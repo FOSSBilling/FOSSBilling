@@ -15,7 +15,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Seo\Api;
 
-class Admin extends \Api_Abstract
+class Admin extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Returns SEO information. When the pings were was last sent.
@@ -24,6 +24,8 @@ class Admin extends \Api_Abstract
      */
     public function info($data)
     {
+        $this->checkPermissions('seo', 'view');
+
         return $this->getService()->getInfo();
     }
 
@@ -34,7 +36,9 @@ class Admin extends \Api_Abstract
      */
     public function ping_all()
     {
-        $extensionService = $this->di['mod_service']('extension');
+        $this->checkPermissions('seo', 'manage');
+
+        $extensionService = $this->getDi()['mod_service']('extension');
         $config = $extensionService->getConfig('mod_seo');
 
         return $this->getService()->pingSitemap($config, true);

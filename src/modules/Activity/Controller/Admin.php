@@ -33,12 +33,12 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                 'index' => 700,
                 'location' => 'activity',
                 'label' => __trans('Activity'),
-                'class' => 'graphs',
+                'class' => 'chart-bar',
             ],
             'subpages' => [
                 [
                     'location' => 'activity',
-                    'label' => __trans('System activity'),
+                    'label' => __trans('System Activity'),
                     'index' => 100,
                     'uri' => $this->di['url']->adminLink('activity'),
                     'class' => '',

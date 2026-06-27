@@ -241,16 +241,16 @@ class Registrar_Domain implements Stringable
         $c .= sprintf('SLD: %s', $this->getSld()) . PHP_EOL;
 
         $c .= sprintf('EPP: %s', $this->getEpp()) . PHP_EOL;
-        $c .= sprintf('Registration period: %s year(s)', $this->getRegistrationPeriod()) . PHP_EOL;
+        $c .= sprintf('Registration Period: %s year(s)', $this->getRegistrationPeriod()) . PHP_EOL;
 
         $registered_at = ($this->getRegistrationTime()) ? date('Y-m-d', $this->getRegistrationTime()) : '-';
-        $c .= sprintf('Registered at: %s', $registered_at) . PHP_EOL;
+        $c .= sprintf('Registered At: %s', $registered_at) . PHP_EOL;
 
         $expires_at = ($this->getExpirationTime()) ? date('Y-m-d', $this->getExpirationTime()) : '-';
-        $c .= sprintf('Expires at: %s', $expires_at) . PHP_EOL;
+        $c .= sprintf('Expires At: %s', $expires_at) . PHP_EOL;
 
         $privacy = ($this->getPrivacyEnabled()) ? 'Yes' : 'No';
-        $c .= sprintf('WHOIS Privacy Protection enabled: %s', $privacy);
+        $c .= sprintf('WHOIS Privacy Protection Enabled: %s', $privacy);
         $c .= PHP_EOL;
         $c .= PHP_EOL;
 

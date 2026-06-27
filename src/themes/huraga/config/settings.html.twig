@@ -1,335 +1,359 @@
 {% block content %}
-<fieldset>
-    <legend>{{ 'Look and Feel'|trans }}</legend>
+<section class="mb-4">
+    <h4 class="card-title mb-3">{{ 'Look and Feel'|trans }}</h4>
 
-    <h3>{{ 'Theme'|trans }}</h3>
-    <select name="theme">
-        <option value="light" selected>{{ 'Bootstrap Light'|trans }}</option>
-        <option value="dark">{{ 'Bootstrap Dark'|trans }}</option>
+    <div class="mb-3">
+        <label class="form-label" for="theme">{{ 'Theme'|trans }}</label>
+        <select class="form-select" name="theme" id="theme">
+            <option value="light" selected>{{ 'Bootstrap Light'|trans }}</option>
+            <option value="dark">{{ 'Bootstrap Dark'|trans }}</option>
+        </select>
+    </div>
+</section>
+
+<section class="mb-4">
+    <h4 class="card-title mb-3">{{ 'General'|trans }}</h4>
+
+    <div class="mb-4">
+        <h5 class="mb-2">{{ 'Header Items'|trans }}</h5>
+        <div class="d-flex flex-column gap-3">
+            <div>
+                <label class="form-label d-block">{{ 'Show Company Logo'|trans }}</label>
+                <div class="d-flex gap-3">
+                    <label class="form-check"><input class="form-check-input" type="radio" name="show_company_logo" value="1" id="show_company_logo_1" checked="checked"><span class="form-check-label">{{ 'Yes'|trans }}</span></label>
+                    <label class="form-check"><input class="form-check-input" type="radio" name="show_company_logo" value="0" id="show_company_logo_0"><span class="form-check-label">{{ 'No'|trans }}</span></label>
+                </div>
+            </div>
+            <div>
+                <label class="form-label d-block">{{ 'Show Client Balance'|trans }}</label>
+                <div class="d-flex gap-3">
+                    <label class="form-check"><input class="form-check-input" type="radio" name="sidebar_balance_enabled" value="1" id="sidebar_balance_enabled_1" checked="checked"><span class="form-check-label">{{ 'Yes'|trans }}</span></label>
+                    <label class="form-check"><input class="form-check-input" type="radio" name="sidebar_balance_enabled" value="0" id="sidebar_balance_enabled_0"><span class="form-check-label">{{ 'No'|trans }}</span></label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <h5 class="mb-2">{{ 'Menu Items Visible in the Top Right Menu'|trans }}</h5>
+        <div class="d-flex flex-column gap-2">
+            <label class="form-check"><input class="form-check-input" type="checkbox" name="top_menu_dashboard" value="1" id="top_menu_dashboard"><span class="form-check-label">{{ 'Show Dashboard Link'|trans }}</span></label>
+            <label class="form-check"><input class="form-check-input" type="checkbox" name="top_menu_order" value="1" id="top_menu_order"><span class="form-check-label">{{ 'Show Order Link'|trans }}</span></label>
+            <label class="form-check"><input class="form-check-input" type="checkbox" name="top_menu_profile" value="1" id="top_menu_profile"><span class="form-check-label">{{ 'Show Profile Link'|trans }}</span></label>
+            <label class="form-check"><input class="form-check-input" type="checkbox" name="top_menu_signout" value="1" id="top_menu_signout"><span class="form-check-label">{{ 'Show Sign Out Link'|trans }}</span></label>
+        </div>
+    </div>
+</section>
+
+<section class="mb-4">
+    <h4 class="card-title mb-3">{{ 'Login Page'|trans }}</h4>
+
+    <div class="row g-3">
+        <div class="col-12">
+            <label class="form-label d-block">{{ 'Show Logo'|trans }}</label>
+            <div class="d-flex gap-3">
+                <label class="form-check"><input class="form-check-input" type="radio" name="login_page_show_logo" value="1" id="login_page_show_logo_1" checked="checked"><span class="form-check-label">{{ 'Yes'|trans }}</span></label>
+                <label class="form-check"><input class="form-check-input" type="radio" name="login_page_show_logo" value="0" id="login_page_show_logo_0"><span class="form-check-label">{{ 'No'|trans }}</span></label>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <label class="form-label" for="login_page_logo_url">{{ 'Logo Link URL'|trans }}</label>
+            <input class="form-control" type="text" name="login_page_logo_url" id="login_page_logo_url" value="">
+        </div>
+        <div class="col-12">
+            <label class="form-label d-block">{{ 'Show Password Reset Link'|trans }}</label>
+            <div class="d-flex gap-3">
+                <label class="form-check"><input class="form-check-input" type="radio" name="show_password_reset_link" value="1" id="show_password_reset_link_1" checked="checked"><span class="form-check-label">{{ 'Yes'|trans }}</span></label>
+                <label class="form-check"><input class="form-check-input" type="radio" name="show_password_reset_link" value="0" id="show_password_reset_link_0"><span class="form-check-label">{{ 'No'|trans }}</span></label>
+            </div>
+        </div>
+        <div class="col-12">
+            <label class="form-label d-block">{{ 'Show Signup Link'|trans }}</label>
+            <div class="d-flex gap-3">
+                <label class="form-check"><input class="form-check-input" type="radio" name="show_signup_link" value="1" id="show_signup_link_1" checked="checked"><span class="form-check-label">{{ 'Yes'|trans }}</span></label>
+                <label class="form-check"><input class="form-check-input" type="radio" name="show_signup_link" value="0" id="show_signup_link_0"><span class="form-check-label">{{ 'No'|trans }}</span></label>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="mb-4">
+    <h4 class="card-title mb-3">{{ 'Breadcrumbs'|trans }}</h4>
+
+    <div class="d-flex flex-column gap-3">
+        <div>
+            <label class="form-label d-block">{{ 'Show Breadcrumbs'|trans }}</label>
+            <div class="d-flex gap-3">
+                <label class="form-check"><input class="form-check-input" type="radio" name="show_breadcrumb" value="1" id="show_breadcrumb_1" checked="checked"><span class="form-check-label">{{ 'Yes'|trans }}</span></label>
+                <label class="form-check"><input class="form-check-input" type="radio" name="show_breadcrumb" value="0" id="show_breadcrumb_0"><span class="form-check-label">{{ 'No'|trans }}</span></label>
+            </div>
+        </div>
+        <div>
+            <label class="form-label d-block">{{ 'Hide Breadcrumbs on Dashboard'|trans }}</label>
+            <div class="d-flex gap-3">
+                <label class="form-check"><input class="form-check-input" type="radio" name="hide_dashboard_breadcrumb" value="1" id="hide_dashboard_breadcrumb_1" checked="checked"><span class="form-check-label">{{ 'Yes'|trans }}</span></label>
+                <label class="form-check"><input class="form-check-input" type="radio" name="hide_dashboard_breadcrumb" value="0" id="hide_dashboard_breadcrumb_0"><span class="form-check-label">{{ 'No'|trans }}</span></label>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="mb-4">
+    <h4 class="card-title mb-3">{{ 'Dashboard'|trans }}</h4>
+
+    <div class="d-flex flex-column gap-3 mb-4">
+        <div>
+            <label class="form-label d-block">{{ 'Enable Dashboard for Guests'|trans }}</label>
+            <div class="d-flex gap-3">
+                <label class="form-check"><input class="form-check-input" type="radio" name="require_login" value="0" id="require_login_1" checked="checked"><span class="form-check-label">{{ 'Yes'|trans }}</span></label>
+                <label class="form-check"><input class="form-check-input" type="radio" name="require_login" value="1" id="require_login_0"><span class="form-check-label">{{ 'No'|trans }}</span></label>
+            </div>
+        </div>
+        <div>
+            <label class="form-label d-block">{{ 'Hide Nav Menu for Guests'|trans }}</label>
+            <div class="d-flex gap-3">
+                <label class="form-check"><input class="form-check-input" type="radio" name="hide_menu" value="1" id="hide_menu_1" checked="checked"><span class="form-check-label">{{ 'Yes'|trans }}</span></label>
+                <label class="form-check"><input class="form-check-input" type="radio" name="hide_menu" value="0" id="hide_menu_0"><span class="form-check-label">{{ 'No'|trans }}</span></label>
+            </div>
+        </div>
+    </div>
+
+    <h5 class="mb-2">{{ 'Showcase'|trans }}</h5>
+    <div class="row g-3">
+        <div class="col-12">
+            <label class="form-label d-block">{{ 'Enable Showcase'|trans }}</label>
+            <div class="d-flex gap-3">
+                <label class="form-check"><input class="form-check-input" type="radio" name="showcase_enabled" value="1" id="showcase_enabled_1"><span class="form-check-label">{{ 'Yes'|trans }}</span></label>
+                <label class="form-check"><input class="form-check-input" type="radio" name="showcase_enabled" value="0" id="showcase_enabled_0" checked="checked"><span class="form-check-label">{{ 'No'|trans }}</span></label>
+            </div>
+        </div>
+        <div class="col-12">
+            <label class="form-label" for="showcase_text">{{ 'Showcase Text'|trans }}</label>
+            <textarea class="form-control" id="showcase_text" name="showcase_text"></textarea>
+        </div>
+        <div class="col-lg-6">
+            <label class="form-label" for="showcase_button_title">{{ 'Showcase Button Title'|trans }}</label>
+            <input class="form-control" type="text" name="showcase_button_title" id="showcase_button_title" value="">
+        </div>
+        <div class="col-lg-6">
+            <label class="form-label" for="showcase_button_url">{{ 'Showcase Link URL'|trans }}</label>
+            <input class="form-control" type="text" name="showcase_button_url" id="showcase_button_url" value="">
+        </div>
+    </div>
+</section>
+
+<section class="mb-4">
+    <h4 class="card-title mb-3">{{ 'Sidebar'|trans }}</h4>
+
+    <div class="mb-4">
+        <h5 class="mb-2">{{ 'Menu Items Visible in the Left Menu'|trans }}</h5>
+        <div class="d-flex flex-column gap-2">
+            <label class="form-check" for="side_menu_dashboard"><input class="form-check-input" type="checkbox" name="side_menu_dashboard" value="1" id="side_menu_dashboard"><span class="form-check-label">{{ 'Show Dashboard Link'|trans }}</span></label>
+            <label class="form-check" for="side_menu_order"><input class="form-check-input" type="checkbox" name="side_menu_order" value="1" id="side_menu_order"><span class="form-check-label">{{ 'Show Order Link'|trans }}</span></label>
+            <label class="form-check" for="side_menu_support"><input class="form-check-input" type="checkbox" name="side_menu_support" value="1" id="side_menu_support"><span class="form-check-label">{{ 'Show Support Link'|trans }}</span></label>
+            <label class="form-check" for="side_menu_kb"><input class="form-check-input" type="checkbox" name="side_menu_kb" value="1" id="side_menu_kb"><span class="form-check-label">{{ 'Show Knowledge Base Link'|trans }}</span></label>
+            <label class="form-check" for="side_menu_services"><input class="form-check-input" type="checkbox" name="side_menu_services" value="1" id="side_menu_services"><span class="form-check-label">{{ 'Show Services Link'|trans }}</span></label>
+            <label class="form-check" for="side_menu_invoices"><input class="form-check-input" type="checkbox" name="side_menu_invoices" value="1" id="side_menu_invoices"><span class="form-check-label">{{ 'Show Invoices Link'|trans }}</span></label>
+            <label class="form-check" for="side_menu_emails"><input class="form-check-input" type="checkbox" name="side_menu_emails" value="1" id="side_menu_emails"><span class="form-check-label">{{ 'Show Emails Link'|trans }}</span></label>
+            <label class="form-check" for="side_menu_payments"><input class="form-check-input" type="checkbox" name="side_menu_payments" value="1" id="side_menu_payments"><span class="form-check-label">{{ 'Show Payments Link'|trans }}</span></label>
+            <label class="form-check" for="side_menu_news"><input class="form-check-input" type="checkbox" name="side_menu_news" value="1" id="side_menu_news"><span class="form-check-label">{{ 'Show News Link'|trans }}</span></label>
+        </div>
+    </div>
+
+    <div>
+        <h5 class="mb-2">{{ 'Simple Sidebar Note'|trans }}</h5>
+        <div class="row g-3">
+            <div class="col-12">
+                <label class="form-label d-block">{{ 'Show Sidebar Note'|trans }}</label>
+                <div class="d-flex gap-3">
+                    <label class="form-check"><input class="form-check-input" type="radio" name="sidebar_note_enabled" value="1" id="sidebar_note_enabled_1" checked="checked"><span class="form-check-label">{{ 'Yes'|trans }}</span></label>
+                    <label class="form-check"><input class="form-check-input" type="radio" name="sidebar_note_enabled" value="0" id="sidebar_note_enabled_0"><span class="form-check-label">{{ 'No'|trans }}</span></label>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <label class="form-label" for="sidebar_note_title">{{ 'Note Title'|trans }}</label>
+                <input class="form-control" type="text" name="sidebar_note_title" id="sidebar_note_title" value="">
+            </div>
+            <div class="col-12">
+                <label class="form-label" for="sidebar_note_content">{{ 'Note Text'|trans }}</label>
+                <textarea class="form-control" id="sidebar_note_content" name="sidebar_note_content"></textarea>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="mb-4">
+    <h4 class="card-title mb-3">{{ 'Meta Fields'|trans }}</h4>
+
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <label class="form-label" for="meta_title_prefix">{{ 'Meta Title Prefix'|trans }}</label>
+            <input class="form-control" type="text" name="meta_title_prefix" id="meta_title_prefix" value="">
+        </div>
+        <div class="col-lg-6">
+            <label class="form-label" for="meta_title_suffix">{{ 'Meta Title Suffix'|trans }}</label>
+            <input class="form-control" type="text" name="meta_title_suffix" id="meta_title_suffix" value="">
+        </div>
+        <div class="col-12">
+            <label class="form-label" for="meta_description">{{ 'Meta Description'|trans }}</label>
+            <input class="form-control" type="text" name="meta_description" id="meta_description" value="">
+        </div>
+        <div class="col-lg-6">
+            <label class="form-label" for="meta_keywords">{{ 'Meta Keywords'|trans }}</label>
+            <input class="form-control" type="text" name="meta_keywords" id="meta_keywords" value="">
+        </div>
+        <div class="col-lg-6">
+            <label class="form-label" for="meta_robots">{{ 'Meta Robots'|trans }}</label>
+            <input class="form-control" type="text" name="meta_robots" id="meta_robots" value="">
+        </div>
+        <div class="col-lg-6">
+            <label class="form-label" for="meta_author">{{ 'Meta Author'|trans }}</label>
+            <input class="form-control" type="text" name="meta_author" id="meta_author" value="">
+        </div>
+    </div>
+</section>
+
+<section class="mb-4">
+    <h4 class="card-title mb-3">{{ 'Footer'|trans }}</h4>
+
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <label class="form-label d-block">{{ 'Show Footer'|trans }}</label>
+            <div class="d-flex gap-3">
+                <label class="form-check"><input class="form-check-input" type="radio" name="footer_enabled" value="1" id="footer_enabled_1" checked="checked"><span class="form-check-label">{{ 'Yes'|trans }}</span></label>
+                <label class="form-check"><input class="form-check-input" type="radio" name="footer_enabled" value="0" id="footer_enabled_0"><span class="form-check-label">{{ 'No'|trans }}</span></label>
+            </div>
+        </div>
+        <div class="col-12">
+            <label class="form-label d-block">{{ 'Show "Top" Link'|trans }}</label>
+            <div class="d-flex gap-3">
+                <label class="form-check"><input class="form-check-input" type="radio" name="footer_to_top_enabled" value="1" id="footer_to_top_enabled_1" checked="checked"><span class="form-check-label">{{ 'Yes'|trans }}</span></label>
+                <label class="form-check"><input class="form-check-input" type="radio" name="footer_to_top_enabled" value="0" id="footer_to_top_enabled_0"><span class="form-check-label">{{ 'No'|trans }}</span></label>
+            </div>
+        </div>
+        <div class="col-12">
+            <label class="form-label" for="footer_signature">{{ 'Footer Text (instead of company signature)'|trans }}</label>
+            <input class="form-control" type="text" name="footer_signature" id="footer_signature" value="">
+        </div>
+    </div>
+
+    <h5 class="mb-2">{{ 'Links'|trans }}</h5>
+    <div class="d-flex flex-column gap-3 mb-4">
+        <div class="row g-2 align-items-center">
+            <div class="col-12 col-lg-2">
+                <label class="form-label mb-lg-0">{{ 'Footer Link #1'|trans }}</label>
+            </div>
+            <div class="col-auto">
+                <label class="form-check mb-0">
+                    <input class="form-check-input" type="checkbox" name="footer_link_1_enabled">
+                </label>
+            </div>
+            <div class="col-lg-4">
+                <input class="form-control" type="text" name="footer_link_1_title" value="" placeholder="{{ 'Link Title'|trans }}">
+            </div>
+            <div class="col-lg-5">
+                <input class="form-control" type="text" name="footer_link_1_page" value="" placeholder="{{ 'Page or Link Target'|trans }}">
+            </div>
+        </div>
+        <div class="row g-2 align-items-center">
+            <div class="col-12 col-lg-2">
+                <label class="form-label mb-lg-0">{{ 'Footer Link #2'|trans }}</label>
+            </div>
+            <div class="col-auto">
+                <label class="form-check mb-0">
+                    <input class="form-check-input" type="checkbox" name="footer_link_2_enabled">
+                </label>
+            </div>
+            <div class="col-lg-4">
+                <input class="form-control" type="text" name="footer_link_2_title" value="" placeholder="{{ 'Link Title'|trans }}">
+            </div>
+            <div class="col-lg-5">
+                <input class="form-control" type="text" name="footer_link_2_page" value="" placeholder="{{ 'Page or Link Target'|trans }}">
+            </div>
+        </div>
+        <div class="row g-2 align-items-center">
+            <div class="col-12 col-lg-2">
+                <label class="form-label mb-lg-0">{{ 'Footer Link #3'|trans }}</label>
+            </div>
+            <div class="col-auto">
+                <label class="form-check mb-0">
+                    <input class="form-check-input" type="checkbox" name="footer_link_3_enabled">
+                </label>
+            </div>
+            <div class="col-lg-4">
+                <input class="form-control" type="text" name="footer_link_3_title" value="" placeholder="{{ 'Link Title'|trans }}">
+            </div>
+            <div class="col-lg-5">
+                <input class="form-control" type="text" name="footer_link_3_page" value="" placeholder="{{ 'Page or Link Target'|trans }}">
+            </div>
+        </div>
+        <div class="row g-2 align-items-center">
+            <div class="col-12 col-lg-2">
+                <label class="form-label mb-lg-0">{{ 'Footer Link #4'|trans }}</label>
+            </div>
+            <div class="col-auto">
+                <label class="form-check mb-0">
+                    <input class="form-check-input" type="checkbox" name="footer_link_4_enabled">
+                </label>
+            </div>
+            <div class="col-lg-4">
+                <input class="form-control" type="text" name="footer_link_4_title" value="" placeholder="{{ 'Link Title'|trans }}">
+            </div>
+            <div class="col-lg-5">
+                <input class="form-control" type="text" name="footer_link_4_page" value="" placeholder="{{ 'Page or Link Target'|trans }}">
+            </div>
+        </div>
+        <div class="row g-2 align-items-center">
+            <div class="col-12 col-lg-2">
+                <label class="form-label mb-lg-0">{{ 'Footer Link #5'|trans }}</label>
+            </div>
+            <div class="col-auto">
+                <label class="form-check mb-0">
+                    <input class="form-check-input" type="checkbox" name="footer_link_5_enabled">
+                </label>
+            </div>
+            <div class="col-lg-4">
+                <input class="form-control" type="text" name="footer_link_5_title" value="" placeholder="{{ 'Link Title'|trans }}">
+            </div>
+            <div class="col-lg-5">
+                <input class="form-control" type="text" name="footer_link_5_page" value="" placeholder="{{ 'Page or Link Target'|trans }}">
+            </div>
+        </div>
+    </div>
+
+    <h5 class="mb-2">{{ 'JavaScript'|trans }}</h5>
+    <div>
+        <label class="form-label" for="inject_javascript">{{ 'Add JavaScript to Client Area Footer'|trans }}</label>
+        <textarea class="form-control" name="inject_javascript" id="inject_javascript"></textarea>
+    </div>
+</section>
+
+<section class="mb-4">
+    <h4 class="card-title mb-3">{{ 'Invoice'|trans }}</h4>
+    <label class="form-label d-block">{{ 'Allow Clients to Choose Between One-Time and Subscription Payments'|trans }}</label>
+    <div class="d-flex gap-3">
+        <label class="form-check"><input class="form-check-input" type="radio" name="prompt_subscription" value="1"><span class="form-check-label">{{ 'Yes'|trans }}</span></label>
+        <label class="form-check"><input class="form-check-input" type="radio" name="prompt_subscription" value="0" checked="checked"><span class="form-check-label">{{ 'No'|trans }}</span></label>
+    </div>
+</section>
+
+<section class="mb-4">
+    <h4 class="card-title mb-3">{{ 'Checkout'|trans }}</h4>
+    <label class="form-label" for="checkout_tos">{{ 'Terms of Service / Privacy Policy Requirement for the Checkout Screen'|trans }}</label>
+    <select class="form-select" name="checkout_tos" id="checkout_tos">
+        <option value="explicit">{{ 'Explicit Agreement'|trans }}</option>
+        <option value="implicit">{{ 'Implicit Agreement'|trans }}</option>
+        <option value="none">{{ 'None'|trans }}</option>
     </select>
-</fieldset>
+</section>
 
-<fieldset>
-    <legend>{{ 'General'|trans }}</legend>
-
-    <h3>{{ 'Header Items'|trans }}</h3>
-    <table>
-        <tr>
-            <td><label>{{ 'Show company logo'|trans }}</label></td>
-            <td>
-                <label><input type="radio" name="show_company_logo" value="1" id="show_company_logo_1" checked="checked">{{ 'Yes'|trans }}</label>
-                <label><input type="radio" name="show_company_logo" value="0" id="show_company_logo_0">{{ 'No'|trans }}</label>
-            </td>
-        </tr>
-
-        <tr>
-            <td><label>{{ 'Show client balance'|trans }}</label></td>
-            <td>
-                <label><input type="radio" name="sidebar_balance_enabled" value="1" id="sidebar_balance_enabled_1" checked="checked">{{ 'Yes'|trans }}</label>
-                <label><input type="radio" name="sidebar_balance_enabled" value="0" id="sidebar_balance_enabled_0">{{ 'No'|trans }}</label>
-            </td>
-        </tr>
-    </table>
-
-    <h3>{{ 'Menu Items Which Are Visible in Top Right Menu'|trans }}</h3>
-    <table>
-        <tr>
-            <td><label>{{ 'Select which menu items'|trans }}</label></td>
-            <td>
-                <label><input type="checkbox" name="top_menu_dashboard" value="1" id="top_menu_dashboard">{{ 'Show Dashboard Link'|trans }}</label>
-                <label><input type="checkbox" name="top_menu_order" value="1" id="top_menu_order">{{ 'Show Order Link'|trans }}</label>
-                <label><input type="checkbox" name="top_menu_profile" value="1" id="top_menu_profile">{{ 'Show Profile Link'|trans }}</label>
-                <label><input type="checkbox" name="top_menu_signout" value="1" id="top_menu_signout">{{ 'Show Sign Out Link'|trans }}</label>
-            </td>
-        </tr>
-    </table>
-
-</fieldset>
-
-<fieldset>
-    <legend>{{ 'Login Page'|trans }}</legend>
-
-    <table>
-        <tr>
-            <td><label>{{ 'Show logo'|trans }}</label></td>
-            <td>
-                <label><input type="radio" name="login_page_show_logo" value="1" id="login_page_show_logo_1" checked="checked">{{ 'Yes'|trans }}</label>
-                <label><input type="radio" name="login_page_show_logo" value="0" id="login_page_show_logo_0">{{ 'No'|trans }}</label>
-            </td>
-        </tr>
-
-        <tr>
-            <td><label>{{ 'Logo link URL'|trans }}</label></td>
-            <td><input type="text" name="login_page_logo_url" id="login_page_logo_url" value=""></td>
-        </tr>
-
-        <tr>
-            <td><label>{{ 'Show password reset link'|trans }}</label></td>
-            <td>
-                <label><input type="radio" name="show_password_reset_link" value="1" id="show_password_reset_link_1" checked="checked">{{ 'Yes'|trans }}</label>
-                <label><input type="radio" name="show_password_reset_link" value="0" id="show_password_reset_link_0">{{ 'No'|trans }}</label>
-            </td>
-        </tr>
-
-        <tr>
-            <td><label>{{ 'Show signup link'|trans }}</label></td>
-            <td>
-                <label><input type="radio" name="show_signup_link" value="1" id="show_signup_link_1" checked="checked">{{ 'Yes'|trans }}</label>
-                <label><input type="radio" name="show_signup_link" value="0" id="show_signup_link_0">{{ 'No'|trans }}</label>
-            </td>
-        </tr>
-    </table>
-</fieldset>
-
-<fieldset>
-    <legend>{{ 'Breadcrumbs'|trans }}</legend>
-
-    <table>
-        <tr>
-            <td><label>{{ 'Show breadcrumbs'|trans }}</label></td>
-            <td>
-                <label><input type="radio" name="show_breadcrumb" value="1" id="show_breadcrumb_1" checked="checked">{{ 'Yes'|trans }}</label>
-                <label><input type="radio" name="show_breadcrumb" value="0" id="show_breadcrumb_0">{{ 'No'|trans }}</label>
-            </td>
-        </tr>
-        <tr>
-            <td><label>{{ 'Hide breadcrumbs on dashboard'|trans }}</label></td>
-            <td>
-                <label><input type="radio" name="hide_dashboard_breadcrumb" value="1" id="hide_dashboard_breadcrumb_1" checked="checked">{{ 'Yes'|trans }}</label>
-                <label><input type="radio" name="hide_dashboard_breadcrumb" value="0" id="hide_dashboard_breadcrumb_0">{{ 'No'|trans }}</label>
-            </td>
-        </tr>
-    </table>
-</fieldset>
-
-<fieldset>
-    <legend>{{ 'Dashboard'|trans }}</legend>
-
-    <table>
-        <tr>
-            <td><label>{{ 'Enable Dashboard for Guests'|trans }}</label></td>
-            <td>
-                <label><input type="radio" name="require_login" value="0" id="require_login_1" checked="checked">{{ 'Yes'|trans }}</label>
-                <label><input type="radio" name="require_login" value="1" id="require_login_0">{{ 'No'|trans }}</label>
-            </td>
-        </tr>
-        <tr>
-            <td><label>{{ 'Hide nav menu for guests'|trans }}</label></td>
-            <td>
-                <label><input type="radio" name="hide_menu" value="1" id="hide_menu_1" checked="checked">{{ 'Yes'|trans }}</label>
-                <label><input type="radio" name="hide_menu" value="0" id="hide_menu_0">{{ 'No'|trans }}</label>
-            </td>
-        </tr>
-    </table>
-    <h3>{{ 'Showcase'|trans }}</h3>
-    <table>
-        <tr>
-            <td><label>{{ 'Enable Showcase'|trans }}</label></td>
-            <td>
-                <label><input type="radio" name="showcase_enabled" value="1" id="showcase_enabled_1">{{ 'Yes'|trans }}</label>
-                <label><input type="radio" name="showcase_enabled" value="0" id="showcase_enabled_0" checked="checked">{{ 'No'|trans }}</label>
-            </td>
-        </tr>
-        <tr>
-            <td><label for="showcase_text">{{ 'Showcase text'|trans }}</label></td>
-            <td><textarea id="showcase_text" name="showcase_text"></textarea></td>
-        </tr>
-        <tr>
-            <td><label for="showcase_button_title">{{ 'Showcase button title'|trans }}</label></td>
-            <td><input type="text" name="showcase_button_title" id="showcase_button_title" value=""></td>
-        </tr>
-        <tr>
-            <td><label for="showcase_button_url">{{ 'Showcase link URL'|trans }}</label></td>
-            <td><input type="text" name="showcase_button_url" id="showcase_button_url" value=""></td>
-        </tr>
-    </table>
-</fieldset>
-
-<fieldset>
-    <legend>{{ 'Sidebar'|trans }}</legend>
-
-    <h3>{{ 'Menu Items Which Are Visible in Left Menu'|trans }}</h3>
-    <table>
-        <tr>
-            <td><label>{{ 'Select menu items'|trans }}</label></td>
-            <td>
-                  <label for="side_menu_dashboard"><input type="checkbox" name="side_menu_dashboard" value="1" id="side_menu_dashboard"> {{ 'Show dashboard link'|trans }}</label>
-                  <label for="side_menu_order"><input type="checkbox" name="side_menu_order" value="1" id="side_menu_order"> {{ 'Show order link'|trans }}</label>
-                  <label for="side_menu_support"><input type="checkbox" name="side_menu_support" value="1" id="side_menu_support"> {{ 'Show support link'|trans }}</label>
-                  <label for="side_menu_kb"><input type="checkbox" name="side_menu_kb" value="1" id="side_menu_kb"> {{ 'Show knowledge base link'|trans }}</label>
-                  <label for="side_menu_services"><input type="checkbox" name="side_menu_services" value="1" id="side_menu_services"> {{ 'Show services link'|trans }}</label>
-                  <label for="side_menu_invoices"><input type="checkbox" name="side_menu_invoices" value="1" id="side_menu_invoices"> {{ 'Show invoices link'|trans }}</label>
-                  <label for="side_menu_emails"><input type="checkbox" name="side_menu_emails" value="1" id="side_menu_emails"> {{ 'Show emails link'|trans }}</label>
-                  <label for="side_menu_payments"><input type="checkbox" name="side_menu_payments" value="1" id="side_menu_payments"> {{ 'Show payments link'|trans }}</label>
-                  <label for="side_menu_news"><input type="checkbox" name="side_menu_news" value="1" id="side_menu_news"> {{ 'Show news link'|trans }}</label>
-            </td>
-        </tr>
-    </table>
-
-    <h3>{{ 'Simple Sidebar Note'|trans }}</h3>
-    <table>
-        <tr>
-            <td><label>{{ 'Show sidebar note'|trans }}</label></td>
-            <td>
-                <label><input type="radio" name="sidebar_note_enabled" value="1" id="sidebar_note_enabled_1" checked="checked">{{ 'Yes'|trans }}</label>
-                <label><input type="radio" name="sidebar_note_enabled" value="0" id="sidebar_note_enabled_0">{{ 'No'|trans }}</label>
-            </td>
-        </tr>
-
-        <tr>
-            <td><label for="sidebar_note_title">{{ 'Note title'|trans }}</label></td>
-            <td><input type="text" name="sidebar_note_title" id="sidebar_note_title" value=""></td>
-        </tr>
-
-        <tr>
-            <td><label for="sidebar_note_content">{{ 'Note text'|trans }}</label></td>
-            <td><textarea id="sidebar_note_content" name="sidebar_note_content"></textarea></td>
-        </tr>
-    </table>
-</fieldset>
-
-<fieldset>
-    <legend>{{ 'Meta fields'|trans }}</legend>
-
-    <table>
-        <tr>
-            <td><label for="meta_title_prefix">{{ 'Meta title prefix'|trans }}</label></td>
-            <td><input type="text" name="meta_title_prefix" id="meta_title_prefix" value=""></td>
-        </tr>
-
-        <tr>
-            <td><label for="meta_title_suffix">{{ 'Meta title suffix'|trans }}</label></td>
-            <td><input type="text" name="meta_title_suffix" id="meta_title_suffix" value=""></td>
-        </tr>
-
-        <tr>
-            <td><label for="meta_description">{{ 'Meta description'|trans }}</label></td>
-            <td><input type="text" name="meta_description" id="meta_description" value=""></td>
-        </tr>
-
-        <tr>
-            <td><label for="meta_keywords">{{ 'Meta keywords'|trans }}</label></td>
-            <td><input type="text" name="meta_keywords" id="meta_keywords" value=""></td>
-        </tr>
-
-        <tr>
-            <td><label for="meta_robots">{{ 'Meta robots'|trans }}</label></td>
-            <td><input type="text" name="meta_robots" id="meta_robots" value=""></td>
-        </tr>
-
-        <tr>
-            <td><label for="meta_author">{{ 'Meta author'|trans }}</label></td>
-            <td><input type="text" name="meta_author" id="meta_author" value=""></td>
-        </tr>
-    </table>
-</fieldset>
-
-<fieldset>
-    <legend>{{ 'Footer'|trans }}</legend>
-
-    <table>
-    <tr>
-        <td><label>{{ 'Show Footer'|trans }}</label></td>
-        <td>
-            <label><input type="radio" name="footer_enabled" value="1" id="footer_enabled_1" checked="checked">{{ 'Yes'|trans }}</label>
-            <label><input type="radio" name="footer_enabled" value="0" id="footer_enabled_0">{{ 'No'|trans }}</label>
-        </td>
-    </tr>
-
-    <tr>
-        <td><label>{{ 'Show "Top" link'|trans }}</label></td>
-        <td>
-            <label><input type="radio" name="footer_to_top_enabled" value="1" id="footer_to_top_enabled_1" checked="checked">{{ 'Yes'|trans }}</label>
-            <label><input type="radio" name="footer_to_top_enabled" value="0" id="footer_to_top_enabled_0">{{ 'No'|trans }}</label>
-        </td>
-    </tr>
-
-    <tr>
-        <td><label for="footer_signature">{{ 'Footer text (instead of company signature)'|trans }}</label></td>
-        <td><input type="text" name="footer_signature" id="footer_signature" value=""></td>
-    </tr>
-    </table>
-
-    <h3>{{ 'Links'|trans }}</h3>
-    <table>
-        <tr>
-            <td><label>{{ 'Footer link #1'|trans }}</label></td>
-            <td><label><input type="checkbox" name="footer_link_1_enabled"></label><input type="text" name="footer_link_1_title" value=""><span> -> </span><input type="text" name="footer_link_1_page"></td>
-        </tr>
-
-        <tr>
-            <td><label>{{ 'Footer link #2'|trans }}</label></td>
-            <td><label><input type="checkbox" name="footer_link_2_enabled"></label><input type="text" name="footer_link_2_title" value=""><span> -> </span><input type="text" name="footer_link_2_page"></td>
-        </tr>
-
-        <tr>
-            <td><label>{{ 'Footer link #3'|trans }}</label></td>
-            <td><label><input type="checkbox" name="footer_link_3_enabled"></label><input type="text" name="footer_link_3_title" value=""><span> -> </span><input type="text" name="footer_link_3_page"></td>
-        </tr>
-
-        <tr>
-            <td><label>{{ 'Footer link #4'|trans }}</label></td>
-            <td><label><input type="checkbox" name="footer_link_4_enabled"></label><input type="text" name="footer_link_4_title" value=""><span> -> </span><input type="text" name="footer_link_4_page"></td>
-        </tr>
-
-        <tr>
-            <td><label>{{ 'Footer link #5'|trans }}</label></td>
-            <td><label><input type="checkbox" name="footer_link_5_enabled"></label><input type="text" name="footer_link_5_title" value=""><span> -> </span><input type="text" name="footer_link_5_page"></td>
-        </tr>
-
-    </table>
-
-    <h3>{{ 'JavaScript'|trans }}</h3>
-    <table>
-        <tr>
-            <td><label for="meta_title">{{ 'Add javascript to client area footer'|trans }}</label></td>
-            <td><textarea name="inject_javascript" id="inject_javascript"></textarea></td>
-        </tr>
-    </table>
-</fieldset>
-
-<fieldset>
-    <legend>{{ 'Invoice'|trans }}</legend>
-    <table>
-    <tr>
-        <td><label>{{ 'Allow clients to choose between one-time and subscription payments'|trans }}</label></td>
-        <td>
-            <label><input type="radio" name="prompt_subscription" value="1">{{ 'Yes'|trans }}</label>
-            <label><input type="radio" name="prompt_subscription" value="0" checked="checked">{{ 'No'|trans }}</label>
-        </td>
-    </tr>
-    </table>
-</fieldset>
-
-<fieldset>
-    <legend>{{ 'Checkout'|trans }}</legend>
-    <table>
-    <tr>
-        <td><label>{{ 'Terms of service / privacy policy requirement for the checkout screen'|trans }}</label></td>
-        <td>
-            <select name="checkout_tos">
-                <option value="explicit">{{ 'Explicit agreement'|trans }}</option>
-                <option value="implicit">{{ 'Implicit agreement'|trans }}</option>
-                <option value="none">{{ 'None'|trans }}</option>
-            </select>
-        </td>
-    </tr>
-    </table>
-</fieldset>
-
-<fieldset>
-    <legend>{{ 'Signup page'|trans }}</legend>
-    <table>
-    <tr>
-        <td><label>{{ 'Terms of service / privacy policy requirement for the signup page'|trans }}</label></td>
-        <td>
-            <select name="signup_tos">
-                <option value="explicit">{{ 'Explicit agreement'|trans }}</option>
-                <option value="implicit">{{ 'Implicit agreement'|trans }}</option>
-                <option value="none">{{ 'None'|trans }}</option>
-            </select>
-        </td>
-    </tr>
-    </table>
-</fieldset>
+<section>
+    <h4 class="card-title mb-3">{{ 'Signup Page'|trans }}</h4>
+    <label class="form-label" for="signup_tos">{{ 'Terms of Service / Privacy Policy Requirement for the Signup Page'|trans }}</label>
+    <select class="form-select" name="signup_tos" id="signup_tos">
+        <option value="explicit">{{ 'Explicit Agreement'|trans }}</option>
+        <option value="implicit">{{ 'Implicit Agreement'|trans }}</option>
+        <option value="none">{{ 'None'|trans }}</option>
+    </select>
+</section>
 {% endblock %}

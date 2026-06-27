@@ -10,12 +10,8 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-use DebugBar\Bridge\Twig\NamespacedTwigProfileCollector;
-use FOSSBilling\Environment;
-use FOSSBilling\TwigExtensions\DebugBar;
 use Symfony\Component\Filesystem\Path;
-use Twig\Extension\ProfilerExtension;
-use Twig\Profiler\Profile;
+use Symfony\Component\HttpFoundation\Response;
 
 class Box_AppClient extends Box_App
 {
@@ -52,7 +48,7 @@ class Box_AppClient extends Box_App
         return $this->render('mod_index_dashboard');
     }
 
-    public function get_custom_page($page): string
+    public function get_custom_page($page): Response
     {
         $ext = $this->ext;
         if (str_contains((string) $page, '.')) {
@@ -63,8 +59,15 @@ class Box_AppClient extends Box_App
         $tpl = 'mod_page_' . $page;
 
         try {
-            return $this->render($tpl, ['post' => $_POST], $ext);
+            $content = $this->render($tpl, ['post' => $this->getRequest()->request->all()], $ext);
+
+            if ("{$tpl}.{$ext}" === 'mod_page_sitemap.xml') {
+                return new Response($content, 200, ['Content-Type' => 'application/xml']);
+            }
+
+            return new Response($content);
         } catch (Exception $e) {
+            // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
             if (DEBUG) {
                 error_log($e->getMessage());
             }
@@ -72,9 +75,8 @@ class Box_AppClient extends Box_App
         $e = new FOSSBilling\InformationException('Page :url not found', [':url' => $this->url], 404);
 
         $this->di['logger']->setChannel('routing')->info($e->getMessage());
-        http_response_code(404);
 
-        return $this->render('error', ['exception' => $e]);
+        return $this->errorResponse($e, 404);
     }
 
     /**
@@ -87,58 +89,20 @@ class Box_AppClient extends Box_App
             $template = $this->getTwig()->load(Path::changeExtension($fileName, $ext));
         } catch (Twig\Error\LoaderError $e) {
             $this->di['logger']->setChannel('routing')->info($e->getMessage());
-            http_response_code(404);
 
             throw new FOSSBilling\InformationException('Page not found', null, 404);
-        }
-
-        if ("{$fileName}.{$ext}" == 'mod_page_sitemap.xml') {
-            header('Content-Type: application/xml');
         }
 
         return $template->render($variableArray);
     }
 
+    /**
+     * Get Twig environment for client area.
+     */
     protected function getTwig(): Twig\Environment
     {
-        $service = $this->di['mod_service']('theme');
-        $code = $service->getCurrentClientAreaThemeCode();
-        $theme = $service->getTheme($code);
-        $settings = $service->getThemeSettings($theme);
+        $twigFactory = $this->di['twig_factory'];
 
-        $loader = new Box_TwigLoader(
-            [
-                'mods' => PATH_MODS,
-                'theme' => Path::join(PATH_THEMES, $code),
-                'type' => 'client',
-            ]
-        );
-
-        $twig = $this->di['twig'];
-        $twig->setLoader($loader);
-
-        $twig->addGlobal('current_theme', $code);
-        $twig->addGlobal('settings', $settings);
-
-        if (Environment::isDevelopment()) {
-            $profile = new Profile();
-            $twig->addExtension(new ProfilerExtension($profile));
-            $collector = new NamespacedTwigProfileCollector($profile);
-            if (!$this->debugBar->hasCollector($collector->getName())) {
-                $this->debugBar->addCollector($collector);
-            }
-        }
-
-        $twig->addExtension(new DebugBar($this->getDebugBar()));
-
-        if ($this->di['auth']->isClientLoggedIn()) {
-            $twig->addGlobal('client', $this->di['api_client']);
-        }
-
-        if ($this->di['auth']->isAdminLoggedIn()) {
-            $twig->addGlobal('admin', $this->di['api_admin']);
-        }
-
-        return $twig;
+        return $twigFactory->createClientEnvironment($this->debugBar);
     }
 }

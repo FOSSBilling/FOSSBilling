@@ -33,13 +33,13 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
             'label' => 'Manages domains on Internetbs via API',
             'form' => [
                 'apikey' => ['text', [
-                    'label' => 'Internetbs API key',
-                    'description' => 'Internetbs API key',
+                    'label' => 'Internetbs API Key',
+                    'description' => 'Internetbs API Key',
                 ],
                 ],
                 'password' => ['password', [
-                    'label' => 'Internetbs API password',
-                    'description' => 'Internetbs API password',
+                    'label' => 'Internetbs API Password',
+                    'description' => 'Internetbs API Password',
                     'renderPassword' => true,
                 ],
                 ],
@@ -142,6 +142,8 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
             $params[$contactType . '_PostalCode'] = $c->getZip();
             $params[$contactType . '_Language'] = 'en';
         }
+
+        $params['transferauthinfo'] = $domain->getEpp();
 
         $result = $this->_process('/Domain/Transfer/Initiate', $params);
 
@@ -336,7 +338,7 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
             ]);
         } catch (HttpExceptionInterface $error) {
             $e = new Registrar_Exception("HttpClientException: {$error->getMessage()}.");
-            $this->getLog()->err($e->getMessage());
+            $this->getLog()->error($e->getMessage());
 
             throw $e;
         }
@@ -367,7 +369,7 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
         }
 
         if ($this->isTestEnv()) {
-            error_log(print_r($result, 1));
+            error_log(print_r($result, true));
         }
 
         return $result;
@@ -454,9 +456,11 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
                         || ($result['privatewhois'] == 'PARTIAL');
         }
 
-        $domain->setExpirationTime(strtotime((string) $result['expirationdate']));
+        $expirationTime = isset($result['expirationdate']) ? strtotime((string) $result['expirationdate']) : false;
+
+        $domain->setExpirationTime($expirationTime === false ? null : $expirationTime);
         $domain->setPrivacyEnabled($privacy);
-        $domain->setEpp($result['transferauthinfo']);
+        $domain->setEpp($result['transferauthinfo'] ?? '');
         $domain->setContactRegistrar($c);
 
         return $domain;
@@ -464,6 +468,8 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
 
     /**
      * Checks whether privacy is enabled.
+     *
+     * @phpstan-ignore method.unused (part of API, reserved for future use)
      */
     private function _isPrivacyEnabled(Registrar_Domain $domain): bool
     {

@@ -15,7 +15,7 @@ namespace Box\Mod\Servicehosting\Api;
 /**
  * Hosting service management.
  */
-class Client extends \Api_Abstract
+class Client extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Change hosting account username.
@@ -83,12 +83,12 @@ class Client extends \Api_Abstract
             throw new \FOSSBilling\Exception('Order ID is required');
         }
         $identity = $this->getIdentity();
-        $order = $this->di['db']->findOne('ClientOrder', 'id = ? and client_id = ?', [$data['order_id'], $identity->id]);
+        $order = $this->getDi()['db']->findOne('ClientOrder', 'id = ? and client_id = ?', [$data['order_id'], $identity->id]);
         if (!$order instanceof \Model_ClientOrder) {
             throw new \FOSSBilling\Exception('Order not found');
         }
 
-        $orderService = $this->di['mod_service']('order');
+        $orderService = $this->getDi()['mod_service']('order');
         $s = $orderService->getOrderService($order);
         if (!$s instanceof \Model_ServiceHosting || $order->status !== \Model_ClientOrder::STATUS_ACTIVE) {
             throw new \FOSSBilling\Exception('Order is not activated');

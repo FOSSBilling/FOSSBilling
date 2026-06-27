@@ -24,8 +24,9 @@ class Service implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
-    public function __construct(private readonly ?Filesystem $filesystem = new Filesystem())
+    public function __construct(private ?Filesystem $filesystem = null)
     {
+        $this->filesystem ??= new Filesystem();
     }
 
     public function setDi(\Pimple\Container $di): void
@@ -41,7 +42,11 @@ class Service implements InjectionAwareInterface
     public function getModulePermissions(): array
     {
         return [
-            'can_always_access' => true,
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View extensions'),
+                'description' => __trans('Allows the staff member to view installed and available extensions, languages, and extension details.'),
+            ],
             'manage_extensions' => [
                 'type' => 'bool',
                 'display_name' => __trans('Manage extensions'),
@@ -57,9 +62,9 @@ class Service implements InjectionAwareInterface
 
     public function isCoreModule(string $mod): bool
     {
-        $core = $this->di['mod']('extension')->getCoreModules();
+        $core = array_map(strtolower(...), $this->di['mod']('extension')->getCoreModules());
 
-        return in_array($mod, $core);
+        return in_array(strtolower($mod), $core, true);
     }
 
     public function isExtensionActive(string $type, string $id): bool
@@ -95,7 +100,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function removeNotExistingModules(): bool|int
+    public function removeNotExistingModules(): int
     {
         $list = $this->di['db']->find('Extension', "type = 'mod'");
         $removedItems = 0;
@@ -109,7 +114,7 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        return $removedItems == 0 ? true : $removedItems;
+        return $removedItems;
     }
 
     public function getSearchQuery($filter): array
@@ -255,7 +260,7 @@ class Service implements InjectionAwareInterface
     {
         $mods = [];
         $finder = new Finder();
-        $finder->directories()->in(PATH_MODS)->depth('== 0')->name('/^[a-zA-Z0-9]+$/');
+        $finder->directories()->in(PATH_MODS)->depth('== 0')->name('/\A[a-zA-Z0-9]+\z/');
 
         foreach ($finder as $dir) {
             $m = $dir->getBasename();
@@ -279,8 +284,6 @@ class Service implements InjectionAwareInterface
     public function getAdminNavigation($admin, $url = null)
     {
         $staff_service = $this->di['mod_service']('staff');
-        $current_mod = null;
-        $current_url = null;
         $nav = [];
         $subpages = [];
 
@@ -301,6 +304,7 @@ class Service implements InjectionAwareInterface
                     $l = $n['group']['location'];
                     unset($n['group']['location']);
                     $n['group']['active'] = false;
+                    $n['group']['uri'] = $this->normalizeNavigationUri($n['group']['uri'] ?? null);
                     $nav[$l] = $n['group'];
                 }
 
@@ -331,20 +335,54 @@ class Service implements InjectionAwareInterface
 
             $l = $page['location'];
             unset($page['location']);
+            $page['uri'] = $this->normalizeNavigationUri($page['uri'] ?? null);
             $nav[$l]['subpages'][] = $page;
         }
 
         // submenu sorting
         foreach ($nav as &$group) {
             $group['subpages'] = $this->di['tools']->sortByOneKey($group['subpages'], 'index');
+            $group['uri'] = $this->resolveNavigationGroupUri($group);
         }
 
         return $nav;
     }
 
-    /**
-     * @return \Model_Extension
-     */
+    private function resolveNavigationGroupUri(array $group): ?string
+    {
+        $groupUri = $this->normalizeNavigationUri($group['uri'] ?? null);
+        if (!empty($groupUri)) {
+            return $groupUri;
+        }
+
+        foreach ($group['subpages'] ?? [] as $subpage) {
+            $subpageUri = $this->normalizeNavigationUri($subpage['uri'] ?? null);
+            if (!empty($subpageUri)) {
+                return $subpageUri;
+            }
+        }
+
+        return null;
+    }
+
+    private function normalizeNavigationUri(?string $uri): ?string
+    {
+        if (is_null($uri)) {
+            return null;
+        }
+
+        $uri = trim($uri);
+        if ($uri === '') {
+            return null;
+        }
+
+        if (preg_match('/^(?:[a-z][a-z0-9+.-]*:|\/|#|\?)/i', $uri) === 1) {
+            return $uri;
+        }
+
+        return $this->di['url']->adminLink(ltrim($uri, '/'));
+    }
+
     /**
      * @return \Model_Extension|null
      */
@@ -473,7 +511,7 @@ class Service implements InjectionAwareInterface
                 $this->filesystem->remove($path);
                 $this->di['logger']->info('Removed extension files for "%s" from %s', $id, $path);
             } catch (IOException $e) {
-                $this->di['logger']->warn('Failed to remove extension files for "%s": %s', $id, $e->getMessage());
+                $this->di['logger']->warning('Failed to remove extension files for "%s": %s', $id, $e->getMessage());
 
                 throw new \FOSSBilling\Exception('Failed to remove extension files. Please check file permissions and try again or manually remove the files from :path', [':path' => $path]);
             }
@@ -505,7 +543,7 @@ class Service implements InjectionAwareInterface
         $this->filesystem->mkdir($extractedPath, 0o755);
 
         // Download the extension archive and save it to the cache folder
-        $client = \Symfony\Component\HttpClient\HttpClient::create(['bindto' => BIND_TO]);
+        $client = $this->di['http_client'];
         $response = $client->request('GET', $latest['download_url']);
 
         $code = $response->getStatusCode();
@@ -515,7 +553,7 @@ class Service implements InjectionAwareInterface
 
         $fileHandler = fopen($zipPath, 'w');
         foreach ($client->stream($response) as $chunk) {
-            fwrite($fileHandler, $chunk->getContent());
+            fwrite($fileHandler, (string) $chunk->getContent());
         }
         fclose($fileHandler);
 
@@ -627,7 +665,7 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    public function getConfig($ext): array
+    public function getConfig(string $ext): array
     {
         return $this->di['cache']->get("config_{$ext}", function (ItemInterface $item) use ($ext) {
             $item->expiresAfter(60 * 60);
@@ -692,19 +730,54 @@ class Service implements InjectionAwareInterface
      *
      * @return string The filesystem path for the extension
      *
-     * @throws \FOSSBilling\Exception If the extension type is not supported
+     * @throws \FOSSBilling\InformationException If the extension type is not supported
      */
     public function getExtensionPath(string $type, string $id, bool $includeMessagesSubdir = false): string
     {
-        return match ($type) {
-            \FOSSBilling\ExtensionManager::TYPE_MOD => Path::join(PATH_MODS, ucfirst($id)),
-            \FOSSBilling\ExtensionManager::TYPE_THEME => Path::join(PATH_THEMES, $id),
+        $this->assertValidExtensionIdentifier($id);
+
+        $basePath = $this->getExtensionBasePath($type);
+        $path = match ($type) {
+            \FOSSBilling\ExtensionManager::TYPE_MOD,
+            \FOSSBilling\ExtensionManager::TYPE_PG => Path::join($basePath, ucfirst($id)),
+            \FOSSBilling\ExtensionManager::TYPE_THEME => Path::join($basePath, $id),
             \FOSSBilling\ExtensionManager::TYPE_TRANSLATION => $includeMessagesSubdir
-                ? Path::join(PATH_LANGS, $id, 'LC_MESSAGES')
-                : Path::join(PATH_LANGS, $id),
-            \FOSSBilling\ExtensionManager::TYPE_PG => Path::join(PATH_LIBRARY, 'Payment', 'Adapter', ucfirst($id)),
+                ? Path::join($basePath, $id, 'LC_MESSAGES')
+                : Path::join($basePath, $id),
             default => throw new \FOSSBilling\InformationException('Extension type (:type) is not supported for automatic path determination.', [':type' => $type]),
         };
+
+        $this->assertPathWithinBasePath($path, $basePath);
+
+        return $path;
+    }
+
+    private function getExtensionBasePath(string $type): string
+    {
+        return match ($type) {
+            \FOSSBilling\ExtensionManager::TYPE_MOD => PATH_MODS,
+            \FOSSBilling\ExtensionManager::TYPE_THEME => PATH_THEMES,
+            \FOSSBilling\ExtensionManager::TYPE_TRANSLATION => PATH_LANGS,
+            \FOSSBilling\ExtensionManager::TYPE_PG => Path::join(PATH_LIBRARY, 'Payment', 'Adapter'),
+            default => throw new \FOSSBilling\InformationException('Extension type (:type) is not supported for automatic path determination.', [':type' => $type]),
+        };
+    }
+
+    private function assertValidExtensionIdentifier(string $id): void
+    {
+        if (preg_match('/\A[A-Za-z0-9_-]+\z/', $id) !== 1) {
+            throw new \FOSSBilling\InformationException('Extension ID contains invalid characters.');
+        }
+    }
+
+    private function assertPathWithinBasePath(string $path, string $basePath): void
+    {
+        $canonicalBasePath = Path::canonicalize($basePath);
+        $canonicalPath = Path::canonicalize($path);
+
+        if (!Path::isBasePath($canonicalBasePath, $canonicalPath)) {
+            throw new \FOSSBilling\InformationException('Extension path resolved outside the expected extension directory.');
+        }
     }
 
     private function _getSalt(): ?string
@@ -760,7 +833,7 @@ class Service implements InjectionAwareInterface
         return $modules;
     }
 
-    public function getSpecificModulePermissions(string $module): array|false
+    public function getSpecificModulePermissions(string $module): array
     {
         $class = 'Box\Mod\\' . ucfirst($module) . '\Service';
         if (class_exists($class) && method_exists($class, 'getModulePermissions')) {
@@ -793,33 +866,36 @@ class Service implements InjectionAwareInterface
     public function hasManagePermission(string $module, ?\Box_App $app = null): void
     {
         $staff_service = $this->di['mod_service']('Staff');
+        $permission_module = str_starts_with($module, 'mod_') ? substr($module, 4) : $module;
 
         // The module isn't active or has no permissions if this is the case, so continue as normal
-        if (!$this->isExtensionActive('mod', $module)) {
+        if (!$this->isExtensionActive('mod', $permission_module)) {
             return;
         }
 
         // First check if any access is allowed to the module for this person
-        if (!$staff_service->hasPermission(null, $module)) {
-            http_response_code(403);
-            $e = new \FOSSBilling\InformationException('You do not have permission to access the :mod: module', [':mod:' => $module], 403);
+        if (!$staff_service->hasPermission(null, $permission_module)) {
+            $e = new \FOSSBilling\InformationException('You do not have permission to access the :mod: module', [':mod:' => $permission_module], 403);
             if (!is_null($app)) {
-                echo $app->render('error', ['exception' => $e]);
-                exit;
+                $app->abortWithResponse(new \Symfony\Component\HttpFoundation\Response(
+                    $app->render('error', ['exception' => $e]),
+                    403
+                ));
             }
 
             throw $e;
         }
 
-        $module_permissions = $this->getSpecificModulePermissions($module);
+        $module_permissions = $this->getSpecificModulePermissions($permission_module);
 
         // If they have access, let's see if that module has a permission specifically for managing settings and check if they have that permission.
-        if (array_key_exists('manage_settings', $module_permissions) && !$staff_service->hasPermission(null, $module, 'manage_settings')) {
-            http_response_code(403);
+        if (array_key_exists('manage_settings', $module_permissions) && !$staff_service->hasPermission(null, $permission_module, 'manage_settings')) {
             $e = new \FOSSBilling\InformationException('You do not have permission to perform this action', [], 403);
             if (!is_null($app)) {
-                echo $app->render('error', ['exception' => $e]);
-                exit;
+                $app->abortWithResponse(new \Symfony\Component\HttpFoundation\Response(
+                    $app->render('error', ['exception' => $e]),
+                    403
+                ));
             }
 
             throw $e;

@@ -1,7 +1,7 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
 
 {% block meta_title %}{{ 'Profile Details'|trans }}{% endblock %}
-{% block page_header %}{{ 'User profile settings'|trans }}{% endblock %}
+{% block page_header %}{{ 'User Profile Settings'|trans }}{% endblock %}
 {% block breadcrumb %}
     <li class="breadcrumb-item active" aria-current="page">{{ 'Profile'|trans }}</li>{% endblock %}
 
@@ -13,7 +13,7 @@
             <div class="row">
                 <span>{{ 'You must verify your email address before you may access our services.'|trans }}</span>
             </div>
-            <a class="btn btn-primary" href="{{ 'api/client/client/resend_email_verification'|link }}"
+            <a class="btn btn-primary" href="{{ 'client/resend_email_verification'|api_url }}"
                {{ fb_api_link({message: 'Verification Email Re-sent'|trans}) }}>{{ 'Resend Verification Email'|trans }}</a>
         </div>
     {% endif %}
@@ -24,13 +24,13 @@
                 <div class="card-header">
                     <nav class="nav nav-tabs card-header-tabs">
                         <a class="nav-link active" id="details-tab" data-bs-toggle="tab"
-                           data-bs-target="#details-tab-pane" href="#">{{ 'Details'|trans }}</a>
+                           data-bs-target="#details-tab-pane" href="#details-tab-pane">{{ 'Details'|trans }}</a>
                         <a class="nav-link" id="pass-tab" data-bs-toggle="tab" data-bs-target="#pass-tab-pane"
-                           href="#">{{ 'Change Password'|trans }}</a>
-                        <a class="nav-link" id="apikey-tab" data-toggle="tab" data-bs-toggle="tab"
-                           data-bs-target="#apikey-tab-pane" href="#">{{ 'API Key'|trans }}</a>
-                        <a class="nav-link" id="currency-tab" data-toggle="tab" data-bs-toggle="tab"
-                           data-bs-target="#currency-tab-pane" href="#">{{ 'Currency'|trans }}</a>
+                           href="#pass-tab-pane">{{ 'Change Password'|trans }}</a>
+                        <a class="nav-link" id="apikey-tab" data-bs-toggle="tab"
+                           data-bs-target="#apikey-tab-pane" href="#apikey-tab-pane">{{ 'API Key'|trans }}</a>
+                        <a class="nav-link" id="currency-tab" data-bs-toggle="tab"
+                           data-bs-target="#currency-tab-pane" href="#currency-tab-pane">{{ 'Currency'|trans }}</a>
                     </nav>
                 </div>
                 <div class="tab-content">
@@ -40,10 +40,10 @@
                         <form method="post" action="client/profile/update" id="profile-update" {{ fb_api_form({message: 'Profile Updated'|trans}) }}>
                             <div class="row mb-4 d-flex justify-content-center">
                                 <div class="col-md-2">
-                                    <div class="db-avatar img-thumbnail" data-avatar-seed="{{ profile.email|hash('xxh128') }}" data-avatar-size="100" style="width: 100px; height: 100px;"></div>
+                                    {{ avatar(profile.email, 100, 'img-thumbnail', null, 'div') }}
                                 </div>
                                 <div class="col-md-10 d-flex align-items-center">
-                                    {{ 'Avatar is generated locally based on your email address.'|trans }}
+                                    {{ 'Avatar is derived deterministically from your email address.'|trans }}
                                 </div>
                             </div>
                             <div class="row">
@@ -57,9 +57,14 @@
                                 </div>
                             </div>
                             <div class="row">
-                                <div class="mb-3 col-md-10">
+                                <div class="mb-3 col-md-5">
                                     <label class="form-label" for="email">{{ 'Email Address'|trans }}</label>
                                     <input type="email" class="form-control" id="email" name="email" value="{{ profile.email }}" required>
+                                </div>
+                                <div class="mb-3 col-md-5">
+                                    <label class="form-label" for="phone">{{ 'Phone Number'|trans }}</label>
+                                    <input type="hidden" name="phone_cc" id="phone_cc" value="{{ profile.phone_cc }}">
+                                    <input type="tel" class="form-control js-phone-input" name="phone" id="phone" value="{{ profile.phone }}" autocomplete="tel" data-initial-country="{{ profile.country|lower }}" {% if "phone" in required %} required {% endif %}>
                                 </div>
                             </div>
                             <div class="row">
@@ -105,16 +110,6 @@
                             </div>
                             <div class="row">
                                 <div class="mb-3 col-md-5">
-                                    <label class="form-label" for="phone_cc">{{ 'Phone Country Code'|trans }}</label>
-                                    <input type="text" class="form-control" name="phone_cc" id="phone_cc" value="{{ profile.phone_cc }}" {% if "phone" in required %} required {% endif %}>
-                                </div>
-                                <div class="mb-3 col-md-5">
-                                    <label class="form-label" for="phone">{{ 'Phone Number'|trans }}</label>
-                                    <input type="text" class="form-control" name="phone" id="phone" value="{{ profile.phone }}" {% if "phone" in required %} required {% endif %}>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="mb-3 col-md-5">
                                     <label class="form-label" for="address_1">{{ 'Address'|trans }}</label>
                                     <input type="text" class="form-control" name="address_1" id="address_1" value="{{ profile.address_1 }}" {% if "address_1" in required %} required {% endif %}>
                                 </div>
@@ -131,7 +126,7 @@
                                 <div class="mb-3 col-md-5">
                                     <label class="form-label" for="country">{{ 'Country'|trans }}</label>
                                     <select class="form-select" id="country" name="country" {% if "country" in required %} required {% endif %}>
-                                        <option value="">{{ '-- Select country --'|trans }}</option>
+                                        <option value="">{{ '-- Select Country --'|trans }}</option>
                                         {% for val,label in guest.system_countries %}
                                             <option value="{{ val }}" label="{{ label|e }}"
                                                     {% if val == profile.country %}selected="selected"{% endif %}>{{ label|e }}</option>
@@ -148,28 +143,24 @@
                                     <label class="form-label" for="postcode">{{ 'Zip/Postal Code'|trans }}</label>
                                     <input type="text" class="form-control" id="postcode" name="postcode" value="{{ profile.postcode }}" {% if "postcode" in required %} required {% endif %}>
                                 </div>
-                                <div class="mb-3 col-md-5">
-                                    <label class="form-label" for="document_nr">{{ 'Passport number'|trans }}</label>
-                                    <input type="text" class="form-control" name="document_nr" id="document_nr" value="{{ profile.document_nr }}">
-                                </div>
                             </div>
                             {% for i in 1..10 %}
                                 {% set custom = 'custom_' ~ i %}
-                                {% set current = guest.client_custom_fields[custom] %}
-                                {% if current.active %}
+                                {% set current = guest.client_custom_fields|default({})[custom]|default(null) %}
+                                {% if current and current.active %}
                                     <div class="mb-3">
                                         <label class="form-label" for="{{ custom }}">{{ current.title }}</label>
                                         <input type="text" class="form-control" name="{{ custom }}" id="{{ custom }}" value="{{ profile[custom] }}" {% if current.required %} required {% endif %}>
                                     </div>
                                 {% endif %}
                             {% endfor %}
-                            <button class="btn btn-primary" type="submit">{{ 'Update profile'|trans }}</button>
+                            <button class="btn btn-primary" type="submit">{{ 'Update Profile'|trans }}</button>
                         </form>
                     </div>
                     <div class="card-body tab-pane" id="pass-tab-pane" role="tabpanel" tabindex="0">
                         <h5 class="card-title mb-1">{{ 'Change Password'|trans }}</h5>
                         <p class="card-text fs-7 text-muted">{{ 'Enter your new password twice to avoid mistakes. '|trans }}</p>
-                        <form method="post" action="{{ 'api/client/profile/change_password'|link }}" {{ fb_api_form() }}>
+                        <form method="post" action="{{ 'profile/change_password'|api_url }}" {{ fb_api_form() }}>
                             <div class="mb-3">
                                 <label class="form-label" for="current_password">{{ 'Current Password'|trans }}</label>
                                 <input class="form-control" type="password" name="current_password"
@@ -198,18 +189,18 @@
                                 </div>
                             {% endif %}
                             <div class="mb-3">
-                                <label for="api-key" class="form-label">{{ 'Your API key'|trans }}</label>
+                                <label for="api-key" class="form-label">{{ 'Your API Key'|trans }}</label>
                                 <input class="form-control" readonly type="text"
                                        value="{{ client.profile_api_key_get }}" id="api-key">
                             </div>
-                            <button class="btn btn-primary" type="submit">{{ 'Generate a new key'|trans }}</button>
+                            <button class="btn btn-primary" type="submit">{{ 'Generate a New Key'|trans }}</button>
                         </form>
                     </div>
                     <div class="card-body tab-pane" id="currency-tab-pane" role="tabpanel" tabindex="0">
                         <h5 class="card-title mb-1">{{ 'Currency'|trans }}</h5>
                         <p class="card-text fs-7 text-muted">{{ 'Your profile currency is defined after your first order. Once your currency is set, all your profile accounting will be managed in that currency and cannot be changed.'|trans }}</p>
                         {% if profile.currency %}
-                            <p>{{ 'Your profile currency is'|trans }} <strong>{{ profile.currency }}</strong></p>
+                            <p>{{ 'Your profile currency is'|trans }} <strong>{{ profile.currency|currency_name }}</strong></p>
                             <p>{{ 'You will need to create a new client profile to use an alternative currency.'|trans }}</p>
                         {% else %}
                             <div class="alert alert-info" role="alert">

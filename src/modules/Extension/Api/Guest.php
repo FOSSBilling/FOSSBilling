@@ -17,7 +17,7 @@ use FOSSBilling\Validation\Api\RequiredParams;
 /**
  * Extensions.
  */
-class Guest extends \Api_Abstract
+class Guest extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Checks if extensions is available.
@@ -36,18 +36,6 @@ class Guest extends \Api_Abstract
         }
 
         return true;
-    }
-
-    /**
-     * Return active theme info.
-     *
-     * @return array
-     */
-    public function theme($client = true)
-    {
-        $systemService = $this->di['mod_service']('theme');
-
-        return $systemService->getThemeConfig($client, null);
     }
 
     /**

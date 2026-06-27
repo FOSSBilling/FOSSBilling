@@ -1,8 +1,8 @@
 <a class="btn btn-danger d-none" id="batch-delete-selected-btn">
     <svg class="icon">
-        <use xlink:href="#delete"/>
+        <use href="#trash"/>
     </svg>
-    {{ 'Delete selected'|trans }}</a>
+    {{ 'Delete Selected'|trans }}</a>
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
@@ -39,7 +39,7 @@
                         const ids = Array.from(checkedBoxes).map(function(checkbox) {
                             return checkbox.getAttribute("data-item-id");
                         });
-                        API.admin.post('{{ action }}', { ids: ids },
+                        FOSSBilling.api.admin.post('{{ action }}', { ids: ids },
                             (result) => {
                                 window.location.reload();
                             });

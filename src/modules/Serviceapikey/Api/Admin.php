@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Serviceapikey\Api;
 
-class Admin extends \Api_Abstract
+class Admin extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Update an API key. Can be used to change the config, but not to reset / regenerate the key itself.
@@ -23,6 +23,8 @@ class Admin extends \Api_Abstract
      */
     public function update($data): bool
     {
+        $this->checkPermissions('serviceapikey', 'manage');
+
         return $this->getService()->updateApiKey($data);
     }
 
@@ -35,6 +37,8 @@ class Admin extends \Api_Abstract
      */
     public function reset($data): bool
     {
+        $this->checkPermissions('serviceapikey', 'manage');
+
         return $this->getService()->resetApiKey($data);
     }
 }

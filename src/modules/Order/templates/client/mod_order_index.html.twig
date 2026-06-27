@@ -1,10 +1,10 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
-
-{% import "macro_functions.html.twig" as mf %}
+{% set active_menu = 'order' %}
 
 {% block meta_title %}{{ 'Order'|trans }}{% endblock %}
+{% block meta_description %}{{ 'Browse available products and services, compare options, and place your order online.'|trans }}{% endblock %}
 
-{% set loader_nr = request.loader | default("8")%}
+{% set loader_nr = request.loader|default("8")%}
 {% set loader_url = ('img/assets/loaders/loader'~loader_nr~'.gif') %}
 
 {% block body_class %}order-index{% endblock %}

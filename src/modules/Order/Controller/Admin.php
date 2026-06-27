@@ -34,7 +34,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                 'location' => 'order',
                 'label' => __trans('Orders'),
                 'uri' => $this->di['url']->adminLink('order'),
-                'class' => 'orders',
+                'class' => 'package',
             ],
             'subpages' => [
                 [
@@ -42,13 +42,6 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                     'index' => 100,
                     'label' => __trans('Overview'),
                     'uri' => $this->di['url']->adminLink('order'),
-                    'class' => '',
-                ],
-                [
-                    'location' => 'order',
-                    'index' => 200,
-                    'label' => __trans('Advanced search'),
-                    'uri' => $this->di['url']->adminLink('order', ['show_filter' => 1]),
                     'class' => '',
                 ],
             ],

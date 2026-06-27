@@ -16,10 +16,15 @@ declare(strict_types=1);
 
 namespace Box\Mod\Support\Api;
 
+use Box\Mod\Support\Entity\CannedResponse;
+use Box\Mod\Support\Entity\CannedResponseCategory;
+use Box\Mod\Support\Entity\Helpdesk;
+use Box\Mod\Support\Entity\KbArticle;
+use Box\Mod\Support\Entity\KbArticleCategory;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
-class Admin extends \Api_Abstract
+class Admin extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get tickets list.
@@ -30,11 +35,13 @@ class Admin extends \Api_Abstract
      */
     public function ticket_get_list(array $data): array
     {
+        $this->checkPermissions('support', 'view');
+
         [$sql, $bindings] = $this->getService()->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $bindings, PaginationOptions::fromArray($data));
+        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $bindings, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $ticketArr) {
-            $ticket = $this->di['db']->getExistingModelById('SupportTicket', $ticketArr['id'], 'Ticket not found');
+            $ticket = $this->getDi()['db']->getExistingModelById('SupportTicket', $ticketArr['id'], 'Ticket not found');
             $pager['list'][$key] = $this->getService()->toApiArray($ticket, true, $this->getIdentity());
         }
 
@@ -47,7 +54,9 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Ticket ID is missing'])]
     public function ticket_get(array $data): array
     {
-        $model = $this->di['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
+        $this->checkPermissions('support', 'view');
+
+        $model = $this->getDi()['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
 
         return $this->getService()->toApiArray($model, true, $this->getIdentity());
     }
@@ -63,7 +72,9 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Ticket ID is missing'])]
     public function ticket_update(array $data): bool
     {
-        $model = $this->di['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
+        $this->checkPermissions('support', 'manage_tickets');
+
+        $model = $this->getDi()['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
 
         // Sanitize subject if provided
         if (isset($data['subject'])) {
@@ -79,7 +90,9 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Ticket message ID is missing', 'content' => 'Ticket message content is missing'])]
     public function ticket_message_update(array $data): bool
     {
-        $model = $this->di['db']->getExistingModelById('SupportTicketMessage', $data['id'], 'Ticket message not found');
+        $this->checkPermissions('support', 'manage_tickets');
+
+        $model = $this->getDi()['db']->getExistingModelById('SupportTicketMessage', $data['id'], 'Ticket message not found');
 
         return $this->getService()->ticketMessageUpdate($model, $data['content']);
     }
@@ -90,7 +103,9 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Ticket ID is missing'])]
     public function ticket_delete(array $data): bool
     {
-        $model = $this->di['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
+        $this->checkPermissions('support', 'manage_tickets');
+
+        $model = $this->getDi()['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
 
         return $this->getService()->rm($model);
     }
@@ -103,10 +118,11 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Ticket ID is missing', 'content' => 'Ticket message content is missing'])]
     public function ticket_reply(array $data): int
     {
-        // Sanitize content to prevent XSS attacks
-        $data['content'] = \FOSSBilling\Tools::sanitizeContent($data['content'], true);
+        $this->checkPermissions('support', 'manage_tickets');
 
-        $ticket = $this->di['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
+        $data['content'] = \FOSSBilling\Tools::sanitizeMarkdownContent($data['content']);
+
+        $ticket = $this->getDi()['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
 
         return $this->getService()->ticketReply($ticket, $this->getIdentity(), $data['content']);
     }
@@ -117,7 +133,9 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Ticket ID is missing'])]
     public function ticket_close(array $data): bool
     {
-        $ticket = $this->di['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
+        $this->checkPermissions('support', 'manage_tickets');
+
+        $ticket = $this->getDi()['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
 
         if ($ticket->status == \Model_SupportTicket::CLOSED) {
             return true;
@@ -137,11 +155,19 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['client_id' => 'Client ID is missing', 'content' => 'Ticket content required', 'subject' => 'Ticket subject required', 'support_helpdesk_id' => 'Ticket support_helpdesk_id is required'])]
     public function ticket_create(array $data): int
     {
-        // Sanitize content to prevent XSS attacks
-        $data['content'] = \FOSSBilling\Tools::sanitizeContent($data['content'], true);
+        $this->checkPermissions('support', 'manage_tickets');
 
-        $client = $this->di['db']->getExistingModelById('Client', $data['client_id'], 'Client not found');
-        $helpdesk = $this->di['db']->getExistingModelById('SupportHelpdesk', $data['support_helpdesk_id'], 'Helpdesk invalid');
+        $data['content'] = \FOSSBilling\Tools::sanitizeMarkdownContent($data['content']);
+
+        $client = $this->getDi()['db']->getExistingModelById('Client', $data['client_id'], 'Client not found');
+
+        /** @var \Box\Mod\Support\Repository\HelpdeskRepository $repo */
+        $repo = $this->getService()->getHelpdeskRepository();
+
+        $helpdesk = $repo->find((int) $data['support_helpdesk_id']);
+        if (!$helpdesk instanceof Helpdesk) {
+            throw new \FOSSBilling\InformationException('Helpdesk invalid');
+        }
 
         return $this->getService()->ticketCreateForAdmin($client, $helpdesk, $data, $this->getIdentity());
     }
@@ -154,32 +180,15 @@ class Admin extends \Api_Abstract
      */
     public function batch_ticket_auto_close($data): bool
     {
+        $this->checkPermissions('support', 'manage_tickets');
+
         // Auto close support tickets
         $expiredArr = $this->getService()->getExpired();
 
         foreach ($expiredArr as $ticketArr) {
-            $ticketModel = $this->di['db']->getExistingModelById('SupportTicket', $ticketArr['id'], 'Ticket not found');
+            $ticketModel = $this->getDi()['db']->getExistingModelById('SupportTicket', $ticketArr['id'], 'Ticket not found');
             if (!$this->getService()->autoClose($ticketModel)) {
-                $this->di['logger']->info('Ticket %s was not closed', $ticketModel->id);
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * Action to close all inquiries which have not received any replies for a
-     * time defined in helpdesk.
-     *
-     * Run by cron job
-     */
-    public function batch_public_ticket_auto_close($data): bool
-    {
-        // Auto close public tickets
-        $expired = $this->getService()->publicGetExpired();
-        foreach ($expired as $model) {
-            if (!$this->getService()->publicAutoClose($model)) {
-                $this->di['logger']->info('Public Ticket %s was not closed', $model->id);
+                $this->getDi()['logger']->info('Ticket %s was not closed', $ticketModel->id);
             }
         }
 
@@ -191,6 +200,8 @@ class Admin extends \Api_Abstract
      */
     public function ticket_get_statuses(array $data): array
     {
+        $this->checkPermissions('support', 'view');
+
         if (isset($data['titles'])) {
             return $this->getService()->getStatuses();
         }
@@ -199,123 +210,18 @@ class Admin extends \Api_Abstract
     }
 
     /**
-     * Get paginated list of inquiries.
-     */
-    public function public_ticket_get_list(array $data): array
-    {
-        [$sql, $bindings] = $this->getService()->publicGetSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $bindings, PaginationOptions::fromArray($data));
-
-        foreach ($pager['list'] as $key => $ticketArr) {
-            $ticket = $this->di['db']->getExistingModelById('SupportPTicket', $ticketArr['id'], 'Ticket not found');
-            $pager['list'][$key] = $this->getService()->publicToApiArray($ticket);
-        }
-
-        return $pager;
-    }
-
-    /**
-     * Create new public inquiry.
-     *
-     * @throws \FOSSBilling\Exception
-     */
-    #[RequiredParams(['name' => 'Name is required', 'email' => 'Email is required', 'subject' => 'Subject is required', 'message' => 'Message is required'])]
-    public function public_ticket_create(array $data): int
-    {
-        $data['subject'] = \FOSSBilling\Tools::sanitizeContent($data['subject'], false);
-        $data['message'] = \FOSSBilling\Tools::sanitizeContent($data['message'], true);
-
-        return $this->getService()->publicTicketCreate($data, $this->getIdentity());
-    }
-
-    /**
-     * Get inquiry details.
-     *
-     * @throws \FOSSBilling\Exception
-     */
-    #[RequiredParams(['id' => 'Ticket ID is missing'])]
-    public function public_ticket_get(array $data): array
-    {
-        $model = $this->di['db']->getExistingModelById('SupportPTicket', $data['id'], 'Ticket not found');
-
-        return $this->getService()->publicToApiArray($model, true);
-    }
-
-    /**
-     * Delete inquiry.
-     *
-     * @throws \FOSSBilling\Exception
-     */
-    #[RequiredParams(['id' => 'Ticket ID is missing'])]
-    public function public_ticket_delete(array $data): bool
-    {
-        $model = $this->di['db']->getExistingModelById('SupportPTicket', $data['id'], 'Ticket not found');
-
-        return $this->getService()->publicRm($model);
-    }
-
-    /**
-     * Set id status to closed.
-     *
-     * @throws \FOSSBilling\Exception
-     */
-    #[RequiredParams(['id' => 'Ticket ID is missing'])]
-    public function public_ticket_close(array $data): bool
-    {
-        $ticket = $this->di['db']->getExistingModelById('SupportPTicket', $data['id'], 'Ticket not found');
-
-        return $this->getService()->publicCloseTicket($ticket, $this->getIdentity());
-    }
-
-    /**
-     * Update inquiry details.
-     *
-     * @optional string $subject - subject
-     * @optional string $status - status
-     *
-     * @throws \FOSSBilling\Exception
-     */
-    #[RequiredParams(['id' => 'Ticket ID is missing'])]
-    public function public_ticket_update(array $data): bool
-    {
-        $model = $this->di['db']->getExistingModelById('SupportPTicket', $data['id'], 'Ticket not found');
-
-        return $this->getService()->publicTicketUpdate($model, $data);
-    }
-
-    /**
-     * Post new reply to inquiry.
-     *
-     * @throws \FOSSBilling\Exception
-     */
-    #[RequiredParams(['id' => 'Ticket ID is missing', 'content' => 'Ticket content required'])]
-    public function public_ticket_reply(array $data): int
-    {
-        $ticket = $this->di['db']->getExistingModelById('SupportPTicket', $data['id'], 'Ticket not found');
-
-        return $this->getService()->publicTicketReply($ticket, $this->getIdentity(), $data['content']);
-    }
-
-    /**
-     * Return tickets statuses with counter.
-     */
-    public function public_ticket_get_statuses(array $data): array
-    {
-        if (isset($data['titles'])) {
-            return $this->getService()->publicGetStatuses();
-        }
-
-        return $this->getService()->publicCounter();
-    }
-
-    /**
      * Get helpdesk list.
      */
     public function helpdesk_get_list(array $data): array
     {
-        [$sql, $bindings] = $this->getService()->helpdeskGetSearchQuery($data);
+        $this->checkPermissions('support', 'view');
 
-        return $this->di['pager']->getPaginatedResultSet($sql, $bindings, PaginationOptions::fromArray($data));
+        /** @var \Box\Mod\Support\Repository\HelpdeskRepository $repo */
+        $repo = $this->getService()->getHelpdeskRepository();
+
+        $qb = $repo->getSearchQueryBuilder($data);
+
+        return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data), $this->getIdentity());
     }
 
     /**
@@ -323,7 +229,9 @@ class Admin extends \Api_Abstract
      */
     public function helpdesk_get_pairs(array $data): array
     {
-        return $this->getService()->helpdeskGetPairs();
+        $this->checkPermissions('support', 'view');
+
+        return $this->getService()->getHelpdeskRepository()->getPairs();
     }
 
     /**
@@ -334,9 +242,17 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Help desk ID is missing'])]
     public function helpdesk_get(array $data): array
     {
-        $model = $this->di['db']->getExistingModelById('SupportHelpdesk', $data['id'], 'Help desk not found');
+        $this->checkPermissions('support', 'view');
 
-        return $this->getService()->helpdeskToApiArray($model);
+        /** @var \Box\Mod\Support\Repository\HelpdeskRepository $repo */
+        $repo = $this->getService()->getHelpdeskRepository();
+
+        $model = $repo->find((int) $data['id']);
+        if (!$model instanceof Helpdesk) {
+            throw new \FOSSBilling\InformationException('Help desk not found');
+        }
+
+        return $model->toApiArray($this->getIdentity());
     }
 
     /**
@@ -353,7 +269,15 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Help desk ID is missing'])]
     public function helpdesk_update(array $data): bool
     {
-        $model = $this->di['db']->getExistingModelById('SupportHelpdesk', $data['id'], 'Help desk not found');
+        $this->checkPermissions('support', 'manage_helpdesk');
+
+        /** @var \Box\Mod\Support\Repository\HelpdeskRepository $repo */
+        $repo = $this->getService()->getHelpdeskRepository();
+
+        $model = $repo->find((int) $data['id']);
+        if (!$model instanceof Helpdesk) {
+            throw new \FOSSBilling\InformationException('Help desk not found');
+        }
 
         return $this->getService()->helpdeskUpdate($model, $data);
     }
@@ -373,6 +297,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['name' => 'Help desk title is missing'])]
     public function helpdesk_create(array $data): int
     {
+        $this->checkPermissions('support', 'manage_helpdesk');
+
         return $this->getService()->helpdeskCreate($data);
     }
 
@@ -384,7 +310,15 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Help desk ID is missing'])]
     public function helpdesk_delete(array $data): bool
     {
-        $model = $this->di['db']->getExistingModelById('SupportHelpdesk', $data['id'], 'Help desk not found');
+        $this->checkPermissions('support', 'manage_helpdesk');
+
+        /** @var \Box\Mod\Support\Repository\HelpdeskRepository $repo */
+        $repo = $this->getService()->getHelpdeskRepository();
+
+        $model = $repo->find((int) $data['id']);
+        if (!$model instanceof Helpdesk) {
+            throw new \FOSSBilling\InformationException('Help desk not found');
+        }
 
         return $this->getService()->helpdeskRm($model);
     }
@@ -394,15 +328,14 @@ class Admin extends \Api_Abstract
      */
     public function canned_get_list(array $data): array
     {
-        [$sql, $bindings] = $this->getService()->cannedGetSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $bindings, PaginationOptions::fromArray($data));
+        $this->checkPermissions('support', 'view');
 
-        foreach ($pager['list'] as $key => $item) {
-            $staff = $this->di['db']->getExistingModelById('SupportPr', $item['id'], 'Canned response not found');
-            $pager['list'][$key] = $this->getService()->cannedToApiArray($staff);
-        }
+        /** @var \Box\Mod\Support\Repository\CannedResponseRepository $repo */
+        $repo = $this->getService()->getCannedResponseRepository();
 
-        return $pager;
+        $qb = $repo->getSearchQueryBuilder($data);
+
+        return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
     }
 
     /**
@@ -410,13 +343,12 @@ class Admin extends \Api_Abstract
      */
     public function canned_pairs(): array
     {
-        $res = $this->di['db']->getAssoc('SELECT id, title FROM support_pr_category WHERE 1');
-        $list = [];
-        foreach ($res as $id => $title) {
-            $list[$title] = $this->di['db']->getAssoc('SELECT id, title FROM support_pr WHERE support_pr_category_id = :id', ['id' => $id]);
-        }
+        $this->checkPermissions('support', 'view');
 
-        return $list;
+        /** @var \Box\Mod\Support\Repository\CannedResponseRepository $repo */
+        $repo = $this->getService()->getCannedResponseRepository();
+
+        return $repo->getGroupedPairs();
     }
 
     /**
@@ -427,9 +359,17 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Canned reply ID is missing'])]
     public function canned_get(array $data): array
     {
-        $model = $this->di['db']->getExistingModelById('SupportPr', $data['id'], 'Canned reply not found');
+        $this->checkPermissions('support', 'view');
 
-        return $this->getService()->cannedToApiArray($model);
+        /** @var \Box\Mod\Support\Repository\CannedResponseRepository $repo */
+        $repo = $this->getService()->getCannedResponseRepository();
+
+        $model = $repo->find((int) $data['id']);
+        if (!$model instanceof CannedResponse) {
+            throw new \FOSSBilling\InformationException('Canned reply not found');
+        }
+
+        return $model->toApiArray();
     }
 
     /**
@@ -440,7 +380,15 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Canned reply ID is missing'])]
     public function canned_delete(array $data): bool
     {
-        $model = $this->di['db']->getExistingModelById('SupportPr', $data['id'], 'Canned reply not found');
+        $this->checkPermissions('support', 'manage_canned');
+
+        /** @var \Box\Mod\Support\Repository\CannedResponseRepository $repo */
+        $repo = $this->getService()->getCannedResponseRepository();
+
+        $model = $repo->find((int) $data['id']);
+        if (!$model instanceof CannedResponse) {
+            throw new \FOSSBilling\InformationException('Canned reply not found');
+        }
 
         return $this->getService()->cannedRm($model);
     }
@@ -455,6 +403,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['title' => 'Canned reply title is missing', 'category_id' => 'Canned reply category ID is missing'])]
     public function canned_create(array $data): int
     {
+        $this->checkPermissions('support', 'manage_canned');
+
         $content = $data['content'] ?? null;
 
         return $this->getService()->cannedCreate($data['title'], (int) $data['category_id'], $content);
@@ -472,7 +422,15 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Canned reply ID is missing'])]
     public function canned_update(array $data): bool
     {
-        $model = $this->di['db']->getExistingModelById('SupportPr', $data['id'], 'Canned reply not found');
+        $this->checkPermissions('support', 'manage_canned');
+
+        /** @var \Box\Mod\Support\Repository\CannedResponseRepository $repo */
+        $repo = $this->getService()->getCannedResponseRepository();
+
+        $model = $repo->find((int) $data['id']);
+        if (!$model instanceof CannedResponse) {
+            throw new \FOSSBilling\InformationException('Canned reply not found');
+        }
 
         return $this->getService()->cannedUpdate($model, $data);
     }
@@ -482,7 +440,12 @@ class Admin extends \Api_Abstract
      */
     public function canned_category_pairs(array $data): array
     {
-        return $this->di['db']->getAssoc('SELECT id, title FROM support_pr_category WHERE 1');
+        $this->checkPermissions('support', 'view');
+
+        /** @var \Box\Mod\Support\Repository\CannedResponseCategoryRepository $repo */
+        $repo = $this->getService()->getCannedResponseCategoryRepository();
+
+        return $repo->getPairs();
     }
 
     /**
@@ -493,9 +456,17 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Canned category ID is missing'])]
     public function canned_category_get(array $data): array
     {
-        $model = $this->di['db']->getExistingModelById('SupportPrCategory', $data['id'], 'Canned category not found');
+        $this->checkPermissions('support', 'view');
 
-        return $this->getService()->cannedCategoryToApiArray($model);
+        /** @var \Box\Mod\Support\Repository\CannedResponseCategoryRepository $repo */
+        $repo = $this->getService()->getCannedResponseCategoryRepository();
+
+        $model = $repo->find((int) $data['id']);
+        if (!$model instanceof CannedResponseCategory) {
+            throw new \FOSSBilling\InformationException('Canned category not found');
+        }
+
+        return $model->toApiArray();
     }
 
     /**
@@ -508,9 +479,17 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Canned category ID is missing'])]
     public function canned_category_update(array $data): bool
     {
-        $model = $this->di['db']->getExistingModelById('SupportPrCategory', $data['id'], 'Canned category not found');
+        $this->checkPermissions('support', 'manage_canned');
 
-        $title = $data['title'] ?? $model->title;
+        /** @var \Box\Mod\Support\Repository\CannedResponseCategoryRepository $repo */
+        $repo = $this->getService()->getCannedResponseCategoryRepository();
+
+        $model = $repo->find((int) $data['id']);
+        if (!$model instanceof CannedResponseCategory) {
+            throw new \FOSSBilling\InformationException('Canned category not found');
+        }
+
+        $title = $data['title'] ?? $model->getTitle();
 
         return $this->getService()->cannedCategoryUpdate($model, $title);
     }
@@ -523,7 +502,15 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Canned category ID is missing'])]
     public function canned_category_delete(array $data): bool
     {
-        $model = $this->di['db']->getExistingModelById('SupportPrCategory', $data['id'], 'Canned category not found');
+        $this->checkPermissions('support', 'manage_canned');
+
+        /** @var \Box\Mod\Support\Repository\CannedResponseCategoryRepository $repo */
+        $repo = $this->getService()->getCannedResponseCategoryRepository();
+
+        $model = $repo->find((int) $data['id']);
+        if (!$model instanceof CannedResponseCategory) {
+            throw new \FOSSBilling\InformationException('Canned category not found');
+        }
 
         return $this->getService()->cannedCategoryRm($model);
     }
@@ -538,6 +525,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['title' => 'Canned category title is missing'])]
     public function canned_category_create(array $data): int
     {
+        $this->checkPermissions('support', 'manage_canned');
+
         return $this->getService()->cannedCategoryCreate($data['title']);
     }
 
@@ -551,7 +540,9 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['ticket_id' => 'ticket_ID is missing', 'note' => 'Note is missing'])]
     public function note_create(array $data): int
     {
-        $ticket = $this->di['db']->getExistingModelById('SupportTicket', $data['ticket_id'], 'Ticket not found');
+        $this->checkPermissions('support', 'manage_tickets');
+
+        $ticket = $this->getDi()['db']->getExistingModelById('SupportTicket', $data['ticket_id'], 'Ticket not found');
 
         return $this->getService()->noteCreate($ticket, $this->getIdentity(), $data['note']);
     }
@@ -564,7 +555,9 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Note ID is missing'])]
     public function note_delete(array $data): bool
     {
-        $model = $this->di['db']->getExistingModelById('SupportTicketNote', $data['id'], 'Note not found');
+        $this->checkPermissions('support', 'manage_tickets');
+
+        $model = $this->getDi()['db']->getExistingModelById('SupportTicketNote', $data['id'], 'Note not found');
 
         return $this->getService()->noteRm($model);
     }
@@ -577,7 +570,9 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Ticket ID is missing'])]
     public function task_complete(array $data): bool
     {
-        $model = $this->di['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
+        $this->checkPermissions('support', 'manage_tickets');
+
+        $model = $this->getDi()['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
 
         return $this->getService()->ticketTaskComplete($model);
     }
@@ -588,21 +583,10 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['ids' => 'IDs were not passed'])]
     public function batch_delete($data): bool
     {
+        $this->checkPermissions('support', 'manage_tickets');
+
         foreach ($data['ids'] as $id) {
             $this->ticket_delete(['id' => $id]);
-        }
-
-        return true;
-    }
-
-    /**
-     * Deletes tickets with given IDs.
-     */
-    #[RequiredParams(['ids' => 'IDs were not passed'])]
-    public function batch_delete_public($data): bool
-    {
-        foreach ($data['ids'] as $id) {
-            $this->public_ticket_delete(['id' => $id]);
         }
 
         return true;
@@ -616,18 +600,18 @@ class Admin extends \Api_Abstract
      */
     public function kb_article_get_list(array $data): array
     {
+        $this->checkPermissions('support', 'view');
+
         $status = $data['status'] ?? null;
         $search = $data['search'] ?? null;
-        $cat = $data['cat'] ?? null;
+        $cat = $data['kb_article_category_id'] ?? $data['cat'] ?? null;
 
-        $pager = $this->getService()->kbSearchArticles($status, $search, $cat, PaginationOptions::fromArray($data));
+        /** @var \Box\Mod\Support\Repository\KbArticleRepository $repo */
+        $repo = $this->getService()->getKbArticleRepository();
 
-        foreach ($pager['list'] as $key => $item) {
-            $article = $this->di['db']->getExistingModelById('SupportKbArticle', $item['id'], 'KB Article not found');
-            $pager['list'][$key] = $this->getService()->kbToApiArray($article);
-        }
+        $qb = $repo->getSearchQueryBuilder($status, $search, $cat);
 
-        return $pager;
+        return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data), $this->getIdentity());
     }
 
     /**
@@ -636,13 +620,18 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Article ID was not passed'])]
     public function kb_article_get(array $data): array
     {
-        $model = $this->di['db']->findOne('SupportKbArticle', 'id = ?', [$data['id']]);
+        $this->checkPermissions('support', 'view');
 
-        if (!$model instanceof \Model_SupportKbArticle) {
+        /** @var \Box\Mod\Support\Repository\KbArticleRepository $repo */
+        $repo = $this->getService()->getKbArticleRepository();
+
+        $article = $repo->find((int) $data['id']);
+
+        if (!$article instanceof KbArticle) {
             throw new \FOSSBilling\InformationException('Article not found');
         }
 
-        return $this->getService()->kbToApiArray($model, true, $this->getIdentity());
+        return $article->toApiArray($this->getIdentity(), includeContent: true);
     }
 
     /**
@@ -654,11 +643,13 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['kb_article_category_id' => 'Article category ID was not passed', 'title' => 'Article title not passed'])]
     public function kb_article_create(array $data): int
     {
+        $this->checkPermissions('support', 'manage_kb');
+
         $articleCategoryId = (int) $data['kb_article_category_id'];
-        // Sanitize title and content to prevent XSS attacks
+        $status = $data['status'] ?? KbArticle::DRAFT;
+
         $title = \FOSSBilling\Tools::sanitizeContent($data['title'], false);
-        $status = $data['status'] ?? \Model_SupportKbArticle::DRAFT;
-        $content = isset($data['content']) ? \FOSSBilling\Tools::sanitizeContent($data['content'], true) : null;
+        $content = isset($data['content']) ? \FOSSBilling\Tools::sanitizeMarkdownContent($data['content']) : null;
 
         return $this->getService()->kbCreateArticle($articleCategoryId, $title, $status, $content);
     }
@@ -676,12 +667,13 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Article ID was not passed'])]
     public function kb_article_update(array $data): bool
     {
+        $this->checkPermissions('support', 'manage_kb');
+
         $articleCategoryId = isset($data['kb_article_category_id']) ? (int) $data['kb_article_category_id'] : null;
-        // Sanitize title and content to prevent XSS attacks
         $title = isset($data['title']) ? \FOSSBilling\Tools::sanitizeContent($data['title'], false) : null;
         $slug = $data['slug'] ?? null;
         $status = $data['status'] ?? null;
-        $content = isset($data['content']) ? \FOSSBilling\Tools::sanitizeContent($data['content'], true) : null;
+        $content = isset($data['content']) ? \FOSSBilling\Tools::sanitizeMarkdownContent($data['content']) : null;
         $views = isset($data['views']) ? (int) $data['views'] : null;
 
         return $this->getService()->kbUpdateArticle((int) $data['id'], $articleCategoryId, $title, $slug, $status, $content, $views);
@@ -693,13 +685,18 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Article ID was not passed'])]
     public function kb_article_delete($data): bool
     {
-        $model = $this->di['db']->findOne('SupportKbArticle', 'id = ?', [$data['id']]);
+        $this->checkPermissions('support', 'manage_kb');
 
-        if (!$model instanceof \Model_SupportKbArticle) {
+        /** @var \Box\Mod\Support\Repository\KbArticleRepository $repo */
+        $repo = $this->getService()->getKbArticleRepository();
+
+        $article = $repo->find((int) $data['id']);
+
+        if (!$article instanceof KbArticle) {
             throw new \FOSSBilling\InformationException('Article not found');
         }
 
-        $this->getService()->kbRm($model);
+        $this->getService()->kbRm($article);
 
         return true;
     }
@@ -709,15 +706,14 @@ class Admin extends \Api_Abstract
      */
     public function kb_category_get_list(array $data): array
     {
-        [$sql, $bindings] = $this->getService()->kbCategoryGetSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $bindings, PaginationOptions::fromArray($data));
+        $this->checkPermissions('support', 'view');
 
-        foreach ($pager['list'] as $key => $item) {
-            $category = $this->di['db']->getExistingModelById('SupportKbArticleCategory', $item['id'], 'KB Article not found');
-            $pager['list'][$key] = $this->getService()->kbCategoryToApiArray($category, $this->getIdentity());
-        }
+        /** @var \Box\Mod\Support\Repository\KbArticleCategoryRepository $repo */
+        $repo = $this->getService()->getKbArticleCategoryRepository();
 
-        return $pager;
+        $qb = $repo->getSearchQueryBuilder($data);
+
+        return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data), $this->getIdentity(), $data['q'] ?? null);
     }
 
     /**
@@ -726,13 +722,18 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Category ID was not passed'])]
     public function kb_category_get(array $data): array
     {
-        $model = $this->di['db']->findOne('SupportKbArticleCategory', 'id = ?', [$data['id']]);
+        $this->checkPermissions('support', 'view');
 
-        if (!$model instanceof \Model_SupportKbArticleCategory) {
+        /** @var \Box\Mod\Support\Repository\KbArticleCategoryRepository $repo */
+        $repo = $this->getService()->getKbArticleCategoryRepository();
+
+        $cat = $repo->find((int) $data['id']);
+
+        if (!$cat instanceof KbArticleCategory) {
             throw new \FOSSBilling\InformationException('Article Category not found');
         }
 
-        return $this->getService()->kbCategoryToApiArray($model);
+        return $cat->toApiArray($this->getIdentity());
     }
 
     /**
@@ -743,6 +744,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['title' => 'Category title not passed'])]
     public function kb_category_create(array $data): int
     {
+        $this->checkPermissions('support', 'manage_kb');
+
         $title = $data['title'];
         $description = $data['description'] ?? null;
 
@@ -759,9 +762,14 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Category ID was not passed'])]
     public function kb_category_update(array $data): bool
     {
-        $model = $this->di['db']->findOne('SupportKbArticleCategory', 'id = ?', [$data['id']]);
+        $this->checkPermissions('support', 'manage_kb');
 
-        if (!$model instanceof \Model_SupportKbArticleCategory) {
+        /** @var \Box\Mod\Support\Repository\KbArticleCategoryRepository $repo */
+        $repo = $this->getService()->getKbArticleCategoryRepository();
+
+        $cat = $repo->find((int) $data['id']);
+
+        if (!$cat instanceof KbArticleCategory) {
             throw new \FOSSBilling\InformationException('Article Category not found');
         }
 
@@ -769,7 +777,7 @@ class Admin extends \Api_Abstract
         $slug = $data['slug'] ?? null;
         $description = $data['description'] ?? null;
 
-        return $this->getService()->kbUpdateCategory($model, $title, $slug, $description);
+        return $this->getService()->kbUpdateCategory($cat, $title, $slug, $description);
     }
 
     /**
@@ -778,13 +786,18 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Category ID was not passed'])]
     public function kb_category_delete(array $data): bool
     {
-        $model = $this->di['db']->findOne('SupportKbArticleCategory', 'id = ?', [$data['id']]);
+        $this->checkPermissions('support', 'manage_kb');
 
-        if (!$model instanceof \Model_SupportKbArticleCategory) {
+        /** @var \Box\Mod\Support\Repository\KbArticleCategoryRepository $repo */
+        $repo = $this->getService()->getKbArticleCategoryRepository();
+
+        $cat = $repo->find((int) $data['id']);
+
+        if (!$cat instanceof KbArticleCategory) {
             throw new \FOSSBilling\InformationException('Category not found');
         }
 
-        return $this->getService()->kbCategoryRm($model);
+        return $this->getService()->kbCategoryRm($cat);
     }
 
     /**
@@ -792,6 +805,8 @@ class Admin extends \Api_Abstract
      */
     public function kb_category_get_pairs(array $data): array
     {
-        return $this->getService()->kbCategoryGetPairs();
+        $this->checkPermissions('support', 'view');
+
+        return $this->getService()->getKbArticleCategoryRepository()->getPairs();
     }
 }

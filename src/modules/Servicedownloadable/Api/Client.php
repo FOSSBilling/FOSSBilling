@@ -13,30 +13,31 @@ declare(strict_types=1);
 namespace Box\Mod\Servicedownloadable\Api;
 
 use FOSSBilling\Validation\Api\RequiredParams;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Downloadable service management.
  */
-class Client extends \Api_Abstract
+class Client extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Use GET to call this method. Sends file attached to order.
      * Sends file as attachment.
      */
     #[RequiredParams(['order_id' => 'Order ID is required'])]
-    public function send_file($data): bool
+    public function send_file($data): Response
     {
         if (empty($data['order_id'])) {
             throw new \FOSSBilling\Exception('Order ID is required');
         }
 
         $identity = $this->getIdentity();
-        $order = $this->di['db']->findOne('ClientOrder', 'id = :id AND client_id = :client_id', [':id' => $data['order_id'], ':client_id' => $identity->id]);
+        $order = $this->getDi()['db']->findOne('ClientOrder', 'id = :id AND client_id = :client_id', [':id' => $data['order_id'], ':client_id' => $identity->id]);
         if (!$order instanceof \Model_ClientOrder) {
             throw new \FOSSBilling\Exception('Order not found');
         }
 
-        $orderService = $this->di['mod_service']('order');
+        $orderService = $this->getDi()['mod_service']('order');
         $s = $orderService->getOrderService($order);
         if (!$s instanceof \Model_ServiceDownloadable || $order->status !== 'active') {
             throw new \FOSSBilling\Exception('Order is not activated');
@@ -44,6 +45,6 @@ class Client extends \Api_Abstract
 
         $service = $this->getService();
 
-        return (bool) $service->sendFile($s);
+        return $service->sendFile($s);
     }
 }

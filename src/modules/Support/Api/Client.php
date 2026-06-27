@@ -16,13 +16,14 @@ declare(strict_types=1);
 
 namespace Box\Mod\Support\Api;
 
+use Box\Mod\Support\Entity\Helpdesk;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
-class Client extends \Api_Abstract
+class Client extends \FOSSBilling\Api\AbstractApi
 {
     /**
-     * Get client tickets list.
+     * Get the list of tickets for the logged in client.
      *
      * @optional string status - filter tickets by status
      * @optional string date_from - show tickets created since this day. Can be any string parsable by strtotime()
@@ -34,10 +35,10 @@ class Client extends \Api_Abstract
         $data['client_id'] = $identity->id;
 
         [$sql, $bindings] = $this->getService()->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $bindings, PaginationOptions::fromArray($data));
+        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $bindings, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $ticketArr) {
-            $ticket = $this->di['db']->getExistingModelById('SupportTicket', $ticketArr['id'], 'Ticket not found');
+            $ticket = $this->getDi()['db']->getExistingModelById('SupportTicket', $ticketArr['id'], 'Ticket not found');
             $pager['list'][$key] = $this->getService()->toApiArray($ticket, true, $this->getIdentity());
         }
 
@@ -50,9 +51,10 @@ class Client extends \Api_Abstract
     #[RequiredParams(['id' => 'Ticket ID was not passed'])]
     public function ticket_get(array $data): array
     {
-        $ticket = $this->getService()->findOneByClient($this->getIdentity(), (int) $data['id']);
+        $identity = $this->getIdentity();
+        $ticket = $this->getService()->findOneByClient($identity, (int) $data['id']);
 
-        return $this->getService()->toApiArray($ticket);
+        return $this->getService()->toApiArray($ticket, true, $identity);
     }
 
     /**
@@ -60,7 +62,7 @@ class Client extends \Api_Abstract
      */
     public function helpdesk_get_pairs(): array
     {
-        return $this->getService()->helpdeskGetPairs();
+        return $this->getService()->getHelpdeskRepository()->getPairs();
     }
 
     /**
@@ -81,10 +83,15 @@ class Client extends \Api_Abstract
     ])]
     public function ticket_create(array $data): int
     {
-        // Sanitize content to prevent XSS attacks
-        $data['content'] = \FOSSBilling\Tools::sanitizeContent($data['content'], true);
+        $data['content'] = \FOSSBilling\Tools::sanitizeMarkdownContent($data['content']);
 
-        $helpdesk = $this->di['db']->getExistingModelById('SupportHelpdesk', $data['support_helpdesk_id'], 'Helpdesk invalid');
+        /** @var \Box\Mod\Support\Repository\HelpdeskRepository $repo */
+        $repo = $this->getService()->getHelpdeskRepository();
+
+        $helpdesk = $repo->find((int) $data['support_helpdesk_id']);
+        if (!$helpdesk instanceof Helpdesk) {
+            throw new \FOSSBilling\InformationException('Helpdesk invalid');
+        }
 
         $client = $this->getIdentity();
 
@@ -97,8 +104,7 @@ class Client extends \Api_Abstract
     #[RequiredParams(['id' => 'Ticket ID was not passed', 'content' => 'Ticket content required'])]
     public function ticket_reply(array $data): bool
     {
-        // Sanitize content to prevent XSS attacks
-        $data['content'] = \FOSSBilling\Tools::sanitizeContent($data['content'], true);
+        $data['content'] = \FOSSBilling\Tools::sanitizeMarkdownContent($data['content']);
 
         $client = $this->getIdentity();
 
@@ -106,7 +112,7 @@ class Client extends \Api_Abstract
             ':id' => $data['id'],
             ':client_id' => $client->id,
         ];
-        $ticket = $this->di['db']->findOne('SupportTicket', 'id = :id AND client_id = :client_id', $bindings);
+        $ticket = $this->getDi()['db']->findOne('SupportTicket', 'id = :id AND client_id = :client_id', $bindings);
 
         if (!$ticket instanceof \Model_SupportTicket) {
             throw new \FOSSBilling\InformationException('Ticket not found');

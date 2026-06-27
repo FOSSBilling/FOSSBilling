@@ -1,7 +1,5 @@
 {% extends 'layout_default.html.twig' %}
 
-{% import 'macro_functions.html.twig' as mf %}
-
 {% block meta_title %}{{ post.title }}{% endblock %}
 
 {% set active_menu = 'support' %}
@@ -9,14 +7,14 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
-                    <use xlink:href="#home" />
+                    <use href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'news'|alink }}">{{ 'News'|trans }}</a>
+            <a href="{{ 'news'|url }}">{{ 'News'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ post.title }}</li>
     </ol>
@@ -24,58 +22,50 @@
 
 {% block content %}
 <div class="card">
-    <form method="post" action="{{ 'api/admin/news/update'|link }}" {{ fb_api_form({message: 'Post Updated'|trans}) }}>
+    <form method="post" action="{{ 'news/update'|api_url }}" {{ fb_api_form({message: 'Post Updated'|trans}) }}>
         <div class="card-body">
-            <h3>{{ 'Edit Post'|trans }}</h3>
-            <p class="text-muted">{{ post.title }}</p>
+            <div class="mb-3">
+                <h3 class="card-title mb-1">{{ 'Edit Post'|trans }}</h3>
+                <p class="text-secondary mb-0">{{ post.title }}</p>
+            </div>
 
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}</label>
-                <div class="col">
+            <div class="row g-3">
+                <div class="col-lg-6">
+                    <label class="form-label">{{ 'Title'|trans }}</label>
                     <input class="form-control" type="text" name="title" value="{{ post.title }}" required>
                 </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Content'|trans }}</label>
-                <div class="col">
-                    <textarea class="bb-textarea" name="content" rows="10">{{ post.content }}</textarea>
-                    <small class="my-2 form-hint">{{ 'If the text is very long you can use <strong>&lt;!--more--&gt;</strong> tag. Inserting this tag within the post will create and excerpt of text (before the tag) to be displayed in posts list. Users will be able to see whole content when they click on "Read more" button.'|trans|raw }}</small>
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Image'|trans }}</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="image" value="{{ post.image }}" id="post_image" placeholder="https://www.yourdomain.com/image.jpg"/>
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Meta description'|trans }}</label>
-                <div class="col">
-                    <textarea class="form-control" name="description" rows="2" placeholder="{{ post.description }}">{{ post.description }}</textarea>
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Slug'|trans }}</label>
-                <div class="col">
+                <div class="col-lg-6">
+                    <label class="form-label">{{ 'Slug'|trans }}</label>
                     <input class="form-control" type="text" name="slug" value="{{ post.slug }}" required>
                 </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Status'|trans }}</label>
-                <div class="col">
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioStatusDraft" type="radio" name="status" value="draft"{% if post.status == 'draft' %} checked{% endif %}>
-                        <label class="form-check-label" for="radioStatusDraft">{{ 'Draft'|trans }}</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioStatusActive" type="radio" name="status" value="active"{% if post.status == 'active' %} checked{% endif %}>
-                        <label class="form-check-label" for="radioStatusActive">{{ 'Active'|trans }}</label>
+                <div class="col-12">
+                    <label class="form-label">{{ 'Content'|trans }}</label>
+                    <textarea class="editor-textarea" name="content" rows="10">{{ post.content }}</textarea>
+                    <small class="my-2 form-hint">{{ 'If the text is very long you can use <strong>&lt;!--more--&gt;</strong> tag. Inserting this tag within the post will create and excerpt of text (before the tag) to be displayed in posts list. Users will be able to see whole content when they click on "Read more" button.'|trans|raw }}</small>
+                </div>
+                <div class="col-lg-6">
+                    <label class="form-label">{{ 'Image'|trans }}</label>
+                    <input class="form-control" type="text" name="image" value="{{ post.image }}" id="post_image" placeholder="https://www.yourdomain.com/image.jpg"/>
+                </div>
+                <div class="col-lg-6">
+                    <label class="form-label">{{ 'Status'|trans }}</label>
+                    <div class="d-flex flex-wrap gap-3 pt-1">
+                        <label class="form-check">
+                            <input class="form-check-input" id="radioStatusDraft" type="radio" name="status" value="draft"{% if post.status == 'draft' %} checked{% endif %}>
+                            <span class="form-check-label">{{ 'Draft'|trans }}</span>
+                        </label>
+                        <label class="form-check">
+                            <input class="form-check-input" id="radioStatusActive" type="radio" name="status" value="active"{% if post.status == 'active' %} checked{% endif %}>
+                            <span class="form-check-label">{{ 'Active'|trans }}</span>
+                        </label>
                     </div>
                 </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label" for="post_created">{{ 'Post created'|trans }}</label>
-                <div class="col">
+                <div class="col-12">
+                    <label class="form-label">{{ 'Meta Description'|trans }}</label>
+                    <textarea class="form-control" name="description" rows="2" placeholder="{{ post.description }}">{{ post.description }}</textarea>
+                </div>
+                <div class="col-lg-6">
+                    <label class="form-label" for="post_created">{{ 'Post Created'|trans }}</label>
                     <div class="input-group">
                         <div class="input-icon w-100">
                             <input class="form-control datepicker"
@@ -98,10 +88,8 @@
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label" for="last_updated">{{ 'Last update'|trans }}</label>
-                <div class="col">
+                <div class="col-lg-6">
+                    <label class="form-label" for="last_updated">{{ 'Last Update'|trans }}</label>
                     <div class="input-group">
                         <div class="input-icon w-100">
                             <input class="form-control datepicker"
@@ -130,16 +118,16 @@
         <input type="hidden" name="id" value="{{ post.id }}">
 
         <div class="card-footer d-flex gap-2">
-            <a href="{{ 'news'|alink }}" class="btn btn-secondary">
+            <a href="{{ 'news'|url }}" class="btn btn-secondary">
                 <svg class="icon">
-                    <use xlink:href="#arrow-sm-left" />
+                    <use href="#arrow-left" />
                 </svg>
-                {{ 'Go back'|trans }}
+                {{ 'Go Back'|trans }}
             </a>
-            <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-100">
+            <button class="btn btn-primary" type="submit">{{ 'Update'|trans }}</button>
         </div>
     </form>
 </div>
 {% endblock %}
 
-{% block head %}{{ mf.bb_editor('.bb-textarea') }}{% endblock %}
+{% block head %}{{ wysiwyg('.editor-textarea') }}{% endblock %}

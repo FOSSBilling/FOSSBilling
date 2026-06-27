@@ -30,6 +30,22 @@ class Service
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View cron information'),
+                'description' => __trans('Allows the staff member to view cron job information.'),
+            ],
+            'manage' => [
+                'type' => 'bool',
+                'display_name' => __trans('Run cron jobs'),
+                'description' => __trans('Allows the staff member to manually execute cron jobs.'),
+            ],
+        ];
+    }
+
     public function getCronInfo(): array
     {
         $service = $this->di['mod_service']('system');
@@ -42,52 +58,65 @@ class Service
 
     public function runCrons(): bool
     {
-        $api = $this->di['api_system'];
-        $this->di['logger']->setChannel('cron')->info('Started executing cron jobs.');
+        $hadCronFlag = isset($this->di['is_cron']);
+        $previousCronFlag = $hadCronFlag ? $this->di['is_cron'] : null;
+        $this->di['is_cron'] = true;
 
-        // @core tasks
-        $this->_exec($api, 'hook_batch_connect');
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminCronRun']);
+        try {
+            if ($this->di['update_finalization']->isRequired()) {
+                $this->di['logger']->setChannel('cron')->warning('Skipped cron execution because update finalization is pending.');
 
-        $this->_exec($api, 'invoice_batch_pay_with_credits');
-        $this->_exec($api, 'invoice_batch_activate_paid');
-        $this->_exec($api, 'invoice_batch_send_reminders');
-        $this->_exec($api, 'invoice_batch_generate');
-        $this->_exec($api, 'invoice_batch_invoke_due_event');
-        $this->_exec($api, 'order_batch_suspend_expired');
-        $this->_exec($api, 'order_batch_cancel_suspended');
-        $this->_exec($api, 'support_batch_ticket_auto_close');
-        $this->_exec($api, 'support_batch_public_ticket_auto_close');
-        $this->_exec($api, 'client_batch_expire_password_reminders');
-        $this->_exec($api, 'cart_batch_expire');
-        $this->_exec($api, 'email_batch_sendmail');
+                throw new \FOSSBilling\InformationException('Update finalization is pending. Cron jobs are paused until finalization is completed.', [], 503);
+            }
 
-        // Update the last time cron was executed
-        $this->di['mod_service']('system')->setParamValue('last_cron_exec', date('Y-m-d H:i:s'), true);
+            $api = $this->di['api_system'];
+            $this->di['logger']->setChannel('cron')->info('Started executing cron jobs.');
 
-        // Purge old sessions from the DB
-        $count = $this->clearOldSessions() ?? 0;
-        $this->di['logger']->setChannel('cron')->info("Cleared {$count} outdated sessions from the database.");
+            // @core tasks
+            $this->_exec($api, 'hook_batch_connect');
+            $this->di['events_manager']->fire(['event' => 'onBeforeAdminCronRun']);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminCronRun']);
-        $this->di['logger']->setChannel('cron')->info('Finished executing cron jobs.');
+            $this->_exec($api, 'invoice_batch_pay_with_credits');
+            $this->_exec($api, 'invoice_batch_activate_paid');
+            $this->_exec($api, 'invoice_batch_send_reminders');
+            $this->_exec($api, 'invoice_batch_generate');
+            $this->_exec($api, 'invoice_batch_invoke_due_event');
+            $this->_exec($api, 'order_batch_suspend_expired');
+            $this->_exec($api, 'order_batch_cancel_suspended');
+            $this->_exec($api, 'support_batch_ticket_auto_close');
+            $this->_exec($api, 'client_batch_expire_password_reminders');
+            $this->_exec($api, 'cart_batch_expire');
+            $this->_exec($api, 'email_batch_sendmail');
 
-        return true;
+            // Update the last time cron was executed
+            $this->di['mod_service']('system')->setParamValue('last_cron_exec', date('Y-m-d H:i:s'), true);
+
+            // Purge old sessions from the DB
+            $count = $this->clearOldSessions() ?? 0;
+            $this->di['logger']->setChannel('cron')->info("Cleared {$count} outdated sessions from the database.");
+
+            $this->di['events_manager']->fire(['event' => 'onAfterAdminCronRun']);
+            $this->di['logger']->setChannel('cron')->info('Finished executing cron jobs.');
+
+            return true;
+        } finally {
+            if ($hadCronFlag) {
+                $this->di['is_cron'] = $previousCronFlag;
+            } else {
+                unset($this->di['is_cron']);
+            }
+        }
     }
 
     /**
      * @param string $method
      */
-    protected function _exec($api, $method, $params = null): void
+    protected function _exec($api, $method, array $params = []): void
     {
-        try {
-            $api->{$method}($params);
-        } catch (\Exception $e) {
-            throw new \Exception($e->getMessage());
-        } finally {
-            if (Environment::isCLI()) {
-                echo "\e[32mSuccessfully ran {$method}({$params}).\e[0m\n";
-            }
+        $api->{$method}($params);
+
+        if (Environment::isCLI()) {
+            echo "\e[32mSuccessfully ran {$method}(" . json_encode($params) . ").\e[0m\n";
         }
     }
 

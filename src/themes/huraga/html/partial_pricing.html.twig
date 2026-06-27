@@ -1,18 +1,18 @@
 <div class="box">
     <div class="block pricing">
-
+        {% set cart_currency = guest.cart_get_currency %}
         <div class="total">
             {% if pricing.type == 'free' %}
-            
+
                 {% if product.allow_quantity_select %}
                     <label>{{ 'Quantity:'|trans }}
                         <input type="text" name="quantity" value="1" style="width:30px;"/>
                     </label>
                     <hr/>
                 {% endif %}
-                
+
                 <p>{{ 'Total price:'|trans }}</p>
-                <div class="currency">{{ 0 | money_convert }}</div>
+                <div class="currency">{{ 0|format_currency(cart_currency.code) }}</div>
             {% endif %}
 
             {% if pricing.type == 'once'  %}
@@ -24,19 +24,19 @@
                 {% endif %}
 
                 <p>{{ 'Total price:'|trans }}</p>
-                <div class="currency">{{ (pricing.once.price + pricing.once.setup) | money_convert }}</div>
+                <div class="currency">{{ ((pricing.once.price + pricing.once.setup) * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</div>
             {% endif %}
 
 
         {% if pricing.type == 'recurrent'  %}
-        
+
         {% if product.allow_quantity_select %}
             <label>{{ 'Quantity:'|trans }}
                 <input type="text" name="quantity" value="1" style="width:30px;"/>
             </label>
             <hr/>
         {% endif %}
-                
+
         <select name="period" id="period-selector">
         {% for code,prices in pricing.recurrent %}
             {% if prices.enabled %}
@@ -52,11 +52,11 @@
             <table>
                 <tr>
                     <td>{{ 'Price'|trans }}</td>
-                    <td>{{ prices.price | money_convert }}</td>
+                    <td>{{ (prices.price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</td>
                 </tr>
                 <tr>
                     <td>{{ 'Setup Price'|trans }}</td>
-                    <td>{{ prices.setup | money_convert }}</td>
+                    <td>{{ (prices.setup * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</td>
                 </tr>
             </table>
         </div>
@@ -68,9 +68,9 @@
         <hr/>
         <p>{{ 'Total price:'|trans }}</p>
         {% for code,prices in pricing.recurrent %}
-        <div class="currency period {{code}}">{{ (prices.price + prices.setup) | money_convert }}</div>
+        <div class="currency period {{ code }}">{{ ((prices.price + prices.setup) * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</div>
         {% endfor %}
-        
+
         {% endif %}
         </div>
 

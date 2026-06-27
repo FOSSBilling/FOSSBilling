@@ -1,5 +1,7 @@
-{% block subject %}[{{ guest.system_company.name }}] {{ order.title }} Activated{% endblock %}
+{% block subject %}[{{ guest.system_company.name }}] {{ order.title|default('') }} Activated{% endblock %}
 {% block content %}
+{% set order = order|default({}) %}
+{% set service = service|default({}) %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -36,14 +38,14 @@
 </head>
 <body>
 	<h1>Order Is Now Active</h1>
-	<p>Hello {{ c.first_name }} {{ c.last_name }},</p>
-	<p>Your <strong>{{ order.title }}</strong> is now activated.</p>
+	<p>Hello {{ c.first_name|default('') }} {{ c.last_name|default('') }},</p>
+	<p>Your <strong>{{ order.title|default('') }}</strong> is now activated.</p>
 
-    <p><strong>License key:</strong> {{ service.license_key }}</p>
+    <p><strong>License key:</strong> {{ service.license_key|default('') }}</p>
 
-    <p>You may <a href="{{'login'|link({'email' : c.email }) }}" target="_blank">login</a> or <a href="{{ 'order/service/manage'|link }}/{{ order.id }}" target="_blank">manage your order.</a>
+    <p>You may <a href="{{ 'login'|url(query: { 'email': c.email|default('') }, area: 'client') }}" target="_blank">login</a> or <a href='{{ "order/service/manage/#{order.id|default('')}"|url(area: 'client') }}' target="_blank">manage your order.</a>
 
-	<p class="signature">{{ guest.system_company.signature }}</p>
+	<div class="signature">{{ guest.system_email.signature }}</div>
 </body>
 </html>
 {% endblock %}

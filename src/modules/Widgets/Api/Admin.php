@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Widgets\Api;
 
-class Admin extends \Api_Abstract
+class Admin extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get all registered widgets grouped by slots.
@@ -20,6 +20,8 @@ class Admin extends \Api_Abstract
      */
     public function list(): array
     {
+        $this->checkPermissions('widgets', 'view');
+
         return $this->getService()->getWidgetList();
     }
 
@@ -29,6 +31,8 @@ class Admin extends \Api_Abstract
      */
     public function rebuild(): bool
     {
+        $this->checkPermissions('widgets', 'manage');
+
         $service = $this->getService();
         $service->invalidateCache();
         $service->getRegistry(); // Trigger rebuild

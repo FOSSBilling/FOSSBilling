@@ -1,0 +1,228 @@
+name: Multi-platform Docker Build
+
+on:
+  workflow_call:
+    inputs:
+      target:
+        required: true
+        type: string
+      build-args:
+        required: false
+        type: string
+        default: ''
+      cache-scope:
+        required: true
+        type: string
+      meta-images:
+        required: true
+        type: string
+      meta-tags:
+        required: true
+        type: string
+      meta-flavor:
+        required: false
+        type: string
+        default: ''
+      extract-release-tree:
+        required: false
+        type: boolean
+        default: false
+      release-tree-artifact-name:
+        required: false
+        type: string
+        default: 'release-tree'
+    secrets:
+      DOCKERHUB_USERNAME:
+        required: true
+      DOCKERHUB_TOKEN:
+        required: true
+    outputs:
+      release-tree-artifact:
+        value: ${{ jobs.build.outputs.release-tree-artifact }}
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    name: 'Build (${{ matrix.platform }})'
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-24.04
+            suffix: amd64
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+            suffix: arm64
+      fail-fast: false
+    outputs:
+      release-tree-artifact: ${{ steps.release-tree-output.outputs.artifact-name || '' }}
+    steps:
+      - name: 'Checkout Repository'
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+
+      - name: 'Set Registry Cache Image'
+        run: echo "CACHE_IMAGE=ghcr.io/${GITHUB_REPOSITORY@L}-build-cache" >> "${GITHUB_ENV}"
+
+      - name: 'Set Release Tree Artifact Output'
+        id: release-tree-output
+        if: inputs.extract-release-tree
+        run: echo "artifact-name=${{ inputs.release-tree-artifact-name }}" >> "${GITHUB_OUTPUT}"
+
+      - name: 'Login to Docker Hub'
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: 'Login to GitHub Container Registry'
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 'Set up Docker Buildx'
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4
+
+      - name: 'Docker Metadata'
+        id: meta
+        uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6
+        with:
+          images: ${{ inputs.meta-images }}
+          tags: ${{ inputs.meta-tags }}
+          flavor: ${{ inputs.meta-flavor }}
+
+      - name: 'Build and Push by Digest'
+        id: build
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7
+        with:
+          build-args: ${{ inputs.build-args }}
+          cache-from: type=registry,ref=${{ env.CACHE_IMAGE }}:${{ inputs.cache-scope }}
+          cache-to: type=registry,ref=${{ env.CACHE_IMAGE }}:${{ inputs.cache-scope }},mode=max
+          context: .
+          labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=image,name=docker.io/${{ inputs.meta-images }},name-canonical=true,push=true,push-by-digest=true
+          provenance: false
+          target: ${{ inputs.target }}
+
+      - name: 'Extract Release Tree'
+        if: inputs.extract-release-tree && matrix.platform == 'linux/amd64'
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7
+        with:
+          build-args: ${{ inputs.build-args }}
+          cache-from: type=registry,ref=${{ env.CACHE_IMAGE }}:${{ inputs.cache-scope }}
+          context: .
+          outputs: type=local,dest=./release-tree
+          provenance: false
+          target: release-artifact
+
+      - name: 'Create Release Tree Archive'
+        if: inputs.extract-release-tree && matrix.platform == 'linux/amd64'
+        run: |
+          rm -f ./release-tree/provenance.json
+          tar -cf /tmp/build.tar -C ./release-tree ./
+
+      - name: 'Upload Release Tree'
+        if: inputs.extract-release-tree && matrix.platform == 'linux/amd64'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          if-no-files-found: 'error'
+          name: ${{ inputs.release-tree-artifact-name }}
+          path: /tmp/build.tar
+          retention-days: 1
+
+      - name: 'Export Digest'
+        run: |
+          mkdir -p /tmp/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "/tmp/digests/${digest#sha256:}"
+
+      - name: 'Upload Digest'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          if-no-files-found: 'error'
+          name: digest-${{ matrix.suffix }}
+          path: /tmp/digests/*
+          retention-days: 1
+
+  merge:
+    name: 'Merge Multi-Platform Manifest'
+    needs: [ build ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Login to Docker Hub'
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: 'Login to GitHub Container Registry'
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 'Set up Docker Buildx'
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4
+
+      - name: 'Docker Metadata'
+        id: meta
+        uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6
+        with:
+          images: ${{ inputs.meta-images }}
+          tags: ${{ inputs.meta-tags }}
+          flavor: ${{ inputs.meta-flavor }}
+
+      - name: 'Download Digests'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          path: /tmp/digests
+          pattern: digest-*
+          merge-multiple: true
+
+      - name: 'Create Manifest List and Push'
+        working-directory: /tmp/digests
+        run: |
+          mapfile -t metadata_tags < <(jq -r '.tags[]' <<< "$DOCKER_METADATA_OUTPUT_JSON")
+          tag_args=()
+          for tag in "${metadata_tags[@]}"; do
+            tag_args+=(-t "$tag")
+          done
+
+          digest_args=()
+          for digest in *; do
+            digest_args+=("docker.io/${{ inputs.meta-images }}@sha256:${digest}")
+          done
+
+          docker buildx imagetools create "${tag_args[@]}" "${digest_args[@]}"
+
+      - name: 'Mirror Manifest List to GHCR'
+        run: |
+          mapfile -t docker_tags < <(jq -r '.tags[]' <<< "$DOCKER_METADATA_OUTPUT_JSON")
+          ghcr_tag_args=()
+          for tag in "${docker_tags[@]}"; do
+            ghcr_tag_args+=(-t "ghcr.io/${tag#docker.io/}")
+          done
+
+          docker buildx imagetools create \
+            "${ghcr_tag_args[@]}" \
+            "docker.io/${{ inputs.meta-images }}:${{ steps.meta.outputs.version }}"
+
+      - name: 'Inspect Image'
+        run: |
+          docker buildx imagetools inspect \
+            'docker.io/${{ inputs.meta-images }}:${{ steps.meta.outputs.version }}'
+
+      - name: 'Inspect GHCR Image'
+        run: |
+          docker buildx imagetools inspect \
+            'ghcr.io/${{ inputs.meta-images }}:${{ steps.meta.outputs.version }}'

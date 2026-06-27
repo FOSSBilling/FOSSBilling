@@ -45,9 +45,4 @@ class Service implements InjectionAwareInterface, WidgetProviderInterface
             ],
         ];
     }
-
-    public function uninstall(): bool
-    {
-        return true;
-    }
 }

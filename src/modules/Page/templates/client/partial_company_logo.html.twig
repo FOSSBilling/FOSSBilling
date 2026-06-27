@@ -1,0 +1,19 @@
+{% set logo_url = logo_url|default(null) %}
+{% set link_url = link_url|default('/'|url) %}
+{% set link_class = link_class|default('') %}
+{% set image_width = image_width|default('auto') %}
+{% set link_rel = link_rel|default(null) %}
+{% set image_class = image_class|default('') %}
+{% set image_height = image_height|default('45px') %}
+{% set show_mobile_name = show_mobile_name|default(false) %}
+
+<a{% if link_class %} class="{{ link_class }}"{% endif %} href="{{ link_url }}"{% if link_target is defined %} target="{{ link_target }}"{% endif %}{% if link_rel %} rel="{{ link_rel }}"{% endif %}>
+    {% if logo_url %}
+        <img{% if image_class %} class="{{ image_class }}"{% endif %} src="{{ logo_url }}" alt="{{ company.name }}" width="{{ image_width }}" height="{{ image_height }}">
+        {% if show_mobile_name %}
+            <span class="d-sm-none">{{ company.name }}</span>
+        {% endif %}
+    {% else %}
+        <span>{{ company.name }}</span>
+    {% endif %}
+</a>

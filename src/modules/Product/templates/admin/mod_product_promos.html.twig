@@ -5,47 +5,42 @@
 {% block meta_title %}{{ 'Product Promotions'|trans }}{% endblock %}
 
 {% set active_menu = 'products' %}
+{% set promo_toolbar_actions %}
+    <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newPromoModal">
+        <svg class="icon">
+            <use href="#plus" />
+        </svg>
+        {{ 'New Promotion'|trans }}
+    </button>
+{% endset %}
 
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
-                    <use xlink:href="#home" />
+                    <use href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'product'|alink }}">{{ 'Products'|trans }}</a>
+            <a href="{{ 'product'|url }}">{{ 'Products'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ 'Product Promotions'|trans }}</li>
     </ol>
 {% endblock %}
 
 {% block content %}
-    <ul class="nav nav-tabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <a class="nav-link active" href="#tab-promos" data-bs-toggle="tab">{{ 'Promotions'|trans }}</a>
-        </li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link" href="#tab-new" data-bs-toggle="tab">
-                <svg class="icon me-2">
-                    <use xlink:href="#plus" />
-                </svg>
-                {{ 'New Promotion'|trans }}
-            </a>
-        </li>
-    </ul>
-
     <div class="card">
-        <div class="tab-content">
-            <div class="tab-pane fade show active" id="tab-promos" role="tabpanel">
-                <div class="card-header">
-                    <h3 class="card-title">{{ 'Promo Codes'|trans }}</h3>
-                    <div class="card-actions">
-                        {{ include('partial_search_action.html.twig') }}
-                    </div>
-                </div>
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">{{ 'Product Promotions'|trans }}</h3>
+                <p class="card-subtitle">{{ 'Manage promotional discounts and create new offers for products and client groups.'|trans }}</p>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            {{ include('partial_search.html.twig', { search_toolbar_actions: promo_toolbar_actions }) }}
+                <div class="table-responsive">
                 <table class="table card-table table-vcenter table-striped text-nowrap">
                     <thead>
                         <tr>
@@ -55,28 +50,29 @@
                             <th>{{ 'Client Groups'|trans }}</th>
                             <th>{{ 'Validity Period'|trans }}</th>
                             <th>{{ 'Enabled'|trans }}</th>
-                            <th>{{ 'Usage'|trans }}</th>
+                            <th>{{ 'Limit Tracking'|trans }}</th>
                             <th class="w-1"></th>
                         </tr>
                     </thead>
                     <tbody>
-                    {% set promos = admin.product_promo_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
+                    {% set currency = guest.currency_get %}
+                    {% set promos = admin.product_promo_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
                     {% for promo in promos.list %}
                     <tr>
                         <td>
-                            <a href="{{ '/product/promo'|alink }}/{{ promo.id }}">{{ promo.code }}</a>
+                            <a href='{{ "product/promo/#{promo.id}"|url }}'>{{ promo.code }}</a>
                         </td>
-                        <td>{% if promo.type == 'percentage' %}{{ promo.value }}%{% endif %}{% if promo.type == 'absolute' %}{{ mf.currency_format(promo.value) }}{% endif %}</td>
+                        <td>{% if promo.type == 'percentage' %}{{ promo.value }}%{% endif %}{% if promo.type == 'absolute' %}{{ promo.value|format_currency(currency.code) }}{% endif %}</td>
                         <td>{% for pid,product in promo.applies_to %}
-                            <a href="{{ 'product/manage'|alink }}/{{ pid }}">{{ product|truncate(15) }}</a><br/>
+                            <a href='{{ "product/manage/#{pid}"|url }}'>{{ product|truncate(15) }}</a><br/>
                             {% else %}
                             {{ 'All Products'|trans }}
                             {% endfor %}
                         </td>
                         <td>{% for cid,client_group in promo.cgroups %}
-                            <a href="{{ 'client/group'|alink }}/{{ cid }}">{{ client_group|truncate(15) }}</a><br/>
+                            <a href='{{ "client/group/#{cid}"|url }}'>{{ client_group|truncate(15) }}</a><br/>
                             {% else %}
-                            {{ 'All Client groups'|trans }}
+                            {{ 'All Client Groups'|trans }}
                             {% endfor %}
                         </td>
                         <td>
@@ -84,194 +80,269 @@
                             From {% if promo.start_at %}{{ promo.start_at|format_date }}{% else %}now{% endif %}
                             until {% if promo.end_at %}{{ promo.end_at|format_date }}{% else %}disabled{% endif %}
                         </td>
+                        <td>{{ mf.boolean_badge(promo.active, 'Yes'|trans, 'No'|trans, 'text-bg-success', 'text-bg-secondary') }}</td>
                         <td>
-                            {% if promo.active == true %}
-                                <span class="badge bg-success me-1"></span>
-                            {% endif %}
-                            {% if promo.active == false %}
-                                <span class="badge bg-secondary me-1"></span>
-                            {% endif %}
-                            {{ mf.q(promo.active) }}
+                            {{ promo.used }} / {% if promo.maxuses %}{{ promo.maxuses }}{% else %}&#8734;{% endif %}
+                            <div class="text-secondary small">{{ promo.redemption_count }} {{ 'recorded applications'|trans }}</div>
                         </td>
-                        <td>{{ promo.used }} / {% if promo.maxuses %}{{ promo.maxuses }}{% else %}&#8734;{% endif %}</td>
                         <td>
-                            <a class="btn btn-icon" href="{{ '/product/promo'|alink }}/{{ promo.id }}">
+                            <a class="btn btn-icon" href='{{ "product/promo/#{promo.id}"|url }}'>
                                 <svg class="icon">
-                                    <use xlink:href="#edit" />
+                                    <use href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon" href="{{ 'api/admin/product/promo_delete'|link({ 'id': promo.id }) }}"
-                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'product/promos'|alink}) }}>
+                            <a class="btn btn-icon" href='{{ "product/promo/#{promo.id}"|url }}#promo-redemptions' title="{{ 'View Redemption History'|trans }}">
                                 <svg class="icon">
-                                    <use xlink:href="#delete" />
+                                    <use href="#eye" />
                                 </svg>
                             </a>
+                            {% if promo.can_be_deleted %}
+                                <a class="btn btn-icon" href="{{ 'product/promo_delete'|api_url(query: { 'id': promo.id }) }}"
+                                    {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'product/promos'|url}) }}>
+                                    <svg class="icon">
+                                        <use href="#trash" />
+                                    </svg>
+                                </a>
+                            {% else %}
+                                <button class="btn btn-icon" type="button" disabled title="{{ 'Promotions with redemption history cannot be deleted'|trans }}">
+                                    <svg class="icon">
+                                        <use href="#trash" />
+                                    </svg>
+                                </button>
+                            {% endif %}
                         </td>
                     </tr>
                     {% else %}
                         <tr>
-                            <td class="text-muted" colspan="7">{{ 'The list is empty'|trans }}</td>
+                            <td class="text-muted" colspan="8">{{ 'The list is empty'|trans }}</td>
                         </tr>
                     {% endfor %}
                     </tbody>
                 </table>
+                </div>
 
-                {{ include('partial_pagination.html.twig', { 'list': promos, 'url': 'product/promos' }) }}
-            </div>
+                <div class="card-footer d-flex align-items-center">
+                    {{ include('partial_pagination.html.twig', { 'list': promos, 'url': 'product/promos', 'split_footer_controls': true }) }}
+                </div>
 
-            <div class="tab-pane fade" id="tab-new" role="tabpanel">
-                <div class="card-body">
-                    <h3>{{ 'Create New Promotional Code'|trans }}</h3>
-                    <p class="text-muted">{{ 'Create special offers for your clients by creating promo codes.'|trans }}</p>
-                    <form method="post" action="{{ 'api/admin/product/promo_create'|link }}" {{ fb_api_form({redirect: 'product/promos'|alink}) }}>
-                        <div class="mb-3 row">
-                            <label class="form-label col-3 col-form-label">{{ 'Promo Code'|trans }}</label>
-                            <div class="col">
-                                <input class="form-control" type="text" name="code" value="" required>
+        <div class="modal modal-blur fade" id="newPromoModal" tabindex="-1" aria-labelledby="newPromoModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-md-down modal-xl">
+                <form class="modal-content fb-modal-form" method="post" action="{{ 'product/promo_create'|api_url }}" {{ fb_api_form({redirect: 'product/promos'|url}) }}>
+                    <div class="modal-header">
+                        <h3 class="modal-title" id="newPromoModalLabel">{{ 'Create New Promotional Code'|trans }}</h3>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        <section class="fb-modal-section">
+                            <div class="fb-modal-section-header">
+                                <div class="fb-modal-section-heading-row">
+                                    <h4 class="fb-modal-section-title">{{ 'Offer Details'|trans }}</h4>
+                                </div>
+                                <p class="fb-modal-section-description">{{ 'Set the public promo code, discount type, value, and validity window.'|trans }}</p>
                             </div>
-                        </div>
-                        <div class="mb-3 row">
-                            <label class="form-label col-3 col-form-label">{{ 'Discount Type'|trans }}</label>
-                            <div class="col">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" id="radioTypeAbsolute" type="radio" name="type" value="absolute" checked>
-                                    <label class="form-check-label" for="radioTypeAbsolute">{{ 'Absolute'|trans }}</label>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label" for="promo-code">{{ 'Promo Code'|trans }}</label>
+                                    <input class="form-control" type="text" id="promo-code" name="code" value="" required>
                                 </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" id="radioTypePercentage" type="radio" name="type" value="percentage">
-                                    <label class="form-check-label" for="radioTypePercentage">{{ 'Percentage'|trans }}</label>
+                                <div class="col-lg-6">
+                                    <label class="form-label">{{ 'Discount Type'|trans }}</label>
+                                    <div class="d-flex flex-wrap gap-3 pt-2">
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioTypeAbsolute" type="radio" name="type" value="absolute" checked>
+                                            <span class="form-check-label">{{ 'Absolute'|trans }}</span>
+                                        </label>
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioTypePercentage" type="radio" name="type" value="percentage">
+                                            <span class="form-check-label">{{ 'Percentage'|trans }}</span>
+                                        </label>
+                                    </div>
                                 </div>
-                                <input class="form-control" type="text" name="value" required>
-                            </div>
-                        </div>
-                        <div class="mb-3 row">
-                            <label class="form-label col-3 col-form-label">{{ 'Recurring'|trans }}</label>
-                            <div class="col">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" id="radioApplyFirst" type="radio" name="recurring" value="0">
-                                    <label class="form-check-label" for="radioApplyFirst">{{ 'Apply to first order only'|trans }}</label>
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="promo-value">{{ 'Discount Value'|trans }}</label>
+                                    <input class="form-control" type="text" id="promo-value" name="value" required>
                                 </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" id="radioApplyAll" type="radio" name="recurring" value="1" checked>
-                                    <label class="form-check-label" for="radioApplyAll">{{ 'Apply to first order and renewals'|trans }}</label>
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="promo-max-uses">{{ 'Max Uses (Zero for Unlimited)'|trans }}</label>
+                                    <input class="form-control" type="text" id="promo-max-uses" name="maxuses" value="" title="{{ 'Leave blank for unlimited uses'|trans }}" placeholder="0">
                                 </div>
-                            </div>
-                        </div>
-                        <div class="mb-3 row">
-                            <label class="form-label col-3 col-form-label">{{ 'Active'|trans }}</label>
-                            <div class="col">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" id="radioActiveYes" type="radio" name="active" value="1" checked>
-                                    <label class="form-check-label" for="radioActiveYes">{{ 'Yes'|trans }}</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" id="radioActiveNo" type="radio" name="active" value="0">
-                                    <label class="form-check-label" for="radioActiveNo">{{ 'No'|trans }}</label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mb-3 row">
-                            <label class="form-label col-3 col-form-label">{{ 'Free Setup'|trans }}</label>
-                            <div class="col">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" id="radioFreeSetupYes" type="radio" name="freesetup" value="1">
-                                    <label class="form-check-label" for="radioFreeSetupYes">{{ 'Yes'|trans }}</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" id="radioFreeSetupNo" type="radio" name="freesetup" value="0" checked>
-                                    <label class="form-check-label" for="radioFreeSetupNo">{{ 'No'|trans }}</label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <h5>{{ 'Promotion Limitations'|trans }}</h5>
-                        <div class="mb-3 row">
-                            <label class="form-label col-3 col-form-label">{{ 'Once per Client'|trans }}</label>
-                            <div class="col">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" id="radioOncePerClientYes" type="radio" name="once_per_client" value="1" checked>
-                                    <label class="form-check-label" for="radioOncePerClientYes">{{ 'Yes'|trans }}</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" id="radioOncePerClientNo" type="radio" name="once_per_client" value="0">
-                                    <label class="form-check-label" for="radioOncePerClientNo">{{ 'No'|trans }}</label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mb-3 row">
-                            <label class="form-label col-3 col-form-label">{{ 'Max Uses (Zero for Unlimited)'|trans }}</label>
-                            <div class="col">
-                                <input class="form-control" type="text" name="maxuses" value="" class="dirRight" title="{{ 'Leave blank for unlimited uses'|trans }}" placeholder="0">
-                            </div>
-                        </div>
-                        <div class="mb-3 row">
-                            <label class="form-label col-3 col-form-label" for="valid_time">{{ 'Validity Period (Blank for Indefinite)'|trans }}</label>
-                            <div class="col">
-                                <div class="input-group">
-                                    <div class="input-icon w-100">
-                                        <input class="form-control datepicker"
-                                               id="valid_time"
-                                               data-name-from="start_at"
-                                               data-name-to="end_at">
-                                        <span class="input-icon-addon">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                                <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
-                                                <path d="M16 3l0 4"></path>
-                                                <path d="M8 3l0 4"></path>
-                                                <path d="M4 11l16 0"></path>
-                                                <path d="M11 15l1 0"></path>
-                                                <path d="M12 15l0 3"></path>
-                                            </svg>
-                                        </span>
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="valid_time">{{ 'Validity Period (Blank for Indefinite)'|trans }}</label>
+                                    <div class="input-group">
+                                        <div class="input-icon w-100">
+                                            <input class="form-control datepicker"
+                                                   id="valid_time"
+                                                   data-name-from="start_at"
+                                                   data-name-to="end_at">
+                                            <span class="input-icon-addon">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                    <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
+                                                    <path d="M16 3l0 4"></path>
+                                                    <path d="M8 3l0 4"></path>
+                                                    <path d="M4 11l16 0"></path>
+                                                    <path d="M11 15l1 0"></path>
+                                                    <path d="M12 15l0 3"></path>
+                                                </svg>
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="mb-3 row">
-                            <label class="form-label col-3 col-form-label">{{ 'Applicable Products (Select None to Apply to All)'|trans }}</label>
-                            <div class="col">
-                                <table class="table card-table table-vcenter table-striped text-nowrap">
-                                    <tbody>
-                                        {% set products = admin.product_get_pairs %}
-                                        {% for id,product in products %}
-                                        <tr><td class="w-1"><input type="checkbox" name="products[]" value="{{ id }}" /></td><td>{{ product }}</td></tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
+                        </section>
+
+                        <section class="fb-modal-section">
+                            <div class="fb-modal-section-header">
+                                <div class="fb-modal-section-heading-row">
+                                    <h4 class="fb-modal-section-title">{{ 'Promotion Behavior'|trans }}</h4>
+                                </div>
+                                <p class="fb-modal-section-description">{{ 'Control how the promotion behaves during checkout and renewals.'|trans }}</p>
                             </div>
-                        </div>
-                        <div class="mb-3 row">
-                            <label class="form-label col-3 col-form-label">{{ 'Applicable Periods (Select None to Apply to All)'|trans }}</label>
-                            <div class="col">
-                                <table class="table card-table table-vcenter table-striped text-nowrap">
-                                    <tbody>
-                                        {% set periods = guest.system_periods %}
-                                        {% for id, period in periods %}
-                                        <tr><td class="w-1"><input type="checkbox" name="periods[]" value="{{ id }}" /></td><td>{{ period }}</td></tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
+                            <div class="row g-4">
+                                <div class="col-lg-6">
+                                    <label class="form-label">{{ 'Recurring'|trans }}</label>
+                                    <p class="text-secondary small mb-2">{{ 'Choose whether the promotion affects only the first order or also future renewals.'|trans }}</p>
+                                    <div class="d-flex flex-column gap-2">
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioApplyFirst" type="radio" name="recurring" value="0">
+                                            <span class="form-check-label">{{ 'Apply to First Order Only'|trans }}</span>
+                                        </label>
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioApplyAll" type="radio" name="recurring" value="1" checked>
+                                            <span class="form-check-label">{{ 'Apply to First Order and Renewals'|trans }}</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label">{{ 'Once per Client'|trans }}</label>
+                                    <p class="text-secondary small mb-2">{{ 'Restrict use to one redemption per client account.'|trans }}</p>
+                                    <div class="d-flex flex-column gap-2">
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioOncePerClientYes" type="radio" name="once_per_client" value="1" checked>
+                                            <span class="form-check-label">{{ 'Yes'|trans }}</span>
+                                        </label>
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioOncePerClientNo" type="radio" name="once_per_client" value="0">
+                                            <span class="form-check-label">{{ 'No'|trans }}</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">{{ 'Active'|trans }}</label>
+                                    <p class="text-secondary small mb-2">{{ 'Decide whether the promo code can be used immediately after creation.'|trans }}</p>
+                                    <div class="d-flex flex-column gap-2">
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioActiveYes" type="radio" name="active" value="1" checked>
+                                            <span class="form-check-label">{{ 'Yes'|trans }}</span>
+                                        </label>
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioActiveNo" type="radio" name="active" value="0">
+                                            <span class="form-check-label">{{ 'No'|trans }}</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">{{ 'Free Setup'|trans }}</label>
+                                    <p class="text-secondary small mb-2">{{ 'Optionally waive any setup fee when the promotion is applied.'|trans }}</p>
+                                    <div class="d-flex flex-column gap-2">
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioFreeSetupYes" type="radio" name="freesetup" value="1">
+                                            <span class="form-check-label">{{ 'Yes'|trans }}</span>
+                                        </label>
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioFreeSetupNo" type="radio" name="freesetup" value="0" checked>
+                                            <span class="form-check-label">{{ 'No'|trans }}</span>
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="mb-3 row">
-                            <label class="form-label col-3 col-form-label">{{ 'Applicable Client Groups (Select None to Apply to All)'|trans }}</label>
-                            <div class="col">
-                                <table class="table card-table table-vcenter table-striped text-nowrap">
-                                    <tbody>
-                                        {% set client_groups = admin.client_group_get_pairs %}
-                                        {% for id, client_group in client_groups %}
-                                        <tr><td class="w-1"><input type="checkbox" name="client_groups[]" value="{{ id }}" /></td><td>{{ client_group }}</td></tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
+                        </section>
+
+                        <section class="fb-modal-section">
+                            <div class="fb-modal-section-header">
+                                <div class="fb-modal-section-heading-row">
+                                    <h4 class="fb-modal-section-title">{{ 'Applicability'|trans }}</h4>
+                                </div>
+                                <p class="fb-modal-section-description">{{ 'Restrict the promotion to specific products, billing periods, or client groups, or leave each list empty to apply globally.'|trans }}</p>
                             </div>
-                        </div>
-                        <input type="submit" value="{{ 'Create'|trans }}" class="btn btn-primary w-100">
-                    </form>
-                </div>
+                            <div class="row g-3">
+                                <div class="col-xl-4">
+                                    <label class="form-label">{{ 'Applicable Products'|trans }}</label>
+                                    <input type="hidden" name="products[]" value="">
+                                    <div class="table-responsive border rounded-3" style="max-height: 16rem;">
+                                        <table class="table card-table table-vcenter table-striped text-nowrap mb-0">
+                                            <tbody>
+                                                {% set products = admin.product_get_pairs %}
+                                                {% for id, product in products %}
+                                                <tr><td class="w-1"><input type="checkbox" name="products[]" value="{{ id }}"></td><td>{{ product }}</td></tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="col-xl-4">
+                                    <label class="form-label">{{ 'Applicable Periods'|trans }}</label>
+                                    <input type="hidden" name="periods[]" value="">
+                                    <div class="table-responsive border rounded-3" style="max-height: 16rem;">
+                                        <table class="table card-table table-vcenter table-striped text-nowrap mb-0">
+                                            <tbody>
+                                                {% set periods = guest.system_periods %}
+                                                {% for id, period in periods %}
+                                                <tr><td class="w-1"><input type="checkbox" name="periods[]" value="{{ id }}"></td><td>{{ period }}</td></tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="col-xl-4">
+                                    <label class="form-label">{{ 'Applicable Client Groups'|trans }}</label>
+                                    <input type="hidden" name="client_groups[]" value="">
+                                    <div class="table-responsive border rounded-3" style="max-height: 16rem;">
+                                        <table class="table card-table table-vcenter table-striped text-nowrap mb-0">
+                                            <tbody>
+                                                {% set client_groups = admin.client_group_get_pairs %}
+                                                {% for id, client_group in client_groups %}
+                                                <tr><td class="w-1"><input type="checkbox" name="client_groups[]" value="{{ id }}"></td><td>{{ client_group }}</td></tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
+                        <button type="submit" class="btn btn-primary">{{ 'Create'|trans }}</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
+{% endblock %}
+
+{% block js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modalElement = document.getElementById('newPromoModal');
+    if (!modalElement) {
+        return;
+    }
+
+    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+    if (window.location.hash === '#tab-new') {
+        modal.show();
+    }
+
+    modalElement.addEventListener('hidden.bs.modal', function () {
+        if (window.location.hash !== '#tab-new') {
+            return;
+        }
+
+        const url = new URL(window.location.href);
+        url.hash = '';
+        window.history.replaceState({}, '', url);
+    });
+});
+</script>
 {% endblock %}

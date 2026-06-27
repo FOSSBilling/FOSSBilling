@@ -31,10 +31,15 @@ class Service implements InjectionAwareInterface
     public function getModulePermissions(): array
     {
         return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View hooks'),
+                'description' => __trans('Allows the staff member to view registered event hooks.'),
+            ],
             'manage_hooks' => [
                 'type' => 'bool',
                 'display_name' => __trans('Manage hooks'),
-                'description' => __trans('Allows the staff member to view and reconnect registered event hooks.'),
+                'description' => __trans('Allows the staff member to reconnect registered event hooks.'),
             ],
             'trigger_hooks' => [
                 'type' => 'bool',
@@ -97,16 +102,21 @@ class Service implements InjectionAwareInterface
     {
         // Clean up the existing list before we add to it
         $this->_disconnectUnavailable();
+        $extensionService = $this->di['mod_service']('extension');
 
         $mods = [];
         if ($mod_name !== null) {
             $mods[] = $mod_name;
         } else {
-            $extensionService = $this->di['mod_service']('extension');
             $mods = $extensionService->getCoreAndActiveModules();
         }
 
         foreach ($mods as $m) {
+            $ext = $this->di['db']->findOne('extension', "type = 'mod' AND name = :mod AND status = 'installed'", ['mod' => $m]);
+            if (!$ext && !$extensionService->isCoreModule($m)) {
+                continue;
+            }
+
             $mod = $this->di['mod']($m);
             if ($mod->hasService()) {
                 $class = $mod->getService();

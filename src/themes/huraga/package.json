@@ -1,22 +1,16 @@
 {
   "name": "huraga",
   "scripts": {
-    "dev": "node ./esbuild.mjs --watch",
+    "dev": "node ./esbuild.mjs",
     "build": "node ./esbuild.mjs"
   },
   "dependencies": {
-    "@dicebear/core": "^9.4.1",
-    "@dicebear/identicon": "^9.0.0",
     "bootstrap": "^5.3.3",
     "flag-icons": "^7.2.3",
-    "github-markdown-css": "^5.7.0",
+    "intl-tel-input": "^29.1.0",
     "tom-select": "^2.3.1"
   },
   "devDependencies": {
-    "autoprefixer": "10.5.0",
-    "esbuild": "0.28.0",
-    "postcss": "8.5.12",
-    "purgecss": "8.0.0",
-    "sass": "1.99.0"
+    "@tabler/icons": "3.44.0"
   }
 }

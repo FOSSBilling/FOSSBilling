@@ -144,15 +144,15 @@ Before a PR can be merged it must pass all of the automated tests and also be re
 
 Great code is only one-half of any successful project, and great documentation is just as important. The reality is that open source projects can stand or fall based on the quality of their documentation.
 
-The documentation for FOSSBilling is hosted here: [FOSSBilling Docs](https://fossbilling.org/docs)
+The documentation for FOSSBilling is hosted here: [FOSSBilling Docs](https://docs.fossbilling.org/)
 
-Documentation is built using [Nextra](https://nextra.site/) from this [GitHub repository](https://github.com/FOSSBilling/docs). You can contribute directly to the repo on GitHub or using the *Edit this page* links on each page of the docs site.
+Documentation is built using [Starlight](https://starlight.astro.build/) from the [docs](https://github.com/FOSSBilling/docs) GitHub repository. You can contribute directly to the repo on GitHub or using the *Edit this page* links on each page of the docs site.
 
-Please try to be thorough and clear when writing directions. Something might seem obvious to you, but do not assume that it is to everybody else. 
+Please try to be thorough and clear when writing directions. Something might seem obvious to you, but do not assume that it is to everybody else.
 
 ### Translating FOSSBilling
 
-We would like FOSSBilling to be available to as many people in as many languages as possible. 
+We would like FOSSBilling to be available to as many people in as many languages as possible.
 
 The software is primarily written in English. If you are a native or fluent speaker of another language then we could use your help with the translations.
 

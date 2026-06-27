@@ -37,29 +37,28 @@
 </head>
 <body>
 	<h1>Invoice Payment Reminder</h1>
-	<p>Hello {{ c.first_name }} {{ c.last_name }},</p>
-	<p>This is to remind that your invoice <strong>{{ invoice.serie_nr }}</strong> is due in {{ invoice.due_at|daysleft }} days.</p>
+	<p>Hello {{ c.first_name|default('') }} {{ c.last_name|default('') }},</p>
+	<p>This is to remind that your invoice <strong>{{ invoice.serie_nr|default('') }}</strong> is due in {{ invoice.due_at|default('')|daysleft }} days.</p>
     <ul>
-        <li><strong>Amount Due:</strong> {{ invoice.total | money(invoice.currency) }}</li>
-        <li><strong>Due Date:</strong>  {{ invoice.due_at|format_date }}</li>
-        {% if invoice.orders is defined and invoice.orders|length > 0 %}
-            {% for order in invoice.orders %}
+        <li><strong>Amount Due:</strong> {{ invoice.total|default(0)|format_currency(invoice.currency|default(default_currency)) }}</li>
+        <li><strong>Due Date:</strong>  {{ invoice.due_at|default('')|format_date }}</li>
+        {% if invoice.orders|default([])|length > 0 %}
+            {% for order in invoice.orders|default([]) %}
                 <li><strong>Order ID:</strong> #{{ order.id }}</li>
-                {% if order.product_name is defined %}
+                {% if order.product_name %}
                     <li><strong>Product:</strong> {{ order.product_name }}</li>
                 {% endif %}
-                {% if order.expires_at is defined %}
+                {% if order.expires_at %}
                     <li><strong>Renewal Date:</strong> {{ order.expires_at|format_date }}</li>
                 {% endif %}
             {% endfor %}
         {% endif %}
     </ul>
 
-    <p>You may view and pay the invoice <a href="{{'invoice'|link}}/{{invoice.hash}}" target="_blank">here.</a></p>
-    <p>You can also <a href="{{'invoice'|link}}/pdf/{{invoice.hash}}" target="_blank">download the invoice as PDF</a>.</p>
-    <p>You may also <a href="{{'login'|link({'email' : c.email }) }}" target="_blank">login</a> or <a href="{{'client/profile'|link}}" target="_blank">edit your profile.</a></p>
+    <p>You may view and pay the invoice <a href='{{ "invoice/#{invoice.hash|default('')}"|url(area: 'client') }}' target="_blank">here.</a></p>
+    <p>You can also <a href="{{ "invoice/pdf/#{invoice.hash|default('')}"|url(area: 'client') }}" target="_blank">download the invoice as a PDF</a>, <a href="{{ 'login'|url(query: { 'email': c.email|default('') }, area: 'client') }}" target="_blank">login</a>, or <a href="{{ 'client/profile'|url(area: 'client') }}" target="_blank">edit your profile.</a></p>
 
-	<p class="signature">{{ guest.system_company.signature }}</p>
+	<div class="signature">{{ guest.system_email.signature }}</div>
 </body>
 </html>
 {% endblock %}

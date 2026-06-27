@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
+export default function initThemeSettings() {
 
   document.querySelectorAll('#theme-settings fieldset').forEach((el, index) => {
     let show = '', collapsed = '';
@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let spanEl = el.parentElement.parentElement.children[2];
             if (spanEl.matches('span')) {
               spanEl.classList.add('d-flex', 'align-items-center');
-              spanEl.innerHTML = `<svg class="icon"><use xlink:href="#arrow-right" /></svg>`;
+              spanEl.innerHTML = `<svg class="icon"><use href="#arrow-right" /></svg>`;
             }
           } else {
             el.parentElement.classList.add('form-check', 'form-check-inline');
@@ -113,4 +113,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-});
+}

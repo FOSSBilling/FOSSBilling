@@ -1,76 +1,199 @@
 name: CI
 
+permissions:
+  contents: read
+
 on:
   push:
   pull_request:
     branches: main
+    types: [opened, reopened, synchronize, labeled, unlabeled]
+  pull_request_target:
+    branches: main
+    types: [opened, reopened, synchronize]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event_name == 'pull_request' && (github.event.action == 'labeled' || github.event.action == 'unlabeled') && 'labels' || 'run' }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  spellcheck:
-    name: 'Spellcheck'
+  merge-hold:
+    name: 'Check for Merge Hold'
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: 'Check merge-hold label'
+        run: |
+          if [[ "${{ contains(github.event.pull_request.labels.*.name, 'merge-hold') }}" == 'true' ]]; then
+            echo "Pull request labeled 'merge-hold'"
+            echo "The pull request cannot be merged until the 'merge-hold' label is removed."
+            exit 1
+          fi
+
+          echo "Pull request not labeled 'merge-hold'"
+          echo "The pull request can be merged as no 'merge-hold' label is set."
+
+  labeler:
+    name: 'Pull Request Labeler'
     permissions:
       contents: read
+      pull-requests: write
+    if: ${{ github.event_name == 'pull_request_target' }}
     runs-on: ubuntu-latest
-    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/labeler@f27b608878404679385c85cfa523b85ccb86e213 # v6
+        with:
+          repo-token: '${{ secrets.GITHUB_TOKEN }}'
+          sync-labels: true
+
+  release-drafter:
+    name: 'Release Drafter'
+    permissions:
+      contents: write
+      pull-requests: read
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: release-drafter/release-drafter@4d75298e00d9e34c483e5ff8c68d0ea1c1940c1e # v7
+        with:
+          config-name: release-drafter.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  spellcheck:
+    name: 'Spellcheck'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: ${{ (github.event_name == 'pull_request' && github.event.action != 'labeled' && github.event.action != 'unlabeled' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
+    steps:
+      - name: 'Checkout Repository'
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
 
       - name: 'Perform Spellcheck'
         uses: streetsidesoftware/cspell-action@de2a73e963e7443969755b648a1008f77033c5b2 # v8
         with:
           incremental_files_only: true
 
-  php-build-test:
+  php-build-test-pr:
     name: 'PHP Build and Test'
+    # Keep PR and push callers separate because job permissions cannot be conditional.
     permissions:
       contents: read
     needs: [ spellcheck ]
-    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        php: [8.3, 8.4]
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-
-      - name: 'PHP Build' 
-        uses: FOSSBilling/.workflows/.github/actions/php-build@3273310677c9a62cdb61aa6f8f0d3ec4993b1a8e
-        with:
-          php-version: ${{ matrix.php }}
-
-      - name: 'Prepare Test Environment'
-        run: |
-          cp ./src/config-sample.php ./src/config.php
-          mkdir -p ./src/data/{cache,log}
-          echo APP_ENV=test >> $GITHUB_ENV
-        
-      - name: 'PHP Tests (PHPStan and PHPUnit)'
-        uses: FOSSBilling/.workflows/.github/actions/php-test@3273310677c9a62cdb61aa6f8f0d3ec4993b1a8e
-        with:
-          php-version: ${{ matrix.php }}
-          php-vendor-dir: './src/vendor'
-          phpstan-enable: 'true'
-          phpstan-php-version: 8.4
-          phpunit-enable: 'true'
-
-  preview-build:
-    name: 'Create Preview Release'
-    permissions: 
-      contents: read
-    needs: [ php-build-test ]
-    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
-    uses: ./.github/workflows/release-build.yml
+    if: ${{ github.event_name == 'pull_request' && github.event.action != 'labeled' && github.event.action != 'unlabeled' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id }}
+    uses: ./.github/workflows/php-build-test.yml
     with:
-      artifact-name: 'preview-build'
-      preview: true
+      write-cache: false
+
+  php-build-test-push:
+    name: 'PHP Build and Test'
+    permissions:
+      contents: read
+      packages: write
+    needs: [ spellcheck ]
+    if: ${{ github.event_name == 'push' }}
+    uses: ./.github/workflows/php-build-test.yml
+    with:
+      write-cache: true
+
+  live-tests-pr:
+    name: 'Live Tests'
+    permissions:
+      contents: read
+    needs: [ php-build-test-pr ]
+    if: ${{ github.event_name == 'pull_request' && github.event.action != 'labeled' && github.event.action != 'unlabeled' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id }}
+    uses: ./.github/workflows/live-tests.yml
+
+  live-tests-push:
+    name: 'Live Tests'
+    permissions:
+      contents: read
+    needs: [ php-build-test-push ]
+    if: ${{ github.event_name == 'push' }}
+    uses: ./.github/workflows/live-tests.yml
+
+  cypress-tests-pr:
+    name: 'Cypress Tests'
+    permissions:
+      contents: read
+    needs: [ php-build-test-pr ]
+    if: ${{ github.event_name == 'pull_request' && github.event.action != 'labeled' && github.event.action != 'unlabeled' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id }}
+    uses: ./.github/workflows/cypress-tests.yml
+    with:
+      cypress-project-id: ${{ vars.CYPRESS_PROJECT_ID }}
+    secrets:
+      CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+
+  cypress-tests-push:
+    name: 'Cypress Tests'
+    permissions:
+      contents: read
+    needs: [ php-build-test-push ]
+    if: ${{ github.event_name == 'push' }}
+    uses: ./.github/workflows/cypress-tests.yml
+    with:
+      cypress-project-id: ${{ vars.CYPRESS_PROJECT_ID }}
+    secrets:
+      CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+
+  preview-build-pr:
+    name: 'Create Preview Build'
+    permissions:
+      contents: read
+    needs: [ live-tests-pr, cypress-tests-pr ]
+    if: ${{ github.event_name == 'pull_request' && github.event.action != 'labeled' && github.event.action != 'unlabeled' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id }}
+    uses: ./.github/workflows/preview-build.yml
+    with:
+      write-cache: false
+
+  preview-build-push:
+    name: 'Create Preview Build'
+    permissions:
+      contents: read
+      packages: write
+    needs: [ live-tests-push, cypress-tests-push ]
+    if: ${{ github.event_name == 'push' && github.ref != 'refs/heads/main' }}
+    uses: ./.github/workflows/preview-build.yml
+    with:
+      write-cache: true
+
+  preview-docker:
+    name: 'Build and Push Preview Docker Image'
+    permissions:
+      contents: read
+      packages: write
+    needs: [ live-tests-push, cypress-tests-push ]
+    if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
+    uses: ./.github/workflows/docker-build.yml
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+    with:
+      target: runtime
+      cache-scope: cache-preview
+      extract-release-tree: true
+      release-tree-artifact-name: preview-build
+      meta-images: fossbilling/fossbilling
+      meta-tags: |
+        type=raw,value=preview
+      meta-flavor: |
+        latest=false
+      build-args: |
+        FOSSBILLING_VERSION=${{ github.sha }}
+        FOSSBILLING_VERSION_TRUNCATE=7
+        SENTRY_DSN=${{ vars.SENTRY_DSN }}
 
   upload-preview:
     name: 'Upload Preview Release'
-    permissions:
-      contents: read
-    needs: [ preview-build ]
-    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
+    needs: [ preview-build-pr, preview-build-push, preview-docker ]
+    if: ${{ !cancelled() && (needs['preview-build-pr'].result == 'success' || needs['preview-build-push'].result == 'success' || needs['preview-docker'].result == 'success') }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: 'Download Preview Release Archive'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
@@ -81,10 +204,11 @@ jobs:
       - name: 'Extract Preview Release Archive'
         run: |
           mkdir ./src
-          tar -xvf /tmp/build.tar -C ./src
+          tar -xf /tmp/build.tar -C ./src
+          rm -f ./src/provenance.json
 
       - name: 'Create Downloadable Preview'
-        run: zip -r ../FOSSBilling-preview.zip .
+        run: zip -qr ../FOSSBilling-preview.zip .
         working-directory: ./src/
 
       - name: 'Move Downloadable Preview for Upload'
@@ -104,7 +228,7 @@ jobs:
           AWS_S3_ENDPOINT: ${{ secrets.AWS_S3_ENDPOINT }}
           AWS_REGION: 'auto'
           SOURCE_DIR: './dist'
-    
+
       - name: 'Upload Downloadable Preview to GitHub'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
@@ -112,21 +236,3 @@ jobs:
           name: 'FOSSBilling Preview'
           path: './src/*'
           retention-days: 14
-
-  deploy-preview-docker:
-    name: 'Build and Push Preview to Docker Hub'
-    permissions:
-      contents: read
-      actions: write
-    needs: [ preview-build ]
-    if: ${{ github.ref == 'refs/heads/main' }}
-    uses: FOSSBilling/.workflows/.github/workflows/docker-build-push.yml@3273310677c9a62cdb61aa6f8f0d3ec4993b1a8e
-    secrets:
-      dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME }}
-      dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
-    with:
-      download-artifact: 'preview-build'
-      platforms: '["linux/amd64", "linux/arm64"]'
-      repository-name: 'fossbilling/fossbilling'
-      tag-latest: 'false'
-      tag-raw: 'preview'

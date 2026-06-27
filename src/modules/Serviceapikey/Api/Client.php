@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Serviceapikey\Api;
 
-class Client extends \Api_Abstract
+class Client extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Used to reset / regenerate an API key. Useful in the event one is accidentally leaked.

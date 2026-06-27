@@ -33,19 +33,19 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                 'index' => 650,
                 'location' => 'security',
                 'label' => __trans('Security'),
-                'class' => 'lock-closed',
+                'class' => 'lock',
             ],
             'subpages' => [
                 [
                     'location' => 'security',
-                    'label' => __trans('Security dashboard'),
+                    'label' => __trans('Security Dashboard'),
                     'index' => 100,
                     'uri' => $this->di['url']->adminLink('security'),
                     'class' => '',
                 ],
                 [
                     'location' => 'security',
-                    'label' => __trans('IP lookup'),
+                    'label' => __trans('IP Lookup'),
                     'index' => 200,
                     'uri' => $this->di['url']->adminLink('security/iplookup'),
                     'class' => '',
@@ -75,7 +75,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
         if (isset($_GET['ip']) && filter_var($_GET['ip'], FILTER_VALIDATE_IP)) {
             try {
-                $record = $this->di['api']('admin')->Security_IP_Lookup(['ip' => $_GET['ip']]);
+                $record = $this->di['api_admin']->Security_IP_Lookup(['ip' => $_GET['ip']]);
             } catch (\Exception) {
             }
         }

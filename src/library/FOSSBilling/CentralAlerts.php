@@ -12,7 +12,6 @@ declare(strict_types=1);
 namespace FOSSBilling;
 
 use Pimple\Container;
-use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
@@ -106,7 +105,7 @@ class CentralAlerts implements InjectionAwareInterface
         $url = $this->_url . $endpoint;
 
         try {
-            $httpClient = HttpClient::create(['bindto' => BIND_TO]);
+            $httpClient = $this->di['http_client'];
             $response = $httpClient->request('GET', $url, [
                 'timeout' => 5,
                 'query' => [...$params, 'fossbilling_version' => Version::VERSION],

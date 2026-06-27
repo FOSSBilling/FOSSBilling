@@ -16,17 +16,24 @@ use FOSSBilling\Config;
 use FOSSBilling\Doctrine\DriverManagerFactory;
 use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\Environment;
-use League\CommonMark\Extension\DefaultAttributes\DefaultAttributesExtension;
-use League\Csv\Writer;
+use FOSSBilling\Http\RequestFactory;
+use FOSSBilling\Security\AuthenticationRequiredException;
+use FOSSBilling\Security\EmailValidationRequiredException;
 use RedBeanPHP\Facade;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
+use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpFoundation\Request;
-use Twig\Extension\CoreExtension;
-use Twig\Extension\DebugExtension;
-use Twig\Extension\StringLoaderExtension;
-use Twig\Extra\Intl\IntlExtension;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 $di = new Pimple\Container();
+
+global $request;
+
+if (!$request instanceof Request) {
+    throw new LogicException('The request must be initialized before loading the DI container.');
+}
 
 /*
  * Create a new logger instance and configures it based on the settings in the configuration file.
@@ -79,7 +86,7 @@ $di['crypt'] = function () use ($di) {
  */
 $di['pdo'] = function () {
     $debugConfig = Config::getProperty('debug_and_monitoring', []);
-    $dbConfig = Config::getProperty('db');
+    $dbConfig = DriverManagerFactory::getDatabaseConfig();
     $driverOptions = [
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     ];
@@ -114,8 +121,20 @@ $di['pdo'] = function () {
  * @return \Box_Database The new Box_Database object that was just created.
  */
 $di['db'] = function () use ($di) {
-    RedBeanPHP\R::setup($di['pdo']);
+    $pdo = $di->offsetGet('pdo');
+    if (!$pdo instanceof PDO) {
+        throw new RuntimeException('PDO service must resolve to a PDO instance');
+    }
+
+    RedBeanPHP\R::setup($pdo);
     RedBeanPHP\Util\DispenseHelper::setEnforceNamingPolicy(false);
+
+    // SECURITY: bind string literals as PARAM_STR, not PARAM_INT. Without
+    // this, ?hash=107 in /api/guest/invoice/get resolves to the invoice
+    // whose hash starts with '107' because MySQL coerces VARCHAR against
+    // int to a leading-digits match. Do not remove; see RedBeanBindingTest.
+    /* @phpstan-ignore-next-line Adapter::getDatabase() returns the abstract Driver; the concrete RPDO implements setUseStringOnlyBinding. */
+    Facade::getDatabaseAdapter()->getDatabase()->setUseStringOnlyBinding(true);
 
     $helper = new Box_BeanHelper();
     $helper->setDi($di);
@@ -224,9 +243,16 @@ $di['events_manager'] = function () use ($di) {
  * @param void
  *
  * @return \FOSSBilling\Session
+ *
+ * @var \FOSSBilling\Session $di['session']
  */
 $di['session'] = function () use ($di) {
-    $handler = new PdoSessionHandler($di['pdo']);
+    $pdo = $di->offsetGet('pdo');
+    if (!$pdo instanceof PDO) {
+        throw new RuntimeException('PDO service must resolve to a PDO instance');
+    }
+
+    $handler = new PdoSessionHandler($pdo);
     $session = new FOSSBilling\Session($handler);
     $session->setDi($di);
     $session->setupSession();
@@ -243,7 +269,7 @@ $di['session'] = function () use ($di) {
  *
  * @return Symfony\Component\HttpFoundation\Request
  */
-$di['request'] = fn (): Request => Request::createFromGlobals();
+$di['request'] = $request;
 
 /*
  * @param void
@@ -254,83 +280,26 @@ $di['request'] = fn (): Request => Request::createFromGlobals();
  */
 $di['cache'] = fn (): FilesystemAdapter => new FilesystemAdapter('sf_cache', 24 * 60 * 60, PATH_CACHE);
 
+$di['rate_limit_cache'] = fn (): FilesystemAdapter => new FilesystemAdapter('rate_limit', 24 * 60 * 60, PATH_CACHE);
+
+$di['http_client'] = fn (): HttpClientInterface => HttpClient::create(['bindto' => BIND_TO]);
+
+$di['rate_limiter'] = function () use ($di) {
+    $rateLimiter = new FOSSBilling\Security\RateLimiter();
+    $rateLimiter->setDi($di);
+
+    return $rateLimiter;
+};
+
 /*
  *
  * @param void
  *
  * @return Box_Authorization
+ *
+ * @var Box_Authorization $di['auth']
  */
 $di['auth'] = fn (): Box_Authorization => new Box_Authorization($di);
-
-/*
- * Creates a new Twig environment that's configured for FOSSBilling.
- *
- * @param void
- *
- * @return \Twig\Environment The new Twig environment that was just created.
- *
- * @throws \Twig\Error\LoaderError If the Twig environment could not be created.
- * @throws \Twig\Error\RuntimeError If an error occurs while rendering a template.
- * @throws \Twig\Error\SyntaxError If a template is malformed.
- */
-$di['twig'] = $di->factory(function () use ($di) {
-    $options = Config::getProperty('twig');
-
-    // Get internationalisation settings from config, or use sensible defaults for
-    // missing required settings.
-    $locale = FOSSBilling\i18n::getActiveLocale();
-    $timezone = Config::getProperty('i18n.timezone', 'UTC');
-    $date_format = strtoupper((string) Config::getProperty('i18n.date_format', 'MEDIUM'));
-    $time_format = strtoupper((string) Config::getProperty('i18n.time_format', 'SHORT'));
-    $datetime_pattern = Config::getProperty('i18n.datetime_pattern');
-
-    $loader = new Twig\Loader\ArrayLoader();
-    $twig = new Twig\Environment($loader, $options);
-
-    $box_extensions = new Box_TwigExtensions();
-    $box_extensions->setDi($di);
-
-    // $twig->addExtension(new OptimizerExtension());
-    $twig->addExtension(new StringLoaderExtension());
-    $twig->addExtension(new DebugExtension());
-    $twig->addExtension($box_extensions);
-    $twig->getExtension(CoreExtension::class)->setTimezone($timezone);
-
-    $dateFormatter = new IntlDateFormatter($locale, constant("\IntlDateFormatter::$date_format"), constant("\IntlDateFormatter::$time_format"), $timezone, null, $datetime_pattern);
-
-    $twig->addExtension(new IntlExtension($dateFormatter));
-
-    // add globals
-    if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
-        $_GET['ajax'] = true;
-    }
-
-    // CSRF token - cookie-based double-submit pattern.
-    $session = $di['session'];
-    $csrfToken = $session->get('csrf_token');
-    if (empty($csrfToken)) {
-        $csrfToken = bin2hex(random_bytes(32));
-        $session->set('csrf_token', $csrfToken);
-    }
-    setcookie('csrf_token', (string) $csrfToken, [
-        'expires' => 0,
-        'path' => '/',
-        'samesite' => 'Strict',
-        'secure' => isset($_SERVER['HTTPS']),
-    ]);
-
-    $redirectUri = $session->get('redirect_uri');
-    if (!empty($redirectUri)) {
-        $twig->addGlobal('redirect_uri', $redirectUri);
-    }
-
-    $twig->addGlobal('CSRFToken', $csrfToken);
-    $twig->addGlobal('request', $_GET);
-    $twig->addGlobal('guest', $di['api_guest']);
-    $twig->addGlobal('FOSSBillingVersion', FOSSBilling\Version::VERSION);
-
-    return $twig;
-});
 
 /*
  * Checks whether a client is logged in and throws an exception or redirects to the login page if not.
@@ -344,18 +313,10 @@ $di['twig'] = $di->factory(function () use ($di) {
  * @throws \HttpException If a client is not logged in and the request is a browser request.
  */
 $di['is_client_logged'] = function () use ($di) {
-    if (!$di['auth']->isClientLoggedIn()) {
-        $api_str = '/api/';
-        $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
-
-        if (strncasecmp((string) $url, $api_str, strlen($api_str)) === 0) {
-            // Throw Exception if api request
-            throw new Exception('Client is not logged in');
-        }
-        // Redirect to login page if browser request
-        $di['set_return_uri'];
-        $login_url = $di['url']->link('login');
-        header("Location: $login_url");
+    /** @var Box_Authorization $auth */
+    $auth = $di['auth'];
+    if (!$auth->isClientLoggedIn()) {
+        throw new AuthenticationRequiredException('client');
     }
 
     return true;
@@ -385,17 +346,10 @@ $di['is_client_email_validated'] = $di->protect(function ($model) use ($di) {
  *
  */
 $di['is_admin_logged'] = function () use ($di) {
-    if (!$di['auth']->isAdminLoggedIn()) {
-        $url = $_GET['_url'] ?? $_SERVER['PATH_INFO'] ?? '';
-
-        if (str_starts_with((string) $url, '/api/')) {
-            throw new Exception('Admin is not logged in');
-        }
-
-        $di['set_return_uri'];
-
-        header("Location: {$di['url']->adminLink('staff/login')}");
-        exit;
+    /** @var Box_Authorization $auth */
+    $auth = $di['auth'];
+    if (!$auth->isAdminLoggedIn()) {
+        throw new AuthenticationRequiredException('admin');
     }
 
     return true;
@@ -410,7 +364,9 @@ $di['is_admin_logged'] = function () use ($di) {
  */
 $di['loggedin_client'] = function () use ($di) {
     $di['is_client_logged'];
-    $client_id = $di['session']->get('client_id');
+    /** @var FOSSBilling\Session $session */
+    $session = $di['session'];
+    $client_id = $session->get('client_id');
 
     try {
         $client = $di['db']->getExistingModelById('Client', $client_id);
@@ -421,21 +377,18 @@ $di['loggedin_client'] = function () use ($di) {
         return $client;
     } catch (Exception) {
         // Either the account was deleted or the session is invalid. Either way, remove the ID from the session so the system doesn't consider someone logged in
-        $di['session']->delete('client_id');
+        $session->delete('client_id');
 
-        // Then either give an appropriate API response or redirect to the login page.
-        $api_str = '/api/';
-        $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
-        if (strncasecmp((string) $url, $api_str, strlen($api_str)) === 0) {
-            // Throw Exception if api request
-            throw new Exception('Client is not logged in');
-        }
-        // Redirect to login page if browser request
-        $login_url = $di['url']->link('login');
-        header("Location: $login_url");
-        exit;
+        throw new AuthenticationRequiredException('client');
     }
 };
+
+/*
+ * Signals whether the current request is executing cron tasks (CLI or HTTP-triggered).
+ * Set to true by Cron\Service::runCrons(). Used to scope cron-admin identity fallbacks
+ * so they cannot fire for unauthenticated requests outside of a genuine cron run.
+ */
+$di['is_cron'] = false;
 
 /*
  * Returns an existing logged-in admin model object.
@@ -452,7 +405,9 @@ $di['loggedin_admin'] = function () use ($di) {
     }
 
     $di['is_admin_logged'];
-    $admin = $di['session']->get('admin');
+    /** @var FOSSBilling\Session $session */
+    $session = $di['session'];
+    $admin = $session->get('admin');
 
     try {
         $model = $di['db']->getExistingModelById('Admin', $admin['id']);
@@ -463,35 +418,29 @@ $di['loggedin_admin'] = function () use ($di) {
         return $model;
     } catch (Exception) {
         // Either the account was deleted or the session is invalid. Either way, remove the ID from the session so the system doesn't consider someone logged in
-        $di['session']->delete('admin');
+        $session->delete('admin');
 
-        // Then either give an appropriate API response or redirect to the login page.
-        $api_str = '/api/';
-        $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
-        if (strncasecmp((string) $url, $api_str, strlen($api_str)) === 0) {
-            // Throw Exception if api request
-            throw new Exception('Admin is not logged in');
-        }
-        // Redirect to login page if browser request
-        $login_url = $di['url']->adminLink('staff/login');
-        header("Location: $login_url");
-        exit;
+        throw new AuthenticationRequiredException('admin');
     }
 };
 
 $di['set_return_uri'] = function () use ($di): void {
-    $url = $_GET['_url'] ?? $_SERVER['PATH_INFO'] ?? '';
-    unset($_GET['_url']);
+    $request = $di['request'];
+    $url = RequestFactory::getRoutePath($request);
+    $query = $request->query->all();
+    unset($query['_url']);
 
-    if (str_starts_with((string) $url, ADMIN_PREFIX)) {
-        $url = substr((string) $url, strlen(ADMIN_PREFIX));
+    if (str_starts_with($url, ADMIN_PREFIX)) {
+        $url = substr($url, strlen(ADMIN_PREFIX));
     }
 
-    if ($_GET) {
-        $url .= '?' . http_build_query($_GET);
+    if (!empty($query)) {
+        $url .= '?' . http_build_query($query);
     }
 
-    $di['session']->set('redirect_uri', $url);
+    /** @var FOSSBilling\Session $session */
+    $session = $di['session'];
+    $session->set('redirect_uri', $url);
 };
 
 /*
@@ -499,11 +448,11 @@ $di['set_return_uri'] = function () use ($di): void {
  *
  * @param string $role The role to create the API object for. Can be 'guest', 'client', or 'admin'.
  *
- * @return \Api_Handler The new API object that was just created.
+ * @return \FOSSBilling\Api\Identity The new API identity wrapper that was just created.
  *
  * @throws \Exception If the specified role is not recognized or if a client is trying to use the API while their email is not valid.
  */
-$di['api'] = $di->protect(function ($role) use ($di) {
+$di['api_identity'] = $di->protect(function ($role) use ($di) {
     $identity = match ($role) {
         'guest' => new Model_Guest(),
         'client' => $di['loggedin_client'],
@@ -513,22 +462,31 @@ $di['api'] = $di->protect(function ($role) use ($di) {
 
     // Checks to enforce email validation for clients
     if ($role === 'client' && !$di['is_client_email_validated']($identity)) {
-        $url = $_GET['_url'] ?? ($_SERVER['PATH_INFO'] ?? '');
+        $routePath = RequestFactory::getRoutePath($di['request']);
+        $isApiRequest = str_starts_with($routePath, '/api/');
+        $isAllowedClientApi = str_starts_with($routePath, '/api/client/client/')
+            || str_starts_with($routePath, '/api/client/profile/');
+        $isAllowedClientPage = str_starts_with($routePath, '/client/profile')
+            || str_starts_with($routePath, '/client/logout');
 
-        // If it's an API request, only allow requests to the "client" and "profile" modules so they can change their email address or resend the confirmation email.
-        if (strncasecmp((string) $url, '/api/', strlen('/api/')) === 0) {
-            if (strncasecmp((string) $url, '/api/client/client/', strlen('/api/client/client/')) !== 0 && strncasecmp((string) $url, '/api/client/profile/', strlen('/api/client/profile/')) !== 0) {
-                throw new Exception('Please check your mailbox and confirm your email address.');
-            }
-        } elseif (strncasecmp((string) $url, '/client', strlen('/client')) !== 0) {
-            // If they aren't attempting to access their profile, redirect them to it.
-            $login_url = $di['url']->link('client/profile');
-            header("Location: $login_url");
-            exit;
+        if (($isApiRequest && !$isAllowedClientApi) || (!$isApiRequest && !$isAllowedClientPage)) {
+            throw new EmailValidationRequiredException();
         }
     }
 
-    $api = new Api_Handler($identity);
+    return new FOSSBilling\Api\Identity($identity);
+});
+
+$di['api_dispatcher'] = function () use ($di): FOSSBilling\Api\Dispatcher {
+    $dispatcher = new FOSSBilling\Api\Dispatcher();
+    $dispatcher->setDi($di);
+
+    return $dispatcher;
+};
+
+$di['api_proxy'] = $di->protect(function (string $role) use ($di): FOSSBilling\Api\Proxy {
+    $identity = $di['api_identity']($role);
+    $api = new FOSSBilling\Api\Proxy($identity->getIdentity());
     $api->setDi($di);
 
     return $api;
@@ -538,35 +496,35 @@ $di['api'] = $di->protect(function ($role) use ($di) {
  *
  * @param void
  *
- * @return \Api_Handler
+ * @return \FOSSBilling\Api\Proxy
  */
-$di['api_guest'] = fn () => $di['api']('guest');
+$di['api_guest'] = fn () => $di['api_proxy']('guest');
 
 /*
  *
  * @param void
  *
- * @return \Api_Handler
+ * @return \FOSSBilling\Api\Proxy
  */
-$di['api_client'] = fn () => $di['api']('client');
+$di['api_client'] = fn () => $di['api_proxy']('client');
 
 /*
  *
  * @param void
  *
- * @return \Api_Handler
+ * @return \FOSSBilling\Api\Proxy
  */
-$di['api_admin'] = fn () => $di['api']('admin');
+$di['api_admin'] = fn () => $di['api_proxy']('admin');
 
 /*
  *
  * @param void
  *
- * @return \Api_Handler Internal-only system API handler used for cron/background processing.
+ * @return \FOSSBilling\Api\Proxy Internal-only system API proxy used for cron/background processing.
  */
 $di['api_system'] = function () use ($di) {
     $identity = $di['mod_service']('staff')->getCronAdmin();
-    $api = new Api_Handler($identity);
+    $api = new FOSSBilling\Api\Proxy($identity);
     $api->setDi($di);
 
     return $api;
@@ -631,6 +589,19 @@ $di['updater'] = function () use ($di) {
     return $updater;
 };
 
+$di['update_finalization'] = function () use ($di) {
+    $finalization = new FOSSBilling\UpdateFinalization();
+    $finalization->setDi($di);
+
+    return $finalization;
+};
+
+$di['update_readiness'] = new FOSSBilling\UpdateReadinessCheck(
+    \PATH_ROOT,
+    \PATH_DATA,
+    \PATH_CONFIG,
+);
+
 /*
  * Creates a new server manager object and returns it.
  *
@@ -640,7 +611,15 @@ $di['updater'] = function () use ($di) {
  * @return \Server_Manager The new server manager object that was just created.
  */
 $di['server_manager'] = $di->protect(function ($manager, $config) use ($di) {
-    $class = sprintf('Server_Manager_%s', ucfirst((string) $manager));
+    $managerName = ucfirst((string) $manager);
+    $class = sprintf('Server_Manager_%s', $managerName);
+
+    if (!class_exists($class)) {
+        $file = Path::join(PATH_LIBRARY, 'Server', 'Manager', $managerName . '.php');
+        if ((new Filesystem())->exists($file)) {
+            require_once $file;
+        }
+    }
 
     $s = new $class($config);
     $s->setLog($di['logger']);
@@ -705,7 +684,7 @@ $di['table'] = $di->protect(function ($name) use ($di) {
  * @return \Box\Mod\Servicelicense\Server
  */
 $di['license_server'] = function () use ($di) {
-    $server = new Box\Mod\Servicelicense\Server($di['logger']);
+    $server = new Box\Mod\Servicelicense\Server();
     $server->setDi($di);
 
     return $server;
@@ -747,75 +726,15 @@ $di['translate'] = $di->protect(function ($textDomain = '') {
     return $tr;
 });
 
-/*
- * Creates a CSV export of data from a specified table and sends it to the browser.
- *
- * @param string $table Name of the table to export data from
- * @param string $outputName Name of the exported CSV file
- * @param array $headers Optional array of column headers for the CSV file
- * @param int $limit Optional limit of the number of rows to export from the table
- * @return void
- */
-$di['table_export_csv'] = $di->protect(function (string $table, string $outputName = 'export.csv', array $headers = [], int $limit = 0) use ($di): void {
-    if ($limit > 0) {
-        $beans = $di['db']->findAll($table, 'LIMIT :limit', [':limit' => $limit]);
-    } else {
-        $beans = $di['db']->findAll($table);
+$di['csv_response_factory'] = function () use ($di): FOSSBilling\Http\CsvResponseFactory {
+    $database = $di->offsetGet('db');
+    if (!$database instanceof Box_Database) {
+        throw new RuntimeException('Database service must resolve to a Box_Database instance');
     }
 
-    $rows = array_map(fn ($bean) => $bean->export(), $beans);
+    return new FOSSBilling\Http\CsvResponseFactory($database);
+};
 
-    // If we've been provided a list of headers, use that. Otherwise, pull the keys from the rows and use that for the CSV header
-    if ($headers) {
-        $rows = array_map(fn ($row): array => array_intersect_key($row, array_flip($headers)), $rows);
-    } else {
-        $headers = array_keys(reset($rows));
-    }
-
-    $csv = Writer::from(new SplTempFileObject());
-    $csv->addFormatter(new League\Csv\EscapeFormula());
-    $csv->insertOne($headers);
-    $csv->insertAll($rows);
-
-    $csv->download($outputName);
-
-    // Prevent further output from being added to the end of the CSV
-    exit;
-});
-
-/*
- * Converts markdown into HTML and returns the result.
- *
- * @param string|null $content The content to convert
- *
- * @return string
- */
-$di['parse_markdown'] = $di->protect(function (?string $content, bool $addAttributes = true) use ($di) {
-    $content ??= '';
-    $defaultAttributes = [];
-
-    // If we are defining the default attributes, build the list and add them to the config
-    if ($addAttributes) {
-        $attributes = $di['mod_service']('theme')->getDefaultMarkdownAttributes();
-        foreach ($attributes as $class => $classAttributes) {
-            $reflectionClass = new ReflectionClass($class);
-            $fqcn = $reflectionClass->getName();
-            $defaultAttributes[$fqcn] = $classAttributes;
-        }
-    }
-
-    $parser = new League\CommonMark\GithubFlavoredMarkdownConverter([
-        'html_input' => 'escape',
-        'allow_unsafe_links' => false,
-        'max_nesting_level' => 50,
-        'default_attributes' => $defaultAttributes,
-    ]);
-
-    if ($addAttributes) {
-        $parser->getEnvironment()->addExtension(new DefaultAttributesExtension());
-    }
-
-    return $parser->convert($content);
-});
+$di['twig_factory'] = fn (): FOSSBilling\Twig\TwigFactory => new FOSSBilling\Twig\TwigFactory($di);
 
 return $di;

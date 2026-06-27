@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Serviceapikey;
 
+use Box\Mod\Product\Entity\Product;
 use FOSSBilling\InjectionAwareInterface;
 use RedBeanPHP\OODBBean;
 
@@ -29,9 +30,20 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function attachOrderConfig(\Model_Product $product, array $data): array
+    public function getModulePermissions(): array
     {
-        $config = json_decode($product->config ?? '', true) ?? [];
+        return [
+            'manage' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage API keys'),
+                'description' => __trans('Allows the staff member to update and reset API keys.'),
+            ],
+        ];
+    }
+
+    public function attachOrderConfig(Product $product, array $data): array
+    {
+        $config = json_decode($product->getConfig() ?? '', true) ?? [];
 
         return array_merge($config, $data);
     }
@@ -130,48 +142,6 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Checks if an API key is valid or not and returns that + any configured custom parameters.
-     *
-     *                    - 'key' What API key to check
-     */
-    public function getInfo(array $data): array
-    {
-        if (empty($data['key'])) {
-            throw new \FOSSBilling\Exception('You must provide an API key to check it\'s validity.');
-        }
-
-        /** @var OODBBean|null $model */
-        $model = $this->di['db']->findOne('service_apikey', 'api_key = :api_key', [':api_key' => $data['key']]);
-        if (is_null($model)) {
-            throw new \FOSSBilling\Exception('API key does not exist');
-        }
-
-        // Load the stored JSON config from the DB
-        $rawConfig = json_decode($model->config ?? '', true);
-        $strippedConfig = [];
-        if (!is_array($rawConfig)) {
-            $rawConfig = [];
-        }
-
-        // Then loop through it and only select the custom parameters, removing the 'custom_' prefix & converting numerical strings to a float.
-        foreach ($rawConfig as $key => $value) {
-            if (str_starts_with((string) $key, 'custom_')) {
-                $name = substr((string) $key, 7);
-                if (is_numeric($value)) {
-                    $strippedConfig[$name] = floatval($value);
-                } else {
-                    $strippedConfig[$name] = $value;
-                }
-            }
-        }
-
-        return [
-            'valid' => $this->isActive($model),
-            'config' => $strippedConfig,
-        ];
-    }
-
-    /**
      * Used to reset an API key using the API key generator.
      *
      * @param array $data An array containing what API key to reset. At least one of the possible identification methods must be provided.
@@ -197,12 +167,16 @@ class Service implements InjectionAwareInterface
         }
 
         $client = null;
-        if ($this->di['is_client_logged']) {
+        if ($this->di['auth']->isClientLoggedIn()) {
             $client = $this->di['loggedin_client'];
         }
 
         if (!is_null($client) && $client->id !== $model->client_id) {
             throw new \FOSSBilling\Exception('API key does not exist');
+        }
+
+        if (!$this->isActive($model)) {
+            throw new \FOSSBilling\InformationException('Order is not active');
         }
 
         $config = json_decode($model->config ?? '', true);

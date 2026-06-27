@@ -1,11 +1,14 @@
 .vscode
 ._*
 .DS_Store
+.opencode
 /cache
 /src/config.php
 /src/data/log/*
 /src/data/cache/*
+/src/data/update-finalization.json
 !/src/data/cache/.gitkeep
+/src/public/assets
 /src/vendor/*
 build
 
@@ -13,10 +16,6 @@ build
 DOCKER_ENV
 docker_tag
 Dockerfile-php-build
-
-### phpunit/phpunit ###
-.phpunit.result.cache
-.phpunit.cache/test-results
 
 ### node_modules ###
 node_modules
@@ -26,3 +25,6 @@ node_modules
 src/install/php_error.log
 src/themes/huraga/config/settings_data.json
 output.log
+
+### Cypress ###
+tests/E2E/Cypress/artifacts

@@ -1,4 +1,5 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+{% set active_menu = 'invoices' %}
 
 {% block meta_title %}{{ 'Thank You'|trans }}{% endblock %}
 {% block breadcrumb %}<li class="breadcrumb-item active" aria-current="page">{{ 'Thank You'|trans }}</li>{% endblock %}
@@ -19,7 +20,7 @@
 
             <script>
                 setTimeout(function() {
-                    window.location = "{{ ('/invoice/' ~ invoice.hash)|link }}";
+                    window.location = '{{ "invoice/#{invoice.hash}"|url }}';
                 }, 1 * 60 * 1000);
             </script>
         </div>

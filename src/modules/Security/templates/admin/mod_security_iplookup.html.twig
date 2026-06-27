@@ -1,36 +1,42 @@
 {% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
 
-{% import 'macro_functions.html.twig' as mf %}
+{% block meta_title %}{{ 'IP Lookup'|trans }}{% endblock %}
 
-{% block meta_title %}{{ 'IP lookup'|trans }}{% endblock %}
-
-{% set active_menu = 'system' %}
+{% set active_menu = 'security' %}
 
 {% block content %}
 <div class="card">
     <div class="card-header">
         <div>
-            <h3 class="card-title">{{ 'IP lookup'|trans }}</h3>
+            <h3 class="card-title">{{ 'IP Lookup'|trans }}</h3>
+            <p class="card-subtitle">{{ 'Lookup IP addresses and review country and ASN ownership details.'|trans }}</p>
         </div>
     </div>
-    <div class="card-body border-bottom">
-        <span class="card-subtitle">{{ 'Lookup & discover info about IP addresses.'|trans }}</span>
-    </div>
-    <div class="card-body container">
-        <form method="post" action="{{'api/admin/security/ip_lookup'|link }}" {{ fb_api_form({callback: 'appendResult'}) }}>
-            <div class="d-flex">
-                <input type="text" name="ip" class="form-control me-2" placeholder="{{ 'IP address to lookup'|trans }}" {% if request.ip %}value="{{ request.ip }}"{% endif %}>
-                <button class="btn btn-primary" type="submit">{{ 'Submit'|trans }}</button>
+    <div class="card-body">
+        <form method="post" action="{{'security/ip_lookup'|api_url }}" {{ fb_api_form({callback: 'appendResult'}) }}>
+            <div class="row g-3 align-items-end">
+                <div class="col-lg">
+                    <label class="form-label" for="security-ip-lookup">{{ 'IP Address'|trans }}</label>
+                    <input type="text" id="security-ip-lookup" name="ip" class="form-control" placeholder="{{ 'Enter an IPv4 or IPv6 address'|trans }}" {% if request.ip %}value="{{ request.ip }}"{% endif %}>
+                </div>
+                <div class="col-lg-auto">
+                    <button class="btn btn-primary" type="submit">
+                        <svg class="icon">
+                            <use href="#search" />
+                        </svg>
+                        {{ 'Lookup'|trans }}
+                    </button>
+                </div>
             </div>
         </form>
 
         <div class="table-responsive mt-4">
-            <table class="table table-striped" id="results">
+            <table class="table card-table table-vcenter table-striped" id="results">
                 <thead>
                     <tr>
                         <th scope="col">{{ 'IP Address'|trans }}</th>
                         <th scope="col">{{ 'Country'|trans }}</th>
-                        <th scope="col">ASN</th>
+                        <th scope="col">{{ 'ASN'|trans }}</th>
                         <th scope="col">{{ 'ASN Organization'|trans }}</th>
                     </tr>
                 </thead>
@@ -38,9 +44,13 @@
                     {% if record %}
                     <tr>
                         <td>{{ record.ip.address }} ({{ record.ip.type }})</td>
-                        <td>{{ record.country.flag }} {{ record.country.name }}</td>
-                        <td>{{ record.asn.asnNumber }}</td>
-                        <td>{{ record.asn.asnOrg }}</td>
+                        <td>{{ record.country.flag|default('') }} {{ record.country.name|default('Unknown'|trans) }}</td>
+                        <td>{{ record.asn.asnNumber|default('Unknown'|trans) }}</td>
+                        <td>{{ record.asn.asnOrg|default('Unknown'|trans) }}</td>
+                    </tr>
+                    {% else %}
+                    <tr class="ip-lookup-empty-state">
+                        <td class="text-secondary" colspan="4">{{ 'Enter an IP address above to review its country and ASN details.'|trans }}</td>
                     </tr>
                     {% endif %}
                 </tbody>
@@ -48,7 +58,7 @@
         </div>
     </div>
     <div class="card-footer text-center">
-        <p>{{ 'ASN stands for autonomous system number. IP address info may not always be accurate.'|trans }}</p>
+        <p class="mb-0 text-secondary">{{ 'ASN stands for autonomous system number. IP address information may not always be accurate.'|trans }}</p>
     </div>
 </div>
 {% endblock %}
@@ -57,6 +67,7 @@
 <script>
     function appendResult(result) {
         const tableBody = document.querySelector('#results tbody');
+        const emptyState = tableBody.querySelector('.ip-lookup-empty-state');
         const newRow = document.createElement('tr');
 
         const addressCell = document.createElement('td');
@@ -75,6 +86,10 @@
         newRow.appendChild(countryCell);
         newRow.appendChild(asnNumCell);
         newRow.appendChild(asnOrgCell);
+
+        if (emptyState) {
+            emptyState.remove();
+        }
 
         tableBody.insertBefore(newRow, tableBody.firstChild);
     }

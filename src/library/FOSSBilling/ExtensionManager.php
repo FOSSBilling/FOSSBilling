@@ -162,17 +162,13 @@ class ExtensionManager implements InjectionAwareInterface
         return $this->di['cache']->get($key, function (ItemInterface $item) use ($url, $params) {
             $item->expiresAfter(60 * 60);
 
-            $httpClient = \Symfony\Component\HttpClient\HttpClient::create(['bindto' => BIND_TO]);
+            $httpClient = $this->di['http_client'];
             $response = $httpClient->request('GET', $url, [
                 'timeout' => 5,
                 'query' => [...$params, 'fossbilling_version' => Version::VERSION],
             ]);
 
             $json = $response->toArray();
-
-            if (is_null($json)) {
-                throw new Exception('Unable to connect to the FOSSBilling extension directory.', null, 1545);
-            }
 
             if (isset($json['error']) && is_array($json['error'])) {
                 throw new Exception($json['error']['message'], null, 746);

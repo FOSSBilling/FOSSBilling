@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Orderbutton\Controller;
 
+use Symfony\Component\HttpFoundation\Response;
+
 class Client implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
@@ -37,10 +39,8 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_orderbutton_index');
     }
 
-    public function get_js(\Box_App $app): string
+    public function get_js(\Box_App $app): Response
     {
-        header('Content-Type: application/javascript');
-
-        return $app->render('mod_orderbutton_js');
+        return $app->renderResponse('mod_orderbutton_embed_js', [], 200, ['Content-Type' => 'application/javascript']);
     }
 }

@@ -16,7 +16,7 @@ use Box\Mod\News\Entity\Post;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
-class Admin extends \Api_Abstract
+class Admin extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get paginated list of news items (any status).
@@ -27,13 +27,15 @@ class Admin extends \Api_Abstract
      */
     public function get_list(array $data): array
     {
+        $this->checkPermissions('news', 'view');
+
         /** @var \Box\Mod\News\Repository\PostRepository $repo */
         $repo = $this->getService()->getPostRepository();
 
         // Repository method returns a QueryBuilder with filters applied
         $qb = $repo->getSearchQueryBuilder($data);
 
-        return $this->di['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
+        return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
     }
 
     /**
@@ -45,6 +47,8 @@ class Admin extends \Api_Abstract
      */
     public function get(array $data): array
     {
+        $this->checkPermissions('news', 'view');
+
         $id = $data['id'] ?? null;
         $slug = $data['slug'] ?? null;
 
@@ -67,7 +71,7 @@ class Admin extends \Api_Abstract
         }
 
         /** @todo Doctrine: Replace with actual Admin entity once it's migrated to Doctrine. */
-        $admin = $this->di['db']->getRow('SELECT name FROM admin WHERE id = :id', ['id' => $post->getAdminId()]);
+        $admin = $this->getDi()['db']->getRow('SELECT name FROM admin WHERE id = :id', ['id' => $post->getAdminId()]);
 
         $post->setAdminData($admin);
 
@@ -80,6 +84,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Post ID was not passed'])]
     public function update(array $data): bool
     {
+        $this->checkPermissions('news', 'manage');
+
         /** @var \Box\Mod\News\Repository\PostRepository $repo */
         $repo = $this->getService()->getPostRepository();
 
@@ -109,10 +115,10 @@ class Admin extends \Api_Abstract
 
         $post->setAdminId($this->getIdentity()->id);
 
-        $this->di['em']->persist($post);
-        $this->di['em']->flush();
+        $this->getDi()['em']->persist($post);
+        $this->getDi()['em']->flush();
 
-        $this->di['logger']->info('Updated news item #%s', $post->getId());
+        $this->getDi()['logger']->info('Updated news item #%s', $post->getId());
 
         return true;
     }
@@ -125,17 +131,19 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['title' => 'Post title was not passed'])]
     public function create(array $data): int
     {
-        $post = new Post($data['title'], $this->di['tools']->slug($data['title']));
+        $this->checkPermissions('news', 'manage');
+
+        $post = new Post($data['title'], $this->getDi()['tools']->slug($data['title']));
 
         $post->setAdminId($this->getIdentity()->id)
              ->setContent($data['content'] ?? null)
              ->setStatus($data['status'] ?? Post::STATUS_ACTIVE)
              ->setDescription($data['description'] ?? null);
 
-        $this->di['em']->persist($post);
-        $this->di['em']->flush();
+        $this->getDi()['em']->persist($post);
+        $this->getDi()['em']->flush();
 
-        $this->di['logger']->info('Created news item #%s', $post->getId());
+        $this->getDi()['logger']->info('Created news item #%s', $post->getId());
 
         return $post->getId();
     }
@@ -146,6 +154,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Post ID was not passed'])]
     public function delete(array $data): bool
     {
+        $this->checkPermissions('news', 'manage');
+
         /** @var \Box\Mod\News\Repository\PostRepository $repo */
         $repo = $this->getService()->getPostRepository();
 
@@ -155,10 +165,10 @@ class Admin extends \Api_Abstract
             throw new \FOSSBilling\Exception('News item not found');
         }
 
-        $this->di['em']->remove($post);
-        $this->di['em']->flush();
+        $this->getDi()['em']->remove($post);
+        $this->getDi()['em']->flush();
 
-        $this->di['logger']->info('Removed news item #%s', $data['id']);
+        $this->getDi()['logger']->info('Removed news item #%s', $data['id']);
 
         return true;
     }
@@ -169,12 +179,14 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['ids' => 'IDs were not passed'])]
     public function batch_delete(array $data): bool
     {
+        $this->checkPermissions('news', 'manage');
+
         /** @var \Box\Mod\News\Repository\PostRepository $repo */
         $repo = $this->getService()->getPostRepository();
 
         $count = $repo->deleteByIds($data['ids']);
 
-        $this->di['logger']->info('Removed %s news items', $count);
+        $this->getDi()['logger']->info('Removed %s news items', $count);
 
         return true;
     }

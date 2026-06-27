@@ -149,21 +149,6 @@ CREATE TABLE `admin_password_reset` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `api_request`
---
-
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `api_request` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `ip` varchar(45) DEFAULT NULL,
-  `request` text,
-  `created_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
 -- Table structure for table `cart`
 --
 
@@ -234,8 +219,6 @@ CREATE TABLE `client` (
   `state` varchar(100) DEFAULT NULL,
   `postcode` varchar(100) DEFAULT NULL,
   `country` varchar(100) DEFAULT NULL,
-  `document_type` varchar(50) DEFAULT NULL,
-  `document_nr` varchar(20) DEFAULT NULL,
   `notes` text,
   `currency` varchar(10) DEFAULT NULL,
   `lang` varchar(10) DEFAULT NULL,
@@ -405,15 +388,13 @@ CREATE TABLE `client_password_reset` (
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `currency` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `title` varchar(50) DEFAULT NULL,
   `code` varchar(3) DEFAULT NULL,
   `is_default` tinyint(1) DEFAULT '0',
   `conversion_rate` decimal(13,6) DEFAULT '1.000000',
-  `format` varchar(30) DEFAULT NULL,
-  `price_format` varchar(50) DEFAULT '1',
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `code` (`code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -434,6 +415,8 @@ CREATE TABLE `email_template` (
   `content` text,
   `description` text,
   `vars` text,
+  `last_error` text DEFAULT NULL,
+  `error_checked_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `action_code` (`action_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -451,7 +434,8 @@ CREATE TABLE `extension` (
   `name` varchar(255) DEFAULT NULL,
   `status` varchar(100) DEFAULT NULL,
   `version` varchar(100) DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `type_name` (`type`,`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -576,6 +560,7 @@ CREATE TABLE `invoice` (
   `paid_at` datetime DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
+  `hash_expires_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `hash` (`hash`),
   KEY `client_id_idx` (`client_id`)
@@ -871,43 +856,33 @@ CREATE TABLE `promo` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `queue`
+-- Table structure for table `promo_redemption`
 --
 
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `queue` (
+CREATE TABLE `promo_redemption` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `name` varchar(100) DEFAULT NULL,
-  `module` varchar(255) DEFAULT NULL,
-  `timeout` bigint(20) DEFAULT NULL,
-  `iteration` int(10) DEFAULT NULL,
-  `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `queue_message`
---
-
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `queue_message` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `queue_id` bigint(20) DEFAULT NULL,
-  `handle` char(32) DEFAULT NULL,
-  `handler` varchar(255) DEFAULT NULL,
-  `body` longblob,
-  `hash` char(32) DEFAULT NULL,
-  `timeout` double(18,2) DEFAULT NULL,
-  `log` text,
-  `execute_at` datetime DEFAULT NULL,
+  `promo_id` bigint(20) DEFAULT NULL,
+  `client_id` bigint(20) DEFAULT NULL,
+  `client_order_id` bigint(20) DEFAULT NULL,
+  `invoice_id` bigint(20) DEFAULT NULL,
+  `phase` varchar(30) NOT NULL DEFAULT 'checkout',
+  `status` varchar(30) NOT NULL DEFAULT 'reserved',
+  `discount_amount` decimal(18,2) DEFAULT NULL,
+  `currency` varchar(20) DEFAULT NULL,
+  `committed_at` datetime DEFAULT NULL,
+  `released_at` datetime DEFAULT NULL,
+  `release_reason` varchar(100) DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `queue_id_idx` (`queue_id`)
+  KEY `promo_id_idx` (`promo_id`),
+  KEY `client_id_idx` (`client_id`),
+  KEY `client_order_id_idx` (`client_order_id`),
+  KEY `invoice_id_idx` (`invoice_id`),
+  KEY `phase_idx` (`phase`),
+  KEY `status_idx` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -995,6 +970,7 @@ CREATE TABLE `service_downloadable` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `client_id` bigint(20) DEFAULT NULL,
   `filename` varchar(100) DEFAULT NULL,
+  `stored_filename` varchar(100) DEFAULT NULL,
   `downloads` int(11) DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
@@ -1197,46 +1173,6 @@ CREATE TABLE `support_helpdesk` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `support_p_ticket`
---
-
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `support_p_ticket` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `hash` varchar(255) DEFAULT NULL,
-  `author_name` varchar(255) DEFAULT NULL,
-  `author_email` varchar(255) DEFAULT NULL,
-  `subject` varchar(255) DEFAULT NULL,
-  `status` varchar(30) DEFAULT 'open',
-  `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `support_p_ticket_message`
---
-
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `support_p_ticket_message` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `support_p_ticket_id` bigint(20) DEFAULT NULL,
-  `admin_id` bigint(20) DEFAULT NULL COMMENT 'Filled when message author is admin',
-  `content` text,
-  `ip` varchar(45) DEFAULT NULL,
-  `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `support_p_ticket_id_idx` (`support_p_ticket_id`),
-  KEY `admin_id_idx` (`admin_id`),
-  FULLTEXT KEY `content_idx` (`content`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
 -- Table structure for table `support_pr`
 --
 
@@ -1279,6 +1215,9 @@ CREATE TABLE `support_ticket` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `support_helpdesk_id` bigint(20) DEFAULT NULL,
   `client_id` bigint(20) DEFAULT NULL,
+  `access_hash` varchar(255) DEFAULT NULL,
+  `author_name` varchar(255) DEFAULT NULL,
+  `author_email` varchar(255) DEFAULT NULL,
   `priority` int(11) DEFAULT '100',
   `subject` varchar(255) DEFAULT NULL,
   `status` varchar(30) DEFAULT 'open' COMMENT 'open, closed, on_hold',
@@ -1291,7 +1230,8 @@ CREATE TABLE `support_ticket` (
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `support_helpdesk_id_idx` (`support_helpdesk_id`),
-  KEY `client_id_idx` (`client_id`)
+  KEY `client_id_idx` (`client_id`),
+  KEY `access_hash_idx` (`access_hash`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -1366,7 +1306,7 @@ CREATE TABLE `tax` (
 CREATE TABLE `tld` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `tld_registrar_id` bigint(20) DEFAULT NULL,
-  `tld` varchar(15) DEFAULT NULL,
+  `tld` varchar(64) DEFAULT NULL,
   `price_registration` decimal(18,2) DEFAULT '0.00',
   `price_renew` decimal(18,2) DEFAULT '0.00',
   `price_transfer` decimal(18,2) DEFAULT '0.00',

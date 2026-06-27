@@ -3,19 +3,19 @@
 {% set active_menu = 'client' %}
 {% set can_manage_groups = has_permission('client', 'manage_groups') %}
 
-{% block meta_title %}{{ group.title}}{% endblock %}
+{% block meta_title %}{{ group.title }}{% endblock %}
 
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
-                    <use xlink:href="#home" />
+                    <use href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'client'|alink }}#tab-groups">{{ 'Client groups'|trans }}</a>
+            <a href="{{ 'client'|url }}#tab-groups">{{ 'Client Groups'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ group.title}}</li>
     </ol>
@@ -24,14 +24,17 @@
 {% block content %}
 <div class="card">
     <div class="card-header">
-        <h4>{{ 'Edit client group'|trans }} - {{ group.title }}</h4>
+        <div>
+            <h3 class="card-title">{{ group.title }}</h3>
+            <p class="card-subtitle">{{ 'Update the client group name or remove the group entirely.'|trans }}</p>
+        </div>
     </div>
     {% if can_manage_groups %}
-    <form method="post" action="{{ 'api/admin/client/group_update'|link }}" {{ fb_api_form({redirect: 'client'|alink}) }}>
+    <form method="post" action="{{ 'client/group_update'|api_url }}" {{ fb_api_form({redirect: 'client'|url ~ '#tab-groups'}) }}>
         <div class="card-body">
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
-                <div class="col">
+            <div class="row g-3">
+                <div class="col-lg-6">
+                    <label class="form-label">{{ 'Title'|trans }}</label>
                     <input class="form-control" type="text" name="title" value="{{ group.title }}" required>
                 </div>
             </div>
@@ -39,20 +42,23 @@
 
         <input type="hidden" name="id" value="{{ group.id }}">
 
-        <div class="card-footer d-flex gap-2">
-            <a href="{{ 'client'|alink }}" class="btn btn-secondary w-25">
+        <div class="card-footer d-flex flex-wrap gap-2 justify-content-between">
+            <a href="{{ 'client'|url }}#tab-groups" class="btn btn-secondary">
                 <svg class="icon">
-                    <use xlink:href="#arrow-sm-left" />
+                    <use href="#arrow-left" />
                 </svg>
-                {{ 'Go back'|trans }}
+                {{ 'Go Back'|trans }}
             </a>
-            <button class="btn btn-primary w-100" type="submit">{{ 'Update'|trans }}</button>
-            <a class="btn btn-danger w-25" href="{{ 'api/admin/client/group_delete'|link({ 'id': group.id }) }}"
-                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'client'|alink}) }}>
-                <svg class="icon">
-                    <use xlink:href="#delete" />
-                </svg>
-            </a>
+            <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-danger" href="{{ 'client/group_delete'|api_url(query: { 'id': group.id }) }}"
+                    {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'client'|url ~ '#tab-groups'}) }}>
+                    <svg class="icon">
+                        <use href="#trash" />
+                    </svg>
+                    {{ 'Delete'|trans }}
+                </a>
+                <button class="btn btn-primary" type="submit">{{ 'Update'|trans }}</button>
+            </div>
         </div>
     </form>
     {% else %}

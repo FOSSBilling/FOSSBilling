@@ -34,7 +34,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                 'location' => 'client',
                 'label' => __trans('Clients'),
                 'uri' => $this->di['url']->adminLink('client'),
-                'class' => 'contacts',
+                'class' => 'address-book',
             ],
             'subpages' => [
                 [
@@ -45,16 +45,9 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                     'class' => '',
                 ],
                 [
-                    'location' => 'client',
-                    'label' => __trans('Advanced search'),
-                    'uri' => $this->di['url']->adminLink('client', ['show_filter' => 1]),
-                    'index' => 200,
-                    'class' => '',
-                ],
-                [
                     'location' => 'activity',
                     'index' => 900,
-                    'label' => __trans('Client login history'),
+                    'label' => __trans('Client Login History'),
                     'uri' => $this->di['url']->adminLink('client/logins'),
                     'class' => '',
                 ],
@@ -117,8 +110,6 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
             $redirect_to = '/' . trim((string) $r, '/');
         }
 
-        header('HTTP/1.1 301 Moved Permanently');
-        header('Location: ' . $this->di['tools']->url($redirect_to));
-        exit;
+        $app->redirectUrl($this->di['tools']->url($redirect_to), 301);
     }
 }

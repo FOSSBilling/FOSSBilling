@@ -2,7 +2,7 @@
   "id": "redirect",
   "type": "mod",
   "name": "Redirect",
-  "description": "Manage redirects",
+  "description": "Creates and manages URL redirects within FOSSBilling.",
   "icon_url": "icon.svg",
   "author": "FOSSBilling",
   "author_url": "https://www.fossbilling.org",

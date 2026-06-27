@@ -1,17 +1,24 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+{% set active_menu = 'support' %}
 
 {% import "macro_functions.html.twig" as mf %}
+{% set is_guest_ticket = ticket.author.role|default('') == 'guest' %}
+{% set can_reply = ticket.status != 'closed' or (not is_guest_ticket and ticket.helpdesk.can_reopen) %}
 
 {% block meta_title %}{{ ticket.subject }}{% endblock %}
 
 {% block head %}
-    <link rel="stylesheet" href="{{ 'build/css/markdown.css' | asset_url }}">
-    {{ mf.wysiwyg('.editor-textarea') }}
+    {{ 'css/markdown.css' | public_asset_url | stylesheet_tag }}
+    {{ wysiwyg('.editor-textarea') }}
 {% endblock %}
 
 {% block body_class %}support-ticket{% endblock %}
 {% block breadcrumb %}
-    <li class="breadcrumb-item"><a href="{{ 'support' | link }}">{{ 'Support tickets'|trans }}</a></li>
+    {% if is_guest_ticket %}
+        <li class="breadcrumb-item"><a href="{{ 'support/contact-us'|url }}">{{ 'Contact Us'|trans }}</a></li>
+    {% else %}
+        <li class="breadcrumb-item"><a href="{{ 'support'|url }}">{{ 'Support Tickets'|trans }}</a></li>
+    {% endif %}
     <li class="breadcrumb-item active" aria-current="page">{{ ticket.subject }}</li>
 {% endblock %}
 
@@ -26,11 +33,11 @@
                         </div>
                         <div class="">
                             <div class="d-flex gap-2">
-                                {% if (ticket.status != 'closed') or (ticket.helpdesk.can_reopen) %}
+                                {% if can_reply %}
                                     <button class="btn btn-info btn-sm" id="reply-to-btn">{{ 'Reply'|trans }}</button>
                                 {% endif %}
                                 {% if ticket.status != 'closed' %}
-                                    <button class="btn btn-secondary btn-sm" type="button" id="ticket-close">{{ 'Close ticket'|trans }}</button>
+                                    <button class="btn btn-secondary btn-sm" type="button" id="ticket-close">{{ 'Close Ticket'|trans }}</button>
                                 {% endif %}
                             </div>
                         </div>
@@ -40,27 +47,27 @@
                     <table class="table table-hover table-sm">
                         <tbody>
                         <tr>
-                            <td>{{ 'Help desk'|trans }}</td>
+                            <td>{{ 'Help Desk'|trans }}</td>
                             <td>{{ ticket.helpdesk.name }}</td>
                         </tr>
 
                         <tr>
                             <td>{{ 'Status'|trans }}</td>
                             <td>
-                                <div class="badge {% if ticket.status=='open' %}text-bg-success{% elseif ticket.status == 'on_hold' %}text-bg-warning{% else %}text-bg-danger{% endif %}">{{ mf.status_name(ticket.status) }}</div>
+                                {{ mf.status_badge(ticket.status, 'ticket') }}
                             </td>
                         </tr>
 
                         <tr>
-                            <td>{{ 'Time opened'|trans }}</td>
+                            <td>{{ 'Time Opened'|trans }}</td>
                             <td>{{ ticket.created_at|format_date }}</td>
                         </tr>
 
-                        {% if ticket.rel_type == 'order' and ticket.rel_id %}
+                        {% if ticket.rel_type|default('') == 'order' and ticket.rel_id %}
                             <tr>
-                                <td>{{ 'Related to'|trans }}</td>
+                                <td>{{ 'Related To'|trans }}</td>
                                 <td>
-                                    <a href="{{ 'order/service/manage'|link }}/{{ ticket.rel_id }}">{{ 'Service #'|trans }} {{ ticket.rel_id }}</a>
+                                    <a href='{{ "order/service/manage/#{ticket.rel_id}"|url }}'>{{ 'Service #'|trans }} {{ ticket.rel_id }}</a>
                                 </td>
                             </tr>
                         {% endif %}
@@ -73,15 +80,15 @@
             {% for i, message in ticket.messages %}
                 <div class="row">
                     <div class="col-md-12">
-                        <div class="card {% if message.admin_id %}border-primary{% endif %}">
+                        <div class="card {% if message.author.role == 'admin' %}border-primary{% endif %}">
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <div class="d-flex align-items-center gap-2">
-                                    <div class="db-avatar img-thumbnail d-none d-md-block" data-avatar-seed="{{ message.author.email|hash('xxh128') }}" data-avatar-size="40" style="width: 40px; height: 40px;"></div>
+                                    {{ avatar(message.author.email|default(''), 40, 'img-thumbnail d-none d-md-block', null, 'div') }}
                                     <div class="d-flex flex-column">
                                         <span class="text-muted">
                                             {{ message.author.name }}
                                         </span>
-                                        {% if message.admin_id %}
+                                        {% if message.author.role == 'admin' %}
                                             <span class="badge text-bg-primary">
                                                     {{ 'Operator'|trans }}
                                                 </span>
@@ -93,16 +100,13 @@
                                     </div>
                                     <span class="text-muted fs-7">on {{ message.created_at|format_date }}</span>
                                 </div>
-                                {% if (ticket.status != 'closed') or (ticket.helpdesk.can_reopen) %}
+                                {% if can_reply %}
                                     <div class="d-flex gap-3 align-items-center">
                                         <span class="text-muted fs-7">#{{ message.id }}</span>
                                         <button class="btn btn-outline-secondary btn-quote-reply"
                                                 message-quote="{{ mf.markdown_quote(message.content) }}"
-                                                data-bs-toggle="tooltip" data-bs-title="{{ 'Quote reply'|trans }}">
-                                            <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg"
-                                                 viewBox="0 0 24 24">
-                                                <path d="M11 18V10H9.12L11.12 6H5.38L3 10.76V18M9 16H5V11.24L6.62 8H7.88L5.88 12H9M21 18V10H19.12L21.12 6H15.38L13 10.76V18M19 16H15V11.24L16.62 8H17.88L15.88 12H19Z"/>
-                                            </svg>
+                                                data-bs-toggle="tooltip" data-bs-title="{{ 'Quote Reply'|trans }}">
+                                            <svg class="icon"><use href="#quote" /></svg>
                                         </button>
                                     </div>
                                 {% endif %}
@@ -111,7 +115,7 @@
                                 <div class="row">
                                     <div class="col-md-12">
                                         <article class="markdown-body bg-transparent text-reset" id="message-{{ message.id }}">
-                                            {{ message.content|markdown }}
+                                            {{ (message.content ?? '')|markdown_to_html }}
                                         </article>
                                     </div>
                                 </div>
@@ -124,7 +128,7 @@
         <div>
             <div class="row">
                 <div class="col-md-12">
-                    {% if ticket.status == 'closed' and not ticket.helpdesk.can_reopen %}
+                    {% if not can_reply %}
                         <div class="mt-3 alert alert-secondary text-center">{{ 'Ticket was closed and cannot be reopened.'|trans }}</div>
                     {% else %}
                         {% if ticket.status == 'closed' %}
@@ -133,7 +137,11 @@
                         <div class="card mt-3" id="reply-to">
                             <div class="card-body">
                                 <form id="ticket-reply-form">
-                                    <input type="hidden" name="id" value="{{ ticket.id }}">
+                                    {% if is_guest_ticket %}
+                                        <input type="hidden" name="hash" value="{{ ticket.hash }}">
+                                    {% else %}
+                                        <input type="hidden" name="id" value="{{ ticket.id }}">
+                                    {% endif %}
                                     <textarea name="content" cols="5" rows="10" class="editor-textarea form-control" required="required"
                                               id="ticket-reply-text"></textarea>
                                     <button class="mt-2 btn btn-primary" type="submit" id="post-reply-btn"
@@ -157,10 +165,11 @@
             const postReplyBtn = document.getElementById('post-reply-btn');
             const replyToMessageBtn = document.querySelectorAll('.btn-quote-reply');
             const ticketReplyTextArea = document.getElementById('ticket-reply-text');
+            const supportApi = FOSSBilling.api.{{ is_guest_ticket ? 'guest' : 'client' }};
 
             ticketReplyForm?.addEventListener('submit', (e) => {
                 e.preventDefault();
-                API.client.post('support/ticket_reply', Tools.serializeFormDataToObject(new FormData(ticketReplyForm)),
+                supportApi.post('support/ticket_reply', FOSSBilling.tools.serializeFormDataToObject(new FormData(ticketReplyForm)),
                     () => {
                         flashMessage({
                             message: 'Posted reply',
@@ -171,10 +180,10 @@
                 )
             });
 
-            closeTicketBtn.addEventListener('click', (e) => {
+            closeTicketBtn?.addEventListener('click', (e) => {
                 e.preventDefault();
                 toggleLoader();
-                API.client.post('support/ticket_close', Tools.serializeFormDataToObject(new FormData(ticketReplyForm)),
+                supportApi.post('support/ticket_close', FOSSBilling.tools.serializeFormDataToObject(new FormData(ticketReplyForm)),
                     () => {
                         flashMessage({
                             message: 'Closed ticket #{{ ticket.id }}',
@@ -185,7 +194,7 @@
                 )
             });
 
-            postReplyBtn.addEventListener('click', () => {
+            postReplyBtn?.addEventListener('click', () => {
                 if (document.getElementById('ticket-reply-text').value.length > 0) {
                     toggleLoader();
                 }
@@ -195,17 +204,30 @@
                 reply.addEventListener('click', (e) => {
                     e.preventDefault();
                     let quote = e.currentTarget.getAttribute('message-quote');
-                    ticketReplyTextArea.textContent = quote.replace(/^\s*$(?:\r\n?|\n)/gm, '');
-                    ticketReplyTextArea.focus();
+                    quote = quote.replace(/^\s*$(?:\r\n?|\n)/gm, '');
+                    if (ticketReplyTextArea.editor) {
+                        ticketReplyTextArea.editor.setData(quote);
+                        ticketReplyTextArea.editor.focus();
+                    } else {
+                        ticketReplyTextArea.textContent = quote;
+                        ticketReplyTextArea.focus();
+                    }
                 });
             })
 
-            document.getElementById('reply-to-btn').addEventListener('click', () => {
-                ticketReplyTextArea.focus();
+            document.getElementById('reply-to-btn')?.addEventListener('click', () => {
+                if (ticketReplyTextArea.editor) {
+                    ticketReplyTextArea.editor.focus();
+                } else {
+                    ticketReplyTextArea.focus();
+                }
             });
 
             const toggleLoader = () => {
                 let loader = document.querySelector('.wait');
+                if (!loader) {
+                    return;
+                }
                 if (loader.style.display === 'none') {
                     loader.style.display = 'block';
                 } else {

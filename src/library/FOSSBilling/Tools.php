@@ -248,11 +248,31 @@ class Tools
         return $default;
     }
 
+    /**
+     * Normalizes mixed input into a valid TCP/UDP port number.
+     */
+    public static function normalizePort(mixed $value, ?int $default = null): ?int
+    {
+        if (!is_int($value) && !is_string($value)) {
+            return $default;
+        }
+
+        if (is_string($value)) {
+            $value = trim($value);
+        }
+
+        $port = filter_var($value, FILTER_VALIDATE_INT, [
+            'options' => ['min_range' => 1, 'max_range' => 65535],
+        ]);
+
+        return $port === false ? $default : $port;
+    }
+
     public static function isHTTPS(): bool
     {
-        $protocol = $_SERVER['HTTPS'] ?? $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? $_SERVER['REQUEST_SCHEME'] ?? '';
+        $protocol = $_SERVER['HTTPS'] ?? $_SERVER['REQUEST_SCHEME'] ?? '';
 
-        // $_SERVER['HTTPS'] will be set to `on` to indicate HTTPS and the others to will be set to `https`, so either one means we are connected via HTTPS.
+        // $_SERVER['HTTPS'] will be set to `on` to indicate HTTPS and REQUEST_SCHEME may be set to `https`, so either one means we are connected via HTTPS.
         return strcasecmp((string) $protocol, 'on') === 0 || strcasecmp((string) $protocol, 'https') === 0;
     }
 
@@ -326,7 +346,7 @@ class Tools
             $knownInterfaces = [];
         }
 
-        if ($interface && $interface !== '0' && in_array($interface, $knownInterfaces)) {
+        if ($interface !== '0' && in_array($interface, $knownInterfaces)) {
             return $interface;
         }
 
@@ -336,7 +356,7 @@ class Tools
     /**
      * Returns the public IP address of the current FOSSBilling instance.
      * Will try multiple services in order if they time out.
-     * Try order: ipify.org, ifconfig.io, ip.hestiacp.com.
+     * Try order: ipify.org, checkip.global.api.aws, ifconfig.io.
      *
      * @param bool    $throw if the function should throw an exception on an error
      * @param ?string $bind  overrides the default network interface bind. When `null` (default), the configured default (BIND_TO) is used.
@@ -345,7 +365,7 @@ class Tools
      */
     public static function getExternalIP(bool $throw = true, ?string $bind = null): ?string
     {
-        $services = ['https://api64.ipify.org', 'https://ifconfig.io/ip', 'https://ip.hestiacp.com/'];
+        $services = ['https://api64.ipify.org', 'https://checkip.global.api.aws', 'https://ifconfig.io/ip'];
         $bind ??= BIND_TO;
         $client = HttpClient::create(['bindto' => $bind]);
 
@@ -401,6 +421,10 @@ class Tools
      * Sanitize user content to prevent XSS attacks.
      * Uses Symfony's HTML Sanitizer component for robust protection.
      *
+     * Use this only for content that is stored and rendered as HTML.
+     * For Markdown content (e.g. ticket messages, KB articles), use sanitizeMarkdownContent() instead,
+     * since the HTML sanitizer incorrectly strips text that follows unrecognized tags like <foo>.
+     *
      * @param string $content   The content to sanitize. If empty, returns an empty string.
      * @param bool   $allowHtml Whether to allow safe HTML tags (default: true for rich content)
      *
@@ -431,6 +455,31 @@ class Tools
         $sanitizer = new \Symfony\Component\HtmlSanitizer\HtmlSanitizer($config);
 
         return trim($sanitizer->sanitize($content));
+    }
+
+    /**
+     * Sanitize Markdown content for storage.
+     *
+     * Unlike sanitizeContent(), this does NOT run an HTML sanitizer because the content is Markdown,
+     * not HTML. Running an HTML sanitizer on Markdown corrupts it: characters like < and > that users
+     * type as literal text get misinterpreted as unknown HTML elements and dropped together with all
+     * subsequent text.
+     *
+     * XSS protection for Markdown content is handled at render time by the markdown_to_html Twig
+     * filter, which is configured with html_input=escape so any raw HTML in the Markdown is safely
+     * escaped rather than executed.
+     *
+     * @param string $content the Markdown content to sanitize
+     *
+     * @return string Sanitized Markdown content safe for storage
+     */
+    public static function sanitizeMarkdownContent(string $content = ''): string
+    {
+        if (empty($content)) {
+            return '';
+        }
+
+        return trim(str_replace("\0", '', $content));
     }
 
     public static function validatePhoneCC(string|int $countryCode): int

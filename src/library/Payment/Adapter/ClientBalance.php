@@ -53,7 +53,7 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
         return true;
     }
 
-    public function getHtml($api_admin, $invoice_id, $subscription)
+    public function getHtml($api_admin, $invoice_id, $subscription): string
     {
         $invoiceModel = $this->di['db']->load('Invoice', $invoice_id);
 
@@ -71,7 +71,7 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
 
         return "<script>
                 document.addEventListener('DOMContentLoaded', function() {
-                    API.makeRequest('POST', '$ipnUrl', {}, function () {
+                    FOSSBilling.api.makeRequest('POST', '$ipnUrl', {}, function () {
                         window.location.href = '$invoiceUrl';
                     }, function (error) {
                         console.error('Payment callback failed:', error);

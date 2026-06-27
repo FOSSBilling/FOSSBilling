@@ -1,4 +1,4 @@
-{% block subject %}[{{ guest.system_company.name }}] {{ ticket.subject }}{% endblock %}
+{% block subject %}[{{ guest.system_company.name }}] {{ ticket.subject|default('') }}{% endblock %}
 {% block content %}
 <!DOCTYPE html>
 <html>
@@ -35,25 +35,32 @@
 	</style>
 </head>
 <body>
+	{% set is_guest_ticket = ticket.author.role|default('') == 'guest' %}
 	<h1>Ticket Opened</h1>
+
+    {% if is_guest_ticket %}
+    <p>Hello, {{ ticket.author.name|default('') }}.</p>
+    {% endif %}
 
     <p>Thank you for contacting our support team. A support ticket has now been opened for your request.</p>
     <p>You will be notified by email when your ticket receives a response. The details of your ticket are shown below.</p>
 
     <p>Ticket info</p>
     <ul>
-        <li><strong>Ticket ID:</strong> #{{ticket.id}}</li>
-        <li><strong>Department:</strong> {{ticket.helpdesk.name}}</li>
-        <li><strong>Status:</strong> {{ticket.status|title}}</li>
+        <li><strong>Ticket ID:</strong> #{{ticket.id|default('')}}</li>
+        <li><strong>Department:</strong> {{ticket.helpdesk|default({}).name|default('')}}</li>
+        <li><strong>Status:</strong> {{ticket.status|default('')|title}}</li>
     </ul>
 
-    <a href="{{'support/ticket'|link}}/{{ ticket.id }}" target="_blank">Reply<a>
-    
+    {% if is_guest_ticket %}
+        <a href='{{ "support/ticket/#{ticket.hash|default('')}"|url(area: 'client') }}' target="_blank">Reply</a>
+    {% else %}
+        <a href='{{ "support/ticket/#{ticket.id|default('')}"|url(area: 'client') }}' target="_blank">Reply</a>
+    {% endif %}
+
     <p>Please do not reply to this email directly. Use the link provided above.</p>
 
-    <p>You may <a href="{{'admin/staff/login'|link({'email' : c.email }) }}" target="_blank">login</a> or <a href="{{'admin/staff/profile'|link}}" target="_blank">edit your profile.</a>
-
-	<p class="signature">{{ guest.system_company.signature }}</p>
+	<div class="signature">{{ guest.system_email.signature }}</div>
 </body>
 </html>
 {% endblock %}

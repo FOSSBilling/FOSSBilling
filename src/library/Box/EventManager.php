@@ -28,7 +28,9 @@ class Box_EventManager implements FOSSBilling\InjectionAwareInterface
     public function fire($data)
     {
         if (!isset($data['event']) || empty($data['event'])) {
-            error_log('Invoked event call without providing event name');
+            if ($this->di !== null && isset($this->di['logger'])) {
+                $this->di['logger']->warning('Invoked event call without providing event name');
+            }
 
             return false;
         }
@@ -43,8 +45,10 @@ class Box_EventManager implements FOSSBilling\InjectionAwareInterface
         $e->setDi($this->di);
         $disp = new Box_EventDispatcher();
 
-        $this->_connectDatabaseHooks($disp, $e->getName());
-        $this->_connectDatabaseHooks($disp, self::GLOBAL_LISTENER_NAME); // Also connect the global listeners (onEveryEvent)
+        $eventName = $e->getName();
+
+        $this->_connectDatabaseHooks($disp, $eventName);
+        $this->_connectDatabaseHooks($disp, self::GLOBAL_LISTENER_NAME, $eventName); // Also connect global listeners (onEveryEvent) to the fired event
 
         $disp->notify($e);
 
@@ -55,7 +59,7 @@ class Box_EventManager implements FOSSBilling\InjectionAwareInterface
      * @param Box_EventDispatcher $disp
      * @param string              $event
      */
-    private function _connectDatabaseHooks(&$disp, $event): void
+    private function _connectDatabaseHooks(&$disp, $event, ?string $dispatchEventName = null): void
     {
         $sql = "SELECT id, rel_id, meta_value
             FROM extension_meta
@@ -74,12 +78,13 @@ class Box_EventManager implements FOSSBilling\InjectionAwareInterface
         foreach ($list as $listener) {
             $mod = $listener['rel_id'];
             $event = $listener['meta_value'];
+            $dispatchEvent = $dispatchEventName ?? $event;
 
             try {
                 $s = $this->di['mod_service']($mod);
 
                 if (method_exists($s, $event)) {
-                    $disp->connect($event, [$s::class, $event]);
+                    $disp->connect($dispatchEvent, [$s::class, $event]);
                 }
             } catch (Exception $e) {
                 error_log($e->getMessage());

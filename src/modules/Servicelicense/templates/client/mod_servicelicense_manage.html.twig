@@ -38,7 +38,7 @@
                     {% for host in service.hosts %}
                     {{ host }} <br/>
                     {% else %}
-                    {{ 'All hosts'|trans }}
+                    {{ 'All Hosts'|trans }}
                     {% endfor %}
                 </td>
             </tr>
@@ -53,7 +53,7 @@
                     {% for version in service.versions %}
                     {{ version }} <br/>
                     {% else %}
-                    {{ 'All versions'|trans }}
+                    {{ 'All Versions'|trans }}
                     {% endfor %}
                 </td>
             </tr>
@@ -68,7 +68,7 @@
                     {% for path in service.paths %}
                     {{ path }} <br/>
                     {% else %}
-                    {{ 'All paths'|trans }}
+                    {{ 'All Paths'|trans }}
                     {% endfor %}
                 </td>
             </tr>
@@ -78,25 +78,12 @@
         </table>
 
         <h2>{{ 'Reset License'|trans }}</h2>
-        <p>{{ 'You can reset your license parameters if you have changed your server'|trans }}</p>
+        <p>{{ 'Resetting the license will clear saved validation data (IP addresses, domains, versions, and installation paths). Use this if you moved servers; the license must then be activated again from the new environment.'|trans }}</p>
         <div class="block">
-            <p><button class="btn btn-primary" type="button" id="license-reset">{{ 'Reset'|trans }}</button></p>
+            <p>
+                <a class="btn btn-primary" {{ fb_api_link({href: 'servicelicense/reset'|api_url(query: {order_id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, message: 'License was reset'|trans}) }}>{{ 'Reset'|trans }}</a>
+            </p>
         </div>
     </div>
 </div>
-
-{% block js %}
-<script>
-    document.querySelector('#license-reset').addEventListener('click', (event) => {
-        event.preventDefault();
-
-        if (confirm("{{ 'Are you sure?'|trans }}")) {
-            API.client.post('servicelicense/reset', { order_id: {{ order.id }} },
-                (result) => {
-                    FOSSBilling.message("{{ 'License was reset'|trans }}");
-                });
-        }
-    });
-</script>
-{% endblock %}
 {% endif %}

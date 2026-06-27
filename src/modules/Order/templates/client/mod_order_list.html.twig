@@ -1,4 +1,5 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+{% set active_menu = 'services' %}
 
 {% import "macro_functions.html.twig" as mf %}
 
@@ -30,7 +31,7 @@
                                 <th>{{ 'Order ID'|trans }}</th>
                                 <th>{{ 'Product/Service'|trans }}</th>
                                 <th>{{ 'Price'|trans }}</th>
-                                <th>{{ 'Next due date'|trans }}</th>
+                                <th>{{ 'Next Due Date'|trans }}</th>
                                 <th>{{ 'Status'|trans }}</th>
                                 <th>{{ 'Actions'|trans }}</th>
                             </tr>
@@ -38,19 +39,17 @@
                             <tbody>
                             {% for i, order in orders.list %}
                                 <tr>
-                                    <td><a href="{{ '/order/service/manage'|link }}/{{ order.id }}">#{{ order.id }}</a></td>
+                                    <td><a href='{{ "order/service/manage/#{order.id}"|url }}'>#{{ order.id }}</a></td>
                                     <td>
                                         <span>{{ order.title }}</span>
                                     </td>
-                                    <td>{{ order.total | money(order.currency) }} {% if order.period %}{{ order.period | period_title }}{% endif %}</td>
+                                    <td>{{ order.total|format_currency(order.currency ?? default_currency) }} {% if order.period %}{{ order.period|period_title }}{% endif %}</td>
                                     <td>{% if order.expires_at %}{{ order.expires_at|format_date }}{% else %}-{% endif %}</td>
                                     <td>
-                                    <span
-                                        class="badge {% if order.status == 'active' %}bg-success{% elseif order.status == 'pending_setup' %}bg-warning{% elseif order.status == 'failed_setup' or order.status == 'suspended' or order.status == 'failed_renew' %}bg-danger{% elseif order.status == 'canceled' %}bg-secondary{% endif %}">{{ mf.status_name(order.status) }}</span>
+                                    {{ mf.status_badge(order.status, 'order') }}
                                     </td>
                                     <td class="actions">
-                                        <a class="btn btn-sm btn-outline-primary"
-                                           href="{{ '/order/service/manage'|link }}/{{ order.id }}">Manage</a>
+                                        <a class="btn btn-sm btn-outline-primary" href='{{ "order/service/manage/#{order.id}"|url }}'>{{ 'Manage'|trans }}</a>
                                     </td>
                                 </tr>
                             {% endfor %}
@@ -61,7 +60,7 @@
                             <span class="m-0">{{ 'No orders yet'|trans }}</span>
                         </div>
                     {% endif %}
-                    {{ include('partial_pagination.html.twig', { 'list': orders }) }}
+                    {{ include('partial_pagination.html.twig', { 'list': orders, 'url': 'order' }) }}
                 </div>
             </div>
         </div>

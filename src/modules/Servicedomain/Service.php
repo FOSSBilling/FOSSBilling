@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicedomain;
 
+use Box\Mod\Product\Entity\Product;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
@@ -36,7 +37,28 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function getCartProductTitle($product, array $data)
+    public function getModulePermissions(): array
+    {
+        return [
+            'manage_domains' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage domains'),
+                'description' => __trans('Allows the staff member to manage domain services (nameservers, contacts, privacy, transfers).'),
+            ],
+            'manage_tlds' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage TLDs'),
+                'description' => __trans('Allows the staff member to create, update, and delete TLDs and their pricing.'),
+            ],
+            'manage_registrars' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage registrars'),
+                'description' => __trans('Allows the staff member to install, update, and delete domain registrars.'),
+            ],
+        ];
+    }
+
+    public function getCartProductTitle(Product $product, array $data): ?string
     {
         if (
             isset($data['action']) && $data['action'] == 'register'
@@ -52,7 +74,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             return __trans('Domain :domain transfer', [':domain' => $data['transfer_sld'] . $data['transfer_tld']]);
         }
 
-        return $product->title;
+        return $product->getTitle();
     }
 
     public function validateOrderData(&$data): void
@@ -119,7 +141,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $required = [
                 'register_tld' => 'Domain registration tld parameter missing.',
                 'register_sld' => 'Domain registration sld parameter missing.',
-                'register_years' => 'Years parameter is missing for domain configuration.',
+                'register_years' => 'Domain registration period is missing. Please check domain availability before proceeding.',
             ];
             $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
@@ -146,7 +168,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
             // return by reference
             $data['period'] = $years . 'Y';
-            $data['quantity'] = $years;
         }
     }
 
@@ -358,8 +379,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->contact_phone = $contact->getTel();
 
         $model->details = serialize($whois);
-        $model->expires_at = date('Y-m-d H:i:s', $whois->getExpirationTime());
-        $model->registered_at = date('Y-m-d H:i:s', $whois->getRegistrationTime());
+        $model->expires_at = $this->formatRegistrarTimestamp($whois->getExpirationTime());
+        $model->registered_at = $this->formatRegistrarTimestamp($whois->getRegistrationTime());
         $model->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($model);
@@ -610,7 +631,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $data['transfer_code'] = $model->transfer_code;
 
             $tldRegistrar = $this->di['db']->load('TldRegistrar', $model->tld_registrar_id);
-            $data['registrar'] = $tldRegistrar->name;
+            $data['registrar'] = $tldRegistrar instanceof \Model_TldRegistrar ? $tldRegistrar->name : null;
         }
 
         return $data;
@@ -677,7 +698,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $address2 = empty($model->contact_address2) ? $client->address_2 : $model->contact_address2;
         $birthday = !empty($client->birthday) ? $client->birthday : '';
         $company_number = !empty($client->company_number) ? $client->company_number : '';
-        $document_nr = !empty($client->document_nr) ? $client->document_nr : '';
+        $document_nr = (string) ($this->di['mod_service']('client')->resolveDocumentNumber($client) ?? '');
 
         $contact = new \Registrar_Domain_Contact();
         $contact
@@ -861,11 +882,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function tldToApiArray(\Model_Tld $model): array
+    public function tldToApiArray(\Model_Tld $model, $identity = null): array
     {
-        $tldRegistrar = $this->di['db']->load('TldRegistrar', $model->tld_registrar_id);
-
-        return [
+        $result = [
             'id' => $model->id,
             'tld' => $model->tld,
             'price_registration' => $model->price_registration,
@@ -875,11 +894,18 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'allow_register' => $model->allow_register,
             'allow_transfer' => $model->allow_transfer,
             'min_years' => $model->min_years,
-            'registrar' => [
-                'id' => $model->tld_registrar_id,
-                'title' => $tldRegistrar->name,
-            ],
         ];
+
+        if ($identity instanceof \Model_Admin) {
+            $tldRegistrar = $this->di['db']->load('TldRegistrar', $model->tld_registrar_id);
+
+            $result['registrar'] = [
+                'id' => $model->tld_registrar_id,
+                'title' => $tldRegistrar instanceof \Model_TldRegistrar ? $tldRegistrar->name : null,
+            ];
+        }
+
+        return $result;
     }
 
     /**
@@ -952,11 +978,16 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     private function registrarGetRegistrarAdapterClassName(\Model_TldRegistrar $model): string
     {
-        if (!$this->filesystem->exists(Path::join(PATH_LIBRARY, 'Registrar', 'Adapter', "{$model->registrar}.php"))) {
+        $file = Path::join(PATH_LIBRARY, 'Registrar', 'Adapter', "{$model->registrar}.php");
+        if (!$this->filesystem->exists($file)) {
             throw new \FOSSBilling\Exception('Domain registrar :adapter was not found', [':adapter' => $model->registrar]);
         }
 
         $class = sprintf('Registrar_Adapter_%s', $model->registrar);
+        if (!class_exists($class)) {
+            require_once $file;
+        }
+
         if (!class_exists($class)) {
             throw new \FOSSBilling\Exception('Registrar :adapter was not found', [':adapter' => $class]);
         }
@@ -1038,6 +1069,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Registrar is used by :count: domains', [':count:' => $count], 707);
         }
 
+        $tlds = $this->di['db']->find('Tld', 'tld_registrar_id = :registrar_id', [':registrar_id' => $model->id]);
+        $count = \FOSSBilling\Tools::safeCount($tlds);
+
+        if ($count > 0) {
+            throw new \FOSSBilling\InformationException('Registrar is used by :count: TLDs', [':count:' => $count], 707);
+        }
+
         $name = $model->name;
 
         $this->di['db']->trash($model);
@@ -1079,5 +1117,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['logger']->info('Updated domain #%s without sending actions to server', $s->id);
 
         return true;
+    }
+
+    private function formatRegistrarTimestamp(mixed $timestamp): ?string
+    {
+        if (!is_numeric($timestamp) || (int) $timestamp <= 0) {
+            return null;
+        }
+
+        return date('Y-m-d H:i:s', (int) $timestamp);
     }
 }

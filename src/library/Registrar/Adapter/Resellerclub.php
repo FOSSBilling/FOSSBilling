@@ -533,11 +533,17 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         return $this->_makeRequest('contacts/add', $contact, 'POST');
     }
 
+    /**
+     * @phpstan-ignore method.unused (part of API, reserved for future use)
+     */
     private function getResellerDetails()
     {
         return $this->_makeRequest('resellers/details');
     }
 
+    /**
+     * @phpstan-ignore method.unused (part of API, reserved for future use)
+     */
     private function getPromoPrices()
     {
         return $this->_makeRequest('resellers/promo-details');
@@ -549,6 +555,8 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
      * @param array $params
      *
      * @return stdClass
+     *
+     * @phpstan-ignore method.unused (part of API, reserved for future use)
      */
     private function addSubReseller($params)
     {
@@ -604,6 +612,9 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         return $this->_makeRequest('contacts/default', $params, 'POST');
     }
 
+    /**
+     * @phpstan-ignore method.unused (part of API, reserved for future use)
+     */
     private function removeCustomer($params): bool
     {
         $required_params = [
@@ -684,21 +695,19 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             $this->getLog()->info('API RESULT: ' . $result->getContent(false));
         } catch (HttpExceptionInterface $error) {
             $e = new Registrar_Exception("HttpClientException: {$error->getMessage()}.");
-            $this->getLog()->err($e->getMessage());
+            $this->getLog()->error($e->getMessage());
 
             throw $e;
         }
 
-        if ($result->getContent(false) == 'true') {
-            return $result->getContent(false);
+        $content = $result->getContent(false);
+        if (in_array($content, ['true', 'false'], true)) {
+            return $content;
         }
-        if (is_numeric($result->getContent(false))) {
-            return $data = $result->getContent(false);
+        if (is_numeric($content)) {
+            return $content;
         }
         $json = $result->toArray(false);
-        if (!is_array($json)) {
-            return $data = $result->getContent(false);
-        }
 
         if (isset($json['status']) && $json['status'] == 'ERROR') {
             error_log('ResellerClub error: ' . $json['message']);
@@ -751,8 +760,6 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
      * @param array $params          - given params
      *
      * @return array
-     *
-     * @throws Registrar_Exception
      */
     private function _checkRequiredParams($required_params, $params)
     {
@@ -840,7 +847,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
         if ($tld == '.es') {
             if (strlen(trim((string) $client->getDocumentNr())) == 0) {
-                throw new Registrar_Exception('Valid contact passport information is required while registering ES domain name');
+                throw new Registrar_Exception('A document number is required while registering an ES domain name. Enable a custom client field with a title containing "passport" or "document" (e.g. "Passport Number") and ask the client to fill it in.');
             }
 
             // @see http://manage.directi.com/kb/answer/790
@@ -859,7 +866,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
         if ($tld == '.asia') {
             if (strlen(trim((string) $client->getDocumentNr())) == 0) {
-                throw new Registrar_Exception('Valid contact passport information is required while registering ASIA domain name');
+                throw new Registrar_Exception('A document number is required while registering an ASIA domain name. Enable a custom client field with a title containing "passport" or "document" (e.g. "Passport Number") and ask the client to fill it in.');
             }
 
             $contact['attr-name1'] = 'locality';
@@ -887,7 +894,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             }
 
             if (strlen(trim((string) $client->getDocumentNr())) === 0) {
-                throw new Registrar_Exception('Valid contact passport information is required while registering RU domain name');
+                throw new Registrar_Exception('A document number is required while registering a RU domain name. Enable a custom client field with a title containing "passport" or "document" (e.g. "Passport Number") and ask the client to fill it in.');
             }
 
             if (str_word_count((string) $contact['company']) < 2) {

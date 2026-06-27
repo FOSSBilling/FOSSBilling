@@ -13,11 +13,12 @@ declare(strict_types=1);
 namespace Box\Mod\Servicedownloadable\Api;
 
 use FOSSBilling\Validation\Api\RequiredParams;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Downloadable service management.
  */
-class Admin extends \Api_Abstract
+class Admin extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Upload file to product. Uses $_FILES array so make sure your form is
@@ -28,9 +29,11 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Product ID was not passed'])]
     public function upload($data)
     {
-        $model = $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');
+        $this->checkPermissions('servicedownloadable', 'manage');
 
-        $request = $this->di['request'];
+        $model = $this->di['mod_service']('product')->findProductById((int) $data['id']);
+
+        $request = $this->getDi()['request'];
         if (!$request->files->has('file_data')) {
             throw new \FOSSBilling\Exception('File was not uploaded.');
         }
@@ -52,9 +55,11 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['order_id' => 'Order ID (order_id) was not passed'])]
     public function update($data)
     {
-        $order = $this->di['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
+        $this->checkPermissions('servicedownloadable', 'manage');
 
-        $orderService = $this->di['mod_service']('order');
+        $order = $this->getDi()['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
+
+        $orderService = $this->getDi()['mod_service']('order');
         $serviceDownloadable = $orderService->getOrderService($order);
         if (!$serviceDownloadable instanceof \Model_ServiceDownloadable) {
             throw new \FOSSBilling\Exception('Order is not activated');
@@ -72,7 +77,9 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Product ID was not passed'])]
     public function config_save($data)
     {
-        $model = $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');
+        $this->checkPermissions('servicedownloadable', 'manage');
+
+        $model = $this->di['mod_service']('product')->findProductById((int) $data['id']);
 
         $service = $this->getService();
 
@@ -84,17 +91,19 @@ class Admin extends \Api_Abstract
      *
      * @param array{id:int|string} $data data required to send the product file, must contain the product ID as `id`
      *
-     * @return bool true if the product file was successfully sent
+     * @return Response the product file download response
      *
      * @throws \FOSSBilling\Exception if the product cannot be found or the file cannot be sent
      */
     #[RequiredParams(['id' => 'Product ID was not passed'])]
-    public function send_file($data): bool
+    public function send_file($data): Response
     {
-        $model = $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');
+        $this->checkPermissions('servicedownloadable', 'manage');
+
+        $model = $this->di['mod_service']('product')->findProductById((int) $data['id']);
 
         $service = $this->getService();
 
-        return (bool) $service->sendProductFile($model);
+        return $service->sendProductFile($model);
     }
 }

@@ -16,10 +16,11 @@ declare(strict_types=1);
 
 namespace Box\Mod\Product\Api;
 
+use Box\Mod\Product\Entity\Product;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
-class Admin extends \Api_Abstract
+class Admin extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get paginated list of products.
@@ -28,17 +29,9 @@ class Admin extends \Api_Abstract
      */
     public function get_list($data)
     {
-        $service = $this->getService();
+        $this->checkPermissions('product', 'view');
 
-        [$sql, $params] = $service->getProductSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
-
-        foreach ($pager['list'] as $key => $item) {
-            $model = $this->di['db']->getExistingModelById('Product', $item['id'], 'Post not found');
-            $pager['list'][$key] = $this->getService()->toApiArray($model, false, $this->getIdentity());
-        }
-
-        return $pager;
+        return $this->getService()->getPaginatedProducts($data, $this->getIdentity());
     }
 
     /**
@@ -48,6 +41,8 @@ class Admin extends \Api_Abstract
      */
     public function get_pairs($data)
     {
+        $this->checkPermissions('product', 'view');
+
         $service = $this->getService();
 
         return $service->getPairs($data);
@@ -60,7 +55,9 @@ class Admin extends \Api_Abstract
      */
     public function get($data)
     {
-        $model = $this->_getProduct($data);
+        $this->checkPermissions('product', 'view');
+
+        $model = $this->getService()->findProductById((int) $data['id']);
         $service = $this->getService();
 
         return $service->toApiArray($model, true, $this->getIdentity());
@@ -73,6 +70,8 @@ class Admin extends \Api_Abstract
      */
     public function get_types()
     {
+        $this->checkPermissions('product', 'view');
+
         return $this->getService()->getTypes();
     }
 
@@ -88,11 +87,13 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['title' => 'You must specify a title', 'type' => 'Type was not passed'])]
     public function prepare($data): int
     {
+        $this->checkPermissions('product', 'manage_products');
+
         $service = $this->getService();
         // allow having only one domain product
         if ($data['type'] == 'domain') {
             $model = $service->getMainDomainProduct();
-            if ($model instanceof \Model_Product) {
+            if ($model !== null) {
                 throw new \FOSSBilling\InformationException('You have already created domain product.', null, 413);
             }
         }
@@ -132,6 +133,8 @@ class Admin extends \Api_Abstract
      */
     public function update($data)
     {
+        $this->checkPermissions('product', 'manage_products');
+
         $model = $this->_getProduct($data);
         $service = $this->getService();
 
@@ -148,6 +151,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['priority' => 'priority params is missing'])]
     public function update_priority($data)
     {
+        $this->checkPermissions('product', 'manage_products');
+
         if (!is_array($data['priority'] ?? null)) {
             throw new \FOSSBilling\Exception('priority params is missing');
         }
@@ -166,6 +171,8 @@ class Admin extends \Api_Abstract
      */
     public function update_config($data)
     {
+        $this->checkPermissions('product', 'manage_products');
+
         $model = $this->_getProduct($data);
 
         $service = $this->getService();
@@ -180,6 +187,8 @@ class Admin extends \Api_Abstract
      */
     public function addon_get_pairs($data)
     {
+        $this->checkPermissions('product', 'view');
+
         return $this->getService()->getAddons();
     }
 
@@ -193,6 +202,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['title' => 'You must specify a title'])]
     public function addon_create($data)
     {
+        $this->checkPermissions('product', 'manage_products');
+
         $title = $data['title'];
         $status = $data['status'] ?? null;
         $setup = $data['setup'] ?? null;
@@ -214,8 +225,10 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Addon ID was not passed'])]
     public function addon_get($data)
     {
-        $model = $this->di['db']->load('Product', $data['id']);
-        if (!$model instanceof \Model_Product || !$model->is_addon) {
+        $this->checkPermissions('product', 'view');
+
+        $model = $this->getService()->findProductById((int) $data['id']);
+        if (!$model instanceof Product || !$model->isAddon()) {
             throw new \FOSSBilling\Exception('Addon not found');
         }
         $service = $this->getService();
@@ -249,11 +262,13 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Addon ID was not passed'])]
     public function addon_update($data)
     {
-        $model = $this->di['db']->load('Product', $data['id']);
-        if (!$model instanceof \Model_Product || !$model->is_addon) {
+        $this->checkPermissions('product', 'manage_products');
+
+        $model = $this->getService()->findProductById((int) $data['id']);
+        if (!$model instanceof Product || !$model->isAddon()) {
             throw new \FOSSBilling\Exception('Addon not found');
         }
-        $this->di['logger']->info('Updated addon #%s', $model->id);
+        $this->di['logger']->info('Updated addon #%s', $model->getId());
 
         return $this->update($data);
     }
@@ -265,6 +280,8 @@ class Admin extends \Api_Abstract
      */
     public function addon_delete($data)
     {
+        $this->checkPermissions('product', 'manage_products');
+
         return $this->delete($data);
     }
 
@@ -275,6 +292,8 @@ class Admin extends \Api_Abstract
      */
     public function delete($data)
     {
+        $this->checkPermissions('product', 'manage_products');
+
         $model = $this->_getProduct($data);
         $service = $this->getService();
 
@@ -288,6 +307,8 @@ class Admin extends \Api_Abstract
      */
     public function category_get_pairs($data)
     {
+        $this->checkPermissions('product', 'view');
+
         return $this->getService()->getProductCategoryPairs($data);
     }
 
@@ -305,7 +326,9 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Category ID was not passed'])]
     public function category_update($data)
     {
-        $model = $this->di['db']->getExistingModelById('ProductCategory', $data['id'], 'Category not found');
+        $this->checkPermissions('product', 'manage_categories');
+
+        $model = $this->getService()->findProductCategoryById((int) $data['id']);
 
         $title = $data['title'] ?? null;
         $description = $data['description'] ?? null;
@@ -326,9 +349,11 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Category ID was not passed'])]
     public function category_get($data)
     {
-        $model = $this->di['db']->getExistingModelById('ProductCategory', $data['id'], 'Category not found');
+        $this->checkPermissions('product', 'manage_categories');
 
-        return $this->getService()->toProductCategoryApiArray($model);
+        $model = $this->getService()->findProductCategoryById((int) $data['id']);
+
+        return $this->getService()->toProductCategoryApiArray($model, true, $this->getIdentity());
     }
 
     /**
@@ -344,6 +369,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['title' => 'Category title is required'])]
     public function category_create($data): int
     {
+        $this->checkPermissions('product', 'manage_categories');
+
         $service = $this->getService();
 
         $title = $data['title'] ?? null;
@@ -363,7 +390,9 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Category ID was not passed'])]
     public function category_delete($data)
     {
-        $model = $this->di['db']->getExistingModelById('ProductCategory', $data['id'], 'Category not found');
+        $this->checkPermissions('product', 'manage_categories');
+
+        $model = $this->getService()->findProductCategoryById((int) $data['id']);
         $service = $this->getService();
 
         return $service->removeProductCategory($model);
@@ -376,14 +405,14 @@ class Admin extends \Api_Abstract
      */
     public function promo_get_list($data)
     {
-        $service = $this->getService();
+        $this->checkPermissions('product', 'view');
 
-        [$sql, $params] = $service->getPromoSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $service = $this->getService();
+        $qb = $service->getPromoSearchQueryBuilder($data);
+        $pager = $this->di['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
-            $model = $this->di['db']->getExistingModelById('Promo', $item['id'], 'Promo not found');
-            $pager['list'][$key] = $this->getService()->toPromoApiArray($model);
+            $pager['list'][$key] = $this->getService()->enrichPromoApiArray($item);
         }
 
         return $pager;
@@ -413,6 +442,8 @@ class Admin extends \Api_Abstract
     ])]
     public function promo_create($data): int
     {
+        $this->checkPermissions('product', 'manage_promos');
+
         $products = [];
         if (isset($data['products']) && is_array($data['products'])) {
             $products = $data['products'];
@@ -441,10 +472,37 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Promo ID was not passed'])]
     public function promo_get($data)
     {
+        $this->checkPermissions('product', 'view');
+
         $id = $data['id'] ?? null;
-        $model = $this->di['db']->getExistingModelById('Promo', $id, 'Promo not found');
+        $model = $this->getService()->findPromoById((int) $id);
 
         return $this->getService()->toPromoApiArray($model, true, $this->getIdentity());
+    }
+
+    /**
+     * Get promo redemption history.
+     *
+     * @return array
+     *
+     * @throws \FOSSBilling\Exception
+     */
+    #[RequiredParams(['promo_id' => 'Promo ID is missing'])]
+    public function promo_redemption_get_list($data)
+    {
+        $this->checkPermissions('product', 'view');
+
+        /** @var \Box\Mod\Product\Repository\PromoRedemptionRepository $repo */
+        $repo = $this->getService()->getPromoRedemptionRepository();
+
+        $qb = $repo->getSearchQueryBuilder($data);
+        $pager = $this->di['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
+
+        foreach ($pager['list'] as $key => $item) {
+            $pager['list'][$key] = $this->getService()->enrichPromoRedemptionApiArray($item);
+        }
+
+        return $pager;
     }
 
     /**
@@ -471,9 +529,10 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Promo ID was not passed'])]
     public function promo_update($data)
     {
-        $model = $this->di['db']->getExistingModelById('Promo', $data['id'], 'Promo not found');
+        $this->checkPermissions('product', 'manage_promos');
 
         $service = $this->getService();
+        $model = $service->findPromoById((int) $data['id']);
 
         return $service->updatePromo($model, $data);
     }
@@ -488,7 +547,9 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Promo ID was not passed'])]
     public function promo_delete($data)
     {
-        $model = $this->di['db']->getExistingModelById('Promo', $data['id'], 'Promo not found');
+        $this->checkPermissions('product', 'manage_promos');
+
+        $model = $this->getService()->findPromoById((int) $data['id']);
 
         return $this->getService()->deletePromo($model);
     }
@@ -496,6 +557,6 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Product ID was not passed'])]
     private function _getProduct($data)
     {
-        return $this->di['db']->getExistingModelById('Product', $data['id'], 'Product not found');
+        return $this->getService()->findProductById((int) $data['id']);
     }
 }

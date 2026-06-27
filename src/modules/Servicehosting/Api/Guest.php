@@ -12,12 +12,13 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicehosting\Api;
 
+use Box\Mod\Product\Entity\Product;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 /**
  * Hosting service management.
  */
-class Guest extends \Api_Abstract
+class Guest extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * @param array $data
@@ -30,9 +31,9 @@ class Guest extends \Api_Abstract
     public function free_tlds($data = [])
     {
         $product_id = $data['product_id'] ?? 0;
-        $product = $this->di['db']->getExistingModelById('Product', $product_id, 'Product was not found');
+        $product = $this->di['mod_service']('product')->findProductById((int) $product_id);
 
-        if ($product->type !== \Model_Product::HOSTING) {
+        if (!$product instanceof Product || $product->getType() !== \Box\Mod\Product\Service::HOSTING) {
             $friendlyName = ucfirst(__trans('Product type'));
 
             throw new \FOSSBilling\Exception(':friendlyName: is invalid', [':friendlyName:' => $friendlyName]);

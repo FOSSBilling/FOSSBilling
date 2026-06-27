@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2026 FOSSBilling
  * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
@@ -58,7 +58,9 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
 
     public function getHtml($api_admin, $invoice_id, $subscription): string
     {
-        $invoice = $api_admin->invoice_get(['id' => $invoice_id]);
+        $invoiceModel = $this->di['db']->load('Invoice', $invoice_id);
+        $invoiceService = $this->di['mod_service']('Invoice');
+        $invoice = $invoiceService->toApiArray($invoiceModel, true);
 
         $data = [];
         if ($subscription) {
@@ -145,6 +147,39 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                         $tx['txn_status'] = 'Completed';
                     }
 
+                    if ($this->isIpnDuplicate($ipn)) {
+                        throw new Payment_Exception('Cannot process duplicate IPN');
+                    }
+
+                    $invoiceService = $this->di['mod_service']('Invoice');
+                    $invoiceDbModel = null;
+                    if (!empty($tx['invoice_id'])) {
+                        $invoiceDbModel = $this->di['db']->load('Invoice', $tx['invoice_id']);
+                    }
+
+                    // For subscription renewals, generate a renewal invoice so
+                    // we validate against the correct amount. Skip this for the
+                    // initial payment (original invoice still unpaid) — that
+                    // payment should go to the original invoice.
+                    if ($ipn['txn_type'] === 'subscr_payment' && isset($ipn['subscr_id'])) {
+                        $originalAlreadyPaid = $invoiceDbModel instanceof Model_Invoice
+                            && $invoiceDbModel->status === Model_Invoice::STATUS_PAID;
+
+                        if ($originalAlreadyPaid) {
+                            $renewalInvoice = $invoiceService->generateRenewalInvoiceForSubscriptionPayment($ipn['subscr_id'], $client_id);
+                            if ($renewalInvoice instanceof Model_Invoice) {
+                                $api_admin->invoice_transaction_update(['id' => $id, 'invoice_id' => $renewalInvoice->id]);
+                                $tx['invoice_id'] = $renewalInvoice->id;
+                                $invoiceDbModel = $renewalInvoice;
+                            }
+                        }
+                    }
+
+                    if ($invoiceDbModel instanceof Model_Invoice) {
+                        $expected = $invoiceService->getTotalWithTax($invoiceDbModel);
+                        $invoiceService->validatePaymentAmount((float) $ipn['mc_gross'], $expected);
+                    }
+
                     $bd = [
                         'id' => $client_id,
                         'amount' => $ipn['mc_gross'],
@@ -153,34 +188,15 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                         'rel_id' => $ipn['txn_id'],
                     ];
 
-                    if ($this->isIpnDuplicate($ipn)) {
-                        throw new Payment_Exception('Cannot process duplicate IPN');
-                    }
-
                     $api_admin->client_balance_add_funds($bd);
-
-                    $invoiceService = $this->di['mod_service']('Invoice');
-                    $invoiceDbModel = null;
-                    if (!empty($tx['invoice_id'])) {
-                        $invoiceDbModel = $this->di['db']->load('Invoice', $tx['invoice_id']);
-                    }
-
-                    // For subscription payments, always try to find or generate the correct renewal invoice
-                    // based on the subscription SID, instead of blindly reusing the original invoice ID.
-                    if ($ipn['txn_type'] === 'subscr_payment' && isset($ipn['subscr_id'])) {
-                        $renewalInvoice = $invoiceService->generateRenewalInvoiceForSubscriptionPayment($ipn['subscr_id'], $client_id);
-                        if ($renewalInvoice instanceof Model_Invoice) {
-                            $api_admin->invoice_transaction_update(['id' => $id, 'invoice_id' => $renewalInvoice->id]);
-                            $tx['invoice_id'] = $renewalInvoice->id;
-                            $invoiceDbModel = $renewalInvoice;
-                        }
-                    }
 
                     if (!empty($tx['invoice_id']) && $invoiceDbModel instanceof Model_Invoice && !$invoiceService->isInvoiceTypeDeposit($invoiceDbModel)) {
                         if (!$invoiceDbModel->approved) {
                             $invoiceService->approveInvoice($invoiceDbModel, ['use_credits' => false]);
                         }
                         $api_admin->invoice_pay_with_credits(['id' => $tx['invoice_id']]);
+                    } elseif (!empty($tx['invoice_id']) && $invoiceDbModel instanceof Model_Invoice && $invoiceService->isInvoiceTypeDeposit($invoiceDbModel)) {
+                        $invoiceService->markAsPaid($invoiceDbModel);
                     } elseif (empty($tx['invoice_id'])) {
                         $api_admin->invoice_batch_pay_with_credits(['client_id' => $client_id]);
                     }
@@ -268,17 +284,6 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         return $ret == 'VERIFIED';
     }
 
-    #[Override]
-    public function moneyFormat($amount, $currency = null): string
-    {
-        // HUF currency do not accept decimal values
-        if ($currency == 'HUF') {
-            return number_format($amount, 0);
-        }
-
-        return number_format($amount, 2, '.', '');
-    }
-
     /**
      * @param string $url
      */
@@ -356,7 +361,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return false;
     }
 
-    public function getInvoiceTitle(array $invoice)
+    public function getInvoiceTitle(array $invoice): string
     {
         $p = [
             ':id' => sprintf('%05s', $invoice['nr']),

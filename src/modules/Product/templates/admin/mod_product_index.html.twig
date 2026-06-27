@@ -3,46 +3,42 @@
 {% import 'macro_functions.html.twig' as mf %}
 
 {% set active_menu = 'products' %}
+{% set product_toolbar_actions %}
+    <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newProductModal">
+        <svg class="icon">
+            <use href="#plus" />
+        </svg>
+        {{ 'New Product'|trans }}
+    </button>
+{% endset %}
 
 {% block meta_title %}{{ 'Products'|trans }}{% endblock %}
 
 {% block content %}
-    <ul class="nav nav-tabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="index-tab" data-bs-toggle="tab" data-bs-target="#tab-index" type="button" role="tab" aria-controls="index" aria-selected="true">{{ 'Products'|trans }}</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="new-tab" data-bs-toggle="tab" data-bs-target="#tab-new" type="button" role="tab" aria-controls="index" aria-selected="true">
-                <svg class="icon me-2">
-                    <use xlink:href="#plus" />
-                </svg>
-                {{ 'New Product'|trans }}
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="categories-tab" data-bs-toggle="tab" data-bs-target="#tab-categories" type="button" role="tab" aria-controls="index" aria-selected="true">{{ 'Categories'|trans }}</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="new-category-tab" data-bs-toggle="tab" data-bs-target="#tab-new-category" type="button" role="tab" aria-controls="index" aria-selected="true">
-                <svg class="icon me-2">
-                    <use xlink:href="#plus" />
-                </svg>
-                {{ 'New Category'|trans }}
-            </button>
-        </li>
-    </ul>
-
-<div class="card">
-    <div class="tab-content">
-        <div class="tab-pane fade show active" id="tab-index" role="tabpanel" aria-labelledby="index-tab">
-            <div class="card-header">
+    <div class="card">
+        <div class="card-header">
+            <div>
                 <h3 class="card-title">{{ 'Products'|trans }}</h3>
-                <div class="card-actions">
-                    {{ include('partial_search_action.html.twig') }}
-                </div>
+                <p class="card-subtitle">{{ 'Manage products, prepare new offerings, and organize product categories.'|trans }}</p>
             </div>
+        </div>
+        <div class="card-body pt-3 pb-0 px-0">
+            <div class="card border-0 shadow-none rounded-0">
+                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
+                    <ul class="nav nav-pills card-header-pills">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="index-tab" data-bs-toggle="tab" data-bs-target="#tab-index" type="button" role="tab" aria-controls="index" aria-selected="true">{{ 'Products'|trans }}</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="categories-tab" data-bs-toggle="tab" data-bs-target="#tab-categories" type="button" role="tab" aria-controls="index" aria-selected="true">{{ 'Categories'|trans }}</button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="tab-content border-top">
+        <div class="tab-pane fade show active" id="tab-index" role="tabpanel" aria-labelledby="index-tab">
+            {{ include('partial_search.html.twig', { search_toolbar_actions: product_toolbar_actions }) }}
             <div class="table-responsive">
-                <form method="post" action="{{ 'api/admin/product/update_priority'|link }}" {{ fb_api_form({reload: true}) }}>
+                <form method="post" action="{{ 'product/update_priority'|api_url }}" {{ fb_api_form({reload: true}) }}>
                     <table class="table card-table table-vcenter table-striped text-nowrap sortable">
                         <thead>
                             <tr>
@@ -56,54 +52,53 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% set products = admin.product_get_list({ 'per_page': 30, 'page': request.page }|merge(request)) %}
+                            {% set products = admin.product_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
                             {% for product in products.list %}
                             <tr>
                                 <td>{{ product.id }}</td>
                                 <td>{{ mf.status_name(product.type) }}</td>
                                 <td>
-                                    <a href="{{ '/product/category'|alink }}/{{ product.category.id }}">{{ product.category.title }}</a>
+                                    {% if product.category is defined %}
+                                    <a href='{{ "product/category/#{product.category.id}"|url }}'>{{ product.category.title }}</a>
+                                    {% else %}
+                                    –
+                                    {% endif %}
                                 </td>
-                                <td><a href="{{ '/product/manage'|alink }}/{{ product.id }}">{{ product.title }}</a></td>
-                                <td>
-                                    {% if product.status == 'enabled' %}
-                                        <span class="badge bg-success me-1"></span>
-                                    {% endif %}
-                                    {% if product.status == 'disabled' %}
-                                        <span class="badge bg-secondary me-1"></span>
-                                    {% endif %}
-                                    {{ mf.status_name(product.status) }}</td>
+                                <td><a href='{{ "product/manage/#{product.id}"|url }}'>{{ product.title }}</a></td>
+                                <td>{{ mf.status_badge(product.status, 'product') }}</td>
                                 <td class="text-center">
                                     <input type="text" class="form-control form-control-sm" name="priority[{{ product.id }}]" value="{{ product.priority }}" size="2">
                                 </td>
                                 <td>
-                                    <a class="btn btn-icon" href="{{ '/product/manage'|alink }}/{{ product.id }}">
+                                    <a class="btn btn-icon" href='{{ "product/manage/#{product.id}"|url }}'>
                                         <svg class="icon">
-                                            <use xlink:href="#edit" />
+                                            <use href="#edit" />
                                         </svg>
                                     </a>
-                                    <a class="btn btn-icon" href="{{ 'api/admin/product/delete'|link({'id' : product.id }) }}"
-                                        {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'product'|alink}) }}>
+                                    <a class="btn btn-icon" href="{{ 'product/delete'|api_url({'id' : product.id }) }}"
+                                        {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'product'|url}) }}>
                                         <svg class="icon">
-                                            <use xlink:href="#delete" />
+                                            <use href="#trash" />
                                         </svg>
                                     </a>
                                 </td>
                             </tr>
                             {% else %}
                             <tr>
-                                <td class="text-muted" colspan="6">{{ 'The list is empty'|trans }}</td>
+                                <td class="text-muted" colspan="7">{{ 'The list is empty'|trans }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
 
-                    {{ include('partial_pagination.html.twig', { 'list': products, 'url': 'product' }) }}
+                    <div class="card-footer d-flex align-items-center">
+                        {{ include('partial_pagination.html.twig', { 'list': products, 'url': 'product', 'split_footer_controls': true }) }}
+                    </div>
 
                     <div class="card-footer text-end">
                         <button type="submit" class="btn btn-primary">
                             <svg class="icon">
-                                <use xlink:href="#refresh" />
+                                <use href="#refresh" />
                             </svg>
                             {{ 'Update Priority'|trans }}
                         </button>
@@ -112,34 +107,16 @@
             </div>
         </div>
 
-        <div class="tab-pane fade" id="tab-new" role="tabpanel" aria-labelledby="new-tab">
-            <div class="card-body">
-                <form method="post" action="{{ 'api/admin/product/prepare'|link }}" {{ fb_api_form({reload: true}) }}>
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Type'|trans }}:</label>
-                        <div class="col">
-                            {{ mf.selectbox('type', admin.product_get_types, request.type, 1) }}
-                        </div>
-                    </div>
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Category'|trans }}:</label>
-                        <div class="col">
-                            {{ mf.selectbox('product_category_id', admin.product_category_get_pairs, request.product_category_id, 1) }}
-                        </div>
-                    </div>
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
-                        <div class="col">
-                            <input type="text" class="form-control" name="title" value="{{ request.title }}" required>
-                        </div>
-                    </div>
-
-                    <button class="btn btn-primary w-100" type="submit">{{ 'Create'|trans }}</button>
-                </form>
-            </div>
-        </div>
-
         <div class="tab-pane fade" id="tab-categories" role="tabpanel" aria-labelledby="categories-tab">
+            <div class="p-3 border-bottom d-flex justify-content-end">
+                <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newCategoryModal">
+                    <svg class="icon">
+                        <use href="#plus" />
+                    </svg>
+                    {{ 'New Category'|trans }}
+                </button>
+            </div>
+            <div class="table-responsive">
             <table class="table card-table table-vcenter table-striped text-nowrap">
                 <thead>
                     <tr>
@@ -153,18 +130,18 @@
                     <tr>
                         <td>{{ loop.index }}</td>
                         <td>
-                            <a href="{{ '/product/category'|alink }}/{{ cat_id }}">{{ cat_title }}</a>
+                            <a href='{{ "product/category/#{cat_id}"|url }}'>{{ cat_title }}</a>
                         </td>
                         <td>
-                            <a class="btn btn-icon" href="{{ '/product/category'|alink }}/{{ cat_id }}">
+                            <a class="btn btn-icon" href='{{ "product/category/#{cat_id}"|url }}'>
                                 <svg class="icon">
-                                    <use xlink:href="#edit" />
+                                    <use href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon" href="{{ 'api/admin/product/category_delete'|link({ 'id': cat_id }) }}"
-                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'product'|alink}) }}>
+                            <a class="btn btn-icon" href="{{ 'product/category_delete'|api_url(query: { 'id': cat_id }) }}"
+                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'product#tab-categories'|url}) }}>
                                 <svg class="icon">
-                                    <use xlink:href="#delete" />
+                                    <use href="#trash" />
                                 </svg>
                             </a>
                         </td>
@@ -176,36 +153,103 @@
                     {% endfor %}
                 </tbody>
             </table>
+            </div>
+        </div>
+                </div>
+            </div>
         </div>
 
-        <div class="tab-pane fade" id="tab-new-category" role="tabpanel" aria-labelledby="new-category-tab">
-            <div class="card-body">
-                <form method="post" action="{{ 'api/admin/product/category_create'|link }}" {{ fb_api_form({redirect: 'product'|alink}) }}>
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Title'|trans }}:</label>
-                        <div class="col">
-                            <input type="text" class="form-control" name="title" value="{{ request.cat_title }}" required>
+        <div class="modal modal-blur fade" id="newProductModal" tabindex="-1" aria-labelledby="newProductModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <form class="modal-content" method="post" action="{{ 'product/prepare'|api_url }}" {{ fb_api_form({reload: true}) }}>
+                    <div class="modal-header">
+                        <h3 class="modal-title" id="newProductModalLabel">{{ 'Create New Product'|trans }}</h3>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">{{ 'Type'|trans }}</label>
+                            {{ mf.selectbox('type', admin.product_get_types, request.type, 1) }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">{{ 'Category'|trans }}</label>
+                            {{ mf.selectbox('product_category_id', admin.product_category_get_pairs, request.product_category_id, 1) }}
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label" for="new-product-title">{{ 'Title'|trans }}</label>
+                            <input type="text" class="form-control" id="new-product-title" name="title" value="{{ request.title }}" required>
                         </div>
                     </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
+                        <button class="btn btn-primary" type="submit">{{ 'Create'|trans }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
 
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Icon URL'|trans }}:</label>
-                        <div class="col">
-                            <input type="text" class="form-control" name="icon_url" value="">
+        <div class="modal modal-blur fade" id="newCategoryModal" tabindex="-1" aria-labelledby="newCategoryModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <form class="modal-content" method="post" action="{{ 'product/category_create'|api_url }}" {{ fb_api_form({redirect: 'product#tab-categories'|url}) }}>
+                    <div class="modal-header">
+                        <h3 class="modal-title" id="newCategoryModalLabel">{{ 'Create New Category'|trans }}</h3>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label" for="new-category-title">{{ 'Title'|trans }}</label>
+                            <input type="text" class="form-control" id="new-category-title" name="title" value="{{ request.cat_title }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="new-category-icon-url">{{ 'Icon URL'|trans }}</label>
+                            <input type="text" class="form-control" id="new-category-icon-url" name="icon_url" value="">
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label" for="new-category-description">{{ 'Description'|trans }}</label>
+                            <textarea class="form-control editor-textarea" id="new-category-description" name="description" rows="5">{{ request.cat_description }}</textarea>
                         </div>
                     </div>
-
-                    <div class="form-group mb-3 row">
-                        <label class="form-label col-3 col-form-label">{{ 'Description'|trans }}:</label>
-                        <div class="col">
-                            <textarea class="form-control" name="description" rows="5">{{ request.cat_description }}</textarea>
-                        </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
+                        <button class="btn btn-primary" type="submit">{{ 'Create'|trans }}</button>
                     </div>
-
-                    <button class="btn btn-primary w-100" type="submit">{{ 'Create'|trans }}</button>
                 </form>
             </div>
         </div>
     </div>
-</div>
 {% endblock %}
+
+{% block js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modalConfigs = [
+        { elementId: 'newProductModal', hash: '#tab-new' },
+        { elementId: 'newCategoryModal', hash: '#tab-new-category' }
+    ];
+
+    for (const { elementId, hash } of modalConfigs) {
+        const modalElement = document.getElementById(elementId);
+        if (!modalElement) {
+            continue;
+        }
+
+        const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+        if (window.location.hash === hash) {
+            modal.show();
+        }
+
+        modalElement.addEventListener('hidden.bs.modal', function () {
+            if (window.location.hash !== hash) {
+                return;
+            }
+
+            const url = new URL(window.location.href);
+            url.hash = '';
+            window.history.replaceState({}, '', url);
+        });
+    }
+});
+</script>
+{% endblock %}
+
+{% block head %}{{ wysiwyg('.editor-textarea') }}{% endblock %}

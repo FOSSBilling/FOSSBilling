@@ -9,14 +9,14 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
-                    <use xlink:href="#home" />
+                    <use href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'email/history'|alink }}">{{ 'Email History'|trans }}</a>
+            <a href="{{ 'email/history'|url }}">{{ 'Email History'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ email.subject }}</li>
     </ol>
@@ -52,24 +52,24 @@
             data-email-subject="{{ email.subject }}"
             data-email-content="{{ email.content_html|e('html_attr') }}">
             <svg class="icon icon-tabler" width="24" height="24">
-                <use xlink:href="#eye" />
+                <use href="#eye" />
             </svg>
             <span class="d-block text-secondary">{{ 'Preview'|trans }}</span>
         </button>
         {% if can_send_emails %}
         <a class="btn btn-primary"
-            {{ fb_api_link({href: 'api/admin/email/email_resend'|link({id: email.id}), message: 'Email Resent'|trans}) }}>
+            {{ fb_api_link({href: 'email/email_resend'|api_url(query: {id: email.id}), message: 'Email Resent'|trans}) }}>
             <svg class="icon icon-tabler" width="24" height="24">
-                <use xlink:href="#refresh" />
+                <use href="#refresh" />
             </svg>
             <span class="d-block text-secondary">{{ 'Resend'|trans }}</span>
         </a>
         {% endif %}
         {% if can_delete_email_history %}
         <a class="btn btn-primary"
-            {{ fb_api_link({href: 'api/admin/email/email_delete'|link({id: email.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'email/history'|alink}) }}>
+            {{ fb_api_link({href: 'email/email_delete'|api_url(query: {id: email.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'email/history'|url}) }}>
             <svg class="icon icon-tabler" width="24" height="24">
-                <use xlink:href="#delete" />
+                <use href="#trash" />
             </svg>
             <span class="d-block text-secondary">{{ 'Delete'|trans }}</span>
         </a>

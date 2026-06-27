@@ -18,14 +18,14 @@ namespace Box\Mod\Profile\Api;
 
 use FOSSBilling\Validation\Api\RequiredParams;
 
-class Client extends \Api_Abstract
+class Client extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get currently logged in client details.
      */
     public function get()
     {
-        $clientService = $this->di['mod_service']('client');
+        $clientService = $this->getDi()['mod_service']('client');
 
         return $clientService->toApiArray($this->getIdentity(), true, $this->getIdentity());
     }
@@ -50,8 +50,6 @@ class Client extends \Api_Abstract
      * @optional string $state - country state
      * @optional string $phone - Phone number
      * @optional string $phone_cc - Phone country code
-     * @optional string $document_type - Related document type, ie: passport, driving license
-     * @optional string $document_nr - Related document number, ie: passport number: LC45698122
      * @optional string $notes - Notes about client. Visible for admin only
      * @optional string $lang - language option
      * @optional string $custom_1 - Custom field 1
@@ -72,7 +70,7 @@ class Client extends \Api_Abstract
     public function update($data)
     {
         if (!is_null($data['email'] ?? null)) {
-            $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+            $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
         }
 
         return $this->getService()->updateClient($this->getIdentity(), $data);
@@ -110,12 +108,15 @@ class Client extends \Api_Abstract
     ])]
     public function change_password($data)
     {
-        $this->di['validator']->isPasswordStrong($data['new_password']);
-        $this->di['validator']->passwordsMatch($data, 'new_password', 'confirm_password');
+        $this->getDi()['validator']->isPasswordStrong($data['new_password']);
+        $this->getDi()['validator']->passwordsMatch($data, 'new_password', 'confirm_password');
 
         $client = $this->getIdentity();
 
-        if (!$this->di['password']->verify($data['current_password'], $client->pass)) {
+        $this->getDi()['rate_limiter']->consumeOrThrow('profile_password_change_ip', (string) $this->getIp());
+        $this->getDi()['rate_limiter']->consumeOrThrow('profile_password_change_account', 'client:' . $client->id);
+
+        if (!$this->getDi()['password']->verify($data['current_password'], $client->pass)) {
             throw new \FOSSBilling\InformationException('Current password incorrect');
         }
 

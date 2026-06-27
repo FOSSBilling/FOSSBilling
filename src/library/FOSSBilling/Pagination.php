@@ -21,7 +21,7 @@ class Pagination implements InjectionAwareInterface
 {
     private ?\Pimple\Container $di = null;
 
-    public function setDi(?\Pimple\Container $di): void
+    public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
     }
@@ -52,8 +52,9 @@ class Pagination implements InjectionAwareInterface
      * Entities implementing `ApiArrayInterface` will use `toApiArray()`, others will be normalized
      * using Symfony's ObjectNormalizer.
      *
-     * @param QueryBuilder      $qb         the Doctrine QueryBuilder instance to paginate
-     * @param PaginationOptions $pagination pagination options
+     * @param QueryBuilder      $qb              the Doctrine QueryBuilder instance to paginate
+     * @param PaginationOptions $pagination      pagination options
+     * @param mixed             ...$apiArrayArgs optional arguments passed to entity toApiArray() methods
      *
      * @return array{
      *     pages: int,      // Total number of pages
@@ -63,21 +64,21 @@ class Pagination implements InjectionAwareInterface
      *     list: array      // List of paginated items as arrays
      * }
      */
-    public function paginateDoctrineQuery(QueryBuilder $qb, PaginationOptions $pagination): array
+    public function paginateDoctrineQuery(QueryBuilder $qb, PaginationOptions $pagination, mixed ...$apiArrayArgs): array
     {
         $serializer = new Serializer([new ObjectNormalizer()]);
-        $paginator = new DoctrinePaginator($qb, true);
 
         $offset = ($pagination->page - 1) * $pagination->perPage;
         $qb->setFirstResult($offset)
            ->setMaxResults($pagination->perPage);
+        $paginator = new DoctrinePaginator($qb, true);
 
         $total = count($paginator);
 
         $list = [];
         foreach ($paginator as $entity) {
             if ($entity instanceof ApiArrayInterface) {
-                $list[] = $entity->toApiArray();
+                $list[] = $entity->toApiArray(...$apiArrayArgs);
             } else {
                 $list[] = $serializer->normalize($entity);
             }

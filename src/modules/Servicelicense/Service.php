@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicelicense;
 
+use Box\Mod\Product\Entity\Product;
 use FOSSBilling\InjectionAwareInterface;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
@@ -30,12 +31,23 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'manage' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage licenses'),
+                'description' => __trans('Allows the staff member to update and reset license validation rules.'),
+            ],
+        ];
+    }
+
     /**
      * Method called before adding product to cart.
      */
-    public function attachOrderConfig(\Model_Product $product, array $data): array
+    public function attachOrderConfig(Product $product, array $data): array
     {
-        $config = json_decode($product->config ?? '', true) ?? [];
+        $config = json_decode($product->getConfig() ?? '', true) ?? [];
 
         return array_merge($config, $data);
     }
@@ -371,7 +383,9 @@ class Service implements InjectionAwareInterface
                 return new $class_name();
             }
         }
-        error_log("License #{$model->id} plugin {$model->plugin} is invalid.");
+        if (isset($this->di['logger'])) {
+            $this->di['logger']->info('License #%s plugin %s is invalid.', $model->id, $model->plugin);
+        }
 
         return null;
     }
@@ -409,7 +423,7 @@ class Service implements InjectionAwareInterface
     {
         $result = [];
         $log = $this->di['logger']->setChannel('license');
-
+        // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
         if (DEBUG) {
             $log->debug(print_r($data, true));
         }

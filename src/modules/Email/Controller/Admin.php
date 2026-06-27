@@ -33,7 +33,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                 [
                     'location' => 'activity',
                     'index' => 200,
-                    'label' => __trans('Email history'),
+                    'label' => __trans('Email History'),
                     'uri' => $this->di['url']->adminLink('email/history'),
                     'class' => '',
                 ],
@@ -55,6 +55,13 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $this->di['is_admin_logged'];
 
         return $app->render('mod_email_history');
+    }
+
+    public function get_index(\Box_App $app): string
+    {
+        $this->di['is_admin_logged'];
+
+        return $app->render('mod_email_settings');
     }
 
     public function get_template(\Box_App $app, $id): string

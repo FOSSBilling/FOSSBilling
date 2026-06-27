@@ -6,65 +6,279 @@
         <link href="./assets/css/pico.min.css" rel="stylesheet">
         <script src="./assets/js/modal.js"></script>
         <title>FOSSBilling Installation</title>
-        <base href="{{ constant('URL_INSTALL') }}"/>
         <style type="text/css">
+            :root {
+                --fb-brand: #1c7ed6;
+                --fb-brand-dark: #1864ab;
+                --fb-surface: #ffffff;
+                --fb-border: #dbe3ec;
+                --fb-muted: #5f6c7b;
+                --fb-success: #2f9e44;
+                --fb-danger: #d9480f;
+                --fb-warning: #f08c00;
+                --fb-details-surface: #fbfcfe;
+                --fb-details-open-border: #b9c8d8;
+                --fb-input-surface: #ffffff;
+                --fb-page-background: #f6f8fb;
+                --fb-panel-shadow: 0 16px 40px rgba(20, 33, 61, 0.08);
+            }
+            @media (prefers-color-scheme: dark) {
+                :root {
+                    --fb-brand: #4dabf7;
+                    --fb-brand-dark: #339af0;
+                    --fb-surface: #141e29;
+                    --fb-border: #2b3a4a;
+                    --fb-muted: #a8b3c2;
+                    --fb-success: #69db7c;
+                    --fb-danger: #ff8787;
+                    --fb-warning: #ffc078;
+                    --fb-details-surface: #101821;
+                    --fb-details-open-border: #3d5065;
+                    --fb-input-surface: #0f1720;
+                    --fb-page-background: #0b1118;
+                    --fb-panel-shadow: 0 16px 40px rgba(0, 0, 0, 0.32);
+                }
+            }
+            body {
+                background: var(--fb-page-background);
+            }
+            body > main.container {
+                max-width: 980px;
+                padding-top: 2rem;
+                padding-bottom: 2rem;
+            }
+            body > footer.container {
+                max-width: 980px;
+                padding-top: 0;
+                padding-bottom: 2rem;
+                color: var(--fb-muted);
+            }
+            nav.installer-nav {
+                align-items: center;
+                border-bottom: 1px solid var(--fb-border);
+                margin-bottom: 2rem;
+                padding-bottom: 1rem;
+            }
+            nav.installer-nav img {
+                height: 48px;
+                width: auto;
+            }
+            .installer-logo-dark {
+                display: none;
+            }
+            @media (prefers-color-scheme: dark) {
+                .installer-logo-light {
+                    display: none;
+                }
+                .installer-logo-dark {
+                    display: block;
+                }
+            }
+            .installer-panel {
+                background: var(--fb-surface);
+                border: 1px solid var(--fb-border);
+                border-radius: 8px;
+                box-shadow: var(--fb-panel-shadow);
+                padding: clamp(1rem, 3vw, 2rem);
+            }
+            .installer-intro {
+                color: var(--fb-muted);
+                margin-bottom: 1.25rem;
+            }
             .green {
-                color: green;
+                color: var(--fb-success);
                 font-weight: bold;
             }
             .red {
-                color: red;
+                color: var(--fb-danger);
                 font-weight: bold;
             }
             .orange {
-                color: orange;
+                color: var(--fb-warning);
                 font-weight: bold;
             }
-            hr {
-                margin-bottom: 3em;
+            #overall-progress {
+                height: 0.75rem;
+                margin-bottom: 1.5rem;
             }
-            .button-inline {
+            details {
+                background: var(--fb-details-surface);
+                border: 1px solid var(--fb-border);
+                border-radius: 8px;
+                margin-bottom: 1rem;
+                padding: 0;
+            }
+            details[open] {
+                background: var(--fb-surface);
+                border-color: var(--fb-details-open-border);
+            }
+            details summary {
+                border-radius: 8px;
+                font-weight: 700;
+                padding: 1rem 1.25rem;
+            }
+            details[open] summary {
+                border-bottom: 1px solid var(--fb-border);
+                margin-bottom: 1rem;
+            }
+            details > :not(summary) {
+                margin-left: 1.25rem;
+                margin-right: 1.25rem;
+            }
+            details > :last-child {
+                margin-bottom: 1.25rem;
+            }
+            fieldset {
+                margin-bottom: 0;
+            }
+            input:not([type="checkbox"]):not([type="radio"]) {
+                background-color: var(--fb-input-surface);
+            }
+            .choice-row {
+                align-items: flex-start;
+                display: flex;
+                gap: 0.75rem;
+                margin-bottom: 0.5rem;
+            }
+            .choice-row input[type="checkbox"] {
+                flex: 0 0 auto;
+                margin-top: 0.15rem;
+            }
+            .choice-row label {
+                cursor: pointer;
+                margin-bottom: 0;
+            }
+            .choice-help {
+                color: var(--fb-muted);
+                display: block;
+                margin-left: calc(1.75rem + 0.75rem);
+            }
+            .option-section {
+                border-top: 1px solid var(--fb-border);
+                padding-top: 1rem;
+            }
+            .option-section.first-option-section {
+                border-top: 0;
+                padding-top: 0;
+            }
+            .option-section h3 {
+                font-size: 1.1rem;
+                margin-bottom: 0.35rem;
+            }
+            .option-section p {
+                color: var(--fb-muted);
+                margin-bottom: 0.75rem;
+            }
+            .requirements-table-wrapper {
+                max-width: calc(100% - 2.5rem);
+                overflow-x: auto;
+            }
+            table {
+                font-size: 0.95rem;
+            }
+            .installer-actions {
+                align-items: center;
+                display: flex;
+                gap: 0.75rem;
+                justify-content: flex-end;
+                margin-top: 1.5rem;
+            }
+            .installer-actions button {
+                margin-bottom: 0;
+                min-width: 8rem;
+                width: auto;
+            }
+            .installer-actions .secondary {
+                margin-right: auto;
+            }
+            .installer-note {
+                color: var(--fb-muted);
+                margin: 0.75rem 0 0;
+                text-align: right;
+            }
+            .result-actions {
+                display: grid;
+                gap: 1rem;
+                grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+                margin-top: 1.5rem;
+            }
+            .result-actions a {
+                width: 100%;
+            }
+            .success-list {
+                counter-reset: success-step;
+                list-style: none;
+                padding-left: 0;
+            }
+            .success-list > li {
+                border-top: 1px solid var(--fb-border);
+                counter-increment: success-step;
+                padding: 1.25rem 0;
+            }
+            .success-list > li::before {
+                color: var(--fb-brand);
+                content: counter(success-step) ". ";
+                font-weight: 700;
+            }
+            .success-list h3 {
                 display: inline;
-                width: 25%;
             }
-            .float-right-margin {
-                float: right;
-                margin-right: 1.5em;
+            .success-list pre {
+                margin-top: 0.75rem;
             }
-            .float-left-margin {
-                float: left;
-                margin-left: 1.5em;
+            @media (max-width: 640px) {
+                body > main.container {
+                    padding-top: 1rem;
+                }
+                .installer-panel {
+                    border-radius: 0;
+                    margin-left: calc(var(--block-spacing-horizontal) * -1);
+                    margin-right: calc(var(--block-spacing-horizontal) * -1);
+                }
+                nav.installer-nav {
+                    align-items: flex-start;
+                }
+                .installer-actions {
+                    align-items: stretch;
+                    flex-direction: column;
+                }
+                .installer-actions .secondary {
+                    margin-right: 0;
+                }
+                .installer-actions button {
+                    width: 100%;
+                }
+                .installer-note {
+                    text-align: left;
+                }
+            }
+            hr {
+                margin-bottom: 2rem;
             }
         </style>
     </head>
     <body>
         <main class="container">
-            <nav style='padding-bottom: 1em;'>
+            <nav class="installer-nav">
                 <ul>
                     <li>
-                    <a href="{{ constant('URL_INSTALL') }}" title="FOSSBilling">
-                        <picture>
-                            <!-- User prefers light mode: -->
-                            <source srcset="../themes/huraga/assets/img/logo.svg" media="(prefers-color-scheme: light)" alt="FOSSBilling logo" height="50px" width="238"/>
-
-                            <!-- User prefers dark mode: -->
-                            <source srcset="../themes/huraga/assets/img/logo_white.svg"  media="(prefers-color-scheme: dark)" alt="FOSSBilling logo" height="50px" width="238"/>
-
-                            <!-- Fallback / no preference -->
-                            <img src="../themes/huraga/assets/img/logo.svg" alt="FOSSBilling logo" height="50px" width="238"/>
-                        </picture>
+                    <a href="./install.php" title="FOSSBilling">
+                        <img class="installer-logo-light" src="../public/branding/logo.svg" alt="FOSSBilling logo" height="50" width="238">
+                        <img class="installer-logo-dark" src="../public/branding/logo-dark.svg" alt="FOSSBilling logo" height="50" width="238">
                     </a></li>
                 </ul>
                 <ul>
-                    <li><a href="https://fossbilling.org/docs" target="_blank" data-tooltip="Opens in a new window.">Documentation</a></li>
+                    <li><a href="https://docs.fossbilling.org/" target="_blank" data-tooltip="Opens in a new window.">Documentation</a></li>
                     <li><a href="https://github.com/FOSSBilling/FOSSBilling/issues" target="_blank" data-tooltip="Opens in a new window.">Bug Reports</a></li>
                 </ul>
             </nav>
-            {% block page %}{% endblock %}
+            <section class="installer-panel">
+                {% block page %}{% endblock %}
+            </section>
         </main>
         <footer class="container">
             <small>
-                <span>&copy; Copyright {{ now|date('Y') }}. All rights reserved. Powered by <a href="https://fossbilling.org" title="FOSSBilling" target="_blank" data-tooltip="Opens in a new tab.">FOSSBilling {{version}}</a></span>
+                <span>&copy; Copyright {{ 'now'|date('Y') }}. All rights reserved. Powered by <a href="https://fossbilling.org" title="FOSSBilling" target="_blank" data-tooltip="Opens in a new tab.">FOSSBilling {{version}}</a></span>
             </small>
         </footer>
         {% block javascript %}{% endblock %}

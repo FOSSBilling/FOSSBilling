@@ -3,153 +3,219 @@
 {% block meta_title %}{{ 'Manage Translations'|trans }}{% endblock %}
 
 {% set active_menu = 'extensions' %}
+{% set new_translation_action %}
+    <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newTranslationsModal">
+        <svg class="icon">
+            <use href="#plus" />
+        </svg>
+        {{ 'New Translations'|trans }}
+    </button>
+{% endset %}
 
 {% block content %}
-    <div class="card-tabs">
-        <ul class="nav nav-tabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Manage Translations'|trans }}</a>
-            </li>
-            <li class="nav-item" role="presentation">
-                <a class="nav-link" href="#tab-new" data-bs-toggle="tab">
-                    <svg class="icon me-2">
-                        <use xlink:href="#plus" />
-                    </svg>
-                    {{ 'New translations'|trans }}
-                </a>
-            </li>
-        </ul>
-        <div class="card">
-            <div class="tab-content">
-                <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
-                    <div class="container">
-                        <h2 class="mb-1 mt-1">{{ 'Enabled Translations'|trans}}</h2>
-                        <table class="table card-table table-vcenter table-striped text-nowrap">
-                            <thead>
-                            <tr>
-                                <th>{{ 'Country'|trans }}</th>
-                                <th>{{ 'Language'|trans }}</th>
-                                <th>{{ 'Completion'|trans}}</th>
-                                <th>{{ 'Code'|trans }}</th>
-                                <th>{{ 'Disable'|trans }}</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {% for lang in admin.extension_languages %}
-                            <tr>
-                                <td class="w-2">
-                                    <span class="flag flag-country-{{ lang.locale|split('_')[1]|lower }}"></span>
-                                </td>
-                                <td class="w-6">{{ lang.name }}</td>
-                                <td>
-                                    {% set progress = admin.extension_locale_completion({'locale_id': lang.locale})%}
-                                    {% if progress > 75 %}
-                                        {% set background = 'success' %}
-                                    {% elseif progress > 50 %}
-                                        {% set background = 'warning' %}
-                                    {% else %}
-                                        {% set background = 'danger' %}
-                                    {% endif %}
-                                    <div class="progress" style="height: 15px;">
-                                        <div class="progress-bar bg-{{ background }}" role="progressbar" style="width: {{ progress }}%" aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100">{{ progress }}%</div>
-                                    </div>
-                                </td>
-                                <td class="w-1">{{ lang.locale }}</td>
-                                <td class="w-1">
-                                        <a class="btn btn-icon" href="{{ 'api/admin/extension/toggle_language'|link({ 'locale_id': lang.locale }) }}" {{ fb_api_link({reload: true}) }}>
-                                        <svg class="icon">
-                                            <use xlink:href="#close" />
-                                        </svg>
-                                    </a>
-                                </td>
-                            </tr>
-                            </tbody>
-                            {% else %}
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">{{ 'Translations'|trans }}</h3>
+                <p class="card-subtitle">{{ 'Manage installed translations and discover new language packs.'|trans }}</p>
+            </div>
+        </div>
+        <div class="card-body pt-3 pb-0 px-0">
+            <div class="card border-0 shadow-none rounded-0">
+                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
+                    <ul class="nav nav-pills card-header-pills">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#tab-enabled-translations" role="tab" data-bs-toggle="tab">{{ 'Enabled Translations'|trans }}</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#tab-disabled-translations" role="tab" data-bs-toggle="tab">{{ 'Disabled Translations'|trans }}</a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="tab-content border-top">
+                    <div class="tab-pane fade show active" id="tab-enabled-translations" role="tabpanel">
+                        <div class="card-body border-bottom py-3">
+                            <div class="d-flex justify-content-end">
+                                {{ new_translation_action|raw }}
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table card-table table-vcenter table-striped text-nowrap">
+                                <thead>
+                                    <tr>
+                                        <th>{{ 'Country'|trans }}</th>
+                                        <th>{{ 'Language'|trans }}</th>
+                                        <th>{{ 'Completion'|trans }}</th>
+                                        <th>{{ 'Code'|trans }}</th>
+                                        <th class="w-1">{{ 'Disable'|trans }}</th>
+                                    </tr>
+                                </thead>
                                 <tbody>
-                                <tr>
-                                    <td class="text-muted" colspan="2">{{ 'The list is empty'|trans }}
-                                    </td>
-                                </tr>
-                                </tbody>
-                            {% endfor %}
-                        </table>
-                    </div>
-
-                    <hr/>
-
-                    <div class="container">
-                        <h2 class="mb-1 mt-1">{{ 'Disabled Translations'|trans}}</h2>
-                        <table class="table card-table table-vcenter table-striped text-nowrap">
-                            <thead>
-                            <tr>
-                                <th>{{ 'Country'|trans }}</th>
-                                <th>{{ 'Language'|trans }}</th>
-                                <th>{{ 'Completion'|trans}}</th>
-                                <th>{{ 'Code'|trans }}</th>
-                                <th>{{ 'Enable'|trans }}</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {% for lang in admin.extension_languages({'disabled': true}) %}
-                                <tr>
-                                    <td class="w-2">
-                                        <span class="flag flag-country-{{ lang.locale|split('_')[1]|lower }}"></span>
-                                    </td>
-                                    <td class="w-6">{{ lang.name }}</td>
-                                    <td>
-                                        {% set progress = admin.extension_locale_completion({'locale_id': lang.locale})%}
-                                        {% if progress > 75 %}
-                                            {% set background = 'success' %}
-                                        {% elseif progress > 50 %}
-                                            {% set background = 'warning' %}
-                                        {% else %}
-                                            {% set background = 'danger' %}
-                                        {% endif %}
-                                        <div class="progress" style="height: 15px;">
+                                    {% for lang in admin.extension_languages %}
+                                    <tr>
+                                        <td class="w-1">
+                                            <span class="flag flag-country-{{ lang.locale|split('_')[1]|lower }}"></span>
+                                        </td>
+                                        <td>{{ lang.locale|locale_name }}</td>
+                                        <td>
+                                            {% set progress = admin.extension_locale_completion({'locale_id': lang.locale}) %}
+                                            {% if progress > 75 %}
+                                                {% set background = 'success' %}
+                                            {% elseif progress > 50 %}
+                                                {% set background = 'warning' %}
+                                            {% else %}
+                                                {% set background = 'danger' %}
+                                            {% endif %}
                                             <div class="progress" style="height: 15px;">
                                                 <div class="progress-bar bg-{{ background }}" role="progressbar" style="width: {{ progress }}%" aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100">{{ progress }}%</div>
                                             </div>
-                                        </div>
-                                    </td>
-                                    <td class="w-1">{{ lang.locale }}</td>
-                                    <td class="w-1">
-                                    <a class="btn btn-icon" href="{{ 'api/admin/extension/toggle_language'|link({ 'locale_id': lang.locale }) }}" {{ fb_api_link({reload: true}) }}>
-                                            <svg class="icon">
-                                                <use xlink:href="#check" />
-                                            </svg>
-                                        </a>
-                                    </td>
-                                </tr>
-                            </tbody>
-                            {% else %}
-                                <tbody>
-                                <tr>
-                                    <td class="text-muted" colspan="2">{{ 'The list is empty'|trans }}
-                                    </td>
-                                </tr>
+                                        </td>
+                                        <td class="w-1">{{ lang.locale }}</td>
+                                        <td class="w-1">
+                                            <a class="btn btn-icon" href="{{ 'extension/toggle_language'|api_url(query: { 'locale_id': lang.locale }) }}" {{ fb_api_link({reload: true}) }}>
+                                                <svg class="icon">
+                                                    <use href="#x" />
+                                                </svg>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
+                                    </tr>
+                                    {% endfor %}
                                 </tbody>
-                            {% endfor %}
-                        </table>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="tab-disabled-translations" role="tabpanel">
+                        <div class="card-body border-bottom py-3">
+                            <div class="d-flex justify-content-end">
+                                {{ new_translation_action|raw }}
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table card-table table-vcenter table-striped text-nowrap">
+                                <thead>
+                                    <tr>
+                                        <th>{{ 'Country'|trans }}</th>
+                                        <th>{{ 'Language'|trans }}</th>
+                                        <th>{{ 'Completion'|trans }}</th>
+                                        <th>{{ 'Code'|trans }}</th>
+                                        <th class="w-1">{{ 'Enable'|trans }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for lang in admin.extension_languages({'disabled': true}) %}
+                                    <tr>
+                                        <td class="w-1">
+                                            <span class="flag flag-country-{{ lang.locale|split('_')[1]|lower }}"></span>
+                                        </td>
+                                        <td>{{ lang.locale|locale_name }}</td>
+                                        <td>
+                                            {% set progress = admin.extension_locale_completion({'locale_id': lang.locale}) %}
+                                            {% if progress > 75 %}
+                                                {% set background = 'success' %}
+                                            {% elseif progress > 50 %}
+                                                {% set background = 'warning' %}
+                                            {% else %}
+                                                {% set background = 'danger' %}
+                                            {% endif %}
+                                            <div class="progress" style="height: 15px;">
+                                                <div class="progress-bar bg-{{ background }}" role="progressbar" style="width: {{ progress }}%" aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100">{{ progress }}%</div>
+                                            </div>
+                                        </td>
+                                        <td class="w-1">{{ lang.locale }}</td>
+                                        <td class="w-1">
+                                            <a class="btn btn-icon" href="{{ 'extension/toggle_language'|api_url(query: { 'locale_id': lang.locale }) }}" {{ fb_api_link({reload: true}) }}>
+                                                <svg class="icon">
+                                                    <use href="#check" />
+                                                </svg>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <div class="tab-pane fade" id="tab-new" role="tabpanel">
-                    {{ include('partial_extensions.html.twig', { 'type': 'translation', 'header': 'List of translations on the Extension Directory'|trans }, with_context = false) }}
-                    <div class="card-body">
-                        <h3 class="card-title">{{ 'FOSSBilling in Your Language'|trans }}</h3>
-                        <p class="card-subtitle">{{ 'Although FOSSBilling displays in U.S. English by default, it has the capability to be used in any language. Follow the instructions below to install new language.'|trans }}</p>
-                        <div>
-                            <ul>
-                                <li>{{ 'Check the FOSSBilling locale repository to see if the language you are looking for is available.'|trans }} <a target="_blank" href="https://github.com/FOSSBilling/locale">({{ 'Locale repository'|trans }})<a></li>
-                                <li>{{ "Follow the instructions on the FOSSBilling documentation to install the new language's translation files."|trans }} <a target="_blank" href="https://fossbilling.org/docs/customizing-fossbilling/localization#installing-a-new-language">(Installing a new language)<a></li>
+        <div class="modal modal-blur fade" id="newTranslationsModal" tabindex="-1" aria-labelledby="newTranslationsModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-md-down modal-xl">
+                <div class="modal-content fb-modal-form">
+                    <div class="modal-header">
+                        <h3 class="modal-title" id="newTranslationsModalLabel">{{ 'New Translations'|trans }}</h3>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        <section class="fb-modal-section">
+                            <div class="fb-modal-section-header">
+                                <div class="fb-modal-section-heading-row">
+                                    <h4 class="fb-modal-section-title">{{ 'Discover Language Packs'|trans }}</h4>
+                                </div>
+                                <p class="fb-modal-section-description">{{ 'Browse available translations from the extension directory or install a locale manually using the documentation links below.'|trans }}</p>
+                            </div>
+                            {{ include('partial_extensions.html.twig', { 'type': 'translation' }, with_context = false) }}
+                        </section>
+
+                        <section class="fb-modal-section">
+                            <div class="fb-modal-section-header">
+                                <div class="fb-modal-section-heading-row">
+                                    <h4 class="fb-modal-section-title">{{ 'Install Manually'|trans }}</h4>
+                                </div>
+                                <p class="fb-modal-section-description">{{ 'Use the locale repository and documentation if you want to install or maintain translation files directly.'|trans }}</p>
+                            </div>
+                            <ul class="mb-4">
+                                <li>{{ 'Check the FOSSBilling locale repository to see if the language you are looking for is available.'|trans }} <a target="_blank" href="https://github.com/FOSSBilling/locale">({{ 'Locale repository'|trans }})</a></li>
+                                <li>{{ "Follow the instructions on the FOSSBilling documentation to install the new language's translation files."|trans }} <a target="_blank" href="https://docs.fossbilling.org/admin-guide/localization/#installing-languages">({{ 'Installing a new language'|trans }})</a></li>
                             </ul>
-                        </div>
 
-                        <h5>{{ 'Changing the default language'|trans }}</h5>
-                        <p>{{ 'Instructions for changing the default language can be found on the FOSSBilling documentation.'|trans }} <a target="_blank" href="https://fossbilling.org/docs/customizing-fossbilling/localization#changing-the-default-language">(Changing the default language)<a></p>
+                            <h5>{{ 'Changing the Default Language'|trans }}</h5>
+                            <p class="mb-0">{{ 'Instructions for changing the default language can be found on the FOSSBilling documentation.'|trans }} <a target="_blank" href="https://docs.fossbilling.org/admin-guide/localization/#setting-the-default-language">({{ 'Changing the default language'|trans }})</a></p>
+                        </section>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Close'|trans }}</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+{% endblock %}
+
+{% block js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var modalElement = document.getElementById('newTranslationsModal');
+        var modal = modalElement ? bootstrap.Modal.getOrCreateInstance(modalElement) : null;
+
+        if (window.location.hash === '#tab-new-translations' && modal) {
+            modal.show();
+            return;
+        }
+
+        var tabTrigger = document.querySelector('[data-bs-toggle="tab"][href="' + window.location.hash + '"]');
+        if (tabTrigger) {
+            bootstrap.Tab.getOrCreateInstance(tabTrigger).show();
+        }
+
+        modalElement?.addEventListener('hidden.bs.modal', function () {
+            if (window.location.hash !== '#tab-new-translations') {
+                return;
+            }
+
+            var url = new URL(window.location.href);
+            url.hash = '';
+            window.history.replaceState({}, '', url);
+        });
+    });
+</script>
 {% endblock %}

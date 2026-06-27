@@ -14,6 +14,7 @@ namespace Box\Mod\Redirect;
 
 use Box\Mod\Extension\Entity\ExtensionMeta;
 use Box\Mod\Extension\Repository\ExtensionMetaRepository;
+use FOSSBilling\Exception;
 
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
@@ -36,6 +37,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function getModulePermissions(): array
     {
         return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View redirects'),
+                'description' => __trans('Allows the staff member to view redirect rules.'),
+            ],
             'create_and_edit' => [
                 'type' => 'bool',
                 'display_name' => __trans('Create and edit redirects'),
@@ -54,7 +60,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         if ($this->extensionMetaRepository === null) {
             if ($this->di === null) {
-                throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
+                throw new Exception('The dependency injection container has not been set.');
             }
 
             $this->extensionMetaRepository = $this->di['em']->getRepository(ExtensionMeta::class);
@@ -81,7 +87,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $redirect = $this->getExtensionMetaRepository()->findOneByExtensionAndId('mod_redirect', $id);
         if (!$redirect instanceof ExtensionMeta) {
-            throw new \FOSSBilling\Exception('Redirect not found');
+            throw new Exception('Redirect not found');
         }
 
         return $redirect;
@@ -89,6 +95,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function create(string $path, string $target): int
     {
+        $path = $this->validatePath($path);
+        $target = $this->validateTarget($target);
+
         $redirect = (new ExtensionMeta())
             ->setExtension('mod_redirect')
             ->setMetaKey($path)
@@ -99,7 +108,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $id = $redirect->getId();
         if ($id === null) {
-            throw new \FOSSBilling\Exception('Failed to create redirect.');
+            throw new Exception('Failed to create redirect.');
         }
 
         return $id;
@@ -107,9 +116,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function update(ExtensionMeta $redirect, array $data): bool
     {
-        $redirect
-            ->setMetaKey(trim(htmlspecialchars((string) ($data['path'] ?? $redirect->getMetaKey()), ENT_QUOTES | ENT_HTML5, 'UTF-8'), '/'))
-            ->setMetaValue(trim(htmlspecialchars((string) ($data['target'] ?? $redirect->getMetaValue()), ENT_QUOTES | ENT_HTML5, 'UTF-8'), '/'));
+        if (isset($data['path'])) {
+            $redirect->setMetaKey($this->validatePath((string) $data['path']));
+        }
+
+        if (isset($data['target'])) {
+            $redirect->setMetaValue($this->validateTarget((string) $data['target']));
+        }
 
         $this->di['em']->flush();
 
@@ -131,5 +144,36 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'path' => $redirect->getMetaKey(),
             'target' => $redirect->getMetaValue(),
         ];
+    }
+
+    public function validateTarget(string $target): string
+    {
+        $target = trim($target);
+
+        if ($target === '' || strpbrk($target, "\r\n") !== false) {
+            throw new Exception('Invalid redirect target.');
+        }
+
+        $scheme = parse_url($target, PHP_URL_SCHEME);
+        if (is_string($scheme) && !in_array(strtolower($scheme), ['http', 'https'], true)) {
+            throw new Exception('Only HTTP and HTTPS redirect targets are allowed.');
+        }
+
+        return $target;
+    }
+
+    public function validatePath(string $path): string
+    {
+        $path = trim($path, '/');
+
+        if ($path === '' || strpbrk($path, "\r\n") !== false) {
+            throw new Exception('Invalid redirect path.');
+        }
+
+        if (str_contains($path, '..')) {
+            throw new Exception('Redirect path must not contain path traversal sequences.');
+        }
+
+        return $path;
     }
 }

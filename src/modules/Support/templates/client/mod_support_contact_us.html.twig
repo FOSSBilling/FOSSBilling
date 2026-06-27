@@ -1,8 +1,10 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+{% set active_menu = 'support' %}
 
 {% import "macro_functions.html.twig" as mf %}
 
 {% block meta_title %}{{ 'Contact Us'|trans }}{% endblock %}
+{% block meta_description %}{{ 'Send a support request or question to our team using the contact form.'|trans }}{% endblock %}
 
 {% block body_class %}support-contact-us{% endblock %}
 {% block breadcrumb %}
@@ -10,7 +12,7 @@
 {% endblock %}
 
 {% block head %}
-    {{ mf.wysiwyg('.editor-textarea') }}
+    {{ wysiwyg('.editor-textarea') }}
 {% endblock %}
 
 {% block content %}
@@ -27,7 +29,7 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <form method="post" action="{{ 'api/guest/support/ticket_create'|link}}" id="public-ticket-create" {{ fb_api_form({ callback: 'onTicketCreate' }) }}>
+                    <form method="post" action="{{ 'support/ticket_create'|api_url(role: 'guest') }}" id="public-ticket-create" {{ fb_api_form({ callback: 'onTicketCreate' }) }}>
                         <div class="mb-3">
                             <label class="form-label" for="name">{{ 'Name'|trans }}</label>
                             <input class="form-control" type="text" name="name" value="{{ request.name }}" required="required" id="name">
@@ -37,12 +39,19 @@
                             <input class="form-control" type="email" name="email" value="{{ request.email }}" required="required" id="email">
                         </div>
                         <div class="mb-3">
+                            <label for="support-helpdesk-id" class="form-label">{{ 'Helpdesk'|trans }}</label>
+                            {{ mf.selectbox('support_helpdesk_id', guest.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
+                        </div>
+                        <div class="mb-3">
                             <label class="form-label" for="subject">{{ 'Subject'|trans }}</label>
                             <input class="form-control" type="text" name="subject" value="{{ request.subject }}" required="required" id="subject">
                         </div>
+                        {% if guest.support_kb_suggestions_enabled({ 'area': 'contact' }) %}
+                            {{ include('mod_support_kb_suggestions.html.twig', { 'input_id': 'subject' }) }}
+                        {% endif %}
                         <div class="mb-3">
                             <label class="form-label" for="message">{{ 'Message'|trans }}</label>
-                            <textarea class="editor-textarea form-control" name="message" cols="5" rows="5" required="required" id="message">{{ request.message }}</textarea>
+                            <textarea class="editor-textarea form-control" name="content" cols="5" rows="5" required="required" id="message">{{ request.content }}</textarea>
                         </div>
 
                         {{ mf.recaptcha }}
@@ -59,22 +68,22 @@
                             {{ company.name }}
                         </dd>
                         <dd>
-                            {{ company.address_1 }}
+                            {{ company.address_1|default('') }}
                         </dd>
                         <dd>
-                            {{ company.address_2 }}
+                            {{ company.address_2|default('') }}
                         </dd>
                         <dd>
-                            {{ company.address_3 }}
+                            {{ company.address_3|default('') }}
                         </dd>
                         <dd>
-                            {{ company.tel }}
+                            {{ company.tel|default('') }}
                         </dd>
                         <dd>
-                            {{ company.www }}
+                            {{ company.www|default('') }}
                         </dd>
                         <dd>
-                            {{ company.email }}
+                            {{ company.email|default('') }}
                         </dd>
                     </dl>
                 </div>
@@ -90,7 +99,7 @@
         });
 
         function onTicketCreate(result){
-            window.location = "{{ 'support/contact-us/conversation'|link }}" + '/' + result;
+            window.location = "{{ 'support/ticket'|url }}" + '/' + result;
         }
     </script>
 {% endblock %}

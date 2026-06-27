@@ -16,19 +16,24 @@ body {
     line-height: 1.42857143;
 }
 
+.modal-dialog {
+    margin-right: auto;
+    margin-left: auto;
+}
+
 .fs-7 {
     font-size: .875rem;
 }
 
 .offcanvas-item {
-    border-bottom: 1px rgba(#000, .1) solid;
+    border-bottom: 1px solid var(--bs-border-color);
 
     &:first-child {
-        border-top: 1px rgba(#000, .1) solid;
+        border-top: 1px solid var(--bs-border-color);
     }
 
     &:hover {
-        background: #fafafa;
+        background: var(--bs-tertiary-bg);
     }
 
     >a {
@@ -63,10 +68,14 @@ body {
     }
 }
 
-.svg-icon {
+.icon {
     height: 20px;
     width: 20px;
-    fill: currentColor;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 // Order management accordion
@@ -115,7 +124,7 @@ body {
 }
 
 @media (max-width: 768px) {
-    .ts-wrapper.js-language-selector {
+    .ts-wrapper.js-locale-selector {
         width: 180px
     }
 }
@@ -126,6 +135,30 @@ body {
     &:hover {
         border: 1px solid var(--bs-primary);
     }
+}
+
+.fb-phone-country-code {
+    width: 5.5rem;
+    flex: 0 0 5.5rem;
+    max-width: 5.5rem;
+}
+
+.iti {
+    --iti-border-color: var(--bs-border-color);
+    --iti-country-selector-bg: var(--bs-body-bg);
+    --iti-hover-color: rgba(var(--bs-primary-rgb), 0.08);
+    --iti-icon-color: var(--bs-secondary-color);
+
+    width: 100%;
+}
+
+.iti__country-selector,
+.iti__search-input {
+    color: var(--bs-body-color);
+}
+
+.iti__search-input {
+    background-color: var(--bs-body-bg);
 }
 
 .email-list {
@@ -180,7 +213,6 @@ body {
     width: auto;
 }
 
-// Language selector flag icon styling
 .locale-selector-dropdown {
     background-color: var(--bs-body-bg);
     border: 1px solid var(--bs-border-color);
@@ -192,64 +224,50 @@ body {
         align-items: center;
         padding: 0.5rem 1rem;
 
-        .fi {
-            display: inline-block;
-            width: 1.25em;
-            height: 1em;
-            margin-right: 0.5rem;
-            vertical-align: middle;
+        .locale-flag {
+            flex: 0 0 1.25em;
         }
     }
 }
 
-// Ensure flag icons render correctly in all contexts
 .fi {
     border-radius: 4px;
-    display: inline-block;
     vertical-align: middle;
-    position: relative;
+}
+
+.locale-flag {
+    display: inline-block;
     width: 1.25em;
     height: 1em;
-
-    &::before {
-        content: '';
-        display: block;
-        width: inherit;
-        height: inherit;
-        background-size: contain;
-        background-position: center;
-        background-repeat: no-repeat;
-    }
+    line-height: 1em;
+    margin-right: 0.5rem;
+    vertical-align: middle;
 }
 
-// Flag icon size variants
-.fi-fw {
-    width: 1.28571429em;
-}
-
-.fi-size-sm {
-    font-size: 0.875rem;
-}
-
-.fi-size-lg {
-    font-size: 1.25rem;
-}
-
-// Dark mode is now handled by Bootstrap's native color modes via data-bs-theme attribute
-// See: https://getbootstrap.com/docs/5.3/customize/color-modes/
-
-// Breadcrumb margin
 .breadcrumb {
     margin-bottom: 1.25rem;
 }
 
-// Nav-link color - black for better visibility and contrast
 .nav-link {
-    color: #000000 !important;
+    color: var(--bs-body-color);
 }
 
 .nav-link:hover {
     color: var(--bs-primary) !important;
+}
+
+.nav-link.active,
+.offcanvas-item.active > .nav-link {
+    color: var(--bs-primary) !important;
+    font-weight: 600;
+}
+
+.nav-pills .nav-link.active {
+    color: var(--bs-nav-pills-link-active-color) !important;
+}
+
+.offcanvas-item.active {
+    background: rgba(var(--bs-primary-rgb), 0.08);
 }
 
 // Client profile dropdown - inline with nav items, transparent background
@@ -281,17 +299,6 @@ body {
     .dropdown-item {
         padding: 0.5rem 1rem;
     }
-}
-
-// Sidebar balance and note styling
-.sidebar-balance-title {
-    color: var(--bs-secondary);
-    font-size: 0.875rem;
-    font-weight: 500;
-}
-
-.sidebar-note-content {
-    font-size: 0.875rem;
 }
 
 // Alert styling - use Bootstrap's native alert colors
@@ -341,7 +348,7 @@ body {
     display: flex;
     align-items: center;
 
-    .form-select.js-language-selector {
+    .form-select.js-locale-selector {
         color: var(--bs-body-color);
         padding: 0.5rem 2rem 0.5rem 0.75rem;
         font-size: 0.875rem;
@@ -379,9 +386,29 @@ body {
         align-items: center;
     }
 }
-.toast-container-zindex {
-    z-index: 1070;
-}
 
 // Dark mode support uses Bootstrap's native color mode system via data-bs-theme attribute in HTML tag.
 // Bootstrap 5.3+ automatically handles dark mode colors through CSS variables.
+
+// Dual logo: show only the logo matching the current color mode.
+[data-bs-theme="light"] .hide-theme-light,
+[data-bs-theme="dark"]  .hide-theme-dark { display: none !important; }
+
+// Theme toggler links share the navbar's icon style.
+.js-theme-toggler {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+}
+
+.db-avatar {
+    display: inline-block;
+    flex-shrink: 0;
+    vertical-align: middle;
+    background-color: var(--bs-secondary-bg);
+    background-size: 100% 100%;
+    background-position: center;
+    background-repeat: no-repeat;
+    border-radius: 50%;
+    overflow: hidden;
+}

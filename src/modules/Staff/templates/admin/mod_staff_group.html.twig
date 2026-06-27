@@ -7,20 +7,20 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
-                    <use xlink:href="#home" />
+                    <use href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'system'|alink }}">{{ 'Settings'|trans }}</a>
+            <a href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'extension/settings/staff'|alink }}">{{ 'Staff'|trans }}</a>
+            <a href="{{ 'extension/settings/staff'|url }}">{{ 'Staff'|trans }}</a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'extension/settings/staff'|alink }}#tab-groups">{{ 'Groups'|trans }}</a>
+            <a href="{{ 'extension/settings/staff'|url }}#tab-groups">{{ 'Groups'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ group.name }}</li>
     </ol>
@@ -28,20 +28,26 @@
 
 {% block content %}
 <div class="card">
-    <div class="card-body">
-        <h5>{{ 'Manage staff member details'|trans }}</h5>
-
-        <form method="post" action="{{ 'api/admin/staff/group_update'|link }}" {{ fb_api_form({message: 'Staff Group Updated'|trans}) }}>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label" for="inputName">{{ 'Name'|trans }}</label>
-                <div class="col">
-                    <input class="form-control" id="inputName" type="text" name="name" value="{{ group.name }}" required>
+    <form method="post" action="{{ 'staff/group_update'|api_url }}" {{ fb_api_form({message: 'Staff Group Updated'|trans}) }}>
+        {% embed 'partial_admin_form_card.html.twig' with {
+            title: group.name,
+            subtitle: 'Update the group name used when organizing staff members and assigning permissions.'|trans,
+            body_class: 'pt-4'
+        } %}
+            {% block form_content %}
+                <div class="row g-3">
+                    <div class="col-lg-6">
+                        <label class="form-label" for="inputName">{{ 'Name'|trans }}</label>
+                        <input class="form-control" id="inputName" type="text" name="name" value="{{ group.name }}" required>
+                    </div>
                 </div>
-            </div>
+                <input type="hidden" name="id" value="{{ group.id }}">
+            {% endblock %}
 
-            <input type="hidden" name="id" value="{{ group.id }}">
-            <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-100">
-        </form>
-    </div>
+            {% block form_actions %}
+                <button class="btn btn-primary" type="submit">{{ 'Update'|trans }}</button>
+            {% endblock %}
+        {% endembed %}
+    </form>
 </div>
 {% endblock %}

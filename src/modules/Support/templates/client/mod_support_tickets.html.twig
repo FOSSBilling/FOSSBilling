@@ -1,4 +1,5 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+{% set active_menu = 'support' %}
 
 {% import "macro_functions.html.twig" as mf %}
 
@@ -9,7 +10,7 @@
 {% block breadcrumb %}<li class="breadcrumb-item active" aria-current="page">{{ 'Support Tickets'|trans }}</li>{% endblock %}
 
 {% block head %}
-    {{ mf.wysiwyg('.editor-textarea') }}
+    {{ wysiwyg('.editor-textarea') }}
 {% endblock %}
 
 {% block content %}
@@ -33,7 +34,7 @@
                 <table class="table table-striped table-bordered table-hover">
                     <thead>
                     <tr>
-                        <th>{{ 'Id'|trans }}</th>
+                        <th>{{ 'ID'|trans }}</th>
                         <th>{{ 'Subject'|trans }}</th>
                         <th>{{ 'Help Desk'|trans }}</th>
                         <th>{{ 'Status'|trans }}</th>
@@ -45,24 +46,24 @@
                     {% for i, ticket in tickets.list %}
                         <tr>
                             <td>#{{ticket.id}}</td>
-                            <td><a href="{{ 'support/ticket'|link }}/{{ ticket.id }}">{{ ticket.subject|truncate(40) }}</a></td>
+                            <td><a href='{{ "support/ticket/#{ticket.id}"|url }}'>{{ ticket.subject|truncate(40) }}</a></td>
                             <td>{{ ticket.helpdesk.name }}</td>
                             <td>
-                                <span class="badge {% if ticket.status == 'open' %}text-bg-success{% elseif ticket.status == 'on_hold' %}text-bg-warning{% elseif ticket.status == 'closed' %}text-bg-secondary{% endif %}">{{ mf.status_name(ticket.status) }}</span>
+                                {{ mf.status_badge(ticket.status, 'ticket') }}
                             </td>
                             <td>{{ ticket.created_at|timeago }} {{ 'ago'|trans }}</td>
                             <td class="actions">
                                 {% if ticket.status == 'closed' %}
-                                    <a href="{{ 'support/ticket'|link }}/{{ ticket.id }}" class="btn btn-sm btn-outline-secondary">{{ 'View'|trans }}</a>
+                                    <a href='{{ "support/ticket/#{ticket.id}"|url }}' class="btn btn-sm btn-outline-secondary">{{ 'View'|trans }}</a>
                                 {% else %}
-                                    <a href="{{ 'support/ticket'|link }}/{{ ticket.id }}#reply-to" class="btn btn-sm btn-outline-info">{{ 'Reply'|trans }}</a>
+                                    <a href='{{ "support/ticket/#{ticket.id}"|url }}#reply-to' class="btn btn-sm btn-outline-info">{{ 'Reply'|trans }}</a>
                                 {% endif %}
                             </td>
                         </tr>
                     {% endfor %}
                     </tbody>
                 </table>
-                {{ include('partial_pagination.html.twig', { 'list': tickets }) }}
+                {{ include('partial_pagination.html.twig', { 'list': tickets, 'url': 'support' }) }}
                 {% else %}
                     <div class="d-flex justify-content-center my-2 py-4">
                         <span class="blockquote m-0">{{ 'No Support Tickets'|trans }}</span>
@@ -93,6 +94,9 @@
                         <label for="subject" class="form-label">{{ 'Subject'|trans }}</label>
                         <input type="text" name="subject" class="form-control" id="subject" required aria-describedby="subject" value="{{ request.subject|e }}">
                     </div>
+                    {% if guest.support_kb_suggestions_enabled({ 'area': 'ticket' }) %}
+                        {{ include('mod_support_kb_suggestions.html.twig', { 'input_id': 'subject' }) }}
+                    {% endif %}
                     <div class="mb-3">
                         <label for="message" class="form-label">{{ 'Message'|trans }}</label>
                         <textarea name="content" class="editor-textarea form-control" id="message" aria-describedby="message" rows="5" required>{{ request.content|e }}</textarea>
@@ -113,9 +117,9 @@
             let submitTicket = document.getElementById('ticket-submit');
             submitTicket.addEventListener('submit', (event) => {
                 event.preventDefault();
-                API.client.post('support/ticket_create', Tools.serializeFormDataToObject(new FormData(submitTicket)),
+                FOSSBilling.api.client.post('support/ticket_create', FOSSBilling.tools.serializeFormDataToObject(new FormData(submitTicket)),
                     (res) => {
-                        window.location = "{{ 'support/ticket'|link }}" + '/' + res
+                        window.location = "{{ 'support/ticket'|url }}" + '/' + res
                     },
                     (res) => {
                         FOSSBilling.message(`${res.message} (${res.code})`, 'error')

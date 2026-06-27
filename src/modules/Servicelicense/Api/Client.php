@@ -15,7 +15,7 @@ namespace Box\Mod\Servicelicense\Api;
 /**
  *License Service management.
  */
-class Client extends \Api_Abstract
+class Client extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Reset license validation rules.
@@ -32,7 +32,7 @@ class Client extends \Api_Abstract
     public function _getService(array $data)
     {
         $required = ['order_id' => 'Order ID is required'];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+        $this->getDi()['validator']->checkRequiredParamsForArray($required, $data);
 
         $client = $this->getIdentity();
 
@@ -41,13 +41,17 @@ class Client extends \Api_Abstract
             ':client_id' => $client->id,
         ];
 
-        $order = $this->di['db']->findOne('ClientOrder', 'id = :id AND client_id = :client_id', $bindings);
+        $order = $this->getDi()['db']->findOne('ClientOrder', 'id = :id AND client_id = :client_id', $bindings);
 
         if (!$order instanceof \Model_ClientOrder) {
             throw new \FOSSBilling\Exception('Order not found');
         }
 
-        $orderService = $this->di['mod_service']('order');
+        if ($order->status !== \Model_ClientOrder::STATUS_ACTIVE) {
+            throw new \FOSSBilling\InformationException('Order is not activated');
+        }
+
+        $orderService = $this->getDi()['mod_service']('order');
         $s = $orderService->getOrderService($order);
         if (!$s instanceof \Model_ServiceLicense) {
             throw new \FOSSBilling\Exception('Order is not activated');

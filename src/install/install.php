@@ -12,10 +12,14 @@ declare(strict_types=1);
 
 use Box\Mod\Email\Service;
 use FOSSBilling\Environment;
+use FOSSBilling\Http\RequestFactory;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;
 use Twig\Loader\FilesystemLoader;
 
@@ -30,9 +34,6 @@ ini_set('error_log', 'php_error.log');
 define('PATH_ROOT', dirname(__DIR__));
 define('PATH_LIBRARY', PATH_ROOT . DIRECTORY_SEPARATOR . 'library');
 define('PATH_VENDOR', PATH_ROOT . DIRECTORY_SEPARATOR . 'vendor');
-
-// Set the default include path to include the library directory.
-set_include_path(get_include_path() . PATH_SEPARATOR . PATH_LIBRARY);
 
 // Check vendor folder exists and load Composer autoloader.
 if (!file_exists(PATH_VENDOR)) {
@@ -52,8 +53,9 @@ define('PATH_CONFIG_SAMPLE', Path::join(PATH_ROOT, 'config-sample.php'));
 define('PATH_CRON', Path::join(PATH_ROOT, 'cron.php'));
 define('PATH_LANGS', Path::join(PATH_ROOT, 'locale'));
 define('PATH_MODS', Path::join(PATH_ROOT, 'modules'));
-define('PATH_CACHE', Path::join(PATH_ROOT, 'data', 'cache'));
-define('PATH_LOG', Path::join(PATH_ROOT, 'data', 'log'));
+define('PATH_DATA', Path::join(PATH_ROOT, 'data'));
+define('PATH_CACHE', Path::join(PATH_DATA, 'cache'));
+define('PATH_LOG', Path::join(PATH_DATA, 'log'));
 define('HURAGA_CONFIG', Path::join(PATH_THEMES, 'huraga', 'config', 'settings_data.json'));
 define('HURAGA_CONFIG_TEMPLATE', Path::join(PATH_THEMES, 'huraga', 'config', 'settings_data.json.example'));
 define('PATH_HTACCESS', Path::join(PATH_ROOT, '.htaccess'));
@@ -63,28 +65,9 @@ define('PAGE_RESULT', Path::join('./assets', 'result.html.twig'));
 // Some functions and classes reference this, so we define it here to avoid errors.
 const DEBUG = false;
 
-// Set default include path
-set_include_path(implode(PATH_SEPARATOR, [
-    PATH_LIBRARY,
-    get_include_path(),
-]));
-
-// Set up custom autoloader.
-require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Autoloader.php');
-$loader = new FOSSBilling\AutoLoader();
-$loader->register();
-
-// Check whether using HTTPS or HTTP.
-$protocol = FOSSBilling\Tools::isHTTPS() ? 'https' : 'http';
-
-// Detect if FOSSBilling is behind a proxy server.
-if (!empty($_SERVER['HTTP_X_FORWARDED_HOST'])) {
-    $host = $_SERVER['HTTP_X_FORWARDED_HOST'];
-} else {
-    $host = $_SERVER['HTTP_HOST'];
-}
-
-$url = $protocol . '://' . $host . $_SERVER['REQUEST_URI'];
+$preConfigProxyCandidate = RequestFactory::getPreConfigProxyCandidate($_SERVER);
+$request = RequestFactory::createFromGlobals();
+$url = $request->getSchemeAndHttpHost() . $request->getRequestUri();
 $current_url = Path::getDirectory($url);
 $root_url = str_replace('/install', '', $current_url) . '/';
 define('SYSTEM_URL', $root_url);
@@ -92,12 +75,13 @@ const URL_INSTALL = SYSTEM_URL . 'install/';
 const URL_ADMIN = SYSTEM_URL . 'admin';
 
 // Load action and initialize the installer
-$action = $_GET['a'] ?? 'index';
-$installer = new FOSSBilling_Installer();
+$action = $request->query->get('a', 'index');
+$action = $action !== '' ? $action : 'index';
+$installer = new FOSSBilling_Installer($request, $preConfigProxyCandidate);
 
 // Run the installer only in non-CLI mode
 if (!Environment::isCLI()) {
-    $installer->run($action);
+    $installer->run($action)->send();
 }
 
 // Inline installer class.
@@ -108,19 +92,18 @@ final class FOSSBilling_Installer
     private bool $isDebug = false;
     private readonly Filesystem $filesystem;
 
-    public function __construct()
+    public function __construct(private readonly Request $request, private readonly array $preConfigProxyCandidate = [])
     {
-        require_once 'session.php';
+        require_once Path::join(PATH_INSTALL, 'session.php');
         $this->session = new Session();
         $this->filesystem = new Filesystem();
-        $this->isDebug = !Environment::isProduction();
-
-        if (!$this->isDebug && $this->filesystem->exists(PATH_CONFIG)) {
-            $config = require PATH_CONFIG;
-            $this->isDebug = $config['debug_and_monitoring']['debug'] || !Environment::isProduction();
+        $config = $this->getExistingConfig();
+        if ($config !== null) {
+            $this->isDebug = (bool) ($config['debug_and_monitoring']['debug'] ?? false);
         }
 
-        if (getenv('IS_DDEV') === 'true' && ($_GET['a'] ?? 'index') === 'index') {
+        $action = $this->request->query->get('a', 'index');
+        if (getenv('IS_DDEV') === 'true' && $action === 'index') {
             $this->session->set('database_hostname', 'db');
             $this->session->set('database_name', 'db');
             $this->session->set('database_username', 'db');
@@ -133,14 +116,13 @@ final class FOSSBilling_Installer
      *
      * @param string $action
      */
-    public function run($action): void
+    public function run($action): Response
     {
         switch ($action) {
             case 'install':
                 // Make sure this is a POST request
-                if ($_SERVER['REQUEST_METHOD'] != 'POST') {
-                    header('Location: ' . URL_INSTALL);
-                    exit;
+                if (!$this->request->isMethod('POST')) {
+                    return new RedirectResponse('./install.php');
                 }
 
                 // Installer validation
@@ -151,67 +133,78 @@ final class FOSSBilling_Installer
                     }
 
                     // Set if they've opted into error reporting
-                    $this->session->set('error_reporting', $_POST['error_reporting']);
+                    $this->session->set('error_reporting', $this->request->request->get('error_reporting'));
+
+                    $this->session->set('system_url', $this->normalizeSystemUrl($this->request->request->get('system_url', SYSTEM_URL)));
+                    $trustedProxyEnabled = $this->isChecked($this->request->request->get('trusted_proxy_enabled'));
+                    $this->session->set('trusted_proxy_enabled', $trustedProxyEnabled);
+                    if ($trustedProxyEnabled) {
+                        $this->session->set('trusted_proxy_proxies', $this->normalizeTrustedProxyProxies($this->request->request->get('trusted_proxy_proxies')));
+                        $this->session->set('trusted_proxy_headers', $this->normalizeTrustedProxyHeaders($this->request->request->get('trusted_proxy_headers')));
+                    } else {
+                        $this->session->set('trusted_proxy_proxies', []);
+                        $this->session->set('trusted_proxy_headers', 'x_forwarded');
+                    }
 
                     // Set up default currency before validation to preserve user selection if validation fails
-                    $this->session->set('currency_code', $_POST['currency_code']);
-                    $this->session->set('currency_title', $_POST['currency_title']);
-                    $this->session->set('currency_format', $_POST['currency_format'] ?? '${{price}}');
-
+                    $this->session->set('currency_code', $this->request->request->get('currency_code'));
                     // Handle database information
-                    $this->session->set('database_hostname', $_POST['database_hostname']);
-                    $this->session->set('database_port', $_POST['database_port']);
-                    $this->session->set('database_name', $_POST['database_name']);
-                    $this->session->set('database_username', $_POST['database_username']);
-                    $this->session->set('database_password', $_POST['database_password']);
+                    $this->session->set('database_hostname', $this->request->request->get('database_hostname'));
+                    $databasePort = FOSSBilling\Tools::normalizePort($this->request->request->get('database_port'));
+                    if ($databasePort === null) {
+                        throw new Exception('Database port is invalid.');
+                    }
+                    $this->session->set('database_port', $databasePort);
+                    $this->session->set('database_name', $this->request->request->get('database_name'));
+                    $this->session->set('database_username', $this->request->request->get('database_username'));
+                    $this->session->set('database_password', $this->request->request->get('database_password'));
                     $this->connectDatabase();
 
                     // Handle admin information
-                    $this->session->set('admin_name', $_POST['admin_name']);
-                    $this->session->set('admin_email', $_POST['admin_email']);
-                    $this->session->set('admin_password', $_POST['admin_password']);
+                    $this->session->set('admin_name', $this->request->request->get('admin_name'));
+                    $this->session->set('admin_email', $this->request->request->get('admin_email'));
+                    $this->session->set('admin_password', $this->request->request->get('admin_password'));
 
                     if (Environment::isTesting()) {
-                        $this->session->set('admin_api_token', $_POST['admin_api_token'] ?? null);
+                        $this->session->set('admin_api_token', $this->request->request->get('admin_api_token'));
                     } else {
                         $this->session->set('admin_api_token', null);
                     }
 
                     $this->validateAdmin();
+                    $selectedSystemUrl = $this->getSelectedSystemUrl();
 
                     // Attempt installation
                     $this->install();
                     $this->generateEmailTemplates();
                     session_destroy();
 
-                    // Installation is successful
-                    echo $this->render(PAGE_RESULT, [
+                    $result = $this->render(PAGE_RESULT, [
                         'success' => true,
                         'config_file_path' => PATH_CONFIG,
                         'cron_path' => PATH_CRON,
                         'install_module_path' => PATH_INSTALL,
-                        'url_customer' => SYSTEM_URL,
-                        'url_admin' => URL_ADMIN,
+                        'url_customer' => $selectedSystemUrl,
+                        'url_admin' => rtrim($selectedSystemUrl, '/') . '/admin',
                     ]);
 
-                    // Try to remove install folder
+                    // Delete only the installer entry point if debug mode is NOT enabled, so completion page assets remain available.
                     try {
-                        // Delete install directory only if debug mode is NOT enabled.
                         if (!$this->isDebug) {
-                            $this->filesystem->remove(Path::normalize(__DIR__ . '/install.php'));
+                            $this->filesystem->remove(Path::join(PATH_INSTALL, 'install.php'));
                         }
-                    } catch (Exception) {
+                    } catch (Throwable) {
                         // Do nothing and fail silently. New warnings are presented on the installation completed page for a leftover install directory.
                     }
+
+                    return new Response($result);
                 } catch (Exception $e) {
                     // Route to result page with exception information
-                    echo $this->render(PAGE_RESULT, [
+                    return new Response($this->render(PAGE_RESULT, [
                         'success' => false,
                         'message' => $e->getMessage(),
-                    ]);
+                    ]), 500);
                 }
-
-                break;
             case 'index':
             default:
                 $requirements = new FOSSBilling\Requirements();
@@ -232,18 +225,19 @@ final class FOSSBilling_Installer
                     'admin_email' => $this->session->get('admin_email'),
                     'admin_password' => $this->session->get('admin_password'),
                     'currency_code' => $this->session->get('currency_code') ?: 'USD',
-                    'currency_title' => $this->session->get('currency_title') ?: 'US Dollar',
-                    'currency_format' => $this->session->get('currency_format') ?: '${{price}}',
                     'install_module_path' => PATH_INSTALL,
                     'cron_path' => PATH_CRON,
                     'config_file_path' => PATH_CONFIG,
-                    'live_site' => SYSTEM_URL,
+                    'system_url' => $this->session->get('system_url') ?: SYSTEM_URL,
                     'admin_site' => URL_ADMIN,
                     'domain' => SYSTEM_URL,
+                    'proxy_candidate' => $this->preConfigProxyCandidate,
+                    'trusted_proxy_enabled' => (bool) $this->session->get('trusted_proxy_enabled'),
+                    'trusted_proxy_proxies' => implode(', ', $this->session->get('trusted_proxy_proxies') ?: ($this->preConfigProxyCandidate['proxies'] ?? [])),
+                    'trusted_proxy_headers' => $this->session->get('trusted_proxy_headers') ?: ($this->preConfigProxyCandidate['headers'] ?? 'x_forwarded'),
                 ];
-                echo $this->render(PAGE_INSTALL, $vars);
 
-                break;
+                return new Response($this->render(PAGE_INSTALL, $vars));
         }
     }
 
@@ -263,10 +257,11 @@ final class FOSSBilling_Installer
             'autoescape' => 'html',
             'auto_reload' => true,
             'cache' => false,
+            'strict_variables' => true,
         ];
         $loader = new FilesystemLoader($options['paths']);
         $twig = new Twig\Environment($loader, $options);
-        $twig->addGlobal('request', $_REQUEST);
+        $twig->addGlobal('request', array_merge($this->request->query->all(), $this->request->request->all()));
         $twig->addGlobal('version', FOSSBilling\Version::VERSION);
 
         return $twig->render($name, $vars);
@@ -280,7 +275,9 @@ final class FOSSBilling_Installer
         $databaseName = $this->quoteMysqlIdentifier((string) $this->session->get('database_name'));
 
         // Open the connection
-        $this->pdo = new PDO('mysql:host=' . $this->session->get('database_hostname') . ';' . $this->session->get('database_port'),
+        $databasePort = FOSSBilling\Tools::normalizePort($this->session->get('database_port'), 3306);
+
+        $this->pdo = new PDO('mysql:host=' . $this->session->get('database_hostname') . ';port=' . $databasePort,
             $this->session->get('database_username'),
             $this->session->get('database_password'),
             [
@@ -360,10 +357,29 @@ final class FOSSBilling_Installer
 
     /**
      * Check if we are already installed.
+     *
+     * Any existing config file must block the public installer. If the file is
+     * invalid, a server administrator must repair or remove it manually before
+     * installation can proceed.
      */
     public function isAlreadyInstalled(): bool
     {
         return !$this->isDebug && $this->filesystem->exists(PATH_CONFIG);
+    }
+
+    private function getExistingConfig(): ?array
+    {
+        if (!$this->filesystem->exists(PATH_CONFIG)) {
+            return null;
+        }
+
+        try {
+            $config = require PATH_CONFIG;
+        } catch (Throwable) {
+            return null;
+        }
+
+        return is_array($config) ? $config : null;
     }
 
     /**
@@ -402,11 +418,9 @@ final class FOSSBilling_Installer
         // Delete default currency from content file and use currency passed in the installer
         $stmt = $this->pdo->prepare("DELETE FROM currency WHERE code='USD'");
         $stmt->execute();
-        $stmt = $this->pdo->prepare('INSERT INTO currency (id, title, code, is_default, conversion_rate, format, price_format, created_at, updated_at) VALUES(1, :currency_title, :currency_code, 1, 1.000000, :currency_format, 1,  NOW(), NOW());');
+        $stmt = $this->pdo->prepare('INSERT INTO currency (id, code, is_default, conversion_rate, created_at, updated_at) VALUES(1, :currency_code, 1, 1.000000, NOW(), NOW());');
         $stmt->execute([
-            'currency_title' => $this->session->get('currency_title'),
             'currency_code' => $this->session->get('currency_code'),
-            'currency_format' => $this->session->get('currency_format'),
         ]);
 
         $stmt = $this->pdo->prepare('INSERT INTO setting (param, value, created_at, updated_at) VALUES (:param, :value, NOW(), NOW())');
@@ -439,9 +453,78 @@ final class FOSSBilling_Installer
         } catch (IOException) {
             throw new Exception('Configuration file is not writable or does not exist. Please create the file at ' . PATH_CONFIG . ' and make it writable', 101);
         }
+        clearstatcache(true, PATH_CONFIG);
+        if (function_exists('opcache_invalidate')) {
+            opcache_invalidate(PATH_CONFIG, true);
+        }
+        (new FOSSBilling\UpdateFinalization())->writeCompleteState();
 
         // Installation completed successfully
         return true;
+    }
+
+    private function getSelectedSystemUrl(): string
+    {
+        $systemUrl = $this->session->get('system_url');
+        if (is_string($systemUrl) && $systemUrl !== '') {
+            return $systemUrl;
+        }
+
+        return $this->normalizeSystemUrl(SYSTEM_URL);
+    }
+
+    private function normalizeSystemUrl(mixed $url): string
+    {
+        $url = trim((string) $url);
+        if ($url === '') {
+            throw new InvalidArgumentException('The FOSSBilling URL is required.');
+        }
+
+        if (!str_contains($url, '://')) {
+            $url = 'https://' . $url;
+        }
+
+        $parts = parse_url($url);
+        if (!is_array($parts) || !isset($parts['scheme'], $parts['host']) || !in_array(strtolower($parts['scheme']), ['http', 'https'], true)) {
+            throw new InvalidArgumentException('The FOSSBilling URL must be a valid HTTP or HTTPS URL.');
+        }
+
+        $path = $parts['path'] ?? '/';
+        if ($path === '') {
+            $path = '/';
+        }
+
+        $normalizedUrl = strtolower($parts['scheme']) . '://' . $parts['host'];
+        if (isset($parts['port'])) {
+            $normalizedUrl .= ':' . $parts['port'];
+        }
+
+        return rtrim($normalizedUrl . '/' . trim($path, '/'), '/') . '/';
+    }
+
+    private function normalizeTrustedProxyProxies(mixed $proxies): array
+    {
+        $proxyList = preg_split('/[\s,]+/', trim((string) $proxies), -1, PREG_SPLIT_NO_EMPTY);
+        if ($proxyList === false || $proxyList === []) {
+            throw new InvalidArgumentException('At least one trusted proxy IP address is required when reverse proxy trust is enabled.');
+        }
+
+        return array_values(array_unique(array_map(trim(...), $proxyList)));
+    }
+
+    private function normalizeTrustedProxyHeaders(mixed $headers): string
+    {
+        $headers = trim((string) $headers);
+        if (!in_array($headers, ['x_forwarded', 'forwarded', 'aws_elb', 'traefik'], true)) {
+            throw new InvalidArgumentException('The trusted proxy header format is invalid.');
+        }
+
+        return $headers;
+    }
+
+    private function isChecked(mixed $value): bool
+    {
+        return in_array($value, ['1', 1, true, 'true', 'on', 'yes'], true);
     }
 
     /**
@@ -453,19 +536,27 @@ final class FOSSBilling_Installer
 
         // Load default sample config
         $data = require PATH_CONFIG_SAMPLE;
+        $systemUrl = $this->getSelectedSystemUrl();
 
         // Handle dynamic configs
-        $data['security']['force_https'] = FOSSBilling\Tools::isHTTPS();
+        $data['security']['force_https'] = str_starts_with($systemUrl, 'https://');
+        if ($this->session->get('trusted_proxy_enabled') === true) {
+            $data['security']['trusted_proxies'] = [
+                'enabled' => true,
+                'proxies' => $this->session->get('trusted_proxy_proxies') ?: [],
+                'headers' => $this->session->get('trusted_proxy_headers') ?: 'x_forwarded',
+            ];
+        }
         $data['debug_and_monitoring']['report_errors'] = (bool) $this->session->get('error_reporting');
         $data['debug_and_monitoring']['debug'] = $this->isDebug;
         $data['update_branch'] = $updateBranch;
         $data['info']['instance_id'] = Uuid::v4()->toString();
-        $data['url'] = str_replace(['https://', 'http://'], '', SYSTEM_URL);
-        $data['path_data'] = Path::join(PATH_ROOT, 'data');
+        $data['url'] = str_replace(['https://', 'http://'], '', $systemUrl);
+        $data['path_data'] = PATH_DATA;
         $data['db'] = [
             'driver' => 'pdo_mysql',
             'host' => $this->session->get('database_hostname'),
-            'port' => $this->session->get('database_port'),
+            'port' => FOSSBilling\Tools::normalizePort($this->session->get('database_port'), 3306),
             'name' => $this->session->get('database_name'),
             'user' => $this->session->get('database_username'),
             'password' => $this->session->get('database_password'),

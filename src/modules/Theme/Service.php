@@ -15,6 +15,8 @@ namespace Box\Mod\Theme;
 use Box\Mod\Extension\Entity\ExtensionMeta;
 use Box\Mod\Extension\Repository\ExtensionMetaRepository;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Sanitizer\BrowserHtmlSanitizer;
+use FOSSBilling\Twig\SandboxedStringRenderer;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
@@ -33,7 +35,7 @@ class Service implements InjectionAwareInterface
     private static ?string $adminThemeCache = null;
     /**
      * In-request cache for the current client theme name.
-     * This cache is used to avoid repeated lookups during a single request.
+     * This cache is used to store theme information during a single request.
      * It is cleared whenever theme settings are changed by calling clearThemeCache().
      */
     private static ?string $clientThemeCache = null;
@@ -49,6 +51,22 @@ class Service implements InjectionAwareInterface
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
+    }
+
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View themes'),
+                'description' => __trans('Allows the staff member to view available themes and their configuration.'),
+            ],
+            'manage' => [
+                'type' => 'bool',
+                'display_name' => __trans('Manage themes'),
+                'description' => __trans('Allows the staff member to select themes and manage presets.'),
+            ],
+        ];
     }
 
     public function __construct()
@@ -118,8 +136,14 @@ class Service implements InjectionAwareInterface
 
     public function deletePreset(Model\Theme $theme, $preset): bool
     {
-        $this->getExtensionMetaRepository()->deleteByExtensionAndScope('mod_theme', (string) $preset, 'settings', $theme->getName());
-        $this->getExtensionMetaRepository()->deleteByExtensionAndScope('mod_theme', $theme->getName(), 'preset', 'current');
+        $preset = (string) $preset;
+        $currentPreset = (string) $this->getCurrentThemePreset($theme);
+
+        $this->getExtensionMetaRepository()->deleteByExtensionAndScope('mod_theme', $preset, 'settings', $theme->getName());
+
+        if ($preset === $currentPreset) {
+            $this->getExtensionMetaRepository()->deleteByExtensionAndScope('mod_theme', $theme->getName(), 'preset', 'current');
+        }
 
         return true;
     }
@@ -202,27 +226,54 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function regenerateThemeCssAndJsFiles(Model\Theme $theme, $preset, $api_admin): bool
+    public function regenerateThemeCssAndJsFiles(Model\Theme $theme, $preset): bool
     {
         $assets = $theme->getPathAssets();
 
         $finder = new Finder();
         $finder->files()->in($assets)->name(['*.css.html.twig', '*.js.html.twig']);
 
-        foreach ($finder as $file) {
-            $settings = $this->getThemeSettings($theme, $preset);
-            $realFile = Path::join($file->getPath(), Path::getFilenameWithoutExtension($file->getRelativePathname(), '.html.twig'));
+        if (!count($finder)) {
+            return true;
+        }
 
-            $vars = [];
-            $vars['settings'] = $settings;
-            $vars['_tpl'] = $file->getContents();
-            $systemService = $this->di['mod_service']('system');
-            $data = $systemService->renderString($vars['_tpl'], false, $vars);
+        $twigFactory = $this->di['twig_factory'];
+        $settings = $this->getThemeSettings($theme, $preset);
+
+        foreach ($finder as $file) {
+            $templateFilename = $file->getFilename();
+            $realFilename = preg_replace('/\.(css|js)\.html\.twig$/', '.$1', $templateFilename);
+            $realFile = Path::join($file->getPath(), $realFilename);
+
+            $twig = $twigFactory->createBaseEnvironment();
+            $template = $twig->createTemplate($file->getContents());
+            $data = $template->render(['settings' => $settings]);
 
             $this->filesystem->dumpFile($realFile, $data);
         }
 
         return true;
+    }
+
+    public function renderThemeSettingsPageHtml(Model\Theme $theme, array $settings): string
+    {
+        $twigFactory = $this->di['twig_factory'];
+        $twig = $twigFactory->createThemeSettingsEnvironment();
+
+        $rendered = SandboxedStringRenderer::render(
+            $twig,
+            $theme->getSettingsPageHtml(),
+            ['settings' => $settings],
+            'Theme settings template',
+            function (\Twig\Sandbox\SecurityError $e) use ($theme): void {
+                $this->di['logger']->setChannel('security')->warning('Theme settings template sandbox violation', [
+                    'theme' => $theme->getName(),
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        );
+
+        return BrowserHtmlSanitizer::sanitizeThemeSettingsHtml($rendered);
     }
 
     public function getCurrentAdminAreaTheme(): array
@@ -290,11 +341,11 @@ class Service implements InjectionAwareInterface
         foreach ($finder as $file) {
             try {
                 if (!$client && str_contains($file->getFilename(), 'admin')) {
-                    $list[] = $this->_loadTheme($file->getFilename());
+                    $list[] = $this->buildThemeConfig($file->getFilename());
                 }
 
                 if ($client && !str_contains($file->getFilename(), 'admin')) {
-                    $list[] = $this->_loadTheme($file->getFilename());
+                    $list[] = $this->buildThemeConfig($file->getFilename());
                 }
             } catch (\Exception $e) {
                 error_log($e->getMessage());
@@ -320,12 +371,12 @@ class Service implements InjectionAwareInterface
             $theme = $default;
         }
 
-        return $this->_loadTheme($theme, $client, $mod);
+        return $this->buildThemeConfig($theme, $client, $mod);
     }
 
     public function loadTheme($code, $client = true, $mod = null)
     {
-        return $this->_loadTheme($code, $client, $mod);
+        return $this->buildThemeConfig($code, $client, $mod);
     }
 
     public function getThemesPath()
@@ -333,7 +384,7 @@ class Service implements InjectionAwareInterface
         return PATH_THEMES;
     }
 
-    private function _loadTheme($theme, $client = true, $mod = null): array
+    private function buildThemeConfig($theme, $client = true, $mod = null): array
     {
         $theme_path = Path::join($this->getThemesPath(), $theme);
 
@@ -398,9 +449,9 @@ class Service implements InjectionAwareInterface
 
     public function getCurrentRouteTheme(): string
     {
-        // Runtime check for admin area - uses index.php defined constant
-        $isAdmin = defined('ADMIN_AREA') && ADMIN_AREA;
-        if ($isAdmin) {
+        // Runtime check for admin area - uses index.php defined constant.
+        // @phpstan-ignore if.alwaysTrue, booleanAnd.rightAlwaysTrue
+        if (\defined('ADMIN_AREA') && ADMIN_AREA) {
             return $this->getCurrentAdminAreaTheme()['code'];
         }
 
@@ -410,7 +461,8 @@ class Service implements InjectionAwareInterface
     public function getDefaultMarkdownAttributes(): array
     {
         // Runtime check for admin area - uses index.php defined constant
-        $isAdmin = defined('ADMIN_AREA') && ADMIN_AREA;
+        $isAdmin = ADMIN_AREA;
+        // @phpstan-ignore if.alwaysTrue
         if ($isAdmin) {
             $config = $this->getThemeConfig(false);
         } else {

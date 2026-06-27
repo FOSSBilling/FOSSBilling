@@ -38,7 +38,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         $app->get('/service', 'get_orders', [], '\\' . \Box\Mod\Order\Controller\Client::class);
         $app->get('/service/manage/:id', 'get_order', ['id' => '[0-9]+'], '\\' . \Box\Mod\Order\Controller\Client::class);
         $app->get('/contact-us', 'get_contact_us', [], '\\' . \Box\Mod\Support\Controller\Client::class);
-        $app->get('/contact-us/conversation/:hash', 'get_contact_us_conversation', ['hash' => '[a-z0-9]+'], '\\' . \Box\Mod\Support\Controller\Client::class);
+        $app->get('/contact-us/conversation/:hash', 'get_ticket_redirect', ['hash' => '[a-z0-9]+'], '\\' . \Box\Mod\Support\Controller\Client::class);
 
         $service = $this->di['mod_service']('redirect');
         $redirects = $service->getRedirects();
@@ -51,8 +51,25 @@ class Client implements \FOSSBilling\InjectionAwareInterface
     {
         $service = $this->di['mod_service']('redirect');
         $target = $service->getRedirectByPath($app->uri);
-        header('HTTP/1.1 301 Moved Permanently');
-        header('Location: ' . $target);
-        exit;
+
+        if ($target === null || !$this->isTargetAllowed($target)) {
+            $app->abortWithResponse(new \Symfony\Component\HttpFoundation\Response('', 404));
+        }
+
+        $app->redirectUrl($target, 301);
+    }
+
+    private function isTargetAllowed(string $target): bool
+    {
+        if (trim($target) === '' || strpbrk($target, "\r\n") !== false) {
+            return false;
+        }
+
+        $scheme = parse_url($target, PHP_URL_SCHEME);
+        if (is_string($scheme) && !in_array(strtolower($scheme), ['http', 'https'], true)) {
+            return false;
+        }
+
+        return true;
     }
 }

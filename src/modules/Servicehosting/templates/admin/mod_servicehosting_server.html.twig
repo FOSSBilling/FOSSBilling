@@ -7,14 +7,14 @@
 {% block breadcrumbs %}
 <ul class="breadcrumb">
     <li class="breadcrumb-item">
-        <a href="{{ '/'|alink }}">
+        <a href="{{ '/'|url }}">
             <svg class="icon">
-                <use xlink:href="#home" />
+                <use href="#home" />
             </svg>
         </a>
     </li>
     <li class="breadcrumb-item">
-        <a href="{{ 'servicehosting'|alink }}">{{ 'Hosting plans and servers'|trans }}</a>
+        <a href="{{ 'servicehosting'|url }}">{{ 'Hosting Plans and Servers'|trans }}</a>
     </li>
     <li class="breadcrumb-item active" aria-current="page">{{ server.name }}</li>
 </ul>
@@ -23,186 +23,173 @@
 {% block content %}
 {% set tlsVerify = server.config.tls_verify is defined ? server.config.tls_verify : true %}
 <div class="card">
+    <div class="card-header">
+        <div>
+            <h3 class="card-title">{{ server.name }}</h3>
+            <p class="card-subtitle">{{ 'Manage connection details, provisioning settings, and nameserver defaults for this hosting server.'|trans }}</p>
+        </div>
+    </div>
     <div class="card-body">
-        <h3>{{ 'Server Management'|trans }}</h3>
-
-        <form method="post" action="{{ 'api/admin/servicehosting/server_update'|link }}" id="server-update" {{ fb_api_form({message: 'Server Updated'|trans}) }}>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Name'|trans }}:</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="name" value="{{ server.name }}" required placeholder="{{ 'Unique name to identify this server'|trans }}">
+        <form method="post" action="{{ 'servicehosting/server_update'|api_url }}" id="server-update" {{ fb_api_form({message: 'Server Updated'|trans}) }}>
+            <div class="mb-5">
+                <div class="mb-3">
+                    <h4 class="card-title mb-1">{{ 'Server Details'|trans }}</h4>
+                    <p class="text-secondary mb-0">{{ 'Basic identification and network details used when provisioning accounts on this server.'|trans }}</p>
                 </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Hostname'|trans }}:</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="hostname" value="{{ server.hostname }}" placeholder="host1.domain.com">
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'IP'|trans }}:</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="ip" value="{{ server.ip }}" required placeholder="{{ 'Primary IP address used to connect to the server. i.e. 127.0.0.1'|trans }}">
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Assigned IP Addresses'|trans }}:</label>
-                <div class="col">
-                    <textarea class="form-control" name="assigned_ips" rows="5" placeholder="List the IP Addresses assigned to the server (One per line)">{% for v in server.assigned_ips %}{{ v }}{{constant("PHP_EOL")}}{% endfor %}</textarea>
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Enable/Disable'|trans }}:</label>
-                <div class="col">
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioActiveYes" type="radio" name="active" value="1"{% if server.active %} checked{% endif %}>
-                        <label class="form-check-label" for="radioActiveYes">{{ 'Yes'|trans }}</label>
+                <div class="row g-3">
+                    <div class="col-lg-6">
+                        <label class="form-label">{{ 'Name'|trans }}</label>
+                        <input class="form-control" type="text" name="name" value="{{ server.name }}" required placeholder="{{ 'Unique name to identify this server'|trans }}">
                     </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioActiveNo" type="radio" name="active" value="0"{% if not server.active %} checked{% endif %}>
-                        <label class="form-check-label" for="radioActiveNo">{{ 'No'|trans }}</label>
+                    <div class="col-lg-6">
+                        <label class="form-label">{{ 'Hostname'|trans }}</label>
+                        <input class="form-control" type="text" name="hostname" value="{{ server.hostname }}" placeholder="host1.domain.com">
+                    </div>
+                    <div class="col-lg-6">
+                        <label class="form-label">{{ 'IP'|trans }}</label>
+                        <input class="form-control" type="text" name="ip" value="{{ server.ip }}" required placeholder="{{ 'Primary IP address used to connect to the server. i.e. 127.0.0.1'|trans }}">
+                    </div>
+                    <div class="col-lg-6">
+                        <label class="form-label">{{ 'Enable/Disable'|trans }}</label>
+                        <div class="d-flex flex-wrap gap-3 pt-1">
+                            <label class="form-check">
+                                <input class="form-check-input" id="radioActiveYes" type="radio" name="active" value="1"{% if server.active %} checked{% endif %}>
+                                <span class="form-check-label">{{ 'Yes'|trans }}</span>
+                            </label>
+                            <label class="form-check">
+                                <input class="form-check-input" id="radioActiveNo" type="radio" name="active" value="0"{% if not server.active %} checked{% endif %}>
+                                <span class="form-check-label">{{ 'No'|trans }}</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">{{ 'Assigned IP Addresses'|trans }}</label>
+                        <textarea class="form-control" name="assigned_ips" rows="5" placeholder="List the IP Addresses assigned to the server (One per line)">{% for value in server.assigned_ips %}{{ value }}{{ constant('PHP_EOL') }}{% endfor %}</textarea>
                     </div>
                 </div>
             </div>
-            <hr>
 
-            <h5>{{ 'Server manager'|trans }}</h5>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Server manager'|trans }}:</label>
-                <div class="col">
-                    <select class="form-select" name="manager" onchange="handleManagerChange(this)">
-                        {% for code, manager in admin.servicehosting_manager_get_pairs %}
-                        <option value="{{ code }}"{% if server.manager == code %} selected{% endif %}>{{ manager.label }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
+            <hr class="my-4" />
 
-            <div id="credentials"></div>
-
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Connection port'|trans }}:</label>
-                <div class="col">
-                    <input class="form-control" type="number" name="port" min="1" max="65535" value="{{ server.port }}" placeholder="{{ 'Custom port. Use blank to use default. Used to connect to the API'|trans }}">
+            <div class="mb-5">
+                <div class="mb-3">
+                    <h4 class="card-title mb-1">{{ 'Connection Settings'|trans }}</h4>
+                    <p class="text-secondary mb-0">{{ 'Choose the control panel adapter and provide the credentials used for API communication. Saved credentials are never displayed again — submit a new value to rotate them.'|trans }}</p>
                 </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Password length'|trans }}:</label>
-                <div class="col">
-                    <input class="form-control" type="number" name="passwordLength" min="1" max="100" value="{{ server.passwordLength }}" placeholder="{{ 'Length of generated passwords when creating user accounts. Defaults to 10'|trans }}">
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Use secure connection'|trans }}:</label>
-                <div class="col">
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioSecureConnectionYes" type="radio" name="secure" value="1"{% if server.secure %} checked{% endif %}>
-                        <label class="form-check-label" for="radioSecureConnectionYes">{{ 'Yes'|trans }}</label>
+                <div class="row g-3">
+                    <div class="col-lg-6">
+                        <label class="form-label">{{ 'Server Manager'|trans }}</label>
+                        <select class="form-select" name="manager" onchange="handleManagerChange(this)">
+                            {% for code, manager in admin.servicehosting_manager_get_pairs %}
+                                <option value="{{ code }}"{% if server.manager == code %} selected{% endif %}>{{ manager.label }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioSecureConnectionNo" type="radio" name="secure" value="0"{% if not server.secure %} checked{% endif %}>
-                        <label class="form-check-label" for="radioSecureConnectionNo">{{ 'No'|trans }}</label>
+                    <div class="col-lg-6">
+                        <label class="form-label">{{ 'Connection Port'|trans }}</label>
+                        <input class="form-control" type="number" name="port" min="1" max="65535" value="{{ server.port }}" placeholder="{{ 'Custom port. Use blank to use default. Used to connect to the API'|trans }}">
                     </div>
-                    <span class="text-muted">{{ 'Controls whether HTTPS or HTTP is used for API requests.'|trans }}</span>
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Verify TLS certificate'|trans }}:</label>
-                <div class="col">
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioTlsVerifyYes" type="radio" name="tls_verify" value="1"{% if tlsVerify %} checked{% endif %}>
-                        <label class="form-check-label" for="radioTlsVerifyYes">{{ 'Yes'|trans }}</label>
+
+                    <div class="col-12">
+                        <div id="credentials" class="row g-3"></div>
                     </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioTlsVerifyNo" type="radio" name="tls_verify" value="0"{% if not tlsVerify %} checked{% endif %}>
-                        <label class="form-check-label" for="radioTlsVerifyNo">{{ 'No'|trans }}</label>
+
+                    <div class="col-lg-6">
+                        <label class="form-label">{{ 'Password Length'|trans }}</label>
+                        <input class="form-control" type="number" name="passwordLength" min="1" max="100" value="{{ server.passwordLength }}" placeholder="{{ 'Length of generated passwords when creating user accounts. Defaults to 10'|trans }}">
                     </div>
-                    <span class="text-muted">{{ 'Recommended: keep enabled unless your server uses a self-signed or otherwise invalid certificate.'|trans }}</span>
+                    <div class="col-lg-6">
+                        <label class="form-label">{{ 'Use Secure Connection'|trans }}</label>
+                        <div class="d-flex flex-wrap gap-3 pt-1">
+                            <label class="form-check">
+                                <input class="form-check-input" id="radioSecureConnectionYes" type="radio" name="secure" value="1"{% if server.secure %} checked{% endif %}>
+                                <span class="form-check-label">{{ 'Yes'|trans }}</span>
+                            </label>
+                            <label class="form-check">
+                                <input class="form-check-input" id="radioSecureConnectionNo" type="radio" name="secure" value="0"{% if not server.secure %} checked{% endif %}>
+                                <span class="form-check-label">{{ 'No'|trans }}</span>
+                            </label>
+                        </div>
+                        <div class="form-text">{{ 'Controls whether HTTPS or HTTP is used for API requests.'|trans }}</div>
+                    </div>
+                    <div class="col-lg-6">
+                        <label class="form-label">{{ 'Verify TLS Certificate'|trans }}</label>
+                        <div class="d-flex flex-wrap gap-3 pt-1">
+                            <label class="form-check">
+                                <input class="form-check-input" id="radioTlsVerifyYes" type="radio" name="tls_verify" value="1"{% if tlsVerify %} checked{% endif %}>
+                                <span class="form-check-label">{{ 'Yes'|trans }}</span>
+                            </label>
+                            <label class="form-check">
+                                <input class="form-check-input" id="radioTlsVerifyNo" type="radio" name="tls_verify" value="0"{% if not tlsVerify %} checked{% endif %}>
+                                <span class="form-check-label">{{ 'No'|trans }}</span>
+                            </label>
+                        </div>
+                        <div class="form-text">{{ 'Recommended: keep enabled unless your server uses a self-signed or otherwise invalid certificate.'|trans }}</div>
+                    </div>
                 </div>
             </div>
 
-            <input class="btn btn-primary w-100" id="test-connection" type="button" value="{{ 'Update and test connection'|trans }}">
+            <hr class="my-4" />
 
-            <h5>{{ 'Optional configuration'|trans }}</h5>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Users prefix'|trans }}:</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="userprefix" value="{{ server.config.userprefix }}" placeholder="{{ 'Prefix for created users (especially for database)'|trans }}">
-                    <span class="text-muted">{{ 'Some server managers may ignore this option due to limitations / requirements for usernames imposed by the control panel.'|trans }}</span>
+            <div class="mb-5">
+                <div class="mb-3">
+                    <h4 class="card-title mb-1">{{ 'Optional Configuration'|trans }}</h4>
+                    <p class="text-secondary mb-0">{{ 'Use these values when your control panel supports account prefixes or other optional provisioning defaults.'|trans }}</p>
+                </div>
+                <div class="row g-3">
+                    <div class="col-lg-6">
+                        <label class="form-label">{{ 'Users Prefix'|trans }}</label>
+                        <input class="form-control" type="text" name="userprefix" value="{{ server.config.userprefix }}" placeholder="{{ 'Prefix for created users (especially for database)'|trans }}">
+                        <div class="form-text">{{ 'Some server managers may ignore this option due to limitations or requirements imposed by the control panel.'|trans }}</div>
+                    </div>
                 </div>
             </div>
 
-            <hr>
+            <hr class="my-4" />
 
-            <h5>{{ 'Nameservers'|trans }}</h5>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Nameserver 1'|trans }}:</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="ns1" value="{{ server.ns1 }}" placeholder="ns1.yourdomain.com">
+            <div class="mb-4">
+                <div class="mb-3">
+                    <h4 class="card-title mb-1">{{ 'Nameservers'|trans }}</h4>
+                    <p class="text-secondary mb-0">{{ 'Set the default nameservers that will be suggested for domains provisioned on this server.'|trans }}</p>
                 </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Nameserver 2'|trans }}:</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="ns2" value="{{ server.ns2 }}" placeholder="ns2.yourdomain.com">
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Nameserver 3'|trans }}:</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="ns3" value="{{ server.ns3 }}" placeholder="ns3.yourdomain.com">
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Nameserver 4'|trans }}:</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="ns4" value="{{ server.ns4 }}" placeholder="ns4.yourdomain.com">
+                <div class="row g-3">
+                    <div class="col-lg-6">
+                        <label class="form-label">{{ 'Nameserver 1'|trans }}</label>
+                        <input class="form-control" type="text" name="ns1" value="{{ server.ns1 }}" placeholder="ns1.yourdomain.com">
+                    </div>
+                    <div class="col-lg-6">
+                        <label class="form-label">{{ 'Nameserver 2'|trans }}</label>
+                        <input class="form-control" type="text" name="ns2" value="{{ server.ns2 }}" placeholder="ns2.yourdomain.com">
+                    </div>
+                    <div class="col-lg-6">
+                        <label class="form-label">{{ 'Nameserver 3'|trans }}</label>
+                        <input class="form-control" type="text" name="ns3" value="{{ server.ns3 }}" placeholder="ns3.yourdomain.com">
+                    </div>
+                    <div class="col-lg-6">
+                        <label class="form-label">{{ 'Nameserver 4'|trans }}</label>
+                        <input class="form-control" type="text" name="ns4" value="{{ server.ns4 }}" placeholder="ns4.yourdomain.com">
+                    </div>
                 </div>
             </div>
 
             <input type="hidden" name="id" value="{{ server.id }}">
-            <input type="submit" value="{{ 'Update server'|trans }}" class="btn btn-primary w-100">
+            <div class="d-flex flex-wrap gap-2 justify-content-end">
+                <button class="btn btn-outline-primary" id="test-connection" type="button">{{ 'Update and Test Connection'|trans }}</button>
+                <button class="btn btn-primary" type="submit">{{ 'Update Server'|trans }}</button>
+            </div>
         </form>
     </div>
 </div>
 {% endblock %}
 
-{% block js%}
+{% block js %}
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        document.getElementById('test-connection').addEventListener('click', function(event) {
-            event.preventDefault();
-            formElement = document.getElementById('server-update');
-            const formData = new FormData(formElement);
-
-            if(formElement.getAttribute('method').toLowerCase() != 'get') {
-                data = Tools.serializeFormDataToJSON(formData);
-            }
-            else {
-                data = Tools.serializeFormData(formData);
-            }
-
-            API.makeRequest(formElement.getAttribute('method'), Tools.getBaseURL(formElement.getAttribute('action')), data,
-                (result) =>{
-                    return API._afterComplete(formElement, result);
-                },
-                (error) => {
-                    FOSSBilling.message(`${error.message} (${error.code})`, 'error');
-                });
-
-            API.makeRequest(formElement.getAttribute('method'), Tools.getBaseURL('admin/servicehosting/server_test_connection'), { id: {{ server.id }} },
-                () => {
-                    FOSSBilling.message(`{{ 'Server connected'|trans }}`, 'message');
-                },
-                (error) => {
-                    FOSSBilling.message(`${error.message} (${error.code})`, 'error');
-                });
-        });
-    });
-
-    function handleManagerChange (select) {
-        var pairs = {{ admin.servicehosting_manager_get_pairs|json_encode|raw }} // PHP array returned by the server manager converted to a JavaScript object
-        var defaults = {
+    const KEEP_SENTINEL = '{{ constant('Box\\Mod\\Servicehosting\\Service::CREDENTIAL_KEEP_SENTINEL')|e('js') }}';
+    const KEEP_PLACEHOLDER = '{{ 'Leave blank to keep the saved credential.'|trans|e('js') }}';
+    const CONFIGURED_BADGE = '{{ 'Configured'|trans|e('js') }}';
+    function handleManagerChange(select) {
+        const pairs = {{ admin.servicehosting_manager_get_pairs|json_encode|raw }};
+        const defaults = {
             form: {
                 credentials: {
                     fields: [
@@ -220,54 +207,122 @@
                             placeholder: 'Password to connect to the server',
                             required: true
                         }
-                    ],
-                },
-            },
-        } // Default form fields. If server manager does not provide any, use these.
+                    ]
+                }
+            }
+        };
+        const values = {{ server|json_encode|raw }};
+        const credentials = document.getElementById('credentials');
+        const manager = select.value;
+        const fields = pairs[manager] && pairs[manager].form && pairs[manager].form.credentials && pairs[manager].form.credentials.fields
+            ? pairs[manager].form.credentials.fields
+            : defaults.form.credentials.fields;
 
-        var values = {{ server|json_encode|raw }}; // Server data returned by the server manager converted to a JavaScript object
+        const secretFields = values.secret_fields || [];
 
-        var credentials = document.getElementById('credentials'); // HTML element where the form fields will be inserted.
-        var manager = select.value; // Selected server manager code.
+        credentials.innerHTML = '';
 
-        credentials.innerHTML = ''; // Clear the form fields.
+        fields.forEach((field, index) => {
+            const wrapper = document.createElement('div');
+            const isLastOddField = fields.length % 2 === 1 && index === fields.length - 1;
+            wrapper.className = fields.length === 1 || isLastOddField ? 'col-12' : 'col-lg-6';
 
-        if (pairs[manager].form && pairs[manager].form.credentials && pairs[manager].form.credentials.fields) {
-            var data = pairs[manager].form.credentials.fields;
-        } else {
-            var data = defaults.form.credentials.fields;
-        }
+            const label = document.createElement('label');
+            label.className = 'form-label';
+            label.textContent = field.label;
+            wrapper.appendChild(label);
 
-        for (var i = 0; i < data.length; i++) {
-            // Create a new form field and append it to the credentials element.
-            var field = data[i];
-            var div = document.createElement('div');
-            div.className = 'mb-3 row';
+            const isSecret = secretFields.indexOf(field.name) !== -1;
+            const isSet = isSecret && values[field.name + '_set'] === true;
 
-            var label = document.createElement('label');
-            label.className = 'form-label col-3 col-form-label';
-            label.innerHTML = field.label + ':';
-            div.appendChild(label);
-
-            var input = document.createElement('input');
+            const input = document.createElement('input');
             input.className = 'form-control';
-            input.type = field.type;
             input.name = field.name;
-            input.value = values[field.name];
-            input.placeholder = field.placeholder;
-            input.required = field.required;
 
-            var col = document.createElement('div');
-            col.className = 'col';
-            col.appendChild(input);
-            div.appendChild(col);
+            if (isSecret && isSet) {
+                input.type = 'password';
+                input.value = '';
+                input.placeholder = KEEP_PLACEHOLDER;
+                input.autocomplete = 'new-password';
+                input.dataset.credentialKeep = 'true';
+                input.required = false;
 
-            credentials.appendChild(div);
-        }
+                const badge = document.createElement('span');
+                badge.className = 'badge text-bg-success ms-2 align-middle';
+                badge.textContent = CONFIGURED_BADGE;
+                label.appendChild(badge);
+            } else {
+                input.type = field.type || 'text';
+                input.value = isSecret ? '' : (values[field.name] || '');
+                input.placeholder = field.placeholder || '';
+                input.required = !!field.required;
+            }
+
+            wrapper.appendChild(input);
+
+            if (isSecret && isSet) {
+                const hint = document.createElement('div');
+                hint.className = 'form-text';
+                hint.textContent = KEEP_PLACEHOLDER;
+                wrapper.appendChild(hint);
+            }
+
+            credentials.appendChild(wrapper);
+        });
     }
 
-    window.onload = function () {
-        handleManagerChange(document.querySelector('select[name="manager"]'));
-    };
+    function fillKeepSentinels(formElement) {
+        const inputs = formElement.querySelectorAll('input[data-credential-keep="true"]');
+        inputs.forEach((input) => {
+            if (input.value === '') {
+                input.value = KEEP_SENTINEL;
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const formElement = document.getElementById('server-update');
+        const managerSelect = document.querySelector('select[name="manager"]');
+        const testConnectionButton = document.getElementById('test-connection');
+
+        handleManagerChange(managerSelect);
+
+        formElement.addEventListener('submit', function() {
+            fillKeepSentinels(formElement);
+        });
+
+        testConnectionButton.addEventListener('click', function(event) {
+            event.preventDefault();
+
+            fillKeepSentinels(formElement);
+
+            const formData = new FormData(formElement);
+            const data = formElement.getAttribute('method').toLowerCase() !== 'get'
+                ? FOSSBilling.tools.serializeFormDataToJSON(formData)
+                : FOSSBilling.tools.serializeFormData(formData);
+
+            FOSSBilling.api.makeRequest(
+                formElement.getAttribute('method'),
+                FOSSBilling.tools.getBaseURL(formElement.getAttribute('action')),
+                data,
+                (result) => FOSSBilling.api._afterComplete(formElement, result),
+                (error) => {
+                    FOSSBilling.message(`${error.message} (${error.code})`, 'error');
+                }
+            );
+
+            FOSSBilling.api.makeRequest(
+                formElement.getAttribute('method'),
+                FOSSBilling.tools.getBaseURL('admin/servicehosting/server_test_connection'),
+                { id: {{ server.id }} },
+                () => {
+                    FOSSBilling.message(`{{ 'Server connected'|trans }}`, 'message');
+                },
+                (error) => {
+                    FOSSBilling.message(`${error.message} (${error.code})`, 'error');
+                }
+            );
+        });
+    });
 </script>
 {% endblock %}

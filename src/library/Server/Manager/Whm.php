@@ -38,13 +38,15 @@ class Server_Manager_Whm extends Server_Manager
                             'label' => 'Username',
                             'placeholder' => 'Username to connect to the server',
                             'required' => true,
+                            'secret' => true,
                         ],
                         [
                             'name' => 'accesshash',
                             'type' => 'text',
-                            'label' => 'Access hash',
-                            'placeholder' => 'Access hash to connect to the server',
+                            'label' => 'Access Hash or API Token',
+                            'placeholder' => 'Access hash or WHM API token to connect to the server',
                             'required' => true,
+                            'secret' => true,
                         ],
                     ],
                 ],
@@ -73,7 +75,7 @@ class Server_Manager_Whm extends Server_Manager
         }
 
         // If port not set, use WHM default.
-        $this->_config['port'] = empty($this->_config['port']) ? '2087' : $this->_config['port'];
+        $this->_config['port'] = FOSSBilling\Tools::normalizePort($this->_config['port'] ?? null, 2087);
     }
 
     /**
@@ -98,11 +100,11 @@ class Server_Manager_Whm extends Server_Manager
                 if (isset($response->data->url)) {
                     return $response->data->url;
                 }
-                $this->getLog()->err('Unexpected API response: ' . print_r($response, true));
+                $this->getLog()->error('Unexpected API response: ' . print_r($response, true));
 
                 return 'https://' . $this->_config['host'] . '/cpanel';
             } catch (Server_Exception $e) {
-                $this->getLog()->err("Failed to get login URL: {$e->getMessage()}.");
+                $this->getLog()->error("Failed to get login URL: {$e->getMessage()}.");
 
                 return 'https://' . $this->_config['host'] . '/cpanel';
             }
@@ -136,11 +138,11 @@ class Server_Manager_Whm extends Server_Manager
                 if (isset($response->data->url)) {
                     return $response->data->url;
                 }
-                $this->getLog()->err('Unexpected API response: ' . print_r($response, true));
+                $this->getLog()->error('Unexpected API response: ' . print_r($response, true));
 
                 return 'https://' . $this->_config['host'] . '/whm';
             } catch (Server_Exception $e) {
-                $this->getLog()->err("Failed to get login URL: {$e->getMessage()}.");
+                $this->getLog()->error("Failed to get login URL: {$e->getMessage()}.");
 
                 return 'https://' . $this->_config['host'] . '/whm';
             }
@@ -608,7 +610,7 @@ class Server_Manager_Whm extends Server_Manager
             ]);
         } catch (HttpExceptionInterface $error) {
             $e = new Server_Exception('HttpClientException: :error', [':error' => $error->getMessage()]);
-            $this->getLog()->err($e->getMessage());
+            $this->getLog()->error($e->getMessage());
 
             throw $e;
         }
@@ -620,7 +622,7 @@ class Server_Manager_Whm extends Server_Manager
         // Check the response for errors and throw a Server_Exception if any are found
         if (!is_object($json)) {
             $msg = sprintf('Function call "%s" response is invalid, body: %s', $action, $body);
-            $this->getLog()->crit($msg);
+            $this->getLog()->critical($msg);
 
             $placeholders = [':action:' => $action, ':type:' => 'cPanel'];
 
@@ -628,28 +630,28 @@ class Server_Manager_Whm extends Server_Manager
         }
 
         if (isset($json->cpanelresult->error)) {
-            $this->getLog()->crit(sprintf('WHM server response error calling action %s: "%s"', $action, $json->cpanelresult->error));
+            $this->getLog()->critical(sprintf('WHM server response error calling action %s: "%s"', $action, $json->cpanelresult->error));
             $placeholders = ['action' => $action, 'type' => 'cPanel'];
 
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
 
         if (isset($json->data->result) && $json->data->result == '0') {
-            $this->getLog()->crit(sprintf('WHM server response error calling action %s: "%s"', $action, $json->data->reason));
+            $this->getLog()->critical(sprintf('WHM server response error calling action %s: "%s"', $action, $json->data->reason));
             $placeholders = [':action:' => $action, ':type:' => 'cPanel'];
 
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
 
         if (isset($json->result) && is_array($json->result) && $json->result[0]->status == 0) {
-            $this->getLog()->crit(sprintf('WHM server response error calling action %s: "%s"', $action, $json->result[0]->statusmsg));
+            $this->getLog()->critical(sprintf('WHM server response error calling action %s: "%s"', $action, $json->result[0]->statusmsg));
             $placeholders = [':action:' => $action, ':type:' => 'cPanel'];
 
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
 
         if (isset($json->status) && $json->status != '1') {
-            $this->getLog()->crit(sprintf('WHM server response error calling action %s: "%s"', $action, $json->statusmsg));
+            $this->getLog()->critical(sprintf('WHM server response error calling action %s: "%s"', $action, $json->statusmsg));
             $placeholders = [':action:' => $action, ':type:' => 'cPanel'];
 
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);

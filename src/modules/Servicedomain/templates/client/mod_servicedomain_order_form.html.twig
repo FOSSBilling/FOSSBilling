@@ -6,11 +6,11 @@
     <nav class="nav nav-pills flex-column border-end me-3 gap-2">
         {% if tlds is not empty %}
             <a class="nav-link me-3 py-1 px-2 fs-7 active" href="#" id="register-tab" data-bs-toggle="tab" data-bs-target="#register-tab-pane"
-                role="tab" aria-controls="register-tab-pane">Register</a>
+                role="tab" aria-controls="register-tab-pane">{{ 'Register'|trans }}</a>
         {% endif %}
         {% if transfer_tlds is not empty %}
         <a class="nav-link me-3 py-1 px-2 fs-7 {% if tlds is empty %} active {% endif %}" href="#" id="transfer-tab" data-bs-toggle="tab" data-bs-target="#transfer-tab-pane"
-               role="tab" aria-controls="transfer-tab-pane">Transfer</a>
+               role="tab" aria-controls="transfer-tab-pane">{{ 'Transfer'|trans }}</a>
         {% endif %}
     </nav>
     <div class="tab-content">
@@ -155,7 +155,11 @@
             if (typeof multiply !== 'undefined') {
                 total *= multiply;
             }
-            return `${total.toFixed(2)} ${code}`;
+            return new Intl.NumberFormat(undefined, {
+                style: 'currency',
+                currency: code,
+                currencyDisplay: 'narrowSymbol',
+            }).format(total);
         };
 
         const transferCheck = document.getElementById('transfer-check');
@@ -166,7 +170,7 @@
                 document.getElementById('domain-action').value = 'transfer';
                 const domain = sld + tld;
 
-                API.guest.post(
+                FOSSBilling.api.guest.post(
                     'servicedomain/can_be_transferred',
                     {sld: sld, tld: tld},
                     function (result) {
@@ -177,7 +181,7 @@
                         if (transferConfig) fadeIn(transferConfig);
                         const onAfterDomainCheck = document.querySelector('.onAfterDomainCheck');
                         if (onAfterDomainCheck) fadeIn(onAfterDomainCheck);
-                        transferCheck.style.display = 'none';
+
                         const transferOrderButton = document.querySelector('#transfer .order-button');
                         if (transferOrderButton) transferOrderButton.style.display = '';
                     },
@@ -194,7 +198,7 @@
                 const tld = document.querySelector('select[name="register_tld"]').value.toLowerCase();
                 const domain = sld + tld;
                 document.getElementById('domain-action').value = 'register';
-                API.guest.post(
+                FOSSBilling.api.guest.post(
                     'servicedomain/check',
                     {sld: sld, tld: tld},
                     function (result) {
@@ -203,7 +207,7 @@
                         if (domainNameEl) domainNameEl.textContent = domain;
                         const onAfterDomainCheck = document.querySelector('.onAfterDomainCheck');
                         if (onAfterDomainCheck) fadeIn(onAfterDomainCheck);
-                        domainCheck.style.display = 'none';
+
                         const registerOrderButton = document.querySelector('#register .order-button');
                         if (registerOrderButton) registerOrderButton.style.display = '';
                     },
@@ -214,7 +218,7 @@
         }
 
         function setPricing(tld) {
-            API.guest.post(
+            FOSSBilling.api.guest.post(
                 'servicedomain/pricing',
                 {tld: tld},
                 function (result) {
@@ -253,7 +257,7 @@
         }
 
         function setTransferPricing(tld) {
-            API.guest.post(
+            FOSSBilling.api.guest.post(
                 'servicedomain/pricing',
                 {tld: tld},
                 function (result) {

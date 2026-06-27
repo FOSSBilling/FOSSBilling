@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Serviceapikey\Api;
 
-class Guest extends \Api_Abstract
+class Guest extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Checks if an API key is valid or not.
@@ -23,16 +23,5 @@ class Guest extends \Api_Abstract
     public function check($data)
     {
         return $this->getService()->isValid($data);
-    }
-
-    /**
-     * Gets the information tied to an API key such as its validity and any custom parameters tied to it.
-     *
-     * @param array $data
-     *                    - 'key' What API key to check & get custom parameters for
-     */
-    public function get_info($data)
-    {
-        return $this->getService()->getInfo($data);
     }
 }

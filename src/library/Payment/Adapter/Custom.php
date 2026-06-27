@@ -29,7 +29,7 @@ class Payment_Adapter_Custom
             'can_load_in_iframe' => true,
             'supports_one_time_payments' => true,
             'supports_subscriptions' => true,
-            'description' => 'Custom payment gateway allows you to give instructions how can your client pay invoice. All system, client, order and invoice details can be printed. HTML and JavaScript code is supported.',
+            'description' => 'Custom payment gateway allows you to give instructions how can your client pay invoice. All system, client, order and invoice details can be printed. HTML code is supported.',
             'logo' => [
                 'logo' => 'custom.png',
                 'height' => '50px',
@@ -38,12 +38,12 @@ class Payment_Adapter_Custom
             'form' => [
                 'single' => [
                     'textarea', [
-                        'label' => 'Enter your text for single payment information',
+                        'label' => 'Enter Your Text for Single Payment Information',
                     ],
                 ],
                 'recurrent' => [
                     'textarea', [
-                        'label' => 'Enter your text for subscription information',
+                        'label' => 'Enter Your Text for Subscription Information',
                     ],
                 ],
             ],
@@ -55,33 +55,32 @@ class Payment_Adapter_Custom
      *
      * @return string - html form with auto submit javascript
      */
-    public function getHtml(Api_Handler $api_admin, int $invoice_id, bool $subscription): string
+    public function getHtml(FOSSBilling\Api\Proxy $api_admin, int $invoice_id, bool $subscription): string
     {
         $invoiceModel = $this->di['db']->load('Invoice', $invoice_id);
         $invoiceService = $this->di['mod_service']('Invoice');
         $invoice = $invoiceService->toApiArray($invoiceModel, true);
 
+        $tpl = $subscription ? ($this->config['recurrent'] ?? '"Custom" payment adapter is not fully configured.') : ($this->config['single'] ?? '"Custom" payment adapter is not fully configured.');
         $vars = [
-            '_client_id' => $invoice['client']['id'],
             'invoice' => $invoice,
-            '_tpl' => $subscription ? ($this->config['recurrent'] ?? '"Custom" payment adapter is not fully configured.') : ($this->config['single'] ?? '"Custom" payment adapter is not fully configured.'),
         ];
         $systemService = $this->di['mod_service']('System');
 
-        return $systemService->renderString($vars['_tpl'], true, $vars);
+        return $systemService->renderAdapterTplString($tpl, $vars);
     }
 
     /**
      * Processes a transaction using a custom payment adapter.
      *
-     * @param Api_Handler $api_admin  the API admin object
-     * @param int         $id         the ID of the transaction to process
-     * @param array       $data       the data associated with the transaction
-     * @param int         $gateway_id the ID of the payment gateway to use
+     * @param FOSSBilling\Api\Proxy $api_admin  the API admin object
+     * @param int                   $id         the ID of the transaction to process
+     * @param array                 $data       the data associated with the transaction
+     * @param int                   $gateway_id the ID of the payment gateway to use
      *
      * @return bool returns true if the transaction was processed successfully, false otherwise
      */
-    public function processTransaction(Api_Handler $api_admin, int $id, array $data, int $gateway_id)
+    public function processTransaction(FOSSBilling\Api\Proxy $api_admin, int $id, array $data, int $gateway_id)
     {
         if (!$this->isIpnValid($data)) {
             throw new Payment_Exception('Custom payment gateway callbacks must be confirmed by an administrator.');

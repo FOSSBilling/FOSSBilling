@@ -24,16 +24,18 @@ class Server_Manager_Hestia extends Server_Manager
                         [
                             'name' => 'username',
                             'type' => 'text',
-                            'label' => 'Access key ID',
+                            'label' => 'Access Key ID',
                             'placeholder' => 'ID for the access key you\'ve generated in Hestia.',
                             'required' => true,
+                            'secret' => true,
                         ],
                         [
                             'name' => 'accesshash',
                             'type' => 'text',
-                            'label' => 'Secret key',
+                            'label' => 'Secret Key',
                             'placeholder' => 'Secret key for the access key you\'ve generated in Hestia',
                             'required' => true,
+                            'secret' => true,
                         ],
                     ],
                 ],
@@ -65,15 +67,9 @@ class Server_Manager_Hestia extends Server_Manager
         return 'https://' . $this->_config['host'] . ':' . $this->getPort() . '/';
     }
 
-    public function getPort(): int|string
+    public function getPort(): int
     {
-        $port = $this->_config['port'];
-
-        if (filter_var($port, FILTER_VALIDATE_INT) !== false && $port >= 0 && $port <= 65535) {
-            return $this->_config['port'];
-        }
-
-        return 8083;
+        return FOSSBilling\Tools::normalizePort($this->_config['port'] ?? null, 8083);
     }
 
     #[Override]
@@ -368,7 +364,7 @@ class Server_Manager_Hestia extends Server_Manager
         $client = $this->getHttpClient()->withOptions([
             'verify_peer' => $verifyTls,
             'verify_host' => $verifyTls,
-            'timeout' => 30,
+            'timeout' => 120,
         ]);
 
         $response = $client->request('POST', $host, [

@@ -20,7 +20,7 @@ use FOSSBilling\PaginationOptions;
 use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
-class Client extends \Api_Abstract
+class Client extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get list of emails system had sent to client.
@@ -32,7 +32,7 @@ class Client extends \Api_Abstract
         $client = $this->getIdentity();
         $data['client_id'] = $client->id;
         [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = [
@@ -80,7 +80,12 @@ class Client extends \Api_Abstract
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function resend($data)
     {
-        $model = $this->getService()->findOneForClientById($this->getIdentity(), $data['id']);
+        $client = $this->getIdentity();
+
+        $this->getDi()['rate_limiter']->consumeOrThrow('client_email_resend_ip', (string) $this->getIp());
+        $this->getDi()['rate_limiter']->consumeOrThrow('client_email_resend_account', 'client:' . $client->id);
+
+        $model = $this->getService()->findOneForClientById($client, $data['id']);
         if (!$model instanceof \Model_ActivityClientEmail) {
             throw new \FOSSBilling\Exception('Email not found');
         }

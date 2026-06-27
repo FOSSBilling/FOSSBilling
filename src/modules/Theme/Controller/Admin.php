@@ -91,26 +91,39 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $service = $mod->getService();
         $t = $service->getTheme($theme);
         $preset = $service->getCurrentThemePreset($t);
-        $html = $t->getSettingsPageHtml($theme);
+        $settings = $service->getThemeSettings($t, $preset);
+        $error = $_GET['error'] ?? null;
+
+        try {
+            $html = $service->renderThemeSettingsPageHtml($t, $settings);
+        } catch (\FOSSBilling\InformationException $e) {
+            $html = '';
+            $error ??= $e->getMessage();
+        }
 
         $info = null;
         if (!$t->isAssetsPathWritable()) {
             $info = __trans('Theme ":name" assets folder is not writable. Set folder :folder permissions to 777', [':name' => $t->getName(), ':folder' => $t->getPathAssets()]);
         }
 
-        if (empty($html)) {
+        if (empty($html) && empty($error)) {
             $info = __trans('Theme ":name" is not configurable', [':name' => $t->getName()]);
         }
 
         $data = [
             'info' => $info,
-            'error' => $_GET['error'] ?? null,
+            'error' => $error,
             'theme_code' => $t->getName(),
-            'settings_html' => $html,
-            'uploaded' => $t->getUploadedAssets($theme),
-            'settings' => $service->getThemeSettings($t, $preset),
+            'settings_html' => new \Twig\Markup($html, 'UTF-8'),
+            'uploaded' => $t->getUploadedAssets(),
+            'settings' => $settings,
             'current_preset' => $preset,
             'presets' => $service->getThemePresets($t),
+            'snippets' => [
+                'client-login-form' => 'Client Area Login Form',
+                'domain-checker-form' => 'Domain Checker Form',
+                'contact-us-form' => 'Contact Us Form',
+            ],
         ];
 
         return $app->render('mod_theme_preset', $data);

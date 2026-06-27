@@ -1,131 +1,76 @@
-{% macro q(bool) %}
-    {% if bool %}
-        {{ 'Yes'|trans }}
+{% macro compute_field_required(element, context) %}
+    {% set result = false %}
+    {% if element[1].required_when is defined and element[1].required_when is iterable %}
+        {% set result = true %}
+        {% for cond_key, cond_value in element[1].required_when %}
+            {% if attribute(context, cond_key) is null or attribute(context, cond_key) != cond_value %}
+                {% set result = false %}
+            {% endif %}
+        {% endfor %}
+    {% elseif element[1].required is defined %}
+        {% set result = element[1].required != 'false' %}
     {% else %}
-        {{ 'No'|trans }}
+        {% set result = false %}
     {% endif %}
+    {{ result ? 'true' : 'false' }}
 {% endmacro %}
 
-{% macro selectbox(name, options, selected, required, nullOption) %}
-    <select class="form-select" name="{{ name }}" id="{{ name }}"{% if required %} required{% endif %}>
-        {% if nullOption %}<option value="">-- {{ nullOption }} --</option>{% endif %}
-        {% for val, label in options %}
-        <option value="{{ val }}" label="{{ label|e }}" {% if selected == val %}selected="selected"{% endif %}>{{ label|e }}</option>
-        {% endfor %}
-    </select>
-{% endmacro %}
-
-{% macro selectboxtld(name, options, selected, required) %}
-    <select class="form-select" name="{{ name }}"{% if required %} required{% endif %}>
-        {% for data in options %}
-        <option value="{{ data.tld }}" label="{{ data.tld }}"{% if selected == data.tld %} selected{% endif %}>{{ data.tld }}</option>
-        {% endfor %}
-    </select>
-{% endmacro %}
-
-{% macro build_form(elements, values) %}
+{% macro build_form(elements, values, context) %}
+    {% set ctx = context|default({}) %}
+    <div class="row g-3">
     {% for name, element in elements %}
-    <div class="mb-3 row">
+    {% set field_class = element[0] == 'textarea' ? 'col-12' : 'col-lg-6' %}
+    {% set field_required = _self.compute_field_required(element, ctx) == 'true' %}
+    <div class="{{ field_class }}">
         {% if element[0] == 'select' %}
-        <div class="col-3">
-            <label class="form-label col-form-label">{{ element[1].label }}</label>
-            {% if element[1].description %}<div class="form-text mt-0">{{ element[1].description | markdown }}</div>{% endif %}
-        </div>
-        <div class="col">
+            <label class="form-label">{{ element[1].label }}</label>
+            {% if element[1].description is defined and element[1].description %}<div class="form-text mt-0 mb-2">{{ element[1].description|markdown_to_html }}</div>{% endif %}
             <select class="form-select" name="config[{{ name }}]">
             {% for k, v in element[1].multiOptions %}
-                <option value="{{ k }}"{% if k == values[name] %} selected{% endif %}>{{ v }}</option>
+                <option value="{{ k }}"{% if k == values[name]|default('') %} selected{% endif %}>{{ v }}</option>
             {% endfor %}
             </select>
-        </div>
         {% elseif element[0] == 'multiselect' %}
-        <div class="col-3">
-            <label class="form-label col-form-label">{{ element[1].label }}</label>
-            {% if element[1].description %}<div class="form-text mt-0">{{ element[1].description | markdown }}</div>{% endif %}
-        </div>
-        <div class="col">
+            <label class="form-label">{{ element[1].label }}</label>
+            {% if element[1].description is defined and element[1].description %}<div class="form-text mt-0 mb-2">{{ element[1].description|markdown_to_html }}</div>{% endif %}
             <select class="form-select" name="config[{{ name }}]" multiple>
             {% for k, v in element[1].multiOptions %}
-                <option value="{{ k }}"{% if values[name] is iterable and k in values[name] %} selected{% endif %}>{{ v }}</option>
+                <option value="{{ k }}"{% if k in values[name]|default([]) %} selected{% endif %}>{{ v }}</option>
             {% endfor %}
             </select>
-        </div>
         {% elseif element[0] == 'radio' %}
-        <div class="col-3">
-            <label class="form-label col-form-label">{{ element[1].label }}</label>
-            {% if element[1].description %}<div class="form-text mt-0">{{ element[1].description | markdown }}</div>{% endif %}
-        </div>
-        <div class="col">
+            <label class="form-label d-block">{{ element[1].label }}</label>
+            {% if element[1].description is defined and element[1].description %}<div class="form-text mt-0 mb-2">{{ element[1].description|markdown_to_html }}</div>{% endif %}
+            <div class="d-flex flex-wrap gap-3">
             {% for k, v in element[1].multiOptions %}
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" id="el-{{ name ~ k }}" type="radio" name="config[{{ name }}]" value="{{ k }}"{% if k == values[name] %} checked{% endif %}>
-                    <label class="form-check-label" for="el-{{ name ~ k }}">{{ v }}</label>
-                </div>
+                <label class="form-check">
+                    <input class="form-check-input" id="el-{{ name ~ k }}" type="radio" name="config[{{ name }}]" value="{{ k }}"{% if k == values[name]|default('') %}checked{% endif %}>
+                    <span class="form-check-label">{{ v }}</span>
+                </label>
             {% endfor %}
-        </div>
+            </div>
         {% elseif element[0] == 'textarea' %}
-        <div class="col-3">
-            <label class="form-label col-form-label" for="el-{{ name }}">{{ element[1].label }}</label>
-            {% if element[1].description %}<div class="form-text mt-0">{{ element[1].description | markdown }}</div>{% endif %}
-        </div>
-        <div class="col">
-            <textarea class="form-control" id="el-{{ name }}" name="config[{{ name }}]" rows="20"{% if element[1].required is defined and element[1].required != 'false' %} required{% endif %}>{{ values[name] }}</textarea>
-        </div>
+            <label class="form-label" for="el-{{ name }}">{{ element[1].label }}</label>
+            {% if element[1].description is defined and element[1].description %}<div class="form-text mt-0 mb-2">{{ element[1].description|markdown_to_html }}</div>{% endif %}
+            <textarea class="form-control" id="el-{{ name }}" name="config[{{ name }}]" rows="20"
+                {% if field_required %} required{% endif %}
+                {% if element[1].required_when is defined and element[1].required_when.test_mode is defined %} data-required-when-test-mode="{{ element[1].required_when.test_mode ? 'true' : 'false' }}"{% endif %}>{{ values[name]|default('') }}</textarea>
         {% else %}
-        <div class="col-3">
-            <label class="form-label col-form-label" for="el-{{ name }}">{{ element[1].label }}</label>
-            {% if element[1].description %}<div class="form-text mt-0">{{ element[1].description | markdown }}</div>{% endif %}
-        </div>
-        <div class="col">
-            <input class="form-control" id="el-{{ name }}" type="{{ element[0] }}" name="config[{{ name }}]" value="{{ values[name] }}"{% if element[1].required is defined and element[1].required != 'false' %} required{% endif %}>
-        </div>
+            <label class="form-label" for="el-{{ name }}">{{ element[1].label }}</label>
+            {% if element[1].description is defined and element[1].description %}<div class="form-text mt-0 mb-2">{{ element[1].description|markdown_to_html }}</div>{% endif %}
+            <input class="form-control" id="el-{{ name }}" type="{{ element[0] }}" name="config[{{ name }}]" value="{{ values[name]|default('') }}"
+                {% if field_required %} required{% endif %}
+                {% if element[1].required_when is defined and element[1].required_when.test_mode is defined %} data-required-when-test-mode="{{ element[1].required_when.test_mode ? 'true' : 'false' }}"{% endif %}>
         {% endif %}
     </div>
     {% endfor %}
-{% endmacro %}
-
-{% macro currency_format(price, currency) %}
-    {% set c = guest.currency_get({"code":currency}) %}
-    {% set p = (price)|number %}
-    {% if c.price_format == 1 %}
-        {% set p = p|number(2, '.', '') %}
-    {% elseif c.price_format == 2 %}
-        {% set p = p|number(2, '.', ',') %}
-    {% elseif c.price_format == 3 %}
-        {% set p = p|number(2, ',', '.') %}
-    {% elseif c.price_format == 4 %}
-        {% set p = p|number(0, '', ',') %}
-    {% elseif c.price_format == 5 %}
-        {% set p = p|number(0, '', '') %}
-    {% endif %}
-    {{ c.format|replace({'{{price}}': p }) }}
-{% endmacro %}
-
-{% macro currency(price, currency) %}
-    {% if currency == null %}
-        {% set c = guest.cart_get_currency %}
-    {% else %}
-        {% set c = guest.currency_get({"code":currency}) %}
-    {% endif %}
-
-    {% set p = (price * c.conversion_rate) %}
-
-    {% if c.price_format == 1 %}
-        {% set p = p|number(2, '.', '') %}
-    {% elseif c.price_format == 2 %}
-        {% set p = p|number(2, '.', ',') %}
-    {% elseif c.price_format == 3 %}
-        {% set p = p|number(2, ',', '.') %}
-    {% elseif c.price_format == 4 %}
-        {% set p = p|number(0, '', ',') %}
-    {% elseif c.price_format == 5 %}
-        {% set p = p|number(0, '', '') %}
-    {% endif %}
-
-    {{ c.format|replace({'{{price}}': p }) }}
-{% endmacro %}
+    </div>
+{% endmacro build_form %}
 
 {% macro status_name(status) %}
+    {% if status is same as(null) or (status is empty and status != '0') %}
+        -
+    {% else %}
     {% set status = status|replace({'_': " "})|title|trim %}
     {% if status == 'Active' %}
         {{ 'Active'|trans }}
@@ -139,43 +84,296 @@
         {{ 'Suspended'|trans }}
     {% elseif status == 'Canceled' %}
         {{ 'Canceled'|trans }}
+    {% elseif status == 'Inactive' %}
+        {{ 'Inactive'|trans }}
+    {% elseif status == 'Enabled' %}
+        {{ 'Enabled'|trans }}
+    {% elseif status == 'Disabled' %}
+        {{ 'Disabled'|trans }}
+    {% elseif status == 'Draft' %}
+        {{ 'Draft'|trans }}
+    {% elseif status == 'Sent' %}
+        {{ 'Sent'|trans }}
+    {% elseif status == 'Sending' %}
+        {{ 'Sending'|trans }}
+    {% elseif status == 'Unsent' %}
+        {{ 'Unsent'|trans }}
     {% elseif status == 'Paid' %}
         {{ 'Paid'|trans }}
     {% elseif status == 'Unpaid' %}
         {{ 'Unpaid'|trans }}
     {% elseif status == 'Refunded' %}
         {{ 'Refunded'|trans }}
+    {% elseif status == 'Approved' %}
+        {{ 'Approved'|trans }}
+    {% elseif status == 'Processed' %}
+        {{ 'Processed'|trans }}
+    {% elseif status == 'Received' %}
+        {{ 'Received'|trans }}
+    {% elseif status == 'Error' %}
+        {{ 'Error'|trans }}
+    {% elseif status == 'Unknown' %}
+        {{ 'Unknown'|trans }}
+    {% elseif status == 'Complete' %}
+        {{ 'Complete'|trans }}
+    {% elseif status == 'Completed' %}
+        {{ 'Completed'|trans }}
+    {% elseif status == 'Success' %}
+        {{ 'Success'|trans }}
+    {% elseif status == 'Failed' %}
+        {{ 'Failed'|trans }}
     {% else %}
         {{ status|trans }}
     {% endif %}
-{% endmacro %}
+    {% endif %}
+{% endmacro status_name %}
 
-{% macro period_name(period) %}
-    {{ guest.system_period_title({"code":period}) }}
-{% endmacro %}
+{% macro ip_lookup_link(ip) %}
+    {% if ip is not empty %}
+        <a href="{{ 'security/iplookup'|url({'ip': ip }) }}" target="_blank" class='ip_lookup_link'>{{ ip }}</a>
+    {% else %}
+        {{ ip }}
+    {% endif %}
+{% endmacro ip_lookup_link %}
 
-{% macro markdown_quote(text) %}
+{% macro q(bool) %}
+    {% if bool %}
+        {{ 'Yes'|trans }}
+    {% else %}
+        {{ 'No'|trans }}
+    {% endif %}
+{% endmacro q %}
 
-{% for line in text|split('\n') %}
-> {{ line }}
-{% endfor %}
-{% endmacro %}
+{% macro selectbox(name, options, selected, required, nullOption) %}
+    <select class="form-select" name="{{ name }}" id="{{ name }}"{% if required %}required{% endif%}>
+        {% if nullOption %}<option value="">{{ nullOption }}</option>{% endif %}
+        {% for val, label in options %}
+            <option value="{{ val }}" label="{{ label|e }}" {% if selected == val %}selected="selected"{% endif %}>{{ label|e }}</option>
+        {% endfor %}
+    </select>
+{% endmacro selectbox %}
 
-{% macro bb_editor(selector) %}
-{% if guest.extension_is_on({"mod":"wysiwyg"}) %}
-{{ include('mod_wysiwyg_js.html.twig', { 'class': selector|trim('.#') }) }}
-{% else %}
-<!-- No WYSIWYG, no fancy stuff. Enable the WYSIWYG extension for a better management experience. -->
+{% macro selectboxtld(name, options, selected, required) %}
+    <select class="form-select" name="{{ name }}"{% if required %}required{% endif %}>
+        {% for data in options %}
+            <option value="{{ data.tld }}" label="{{ data.tld }}"{% if selected == data.tld %}selected{% endif %}>{{ data.tld }}</option>
+        {% endfor %}
+    </select>
+{% endmacro selectboxtld %}
+
+{% macro recaptcha() %}
+
+{% if guest.extension_is_on({"mod":"antispam"}) %}
+    {% set config = guest.antispam_recaptcha %}
 {% endif %}
+
+{% if config is defined and config.enabled %}
+            {% set provider = config.captcha_provider|default('recaptcha_v2') %}
+            {% if provider == 'turnstile' %}
+                {% if config.turnstile_site_key %}
+                    <div class="mb-3">
+                        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+                        <div class="cf-turnstile" data-sitekey="{{ config.turnstile_site_key }}"></div>
+                    </div>
+                {% endif %}
+
+            {% elseif provider == 'recaptcha_v2' %}
+                {% if config.publickey %}
+                    <div class="mb-3">
+                        <script src='https://www.google.com/recaptcha/api.js' async defer></script>
+                        <div class="g-recaptcha" data-sitekey="{{ config.publickey }}"></div>
+                    </div>
+                {% endif %}
+            {% elseif provider == 'recaptcha_v3' %}
+                {% if config.publickey %}
+                    <script src="https://www.google.com/recaptcha/api.js?render={{ config.publickey }}" async defer></script>
+                    <input type="hidden" name="g-recaptcha-response" value="">
+                    <input type="hidden" name="g-recaptcha-action" value="fossbilling_submit">
+                    <script>
+                    (function () {
+                        const script = document.currentScript;
+                        const form = script.closest('form');
+                        if (!form) {
+                            return;
+                        }
+
+                        form.addEventListener('submit', function (event) {
+                            if (form.dataset.recaptchaV3Verified === 'true') {
+                                form.dataset.recaptchaV3Verified = '';
+                                return;
+                            }
+
+                            event.preventDefault();
+                            event.stopImmediatePropagation();
+
+                            if (!window.grecaptcha) {
+                                form.dataset.recaptchaV3Verified = 'true';
+                                form.requestSubmit();
+                                return;
+                            }
+
+                            const tokenField = form.querySelector('input[name="g-recaptcha-response"]');
+                            const actionField = form.querySelector('input[name="g-recaptcha-action"]');
+                            window.grecaptcha.ready(function () {
+                                window.grecaptcha.execute('{{ config.publickey|e('js') }}', { action: actionField.value }).then(function (token) {
+                                    tokenField.value = token;
+                                    form.dataset.recaptchaV3Verified = 'true';
+                                    form.requestSubmit();
+                                }).catch(function () {
+                                    form.dataset.recaptchaV3Verified = 'true';
+                                    form.requestSubmit();
+                                });
+                            });
+                        }, true);
+                    }());
+                    </script>
+                {% endif %}
+            {% elseif provider == 'hcaptcha' %}
+                {% if config.hcaptcha_site_key %}
+                    <div class="mb-3">
+                        <script src='https://js.hcaptcha.com/1/api.js' async defer></script>
+                        <div class="h-captcha" data-sitekey="{{ config.hcaptcha_site_key }}"></div>
+                    </div>
+                {% endif %}
+            {% endif %}
+        {% endif %}
 {% endmacro %}
 
 {% macro table_search() %}
 <div style="position: relative;">
     <div class="dataTables_filter">
         <form method="get" action="">
-            <input type="hidden" name="_url" value="{{request._url}}"/>
             <label>{{ 'Search:'|trans }} <input type="text" name="search" placeholder="{{ 'Enter search text...'|trans }}" value="{{ request.search }}"><div class="srch"></div></label>
         </form>
     </div>
 </div>
+{% endmacro table_search %}
+
+{% macro text_badge(label, badge_class) %}
+    <span class="badge {{ badge_class }}">{{ label }}</span>
+{% endmacro %}
+
+{% macro boolean_badge(value, true_label, false_label, true_class, false_class) %}
+    {% if value %}
+        {{ _self.text_badge(true_label, true_class|default('text-bg-success')) }}
+    {% else %}
+        {{ _self.text_badge(false_label, false_class|default('text-bg-secondary')) }}
+    {% endif %}
+{% endmacro %}
+
+{% macro status_badge(status, type) %}
+    {% set status_key = status|default('')|lower %}
+    {% set status_classes = {
+        'order': {
+            'active': 'text-bg-success',
+            'pending_setup': 'text-bg-warning',
+            'failed_setup': 'text-bg-danger',
+            'suspended': 'text-bg-danger',
+            'failed_renew': 'text-bg-danger',
+            'canceled': 'text-bg-secondary',
+        },
+        'ticket': {
+            'open': 'text-bg-success',
+            'on_hold': 'text-bg-warning',
+            'closed': 'text-bg-secondary',
+        },
+        'invoice': {
+            'paid': 'text-bg-success',
+            'unpaid': 'text-bg-warning',
+            'refunded': 'text-bg-info',
+            'canceled': 'text-bg-secondary',
+        },
+        'client': {
+            'active': 'bg-green text-green-fg',
+            'suspended': 'bg-red text-red-fg',
+            'canceled': 'bg-secondary text-secondary-fg',
+        },
+        'admin': {
+            'active': 'bg-green text-green-fg',
+            'inactive': 'bg-secondary text-secondary-fg',
+        },
+        'subscription': {
+            'active': 'text-bg-success',
+            'canceled': 'text-bg-secondary',
+            'past_due': 'text-bg-danger',
+        },
+        'post': {
+            'published': 'text-bg-success',
+            'active': 'text-bg-success',
+            'draft': 'text-bg-secondary',
+        },
+        'product': {
+            'enabled': 'text-bg-success',
+            'disabled': 'text-bg-secondary',
+        },
+        'massmailer': {
+            'sent': 'text-bg-success',
+            'draft': 'text-bg-secondary',
+        },
+        'transaction': {
+            'approved': 'text-bg-success',
+            'processed': 'text-bg-success',
+            'received': 'text-bg-warning',
+            'processing': 'text-bg-warning',
+            'error': 'text-bg-danger',
+        },
+        'gateway_tx': {
+            'approved': 'text-bg-success',
+            'complete': 'text-bg-success',
+            'completed': 'text-bg-success',
+            'processed': 'text-bg-success',
+            'success': 'text-bg-success',
+            'succeeded': 'text-bg-success',
+            'pending': 'text-bg-warning',
+            'processing': 'text-bg-warning',
+            'received': 'text-bg-warning',
+            'requires_action': 'text-bg-warning',
+            'requires_capture': 'text-bg-warning',
+            'requires_confirmation': 'text-bg-warning',
+            'canceled': 'text-bg-danger',
+            'cancelled': 'text-bg-danger',
+            'error': 'text-bg-danger',
+            'failed': 'text-bg-danger',
+            'requires_payment_method': 'text-bg-danger',
+            'unknown': 'text-bg-danger',
+        },
+        'mail_queue': {
+            'sent': 'text-bg-success',
+            'sending': 'text-bg-warning',
+            'unsent': 'text-bg-danger',
+        },
+        'tx': {
+            'success': 'text-bg-success',
+            'failed': 'text-bg-danger',
+            'pending': 'text-bg-warning',
+            'refunded': 'text-bg-info',
+        },
+    } %}
+    {% set fallback_classes = {
+        'active': 'text-bg-success',
+        'open': 'text-bg-success',
+        'paid': 'text-bg-success',
+        'published': 'text-bg-success',
+        'pending_setup': 'text-bg-warning',
+        'on_hold': 'text-bg-warning',
+        'unpaid': 'text-bg-warning',
+        'pending': 'text-bg-warning',
+        'failed_setup': 'text-bg-danger',
+        'suspended': 'text-bg-danger',
+        'failed_renew': 'text-bg-danger',
+        'canceled': 'text-bg-danger',
+        'closed': 'text-bg-danger',
+        'failed': 'text-bg-danger',
+    } %}
+    {% set type_classes = status_classes[type]|default(null) %}
+    {% if type_classes is not null %}
+        {% set badge_class = type_classes[status_key]|default('text-bg-primary') %}
+    {% else %}
+        {% set badge_class = fallback_classes[status_key]|default('text-bg-primary') %}
+    {% endif %}
+    {{ _self.text_badge(_self.status_name(status), badge_class) }}
+{% endmacro %}
+
+{% macro empty_list(colspan, message) %}
+<td class="text-muted" colspan="{{ colspan|default(5) }}">{{ (message|default('The list is empty'))|trans }}</td>
 {% endmacro %}

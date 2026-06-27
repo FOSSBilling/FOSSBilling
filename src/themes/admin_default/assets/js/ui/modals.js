@@ -113,7 +113,7 @@ globalThis.Modals = {
             <div class="modal-status bg-{{ emphasis }}"></div>
             <div class="modal-body text-center py-4">
               <svg xmlns="http://www.w3.org/2000/svg" class="icon mb-2 text-{{ textColor }} icon-lg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                  <use xlink:href="#{{ emphasisIcon }}" />
+                  <use href="#{{ emphasisIcon }}" />
               </svg>
               <h3>{{ title }}</h3>
               <div class="text-muted">{{ content }}</div>

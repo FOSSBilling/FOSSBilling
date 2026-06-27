@@ -18,7 +18,7 @@ namespace Box\Mod\Client\Api;
 
 use FOSSBilling\PaginationOptions;
 
-class Client extends \Api_Abstract
+class Client extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get payments information.
@@ -27,14 +27,14 @@ class Client extends \Api_Abstract
      */
     public function balance_get_list($data)
     {
-        $service = $this->di['mod_service']('Client', 'Balance');
+        $service = $this->getDi()['mod_service']('Client', 'Balance');
         $data['client_id'] = $this->identity->id;
 
         [$q, $params] = $service->getSearchQuery($data);
-        $pager = $this->di['pager']->getPaginatedResultSet($q, $params, PaginationOptions::fromArray($data));
+        $pager = $this->getDi()['pager']->getPaginatedResultSet($q, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
-            $balance = $this->di['db']->getExistingModelById('ClientBalance', $item['id'], 'Balance not found');
+            $balance = $this->getDi()['db']->getExistingModelById('ClientBalance', $item['id'], 'Balance not found');
             $pager['list'][$key] = $service->toApiArray($balance);
         }
 
@@ -48,7 +48,7 @@ class Client extends \Api_Abstract
      */
     public function balance_get_total()
     {
-        $service = $this->di['mod_service']('Client', 'Balance');
+        $service = $this->getDi()['mod_service']('Client', 'Balance');
 
         return $service->getClientBalance($this->identity);
     }
@@ -60,11 +60,16 @@ class Client extends \Api_Abstract
 
     public function resend_email_verification()
     {
-        if ($this->identity->email_approved) {
+        $client = $this->getIdentity();
+
+        if ($client->email_approved) {
             // Email is already validated, so we don't need to do so again
             return true;
         }
 
-        return $this->getService()->sendEmailConfirmationForClient($this->identity);
+        $this->getDi()['rate_limiter']->consumeOrThrow('client_email_verification_resend_ip', (string) $this->getIp());
+        $this->getDi()['rate_limiter']->consumeOrThrow('client_email_verification_resend_account', 'client:' . $client->id);
+
+        return $this->getService()->sendEmailConfirmationForClient($client);
     }
 }

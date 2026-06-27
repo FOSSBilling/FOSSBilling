@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice\Controller;
 
+use Symfony\Component\HttpFoundation\Response;
+
 class Admin implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
@@ -33,8 +35,8 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                 'index' => 400,
                 'location' => 'invoice',
                 'label' => __trans('Invoices'),
-                'uri' => 'invoice',
-                'class' => 'invoices',
+                'uri' => $this->di['url']->adminLink('invoice'),
+                'class' => 'receipt',
             ],
             'subpages' => [
                 [
@@ -46,13 +48,6 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                 ],
                 [
                     'location' => 'invoice',
-                    'label' => __trans('Advanced search'),
-                    'uri' => $this->di['url']->adminLink('invoice', ['show_filter' => 1]),
-                    'index' => 200,
-                    'class' => '',
-                ],
-                [
-                    'location' => 'invoice',
                     'label' => __trans('Subscriptions'),
                     'uri' => $this->di['url']->adminLink('invoice/subscriptions'),
                     'index' => 300,
@@ -60,28 +55,21 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                 ],
                 [
                     'location' => 'invoice',
-                    'label' => __trans('Transactions overview'),
+                    'label' => __trans('Transactions'),
                     'uri' => $this->di['url']->adminLink('invoice/transactions'),
                     'index' => 400,
                     'class' => '',
                 ],
                 [
-                    'location' => 'invoice',
-                    'label' => __trans('Transactions search'),
-                    'uri' => $this->di['url']->adminLink('invoice/transactions', ['show_filter' => 1]),
-                    'index' => 500,
-                    'class' => '',
-                ],
-                [
                     'location' => 'system',
-                    'label' => __trans('Tax rules'),
+                    'label' => __trans('Tax Rules'),
                     'uri' => $this->di['url']->adminLink('invoice/tax'),
                     'index' => 180,
                     'class' => '',
                 ],
                 [
                     'location' => 'system',
-                    'label' => __trans('Payment gateways'),
+                    'label' => __trans('Payment Gateways'),
                     'uri' => $this->di['url']->adminLink('invoice/gateways'),
                     'index' => 160,
                     'class' => '',
@@ -180,14 +168,18 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_invoice_gateway', ['gateway' => $gateway]);
     }
 
-    public function get_pdf(\Box_App $app, $hash): string
+    public function get_pdf(\Box_App $app, $hash): Response
     {
         $api = $this->di['api_guest'];
         $data = [
             'hash' => $hash,
         ];
-        $invoice = $api->invoice_pdf($data);
+        $response = $api->invoice_pdf($data);
 
-        return $app->render('mod_invoice_pdf', ['invoice' => $invoice]);
+        if (!$response instanceof Response) {
+            throw new \FOSSBilling\Exception('Invoice PDF response could not be generated');
+        }
+
+        return $response;
     }
 }

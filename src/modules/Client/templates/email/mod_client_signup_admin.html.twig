@@ -1,0 +1,57 @@
+{% block subject %}[{{ guest.system_company.name }}] Welcome {{ c.first_name|default('') }}{% endblock %}
+{% block content %}
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<style type="text/css">
+		body {
+			font-family: Arial, sans-serif;
+			font-size: 14px;
+			color: #333333;
+		}
+
+		h1 {
+			font-size: 24px;
+			font-weight: bold;
+			margin: 0 0 20px;
+		}
+
+		p {
+			margin: 0 0 10px;
+		}
+
+		strong {
+			font-weight: bold;
+		}
+
+		.signature {
+			font-style: italic;
+			color: #999999;
+			margin-top: 20px;
+			border-top: 1px solid #cccccc;
+			padding-top: 10px;
+		}
+	</style>
+</head>
+<body>
+	<h1>Welcome</h1>
+	<p>A client account has been created on your behalf by a member of our team.</p>
+	<ul>
+		<li><strong>Email:</strong> {{ c.email|default('') }}</li>
+	</ul>
+
+	<p>To choose your password and access the client area, please use the link below:</p>
+	<a href='{{ "client/reset-password-confirm/#{hash|default('')}"|url(area: 'client') }}' target="_blank">Set your password.</a>
+
+	{% if require_email_confirmation|default(false) %}
+		<p>You may also verify your email address now using the link below. If needed, you can request another verification email after signing in.</p>
+		<a href="{{ email_confirmation_link|default('#') }}" target="_blank">Verify email address.</a>
+	{% endif %}
+
+	<p>You may then <a href="{{ 'login'|url(query: { 'email': c.email|default('') }, area: 'client') }}" target="_blank">login</a> or <a href="{{ 'client/profile'|url(area: 'client') }}" target="_blank">edit your profile.</a></p>
+
+	<div class="signature">{{ guest.system_email.signature }}</div>
+</body>
+</html>
+{% endblock %}

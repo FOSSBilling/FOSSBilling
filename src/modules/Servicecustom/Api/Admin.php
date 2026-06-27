@@ -17,7 +17,7 @@ use FOSSBilling\Validation\Api\RequiredParams;
 /**
  * Custom service management.
  */
-class Admin extends \Api_Abstract
+class Admin extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Update custom service configuration.
@@ -25,6 +25,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['order_id' => 'Order ID is required'])]
     public function update($data): bool
     {
+        $this->checkPermissions('servicecustom', 'manage');
+
         if (!isset($data['order_id'])) {
             throw new \FOSSBilling\Exception('Order ID is required');
         }
@@ -44,6 +46,8 @@ class Admin extends \Api_Abstract
      */
     public function __call($name, $arguments)
     {
+        $this->checkPermissions('servicecustom', 'manage');
+
         if (!isset($arguments[0])) {
             throw new \FOSSBilling\Exception('API call is missing arguments', null, 7103);
         }

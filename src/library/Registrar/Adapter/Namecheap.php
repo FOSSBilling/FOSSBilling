@@ -139,7 +139,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
             }
         } catch (HttpExceptionInterface $error) {
             $e = new Registrar_Exception("HttpClientException: {$error->getMessage()}.");
-            $this->getLog()->err($e->getMessage());
+            $this->getLog()->error($e->getMessage());
 
             throw $e;
         }
@@ -150,14 +150,14 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
         $result = simplexml_load_string($data);
 
-        if (isset($result['status']) && strtolower($result['status']) == 'error') {
+        if (isset($result['status']) && strtolower((string) $result['status']) == 'error') {
             error_log('Namecheap error: ' . PHP_EOL . $result['error']);
             $placeholders = [':action:' => $params['Command'], ':type:' => 'Namecheap'];
 
             throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
 
-        if (isset($result['status']) && strtolower($result['status']) == 'failed') {
+        if (isset($result['status']) && strtolower((string) $result['status']) == 'failed') {
             error_log('Namecheap error: ' . PHP_EOL . $result['actionstatusdesc']);
             $placeholders = [':action:' => $params['Command'], ':type:' => 'Namecheap'];
 

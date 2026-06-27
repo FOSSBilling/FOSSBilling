@@ -18,7 +18,7 @@ namespace Box\Mod\Order\Api;
 
 use FOSSBilling\PaginationOptions;
 
-class Client extends \Api_Abstract
+class Client extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get list of orders.
@@ -36,12 +36,12 @@ class Client extends \Api_Abstract
             [$query, $bindings] = $this->getService()->getSearchQuery($data);
         }
 
-        $pager = $this->di['pager']->getPaginatedResultSet($query, $bindings, PaginationOptions::fromArray($data));
+        $pager = $this->getDi()['pager']->getPaginatedResultSet($query, $bindings, PaginationOptions::fromArray($data));
 
-        foreach ($pager['list'] as $key => $item) {
-            $order = $this->di['db']->getExistingModelById('ClientOrder', $item['id'], 'Client order not found');
-            $pager['list'][$key] = $this->getService()->toApiArray($order);
-        }
+        $pager['list'] = $this->getService()->getBatchForApi(
+            array_column($pager['list'], 'id'),
+            $identity
+        );
 
         return $pager;
     }
@@ -82,7 +82,11 @@ class Client extends \Api_Abstract
     {
         $order = $this->_getOrder($data);
 
-        return $this->getService()->getOrderServiceData($order, $data['id'], $this->getIdentity());
+        if ($order->status !== \Model_ClientOrder::STATUS_ACTIVE) {
+            throw new \FOSSBilling\InformationException('Order is not active');
+        }
+
+        return $this->getService()->getOrderServiceData($order, $this->getIdentity());
     }
 
     /**
@@ -93,10 +97,9 @@ class Client extends \Api_Abstract
     public function upgradables($data)
     {
         $model = $this->_getOrder($data);
-        $product = $this->di['db']->getExistingModelById('Product', $model->product_id);
         $productService = $this->di['mod_service']('product');
 
-        return $productService->getUpgradablePairs($product);
+        return $productService->getUpgradablePairsByProductId((int) $model->product_id);
     }
 
     /**
@@ -117,7 +120,7 @@ class Client extends \Api_Abstract
         $required = [
             'id' => 'Order id required',
         ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+        $this->getDi()['validator']->checkRequiredParamsForArray($required, $data);
 
         $order = $this->getService()->findForClientById($this->getIdentity(), $data['id']);
         if (!$order instanceof \Model_ClientOrder) {

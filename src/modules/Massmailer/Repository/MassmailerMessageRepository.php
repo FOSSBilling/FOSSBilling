@@ -22,6 +22,12 @@ class MassmailerMessageRepository extends EntityRepository
     {
         $qb = $this->createQueryBuilder('m');
 
+        $id = $data['id'] ?? null;
+        if ($id !== null && $id !== '') {
+            $qb->andWhere('m.id = :id')
+                ->setParameter('id', (int) $id);
+        }
+
         $status = $data['status'] ?? null;
         if ($status !== null && $status !== '') {
             $qb->andWhere('m.status = :status')
@@ -30,7 +36,7 @@ class MassmailerMessageRepository extends EntityRepository
 
         $search = $data['search'] ?? null;
         if ($search !== null && $search !== '') {
-            $qb->andWhere('m.subject LIKE :search OR m.content LIKE :search OR m.fromEmail LIKE :search OR m.fromName LIKE :search')
+            $qb->andWhere('(m.subject LIKE :search OR m.content LIKE :search OR m.fromEmail LIKE :search OR m.fromName LIKE :search)')
                 ->setParameter('search', '%' . $search . '%');
         }
 

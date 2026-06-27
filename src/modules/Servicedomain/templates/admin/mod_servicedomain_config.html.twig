@@ -1,14 +1,16 @@
-<div class="help">
-    <h5>{{ 'Domains management'|trans }}</h5>
-</div>
-
-<div class="body">
-    <div class="aligncenter">
-        <a href="{{ 'servicedomain'|alink }}" class="btn btn-primary">
-            <svg class="icon">
-                <use xlink:href="#edit" />
-            </svg>
-           <span>Management</span>
-        </a>
-    </div>
-</div>
+{% embed 'partial_admin_related_section.html.twig' with {
+    title: 'Domain Management'|trans,
+    subtitle: 'Domain products are configured from the shared domain management area, including TLD pricing, registrars, and nameservers.'|trans,
+    card_class: 'mb-0'
+} %}
+    {% block section_footer %}
+        <div class="d-flex justify-content-end">
+            <a href="{{ 'servicedomain'|url }}" class="btn btn-primary">
+                <svg class="icon">
+                    <use href="#edit" />
+                </svg>
+                <span>{{ 'Open Domain Management'|trans }}</span>
+            </a>
+        </div>
+    {% endblock %}
+{% endembed %}

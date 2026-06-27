@@ -1,5 +1,4 @@
 {% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
-
 {% import 'macro_functions.html.twig' as mf %}
 
 {% block meta_title %}{{ 'Gateway'|trans }} {{ gateway.title }}{% endblock %}
@@ -9,14 +8,14 @@
 {% block breadcrumbs %}
     <ul class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
-                    <use xlink:href="#home" />
+                    <use href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'invoice/gateways'|alink }}">{{ 'Payment gateways'|trans }}</a>
+            <a href="{{ 'invoice/gateways'|url }}">{{ 'Payment Gateways'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ gateway.title }}</li>
     </ul>
@@ -24,107 +23,231 @@
 
 {% block content %}
 <div class="card">
-    <div class="card-body">
-        <h3>{{ 'Payment Gateway Configuration'|trans }} {{ gateway.title }}</h3>
-        <h5>{{ gateway.title }}</h5>
-        {{ gateway.description|raw }}
-
-        <form method="post" action="{{ 'api/admin/invoice/gateway_update'|link }}" {{ fb_api_form({message: 'Gateway Updated'|trans}) }}>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Payment gateway title'|trans }}:</label>
-                <div class="col">
-                    <input class="form-control" type="text" name="title" value="{{ gateway.title }}">
-                </div>
+    <div class="card-header">
+        <div>
+            <h3 class="card-title">{{ gateway.title }}</h3>
+            <p class="card-subtitle">{{ 'Configure gateway behavior, accepted currencies, and provider credentials for this payment adapter.'|trans }}</p>
+        </div>
+    </div>
+    <div class="card-body d-flex flex-column gap-3">
+        {% if gateway.description %}
+            <div class="alert alert-info mb-0">
+                {{ gateway.description|raw }}
             </div>
+        {% endif %}
 
-            {# Build form elements from registrar configuration array #}
-            {{ mf.build_form(gateway.form, gateway.config) }}
+        <form method="post" action="{{ 'invoice/gateway_update'|api_url }}" {{ fb_api_form({message: 'Gateway Updated'|trans}) }}>
+            {% embed 'partial_admin_form_card.html.twig' with {
+                title: 'Gateway Basics'|trans,
+                subtitle: 'Define the display title and choose which currencies can use this gateway.'|trans,
+                card_class: 'mb-4'
+            } %}
+                
+                {% block form_content %}
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label" for="gateway_title">{{ 'Payment Gateway Title'|trans }}</label>
+                            <input class="form-control" id="gateway_title" type="text" name="title" value="{{ gateway.title }}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label" for="gateway_accepted_currencies">{{ 'Accepted Currencies'|trans }}</label>
+                            <div class="form-text mb-2">{{ 'Select which currencies can accept this payment gateway. Leave all unselected to allow all currencies.'|trans }}</div>
+                            {% set currencies = guest.currency_get_pairs %}
+                            <select class="form-select" id="gateway_accepted_currencies" name="accepted_currencies[]" multiple size="{{ currencies|length > 8 ? 8 : currencies|length }}">
+                                {% for id, currency in currencies %}
+                                <option value="{{ id }}"{% if id in gateway.accepted_currencies %} selected{% endif %}>{{ currency }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                {% endblock %}
+            {% endembed %}
 
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Select which currencies can accept this payment gateway (Select none to allow all currencies)'|trans }}</label>
-                <div class="col">
-                    {% set currencies = guest.currency_get_pairs %}
-                    <select class="form-select" name="accepted_currencies[]" multiple="multiple" size="{{ currencies|length }}">
-                        {% for id, currency in currencies %}
-                        <option value="{{ id }}"{% if id in gateway.accepted_currencies %} selected{% endif %}>{{ currency }}</option>
+            {% if gateway.form %}
+            {% embed 'partial_admin_form_card.html.twig' with {
+                title: 'Gateway Credentials and Adapter Settings'|trans,
+                subtitle: 'Configure the provider-specific credentials and adapter options required by this gateway.'|trans,
+                card_class: 'mb-4'
+            } %}
+                
+                {% block form_content %}
+                    {% import 'macro_functions.html.twig' as mf %}
+                    <div class="d-flex flex-column gap-4">
+                        {% for name, element in gateway.form %}
+                            {% set field_required = mf.compute_field_required(element, gateway) == 'true' %}
+                            <div>
+                                {% if element[0] == 'select' %}
+                                    <label class="form-label" for="gateway-config-{{ name }}">{{ element[1].label }}</label>
+                                    {% if element[1].description is defined and element[1].description %}<div class="form-text mb-2">{{ element[1].description|markdown_to_html }}</div>{% endif %}
+                                    <select class="form-select" id="gateway-config-{{ name }}" name="config[{{ name }}]">
+                                        {% for k, v in element[1].multiOptions %}
+                                            <option value="{{ k }}"{% if k == gateway.config[name]|default('') %} selected{% endif %}>{{ v }}</option>
+                                        {% endfor %}
+                                    </select>
+                                {% elseif element[0] == 'multiselect' %}
+                                    <label class="form-label" for="gateway-config-{{ name }}">{{ element[1].label }}</label>
+                                    {% if element[1].description is defined and element[1].description %}<div class="form-text mb-2">{{ element[1].description|markdown_to_html }}</div>{% endif %}
+                                    <select class="form-select" id="gateway-config-{{ name }}" name="config[{{ name }}]" multiple>
+                                        {% for k, v in element[1].multiOptions %}
+                                            <option value="{{ k }}"{% if k in gateway.config[name]|default([]) %} selected{% endif %}>{{ v }}</option>
+                                        {% endfor %}
+                                    </select>
+                                {% elseif element[0] == 'radio' %}
+                                    <label class="form-label d-block">{{ element[1].label }}</label>
+                                    {% if element[1].description is defined and element[1].description %}<div class="form-text mb-2">{{ element[1].description|markdown_to_html }}</div>{% endif %}
+                                    <div class="d-flex flex-wrap gap-3">
+                                        {% for k, v in element[1].multiOptions %}
+                                            <label class="form-check">
+                                                <input class="form-check-input" id="gateway-config-{{ name }}-{{ k }}" type="radio" name="config[{{ name }}]" value="{{ k }}"{% if k == gateway.config[name]|default('') %} checked{% endif %}>
+                                                <span class="form-check-label">{{ v }}</span>
+                                            </label>
+                                        {% endfor %}
+                                    </div>
+                                {% elseif element[0] == 'textarea' %}
+                                    <label class="form-label" for="gateway-config-{{ name }}">{{ element[1].label }}</label>
+                                    {% if element[1].description is defined and element[1].description %}<div class="form-text mb-2">{{ element[1].description|markdown_to_html }}</div>{% endif %}
+                                    <textarea class="form-control" id="gateway-config-{{ name }}" name="config[{{ name }}]" rows="8"
+                                        {% if field_required %} required{% endif %}
+                                        {% if element[1].required_when is defined and element[1].required_when.enabled is defined %} data-required-when-enabled="{{ element[1].required_when.enabled ? 'true' : 'false' }}"{% endif %}
+                                        {% if element[1].required_when is defined and element[1].required_when.test_mode is defined %} data-required-when-test-mode="{{ element[1].required_when.test_mode ? 'true' : 'false' }}"{% endif %}>{{ gateway.config[name]|default('') }}</textarea>
+                                {% else %}
+                                    <label class="form-label" for="gateway-config-{{ name }}">{{ element[1].label }}</label>
+                                    {% if element[1].description is defined and element[1].description %}<div class="form-text mb-2">{{ element[1].description|markdown_to_html }}</div>{% endif %}
+                                    <input class="form-control" id="gateway-config-{{ name }}" type="{{ element[0] }}" name="config[{{ name }}]" value="{{ gateway.config[name]|default('') }}"
+                                        {% if field_required %} required{% endif %}
+                                        {% if element[1].required_when is defined and element[1].required_when.enabled is defined %} data-required-when-enabled="{{ element[1].required_when.enabled ? 'true' : 'false' }}"{% endif %}
+                                        {% if element[1].required_when is defined and element[1].required_when.test_mode is defined %} data-required-when-test-mode="{{ element[1].required_when.test_mode ? 'true' : 'false' }}"{% endif %}>
+                                {% endif %}
+                            </div>
                         {% endfor %}
-                    </select>
-                </div>
-            </div>
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Enabled'|trans }}:</label>
-                <div class="col">
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioEnabledYes" type="radio" name="enabled" value="1"{% if gateway.enabled %} checked{% endif %}>
-                        <label class="form-check-label" for="radioEnabledYes">{{ 'Yes'|trans }}</label>
                     </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioEnabledNo" type="radio" name="enabled" value="0"{% if not gateway.enabled %} checked{% endif %}>
-                        <label class="form-check-label" for="radioEnabledNo">{{ 'No'|trans }}</label>
-                    </div>
-                </div>
-            </div>
-
-            {% if gateway.supports_one_time_payments %}
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Allow one time payments'|trans }}:</label>
-                <div class="col">
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioAllowSingleYes" type="radio" name="allow_single" value="1"{% if gateway.allow_single %} checked{% endif %}>
-                        <label class="form-check-label" for="radioAllowSingleYes">{{ 'Yes'|trans }}</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioAllowSingleNo" type="radio" name="allow_single" value="0"{% if not gateway.allow_single %} checked{% endif %}>
-                        <label class="form-check-label" for="radioAllowSingleNo">{{ 'No'|trans }}</label>
-                    </div>
-                </div>
-            </div>
-            {% else %}
-            <input type="hidden" name="allow_single" value="0">
+                {% endblock %}
+            {% endembed %}
             {% endif %}
 
-            {% if gateway.supports_subscriptions %}
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Allow subscription payments'|trans }}:</label>
-                <div class="col">
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioAllowRecurrentYes" type="radio" name="allow_recurrent" value="1"{% if gateway.allow_recurrent %} checked{% endif %}>
-                        <label class="form-check-label" for="radioAllowRecurrentYes">{{ 'Yes'|trans }}</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioAllowRecurrentNo" type="radio" name="allow_recurrent" value="0"{% if not gateway.allow_recurrent %} checked{% endif %}>
-                        <label class="form-check-label" for="radioAllowRecurrentNo">{{ 'No'|trans }}</label>
-                    </div>
-                </div>
-            </div>
-            {% else %}
-            <input type="hidden" name="allow_recurrent" value="0">
-            {% endif %}
+            {% embed 'partial_admin_form_card.html.twig' with {
+                title: 'Gateway Behavior'|trans,
+                subtitle: 'Control availability, payment modes, test mode, and the callback URL used by this adapter.'|trans
+            } %}
+                
+                {% block form_content %}
+                    <div class="row g-4">
+                        <div class="col-lg-6">
+                            <input type="hidden" name="enabled" value="0">
+                            <label class="form-check form-switch form-switch-2">
+                                <input class="form-check-input" type="checkbox" name="enabled" value="1"{% if gateway.enabled %} checked{% endif %}>
+                                <span class="form-check-label">{{ 'Enabled'|trans }}</span>
+                            </label>
+                        </div>
 
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'Enable test mode'|trans }}:</label>
-                <div class="col">
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioTestModeYes" type="radio" name="test_mode" value="1"{% if gateway.test_mode %} checked{% endif %}>
-                        <label class="form-check-label" for="radioTestModeYes">{{ 'Yes'|trans }}</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" id="radioTestModeNo" type="radio" name="test_mode" value="0"{% if not gateway.test_mode %} checked{% endif %}>
-                        <label class="form-check-label" for="radioTestModeNo">{{ 'No'|trans }}</label>
-                    </div>
-                </div>
-            </div>
+                        {% if gateway.supports_one_time_payments %}
+                        <div class="col-lg-6">
+                            <input type="hidden" name="allow_single" value="0">
+                            <label class="form-check form-switch form-switch-2">
+                                <input class="form-check-input" type="checkbox" name="allow_single" value="1"{% if gateway.allow_single %} checked{% endif %}>
+                                <span class="form-check-label">{{ 'Allow One Time Payments'|trans }}</span>
+                            </label>
+                        </div>
+                        {% else %}
+                        <input type="hidden" name="allow_single" value="0">
+                        {% endif %}
 
-            <div class="mb-3 row">
-                <label class="form-label col-3 col-form-label">{{ 'IPN Callback URL'|trans }}:</label>
-                <div class="col">
-                    <input class="form-control" type="text" value="{{ gateway.callback }}" readonly="readonly">
-                </div>
-            </div>
+                        {% if gateway.supports_subscriptions %}
+                        <div class="col-lg-6">
+                            <input type="hidden" name="allow_recurrent" value="0">
+                            <label class="form-check form-switch form-switch-2">
+                                <input class="form-check-input" type="checkbox" name="allow_recurrent" value="1"{% if gateway.allow_recurrent %} checked{% endif %}>
+                                <span class="form-check-label">{{ 'Allow Subscription Payments'|trans }}</span>
+                            </label>
+                        </div>
+                        {% else %}
+                        <input type="hidden" name="allow_recurrent" value="0">
+                        {% endif %}
 
-            <input type="hidden" name="id" value="{{ gateway.id }}">
-            <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary w-100">
+                        <div class="col-lg-6">
+                            <input type="hidden" name="test_mode" value="0">
+                            <label class="form-check form-switch form-switch-2">
+                                <input class="form-check-input" type="checkbox" name="test_mode" value="1"{% if gateway.test_mode %} checked{% endif %}>
+                                <span class="form-check-label">{{ 'Enable Test Mode'|trans }}</span>
+                            </label>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label" for="gateway_callback">{{ 'IPN Callback URL'|trans }}</label>
+                            <input class="form-control" id="gateway_callback" type="text" value="{{ gateway.callback }}" readonly>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="id" value="{{ gateway.id }}">
+                {% endblock %}
+
+                {% block form_actions %}
+                    <button type="submit" class="btn btn-primary">{{ 'Update Gateway'|trans }}</button>
+                {% endblock %}
+            {% endembed %}
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block js %}
+<script>
+    (function () {
+        const enabledCheckbox = document.querySelector('input[type="checkbox"][name="enabled"]');
+        const testModeCheckbox = document.querySelector('input[type="checkbox"][name="test_mode"]');
+
+        if (!enabledCheckbox && !testModeCheckbox) {
+            return;
+        }
+
+        const managedInputs = document.querySelectorAll(
+            '[data-required-when-enabled], [data-required-when-test-mode]'
+        );
+
+        if (managedInputs.length === 0) {
+            return;
+        }
+
+        function updateRequiredStates() {
+            const enabledChecked = enabledCheckbox ? enabledCheckbox.checked : null;
+            const testModeChecked = testModeCheckbox ? testModeCheckbox.checked : null;
+
+            managedInputs.forEach(function (input) {
+                const requiredEnabled = input.getAttribute('data-required-when-enabled');
+                const requiredTestMode = input.getAttribute('data-required-when-test-mode');
+
+                let required = true;
+
+                if (requiredEnabled !== null) {
+                    if (enabledChecked === null) {
+                        required = false;
+                    } else if (String(enabledChecked) !== requiredEnabled) {
+                        required = false;
+                    }
+                }
+
+                if (required && requiredTestMode !== null) {
+                    if (testModeChecked === null) {
+                        required = false;
+                    } else if (String(testModeChecked) !== requiredTestMode) {
+                        required = false;
+                    }
+                }
+
+                if (required) {
+                    input.setAttribute('required', '');
+                } else {
+                    input.removeAttribute('required');
+                }
+            });
+        }
+
+        if (enabledCheckbox) {
+            enabledCheckbox.addEventListener('change', updateRequiredStates);
+        }
+        if (testModeCheckbox) {
+            testModeCheckbox.addEventListener('change', updateRequiredStates);
+        }
+    })();
+</script>
 {% endblock %}

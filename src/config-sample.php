@@ -11,7 +11,7 @@ declare(strict_types=1);
  * Open browser https://www.yourdomain.com/admin to create a new admin account.
  * Remove /install directory
  *
- * For more information, see the documentation: https://fossbilling.org/docs/customizing-fossbilling/config
+ * For more information, see the documentation: https://docs.fossbilling.org/customizing-fossbilling/config/
  */
 
 return [
@@ -22,7 +22,17 @@ return [
     'security' => [
         'mode' => 'strict',
         'force_https' => true,
+        /*
+         * Configure trusted reverse proxies when HTTPS is terminated before the PHP backend.
+         * Keep this disabled unless requests arrive through a proxy you control.
+         */
+        'trusted_proxies' => [
+            'enabled' => false,
+            'proxies' => [],
+            'headers' => 'x_forwarded',
+        ],
         'session_lifespan' => 7200,
+        'session_regeneration_grace_period' => 300,
         'perform_session_fingerprinting' => true,
         'debug_fingerprint' => false,
     ],
@@ -103,6 +113,8 @@ return [
      */
     'i18n' => [
         'locale' => 'en_US',
+        // Set to false to always use the configured locale unless the user manually selects another language.
+        'auto_detect_locale' => true,
         'timezone' => 'UTC',
 
         // Short names for formats (none, short, medium, long).
@@ -156,6 +168,7 @@ return [
         'debug' => false,
         'auto_reload' => true,
         'cache' => __DIR__ . '/data/cache',
+        'strict_variables' => true,
     ],
 
     'api' => [
@@ -165,38 +178,29 @@ return [
         // Empty array will allow all IPs to access the API
         'allowed_ips' => [],
 
-        // Time span for limit in seconds
-        'rate_span' => 60 * 60,
-
-        // How many requests allowed per time span
-        'rate_limit' => 1000,
-
-        /**
-         * Note about rate-limiting login attempts:
-         * When the limit is reached, a default delay of 2 seconds is added to the request.
-         * This makes brute-forcing a password useless while not outright blocking legitimate traffic.
-         * When calculating, ensure the rate-limited traffic can still make enough requests to stay rate limited
-         * Ex: One request every 2 seconds is more than 20 times in 1 minute, so the IP will remain throttled.
-         */
-        'throttle_delay' => 2,
-
-        // Time span login for limit in seconds
-        'rate_span_login' => 60,
-
-        // How many login requests allowed per time span
-        'rate_limit_login' => 20,
-
         /*
         * This enables the usage of a token to protect the system from CSRF attacks.
         * Disabling this is highly discouraged and opens your instance to a known vulnerability.
         * This option is only here for backwards compatibility.
         */
         'CSRFPrevention' => true,
+    ],
+
+    'rate_limiter' => [
+        'enabled' => true,
 
         /**
          * Any IP address within this list will not be put through the rate-limiter system.
          * This is useful if you have an application with a static IP address that needs to make frequent API requests to FOSSBilling.
          */
-        'rate_limit_whitelist' => [],
+        'whitelist_ips' => [],
+
+        /**
+         * Override individual rate limiter policies here.
+         * Defaults are defined in FOSSBilling\Security\RateLimiter::getDefaultConfig().
+         */
+        'policies' => [
+            // 'client_signup' => ['policy' => 'fixed_window', 'limit' => 5, 'interval' => '1 hour'],
+        ],
     ],
 ];

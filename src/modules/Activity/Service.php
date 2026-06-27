@@ -29,6 +29,22 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function getModulePermissions(): array
+    {
+        return [
+            'view' => [
+                'type' => 'bool',
+                'display_name' => __trans('View activity log'),
+                'description' => __trans('Allows the staff member to view the activity log.'),
+            ],
+            'manage' => [
+                'type' => 'bool',
+                'display_name' => __trans('Log activity'),
+                'description' => __trans('Allows the staff member to add entries to the activity log and email log.'),
+            ],
+        ];
+    }
+
     private function getDbal(): Connection
     {
         return $this->di['dbal'];
@@ -56,7 +72,6 @@ class Service implements InjectionAwareInterface
         ]);
     }
 
-    /** EVENTS  **/
     public static function onAfterClientLogin(\Box_Event $event): void
     {
         $params = $event->getParameters();

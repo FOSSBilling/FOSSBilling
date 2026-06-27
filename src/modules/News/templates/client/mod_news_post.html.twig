@@ -1,11 +1,12 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
+{% set active_menu = 'news' %}
 
 {% block meta_title %}{{ post.title }}{% endblock %}
 {% block meta_description %}{{ post.description }}{% endblock %}
 
 {% block body_class %}news-post{% endblock %}
 {% block breadcrumb %}
-<li class="breadcrumb-item"><a href="{{ 'news' | link}}">{{ 'News'|trans }}</a></li>
+<li class="breadcrumb-item"><a href="{{ 'news'|url }}">{{ 'News'|trans }}</a></li>
 <li class="breadcrumb-item active" aria-current="page">{{post.title}}</li>
 {% endblock %}
 
@@ -13,7 +14,7 @@
     <meta property="og:title" content="{{ post.title }}" />
     <meta property="og:type" content="article" />
     <meta property="og:description" content="{{ post.description }}" />
-    <meta property="og:url" content="{{ guest.system_current_url }}" />
+    <meta property="og:url" content="{{ guest.system_current_url|url }}" />
     <meta property="og:image" content="{{ post.image }}" />
     <meta property="article:author" content="{{ post.author.name }}" />
 
@@ -21,7 +22,7 @@
     {% if post.updated_at %}<meta property="article:modified_time" content="{{ post.updated_at }}" />{% endif %}
     {% if post.expires_at %}<meta property="article:expiration_time" content="{{ post.expires_at }}" />{% endif %}
     {% if post.section %}<meta property="article:section" content="{{ post.section }}" />{% endif %}
-    {% if post.tags %}<meta property="article:tag" content="{{ post.tags|join(', ') }}" />{% endif %}
+    {% if post.tags|default([])|length > 0 %}<meta property="article:tag" content="{{ post.tags|join(', ') }}" />{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -35,12 +36,11 @@
             <div class="card-body">
                 <div class="pt-3 px-2">
                     {% if post.image %}<img src="{{ post.image }}" alt="{{ post.title }}">{% endif %}
-                    {{ post.content|markdown }}
-                    {% if guest.extension_is_on({ "mod": "comment" }) %}{{ include('mod_comment_block.html.twig') }}{% endif %}
+                    {{ (post.content ?? '')|markdown_to_html }}
                 </div>
             </div>
             <div class="card-footer">
-                <a href="{{ '/news/'|link }}" class="btn btn-primary">{{ 'Back to the list'|trans }}</a>
+                <a href="{{ 'news'|url }}" class="btn btn-primary">{{ 'Back to the List'|trans }}</a>
             </div>
         </div>
     </div>

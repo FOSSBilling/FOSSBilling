@@ -18,21 +18,11 @@ namespace Box\Mod\System\Api;
 
 use FOSSBilling\i18n;
 use FOSSBilling\Validation\Api\RequiredParams;
+use PrinsFrank\Standards\CountryCallingCode\CountryCallingCode;
+use Symfony\Component\Intl\Countries;
 
-class Guest extends \Api_Abstract
+class Guest extends \FOSSBilling\Api\AbstractApi
 {
-    /**
-     * Get FOSSBilling version.
-     *
-     * @return string
-     */
-    public function version()
-    {
-        $service = $this->getService();
-
-        return $service->shouldExposeVersion() ? $service->getVersion() : '';
-    }
-
     /**
      * Returns company information.
      *
@@ -41,7 +31,7 @@ class Guest extends \Api_Abstract
     public function company()
     {
         $companyInfo = $this->getService()->getCompany();
-        $auth = $this->di['auth'];
+        $auth = $this->getDi()['auth'];
         $hideExtraCompanyInfoFromGuest = $this->getService()->getParamValue('hide_company_public');
 
         if (!$auth->isAdminLoggedIn() && !$auth->isClientLoggedIn() && $hideExtraCompanyInfoFromGuest) {
@@ -62,56 +52,48 @@ class Guest extends \Api_Abstract
     }
 
     /**
-     * Returns world wide phone codes.
-     *
-     * @optional $country - if passed country code the result will be phone code only
-     *
-     * @return array
-     */
-    public function phone_codes($data)
-    {
-        return $this->getService()->getPhoneCodes($data);
-    }
-
-    /**
-     * Returns USA states list.
-     *
-     * @return array
-     */
-    public function states()
-    {
-        return $this->getService()->getStates();
-    }
-
-    /**
-     * Returns list of european union countries.
-     *
-     * @return array
-     */
-    public function countries_eunion()
-    {
-        return $this->getService()->getEuCountries();
-    }
-
-    /**
-     * Returns list of world countries.
-     *
-     * @return array
-     */
-    public function countries()
-    {
-        return $this->getService()->getCountries();
-    }
-
-    /**
      * Return the code of the default country, if set.
      */
     public function default_country(): ?string
     {
-        $mod = $this->di['mod']('system');
+        $mod = $this->getDi()['mod']('system');
         $cfg = $mod->getConfig();
 
         return $cfg['default_country'] ?? null;
+    }
+
+    /**
+     * Return countries enabled in System settings.
+     *
+     * @return array<string, string>
+     */
+    public function countries(): array
+    {
+        $mod = $this->getDi()['mod']('system');
+        $cfg = $mod->getConfig();
+        $configuredCountries = trim((string) ($cfg['countries'] ?? ''));
+
+        if ($configuredCountries === '') {
+            return Countries::getNames();
+        }
+
+        $countries = [];
+        foreach (preg_split('/\R/', $configuredCountries) as $line) {
+            $parts = explode('=', trim($line), 2);
+            if (count($parts) !== 2) {
+                continue;
+            }
+
+            $code = strtoupper(trim($parts[0]));
+            $name = trim($parts[1]);
+            if ($code === '' || $name === '' || !Countries::exists($code)) {
+                continue;
+            }
+
+            $countries[$code] = $name;
+        }
+
+        return $countries;
     }
 
     /**
@@ -136,6 +118,20 @@ class Guest extends \Api_Abstract
     }
 
     /**
+     * Return a unique list of available phone country calling codes.
+     *
+     * @return list<int>
+     */
+    public function phone_codes(): array
+    {
+        $codes = array_map(static fn (CountryCallingCode $code): int => $code->value, CountryCallingCode::cases());
+        $codes = array_values(array_unique($codes));
+        sort($codes, SORT_NUMERIC);
+
+        return $codes;
+    }
+
+    /**
      * Gets period title by identifier.
      *
      * @return string
@@ -143,7 +139,7 @@ class Guest extends \Api_Abstract
     public function period_title($data)
     {
         $code = $data['code'] ?? null;
-        if ($code == null) {
+        if ($code === null || $code === '' || $code === 0 || $code === '0') {
             return '-';
         }
 
@@ -175,7 +171,7 @@ class Guest extends \Api_Abstract
      */
     public function current_url()
     {
-        return $_SERVER['REQUEST_URI'] ?? null;
+        return $this->getDi()['request']->getRequestUri();
     }
 
     /**

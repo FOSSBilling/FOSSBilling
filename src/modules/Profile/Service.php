@@ -12,8 +12,11 @@ declare(strict_types=1);
 
 namespace Box\Mod\Profile;
 
+use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Tools;
+use Symfony\Component\Intl\Countries;
+use Symfony\Component\Intl\Locales;
 
 class Service implements InjectionAwareInterface
 {
@@ -39,9 +42,7 @@ class Service implements InjectionAwareInterface
 
     public function changeAdminPassword(\Model_Admin $admin, $new_password): bool
     {
-        $event_params = [];
-        $event_params['password'] = $new_password;
-        $event_params['id'] = $admin->id;
+        $event_params = ['id' => $admin->id];
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffProfilePasswordChange', 'params' => $event_params]);
 
         $admin->pass = $this->di['password']->hashIt($new_password);
@@ -125,7 +126,7 @@ class Service implements InjectionAwareInterface
             && isset($config['disable_change_email'])
             && $config['disable_change_email']
         ) {
-            throw new \FOSSBilling\InformationException('Email address cannot be changed');
+            throw new InformationException('Email address cannot be changed');
         }
 
         if (!empty($email)) {
@@ -133,17 +134,26 @@ class Service implements InjectionAwareInterface
 
             $clientService = $this->di['mod_service']('client');
             if ($clientService->emailAlreadyRegistered($email, $client)) {
-                throw new \FOSSBilling\InformationException('This email address is already registered.');
+                throw new InformationException('This email address is already registered.');
             }
 
-            $client->email = $email;
+            if ($client->email !== $email) {
+                $client->email = $email;
+                $client->email_approved = false;
+
+                $clientConfig = $this->di['mod_config']('client');
+                if (isset($clientConfig['require_email_confirmation']) && $clientConfig['require_email_confirmation']) {
+                    $clientService = $this->di['mod_service']('client');
+                    $clientService->sendEmailConfirmationForClient($client);
+                }
+            }
         }
 
-        if (isset($data['phone_cc'])) {
+        if (isset($data['phone_cc']) && $data['phone_cc'] !== '') {
             $client->phone_cc = Tools::validatePhoneCC($data['phone_cc']);
         }
 
-        if (isset($data['phone']) && is_string($data['phone'])) {
+        if (isset($data['phone']) && is_string($data['phone']) && $data['phone'] !== '') {
             $client->phone = Tools::validatePhoneNumber($data['phone']);
         }
 
@@ -157,19 +167,19 @@ class Service implements InjectionAwareInterface
         $client->type = $data['type'] ?? $client->type;
         $client->address_1 = $data['address_1'] ?? $client->address_1;
         $client->address_2 = $data['address_2'] ?? $client->address_2;
-        $client->country = $data['country'] ?? $client->country;
+        $country = $data['country'] ?? $client->country;
+        if (!empty($country) && !Countries::exists($country)) {
+            throw new InformationException('Invalid country code: :code', [':code' => $country]);
+        }
+        $client->country = $country;
         $client->postcode = $data['postcode'] ?? $client->postcode;
         $client->city = $data['city'] ?? $client->city;
         $client->state = $data['state'] ?? $client->state;
-        $client->document_type = $data['document_type'] ?? $client->document_type;
-        $client->document_nr = $data['document_nr'] ?? $client->document_nr;
-
-        if (isset($client->document_nr)) {
-            $client->document_type = ClientValidator::validateDocument(
-                $data['document_type'] ?? \Model_Client::DOC_PASSPORT,
-            );
+        $lang = $data['lang'] ?? $client->lang;
+        if (!empty($lang) && !Locales::exists($lang)) {
+            throw new InformationException('Invalid locale code: :code', [':code' => $lang]);
         }
-        $client->lang = $data['lang'] ?? $client->lang;
+        $client->lang = $lang;
         $client->notes = $data['notes'] ?? $client->notes;
         $client->custom_1 = $data['custom_1'] ?? $client->custom_1;
         $client->custom_2 = $data['custom_2'] ?? $client->custom_2;
@@ -207,9 +217,7 @@ class Service implements InjectionAwareInterface
 
     public function changeClientPassword(\Model_Client $client, $new_password): bool
     {
-        $event_params = [];
-        $event_params['password'] = $new_password;
-        $event_params['id'] = $client->id;
+        $event_params = ['id' => $client->id];
         $this->di['events_manager']->fire(['event' => 'onBeforeClientProfilePasswordChange', 'params' => $event_params]);
 
         $client->pass = $this->di['password']->hashIt($new_password);

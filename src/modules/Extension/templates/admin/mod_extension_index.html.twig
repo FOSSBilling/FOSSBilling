@@ -1,6 +1,5 @@
 {% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
 
-{% import 'macro_functions.html.twig' as mf %}
 {% set can_manage_hooks = has_permission('hook', 'manage_hooks') %}
 
 {% block meta_title %}{{ 'Extensions'|trans }}{% endblock %}
@@ -8,193 +7,206 @@
 {% set active_menu = 'extensions' %}
 
 {% block content %}
-    <div class="card-tabs">
-        <ul class="nav nav-tabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Extensions'|trans }}</a>
-            </li>
-            <li class="nav-item" role="presentation">
-                <a class="nav-link" href="#tab-store" data-bs-toggle="tab">{{ 'Extension Directory'|trans }}</a>
-            </li>
-            <li class="nav-item" role="presentation">
-                <a class="nav-link" href="#tab-about" data-bs-toggle="tab">{{ 'Information'|trans }}</a>
-            </li>
-            {% if can_manage_hooks %}
-            <li class="nav-item" role="presentation">
-                <a class="nav-link" href="#tab-hooks" data-bs-toggle="tab">{{ 'Hooks'|trans }}</a>
-            </li>
-            {% endif %}
-        </ul>
-
-        <div class="card">
-            <div class="tab-content">
-
-                <div class="tab-pane fade active show" id="tab-index" role="tabpanel">
-                    <div class="card-header">
-                        <div>
-                            <h3 class="card-title">{{ 'FOSSBilling Extensions'|trans }}</h3>
-                            <p class="card-subtitle">{{ 'Activate or deactivate extensions'|trans }}</p>
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">{{ 'Extensions'|trans }}</h3>
+                <p class="card-subtitle">{{ 'Manage installed extensions, browse the extension directory, and review integration information.'|trans }}</p>
+            </div>
+        </div>
+        <div class="card-body pt-3 pb-0 px-0">
+            <div class="card border-0 shadow-none rounded-0">
+                <div class="card-header bg-transparent px-3 pt-0 pb-3 border-0">
+                    <ul class="nav nav-pills card-header-pills">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#tab-index" data-bs-toggle="tab">{{ 'Extensions'|trans }}</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#tab-store" data-bs-toggle="tab">{{ 'Extension Directory'|trans }}</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#tab-about" data-bs-toggle="tab">{{ 'Information'|trans }}</a>
+                        </li>
+                        {% if can_manage_hooks %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="#tab-hooks" data-bs-toggle="tab">{{ 'Hooks'|trans }}</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+                <div class="tab-content border-top">
+                    <div class="tab-pane fade active show" id="tab-index" role="tabpanel">
+                        <div class="card-body border-bottom py-3">
+                            <div class="text-secondary">
+                                {{ 'Installed and available extensions are listed here. Use the action icons to activate, deactivate, uninstall, or configure each module.'|trans }}
+                            </div>
                         </div>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table card-table table-vcenter table-striped sortable">
-                            <thead>
-                                <tr>
-                                    <th class="no-sort"></th>
-                                    <th>{{ 'Extension'|trans }}</th>
-                                    <th>{{ 'Description'|trans }}</th>
-                                    <th class="w-1"></th>
-                                    <th class="w-1"></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            {% for ext in admin.extension_get_list %}
-                                <tr>
-                                    <td>
-                                        {% set icon_filename = ext.icon_url|split('/')|last %}
-                                        {% if (icon_filename != 'cog.svg') and (icon_filename|split('.')|last == 'svg' and ext.icon_path) %}
-                                            <div class="text-primary" style="width:24px;height:24px;">
-                                                {{ source (ext.icon_path, ignore_missing = true) }}
-                                            </div>
-                                        {% else %}
-                                            <img src="{{ ext.icon_url|default('assets/icons/cog.svg') }}" alt="{{ ext.name }}" style="width:32px;height:32px;">
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <strong>{{ ext.name }}</strong> {{ ext.version }}<br>
-                                        <span>by <a href="{{ ext.author_url }}" target="_blank">{{ ext.author }}</a></span>
-                                    </td>
-                                    <td>
-                                        {{ ext.description }}<br>
-                                        <a href="{{ ext.project_url }}" target="_blank" data-bs-toggle="tooltip" data-bs-title="Project details">{{ 'Learn more'|trans }}</a>
-                                    </td>
-                                    <td>
-                                        {% if ext.type == 'mod' %}
-                                            {% if ext.status == 'installed' %}
-                                                <a class="btn btn-icon" href="{{ 'api/admin/extension/deactivate'|link({ 'type': ext.type, 'id': ext.id }) }}"
-                                                    data-bs-toggle="tooltip" data-bs-title="{{ 'Deactivate'|trans }}"
-                                                    {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, button: 'Deactivate'|trans}, reload: true}) }}>
-                                                    <svg class="icon">
-                                                        <use xlink:href="#close" />
-                                                    </svg>
-                                                </a>
+                        <div class="table-responsive">
+                            <table class="table card-table table-vcenter table-striped sortable">
+                                <thead>
+                                    <tr>
+                                        <th class="no-sort"></th>
+                                        <th>{{ 'Extension'|trans }}</th>
+                                        <th>{{ 'Description'|trans }}</th>
+                                        <th class="w-1 no-sort text-end">{{ 'Actions'|trans }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for ext in admin.extension_get_list %}
+                                    <tr>
+                                        <td>
+                                            {% set icon_filename = ext.icon_url|split('/')|last %}
+                                            {% if (icon_filename != 'cog.svg') and (icon_filename|split('.')|last == 'svg' and ext.icon_path) %}
+                                                <div class="text-primary" style="width:24px;height:24px;">
+                                                    {{ source (ext.icon_path, ignore_missing = true) }}
+                                                </div>
                                             {% else %}
-                                                <a class="btn btn-icon"
-                                                    href="{{ 'api/admin/extension/uninstall'|link({ 'type': ext.type, 'id': ext.id }) }}"
-                                                    data-bs-toggle="tooltip" data-bs-title="{{ 'Uninstall'|trans }}"
-                                                    {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, content: 'Uninstalling this module will permanently delete all its database tables and remove its files from the disk. This action cannot be undone.'|trans, button: 'Uninstall'|trans}, callback: 'onAfterModuleActivated'}) }}>
-
-                                                    <svg class="icon">
-                                                        <use xlink:href="#delete" />
-                                                    </svg>
-                                                </a>
+                                                <img src="{{ ext.icon_url|default('assets/icons/cog.svg') }}" alt="{{ ext.name }}" style="width:32px;height:32px;">
                                             {% endif %}
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if ext.type == 'mod' and ext.status != 'installed' %}
-                                            <a class="btn btn-icon"
-                                                href="{{ 'api/admin/extension/activate'|link({ 'type': ext.type, 'id': ext.id }) }}"
-                                                {{ fb_api_link({modal: { type: 'confirm', title: 'Are you sure?'|trans, button: 'Activate'|trans}, callback: 'onAfterModuleActivated'}) }}
-                                                data-bs-toggle="tooltip" data-bs-title="{{ 'Activate'|trans }}">
-                                                <svg class="icon">
-                                                    <use xlink:href="#play" />
-                                                </svg>
-                                            </a>
-                                        {% endif %}
-                                        {% if ext.has_settings %}
-                                            <a class="btn btn-icon" href="{{ 'extension/settings'|alink }}/{{ ext.id }}" data-bs-toggle="tooltip" data-bs-title="{{ 'Settings'|trans }}">
-                                                <svg class="icon">
-                                                    <use xlink:href="#cog" />
-                                                </svg>
-                                            </a>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                            {% else %}
-                                <tr>
-                                    <td class="text-muted" colspan="5">{{ 'The list is empty'|trans }}</td>
-                                </tr>
-                            {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="tab-pane fade" id="tab-store" role="tabpanel">
-                    <div class="card-header">
-                        <div>
-                            <h3 class="card-title">{{ 'Modules on the Extension Directory'|trans }}</h3>
-                            <p class="card-subtitle">{{ 'These are all modules available for installation from the <a href="https://extensions.fossbilling.org/">extension directory</a> at the click of a button.'|trans|raw }}</p>
+                                        </td>
+                                        <td>
+                                            <strong>{{ ext.name }}</strong> {{ ext.version }}<br>
+                                            <span>by <a href="{{ ext.author_url }}" target="_blank">{{ ext.author }}</a></span>
+                                        </td>
+                                        <td>
+                                            {{ ext.description }}<br>
+                                            <a href="{{ ext.project_url }}" target="_blank" data-bs-toggle="tooltip" data-bs-title="{{ 'Project Details'|trans }}">{{ 'Learn more'|trans }}</a>
+                                        </td>
+                                        <td class="text-end">
+                                            <div class="d-inline-flex align-items-center gap-2">
+                                                {% if ext.type == 'mod' %}
+                                                    {% if ext.status == 'installed' %}
+                                                        <a class="btn btn-icon" href="{{ 'extension/deactivate'|api_url(query: { 'type': ext.type, 'id': ext.id }) }}"
+                                                            data-bs-toggle="tooltip" data-bs-title="{{ 'Deactivate'|trans }}"
+                                                            {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, button: 'Deactivate'|trans}, reload: true}) }}>
+                                                            <svg class="icon">
+                                                                <use href="#x" />
+                                                            </svg>
+                                                        </a>
+                                                    {% else %}
+                                                        <a class="btn btn-icon"
+                                                            href="{{ 'extension/uninstall'|api_url(query: { 'type': ext.type, 'id': ext.id }) }}"
+                                                            data-bs-toggle="tooltip" data-bs-title="{{ 'Uninstall'|trans }}"
+                                                            {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, content: 'Uninstalling this module will permanently delete all its database tables and remove its files from the disk. This action cannot be undone.'|trans, button: 'Uninstall'|trans}, callback: 'onAfterModuleActivated'}) }}>
+                                                            <svg class="icon">
+                                                                <use href="#trash" />
+                                                            </svg>
+                                                        </a>
+                                                    {% endif %}
+                                                {% endif %}
+                                                {% if ext.type == 'mod' and ext.status != 'installed' %}
+                                                    <a class="btn btn-icon"
+                                                        href="{{ 'extension/activate'|api_url(query:{ 'type': ext.type, 'id': ext.id }) }}"
+                                                        {{ fb_api_link({modal: { type: 'confirm', title: 'Are you sure?'|trans, button: 'Activate'|trans}, callback: 'onAfterModuleActivated'}) }}
+                                                        data-bs-toggle="tooltip" data-bs-title="{{ 'Activate'|trans }}">
+                                                        <svg class="icon">
+                                                            <use href="#player-play" />
+                                                        </svg>
+                                                    </a>
+                                                {% endif %}
+                                                {% if ext.has_settings %}
+                                                    <a class="btn btn-icon" href='{{ "extension/settings/#{ext.id}"|url }}' data-bs-toggle="tooltip" data-bs-title="{{ 'Settings'|trans }}">
+                                                        <svg class="icon">
+                                                            <use href="#settings" />
+                                                        </svg>
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% else %}
+                                    <tr>
+                                        <td class="text-muted" colspan="4">{{ 'The list is empty'|trans }}</td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-                    {{ include('partial_extensions.html.twig') }}
-                </div>
 
-                <div class="tab-pane fade" id="tab-about" role="tabpanel">
-                    <div class="card-header">
-                        <div>
-                            <h3 class="card-title">{{ 'Extending FOSSBilling'|trans }}</h3>
-                            <p class="card-subtitle">{{ 'FOSSBilling gives developers all the capabilities to customize, integrate & extend the core system into your own website & applications.'|trans }}</p>
+                    <div class="tab-pane fade" id="tab-store" role="tabpanel">
+                        <div class="card-body border-bottom py-3">
+                            <p class="text-secondary mb-0">{{ 'Browse modules available from the <a href="https://extensions.fossbilling.org/">extension directory</a> and install them without leaving the admin area.'|trans|raw }}</p>
+                        </div>
+                        {{ include('partial_extensions.html.twig') }}
+                    </div>
+
+                    <div class="tab-pane fade" id="tab-about" role="tabpanel">
+                        <div class="card-body">
+                            <div class="d-flex flex-column gap-4">
+                                <section>
+                                    <p class="text-secondary mb-0">{{ 'FOSSBilling gives developers all the capabilities to customize, integrate, and extend the core system into your own website and applications.'|trans }}</p>
+                                </section>
+
+                                <section>
+                                    <h4 class="card-title mb-2">{{ 'More Extensions'|trans }}</h4>
+                                    <p class="mb-0">{{ 'If you cannot find the extensions you are looking for in the admin area, please visit the extension directory at <a href="https://extensions.fossbilling.org" target="_blank">https://extensions.fossbilling.org</a>.'|trans|raw }}</p>
+                                </section>
+
+                                <section>
+                                    <h4 class="card-title mb-2">{{ 'How to Create a New Extension'|trans }}</h4>
+                                    <ul class="mb-0">
+                                        <li>{{ 'Create a <a href="https://github.com/signup/free" target="_blank">GitHub</a> account for free.'|trans|raw }}</li>
+                                        <li>{{ 'Create a new public repository dedicated to the extension only.'|trans }}</li>
+                                        <li>{{ 'The repository must have a valid manifest file for your extension in the JSON format. For more information, please refer <a href="https://github.com/FOSSBilling/example-extension" target="_blank">to our example extension</a>.'|trans|raw }}</li>
+                                        <li>{{ 'Create a pull request <a href="https://github.com/FOSSBilling/extension-directory">here</a>.'|trans|raw }}</li>
+                                        <li>{{ 'The FOSSBilling team will review your extension and contact you if there are any issues.'|trans }}</li>
+                                        <li>{{ 'Registered extensions will then appear on the extension directory.'|trans }}</li>
+                                    </ul>
+                                </section>
+
+                                <section>
+                                    <h4 class="card-title mb-2">{{ 'Supported Extension Types'|trans }}</h4>
+                                    <ul class="mb-0">
+                                        <li>{{ 'Payment Gateways'|trans }}</li>
+                                        <li>{{ 'Server Managers'|trans }}</li>
+                                        <li>{{ 'Domain Registrars'|trans }}</li>
+                                        <li>{{ 'Client Area Themes'|trans }}</li>
+                                        <li>{{ 'Admin Area Themes'|trans }}</li>
+                                        <li>{{ 'Translations for Client and Admin Areas'|trans }}</li>
+                                        <li>{{ 'Event Hooks - Hooks can be injected into the process, change its behaviour, stop executing actions'|trans }}</li>
+                                        <li>{{ 'API Module - External program which uses FOSSBilling API'|trans }}</li>
+                                    </ul>
+                                </section>
+
+                                <section>
+                                    <h4 class="card-title mb-2">{{ 'Extension Support'|trans }}</h4>
+                                    <p class="mb-0">{{ 'Contact extensions developers directly for support. You can find issue tracker on the extension directory.'|trans }}</p>
+                                </section>
+                            </div>
                         </div>
                     </div>
-                    <div class="card-body">
-                        <h3>{{ 'More Extensions'|trans }}</h3>
-                        <p>{{ 'If you cannot find the extensions you are looking for in the admin area, please visit the extension directory at <a href="https://extensions.fossbilling.org" target="_blank">https://extensions.fossbilling.org</a>.'|trans|raw }}</p>
 
-                        <h3>{{ 'How to Create a New Extension'|trans }}</h3>
-                        <ul>
-                            <li>{{ 'Create a <a href="https://github.com/signup/free" target="_blank">GitHub</a> account for free.'|trans|raw }}</li>
-                            <li>{{ 'Create a new public repository dedicated to the extension only.'|trans }}</li>
-                            <li>{{ 'The repository must have a valid manifest file for your extension in the JSON format. For more information, please refer <a href="https://github.com/FOSSBilling/example-extension" target="_blank">to our example extension</a>.'|trans|raw }}</li> {# @TODO: Replace with some actual form of documentation #}
-                            <li>{{ 'Create a pull request <a href="https://github.com/FOSSBilling/extension-directory">here</a>.'|trans|raw }}</li>
-                            <li>{{ 'The FOSSBilling team will review your extension and contact you if there are any issues.'|trans }}</li>
-                            <li>{{ 'Registered extensions will then appear on the extension directory.'|trans }}</li>
-                        </ul>
-
-                        <h3>{{ 'Supported Extension Types'|trans }}</h3>
-                        <ul>
-                            <li>{{ 'Payment gateways'|trans }}</li>
-                            <li>{{ 'Server managers'|trans }}</li>
-                            <li>{{ 'Domain registrars'|trans }}</li>
-                            <li>{{ 'Client area themes'|trans }}</li>
-                            <li>{{ 'Admin area themes'|trans }}</li>
-                            <li>{{ 'Translations for client and admin areas'|trans }}</li>
-                            <li>{{ 'Event hooks - Hooks can be injected into the process, change its behaviour, stop executing actions'|trans }}</li>
-                            <li>{{ 'API module - External program which uses FOSSBilling API'|trans }}</li>
-                        </ul>
-
-                        <h3>{{ 'Extension Support'|trans }}</h3>
-                        <p>{{ 'Contact extensions developers directly for support. You can find issue tracker on the extension directory.'|trans }}</p>
-                    </div>
-                </div>
-
-                {% if can_manage_hooks %}
-                <div class="tab-pane fade" id="tab-hooks" role="tabpanel">
-                    <div class="table-responsive">
-                        <table class="table card-table table-vcenter table-striped text-nowrap">
-                            <thead>
-                            <tr>
-                                <th>{{ 'Extension'|trans }}</th>
-                                <th>{{ 'Hook'|trans }}</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {% for hook in admin.hook_get_list({ 'per_page': 90 }).list %}
+                    {% if can_manage_hooks %}
+                    <div class="tab-pane fade" id="tab-hooks" role="tabpanel">
+                        <div class="card-body border-bottom py-3">
+                            <p class="text-secondary mb-0">{{ 'Registered hooks let extensions integrate with key lifecycle events throughout FOSSBilling.'|trans }}</p>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table card-table table-vcenter table-striped text-nowrap">
+                                <thead>
                                 <tr>
-                                    <td>
-                                        {{ hook.rel_id|capitalize}}
-                                    </td>
-                                    <td>
-                                        <code>{{ hook.event }}</code>
-                                    </td>
+                                    <th>{{ 'Extension'|trans }}</th>
+                                    <th>{{ 'Hook'|trans }}</th>
                                 </tr>
-                            {% endfor %}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                {% for hook in admin.hook_get_list({ 'per_page': 90 }).list %}
+                                    <tr>
+                                        <td>
+                                            {{ hook.rel_id|capitalize }}
+                                        </td>
+                                        <td>
+                                            <code>{{ hook.event }}</code>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
+                    {% endif %}
                 </div>
-                {% endif %}
             </div>
         </div>
     </div>
@@ -204,10 +216,10 @@
     <script>
         function onAfterUpdate(result) {}
         function onAfterModuleActivated(result) {
-            if(result.redirect && result.type === 'mod') {
-                window.location = "{{ ''|alink }}/" + result.id;
+            if (result.redirect && result.type === 'mod') {
+                window.location = "{{ ''|url }}/" + result.id;
             } else if (result.has_settings) {
-                window.location = "{{ 'extension/settings'|alink }}/" + result.id;
+                window.location = "{{ 'extension/settings'|url }}/" + result.id;
             } else {
                 window.location.reload();
             }

@@ -19,8 +19,9 @@ namespace Box\Mod\Order\Api;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
+use Symfony\Component\HttpFoundation\Response;
 
-class Admin extends \Api_Abstract
+class Admin extends \FOSSBilling\Api\AbstractApi
 {
     /**
      * Get order details.
@@ -29,6 +30,8 @@ class Admin extends \Api_Abstract
      */
     public function get($data)
     {
+        $this->checkPermissions('order', 'view');
+
         $deep = isset($data['deep']) ? (bool) $data['deep'] : true;
         $order = $this->_getOrder($data);
 
@@ -45,16 +48,18 @@ class Admin extends \Api_Abstract
      */
     public function get_list($data)
     {
-        $orderConfig = $this->di['mod']('order')->getConfig();
+        $this->checkPermissions('order', 'view');
+
+        $orderConfig = $this->getDi()['mod']('order')->getConfig();
         $data['hide_addons'] = (isset($orderConfig['show_addons']) && $orderConfig['show_addons']) ? 0 : 1;
 
         [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $resultSet = $this->di['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $resultSet = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
-        foreach ($resultSet['list'] as $key => $result) {
-            $orderObj = $this->di['db']->getExistingModelById('ClientOrder', $result['id'], 'Order not found');
-            $resultSet['list'][$key] = $this->getService()->toApiArray($orderObj, true, $this->getIdentity());
-        }
+        $resultSet['list'] = $this->getService()->getBatchForApi(
+            array_column($resultSet['list'], 'id'),
+            $this->getIdentity()
+        );
 
         return $resultSet;
     }
@@ -70,10 +75,13 @@ class Admin extends \Api_Abstract
      * @optional string $title - Order title. If not passed, product title is used
      * @optional bool $activate - activate immediately
      * @optional string $invoice_option - Options: "no-invoice", "issue-invoice"; Default: no-invoice
+     * @optional bool $mark_invoice_paid - Mark the generated invoice as paid after the order is created
+     * @optional int $gateway_id - Payment gateway to associate with the invoice when mark_invoice_paid is used
+     * @optional string $transactionId - Custom transaction ID to use when the selected gateway is Custom
      * @optional string $created_at - date when order was created. Default: now
      * @optional string $updated_at - date when order was updated. Default: now
      *
-     * @return array
+     * @return int
      */
     #[RequiredParams([
         'client_id' => 'Client ID was not passed',
@@ -81,8 +89,23 @@ class Admin extends \Api_Abstract
     ])]
     public function create($data)
     {
+        $this->checkPermissions('order', 'manage');
+
+        $markInvoicePaid = Tools::normalizeBoolean($data['mark_invoice_paid'] ?? false);
+        $data['mark_invoice_paid'] = $markInvoicePaid;
+
+        if ($markInvoicePaid) {
+            $this->checkPermissions('invoice');
+
+            if (($data['invoice_option'] ?? 'no-invoice') !== 'issue-invoice') {
+                throw new \FOSSBilling\InformationException('Marking an invoice as paid requires the order to issue an invoice.');
+            }
+
+            $this->getDi()['mod_service']('Invoice')->validateAdminMarkAsPaidRequest($data);
+        }
+
         $client = $this->di['db']->getExistingModelById('Client', $data['client_id'], 'Client not found');
-        $product = $this->di['db']->getExistingModelById('Product', $data['product_id'], 'Product not found');
+        $product = $this->di['mod_service']('product')->findProductById((int) $data['product_id']);
 
         return $this->getService()->createOrder($client, $product, $data);
     }
@@ -104,6 +127,8 @@ class Admin extends \Api_Abstract
      */
     public function update($data)
     {
+        $this->checkPermissions('order', 'manage');
+
         $order = $this->_getOrder($data);
 
         return $this->getService()->updateOrder($order, $data);
@@ -118,6 +143,8 @@ class Admin extends \Api_Abstract
      */
     public function activate($data)
     {
+        $this->checkPermissions('order', 'manage');
+
         $order = $this->_getOrder($data);
 
         return $this->getService()->activateOrder($order, $data);
@@ -130,6 +157,8 @@ class Admin extends \Api_Abstract
      */
     public function renew($data)
     {
+        $this->checkPermissions('order', 'manage');
+
         $order = $this->_getOrder($data);
 
         if ($order->status == \Model_ClientOrder::STATUS_PENDING_SETUP || $order->status == \Model_ClientOrder::STATUS_FAILED_SETUP) {
@@ -149,6 +178,8 @@ class Admin extends \Api_Abstract
      */
     public function suspend($data)
     {
+        $this->checkPermissions('order', 'manage');
+
         $order = $this->_getOrder($data);
         $skip_event = Tools::normalizeBoolean($data['skip_event'] ?? false);
 
@@ -164,6 +195,8 @@ class Admin extends \Api_Abstract
      */
     public function unsuspend($data)
     {
+        $this->checkPermissions('order', 'manage');
+
         $order = $this->_getOrder($data);
         if ($order->status != \Model_ClientOrder::STATUS_SUSPENDED) {
             throw new \FOSSBilling\InformationException('Only suspended orders can be unsuspended');
@@ -181,6 +214,8 @@ class Admin extends \Api_Abstract
      */
     public function cancel($data)
     {
+        $this->checkPermissions('order', 'manage');
+
         $order = $this->_getOrder($data);
         $skip_event = Tools::normalizeBoolean($data['skip_event'] ?? false);
 
@@ -196,6 +231,8 @@ class Admin extends \Api_Abstract
      */
     public function uncancel($data)
     {
+        $this->checkPermissions('order', 'manage');
+
         $order = $this->_getOrder($data);
         if ($order->status != \Model_ClientOrder::STATUS_CANCELED) {
             throw new \FOSSBilling\InformationException('Only canceled orders can be uncanceled');
@@ -213,6 +250,8 @@ class Admin extends \Api_Abstract
      */
     public function delete($data)
     {
+        $this->checkPermissions('order', 'manage');
+
         $order = $this->_getOrder($data);
         $delete_addons = Tools::normalizeBoolean($data['delete_addons'] ?? false);
         $forceDelete = Tools::normalizeBoolean($data['force_delete'] ?? false);
@@ -234,6 +273,8 @@ class Admin extends \Api_Abstract
      */
     public function batch_suspend_expired($data)
     {
+        $this->checkPermissions('order', 'manage');
+
         return $this->getService()->batchSuspendExpired();
     }
 
@@ -245,6 +286,8 @@ class Admin extends \Api_Abstract
      */
     public function batch_cancel_suspended($data)
     {
+        $this->checkPermissions('order', 'manage');
+
         return $this->getService()->batchCancelSuspended();
     }
 
@@ -256,13 +299,14 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['config' => 'Order config not passed'])]
     public function update_config($data)
     {
+        $this->checkPermissions('order', 'manage');
+
         $order = $this->_getOrder($data);
 
-        if (!is_array($data['config'])) {
+        $config = $data['config'] ?? null;
+        if (!is_array($config)) {
             throw new \FOSSBilling\Exception('Order config not passed');
         }
-
-        $config = $data['config'];
 
         return $this->getService()->updateOrderConfig($order, $config);
     }
@@ -274,6 +318,8 @@ class Admin extends \Api_Abstract
      */
     public function service($data)
     {
+        $this->checkPermissions('order', 'view');
+
         $order = $this->_getOrder($data);
 
         return $this->getService()->getOrderServiceData($order, $this->getIdentity());
@@ -286,13 +332,15 @@ class Admin extends \Api_Abstract
      */
     public function status_history_get_list($data)
     {
+        $this->checkPermissions('order', 'view');
+
         $order = $this->_getOrder($data);
 
         $data['client_order_id'] = $order->id;
 
         [$sql, $bindings] = $this->getService()->getOrderStatusSearchQuery($data);
 
-        return $this->di['pager']->getPaginatedResultSet($sql, $bindings, PaginationOptions::fromArray($data));
+        return $this->getDi()['pager']->getPaginatedResultSet($sql, $bindings, PaginationOptions::fromArray($data));
     }
 
     /**
@@ -303,6 +351,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['status' => 'Order status was not passed'])]
     public function status_history_add($data)
     {
+        $this->checkPermissions('order', 'manage');
+
         $order = $this->_getOrder($data);
 
         $notes = $data['notes'] ?? null;
@@ -318,6 +368,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['id' => 'Order history line ID was not passed'])]
     public function status_history_delete($data)
     {
+        $this->checkPermissions('order', 'manage');
+
         return $this->getService()->orderStatusRm($data['id']);
     }
 
@@ -328,6 +380,8 @@ class Admin extends \Api_Abstract
      */
     public function get_statuses()
     {
+        $this->checkPermissions('order', 'view');
+
         return $this->getService()->counter();
     }
 
@@ -336,9 +390,11 @@ class Admin extends \Api_Abstract
      */
     public function get_invoice_options($data): array
     {
+        $this->checkPermissions('order', 'view');
+
         return [
-            'issue-invoice' => __trans('Automatically issue renewal invoices'),
-            'no-invoice' => __trans('Issue invoices manually'),
+            'issue-invoice' => __trans('Automatically Issue Renewal Invoices'),
+            'no-invoice' => __trans('Issue Invoices Manually'),
         ];
     }
 
@@ -347,9 +403,11 @@ class Admin extends \Api_Abstract
      */
     public function get_status_pairs($data): array
     {
+        $this->checkPermissions('order', 'view');
+
         return [
-            \Model_ClientOrder::STATUS_PENDING_SETUP => 'Pending setup',
-            \Model_ClientOrder::STATUS_FAILED_SETUP => 'Setup failed',
+            \Model_ClientOrder::STATUS_PENDING_SETUP => 'Pending Setup',
+            \Model_ClientOrder::STATUS_FAILED_SETUP => 'Setup Failed',
             \Model_ClientOrder::STATUS_ACTIVE => 'Active',
             \Model_ClientOrder::STATUS_SUSPENDED => 'Suspended',
             \Model_ClientOrder::STATUS_CANCELED => 'Canceled',
@@ -361,6 +419,8 @@ class Admin extends \Api_Abstract
      */
     public function addons($data): array
     {
+        $this->checkPermissions('order', 'view');
+
         $model = $this->_getOrder($data);
         $list = $this->getService()->getOrderAddonsList($model);
         $result = [];
@@ -376,9 +436,9 @@ class Admin extends \Api_Abstract
         $required = [
             'id' => 'Order ID was not passed',
         ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
+        $this->getDi()['validator']->checkRequiredParamsForArray($required, $data);
 
-        return $this->di['db']->getExistingModelById('ClientOrder', $data['id'], 'Order not found');
+        return $this->getDi()['db']->getExistingModelById('ClientOrder', $data['id'], 'Order Not Found');
     }
 
     /**
@@ -389,6 +449,8 @@ class Admin extends \Api_Abstract
     #[RequiredParams(['ids' => 'Order IDs were not passed'])]
     public function batch_delete($data): bool
     {
+        $this->checkPermissions('order', 'manage');
+
         $delete_addons = Tools::normalizeBoolean($data['delete_addons'] ?? false);
 
         foreach ($data['ids'] as $id) {
@@ -398,8 +460,10 @@ class Admin extends \Api_Abstract
         return true;
     }
 
-    public function export_csv($data)
+    public function export_csv($data): Response
     {
+        $this->checkPermissions('order', 'export');
+
         $data['headers'] ??= [];
 
         return $this->getService()->exportCSV($data['headers']);

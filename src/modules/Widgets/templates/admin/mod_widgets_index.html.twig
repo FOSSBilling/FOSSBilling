@@ -1,7 +1,5 @@
 {% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
 
-{% import 'macro_functions.html.twig' as mf %}
-
 {% block meta_title %}{{ 'Widgets'|trans }}{% endblock %}
 
 {% set active_menu = 'extensions' %}
@@ -9,14 +7,14 @@
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
-            <a href="{{ '/'|alink }}">
+            <a href="{{ '/'|url }}">
                 <svg class="icon">
-                    <use xlink:href="#home" />
+                    <use href="#home" />
                 </svg>
             </a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ 'extension'|alink }}">{{ 'Extensions'|trans }}</a>
+            <a href="{{ 'extension'|url }}">{{ 'Extensions'|trans }}</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">{{ 'Widgets'|trans }}</li>
     </ol>
@@ -29,13 +27,13 @@
         <div class="card-header">
             <div>
                 <h3 class="card-title">{{ 'Widget Registry'|trans }}</h3>
-                <p class="card-subtitle">{{ 'Modules can register widgets to dynamically display content in theme slots'|trans }}</p>
+                <p class="card-subtitle">{{ 'Review registered widget slots and the modules that populate them across the admin and client themes.'|trans }}</p>
             </div>
             <div class="card-actions">
-                <a href="{{ 'api/admin/widgets/rebuild'|link }}" class="btn btn-primary"
+                <a href="{{ 'widgets/rebuild'|api_url }}" class="btn btn-outline-secondary"
                    {{ fb_api_link({ reload: true, message: 'Widget cache rebuilt successfully'|trans}) }}>
                     <svg class="icon">
-                        <use xlink:href="#refresh" />
+                        <use href="#refresh" />
                     </svg>
                     {{ 'Rediscover Widgets'|trans }}
                 </a>
@@ -47,7 +45,7 @@
                 <div class="empty">
                     <div class="empty-icon">
                         <svg class="icon icon-lg">
-                            <use xlink:href="#info" />
+                            <use href="#info-circle" />
                         </svg>
                     </div>
                     <p class="empty-title">{{ 'No widgets registered'|trans }}</p>
@@ -56,9 +54,9 @@
                         {{ 'Modules register widgets by implementing a <code>getWidgets()</code> method in their Service class.'|trans|raw }}
                     </p>
                     <div class="empty-action">
-                        <a href="{{ 'extension'|alink }}" class="btn btn-primary">
+                        <a href="{{ 'extension'|url }}" class="btn btn-primary">
                             <svg class="icon">
-                                <use xlink:href="#iPlugin" />
+                                <use href="#iPlugin" />
                             </svg>
                             {{ 'Manage Extensions'|trans }}
                         </a>
@@ -80,12 +78,12 @@
             </div>
 
             <div class="table-responsive">
-                <table class="table table-vcenter card-table">
+                <table class="table table-vcenter card-table table-striped">
                     <thead>
                         <tr>
                             <th>{{ 'Slot'|trans }}</th>
                             <th>{{ 'Widgets'|trans }}</th>
-                            <th class="w-1"></th>
+                            <th class="w-1 text-end">{{ 'Count'|trans }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -95,7 +93,7 @@
                                     <div class="d-flex align-items-center">
                                         <span class="avatar avatar-sm bg-primary-lt text-secondary me-2">
                                             <svg class="icon">
-                                                <use xlink:href="#cog" />
+                                                <use href="#settings" />
                                             </svg>
                                         </span>
                                         <div>
@@ -128,7 +126,7 @@
                                         {% endfor %}
                                     </div>
                                 </td>
-                                <td>
+                                <td class="text-end">
                                     <span class="badge bg-blue-lt">{{ slot.count }}</span>
                                 </td>
                             </tr>
@@ -141,7 +139,7 @@
                 <div class="row align-items-center">
                     <div class="col-auto">
                         <svg class="icon">
-                            <use xlink:href="#info" />
+                            <use href="#info-circle" />
                         </svg>
                     </div>
                     <div class="col">

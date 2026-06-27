@@ -22,37 +22,24 @@
             });
         });
 
-        document.querySelectorAll('.remove-cart-item').forEach(function(button) {
-            button.addEventListener('click', function(event) {
-                event.preventDefault();
-
-                if (confirm("{{ 'Are you sure you want to remove this item from cart?'|trans }}")) {
-                    var item_id = this.getAttribute('data-cart-item-id');
-
-                    API.guest.post("cart/remove_item", { id: item_id },
-                        () => {
-                            FOSSBilling.message("{{ 'Item was removed from cart'|trans }}");
-                            window.location.reload();
-                        });
-                }
-            });
-        });
     });
 
     function onOrderCheckout(result){
         if (result.invoice_hash) {
-            API.guest.post('invoice/payment', { hash: result.invoice_hash, gateway_id: result.gateway_id, auto_redirect: true },
+            FOSSBilling.api.guest.post('invoice/payment', { hash: result.invoice_hash, gateway_id: result.gateway_id, auto_redirect: true },
                 (r) => {
                     let checkoutEl = document.getElementById('checkout');
                     let paymentHtmlEl = document.getElementById('payment-html');
                     if (r.iframe) {
                         document.getElementById('payment-html-inner').innerHTML = r.result;
                         bootstrap.Collapse.getOrCreateInstance(checkoutEl).hide();
-                        document.getElementById('checkout').remove();
+                        if (checkoutEl) {
+                            checkoutEl.remove();
+                        }
                         bootstrap.Collapse.getOrCreateInstance(paymentHtmlEl).show();
                     } else {
-                        const link = '{{ "invoice/banklink"|link }}' + '/' + result.invoice_hash + '/' + result.gateway_id;
-                        document.getElementById('payment-html-inner').innerHTML = '<a href="' + link + '" target="_parent" id="redirect-to-gateway">Redirect to payment gateway</a>';
+                        const link = '{{ "invoice/banklink"|url }}' + '/' + result.invoice_hash + '/' + result.gateway_id;
+                        document.getElementById('payment-html-inner').innerHTML = '<a href="' + link + '" target="_parent" id="redirect-to-gateway">Redirect to Payment Gateway</a>';
                         bootstrap.Collapse.getOrCreateInstance(checkoutEl).hide();
                         document.getElementById('checkout-inner').remove();
                         bootstrap.Collapse.getOrCreateInstance(paymentHtmlEl).show();
@@ -60,19 +47,20 @@
                     }
                 });
         } else {
-            window.top.location.href = ('{{ "order/service/manage"|link }}' + '/' + result.order_id);
+            window.top.location.href = ('{{ "order/service/manage"|url }}' + '/' + result.order_id);
         }
     }
 
     function onLogin(result){
         FOSSBilling.message("{{ 'You logged in successfully'|trans }}");
         let registerEl = document.getElementById('register');
-        new bootstrap.Collapse('#register').hide();
+        let checkoutEl = document.getElementById('checkout');
+        bootstrap.Collapse.getOrCreateInstance(registerEl).hide();
         document.querySelector("#checkoutButton").hidden = false;
         document.querySelector("#loginMessage").hidden = true;
         setTimeout(() => {
             registerEl.parentElement.remove();
-            new bootstrap.Collapse('#checkout').show();
+            bootstrap.Collapse.getOrCreateInstance(checkoutEl).show();
         }, 500);
     }
 
@@ -81,16 +69,16 @@
             email: document.getElementById('reg-email').value,
             password: document.getElementById('reg-password').value
         };
-        API.guest.post('client/login', login_details,
+        FOSSBilling.api.guest.post('client/login', login_details,
             () => {
                 FOSSBilling.message("{{ 'You logged in successfully'|trans }}");
                 let registerEl = document.getElementById('register');
-                new bootstrap.Collapse('#register').hide();
+                bootstrap.Collapse.getOrCreateInstance(registerEl).hide();
                 document.querySelector("#checkoutButton").hidden = false;
                 document.querySelector("#loginMessage").hidden = true;
                 setTimeout(() => {
                     registerEl.parentElement.remove();
-                    new bootstrap.Collapse('#checkout').show();
+                    bootstrap.Collapse.getOrCreateInstance(document.getElementById('checkout')).show();
                     }, 500);
             });
     }
