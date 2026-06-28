@@ -25,6 +25,7 @@
     </button>
 {% endset %}
 {% set is_super_admin = admin.staff_is_super_administrator %}
+{% set exclude_cron = request.no_cron|default('1') != '0' %}
 
 {% block breadcrumbs %}
     <ol class="breadcrumb">
@@ -92,7 +93,8 @@
                                         <label class="form-label text-muted small mb-1 d-block invisible" aria-hidden="true">{{ 'Status'|trans }}</label>
                                         <div class="d-flex align-items-center" style="min-height: 40px;">
                                             <label class="form-check form-switch m-0">
-                                                <input class="form-check-input" type="checkbox" name="no_cron" value="1"{% if request.no_cron %} checked{% endif %}>
+                                                <input type="hidden" name="no_cron" value="0">
+                                                <input class="form-check-input" type="checkbox" name="no_cron" value="1"{% if exclude_cron %} checked{% endif %}>
                                                 <span class="form-check-label">{{ 'Exclude Cron User'|trans }}</span>
                                             </label>
                                         </div>
@@ -123,10 +125,10 @@
                             </tr>
                             </thead>
                             <tbody>
-                            {% set members = admin.staff_get_list({ 'per_page': 100, 'page': request.page }|merge(request)) %}
+                            {% set members = admin.staff_get_list({ 'per_page': 100, 'page': request.page, 'no_cron': '1' }|merge(request)) %}
                             {% for i, member in members.list %}
                                 <tr>
-                                    <td>{{ loop.index }}</td>
+                                    <td>{{ member.id }}</td>
                                     <td>
                                         <a href='{{ "staff/manage/#{member.id}"|url }}'>
                                         {{ avatar(member.email, 25, 'avatar avatar-xs me-2') }}

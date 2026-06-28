@@ -31,8 +31,6 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('staff', 'view');
 
-        $data['no_cron'] = true;
-
         [$sql, $params] = $this->getService()->getSearchQuery($data);
         $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 

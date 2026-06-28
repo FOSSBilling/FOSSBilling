@@ -19,6 +19,7 @@ use Box\Mod\Staff\Repository\AdminGroupRepository;
 use Box\Mod\Support\Entity\Helpdesk;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\PaginationOptions;
+use FOSSBilling\Tools;
 
 class Service implements InjectionAwareInterface
 {
@@ -371,8 +372,6 @@ class Service implements InjectionAwareInterface
 
     public function getList($data)
     {
-        $data['no_cron'] = true;
-
         [$query, $params] = $this->getSearchQuery($data);
 
         return $this->di['pager']->getPaginatedResultSet($query, $params, PaginationOptions::fromArray($data));
@@ -385,7 +384,7 @@ class Service implements InjectionAwareInterface
         $id = $data['id'] ?? null;
         $search = $data['search'] ?? null;
         $status = $data['status'] ?? null;
-        $no_cron = (bool) ($data['no_cron'] ?? false);
+        $no_cron = Tools::normalizeBoolean($data['no_cron'] ?? false);
 
         $where = [];
         $bindings = [];

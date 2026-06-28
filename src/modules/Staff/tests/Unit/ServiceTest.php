@@ -846,6 +846,11 @@ dataset('searchFilters', fn (): array => [
         'system_name != :system_name',
         [':system_name' => Model_Admin::SYSTEM_CRON],
     ],
+    'do not filter by false no_cron' => [
+        ['no_cron' => 'false'],
+        'SELECT * FROM admin',
+        [],
+    ],
 ]);
 
 test('getSearchQuery returns correct query and params', function (array $data, string $expectedStr, array $expectedParams): void {
