@@ -897,16 +897,13 @@ describe('processWebhookEvent noise filtering', function (): void {
         expect($trashCalled)->toBeTrue();
     });
 
-    test('does not delete transaction for handled event types', function (): void {
+    test('deletes transaction for subscription lifecycle events', function (): void {
         $tx = buildTransaction();
         $tx->id = 501;
 
-        $stripeSubscription = new stdClass();
-        $stripeSubscription->id = 'sub_nonexistent';
-
         $rawBody = json_encode([
             'type' => 'customer.subscription.deleted',
-            'id' => 'evt_good_1',
+            'id' => 'evt_life_1',
             'data' => ['object' => ['id' => 'sub_nonexistent']],
         ]);
 
@@ -941,8 +938,9 @@ describe('processWebhookEvent noise filtering', function (): void {
             1,
         ]);
 
-        expect($trashCalled)->toBeFalse()
-            ->and($tx->status)->toBe(Model_Transaction::STATUS_PROCESSED);
+        // Subscription lifecycle events don't represent payments — their
+        // transactions should be deleted to keep the list clean.
+        expect($trashCalled)->toBeTrue();
     });
 });
 
