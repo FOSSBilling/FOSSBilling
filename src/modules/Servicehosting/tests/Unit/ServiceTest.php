@@ -72,6 +72,11 @@ test('action create', function (): void {
 
     $service->setDi($di);
     $service->action_create($orderModel);
+
+    expect($servhostingModel->server_id)->toBe($confArr['server_id']);
+    expect($servhostingModel->hosting_plan_id)->toBe($confArr['hosting_plan_id']);
+    expect($servhostingModel->sld)->toBe($confArr['sld']);
+    expect($servhostingModel->tld)->toBe($confArr['tld']);
 });
 
 test('action renew', function (): void {
