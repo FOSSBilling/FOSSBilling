@@ -550,8 +550,9 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $validatedEmail = filter_var($invoice->buyer_email, FILTER_VALIDATE_EMAIL);
 
         if ($validatedEmail !== false) {
+            $escapedEmail = str_replace(['\\', '\''], ['\\\\', '\\\''], $validatedEmail);
             $customers = $this->stripe->customers->search([
-                'query' => "email:'" . $validatedEmail . "'",
+                'query' => "email:'" . $escapedEmail . "'",
                 'limit' => 1,
             ]);
         } else {
