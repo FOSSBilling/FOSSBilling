@@ -634,13 +634,14 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $prices = $this->stripe->prices->all([
             'product' => $product->id,
             'recurring' => ['interval' => $interval],
-            'unit_amount' => $amount,
             'currency' => $currency,
-            'limit' => 1,
+            'limit' => 100,
         ]);
 
-        if (count($prices->data) > 0) {
-            return $prices->data[0];
+        foreach ($prices->data as $existingPrice) {
+            if ($existingPrice->unit_amount === $amount) {
+                return $existingPrice;
+            }
         }
 
         return $this->stripe->prices->create([
