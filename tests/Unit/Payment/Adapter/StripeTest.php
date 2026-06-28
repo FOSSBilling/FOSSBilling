@@ -363,7 +363,11 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
 
         $dbMock = Mockery::mock('\Box_Database');
         $dbMock->shouldReceive('store')->andReturn($tx->id);
-        // findOne is called for the fallback check
+        // Dedup check — no prior transaction processed this Stripe invoice.
+        $dbMock->shouldReceive('findOne')
+            ->with('Transaction', Mockery::any(), Mockery::any())
+            ->andReturn(null);
+        // findOne for the already-paid guard and the billing_reason fallback.
         $dbMock->shouldReceive('findOne')
             ->with('Invoice', 'id = :id', [':id' => 77])
             ->andReturn($originalInvoice);
