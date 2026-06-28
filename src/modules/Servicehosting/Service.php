@@ -959,11 +959,7 @@ class Service implements InjectionAwareInterface
      */
     private function normalizeCredential(string $field, mixed $incoming, mixed $existing, mixed $serverId, bool $audit): mixed
     {
-        if ($incoming === null) {
-            return $existing;
-        }
-
-        if (!is_scalar($incoming)) {
+        if ($incoming === null || !is_scalar($incoming)) {
             return $existing;
         }
 
