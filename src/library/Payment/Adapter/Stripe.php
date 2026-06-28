@@ -231,15 +231,25 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         }
 
         $eventType = $payload['type'];
-        $subscriptionPrefixes = ['customer.subscription.', 'invoice.'];
+        $webhookPrefixes = ['customer.subscription.', 'invoice.', 'invoice_payment.'];
 
-        foreach ($subscriptionPrefixes as $prefix) {
+        foreach ($webhookPrefixes as $prefix) {
             if (str_starts_with($eventType, $prefix)) {
                 return true;
             }
         }
 
-        return false;
+        // Handle specific PaymentIntent and SetupIntent events by exact match
+        // to avoid creating transactions for noisy lifecycle events (e.g.
+        // payment_intent.created, payment_intent.processing).
+        $specificTypes = [
+            'payment_intent.succeeded',
+            'payment_intent.payment_failed',
+            'setup_intent.succeeded',
+            'setup_intent.setup_failed',
+        ];
+
+        return in_array($eventType, $specificTypes, true);
     }
 
     private function processPaymentIntent(Model_Transaction $tx, ?Model_Invoice $invoice, array $data): void
@@ -386,6 +396,12 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 'invoice.payment_succeeded' => $this->handleInvoicePaymentSucceeded($api_admin, $tx, $event, $gateway_id),
                 'invoice.paid' => $this->handleInvoicePaymentSucceeded($api_admin, $tx, $event, $gateway_id),
                 'invoice.payment_failed' => $this->handleInvoicePaymentFailed($api_admin, $tx, $event),
+                'invoice_payment.paid' => $this->handleInvoicePaymentSucceeded($api_admin, $tx, $event, $gateway_id),
+                'invoice_payment.failed' => $this->handleInvoicePaymentFailed($api_admin, $tx, $event),
+                'payment_intent.succeeded' => $this->handlePaymentIntentSucceededWebhook($api_admin, $tx, $event, $gateway_id),
+                'payment_intent.payment_failed' => $this->handlePaymentIntentFailedWebhook($api_admin, $tx, $event),
+                'setup_intent.succeeded' => $this->handleSetupIntentSucceededWebhook($api_admin, $tx, $event, $gateway_id),
+                'setup_intent.setup_failed' => $this->handleSetupIntentFailedWebhook($api_admin, $tx, $event),
                 default => null,
             };
         } catch (Stripe\Exception\CardException|Stripe\Exception\InvalidRequestException|Stripe\Exception\AuthenticationException|Stripe\Exception\ApiConnectionException|Stripe\Exception\ApiErrorException $e) {
@@ -463,9 +479,9 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
     private function handleInvoicePaymentSucceeded($api_admin, Model_Transaction $tx, object $event, int $gateway_id): void
     {
-        $stripeInvoice = $event->data->object;
+        $stripeInvoice = $this->resolveStripeInvoice($event->data->object);
 
-        if (empty($stripeInvoice->subscription)) {
+        if ($stripeInvoice === null || empty($stripeInvoice->subscription)) {
             return;
         }
 
@@ -544,9 +560,9 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
     private function handleInvoicePaymentFailed($api_admin, Model_Transaction $tx, object $event): void
     {
-        $stripeInvoice = $event->data->object;
+        $stripeInvoice = $this->resolveStripeInvoice($event->data->object);
 
-        if (empty($stripeInvoice->subscription)) {
+        if ($stripeInvoice === null || empty($stripeInvoice->subscription)) {
             return;
         }
 
@@ -558,6 +574,216 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 error_log('Stripe invoice payment failed webhook: ' . $e->getMessage());
             }
         }
+    }
+
+    /**
+     * Handle payment_intent.succeeded webhook for one-time payments.
+     *
+     * Provides reliability when the customer doesn't return via the redirect
+     * flow (e.g. browser closed). Includes dedup so it's safe to receive this
+     * event even if the redirect already processed the payment.
+     */
+    private function handlePaymentIntentSucceededWebhook($api_admin, Model_Transaction $tx, object $event, int $gateway_id): void
+    {
+        $paymentIntent = $event->data->object;
+
+        // Set transaction metadata from the PaymentIntent
+        $tx->txn_id = $paymentIntent->id;
+        $tx->txn_status = $paymentIntent->status;
+        $tx->amount = $this->getAmountFromMinorUnits($paymentIntent->amount, $paymentIntent->currency);
+        $tx->currency = $paymentIntent->currency;
+
+        // Dedup: skip if already processed via the redirect flow.
+        // The redirect transaction stores txn_id = PaymentIntent ID.
+        $existing = $this->di['db']->findOne(
+            'Transaction',
+            'txn_id = :txn_id AND status = :status',
+            [':txn_id' => $paymentIntent->id, ':status' => Model_Transaction::STATUS_PROCESSED]
+        );
+        if ($existing instanceof Model_Transaction) {
+            $tx->invoice_id = $existing->invoice_id;
+
+            return;
+        }
+
+        // Link transaction to the invoice from PaymentIntent metadata
+        $invoiceId = $paymentIntent->metadata->invoice_id ?? null;
+        if ($invoiceId) {
+            $tx->invoice_id = (int) $invoiceId;
+            $this->di['db']->store($tx);
+        }
+
+        if ($paymentIntent->status !== 'succeeded') {
+            return;
+        }
+
+        $invoice = $invoiceId ? $this->di['db']->getExistingModelById('Invoice', (int) $invoiceId) : null;
+
+        // Delegate to the shared payment processing logic
+        $this->applyOneTimePayment($tx, $invoice, $paymentIntent);
+    }
+
+    private function handlePaymentIntentFailedWebhook($api_admin, Model_Transaction $tx, object $event): void
+    {
+        $paymentIntent = $event->data->object;
+        $tx->txn_id = $paymentIntent->id;
+        $tx->txn_status = $paymentIntent->status;
+        $tx->status = Model_Transaction::STATUS_ERROR;
+        $tx->error = 'Payment failed via webhook';
+        $tx->updated_at = date('Y-m-d H:i:s');
+        $this->di['db']->store($tx);
+    }
+
+    /**
+     * Handle setup_intent.succeeded webhook for subscription creation.
+     *
+     * Provides reliability when the customer doesn't return via the redirect
+     * flow. Uses the subscription creation idempotency key to prevent
+     * duplicates if the redirect also fires.
+     */
+    private function handleSetupIntentSucceededWebhook($api_admin, Model_Transaction $tx, object $event, int $gateway_id): void
+    {
+        $setupIntent = $event->data->object;
+
+        $tx->txn_id = $setupIntent->id;
+        $tx->txn_status = $setupIntent->status;
+
+        if ($setupIntent->status !== 'succeeded') {
+            $tx->status = Model_Transaction::STATUS_ERROR;
+            $tx->updated_at = date('Y-m-d H:i:s');
+            $this->di['db']->store($tx);
+
+            return;
+        }
+
+        // Dedup: skip if already processed via the redirect flow.
+        $existing = $this->di['db']->findOne(
+            'Transaction',
+            'txn_id = :txn_id AND status = :status',
+            [':txn_id' => $setupIntent->id, ':status' => Model_Transaction::STATUS_PROCESSED]
+        );
+        if ($existing instanceof Model_Transaction) {
+            $tx->invoice_id = $existing->invoice_id;
+
+            return;
+        }
+
+        $invoiceId = $setupIntent->metadata->invoice_id ?? null;
+        if (!$invoiceId) {
+            return;
+        }
+
+        $tx->invoice_id = (int) $invoiceId;
+        $this->di['db']->store($tx);
+
+        $invoice = $this->di['db']->getExistingModelById('Invoice', (int) $invoiceId);
+        $customer = $this->getOrCreateCustomer($invoice);
+
+        // createStripeSubscription uses an idempotency key based on the
+        // invoice ID, so this is safe even if the redirect flow races.
+        $subscription = $this->createStripeSubscription($customer, $setupIntent, $invoice);
+
+        $tx->s_id = $subscription->id;
+        $tx->s_period = $this->getSubscriptionPeriodForInvoice($invoice);
+        $tx->amount = $this->getAmountFromMinorUnits($this->getAmountInCents($invoice), $invoice->currency);
+        $tx->currency = $invoice->currency;
+        $tx->updated_at = date('Y-m-d H:i:s');
+        $this->di['db']->store($tx);
+    }
+
+    private function handleSetupIntentFailedWebhook($api_admin, Model_Transaction $tx, object $event): void
+    {
+        $setupIntent = $event->data->object;
+        $tx->txn_id = $setupIntent->id;
+        $tx->txn_status = $setupIntent->status;
+        $tx->status = Model_Transaction::STATUS_ERROR;
+        $tx->error = 'Setup Intent failed via webhook';
+        $tx->updated_at = date('Y-m-d H:i:s');
+        $this->di['db']->store($tx);
+    }
+
+    /**
+     * Shared logic for applying a one-time payment to a client balance and
+     * invoice. Used by both the redirect flow (processPaymentIntent) and the
+     * payment_intent.succeeded webhook handler.
+     */
+    private function applyOneTimePayment(Model_Transaction $tx, ?Model_Invoice $invoice, object $charge): void
+    {
+        $invoiceService = $this->di['mod_service']('Invoice');
+
+        $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
+        if (!$transactionService->claimForProcessing((int) $tx->id)) {
+            return;
+        }
+
+        $tx->status = Model_Transaction::STATUS_PROCESSING;
+
+        $clientService = $this->di['mod_service']('client');
+        $client = $invoice
+            ? $this->di['db']->getExistingModelById('Client', $invoice->client_id)
+            : $this->getClientFromTransaction($tx, $charge);
+
+        if ($invoice) {
+            $expected = $invoiceService->getTotalWithTax($invoice);
+
+            try {
+                $invoiceService->validatePaymentAmount($tx->amount, $expected);
+            } catch (FOSSBilling\Exception $e) {
+                $tx->status = Model_Transaction::STATUS_ERROR;
+                $tx->error = $e->getMessage();
+                $tx->updated_at = date('Y-m-d H:i:s');
+                $this->di['db']->store($tx);
+
+                throw $e;
+            }
+        }
+
+        $bd = [
+            'amount' => $tx->amount,
+            'description' => 'Stripe transaction ' . $charge->id,
+            'type' => 'transaction',
+            'rel_id' => $tx->id,
+        ];
+
+        $clientService->addFunds($client, $bd['amount'], $bd['description'], $bd);
+
+        if ($tx->invoice_id && $invoice && !$invoiceService->isInvoiceTypeDeposit($invoice)) {
+            if (!$invoice->approved) {
+                $invoiceService->approveInvoice($invoice, ['use_credits' => false]);
+            }
+            $invoiceService->payInvoiceWithCredits($invoice);
+        } elseif ($tx->invoice_id && $invoice && $invoiceService->isInvoiceTypeDeposit($invoice)) {
+            $invoiceService->markAsPaid($invoice);
+        } elseif (!$tx->invoice_id) {
+            $invoiceService->doBatchPayWithCredits(['client_id' => $client->id]);
+        }
+
+        $tx->status = Model_Transaction::STATUS_PROCESSED;
+        $tx->updated_at = date('Y-m-d H:i:s');
+        $this->di['db']->store($tx);
+    }
+
+    /**
+     * Resolve the event payload to a Stripe invoice object.
+     *
+     * Handles both legacy invoice events (where data.object is already an
+     * invoice) and the newer invoice_payment events introduced in API version
+     * 2026-06-24, where data.object is an invoice_payment that references the
+     * invoice by ID and does not embed subscription/billing_reason fields.
+     *
+     * @return object|null The full Stripe invoice object, or null on failure
+     */
+    private function resolveStripeInvoice(object $paymentObject): ?object
+    {
+        if (($paymentObject->object ?? '') === 'invoice_payment') {
+            if (empty($paymentObject->invoice)) {
+                return null;
+            }
+
+            return $this->stripe->invoices->retrieve($paymentObject->invoice, []);
+        }
+
+        return $paymentObject;
     }
 
     private function getOrCreateCustomer(Model_Invoice $invoice): Stripe\Customer
@@ -607,7 +833,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 'invoice_id' => $invoice->id,
                 'client_id' => $invoice->client_id,
             ],
-        ]);
+        ], ['idempotency_key' => 'sub_invoice_' . $invoice->id]);
     }
 
     private function getOrCreateProduct(Model_Invoice $invoice): Stripe\Product
@@ -724,7 +950,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 'client_id' => (string) $invoice->client_id,
                 'invoice_id' => (string) $invoice->id,
             ],
-        ]);
+        ], ['idempotency_key' => 'pi_invoice_' . $invoice->id]);
 
         $pubKey = ($this->config['test_mode']) ? $this->config['test_pub_key'] : $this->config['pub_key'];
 
@@ -830,7 +1056,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 'invoice_id' => $invoice->id,
                 'price_id' => $price->id,
             ],
-        ]);
+        ], ['idempotency_key' => 'si_invoice_' . $invoice->id]);
 
         $pubKey = ($this->config['test_mode']) ? $this->config['test_pub_key'] : $this->config['pub_key'];
 
