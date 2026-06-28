@@ -79,11 +79,11 @@ test('action renew', function (): void {
     $orderModel = new Model_ClientOrder();
     $orderModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $hostingPlanModel = new Model_ServiceHostingHp();
-    $hostingPlanModel->loadBean(new Tests\Helpers\DummyBean());
+    $hostingServiceModel = new Model_ServiceHosting();
+    $hostingServiceModel->loadBean(new Tests\Helpers\DummyBean());
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
-    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($hostingPlanModel);
+    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($hostingServiceModel);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('store')->atLeast()->once();
