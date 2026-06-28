@@ -221,6 +221,7 @@ test('create', function (): void {
         'password' => 'test!23A',
         'email' => 'okay@example.com',
         'name' => 'OkayTest',
+        'group_id' => '2',
     ];
 
     $newStaffId = 1;

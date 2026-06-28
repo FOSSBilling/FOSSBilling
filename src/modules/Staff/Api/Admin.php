@@ -159,6 +159,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         'email' => 'Email address was not passed',
         'password' => 'Password was not passed',
         'name' => 'Name was not passed',
+        'group_id' => 'Group ID was not passed',
     ])]
     public function create($data)
     {

@@ -561,6 +561,17 @@ class Service implements InjectionAwareInterface
         $this->checkPermissionsAndThrowException('staff', 'create_and_edit_staff');
 
         $signature = $data['signature'] ?? null;
+        $groupId = (int) ($data['group_id'] ?? 0);
+        if ($groupId <= 0) {
+            throw new \FOSSBilling\InformationException('Group ID was not passed');
+        }
+
+        $group = $this->adminGroupRepository->findById($groupId);
+        if (!$group instanceof AdminGroup) {
+            throw new \FOSSBilling\InformationException('Group not found');
+        }
+
+        $this->assertCanManageGroup($group);
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffCreate', 'params' => $data]);
 
@@ -578,6 +589,9 @@ class Service implements InjectionAwareInterface
         } catch (\RedBeanPHP\RedException) {
             throw new \FOSSBilling\InformationException('Staff member with email :email is already registered.', [':email' => $data['email']], 788954);
         }
+
+        $this->di['em']->persist(new AdminGroupMember((int) $newId, $group));
+        $this->di['em']->flush();
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffCreate', 'params' => ['id' => $newId]]);
 

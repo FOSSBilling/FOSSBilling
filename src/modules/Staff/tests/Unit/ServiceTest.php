@@ -1141,9 +1141,12 @@ test('create creates new admin account', function (): void {
         'name' => 'testJohn',
         'status' => 'active',
         'password' => '1345',
+        'group_id' => 2,
     ];
 
     $newId = 1;
+    $group = new AdminGroup();
+    staffSetEntityId($group, 2);
 
     $adminModel = new Model_Admin();
     $adminModel->loadBean(new Tests\Helpers\DummyBean());
@@ -1171,7 +1174,8 @@ test('create creates new admin account', function (): void {
     $di['events_manager'] = $eventsMock;
     $di['logger'] = $logStub;
     $di['db'] = $dbMock;
-
+    $di['em'] = staffEntityManager(Mockery::mock(AdminGroupRepository::class)->shouldReceive('findById')->once()->with(2)->andReturn($group)->getMock());
+    $di['loggedin_admin'] = staffHierarchyBypassAdmin();
     $di['password'] = $passwordMock;
 
     $serviceMock->setDi($di);
@@ -1179,6 +1183,23 @@ test('create creates new admin account', function (): void {
     $result = $serviceMock->create($data);
     expect($result)->toBeInt();
     expect($result)->toBe($newId);
+    expect($di['em']->persisted[0])->toBeInstanceOf(AdminGroupMember::class);
+});
+
+test('create rejects missing initial group', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('hasPermission')->atLeast()->once()->andReturn(true);
+
+    $di = container();
+    $di['em'] = staffEntityManager(Mockery::mock(AdminGroupRepository::class), Mockery::mock(AdminGroupMemberRepository::class));
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->create([
+        'email' => 'test@example.com',
+        'name' => 'testJohn',
+        'status' => 'active',
+        'password' => '1345',
+    ]))->toThrow(FOSSBilling\InformationException::class, 'Group ID was not passed');
 });
 
 test('create throws exception for duplicate email', function (): void {
@@ -1187,9 +1208,12 @@ test('create throws exception for duplicate email', function (): void {
         'name' => 'testJohn',
         'status' => 'active',
         'password' => '1345',
+        'group_id' => 2,
     ];
 
     $newId = 1;
+    $group = new AdminGroup();
+    staffSetEntityId($group, 2);
 
     $adminModel = new Model_Admin();
     $adminModel->loadBean(new Tests\Helpers\DummyBean());
@@ -1217,7 +1241,8 @@ test('create throws exception for duplicate email', function (): void {
     $di['events_manager'] = $eventsMock;
     $di['logger'] = $logStub;
     $di['db'] = $dbMock;
-
+    $di['em'] = staffEntityManager(Mockery::mock(AdminGroupRepository::class)->shouldReceive('findById')->once()->with(2)->andReturn($group)->getMock());
+    $di['loggedin_admin'] = staffHierarchyBypassAdmin();
     $di['password'] = $passwordMock;
 
     $serviceMock->setDi($di);

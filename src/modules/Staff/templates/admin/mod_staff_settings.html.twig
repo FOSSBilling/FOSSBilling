@@ -326,6 +326,10 @@
                             <label class="form-label" for="new-staff-password">{{ 'Password'|trans }}</label>
                             <input class="form-control" id="new-staff-password" type="password" name="password" required>
                         </div>
+                        <div class="col-lg-6">
+                            <label class="form-label" for="new-staff-group">{{ 'Initial group'|trans }}</label>
+                            {{ mf.selectbox('group_id', admin.staff_group_get_pairs, '', 1, 'Select group'|trans) }}
+                        </div>
                         <div class="col-12">
                             <label class="form-label" for="new-staff-signature">{{ 'Signature'|trans }}</label>
                             <textarea class="form-control" id="new-staff-signature" name="signature" rows="3"></textarea>
