@@ -600,15 +600,15 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         }
 
         $productName = $invoiceItems[0]['title'];
-        $escapedName = addslashes($productName);
 
-        $products = $this->stripe->products->search([
-            'query' => "name:'" . $escapedName . "'",
-            'limit' => 1,
+        $products = $this->stripe->products->all([
+            'limit' => 100,
         ]);
 
-        if (count($products->data) > 0) {
-            return $products->data[0];
+        foreach ($products->data as $existingProduct) {
+            if ($existingProduct->name === $productName) {
+                return $existingProduct;
+            }
         }
 
         return $this->stripe->products->create([
