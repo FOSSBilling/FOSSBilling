@@ -320,7 +320,7 @@ class Service implements InjectionAwareInterface
         $adapter->createAccount($account);
 
         // Update the service's password to a placeholder value for security reasons
-        $model->pass = '********';
+        $model->pass = self::PASSWORD_PLACEHOLDER;
 
         // Save the service
         $this->di['db']->store($model);
@@ -941,7 +941,7 @@ class Service implements InjectionAwareInterface
         $model->username = $this->normalizeCredential('username', $data['username'] ?? null, $model->username, $model->id, false);
         $model->password = $this->normalizeCredential('password', $data['password'] ?? null, $model->password, $model->id, true);
         $model->accesshash = $this->normalizeCredential('accesshash', $data['accesshash'] ?? null, $model->accesshash, $model->id, true);
-        $model->passwordLength = is_numeric($data['passwordLength'] ?? '') ? $data['passwordLength'] : $model->passwordLength;
+        $model->passwordLength = is_numeric($data['passwordLength'] ?? '') ? intval($data['passwordLength']) : $model->passwordLength;
         $model->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($model);
