@@ -783,7 +783,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             ':amount' => $dataAmount,
             ':currency' => $invoice->currency,
             ':description' => $title,
-            ':buyer_email' => $invoice->buyer_email,
+            ':buyer_email' => htmlspecialchars((string) $invoice->buyer_email, ENT_QUOTES, 'UTF-8'),
             ':buyer_name' => htmlspecialchars(trim($invoice->buyer_first_name . ' ' . $invoice->buyer_last_name), ENT_QUOTES, 'UTF-8'),
             ':callbackUrl' => $payGatewayService->getCallbackUrl($payGateway, $invoice),
             ':redirectUrl' => $this->di['tools']->url('invoice/' . $invoice->hash),
