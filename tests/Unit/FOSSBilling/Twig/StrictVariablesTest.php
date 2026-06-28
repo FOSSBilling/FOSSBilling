@@ -55,6 +55,9 @@ test('all templates render under strict_variables', function (): void {
         // such finding fails the test. Test-infra findings are informational
         // only and never fail the test.
         expect($realBugs)->toBeEmpty("New strict-variables findings detected:\n" . formatFindings($realBugs));
+    } else {
+        // No baseline: still assert so failures are never silent.
+        expect($realBugs)->toBeEmpty("Strict-variables real-bug findings detected (no baseline present):\n" . formatFindings($realBugs));
     }
 });
 
