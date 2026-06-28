@@ -25,8 +25,13 @@ test('validate order data', function (string $field, string $exceptionMessage, i
 
     unset($data[$field]);
 
-    expect(fn () => $service->validateOrderData($data))
-        ->toThrow(FOSSBilling\Exception::class, $exceptionMessage);
+    try {
+        $service->validateOrderData($data);
+        expect(true)->toBeFalse('Expected FOSSBilling\Exception was not thrown.');
+    } catch (FOSSBilling\Exception $e) {
+        expect($e->getMessage())->toBe($exceptionMessage);
+        expect($e->getCode())->toBe($excCode);
+    }
 })->with([
     ['server_id', 'Hosting product is not configured completely. Configure server for hosting product.', 701],
     ['hosting_plan_id', 'Hosting product is not configured completely. Configure hosting plan for hosting product.', 702],
@@ -74,11 +79,11 @@ test('action renew', function (): void {
     $orderModel = new Model_ClientOrder();
     $orderModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $model = new Model_ServiceHostingHp();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $hostingPlanModel = new Model_ServiceHostingHp();
+    $hostingPlanModel->loadBean(new Tests\Helpers\DummyBean());
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
-    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($model);
+    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($hostingPlanModel);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('store')->atLeast()->once();
