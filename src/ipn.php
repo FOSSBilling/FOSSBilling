@@ -53,7 +53,8 @@ $ipn = [
 ];
 
 $contentType = $request->headers->get('Content-Type', '');
-if (str_contains($contentType, 'application/json') && !empty($rawBody)) {
+$isJsonWebhook = str_contains($contentType, 'application/json') && !empty($rawBody);
+if ($isJsonWebhook) {
     $ipn['skip_validation'] = true;
 }
 
@@ -64,8 +65,6 @@ try {
     // When running under FastCGI, decouple the HTTP response from processing:
     // create the transaction, send 200, then finish in the background via
     // fastcgi_finish_request().
-    $isJsonWebhook = str_contains($contentType, 'application/json') && !empty($rawBody);
-
     if ($isJsonWebhook && function_exists('fastcgi_finish_request')) {
         $transactionId = $service->create($ipn);
         $res = ['result' => $transactionId, 'error' => null];

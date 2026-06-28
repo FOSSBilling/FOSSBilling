@@ -190,7 +190,7 @@ describe('handleSubscriptionCreated', function (): void {
             ->and($capturedSubscriptionData)->not->toBeNull()
             ->and($capturedSubscriptionData['currency'])->toBe('USD')
             ->and($capturedSubscriptionData['sid'])->toBe('sub_123')
-            ->and($tx->invoice_id)->toBe('5');
+            ->and($tx->invoice_id)->toBe(5);
     });
 
     test('returns false when metadata is missing', function (): void {

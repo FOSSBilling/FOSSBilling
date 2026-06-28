@@ -419,9 +419,10 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
      */
     private function processInitialSubscriptionPayment($api_admin, Model_Transaction $tx, Model_Invoice $invoice, Stripe\Subscription $subscription): void
     {
-        // Already-paid guard — prevents double-crediting when both the redirect
-        // flow and webhook handler process the same subscription.
-        if ($invoice->status === Model_Invoice::STATUS_PAID) {
+        // Already-paid guard — reload from DB to narrow the TOCTOU window when
+        // the redirect flow and webhook handler race on the same subscription.
+        $fresh = $this->di['db']->findOne('Invoice', 'id = :id', [':id' => $invoice->id]);
+        if ($fresh instanceof Model_Invoice && $fresh->status === Model_Invoice::STATUS_PAID) {
             return;
         }
 
@@ -523,7 +524,9 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         }
 
         if ($keepTransaction) {
-            $tx->status = Model_Transaction::STATUS_PROCESSED;
+            if ($tx->status !== Model_Transaction::STATUS_ERROR) {
+                $tx->status = Model_Transaction::STATUS_PROCESSED;
+            }
         } else {
             $this->di['db']->trash($tx);
 
@@ -544,7 +547,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             return false;
         }
 
-        $tx->invoice_id = $invoiceId;
+        $tx->invoice_id = (int) $invoiceId;
 
         // Subscription record is now created inline by processSetupIntent and
         // handleSetupIntentSucceededWebhook. This handler only serves as a
@@ -615,23 +618,20 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             $this->di['db']->store($tx);
         }
 
-        // Skip if the FOSSBilling invoice is already paid — the redirect flow
-        // (processSetupIntent → processInitialSubscriptionPayment) may have
-        // processed it before the webhook arrived.
+        $isInitialPayment = ($stripeInvoice->billing_reason ?? '') === 'subscription_create';
+
+        // Single DB fetch covers: (a) skip if already paid, (b) billing_reason fallback.
         if ($invoiceId) {
             $existingInvoice = $this->di['db']->findOne('Invoice', 'id = :id', [':id' => (int) $invoiceId]);
-            if ($existingInvoice instanceof Model_Invoice && $existingInvoice->status === Model_Invoice::STATUS_PAID) {
-                return false;
-            }
-        }
-
-        $isInitialPayment = ($stripeInvoice->billing_reason ?? '') === 'subscription_create';
-        // Fallback: if billing_reason is inconclusive but the original invoice
-        // still exists and is unpaid, treat this as the initial payment.
-        if (!$isInitialPayment && $invoiceId) {
-            $originalInvoice = $this->di['db']->findOne('Invoice', 'id = :id', [':id' => (int) $invoiceId]);
-            if ($originalInvoice instanceof Model_Invoice && $originalInvoice->status === Model_Invoice::STATUS_UNPAID) {
-                $isInitialPayment = true;
+            if ($existingInvoice instanceof Model_Invoice) {
+                // Skip if already paid — redirect flow may have processed it first.
+                if ($existingInvoice->status === Model_Invoice::STATUS_PAID) {
+                    return false;
+                }
+                // Fallback: billing_reason inconclusive but original invoice still unpaid.
+                if (!$isInitialPayment && $existingInvoice->status === Model_Invoice::STATUS_UNPAID) {
+                    $isInitialPayment = true;
+                }
             }
         }
 
@@ -781,10 +781,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $tx->txn_status = $paymentIntent->status;
         $tx->status = Model_Transaction::STATUS_ERROR;
         $tx->error = 'Payment failed via webhook';
-        $tx->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($tx);
 
-        return false;
+        return true;
     }
 
     /**
@@ -874,10 +872,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $tx->txn_status = $setupIntent->status;
         $tx->status = Model_Transaction::STATUS_ERROR;
         $tx->error = 'Setup Intent failed via webhook';
-        $tx->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($tx);
 
-        return false;
+        return true;
     }
 
     /**
