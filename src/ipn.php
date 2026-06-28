@@ -53,7 +53,7 @@ $ipn = [
 ];
 
 $contentType = $request->headers->get('Content-Type', '');
-$isJsonWebhook = str_contains($contentType, 'application/json') && !empty($rawBody);
+$isJsonWebhook = str_contains((string) $contentType, 'application/json') && !empty($rawBody);
 if ($isJsonWebhook) {
     $ipn['skip_validation'] = true;
 }

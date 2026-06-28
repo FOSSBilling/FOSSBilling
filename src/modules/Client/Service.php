@@ -890,7 +890,7 @@ class Service implements InjectionAwareInterface
                 continue;
             }
             $title = strtolower((string) ($fieldConfig['title'] ?? ''));
-            if ($title === '' || !array_filter($keywords, fn ($k) => str_contains($title, $k))) {
+            if ($title === '' || !array_filter($keywords, fn ($k): bool => str_contains($title, (string) $k))) {
                 continue;
             }
             $value = $client->{$fieldName} ?? null;
