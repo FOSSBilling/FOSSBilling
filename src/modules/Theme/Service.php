@@ -66,6 +66,7 @@ class Service implements InjectionAwareInterface
                 'display_name' => __trans('Manage themes'),
                 'description' => __trans('Allows the staff member to select themes and manage presets.'),
             ],
+            'manage_settings' => [],
         ];
     }
 
