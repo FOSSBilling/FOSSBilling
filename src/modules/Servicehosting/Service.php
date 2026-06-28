@@ -1101,11 +1101,10 @@ class Service implements InjectionAwareInterface
 
         if (is_array($inConfig)) {
             foreach ($inConfig as $key => $val) {
-                if (isset($config[$key])) {
-                    $config[$key] = $val;
-                }
-                if (isset($config[$key]) && empty($val)) {
+                if (empty($val)) {
                     unset($config[$key]);
+                } else {
+                    $config[$key] = $val;
                 }
             }
         }
