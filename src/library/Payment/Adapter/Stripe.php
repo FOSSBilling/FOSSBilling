@@ -245,7 +245,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             return false;
         }
 
-        $payload = json_decode($rawBody, true);
+        $payload = json_decode((string) $rawBody, true);
 
         return is_array($payload) && isset($payload['type']);
     }
@@ -477,9 +477,9 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         if (!empty($webhookSecret) && !empty($sigHeader)) {
             try {
                 $event = Stripe\Webhook::constructEvent($rawBody, $sigHeader, $webhookSecret);
-            } catch (UnexpectedValueException $e) {
+            } catch (UnexpectedValueException) {
                 throw new FOSSBilling\Exception('Invalid Stripe webhook payload');
-            } catch (Stripe\Exception\SignatureVerificationException $e) {
+            } catch (Stripe\Exception\SignatureVerificationException) {
                 throw new FOSSBilling\Exception('Invalid Stripe webhook signature');
             }
         } else {
@@ -1186,7 +1186,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     {
         $unit = preg_replace('/[^A-Za-z]/', '', $period);
 
-        return match (strtoupper($unit)) {
+        return match (strtoupper((string) $unit)) {
             'D' => 'day',
             'W' => 'week',
             'M' => 'month',

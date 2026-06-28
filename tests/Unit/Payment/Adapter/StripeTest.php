@@ -27,7 +27,6 @@ function invokePrivateMethod(object $obj, string $method, array $args = []): mix
 {
     $reflection = new ReflectionClass($obj);
     $methodObj = $reflection->getMethod($method);
-    $methodObj->setAccessible(true);
 
     return $methodObj->invokeArgs($obj, $args);
 }
@@ -395,11 +394,9 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
 
         $di = container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(function ($module, $service = null) use ($transactionService, $invoiceService) {
-            return match ($service) {
-                'Transaction' => $transactionService,
-                default => $invoiceService,
-            };
+        $di['mod_service'] = $di->protect(fn ($module, $service = null) => match ($service) {
+            'Transaction' => $transactionService,
+            default => $invoiceService,
         });
 
         $this->adapter->setDi($di);
@@ -608,11 +605,9 @@ describe('handleInvoicePaymentSucceeded with invoice_payment event (API 2026-06-
 
         $di = container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(function ($module, $service = null) use ($transactionService, $invoiceService) {
-            return match ($service) {
-                'Transaction' => $transactionService,
-                default => $invoiceService,
-            };
+        $di['mod_service'] = $di->protect(fn ($module, $service = null) => match ($service) {
+            'Transaction' => $transactionService,
+            default => $invoiceService,
         });
 
         $this->adapter->setDi($di);
@@ -723,12 +718,10 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
 
         $di = container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = $di->protect(function ($module, $service = null) use ($transactionService, $invoiceService, $clientService) {
-            return match (true) {
-                $service === 'Transaction' => $transactionService,
-                $module === 'client' => $clientService,
-                default => $invoiceService,
-            };
+        $di['mod_service'] = $di->protect(fn ($module, $service = null) => match (true) {
+            $service === 'Transaction' => $transactionService,
+            $module === 'client' => $clientService,
+            default => $invoiceService,
         });
 
         $this->adapter->setDi($di);
