@@ -226,30 +226,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         }
 
         $payload = json_decode($rawBody, true);
-        if (!is_array($payload) || !isset($payload['type'])) {
-            return false;
-        }
 
-        $eventType = $payload['type'];
-        $webhookPrefixes = ['customer.subscription.', 'invoice.', 'invoice_payment.'];
-
-        foreach ($webhookPrefixes as $prefix) {
-            if (str_starts_with($eventType, $prefix)) {
-                return true;
-            }
-        }
-
-        // Handle specific PaymentIntent and SetupIntent events by exact match
-        // to avoid creating transactions for noisy lifecycle events (e.g.
-        // payment_intent.created, payment_intent.processing).
-        $specificTypes = [
-            'payment_intent.succeeded',
-            'payment_intent.payment_failed',
-            'setup_intent.succeeded',
-            'setup_intent.setup_failed',
-        ];
-
-        return in_array($eventType, $specificTypes, true);
+        return is_array($payload) && isset($payload['type']);
     }
 
     private function processPaymentIntent(Model_Transaction $tx, ?Model_Invoice $invoice, array $data): void
@@ -950,7 +928,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 'client_id' => (string) $invoice->client_id,
                 'invoice_id' => (string) $invoice->id,
             ],
-        ], ['idempotency_key' => 'pi_invoice_' . $invoice->id]);
+        ]);
 
         $pubKey = ($this->config['test_mode']) ? $this->config['test_pub_key'] : $this->config['pub_key'];
 
@@ -1056,7 +1034,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 'invoice_id' => $invoice->id,
                 'price_id' => $price->id,
             ],
-        ], ['idempotency_key' => 'si_invoice_' . $invoice->id]);
+        ]);
 
         $pubKey = ($this->config['test_mode']) ? $this->config['test_pub_key'] : $this->config['pub_key'];
 

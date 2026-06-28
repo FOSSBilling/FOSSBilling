@@ -81,20 +81,14 @@ describe('isStripeWebhook', function (): void {
         expect($result)->toBeTrue();
     });
 
-    test('does not identify non-subscription webhook events', function (): void {
-        $data = ['http_raw_post_data' => json_encode(['type' => 'charge.updated'])];
-
-        $result = invokePrivateMethod($this->adapter, 'isStripeWebhook', [$data]);
-
-        expect($result)->toBeFalse();
-    });
-
-    test('does not identify noisy payment_intent lifecycle events', function (): void {
+    test('identifies all Stripe webhook events for clean processing', function (): void {
         $data = ['http_raw_post_data' => json_encode(['type' => 'payment_intent.created'])];
 
         $result = invokePrivateMethod($this->adapter, 'isStripeWebhook', [$data]);
 
-        expect($result)->toBeFalse();
+        // All events are recognized so they get marked processed instead of
+        // leaving noisy $0.00 received transactions.
+        expect($result)->toBeTrue();
     });
 
     test('identifies payment_intent.succeeded webhook', function (): void {
