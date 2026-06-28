@@ -210,7 +210,7 @@ class Service implements InjectionAwareInterface
         }
 
         // Update the service's password to a placeholder value for security reasons
-        $model->pass = '********';
+        $model->pass = self::PASSWORD_PLACEHOLDER;
 
         // Save the service
         $this->di['db']->store($model);
@@ -320,7 +320,7 @@ class Service implements InjectionAwareInterface
         $adapter->createAccount($account);
 
         // Update the service's password to a placeholder value for security reasons
-        $model->pass = '********';
+        $model->pass = self::PASSWORD_PLACEHOLDER;
 
         // Save the service
         $this->di['db']->store($model);
@@ -941,7 +941,7 @@ class Service implements InjectionAwareInterface
         $model->username = $this->normalizeCredential('username', $data['username'] ?? null, $model->username, $model->id, false);
         $model->password = $this->normalizeCredential('password', $data['password'] ?? null, $model->password, $model->id, true);
         $model->accesshash = $this->normalizeCredential('accesshash', $data['accesshash'] ?? null, $model->accesshash, $model->id, true);
-        $model->passwordLength = is_numeric($data['passwordLength'] ?? '') ? $data['passwordLength'] : $model->passwordLength;
+        $model->passwordLength = is_numeric($data['passwordLength'] ?? '') ? intval($data['passwordLength']) : $model->passwordLength;
         $model->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($model);
@@ -959,11 +959,7 @@ class Service implements InjectionAwareInterface
      */
     private function normalizeCredential(string $field, mixed $incoming, mixed $existing, mixed $serverId, bool $audit): mixed
     {
-        if ($incoming === null) {
-            return $existing;
-        }
-
-        if (!is_scalar($incoming)) {
+        if ($incoming === null || !is_scalar($incoming)) {
             return $existing;
         }
 
@@ -1105,11 +1101,10 @@ class Service implements InjectionAwareInterface
 
         if (is_array($inConfig)) {
             foreach ($inConfig as $key => $val) {
-                if (isset($config[$key])) {
-                    $config[$key] = $val;
-                }
-                if (isset($config[$key]) && empty($val)) {
+                if (empty($val)) {
                     unset($config[$key]);
+                } else {
+                    $config[$key] = $val;
                 }
             }
         }

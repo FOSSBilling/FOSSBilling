@@ -25,8 +25,13 @@ test('validate order data', function (string $field, string $exceptionMessage, i
 
     unset($data[$field]);
 
-    expect(fn () => $service->validateOrderData($data))
-        ->toThrow(FOSSBilling\Exception::class, $exceptionMessage);
+    try {
+        $service->validateOrderData($data);
+        expect(true)->toBeFalse('Expected FOSSBilling\Exception was not thrown.');
+    } catch (FOSSBilling\Exception $e) {
+        expect($e->getMessage())->toBe($exceptionMessage);
+        expect($e->getCode())->toBe($excCode);
+    }
 })->with([
     ['server_id', 'Hosting product is not configured completely. Configure server for hosting product.', 701],
     ['hosting_plan_id', 'Hosting product is not configured completely. Configure hosting plan for hosting product.', 702],
@@ -49,8 +54,10 @@ test('action create', function (): void {
 
     $hostingServerModel = new Model_ServiceHostingServer();
     $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
+    $hostingServerModel->id = $confArr['server_id'];
     $hostingPlansModel = new Model_ServiceHostingHp();
     $hostingPlansModel->loadBean(new Tests\Helpers\DummyBean());
+    $hostingPlansModel->id = $confArr['hosting_plan_id'];
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getExistingModelById')->atLeast()->once()->andReturn($hostingServerModel, $hostingPlansModel);
 
@@ -67,6 +74,11 @@ test('action create', function (): void {
 
     $service->setDi($di);
     $service->action_create($orderModel);
+
+    expect($servhostingModel->service_hosting_server_id)->toBe($confArr['server_id']);
+    expect($servhostingModel->service_hosting_hp_id)->toBe($confArr['hosting_plan_id']);
+    expect($servhostingModel->sld)->toBe($confArr['sld']);
+    expect($servhostingModel->tld)->toBe($confArr['tld']);
 });
 
 test('action renew', function (): void {
@@ -74,11 +86,11 @@ test('action renew', function (): void {
     $orderModel = new Model_ClientOrder();
     $orderModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $model = new Model_ServiceHostingHp();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $hostingServiceModel = new Model_ServiceHosting();
+    $hostingServiceModel->loadBean(new Tests\Helpers\DummyBean());
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
-    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($model);
+    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($hostingServiceModel);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('store')->atLeast()->once();
@@ -99,7 +111,7 @@ test('action renew order without active service', function (): void {
     $orderModel->id = 1;
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
-    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once();
+    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturnNull();
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
@@ -145,7 +157,7 @@ test('action suspend order without active service', function (): void {
     $orderModel->id = 1;
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
-    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once();
+    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturnNull();
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
@@ -191,7 +203,7 @@ test('action unsuspend order without active service', function (): void {
     $orderModel->id = 1;
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
-    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once();
+    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturnNull();
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
@@ -237,7 +249,7 @@ test('action cancel order without active service', function (): void {
     $orderModel->id = 1;
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
-    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once();
+    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturnNull();
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
@@ -800,7 +812,7 @@ test('get hp pairs', function (): void {
 
 test('get hp search query', function (): void {
     $service = new Service();
-    $result = $service->getServersSearchQuery([]);
+    $result = $service->getHpSearchQuery([]);
     expect($result[0])->toBeString();
     expect($result[1])->toBeArray();
     expect($result[1])->toEqual([]);

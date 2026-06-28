@@ -94,6 +94,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 'display_name' => __trans('Delete mass mail messages'),
                 'description' => __trans('Allows the staff member to delete mass mail messages.'),
             ],
+            'manage_settings' => [],
         ];
     }
 

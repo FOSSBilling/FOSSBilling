@@ -42,6 +42,7 @@ class Service implements InjectionAwareInterface
                 'display_name' => __trans('Log activity'),
                 'description' => __trans('Allows the staff member to add entries to the activity log and email log.'),
             ],
+            'manage_settings' => [],
         ];
     }
 

@@ -145,7 +145,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
     public function getInvoiceTitle(Model_Invoice $invoice): string
     {
-        $invoiceItems = $this->di['db']->getAll('SELECT title from invoice_item WHERE invoice_id = :invoice_id', [':invoice_id' => $invoice->id]);
+        $invoiceItems = $this->di['db']->getAll('SELECT title FROM invoice_item WHERE invoice_id = :invoice_id', [':invoice_id' => $invoice->id]);
 
         $params = [
             ':id' => sprintf('%05s', $invoice->nr),
@@ -423,7 +423,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             'sid' => $stripeSubscription->id,
             'status' => 'active',
             'period' => $this->getSubscriptionPeriodForInvoiceId((int) $invoiceId),
-            'amount' => ($stripeSubscription->plan->amount ?? 0) / 100,
+            'amount' => $this->getAmountFromMinorUnits($stripeSubscription->plan->amount ?? 0, $stripeSubscription->currency ?? ''),
             'rel_type' => 'invoice',
             'rel_id' => $invoiceId,
         ];
@@ -496,7 +496,10 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
         $bd = [
             'id' => $clientId,
-            'amount' => ($stripeInvoice->amount_paid ?? 0) / 100,
+            'amount' => $this->getAmountFromMinorUnits(
+                (int) ($stripeInvoice->amount_paid ?? 0),
+                (string) ($stripeInvoice->currency ?? '')
+            ),
             'description' => $isInitialPayment
                 ? 'Stripe subscription initial payment ' . $stripeInvoice->id
                 : 'Stripe subscription recurring payment ' . $stripeInvoice->id,
@@ -559,10 +562,17 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
     private function getOrCreateCustomer(Model_Invoice $invoice): Stripe\Customer
     {
-        $customers = $this->stripe->customers->search([
-            'query' => "email:'" . addslashes($invoice->buyer_email) . "'",
-            'limit' => 1,
-        ]);
+        $validatedEmail = filter_var($invoice->buyer_email, FILTER_VALIDATE_EMAIL);
+
+        if ($validatedEmail !== false) {
+            $escapedEmail = str_replace(['\\', '\''], ['\\\\', '\\\''], $validatedEmail);
+            $customers = $this->stripe->customers->search([
+                'query' => "email:'" . $escapedEmail . "'",
+                'limit' => 1,
+            ]);
+        } else {
+            $customers = (object) ['data' => []];
+        }
 
         if (count($customers->data) > 0) {
             return $customers->data[0];
@@ -612,10 +622,10 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         }
 
         $productName = $invoiceItems[0]['title'];
-        $escapedName = addslashes($productName);
 
+        $escapedProductName = str_replace("'", "\\'", $productName);
         $products = $this->stripe->products->search([
-            'query' => "name:'" . $escapedName . "'",
+            'query' => "name:'{$escapedProductName}'",
             'limit' => 1,
         ]);
 
@@ -640,13 +650,14 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $prices = $this->stripe->prices->all([
             'product' => $product->id,
             'recurring' => ['interval' => $interval],
-            'unit_amount' => $amount,
             'currency' => $currency,
-            'limit' => 1,
+            'limit' => 100,
         ]);
 
-        if (count($prices->data) > 0) {
-            return $prices->data[0];
+        foreach ($prices->data as $existingPrice) {
+            if ($existingPrice->unit_amount === $amount) {
+                return $existingPrice;
+            }
         }
 
         return $this->stripe->prices->create([
@@ -795,8 +806,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             ':amount' => $dataAmount,
             ':currency' => $invoice->currency,
             ':description' => $title,
-            ':buyer_email' => $invoice->buyer_email,
-            ':buyer_name' => trim($invoice->buyer_first_name . ' ' . $invoice->buyer_last_name),
+            ':buyer_email' => htmlspecialchars((string) $invoice->buyer_email, ENT_QUOTES, 'UTF-8'),
+            ':buyer_name' => htmlspecialchars(trim($invoice->buyer_first_name . ' ' . $invoice->buyer_last_name), ENT_QUOTES, 'UTF-8'),
             ':callbackUrl' => $payGatewayService->getCallbackUrl($payGateway, $invoice),
             ':redirectUrl' => $this->di['tools']->url('invoice/' . $invoice->hash),
             ':invoice_hash' => $invoice->hash,

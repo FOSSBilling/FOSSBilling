@@ -50,6 +50,7 @@ class Service implements InjectionAwareInterface
                 'display_name' => __trans('Export orders'),
                 'description' => __trans('Allows the staff member to export order data as CSV.'),
             ],
+            'manage_settings' => [],
         ];
     }
 
