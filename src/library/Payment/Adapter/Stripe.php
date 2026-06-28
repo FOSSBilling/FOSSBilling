@@ -269,6 +269,20 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 return;
             }
 
+            // Already-paid guard — prevents double-crediting when the
+            // payment_intent.succeeded webhook processed the payment
+            // before the redirect flow runs.
+            if ($invoice instanceof Model_Invoice) {
+                $fresh = $this->di['db']->findOne('Invoice', 'id = :id', [':id' => $invoice->id]);
+                if ($fresh instanceof Model_Invoice && $fresh->status === Model_Invoice::STATUS_PAID) {
+                    $tx->status = Model_Transaction::STATUS_PROCESSED;
+                    $tx->updated_at = date('Y-m-d H:i:s');
+                    $this->di['db']->store($tx);
+
+                    return;
+                }
+            }
+
             $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
             if (!$transactionService->claimForProcessing((int) $tx->id)) {
                 return;
@@ -715,12 +729,14 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $tx->currency = $paymentIntent->currency;
         $tx->type = Payment_Transaction::TXTYPE_PAYMENT;
 
-        // Dedup: skip if already processed via the redirect flow.
-        // The redirect transaction stores txn_id = PaymentIntent ID.
+        // Dedup: skip if already processed or currently being processed via
+        // the redirect flow. The redirect transaction stores txn_id = PaymentIntent ID.
+        // We check both PROCESSING and PROCESSED to catch the race where the
+        // redirect flow is mid-processing when the webhook arrives.
         $existing = $this->di['db']->findOne(
             'Transaction',
-            'txn_id = :txn_id AND status = :status',
-            [':txn_id' => $paymentIntent->id, ':status' => Model_Transaction::STATUS_PROCESSED]
+            'txn_id = :txn_id AND status IN (:s1, :s2)',
+            [':txn_id' => $paymentIntent->id, ':s1' => Model_Transaction::STATUS_PROCESSING, ':s2' => Model_Transaction::STATUS_PROCESSED]
         );
         if ($existing instanceof Model_Transaction) {
             $tx->invoice_id = $existing->invoice_id;
@@ -793,11 +809,11 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             return false;
         }
 
-        // Dedup: skip if already processed via the redirect flow.
+        // Dedup: skip if already processed or being processed via the redirect flow.
         $existing = $this->di['db']->findOne(
             'Transaction',
-            'txn_id = :txn_id AND status = :status',
-            [':txn_id' => $setupIntent->id, ':status' => Model_Transaction::STATUS_PROCESSED]
+            'txn_id = :txn_id AND status IN (:s1, :s2)',
+            [':txn_id' => $setupIntent->id, ':s1' => Model_Transaction::STATUS_PROCESSING, ':s2' => Model_Transaction::STATUS_PROCESSED]
         );
         if ($existing instanceof Model_Transaction) {
             $tx->invoice_id = $existing->invoice_id;
@@ -905,6 +921,16 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
      */
     private function applyOneTimePayment(Model_Transaction $tx, ?Model_Invoice $invoice, object $charge): void
     {
+        // Reload the invoice from the database to get the freshest status.
+        // This narrows the TOCTOU race window when the redirect flow and
+        // webhook process the same payment concurrently.
+        if ($invoice instanceof Model_Invoice) {
+            $fresh = $this->di['db']->findOne('Invoice', 'id = :id', [':id' => $invoice->id]);
+            if ($fresh instanceof Model_Invoice) {
+                $invoice = $fresh;
+            }
+        }
+
         // Skip if the invoice is already paid — prevents double-crediting
         // when the webhook arrives after the redirect flow.
         if ($invoice instanceof Model_Invoice && $invoice->status === Model_Invoice::STATUS_PAID) {

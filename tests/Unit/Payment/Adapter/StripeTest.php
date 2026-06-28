@@ -648,7 +648,7 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
 
         $dbMock = Mockery::mock('\Box_Database');
         $dbMock->shouldReceive('findOne')
-            ->with('Transaction', 'txn_id = :txn_id AND status = :status', Mockery::any())
+            ->with('Transaction', 'txn_id = :txn_id AND status IN (:s1, :s2)', Mockery::any())
             ->andReturn($existingTx);
         $dbMock->shouldReceive('store')->andReturn($tx->id);
 
@@ -763,7 +763,7 @@ describe('handleSetupIntentSucceededWebhook', function (): void {
 
         $dbMock = Mockery::mock('\Box_Database');
         $dbMock->shouldReceive('findOne')
-            ->with('Transaction', 'txn_id = :txn_id AND status = :status', Mockery::any())
+            ->with('Transaction', 'txn_id = :txn_id AND status IN (:s1, :s2)', Mockery::any())
             ->andReturn($existingTx);
 
         $di = container();
@@ -969,10 +969,13 @@ describe('applyOneTimePayment already-paid guard', function (): void {
         $transactionService = Mockery::mock();
 
         $dbMock = Mockery::mock('\Box_Database');
+        $dbMock->shouldReceive('findOne')
+            ->with('Invoice', 'id = :id', Mockery::any())
+            ->andReturn($invoice);
 
         $di = container();
         $di['db'] = $dbMock;
-        $di['mod_service'] = function ($name, $sub = null) use ($clientService, $invoiceService, $transactionService) {
+        $di['mod_service'] = $di->protect(function ($name, $sub = null) use ($clientService, $invoiceService, $transactionService) {
             if ($name === 'client') {
                 return $clientService;
             }
@@ -984,7 +987,7 @@ describe('applyOneTimePayment already-paid guard', function (): void {
             }
 
             return Mockery::mock();
-        };
+        });
         $this->adapter->setDi($di);
 
         $charge = new stdClass();
