@@ -210,7 +210,7 @@ class Service implements InjectionAwareInterface
         }
 
         // Update the service's password to a placeholder value for security reasons
-        $model->pass = '********';
+        $model->pass = self::PASSWORD_PLACEHOLDER;
 
         // Save the service
         $this->di['db']->store($model);
