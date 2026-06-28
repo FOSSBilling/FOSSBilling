@@ -422,7 +422,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             'sid' => $stripeSubscription->id,
             'status' => 'active',
             'period' => $this->getSubscriptionPeriodForInvoiceId((int) $invoiceId),
-            'amount' => ($stripeSubscription->plan->amount ?? 0) / 100,
+            'amount' => $this->getAmountFromMinorUnits($stripeSubscription->plan->amount ?? 0, $stripeSubscription->currency ?? ''),
             'rel_type' => 'invoice',
             'rel_id' => $invoiceId,
         ];
