@@ -363,7 +363,7 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
 
         $dbMock = Mockery::mock('\Box_Database');
         $dbMock->shouldReceive('store')->andReturn($tx->id);
-        // Dedup check — no prior transaction processed this Stripe invoice.
+        // Duplicate-event check — no prior transaction processed this Stripe invoice.
         $dbMock->shouldReceive('findOne')
             ->with('Transaction', Mockery::any(), Mockery::any())
             ->andReturn(null);
