@@ -506,7 +506,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffUpdate', 'params' => ['id' => $model->id]]);
 
-        $this->di['logger']->info('Updated staff member %s details', $model->id);
+        $this->di['logger']->info('Updated staff member #%s "%s" details; status is "%s"', $model->id, $model->name, $model->status);
 
         return true;
     }
@@ -525,12 +525,13 @@ class Service implements InjectionAwareInterface
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffDelete', 'params' => ['id' => $model->id]]);
 
         $id = $model->id;
+        $name = $model->name;
         $this->adminGroupMemberRepository->deleteMembershipsForAdmin((int) $id);
         $this->di['db']->trash($model);
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffDelete', 'params' => ['id' => $id]]);
 
-        $this->di['logger']->info('Deleted staff member %s', $id);
+        $this->di['logger']->info('Deleted staff member #%s "%s"', $id, $name);
 
         return true;
     }
@@ -551,7 +552,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffPasswordChange', 'params' => ['id' => $model->id]]);
 
-        $this->di['logger']->info('Changed staff member %s password', $model->id);
+        $this->di['logger']->info('Changed password for staff member #%s "%s"', $model->id, $model->name);
 
         return true;
     }
@@ -595,7 +596,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffCreate', 'params' => ['id' => $newId]]);
 
-        $this->di['logger']->info('Created new staff member %s', $newId);
+        $this->di['logger']->info('Created staff member #%s "%s" in group #%s "%s"', $newId, $model->name, $groupId, $group->getName());
 
         return (int) $newId;
     }
@@ -615,7 +616,7 @@ class Service implements InjectionAwareInterface
         $this->di['em']->persist($group);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Created new staff group %s', $group->getId());
+        $this->di['logger']->info('Created staff group #%s "%s" under parent group #%s "%s"', $group->getId(), $group->getName(), $parent->getId(), $parent->getName());
 
         return (int) $group->getId();
     }
@@ -627,6 +628,7 @@ class Service implements InjectionAwareInterface
         }
 
         $id = $model->getId();
+        $name = $model->getName();
         if ($model->isProtected()) {
             throw new \FOSSBilling\InformationException('Protected staff groups cannot be removed');
         }
@@ -643,7 +645,7 @@ class Service implements InjectionAwareInterface
         $this->di['em']->flush();
         $this->permissionCache = [];
 
-        $this->di['logger']->info('Deleted staff group %s', $id);
+        $this->di['logger']->info('Deleted staff group #%s "%s"', $id, $name);
 
         return true;
     }
@@ -657,6 +659,9 @@ class Service implements InjectionAwareInterface
         if ($model->isProtected()) {
             throw new \FOSSBilling\InformationException('Protected staff groups cannot be modified');
         }
+
+        $parentChanged = array_key_exists('parent_id', $data);
+        $permissionsChanged = array_key_exists('permissions', $data);
 
         if (isset($data['name'])) {
             $model->setName($data['name']);
@@ -696,7 +701,13 @@ class Service implements InjectionAwareInterface
         $this->di['em']->flush();
         $this->permissionCache = [];
 
-        $this->di['logger']->info('Updated staff group %s', $model->getId());
+        $this->di['logger']->info(
+            'Updated staff group #%s "%s"; parent changed: %s; permissions changed: %s',
+            $model->getId(),
+            $model->getName(),
+            $parentChanged ? 'yes' : 'no',
+            $permissionsChanged ? 'yes' : 'no',
+        );
 
         return true;
     }
@@ -717,7 +728,7 @@ class Service implements InjectionAwareInterface
         $this->di['em']->flush();
         $this->permissionCache = [];
 
-        $this->di['logger']->info('Added staff member %s to group %s', $adminId, $groupId);
+        $this->di['logger']->info('Added staff member #%s "%s" to group #%s "%s"', $adminId, $admin->name, $groupId, $group->getName());
 
         return true;
     }
@@ -743,7 +754,7 @@ class Service implements InjectionAwareInterface
         $this->di['em']->flush();
         $this->permissionCache = [];
 
-        $this->di['logger']->info('Removed staff member %s from group %s', $adminId, $groupId);
+        $this->di['logger']->info('Removed staff member #%s "%s" from group #%s "%s"', $adminId, $admin->name, $groupId, $group->getName());
 
         return true;
     }
