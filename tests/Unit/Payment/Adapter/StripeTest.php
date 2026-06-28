@@ -458,6 +458,66 @@ describe('resolveStripeInvoice', function (): void {
     });
 });
 
+describe('extractSubscriptionId', function (): void {
+    test('reads top-level subscription from legacy API invoices', function (): void {
+        $invoice = new stdClass();
+        $invoice->subscription = 'sub_legacy_123';
+
+        $result = invokePrivateMethod($this->adapter, 'extractSubscriptionId', [$invoice]);
+
+        expect($result)->toBe('sub_legacy_123');
+    });
+
+    test('reads nested subscription from new API (2026-06-24+) invoices', function (): void {
+        $invoice = new stdClass();
+        $invoice->parent = (object) [
+            'type' => 'subscription_details',
+            'subscription_details' => (object) [
+                'subscription' => 'sub_new_456',
+                'metadata' => ['client_id' => '1', 'invoice_id' => '95'],
+            ],
+        ];
+
+        $result = invokePrivateMethod($this->adapter, 'extractSubscriptionId', [$invoice]);
+
+        expect($result)->toBe('sub_new_456');
+    });
+
+    test('reads subscription from line items as fallback', function (): void {
+        $invoice = new stdClass();
+        $invoice->lines = (object) [
+            'data' => [
+                (object) [
+                    'parent' => (object) [
+                        'type' => 'subscription_item_details',
+                        'subscription_item_details' => (object) [
+                            'subscription' => 'sub_line_789',
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = invokePrivateMethod($this->adapter, 'extractSubscriptionId', [$invoice]);
+
+        expect($result)->toBe('sub_line_789');
+    });
+
+    test('returns null when no subscription reference exists', function (): void {
+        $invoice = new stdClass();
+
+        $result = invokePrivateMethod($this->adapter, 'extractSubscriptionId', [$invoice]);
+
+        expect($result)->toBeNull();
+    });
+
+    test('returns null for null input', function (): void {
+        $result = invokePrivateMethod($this->adapter, 'extractSubscriptionId', [null]);
+
+        expect($result)->toBeNull();
+    });
+});
+
 describe('handleInvoicePaymentSucceeded with invoice_payment event (API 2026-06-24+)', function (): void {
     test('processes invoice_payment.paid by retrieving full invoice and subscription', function (): void {
         $tx = buildTransaction();
@@ -473,11 +533,18 @@ describe('handleInvoicePaymentSucceeded with invoice_payment event (API 2026-06-
         $event = new stdClass();
         $event->data = (object) ['object' => $invoicePayment];
 
-        // Full invoice returned by invoices->retrieve
+        // Full invoice returned by invoices->retrieve (API 2026-06-24 format)
         $fullInvoice = new stdClass();
         $fullInvoice->object = 'invoice';
         $fullInvoice->id = 'in_1TnBdC';
-        $fullInvoice->subscription = 'sub_abc';
+        // New API: subscription is nested under parent.subscription_details
+        $fullInvoice->parent = (object) [
+            'type' => 'subscription_details',
+            'subscription_details' => (object) [
+                'subscription' => 'sub_abc',
+                'metadata' => ['client_id' => '5', 'invoice_id' => '42'],
+            ],
+        ];
         $fullInvoice->billing_reason = 'subscription_create';
         $fullInvoice->amount_paid = 7194;
 

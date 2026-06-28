@@ -459,11 +459,13 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     {
         $stripeInvoice = $this->resolveStripeInvoice($event->data->object);
 
-        if ($stripeInvoice === null || empty($stripeInvoice->subscription)) {
+        $subscriptionId = $this->extractSubscriptionId($stripeInvoice);
+
+        if ($stripeInvoice === null || $subscriptionId === null) {
             return;
         }
 
-        $stripeSubscription = $this->stripe->subscriptions->retrieve($stripeInvoice->subscription, []);
+        $stripeSubscription = $this->stripe->subscriptions->retrieve($subscriptionId, []);
         $invoiceId = $stripeSubscription->metadata->invoice_id ?? null;
         $clientId = $stripeSubscription->metadata->client_id ?? null;
 
@@ -540,12 +542,14 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     {
         $stripeInvoice = $this->resolveStripeInvoice($event->data->object);
 
-        if ($stripeInvoice === null || empty($stripeInvoice->subscription)) {
+        $subscriptionId = $this->extractSubscriptionId($stripeInvoice);
+
+        if ($stripeInvoice === null || $subscriptionId === null) {
             return;
         }
 
         try {
-            $s = $api_admin->invoice_subscription_get(['sid' => $stripeInvoice->subscription]);
+            $s = $api_admin->invoice_subscription_get(['sid' => $subscriptionId]);
             $api_admin->invoice_subscription_update(['id' => $s['id'], 'status' => 'canceled']);
         } catch (Exception $e) {
             if (DEBUG) {
@@ -584,8 +588,19 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             return;
         }
 
-        // Link transaction to the invoice from PaymentIntent metadata
+        // Link transaction to the invoice from PaymentIntent metadata.
+        // PaymentIntents created internally by Stripe Subscriptions don't
+        // carry FOSSBilling metadata — those are handled via invoice events.
         $invoiceId = $paymentIntent->metadata->invoice_id ?? null;
+        $clientId = $paymentIntent->metadata->client_id ?? null;
+
+        if (!$invoiceId && !$clientId) {
+            // This is a subscription-internal PaymentIntent, not a one-time
+            // payment from FOSSBilling. Skip it — the invoice_payment.paid
+            // or invoice.payment_succeeded webhook handles subscription payments.
+            return;
+        }
+
         if ($invoiceId) {
             $tx->invoice_id = (int) $invoiceId;
             $this->di['db']->store($tx);
@@ -659,7 +674,20 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
         // createStripeSubscription uses an idempotency key based on the
         // invoice ID, so this is safe even if the redirect flow races.
-        $subscription = $this->createStripeSubscription($customer, $setupIntent, $invoice);
+        // If both fire simultaneously, Stripe returns the same subscription
+        // to the first and a "concurrent request" error to the second.
+        try {
+            $subscription = $this->createStripeSubscription($customer, $setupIntent, $invoice);
+        } catch (Stripe\Exception\ApiErrorException $e) {
+            // If the redirect flow is creating the subscription concurrently,
+            // Stripe rejects the duplicate idempotency key. This is expected —
+            // the redirect flow will complete and create the subscription.
+            if (DEBUG) {
+                error_log('Stripe setup_intent webhook: subscription creation deferred to redirect flow: ' . $e->getMessage());
+            }
+
+            return;
+        }
 
         $tx->s_id = $subscription->id;
         $tx->s_period = $this->getSubscriptionPeriodForInvoice($invoice);
@@ -762,6 +790,40 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         }
 
         return $paymentObject;
+    }
+
+    /**
+     * Extract the subscription ID from a Stripe invoice object.
+     *
+     * Handles both the legacy API (where subscription is a top-level field)
+     * and API version 2026-06-24+ (where it moved to parent.subscription_details).
+     *
+     * @param object|null $stripeInvoice The invoice object from Stripe
+     *
+     * @return string|null The subscription ID (e.g. sub_123), or null if not found
+     */
+    private function extractSubscriptionId(?object $stripeInvoice): ?string
+    {
+        if ($stripeInvoice === null) {
+            return null;
+        }
+
+        // Legacy API: top-level subscription field
+        if (!empty($stripeInvoice->subscription)) {
+            return $stripeInvoice->subscription;
+        }
+
+        // New API (2026-06-24+): nested under parent.subscription_details
+        if (!empty($stripeInvoice->parent->subscription_details->subscription)) {
+            return $stripeInvoice->parent->subscription_details->subscription;
+        }
+
+        // Fallback: check line items for subscription reference
+        if (!empty($stripeInvoice->lines->data[0]->parent->subscription_item_details->subscription)) {
+            return $stripeInvoice->lines->data[0]->parent->subscription_item_details->subscription;
+        }
+
+        return null;
     }
 
     private function getOrCreateCustomer(Model_Invoice $invoice): Stripe\Customer
