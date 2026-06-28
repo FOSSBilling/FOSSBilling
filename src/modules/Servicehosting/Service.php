@@ -210,7 +210,7 @@ class Service implements InjectionAwareInterface
         }
 
         // Update the service's password to a placeholder value for security reasons
-        $model->pass = '********';
+        $model->pass = self::PASSWORD_PLACEHOLDER;
 
         // Save the service
         $this->di['db']->store($model);
@@ -959,11 +959,7 @@ class Service implements InjectionAwareInterface
      */
     private function normalizeCredential(string $field, mixed $incoming, mixed $existing, mixed $serverId, bool $audit): mixed
     {
-        if ($incoming === null) {
-            return $existing;
-        }
-
-        if (!is_scalar($incoming)) {
+        if ($incoming === null || !is_scalar($incoming)) {
             return $existing;
         }
 
