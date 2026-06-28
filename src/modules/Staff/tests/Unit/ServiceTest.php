@@ -923,7 +923,6 @@ test('toModel_AdminApiArray returns admin array data', function (): void {
             'signature' => '',
             'created_at' => '',
             'updated_at' => '',
-            'protected' => '',
             'groups' => [],
             'group' => null,
         ];
@@ -1078,15 +1077,15 @@ test('delete rejects removing last active super administrator', function (): voi
         ->toThrow(FOSSBilling\InformationException::class, 'Cannot remove the last active super administrator');
 });
 
-test('delete throws exception for protected account', function (): void {
+test('delete rejects cron account', function (): void {
     $adminModel = new Model_Admin();
     $adminModel->loadBean(new Tests\Helpers\DummyBean());
-    $adminModel->protected = 1;
+    $adminModel->system_name = Model_Admin::SYSTEM_CRON;
 
     $service = new Service();
 
     expect(fn (): bool => $service->delete($adminModel))
-        ->toThrow(FOSSBilling\Exception::class, 'This administrator account is protected and cannot be removed');
+        ->toThrow(FOSSBilling\Exception::class, 'The cron administrator account cannot be removed');
 });
 
 test('changePassword updates admin password', function (): void {

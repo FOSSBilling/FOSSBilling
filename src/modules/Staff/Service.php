@@ -441,7 +441,6 @@ class Service implements InjectionAwareInterface
         $cron->pass = $this->di['password']->hashIt($cronPass);
         $cron->name = 'System Cron Job';
         $cron->signature = '';
-        $cron->protected = 1;
         $cron->status = 'active';
         $cron->created_at = date('Y-m-d H:i:s');
         $cron->updated_at = date('Y-m-d H:i:s');
@@ -462,8 +461,6 @@ class Service implements InjectionAwareInterface
             'created_at' => $model->created_at,
             'updated_at' => $model->updated_at,
         ];
-
-        $data['protected'] = $model->protected;
 
         $data['groups'] = array_map(
             static fn (AdminGroup $group): array => $group->toApiArray(),
@@ -517,8 +514,8 @@ class Service implements InjectionAwareInterface
 
     public function delete(\Model_Admin $model): bool
     {
-        if ($model->protected) {
-            throw new \FOSSBilling\InformationException('This administrator account is protected and cannot be removed');
+        if ($model->isCron()) {
+            throw new \FOSSBilling\InformationException('The cron administrator account cannot be removed');
         }
 
         $this->checkPermissionsAndThrowException('staff', 'delete_staff');
@@ -761,7 +758,7 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('You cannot manage your own staff account here');
         }
 
-        if ($target->isCron() || $target->protected) {
+        if ($target->isCron()) {
             throw new \FOSSBilling\InformationException('You can only manage staff accounts in lower groups');
         }
 

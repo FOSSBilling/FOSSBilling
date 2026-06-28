@@ -2004,6 +2004,10 @@ class UpdatePatcher implements InjectionAwareInterface
         if ($this->tableHasColumn('admin', 'permissions')) {
             $this->executeSql('ALTER TABLE `admin` DROP COLUMN `permissions`;');
         }
+
+        if ($this->tableHasColumn('admin', 'protected')) {
+            $this->executeSql('ALTER TABLE `admin` DROP COLUMN `protected`;');
+        }
     }
 
     private function generateDownloadableStoredFilename(): string

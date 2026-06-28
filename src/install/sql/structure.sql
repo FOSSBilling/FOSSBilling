@@ -101,7 +101,6 @@ CREATE TABLE `admin` (
   `salt` varchar(255) DEFAULT NULL,
   `name` varchar(255) DEFAULT NULL,
   `signature` varchar(255) DEFAULT NULL,
-  `protected` tinyint(1) DEFAULT '0',
   `status` varchar(30) DEFAULT 'active' COMMENT 'active, inactive',
   `api_token` varchar(128) DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
