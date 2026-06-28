@@ -114,15 +114,14 @@ describe('isStripeWebhook', function (): void {
     });
 });
 
-describe('handleSubscriptionCreated currency normalization', function (): void {
-    test('uppercases lowercase currency from Stripe before passing to API', function (): void {
+describe('handleSubscriptionCreated', function (): void {
+    test('creates subscription via createOrUpdateSubscription helper', function (): void {
         $tx = buildTransaction();
         $gatewayId = 1;
 
         $stripeSubscription = new stdClass();
         $stripeSubscription->id = 'sub_123';
         $stripeSubscription->currency = 'usd';
-        $stripeSubscription->plan = (object) ['amount' => 1000];
         $stripeSubscription->metadata = (object) [
             'invoice_id' => '5',
             'client_id' => '10',
@@ -130,6 +129,12 @@ describe('handleSubscriptionCreated currency normalization', function (): void {
 
         $event = new stdClass();
         $event->data = (object) ['object' => $stripeSubscription];
+
+        $invoiceModel = new Model_Invoice();
+        $invoiceModel->loadBean(new DummyBean());
+        $invoiceModel->id = 5;
+        $invoiceModel->client_id = 10;
+        $invoiceModel->currency = 'USD';
 
         $capturedSubscriptionData = null;
 
@@ -145,74 +150,71 @@ describe('handleSubscriptionCreated currency normalization', function (): void {
 
         $dbMock = Mockery::mock('\Box_Database');
         $dbMock->shouldReceive('findOne')
-            ->with('Subscription', 'sid = :sid', [':sid' => 'sub_123'])
+            ->with('Subscription', 'sid = :sid', Mockery::any())
             ->andReturn(null);
-        $dbMock->shouldReceive('getCell')
-            ->andReturn('1M');
+        $dbMock->shouldReceive('getExistingModelById')
+            ->with('Invoice', 5)
+            ->andReturn($invoiceModel);
+        $dbMock->shouldReceive('getCell')->andReturn('1M');
+        $dbMock->shouldReceive('getAll')->andReturn([['title' => 'Test Product']]);
+
+        $invoiceService = Mockery::mock();
+        $invoiceService->shouldReceive('getTotalWithTax')->andReturn(10.00);
+
+        $subscriptionService = Mockery::mock();
+        $subscriptionService->shouldReceive('getSubscriptionPeriod')->andReturn('1M');
 
         $di = container();
         $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(function ($name, $sub = '') use ($invoiceService, $subscriptionService) {
+            if ($name === 'Invoice' && $sub === 'Subscription') {
+                return $subscriptionService;
+            }
+            if ($name === 'Invoice') {
+                return $invoiceService;
+            }
+
+            return Mockery::mock();
+        });
 
         $this->adapter->setDi($di);
 
-        invokePrivateMethod($this->adapter, 'handleSubscriptionCreated', [
+        $result = invokePrivateMethod($this->adapter, 'handleSubscriptionCreated', [
             $apiAdmin,
             $tx,
             $event,
             $gatewayId,
         ]);
 
-        expect($capturedSubscriptionData)->not->toBeNull()
+        expect($result)->toBeFalse()
+            ->and($capturedSubscriptionData)->not->toBeNull()
             ->and($capturedSubscriptionData['currency'])->toBe('USD')
+            ->and($capturedSubscriptionData['sid'])->toBe('sub_123')
             ->and($tx->invoice_id)->toBe('5');
     });
 
-    test('preserves uppercase currency from Stripe', function (): void {
+    test('returns false when metadata is missing', function (): void {
         $tx = buildTransaction();
 
         $stripeSubscription = new stdClass();
-        $stripeSubscription->id = 'sub_456';
-        $stripeSubscription->currency = 'EUR';
-        $stripeSubscription->plan = (object) ['amount' => 2000];
-        $stripeSubscription->metadata = (object) [
-            'invoice_id' => '7',
-            'client_id' => '3',
-        ];
+        $stripeSubscription->id = 'sub_no_meta';
+        $stripeSubscription->metadata = new stdClass();
 
         $event = new stdClass();
         $event->data = (object) ['object' => $stripeSubscription];
 
-        $capturedSubscriptionData = null;
-
-        $apiAdmin = Mockery::mock();
-        $apiAdmin->shouldReceive('invoice_subscription_create')
-            ->once()
-            ->withArgs(function ($data) use (&$capturedSubscriptionData): bool {
-                $capturedSubscriptionData = $data;
-
-                return true;
-            })
-            ->andReturn(2);
-
-        $dbMock = Mockery::mock('\Box_Database');
-        $dbMock->shouldReceive('findOne')
-            ->andReturn(null);
-        $dbMock->shouldReceive('getCell')
-            ->andReturn('1M');
-
         $di = container();
-        $di['db'] = $dbMock;
-
+        $di['db'] = Mockery::mock('\Box_Database');
         $this->adapter->setDi($di);
 
-        invokePrivateMethod($this->adapter, 'handleSubscriptionCreated', [
-            $apiAdmin,
+        $result = invokePrivateMethod($this->adapter, 'handleSubscriptionCreated', [
+            Mockery::mock(),
             $tx,
             $event,
             1,
         ]);
 
-        expect($capturedSubscriptionData['currency'])->toBe('EUR');
+        expect($result)->toBeFalse();
     });
 
     test('skips creation when metadata is missing', function (): void {

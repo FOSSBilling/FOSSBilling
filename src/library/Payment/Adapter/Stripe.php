@@ -259,6 +259,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $tx->txn_id = $charge->id;
         $tx->amount = $this->getAmountFromMinorUnits($charge->amount, $charge->currency);
         $tx->currency = $charge->currency;
+        $tx->type = Payment_Transaction::TXTYPE_PAYMENT;
 
         if ($charge->status === 'succeeded') {
             if ($tx->status === Model_Transaction::STATUS_PROCESSED && empty($tx->error)) {
@@ -372,7 +373,13 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             $tx->s_period = $this->getSubscriptionPeriodForInvoice($invoice);
             $tx->amount = $this->getAmountFromMinorUnits($this->getAmountInCents($invoice), $invoice->currency);
             $tx->currency = $invoice->currency;
+            $tx->type = Payment_Transaction::TXTYPE_PAYMENT;
             $tx->status = Model_Transaction::STATUS_PROCESSED;
+
+            // Create the FOSSBilling subscription record immediately so it
+            // shows up in the subscriptions list without depending on the
+            // customer.subscription.created webhook event.
+            $this->createOrUpdateSubscription($api_admin, $invoice, $subscription, $gateway_id);
 
             // Process the initial subscription payment immediately so the user
             // sees a paid invoice on redirect. Stripe charges the first invoice
@@ -525,24 +532,12 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
         $tx->invoice_id = $invoiceId;
 
-        $existingSubscription = $this->di['db']->findOne('Subscription', 'sid = :sid', [':sid' => $stripeSubscription->id]);
-        if ($existingSubscription instanceof Model_Subscription) {
-            return false;
-        }
-
-        $sd = [
-            'client_id' => $clientId,
-            'gateway_id' => $gateway_id,
-            'currency' => strtoupper($stripeSubscription->currency ?? ''),
-            'sid' => $stripeSubscription->id,
-            'status' => 'active',
-            'period' => $this->getSubscriptionPeriodForInvoiceId((int) $invoiceId),
-            'amount' => $this->getAmountFromMinorUnits($stripeSubscription->plan->amount ?? 0, $stripeSubscription->currency ?? ''),
-            'rel_type' => 'invoice',
-            'rel_id' => $invoiceId,
-        ];
-
-        $api_admin->invoice_subscription_create($sd);
+        // Subscription record is now created inline by processSetupIntent and
+        // handleSetupIntentSucceededWebhook. This handler only serves as a
+        // fallback if those flows didn't run (e.g. subscription created outside
+        // FOSSBilling). Use the shared helper to avoid duplication.
+        $invoice = $this->di['db']->getExistingModelById('Invoice', (int) $invoiceId);
+        $this->createOrUpdateSubscription($api_admin, $invoice, $stripeSubscription, $gateway_id);
 
         return false;
     }
@@ -644,6 +639,10 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             return false;
         }
 
+        $tx->type = Payment_Transaction::TXTYPE_PAYMENT;
+        $tx->amount = $bd['amount'];
+        $tx->currency = strtoupper((string) ($stripeInvoice->currency ?? ''));
+
         $api_admin->client_balance_add_funds($bd);
 
         $invoiceService = $this->di['mod_service']('Invoice');
@@ -714,6 +713,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $tx->txn_status = $paymentIntent->status;
         $tx->amount = $this->getAmountFromMinorUnits($paymentIntent->amount, $paymentIntent->currency);
         $tx->currency = $paymentIntent->currency;
+        $tx->type = Payment_Transaction::TXTYPE_PAYMENT;
 
         // Dedup: skip if already processed via the redirect flow.
         // The redirect transaction stores txn_id = PaymentIntent ID.
@@ -837,8 +837,12 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $tx->s_period = $this->getSubscriptionPeriodForInvoice($invoice);
         $tx->amount = $this->getAmountFromMinorUnits($this->getAmountInCents($invoice), $invoice->currency);
         $tx->currency = $invoice->currency;
+        $tx->type = Payment_Transaction::TXTYPE_PAYMENT;
         $tx->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($tx);
+
+        // Create the FOSSBilling subscription record immediately.
+        $this->createOrUpdateSubscription($api_admin, $invoice, $subscription, $gateway_id);
 
         // Process the initial payment immediately so the invoice is paid
         // even if the redirect flow hasn't completed yet.
@@ -858,6 +862,40 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $this->di['db']->store($tx);
 
         return false;
+    }
+
+    /**
+     * Create a FOSSBilling subscription record from a Stripe subscription.
+     * Called from the redirect flow and webhook handler so the subscription
+     * appears immediately, without depending on the customer.subscription.created
+     * webhook event.
+     */
+    private function createOrUpdateSubscription($api_admin, Model_Invoice $invoice, object $subscription, int $gateway_id): void
+    {
+        $existing = $this->di['db']->findOne('Subscription', 'sid = :sid', [':sid' => $subscription->id]);
+        if ($existing instanceof Model_Subscription) {
+            return;
+        }
+
+        $sd = [
+            'client_id' => $invoice->client_id,
+            'gateway_id' => $gateway_id,
+            'currency' => strtoupper($invoice->currency),
+            'sid' => $subscription->id,
+            'status' => 'active',
+            'period' => $this->getSubscriptionPeriodForInvoice($invoice),
+            'amount' => $this->getAmountFromMinorUnits($this->getAmountInCents($invoice), $invoice->currency),
+            'rel_type' => 'invoice',
+            'rel_id' => $invoice->id,
+        ];
+
+        try {
+            $api_admin->invoice_subscription_create($sd);
+        } catch (Exception $e) {
+            if (DEBUG) {
+                error_log('Failed to create FOSSBilling subscription for ' . $subscription->id . ': ' . $e->getMessage());
+            }
+        }
     }
 
     /**
@@ -1096,14 +1134,6 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     {
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
         $period = $subscriptionService->getSubscriptionPeriod($invoice);
-
-        return $period ?? '1M';
-    }
-
-    private function getSubscriptionPeriodForInvoiceId(int $invoiceId): string
-    {
-        $query = 'SELECT period FROM invoice_item WHERE invoice_id = :id LIMIT 1';
-        $period = $this->di['db']->getCell($query, [':id' => $invoiceId]);
 
         return $period ?? '1M';
     }
