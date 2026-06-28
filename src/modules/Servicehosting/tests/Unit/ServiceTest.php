@@ -805,7 +805,7 @@ test('get hp pairs', function (): void {
 
 test('get hp search query', function (): void {
     $service = new Service();
-    $result = $service->getServersSearchQuery([]);
+    $result = $service->getHpSearchQuery([]);
     expect($result[0])->toBeString();
     expect($result[1])->toBeArray();
     expect($result[1])->toEqual([]);
