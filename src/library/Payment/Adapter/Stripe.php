@@ -547,10 +547,16 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
     private function getOrCreateCustomer(Model_Invoice $invoice): Stripe\Customer
     {
-        $customers = $this->stripe->customers->search([
-            'query' => "email:'" . addslashes($invoice->buyer_email) . "'",
-            'limit' => 1,
-        ]);
+        $validatedEmail = filter_var($invoice->buyer_email, FILTER_VALIDATE_EMAIL);
+
+        if ($validatedEmail !== false) {
+            $customers = $this->stripe->customers->search([
+                'query' => "email:'" . $validatedEmail . "'",
+                'limit' => 1,
+            ]);
+        } else {
+            $customers = (object) ['data' => []];
+        }
 
         if (count($customers->data) > 0) {
             return $customers->data[0];
