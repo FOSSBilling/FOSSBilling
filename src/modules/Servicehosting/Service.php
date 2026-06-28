@@ -970,7 +970,7 @@ class Service implements InjectionAwareInterface
         }
 
         if ($audit && $incoming !== $existing) {
-            $adminId = $this->di['loggedin_admin']->id ?? 'unknown';
+            $adminId = $this->di['loggedin_admin']?->id ?? 'unknown';
             $this->di['logger']->info('Rotated %s for hosting server %s by admin %s', $field, (string) $serverId, (string) $adminId);
         }
 
