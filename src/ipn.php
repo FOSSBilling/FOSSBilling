@@ -60,17 +60,13 @@ if (str_contains($contentType, 'application/json') && !empty($rawBody)) {
 try {
     $service = $di['mod_service']('invoice', 'transaction');
 
-    // Detect Stripe webhook requests to decouple HTTP response from processing.
-    // Stripe requires a 2xx response quickly; complex logic (API calls, invoice
-    // updates) can exceed the webhook timeout. When running under FastCGI we
-    // can create the transaction, send 200, then finish processing in the
-    // background via fastcgi_finish_request().
-    $userAgent = $request->headers->get('User-Agent', '');
-    $isStripeWebhook = str_contains($userAgent, 'Stripe/')
-        && str_contains($contentType, 'application/json')
-        && !empty($rawBody);
+    // JSON webhooks (Stripe, etc.) require fast 2xx acknowledgment.
+    // When running under FastCGI, decouple the HTTP response from processing:
+    // create the transaction, send 200, then finish in the background via
+    // fastcgi_finish_request().
+    $isJsonWebhook = str_contains($contentType, 'application/json') && !empty($rawBody);
 
-    if ($isStripeWebhook && function_exists('fastcgi_finish_request')) {
+    if ($isJsonWebhook && function_exists('fastcgi_finish_request')) {
         $transactionId = $service->create($ipn);
         $res = ['result' => $transactionId, 'error' => null];
         (new JsonResponse($res, 200, [

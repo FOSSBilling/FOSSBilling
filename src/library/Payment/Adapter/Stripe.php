@@ -19,6 +19,26 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
     private StripeClient $stripe;
 
+    /**
+     * Stripe webhook event types that this adapter processes.
+     * Events not in this list are silently acknowledged and their
+     * transaction records are deleted to keep the transactions list clean.
+     */
+    public const HANDLED_EVENT_TYPES = [
+        'customer.subscription.created',
+        'customer.subscription.updated',
+        'customer.subscription.deleted',
+        'invoice.payment_succeeded',
+        'invoice.paid',
+        'invoice.payment_failed',
+        'invoice_payment.paid',
+        'invoice_payment.failed',
+        'payment_intent.succeeded',
+        'payment_intent.payment_failed',
+        'setup_intent.succeeded',
+        'setup_intent.setup_failed',
+    ];
+
     public function setDi(Pimple\Container $di): void
     {
         $this->di = $di;
@@ -431,6 +451,16 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $tx->txn_id = $event->id;
         $tx->txn_status = $event->type;
 
+        // Delete transactions for events we don't handle to keep the
+        // transactions list clean. Stripe sends many webhook events per
+        // payment cycle (e.g. invoice.created, charge.succeeded) that are
+        // not relevant to FOSSBilling.
+        if (!in_array($event->type, self::HANDLED_EVENT_TYPES, true)) {
+            $this->di['db']->trash($tx);
+
+            return;
+        }
+
         try {
             match ($event->type) {
                 'customer.subscription.created' => $this->handleSubscriptionCreated($api_admin, $tx, $event, $gateway_id),
@@ -445,7 +475,6 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 'payment_intent.payment_failed' => $this->handlePaymentIntentFailedWebhook($api_admin, $tx, $event),
                 'setup_intent.succeeded' => $this->handleSetupIntentSucceededWebhook($api_admin, $tx, $event, $gateway_id),
                 'setup_intent.setup_failed' => $this->handleSetupIntentFailedWebhook($api_admin, $tx, $event),
-                default => null,
             };
         } catch (Stripe\Exception\CardException|Stripe\Exception\InvalidRequestException|Stripe\Exception\AuthenticationException|Stripe\Exception\ApiConnectionException|Stripe\Exception\ApiErrorException $e) {
             $this->logError($e, $tx);
@@ -790,6 +819,12 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
      */
     private function applyOneTimePayment(Model_Transaction $tx, ?Model_Invoice $invoice, object $charge): void
     {
+        // Skip if the invoice is already paid — prevents double-crediting
+        // when the webhook arrives after the redirect flow.
+        if ($invoice instanceof Model_Invoice && $invoice->status === Model_Invoice::STATUS_PAID) {
+            return;
+        }
+
         $invoiceService = $this->di['mod_service']('Invoice');
 
         $transactionService = $this->di['mod_service']('Invoice', 'Transaction');

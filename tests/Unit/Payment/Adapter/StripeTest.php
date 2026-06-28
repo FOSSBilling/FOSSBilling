@@ -81,13 +81,13 @@ describe('isStripeWebhook', function (): void {
         expect($result)->toBeTrue();
     });
 
-    test('identifies all Stripe webhook events for clean processing', function (): void {
+    test('identifies all Stripe webhook events for dispatch', function (): void {
         $data = ['http_raw_post_data' => json_encode(['type' => 'payment_intent.created'])];
 
         $result = invokePrivateMethod($this->adapter, 'isStripeWebhook', [$data]);
 
-        // All events are recognized so they get marked processed instead of
-        // leaving noisy $0.00 received transactions.
+        // All JSON payloads with a type field are recognized as webhooks.
+        // Unhandled types are deleted in processWebhookEvent to prevent noise.
         expect($result)->toBeTrue();
     });
 
@@ -850,5 +850,148 @@ describe('handleSetupIntentSucceededWebhook', function (): void {
 
         expect($tx->invoice_id)->toBe(25)
             ->and($tx->s_id)->toBe('sub_new_123');
+    });
+});
+
+describe('processWebhookEvent noise filtering', function (): void {
+    test('deletes transaction for unhandled event types', function (): void {
+        $tx = buildTransaction();
+        $tx->id = 500;
+
+        $event = new stdClass();
+        $event->id = 'evt_noise_1';
+        $event->type = 'charge.succeeded';
+        $event->data = (object) ['object' => new stdClass()];
+
+        $rawBody = json_encode(['type' => 'charge.succeeded', 'id' => 'evt_noise_1']);
+
+        $trashCalled = false;
+
+        $dbMock = Mockery::mock('\Box_Database');
+        $dbMock->shouldReceive('trash')
+            ->withArgs(function ($txArg) use (&$trashCalled): bool {
+                $trashCalled = true;
+
+                return true;
+            });
+        $dbMock->shouldReceive('store')->andReturn($tx->id);
+
+        $di = container();
+        $di['db'] = $dbMock;
+        $this->adapter->setDi($di);
+
+        $data = [
+            'http_raw_post_data' => $rawBody,
+            'server' => [],
+            'get' => [],
+            'post' => [],
+        ];
+
+        invokePrivateMethod($this->adapter, 'processWebhookEvent', [
+            Mockery::mock(),
+            $tx,
+            $data,
+            1,
+        ]);
+
+        expect($trashCalled)->toBeTrue();
+    });
+
+    test('does not delete transaction for handled event types', function (): void {
+        $tx = buildTransaction();
+        $tx->id = 501;
+
+        $stripeSubscription = new stdClass();
+        $stripeSubscription->id = 'sub_nonexistent';
+
+        $rawBody = json_encode([
+            'type' => 'customer.subscription.deleted',
+            'id' => 'evt_good_1',
+            'data' => ['object' => ['id' => 'sub_nonexistent']],
+        ]);
+
+        $trashCalled = false;
+
+        $dbMock = Mockery::mock('\Box_Database');
+        $dbMock->shouldReceive('trash')
+            ->andReturnUsing(function () use (&$trashCalled): void {
+                $trashCalled = true;
+            });
+        $dbMock->shouldReceive('store')->andReturn($tx->id);
+
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldReceive('invoice_subscription_get')
+            ->andThrow(new Exception('Not found'));
+
+        $di = container();
+        $di['db'] = $dbMock;
+        $this->adapter->setDi($di);
+
+        $data = [
+            'http_raw_post_data' => $rawBody,
+            'server' => [],
+            'get' => [],
+            'post' => [],
+        ];
+
+        invokePrivateMethod($this->adapter, 'processWebhookEvent', [
+            $apiAdmin,
+            $tx,
+            $data,
+            1,
+        ]);
+
+        expect($trashCalled)->toBeFalse()
+            ->and($tx->status)->toBe(Model_Transaction::STATUS_PROCESSED);
+    });
+});
+
+describe('applyOneTimePayment already-paid guard', function (): void {
+    test('skips processing when invoice is already paid', function (): void {
+        $tx = buildTransaction();
+        $tx->id = 600;
+        $tx->amount = '50.00';
+
+        $invoice = new Model_Invoice();
+        $invoice->loadBean(new DummyBean());
+        $invoice->id = 42;
+        $invoice->status = Model_Invoice::STATUS_PAID;
+
+        $addFundsCalled = false;
+
+        $clientService = Mockery::mock();
+        $clientService->shouldReceive('addFunds')
+            ->andReturnUsing(function () use (&$addFundsCalled): void {
+                $addFundsCalled = true;
+            });
+
+        $invoiceService = Mockery::mock();
+        $transactionService = Mockery::mock();
+
+        $dbMock = Mockery::mock('\Box_Database');
+
+        $di = container();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = function ($name, $sub = null) use ($clientService, $invoiceService, $transactionService) {
+            if ($name === 'client') {
+                return $clientService;
+            }
+            if ($name === 'Invoice' && $sub === 'Transaction') {
+                return $transactionService;
+            }
+            if ($name === 'Invoice') {
+                return $invoiceService;
+            }
+
+            return Mockery::mock();
+        };
+        $this->adapter->setDi($di);
+
+        $charge = new stdClass();
+        $charge->id = 'pi_test123';
+
+        invokePrivateMethod($this->adapter, 'applyOneTimePayment', [$tx, $invoice, $charge]);
+
+        expect($addFundsCalled)->toBeFalse();
     });
 });
