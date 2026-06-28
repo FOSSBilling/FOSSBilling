@@ -14,6 +14,8 @@ class Payment_Transaction
     final public const string STATUS_UNKNOWN = 'unknown';
     final public const string STATUS_PENDING = 'pending';
     final public const string STATUS_COMPLETE = 'complete';
+    final public const string STATUS_SUCCEEDED = 'succeeded';
+    final public const string STATUS_FAILED = 'failed';
 
     final public const string TXTYPE_PAYMENT = 'payment';
     final public const string TXTYPE_REFUND = 'refund';

@@ -91,6 +91,27 @@ class ServiceTransaction implements InjectionAwareInterface
         return $id;
     }
 
+    /**
+     * Process a transaction by ID, catching and logging any errors.
+     *
+     * Used for asynchronous webhook processing where the HTTP response has
+     * already been sent (e.g. via fastcgi_finish_request). Ensures errors
+     * are recorded on the transaction without propagating to the caller.
+     */
+    public function processAndCatchErrors(int $id): void
+    {
+        $tx = $this->di['db']->getExistingModelById('Transaction', $id);
+        if ($tx->status === \Model_Transaction::STATUS_PROCESSED && empty($tx->error)) {
+            return;
+        }
+
+        try {
+            $this->processTransaction($id);
+        } catch (\Throwable $e) {
+            $this->markTransactionError($id, $e);
+        }
+    }
+
     public function create(array $data)
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminTransactionCreate', 'params' => $data]);
@@ -384,8 +405,10 @@ class ServiceTransaction implements InjectionAwareInterface
     public function getGatewayStatuses(): array
     {
         return [
-            \Payment_Transaction::STATUS_PENDING => 'Pending validation',
+            \Payment_Transaction::STATUS_SUCCEEDED => 'Succeeded',
             \Payment_Transaction::STATUS_COMPLETE => 'Complete',
+            \Payment_Transaction::STATUS_PENDING => 'Pending validation',
+            \Payment_Transaction::STATUS_FAILED => 'Failed',
             \Payment_Transaction::STATUS_UNKNOWN => 'Unknown',
         ];
     }
