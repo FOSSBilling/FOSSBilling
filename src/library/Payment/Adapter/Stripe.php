@@ -325,19 +325,84 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
         if ($setupIntent->status === 'succeeded' && $invoice instanceof Model_Invoice) {
             $customer = $this->getOrCreateCustomer($invoice);
-            $subscription = $this->createStripeSubscription($customer, $setupIntent, $invoice);
+
+            try {
+                $subscription = $this->createStripeSubscription($customer, $setupIntent, $invoice);
+            } catch (Stripe\Exception\ApiErrorException $e) {
+                // The setup_intent.succeeded webhook may have already created
+                // the subscription using the same idempotency key. This is
+                // expected — the webhook handler and invoice payment events
+                // will complete the flow.
+                $tx->status = Model_Transaction::STATUS_PROCESSED;
+                $tx->updated_at = date('Y-m-d H:i:s');
+                $this->di['db']->store($tx);
+
+                return;
+            }
 
             $tx->s_id = $subscription->id;
             $tx->s_period = $this->getSubscriptionPeriodForInvoice($invoice);
             $tx->amount = $this->getAmountFromMinorUnits($this->getAmountInCents($invoice), $invoice->currency);
             $tx->currency = $invoice->currency;
             $tx->status = Model_Transaction::STATUS_PROCESSED;
+
+            // Process the initial subscription payment immediately so the user
+            // sees a paid invoice on redirect. Stripe charges the first invoice
+            // synchronously during subscription creation when using
+            // charge_automatically with a default_payment_method.
+            $this->processInitialSubscriptionPayment($api_admin, $tx, $invoice, $subscription);
         } else {
             $tx->status = Model_Transaction::STATUS_ERROR;
         }
 
         $tx->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($tx);
+    }
+
+    /**
+     * Process the initial subscription payment immediately after subscription
+     * creation so the user sees a paid invoice when redirected back.
+     *
+     * Stripe charges the first invoice synchronously during subscription
+     * creation (charge_automatically + default_payment_method). This method
+     * retrieves that invoice and applies the payment to FOSSBilling right
+     * away, rather than waiting for the invoice.paid webhook to arrive.
+     */
+    private function processInitialSubscriptionPayment($api_admin, Model_Transaction $tx, Model_Invoice $invoice, Stripe\Subscription $subscription): void
+    {
+        $latestInvoiceId = $subscription->latest_invoice ?? null;
+        if (empty($latestInvoiceId)) {
+            return;
+        }
+
+        $latestInvoice = is_string($latestInvoiceId)
+            ? $this->stripe->invoices->retrieve($latestInvoiceId, [])
+            : $latestInvoiceId;
+
+        if (($latestInvoice->status ?? '') !== 'paid') {
+            return;
+        }
+
+        $bd = [
+            'id' => $invoice->client_id,
+            'amount' => $this->getAmountFromMinorUnits(
+                (int) ($latestInvoice->amount_paid ?? 0),
+                (string) ($latestInvoice->currency ?? '')
+            ),
+            'description' => 'Stripe subscription initial payment ' . $latestInvoice->id,
+            'type' => 'transaction',
+            'rel_id' => $tx->id,
+        ];
+
+        $api_admin->client_balance_add_funds($bd);
+
+        $invoiceService = $this->di['mod_service']('Invoice');
+        if (!$invoiceService->isInvoiceTypeDeposit($invoice)) {
+            if (!$invoice->approved) {
+                $invoiceService->approveInvoice($invoice, ['use_credits' => false]);
+            }
+            $invoiceService->payInvoiceWithCredits($invoice);
+        }
     }
 
     private function processWebhookEvent($api_admin, Model_Transaction $tx, array $data, int $gateway_id): void
@@ -480,6 +545,16 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             $this->di['db']->store($tx);
         }
 
+        // Skip if the FOSSBilling invoice is already paid — the redirect flow
+        // (processSetupIntent → processInitialSubscriptionPayment) may have
+        // processed it before the webhook arrived.
+        if ($invoiceId) {
+            $existingInvoice = $this->di['db']->findOne('Invoice', 'id = :id', [':id' => (int) $invoiceId]);
+            if ($existingInvoice instanceof Model_Invoice && $existingInvoice->status === Model_Invoice::STATUS_PAID) {
+                return;
+            }
+        }
+
         $isInitialPayment = ($stripeInvoice->billing_reason ?? '') === 'subscription_create';
         // Fallback: if billing_reason is inconclusive but the original invoice
         // still exists and is unpaid, treat this as the initial payment.
@@ -499,8 +574,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             'description' => $isInitialPayment
                 ? 'Stripe subscription initial payment ' . $stripeInvoice->id
                 : 'Stripe subscription recurring payment ' . $stripeInvoice->id,
-            'type' => 'Stripe',
-            'rel_id' => $stripeInvoice->id,
+            'type' => 'transaction',
+            'rel_id' => $tx->id,
         ];
 
         $transactionService = $this->di['mod_service']('Invoice', 'Transaction');

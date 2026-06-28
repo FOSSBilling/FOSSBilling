@@ -285,6 +285,7 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
                 return true;
             })
             ->andReturn(42);
+        $dbMock->shouldReceive('findOne')->andReturn(null);
 
         $transactionService = Mockery::mock();
         $transactionService->shouldReceive('claimForProcessing')
@@ -579,6 +580,7 @@ describe('handleInvoicePaymentSucceeded with invoice_payment event (API 2026-06-
 
         $dbMock = Mockery::mock('\Box_Database');
         $dbMock->shouldReceive('store')->andReturn($tx->id);
+        $dbMock->shouldReceive('findOne')->andReturn(null);
         $dbMock->shouldReceive('getExistingModelById')
             ->with('Invoice', 42)
             ->andReturn($invoiceModel);
