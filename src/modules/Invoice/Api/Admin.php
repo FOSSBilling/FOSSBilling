@@ -773,7 +773,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $client = $this->getDi()['db']->getExistingModelById('Client', $data['client_id'], 'Client not found');
         $payGateway = $this->getDi()['db']->getExistingModelById('PayGateway', $data['gateway_id'], 'Payment gateway not found');
 
-        if ($client->currency != $data['currency']) {
+        if (strtoupper((string) $client->currency) !== strtoupper((string) $data['currency'])) {
             throw new InformationException('Client currency must match subscription currency. Check if clients currency is defined.');
         }
         $subscriptionService = $this->getDi()['mod_service']('Invoice', 'Subscription');

@@ -1009,6 +1009,40 @@ test('throws exception when creating subscription with currency mismatch', funct
         ->toThrow(FOSSBilling\Exception::class, 'Client currency must match subscription currency. Check if clients currency is defined.');
 });
 
+test('creates a subscription with case-insensitive currency match', function (): void {
+    $api = new Admin();
+    $data = [
+        'client_id' => 1,
+        'gateway_id' => 1,
+        'currency' => 'usd',
+    ];
+    $newSubscriptionId = 2;
+    $subscriptionService = Mockery::mock(ServiceSubscription::class);
+    $subscriptionService->shouldReceive('create')
+        ->atLeast()->once()
+        ->andReturn($newSubscriptionId);
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $model = new Model_PayGateway();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $client = new Model_Client();
+    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client->currency = 'USD';
+
+    $dbMock->shouldReceive('getExistingModelById')
+        ->atLeast()->once()
+        ->andReturn($client, $model);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(moduleService(['invoice:subscription' => $subscriptionService]));
+
+    $api->setDi($di);
+
+    $result = $api->subscription_create($data);
+    expect($result)->toBeInt()->toBe($newSubscriptionId);
+});
+
 test('updates a subscription', function (): void {
     $api = new Admin();
     $data = [

@@ -384,6 +384,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 'customer.subscription.updated' => $this->handleSubscriptionUpdated($api_admin, $tx, $event),
                 'customer.subscription.deleted' => $this->handleSubscriptionDeleted($api_admin, $tx, $event),
                 'invoice.payment_succeeded' => $this->handleInvoicePaymentSucceeded($api_admin, $tx, $event, $gateway_id),
+                'invoice.paid' => $this->handleInvoicePaymentSucceeded($api_admin, $tx, $event, $gateway_id),
                 'invoice.payment_failed' => $this->handleInvoicePaymentFailed($api_admin, $tx, $event),
                 default => null,
             };
@@ -418,7 +419,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $sd = [
             'client_id' => $clientId,
             'gateway_id' => $gateway_id,
-            'currency' => $stripeSubscription->currency ?? '',
+            'currency' => strtoupper($stripeSubscription->currency ?? ''),
             'sid' => $stripeSubscription->id,
             'status' => 'active',
             'period' => $this->getSubscriptionPeriodForInvoiceId((int) $invoiceId),
@@ -476,7 +477,22 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             return;
         }
 
+        // Link the transaction to the invoice as early as possible so the
+        // association survives any early return or failure further below.
+        if ($invoiceId) {
+            $tx->invoice_id = (int) $invoiceId;
+            $this->di['db']->store($tx);
+        }
+
         $isInitialPayment = ($stripeInvoice->billing_reason ?? '') === 'subscription_create';
+        // Fallback: if billing_reason is inconclusive but the original invoice
+        // still exists and is unpaid, treat this as the initial payment.
+        if (!$isInitialPayment && $invoiceId) {
+            $originalInvoice = $this->di['db']->findOne('Invoice', 'id = :id', [':id' => (int) $invoiceId]);
+            if ($originalInvoice instanceof Model_Invoice && $originalInvoice->status === Model_Invoice::STATUS_UNPAID) {
+                $isInitialPayment = true;
+            }
+        }
 
         $bd = [
             'id' => $clientId,
@@ -499,7 +515,6 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
         if ($isInitialPayment && $invoiceId) {
             $invoiceModel = $this->di['db']->getExistingModelById('Invoice', (int) $invoiceId);
-            $tx->invoice_id = $invoiceModel->id;
 
             if (!$invoiceService->isInvoiceTypeDeposit($invoiceModel)) {
                 if (!$invoiceModel->approved) {
