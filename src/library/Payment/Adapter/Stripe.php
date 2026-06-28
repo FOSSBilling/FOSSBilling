@@ -550,8 +550,9 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $validatedEmail = filter_var($invoice->buyer_email, FILTER_VALIDATE_EMAIL);
 
         if ($validatedEmail !== false) {
+            $escapedEmail = str_replace(['\\', '\''], ['\\\\', '\\\''], $validatedEmail);
             $customers = $this->stripe->customers->search([
-                'query' => "email:'" . $validatedEmail . "'",
+                'query' => "email:'" . $escapedEmail . "'",
                 'limit' => 1,
             ]);
         } else {
@@ -607,14 +608,14 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
         $productName = $invoiceItems[0]['title'];
 
-        $products = $this->stripe->products->all([
-            'limit' => 100,
+        $escapedProductName = str_replace("'", "\\'", $productName);
+        $products = $this->stripe->products->search([
+            'query' => "name:'{$escapedProductName}'",
+            'limit' => 1,
         ]);
 
-        foreach ($products->data as $existingProduct) {
-            if ($existingProduct->name === $productName) {
-                return $existingProduct;
-            }
+        if (count($products->data) > 0) {
+            return $products->data[0];
         }
 
         return $this->stripe->products->create([
@@ -634,13 +635,14 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $prices = $this->stripe->prices->all([
             'product' => $product->id,
             'recurring' => ['interval' => $interval],
-            'unit_amount' => $amount,
             'currency' => $currency,
-            'limit' => 1,
+            'limit' => 100,
         ]);
 
-        if (count($prices->data) > 0) {
-            return $prices->data[0];
+        foreach ($prices->data as $existingPrice) {
+            if ($existingPrice->unit_amount === $amount) {
+                return $existingPrice;
+            }
         }
 
         return $this->stripe->prices->create([
