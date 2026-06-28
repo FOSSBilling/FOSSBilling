@@ -405,8 +405,10 @@ class ServiceTransaction implements InjectionAwareInterface
     public function getGatewayStatuses(): array
     {
         return [
-            \Payment_Transaction::STATUS_PENDING => 'Pending validation',
+            \Payment_Transaction::STATUS_SUCCEEDED => 'Succeeded',
             \Payment_Transaction::STATUS_COMPLETE => 'Complete',
+            \Payment_Transaction::STATUS_PENDING => 'Pending validation',
+            \Payment_Transaction::STATUS_FAILED => 'Failed',
             \Payment_Transaction::STATUS_UNKNOWN => 'Unknown',
         ];
     }
