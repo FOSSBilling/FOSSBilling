@@ -718,7 +718,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
         if (isset($json['status']) && $json['status'] == 'error') {
             error_log('ResellerClub error: ' . $json['error']);
-            $placeholders = [':action"' => $url, ':type:' => 'ResellerClub'];
+            $placeholders = [':action:' => $url, ':type:' => 'ResellerClub'];
 
             throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
