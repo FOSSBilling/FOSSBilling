@@ -43,6 +43,7 @@ class Service
                 'display_name' => __trans('Run cron jobs'),
                 'description' => __trans('Allows the staff member to manually execute cron jobs.'),
             ],
+            'manage_settings' => [],
         ];
     }
 

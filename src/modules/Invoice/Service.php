@@ -80,6 +80,7 @@ class Service implements InjectionAwareInterface
                 'display_name' => __trans('Export invoice data'),
                 'description' => __trans('Allows the staff member to export invoice data as CSV.'),
             ],
+            'manage_settings' => [],
         ];
     }
 

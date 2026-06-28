@@ -52,6 +52,7 @@ class Service implements InjectionAwareInterface
                 'display_name' => __trans('Manage antispam settings'),
                 'description' => __trans('Allows the staff member to block and unblock IP addresses.'),
             ],
+            'manage_settings' => [],
         ];
     }
 

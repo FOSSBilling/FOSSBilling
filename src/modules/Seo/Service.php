@@ -43,6 +43,7 @@ class Service implements InjectionAwareInterface
                 'display_name' => __trans('Manage SEO'),
                 'description' => __trans('Allows the staff member to ping search engines.'),
             ],
+            'manage_settings' => [],
         ];
     }
 

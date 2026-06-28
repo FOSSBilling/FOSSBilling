@@ -249,7 +249,7 @@ test('action cancel order without active service', function (): void {
     $orderModel->id = 1;
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
-    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once();
+    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturnNull();
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);

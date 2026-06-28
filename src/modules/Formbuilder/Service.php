@@ -42,6 +42,7 @@ class Service implements InjectionAwareInterface
                 'display_name' => __trans('Manage forms'),
                 'description' => __trans('Allows the staff member to create, update, and delete order forms and fields.'),
             ],
+            'manage_settings' => [],
         ];
     }
 

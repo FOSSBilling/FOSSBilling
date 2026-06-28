@@ -841,6 +841,11 @@ test('setConfig sets extension config', function (): void {
 
     $serviceMock = Mockery::mock(Box\Mod\Extension\Service::class)->makePartial();
     $serviceMock->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('hasManagePermission')
+        ->with('extensionName')
+        ->atLeast()
+        ->once()
+        ->andReturn(null);
     $serviceMock->shouldReceive('getConfig')
         ->atLeast()
         ->once()
@@ -861,19 +866,9 @@ test('setConfig sets extension config', function (): void {
         ->atLeast()
         ->once()
         ->andReturn([]);
-    $dbMock->shouldReceive('getCell')
-        ->atLeast()
-        ->once()
-        ->andReturn(1);
 
     $eventMock = Mockery::mock(Box_EventManager::class);
     $eventMock->shouldReceive('fire')->atLeast()->once();
-
-    $staffMock = Mockery::mock(Box\Mod\Staff\Service::class);
-    $staffMock->shouldReceive('hasPermission')->atLeast()->once()->andReturn(true);
-
-    $modMock = Mockery::mock(FOSSBilling\Module::class);
-    $modMock->shouldReceive('getCoreModules')->atLeast()->once()->andReturn([]);
 
     $di = container();
     $di['db'] = $dbMock;
@@ -881,12 +876,96 @@ test('setConfig sets extension config', function (): void {
     $di['crypt'] = $cryptMock;
     $di['events_manager'] = $eventMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $staffMock);
     $di['cache'] = new Symfony\Component\Cache\Adapter\ArrayAdapter();
 
     $serviceMock->setDi($di);
     $result = $serviceMock->setConfig($data);
 
     expect($result)->toBeTrue();
+});
+
+test('hasManagePermission denies access when module does not declare manage_settings', function (): void {
+    $serviceMock = Mockery::mock(Box\Mod\Extension\Service::class)->makePartial();
+    $serviceMock->shouldAllowMockingProtectedMethods();
+
+    $staffMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffMock->shouldReceive('hasPermission')
+        ->with(null, 'support')
+        ->atLeast()
+        ->once()
+        ->andReturn(true);
+
+    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock->shouldReceive('getCoreModules')
+        ->atLeast()
+        ->once()
+        ->andReturn([]);
+
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('getCell')
+        ->atLeast()
+        ->once()
+        ->andReturn(1);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $staffMock);
+
+    $serviceMock->setDi($di);
+
+    $serviceMock->shouldReceive('getSpecificModulePermissions')
+        ->with('support')
+        ->andReturn([
+            'view' => [],
+        ]);
+
+    expect(fn () => $serviceMock->hasManagePermission('mod_support'))
+->toThrow(new FOSSBilling\InformationException('You do not have permission to perform this action', [], 403));
+});
+
+test('hasManagePermission allows access when module declares manage_settings and user has it', function (): void {
+    $serviceMock = Mockery::mock(Box\Mod\Extension\Service::class)->makePartial();
+    $serviceMock->shouldAllowMockingProtectedMethods();
+
+    $staffMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffMock->shouldReceive('hasPermission')
+        ->with(null, 'email')
+        ->atLeast()
+        ->once()
+        ->andReturn(true);
+    $staffMock->shouldReceive('hasPermission')
+        ->with(null, 'email', 'manage_settings')
+        ->atLeast()
+        ->once()
+        ->andReturn(true);
+
+    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock->shouldReceive('getCoreModules')
+        ->atLeast()
+        ->once()
+        ->andReturn([]);
+
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('getCell')
+        ->atLeast()
+        ->once()
+        ->andReturn(1);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $staffMock);
+
+    $serviceMock->setDi($di);
+
+    $serviceMock->shouldReceive('getSpecificModulePermissions')
+        ->with('email')
+        ->andReturn([
+            'view' => [],
+            'manage_settings' => [],
+        ]);
+
+    expect(fn () => $serviceMock->hasManagePermission('mod_email'))
+        ->not->toThrow(new FOSSBilling\InformationException('You do not have permission to perform this action', [], 403));
 });
