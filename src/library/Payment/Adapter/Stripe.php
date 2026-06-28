@@ -364,10 +364,15 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             try {
                 $subscription = $this->createStripeSubscription($customer, $setupIntent, $invoice);
             } catch (Stripe\Exception\ApiErrorException $e) {
-                // The setup_intent.succeeded webhook may have already created
-                // the subscription using the same idempotency key. Retrieve it
-                // so we can still process the initial payment synchronously
-                // rather than leaving the invoice unpaid until a webhook arrives.
+                // Only handle the expected race where the setup_intent.succeeded
+                // webhook created the subscription concurrently with the same
+                // idempotency key. All other API errors (card declined, auth
+                // failures, network issues) must propagate so the caller sees them.
+                if ($e->getStripeCode() !== 'idempotency_key_in_use') {
+                    throw $e;
+                }
+
+                // Webhook beat us here — find the subscription it created.
                 $subscriptions = $this->stripe->subscriptions->all([
                     'customer' => $customer->id,
                     'limit' => 1,
@@ -600,6 +605,19 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $subscriptionId = $this->extractSubscriptionId($stripeInvoice);
 
         if ($stripeInvoice === null || $subscriptionId === null) {
+            return false;
+        }
+
+        // Dedup: Stripe sends both invoice.payment_succeeded and invoice.paid for
+        // the same payment. Use the Stripe invoice ID as the shared natural key so
+        // whichever event arrives second sees the first is already processing/done.
+        $tx->txn_id = $stripeInvoice->id;
+        $existing = $this->di['db']->findOne(
+            'Transaction',
+            'txn_id = :txn_id AND status IN (:s1, :s2) AND id != :id',
+            [':txn_id' => $stripeInvoice->id, ':s1' => Model_Transaction::STATUS_PROCESSING, ':s2' => Model_Transaction::STATUS_PROCESSED, ':id' => $tx->id]
+        );
+        if ($existing instanceof Model_Transaction) {
             return false;
         }
 
@@ -837,9 +855,13 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         try {
             $subscription = $this->createStripeSubscription($customer, $setupIntent, $invoice);
         } catch (Stripe\Exception\ApiErrorException $e) {
-            // If the redirect flow is creating the subscription concurrently,
-            // Stripe rejects the duplicate idempotency key. This is expected —
-            // the redirect flow will complete and create the subscription.
+            // Only treat idempotency conflicts as the expected race with the
+            // redirect flow; rethrow all other API errors (card declined, auth
+            // failures, etc.) so they surface to the caller.
+            if ($e->getStripeCode() !== 'idempotency_key_in_use') {
+                throw $e;
+            }
+
             if (DEBUG) {
                 error_log('Stripe setup_intent webhook: subscription creation deferred to redirect flow: ' . $e->getMessage());
             }
