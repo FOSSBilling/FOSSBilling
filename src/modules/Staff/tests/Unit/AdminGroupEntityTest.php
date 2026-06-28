@@ -52,7 +52,7 @@ test('admin group member repository unions group permissions', function (): void
         ],
     ]);
 
-    $repository = Mockery::mock(AdminGroupMemberRepository::class)->makePartial();
+    $repository = Mockery::mock(AdminGroupMemberRepository::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $repository->shouldReceive('findGroupsForAdmin')
         ->once()
         ->with(1)
@@ -68,4 +68,29 @@ test('admin group member repository unions group permissions', function (): void
             'access' => true,
         ],
     ]);
+});
+
+test('admin group member repository excludes cron from active system group count', function (): void {
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchOne')
+        ->once()
+        ->with(
+            Mockery::on(static fn (string $sql): bool => str_contains($sql, 'a.system_name IS NULL OR a.system_name != :cron_system_name')),
+            [
+                'status' => Model_Admin::STATUS_ACTIVE,
+                'system_name' => AdminGroup::SYSTEM_SUPER_ADMIN,
+                'cron_system_name' => Model_Admin::SYSTEM_CRON,
+            ],
+        )
+        ->andReturn(1);
+
+    $entityManager = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $entityManager->shouldReceive('getConnection')->once()->andReturn($connection);
+
+    $repository = Mockery::mock(AdminGroupMemberRepository::class)
+        ->makePartial()
+        ->shouldAllowMockingProtectedMethods();
+    $repository->shouldReceive('getEntityManager')->once()->andReturn($entityManager);
+
+    expect($repository->countActiveMembersInSystemGroup(AdminGroup::SYSTEM_SUPER_ADMIN))->toBe(1);
 });

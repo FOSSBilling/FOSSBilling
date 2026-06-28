@@ -24,6 +24,7 @@
         {{ 'New Group'|trans }}
     </button>
 {% endset %}
+{% set is_super_admin = admin.is_super_administrator %}
 
 {% block breadcrumbs %}
     <ol class="breadcrumb">
@@ -205,9 +206,31 @@
                 </div>
 
                 <div class="tab-pane fade" id="tab-groups" role="tabpanel">
-                    <div class="card-body border-bottom py-3">
-                        <div class="d-flex justify-content-end">
-                            {{ new_staff_group_action|raw }}
+                    <div class="card-body border-bottom">
+                        <div class="row g-3 align-items-start">
+                            <div class="col">
+                                <h3 class="card-title mb-1">{{ 'Staff group hierarchy'|trans }}</h3>
+                                <p class="text-secondary mb-3">{{ 'Use groups to grant permissions and control which staff accounts can be managed by delegated staff.'|trans }}</p>
+                                <div class="row g-3 text-secondary small">
+                                    <div class="col-lg-4">
+                                        <div class="fw-medium text-body">{{ 'Delegated staff updates'|trans }}</div>
+                                        {{ 'When allowed by permissions, staff can only update staff members below their assigned groups.'|trans }}
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <div class="fw-medium text-body">{{ 'Structure changes'|trans }}</div>
+                                        {{ 'Only Super Administrators create groups or update group details.'|trans }}
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <div class="fw-medium text-body">{{ 'Delegated membership'|trans }}</div>
+                                        {{ 'Allowed staff can only assign or remove members from groups below them.'|trans }}
+                                    </div>
+                                </div>
+                            </div>
+                            {% if is_super_admin %}
+                                <div class="col-auto">
+                                    {{ new_staff_group_action|raw }}
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                     <table class="table card-table table-vcenter table-striped text-nowrap">
@@ -218,26 +241,49 @@
                         </tr>
                         </thead>
                         <tbody>
-                        {% set groups = admin.staff_group_get_list({ 'per_page': 100, 'page': request.page }) %}
+                        {% set groups = admin.staff_group_get_list %}
                         {% for i, group in groups.list %}
                             <tr>
                                 <td>
-                                    <a href='{{ "staff/group/#{group.id}"|url }}'>{{ group.name }}</a>
+                                    <div class="d-flex align-items-start gap-2" style="padding-left: {{ group.depth|default(0) * 1.75 }}rem">
+                                        {% if group.depth|default(0) > 0 %}
+                                            <span class="text-secondary mt-1" aria-hidden="true">&rdsh;</span>
+                                        {% endif %}
+                                        <div>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <a href='{{ "staff/group/#{group.id}"|url }}'>{{ group.name }}</a>
+                                                {% if group.system_name == 'super_admin' %}
+                                                    <span class="badge bg-blue-lt">{{ 'Root'|trans }}</span>
+                                                {% elseif group.protected %}
+                                                    <span class="badge bg-secondary-lt">{{ 'Protected'|trans }}</span>
+                                                {% endif %}
+                                            </div>
+                                            <div class="text-secondary small">
+                                                {% if group.system_name == 'super_admin' %}
+                                                    {{ 'Mandatory root group for all staff groups'|trans }}
+                                                {% else %}
+                                                    {{ group.path }}
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </td>
                                 <td>
                                     <a class="btn btn-icon" href='{{ "staff/group/#{group.id}"|url }}'
-                                       data-bs-toggle="tooltip" data-bs-title="{{ 'Edit'|trans }}">
+                                       data-bs-toggle="tooltip" data-bs-title="{% if group.protected or not is_super_admin %}{{ 'View'|trans }}{% else %}{{ 'Edit'|trans }}{% endif %}">
                                         <svg class="icon">
                                             <use href="#edit"/>
                                         </svg>
                                     </a>
-                                    <a class="btn btn-icon" href="{{ 'staff/group_delete'|api_url(query: { 'id': group.id }) }}"
-                                        data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
-                                        {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'extension/settings/staff#tab-groups'|url}) }}>
-                                        <svg class="icon">
-                                            <use href="#trash"/>
-                                        </svg>
-                                    </a>
+                                    {% if is_super_admin and not group.protected %}
+                                        <a class="btn btn-icon" href="{{ 'staff/group_delete'|api_url(query: { 'id': group.id }) }}"
+                                            data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
+                                            {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'extension/settings/staff#tab-groups'|url}) }}>
+                                            <svg class="icon">
+                                                <use href="#trash"/>
+                                            </svg>
+                                        </a>
+                                    {% endif %}
                                 </td>
                             </tr>
                         {% else %}
@@ -299,23 +345,36 @@
         </div>
     </div>
 
-    <div class="modal fade" id="newStaffGroupModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <form method="post" action="{{ 'staff/group_create'|api_url }}" class="modal-content" {{ fb_api_form({redirect: 'extension/settings/staff#tab-groups'|url}) }}>
-                <div class="modal-header">
-                    <h5 class="modal-title">{{ 'New Group'|trans }}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
-                </div>
-                <div class="modal-body">
-                    <label class="form-label" for="new-staff-group-name">{{ 'Name'|trans }}</label>
-                    <input class="form-control" id="new-staff-group-name" type="text" name="name" required>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-primary" type="submit">{{ 'Create Group'|trans }}</button>
-                </div>
-            </form>
+    {% if is_super_admin %}
+        <div class="modal fade" id="newStaffGroupModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <form method="post" action="{{ 'staff/group_create'|api_url }}" class="modal-content" {{ fb_api_form({redirect: 'extension/settings/staff#tab-groups'|url}) }}>
+                    <div class="modal-header">
+                        <h5 class="modal-title">{{ 'New Group'|trans }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label" for="new-staff-group-name">{{ 'Name'|trans }}</label>
+                            <input class="form-control" id="new-staff-group-name" type="text" name="name" required>
+                        </div>
+                        <div>
+                            <label class="form-label" for="new-staff-group-parent">{{ 'Parent group'|trans }}</label>
+                            <select class="form-select" id="new-staff-group-parent" name="parent_id" required>
+                                {% for groupId, groupName in admin.staff_group_get_pairs %}
+                                    <option value="{{ groupId }}">{{ groupName }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">{{ 'Super Administrator is the root group. New groups are created below the selected parent.'|trans }}</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" type="submit">{{ 'Create Group'|trans }}</button>
+                    </div>
+                </form>
+            </div>
         </div>
-    </div>
+    {% endif %}
 {% endblock %}
 
 {% block js %}

@@ -55,6 +55,17 @@ class AdminGroupMemberRepository extends EntityRepository
         );
     }
 
+    /**
+     * @return int[]
+     */
+    public function getGroupIdsForAdmin(int $adminId): array
+    {
+        return array_map(
+            static fn (AdminGroup $group): int => (int) $group->getId(),
+            $this->findGroupsForAdmin($adminId),
+        );
+    }
+
     public function adminBelongsToSystemGroup(int $adminId, string $systemName): bool
     {
         return (bool) $this->createQueryBuilder('m')
@@ -124,10 +135,13 @@ class AdminGroupMemberRepository extends EntityRepository
              FROM admin a
              INNER JOIN admin_group_member m ON m.admin_id = a.id
              INNER JOIN admin_group g ON g.id = m.admin_group_id
-             WHERE a.status = :status AND g.system_name = :system_name',
+             WHERE a.status = :status
+             AND g.system_name = :system_name
+             AND (a.system_name IS NULL OR a.system_name != :cron_system_name)',
             [
                 'status' => \Model_Admin::STATUS_ACTIVE,
                 'system_name' => $systemName,
+                'cron_system_name' => \Model_Admin::SYSTEM_CRON,
             ],
         );
     }

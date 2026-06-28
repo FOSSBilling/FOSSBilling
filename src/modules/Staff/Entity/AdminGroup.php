@@ -35,6 +35,10 @@ class AdminGroup implements ApiArrayInterface
     #[ORM\Column(name: 'system_name', type: Types::STRING, length: 100, nullable: true, unique: true)]
     private ?string $systemName = null;
 
+    #[ORM\ManyToOne(targetEntity: self::class)]
+    #[ORM\JoinColumn(name: 'parent_id', referencedColumnName: 'id', nullable: true)]
+    private ?self $parent = null;
+
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $permissions = null;
 
@@ -49,10 +53,16 @@ class AdminGroup implements ApiArrayInterface
 
     public function toApiArray(): array
     {
+        $pathNames = $this->getPathNames();
+
         return [
             'id' => $this->getId(),
             'name' => $this->getName(),
             'system_name' => $this->getSystemName(),
+            'parent_id' => $this->getParent()?->getId(),
+            'parent_name' => $this->getParent()?->getName(),
+            'path' => implode(' / ', $pathNames),
+            'depth' => max(count($pathNames) - 1, 0),
             'permissions' => $this->getPermissions(),
             'protected' => $this->isProtected(),
             'created_at' => $this->getCreatedAt()?->format('Y-m-d H:i:s'),
@@ -101,6 +111,35 @@ class AdminGroup implements ApiArrayInterface
         $this->systemName = $systemName;
 
         return $this;
+    }
+
+    public function getParent(): ?self
+    {
+        return $this->parent;
+    }
+
+    public function setParent(?self $parent): self
+    {
+        $this->parent = $parent;
+
+        return $this;
+    }
+
+    /**
+     * @return string[]
+     */
+    public function getPathNames(): array
+    {
+        $names = [];
+        $group = $this;
+        $seen = [];
+        while ($group instanceof self && $group->getId() !== null && !in_array($group->getId(), $seen, true)) {
+            $seen[] = $group->getId();
+            array_unshift($names, (string) $group->getName());
+            $group = $group->getParent();
+        }
+
+        return $names;
     }
 
     /**

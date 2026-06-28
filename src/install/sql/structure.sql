@@ -122,12 +122,14 @@ CREATE TABLE `admin_group` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) DEFAULT NULL,
   `system_name` varchar(100) DEFAULT NULL,
+  `parent_id` bigint(20) DEFAULT NULL,
   `permissions` text,
   `protected` tinyint(1) DEFAULT '0',
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `system_name` (`system_name`)
+  UNIQUE KEY `system_name` (`system_name`),
+  KEY `admin_group_parent_id_idx` (`parent_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

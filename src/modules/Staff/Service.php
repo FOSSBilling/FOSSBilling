@@ -23,7 +23,6 @@ use FOSSBilling\PaginationOptions;
 class Service implements InjectionAwareInterface
 {
     private array $permissionCache = [];
-    private array $superAdministratorCache = [];
 
     private AdminGroupRepository $adminGroupRepository;
     private AdminGroupMemberRepository $adminGroupMemberRepository;
@@ -52,27 +51,6 @@ class Service implements InjectionAwareInterface
         return $this->adminGroupMemberRepository;
     }
 
-    private function clearPermissionCache(): void
-    {
-        $this->permissionCache = [];
-        $this->superAdministratorCache = [];
-    }
-
-    private function assertCanRemoveActiveSuperAdministrator(\Model_Admin $admin): void
-    {
-        if ($admin->status !== \Model_Admin::STATUS_ACTIVE) {
-            return;
-        }
-
-        if (!$this->adminGroupMemberRepository->adminBelongsToSystemGroup((int) $admin->id, AdminGroup::SYSTEM_SUPER_ADMIN)) {
-            return;
-        }
-
-        if ($this->adminGroupMemberRepository->countActiveMembersInSystemGroup(AdminGroup::SYSTEM_SUPER_ADMIN) <= 1) {
-            throw new \FOSSBilling\InformationException('Cannot remove the last active super administrator');
-        }
-    }
-
     private function getPermissionsFromCache(int|string $memberId): ?array
     {
         $cacheKey = (string) $memberId;
@@ -91,21 +69,6 @@ class Service implements InjectionAwareInterface
                 'type' => 'bool',
                 'display_name' => __trans('View staff details'),
                 'description' => __trans('Allows the staff member to view staff account details and listings.'),
-            ],
-            'create_and_edit_admin' => [
-                'type' => 'bool',
-                'display_name' => __trans('Create and edit administrators'),
-                'description' => __trans('Allows the staff member to create and edit :type: accounts.', [':type:' => __trans('administrator')]),
-            ],
-            'delete_admin' => [
-                'type' => 'bool',
-                'display_name' => __trans('Delete administrators'),
-                'description' => __trans('Allows the staff member to delete :type: accounts.', [':type:' => __trans('administrator')]),
-            ],
-            'reset_admin_password' => [
-                'type' => 'bool',
-                'display_name' => __trans('Reset administrator passwords'),
-                'description' => __trans('Allows the staff member to perform password resets on :type: accounts.', [':type:' => __trans('administrator')]),
             ],
             'create_and_edit_staff' => [
                 'type' => 'bool',
@@ -197,17 +160,6 @@ class Service implements InjectionAwareInterface
         $this->permissionCache[(string) $member_id] = $permissions;
 
         return $permissions;
-    }
-
-    private function isSuperAdministrator(int|string $memberId): bool
-    {
-        $cacheKey = (string) $memberId;
-
-        if (!array_key_exists($cacheKey, $this->superAdministratorCache)) {
-            $this->superAdministratorCache[$cacheKey] = $this->adminGroupMemberRepository->adminBelongsToSystemGroup((int) $memberId, AdminGroup::SYSTEM_SUPER_ADMIN);
-        }
-
-        return $this->superAdministratorCache[$cacheKey];
     }
 
     /**
@@ -529,8 +481,14 @@ class Service implements InjectionAwareInterface
         $this->checkPermissionsAndThrowException('staff', 'create_and_edit_staff');
 
         $previousStatus = $model->status;
-
         $newStatus = $data['status'] ?? $model->status;
+
+        if ((int) $this->di['loggedin_admin']->id === (int) $model->id && $previousStatus === \Model_Admin::STATUS_ACTIVE && $newStatus !== \Model_Admin::STATUS_ACTIVE) {
+            throw new \FOSSBilling\InformationException('You cannot deactivate your own staff account');
+        }
+
+        $this->assertCanManageAdmin($model);
+
         if ($previousStatus === \Model_Admin::STATUS_ACTIVE && $newStatus !== \Model_Admin::STATUS_ACTIVE) {
             $this->assertCanRemoveActiveSuperAdministrator($model);
         }
@@ -564,6 +522,7 @@ class Service implements InjectionAwareInterface
         }
 
         $this->checkPermissionsAndThrowException('staff', 'delete_staff');
+        $this->assertCanManageAdmin($model);
 
         $this->assertCanRemoveActiveSuperAdministrator($model);
 
@@ -582,6 +541,7 @@ class Service implements InjectionAwareInterface
     public function changePassword(\Model_Admin $model, $password): bool
     {
         $this->checkPermissionsAndThrowException('staff', 'reset_staff_password');
+        $this->assertCanManageAdmin($model);
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffPasswordChange', 'params' => ['id' => $model->id]]);
 
@@ -630,13 +590,17 @@ class Service implements InjectionAwareInterface
         return (int) $newId;
     }
 
-    public function createGroup(string $name, array $permissions = []): int
+    public function createGroup(string $name, ?AdminGroup $parent = null): int
     {
-        $this->checkPermissionsAndThrowException('staff', 'manage_groups');
+        if (!$this->isSuperAdministrator()) {
+            throw new \FOSSBilling\InformationException('Only super administrators can manage staff groups', [], 403);
+        }
+
+        $parent ??= $this->adminGroupRepository->findSuperAdministratorGroup();
 
         $group = (new AdminGroup())
             ->setName($name)
-            ->setPermissions($permissions);
+            ->setParent($parent);
 
         $this->di['em']->persist($group);
         $this->di['em']->flush();
@@ -648,7 +612,9 @@ class Service implements InjectionAwareInterface
 
     public function deleteGroup(AdminGroup $model): bool
     {
-        $this->checkPermissionsAndThrowException('staff', 'manage_groups');
+        if (!$this->isSuperAdministrator()) {
+            throw new \FOSSBilling\InformationException('Only super administrators can manage staff groups', [], 403);
+        }
 
         $id = $model->getId();
         if ($model->isProtected()) {
@@ -659,9 +625,13 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Cannot remove group which has staff members');
         }
 
+        if ($this->adminGroupRepository->getDescendantIdsForGroups([(int) $id]) !== []) {
+            throw new \FOSSBilling\InformationException('Cannot remove group which has child groups');
+        }
+
         $this->di['em']->remove($model);
         $this->di['em']->flush();
-        $this->clearPermissionCache();
+        $this->permissionCache = [];
 
         $this->di['logger']->info('Deleted staff group %s', $id);
 
@@ -670,7 +640,9 @@ class Service implements InjectionAwareInterface
 
     public function updateGroup(AdminGroup $model, array $data): bool
     {
-        $this->checkPermissionsAndThrowException('staff', 'manage_groups');
+        if (!$this->isSuperAdministrator()) {
+            throw new \FOSSBilling\InformationException('Only super administrators can manage staff groups', [], 403);
+        }
 
         if ($model->isProtected()) {
             throw new \FOSSBilling\InformationException('Protected staff groups cannot be modified');
@@ -678,6 +650,27 @@ class Service implements InjectionAwareInterface
 
         if (isset($data['name'])) {
             $model->setName($data['name']);
+        }
+
+        if (array_key_exists('parent_id', $data)) {
+            if (empty($data['parent_id'])) {
+                throw new \FOSSBilling\InformationException('Staff groups must have a parent group');
+            }
+
+            $parent = $this->adminGroupRepository->findById((int) $data['parent_id']);
+            if (!$parent instanceof AdminGroup) {
+                throw new \FOSSBilling\InformationException('Parent group not found');
+            }
+
+            if ((int) $parent->getId() === (int) $model->getId()) {
+                throw new \FOSSBilling\InformationException('A group cannot be its own parent');
+            }
+
+            if ($this->adminGroupRepository->isDescendantOf((int) $parent->getId(), (int) $model->getId())) {
+                throw new \FOSSBilling\InformationException('A group cannot use one of its subgroups as parent');
+            }
+
+            $model->setParent($parent);
         }
 
         if (array_key_exists('permissions', $data)) {
@@ -691,7 +684,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['em']->persist($model);
         $this->di['em']->flush();
-        $this->clearPermissionCache();
+        $this->permissionCache = [];
 
         $this->di['logger']->info('Updated staff group %s', $model->getId());
 
@@ -701,6 +694,8 @@ class Service implements InjectionAwareInterface
     public function addAdminToGroup(\Model_Admin $admin, AdminGroup $group): bool
     {
         $this->checkPermissionsAndThrowException('staff', 'manage_groups');
+        $this->assertCanManageAdmin($admin);
+        $this->assertCanManageGroup($group);
 
         $adminId = (int) $admin->id;
         $groupId = (int) $group->getId();
@@ -710,7 +705,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['em']->persist(new AdminGroupMember($adminId, $group));
         $this->di['em']->flush();
-        $this->clearPermissionCache();
+        $this->permissionCache = [];
 
         $this->di['logger']->info('Added staff member %s to group %s', $adminId, $groupId);
 
@@ -720,6 +715,8 @@ class Service implements InjectionAwareInterface
     public function removeAdminFromGroup(\Model_Admin $admin, AdminGroup $group): bool
     {
         $this->checkPermissionsAndThrowException('staff', 'manage_groups');
+        $this->assertCanManageAdmin($admin);
+        $this->assertCanManageGroup($group);
 
         $adminId = (int) $admin->id;
         $groupId = (int) $group->getId();
@@ -734,11 +731,75 @@ class Service implements InjectionAwareInterface
 
         $this->di['em']->remove($membership);
         $this->di['em']->flush();
-        $this->clearPermissionCache();
+        $this->permissionCache = [];
 
         $this->di['logger']->info('Removed staff member %s from group %s', $adminId, $groupId);
 
         return true;
+    }
+
+    public function isSuperAdministrator(int|string|null $memberId = null): bool
+    {
+        $memberId ??= $this->di['loggedin_admin']->id;
+
+        return $this->adminGroupMemberRepository->adminBelongsToSystemGroup((int) $memberId, AdminGroup::SYSTEM_SUPER_ADMIN);
+    }
+
+    private function actorBypassesHierarchy(\Model_Admin $actor): bool
+    {
+        return $actor->isCron() || $this->isSuperAdministrator($actor->id);
+    }
+
+    private function assertCanManageAdmin(\Model_Admin $target): void
+    {
+        $actor = $this->di['loggedin_admin'];
+        if ($this->actorBypassesHierarchy($actor)) {
+            return;
+        }
+
+        if ((int) $actor->id === (int) $target->id) {
+            throw new \FOSSBilling\InformationException('You cannot manage your own staff account here');
+        }
+
+        if ($target->isCron() || $target->protected) {
+            throw new \FOSSBilling\InformationException('You can only manage staff accounts in lower groups');
+        }
+
+        $targetGroupIds = $this->adminGroupMemberRepository->getGroupIdsForAdmin((int) $target->id);
+        if ($targetGroupIds === []) {
+            return;
+        }
+
+        if (array_diff($targetGroupIds, $this->adminGroupRepository->getDescendantIdsForGroups($this->adminGroupMemberRepository->getGroupIdsForAdmin((int) $actor->id))) !== []) {
+            throw new \FOSSBilling\InformationException('You can only manage staff accounts in lower groups');
+        }
+    }
+
+    private function assertCanManageGroup(AdminGroup $group): void
+    {
+        $actor = $this->di['loggedin_admin'];
+        if ($this->actorBypassesHierarchy($actor)) {
+            return;
+        }
+
+        if (!in_array((int) $group->getId(), $this->adminGroupRepository->getDescendantIdsForGroups($this->adminGroupMemberRepository->getGroupIdsForAdmin((int) $actor->id)), true)) {
+            throw new \FOSSBilling\InformationException('You can only manage lower staff groups');
+        }
+    }
+
+    private function assertCanRemoveActiveSuperAdministrator(\Model_Admin $admin): void
+    {
+        if ($admin->status !== \Model_Admin::STATUS_ACTIVE) {
+            return;
+        }
+
+        if (!$this->adminGroupMemberRepository->adminBelongsToSystemGroup((int) $admin->id, AdminGroup::SYSTEM_SUPER_ADMIN)) {
+            return;
+        }
+
+        if ($this->adminGroupMemberRepository->countActiveMembersInSystemGroup(AdminGroup::SYSTEM_SUPER_ADMIN) <= 1) {
+            throw new \FOSSBilling\InformationException('Cannot remove the last active super administrator');
+        }
     }
 
     public function getActivityAdminHistorySearchQuery($data): array

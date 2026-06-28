@@ -257,7 +257,7 @@ test('group get pairs', function (): void {
     $serviceMock = Mockery::mock(Box\Mod\Staff\Service::class);
     $groupRepository = Mockery::mock(AdminGroupRepository::class);
     $groupRepository
-    ->shouldReceive('getPairs')
+    ->shouldReceive('getParentPairs')
     ->atLeast()->once()
     ->andReturn([]);
     $serviceMock
@@ -270,36 +270,76 @@ test('group get pairs', function (): void {
     expect($result)->toBeArray();
 });
 
+test('group can manage structure', function (): void {
+    $api = new Box\Mod\Staff\Api\Admin();
+    $admin = staffAdminIdentity();
+    $admin->id = 1;
+
+    $di = container();
+    $di['loggedin_admin'] = $admin;
+
+    $serviceMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $serviceMock
+        ->shouldReceive('isSuperAdministrator')
+        ->once()
+        ->withNoArgs()
+        ->andReturn(true);
+
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    expect($api->is_super_administrator([]))->toBeTrue();
+});
+
+test('group repository sorts list as tree', function (): void {
+    $root = (new AdminGroup())->setName('Root');
+    $child = (new AdminGroup())->setName('Child')->setParent($root);
+    $sibling = (new AdminGroup())->setName('Sibling')->setParent($root);
+    $grandchild = (new AdminGroup())->setName('Grandchild')->setParent($child);
+    staffAdminSetEntityId($root, 1);
+    staffAdminSetEntityId($child, 2);
+    staffAdminSetEntityId($sibling, 3);
+    staffAdminSetEntityId($grandchild, 4);
+
+    $query = Mockery::mock(Doctrine\ORM\Query::class);
+    $query->shouldReceive('getResult')->once()->andReturn([$root, $child, $sibling, $grandchild]);
+    $queryBuilder = Mockery::mock(Doctrine\ORM\QueryBuilder::class);
+    $queryBuilder->shouldReceive('getQuery')->once()->andReturn($query);
+    $groupRepository = Mockery::mock(AdminGroupRepository::class)->makePartial();
+    $groupRepository->shouldReceive('getSearchQueryBuilder')->once()->andReturn($queryBuilder);
+
+    expect(array_map(static fn (AdminGroup $group): ?string => $group->getName(), $groupRepository->findTreeSorted()))
+        ->toEqual(['Root', 'Child', 'Grandchild', 'Sibling']);
+});
+
 test('group get list', function (): void {
     $api = new Box\Mod\Staff\Api\Admin();
-    $data = [];
-    $queryBuilder = Mockery::mock(Doctrine\ORM\QueryBuilder::class);
+    $root = (new AdminGroup())->setName('Root');
+    $child = (new AdminGroup())->setName('Child')->setParent($root);
+    $sibling = (new AdminGroup())->setName('Sibling')->setParent($root);
+    $grandchild = (new AdminGroup())->setName('Grandchild')->setParent($child);
+    staffAdminSetEntityId($root, 1);
+    staffAdminSetEntityId($child, 2);
+    staffAdminSetEntityId($sibling, 3);
+    staffAdminSetEntityId($grandchild, 4);
 
     $serviceMock = Mockery::mock(Box\Mod\Staff\Service::class);
     $groupRepository = Mockery::mock(AdminGroupRepository::class);
     $groupRepository
-    ->shouldReceive('getSearchQueryBuilder')
+    ->shouldReceive('findTreeSorted')
     ->atLeast()->once()
-    ->andReturn($queryBuilder);
+    ->andReturn([$root, $child, $grandchild, $sibling]);
     $serviceMock
     ->shouldReceive('getAdminGroupRepository')
     ->atLeast()->once()
     ->andReturn($groupRepository);
 
-    $pagerMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
-    $pagerMock
-    ->shouldReceive('paginateDoctrineQuery')
-    ->atLeast()->once()
-    ->andReturn(['list' => []]);
-
-    $di = container();
-    $di['pager'] = $pagerMock;
-
-    $api->setDi($di);
     $api->setService($serviceMock);
 
-    $result = $api->group_get_list($data);
-    expect($result)->toBeArray();
+    $result = $api->group_get_list([]);
+    expect(array_column($result['list'], 'name'))->toEqual(['Root', 'Child', 'Grandchild', 'Sibling']);
+    expect($result)->toHaveKey('list');
+    expect($result)->not->toHaveKey('total');
 });
 
 test('group create', function (): void {
@@ -311,6 +351,7 @@ test('group create', function (): void {
     $serviceMock
     ->shouldReceive('createGroup')
     ->atLeast()->once()
+    ->with('Prime Group', null)
     ->andReturn($newGroupId);
 
     $di = container();
@@ -322,11 +363,19 @@ test('group create', function (): void {
     expect($result)->toEqual($newGroupId);
 });
 
-test('group create rejects non-array permissions', function (): void {
+test('group create ignores permissions parameter', function (): void {
     $api = new Box\Mod\Staff\Api\Admin();
+    $serviceMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $serviceMock
+    ->shouldReceive('createGroup')
+    ->once()
+    ->with('Prime Group', null)
+    ->andReturn(1);
 
-    expect(fn () => $api->group_create(['name' => 'Prime Group', 'permissions' => 'nope']))
-        ->toThrow(FOSSBilling\InformationException::class, 'Parameter "permissions" must be an array');
+    $api->setDi(container());
+    $api->setService($serviceMock);
+
+    expect($api->group_create(['name' => 'Prime Group', 'permissions' => 'nope']))->toBe(1);
 });
 
 test('group get', function (): void {

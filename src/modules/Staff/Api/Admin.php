@@ -76,6 +76,14 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
+     * Returns whether the logged-in staff member is a Super Administrator.
+     */
+    public function is_super_administrator($data): bool
+    {
+        return $this->getService()->isSuperAdministrator();
+    }
+
+    /**
      * Update staff member.
      *
      * @optional string $email - new email
@@ -189,11 +197,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('staff', 'view');
 
-        return $this->getService()->getAdminGroupRepository()->getPairs();
+        return $this->getService()->getAdminGroupRepository()->getParentPairs();
     }
 
     /**
-     * Return paginate list of staff members groups.
+     * Return list of staff members groups.
      *
      * @return array
      */
@@ -201,9 +209,14 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('staff', 'manage_groups');
 
-        $qb = $this->getService()->getAdminGroupRepository()->getSearchQueryBuilder($data);
+        $groups = $this->getService()->getAdminGroupRepository()->findTreeSorted($data);
 
-        return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
+        return [
+            'list' => array_map(
+                static fn (AdminGroup $group): array => $group->toApiArray(),
+                $groups,
+            ),
+        ];
     }
 
     /**
@@ -218,11 +231,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('staff', 'manage_groups');
 
-        if (isset($data['permissions']) && !is_array($data['permissions'])) {
-            throw new \FOSSBilling\InformationException('Parameter "permissions" must be an array');
-        }
+        $parent = empty($data['parent_id']) ? null : $this->getAdminGroupById((int) $data['parent_id']);
 
-        return $this->getService()->createGroup($data['name'], $data['permissions'] ?? []);
+        return $this->getService()->createGroup($data['name'], $parent);
     }
 
     /**

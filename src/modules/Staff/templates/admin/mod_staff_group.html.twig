@@ -46,10 +46,10 @@
         {% block detail_tab_content %}
             <div class="tab-pane fade show active" id="tab-details" role="tabpanel">
                 <div class="p-3">
-                    {% if group.protected %}
+                    {% if group.protected or not is_super_admin|default(false) %}
                         {% embed 'partial_admin_form_card.html.twig' with {
                             title: 'Group details'|trans,
-                            subtitle: 'This protected system group cannot be modified.'|trans
+                            subtitle: group.protected ? ('This protected system group cannot be modified.'|trans) : ('Only Super Administrators can change staff group details.'|trans)
                         } %}
                             {% block form_content %}
                                 <div class="row g-3">
@@ -66,6 +66,10 @@
                                     <div class="col-lg-4">
                                         <label class="form-label" for="inputName">{{ 'Name'|trans }}</label>
                                         <input class="form-control" id="inputName" type="text" value="{{ group.name }}" readonly>
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <label class="form-label" for="inputParent">{{ 'Parent group'|trans }}</label>
+                                        <input class="form-control" id="inputParent" type="text" value="{{ group.parent_name|default('Root group'|trans) }}" readonly>
                                     </div>
                                 </div>
                             {% endblock %}
@@ -91,6 +95,15 @@
                                         <div class="col-lg-4">
                                             <label class="form-label" for="inputName">{{ 'Name'|trans }}</label>
                                             <input class="form-control" id="inputName" type="text" name="name" value="{{ group.name }}" required>
+                                        </div>
+                                        <div class="col-lg-4">
+                                            <label class="form-label" for="inputParent">{{ 'Parent group'|trans }}</label>
+                                            <select class="form-select" id="inputParent" name="parent_id" required>
+                                                {% for parentId, parentName in parent_pairs %}
+                                                    <option value="{{ parentId }}"{% if group.parent_id|default(null) == parentId %} selected{% endif %}>{{ parentName }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <div class="form-text">{{ 'Members can manage staff and groups below their assigned groups.'|trans }}</div>
                                         </div>
                                     </div>
                                     <input type="hidden" name="id" value="{{ group.id }}">
@@ -154,6 +167,17 @@
                                 {% endblock %}
                             {% endembed %}
                         {% endif %}
+                    {% elseif not is_super_admin|default(false) %}
+                        {% embed 'partial_admin_form_card.html.twig' with {
+                            title: 'Permissions'|trans,
+                            subtitle: 'Only Super Administrators can change staff group permissions.'|trans
+                        } %}
+                            {% block form_content %}
+                                <div class="alert alert-info mb-0" role="alert">
+                                    {{ 'You can still manage group details and memberships within your hierarchy, but permission changes are restricted to Super Administrators.'|trans }}
+                                </div>
+                            {% endblock %}
+                        {% endembed %}
                     {% else %}
                         <form method="post" action="{{ 'staff/group_update'|api_url }}" {{ fb_api_form({message: 'Staff Group Updated'|trans}) }}>
                             {% embed 'partial_admin_form_card.html.twig' with {

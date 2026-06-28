@@ -74,6 +74,25 @@ function staffSetEntityId(object $entity, int $id): void
     $property->setValue($entity, $id);
 }
 
+function staffHierarchyBypassAdmin(): Model_Admin
+{
+    $admin = new Model_Admin();
+    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin->id = 99;
+    $admin->system_name = Model_Admin::SYSTEM_CRON;
+
+    return $admin;
+}
+
+function staffRegularAdmin(): Model_Admin
+{
+    $admin = new Model_Admin();
+    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin->id = 10;
+
+    return $admin;
+}
+
 function staffEntityManager(object $groupRepository, ?object $groupMemberRepository = null): object
 {
     $groupMemberRepository ??= Mockery::mock(AdminGroupMemberRepository::class)->shouldIgnoreMissing();
@@ -947,6 +966,7 @@ test('update updates admin details', function (): void {
     $di['events_manager'] = $eventsMock;
     $di['logger'] = $logStub;
     $di['db'] = $dbMock;
+    $di['loggedin_admin'] = staffHierarchyBypassAdmin();
 
     $serviceMock->setDi($di);
 
@@ -974,10 +994,37 @@ test('update rejects deactivating last active super administrator', function ():
     $di = container();
     $di['em'] = staffEntityManager($groupRepository, $groupMemberRepository);
     $di['events_manager'] = $eventsMock;
+    $di['loggedin_admin'] = staffHierarchyBypassAdmin();
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->update($adminModel, ['status' => Model_Admin::STATUS_INACTIVE]))
         ->toThrow(FOSSBilling\InformationException::class, 'Cannot remove the last active super administrator');
+});
+
+test('update rejects deactivating own staff account', function (): void {
+    $adminModel = new Model_Admin();
+    $adminModel->loadBean(new Tests\Helpers\DummyBean());
+    $adminModel->id = 10;
+    $adminModel->status = Model_Admin::STATUS_ACTIVE;
+
+    $eventsMock = Mockery::mock('\Box_EventManager');
+    $eventsMock->shouldReceive('fire')->atLeast()->once();
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('store')->never();
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('hasPermission')->once()->andReturn(true);
+
+    $di = container();
+    $di['em'] = staffEntityManager(Mockery::mock(AdminGroupRepository::class), Mockery::mock(AdminGroupMemberRepository::class));
+    $di['events_manager'] = $eventsMock;
+    $di['db'] = $dbMock;
+    $di['loggedin_admin'] = staffRegularAdmin();
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->update($adminModel, ['status' => Model_Admin::STATUS_INACTIVE]))
+        ->toThrow(FOSSBilling\InformationException::class, 'You cannot deactivate your own staff account');
 });
 
 test('delete removes admin account', function (): void {
@@ -1000,6 +1047,7 @@ test('delete removes admin account', function (): void {
     $di['events_manager'] = $eventsMock;
     $di['logger'] = $logStub;
     $di['db'] = $dbMock;
+    $di['loggedin_admin'] = staffHierarchyBypassAdmin();
 
     $serviceMock->setDi($di);
 
@@ -1023,6 +1071,7 @@ test('delete rejects removing last active super administrator', function (): voi
 
     $di = container();
     $di['em'] = staffEntityManager($groupRepository, $groupMemberRepository);
+    $di['loggedin_admin'] = staffHierarchyBypassAdmin();
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->delete($adminModel))
@@ -1069,6 +1118,7 @@ test('changePassword updates admin password', function (): void {
     $di['db'] = $dbMock;
     $di['password'] = $passwordMock;
     $di['mod_service'] = $di->protect(fn () => $profileServiceStub);
+    $di['loggedin_admin'] = staffHierarchyBypassAdmin();
 
     $serviceMock->setDi($di);
 
@@ -1168,24 +1218,71 @@ test('create throws exception for duplicate email', function (): void {
 });
 
 test('createGroup creates new admin group', function (): void {
+    $superAdminGroup = new AdminGroup();
+    staffSetEntityId($superAdminGroup, 1);
+
     $groupRepository = Mockery::mock(AdminGroupRepository::class);
-    $em = staffEntityManager($groupRepository);
+    $groupRepository->shouldReceive('findSuperAdministratorGroup')->once()->andReturn($superAdminGroup);
+    $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
+    $groupMemberRepository->shouldReceive('adminBelongsToSystemGroup')->atLeast()->once()->andReturn(true);
+    $em = staffEntityManager($groupRepository, $groupMemberRepository);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-
-    $serviceMock->shouldReceive('hasPermission')->atLeast()->once()->andReturn(true);
 
     $di = container();
     $di['em'] = $em;
     $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['loggedin_admin'] = staffRegularAdmin();
 
     $serviceMock->setDi($di);
 
-    $result = $serviceMock->createGroup('new_group_name', ['support' => ['access' => true]]);
+    $result = $serviceMock->createGroup('new_group_name');
     expect($result)->toBeInt();
     expect($result)->toBe(1);
     expect($em->persisted[0])->toBeInstanceOf(AdminGroup::class);
-    expect($em->persisted[0]->getPermissions())->toBe(['support' => ['access' => true]]);
+    expect($em->persisted[0]->getParent())->toBe($superAdminGroup);
+    expect($em->persisted[0]->getPermissions())->toBe([]);
+});
+
+test('createGroup rejects non-super administrator', function (): void {
+    $parent = new AdminGroup();
+    staffSetEntityId($parent, 1);
+
+    $groupRepository = Mockery::mock(AdminGroupRepository::class);
+    $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
+    $groupMemberRepository->shouldReceive('adminBelongsToSystemGroup')->atLeast()->once()->andReturn(false);
+    $em = staffEntityManager($groupRepository, $groupMemberRepository);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+
+    $di = container();
+    $di['em'] = $em;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['loggedin_admin'] = staffRegularAdmin();
+
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->createGroup('new_group_name', $parent))
+        ->toThrow(FOSSBilling\Exception::class, 'Only super administrators can manage staff groups');
+    expect($em->persisted)->toBe([]);
+});
+
+test('createGroup rejects missing super administrator root group', function (): void {
+    $groupRepository = Mockery::mock(AdminGroupRepository::class);
+    $groupRepository->shouldReceive('findSuperAdministratorGroup')->once()->andThrow(new FOSSBilling\InformationException('Super Administrator group not found'));
+    $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
+    $groupMemberRepository->shouldReceive('adminBelongsToSystemGroup')->atLeast()->once()->andReturn(true);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+
+    $di = container();
+    $di['em'] = staffEntityManager($groupRepository, $groupMemberRepository);
+    $di['loggedin_admin'] = staffRegularAdmin();
+
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->createGroup('new_group_name'))
+        ->toThrow(FOSSBilling\Exception::class, 'Super Administrator group not found');
 });
 
 test('deleteGroup removes admin group', function (): void {
@@ -1193,17 +1290,18 @@ test('deleteGroup removes admin group', function (): void {
     staffSetEntityId($adminGroupModel, 2);
 
     $groupRepository = Mockery::mock(AdminGroupRepository::class);
+    $groupRepository->shouldReceive('getDescendantIdsForGroups')->once()->with([2])->andReturn([]);
     $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
+    $groupMemberRepository->shouldReceive('adminBelongsToSystemGroup')->atLeast()->once()->andReturn(true);
     $groupMemberRepository->shouldReceive('countMembersInGroup')->once()->with(2)->andReturn(0);
     $em = staffEntityManager($groupRepository, $groupMemberRepository);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
 
-    $serviceMock->shouldReceive('hasPermission')->atLeast()->once()->andReturn(true);
-
     $di = container();
     $di['em'] = $em;
     $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['loggedin_admin'] = staffRegularAdmin();
 
     $serviceMock->setDi($di);
 
@@ -1213,13 +1311,37 @@ test('deleteGroup removes admin group', function (): void {
     expect($em->removed[0])->toBe($adminGroupModel);
 });
 
+test('deleteGroup rejects non-super administrator', function (): void {
+    $adminGroupModel = new AdminGroup();
+    staffSetEntityId($adminGroupModel, 2);
+
+    $groupRepository = Mockery::mock(AdminGroupRepository::class);
+    $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
+    $groupMemberRepository->shouldReceive('adminBelongsToSystemGroup')->atLeast()->once()->andReturn(false);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+
+    $di = container();
+    $di['em'] = staffEntityManager($groupRepository, $groupMemberRepository);
+    $di['loggedin_admin'] = staffRegularAdmin();
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->deleteGroup($adminGroupModel))
+        ->toThrow(FOSSBilling\Exception::class, 'Only super administrators can manage staff groups');
+});
+
 test('deleteGroup throws exception for protected group', function (): void {
     $adminGroupModel = (new AdminGroup())->setProtected(true);
     staffSetEntityId($adminGroupModel, 1);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
 
-    $serviceMock->shouldReceive('hasPermission')->atLeast()->once()->andReturn(true);
+    $di = container();
+    $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
+    $groupMemberRepository->shouldReceive('adminBelongsToSystemGroup')->atLeast()->once()->andReturn(true);
+    $di['em'] = staffEntityManager(Mockery::mock(AdminGroupRepository::class), $groupMemberRepository);
+    $di['loggedin_admin'] = staffRegularAdmin();
+    $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->deleteGroup($adminGroupModel))
         ->toThrow(FOSSBilling\Exception::class, 'Protected staff groups cannot be removed');
@@ -1230,15 +1352,16 @@ test('deleteGroup throws exception when group has members', function (): void {
     staffSetEntityId($adminGroupModel, 2);
 
     $groupRepository = Mockery::mock(AdminGroupRepository::class);
+    $groupRepository->shouldReceive('getDescendantIdsForGroups')->never();
     $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
+    $groupMemberRepository->shouldReceive('adminBelongsToSystemGroup')->atLeast()->once()->andReturn(true);
     $groupMemberRepository->shouldReceive('countMembersInGroup')->once()->with(2)->andReturn(2);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
 
-    $serviceMock->shouldReceive('hasPermission')->atLeast()->once()->andReturn(true);
-
     $di = container();
     $di['em'] = staffEntityManager($groupRepository, $groupMemberRepository);
+    $di['loggedin_admin'] = staffRegularAdmin();
 
     $serviceMock->setDi($di);
 
@@ -1246,40 +1369,146 @@ test('deleteGroup throws exception when group has members', function (): void {
         ->toThrow(FOSSBilling\Exception::class, 'Cannot remove group which has staff members');
 });
 
+test('deleteGroup throws exception when group has child groups', function (): void {
+    $adminGroupModel = new AdminGroup();
+    staffSetEntityId($adminGroupModel, 2);
+
+    $groupRepository = Mockery::mock(AdminGroupRepository::class);
+    $groupRepository->shouldReceive('getDescendantIdsForGroups')->once()->with([2])->andReturn([3]);
+    $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
+    $groupMemberRepository->shouldReceive('adminBelongsToSystemGroup')->atLeast()->once()->andReturn(true);
+    $groupMemberRepository->shouldReceive('countMembersInGroup')->once()->with(2)->andReturn(0);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+
+    $di = container();
+    $di['em'] = staffEntityManager($groupRepository, $groupMemberRepository);
+    $di['loggedin_admin'] = staffRegularAdmin();
+
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->deleteGroup($adminGroupModel))
+        ->toThrow(FOSSBilling\Exception::class, 'Cannot remove group which has child groups');
+});
+
 test('updateGroup updates group details', function (): void {
     $adminGroupModel = new AdminGroup();
     staffSetEntityId($adminGroupModel, 2);
 
     $groupRepository = Mockery::mock(AdminGroupRepository::class);
-    $em = staffEntityManager($groupRepository);
+    $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
+    $groupMemberRepository->shouldReceive('adminBelongsToSystemGroup')->atLeast()->once()->andReturn(true);
+    $em = staffEntityManager($groupRepository, $groupMemberRepository);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-
-    $serviceMock->shouldReceive('hasPermission')->atLeast()->once()->andReturn(true);
 
     $di = container();
     $di['em'] = $em;
     $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['loggedin_admin'] = staffRegularAdmin();
 
     $serviceMock->setDi($di);
 
-    $data = ['name' => 'OhExampleName', 'permissions' => ['_submitted' => '1', 'support' => ['access' => true]]];
+    $data = ['name' => 'OhExampleName'];
     $result = $serviceMock->updateGroup($adminGroupModel, $data);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
     expect($adminGroupModel->getName())->toBe('OhExampleName');
-    expect($adminGroupModel->getPermissions())->toBe(['support' => ['access' => true]]);
+    expect($adminGroupModel->getPermissions())->toBe([]);
     expect($em->persisted[0])->toBe($adminGroupModel);
+});
+
+test('updateGroup rejects details changes from non-super administrator', function (): void {
+    $adminGroupModel = new AdminGroup();
+    staffSetEntityId($adminGroupModel, 2);
+
+    $groupRepository = Mockery::mock(AdminGroupRepository::class);
+    $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
+    $groupMemberRepository->shouldReceive('adminBelongsToSystemGroup')->atLeast()->once()->andReturn(false);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+
+    $di = container();
+    $di['em'] = staffEntityManager($groupRepository, $groupMemberRepository);
+    $di['loggedin_admin'] = staffRegularAdmin();
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->updateGroup($adminGroupModel, ['name' => 'Nope']))
+        ->toThrow(FOSSBilling\Exception::class, 'Only super administrators can manage staff groups');
+});
+
+test('updateGroup allows super administrator to update permissions', function (): void {
+    $adminGroupModel = new AdminGroup();
+    staffSetEntityId($adminGroupModel, 2);
+
+    $groupRepository = Mockery::mock(AdminGroupRepository::class);
+    $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
+    $groupMemberRepository->shouldReceive('adminBelongsToSystemGroup')->atLeast()->once()->andReturn(true);
+    $em = staffEntityManager($groupRepository, $groupMemberRepository);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+
+    $di = container();
+    $di['em'] = $em;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['loggedin_admin'] = staffRegularAdmin();
+
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->updateGroup($adminGroupModel, ['permissions' => ['_submitted' => '1', 'support' => ['access' => true]]]))->toBeTrue();
+    expect($adminGroupModel->getPermissions())->toBe(['support' => ['access' => true]]);
+});
+
+test('updateGroup rejects permission changes from non-super administrator', function (): void {
+    $adminGroupModel = new AdminGroup();
+    staffSetEntityId($adminGroupModel, 2);
+
+    $groupRepository = Mockery::mock(AdminGroupRepository::class);
+    $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
+    $groupMemberRepository->shouldReceive('adminBelongsToSystemGroup')->atLeast()->once()->andReturn(false);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+
+    $di = container();
+    $di['em'] = staffEntityManager($groupRepository, $groupMemberRepository);
+    $di['loggedin_admin'] = staffRegularAdmin();
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->updateGroup($adminGroupModel, ['permissions' => ['support' => ['access' => true]]]))
+        ->toThrow(FOSSBilling\Exception::class, 'Only super administrators can manage staff groups');
 });
 
 test('updateGroup rejects protected group changes', function (): void {
     $adminGroupModel = (new AdminGroup())->setProtected(true);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serviceMock->shouldReceive('hasPermission')->atLeast()->once()->andReturn(true);
+
+    $di = container();
+    $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
+    $groupMemberRepository->shouldReceive('adminBelongsToSystemGroup')->atLeast()->once()->andReturn(true);
+    $di['em'] = staffEntityManager(Mockery::mock(AdminGroupRepository::class), $groupMemberRepository);
+    $di['loggedin_admin'] = staffRegularAdmin();
+    $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->updateGroup($adminGroupModel, ['name' => 'Nope']))
         ->toThrow(FOSSBilling\Exception::class, 'Protected staff groups cannot be modified');
+});
+
+test('updateGroup rejects clearing parent group', function (): void {
+    $adminGroupModel = new AdminGroup();
+    staffSetEntityId($adminGroupModel, 2);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+
+    $di = container();
+    $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
+    $groupMemberRepository->shouldReceive('adminBelongsToSystemGroup')->atLeast()->once()->andReturn(true);
+    $di['em'] = staffEntityManager(Mockery::mock(AdminGroupRepository::class), $groupMemberRepository);
+    $di['loggedin_admin'] = staffRegularAdmin();
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->updateGroup($adminGroupModel, ['parent_id' => '']))
+        ->toThrow(FOSSBilling\Exception::class, 'Staff groups must have a parent group');
 });
 
 test('addAdminToGroup creates membership', function (): void {
@@ -1301,6 +1530,7 @@ test('addAdminToGroup creates membership', function (): void {
     $di = container();
     $di['em'] = $em;
     $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['loggedin_admin'] = staffHierarchyBypassAdmin();
     $serviceMock->setDi($di);
 
     expect($serviceMock->addAdminToGroup($admin, $group))->toBeTrue();
@@ -1325,6 +1555,7 @@ test('addAdminToGroup is idempotent for existing membership', function (): void 
 
     $di = container();
     $di['em'] = $em;
+    $di['loggedin_admin'] = staffHierarchyBypassAdmin();
     $serviceMock->setDi($di);
 
     expect($serviceMock->addAdminToGroup($admin, $group))->toBeTrue();
@@ -1352,6 +1583,7 @@ test('removeAdminFromGroup removes membership', function (): void {
     $di = container();
     $di['em'] = $em;
     $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['loggedin_admin'] = staffHierarchyBypassAdmin();
     $serviceMock->setDi($di);
 
     expect($serviceMock->removeAdminFromGroup($admin, $group))->toBeTrue();
@@ -1378,10 +1610,95 @@ test('removeAdminFromGroup rejects removing last active super administrator', fu
 
     $di = container();
     $di['em'] = staffEntityManager($groupRepository, $groupMemberRepository);
+    $di['loggedin_admin'] = staffHierarchyBypassAdmin();
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->removeAdminFromGroup($admin, $group))
         ->toThrow(FOSSBilling\InformationException::class, 'Cannot remove the last active super administrator');
+});
+
+test('delete rejects staff outside actor group subtree', function (): void {
+    $actor = new Model_Admin();
+    $actor->loadBean(new Tests\Helpers\DummyBean());
+    $actor->id = 10;
+
+    $target = new Model_Admin();
+    $target->loadBean(new Tests\Helpers\DummyBean());
+    $target->id = 20;
+
+    $groupRepository = Mockery::mock(AdminGroupRepository::class);
+    $groupRepository->shouldReceive('getDescendantIdsForGroups')->with([1])->andReturn([3]);
+
+    $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
+    $groupMemberRepository->shouldReceive('adminBelongsToSystemGroup')->with(10, AdminGroup::SYSTEM_SUPER_ADMIN)->andReturn(false);
+    $groupMemberRepository->shouldReceive('getGroupIdsForAdmin')->with(10)->andReturn([1]);
+    $groupMemberRepository->shouldReceive('getGroupIdsForAdmin')->with(20)->andReturn([2]);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('hasPermission')->once()->andReturn(true);
+
+    $di = container();
+    $di['em'] = staffEntityManager($groupRepository, $groupMemberRepository);
+    $di['loggedin_admin'] = $actor;
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->delete($target))
+        ->toThrow(FOSSBilling\InformationException::class, 'You can only manage staff accounts in lower groups');
+});
+
+test('addAdminToGroup rejects assigning groups outside actor subtree', function (): void {
+    $actor = new Model_Admin();
+    $actor->loadBean(new Tests\Helpers\DummyBean());
+    $actor->id = 10;
+
+    $target = new Model_Admin();
+    $target->loadBean(new Tests\Helpers\DummyBean());
+    $target->id = 20;
+
+    $peerGroup = new AdminGroup();
+    staffSetEntityId($peerGroup, 2);
+
+    $groupRepository = Mockery::mock(AdminGroupRepository::class);
+    $groupRepository->shouldReceive('getDescendantIdsForGroups')->with([1])->andReturn([3]);
+
+    $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
+    $groupMemberRepository->shouldReceive('adminBelongsToSystemGroup')->with(10, AdminGroup::SYSTEM_SUPER_ADMIN)->andReturn(false);
+    $groupMemberRepository->shouldReceive('getGroupIdsForAdmin')->with(10)->andReturn([1]);
+    $groupMemberRepository->shouldReceive('getGroupIdsForAdmin')->with(20)->andReturn([]);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('hasPermission')->once()->andReturn(true);
+
+    $di = container();
+    $di['em'] = staffEntityManager($groupRepository, $groupMemberRepository);
+    $di['loggedin_admin'] = $actor;
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->addAdminToGroup($target, $peerGroup))
+        ->toThrow(FOSSBilling\InformationException::class, 'You can only manage lower staff groups');
+});
+
+test('updateGroup rejects moving group below its own child', function (): void {
+    $group = new AdminGroup();
+    staffSetEntityId($group, 2);
+    $child = new AdminGroup();
+    staffSetEntityId($child, 3);
+
+    $groupRepository = Mockery::mock(AdminGroupRepository::class);
+    $groupRepository->shouldReceive('findById')->once()->with(3)->andReturn($child);
+    $groupRepository->shouldReceive('isDescendantOf')->once()->with(3, 2)->andReturn(true);
+    $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
+    $groupMemberRepository->shouldReceive('adminBelongsToSystemGroup')->atLeast()->once()->andReturn(true);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+
+    $di = container();
+    $di['em'] = staffEntityManager($groupRepository, $groupMemberRepository);
+    $di['loggedin_admin'] = staffRegularAdmin();
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->updateGroup($group, ['parent_id' => 3]))
+        ->toThrow(FOSSBilling\InformationException::class, 'A group cannot use one of its subgroups as parent');
 });
 
 // Data provider for ActivityAdminHistorySearchFilters

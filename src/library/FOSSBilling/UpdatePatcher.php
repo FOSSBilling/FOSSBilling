@@ -481,9 +481,6 @@ class UpdatePatcher implements InjectionAwareInterface
             73 => 'patch73',
             74 => 'patch74',
             75 => 'patch75',
-            76 => 'patch76',
-            77 => 'patch77',
-            78 => 'patch78',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -1893,12 +1890,24 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch75(): void
     {
+        // Rework admin groups and permisisons
+        //
+        // This patch migrates from individual admin-scoped permisisons to group permissions.
+        // It allows admins to be a part of multiple groups,
+        // sets up a hierarchy between admin groups and creates
+        // a new protected group named Super Administrator.
+        //
+        // See https://github.com/FOSSBilling/FOSSBilling/pull/3821.
         if (!$this->tableHasColumn('admin_group', 'system_name')) {
             $this->executeSql('ALTER TABLE `admin_group` ADD COLUMN `system_name` VARCHAR(100) DEFAULT NULL AFTER `name`;');
         }
 
+        if (!$this->tableHasColumn('admin_group', 'parent_id')) {
+            $this->executeSql('ALTER TABLE `admin_group` ADD COLUMN `parent_id` bigint(20) DEFAULT NULL AFTER `system_name`;');
+        }
+
         if (!$this->tableHasColumn('admin_group', 'permissions')) {
-            $this->executeSql('ALTER TABLE `admin_group` ADD COLUMN `permissions` TEXT DEFAULT NULL AFTER `system_name`;');
+            $this->executeSql('ALTER TABLE `admin_group` ADD COLUMN `permissions` TEXT DEFAULT NULL AFTER `parent_id`;');
         }
 
         if (!$this->tableHasColumn('admin_group', 'protected')) {
@@ -1907,6 +1916,10 @@ class UpdatePatcher implements InjectionAwareInterface
 
         if (!$this->tableHasIndex('admin_group', 'system_name')) {
             $this->executeSql('ALTER TABLE `admin_group` ADD UNIQUE INDEX `system_name` (`system_name`);');
+        }
+
+        if (!$this->tableHasIndex('admin_group', 'admin_group_parent_id_idx')) {
+            $this->executeSql('ALTER TABLE `admin_group` ADD KEY `admin_group_parent_id_idx` (`parent_id`);');
         }
 
         if (!$this->tableExists('admin_group_member')) {
@@ -1922,6 +1935,7 @@ class UpdatePatcher implements InjectionAwareInterface
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8;');
         }
 
+        // Convert the existing admin group into the protected Super Administrator group.
         $now = date('Y-m-d H:i:s');
         $superAdminGroupId = $this->fetchOne("SELECT id FROM admin_group WHERE system_name = 'super_admin' LIMIT 1");
         if (!$superAdminGroupId) {
@@ -1946,6 +1960,7 @@ class UpdatePatcher implements InjectionAwareInterface
             );
         }
 
+        // Move legacy one-group-per-admin assignments into the new membership table before dropping the column.
         $this->executeSql('
             INSERT IGNORE INTO admin_group_member (admin_id, admin_group_id, created_at)
             SELECT id, admin_group_id, :created_at
@@ -1963,10 +1978,8 @@ class UpdatePatcher implements InjectionAwareInterface
             'created_at' => $now,
             'role' => 'admin',
         ]);
-    }
 
-    private function patch76(): void
-    {
+        // Drop legacy staff-level group ID columns after their data has been migrated.
         if ($this->tableHasColumn('admin', 'admin_group_id')) {
             if ($this->tableHasIndex('admin', 'admin_group_id_idx')) {
                 $this->executeSql('ALTER TABLE `admin` DROP INDEX `admin_group_id_idx`;');
@@ -1974,10 +1987,7 @@ class UpdatePatcher implements InjectionAwareInterface
 
             $this->executeSql('ALTER TABLE `admin` DROP COLUMN `admin_group_id`;');
         }
-    }
 
-    private function patch77(): void
-    {
         if (!$this->tableHasColumn('admin', 'system_name')) {
             $this->executeSql('ALTER TABLE `admin` ADD COLUMN `system_name` varchar(100) DEFAULT NULL AFTER `id`;');
         }
@@ -1990,10 +2000,7 @@ class UpdatePatcher implements InjectionAwareInterface
         if (!$this->tableHasIndex('admin', 'system_name')) {
             $this->executeSql('ALTER TABLE `admin` ADD UNIQUE KEY `system_name` (`system_name`);');
         }
-    }
 
-    private function patch78(): void
-    {
         if ($this->tableHasColumn('admin', 'permissions')) {
             $this->executeSql('ALTER TABLE `admin` DROP COLUMN `permissions`;');
         }
