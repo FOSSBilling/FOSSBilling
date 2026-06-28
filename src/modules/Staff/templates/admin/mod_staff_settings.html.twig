@@ -25,6 +25,7 @@
     </button>
 {% endset %}
 {% set is_super_admin = admin.staff_is_super_administrator %}
+{% set can_manage_groups = has_permission('staff', 'manage_groups') %}
 {% set exclude_cron = request.no_cron|default('1') != '0' %}
 
 {% block breadcrumbs %}
@@ -243,7 +244,7 @@
                         </tr>
                         </thead>
                         <tbody>
-                        {% set groups = admin.staff_group_get_list %}
+                        {% set groups = can_manage_groups ? admin.staff_group_get_list : { 'list': [] } %}
                         {% for i, group in groups.list %}
                             <tr>
                                 <td>
@@ -288,7 +289,13 @@
                             </tr>
                         {% else %}
                             <tr>
-                                <td class="text-center text-muted py-3" colspan="2">{{ 'The list is empty'|trans }}</td>
+                                <td class="text-center text-muted py-3" colspan="2">
+                                    {% if can_manage_groups %}
+                                        {{ 'The list is empty'|trans }}
+                                    {% else %}
+                                        {{ 'You do not have permission to manage staff groups.'|trans }}
+                                    {% endif %}
+                                </td>
                             </tr>
                         {% endfor %}
                         </tbody>

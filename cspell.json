@@ -519,7 +519,8 @@
         "endverbatim",
         "missingmodule",
         "FOUC",
-        "kbarticles"
+        "kbarticles",
+        "rdsh"
     ],
     "ignorePaths": [
         "node_modules/**",
