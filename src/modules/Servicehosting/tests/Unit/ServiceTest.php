@@ -54,8 +54,10 @@ test('action create', function (): void {
 
     $hostingServerModel = new Model_ServiceHostingServer();
     $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
+    $hostingServerModel->id = $confArr['server_id'];
     $hostingPlansModel = new Model_ServiceHostingHp();
     $hostingPlansModel->loadBean(new Tests\Helpers\DummyBean());
+    $hostingPlansModel->id = $confArr['hosting_plan_id'];
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getExistingModelById')->atLeast()->once()->andReturn($hostingServerModel, $hostingPlansModel);
 
@@ -73,8 +75,8 @@ test('action create', function (): void {
     $service->setDi($di);
     $service->action_create($orderModel);
 
-    expect($servhostingModel->server_id)->toBe($confArr['server_id']);
-    expect($servhostingModel->hosting_plan_id)->toBe($confArr['hosting_plan_id']);
+    expect($servhostingModel->service_hosting_server_id)->toBe($confArr['server_id']);
+    expect($servhostingModel->service_hosting_hp_id)->toBe($confArr['hosting_plan_id']);
     expect($servhostingModel->sld)->toBe($confArr['sld']);
     expect($servhostingModel->tld)->toBe($confArr['tld']);
 });
