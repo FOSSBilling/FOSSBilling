@@ -145,7 +145,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
     public function getInvoiceTitle(Model_Invoice $invoice): string
     {
-        $invoiceItems = $this->di['db']->getAll('SELECT title from invoice_item WHERE invoice_id = :invoice_id', [':invoice_id' => $invoice->id]);
+        $invoiceItems = $this->di['db']->getAll('SELECT title FROM invoice_item WHERE invoice_id = :invoice_id', [':invoice_id' => $invoice->id]);
 
         $params = [
             ':id' => sprintf('%05s', $invoice->nr),
@@ -547,10 +547,16 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
     private function getOrCreateCustomer(Model_Invoice $invoice): Stripe\Customer
     {
-        $customers = $this->stripe->customers->search([
-            'query' => "email:'" . addslashes($invoice->buyer_email) . "'",
-            'limit' => 1,
-        ]);
+        $validatedEmail = filter_var($invoice->buyer_email, FILTER_VALIDATE_EMAIL);
+
+        if ($validatedEmail !== false) {
+            $customers = $this->stripe->customers->search([
+                'query' => "email:'" . $validatedEmail . "'",
+                'limit' => 1,
+            ]);
+        } else {
+            $customers = (object) ['data' => []];
+        }
 
         if (count($customers->data) > 0) {
             return $customers->data[0];
@@ -600,15 +606,15 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         }
 
         $productName = $invoiceItems[0]['title'];
-        $escapedName = addslashes($productName);
 
-        $products = $this->stripe->products->search([
-            'query' => "name:'" . $escapedName . "'",
-            'limit' => 1,
+        $products = $this->stripe->products->all([
+            'limit' => 100,
         ]);
 
-        if (count($products->data) > 0) {
-            return $products->data[0];
+        foreach ($products->data as $existingProduct) {
+            if ($existingProduct->name === $productName) {
+                return $existingProduct;
+            }
         }
 
         return $this->stripe->products->create([
@@ -783,7 +789,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             ':amount' => $dataAmount,
             ':currency' => $invoice->currency,
             ':description' => $title,
-            ':buyer_email' => $invoice->buyer_email,
+            ':buyer_email' => htmlspecialchars((string) $invoice->buyer_email, ENT_QUOTES, 'UTF-8'),
             ':buyer_name' => htmlspecialchars(trim($invoice->buyer_first_name . ' ' . $invoice->buyer_last_name), ENT_QUOTES, 'UTF-8'),
             ':callbackUrl' => $payGatewayService->getCallbackUrl($payGateway, $invoice),
             ':redirectUrl' => $this->di['tools']->url('invoice/' . $invoice->hash),
