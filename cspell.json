@@ -520,7 +520,10 @@
         "endverbatim",
         "missingmodule",
         "FOUC",
-        "kbarticles"
+        "kbarticles",
+        "uppercases",
+        "inpay",
+        "seti"
     ],
     "ignorePaths": [
         "node_modules/**",
