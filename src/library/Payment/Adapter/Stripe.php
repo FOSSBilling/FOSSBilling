@@ -480,7 +480,10 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
         $bd = [
             'id' => $clientId,
-            'amount' => ($stripeInvoice->amount_paid ?? 0) / 100,
+            'amount' => $this->getAmountFromMinorUnits(
+                (int) ($stripeInvoice->amount_paid ?? 0),
+                (string) ($stripeInvoice->currency ?? '')
+            ),
             'description' => $isInitialPayment
                 ? 'Stripe subscription initial payment ' . $stripeInvoice->id
                 : 'Stripe subscription recurring payment ' . $stripeInvoice->id,
