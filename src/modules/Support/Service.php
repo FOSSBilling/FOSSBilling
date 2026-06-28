@@ -102,6 +102,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 'display_name' => __trans('Manage knowledge base'),
                 'description' => __trans('Allows the staff member to create, update, and delete knowledge base articles and categories.'),
             ],
+            'manage_settings' => [],
         ];
     }
 

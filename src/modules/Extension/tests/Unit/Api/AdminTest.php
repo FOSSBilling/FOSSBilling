@@ -61,6 +61,11 @@ test('configSave saves extension config', function (): void {
     $api = new Box\Mod\Extension\Api\Admin();
     $serviceMock = Mockery::mock(Box\Mod\Extension\Service::class)->makePartial();
     $serviceMock->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('hasManagePermission')
+        ->with('mod_example')
+        ->atLeast()
+        ->once()
+        ->andReturn(true);
     $serviceMock->shouldReceive('setConfig')
         ->atLeast()
         ->once()
@@ -68,7 +73,7 @@ test('configSave saves extension config', function (): void {
 
     $api->setService($serviceMock);
 
-    $result = $api->config_save([]);
+    $result = $api->config_save(['ext' => 'mod_example']);
     expect($result)->toBeTrue();
 });
 
