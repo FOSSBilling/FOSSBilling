@@ -53,10 +53,6 @@
                         } %}
                             {% block form_content %}
                                 <div class="row g-3">
-                                    <div class="col-lg-4">
-                                        <label class="form-label" for="inputId">{{ 'ID'|trans }}</label>
-                                        <input class="form-control" id="inputId" type="text" value="{{ group.id }}" readonly>
-                                    </div>
                                     {% if group.system_name %}
                                         <div class="col-lg-4">
                                             <label class="form-label" for="inputSystemName">{{ 'System name'|trans }}</label>
@@ -69,7 +65,7 @@
                                     </div>
                                     <div class="col-lg-4">
                                         <label class="form-label" for="inputParent">{{ 'Parent group'|trans }}</label>
-                                        <input class="form-control" id="inputParent" type="text" value="{{ group.parent_name|default('Root group'|trans) }}" readonly>
+                                        <input class="form-control" id="inputParent" type="text" value="{{ group.parent_name|default('(This is a root group)'|trans) }}" readonly>
                                     </div>
                                 </div>
                             {% endblock %}
@@ -78,14 +74,10 @@
                         <form method="post" action="{{ 'staff/group_update'|api_url }}" {{ fb_api_form({message: 'Staff Group Updated'|trans}) }}>
                             {% embed 'partial_admin_form_card.html.twig' with {
                                 title: 'Group details'|trans,
-                                subtitle: 'Update this group name. The ID is assigned by the system.'|trans
+                                subtitle: 'Rename the group and change its parent group.'|trans
                             } %}
                                 {% block form_content %}
                                     <div class="row g-3">
-                                        <div class="col-lg-4">
-                                            <label class="form-label" for="inputId">{{ 'ID'|trans }}</label>
-                                            <input class="form-control" id="inputId" type="text" value="{{ group.id }}" readonly>
-                                        </div>
                                         {% if group.system_name %}
                                             <div class="col-lg-4">
                                                 <label class="form-label" for="inputSystemName">{{ 'System name'|trans }}</label>
@@ -103,7 +95,7 @@
                                                     <option value="{{ parentId }}"{% if group.parent_id|default(null) == parentId %} selected{% endif %}>{{ parentName }}</option>
                                                 {% endfor %}
                                             </select>
-                                            <div class="form-text">{{ 'Members can manage staff and groups below their assigned groups.'|trans }}</div>
+                                            <div class="form-text">{{ 'Members of a higher group can manage staff members below their assigned groups.'|trans }}</div>
                                         </div>
                                     </div>
                                     <input type="hidden" name="id" value="{{ group.id }}">
@@ -124,7 +116,7 @@
                         {% if group.system_name == 'super_admin' %}
                             {% embed 'partial_admin_form_card.html.twig' with {
                                 title: group.name,
-                                subtitle: 'Members of this protected system group bypass permission checks. The permission matrix is intentionally not shown.'|trans
+                                subtitle: 'Members of this protected system group bypass permission checks.'|trans
                             } %}
                                 {% block form_content %}
                                     <div class="alert alert-success d-flex align-items-center" role="alert">
@@ -174,7 +166,7 @@
                         } %}
                             {% block form_content %}
                                 <div class="alert alert-info mb-0" role="alert">
-                                    {{ 'You can still manage group details and memberships within your hierarchy, but permission changes are restricted to Super Administrators.'|trans }}
+                                    {{ 'You can still manage group memberships within your hierarchy, but permission changes are restricted to Super Administrators.'|trans }}
                                 </div>
                             {% endblock %}
                         {% endembed %}

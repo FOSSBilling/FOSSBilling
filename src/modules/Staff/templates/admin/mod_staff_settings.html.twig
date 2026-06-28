@@ -255,15 +255,13 @@
                                             <div class="d-flex align-items-center gap-2">
                                                 <a href='{{ "staff/group/#{group.id}"|url }}'>{{ group.name }}</a>
                                                 {% if group.system_name == 'super_admin' %}
-                                                    <span class="badge bg-blue-lt">{{ 'Root'|trans }}</span>
+                                                    <span class="badge bg-blue-lt">{{ 'System group'|trans }}</span>
                                                 {% elseif group.protected %}
                                                     <span class="badge bg-secondary-lt">{{ 'Protected'|trans }}</span>
                                                 {% endif %}
                                             </div>
                                             <div class="text-secondary small">
-                                                {% if group.system_name == 'super_admin' %}
-                                                    {{ 'Mandatory root group for all staff groups'|trans }}
-                                                {% else %}
+                                                {% if group.system_name !== 'super_admin' %}
                                                     {{ group.path }}
                                                 {% endif %}
                                             </div>

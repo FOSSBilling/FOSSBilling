@@ -100,7 +100,7 @@
 					{% set assigned_groups = admin.staff_admin_group_get_list({ 'admin_id': staff.id }) %}
 					{% embed 'partial_admin_form_card.html.twig' with {
 						title: 'Groups'|trans,
-						subtitle: 'Manage this staff member group memberships one at a time.'|trans
+						subtitle: 'Manage this staff member\'s group memberships.'|trans
 					} %}
 						{% import 'macro_functions.html.twig' as mf %}
 						{% block form_content %}
@@ -125,9 +125,9 @@
 													<span class="badge bg-blue-lt ms-2">{{ 'System'|trans }}</span>
 												{% endif %}
 											</div>
-											<a class="btn btn-icon btn-outline-danger" href="{{ 'staff/group_member_remove'|api_url(query: { 'admin_id': staff.id, 'group_id': group.id }) }}"
+											<a class="btn btn-outline-danger" href="{{ 'staff/group_member_remove'|api_url(query: { 'admin_id': staff.id, 'group_id': group.id }) }}"
 												{{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
-												<svg class="icon"><use href="#delete"/></svg>
+												Remove from group
 											</a>
 										</div>
 									{% endfor %}
