@@ -145,7 +145,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
     public function getInvoiceTitle(Model_Invoice $invoice): string
     {
-        $invoiceItems = $this->di['db']->getAll('SELECT title from invoice_item WHERE invoice_id = :invoice_id', [':invoice_id' => $invoice->id]);
+        $invoiceItems = $this->di['db']->getAll('SELECT title FROM invoice_item WHERE invoice_id = :invoice_id', [':invoice_id' => $invoice->id]);
 
         $params = [
             ':id' => sprintf('%05s', $invoice->nr),
