@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 use Box\Mod\Staff\Entity\AdminGroup;
 use Box\Mod\Staff\Repository\AdminGroupMemberRepository;
+use Box\Mod\Staff\Repository\AdminGroupRepository;
 
 test('admin group encodes permissions and identifies super administrator group', function (): void {
     $group = (new AdminGroup())
@@ -93,4 +94,29 @@ test('admin group member repository excludes cron from active system group count
     $repository->shouldReceive('getEntityManager')->once()->andReturn($entityManager);
 
     expect($repository->countActiveMembersInSystemGroup(AdminGroup::SYSTEM_SUPER_ADMIN))->toBe(1);
+});
+
+test('admin group repository excludes group descendants from parent pairs', function (): void {
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')
+        ->once()
+        ->andReturn([
+            ['id' => 1, 'name' => 'Root', 'parent_id' => null],
+            ['id' => 2, 'name' => 'Parent', 'parent_id' => 1],
+            ['id' => 3, 'name' => 'Child', 'parent_id' => 2],
+            ['id' => 4, 'name' => 'Sibling', 'parent_id' => 1],
+        ]);
+
+    $entityManager = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $entityManager->shouldReceive('getConnection')->once()->andReturn($connection);
+
+    $repository = Mockery::mock(AdminGroupRepository::class)
+        ->makePartial()
+        ->shouldAllowMockingProtectedMethods();
+    $repository->shouldReceive('getEntityManager')->once()->andReturn($entityManager);
+
+    expect($repository->getParentPairs(2))->toBe([
+        1 => 'Root',
+        4 => 'Root / Sibling',
+    ]);
 });

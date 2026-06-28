@@ -1890,9 +1890,9 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch75(): void
     {
-        // Rework admin groups and permisisons
+        // Rework admin groups and permissions
         //
-        // This patch migrates from individual admin-scoped permisisons to group permissions.
+        // This patch migrates from individual admin-scoped permissions to group permissions.
         // It allows admins to be a part of multiple groups,
         // sets up a hierarchy between admin groups and creates
         // a new protected group named Super Administrator.

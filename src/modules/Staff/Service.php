@@ -526,6 +526,7 @@ class Service implements InjectionAwareInterface
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffDelete', 'params' => ['id' => $model->id]]);
 
         $id = $model->id;
+        $this->adminGroupMemberRepository->deleteMembershipsForAdmin((int) $id);
         $this->di['db']->trash($model);
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffDelete', 'params' => ['id' => $id]]);
@@ -558,7 +559,6 @@ class Service implements InjectionAwareInterface
 
     public function create(array $data): int
     {
-        // TODO: When it becomes possible to create other super admins, add a check for that here,
         $this->checkPermissionsAndThrowException('staff', 'create_and_edit_staff');
 
         $signature = $data['signature'] ?? null;

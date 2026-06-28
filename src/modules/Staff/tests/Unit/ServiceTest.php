@@ -1029,6 +1029,7 @@ test('update rejects deactivating own staff account', function (): void {
 test('delete removes admin account', function (): void {
     $adminModel = new Model_Admin();
     $adminModel->loadBean(new Tests\Helpers\DummyBean());
+    $adminModel->id = 5;
 
     $eventsMock = Mockery::mock('\Box_EventManager');
     $eventsMock->shouldReceive('fire')->atLeast()->once();
@@ -1042,7 +1043,11 @@ test('delete removes admin account', function (): void {
 
     $serviceMock->shouldReceive('hasPermission')->atLeast()->once()->andReturn(true);
 
+    $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
+    $groupMemberRepository->shouldReceive('deleteMembershipsForAdmin')->once()->with(5)->andReturn(2);
+
     $di = container();
+    $di['em'] = staffEntityManager(Mockery::mock(AdminGroupRepository::class), $groupMemberRepository);
     $di['events_manager'] = $eventsMock;
     $di['logger'] = $logStub;
     $di['db'] = $dbMock;

@@ -24,7 +24,7 @@
         {{ 'New Group'|trans }}
     </button>
 {% endset %}
-{% set is_super_admin = admin.is_super_administrator %}
+{% set is_super_admin = admin.staff_is_super_administrator %}
 
 {% block breadcrumbs %}
     <ol class="breadcrumb">

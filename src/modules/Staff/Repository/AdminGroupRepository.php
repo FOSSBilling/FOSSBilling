@@ -63,9 +63,31 @@ class AdminGroupRepository extends EntityRepository
             ];
         }
 
+        $excludedIds = [];
+        if ($excludeGroupId !== null) {
+            $excludedIds[] = $excludeGroupId;
+            $childrenByParent = [];
+            foreach ($rows as $row) {
+                $childrenByParent[$row['parent_id'] === null ? 0 : (int) $row['parent_id']][] = (int) $row['id'];
+            }
+
+            $queue = $childrenByParent[$excludeGroupId] ?? [];
+            while ($queue !== []) {
+                $id = array_shift($queue);
+                if (in_array($id, $excludedIds, true)) {
+                    continue;
+                }
+
+                $excludedIds[] = $id;
+                foreach ($childrenByParent[$id] ?? [] as $childId) {
+                    $queue[] = $childId;
+                }
+            }
+        }
+
         $pairs = [];
         foreach ($rows as $row) {
-            if ($excludeGroupId !== null && (int) $row['id'] === $excludeGroupId) {
+            if (in_array((int) $row['id'], $excludedIds, true)) {
                 continue;
             }
 

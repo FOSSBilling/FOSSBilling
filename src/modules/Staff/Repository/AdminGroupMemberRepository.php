@@ -93,6 +93,11 @@ class AdminGroupMemberRepository extends EntityRepository
             ->getOneOrNullResult();
     }
 
+    public function deleteMembershipsForAdmin(int $adminId): int
+    {
+        return (int) $this->getEntityManager()->getConnection()->delete('admin_group_member', ['admin_id' => $adminId]);
+    }
+
     /**
      * @return int[]
      */
