@@ -25,7 +25,8 @@ class SupportTicketRepository extends EntityRepository
      *  - `status`            (string)  exact status match
      *  - `priority`          (int)     exact priority match
      *  - `client_id`         (int)     filter by client
-     *  - `helpdesk_id`       (int)     filter by helpdesk
+     *  - `support_helpdesk_id` (int)   filter by helpdesk
+     *  - `helpdesk_id`       (int)     filter by helpdesk (legacy alias)
      *  - `search`            (string)  LIKE on subject / author_email / author_name
      *  - `date_from`         (string)  created_at lower bound (Y-m-d)
      *  - `date_to`           (string)  created_at upper bound (Y-m-d)
@@ -55,9 +56,10 @@ class SupportTicketRepository extends EntityRepository
                 ->setParameter('client_id', (int) $data['client_id']);
         }
 
-        if (!empty($data['helpdesk_id'])) {
-            $qb->andWhere('t.helpdesk = :helpdesk_id')
-                ->setParameter('helpdesk_id', (int) $data['helpdesk_id']);
+        $helpdeskId = $data['support_helpdesk_id'] ?? $data['helpdesk_id'] ?? null;
+        if ($helpdeskId !== null && $helpdeskId !== '') {
+            $qb->andWhere('IDENTITY(t.helpdesk) = :helpdesk_id')
+                ->setParameter('helpdesk_id', (int) $helpdeskId);
         }
 
         if (!empty($data['search'])) {

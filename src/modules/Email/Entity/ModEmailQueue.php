@@ -30,6 +30,7 @@ class ModEmailQueue implements ApiArrayInterface, TimestampInterface
     public const STATUS_PENDING = 'pending';
     public const STATUS_SENT = 'sent';
     public const STATUS_FAILED = 'failed';
+    public const STATUS_UNSENT = 'unsent';
 
     #[ORM\Id]
     #[ORM\GeneratedValue]

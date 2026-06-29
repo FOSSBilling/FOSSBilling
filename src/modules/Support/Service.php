@@ -199,10 +199,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
             $email = [];
             if ($supportService->isGuestTicket($ticketObj)) {
-                $email['to'] = $ticketObj->author_email;
-                $email['to_name'] = $ticketObj->author_name;
+                $email['to'] = $ticketObj->getAuthorEmail();
+                $email['to_name'] = $ticketObj->getAuthorName();
             } else {
-                $email['to_client'] = $ticketObj->client_id;
+                $email['to_client'] = $ticketObj->getClientId();
             }
             $email['code'] = 'mod_support_ticket_staff_open';
             $email['ticket'] = $ticketArr;
@@ -226,10 +226,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
             $email = [];
             if ($supportService->isGuestTicket($ticketObj)) {
-                $email['to'] = $ticketObj->author_email;
-                $email['to_name'] = $ticketObj->author_name;
+                $email['to'] = $ticketObj->getAuthorEmail();
+                $email['to_name'] = $ticketObj->getAuthorName();
             } else {
-                $email['to_client'] = $ticketObj->client_id;
+                $email['to_client'] = $ticketObj->getClientId();
             }
             $email['code'] = 'mod_support_ticket_staff_close';
             $email['ticket'] = $ticketArr;
@@ -253,10 +253,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
             $email = [];
             if ($supportService->isGuestTicket($ticketObj)) {
-                $email['to'] = $ticketObj->author_email;
-                $email['to_name'] = $ticketObj->author_name;
+                $email['to'] = $ticketObj->getAuthorEmail();
+                $email['to_name'] = $ticketObj->getAuthorName();
             } else {
-                $email['to_client'] = $ticketObj->client_id;
+                $email['to_client'] = $ticketObj->getClientId();
             }
             $email['code'] = 'mod_support_ticket_staff_reply';
             $email['ticket'] = $ticketArr;

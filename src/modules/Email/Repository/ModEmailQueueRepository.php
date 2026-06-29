@@ -43,8 +43,8 @@ class ModEmailQueueRepository extends EntityRepository
      * Return the batch of pending queue items the cron should attempt to send.
      *
      * Items are ordered by priority (highest first) and by ID (FIFO within a
-     * priority bucket). Includes items in `pending` and `failed` (re-tries)
-     * status so that transient failures get re-attempted.
+     * priority bucket). Includes legacy `unsent`, `pending`, and `failed`
+     * status so that transient failures and pre-migration rows get attempted.
      *
      * @return ModEmailQueue[]
      */
@@ -52,7 +52,7 @@ class ModEmailQueueRepository extends EntityRepository
     {
         return $this->createQueryBuilder('q')
             ->andWhere('q.status IN (:statuses)')
-            ->setParameter('statuses', [ModEmailQueue::STATUS_PENDING, ModEmailQueue::STATUS_FAILED])
+            ->setParameter('statuses', [ModEmailQueue::STATUS_UNSENT, ModEmailQueue::STATUS_PENDING, ModEmailQueue::STATUS_FAILED])
             ->orderBy('q.priority', 'DESC')
             ->addOrderBy('q.id', 'ASC')
             ->setMaxResults($limit)
