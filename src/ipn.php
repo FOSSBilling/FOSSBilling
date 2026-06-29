@@ -40,6 +40,8 @@ if ($gatewayID !== null) {
     }
 }
 
+$rawBody = $request->getContent();
+
 $ipn = [
     'invoice_id' => $invoiceID,
     'gateway_id' => $gatewayID,
@@ -47,11 +49,36 @@ $ipn = [
     'get' => $request->query->all(),
     'post' => $request->request->all(),
     'server' => $request->server->all(),
-    'http_raw_post_data' => $request->getContent(),
+    'http_raw_post_data' => $rawBody,
 ];
+
+$contentType = $request->headers->get('Content-Type', '');
+$isJsonWebhook = str_contains((string) $contentType, 'application/json') && !empty($rawBody);
+if ($isJsonWebhook) {
+    $ipn['skip_validation'] = true;
+}
 
 try {
     $service = $di['mod_service']('invoice', 'transaction');
+
+    // JSON webhooks (Stripe, etc.) require fast 2xx acknowledgment.
+    // When running under FastCGI, decouple the HTTP response from processing:
+    // create the transaction, send 200, then finish in the background via
+    // fastcgi_finish_request().
+    if ($isJsonWebhook && function_exists('fastcgi_finish_request')) {
+        $transactionId = $service->create($ipn);
+        $res = ['result' => $transactionId, 'error' => null];
+        (new JsonResponse($res, 200, [
+            'Cache-Control' => 'no-cache, must-revalidate',
+            'Expires' => 'Mon, 26 Jul 1997 05:00:00 GMT',
+        ]))->send();
+        fastcgi_finish_request();
+
+        // Process in the background — errors are logged on the transaction.
+        $service->processAndCatchErrors((int) $transactionId);
+        exit;
+    }
+
     $output = $service->createAndProcess($ipn);
     $res = ['result' => $output, 'error' => null];
 } catch (Exception $e) {

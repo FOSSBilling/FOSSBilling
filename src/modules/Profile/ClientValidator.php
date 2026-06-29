@@ -53,17 +53,4 @@ class ClientValidator
 
         return $birthdayDate->format('Y-m-d');
     }
-
-    /**
-     * Validate document type and normalize it.
-     * If no type is provided but a document number exists, defaults to 'passport'.
-     */
-    public static function validateDocument(string $documentType): string
-    {
-        if (!in_array($documentType, \Model_Client::ALLOWED_DOCUMENT_TYPES, true)) {
-            throw new InformationException('Invalid document type. Allowed: :list', [':list' => implode(', ', \Model_Client::ALLOWED_DOCUMENT_TYPES)]);
-        }
-
-        return $documentType;
-    }
 }

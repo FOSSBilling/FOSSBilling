@@ -78,7 +78,6 @@ Cypress.Commands.add('fillClientSignupForm', (client) => {
     postcode: client.postcode || '12345',
     phone_cc: client.phone_cc || '1',
     phone: client.phone || '5551234567',
-    document_nr: client.document_nr || 'AB123456',
     password: client.password,
     password_confirm: client.password,
   };
@@ -215,5 +214,14 @@ Cypress.Commands.add('typeAndVerify', (selector, value, options = {}) => {
     .and('not.be.disabled')
     .clear()
     .type(value, { delay: 0, ...options })
-    .should('have.value', value);
+    .then(($input) => {
+      const el = $input[0];
+      const rawMaxLength = el.getAttribute('maxlength');
+      const maxLength = rawMaxLength === null ? -1 : Number.parseInt(rawMaxLength, 10);
+      const expectedValue = Number.isInteger(maxLength) && maxLength >= 0
+        ? String(value).slice(0, maxLength)
+        : String(value);
+
+      cy.wrap($input).should('have.value', expectedValue);
+    });
 });

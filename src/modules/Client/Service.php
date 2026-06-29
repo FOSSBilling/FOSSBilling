@@ -462,7 +462,6 @@ class Service implements InjectionAwareInterface
             'postcode' => $model->postcode,
             'country' => $model->country,
             'currency' => $model->currency,
-            'document_nr' => $model->document_nr,
         ];
 
         if ($deep) {
@@ -630,8 +629,6 @@ class Service implements InjectionAwareInterface
         if ($client->country !== null && !Countries::exists($client->country)) {
             throw new InformationException('Invalid country code: :code', [':code' => $client->country]);
         }
-        $client->document_type = $data['document_type'] ?? null;
-        $client->document_nr = $data['document_nr'] ?? null;
         $client->notes = $data['notes'] ?? null;
         $client->lang = $data['lang'] ?? null;
         if ($client->lang !== null && $client->lang !== '' && !Locales::exists($client->lang)) {
@@ -687,7 +684,6 @@ class Service implements InjectionAwareInterface
             'phone', 'phone_cc', 'gender', 'birthday',
             'company', 'company_vat', 'company_number', 'type',
             'address_1', 'address_2', 'city', 'state', 'postcode', 'country',
-            'document_type', 'document_nr',
             'custom_1', 'custom_2', 'custom_3', 'custom_4', 'custom_5',
             'custom_6', 'custom_7', 'custom_8', 'custom_9', 'custom_10',
         ];
@@ -878,6 +874,32 @@ class Service implements InjectionAwareInterface
                 }
             }
         }
+    }
+
+    public function resolveDocumentNumber(\Model_Client $client): ?string
+    {
+        $config = $this->di['mod_config']('client');
+        $customFields = $config['custom_fields'] ?? [];
+
+        $keywords = ['passport', 'document', 'identity', 'id number'];
+
+        foreach (range(1, 10) as $i) {
+            $fieldName = 'custom_' . $i;
+            $fieldConfig = $customFields[$fieldName] ?? null;
+            if (!is_array($fieldConfig) || !($fieldConfig['active'] ?? false)) {
+                continue;
+            }
+            $title = strtolower((string) ($fieldConfig['title'] ?? ''));
+            if ($title === '' || !array_filter($keywords, fn ($k): bool => str_contains($title, (string) $k))) {
+                continue;
+            }
+            $value = $client->{$fieldName} ?? null;
+            if ($value !== null && $value !== '') {
+                return (string) $value;
+            }
+        }
+
+        return null;
     }
 
     public function exportCSV(array $headers): Response

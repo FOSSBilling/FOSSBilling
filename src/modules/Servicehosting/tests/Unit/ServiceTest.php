@@ -25,8 +25,13 @@ test('validate order data', function (string $field, string $exceptionMessage, i
 
     unset($data[$field]);
 
-    expect(fn () => $service->validateOrderData($data))
-        ->toThrow(FOSSBilling\Exception::class, $exceptionMessage);
+    try {
+        $service->validateOrderData($data);
+        expect(true)->toBeFalse('Expected FOSSBilling\Exception was not thrown.');
+    } catch (FOSSBilling\Exception $e) {
+        expect($e->getMessage())->toBe($exceptionMessage);
+        expect($e->getCode())->toBe($excCode);
+    }
 })->with([
     ['server_id', 'Hosting product is not configured completely. Configure server for hosting product.', 701],
     ['hosting_plan_id', 'Hosting product is not configured completely. Configure hosting plan for hosting product.', 702],
@@ -49,8 +54,10 @@ test('action create', function (): void {
 
     $hostingServerModel = new Model_ServiceHostingServer();
     $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
+    $hostingServerModel->id = $confArr['server_id'];
     $hostingPlansModel = new Model_ServiceHostingHp();
     $hostingPlansModel->loadBean(new Tests\Helpers\DummyBean());
+    $hostingPlansModel->id = $confArr['hosting_plan_id'];
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getExistingModelById')->atLeast()->once()->andReturn($hostingServerModel, $hostingPlansModel);
 
@@ -67,6 +74,11 @@ test('action create', function (): void {
 
     $service->setDi($di);
     $service->action_create($orderModel);
+
+    expect($servhostingModel->service_hosting_server_id)->toBe($confArr['server_id']);
+    expect($servhostingModel->service_hosting_hp_id)->toBe($confArr['hosting_plan_id']);
+    expect($servhostingModel->sld)->toBe($confArr['sld']);
+    expect($servhostingModel->tld)->toBe($confArr['tld']);
 });
 
 test('action renew', function (): void {
@@ -74,11 +86,11 @@ test('action renew', function (): void {
     $orderModel = new Model_ClientOrder();
     $orderModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $model = new Model_ServiceHostingHp();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $hostingServiceModel = new Model_ServiceHosting();
+    $hostingServiceModel->loadBean(new Tests\Helpers\DummyBean());
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
-    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($model);
+    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($hostingServiceModel);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('store')->atLeast()->once();
@@ -99,7 +111,7 @@ test('action renew order without active service', function (): void {
     $orderModel->id = 1;
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
-    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once();
+    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturnNull();
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
@@ -145,7 +157,7 @@ test('action suspend order without active service', function (): void {
     $orderModel->id = 1;
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
-    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once();
+    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturnNull();
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
@@ -191,7 +203,7 @@ test('action unsuspend order without active service', function (): void {
     $orderModel->id = 1;
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
-    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once();
+    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturnNull();
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
@@ -237,7 +249,7 @@ test('action cancel order without active service', function (): void {
     $orderModel->id = 1;
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
-    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once();
+    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturnNull();
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
@@ -800,7 +812,7 @@ test('get hp pairs', function (): void {
 
 test('get hp search query', function (): void {
     $service = new Service();
-    $result = $service->getServersSearchQuery([]);
+    $result = $service->getHpSearchQuery([]);
     expect($result[0])->toBeString();
     expect($result[1])->toBeArray();
     expect($result[1])->toEqual([]);
@@ -988,4 +1000,151 @@ test('get free tlds', function (): void {
     $result = $service->getFreeTlds($product);
     expect($result)->toBeArray();
     expect($result)->not->toBeEmpty();
+});
+
+test('get server manager secret fields', function (string $manager, array $expected): void {
+    $service = new Service();
+    $di = container();
+    $service->setDi($di);
+
+    $result = $service->getServerManagerSecretFields($manager);
+
+    sort($expected);
+    $sorted = $result;
+    sort($sorted);
+
+    expect($sorted)->toBe($expected);
+})->with([
+    'WHM' => ['Whm', ['username', 'accesshash', 'password']],
+    'Hestia' => ['Hestia', ['username', 'accesshash', 'password']],
+    'CWP' => ['CWP', ['accesshash', 'password']],
+    'DirectAdmin' => ['Directadmin', ['username', 'password', 'accesshash']],
+    'Plesk' => ['Plesk', ['username', 'password', 'accesshash']],
+    'unknown manager' => ['DoesNotExist', ['password', 'accesshash']],
+]);
+
+test('to hosting server api array masks secrets for an admin', function (): void {
+    $service = new Service();
+
+    $identity = new Model_Admin();
+    $identity->loadBean(new Tests\Helpers\DummyBean());
+
+    $hostingServerModel = new Model_ServiceHostingServer();
+    $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
+    $hostingServerModel->id = 1;
+    $hostingServerModel->name = 'Test';
+    $hostingServerModel->hostname = 'host.example.com';
+    $hostingServerModel->ip = '127.0.0.1';
+    $hostingServerModel->manager = 'Whm';
+    $hostingServerModel->username = 'real-admin';
+    $hostingServerModel->accesshash = 'super-secret-hash';
+
+    $di = container();
+    $service->setDi($di);
+
+    $result = $service->toHostingServerApiArray($hostingServerModel, true, $identity);
+
+    expect($result['username'])->toBeNull();
+    expect($result['accesshash'])->toBeNull();
+    expect($result['password'])->toBeNull();
+    expect($result['username_set'])->toBeTrue();
+    expect($result['accesshash_set'])->toBeTrue();
+    expect($result['password_set'])->toBeFalse();
+    expect($result['secret_fields'])->toContain('username');
+    expect($result['secret_fields'])->toContain('accesshash');
+});
+
+test('to hosting server api array does not leak secrets to non-admin callers', function (): void {
+    $service = new Service();
+
+    $identity = new Model_Client();
+    $identity->loadBean(new Tests\Helpers\DummyBean());
+
+    $hostingServerModel = new Model_ServiceHostingServer();
+    $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
+    $hostingServerModel->id = 1;
+    $hostingServerModel->name = 'Test';
+    $hostingServerModel->ip = '127.0.0.1';
+    $hostingServerModel->manager = 'Whm';
+    $hostingServerModel->accesshash = 'super-secret-hash';
+
+    $di = container();
+    $service->setDi($di);
+
+    $result = $service->toHostingServerApiArray($hostingServerModel, true, $identity);
+
+    expect($result)->not->toHaveKey('username');
+    expect($result)->not->toHaveKey('password');
+    expect($result)->not->toHaveKey('accesshash');
+    expect($result)->not->toHaveKey('secret_fields');
+});
+
+test('updateServer keeps the existing secret when the incoming value is blank', function (): void {
+    $service = new Service();
+    $data = [
+        'name' => 'Test',
+        'ip' => '127.0.0.1',
+        'manager' => 'Whm',
+        'username' => '',
+        'accesshash' => Service::CREDENTIAL_KEEP_SENTINEL,
+        'password' => '   ',
+    ];
+
+    $hostingServerModel = new Model_ServiceHostingServer();
+    $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
+    $hostingServerModel->id = 1;
+    $hostingServerModel->name = 'Test';
+    $hostingServerModel->ip = '127.0.0.1';
+    $hostingServerModel->manager = 'Whm';
+    $hostingServerModel->username = 'real-admin';
+    $hostingServerModel->accesshash = 'super-secret-hash';
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('store')->atLeast()->once();
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['logger'] = new Box_Log();
+    $di['loggedin_admin'] = (object) ['id' => 7];
+    $service->setDi($di);
+
+    $result = $service->updateServer($hostingServerModel, $data);
+    expect($result)->toBeTrue();
+    expect($hostingServerModel->username)->toBe('real-admin');
+    expect($hostingServerModel->accesshash)->toBe('super-secret-hash');
+    expect($hostingServerModel->password)->toBeNull();
+});
+
+test('updateServer replaces the stored secret when a new value is submitted', function (): void {
+    $service = new Service();
+    $data = [
+        'name' => 'Test',
+        'ip' => '127.0.0.1',
+        'manager' => 'Whm',
+        'username' => 'new-admin',
+        'accesshash' => 'new-hash',
+    ];
+
+    $hostingServerModel = new Model_ServiceHostingServer();
+    $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
+    $hostingServerModel->id = 1;
+    $hostingServerModel->name = 'Test';
+    $hostingServerModel->ip = '127.0.0.1';
+    $hostingServerModel->manager = 'Whm';
+    $hostingServerModel->username = 'real-admin';
+    $hostingServerModel->accesshash = 'old-hash';
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('store')->atLeast()->once();
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['logger'] = new Box_Log();
+    $di['loggedin_admin'] = (object) ['id' => 7];
+    $service->setDi($di);
+
+    $result = $service->updateServer($hostingServerModel, $data);
+    expect($result)->toBeTrue();
+    expect($hostingServerModel->username)->toBe('new-admin');
+    expect($hostingServerModel->accesshash)->toBe('new-hash');
 });

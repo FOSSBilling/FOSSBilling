@@ -698,7 +698,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $address2 = empty($model->contact_address2) ? $client->address_2 : $model->contact_address2;
         $birthday = !empty($client->birthday) ? $client->birthday : '';
         $company_number = !empty($client->company_number) ? $client->company_number : '';
-        $document_nr = !empty($client->document_nr) ? $client->document_nr : '';
+        $document_nr = (string) ($this->di['mod_service']('client')->resolveDocumentNumber($client) ?? '');
 
         $contact = new \Registrar_Domain_Contact();
         $contact

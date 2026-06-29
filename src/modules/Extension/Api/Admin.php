@@ -273,7 +273,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['ext' => 'Parameter "ext" was not passed'])]
     public function config_save($data)
     {
-        return $this->getService()->setConfig($data);
+        $service = $this->getService();
+        $service->hasManagePermission($data['ext']);
+
+        return $service->setConfig($data);
     }
 
     #[RequiredParams(['id' => 'Extension ID was not passed', 'type' => 'Extension type was not passed'])]

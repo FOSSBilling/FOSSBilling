@@ -718,7 +718,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
         if (isset($json['status']) && $json['status'] == 'error') {
             error_log('ResellerClub error: ' . $json['error']);
-            $placeholders = [':action"' => $url, ':type:' => 'ResellerClub'];
+            $placeholders = [':action:' => $url, ':type:' => 'ResellerClub'];
 
             throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
@@ -847,7 +847,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
         if ($tld == '.es') {
             if (strlen(trim((string) $client->getDocumentNr())) == 0) {
-                throw new Registrar_Exception('Valid contact passport information is required while registering ES domain name');
+                throw new Registrar_Exception('A document number is required while registering an ES domain name. Enable a custom client field with a title containing "passport" or "document" (e.g. "Passport Number") and ask the client to fill it in.');
             }
 
             // @see http://manage.directi.com/kb/answer/790
@@ -866,7 +866,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
         if ($tld == '.asia') {
             if (strlen(trim((string) $client->getDocumentNr())) == 0) {
-                throw new Registrar_Exception('Valid contact passport information is required while registering ASIA domain name');
+                throw new Registrar_Exception('A document number is required while registering an ASIA domain name. Enable a custom client field with a title containing "passport" or "document" (e.g. "Passport Number") and ask the client to fill it in.');
             }
 
             $contact['attr-name1'] = 'locality';
@@ -894,7 +894,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             }
 
             if (strlen(trim((string) $client->getDocumentNr())) === 0) {
-                throw new Registrar_Exception('Valid contact passport information is required while registering RU domain name');
+                throw new Registrar_Exception('A document number is required while registering a RU domain name. Enable a custom client field with a title containing "passport" or "document" (e.g. "Passport Number") and ask the client to fill it in.');
             }
 
             if (str_word_count((string) $contact['company']) < 2) {

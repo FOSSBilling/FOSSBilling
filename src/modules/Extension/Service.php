@@ -543,8 +543,8 @@ class Service implements InjectionAwareInterface
         $this->filesystem->mkdir($extractedPath, 0o755);
 
         // Download the extension archive and save it to the cache folder
-        $client = $this->di['http_client'];
-        $response = $client->request('GET', $latest['download_url']);
+        $httpClient = $this->di['http_client'];
+        $response = $httpClient->request('GET', $latest['download_url']);
 
         $code = $response->getStatusCode();
         if ($code !== 200) {
@@ -552,7 +552,7 @@ class Service implements InjectionAwareInterface
         }
 
         $fileHandler = fopen($zipPath, 'w');
-        foreach ($client->stream($response) as $chunk) {
+        foreach ($httpClient->stream($response) as $chunk) {
             fwrite($fileHandler, (string) $chunk->getContent());
         }
         fclose($fileHandler);
@@ -889,7 +889,7 @@ class Service implements InjectionAwareInterface
         $module_permissions = $this->getSpecificModulePermissions($permission_module);
 
         // If they have access, let's see if that module has a permission specifically for managing settings and check if they have that permission.
-        if (array_key_exists('manage_settings', $module_permissions) && !$staff_service->hasPermission(null, $permission_module, 'manage_settings')) {
+        if (!array_key_exists('manage_settings', $module_permissions) || !$staff_service->hasPermission(null, $permission_module, 'manage_settings')) {
             $e = new \FOSSBilling\InformationException('You do not have permission to perform this action', [], 403);
             if (!is_null($app)) {
                 $app->abortWithResponse(new \Symfony\Component\HttpFoundation\Response(

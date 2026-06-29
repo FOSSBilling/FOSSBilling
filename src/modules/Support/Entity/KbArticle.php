@@ -136,7 +136,7 @@ class KbArticle implements ApiArrayInterface, TimestampInterface
 
     public function setViews(?int $views): self
     {
-        $this->views = max(0, (int) ($views ?? 0));
+        $this->views = max(0, $views ?? 0);
 
         return $this;
     }

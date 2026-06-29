@@ -374,7 +374,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('system', 'manage_network_interface');
 
-        return Tools::listHttpInterfaces();
+        return $this->di['tools']->listHttpInterfaces();
     }
 
     public function set_interface_ip($data): bool

@@ -2,15 +2,14 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace Box\Mod\Cookieconsent;
+namespace Box\Mod\Orderbutton;
 
 use FOSSBilling\InjectionAwareInterface;
 
@@ -33,12 +32,5 @@ class Service implements InjectionAwareInterface
         return [
             'manage_settings' => [],
         ];
-    }
-
-    public function getMessage()
-    {
-        $config = $this->di['mod_config']('cookieconsent');
-
-        return $config['message'] ?? 'This website uses cookies. By continuing to use this website, you consent to our use of these cookies.';
     }
 }

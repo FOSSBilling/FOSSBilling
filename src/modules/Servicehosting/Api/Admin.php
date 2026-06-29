@@ -320,7 +320,22 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $data['config']['userprefix'] = $data['userprefix'] ?? ($existingConfig['userprefix'] ?? null);
         $data['config']['tls_verify'] = Tools::normalizeBoolean($data['tls_verify'] ?? ($existingConfig['tls_verify'] ?? true), true);
 
-        return (bool) $service->updateServer($model, $data);
+        $updated = (bool) $service->updateServer($model, $data);
+
+        if ($updated) {
+            $this->validateServerConfig($model);
+        }
+
+        return $updated;
+    }
+
+    private function validateServerConfig(\Model_ServiceHostingServer $model): void
+    {
+        try {
+            $this->getService()->getServerManager($model);
+        } catch (\Server_Exception|\FOSSBilling\Exception $e) {
+            throw new \FOSSBilling\InformationException($e->getMessage(), [], $e->getCode() ?: 719);
+        }
     }
 
     /**

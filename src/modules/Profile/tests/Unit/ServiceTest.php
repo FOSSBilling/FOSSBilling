@@ -174,8 +174,6 @@ test('updates client', function (): void {
         'postcode' => 'string',
         'city' => 'string',
         'state' => 'string',
-        'document_type' => 'passport',
-        'document_nr' => random_int(100000, 900000),
         'lang' => 'en_US',
         'notes' => 'string',
         'custom_1' => 'string',

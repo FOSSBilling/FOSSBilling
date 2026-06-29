@@ -24,10 +24,6 @@ class Model_Client extends RedBeanPHP\SimpleModel
         self::GENDER_NON_BINARY,
         self::GENDER_OTHER,
     ];
-    final public const string DOC_PASSPORT = 'passport';
-    public const ALLOWED_DOCUMENT_TYPES = [
-        self::DOC_PASSPORT,
-    ];
 
     public function getFullName(): string
     {

@@ -425,6 +425,7 @@
         "Cypress",
         "CSRF",
         "undismissed",
+        "unmigrated",
         "filp",
         "phpunit",
         "passthru",
@@ -520,7 +521,10 @@
         "missingmodule",
         "FOUC",
         "kbarticles",
-        "rdsh"
+        "rdsh",
+        "uppercases",
+        "inpay",
+        "seti"
     ],
     "ignorePaths": [
         "node_modules/**",

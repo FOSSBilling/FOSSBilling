@@ -1065,3 +1065,75 @@ test('checkCustomFields returns null when field is not required', function (): v
     $result = $service->checkCustomFields($data);
     expect($result)->toBeNull();
 });
+
+test('resolveDocumentNumber returns first active custom field matching a document keyword', function (): void {
+    $service = new Box\Mod\Client\Service();
+    $config = [
+        'custom_fields' => [
+            'custom_1' => ['active' => true, 'title' => 'Identity Card'],
+            'custom_2' => ['active' => true, 'title' => 'Passport Number'],
+            'custom_3' => ['active' => true, 'title' => 'VAT Number'],
+        ],
+    ];
+    $di = container();
+    $di['mod_config'] = $di->protect(fn ($modName): array => $config);
+
+    $client = new Model_Client();
+    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client->custom_1 = 'ID-1';
+    $client->custom_2 = 'P-2';
+    $client->custom_3 = 'VAT-3';
+
+    $service->setDi($di);
+    expect($service->resolveDocumentNumber($client))->toBe('ID-1');
+});
+
+test('resolveDocumentNumber returns null when no custom field is active or matches a keyword', function (): void {
+    $service = new Box\Mod\Client\Service();
+    $config = [
+        'custom_fields' => [
+            'custom_1' => ['active' => true, 'title' => 'VAT Number'],
+            'custom_2' => ['active' => false, 'title' => 'Passport Number'],
+        ],
+    ];
+    $di = container();
+    $di['mod_config'] = $di->protect(fn ($modName): array => $config);
+
+    $client = new Model_Client();
+    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client->custom_1 = 'VAT-1';
+    $client->custom_2 = 'P-2';
+
+    $service->setDi($di);
+    expect($service->resolveDocumentNumber($client))->toBeNull();
+});
+
+test('resolveDocumentNumber returns null when matching custom field value is empty', function (): void {
+    $service = new Box\Mod\Client\Service();
+    $config = [
+        'custom_fields' => [
+            'custom_1' => ['active' => true, 'title' => 'Document Number'],
+        ],
+    ];
+    $di = container();
+    $di['mod_config'] = $di->protect(fn ($modName): array => $config);
+
+    $client = new Model_Client();
+    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client->custom_1 = null;
+
+    $service->setDi($di);
+    expect($service->resolveDocumentNumber($client))->toBeNull();
+});
+
+test('resolveDocumentNumber returns null when no custom_fields config exists', function (): void {
+    $service = new Box\Mod\Client\Service();
+    $di = container();
+    $di['mod_config'] = $di->protect(fn ($modName): array => []);
+
+    $client = new Model_Client();
+    $client->loadBean(new Tests\Helpers\DummyBean());
+
+    $service->setDi($di);
+    expect($service->resolveDocumentNumber($client))->toBeNull();
+});
