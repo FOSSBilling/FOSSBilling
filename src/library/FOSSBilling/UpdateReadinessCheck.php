@@ -76,7 +76,7 @@ final readonly class UpdateReadinessCheck
         // The install/ folder must be removable. We test it explicitly because
         // is_writable() on a directory does not guarantee the directory can be
         // deleted.
-        $issues = array_merge($issues, $this->checkRemovable($this->installDir, 'src/install/ (removed by the update)'));
+        $issues = array_merge($issues, $this->checkRemovable($this->installDir, 'install/ (removed by the update)'));
 
         return [
             'can_update' => $issues === [],
