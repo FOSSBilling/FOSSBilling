@@ -202,7 +202,17 @@ globalThis.FOSSBilling = Object.assign(globalThis.FOSSBilling || {}, {
 
    //===== Discord community popover (shown once) =====//
    const discordBtn = document.getElementById('discord-community-btn');
-   if (discordBtn && !localStorage.getItem('fb-discord-popover-seen')) {
+   const isDiscordBtnVisible = () => {
+     if (!discordBtn) {
+       return false;
+     }
+
+     const style = window.getComputedStyle(discordBtn);
+
+     return style.visibility !== 'hidden' && style.display !== 'none' && discordBtn.getClientRects().length > 0;
+   };
+
+   if (discordBtn && !localStorage.getItem('fb-discord-popover-seen') && isDiscordBtnVisible()) {
      const popover = bootstrap.Popover.getOrCreateInstance(discordBtn);
      localStorage.setItem('fb-discord-popover-seen', '1');
      popover.show();
