@@ -25,7 +25,7 @@ class ExtensionManager implements InjectionAwareInterface
     final public const string TYPE_HOOK = 'hook';
     final public const string TYPE_TRANSLATION = 'translation';
 
-    private string $_url = 'https://api.fossbilling.net/extensions/v1/';
+    private string $apiUrl = 'https://api.fossbilling.net/extensions/v1/';
 
     public function setDi(\Pimple\Container $di): void
     {
