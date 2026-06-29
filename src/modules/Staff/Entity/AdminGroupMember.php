@@ -49,7 +49,7 @@ class AdminGroupMember implements ApiArrayInterface
             'id' => $this->getId(),
             'admin_id' => $this->getAdminId(),
             'admin_group_id' => $this->getAdminGroup()->getId(),
-            'created_at' => $this->getCreatedAt(),
+            'created_at' => $this->getCreatedAt()?->format('Y-m-d H:i:s'),
         ];
     }
 

@@ -2014,7 +2014,12 @@ class UpdatePatcher implements InjectionAwareInterface
             SELECT id, admin_group_id, :created_at
             FROM admin
             WHERE admin_group_id IS NOT NULL
-        ', ['created_at' => $now]);
+              AND (admin_group_id != :super_admin_group_id OR role = :role)
+        ', [
+            'created_at' => $now,
+            'super_admin_group_id' => $superAdminGroupId,
+            'role' => 'admin',
+        ]);
 
         $this->executeSql('
             INSERT IGNORE INTO admin_group_member (admin_id, admin_group_id, created_at)
