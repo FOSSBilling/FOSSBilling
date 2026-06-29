@@ -58,10 +58,19 @@ final class Dispatcher implements InjectionAwareInterface
             throw new Exception('FOSSBilling module :mod is not installed/activated', [':mod' => $mod], 715);
         }
 
+        /**
+         * Disable permission checks when an update is pending finalization.
+         * 
+         * This is to make sure update finalization still works when there are changes to the
+         * permission system and patches need to be applied before everything starts working again.
+         */
         if ($role === 'admin') {
-            $staffService = $this->getDi()['mod_service']('Staff');
-            if (!$staffService->hasPermission($identity, $mod)) {
-                throw new Exception('You do not have access to the :mod module', [':mod' => $mod], 725);
+            $f = $this->di['update_finalization'];    
+            if (!$f->isRequired() && !$f->isAdminApiCallAllowed($mod, $method)) {
+                $staffService = $this->getDi()['mod_service']('Staff');
+                if (!$staffService->hasPermission($identity, $mod)) {
+                    throw new Exception('You do not have access to the :mod module', [':mod' => $mod], 725);
+                }
             }
         }
 
