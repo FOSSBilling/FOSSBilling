@@ -19,10 +19,11 @@ final class Proxy implements InjectionAwareInterface
 {
     protected string $type;
     protected ?Container $di = null;
+    private ?Dispatcher $dispatcher = null;
 
     public function __construct(protected object $identity)
     {
-        $this->type = str_replace('model_', '', strtolower($identity::class));
+        $this->type = Identity::typeFromObject($identity);
     }
 
     public function setDi(Container $di): void
@@ -52,6 +53,10 @@ final class Proxy implements InjectionAwareInterface
 
     private function getDispatcher(): Dispatcher
     {
+        if ($this->dispatcher !== null) {
+            return $this->dispatcher;
+        }
+
         if ($this->di === null || !$this->di->offsetExists('api_dispatcher')) {
             throw new \LogicException('API proxy requires the api_dispatcher service');
         }
@@ -61,6 +66,6 @@ final class Proxy implements InjectionAwareInterface
             throw new \LogicException('API dispatcher service must resolve to a FOSSBilling\Api\Dispatcher instance');
         }
 
-        return $dispatcher;
+        return $this->dispatcher = $dispatcher;
     }
 }
