@@ -183,7 +183,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $ext = $this->_getExtension($data);
 
-        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminDeactivateExtension', 'params' => ['id' => $ext->id]]);
+        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminDeactivateExtension', 'params' => ['id' => $ext->getId()]]);
 
         $service = $this->getService();
         $service->deactivate($ext);
