@@ -56,7 +56,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'view');
 
-        $model = $this->getDi()['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
+        $model = $this->getService()->getTicketById((int) $data['id']);
 
         return $this->getService()->toApiArray($model, true, $this->getIdentity());
     }
@@ -74,7 +74,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_tickets');
 
-        $model = $this->getDi()['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
+        $model = $this->getService()->getTicketById((int) $data['id']);
 
         // Sanitize subject if provided
         if (isset($data['subject'])) {
@@ -92,7 +92,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_tickets');
 
-        $model = $this->getDi()['db']->getExistingModelById('SupportTicketMessage', $data['id'], 'Ticket message not found');
+        $model = $this->getService()->getTicketMessageById((int) $data['id']);
 
         return $this->getService()->ticketMessageUpdate($model, $data['content']);
     }
@@ -105,7 +105,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_tickets');
 
-        $model = $this->getDi()['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
+        $model = $this->getService()->getTicketById((int) $data['id']);
 
         return $this->getService()->rm($model);
     }
@@ -122,7 +122,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $data['content'] = \FOSSBilling\Tools::sanitizeMarkdownContent($data['content']);
 
-        $ticket = $this->getDi()['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
+        $ticket = $this->getService()->getTicketById((int) $data['id']);
 
         return $this->getService()->ticketReply($ticket, $this->getIdentity(), $data['content']);
     }
@@ -159,6 +159,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $data['content'] = \FOSSBilling\Tools::sanitizeMarkdownContent($data['content']);
 
+        /** @todo Doctrine: use Client entity once Client is migrated */
         $client = $this->getDi()['db']->getExistingModelById('Client', $data['client_id'], 'Client not found');
 
         /** @var \Box\Mod\Support\Repository\HelpdeskRepository $repo */
@@ -542,7 +543,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_tickets');
 
-        $ticket = $this->getDi()['db']->getExistingModelById('SupportTicket', $data['ticket_id'], 'Ticket not found');
+        $ticket = $this->getService()->getTicketById((int) $data['ticket_id']);
 
         return $this->getService()->noteCreate($ticket, $this->getIdentity(), $data['note']);
     }
@@ -557,7 +558,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_tickets');
 
-        $model = $this->getDi()['db']->getExistingModelById('SupportTicketNote', $data['id'], 'Note not found');
+        $model = $this->getService()->getTicketNoteById((int) $data['id']);
 
         return $this->getService()->noteRm($model);
     }
@@ -572,7 +573,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_tickets');
 
-        $model = $this->getDi()['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
+        $model = $this->getService()->getTicketById((int) $data['id']);
 
         return $this->getService()->ticketTaskComplete($model);
     }

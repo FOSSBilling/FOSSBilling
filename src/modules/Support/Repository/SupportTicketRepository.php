@@ -162,6 +162,79 @@ class SupportTicketRepository extends EntityRepository
     }
 
     /**
+     * Return a `[status => count]` map covering all tickets, grouped by status.
+     *
+     * @return array<string, int>
+     */
+    public function countGroupedByStatus(): array
+    {
+        $result = $this->createQueryBuilder('t')
+            ->select('t.status, COUNT(t.id) AS cnt')
+            ->groupBy('t.status')
+            ->getQuery()
+            ->getArrayResult();
+
+        $counts = [];
+        foreach ($result as $row) {
+            $counts[(string) $row['status']] = (int) $row['cnt'];
+        }
+
+        return $counts;
+    }
+
+    /**
+     * Return on_hold tickets whose helpdesk close_after window has elapsed.
+     *
+     * Implemented via DBAL because the predicate mixes a column argument into
+     * `DATE_ADD(... INTERVAL ... HOUR)`, which is awkward to express in DQL.
+     * The result is returned as associative rows to stay consistent with the
+     * previous RedBean-based return shape.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function findExpiredOnHold(\DateTimeInterface $now): array
+    {
+        $sql = 'SELECT st.*
+                FROM support_ticket AS st
+                    LEFT JOIN support_helpdesk sh ON sh.id = st.support_helpdesk_id
+                WHERE st.status = :status
+                  AND DATE_ADD(st.updated_at, INTERVAL sh.close_after HOUR) < :now
+                ORDER BY st.id ASC';
+
+        return $this->getEntityManager()->getConnection()
+            ->fetchAllAssociative($sql, [
+                'status' => SupportTicket::STATUS_ONHOLD,
+                'now' => $now->format('Y-m-d H:i:s'),
+            ]);
+    }
+
+    /**
+     * Return raw ticket rows (associative arrays) for the supplied id list.
+     *
+     * Used by the performance-sensitive batch fetcher in
+     * {@see \Box\Mod\Support\Service::getBatchForApi()}, which renders many
+     * tickets at once for the client-area listing and intentionally avoids
+     * hydrating entities for that path.
+     *
+     * @param list<int> $ids
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function findBatchRowsByIds(array $ids): array
+    {
+        if (empty($ids)) {
+            return [];
+        }
+
+        return $this->getEntityManager()->getConnection()
+            ->fetchAllAssociative(
+                'SELECT * FROM support_ticket WHERE id IN (:ids)',
+                ['ids' => $ids],
+                ['ids' => \Doctrine\DBAL\ArrayParameterType::INTEGER]
+            );
+    }
+
+    /**
      * Count how many active (open / on_hold) tickets reference a given order id.
      */
     public function countActiveTicketsForOrder(int $orderId): int

@@ -165,7 +165,7 @@ class ExtensionManager implements InjectionAwareInterface
             $httpClient = $this->di['http_client'];
             $response = $httpClient->request('GET', $url, [
                 'timeout' => 5,
-                'query' => [...$params, 'fossbilling_version' => Version::VERSION]
+                'query' => [...$params, 'fossbilling_version' => Version::VERSION],
             ]);
 
             $json = $response->toArray();

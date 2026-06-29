@@ -59,4 +59,73 @@ class SupportTicketMessageRepository extends EntityRepository
             ->getQuery()
             ->getSingleScalarResult();
     }
+
+    /**
+     * Return a `[ticket_id => reply_count]` map for the supplied ticket ids.
+     *
+     * Implemented via DBAL because the calling code operates on raw rows (not
+     * entities) in a performance-sensitive batch path, and a GROUP BY over the
+     * entity manager would hydrate every message.
+     *
+     * @param list<int> $ticketIds
+     *
+     * @return array<int, int>
+     */
+    public function countRepliesByTicketIds(array $ticketIds): array
+    {
+        if (empty($ticketIds)) {
+            return [];
+        }
+
+        $rows = $this->getEntityManager()->getConnection()
+            ->fetchAllAssociative(
+                'SELECT support_ticket_id, COUNT(id) AS counter
+                 FROM support_ticket_message
+                 WHERE support_ticket_id IN (:ids)
+                 GROUP BY support_ticket_id',
+                ['ids' => $ticketIds],
+                ['ids' => \Doctrine\DBAL\ArrayParameterType::INTEGER]
+            );
+
+        $counts = [];
+        foreach ($rows as $row) {
+            $counts[(int) $row['support_ticket_id']] = (int) $row['counter'];
+        }
+
+        return $counts;
+    }
+
+    /**
+     * Return the lowest message id for each supplied ticket id.
+     *
+     * Used by the batch ticket fetcher to pull a single "first message" per
+     * ticket without hydrating the entire thread.
+     *
+     * @param list<int> $ticketIds
+     *
+     * @return array<int, int> `[ticket_id => first_message_id]`
+     */
+    public function findFirstIdsByTicketIds(array $ticketIds): array
+    {
+        if (empty($ticketIds)) {
+            return [];
+        }
+
+        $rows = $this->getEntityManager()->getConnection()
+            ->fetchAllAssociative(
+                'SELECT support_ticket_id, MIN(id) AS message_id
+                 FROM support_ticket_message
+                 WHERE support_ticket_id IN (:ids)
+                 GROUP BY support_ticket_id',
+                ['ids' => $ticketIds],
+                ['ids' => \Doctrine\DBAL\ArrayParameterType::INTEGER]
+            );
+
+        $first = [];
+        foreach ($rows as $row) {
+            $first[(int) $row['support_ticket_id']] = (int) $row['message_id'];
+        }
+
+        return $first;
+    }
 }

@@ -276,6 +276,26 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $ticket;
     }
 
+    public function getTicketMessageById(int $id): SupportTicketMessage
+    {
+        $message = $this->di['em']->find(SupportTicketMessage::class, $id);
+        if (!$message instanceof SupportTicketMessage) {
+            throw new \FOSSBilling\Exception('Ticket message not found');
+        }
+
+        return $message;
+    }
+
+    public function getTicketNoteById(int $id): SupportTicketNote
+    {
+        $note = $this->di['em']->find(SupportTicketNote::class, $id);
+        if (!$note instanceof SupportTicketNote) {
+            throw new \FOSSBilling\Exception('Note not found');
+        }
+
+        return $note;
+    }
+
     public function isGuestTicket(SupportTicket $ticket): bool
     {
         return $ticket->getClientId() === null && $ticket->getAccessHash() !== null;
@@ -437,11 +457,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function counter(): array
     {
-        $query = 'SELECT status, COUNT(id) as counter
-                    FROM support_ticket
-                    GROUP BY status';
-
-        $data = $this->di['db']->getAssoc($query);
+        $data = $this->getSupportTicketRepository()->countGroupedByStatus();
 
         return [
             'total' => array_sum($data),
@@ -453,31 +469,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function getLatest(): array
     {
-        return $this->di['db']->find('SupportTicket', 'ORDER BY id DESC LIMIT 10');
+        return $this->getSupportTicketRepository()->findLatest();
     }
 
     public function getExpired(): array
     {
-        $bindings = [
-            ':status' => SupportTicket::STATUS_ONHOLD,
-        ];
-
-        $sql = 'SELECT st.*
-                FROM support_ticket as st
-                    LEFT JOIN support_helpdesk sh ON sh.id = st.support_helpdesk_id
-                WHERE st.status = :status
-                AND DATE_ADD(st.updated_at, INTERVAL sh.close_after HOUR) < NOW()
-                ORDER BY st.id ASC';
-
-        return $this->di['db']->getAll($sql, $bindings);
+        return $this->getSupportTicketRepository()->findExpiredOnHold(new \DateTime());
     }
 
     public function countByStatus(string $status): int
     {
-        $query = 'SELECT COUNT(id) as counter FROM support_ticket
-                WHERE status = :status GROUP BY status LIMIT 1';
-
-        return (int) $this->di['db']->getCell($query, [':status' => $status]);
+        return $this->getSupportTicketRepository()->countByStatus($status);
     }
 
     public function getActiveTicketsCountForOrder(\Model_ClientOrder $model): int
@@ -555,6 +557,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         if ($model->getRelType() === SupportTicket::REL_TYPE_ORDER) {
             $clientId = $model->getClientId();
+            /** @todo Doctrine: use Client entity once Client is migrated.
+             *        Kept as Model_Client because the order module's
+             *        findForClientById() still expects it. */
             $client = $clientId !== null ? $this->di['db']->load('Client', $clientId) : null;
             $orderService = $this->di['mod_service']('order');
             $o = $client instanceof \Model_Client ? $orderService->findForClientById($client, $model->getRelId()) : null;
@@ -700,8 +705,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             return $this->getBatchForApiWithModels($ids, $deep, $identity);
         }
 
-        $placeholders = implode(',', array_fill(0, count($ids), '?'));
-        $tickets = $this->di['db']->getAll("SELECT * FROM support_ticket WHERE id IN ($placeholders)", $ids);
+        $tickets = $this->getSupportTicketRepository()->findBatchRowsByIds($ids);
         if (empty($tickets)) {
             return [];
         }
@@ -711,37 +715,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $helpdeskIds = $this->normalizeIds(array_column($tickets, 'support_helpdesk_id'));
         $clientIds = $this->normalizeIds(array_column($tickets, 'client_id'));
 
-        $replyCounts = [];
-        if (!empty($ticketIds)) {
-            $placeholders = implode(',', array_fill(0, count($ticketIds), '?'));
-            $countRows = $this->di['db']->getAll(
-                "SELECT support_ticket_id, COUNT(id) as counter
-                FROM support_ticket_message
-                WHERE support_ticket_id IN ($placeholders)
-                GROUP BY support_ticket_id",
-                $ticketIds
-            );
-            foreach ($countRows as $row) {
-                $replyCounts[$row['support_ticket_id']] = (int) $row['counter'];
-            }
-        }
+        $replyCounts = $this->getSupportTicketMessageRepository()->countRepliesByTicketIds($ticketIds);
 
         $firstMessages = [];
         if (!empty($ticketIds)) {
-            $placeholders = implode(',', array_fill(0, count($ticketIds), '?'));
-            $rows = $this->di['db']->getAll(
-                "SELECT support_ticket_id, MIN(id) as message_id
-                FROM support_ticket_message
-                WHERE support_ticket_id IN ($placeholders)
-                GROUP BY support_ticket_id",
-                $ticketIds
-            );
-            $messageIds = array_column($rows, 'message_id');
+            $firstMessageIdsByTicket = $this->getSupportTicketMessageRepository()->findFirstIdsByTicketIds($ticketIds);
+            $messageIds = array_values($firstMessageIdsByTicket);
             if (!empty($messageIds)) {
-                $placeholders = implode(',', array_fill(0, count($messageIds), '?'));
-                $messages = $this->di['db']->find('SupportTicketMessage', "id IN ($placeholders)", $messageIds);
+                $messages = $this->getSupportTicketMessageRepository()->findBy(['id' => $messageIds]);
                 foreach ($messages as $message) {
-                    $firstMessages[$message->support_ticket_id] = $message;
+                    $ticket = $message->getSupportTicket();
+                    $firstMessages[$ticket instanceof SupportTicket ? ($ticket->getId() ?? 0) : 0] = $message;
                 }
             }
         }
@@ -757,11 +741,29 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $clients = [];
         $clientAuthors = [];
         if (!empty($clientIds)) {
-            $placeholders = implode(',', array_fill(0, count($clientIds), '?'));
-            $clientModels = $this->di['db']->find('Client', "id IN ($placeholders)", $clientIds);
-            foreach ($clientModels as $client) {
-                $clients[$client->id] = $this->clientToTicketApiArray($client, $identity);
-                $clientAuthors[$client->id] = $this->clientToTicketAuthorArray($client);
+            /** @todo Doctrine: use Client entity once Client is migrated */
+            $clientRows = $this->di['dbal']->fetchAllAssociative(
+                'SELECT id, first_name, last_name, email FROM client WHERE id IN (?)',
+                [$clientIds],
+                [\Doctrine\DBAL\ArrayParameterType::INTEGER]
+            );
+            foreach ($clientRows as $row) {
+                $id = (int) $row['id'];
+                $first = (string) $row['first_name'];
+                $last = (string) $row['last_name'];
+                $clients[$id] = [
+                    'id' => $id,
+                    'first_name' => $first,
+                    'last_name' => $last,
+                ];
+                $clientAuthors[$id] = [
+                    'id' => $id,
+                    'name' => trim($first . ' ' . $last),
+                    'first_name' => $first,
+                    'last_name' => $last,
+                    'email' => (string) $row['email'],
+                    'role' => 'client',
+                ];
             }
         }
 
@@ -801,15 +803,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     private function getBatchForApiWithModels(array $ids, bool $deep, $identity): array
     {
-        $placeholders = implode(',', array_fill(0, count($ids), '?'));
-        $tickets = $this->di['db']->find('SupportTicket', "id IN ($placeholders)", $ids);
+        $tickets = $this->getSupportTicketRepository()->findBy(['id' => $ids]);
         if (empty($tickets)) {
             return [];
         }
 
         $ticketsById = [];
         foreach ($tickets as $ticket) {
-            $ticketsById[$ticket->id] = $ticket;
+            $id = $ticket->getId();
+            if ($id !== null) {
+                $ticketsById[$id] = $ticket;
+            }
         }
 
         $result = [];
@@ -851,14 +855,34 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         $clientId = $ticket->getClientId();
-        $client = $clientId !== null ? $this->di['db']->load('Client', $clientId) : null;
-
-        if ($client instanceof \Model_Client) {
-            return $this->clientToTicketApiArray($client, $identity);
+        if ($clientId === null) {
+            return [];
         }
-        $this->di['logger']->error('Missing client for ticket ' . $ticket->getId());
 
-        return [];
+        if ($identity instanceof \Model_Admin) {
+            // Admin view needs the full client module api array, which still
+            // expects a Model_Client. Keep the legacy loader until the Client
+            // module is migrated.
+            /** @todo Doctrine: use Client entity once Client is migrated */
+            $client = $this->di['db']->load('Client', $clientId);
+
+            return $client instanceof \Model_Client
+                ? $this->clientToTicketApiArray($client, $identity)
+                : [];
+        }
+
+        $summary = $this->fetchClientSummary($clientId);
+        if ($summary === null) {
+            $this->di['logger']->error('Missing client for ticket ' . $ticket->getId());
+
+            return [];
+        }
+
+        return [
+            'id' => $summary['id'],
+            'first_name' => $summary['first_name'],
+            'last_name' => $summary['last_name'],
+        ];
     }
 
     private function getTicketAuthor(SupportTicket $ticket, \Model_Admin|\Model_Client|null $identity = null): array
@@ -877,26 +901,21 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         $clientId = $ticket->getClientId();
-        $client = $clientId !== null ? $this->di['db']->load('Client', $clientId) : null;
+        $client = $clientId !== null ? $this->fetchClientSummary($clientId) : null;
 
-        if ($client instanceof \Model_Client) {
-            return $this->clientToTicketAuthorArray($client);
+        if ($client !== null) {
+            return [
+                'id' => $client['id'],
+                'name' => $client['name'],
+                'first_name' => $client['first_name'],
+                'last_name' => $client['last_name'],
+                'email' => $client['email'],
+                'role' => 'client',
+            ];
         }
         $this->di['logger']->error('Missing client for ticket ' . $ticket->getId());
 
         return [];
-    }
-
-    private function clientToTicketAuthorArray(\Model_Client $client): array
-    {
-        return [
-            'id' => $client->id,
-            'name' => $client->getFullName(),
-            'first_name' => $client->first_name,
-            'last_name' => $client->last_name,
-            'email' => $client->email,
-            'role' => 'client',
-        ];
     }
 
     private function clientToTicketApiArray(\Model_Client $client, \Model_Admin|\Model_Client|null $identity = null): array
@@ -914,14 +933,70 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         ];
     }
 
+    /**
+     * Fetch a minimal `id / name / email` summary for an admin row via DBAL.
+     *
+     * @return array{id: int, name: string, email: string}|null
+     *
+     * @todo Doctrine: replace with Admin entity once Staff is migrated
+     */
+    private function fetchAdminSummary(int $adminId): ?array
+    {
+        $row = $this->di['dbal']->fetchAssociative(
+            'SELECT id, name, email FROM admin WHERE id = :id',
+            ['id' => $adminId]
+        );
+
+        return $row === false ? null : [
+            'id' => (int) $row['id'],
+            'name' => (string) $row['name'],
+            'email' => (string) $row['email'],
+        ];
+    }
+
+    /**
+     * Fetch a minimal `id / first_name / last_name / email / name` summary
+     * for a client row via DBAL.
+     *
+     * The synthesized `name` field concatenates first and last name to mimic
+     * the legacy {@see \Model_Client::getFullName()} behaviour.
+     *
+     * @return array{id: int, first_name: string, last_name: string, email: string, name: string}|null
+     *
+     * @todo Doctrine: replace with Client entity once Client is migrated
+     */
+    private function fetchClientSummary(int $clientId): ?array
+    {
+        $row = $this->di['dbal']->fetchAssociative(
+            'SELECT id, first_name, last_name, email FROM client WHERE id = :id',
+            ['id' => $clientId]
+        );
+
+        if ($row === false) {
+            return null;
+        }
+
+        $first = (string) $row['first_name'];
+        $last = (string) $row['last_name'];
+        $fullName = trim($first . ' ' . $last);
+
+        return [
+            'id' => (int) $row['id'],
+            'first_name' => $first,
+            'last_name' => $last,
+            'email' => (string) $row['email'],
+            'name' => $fullName,
+        ];
+    }
+
     public function noteGetAuthorDetails(SupportTicketNote $model): array
     {
         $adminId = $model->getAdminId();
-        $admin = $adminId !== null ? $this->di['db']->load('Admin', $adminId) : null;
+        $admin = $adminId !== null ? $this->fetchAdminSummary($adminId) : null;
 
         return [
-            'name' => $admin instanceof \Model_Admin ? $admin->getFullName() : null,
-            'email' => $admin instanceof \Model_Admin ? $admin->email : null,
+            'name' => $admin['name'] ?? null,
+            'email' => $admin['email'] ?? null,
         ];
     }
 
@@ -983,10 +1058,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $ticket = $model->getSupportTicket();
 
         if ($adminId) {
-            $author = $this->di['db']->load('Admin', $adminId);
+            /** @todo Doctrine: use Admin entity once Staff is migrated */
+            $author = $this->fetchAdminSummary($adminId);
             $role = 'admin';
         } elseif ($clientId) {
-            $author = $this->di['db']->load('Client', $clientId);
+            /** @todo Doctrine: use Client entity once Client is migrated */
+            $author = $this->fetchClientSummary($clientId);
             $role = 'client';
         } else {
             if ($ticket instanceof SupportTicket && $this->isGuestTicket($ticket)) {
@@ -1000,17 +1077,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             return [];
         }
 
-        if (!$author) {
+        if ($author === null) {
             return [];
         }
 
         $result = [
-            'name' => $author->getFullName(),
+            'name' => $author['name'],
             'role' => $role,
         ];
 
         if ($identity instanceof \Model_Admin) {
-            $result['email'] = $author->email;
+            $result['email'] = $author['email'];
         }
 
         return $result;
@@ -1222,7 +1299,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $hours = $config['wait_hours'];
 
-        $lastTicket = $this->di['db']->findOne('SupportTicket', 'client_id = :client_id ORDER BY created_at DESC', [':client_id' => $client->id]);
+        $lastTicket = $this->getSupportTicketRepository()->findOneBy(
+            ['clientId' => (int) $client->id],
+            ['createdAt' => 'DESC']
+        );
         if (!$lastTicket instanceof SupportTicket) {
             return true;
         }

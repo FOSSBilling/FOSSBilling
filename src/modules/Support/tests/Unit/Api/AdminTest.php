@@ -133,18 +133,14 @@ test('ticket get list', function (): void {
 
 test('ticket get', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(new SupportTicket());
 
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $serviceMock->shouldReceive('getTicketById')->atLeast()->once()
+        ->andReturn(new SupportTicket());
     $serviceMock->shouldReceive('toApiArray')->atLeast()->once()
         ->andReturn([]);
 
     $di = container();
-    $di['db'] = $dbMock;
     $api->setDi($di);
 
     $api->setService($serviceMock);
@@ -159,18 +155,14 @@ test('ticket get', function (): void {
 
 test('ticket update', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(new SupportTicket());
 
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $serviceMock->shouldReceive('getTicketById')->atLeast()->once()
+        ->andReturn(new SupportTicket());
     $serviceMock->shouldReceive('ticketUpdate')->atLeast()->once()
         ->andReturn(true);
 
     $di = container();
-    $di['db'] = $dbMock;
     $api->setDi($di);
 
     $api->setService($serviceMock);
@@ -185,18 +177,14 @@ test('ticket update', function (): void {
 
 test('ticket message update', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(new Box\Mod\Support\Entity\SupportTicketMessage());
 
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $serviceMock->shouldReceive('getTicketMessageById')->atLeast()->once()
+        ->andReturn(new Box\Mod\Support\Entity\SupportTicketMessage());
     $serviceMock->shouldReceive('ticketMessageUpdate')->atLeast()->once()
         ->andReturn(true);
 
     $di = container();
-    $di['db'] = $dbMock;
     $api->setDi($di);
 
     $api->setService($serviceMock);
@@ -212,18 +200,14 @@ test('ticket message update', function (): void {
 
 test('ticket delete', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(new SupportTicket());
 
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $serviceMock->shouldReceive('getTicketById')->atLeast()->once()
+        ->andReturn(new SupportTicket());
     $serviceMock->shouldReceive('rm')->atLeast()->once()
         ->andReturn(true);
 
     $di = container();
-    $di['db'] = $dbMock;
     $api->setDi($di);
 
     $api->setService($serviceMock);
@@ -238,18 +222,14 @@ test('ticket delete', function (): void {
 
 test('ticket reply', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(new SupportTicket());
 
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $serviceMock->shouldReceive('getTicketById')->atLeast()->once()
+        ->andReturn(new SupportTicket());
     $serviceMock->shouldReceive('ticketReply')->atLeast()->once()
         ->andReturn(1);
 
     $di = container();
-    $di['db'] = $dbMock;
     $api->setDi($di);
 
     $api->setService($serviceMock);
@@ -881,15 +861,10 @@ test('note create', function (): void {
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
     $serviceMock->shouldReceive('noteCreate')->atLeast()->once()
         ->andReturn(1);
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(new SupportTicket());
+    $serviceMock->shouldReceive('getTicketById')->atLeast()->once()
+        ->andReturn(new SupportTicket());
 
     $di = container();
-    $di['db'] = $dbMock;
     $api->setDi($di);
 
     $api->setService($serviceMock);
@@ -909,15 +884,10 @@ test('note delete', function (): void {
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
     $serviceMock->shouldReceive('noteRm')->atLeast()->once()
         ->andReturn(true);
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(new Box\Mod\Support\Entity\SupportTicketNote());
+    $serviceMock->shouldReceive('getTicketNoteById')->atLeast()->once()
+        ->andReturn(new Box\Mod\Support\Entity\SupportTicketNote());
 
     $di = container();
-    $di['db'] = $dbMock;
     $api->setDi($di);
 
     $api->setService($serviceMock);
@@ -936,15 +906,10 @@ test('task complete', function (): void {
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
     $serviceMock->shouldReceive('ticketTaskComplete')->atLeast()->once()
         ->andReturn(true);
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(new SupportTicket());
+    $serviceMock->shouldReceive('getTicketById')->atLeast()->once()
+        ->andReturn(new SupportTicket());
 
     $di = container();
-    $di['db'] = $dbMock;
     $api->setDi($di);
 
     $api->setService($serviceMock);

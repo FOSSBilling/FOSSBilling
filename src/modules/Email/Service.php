@@ -333,9 +333,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, null, $staff['id'], $send_now, $throw_exceptions);
             }
         } elseif (isset($oneStaff)) {
-            $to = $oneStaff->email;
-            $to_name = $oneStaff->name;
-            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, $oneStaff->id, null, $send_now, $throw_exceptions);
+            $to = $oneStaff['email'];
+            $to_name = $oneStaff['name'];
+            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, $oneStaff['id'], null, $send_now, $throw_exceptions);
         } elseif (isset($customer)) {
             $to = $customer['email'];
             $to_name = $customer['first_name'] . ' ' . $customer['last_name'];

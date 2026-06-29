@@ -528,7 +528,6 @@ test('sendTemplate handles to_staff and to_client options', function (array $dat
         ]);
 
     $di['mod'] = $di->protect(fn () => $modMock);
-    $di['db'] = $db;
     $di['twig'] = $twigStub;
     $di['crypt'] = $cryptMock;
     $di['mod_service'] = $di->protect(moduleService([
@@ -703,10 +702,6 @@ test('updateTemplate updates template', function (array $data, string $templateR
 
     $emailService = new Box\Mod\Email\Service();
 
-    $db = Mockery::mock('Box_Database');
-    $db->shouldReceive('store')
-        ->byDefault();
-
     $loggerStub = new Tests\Helpers\TestLogger();
 
     $cryptMock = Mockery::mock('\Box_Crypt');
@@ -717,7 +712,6 @@ test('updateTemplate updates template', function (array $data, string $templateR
     $twigStub = Mockery::mock(Twig\Environment::class);
 
     $di = container();
-    $di['db'] = $db;
     $di['logger'] = $loggerStub;
     $di['crypt'] = $cryptMock;
     $di['config'] = $configMock;
