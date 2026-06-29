@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -25,7 +25,7 @@ class ExtensionManager implements InjectionAwareInterface
     final public const string TYPE_HOOK = 'hook';
     final public const string TYPE_TRANSLATION = 'translation';
 
-    private string $_url = 'https://extensions.fossbilling.org/api/';
+    private string $_url = 'https://api.fossbilling.net/extensions/v1/';
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -44,13 +44,13 @@ class ExtensionManager implements InjectionAwareInterface
      *
      * @return array The extension details
      *
-     * @example https://extensions.fossbilling.org/api/extension/Example An example of the API response
+     * @example https://api.fossbilling.net/extensions/v1/Example An example of the API response
      *
      * @throws Exception
      */
     public function getExtension(string $id): array
     {
-        $manifest = $this->makeRequest('extension/' . $id);
+        $manifest = $this->makeRequest($id);
 
         if (empty($manifest)) {
             throw new Exception('Unable to fetch the extension details from the FOSSBilling extension directory.');
@@ -66,7 +66,7 @@ class ExtensionManager implements InjectionAwareInterface
      *
      * @return array The list of releases of the extension
      *
-     * @example https://extensions.fossbilling.org/api/extension/Example An example of the API response (the "releases" array)
+     * @example https://api.fossbilling.net/extensions/v1/Example An example of the API response (the "releases" array)
      *
      * @throws Exception
      */
@@ -88,7 +88,7 @@ class ExtensionManager implements InjectionAwareInterface
      *
      * @return array The latest release of the extension
      *
-     * @example https://extensions.fossbilling.org/api/extension/Example An example of the API response (the first element in the "releases" array)
+     * @example https://api.fossbilling.net/extensions/v1/Example An example of the API response (the first element in the "releases" array)
      *
      * @throws Exception
      */
@@ -111,7 +111,7 @@ class ExtensionManager implements InjectionAwareInterface
      *
      * @return array The list of extensions
      *
-     * @example https://extensions.fossbilling.org/api/list An example of the API response
+     * @example https://api.fossbilling.net/extensions/v1/list An example of the API response
      */
     public function getExtensionList(?string $type = null): array
     {
