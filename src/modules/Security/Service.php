@@ -68,6 +68,7 @@ class Service
             }
 
             $newCheck = new $className();
+            $newCheck->setDi($this->di);
             if ($newCheck instanceof SecurityCheckInterface) {
                 $checks[$checkID] = $newCheck;
             } else {
@@ -115,6 +116,7 @@ class Service
         }
 
         $check = new $class();
+        $check->setDi($this->di);
         if (!$check instanceof SecurityCheckInterface) {
             throw new InformationException('The check :checkName: does not seem to be a valid check.', [':checkName:' => $checkID]);
         }

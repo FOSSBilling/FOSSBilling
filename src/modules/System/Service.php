@@ -608,7 +608,7 @@ class Service
     {
         if ($fetchExternalIp) {
             try {
-                return Tools::getExternalIP();
+                return $this->di['tools']->getExternalIP();
             } catch (\Exception) {
                 return '';
             }

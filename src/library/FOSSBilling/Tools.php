@@ -280,7 +280,7 @@ class Tools
      * Tries to fetch a list of possible interfaces (IPs) to bind to when making requests.
      * Attempts to make external requests for each interface & only works with IPv4.
      */
-    public static function listHttpInterfaces(): array
+    public function listHttpInterfaces(): array
     {
         // Fetch a list of IP addresses for local interfaces
         $validatedIps = [];
@@ -298,7 +298,7 @@ class Tools
         // For each of the found IPs, attempt a generic network request. If the request produces no errors, consider it valid
         foreach ($ips as $ip) {
             try {
-                self::getExternalIP(true, $ip);
+                $this->getExternalIP(true, $ip);
                 $validatedIps[] = $ip;
             } catch (\Exception) {
             }
@@ -363,15 +363,14 @@ class Tools
      *
      * @return ?string `null` if there was an error, otherwise an IP address will be returned
      */
-    public static function getExternalIP(bool $throw = true, ?string $bind = null): ?string
+    public function getExternalIP(bool $throw = true, ?string $bind = null): ?string
     {
         $services = ['https://api64.ipify.org', 'https://checkip.global.api.aws', 'https://ifconfig.io/ip'];
-        $bind ??= BIND_TO;
-        $client = HttpClient::create(['bindto' => $bind]);
+        $httpClient = $this->di['http_client'];
 
         foreach ($services as $service) {
             try {
-                $response = $client->request('GET', $service, [
+                $response = $httpClient->request('GET', $service, [
                     'timeout' => 2,
                 ]);
 

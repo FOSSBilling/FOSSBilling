@@ -14,10 +14,22 @@ namespace Box\Mod\Security\Checks;
 
 use FOSSBilling\Enums\SecurityCheckResultEnum;
 use FOSSBilling\SecurityCheckResult;
-use Symfony\Component\HttpClient\HttpClient;
+use Pimple\Container;
 
 class phpVersion implements \FOSSBilling\Interfaces\SecurityCheckInterface
 {
+    protected ?Container $di = null;
+
+    public function setDi(Container $di): void
+    {
+        $this->di = $di;
+    }
+
+    public function getDi(): ?Container
+    {
+        return $this->di;
+    }
+
     public function getName(): string
     {
         return __trans('PHP Version Check');
@@ -33,8 +45,8 @@ class phpVersion implements \FOSSBilling\Interfaces\SecurityCheckInterface
         $phpVersionString = PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION;
 
         try {
-            $client = HttpClient::create();
-            $response = $client->request('GET', 'https://php.watch/api/v1/versions');
+            $httpClient = $this->di['http_client'];
+            $response = $httpClient->request('GET', 'https://php.watch/api/v1/versions');
             $data = $response->toArray();
 
             foreach ($data['data'] as $version) {
