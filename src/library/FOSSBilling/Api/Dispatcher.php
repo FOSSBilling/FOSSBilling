@@ -64,13 +64,10 @@ final class Dispatcher implements InjectionAwareInterface
          * This is to make sure update finalization still works when there are changes to the
          * permission system and patches need to be applied before everything starts working again.
          */
-        if ($role === 'admin') {
-            $f = $this->di['update_finalization'];    
-            if (!$f->isRequired() && !$f->isAdminApiCallAllowed($mod, $method)) {
-                $staffService = $this->getDi()['mod_service']('Staff');
-                if (!$staffService->hasPermission($identity, $mod)) {
-                    throw new Exception('You do not have access to the :mod module', [':mod' => $mod], 725);
-                }
+        if ($role === 'admin' && !$this->isAllowedAdminFinalizationCall($mod, $method)) {
+            $staffService = $this->getDi()['mod_service']('Staff');
+            if (!$staffService->hasPermission($identity, $mod)) {
+                throw new Exception('You do not have access to the :mod module', [':mod' => $mod], 725);
             }
         }
 
@@ -104,6 +101,13 @@ final class Dispatcher implements InjectionAwareInterface
         $this->validateRequiredParams($api, $methodName, $data);
 
         return $api->{$methodName}(...$this->normalizeArguments($api, $methodName, $arguments));
+    }
+
+    private function isAllowedAdminFinalizationCall(string $class, string $method): bool
+    {
+        $finalization = $this->di['update_finalization'];
+
+        return $finalization->isRequired() && $finalization->isAdminApiCallAllowed($class, $method);
     }
 
     /**
