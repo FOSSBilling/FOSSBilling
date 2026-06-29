@@ -39,9 +39,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('support', 'view');
 
         $repo = $this->getService()->getSupportTicketRepository();
-        $pager = $this->getDi()['pager']->paginateDoctrineQuery(
+        $pager = $this->getDi()['pager']->paginateMappedQuery(
             $repo->getSearchQueryBuilder($data),
             PaginationOptions::fromArray($data),
+            fn (SupportTicket $ticket): array => $this->getService()->toApiArray($ticket, true, $this->getIdentity()),
         );
 
         return $pager;
@@ -134,7 +135,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_tickets');
 
-        $ticket = $this->getDi()['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
+        $ticket = $this->getService()->getTicketById((int) $data['id']);
 
         if ($ticket->getStatus() === SupportTicket::STATUS_CLOSED) {
             return true;
@@ -185,7 +186,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $expiredArr = $this->getService()->getExpired();
 
         foreach ($expiredArr as $ticketArr) {
-            $ticketModel = $this->getDi()['db']->getExistingModelById('SupportTicket', $ticketArr['id'], 'Ticket not found');
+            $ticketModel = $this->getService()->getTicketById((int) $ticketArr['id']);
             if (!$this->getService()->autoClose($ticketModel)) {
                 $this->getDi()['logger']->info('Ticket %s was not closed', $ticketModel->getId());
             }

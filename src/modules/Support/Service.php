@@ -296,7 +296,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     /**
      * Find ticket for client.
      */
-    public function findOneByClient(\Model_Client $c, int $id): ?SupportTicket
+    public function findOneByClient(\Model_Client $c, int $id): SupportTicket
     {
         $ticket = $this->getSupportTicketRepository()->findOneByClient((int) $c->id, $id);
         if (!$ticket instanceof SupportTicket) {
@@ -482,41 +482,18 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function getActiveTicketsCountForOrder(\Model_ClientOrder $model): int
     {
-        $query = "SELECT COUNT(id) as counter FROM support_ticket
-                WHERE rel_id = :order_id
-                AND rel_type = 'order'
-                AND (status = :status1 OR status = :status2)";
-
-        $bindings = [
-            ':order_id' => $model->id,
-            ':status1' => SupportTicket::STATUS_OPEN,
-            ':status2' => SupportTicket::STATUS_ONHOLD,
-        ];
-
-        return (int) $this->di['db']->getCell($query, $bindings);
+        return $this->getSupportTicketRepository()->countActiveTicketsForOrder((int) $model->id);
     }
 
     public function checkIfTaskAlreadyExists(\Model_Client $client, int $rel_id, string $rel_type, string $rel_task): bool
     {
-        $bindings = [
-            ':client_id' => $client->id,
-            ':rel_id' => $rel_id,
-            ':rel_type' => $rel_type,
-            ':rel_task' => $rel_task,
-            ':rel_status' => SupportTicket::REL_STATUS_PENDING,
-        ];
-
-        $ticket = $this->di['db']->findOne(
-            'SupportTicket',
-            'client_id = :client_id
-            AND rel_id = :rel_id
-            AND rel_type = :rel_type
-            AND rel_task = :rel_task
-            AND rel_status = :rel_status',
-            $bindings
-        );
-
-        return $ticket instanceof SupportTicket;
+        return $this->getSupportTicketRepository()->findOneBy([
+            'clientId' => (int) $client->id,
+            'relId' => $rel_id,
+            'relType' => $rel_type,
+            'relTask' => $rel_task,
+            'relStatus' => SupportTicket::REL_STATUS_PENDING,
+        ]) instanceof SupportTicket;
     }
 
     public function closeTicket(SupportTicket $ticket, \Model_Admin|\Model_Client|\Model_Guest $identity): bool

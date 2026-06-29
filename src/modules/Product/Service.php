@@ -425,8 +425,6 @@ class Service implements InjectionAwareInterface
             ->setType($type)
             ->setSetup(self::SETUP_AFTER_PAYMENT)
             ->setPriority((int) $priority + 10);
-        $model->setUpdatedAt(new \DateTime());
-        $model->setCreatedAt(new \DateTime());
 
         $this->di['em']->persist($model);
         $this->di['em']->flush();
@@ -587,8 +585,6 @@ class Service implements InjectionAwareInterface
             ->setIsAddon(true)
             ->setIconUrl($iconUrl)
             ->setDescription($description);
-        $model->setUpdatedAt(new \DateTime());
-        $model->setCreatedAt(new \DateTime());
 
         $this->di['em']->persist($model);
         $this->di['em']->flush();
@@ -636,7 +632,6 @@ class Service implements InjectionAwareInterface
             ->setTitle($title)
             ->setIconUrl($icon_url)
             ->setDescription($description);
-        $productCategory->setUpdatedAt(new \DateTime());
         $this->di['em']->flush();
 
         $this->di['logger']->info('Updated product category #%s', $productCategory->getId());
@@ -650,8 +645,6 @@ class Service implements InjectionAwareInterface
             ->setTitle($title)
             ->setDescription($description)
             ->setIconUrl($icon_url);
-        $model->setUpdatedAt(new \DateTime());
-        $model->setCreatedAt(new \DateTime());
         $this->di['em']->persist($model);
         $this->di['em']->flush();
         $id = $model->getId();

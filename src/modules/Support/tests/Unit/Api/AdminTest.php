@@ -103,7 +103,7 @@ test('ticket get list', function (): void {
     ];
     $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
     $paginatorMock
-    ->shouldReceive('paginateDoctrineQuery')
+    ->shouldReceive('paginateMappedQuery')
     ->atLeast()->once()
     ->andReturn($simpleResultArr);
 
@@ -269,18 +269,13 @@ test('ticket close', function (): void {
     $ticket = new SupportTicket();
     Tests\Helpers\setEntityId($ticket, 1);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn($ticket);
-
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $serviceMock->shouldReceive('getTicketById')->atLeast()->once()
+        ->andReturn($ticket);
     $serviceMock->shouldReceive('closeTicket')->atLeast()->once()
         ->andReturn(true);
 
     $di = container();
-    $di['db'] = $dbMock;
     $api->setDi($di);
 
     $api->setService($serviceMock);
@@ -300,18 +295,12 @@ test('ticket close already closed', function (): void {
     Tests\Helpers\setEntityId($ticket, 1);
     $ticket->setStatus(SupportTicket::STATUS_CLOSED);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn($ticket);
-
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $serviceMock->shouldReceive('closeTicket')
-    ;
+    $serviceMock->shouldReceive('getTicketById')->atLeast()->once()
+        ->andReturn($ticket);
+    $serviceMock->shouldReceive('closeTicket');
 
     $di = container();
-    $di['db'] = $dbMock;
     $api->setDi($di);
 
     $api->setService($serviceMock);
@@ -369,27 +358,21 @@ test('ticket create', function (): void {
 
 test('batch ticket auto close', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
-    $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $serviceMock->shouldReceive('getExpired')->atLeast()->once()
-        ->andReturn([['id' => 1], ['id' => 2]]);
-    $serviceMock->shouldReceive('autoClose')->atLeast()->once()
-        ->andReturn(true);
-
     $ticket = new SupportTicket();
     Tests\Helpers\setEntityId($ticket, 1);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn($ticket);
+    $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $serviceMock->shouldReceive('getExpired')->atLeast()->once()
+        ->andReturn([['id' => 1], ['id' => 2]]);
+    $serviceMock->shouldReceive('getTicketById')->atLeast()->once()
+        ->andReturn($ticket);
+    $serviceMock->shouldReceive('autoClose')->atLeast()->once()
+        ->andReturn(true);
 
     $api->setService($serviceMock);
     $di = container();
-    $di['db'] = $dbMock;
     $di['logger'] = $this->createStub('\Box_Log');
     $api->setDi($di);
-    $api->setService($serviceMock);
 
     $result = $api->batch_ticket_auto_close([]);
 
@@ -404,20 +387,15 @@ test('batch ticket auto close not closed', function (): void {
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
     $serviceMock->shouldReceive('getExpired')->atLeast()->once()
         ->andReturn([['id' => 1], ['id' => 2]]);
-    $serviceMock->shouldReceive('autoClose')->atLeast()->once()
-    ;
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn($ticket);
+    $serviceMock->shouldReceive('getTicketById')->atLeast()->once()
+        ->andReturn($ticket);
+    $serviceMock->shouldReceive('autoClose')->atLeast()->once();
 
     $api->setService($serviceMock);
     $di = container();
     $di['logger'] = $this->createStub('\Box_Log');
-    $di['db'] = $dbMock;
     $api->setDi($di);
+
     $result = $api->batch_ticket_auto_close([]);
 
     expect($result)->toBeTrue();

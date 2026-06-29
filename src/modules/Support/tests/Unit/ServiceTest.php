@@ -610,13 +610,17 @@ test('counts by status', function (): void {
 
 test('gets active tickets count for order', function (): void {
     $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getCell')
+
+    $repoMock = Mockery::mock(SupportTicketRepository::class);
+    $repoMock->shouldReceive('countActiveTicketsForOrder')
         ->atLeast()->once()
-        ->andReturn('1');
+        ->andReturn(1);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(SupportTicket::class)->andReturn($repoMock);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $service->setDi($di);
 
     $order = new Model_ClientOrder();
@@ -628,15 +632,20 @@ test('gets active tickets count for order', function (): void {
 
 test('checks if task already exists returns true', function (): void {
     $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $supportTicketModel = new SupportTicket();
-    setEntityId($supportTicketModel, 1);
-    $dbMock->shouldReceive('findOne')
+
+    $existingTicket = new SupportTicket();
+    setEntityId($existingTicket, 1);
+
+    $repoMock = Mockery::mock(SupportTicketRepository::class);
+    $repoMock->shouldReceive('findOneBy')
         ->atLeast()->once()
-        ->andReturn($supportTicketModel);
+        ->andReturn($existingTicket);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(SupportTicket::class)->andReturn($repoMock);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $service->setDi($di);
 
     $client = new Model_Client();
@@ -648,13 +657,17 @@ test('checks if task already exists returns true', function (): void {
 
 test('checks if task already exists returns false', function (): void {
     $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')
+
+    $repoMock = Mockery::mock(SupportTicketRepository::class);
+    $repoMock->shouldReceive('findOneBy')
         ->atLeast()->once()
-        ->andReturn(false);
+        ->andReturn(null);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(SupportTicket::class)->andReturn($repoMock);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $service->setDi($di);
 
     $client = new Model_Client();

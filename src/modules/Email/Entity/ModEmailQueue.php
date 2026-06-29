@@ -14,17 +14,16 @@ namespace Box\Mod\Email\Entity;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Doctrine\TimestampTrait;
+use FOSSBilling\Interfaces\ApiArrayInterface;
 use FOSSBilling\Interfaces\TimestampInterface;
 
 /**
  * Pending email in the queue processed by the email-batch cron task.
- *
- * Internal entity; not exposed via the API directly.
  */
 #[ORM\Entity(repositoryClass: \Box\Mod\Email\Repository\ModEmailQueueRepository::class)]
 #[ORM\Table(name: 'mod_email_queue')]
 #[ORM\HasLifecycleCallbacks]
-class ModEmailQueue implements TimestampInterface
+class ModEmailQueue implements ApiArrayInterface, TimestampInterface
 {
     use TimestampTrait;
 
@@ -70,6 +69,21 @@ class ModEmailQueue implements TimestampInterface
 
     #[ORM\Column(type: Types::STRING, length: 20, options: ['default' => self::STATUS_PENDING])]
     private string $status = self::STATUS_PENDING;
+
+    public function toApiArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'recipient' => $this->recipient,
+            'subject' => $this->subject,
+            'content' => $this->content,
+            'to_name' => $this->toName,
+            'status' => $this->status,
+            'tries' => $this->tries,
+            'created_at' => $this->getCreatedAt()?->format('Y-m-d H:i:s'),
+            'updated_at' => $this->getUpdatedAt()?->format('Y-m-d H:i:s'),
+        ];
+    }
 
     public function getId(): ?int
     {

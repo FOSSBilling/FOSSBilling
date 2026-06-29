@@ -25,7 +25,7 @@ test('ticket get list', function (): void {
     ];
     $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
     $paginatorMock
-    ->shouldReceive('paginateDoctrineQuery')
+    ->shouldReceive('paginateMappedQuery')
     ->atLeast()->once()
     ->andReturn($simpleResultArr);
 

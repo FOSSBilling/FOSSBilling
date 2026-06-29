@@ -562,7 +562,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $queue->setFromName($from_name !== null ? (string) $from_name : null);
         $queue->setClientId($client_id !== null ? (int) $client_id : null);
         $queue->setAdminId($admin_id !== null ? (int) $admin_id : null);
-        $queue->setStatus('unsent');
+        $queue->setStatus(ModEmailQueue::STATUS_PENDING);
         $queue->setPriority(1);
         $queue->setTries(0);
 
@@ -1114,7 +1114,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 $queue->setPriority($queue->getPriority() - 1);
             }
 
-            $queue->setStatus('unsent');
+            $queue->setStatus(ModEmailQueue::STATUS_FAILED);
             $queue->setTries($queue->getTries() + 1);
             $this->di['em']->flush();
 

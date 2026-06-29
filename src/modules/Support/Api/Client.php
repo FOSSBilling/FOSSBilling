@@ -36,9 +36,10 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $data['client_id'] = $identity->id;
 
         $repo = $this->getService()->getSupportTicketRepository();
-        $pager = $this->getDi()['pager']->paginateDoctrineQuery(
+        $pager = $this->getDi()['pager']->paginateMappedQuery(
             $repo->getSearchQueryBuilder($data),
             PaginationOptions::fromArray($data),
+            fn (SupportTicket $ticket): array => $this->getService()->toApiArray($ticket, true, $this->getIdentity()),
         );
 
         return $pager;
