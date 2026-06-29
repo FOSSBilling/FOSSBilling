@@ -704,7 +704,7 @@ class Service
     public static function onBeforeAdminCronRun(\Box_Event $event): void
     {
         $di = $event->getDi();
-        Reader::updateDefaultDatabases();
+        $di['geoip']->updateDefaultDatabases();
 
         try {
             // Prune the FS cache

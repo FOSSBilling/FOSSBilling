@@ -701,7 +701,12 @@ $di['license_server'] = function () use ($di) {
  *
  * @return \FOSSBilling\GeoIP\Reader
  */
-$di['geoip'] = fn (): FOSSBilling\GeoIP\Reader => new FOSSBilling\GeoIP\Reader();
+$di['geoip'] = function () use ($di) {
+    $reader = new FOSSBilling\GeoIP\Reader();
+    $reader->setDi($di);
+
+    return $reader;
+};
 
 /*
  * @param void

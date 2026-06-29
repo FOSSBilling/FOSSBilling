@@ -543,8 +543,8 @@ class Service implements InjectionAwareInterface
         $this->filesystem->mkdir($extractedPath, 0o755);
 
         // Download the extension archive and save it to the cache folder
-        $client = $this->di['http_client'];
-        $response = $client->request('GET', $latest['download_url']);
+        $httpClient = $this->di['http_client'];
+        $response = $httpClient->request('GET', $latest['download_url']);
 
         $code = $response->getStatusCode();
         if ($code !== 200) {
@@ -552,7 +552,7 @@ class Service implements InjectionAwareInterface
         }
 
         $fileHandler = fopen($zipPath, 'w');
-        foreach ($client->stream($response) as $chunk) {
+        foreach ($httpClient->stream($response) as $chunk) {
             fwrite($fileHandler, (string) $chunk->getContent());
         }
         fclose($fileHandler);
