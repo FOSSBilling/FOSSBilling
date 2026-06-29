@@ -200,6 +200,20 @@ globalThis.FOSSBilling = Object.assign(globalThis.FOSSBilling || {}, {
      showTabById(nextTabId);
    });
 
+   //===== Discord community popover (shown once) =====//
+   const discordBtn = document.getElementById('discord-community-btn');
+   if (discordBtn && !localStorage.getItem('fb-discord-popover-seen')) {
+     const popover = new bootstrap.Popover(discordBtn);
+     localStorage.setItem('fb-discord-popover-seen', '1');
+     popover.show();
+     discordBtn.addEventListener('click', () => popover.hide(), { once: true });
+     document.addEventListener('click', (e) => {
+       if (!discordBtn.contains(e.target)) {
+         popover.hide();
+       }
+     }, { once: true });
+   }
+
    //===== Search filter toggle state =====//
    const syncSearchFilterToggleState = (toggle, panel) => {
      const targetSelector = toggle.getAttribute('data-bs-target');
