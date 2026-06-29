@@ -367,6 +367,9 @@ class Tools
     {
         $services = ['https://api64.ipify.org', 'https://checkip.global.api.aws', 'https://ifconfig.io/ip'];
         $httpClient = $this->di['http_client'];
+        if ($bind !== null) {
+            $httpClient = $httpClient->withOptions(['bindto' => $bind]);
+        }
 
         foreach ($services as $service) {
             try {
