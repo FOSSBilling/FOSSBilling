@@ -19,9 +19,6 @@
     "at any time"
   ],
   "automergeStrategy": "squash",
-  "constraints": {
-    "php": "8.5.*"
-  },
   "packageRules": [
     {
       "groupName": "CKEditor Development Tools",

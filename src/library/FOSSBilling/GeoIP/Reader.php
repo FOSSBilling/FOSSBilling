@@ -15,6 +15,7 @@ use FOSSBilling\i18n;
 use FOSSBilling\StandardsHelper;
 use MaxMind\Db\Reader as MaxMindReader;
 use MaxMind\Db\Reader\InvalidDatabaseException;
+use Pimple\Container;
 use PrinsFrank\Standards\Language\LanguageAlpha2;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
@@ -27,8 +28,20 @@ use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 
 class Reader
 {
+    protected ?Container $di = null;
+
     private readonly MaxMindReader $reader;
     private readonly LanguageAlpha2 $language;
+
+    public function setDi(Container $di): void
+    {
+        $this->di = $di;
+    }
+
+    public function getDi(): ?Container
+    {
+        return $this->di;
+    }
 
     /**
      * Returns the path to the system's `country` database.
@@ -53,7 +66,7 @@ class Reader
      *
      * @throws IOException
      */
-    public static function updateDefaultDatabases(): bool
+    public function updateDefaultDatabases(): bool
     {
         $databases = [
             self::getCountryDatabase() => 'https://github.com/HostByBelle/IP-Geolocation-DB/releases/latest/download/cc0-both-country.mmdb',
@@ -63,7 +76,7 @@ class Reader
         foreach ($databases as $path => $url) {
             if (self::shouldUpdate($path)) {
                 try {
-                    self::downloadDb($path, $url);
+                    $this->downloadDb($path, $url);
 
                     return true;
                 } catch (\Exception $e) {
@@ -176,9 +189,9 @@ class Reader
      * @throws ClientExceptionInterface
      * @throws ServerExceptionInterface
      */
-    private static function downloadDb(string $path, string $url): void
+    private function downloadDb(string $path, string $url): void
     {
-        $httpClient = HttpClient::create();
+        $httpClient = $this->di['http_client'];
         $response = $httpClient->request('GET', $url);
         $filesystem = new Filesystem();
 

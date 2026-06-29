@@ -11,17 +11,18 @@ declare(strict_types=1);
  */
 
 use FOSSBilling\Environment;
+use Pimple\Container;
 
 class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOSSBilling\InjectionAwareInterface
 {
-    protected ?Pimple\Container $di = null;
+    protected ?Container $di = null;
 
-    public function setDi(Pimple\Container $di): void
+    public function setDi(Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi(): ?Pimple\Container
+    public function getDi(): ?Container
     {
         return $this->di;
     }
@@ -300,10 +301,10 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
             }
         }
 
-        $client = $this->getHttpClient()->withOptions([
+        $httpClient = $this->di['http_client']->withOptions([
             'timeout' => 600,
         ]);
-        $response = $client->request('POST', $url, [
+        $response = $httpClient->request('POST', $url, [
             'body' => $post_contents,
         ]);
 
