@@ -82,8 +82,8 @@ class Validate
         $validTlds = $this->di['cache']->get('validTlds', function (ItemInterface $item): array {
             $item->expiresAfter(86400);
 
-            $client = $this->di['http_client'];
-            $response = $client->request('GET', 'https://publicsuffix.org/list/public_suffix_list.dat');
+            $httpClient = $this->di['http_client'];
+            $response = $httpClient->request('GET', 'https://publicsuffix.org/list/public_suffix_list.dat');
             $dbPath = Path::join(PATH_CACHE, 'tlds.txt');
 
             if ($response->getStatusCode() === 200) {

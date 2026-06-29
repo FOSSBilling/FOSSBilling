@@ -19,6 +19,7 @@ use FOSSBilling\Environment;
 use FOSSBilling\Http\RequestFactory;
 use FOSSBilling\Security\AuthenticationRequiredException;
 use FOSSBilling\Security\EmailValidationRequiredException;
+use FOSSBilling\Version;
 use RedBeanPHP\Facade;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\Filesystem\Filesystem;
@@ -282,7 +283,12 @@ $di['cache'] = fn (): FilesystemAdapter => new FilesystemAdapter('sf_cache', 24 
 
 $di['rate_limit_cache'] = fn (): FilesystemAdapter => new FilesystemAdapter('rate_limit', 24 * 60 * 60, PATH_CACHE);
 
-$di['http_client'] = fn (): HttpClientInterface => HttpClient::create(['bindto' => BIND_TO]);
+$di['http_client'] = fn (): HttpClientInterface => HttpClient::create([
+    'bindto' => BIND_TO,
+        'headers' => [
+        'User-Agent' => 'FOSSBilling/' . Version::VERSION,
+    ],
+]);
 
 $di['rate_limiter'] = function () use ($di) {
     $rateLimiter = new FOSSBilling\Security\RateLimiter();
@@ -695,7 +701,12 @@ $di['license_server'] = function () use ($di) {
  *
  * @return \FOSSBilling\GeoIP\Reader
  */
-$di['geoip'] = fn (): FOSSBilling\GeoIP\Reader => new FOSSBilling\GeoIP\Reader();
+$di['geoip'] = function () use ($di) {
+    $reader = new FOSSBilling\GeoIP\Reader();
+    $reader->setDi($di);
+
+    return $reader;
+};
 
 /*
  * @param void

@@ -20,7 +20,7 @@ class CentralAlerts implements InjectionAwareInterface
 {
     protected ?Container $di = null;
 
-    private string $_url = 'https://api.fossbilling.net/central-alerts/v1/';
+    private string $apiUrl = 'https://api.fossbilling.net/central-alerts/v1/';
 
     public function setDi(Container $di): void
     {
@@ -102,7 +102,7 @@ class CentralAlerts implements InjectionAwareInterface
      */
     public function makeRequest(string $endpoint, array $params = []): array
     {
-        $url = $this->_url . $endpoint;
+        $url = $this->apiUrl . $endpoint;
 
         try {
             $httpClient = $this->di['http_client'];

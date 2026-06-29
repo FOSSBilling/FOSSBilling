@@ -608,7 +608,7 @@ class Service
     {
         if ($fetchExternalIp) {
             try {
-                return Tools::getExternalIP();
+                return $this->di['tools']->getExternalIP();
             } catch (\Exception) {
                 return '';
             }
@@ -704,7 +704,10 @@ class Service
     public static function onBeforeAdminCronRun(\Box_Event $event): void
     {
         $di = $event->getDi();
-        Reader::updateDefaultDatabases();
+        /** @var Reader $geoipReader */
+        $geoipReader = (new \ReflectionClass(Reader::class))->newInstanceWithoutConstructor();
+        $geoipReader->setDi($di);
+        $geoipReader->updateDefaultDatabases();
 
         try {
             // Prune the FS cache

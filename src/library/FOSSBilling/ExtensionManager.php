@@ -25,7 +25,7 @@ class ExtensionManager implements InjectionAwareInterface
     final public const string TYPE_HOOK = 'hook';
     final public const string TYPE_TRANSLATION = 'translation';
 
-    private string $_url = 'https://api.fossbilling.net/extensions/v1/';
+    private string $apiUrl = 'https://api.fossbilling.net/extensions/v1/';
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -156,7 +156,7 @@ class ExtensionManager implements InjectionAwareInterface
      */
     public function makeRequest(string $endpoint, array $params = []): array
     {
-        $url = $this->_url . $endpoint;
+        $url = $this->apiUrl . $endpoint;
         $key = 'extension-manager-' . hash('xxh3', $endpoint . serialize($params));
 
         return $this->di['cache']->get($key, function (ItemInterface $item) use ($url, $params) {
@@ -165,7 +165,7 @@ class ExtensionManager implements InjectionAwareInterface
             $httpClient = $this->di['http_client'];
             $response = $httpClient->request('GET', $url, [
                 'timeout' => 5,
-                'query' => [...$params, 'fossbilling_version' => Version::VERSION],
+                'query' => [...$params, 'fossbilling_version' => Version::VERSION]
             ]);
 
             $json = $response->toArray();
