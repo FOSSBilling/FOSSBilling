@@ -41,7 +41,8 @@ LOCK TABLES `admin_group` WRITE;
 INSERT INTO `admin_group` (`id`, `name`, `system_name`, `parent_id`, `permissions`, `protected`, `created_at`, `updated_at`)
 VALUES
 	(1,'Super Administrator','super_admin',NULL,NULL,1,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
-	(2,'Support',NULL,1,NULL,0,'2022-12-01 12:00:00','2022-12-01 12:00:00');
+	(2,'Support Lead',NULL,1,'{"support":{"access":true,"view":true,"manage_tickets":true,"manage_helpdesk":true,"manage_canned":true,"manage_kb":true},"staff":{"access":true,"create_and_edit_staff":true,"reset_staff_password":true,"manage_groups":true}}',0,'2022-12-01 12:00:00','2022-12-01 12:00:00'),
+	(3,'Support Staff',NULL,2,'{"support":{"access":true,"view":true,"manage_tickets":true}}',0,'2022-12-01 12:00:00','2022-12-01 12:00:00');
 
 /*!40000 ALTER TABLE `admin_group` ENABLE KEYS */;
 UNLOCK TABLES;

@@ -481,6 +481,7 @@ class UpdatePatcher implements InjectionAwareInterface
             73 => 'patch73',
             74 => 'patch74',
             75 => 'patch75',
+            76 => 'patch76',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2008,6 +2009,45 @@ class UpdatePatcher implements InjectionAwareInterface
         if ($this->tableHasColumn('admin', 'protected')) {
             $this->executeSql('ALTER TABLE `admin` DROP COLUMN `protected`;');
         }
+    }
+
+    private function patch76(): void
+    {
+        $now = date('Y-m-d H:i:s');
+        $superAdminGroupId = $this->fetchOne("SELECT id FROM admin_group WHERE system_name = 'super_admin' LIMIT 1");
+        $supportLeadPermissions = json_encode([
+            'support' => [
+                'access' => true,
+                'view' => true,
+                'manage_tickets' => true,
+                'manage_helpdesk' => true,
+                'manage_canned' => true,
+                'manage_kb' => true,
+            ],
+            'staff' => [
+                'access' => true,
+                'create_and_edit_staff' => true,
+                'reset_staff_password' => true,
+                'manage_groups' => true,
+            ],
+        ], JSON_THROW_ON_ERROR);
+        $this->executeSql(
+            "INSERT INTO admin_group (name, parent_id, permissions, protected, created_at, updated_at) VALUES ('Support Lead', :parent_id, :permissions, 0, :created_at, :updated_at)",
+            ['parent_id' => $superAdminGroupId, 'permissions' => $supportLeadPermissions, 'created_at' => $now, 'updated_at' => $now],
+        );
+        $supportLeadGroupId = (int) $this->getPdo()->lastInsertId();
+
+        $supportStaffPermissions = json_encode([
+            'support' => [
+                'access' => true,
+                'view' => true,
+                'manage_tickets' => true,
+            ],
+        ], JSON_THROW_ON_ERROR);
+        $this->executeSql(
+            "INSERT INTO admin_group (name, parent_id, permissions, protected, created_at, updated_at) VALUES ('Support Staff', :parent_id, :permissions, 0, :created_at, :updated_at)",
+            ['parent_id' => $supportLeadGroupId, 'permissions' => $supportStaffPermissions, 'created_at' => $now, 'updated_at' => $now],
+        );
     }
 
     private function generateDownloadableStoredFilename(): string
