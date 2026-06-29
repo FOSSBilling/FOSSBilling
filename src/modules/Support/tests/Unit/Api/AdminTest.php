@@ -15,6 +15,7 @@ use Box\Mod\Support\Entity\CannedResponseCategory;
 use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Entity\KbArticle;
 use Box\Mod\Support\Entity\KbArticleCategory;
+use Box\Mod\Support\Entity\SupportTicket;
 use Box\Mod\Support\Repository\CannedResponseCategoryRepository;
 use Box\Mod\Support\Repository\CannedResponseRepository;
 use Box\Mod\Support\Repository\HelpdeskRepository;
@@ -102,29 +103,23 @@ test('ticket get list', function (): void {
     ];
     $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
     $paginatorMock
-    ->shouldReceive('getPaginatedResultSet')
+    ->shouldReceive('paginateDoctrineQuery')
     ->atLeast()->once()
     ->andReturn($simpleResultArr);
 
-    $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $serviceMock->shouldReceive('getSearchQuery')->atLeast()->once()
-        ->andReturn(['query', []]);
-    $serviceMock
-    ->shouldReceive('toApiArray')
-    ->atLeast()->once()
-    ->andReturn([]);
+    $qb = Mockery::mock(QueryBuilder::class);
+    $repo = Mockery::mock(Box\Mod\Support\Repository\SupportTicketRepository::class);
+    $repo->shouldReceive('getSearchQueryBuilder')->andReturn($qb);
 
-    $model = new Model_SupportTicket();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn($model);
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(SupportTicket::class)->andReturn($repo);
+
+    $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $serviceMock->shouldReceive('getSupportTicketRepository')->andReturn($repo);
 
     $di = container();
     $di['pager'] = $paginatorMock;
-    $di['db'] = $dbMock;
+    $di['em'] = $em;
 
     $api->setDi($di);
 
@@ -142,7 +137,7 @@ test('ticket get', function (): void {
     $dbMock
     ->shouldReceive('getExistingModelById')
     ->atLeast()->once()
-    ->andReturn(new Model_SupportTicket());
+    ->andReturn(new SupportTicket());
 
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
     $serviceMock->shouldReceive('toApiArray')->atLeast()->once()
@@ -168,7 +163,7 @@ test('ticket update', function (): void {
     $dbMock
     ->shouldReceive('getExistingModelById')
     ->atLeast()->once()
-    ->andReturn(new Model_SupportTicket());
+    ->andReturn(new SupportTicket());
 
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
     $serviceMock->shouldReceive('ticketUpdate')->atLeast()->once()
@@ -194,7 +189,7 @@ test('ticket message update', function (): void {
     $dbMock
     ->shouldReceive('getExistingModelById')
     ->atLeast()->once()
-    ->andReturn(new Model_SupportTicketMessage());
+    ->andReturn(new Box\Mod\Support\Entity\SupportTicketMessage());
 
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
     $serviceMock->shouldReceive('ticketMessageUpdate')->atLeast()->once()
@@ -221,7 +216,7 @@ test('ticket delete', function (): void {
     $dbMock
     ->shouldReceive('getExistingModelById')
     ->atLeast()->once()
-    ->andReturn(new Model_SupportTicket());
+    ->andReturn(new SupportTicket());
 
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
     $serviceMock->shouldReceive('rm')->atLeast()->once()
@@ -247,7 +242,7 @@ test('ticket reply', function (): void {
     $dbMock
     ->shouldReceive('getExistingModelById')
     ->atLeast()->once()
-    ->andReturn(new Model_SupportTicket());
+    ->andReturn(new SupportTicket());
 
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
     $serviceMock->shouldReceive('ticketReply')->atLeast()->once()
@@ -271,8 +266,8 @@ test('ticket reply', function (): void {
 
 test('ticket close', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
-    $ticket = new Model_SupportTicket();
-    $ticket->loadBean(new Tests\Helpers\DummyBean());
+    $ticket = new SupportTicket();
+    Tests\Helpers\setEntityId($ticket, 1);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock
@@ -301,9 +296,9 @@ test('ticket close', function (): void {
 
 test('ticket close already closed', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
-    $ticket = new Model_SupportTicket();
-    $ticket->loadBean(new Tests\Helpers\DummyBean());
-    $ticket->status = Model_SupportTicket::CLOSED;
+    $ticket = new SupportTicket();
+    Tests\Helpers\setEntityId($ticket, 1);
+    $ticket->setStatus(SupportTicket::STATUS_CLOSED);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock
@@ -380,9 +375,8 @@ test('batch ticket auto close', function (): void {
     $serviceMock->shouldReceive('autoClose')->atLeast()->once()
         ->andReturn(true);
 
-    $ticket = new Model_SupportTicket();
-    $ticket->loadBean(new Tests\Helpers\DummyBean());
-    $ticket->id = 1;
+    $ticket = new SupportTicket();
+    Tests\Helpers\setEntityId($ticket, 1);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock
@@ -404,9 +398,8 @@ test('batch ticket auto close', function (): void {
 
 test('batch ticket auto close not closed', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
-    $ticket = new Model_SupportTicket();
-    $ticket->loadBean(new Tests\Helpers\DummyBean());
-    $ticket->id = 1;
+    $ticket = new SupportTicket();
+    Tests\Helpers\setEntityId($ticket, 1);
 
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
     $serviceMock->shouldReceive('getExpired')->atLeast()->once()
@@ -433,9 +426,9 @@ test('batch ticket auto close not closed', function (): void {
 test('ticket get statuses', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
     $statuses = [
-        Model_SupportTicket::OPENED => 'Open',
-        Model_SupportTicket::ONHOLD => 'On hold',
-        Model_SupportTicket::CLOSED => 'Closed',
+        SupportTicket::STATUS_OPEN => 'Open',
+        SupportTicket::STATUS_ONHOLD => 'On hold',
+        SupportTicket::STATUS_CLOSED => 'Closed',
     ];
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
     $serviceMock->shouldReceive('getStatuses')
@@ -453,9 +446,9 @@ test('ticket get statuses', function (): void {
 test('ticket get statuses titles set', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
     $statuses = [
-        Model_SupportTicket::OPENED => 'Open',
-        Model_SupportTicket::ONHOLD => 'On hold',
-        Model_SupportTicket::CLOSED => 'Closed',
+        SupportTicket::STATUS_OPEN => 'Open',
+        SupportTicket::STATUS_ONHOLD => 'On hold',
+        SupportTicket::STATUS_CLOSED => 'Closed',
     ];
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
     $serviceMock->shouldReceive('getStatuses')->atLeast()->once()
@@ -915,7 +908,7 @@ test('note create', function (): void {
     $dbMock
     ->shouldReceive('getExistingModelById')
     ->atLeast()->once()
-    ->andReturn(new Model_SupportTicket());
+    ->andReturn(new SupportTicket());
 
     $di = container();
     $di['db'] = $dbMock;
@@ -943,7 +936,7 @@ test('note delete', function (): void {
     $dbMock
     ->shouldReceive('getExistingModelById')
     ->atLeast()->once()
-    ->andReturn(new Model_SupportTicketNote());
+    ->andReturn(new Box\Mod\Support\Entity\SupportTicketNote());
 
     $di = container();
     $di['db'] = $dbMock;
@@ -970,7 +963,7 @@ test('task complete', function (): void {
     $dbMock
     ->shouldReceive('getExistingModelById')
     ->atLeast()->once()
-    ->andReturn(new Model_SupportTicket());
+    ->andReturn(new SupportTicket());
 
     $di = container();
     $di['db'] = $dbMock;

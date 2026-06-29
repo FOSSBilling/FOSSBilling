@@ -92,7 +92,7 @@ test('ticket get', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
     $serviceMock = guestSupportServiceMock();
     $serviceMock->shouldReceive('findOneByHash')->atLeast()->once()
-        ->andReturn(new Model_SupportTicket());
+        ->andReturn(new Box\Mod\Support\Entity\SupportTicket());
     $serviceMock->shouldReceive('toApiArray')->atLeast()->once()
         ->andReturn([]);
 
@@ -113,7 +113,7 @@ test('ticket close', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
     $serviceMock = guestSupportServiceMock();
     $serviceMock->shouldReceive('findOneByHash')->atLeast()->once()
-        ->andReturn(new Model_SupportTicket());
+        ->andReturn(new Box\Mod\Support\Entity\SupportTicket());
     $serviceMock->shouldReceive('closeTicket')->atLeast()->once()
         ->andReturn(true);
 
@@ -135,7 +135,7 @@ test('ticket reply', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
     $serviceMock = guestSupportServiceMock();
     $serviceMock->shouldReceive('findOneByHash')->atLeast()->once()
-        ->andReturn(new Model_SupportTicket());
+        ->andReturn(new Box\Mod\Support\Entity\SupportTicket());
     $serviceMock->shouldReceive('ticketReply')->atLeast()->once()
         ->andReturn(1);
 

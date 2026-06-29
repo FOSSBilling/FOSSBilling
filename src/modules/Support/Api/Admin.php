@@ -21,6 +21,7 @@ use Box\Mod\Support\Entity\CannedResponseCategory;
 use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Entity\KbArticle;
 use Box\Mod\Support\Entity\KbArticleCategory;
+use Box\Mod\Support\Entity\SupportTicket;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
@@ -37,13 +38,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'view');
 
-        [$sql, $bindings] = $this->getService()->getSearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $bindings, PaginationOptions::fromArray($data));
-
-        foreach ($pager['list'] as $key => $ticketArr) {
-            $ticket = $this->getDi()['db']->getExistingModelById('SupportTicket', $ticketArr['id'], 'Ticket not found');
-            $pager['list'][$key] = $this->getService()->toApiArray($ticket, true, $this->getIdentity());
-        }
+        $repo = $this->getService()->getSupportTicketRepository();
+        $pager = $this->getDi()['pager']->paginateDoctrineQuery(
+            $repo->getSearchQueryBuilder($data),
+            PaginationOptions::fromArray($data),
+        );
 
         return $pager;
     }
@@ -137,7 +136,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $ticket = $this->getDi()['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
 
-        if ($ticket->status == \Model_SupportTicket::CLOSED) {
+        if ($ticket->getStatus() === SupportTicket::STATUS_CLOSED) {
             return true;
         }
 
@@ -188,7 +187,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         foreach ($expiredArr as $ticketArr) {
             $ticketModel = $this->getDi()['db']->getExistingModelById('SupportTicket', $ticketArr['id'], 'Ticket not found');
             if (!$this->getService()->autoClose($ticketModel)) {
-                $this->getDi()['logger']->info('Ticket %s was not closed', $ticketModel->id);
+                $this->getDi()['logger']->info('Ticket %s was not closed', $ticketModel->getId());
             }
         }
 

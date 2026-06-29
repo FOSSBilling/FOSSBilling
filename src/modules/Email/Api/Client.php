@@ -16,8 +16,9 @@ declare(strict_types=1);
 
 namespace Box\Mod\Email\Api;
 
+use Box\Mod\Email\Entity\ActivityClientEmail;
+use Box\Mod\Email\Repository\ActivityClientEmailRepository;
 use FOSSBilling\PaginationOptions;
-use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Client extends \FOSSBilling\Api\AbstractApi
@@ -31,22 +32,13 @@ class Client extends \FOSSBilling\Api\AbstractApi
     {
         $client = $this->getIdentity();
         $data['client_id'] = $client->id;
-        [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
-        foreach ($pager['list'] as $key => $item) {
-            $pager['list'][$key] = [
-                'id' => $item['id'] ?? '',
-                'client_id' => $item['client_id'] ?? '',
-                'sender' => $item['sender'] ?? '',
-                'recipients' => $item['recipients'] ?? '',
-                'subject' => $item['subject'] ?? '',
-                'content_html' => Tools::sanitizeContent($item['content_html'] ?? ''),
-                'content_text' => $item['content_text'] ?? '',
-                'created_at' => $item['created_at'] ?? '',
-                'updated_at' => $item['updated_at'] ?? '',
-            ];
-        }
+        $repo = $this->getDi()['em']->getRepository(ActivityClientEmail::class);
+        assert($repo instanceof ActivityClientEmailRepository);
+        $pager = $this->getDi()['pager']->paginateDoctrineQuery(
+            $repo->getSearchQueryBuilder($data),
+            PaginationOptions::fromArray($data),
+        );
 
         return $pager;
     }
@@ -63,7 +55,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
     {
         $model = $this->getService()->findOneForClientById($this->getIdentity(), $data['id']);
 
-        if (!$model instanceof \Model_ActivityClientEmail) {
+        if (!$model instanceof ActivityClientEmail) {
             throw new \FOSSBilling\Exception('Email not found');
         }
 
@@ -86,7 +78,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $this->getDi()['rate_limiter']->consumeOrThrow('client_email_resend_account', 'client:' . $client->id);
 
         $model = $this->getService()->findOneForClientById($client, $data['id']);
-        if (!$model instanceof \Model_ActivityClientEmail) {
+        if (!$model instanceof ActivityClientEmail) {
             throw new \FOSSBilling\Exception('Email not found');
         }
 
@@ -104,7 +96,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
     public function delete($data)
     {
         $model = $this->getService()->findOneForClientById($this->getIdentity(), $data['id']);
-        if (!$model instanceof \Model_ActivityClientEmail) {
+        if (!$model instanceof ActivityClientEmail) {
             throw new \FOSSBilling\Exception('Email not found');
         }
 

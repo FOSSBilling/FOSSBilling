@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace Box\Mod\Support\Api;
 
 use Box\Mod\Support\Entity\Helpdesk;
+use Box\Mod\Support\Entity\SupportTicket;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
@@ -34,13 +35,11 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $identity = $this->getIdentity();
         $data['client_id'] = $identity->id;
 
-        [$sql, $bindings] = $this->getService()->getSearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $bindings, PaginationOptions::fromArray($data));
-
-        foreach ($pager['list'] as $key => $ticketArr) {
-            $ticket = $this->getDi()['db']->getExistingModelById('SupportTicket', $ticketArr['id'], 'Ticket not found');
-            $pager['list'][$key] = $this->getService()->toApiArray($ticket, true, $this->getIdentity());
-        }
+        $repo = $this->getService()->getSupportTicketRepository();
+        $pager = $this->getDi()['pager']->paginateDoctrineQuery(
+            $repo->getSearchQueryBuilder($data),
+            PaginationOptions::fromArray($data),
+        );
 
         return $pager;
     }
@@ -112,9 +111,9 @@ class Client extends \FOSSBilling\Api\AbstractApi
             ':id' => $data['id'],
             ':client_id' => $client->id,
         ];
-        $ticket = $this->getDi()['db']->findOne('SupportTicket', 'id = :id AND client_id = :client_id', $bindings);
+        $ticket = $this->getService()->getSupportTicketRepository()->findOneByClient((int) $client->id, (int) $data['id']);
 
-        if (!$ticket instanceof \Model_SupportTicket) {
+        if (!$ticket instanceof SupportTicket) {
             throw new \FOSSBilling\InformationException('Ticket not found');
         }
 

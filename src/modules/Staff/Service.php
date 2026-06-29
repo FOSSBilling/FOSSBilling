@@ -370,7 +370,8 @@ class Service implements InjectionAwareInterface
             $ticketModel = $supportTicketService->getTicketById((int) $params['id']);
             $ticket = $supportTicketService->toApiArray($ticketModel, true);
 
-            $helpdeskModel = isset($ticketModel->support_helpdesk_id) && $ticketModel->support_helpdesk_id ? $di['em']->getRepository(Helpdesk::class)->find((int) $ticketModel->support_helpdesk_id) : null;
+            $helpdeskId = $ticketModel->getSupportHelpdeskId();
+            $helpdeskModel = $helpdeskId !== null ? $di['em']->getRepository(Helpdesk::class)->find($helpdeskId) : null;
             $emailService = $di['mod_service']('email');
             if ($helpdeskModel instanceof Helpdesk && !empty($helpdeskModel->getEmail())) {
                 $email = [];

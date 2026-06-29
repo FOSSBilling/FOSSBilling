@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Extension\Api;
 
+use Box\Mod\Extension\Entity\Extension;
 use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
@@ -284,7 +285,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $service = $this->getService();
         $ext = $service->findExtension($data['type'], $data['id']);
-        if (!$ext instanceof \Model_Extension) {
+        if (!$ext instanceof Extension) {
             throw new \FOSSBilling\Exception('Extension not found');
         }
 

@@ -23,12 +23,20 @@ test('get list', function (): void {
     ];
     $pager = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
     $pager
-    ->shouldReceive('getPaginatedResultSet')
+    ->shouldReceive('paginateDoctrineQuery')
     ->atLeast()->once()
     ->andReturn($willReturn);
 
+    $repo = Mockery::mock(Box\Mod\Email\Repository\ActivityClientEmailRepository::class);
+    $qb = Mockery::mock(Doctrine\ORM\QueryBuilder::class);
+    $repo->shouldReceive('getSearchQueryBuilder')->andReturn($qb);
+
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(Box\Mod\Email\Entity\ActivityClientEmail::class)->andReturn($repo);
+
     $di = container();
     $di['pager'] = $pager;
+    $di['em'] = $em;
 
     $clientApi->setDi($di);
     $emailService->setDi($di);
@@ -51,8 +59,8 @@ test('get list', function (): void {
 test('get', function (): void {
     $clientApi = new Box\Mod\Email\Api\Client();
 
-    $model = new Model_ActivityClientEmail();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = new Box\Mod\Email\Entity\ActivityClientEmail();
+    \Tests\Helpers\setEntityId($model, 1);
     $service = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
     $service
     ->shouldReceive('findOneForClientById')
@@ -103,8 +111,8 @@ test('get not found exception', function (): void {
 test('resend', function (): void {
     $clientApi = new Box\Mod\Email\Api\Client();
 
-    $model = new Model_ActivityClientEmail();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = new Box\Mod\Email\Entity\ActivityClientEmail();
+    \Tests\Helpers\setEntityId($model, 1);
 
     $service = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
     $service
@@ -160,8 +168,8 @@ test('delete', function (): void {
 
     $di = container();
 
-    $model = new Model_ActivityClientEmail();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = new Box\Mod\Email\Entity\ActivityClientEmail();
+    \Tests\Helpers\setEntityId($model, 1);
     $service = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
     $service
     ->shouldReceive('findOneForClientById')
