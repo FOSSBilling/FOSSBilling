@@ -1066,14 +1066,18 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         return null;
     }
 
+    private function escapeStripeSearchValue(string $value): string
+    {
+        return str_replace(['\\', '\''], ['\\\\', '\\\''], $value);
+    }
+
     private function getOrCreateCustomer(Model_Invoice $invoice): Stripe\Customer
     {
         $validatedEmail = filter_var($invoice->buyer_email, FILTER_VALIDATE_EMAIL);
 
         if ($validatedEmail !== false) {
-            $escapedEmail = str_replace(['\\', '\''], ['\\\\', '\\\''], $validatedEmail);
             $customers = $this->stripe->customers->search([
-                'query' => "email:'" . $escapedEmail . "'",
+                'query' => "email:'" . $this->escapeStripeSearchValue($validatedEmail) . "'",
                 'limit' => 1,
             ]);
         } else {
@@ -1129,9 +1133,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
         $productName = $invoiceItems[0]['title'];
 
-        $escapedProductName = str_replace("'", "\\'", $productName);
         $products = $this->stripe->products->search([
-            'query' => "name:'{$escapedProductName}'",
+            'query' => "name:'" . $this->escapeStripeSearchValue($productName) . "'",
             'limit' => 1,
         ]);
 
