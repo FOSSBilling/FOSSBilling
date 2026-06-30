@@ -1955,7 +1955,7 @@ class UpdatePatcher implements InjectionAwareInterface
         }
 
         if (!$this->tableHasColumn('admin_group', 'permissions')) {
-            $this->executeSql('ALTER TABLE `admin_group` ADD COLUMN `permissions` TEXT DEFAULT NULL AFTER `parent_id`;');
+            $this->executeSql('ALTER TABLE `admin_group` ADD COLUMN `permissions` JSON AFTER `parent_id`;');
         }
 
         if (!$this->tableHasColumn('admin_group', 'protected')) {

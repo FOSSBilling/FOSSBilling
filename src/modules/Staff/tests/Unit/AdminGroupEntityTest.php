@@ -14,7 +14,7 @@ use Box\Mod\Staff\Entity\AdminGroup;
 use Box\Mod\Staff\Repository\AdminGroupMemberRepository;
 use Box\Mod\Staff\Repository\AdminGroupRepository;
 
-test('admin group encodes permissions and identifies super administrator group', function (): void {
+test('admin group stores permissions and identifies super administrator group', function (): void {
     $group = (new AdminGroup())
         ->setName('Super Administrator')
         ->setSystemName(AdminGroup::SYSTEM_SUPER_ADMIN)

@@ -122,7 +122,7 @@ CREATE TABLE `admin_group` (
   `name` varchar(255) DEFAULT NULL,
   `system_name` varchar(100) DEFAULT NULL,
   `parent_id` bigint(20) DEFAULT NULL,
-  `permissions` text,
+  `permissions` json,
   `protected` tinyint(1) DEFAULT '0',
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,

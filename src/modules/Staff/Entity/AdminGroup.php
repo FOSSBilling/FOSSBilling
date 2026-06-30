@@ -39,8 +39,8 @@ class AdminGroup implements ApiArrayInterface
     #[ORM\JoinColumn(name: 'parent_id', referencedColumnName: 'id', nullable: true)]
     private ?self $parent = null;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $permissions = null;
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $permissions = null;
 
     #[ORM\Column(name: 'protected', type: Types::BOOLEAN, options: ['default' => false])]
     private bool $protected = false;
@@ -147,13 +147,7 @@ class AdminGroup implements ApiArrayInterface
      */
     public function getPermissions(): array
     {
-        if ($this->permissions === null || $this->permissions === '') {
-            return [];
-        }
-
-        $permissions = json_decode($this->permissions, true);
-
-        return is_array($permissions) ? $permissions : [];
+        return $this->permissions ?? [];
     }
 
     /**
@@ -161,19 +155,20 @@ class AdminGroup implements ApiArrayInterface
      */
     public function setPermissions(?array $permissions): self
     {
-        $this->permissions = empty($permissions) ? null : json_encode($permissions, JSON_THROW_ON_ERROR);
+        $this->permissions = empty($permissions) ? null : $permissions;
 
         return $this;
     }
 
     public function getPermissionsJson(): ?string
     {
-        return $this->permissions;
+        return $this->permissions === null ? null : json_encode($this->permissions, JSON_THROW_ON_ERROR);
     }
 
     public function setPermissionsJson(?string $permissions): self
     {
-        $this->permissions = $permissions;
+        $decodedPermissions = $permissions === null ? null : json_decode($permissions, true, flags: JSON_THROW_ON_ERROR);
+        $this->permissions = is_array($decodedPermissions) ? $decodedPermissions : null;
 
         return $this;
     }
