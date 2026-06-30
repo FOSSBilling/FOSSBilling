@@ -800,43 +800,45 @@ const API = {
             );
           };
 
-          if (apiData.hasOwnProperty('modal') && (typeof Modals === 'undefined' || typeof Modals.create !== 'function')) {
-            if (apiData.modal.type === 'prompt') {
-              const value = window.prompt(apiData.modal.label ?? apiData.modal.title ?? '', apiData.modal.value ?? '');
-              if (value) {
-                const p = {};
-                p[apiData.modal.key] = value;
-                handleApiRequest('GET', linkElement.getAttribute('href'), p);
-              }
-            } else if (window.confirm(apiData.modal.content || apiData.modal.title || 'Are you sure?')) {
-              handleApiRequest('GET', linkElement.getAttribute('href'));
-            }
-          } else if (apiData.hasOwnProperty('modal') && apiData.modal.type === 'prompt') {
-            Modals.create({
-              type: apiData.modal.type,
-              title: apiData.modal.title,
-              label: apiData.modal.label ?? 'Label',
-              value: apiData.modal.value ?? '',
-              promptConfirmCallback: (value) => {
+          if (apiData.hasOwnProperty('modal')) {
+            if (typeof Modals === 'undefined' || typeof Modals.create !== 'function') {
+              if (apiData.modal.type === 'prompt') {
+                const value = window.prompt(apiData.modal.label ?? apiData.modal.title ?? '', apiData.modal.value ?? '');
                 if (value) {
                   const p = {};
-                  const name = apiData.modal.key;
-                  p[name] = value;
+                  p[apiData.modal.key] = value;
                   handleApiRequest('GET', linkElement.getAttribute('href'), p);
                 }
-              },
-            });
-          } else if (apiData.hasOwnProperty('modal')) {
-            Modals.create({
-              type: (apiData.modal.type === 'confirm') ? 'small-confirm' : apiData.modal.type,
-              title: apiData.modal.title,
-              content: apiData.modal.content ?? '',
-              confirmButton: apiData.modal.button ?? 'Confirm',
-              confirmButtonColor: apiData.modal.buttonColor ?? 'primary',
-              confirmCallback: () => {
+              } else if (window.confirm(apiData.modal.content || apiData.modal.title || 'Are you sure?')) {
                 handleApiRequest('GET', linkElement.getAttribute('href'));
-              },
-            });
+              }
+            } else if (apiData.modal.type === 'prompt') {
+              Modals.create({
+                type: apiData.modal.type,
+                title: apiData.modal.title,
+                label: apiData.modal.label ?? 'Label',
+                value: apiData.modal.value ?? '',
+                promptConfirmCallback: (value) => {
+                  if (value) {
+                    const p = {};
+                    const name = apiData.modal.key;
+                    p[name] = value;
+                    handleApiRequest('GET', linkElement.getAttribute('href'), p);
+                  }
+                },
+              });
+            } else {
+              Modals.create({
+                type: (apiData.modal.type === 'confirm') ? 'small-confirm' : apiData.modal.type,
+                title: apiData.modal.title,
+                content: apiData.modal.content ?? '',
+                confirmButton: apiData.modal.button ?? 'Confirm',
+                confirmButtonColor: apiData.modal.buttonColor ?? 'primary',
+                confirmCallback: () => {
+                  handleApiRequest('GET', linkElement.getAttribute('href'));
+                },
+              });
+            }
           } else {
             handleApiRequest('GET', linkElement.getAttribute('href'));
           }

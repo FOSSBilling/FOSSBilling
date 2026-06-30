@@ -43,7 +43,7 @@ final class Dispatcher implements InjectionAwareInterface
             throw new Exception('Method :method must contain underscore', [':method' => $method], 710);
         }
 
-        $role = str_replace('model_', '', strtolower($identity::class));
+        $role = Identity::typeFromObject($identity);
         $parts = explode('_', $method);
         $mod = strtolower($parts[0]);
         unset($parts[0]);

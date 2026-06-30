@@ -1,6 +1,6 @@
 import { readFile } from 'fs/promises';
-import { dirname, join, relative, resolve } from 'path';
-import { readdirSync, statSync } from 'fs';
+import { dirname, extname, join, relative, resolve } from 'path';
+import { readdirSync } from 'fs';
 import { fileURLToPath } from 'url';
 
 const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -47,7 +47,7 @@ function walkFiles(dir) {
       continue;
     }
 
-    if ([...sourceExtensions].some((extension) => entry.name.endsWith(extension))) {
+    if (sourceExtensions.has(extname(entry.name))) {
       files.push(path);
     }
   }
@@ -83,7 +83,7 @@ async function getDynamicNavigationIcons() {
   const icons = new Set();
 
   for (const file of walkFiles(resolve(rootDir, 'src/modules'))) {
-    if (!file.endsWith('/Controller/Admin.php') || !statSync(file).isFile()) {
+    if (!file.endsWith('/Controller/Admin.php')) {
       continue;
     }
 

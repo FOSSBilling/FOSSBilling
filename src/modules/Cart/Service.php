@@ -720,7 +720,7 @@ class Service implements InjectionAwareInterface
                             $orderService->activateOrder($order);
                         }
                     } catch (\Exception $e) {
-                        error_log($e->getMessage());
+                        $this->di['logger']->error('Order activation failed after checkout: %s', $e->getMessage());
                         $status = 'error';
                         $notes = "Order could not be activated after checkout due to error: {$e->getMessage()}.";
                         $orderService->orderStatusAdd($order, $status, $notes);
