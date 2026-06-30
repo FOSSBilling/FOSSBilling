@@ -18,7 +18,6 @@ use FOSSBilling\Environment;
 use FOSSBilling\GeoIP\Reader;
 use FOSSBilling\Sanitizer\BrowserHtmlSanitizer;
 use FOSSBilling\SentryHelper;
-use FOSSBilling\Tools;
 use FOSSBilling\Twig\SandboxedStringRenderer;
 use FOSSBilling\Version;
 use Pimple\Container;

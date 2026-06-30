@@ -285,7 +285,7 @@ $di['rate_limit_cache'] = fn (): FilesystemAdapter => new FilesystemAdapter('rat
 
 $di['http_client'] = fn (): HttpClientInterface => HttpClient::create([
     'bindto' => BIND_TO,
-        'headers' => [
+    'headers' => [
         'User-Agent' => 'FOSSBilling/' . Version::VERSION,
     ],
 ]);
