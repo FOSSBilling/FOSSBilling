@@ -465,7 +465,6 @@ class Service implements InjectionAwareInterface
             static fn (AdminGroup $group): array => $group->toApiArray(),
             $this->adminGroupMemberRepository->findGroupsForAdmin((int) $model->id),
         );
-        $data['group'] = $data['groups'][0] ?? null;
 
         return $data;
     }

@@ -929,7 +929,6 @@ test('toModel_AdminApiArray returns admin array data', function (): void {
             'created_at' => '',
             'updated_at' => '',
             'groups' => [],
-            'group' => null,
         ];
 
     $di = container();

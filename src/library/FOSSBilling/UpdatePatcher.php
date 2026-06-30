@@ -2091,10 +2091,11 @@ class UpdatePatcher implements InjectionAwareInterface
             ],
         ], JSON_THROW_ON_ERROR);
         $this->executeSql(
-            "INSERT INTO admin_group (name, parent_id, permissions, protected, created_at, updated_at) VALUES ('Support Lead', :parent_id, :permissions, 0, :created_at, :updated_at)",
+            "INSERT INTO admin_group (name, system_name, parent_id, permissions, protected, created_at, updated_at) VALUES ('Support Lead', 'support_lead', :parent_id, :permissions, 0, :created_at, :updated_at)
+             ON DUPLICATE KEY UPDATE name = 'Support Lead', parent_id = :parent_id, permissions = :permissions, protected = 0, updated_at = :updated_at",
             ['parent_id' => $superAdminGroupId, 'permissions' => $supportLeadPermissions, 'created_at' => $now, 'updated_at' => $now],
         );
-        $supportLeadGroupId = (int) $this->getPdo()->lastInsertId();
+        $supportLeadGroupId = (int) $this->fetchOne("SELECT id FROM admin_group WHERE system_name = 'support_lead' LIMIT 1");
 
         $supportStaffPermissions = json_encode([
             'support' => [
@@ -2104,7 +2105,8 @@ class UpdatePatcher implements InjectionAwareInterface
             ],
         ], JSON_THROW_ON_ERROR);
         $this->executeSql(
-            "INSERT INTO admin_group (name, parent_id, permissions, protected, created_at, updated_at) VALUES ('Support Staff', :parent_id, :permissions, 0, :created_at, :updated_at)",
+            "INSERT INTO admin_group (name, system_name, parent_id, permissions, protected, created_at, updated_at) VALUES ('Support Staff', 'support_staff', :parent_id, :permissions, 0, :created_at, :updated_at)
+             ON DUPLICATE KEY UPDATE name = 'Support Staff', parent_id = :parent_id, permissions = :permissions, protected = 0, updated_at = :updated_at",
             ['parent_id' => $supportLeadGroupId, 'permissions' => $supportStaffPermissions, 'created_at' => $now, 'updated_at' => $now],
         );
     }
