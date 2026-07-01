@@ -33,13 +33,17 @@
         } else {
             document.documentElement.removeAttribute("data-bs-theme");
         }
-
-        {% if not admin %}
-            document.addEventListener("DOMContentLoaded", function() {
-                window.location = "{{ 'staff/login'|url }}";
-            });
-        {% else %}
     </script>
+
+    {% if not admin %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            window.location = "{{ 'staff/login'|url }}";
+        });
+    </script>
+    {% endif %}
+
+    {% if admin %}
     {% if hide_menu is defined and hide_menu %}
     {% block content_wide %}{% endblock %}
     {% else %}
