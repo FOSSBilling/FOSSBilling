@@ -288,7 +288,7 @@ class Client implements InjectionAwareInterface
                 break;
 
             case 'admin':
-                $model = $this->di['db']->findOne('Admin', 'api_token = ? AND status = ? AND role != ?', [$password, \Model_Admin::STATUS_ACTIVE, \Model_Admin::ROLE_CRON]);
+                $model = $this->di['db']->findOne('Admin', 'api_token = ? AND status = ? AND (system_name IS NULL OR system_name != ?)', [$password, \Model_Admin::STATUS_ACTIVE, \Model_Admin::SYSTEM_CRON]);
                 if (!$model instanceof \Model_Admin) {
                     throw new \FOSSBilling\InformationException('Authentication Failed', null, 205);
                 }
@@ -302,7 +302,6 @@ class Client implements InjectionAwareInterface
                     'id' => $model->id,
                     'email' => $model->email,
                     'name' => $model->name,
-                    'role' => $model->role,
                 ];
                 $this->di['session']->set('admin', $sessionAdminArray);
 

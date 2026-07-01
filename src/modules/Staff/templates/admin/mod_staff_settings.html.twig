@@ -24,6 +24,9 @@
         {{ 'New Group'|trans }}
     </button>
 {% endset %}
+{% set is_super_admin = admin.staff_is_super_administrator %}
+{% set can_manage_groups = has_permission('staff', 'manage_groups') %}
+{% set exclude_cron = request.no_cron|default('1') != '0' %}
 
 {% block breadcrumbs %}
     <ol class="breadcrumb">
@@ -79,10 +82,6 @@
                                     <input class="form-control" type="text" id="staff-id" name="id" value="{{ request.id }}" placeholder="{{ 'Staff ID'|trans }}">
                                 </div>
                                 <div class="col-md-6 col-xl-3">
-                                    <label class="form-label text-muted small mb-1">{{ 'Group'|trans }}</label>
-                                    {{ mf.selectbox('admin_group_id', admin.staff_group_get_pairs, request.admin_group_id, 0, 'All Groups'|trans) }}
-                                </div>
-                                <div class="col-md-6 col-xl-3">
                                     <label class="form-label text-muted small mb-1" for="staff-status">{{ 'Status'|trans }}</label>
                                     <select class="form-select" id="staff-status" name="status">
                                         <option value="">{{ 'All Statuses'|trans }}</option>
@@ -95,7 +94,8 @@
                                         <label class="form-label text-muted small mb-1 d-block invisible" aria-hidden="true">{{ 'Status'|trans }}</label>
                                         <div class="d-flex align-items-center" style="min-height: 40px;">
                                             <label class="form-check form-switch m-0">
-                                                <input class="form-check-input" type="checkbox" name="no_cron" value="1"{% if request.no_cron %} checked{% endif %}>
+                                                <input type="hidden" name="no_cron" value="0">
+                                                <input class="form-check-input" type="checkbox" name="no_cron" value="1"{% if exclude_cron %} checked{% endif %}>
                                                 <span class="form-check-label">{{ 'Exclude Cron User'|trans }}</span>
                                             </label>
                                         </div>
@@ -120,16 +120,16 @@
                                 <th class="w-1">#</th>
                                 <th>{{ 'Name'|trans }}</th>
                                 <th>{{ 'Email'|trans }}</th>
-                                <th>{{ 'Group'|trans }}</th>
+                                <th>{{ 'Groups'|trans }}</th>
                                 <th>{{ 'Status'|trans }}</th>
                                 <th class="w-1"></th>
                             </tr>
                             </thead>
                             <tbody>
-                            {% set members = admin.staff_get_list({ 'per_page': 100, 'page': request.page }|merge(request)) %}
+                            {% set members = admin.staff_get_list({ 'per_page': 100, 'page': request.page, 'no_cron': '1' }|merge(request)) %}
                             {% for i, member in members.list %}
                                 <tr>
-                                    <td>{{ loop.index }}</td>
+                                    <td>{{ member.id }}</td>
                                     <td>
                                         <a href='{{ "staff/manage/#{member.id}"|url }}'>
                                         {{ avatar(member.email, 25, 'avatar avatar-xs me-2') }}
@@ -138,7 +138,11 @@
                                     </td>
                                     <td>{{ member.email }}</td>
                                     <td>
-                                        <a href='{{ "staff/group/#{member.group.id}"|url }}'>{{ member.group.name }}</a>
+                                        {% for group in member.groups %}
+                                            <a class="badge bg-blue-lt text-blue text-decoration-none me-1" href='{{ "staff/group/#{group.id}"|url }}'>{{ group.name }}</a>
+                                        {% else %}
+                                            <span class="text-muted">{{ 'No groups'|trans }}</span>
+                                        {% endfor %}
                                     </td>
                                     <td>{{ mf.status_badge(member.status, 'admin') }}</td>
                                     <td>
@@ -205,9 +209,31 @@
                 </div>
 
                 <div class="tab-pane fade" id="tab-groups" role="tabpanel">
-                    <div class="card-body border-bottom py-3">
-                        <div class="d-flex justify-content-end">
-                            {{ new_staff_group_action|raw }}
+                    <div class="card-body border-bottom">
+                        <div class="row g-3 align-items-start">
+                            <div class="col">
+                                <h3 class="card-title mb-1">{{ 'Staff group hierarchy'|trans }}</h3>
+                                <p class="text-secondary mb-3">{{ 'Use groups to grant permissions and control which staff accounts can be managed by delegated staff.'|trans }}</p>
+                                <div class="row g-3 text-secondary small">
+                                    <div class="col-lg-4">
+                                        <div class="fw-medium text-body">{{ 'Delegated staff updates'|trans }}</div>
+                                        {{ 'When allowed by permissions, staff can only update staff members below their assigned groups.'|trans }}
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <div class="fw-medium text-body">{{ 'Structure changes'|trans }}</div>
+                                        {{ 'Only Super Administrators create groups or update group details.'|trans }}
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <div class="fw-medium text-body">{{ 'Delegated membership'|trans }}</div>
+                                        {{ 'Allowed staff can only assign or remove members from groups below them.'|trans }}
+                                    </div>
+                                </div>
+                            </div>
+                            {% if is_super_admin %}
+                                <div class="col-auto">
+                                    {{ new_staff_group_action|raw }}
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                     <table class="table card-table table-vcenter table-striped text-nowrap">
@@ -218,31 +244,58 @@
                         </tr>
                         </thead>
                         <tbody>
-                        {% set groups = admin.staff_group_get_list({ 'per_page': 100, 'page': request.page }) %}
+                        {% set groups = can_manage_groups ? admin.staff_group_get_list : { 'list': [] } %}
                         {% for i, group in groups.list %}
                             <tr>
                                 <td>
-                                    <a href='{{ "staff/group/#{group.id}"|url }}'>{{ group.name }}</a>
+                                    <div class="d-flex align-items-start gap-2" style="padding-left: {{ group.depth|default(0) * 1.75 }}rem">
+                                        {% if group.depth|default(0) > 0 %}
+                                            <span class="text-secondary mt-1" aria-hidden="true">&rdsh;</span>
+                                        {% endif %}
+                                        <div>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <a href='{{ "staff/group/#{group.id}"|url }}'>{{ group.name }}</a>
+                                                {% if group.system_name == 'super_admin' %}
+                                                    <span class="badge bg-blue-lt">{{ 'System group'|trans }}</span>
+                                                {% elseif group.protected %}
+                                                    <span class="badge bg-secondary-lt">{{ 'Protected'|trans }}</span>
+                                                {% endif %}
+                                            </div>
+                                            <div class="text-secondary small">
+                                                {% if group.system_name !== 'super_admin' %}
+                                                    {{ group.path }}
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </td>
                                 <td>
                                     <a class="btn btn-icon" href='{{ "staff/group/#{group.id}"|url }}'
-                                       data-bs-toggle="tooltip" data-bs-title="{{ 'Edit'|trans }}">
+                                       data-bs-toggle="tooltip" data-bs-title="{% if group.protected or not is_super_admin %}{{ 'View'|trans }}{% else %}{{ 'Edit'|trans }}{% endif %}">
                                         <svg class="icon">
                                             <use href="#edit"/>
                                         </svg>
                                     </a>
-                                    <a class="btn btn-icon" href="{{ 'staff/group_delete'|api_url(query: { 'id': group.id }) }}"
-                                        data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
-                                        {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'extension/settings/staff#tab-groups'|url}) }}>
-                                        <svg class="icon">
-                                            <use href="#trash"/>
-                                        </svg>
-                                    </a>
+                                    {% if is_super_admin and not group.protected %}
+                                        <a class="btn btn-icon" href="{{ 'staff/group_delete'|api_url(query: { 'id': group.id }) }}"
+                                            data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
+                                            {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'extension/settings/staff#tab-groups'|url}) }}>
+                                            <svg class="icon">
+                                                <use href="#trash"/>
+                                            </svg>
+                                        </a>
+                                    {% endif %}
                                 </td>
                             </tr>
                         {% else %}
                             <tr>
-                                <td class="text-center text-muted py-3" colspan="2">{{ 'The list is empty'|trans }}</td>
+                                <td class="text-center text-muted py-3" colspan="2">
+                                    {% if can_manage_groups %}
+                                        {{ 'The list is empty'|trans }}
+                                    {% else %}
+                                        {{ 'You do not have permission to manage staff groups.'|trans }}
+                                    {% endif %}
+                                </td>
                             </tr>
                         {% endfor %}
                         </tbody>
@@ -262,10 +315,6 @@
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-lg-6">
-                            <label class="form-label" for="admin_group_id">{{ 'Group'|trans }}</label>
-                            {{ mf.selectbox('admin_group_id', admin.staff_group_get_pairs, '', 1) }}
-                        </div>
-                        <div class="col-lg-6">
                             <label class="form-label" for="new-staff-name">{{ 'Name'|trans }}</label>
                             <input class="form-control" id="new-staff-name" type="text" name="name" required>
                         </div>
@@ -276,6 +325,10 @@
                         <div class="col-lg-6">
                             <label class="form-label" for="new-staff-password">{{ 'Password'|trans }}</label>
                             <input class="form-control" id="new-staff-password" type="password" name="password" required>
+                        </div>
+                        <div class="col-lg-6">
+                            <label class="form-label" for="new-staff-group">{{ 'Initial group'|trans }}</label>
+                            {{ mf.selectbox('group_id', admin.staff_group_get_pairs, '', 1, 'Select group'|trans) }}
                         </div>
                         <div class="col-12">
                             <label class="form-label" for="new-staff-signature">{{ 'Signature'|trans }}</label>
@@ -303,29 +356,42 @@
         </div>
     </div>
 
-    <div class="modal fade" id="newStaffGroupModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <form method="post" action="{{ 'staff/group_create'|api_url }}" class="modal-content" {{ fb_api_form({redirect: 'extension/settings/staff#tab-groups'|url}) }}>
-                <div class="modal-header">
-                    <h5 class="modal-title">{{ 'New Group'|trans }}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
-                </div>
-                <div class="modal-body">
-                    <label class="form-label" for="new-staff-group-name">{{ 'Name'|trans }}</label>
-                    <input class="form-control" id="new-staff-group-name" type="text" name="name" required>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-primary" type="submit">{{ 'Create Group'|trans }}</button>
-                </div>
-            </form>
+    {% if is_super_admin %}
+        <div class="modal fade" id="newStaffGroupModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <form method="post" action="{{ 'staff/group_create'|api_url }}" class="modal-content" {{ fb_api_form({redirect: 'extension/settings/staff#tab-groups'|url}) }}>
+                    <div class="modal-header">
+                        <h5 class="modal-title">{{ 'New Group'|trans }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label" for="new-staff-group-name">{{ 'Name'|trans }}</label>
+                            <input class="form-control" id="new-staff-group-name" type="text" name="name" required>
+                        </div>
+                        <div>
+                            <label class="form-label" for="new-staff-group-parent">{{ 'Parent group'|trans }}</label>
+                            <select class="form-select" id="new-staff-group-parent" name="parent_id" required>
+                                {% for groupId, groupName in admin.staff_group_get_pairs %}
+                                    <option value="{{ groupId }}">{{ groupName }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">{{ 'Super Administrator is the root group. New groups are created below the selected parent.'|trans }}</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" type="submit">{{ 'Create Group'|trans }}</button>
+                    </div>
+                </form>
+            </div>
         </div>
-    </div>
+    {% endif %}
 {% endblock %}
 
 {% block js %}
     <script>
         function onAfterStaffCreate(id) {
-            window.location = "{{ 'staff/manage'|url }}/" + id + '#tab-permissions';
+            window.location = "{{ 'staff/manage'|url }}/" + id + '#tab-groups';
         }
 
         document.addEventListener("DOMContentLoaded", function() {

@@ -250,14 +250,14 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     public function update_finalization_status(): array
     {
-        $this->checkPermissions('system', 'system_update');
+        $this->checkUpdateFinalizationPermissions();
 
         return $this->getDi()['update_finalization']->getStatus();
     }
 
     public function finalize_update(): bool
     {
-        $this->checkPermissions('system', 'system_update');
+        $this->checkUpdateFinalizationPermissions();
 
         if (function_exists('set_time_limit')) {
             set_time_limit(180);
@@ -272,12 +272,25 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     public function complete_update_finalization(): bool
     {
-        $this->checkPermissions('system', 'system_update');
+        $this->checkUpdateFinalizationPermissions();
 
         $this->getDi()['update_finalization']->completeFinalization();
         $this->getDi()['logger']->info('Completed FOSSBilling update finalization for %s.', \FOSSBilling\Version::VERSION);
 
         return true;
+    }
+
+    /**
+     * Disable permission checks when an update is pending finalization.
+     * 
+     * This is to make sure update finalization still works when there are changes to the
+     * permission system and patches need to be applied before everything starts working again.
+     */
+    private function checkUpdateFinalizationPermissions(): void
+    {
+        if (!$this->getDi()['update_finalization']->isRequired()) {
+            $this->checkPermissions('system', 'system_update');
+        }
     }
 
     /**

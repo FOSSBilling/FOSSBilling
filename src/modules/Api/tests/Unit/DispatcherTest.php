@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use Symfony\Component\HttpFoundation\Request;
 
-function createApiDispatcherDi(bool $extensionActive = true, bool $moduleHasService = true): Pimple\Container
+function createApiDispatcherDi(bool $extensionActive = true, bool $moduleHasService = true, ?object $staffService = null, ?object $updateFinalization = null): Pimple\Container
 {
     $extensionService = new readonly class($extensionActive) {
         public function __construct(private bool $extensionActive)
@@ -56,7 +56,7 @@ function createApiDispatcherDi(bool $extensionActive = true, bool $moduleHasServ
         }
     };
 
-    $staffService = new class {
+    $staffService ??= new class {
         public function hasPermission(Model_Admin $identity, string $mod): bool
         {
             return true;
@@ -67,6 +67,9 @@ function createApiDispatcherDi(bool $extensionActive = true, bool $moduleHasServ
     $di['request'] = Request::create('/', 'GET', [], [], [], ['REMOTE_ADDR' => '127.0.0.1']);
     $di['mod'] = $di->protect(fn (string $name): object => strtolower($name) === 'extension' ? $extensionModule : $module);
     $di['mod_service'] = $di->protect(fn (string $name): object => strtolower($name) === 'staff' ? $staffService : $systemService);
+    if ($updateFinalization !== null) {
+        $di['update_finalization'] = $updateFinalization;
+    }
 
     return $di;
 }
@@ -142,4 +145,19 @@ test('api proxy requires the dispatcher service instead of creating one itself',
 
     expect(fn (): mixed => $proxy->call('system_period_title', ['code' => '1M']))
         ->toThrow(LogicException::class, 'API proxy requires the api_dispatcher service');
+});
+
+test('skips admin module permission check for allowed update finalization calls', function (): void {
+    $staffService = Mockery::mock();
+    $staffService->shouldReceive('hasPermission')->never();
+
+    $updateFinalization = Mockery::mock();
+    $updateFinalization->shouldReceive('isRequired')->twice()->andReturn(true);
+    $updateFinalization->shouldReceive('isAdminApiCallAllowed')->once()->with('system', 'system_update_finalization_status')->andReturn(true);
+    $updateFinalization->shouldReceive('getStatus')->once()->andReturn(['required' => true]);
+
+    $dispatcher = createApiDispatcher(createApiDispatcherDi(staffService: $staffService, updateFinalization: $updateFinalization));
+
+    expect($dispatcher->dispatch(new Model_Admin(), 'system_update_finalization_status'))
+        ->toBe(['required' => true]);
 });
