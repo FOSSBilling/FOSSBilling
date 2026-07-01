@@ -563,6 +563,29 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $adapter->isDomaincanBeTransferred($domain);
     }
 
+    /**
+     * Scan the current nameservers for a domain via DNS, so an admin/client can
+     * confirm or edit them before a transfer (rather than silently applying them).
+     *
+     * @return array<int, string> up to 4 nameserver hostnames, in order
+     */
+    public function lookupNameservers(string $fqdn): array
+    {
+        $records = @dns_get_record($fqdn, DNS_NS);
+        if (empty($records)) {
+            return [];
+        }
+
+        $ns = [];
+        foreach ($records as $record) {
+            if (!empty($record['target'])) {
+                $ns[] = rtrim((string) $record['target'], '.');
+            }
+        }
+
+        return array_slice($ns, 0, 4);
+    }
+
     public function isDomainAvailable(\Model_Tld $model, $sld)
     {
         if (empty($sld)) {
