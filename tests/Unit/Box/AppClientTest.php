@@ -108,7 +108,11 @@ test('get_custom_page returns 500 (not 404) when a nested template is missing du
 });
 
 test('get_custom_page still returns 404 when the top-level template is missing', function (): void {
-    $app = appClientWithRender(function (): string {
+    $app = appClientWithRender(function (string $fileName): string {
+        if ($fileName === 'error') {
+            return 'error body';
+        }
+
         throw new FOSSBilling\InformationException('Page not found', null, 404);
     });
 
