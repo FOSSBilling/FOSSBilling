@@ -13,6 +13,7 @@ declare(strict_types=1);
 use Box\Mod\Email\Service;
 use FOSSBilling\Environment;
 use FOSSBilling\Http\RequestFactory;
+use FOSSBilling\Http\ResponseEmitter;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -81,7 +82,7 @@ $installer = new FOSSBilling_Installer($request, $preConfigProxyCandidate);
 
 // Run the installer only in non-CLI mode
 if (!Environment::isCLI()) {
-    $installer->run($action)->send();
+    (new ResponseEmitter())->emit($installer->run($action), $request);
 }
 
 // Inline installer class.

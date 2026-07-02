@@ -7,6 +7,7 @@
     <div class="container-tight py-4">
         <div class="text-center mb-4">
             {{ include('partial_company_logo.html.twig', {
+                company: company,
                 link_url: '/'|url(area: 'client'),
                 image_style: 'height: 60px; width: auto;',
                 fallback_class: 'h1'

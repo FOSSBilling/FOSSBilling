@@ -1604,8 +1604,7 @@ class UpdatePatcher implements InjectionAwareInterface
             Path::join(PATH_CACHE, 'fallbackClassMap.php') => 'unlink',
         ]);
 
-        $schemaManager = $this->di['dbal']->createSchemaManager();
-        if (!$schemaManager->tablesExist(['promo_redemption'])) {
+        if (!$this->tableExists('promo_redemption')) {
             $this->executeSql(
                 "CREATE TABLE `promo_redemption` (
                     `id` bigint(20) NOT NULL AUTO_INCREMENT,
@@ -1633,6 +1632,7 @@ class UpdatePatcher implements InjectionAwareInterface
             );
         }
 
+        $schemaManager = $this->di['dbal']->createSchemaManager();
         $table = $schemaManager->introspectTable('promo_redemption');
         $columns = [];
 
@@ -1929,7 +1929,7 @@ class UpdatePatcher implements InjectionAwareInterface
                     ['value' => $documentNr, 'id' => $clientId]
                 );
             } else {
-                error_log(sprintf('patch75: client #%d has no free custom field slot; unmigrated document_nr was "%s".', $clientId, $documentNr));
+                $this->di['logger']->setChannel('update')->warning('patch75: client #%d has no free custom field slot; unmigrated document_nr was "%s".', $clientId, $documentNr);
             }
         }
 

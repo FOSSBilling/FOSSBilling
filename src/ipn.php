@@ -11,6 +11,7 @@ declare(strict_types=1);
  */
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'load.php';
 
+use FOSSBilling\Http\ResponseEmitter;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -25,8 +26,7 @@ $invoiceID = $request->get('invoice_id');
 if ($invoiceID !== null) {
     $invoiceID = filter_var($invoiceID, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
     if ($invoiceID === false) {
-        (new JsonResponse(['error' => ['message' => 'Invalid invoice ID']], 400))->send();
-        exit;
+        emitResponse(new JsonResponse(['error' => ['message' => 'Invalid invoice ID']], 400));
     }
 }
 
@@ -35,8 +35,7 @@ $gatewayID = $request->get('gateway_id');
 if ($gatewayID !== null) {
     $gatewayID = filter_var($gatewayID, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
     if ($gatewayID === false) {
-        (new JsonResponse(['error' => ['message' => 'Invalid gateway ID']], 400))->send();
-        exit;
+        emitResponse(new JsonResponse(['error' => ['message' => 'Invalid gateway ID']], 400));
     }
 }
 
@@ -68,10 +67,11 @@ try {
     if ($isJsonWebhook && function_exists('fastcgi_finish_request')) {
         $transactionId = $service->create($ipn);
         $res = ['result' => $transactionId, 'error' => null];
-        (new JsonResponse($res, 200, [
+        $response = new JsonResponse($res, 200, [
             'Cache-Control' => 'no-cache, must-revalidate',
             'Expires' => 'Mon, 26 Jul 1997 05:00:00 GMT',
-        ]))->send();
+        ]);
+        (new ResponseEmitter())->emit($response, $request);
         fastcgi_finish_request();
 
         // Process in the background — errors are logged on the transaction.
@@ -91,12 +91,10 @@ if ($request->query->has('redirect') && $request->query->has('invoice_hash')) {
     $invoiceHash = $request->query->get('invoice_hash');
     $hash = preg_replace('/[^a-zA-Z0-9]/', '', is_string($invoiceHash) ? $invoiceHash : '');
     $url = $di['url']->link('invoice/' . $hash);
-    (new RedirectResponse($url))->send();
-    exit;
+    emitResponse(new RedirectResponse($url));
 }
 
-(new JsonResponse($res, 200, [
+emitResponse(new JsonResponse($res, 200, [
     'Cache-Control' => 'no-cache, must-revalidate',
     'Expires' => 'Mon, 26 Jul 1997 05:00:00 GMT',
-]))->send();
-exit;
+]));

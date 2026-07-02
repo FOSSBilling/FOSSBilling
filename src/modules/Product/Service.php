@@ -928,7 +928,7 @@ class Service implements InjectionAwareInterface
 
             $addon = $this->getAddonById($id);
             if (!$addon instanceof Product) {
-                error_log('Addon not found by id ' . $id);
+                $this->di['logger']->warning('Addon not found by id %s', $id);
 
                 continue;
             }
