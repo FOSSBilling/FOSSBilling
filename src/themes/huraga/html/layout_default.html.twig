@@ -86,6 +86,7 @@
         <nav class="navbar navbar-expand-md py-4">
             <div class="container-fluid">
                 {{ include('partial_company_logo.html.twig', {
+                    company: company,
                     logo_url: settings.show_company_logo ? company.logo_url : null,
                     dark_logo_url: settings.show_company_logo ? company.logo_url_dark : null,
                     link_class: 'navbar-brand',
