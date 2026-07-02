@@ -95,16 +95,20 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         $startedAt = microtime(true);
 
         try {
-            $result = $service->password_reset_valid($data);
-        } finally {
-            RandomizedTimeFloor::apply($startedAt);
+            try {
+                $result = $service->password_reset_valid($data);
+            } finally {
+                RandomizedTimeFloor::apply($startedAt);
+            }
+        } catch (\FOSSBilling\InformationException) {
+            return $app->render('mod_client_set_new_password', ['expired' => true]);
         }
 
         if ($result !== false) {
             return $app->render('mod_client_set_new_password');
         }
 
-        $app->redirect('/');
+        return $app->render('mod_client_set_new_password', ['expired' => true]);
     }
 
     private function checkPageRateLimit(\Box_App $app, string $policy): ?Response

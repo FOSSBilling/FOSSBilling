@@ -1,0 +1,655 @@
+@use "flags";
+@forward "tokens";
+@forward "fonts";
+
+// -----------------------------------------------------------------------
+// Bootstrap variable overrides
+// -----------------------------------------------------------------------
+// Bootstrap 5.3's CSS (vendor.css, loaded before this file) reads its own
+// look from --bs-* custom properties defined in :root / [data-bs-theme="dark"].
+// Because tenantninja.css loads after vendor.css in the layout twigs, these
+// overrides win the cascade (same selector specificity, later source wins)
+// without needing to recompile Bootstrap's Sass from source.
+:root {
+    --bs-body-bg: var(--bg);
+    --bs-body-color: var(--text);
+    --bs-secondary-color: var(--text-muted);
+    --bs-tertiary-bg: var(--surface-2);
+    --bs-tertiary-color: var(--text-muted);
+    --bs-border-color: var(--border);
+    --bs-border-color-translucent: var(--border);
+    --bs-emphasis-color: var(--text);
+
+    --bs-body-font-family: var(--font-sans);
+    --bs-body-font-size: var(--fs-body);
+    --bs-body-line-height: var(--lh-normal);
+
+    --bs-border-radius: var(--r-sm);
+    --bs-border-radius-sm: var(--r-xs);
+    --bs-border-radius-lg: var(--r-lg);
+    --bs-border-radius-xl: var(--r-xl);
+    --bs-border-radius-pill: var(--r-pill);
+
+    --bs-primary: var(--accent);
+    --bs-primary-rgb: 199, 242, 60;
+    --bs-primary-text-emphasis: var(--accent-press);
+    --bs-primary-bg-subtle: var(--accent-soft);
+    --bs-primary-border-subtle: var(--accent);
+
+    --bs-success: var(--success-500);
+    --bs-success-bg-subtle: var(--success-bg);
+    --bs-warning: var(--warning-500);
+    --bs-warning-bg-subtle: var(--warning-bg);
+    --bs-danger: var(--danger-500);
+    --bs-danger-bg-subtle: var(--danger-bg);
+    --bs-info: var(--info-500);
+    --bs-info-bg-subtle: var(--info-bg);
+
+    --bs-link-color: var(--accent-press);
+    --bs-link-hover-color: var(--accent);
+
+    --bs-card-bg: var(--surface);
+    --bs-card-border-color: var(--border);
+    --bs-card-cap-bg: var(--surface-2);
+
+    --bs-transition-base: all var(--dur) var(--ease-out);
+    --bs-transition-fade: opacity var(--dur-slow) linear;
+    --bs-transition-collapse: height var(--dur) var(--ease-in-out);
+    --bs-transition-collapse-width: width var(--dur) var(--ease-in-out);
+}
+
+[data-bs-theme="dark"] {
+    --bs-body-bg: var(--bg);
+    --bs-body-color: var(--text);
+    --bs-tertiary-bg: var(--surface-2);
+    --bs-border-color: var(--border);
+    --bs-card-bg: var(--surface);
+    --bs-card-cap-bg: var(--surface-2);
+    --bs-primary-rgb: 199, 242, 60;
+}
+
+html {
+    font-size: 1rem;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+}
+
+body {
+    font-family: var(--font-sans);
+    font-size: var(--fs-body);
+    line-height: var(--lh-normal);
+    background-color: var(--bg);
+    color: var(--text);
+}
+
+h1, h2, h3, h4, h5, h6,
+.display-1, .display-2, .display-3, .display-4, .display-5, .display-6 {
+    font-family: var(--font-display);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--ls-snug);
+    line-height: var(--lh-snug);
+}
+
+// Generic monospace utility.
+.text-mono,
+.font-mono {
+    font-family: var(--font-mono) !important;
+}
+
+// Low-risk generic hooks: numeric/eyebrow contexts get the mono treatment
+// automatically. Per-template mono-izing of specific numeric values
+// elsewhere (prices, invoice totals, etc.) is a follow-up - we deliberately
+// do not regex the whole codebase's templates here.
+.badge,
+table td.text-end,
+table th.text-end {
+    font-family: var(--font-mono);
+}
+
+.badge {
+    text-transform: uppercase;
+    letter-spacing: var(--ls-eyebrow);
+    font-weight: var(--fw-semibold);
+    border-radius: var(--r-xs);
+}
+
+table > thead > tr > th {
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-eyebrow);
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    color: var(--text-muted);
+}
+
+.eyebrow {
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-eyebrow);
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+}
+
+.modal-dialog {
+    margin-right: auto;
+    margin-left: auto;
+}
+
+.fs-7 {
+    font-size: .875rem;
+}
+
+.offcanvas-item {
+    border-bottom: 1px solid var(--border);
+
+    &:first-child {
+        border-top: 1px solid var(--border);
+    }
+
+    &:hover {
+        background: var(--surface-2);
+    }
+
+    > a {
+        color: var(--text-muted);
+    }
+}
+
+.card-header h1, .page-password-reset .card h1, .page-login .card h1, .page-signup .card h1 {
+    font-size: 1.25rem;
+    font-family: var(--font-display);
+}
+
+.card-body {
+    @at-root table {
+        > thead > tr > th {
+            font-size: 0.765625rem;
+        }
+
+        > tbody > tr > td {
+            vertical-align: middle;
+        }
+    }
+}
+
+.icon {
+    height: 20px;
+    width: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+// -----------------------------------------------------------------------
+// Buttons
+// -----------------------------------------------------------------------
+.btn {
+    border-radius: var(--r-sm);
+    font-weight: var(--fw-semibold);
+    transition: transform var(--dur-fast) var(--ease-snap), box-shadow var(--dur) var(--ease-out), background-color var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out);
+
+    &:active {
+        transform: translateY(1px) scale(0.985);
+    }
+}
+
+.btn-primary {
+    background-color: var(--accent);
+    border-color: var(--accent);
+    color: var(--on-accent);
+
+    &:hover, &:focus {
+        background-color: var(--accent-hover);
+        border-color: var(--accent-hover);
+        color: var(--on-accent);
+        box-shadow: var(--glow-blade);
+    }
+
+    &:active, &:focus-visible {
+        background-color: var(--accent-press) !important;
+        border-color: var(--accent-press) !important;
+        color: var(--on-accent) !important;
+    }
+}
+
+.btn-outline-primary {
+    color: var(--accent-press);
+    border-color: var(--accent);
+
+    &:hover {
+        background-color: var(--accent);
+        border-color: var(--accent);
+        color: var(--on-accent);
+        box-shadow: var(--glow-blade-soft);
+    }
+}
+
+// -----------------------------------------------------------------------
+// Cards
+// -----------------------------------------------------------------------
+.card {
+    background-color: var(--surface);
+    border: var(--bw-hair) solid var(--border);
+    border-radius: var(--r-lg);
+    box-shadow: var(--inset-top);
+    transition: border-color var(--dur) var(--ease-out);
+
+    &:hover {
+        border-color: var(--border-strong);
+    }
+}
+
+// -----------------------------------------------------------------------
+// Forms
+// -----------------------------------------------------------------------
+.form-control,
+.form-select {
+    border-radius: var(--r-xs);
+    background-color: var(--surface-inset);
+    border-color: var(--border);
+    color: var(--text);
+
+    &:focus {
+        border-color: var(--focus-ring);
+        box-shadow: 0 0 0 0.2rem var(--accent-soft);
+    }
+}
+
+// -----------------------------------------------------------------------
+// Nav tabs
+// -----------------------------------------------------------------------
+.nav-tabs {
+    border-bottom-color: var(--border);
+
+    .nav-link {
+        border-radius: var(--r-sm) var(--r-sm) 0 0;
+
+        &.active {
+            color: var(--accent-press);
+            border-color: var(--border) var(--border) var(--surface);
+        }
+    }
+}
+
+// -----------------------------------------------------------------------
+// Table
+// -----------------------------------------------------------------------
+.table {
+    --bs-table-border-color: var(--border);
+    color: var(--text);
+}
+
+// -----------------------------------------------------------------------
+// Modal
+// -----------------------------------------------------------------------
+.modal-content {
+    background-color: var(--surface);
+    border: var(--bw-hair) solid var(--border);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-pop);
+}
+
+// -----------------------------------------------------------------------
+// Pagination
+// -----------------------------------------------------------------------
+.pagination {
+    .page-link {
+        border-radius: var(--r-xs);
+        color: var(--text);
+        background-color: var(--surface);
+        border-color: var(--border);
+    }
+
+    .page-item.active .page-link {
+        background-color: var(--accent);
+        border-color: var(--accent);
+        color: var(--on-accent);
+    }
+}
+
+// -----------------------------------------------------------------------
+// Alerts
+// -----------------------------------------------------------------------
+.alert {
+    align-items: center;
+    flex-direction: column !important;
+    border-radius: var(--r-sm);
+}
+
+.alert p {
+    margin-bottom: 0;
+}
+
+.alert-danger {
+    --bs-alert-bg: var(--danger-bg);
+    --bs-alert-border-color: var(--danger-500);
+    --bs-alert-color: var(--danger-500);
+}
+
+.alert-warning {
+    --bs-alert-bg: var(--warning-bg);
+    --bs-alert-border-color: var(--warning-500);
+    --bs-alert-color: var(--warning-500);
+}
+
+.alert-info {
+    --bs-alert-bg: var(--info-bg);
+    --bs-alert-border-color: var(--info-500);
+    --bs-alert-color: var(--info-500);
+}
+
+.alert-success {
+    --bs-alert-bg: var(--success-bg);
+    --bs-alert-border-color: var(--success-500);
+    --bs-alert-color: var(--success-500);
+}
+
+// Order management accordion
+#orderManager {
+    --bs-accordion-btn-icon: none;
+    --bs-accordion-btn-active-icon: none;
+}
+
+// TomSelect dropdown
+.ts-input {
+    color: inherit;
+}
+
+.ts-wrapper {
+    &.form-select {
+        background-color: inherit;
+    }
+
+    .ts-control {
+        font-size: 14px;
+        width: 100%;
+        color: inherit;
+
+        &.locale {
+            width: 205px;
+        }
+
+        .dropdown-menu {
+            width: 100%;
+            height: auto;
+        }
+    }
+
+    .ts-dropdown {
+        font-size: 14px;
+
+        .active {
+            background-color: var(--surface-2);
+            color: inherit;
+        }
+
+        .selected {
+            background-color: var(--surface-3);
+        }
+    }
+}
+
+@media (max-width: 768px) {
+    .ts-wrapper.js-locale-selector {
+        width: 180px
+    }
+}
+
+.invoice-gateway {
+    border: 1px solid var(--border);
+
+    &:hover {
+        border: 1px solid var(--accent);
+    }
+}
+
+.fb-phone-country-code {
+    width: 5.5rem;
+    flex: 0 0 5.5rem;
+    max-width: 5.5rem;
+}
+
+.iti {
+    --iti-border-color: var(--border);
+    --iti-country-selector-bg: var(--surface-inset);
+    --iti-hover-color: var(--accent-soft);
+    --iti-icon-color: var(--text-muted);
+
+    width: 100%;
+}
+
+.iti__country-selector,
+.iti__search-input {
+    color: var(--text);
+}
+
+.iti__search-input {
+    background-color: var(--surface-inset);
+}
+
+.email-list {
+    border-radius: 0;
+
+    .list-group-item {
+        border: 0;
+        border-bottom: 1px solid var(--border);
+        border-left: 2px solid transparent;
+
+        &.active {
+            border-left: 2px solid var(--accent);
+            background: var(--accent-soft);
+            color: var(--text);
+        }
+    }
+}
+
+.badge:empty {
+    display: none;
+}
+
+.card-header {
+    padding: 0.75rem 1.25rem;
+    background-color: var(--surface-2);
+}
+
+// Navbar and logo styling
+.navbar {
+    background-color: var(--bg);
+    box-shadow: none;
+}
+
+.navbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 45px;
+    font-family: var(--font-display);
+    font-weight: var(--fw-semibold);
+}
+
+.navbar-brand img {
+    display: block;
+    height: 45px;
+    width: auto;
+}
+
+.tn-logo-mark {
+    display: block;
+    color: var(--accent);
+}
+
+.locale-selector-dropdown {
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    box-shadow: var(--shadow-md);
+
+    .dropdown-item {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+
+        .locale-flag {
+            flex: 0 0 1.25em;
+        }
+    }
+}
+
+.fi {
+    border-radius: 4px;
+    vertical-align: middle;
+}
+
+.locale-flag {
+    display: inline-block;
+    width: 1.25em;
+    height: 1em;
+    line-height: 1em;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+}
+
+.breadcrumb {
+    margin-bottom: 1.25rem;
+}
+
+.nav-link {
+    color: var(--text);
+}
+
+.nav-link:hover {
+    color: var(--accent-press) !important;
+}
+
+.nav-link.active,
+.offcanvas-item.active > .nav-link {
+    color: var(--accent-press) !important;
+    font-weight: 600;
+}
+
+.nav-pills .nav-link.active {
+    background-color: var(--accent);
+    color: var(--on-accent) !important;
+}
+
+.offcanvas-item.active {
+    background: var(--accent-soft);
+}
+
+// Client profile dropdown - inline with nav items, transparent background
+.client-dropdown {
+    .nav-link.dropdown-toggle {
+        color: var(--text);
+        background-color: transparent;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.5rem 0.75rem;
+
+        &:hover {
+            color: var(--accent-press);
+        }
+
+        &::after {
+            margin-left: 0.25rem;
+        }
+    }
+
+    .dropdown-menu {
+        background-color: var(--surface);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-md);
+    }
+
+    .dropdown-item {
+        padding: 0.5rem 1rem;
+    }
+}
+
+// Order page text sizing
+.mod_orderbutton {
+    .accordion-body {
+        span:not(.badge) {
+            font-size: 0.875rem;
+        }
+    }
+}
+
+// Dashboard and client area styling
+.dashboard,
+.mod_client {
+    .card-header {
+        h6 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 0;
+            color: var(--text);
+        }
+    }
+}
+
+// Language selector vertical alignment in navbar
+.nav-item {
+    display: flex;
+    align-items: center;
+
+    .form-select.js-locale-selector {
+        color: var(--text);
+        padding: 0.5rem 2rem 0.5rem 0.75rem;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        min-height: auto;
+        height: auto;
+        background-position: right 0.5rem center;
+    }
+}
+
+// Nav-link vertical alignment with language selector
+.navbar-nav {
+    align-items: center;
+    gap: 0.25rem;
+
+    .nav-link {
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+    }
+
+    > .btn {
+        margin-top: 0;
+        margin-bottom: 0;
+        display: inline-flex;
+        align-items: center;
+    }
+}
+
+// Dark mode support uses Bootstrap's native color mode system via
+// data-bs-theme attribute on the <html> tag (same mechanism as huraga).
+// Dual logo: show only the logo matching the current color mode.
+[data-bs-theme="light"] .hide-theme-light,
+[data-bs-theme="dark"] .hide-theme-dark { display: none !important; }
+
+// Theme toggler links share the navbar's icon style.
+.js-theme-toggler {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+}
+
+.db-avatar {
+    display: inline-block;
+    flex-shrink: 0;
+    vertical-align: middle;
+    background-color: var(--surface-3);
+    background-size: 100% 100%;
+    background-position: center;
+    background-repeat: no-repeat;
+    border-radius: var(--r-pill);
+    overflow: hidden;
+}

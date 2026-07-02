@@ -1,0 +1,8 @@
+{% for label, messages in flashes %}
+    {% for msg in messages %}
+        <div class="h-block {{label}}">
+            <h2>{{label}}</h2>
+            <p>{{msg}}</p>
+        </div>
+    {% endfor %}
+{% endfor %}

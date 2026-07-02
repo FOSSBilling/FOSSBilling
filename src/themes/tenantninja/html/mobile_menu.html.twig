@@ -1,0 +1,136 @@
+{% if settings.side_menu_dashboard %}
+    <li class="nav-item">
+        <a class="nav-link d-flex align-items-center gap-2{% if current_active_menu == 'dashboard' %} active{% endif %}" href="{{ '/'|url }}"{% if current_active_menu == 'dashboard' %} aria-current="page"{% endif %}>
+            <svg class="icon"><use href="#layout-grid" /></svg>
+            {{ 'Dashboard'|trans }}
+        </a>
+    </li>
+{% endif %}
+
+{% if settings.side_menu_order %}
+    <li class="nav-item">
+        <a class="nav-link d-flex align-items-center gap-2{% if current_active_menu == 'order' %} active{% endif %}" href="{{ 'order'|url }}"{% if current_active_menu == 'order' %} aria-current="page"{% endif %}>
+            <svg class="icon"><use href="#shopping-cart" /></svg>
+            {{ 'Order'|trans }}
+        </a>
+    </li>
+{% endif %}
+
+{% if client or not settings.hide_menu %}
+
+{% if settings.side_menu_support %}
+    <li class="nav-item">
+                    <a class="nav-link d-flex align-items-center gap-2{% if current_active_menu == 'support' %} active{% endif %}" href="{{ support_url }}"{% if current_active_menu == 'support' %} aria-current="page"{% endif %}>
+            <svg class="icon"><use href="#lifebuoy" /></svg>
+            {{ 'Support'|trans }}
+        </a>
+    </li>
+{% endif %}
+
+{% if settings.side_menu_services %}
+    <li class="nav-item">
+        <a class="nav-link d-flex align-items-center gap-2{% if current_active_menu == 'services' %} active{% endif %}" href="{{ 'order/service'|url }}"{% if current_active_menu == 'services' %} aria-current="page"{% endif %}>
+            <svg class="icon"><use href="#apps" /></svg>
+            {{ 'Services'|trans }}
+        </a>
+    </li>
+{% endif %}
+
+{% if settings.side_menu_invoices %}
+    <li class="nav-item">
+        <a class="nav-link d-flex align-items-center gap-2{% if current_active_menu == 'invoices' %} active{% endif %}" href="{{ 'invoice'|url }}"{% if current_active_menu == 'invoices' %} aria-current="page"{% endif %}>
+            <svg class="icon"><use href="#receipt" /></svg>
+            {{ 'Invoices'|trans }}
+        </a>
+    </li>
+{% endif %}
+
+{% if settings.side_menu_emails %}
+    <li class="nav-item">
+        <a class="nav-link d-flex align-items-center gap-2{% if current_active_menu == 'emails' %} active{% endif %}" href="{{ 'email'|url}}"{% if current_active_menu == 'emails' %} aria-current="page"{% endif %}>
+            <svg class="icon"><use href="#mail" /></svg>
+            {{ 'Email'|trans }}
+        </a>
+    </li>
+{% endif %}
+
+{% if settings.side_menu_payments %}
+    <li class="nav-item">
+        <a class="nav-link d-flex align-items-center gap-2{% if current_active_menu == 'payments' %} active{% endif %}" href="{{ 'client/balance'|url }}"{% if current_active_menu == 'payments' %} aria-current="page"{% endif %}>
+            <svg class="icon"><use href="#wallet" /></svg>
+            {{ 'Wallet'|trans }}
+        </a>
+    </li>
+{% endif %}
+
+{% if (guest.extension_is_on({"mod":"news"}) and settings.side_menu_news) %}
+    <li class="nav-item">
+        <a class="nav-link d-flex align-items-center gap-2{% if current_active_menu == 'news' %} active{% endif %}" href="{{ 'news'|url }}"{% if current_active_menu == 'news' %} aria-current="page"{% endif %}>
+            <svg class="icon"><use href="#news" /></svg>
+            {{ 'News'|trans }}
+        </a>
+    </li>
+{% endif %}
+
+{% if (guest.support_kb_enabled() and settings.side_menu_kb) %}
+    <li class="nav-item">
+        <a class="nav-link d-flex align-items-center gap-2{% if current_active_menu == 'kb' %} active{% endif %}" href="{{ 'support/kb'|url }}"{% if current_active_menu == 'kb' %} aria-current="page"{% endif %}>
+            <svg class="icon"><use href="#book" /></svg>
+            {{ 'Knowledge Base'|trans }}
+        </a>
+    </li>
+{% endif %}
+
+{% if settings.sidebar_balance_enabled and client %}
+    <li class="pt-3 ps-3">
+        <h5 class="text-secondary d-block pb-1">{{ 'Account Balance'|trans }}</h5>
+        {% if profile.currency is not null %}
+            <h6><strong>{{ profile.balance|format_currency(profile.currency ?? default_currency) }}</strong></h6>
+        {% else %}
+            <h6><strong>-</strong></h6>
+        {% endif %}
+    </li>
+{% endif %}
+
+{% if settings.sidebar_note_enabled %}
+    <li class="pt-3 ps-3">
+        <h5 class="text-secondary d-block pb-1">{{ settings.sidebar_note_title }}</h5>
+        <span>{{ settings.sidebar_note_content }}</span>
+    </li>
+{% endif %}
+
+{% endif %}
+
+{% if settings.top_menu_signout %}
+    <li class="nav-item">
+        {% if client %}
+            <div class="dropdown">
+                <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    {{ avatar(profile.email, 25, 'rounded-circle', null, 'div') }}
+                    {% if profile.company %}
+                        <span>{{ profile.first_name }} {{ profile.last_name }}|{{ profile.company }}</span>
+                    {% else %}
+                        <span>{{ profile.first_name }} {{ profile.last_name }}</span>
+                    {% endif %}
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item"
+                           href="{{ 'client/profile'|url }}">{{ 'Profile'|trans }}</a></li>
+                    <li><a class="dropdown-item"
+                           href="{{ 'client/logout'|url }}">{{ 'Sign Out'|trans }}</a></li>
+                </ul>
+            </div>
+        {% else %}
+            <div class="row pt-2">
+                <div class="col">
+                    <a class="btn btn-outline-primary mb-2 w-100"
+                       href="{{ 'login'|url }}">{{ 'Login'|trans }}</a>
+                </div>
+                <div class="col">
+                    <a class="btn btn-outline-primary mb-2 w-100"
+                       href="{{ 'signup'|url }}">{{ 'Register'|trans }}</a>
+                </div>
+            </div>
+        {% endif %}
+    </li>
+{% endif %}
