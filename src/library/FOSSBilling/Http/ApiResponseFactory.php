@@ -47,8 +47,17 @@ final readonly class ApiResponseFactory
         );
     }
 
-    private function getStatusCode(int $code): int
+    private function getStatusCode(int|string $code): int
     {
+        // Exception codes are not guaranteed to be integers (e.g. PDOException uses SQLSTATE strings),
+        // so non-numeric codes never match one of the known application error codes below.
+        if (is_string($code)) {
+            if (!is_numeric($code)) {
+                return Response::HTTP_OK;
+            }
+            $code = (int) $code;
+        }
+
         return match (true) {
             in_array($code, [201, 202, 203, 204, 205, 206, 1002, 1004], true) => Response::HTTP_UNAUTHORIZED,
             $code === 403 => Response::HTTP_FORBIDDEN,

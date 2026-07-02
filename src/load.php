@@ -148,16 +148,17 @@ function errorHandler(int $number, string $message, string $file, int $line): bo
  */
 function exceptionHandler(Exception|Error $e)
 {
+    $exceptionResponseFactory = new ExceptionResponseFactory();
+
     if (Environment::isTesting()) {
-        $msg = (new ExceptionResponseFactory())->formatTestingMessage($e);
+        $msg = $exceptionResponseFactory->formatTestingMessage($e);
         @file_put_contents(Path::join(PATH_LOG, 'exception_handler.log'), date('c') . ' ' . $msg, FILE_APPEND);
         @file_put_contents(Path::join(PATH_ROOT, 'data', 'log', 'exception_handler.log'), date('c') . ' ' . $msg, FILE_APPEND);
-
-        emitResponse((new ExceptionResponseFactory())->create($e));
+    } else {
+        error_log("{$e->getMessage()} at {$e->getFile()} : {$e->getLine()}");
     }
-    error_log("{$e->getMessage()} at {$e->getFile()} : {$e->getLine()}");
 
-    emitResponse((new ExceptionResponseFactory())->create($e));
+    emitResponse($exceptionResponseFactory->create($e));
 }
 
 /*

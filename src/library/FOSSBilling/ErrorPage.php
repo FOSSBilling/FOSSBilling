@@ -306,14 +306,4 @@ class ErrorPage
             </body>
         </html>';
     }
-
-    /**
-     * @param int    $code    Error code
-     * @param string $message The original exception message
-     */
-    public function generatePage(int $code, string $message): never
-    {
-        echo $this->renderPage($code, $message);
-        exit;
-    }
 }

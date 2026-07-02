@@ -14,7 +14,6 @@ if (version_compare(PHP_VERSION, '8.3.0', '<')) {
 }
 
 require dirname(__DIR__) . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php';
-require dirname(__DIR__) . DIRECTORY_SEPARATOR . 'library' . DIRECTORY_SEPARATOR . 'FOSSBilling' . DIRECTORY_SEPARATOR . 'Http' . DIRECTORY_SEPARATOR . 'ResponseEmitter.php';
 
 $request = Request::createFromGlobals();
 $installPath = rtrim(dirname((string) $request->server->get('PHP_SELF', '')), '/');

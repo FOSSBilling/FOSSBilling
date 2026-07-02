@@ -41,7 +41,6 @@ if (!file_exists(PATH_VENDOR)) {
     throw new Exception('The composer packages are missing.', 1);
 }
 require PATH_VENDOR . DIRECTORY_SEPARATOR . 'autoload.php';
-require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'ResponseEmitter.php');
 
 // Define global paths.
 define('PATH_INSTALL_THEMES', Path::join(PATH_ROOT, 'install'));

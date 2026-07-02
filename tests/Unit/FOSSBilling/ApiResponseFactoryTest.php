@@ -48,3 +48,39 @@ test('API response factory adds retry after header for rate limit errors', funct
     expect($response->getStatusCode())->toBe(Response::HTTP_TOO_MANY_REQUESTS)
         ->and((int) $response->headers->get('Retry-After'))->toBeGreaterThan(0);
 });
+
+test('API response factory does not crash on non-integer exception codes', function (): void {
+    // PDOException (and other libraries) can carry a string SQLSTATE code instead of an int.
+    $exception = new class('Table does not exist') extends PDOException {
+        public function __construct(string $message)
+        {
+            parent::__construct($message);
+            $this->code = '42S02';
+        }
+    };
+
+    $response = (new ApiResponseFactory())->create(null, $exception);
+
+    expect($response->getStatusCode())->toBe(Response::HTTP_OK)
+        ->and(json_decode((string) $response->getContent(), true))->toBe([
+            'result' => null,
+            'error' => [
+                'message' => 'Table does not exist',
+                'code' => '42S02',
+            ],
+        ]);
+});
+
+test('API response factory maps numeric string exception codes like their integer equivalents', function (): void {
+    $exception = new class('Forbidden') extends Exception {
+        public function __construct(string $message)
+        {
+            parent::__construct($message);
+            $this->code = '403';
+        }
+    };
+
+    $response = (new ApiResponseFactory())->create(null, $exception);
+
+    expect($response->getStatusCode())->toBe(Response::HTTP_FORBIDDEN);
+});
