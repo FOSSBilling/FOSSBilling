@@ -13,6 +13,7 @@ declare(strict_types=1);
 use Box\Mod\Email\Service;
 use FOSSBilling\Environment;
 use FOSSBilling\Http\RequestFactory;
+use FOSSBilling\Http\ResponseEmitter;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -40,6 +41,7 @@ if (!file_exists(PATH_VENDOR)) {
     throw new Exception('The composer packages are missing.', 1);
 }
 require PATH_VENDOR . DIRECTORY_SEPARATOR . 'autoload.php';
+require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'ResponseEmitter.php');
 
 // Define global paths.
 define('PATH_INSTALL_THEMES', Path::join(PATH_ROOT, 'install'));
@@ -81,7 +83,7 @@ $installer = new FOSSBilling_Installer($request, $preConfigProxyCandidate);
 
 // Run the installer only in non-CLI mode
 if (!Environment::isCLI()) {
-    $installer->run($action)->send();
+    (new ResponseEmitter())->emit($installer->run($action), $request);
 }
 
 // Inline installer class.
