@@ -16,6 +16,7 @@ use FOSSBilling\Config;
 use FOSSBilling\Http\HttpResponseException;
 use FOSSBilling\Http\RequestFactory;
 use FOSSBilling\Http\ResponseFactory;
+use FOSSBilling\Http\RouteMatcher;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Security\AuthenticationRequiredException;
 use FOSSBilling\Security\EmailValidationRequiredException;
@@ -371,13 +372,14 @@ class Box_App
 
         $timeCollector->startMeasure('sharedMapping', 'Checking shared mappings');
         $sharedCount = count($this->shared);
+        $routeMatcher = new RouteMatcher();
         for ($i = 0; $i < $sharedCount; ++$i) {
             $mapping = $this->shared[$i];
-            $url = new Box_UrlHelper($mapping[0], $mapping[1], $mapping[3], $this->url, $this->getRequest()->getMethod());
-            if ($url->match) {
+            $routeMatch = $routeMatcher->match($mapping[0], $mapping[1], $mapping[3], $this->url, $this->getRequest()->getMethod());
+            if ($routeMatch->matched) {
                 $timeCollector->stopMeasure('sharedMapping');
 
-                return $this->normalizeResponse($this->executeShared($mapping[4], $mapping[2], $url->params));
+                return $this->normalizeResponse($this->executeShared($mapping[4], $mapping[2], $routeMatch->params));
             }
         }
         $timeCollector->stopMeasure('sharedMapping');
@@ -387,11 +389,11 @@ class Box_App
         $mappingsCount = count($this->mappings);
         for ($i = 0; $i < $mappingsCount; ++$i) {
             $mapping = $this->mappings[$i];
-            $url = new Box_UrlHelper($mapping[0], $mapping[1], $mapping[3], $this->url, $this->getRequest()->getMethod());
-            if ($url->match) {
+            $routeMatch = $routeMatcher->match($mapping[0], $mapping[1], $mapping[3], $this->url, $this->getRequest()->getMethod());
+            if ($routeMatch->matched) {
                 $timeCollector->stopMeasure('mapping');
 
-                return $this->normalizeResponse($this->execute($mapping[2], $url->params));
+                return $this->normalizeResponse($this->execute($mapping[2], $routeMatch->params));
             }
         }
         $timeCollector->stopMeasure('mapping');
