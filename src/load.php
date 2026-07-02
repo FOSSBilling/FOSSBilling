@@ -12,14 +12,25 @@ declare(strict_types=1);
 
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
+use FOSSBilling\Http\ExceptionResponseFactory;
 use FOSSBilling\Http\RequestFactory;
+use FOSSBilling\Http\ResponseEmitter;
 use FOSSBilling\SentryHelper;
 use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Whoops\Handler\PrettyPageHandler;
-use Whoops\Run;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+function emitResponse(Response $response): never
+{
+    global $request;
+
+    $currentRequest = $request instanceof Request ? $request : Request::createFromGlobals();
+    (new ResponseEmitter())->emit($response, $currentRequest);
+    exit;
+}
 
 /*
  * Check if the installer is present.
@@ -57,8 +68,7 @@ function checkSSL(): void
 
     if (Config::getProperty('security.force_https') && !Environment::isCLI()) {
         if (!$request->isSecure()) {
-            (new RedirectResponse('https://' . $request->getHost() . $request->getRequestUri()))->send();
-            exit;
+            emitResponse(new RedirectResponse('https://' . $request->getHost() . $request->getRequestUri()));
         }
     }
 }
@@ -138,52 +148,16 @@ function errorHandler(int $number, string $message, string $file, int $line): bo
  */
 function exceptionHandler(Exception|Error $e)
 {
-    global $filesystem;
-
     if (Environment::isTesting()) {
-        $msg = $e::class . ': ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine() . PHP_EOL;
+        $msg = (new ExceptionResponseFactory())->formatTestingMessage($e);
         @file_put_contents(Path::join(PATH_LOG, 'exception_handler.log'), date('c') . ' ' . $msg, FILE_APPEND);
         @file_put_contents(Path::join(PATH_ROOT, 'data', 'log', 'exception_handler.log'), date('c') . ' ' . $msg, FILE_APPEND);
-        echo $msg;
 
-        return;
+        emitResponse((new ExceptionResponseFactory())->create($e));
     }
     error_log("{$e->getMessage()} at {$e->getFile()} : {$e->getLine()}");
 
-    $message = htmlspecialchars($e->getMessage());
-
-    if (defined('API_MODE')) {
-        $code = $e->getCode() ?: 9998;
-        $result = ['result' => null, 'error' => ['message' => $message, 'code' => $code]];
-        echo json_encode($result);
-
-        return false;
-    }
-
-    // @phpstan-ignore booleanAnd.alwaysFalse, booleanAnd.rightAlwaysFalse (DEBUG is a runtime constant)
-    if (defined('DEBUG') && DEBUG && $filesystem->exists(PATH_VENDOR)) {
-        /**
-         * If advanced debugging is enabled, print Whoops instead of our error page.
-         * filp/whoops documentation: https://github.com/filp/whoops/blob/master/docs/API%20Documentation.md.
-         */
-        $whoops = new Run();
-        $prettyPage = new PrettyPageHandler();
-        $prettyPage->setPageTitle('An error occurred');
-        $prettyPage->addDataTable('FOSSBilling environment', [
-            'PHP Version' => PHP_VERSION,
-            'Error code' => $e->getCode(),
-            // @phpstan-ignore nullCoalesce.expr (INSTANCE_ID is a runtime constant that may not be defined during analysis)
-            'Instance ID' => INSTANCE_ID ?? 'Unknown',
-        ]);
-        $whoops->pushHandler($prettyPage);
-        $whoops->allowQuit(false);
-        $whoops->writeToOutput(false);
-
-        echo $whoops->handleException($e);
-    } else {
-        $errorPage = new FOSSBilling\ErrorPage();
-        $errorPage->generatePage($e->getCode(), $message);
-    }
+    emitResponse((new ExceptionResponseFactory())->create($e));
 }
 
 /*
@@ -221,6 +195,7 @@ function preInit(): void
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'SentryHelper.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Environment.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'ApiResponseFactory.php');
+    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'ExceptionResponseFactory.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'RequestFactory.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'RequestPayloadParser.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'ResponseEmitter.php');
@@ -249,17 +224,13 @@ function init(): void
     $installerExists = $filesystem->exists(Path::join('install', 'install.php'));
 
     if (!$configExists && $installerExists) {
-        $response = new RedirectResponse($request->getBasePath() . '/install/install.php', 307);
-        $response->send();
-        exit;
+        emitResponse(new RedirectResponse($request->getBasePath() . '/install/install.php', 307));
     } elseif (!$configIsValid) {
         throw new Exception('The FOSSBilling configuration file is empty or invalid.', 3);
     }
 
     if (Environment::isDevelopment() && Config::getProperty('debug_and_monitoring.debug', false) && $installerExists && !hasDatabaseTables()) {
-        $response = new RedirectResponse($request->getBasePath() . '/install/install.php', 307);
-        $response->send();
-        exit;
+        emitResponse(new RedirectResponse($request->getBasePath() . '/install/install.php', 307));
     }
 
     RequestFactory::configureFromConfig($request);
