@@ -50,13 +50,16 @@ class QueuedEmailRepository extends EntityRepository
      */
     public function findDueBatch(int $limit = 50): array
     {
-        return $this->createQueryBuilder('q')
+        $qb = $this->createQueryBuilder('q')
             ->andWhere('q.status IN (:statuses)')
             ->setParameter('statuses', [QueuedEmail::STATUS_UNSENT, QueuedEmail::STATUS_PENDING, QueuedEmail::STATUS_FAILED])
             ->orderBy('q.priority', 'DESC')
-            ->addOrderBy('q.id', 'ASC')
-            ->setMaxResults($limit)
-            ->getQuery()
-            ->getResult();
+            ->addOrderBy('q.id', 'ASC');
+
+        if ($limit > 0) {
+            $qb->setMaxResults($limit);
+        }
+
+        return $qb->getQuery()->getResult();
     }
 }

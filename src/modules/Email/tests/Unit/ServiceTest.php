@@ -806,6 +806,7 @@ test('batchSend processes email queue', function (): void {
     $queueRepo = Mockery::mock(Box\Mod\Email\Repository\QueuedEmailRepository::class);
     $queueRepo->shouldReceive('findDueBatch')
         ->once()
+        ->with(0)
         ->andReturn([$queueModel]);
 
     $em = emailBuildEm(null, null, $queueRepo);

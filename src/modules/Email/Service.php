@@ -1000,7 +1000,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $start = time();
 
-        $mailQueue = $this->getQueuedEmailRepository()->findDueBatch($sendPerCron ?: 50);
+        $mailQueue = $this->getQueuedEmailRepository()->findDueBatch((int) $sendPerCron);
 
         foreach ($mailQueue as $email) {
             $this->_sendFromQueue($email);
