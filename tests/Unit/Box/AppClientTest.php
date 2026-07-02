@@ -93,13 +93,23 @@ test('get_custom_page returns 500 (not 404) when the template throws a SyntaxErr
     expect($response->getStatusCode())->toBe(500);
 });
 
-test('get_custom_page still returns 404 when the template is missing (LoaderError)', function (): void {
+test('get_custom_page returns 500 (not 404) when a nested template is missing during render', function (): void {
     $app = appClientWithRender(function (string $fileName): string {
         if ($fileName === 'error') {
             return 'error body';
         }
 
-        throw new Twig\Error\LoaderError('Template "mod_page_signup.html.twig" is not defined.');
+        throw new Twig\Error\LoaderError('Template "missing-partial.html.twig" is not defined.');
+    });
+
+    $response = $app->get_custom_page('signup');
+
+    expect($response->getStatusCode())->toBe(500);
+});
+
+test('get_custom_page still returns 404 when the top-level template is missing', function (): void {
+    $app = appClientWithRender(function (): string {
+        throw new FOSSBilling\InformationException('Page not found', null, 404);
     });
 
     $response = $app->get_custom_page('signup');

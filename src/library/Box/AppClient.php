@@ -66,12 +66,12 @@ class Box_AppClient extends Box_App
             }
 
             return new Response($content);
-        } catch (Twig\Error\LoaderError|FOSSBilling\InformationException $e) {
+        } catch (FOSSBilling\InformationException $e) {
             // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
             if (DEBUG) {
                 error_log($e->getMessage());
             }
-        } catch (Twig\Error\RuntimeError|Twig\Error\SyntaxError $e) {
+        } catch (Twig\Error\LoaderError|Twig\Error\RuntimeError|Twig\Error\SyntaxError $e) {
             // A real template bug, not a missing page. Surface as a 500 so the
             // next regression of this shape (issue #3818) cannot hide behind a
             // generic 404.
