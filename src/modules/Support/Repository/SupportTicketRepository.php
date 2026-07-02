@@ -25,6 +25,12 @@ class SupportTicketRepository extends EntityRepository
      *  - `status`            (string)  exact status match
      *  - `priority`          (int)     exact priority match
      *  - `client_id`         (int)     filter by client
+     *  - `auth`              (string)  client or guest author filter
+     *  - `order_id`          (int)     filter by related order
+     *  - `subject`           (string)  LIKE on subject
+     *  - `content`           (string)  LIKE on ticket messages
+     *  - `name`              (string)  LIKE on author name
+     *  - `email`             (string)  LIKE on author email
      *  - `support_helpdesk_id` (int)   filter by helpdesk
      *  - `helpdesk_id`       (int)     filter by helpdesk (legacy alias)
      *  - `search`            (string)  LIKE on subject / author_email / author_name
@@ -56,6 +62,42 @@ class SupportTicketRepository extends EntityRepository
                 ->setParameter('client_id', (int) $data['client_id']);
         }
 
+        if (($data['auth'] ?? null) === 'guest') {
+            $qb->andWhere('t.clientId IS NULL')
+                ->andWhere('t.accessHash IS NOT NULL');
+        } elseif (($data['auth'] ?? null) === 'client') {
+            $qb->andWhere('t.clientId IS NOT NULL');
+        }
+
+        if (!empty($data['name'])) {
+            $qb->andWhere('t.authorName LIKE :author_name')
+                ->setParameter('author_name', '%' . $data['name'] . '%');
+        }
+
+        if (!empty($data['email'])) {
+            $qb->andWhere('t.authorEmail LIKE :author_email')
+                ->setParameter('author_email', '%' . $data['email'] . '%');
+        }
+
+        if (!empty($data['subject'])) {
+            $qb->andWhere('t.subject LIKE :filter_subject')
+                ->setParameter('filter_subject', '%' . $data['subject'] . '%');
+        }
+
+        if (!empty($data['order_id'])) {
+            $qb->andWhere('t.relType = :rel_type')
+                ->andWhere('t.relId = :rel_id')
+                ->setParameter('rel_type', SupportTicket::REL_TYPE_ORDER)
+                ->setParameter('rel_id', (int) $data['order_id']);
+        }
+
+        if (!empty($data['content'])) {
+            $qb->leftJoin('t.messages', 'filter_m')
+                ->andWhere('filter_m.content LIKE :filter_content')
+                ->setParameter('filter_content', '%' . $data['content'] . '%')
+                ->distinct();
+        }
+
         $helpdeskId = $data['support_helpdesk_id'] ?? $data['helpdesk_id'] ?? null;
         if ($helpdeskId !== null && $helpdeskId !== '') {
             $qb->andWhere('IDENTITY(t.helpdesk) = :helpdesk_id')
@@ -63,19 +105,26 @@ class SupportTicketRepository extends EntityRepository
         }
 
         if (!empty($data['search'])) {
-            $search = '%' . $data['search'] . '%';
-            $qb->andWhere('(t.subject LIKE :search OR t.authorEmail LIKE :search OR t.authorName LIKE :search)')
-                ->setParameter('search', $search);
+            if (is_numeric($data['search'])) {
+                $qb->andWhere('t.id = :ticket_id')
+                    ->setParameter('ticket_id', (int) $data['search']);
+            } else {
+                $search = '%' . $data['search'] . '%';
+                $qb->leftJoin('t.messages', 'search_m')
+                    ->andWhere('(search_m.content LIKE :search OR t.subject LIKE :search OR t.authorEmail LIKE :search OR t.authorName LIKE :search)')
+                    ->setParameter('search', $search)
+                    ->distinct();
+            }
         }
 
         if (!empty($data['date_from'])) {
             $qb->andWhere('t.createdAt >= :date_from')
-                ->setParameter('date_from', $data['date_from'] . ' 00:00:00');
+                ->setParameter('date_from', new \DateTime((string) $data['date_from'] . ' 00:00:00'));
         }
 
         if (!empty($data['date_to'])) {
             $qb->andWhere('t.createdAt <= :date_to')
-                ->setParameter('date_to', $data['date_to'] . ' 23:59:59');
+                ->setParameter('date_to', new \DateTime((string) $data['date_to'] . ' 23:59:59'));
         }
 
         return $qb;
