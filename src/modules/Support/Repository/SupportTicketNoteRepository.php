@@ -17,6 +17,19 @@ use Doctrine\ORM\EntityRepository;
 class SupportTicketNoteRepository extends EntityRepository
 {
     /**
+     * Find a single ticket note by id, throwing if it does not exist.
+     */
+    public function findOneByIdOrFail(int $id): SupportTicketNote
+    {
+        $note = $this->find($id);
+        if (!$note instanceof SupportTicketNote) {
+            throw new \FOSSBilling\Exception('Note not found');
+        }
+
+        return $note;
+    }
+
+    /**
      * @return SupportTicketNote[]
      */
     public function findByTicketId(int $ticketId): array

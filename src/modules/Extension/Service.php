@@ -27,8 +27,8 @@ use Symfony\Contracts\Cache\ItemInterface;
 class Service implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
-    protected ?ExtensionRepository $extensionRepository = null;
-    protected ?ExtensionMetaRepository $extensionMetaRepository = null;
+    protected ExtensionRepository $extensionRepository;
+    protected ExtensionMetaRepository $extensionMetaRepository;
 
     public function __construct(private ?Filesystem $filesystem = null)
     {
@@ -38,6 +38,8 @@ class Service implements InjectionAwareInterface
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        $this->extensionRepository = $di['em']->getRepository(Extension::class);
+        $this->extensionMetaRepository = $di['em']->getRepository(ExtensionMeta::class);
     }
 
     public function getDi(): ?\Pimple\Container
@@ -47,27 +49,11 @@ class Service implements InjectionAwareInterface
 
     public function getExtensionRepository(): ExtensionRepository
     {
-        if ($this->extensionRepository === null) {
-            if ($this->di === null) {
-                throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
-            }
-
-            $this->extensionRepository = $this->di['em']->getRepository(Extension::class);
-        }
-
         return $this->extensionRepository;
     }
 
     public function getExtensionMetaRepository(): ExtensionMetaRepository
     {
-        if ($this->extensionMetaRepository === null) {
-            if ($this->di === null) {
-                throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
-            }
-
-            $this->extensionMetaRepository = $this->di['em']->getRepository(ExtensionMeta::class);
-        }
-
         return $this->extensionMetaRepository;
     }
 
@@ -141,11 +127,6 @@ class Service implements InjectionAwareInterface
         }
 
         return $removedItems;
-    }
-
-    public function getSearchQueryBuilder(array $data = []): \Doctrine\ORM\QueryBuilder
-    {
-        return $this->getExtensionRepository()->getSearchQueryBuilder($data);
     }
 
     /**
@@ -393,11 +374,6 @@ class Service implements InjectionAwareInterface
         return $this->di['url']->adminLink(ltrim($uri, '/'));
     }
 
-    public function findExtension($type, $id): ?Extension
-    {
-        return $this->getExtensionRepository()->findOneByTypeAndName($type, $id);
-    }
-
     public function update(Extension $model): never
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
@@ -453,7 +429,7 @@ class Service implements InjectionAwareInterface
 
         switch ($ext->getType()) {
             case \FOSSBilling\ExtensionManager::TYPE_HOOK:
-                $file = Path::changeExtension(ucfirst($ext->getName()), '.php');
+                $file = Path::changeExtension(ucfirst((string) $ext->getName()), '.php');
                 $destination = Path::join(PATH_LIBRARY, 'Hook', $file);
                 if ($this->filesystem->exists($destination)) {
                     $this->filesystem->remove($destination);
@@ -648,7 +624,7 @@ class Service implements InjectionAwareInterface
 
     public function activateExistingExtension(array $data): array
     {
-        $ext = $this->findExtension($data['type'], $data['id']);
+        $ext = $this->getExtensionRepository()->findOneByTypeAndName($data['type'], $data['id']);
         $persistedNewly = false;
         if (!$ext instanceof Extension) {
             $ext = new Extension();

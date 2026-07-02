@@ -642,8 +642,8 @@ class UpdatePatcher implements InjectionAwareInterface
             }
 
             // If the Kb extension exists, uninstall it.
-            $kb_ext = $ext_service->findExtension('mod', 'kb');
-            if ($kb_ext instanceof \Model_Extension) {
+            $kb_ext = $ext_service->getExtensionRepository()->findOneByTypeAndName('mod', 'kb');
+            if ($kb_ext instanceof \Box\Mod\Extension\Entity\Extension) {
                 $ext_service->deactivate($kb_ext);
                 $ext_service->uninstall('mod', 'kb');
             }
@@ -665,8 +665,8 @@ class UpdatePatcher implements InjectionAwareInterface
         try {
             $ext_service = $this->di['mod_service']('extension');
             // If the queue extension exists, uninstall it.
-            $queue_ext = $ext_service->findExtension('mod', 'queue');
-            if ($queue_ext instanceof \Model_Extension) {
+            $queue_ext = $ext_service->getExtensionRepository()->findOneByTypeAndName('mod', 'queue');
+            if ($queue_ext instanceof \Box\Mod\Extension\Entity\Extension) {
                 $ext_service->deactivate($queue_ext);
                 $ext_service->uninstall('mod', 'queue');
             }
@@ -1098,8 +1098,8 @@ class UpdatePatcher implements InjectionAwareInterface
 
             $this->executeSql("DELETE FROM extension_meta WHERE extension = 'mod_spamchecker' AND meta_key = 'config'");
 
-            $spamcheckerExt = $extService->findExtension('mod', 'spamchecker');
-            if ($spamcheckerExt instanceof \Model_Extension) {
+            $spamcheckerExt = $extService->getExtensionRepository()->findOneByTypeAndName('mod', 'spamchecker');
+            if ($spamcheckerExt instanceof \Box\Mod\Extension\Entity\Extension) {
                 $extService->deactivate($spamcheckerExt);
                 $extService->uninstall('mod', 'spamchecker');
             }

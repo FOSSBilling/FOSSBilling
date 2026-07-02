@@ -11,11 +11,11 @@ declare(strict_types=1);
 
 namespace Box\Mod\Email\Repository;
 
-use Box\Mod\Email\Entity\ModEmailQueue;
+use Box\Mod\Email\Entity\QueuedEmail;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
 
-class ModEmailQueueRepository extends EntityRepository
+class QueuedEmailRepository extends EntityRepository
 {
     /**
      * Build a QueryBuilder for the email queue listing (admin UI).
@@ -46,13 +46,13 @@ class ModEmailQueueRepository extends EntityRepository
      * priority bucket). Includes legacy `unsent`, `pending`, and `failed`
      * status so that transient failures and pre-migration rows get attempted.
      *
-     * @return ModEmailQueue[]
+     * @return QueuedEmail[]
      */
     public function findDueBatch(int $limit = 50): array
     {
         return $this->createQueryBuilder('q')
             ->andWhere('q.status IN (:statuses)')
-            ->setParameter('statuses', [ModEmailQueue::STATUS_UNSENT, ModEmailQueue::STATUS_PENDING, ModEmailQueue::STATUS_FAILED])
+            ->setParameter('statuses', [QueuedEmail::STATUS_UNSENT, QueuedEmail::STATUS_PENDING, QueuedEmail::STATUS_FAILED])
             ->orderBy('q.priority', 'DESC')
             ->addOrderBy('q.id', 'ASC')
             ->setMaxResults($limit)

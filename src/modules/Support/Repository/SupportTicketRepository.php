@@ -82,11 +82,37 @@ class SupportTicketRepository extends EntityRepository
     }
 
     /**
+     * Find a single ticket by id, throwing if it does not exist.
+     */
+    public function findOneByIdOrFail(int $id): SupportTicket
+    {
+        $ticket = $this->find($id);
+        if (!$ticket instanceof SupportTicket) {
+            throw new \FOSSBilling\Exception('Ticket not found');
+        }
+
+        return $ticket;
+    }
+
+    /**
      * Find a single ticket owned by the given client.
      */
     public function findOneByClient(int $clientId, int $id): ?SupportTicket
     {
         return $this->findOneBy(['id' => $id, 'clientId' => $clientId]);
+    }
+
+    /**
+     * Find a single ticket owned by the given client, throwing if it does not exist.
+     */
+    public function findOneByClientOrFail(int $clientId, int $id): SupportTicket
+    {
+        $ticket = $this->findOneByClient($clientId, $id);
+        if (!$ticket instanceof SupportTicket) {
+            throw new \FOSSBilling\Exception('Ticket not found');
+        }
+
+        return $ticket;
     }
 
     /**

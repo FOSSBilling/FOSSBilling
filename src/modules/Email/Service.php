@@ -14,10 +14,10 @@ namespace Box\Mod\Email;
 
 use Box\Mod\Email\Entity\ActivityClientEmail;
 use Box\Mod\Email\Entity\EmailTemplate;
-use Box\Mod\Email\Entity\ModEmailQueue;
+use Box\Mod\Email\Entity\QueuedEmail;
 use Box\Mod\Email\Repository\ActivityClientEmailRepository;
 use Box\Mod\Email\Repository\EmailTemplateRepository;
-use Box\Mod\Email\Repository\ModEmailQueueRepository;
+use Box\Mod\Email\Repository\QueuedEmailRepository;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\PaginationOptions;
@@ -29,9 +29,9 @@ use Symfony\Component\Finder\Finder;
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
-    protected ?EmailTemplateRepository $templateRepository = null;
-    protected ?ActivityClientEmailRepository $activityClientEmailRepository = null;
-    protected ?ModEmailQueueRepository $modEmailQueueRepository = null;
+    protected EmailTemplateRepository $templateRepository;
+    protected ActivityClientEmailRepository $activityClientEmailRepository;
+    protected QueuedEmailRepository $queuedEmailRepository;
     private readonly Filesystem $filesystem;
 
     public function __construct()
@@ -42,6 +42,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        $this->templateRepository = $di['em']->getRepository(EmailTemplate::class);
+        $this->activityClientEmailRepository = $di['em']->getRepository(ActivityClientEmail::class);
+        $this->queuedEmailRepository = $di['em']->getRepository(QueuedEmail::class);
     }
 
     public function getDi(): ?\Pimple\Container
@@ -51,38 +54,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function getTemplateRepository(): EmailTemplateRepository
     {
-        if ($this->templateRepository === null) {
-            if ($this->di === null) {
-                throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
-            }
-            $this->templateRepository = $this->di['em']->getRepository(EmailTemplate::class);
-        }
-
         return $this->templateRepository;
     }
 
     public function getActivityClientEmailRepository(): ActivityClientEmailRepository
     {
-        if ($this->activityClientEmailRepository === null) {
-            if ($this->di === null) {
-                throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
-            }
-            $this->activityClientEmailRepository = $this->di['em']->getRepository(ActivityClientEmail::class);
-        }
-
         return $this->activityClientEmailRepository;
     }
 
-    public function getModEmailQueueRepository(): ModEmailQueueRepository
+    public function getQueuedEmailRepository(): QueuedEmailRepository
     {
-        if ($this->modEmailQueueRepository === null) {
-            if ($this->di === null) {
-                throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
-            }
-            $this->modEmailQueueRepository = $this->di['em']->getRepository(ModEmailQueue::class);
-        }
-
-        return $this->modEmailQueueRepository;
+        return $this->queuedEmailRepository;
     }
 
     public function getModulePermissions(): array
@@ -186,27 +168,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return [$query, $bindings];
     }
 
-    public function findOneForClientById(\Model_Client $client, $id)
-    {
-        return $this->getActivityClientEmailRepository()->findOneForClientById((int) $client->id, (int) $id);
-    }
-
     public function rmByClient(\Model_Client $client): bool
     {
-        $em = $this->di['em'];
-        foreach ($this->getActivityClientEmailRepository()->findByClientId((int) $client->id) as $entity) {
-            $em->remove($entity);
-        }
-        $em->flush();
-
-        return true;
-    }
-
-    public function rm(ActivityClientEmail $email): bool
-    {
-        $em = $this->di['em'];
-        $em->remove($email);
-        $em->flush();
+        $this->getActivityClientEmailRepository()->deleteByClientId((int) $client->id);
 
         return true;
     }
@@ -549,11 +513,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return [$template->getSubject() ?? '', $template->getContent() ?? ''];
     }
 
-    private function _queue($to, $from, $subject, $content, $to_name = null, $from_name = null, $client_id = null, $admin_id = null): ModEmailQueue
+    private function _queue($to, $from, $subject, $content, $to_name = null, $from_name = null, $client_id = null, $admin_id = null): QueuedEmail
     {
         $em = $this->di['em'];
 
-        $queue = new ModEmailQueue();
+        $queue = new QueuedEmail();
         $queue->setRecipient((string) $to);
         $queue->setSender((string) $from);
         $queue->setSubject((string) $subject);
@@ -562,7 +526,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $queue->setFromName($from_name !== null ? (string) $from_name : null);
         $queue->setClientId($client_id !== null ? (int) $client_id : null);
         $queue->setAdminId($admin_id !== null ? (int) $admin_id : null);
-        $queue->setStatus(ModEmailQueue::STATUS_PENDING);
+        $queue->setStatus(QueuedEmail::STATUS_PENDING);
         $queue->setPriority(1);
         $queue->setTries(0);
 
@@ -850,12 +814,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function getEmailById($id): ActivityClientEmail
     {
-        $model = $this->di['em']->find(ActivityClientEmail::class, (int) $id);
-        if (!$model instanceof ActivityClientEmail) {
-            throw new \FOSSBilling\Exception('Email not found');
-        }
-
-        return $model;
+        return $this->getActivityClientEmailRepository()->findOneByIdOrFail((int) $id);
     }
 
     public function templateCreate($actionCode, $subject, $content, $enabled = 0, $category = null): EmailTemplate
@@ -1041,7 +1000,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $start = time();
 
-        $mailQueue = $this->getModEmailQueueRepository()->findDueBatch($sendPerCron ?: 50);
+        $mailQueue = $this->getQueuedEmailRepository()->findDueBatch($sendPerCron ?: 50);
 
         foreach ($mailQueue as $email) {
             $this->_sendFromQueue($email);
@@ -1051,7 +1010,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
     }
 
-    private function _sendFromQueue(ModEmailQueue $queue, bool $throw_exceptions = false): bool
+    private function _sendFromQueue(QueuedEmail $queue, bool $throw_exceptions = false): bool
     {
         $extensionService = $this->di['mod_service']('extension');
         if ($extensionService->isExtensionActive('mod', 'demo')) {
@@ -1114,7 +1073,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 $queue->setPriority($queue->getPriority() - 1);
             }
 
-            $queue->setStatus(ModEmailQueue::STATUS_FAILED);
+            $queue->setStatus(QueuedEmail::STATUS_FAILED);
             $queue->setTries($queue->getTries() + 1);
             $this->di['em']->flush();
 

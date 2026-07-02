@@ -34,18 +34,27 @@ use FOSSBilling\Tools;
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
-    protected ?KbArticleRepository $kbArticleRepository = null;
-    protected ?KbArticleCategoryRepository $kbArticleCategoryRepository = null;
-    protected ?CannedResponseRepository $cannedResponseRepository = null;
-    protected ?CannedResponseCategoryRepository $cannedResponseCategoryRepository = null;
-    protected ?HelpdeskRepository $helpdeskRepository = null;
-    protected ?SupportTicketRepository $supportTicketRepository = null;
-    protected ?SupportTicketMessageRepository $supportTicketMessageRepository = null;
-    protected ?SupportTicketNoteRepository $supportTicketNoteRepository = null;
+    protected KbArticleRepository $kbArticleRepository;
+    protected KbArticleCategoryRepository $kbArticleCategoryRepository;
+    protected CannedResponseRepository $cannedResponseRepository;
+    protected CannedResponseCategoryRepository $cannedResponseCategoryRepository;
+    protected HelpdeskRepository $helpdeskRepository;
+    protected SupportTicketRepository $supportTicketRepository;
+    protected SupportTicketMessageRepository $supportTicketMessageRepository;
+    protected SupportTicketNoteRepository $supportTicketNoteRepository;
 
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        $em = $di['em'];
+        $this->kbArticleRepository = $em->getRepository(KbArticle::class);
+        $this->kbArticleCategoryRepository = $em->getRepository(KbArticleCategory::class);
+        $this->cannedResponseRepository = $em->getRepository(CannedResponse::class);
+        $this->cannedResponseCategoryRepository = $em->getRepository(CannedResponseCategory::class);
+        $this->helpdeskRepository = $em->getRepository(Helpdesk::class);
+        $this->supportTicketRepository = $em->getRepository(SupportTicket::class);
+        $this->supportTicketMessageRepository = $em->getRepository(SupportTicketMessage::class);
+        $this->supportTicketNoteRepository = $em->getRepository(SupportTicketNote::class);
     }
 
     public function getDi(): ?\Pimple\Container
@@ -55,73 +64,41 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function getKbArticleRepository(): KbArticleRepository
     {
-        if ($this->kbArticleRepository === null) {
-            $this->kbArticleRepository = $this->di['em']->getRepository(KbArticle::class);
-        }
-
         return $this->kbArticleRepository;
     }
 
     public function getKbArticleCategoryRepository(): KbArticleCategoryRepository
     {
-        if ($this->kbArticleCategoryRepository === null) {
-            $this->kbArticleCategoryRepository = $this->di['em']->getRepository(KbArticleCategory::class);
-        }
-
         return $this->kbArticleCategoryRepository;
     }
 
     public function getCannedResponseRepository(): CannedResponseRepository
     {
-        if ($this->cannedResponseRepository === null) {
-            $this->cannedResponseRepository = $this->di['em']->getRepository(CannedResponse::class);
-        }
-
         return $this->cannedResponseRepository;
     }
 
     public function getCannedResponseCategoryRepository(): CannedResponseCategoryRepository
     {
-        if ($this->cannedResponseCategoryRepository === null) {
-            $this->cannedResponseCategoryRepository = $this->di['em']->getRepository(CannedResponseCategory::class);
-        }
-
         return $this->cannedResponseCategoryRepository;
     }
 
     public function getSupportTicketRepository(): SupportTicketRepository
     {
-        if ($this->supportTicketRepository === null) {
-            $this->supportTicketRepository = $this->di['em']->getRepository(SupportTicket::class);
-        }
-
         return $this->supportTicketRepository;
     }
 
     public function getSupportTicketMessageRepository(): SupportTicketMessageRepository
     {
-        if ($this->supportTicketMessageRepository === null) {
-            $this->supportTicketMessageRepository = $this->di['em']->getRepository(SupportTicketMessage::class);
-        }
-
         return $this->supportTicketMessageRepository;
     }
 
     public function getSupportTicketNoteRepository(): SupportTicketNoteRepository
     {
-        if ($this->supportTicketNoteRepository === null) {
-            $this->supportTicketNoteRepository = $this->di['em']->getRepository(SupportTicketNote::class);
-        }
-
         return $this->supportTicketNoteRepository;
     }
 
     public function getHelpdeskRepository(): HelpdeskRepository
     {
-        if ($this->helpdeskRepository === null) {
-            $this->helpdeskRepository = $this->di['em']->getRepository(Helpdesk::class);
-        }
-
         return $this->helpdeskRepository;
     }
 
@@ -268,37 +245,22 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function getTicketById(int $id): SupportTicket
     {
-        $ticket = $this->di['em']->find(SupportTicket::class, $id);
-        if (!$ticket instanceof SupportTicket) {
-            throw new \FOSSBilling\Exception('Ticket not found');
-        }
-
-        return $ticket;
+        return $this->getSupportTicketRepository()->findOneByIdOrFail($id);
     }
 
     public function getTicketMessageById(int $id): SupportTicketMessage
     {
-        $message = $this->di['em']->find(SupportTicketMessage::class, $id);
-        if (!$message instanceof SupportTicketMessage) {
-            throw new \FOSSBilling\Exception('Ticket message not found');
-        }
-
-        return $message;
+        return $this->getSupportTicketMessageRepository()->findOneByIdOrFail($id);
     }
 
     public function getTicketNoteById(int $id): SupportTicketNote
     {
-        $note = $this->di['em']->find(SupportTicketNote::class, $id);
-        if (!$note instanceof SupportTicketNote) {
-            throw new \FOSSBilling\Exception('Note not found');
-        }
-
-        return $note;
+        return $this->getSupportTicketNoteRepository()->findOneByIdOrFail($id);
     }
 
     public function isGuestTicket(SupportTicket $ticket): bool
     {
-        return $ticket->getClientId() === null && $ticket->getAccessHash() !== null;
+        return $ticket->isGuestTicket();
     }
 
     /**
@@ -318,12 +280,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
      */
     public function findOneByClient(\Model_Client $c, int $id): SupportTicket
     {
-        $ticket = $this->getSupportTicketRepository()->findOneByClient((int) $c->id, $id);
-        if (!$ticket instanceof SupportTicket) {
-            throw new \FOSSBilling\Exception('Ticket not found');
-        }
-
-        return $ticket;
+        return $this->getSupportTicketRepository()->findOneByClientOrFail((int) $c->id, $id);
     }
 
     public function getSearchQuery(array $data): array
@@ -525,17 +482,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function canBeReopened(SupportTicket $model): bool
     {
-        if ($model->getStatus() !== SupportTicket::STATUS_CLOSED) {
-            return true;
-        }
-
-        $helpdeskId = $model->getSupportHelpdeskId();
-        $helpdesk = $helpdeskId !== null ? $this->getHelpdeskRepository()->find($helpdeskId) : null;
-        if (!$helpdesk instanceof Helpdesk) {
-            throw new \FOSSBilling\Exception('Helpdesk invalid');
-        }
-
-        return $helpdesk->canReopen();
+        return $model->canBeReopen();
     }
 
     /**
@@ -606,7 +553,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $helpdeskId = $model->getSupportHelpdeskId();
         $helpdesk = $helpdeskId !== null ? $this->getHelpdeskRepository()->find($helpdeskId) : null;
 
-        $data = $this->ticketToApiArray($this->entityToArray($model), $identity);
+        $data = $model->toApiArray($identity);
         $data['replies'] = $this->messageGetRepliesCount($model);
         $data['first'] = $firstSupportTicketMessage instanceof SupportTicketMessage ? $this->messageToApiArray($firstSupportTicketMessage, true, $identity) : null;
         $data['helpdesk'] = $helpdesk instanceof Helpdesk ? $helpdesk->toApiArray($identity) : null;
@@ -636,28 +583,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $data;
     }
 
-    private function entityToArray(SupportTicket $model): array
-    {
-        return [
-            'id' => $model->getId(),
-            'support_helpdesk_id' => $model->getSupportHelpdeskId(),
-            'client_id' => $model->getClientId(),
-            'author_name' => $model->getAuthorName(),
-            'author_email' => $model->getAuthorEmail(),
-            'subject' => $model->getSubject(),
-            'status' => $model->getStatus(),
-            'priority' => $model->getPriority(),
-            'access_hash' => $model->getAccessHash(),
-            'rel_type' => $model->getRelType(),
-            'rel_id' => $model->getRelId(),
-            'rel_task' => $model->getRelTask(),
-            'rel_new_value' => $model->getRelNewValue(),
-            'rel_status' => $model->getRelStatus(),
-            'created_at' => $model->getCreatedAt()?->format('Y-m-d H:i:s'),
-            'updated_at' => $model->getUpdatedAt()?->format('Y-m-d H:i:s'),
-        ];
-    }
-
+    /**
+     * Apply identity-based field stripping to a raw ticket row.
+     *
+     * Used by the batch fetcher ({@see getBatchForApi()}), which operates on
+     * associative arrays rather than hydrated entities and therefore cannot
+     * use {@see SupportTicket::toApiArray()}.
+     */
     private function ticketToApiArray(array $data, \Model_Admin|\Model_Client|null $identity = null): array
     {
         if (!empty($data['access_hash'])) {
@@ -669,7 +601,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         // @deprecated 0.9.0 Use author.id/name/email instead of client_id/author_name/author_email.
-
         unset(
             $data['support_helpdesk_id'],
             $data['client_id'],
@@ -679,7 +610,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $data['rel_id'],
             $data['rel_task'],
             $data['rel_new_value'],
-            $data['rel_status']
+            $data['rel_status'],
         );
 
         return $data;
@@ -1095,28 +1026,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function messageToApiArray(SupportTicketMessage $model, bool $deep = true, \Model_Admin|\Model_Client|null $identity = null): array
     {
-        if ($identity instanceof \Model_Admin) {
-            $data = [
-                'id' => $model->getId(),
-                'support_ticket_id' => $model->getSupportTicket()?->getId(),
-                'client_id' => $model->getClientId(),
-                'admin_id' => $model->getAdminId(),
-                'content' => $model->getContent(),
-                'attachment' => $model->getAttachment(),
-                'ip' => $model->getIp(),
-                'created_at' => $model->getCreatedAt()?->format('Y-m-d H:i:s'),
-                'updated_at' => $model->getUpdatedAt()?->format('Y-m-d H:i:s'),
-            ];
-        } else {
-            $data = [
-                'id' => $model->getId(),
-                'content' => $model->getContent(),
-                'attachment' => $model->getAttachment(),
-                'created_at' => $model->getCreatedAt()?->format('Y-m-d H:i:s'),
-                'updated_at' => $model->getUpdatedAt()?->format('Y-m-d H:i:s'),
-            ];
-        }
-
+        $data = $model->toApiArray($identity);
         $data['author'] = $this->messageGetAuthorDetails($model, $identity);
 
         return $data;

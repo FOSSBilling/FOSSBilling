@@ -51,10 +51,51 @@ class ActivityClientEmailRepository extends EntityRepository
     }
 
     /**
+     * Find a single email by id, throwing if it does not exist.
+     */
+    public function findOneByIdOrFail(int $id): ActivityClientEmail
+    {
+        $email = $this->find($id);
+        if (!$email instanceof ActivityClientEmail) {
+            throw new \FOSSBilling\Exception('Email not found');
+        }
+
+        return $email;
+    }
+
+    /**
+     * Find a single email owned by the given client, throwing if it does not exist.
+     */
+    public function findOneForClientByIdOrFail(int $clientId, int $id): ActivityClientEmail
+    {
+        $email = $this->findOneForClientById($clientId, $id);
+        if (!$email instanceof ActivityClientEmail) {
+            throw new \FOSSBilling\Exception('Email not found');
+        }
+
+        return $email;
+    }
+
+    /**
      * @return ActivityClientEmail[]
      */
     public function findByClientId(int $clientId): array
     {
         return $this->findBy(['clientId' => $clientId]);
+    }
+
+    /**
+     * Delete every email log row belonging to a client in a single query.
+     *
+     * Returns the number of deleted rows.
+     */
+    public function deleteByClientId(int $clientId): int
+    {
+        return (int) $this->getEntityManager()->createQueryBuilder()
+            ->delete(ActivityClientEmail::class, 'e')
+            ->where('e.clientId = :client_id')
+            ->setParameter('client_id', $clientId)
+            ->getQuery()
+            ->execute();
     }
 }

@@ -20,10 +20,10 @@ use FOSSBilling\Interfaces\TimestampInterface;
 /**
  * Pending email in the queue processed by the email-batch cron task.
  */
-#[ORM\Entity(repositoryClass: \Box\Mod\Email\Repository\ModEmailQueueRepository::class)]
+#[ORM\Entity(repositoryClass: \Box\Mod\Email\Repository\QueuedEmailRepository::class)]
 #[ORM\Table(name: 'mod_email_queue')]
 #[ORM\HasLifecycleCallbacks]
-class ModEmailQueue implements ApiArrayInterface, TimestampInterface
+class QueuedEmail implements ApiArrayInterface, TimestampInterface
 {
     use TimestampTrait;
 

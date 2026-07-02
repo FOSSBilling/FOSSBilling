@@ -62,6 +62,37 @@ function emailTemplate(string $actionCode = '', ?int $id = null, array $data = [
     return $template;
 }
 
+/**
+ * Build a partial Mockery EntityManager that returns the correct repository mock
+ * for each Email entity class requested. Used because the service eagerly fetches
+ * all repositories inside setDi().
+ *
+ * @return Doctrine\ORM\EntityManagerInterface&Mockery\MockInterface
+ */
+function emailBuildEm(
+    ?Box\Mod\Email\Repository\ActivityClientEmailRepository $activityRepo = null,
+    ?Box\Mod\Email\Repository\EmailTemplateRepository $templateRepo = null,
+    ?Box\Mod\Email\Repository\QueuedEmailRepository $queueRepo = null,
+    bool $ignoreMissing = true,
+) {
+    $activityRepo ??= Mockery::mock(Box\Mod\Email\Repository\ActivityClientEmailRepository::class)->shouldIgnoreMissing();
+    $templateRepo ??= Mockery::mock(Box\Mod\Email\Repository\EmailTemplateRepository::class)->shouldIgnoreMissing();
+    $queueRepo ??= Mockery::mock(Box\Mod\Email\Repository\QueuedEmailRepository::class)->shouldIgnoreMissing();
+
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    if ($ignoreMissing) {
+        $em->shouldIgnoreMissing();
+    }
+    $em->shouldReceive('getRepository')->andReturnUsing(static fn (string $class): object => match ($class) {
+        Box\Mod\Email\Entity\ActivityClientEmail::class => $activityRepo,
+        EmailTemplate::class => $templateRepo,
+        Box\Mod\Email\Entity\QueuedEmail::class => $queueRepo,
+        default => $activityRepo,
+    });
+
+    return $em;
+}
+
 test('di returns dependency injection container', function (): void {
     $service = new Box\Mod\Email\Service();
 
@@ -132,60 +163,17 @@ test('getSearchQuery returns query and bindings', function (array $data, string 
     expect($result[1])->toBe($bindings);
 })->with('getSearchQueryProvider');
 
-test('findOneForClientById returns email for client', function (): void {
-    $service = new Box\Mod\Email\Service();
-    $di = container();
-    $id = 5;
-    $client_id = 1;
-
-    $activityEmail = new Box\Mod\Email\Entity\ActivityClientEmail();
-    \Tests\Helpers\setEntityId($activityEmail, $id);
-    $activityEmail->setClientId($client_id);
-
-    $repo = Mockery::mock(Box\Mod\Email\Repository\ActivityClientEmailRepository::class);
-    $repo->shouldReceive('findOneForClientById')
-        ->atLeast()->once()
-        ->with($client_id, $id)
-        ->andReturn($activityEmail);
-
-    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
-    $em->shouldReceive('getRepository')->with(Box\Mod\Email\Entity\ActivityClientEmail::class)->andReturn($repo);
-    $em->shouldReceive('getRepository')->with(EmailTemplate::class)->andReturn(Mockery::mock(Box\Mod\Email\Repository\EmailTemplateRepository::class));
-    $em->shouldReceive('getRepository')->with(Box\Mod\Email\Entity\ModEmailQueue::class)->andReturn(Mockery::mock(Box\Mod\Email\Repository\ModEmailQueueRepository::class));
-
-    $di['em'] = $em;
-    $service->setDi($di);
-
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->id = $client_id;
-
-    $result = $service->findOneForClientById($client, $id);
-
-    expect($result)->toBeInstanceOf(Box\Mod\Email\Entity\ActivityClientEmail::class);
-    expect($result->getId())->toBe($id);
-    expect($result->getClientId())->toBe($client_id);
-});
-
 test('rmByClient removes emails for client', function (): void {
     $service = new Box\Mod\Email\Service();
     $di = container();
 
-    $model = new Box\Mod\Email\Entity\ActivityClientEmail();
-    \Tests\Helpers\setEntityId($model, 1);
-
     $repo = Mockery::mock(Box\Mod\Email\Repository\ActivityClientEmailRepository::class);
-    $repo->shouldReceive('findByClientId')
-        ->atLeast()->once()
+    $repo->shouldReceive('deleteByClientId')
+        ->once()
         ->with(1)
-        ->andReturn([$model]);
+        ->andReturn(3);
 
-    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
-    $em->shouldReceive('getRepository')->with(Box\Mod\Email\Entity\ActivityClientEmail::class)->andReturn($repo);
-    $em->shouldReceive('remove')->atLeast()->once();
-    $em->shouldReceive('flush')->atLeast()->once();
-
-    $di['em'] = $em;
+    $di['em'] = emailBuildEm($repo);
     $service->setDi($di);
 
     $client = new Model_Client();
@@ -193,24 +181,6 @@ test('rmByClient removes emails for client', function (): void {
     $client->id = 1;
 
     $result = $service->rmByClient($client);
-    expect($result)->toBeTrue();
-});
-
-test('rm removes email', function (): void {
-    $service = new Box\Mod\Email\Service();
-    $di = container();
-
-    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
-    $em->shouldReceive('remove')->atLeast()->once();
-    $em->shouldReceive('flush')->atLeast()->once();
-
-    $di['em'] = $em;
-    $service->setDi($di);
-
-    $email = new Box\Mod\Email\Entity\ActivityClientEmail();
-    \Tests\Helpers\setEntityId($email, 1);
-
-    $result = $service->rm($email);
     expect($result)->toBeTrue();
 });
 
@@ -264,7 +234,7 @@ test('setVars encrypts and sets variables', function (): void {
         ->atLeast()->once()
         ->andReturn('encrypted-vars');
 
-    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
+    $em = emailBuildEm();
     $em->shouldReceive('flush')->atLeast()->once();
 
     $di['em'] = $em;
@@ -317,8 +287,7 @@ test('sendTemplate returns false when template does not exist', function (): voi
     $templateRepo = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateRepository::class);
     $templateRepo->shouldReceive('findOneByActionCode')->andReturn(null);
 
-    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
-    $em->shouldReceive('getRepository')->with(EmailTemplate::class)->andReturn($templateRepo);
+    $em = emailBuildEm(null, $templateRepo);
     $em->shouldReceive('persist')->atLeast()->once();
     $em->shouldReceive('flush')->atLeast()->once();
 
@@ -362,8 +331,7 @@ test('sendTemplate sends email when template exists', function (): void {
     $templateRepo = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateRepository::class);
     $templateRepo->shouldReceive('findOneByActionCode')->andReturn($emailTemplate);
 
-    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
-    $em->shouldReceive('getRepository')->with(EmailTemplate::class)->andReturn($templateRepo);
+    $em = emailBuildEm(null, $templateRepo);
     $em->shouldReceive('persist')->atLeast()->once();
     $em->shouldReceive('flush')->atLeast()->once();
 
@@ -450,8 +418,7 @@ test('sendTemplate handles to_staff and to_client options', function (array $dat
     $templateRepo = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateRepository::class);
     $templateRepo->shouldReceive('findOneByActionCode')->andReturn($emailTemplate);
 
-    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
-    $em->shouldReceive('getRepository')->with(EmailTemplate::class)->andReturn($templateRepo);
+    $em = emailBuildEm(null, $templateRepo);
 
     $system = Mockery::mock(Box\Mod\System\Service::class);
     $system->shouldReceive('getParamValue')
@@ -742,14 +709,14 @@ test('getEmailById returns email by ID', function (): void {
     $model = new Box\Mod\Email\Entity\ActivityClientEmail();
     \Tests\Helpers\setEntityId($model, $id);
 
-    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
-    $em->shouldReceive('find')
-        ->atLeast()->once()
-        ->with(Box\Mod\Email\Entity\ActivityClientEmail::class, $id)
+    $repo = Mockery::mock(Box\Mod\Email\Repository\ActivityClientEmailRepository::class);
+    $repo->shouldReceive('findOneByIdOrFail')
+        ->once()
+        ->with($id)
         ->andReturn($model);
 
     $di = container();
-    $di['em'] = $em;
+    $di['em'] = emailBuildEm($repo);
     $service->setDi($di);
 
     $result = $service->getEmailById($id);
@@ -760,23 +727,22 @@ test('getEmailById returns email by ID', function (): void {
 test('getEmailById throws exception when email not found', function (): void {
     $service = new Box\Mod\Email\Service();
 
-    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
-    $em->shouldReceive('find')
-        ->atLeast()->once()
-        ->andReturn(null);
+    $repo = Mockery::mock(Box\Mod\Email\Repository\ActivityClientEmailRepository::class);
+    $repo->shouldReceive('findOneByIdOrFail')
+        ->andThrow(new FOSSBilling\Exception('Email not found'));
 
     $di = container();
-    $di['em'] = $em;
+    $di['em'] = emailBuildEm($repo);
     $service->setDi($di);
 
-    expect(fn () => $service->getEmailById(5))
+    expect(fn (): Box\Mod\Email\Entity\ActivityClientEmail => $service->getEmailById(5))
         ->toThrow(FOSSBilling\Exception::class);
 });
 
 test('templateCreate creates new template', function (): void {
     $service = new Box\Mod\Email\Service();
 
-    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
+    $em = emailBuildEm();
     $em->shouldReceive('persist')->atLeast()->once();
     $em->shouldReceive('flush')->atLeast()->once();
 
@@ -825,7 +791,7 @@ test('templateBatchEnable enables all templates', function (): void {
 test('batchSend processes email queue', function (): void {
     $service = new Box\Mod\Email\Service();
 
-    $queueModel = new Box\Mod\Email\Entity\ModEmailQueue();
+    $queueModel = new Box\Mod\Email\Entity\QueuedEmail();
     \Tests\Helpers\setEntityId($queueModel, 1);
     $queueModel->setPriority(10);
     $queueModel->setTries(10);
@@ -837,13 +803,12 @@ test('batchSend processes email queue', function (): void {
     $queueModel->setFromName('From Name');
     $queueModel->setToName('To Name');
 
-    $queueRepo = Mockery::mock(Box\Mod\Email\Repository\ModEmailQueueRepository::class);
+    $queueRepo = Mockery::mock(Box\Mod\Email\Repository\QueuedEmailRepository::class);
     $queueRepo->shouldReceive('findDueBatch')
         ->once()
         ->andReturn([$queueModel]);
 
-    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
-    $em->shouldReceive('getRepository')->with(Box\Mod\Email\Entity\ModEmailQueue::class)->andReturn($queueRepo);
+    $em = emailBuildEm(null, null, $queueRepo);
     $em->shouldReceive('flush')->atLeast()->once();
 
     $modMock = Mockery::mock(FOSSBilling\Module::class);
@@ -878,7 +843,7 @@ test('batchSend processes email queue', function (): void {
 });
 
 test('sendMail queues email for sending', function (): void {
-    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
+    $em = emailBuildEm();
     $em->shouldReceive('persist')->atLeast()->once();
     $em->shouldReceive('flush')->atLeast()->once();
 
@@ -958,7 +923,7 @@ test('validateAllTemplates reports invalid templates', function (): void {
             return $template;
         });
 
-    $emMock = Mockery::mock();
+    $emMock = emailBuildEm();
     $emMock->shouldReceive('flush')->once();
 
     $di['mod_service'] = $di->protect(function ($name) use ($systemMock) {
@@ -1002,7 +967,7 @@ test('validateAllTemplates clears previous errors on valid templates', function 
         ->twice()
         ->andReturnArg(0);
 
-    $emMock = Mockery::mock();
+    $emMock = emailBuildEm();
     $emMock->shouldReceive('flush')->once();
 
     $di['mod_service'] = $di->protect(function ($name) use ($systemMock) {
@@ -1055,7 +1020,7 @@ test('validateAllTemplates renders templates with stored vars to enforce sandbox
         ->with('Hello {{ name }}', Mockery::any())
         ->never();
 
-    $emMock = Mockery::mock();
+    $emMock = emailBuildEm();
     $emMock->shouldReceive('flush')->once();
 
     $di['crypt'] = $cryptMock;
@@ -1093,7 +1058,7 @@ test('templateCreate validates subject and content', function (): void {
         ->withArgs(fn ($tpl): bool => str_contains((string) $tpl, 'valid content'))
         ->andReturn('rendered');
 
-    $emMock = Mockery::mock();
+    $emMock = emailBuildEm();
     $emMock->shouldReceive('persist')->once();
     $emMock->shouldReceive('flush')->once();
 

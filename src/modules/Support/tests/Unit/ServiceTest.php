@@ -429,11 +429,13 @@ test('gets ticket by id', function (): void {
     $service = new Service();
     $ticket = new SupportTicket();
     setEntityId($ticket, 1);
-    $emMock = Mockery::mock(EntityManagerInterface::class);
-    $emMock->shouldReceive('find')
+    $repo = Mockery::mock(SupportTicketRepository::class);
+    $repo->shouldReceive('findOneByIdOrFail')
         ->atLeast()->once()
-        ->with(SupportTicket::class, 1)
+        ->with(1)
         ->andReturn($ticket);
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock, supportTicketRepo: $repo);
 
     $di = container();
     $di['em'] = $emMock;
@@ -454,7 +456,7 @@ test('finds one by client', function (): void {
     $supportTicketModel = new SupportTicket();
     setEntityId($supportTicketModel, 1);
     $repo = Mockery::mock(SupportTicketRepository::class);
-    $repo->shouldReceive('findOneByClient')->atLeast()->once()
+    $repo->shouldReceive('findOneByClientOrFail')->atLeast()->once()
         ->andReturn($supportTicketModel);
     $service->shouldReceive('getSupportTicketRepository')->atLeast()->once()
         ->andReturn($repo);
@@ -473,8 +475,8 @@ test('finds one by client', function (): void {
 test('throws exception when ticket not found by client', function (): void {
     $service = Mockery::mock(Service::class)->makePartial();
     $repo = Mockery::mock(SupportTicketRepository::class);
-    $repo->shouldReceive('findOneByClient')->atLeast()->once()
-        ->andReturn(null);
+    $repo->shouldReceive('findOneByClientOrFail')->atLeast()->once()
+        ->andThrow(new FOSSBilling\Exception('Ticket not found'));
     $service->shouldReceive('getSupportTicketRepository')->atLeast()->once()
         ->andReturn($repo);
 
@@ -548,9 +550,7 @@ test('counts tickets', function (): void {
         ->andReturn($arr);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
-    $emMock->shouldReceive('getRepository')
-        ->with(SupportTicket::class)
-        ->andReturn($repoMock);
+    supportWireKbRepositories($emMock, supportTicketRepo: $repoMock);
 
     $di = container();
     $di['em'] = $emMock;
@@ -573,9 +573,7 @@ test('gets latest tickets', function (): void {
         ->andReturn([$ticket, $ticket]);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
-    $emMock->shouldReceive('getRepository')
-        ->with(SupportTicket::class)
-        ->andReturn($repoMock);
+    supportWireKbRepositories($emMock, supportTicketRepo: $repoMock);
 
     $di = container();
     $di['em'] = $emMock;
@@ -595,9 +593,7 @@ test('gets expired tickets', function (): void {
         ->andReturn([['id' => 1]]);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
-    $emMock->shouldReceive('getRepository')
-        ->with(SupportTicket::class)
-        ->andReturn($repoMock);
+    supportWireKbRepositories($emMock, supportTicketRepo: $repoMock);
 
     $di = container();
     $di['em'] = $emMock;
@@ -617,9 +613,7 @@ test('counts by status', function (): void {
         ->andReturn(1);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
-    $emMock->shouldReceive('getRepository')
-        ->with(SupportTicket::class)
-        ->andReturn($repoMock);
+    supportWireKbRepositories($emMock, supportTicketRepo: $repoMock);
 
     $di = container();
     $di['em'] = $emMock;
@@ -638,7 +632,7 @@ test('gets active tickets count for order', function (): void {
         ->andReturn(1);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
-    $emMock->shouldReceive('getRepository')->with(SupportTicket::class)->andReturn($repoMock);
+    supportWireKbRepositories($emMock, supportTicketRepo: $repoMock);
 
     $di = container();
     $di['em'] = $emMock;
@@ -663,7 +657,7 @@ test('checks if task already exists returns true', function (): void {
         ->andReturn($existingTicket);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
-    $emMock->shouldReceive('getRepository')->with(SupportTicket::class)->andReturn($repoMock);
+    supportWireKbRepositories($emMock, supportTicketRepo: $repoMock);
 
     $di = container();
     $di['em'] = $emMock;
@@ -685,7 +679,7 @@ test('checks if task already exists returns false', function (): void {
         ->andReturn(null);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
-    $emMock->shouldReceive('getRepository')->with(SupportTicket::class)->andReturn($repoMock);
+    supportWireKbRepositories($emMock, supportTicketRepo: $repoMock);
 
     $di = container();
     $di['em'] = $emMock;
@@ -706,6 +700,7 @@ dataset('closeTicketIdentities', [
 test('closes a ticket', function ($identity): void {
     $service = new Service();
     $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock);
     $emMock->shouldReceive('flush')->atLeast()->once();
 
     $eventMock = Mockery::mock('\Box_EventManager');
@@ -727,6 +722,7 @@ test('closes a ticket', function ($identity): void {
 test('auto closes a ticket', function (): void {
     $service = new Service();
     $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock);
     $emMock->shouldReceive('flush')->atLeast()->once();
 
     $di = container();
@@ -759,17 +755,10 @@ test('checks if ticket can be reopened when not closed', function (): void {
 
 test('checks if ticket can be reopened', function (): void {
     $service = new Service();
-    $helpdeskRepo = Mockery::mock(HelpdeskRepository::class);
-    $helpdeskRepo->shouldReceive('find')
-        ->atLeast()->once()
-        ->andReturn(helpdeskFixture());
-    $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
-    supportWireKbRepositories($emMock, helpdeskRepo: $helpdeskRepo);
-
-    $dbMock = Mockery::mock('\Box_Database');
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock);
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
@@ -779,6 +768,7 @@ test('checks if ticket can be reopened', function (): void {
     $ticket->setStatus(SupportTicket::STATUS_CLOSED);
     $helpdesk = new Helpdesk();
     setEntityId($helpdesk, 1);
+    $helpdesk->setCanReopen(true);
     $ticket->setSupportHelpdesk($helpdesk);
 
     $result = $service->canBeReopened($ticket);
@@ -797,6 +787,7 @@ test('removes tickets by client', function (): void {
         ->andReturn($repo);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock);
     $emMock->shouldReceive('remove')->atLeast()->once();
     $emMock->shouldReceive('flush')->atLeast()->once();
 
@@ -831,6 +822,7 @@ test('removes a ticket', function (): void {
         ->andReturn($messageRepo);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock);
     $emMock->shouldReceive('remove')->atLeast()->once();
     $emMock->shouldReceive('flush')->atLeast()->once();
 
@@ -1759,6 +1751,7 @@ dataset('closeTicketProvider', fn (): array => [
 test('public close ticket', function (Model_Admin|Model_Guest $identity): void {
     $service = new Service();
     $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock);
     $emMock->shouldReceive('flush')->atLeast()->once();
 
     $eventMock = Mockery::mock('\Box_EventManager');
@@ -1798,6 +1791,7 @@ test('guest ticket reply', function (): void {
     setEntityId($message, 1);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock);
     $emMock->shouldReceive('persist')->atLeast()->once()
         ->andReturnUsing(function ($entity) {
             if ($entity->getId() === null) {
@@ -1837,6 +1831,7 @@ test('guest ticket reply', function (): void {
 test('ticket update', function (): void {
     $service = new Service();
     $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    supportWireKbRepositories($emMock);
     $emMock->shouldReceive('flush')->atLeast()->once();
 
     $di = container();
@@ -1860,6 +1855,7 @@ test('ticket update', function (): void {
 test('ticket message update', function (): void {
     $service = new Service();
     $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock);
     $emMock->shouldReceive('flush')->atLeast()->once();
 
     $di = container();
@@ -1896,6 +1892,7 @@ test('ticket reply', function (Model_Admin|Model_Client $identity): void {
 
     $randId = 1;
     $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock);
     $emMock->shouldReceive('persist')->atLeast()->once()
         ->andReturnUsing(function ($entity) {
             if ($entity->getId() === null) {
@@ -1935,6 +1932,7 @@ test('ticket create for admin', function (): void {
 
     $randId = 1;
     $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock);
     $emMock->shouldReceive('persist')->atLeast()->once()
         ->andReturnUsing(function ($entity) {
             if ($entity->getId() === null) {
@@ -1986,6 +1984,7 @@ test('ticket create for client', function (): void {
 
     $randId = 1;
     $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock);
     $emMock->shouldReceive('persist')->atLeast()->once()
         ->andReturnUsing(function ($entity) {
             if ($entity->getId() === null) {
@@ -2081,6 +2080,7 @@ test('ticket create for client task already exists exception', function (): void
 test('ticket task complete', function (): void {
     $service = new Service();
     $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock);
     $emMock->shouldReceive('flush')->atLeast()->once();
 
     $di = container();
@@ -2218,6 +2218,7 @@ test('message create for ticket', function (Model_Admin|Model_Client $identity):
     setEntityId($supportTicketMessage, 1);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock);
     $emMock->shouldReceive('persist')->atLeast()->once()
         ->andReturnUsing(function ($entity) {
             if ($entity->getId() === null) {
@@ -2272,6 +2273,7 @@ test('note get author details', function (): void {
 test('note rm', function (): void {
     $service = new Service();
     $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock);
     $emMock->shouldReceive('remove')->atLeast()->once();
     $emMock->shouldReceive('flush')->atLeast()->once();
 
@@ -2313,6 +2315,7 @@ test('note create', function (): void {
     setEntityId($supportTicketNote, 1);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock);
     $emMock->shouldReceive('persist')->atLeast()->once()
         ->andReturnUsing(function ($entity) {
             if ($entity->getId() === null) {
@@ -2371,9 +2374,7 @@ test('can client submit new ticket', function (?SupportTicket $ticket, int $hour
         ->andReturn($ticket);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
-    $emMock->shouldReceive('getRepository')
-        ->with(SupportTicket::class)
-        ->andReturn($repoMock);
+    supportWireKbRepositories($emMock, supportTicketRepo: $repoMock);
 
     $di = container();
     $di['em'] = $emMock;

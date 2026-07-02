@@ -17,7 +17,6 @@ use function Tests\Helpers\moduleService;
 
 test('email get list', function (): void {
     $adminApi = new Box\Mod\Email\Api\Admin();
-    $emailService = new Box\Mod\Email\Service();
 
     $willReturn = [
         'list' => [
@@ -27,26 +26,22 @@ test('email get list', function (): void {
 
     $pager = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
     $pager
-    ->shouldReceive('paginateDoctrineQuery')
-    ->atLeast()->once()
-    ->andReturn($willReturn);
+        ->shouldReceive('paginateDoctrineQuery')
+        ->atLeast()->once()
+        ->andReturn($willReturn);
 
     $repo = Mockery::mock(Box\Mod\Email\Repository\ActivityClientEmailRepository::class);
     $qb = Mockery::mock(Doctrine\ORM\QueryBuilder::class);
     $repo->shouldReceive('getSearchQueryBuilder')->andReturn($qb);
 
-    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
-    $em->shouldReceive('getRepository')->with(Box\Mod\Email\Entity\ActivityClientEmail::class)->andReturn($repo);
+    $emailService = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
+    $emailService->shouldReceive('getActivityClientEmailRepository')->andReturn($repo);
 
     $di = container();
     $di['pager'] = $pager;
-    $di['em'] = $em;
 
     $adminApi->setDi($di);
-    $emailService->setDi($di);
-
-    $service = $emailService;
-    $adminApi->setService($service);
+    $adminApi->setService($emailService);
 
     $result = $adminApi->email_get_list([]);
     expect($result)->toBeArray();
@@ -142,21 +137,21 @@ test('resend', function (): void {
     $model = new Box\Mod\Email\Entity\ActivityClientEmail();
     \Tests\Helpers\setEntityId($model, 1);
 
-    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
-    $em->shouldReceive('find')
+    $repo = Mockery::mock(Box\Mod\Email\Repository\ActivityClientEmailRepository::class);
+    $repo->shouldReceive('findOneByIdOrFail')
         ->atLeast()->once()
-        ->with(Box\Mod\Email\Entity\ActivityClientEmail::class, 1)
+        ->with(1)
         ->andReturn($model);
 
     $di = container();
-    $di['em'] = $em;
     $adminApi->setDi($di);
 
     $emailService = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
+    $emailService->shouldReceive('getActivityClientEmailRepository')->andReturn($repo);
     $emailService
-    ->shouldReceive('resend')
-    ->atLeast()->once()
-    ->andReturn(true);
+        ->shouldReceive('resend')
+        ->atLeast()->once()
+        ->andReturn(true);
 
     $adminApi->setService($emailService);
 
@@ -172,14 +167,16 @@ test('resend exception email not found', function (): void {
         'id' => 1,
     ];
 
-    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
-    $em->shouldReceive('find')
-        ->atLeast()->once()
-        ->andReturn(null);
+    $repo = Mockery::mock(Box\Mod\Email\Repository\ActivityClientEmailRepository::class);
+    $repo->shouldReceive('findOneByIdOrFail')
+        ->andThrow(new FOSSBilling\Exception('Email not found'));
 
     $di = container();
-    $di['em'] = $em;
     $adminApi->setDi($di);
+
+    $emailService = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
+    $emailService->shouldReceive('getActivityClientEmailRepository')->andReturn($repo);
+    $adminApi->setService($emailService);
 
     $this->expectException(FOSSBilling\Exception::class);
     $this->expectExceptionMessage('Email not found');
@@ -193,14 +190,16 @@ test('delete exception email not found', function (): void {
         'id' => 1,
     ];
 
-    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
-    $em->shouldReceive('find')
-        ->atLeast()->once()
-        ->andReturn(null);
+    $repo = Mockery::mock(Box\Mod\Email\Repository\ActivityClientEmailRepository::class);
+    $repo->shouldReceive('findOneByIdOrFail')
+        ->andThrow(new FOSSBilling\Exception('Email not found'));
 
     $di = container();
-    $di['em'] = $em;
     $adminApi->setDi($di);
+
+    $emailService = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
+    $emailService->shouldReceive('getActivityClientEmailRepository')->andReturn($repo);
+    $adminApi->setService($emailService);
 
     $this->expectException(FOSSBilling\Exception::class);
     $this->expectExceptionMessage('Email not found');
@@ -209,7 +208,6 @@ test('delete exception email not found', function (): void {
 
 test('email delete', function (): void {
     $adminApi = new Box\Mod\Email\Api\Admin();
-    $emailService = new Box\Mod\Email\Service();
 
     $data = [
         'id' => 1,
@@ -219,10 +217,6 @@ test('email delete', function (): void {
     \Tests\Helpers\setEntityId($model, 1);
 
     $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
-    $em->shouldReceive('find')
-        ->atLeast()->once()
-        ->with(Box\Mod\Email\Entity\ActivityClientEmail::class, 1)
-        ->andReturn($model);
     $em->shouldReceive('remove')->atLeast()->once();
     $em->shouldReceive('flush')->atLeast()->once();
 
@@ -232,6 +226,15 @@ test('email delete', function (): void {
     $di['em'] = $em;
     $di['logger'] = $loggerStub;
     $adminApi->setDi($di);
+
+    $repo = Mockery::mock(Box\Mod\Email\Repository\ActivityClientEmailRepository::class);
+    $repo->shouldReceive('findOneByIdOrFail')
+        ->atLeast()->once()
+        ->with(1)
+        ->andReturn($model);
+
+    $emailService = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
+    $emailService->shouldReceive('getActivityClientEmailRepository')->andReturn($repo);
 
     $adminApi->setService($emailService);
 

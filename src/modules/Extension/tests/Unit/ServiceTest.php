@@ -188,7 +188,7 @@ test('getSearchQueryBuilder returns a QueryBuilder', function (): void {
 
     $service->setDi($di);
 
-    $result = $service->getSearchQueryBuilder([]);
+    $result = $service->getExtensionRepository()->getSearchQueryBuilder([]);
     expect($result)->toBeInstanceOf(Doctrine\ORM\QueryBuilder::class);
 });
 
@@ -390,7 +390,7 @@ test('findExtension finds an extension', function (): void {
     $di['em'] = $em;
 
     $service->setDi($di);
-    $result = $service->findExtension('mod', 'id');
+    $result = $service->getExtensionRepository()->findOneByTypeAndName('mod', 'id');
     expect($result)->toBeInstanceOf(Extension::class);
 });
 
@@ -723,25 +723,20 @@ test('activateExistingExtension activates existing extension', function (): void
         'type' => 'extensionType',
     ];
 
-    $model = extensionCreateEntity(1);
-
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('findExtension')
-        ->atLeast()
-        ->once()
-        ->andReturnUsing(function () use ($model) {
-            static $callCount = 0;
-            ++$callCount;
-
-            return $callCount === 1 ? null : $model;
-        });
     $serviceMock->shouldReceive('activate')
         ->atLeast()
         ->once()
         ->andReturn([]);
 
-    $em = extensionBuildEm();
+    $extensionRepository = Mockery::mock(ExtensionRepository::class);
+    $extensionRepository->shouldReceive('findOneByTypeAndName')
+        ->atLeast()
+        ->once()
+        ->andReturn(null);
+
+    $em = extensionBuildEm($extensionRepository);
     $em->shouldReceive('persist')->atLeast()->once();
     $em->shouldReceive('flush')->atLeast()->once();
 
@@ -769,19 +764,21 @@ test('activateExistingExtension throws exception on activation failure', functio
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('findExtension')
-        ->atLeast()
-        ->once()
-        ->andReturn($model);
     $serviceMock->shouldReceive('activate')
         ->atLeast()
         ->once()
         ->andThrow(new Exception());
 
+    $extensionRepository = Mockery::mock(ExtensionRepository::class);
+    $extensionRepository->shouldReceive('findOneByTypeAndName')
+        ->atLeast()
+        ->once()
+        ->andReturn($model);
+
     $eventMock = Mockery::mock(Box_EventManager::class);
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
-    $em = extensionBuildEm();
+    $em = extensionBuildEm($extensionRepository);
 
     $di = container();
     $di['em'] = $em;

@@ -17,6 +17,19 @@ use Doctrine\ORM\EntityRepository;
 class SupportTicketMessageRepository extends EntityRepository
 {
     /**
+     * Find a single ticket message by id, throwing if it does not exist.
+     */
+    public function findOneByIdOrFail(int $id): SupportTicketMessage
+    {
+        $message = $this->find($id);
+        if (!$message instanceof SupportTicketMessage) {
+            throw new \FOSSBilling\Exception('Ticket message not found');
+        }
+
+        return $message;
+    }
+
+    /**
      * Return all messages belonging to a ticket, oldest first.
      *
      * @return SupportTicketMessage[]

@@ -16,10 +16,6 @@ declare(strict_types=1);
 
 namespace Box\Mod\Email\Api;
 
-use Box\Mod\Email\Entity\ActivityClientEmail;
-use Box\Mod\Email\Entity\ModEmailQueue;
-use Box\Mod\Email\Repository\ActivityClientEmailRepository;
-use Box\Mod\Email\Repository\ModEmailQueueRepository;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
@@ -34,14 +30,12 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('email', 'view_email_history');
 
-        $repo = $this->getDi()['em']->getRepository(ActivityClientEmail::class);
-        assert($repo instanceof ActivityClientEmailRepository);
-        $pager = $this->getDi()['pager']->paginateDoctrineQuery(
+        $repo = $this->getService()->getActivityClientEmailRepository();
+
+        return $this->getDi()['pager']->paginateDoctrineQuery(
             $repo->getSearchQueryBuilder($data),
             PaginationOptions::fromArray($data),
         );
-
-        return $pager;
     }
 
     /**
@@ -103,11 +97,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('email', 'send_emails');
 
-        $model = $this->getDi()['em']->find(ActivityClientEmail::class, (int) $data['id']);
-
-        if (!$model instanceof ActivityClientEmail) {
-            throw new \FOSSBilling\Exception('Email not found');
-        }
+        $model = $this->getService()->getActivityClientEmailRepository()->findOneByIdOrFail((int) $data['id']);
 
         return $this->getService()->resend($model);
     }
@@ -123,11 +113,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('email', 'delete_email_history');
 
         $em = $this->getDi()['em'];
-        $model = $em->find(ActivityClientEmail::class, (int) $data['id']);
-
-        if (!$model instanceof ActivityClientEmail) {
-            throw new \FOSSBilling\Exception('Email not found');
-        }
+        $model = $this->getService()->getActivityClientEmailRepository()->findOneByIdOrFail((int) $data['id']);
 
         $id = $model->getId();
         $em->remove($model);
@@ -439,13 +425,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('email', 'view_email_history');
 
-        $repo = $this->getDi()['em']->getRepository(ModEmailQueue::class);
-        assert($repo instanceof ModEmailQueueRepository);
-        $pager = $this->getDi()['pager']->paginateDoctrineQuery(
+        $repo = $this->getService()->getQueuedEmailRepository();
+
+        return $this->getDi()['pager']->paginateDoctrineQuery(
             $repo->getSearchQueryBuilder($data),
             PaginationOptions::fromArray($data),
         );
-
-        return $pager;
     }
 }

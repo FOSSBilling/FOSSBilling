@@ -39,13 +39,12 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('support', 'view');
 
         $repo = $this->getService()->getSupportTicketRepository();
-        $pager = $this->getDi()['pager']->paginateMappedQuery(
+
+        return $this->getDi()['pager']->paginateMappedQuery(
             $repo->getSearchQueryBuilder($data),
             PaginationOptions::fromArray($data),
-            fn (SupportTicket $ticket): array => $this->getService()->toApiArray($ticket, true, $this->getIdentity()),
+            fn (SupportTicket $ticket): array => $this->getService()->toApiArray($ticket, false, $this->getIdentity()),
         );
-
-        return $pager;
     }
 
     /**

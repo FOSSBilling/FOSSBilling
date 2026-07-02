@@ -58,14 +58,24 @@ class SupportTicketMessage implements ApiArrayInterface, TimestampInterface
 
     public function toApiArray(\Model_Admin|\Model_Client|\Model_Guest|null $identity = null): array
     {
+        if ($identity instanceof \Model_Admin) {
+            return [
+                'id' => $this->id,
+                'support_ticket_id' => $this->ticket?->getId(),
+                'client_id' => $this->clientId,
+                'admin_id' => $this->adminId,
+                'content' => $this->content,
+                'attachment' => $this->attachment,
+                'ip' => $this->ip,
+                'created_at' => $this->getCreatedAt()?->format('Y-m-d H:i:s'),
+                'updated_at' => $this->getUpdatedAt()?->format('Y-m-d H:i:s'),
+            ];
+        }
+
         return [
             'id' => $this->id,
-            'support_ticket_id' => $this->ticket?->getId(),
-            'client_id' => $this->clientId,
-            'admin_id' => $this->adminId,
             'content' => $this->content,
             'attachment' => $this->attachment,
-            'ip' => $this->ip,
             'created_at' => $this->getCreatedAt()?->format('Y-m-d H:i:s'),
             'updated_at' => $this->getUpdatedAt()?->format('Y-m-d H:i:s'),
         ];

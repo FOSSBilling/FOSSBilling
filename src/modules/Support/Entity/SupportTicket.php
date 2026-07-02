@@ -113,7 +113,7 @@ class SupportTicket implements ApiArrayInterface, TimestampInterface
 
     public function toApiArray(\Model_Admin|\Model_Client|\Model_Guest|null $identity = null): array
     {
-        return [
+        $data = [
             'id' => $this->id,
             'support_helpdesk_id' => $this->helpdesk?->getId(),
             'client_id' => $this->clientId,
@@ -131,6 +131,59 @@ class SupportTicket implements ApiArrayInterface, TimestampInterface
             'created_at' => $this->getCreatedAt()?->format('Y-m-d H:i:s'),
             'updated_at' => $this->getUpdatedAt()?->format('Y-m-d H:i:s'),
         ];
+
+        if (!empty($data['access_hash'])) {
+            $data['hash'] = $data['access_hash'];
+        }
+
+        if ($identity instanceof \Model_Admin) {
+            return $data;
+        }
+
+        // @deprecated 0.9.0 Use author.id/name/email instead of client_id/author_name/author_email.
+        unset(
+            $data['support_helpdesk_id'],
+            $data['client_id'],
+            $data['priority'],
+            $data['access_hash'],
+            $data['rel_type'],
+            $data['rel_id'],
+            $data['rel_task'],
+            $data['rel_new_value'],
+            $data['rel_status'],
+        );
+
+        return $data;
+    }
+
+    /**
+     * A ticket belongs to a guest when it has no client but does carry a
+     * public access hash (used by the guest/public ticket flow).
+     */
+    public function isGuestTicket(): bool
+    {
+        return $this->clientId === null && $this->accessHash !== null;
+    }
+
+    /**
+     * Whether a closed ticket may be re-opened.
+     *
+     * Non-closed tickets can always be re-opened. Closed tickets delegate to
+     * their helpdesk's `can_reopen` flag. Throws if the helpdesk cannot be
+     * resolved, matching the legacy behaviour.
+     */
+    public function canBeReopen(): bool
+    {
+        if ($this->status !== self::STATUS_CLOSED) {
+            return true;
+        }
+
+        $helpdesk = $this->helpdesk;
+        if (!$helpdesk instanceof Helpdesk) {
+            throw new \FOSSBilling\Exception('Helpdesk invalid');
+        }
+
+        return $helpdesk->canReopen();
     }
 
     public function getId(): ?int
