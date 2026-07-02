@@ -128,7 +128,7 @@ class ErrorPage
      * @param int    $code    Error code
      * @param string $message The original exception message
      */
-    public function generatePage(int $code, string $message): never
+    public function renderPage(int $code, string $message): string
     {
         $error = static::getCodeInfo($code);
         $error['message'] ??= "You've received a generic error message: <code> $message </code>";
@@ -138,7 +138,7 @@ class ErrorPage
             $instanceID = 'Unknown';
         }
 
-        $page = '
+        return '
         <!DOCTYPE html>
         <html>
             <head>
@@ -305,7 +305,5 @@ class ErrorPage
                 </script>
             </body>
         </html>';
-        echo $page;
-        exit;
     }
 }

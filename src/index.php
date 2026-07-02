@@ -15,6 +15,7 @@ global $di;
 
 use DebugBar\DataCollector\TimeDataCollector;
 use FOSSBilling\Http\RequestFactory;
+use FOSSBilling\Http\ResponseEmitter;
 use Symfony\Component\HttpFoundation\Response;
 
 $config = FOSSBilling\Config::getConfig();
@@ -101,16 +102,17 @@ if (!is_null($http_err_code)) {
     switch ($http_err_code) {
         case 404:
             $e = new FOSSBilling\Exception('Page :url not found', [':url' => $url], 404);
-            $app->show404($e)->send();
+            $response = $app->show404($e);
 
             break;
         default:
             $e = new FOSSBilling\Exception('HTTP Error :err_code occurred while attempting to load :url', [':err_code' => $http_err_code, ':url' => $url], $http_err_code);
-            (new Response($app->render('error', ['exception' => $e]), $http_err_code))->send();
+            $response = new Response($app->render('error', ['exception' => $e]), $http_err_code);
     }
-    exit;
+} else {
+    // If no HTTP error passed, run the app.
+    $response = $app->run();
 }
 
-// If no HTTP error passed, run the app.
-$app->run()->send();
+(new ResponseEmitter())->emit($response, $request);
 exit;
