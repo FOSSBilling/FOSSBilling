@@ -27,12 +27,20 @@ test('email get list', function (): void {
 
     $pager = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
     $pager
-    ->shouldReceive('getPaginatedResultSet')
+    ->shouldReceive('paginateDoctrineQuery')
     ->atLeast()->once()
     ->andReturn($willReturn);
 
+    $repo = Mockery::mock(Box\Mod\Email\Repository\ActivityClientEmailRepository::class);
+    $qb = Mockery::mock(Doctrine\ORM\QueryBuilder::class);
+    $repo->shouldReceive('getSearchQueryBuilder')->andReturn($qb);
+
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(Box\Mod\Email\Entity\ActivityClientEmail::class)->andReturn($repo);
+
     $di = container();
     $di['pager'] = $pager;
+    $di['em'] = $em;
 
     $adminApi->setDi($di);
     $emailService->setDi($di);
@@ -63,29 +71,18 @@ test('email get', function (): void {
     $created = date('Y-m-d H:i:s', time() - 86400);
     $updated = date('Y-m-d H:i:s');
 
-    $model = new Model_ActivityClientEmail();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $model->id = $id;
-    $model->client_id = $client_id;
-    $model->sender = $sender;
-    $model->recipients = $recipients;
-    $model->subject = $subject;
-    $model->content_html = $content_html;
-    $model->content_text = $content_text;
-    $model->created_at = $created;
-    $model->updated_at = $updated;
+    $model = new Box\Mod\Email\Entity\ActivityClientEmail();
+    \Tests\Helpers\setEntityId($model, $id);
+    $model->setClientId($client_id);
+    $model->setSender($sender);
+    $model->setRecipients($recipients);
+    $model->setSubject($subject);
+    $model->setContentHtml($content_html);
+    $model->setContentText($content_text);
+    $model->setCreatedAt(new DateTime('-1 day'));
+    $model->setUpdatedAt(new DateTime());
 
-    $expected = [
-        'id' => $id,
-        'client_id' => $client_id,
-        'sender' => $sender,
-        'recipients' => $recipients,
-        'subject' => $subject,
-        'content_html' => $content_html,
-        'content_text' => $content_text,
-        'created_at' => $created,
-        'updated_at' => $updated,
-    ];
+    $expected = $model->toApiArray();
 
     $service = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
     $service
@@ -119,10 +116,6 @@ test('send', function (): void {
         'content' => 'Content',
     ];
 
-    $model = new Model_ActivityClientEmail();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $model->id = 1;
-
     $emailService = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
     $emailService
     ->shouldReceive('sendMail')
@@ -146,18 +139,17 @@ test('resend', function (): void {
         'id' => 1,
     ];
 
-    $model = new Model_ActivityClientEmail();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $model->id = 1;
+    $model = new Box\Mod\Email\Entity\ActivityClientEmail();
+    \Tests\Helpers\setEntityId($model, 1);
 
-    $db = Mockery::mock('Box_Database');
-    $db
-    ->shouldReceive('findOne')
-    ->atLeast()->once()
-    ->andReturn($model);
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('find')
+        ->atLeast()->once()
+        ->with(Box\Mod\Email\Entity\ActivityClientEmail::class, 1)
+        ->andReturn($model);
 
     $di = container();
-    $di['db'] = $db;
+    $di['em'] = $em;
     $adminApi->setDi($di);
 
     $emailService = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
@@ -180,14 +172,13 @@ test('resend exception email not found', function (): void {
         'id' => 1,
     ];
 
-    $db = Mockery::mock('Box_Database');
-    $db
-    ->shouldReceive('findOne')
-    ->atLeast()->once()
-    ->andReturn(null);
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('find')
+        ->atLeast()->once()
+        ->andReturn(null);
 
     $di = container();
-    $di['db'] = $db;
+    $di['em'] = $em;
     $adminApi->setDi($di);
 
     $this->expectException(FOSSBilling\Exception::class);
@@ -202,14 +193,13 @@ test('delete exception email not found', function (): void {
         'id' => 1,
     ];
 
-    $db = Mockery::mock('Box_Database');
-    $db
-    ->shouldReceive('findOne')
-    ->atLeast()->once()
-    ->andReturn(null);
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('find')
+        ->atLeast()->once()
+        ->andReturn(null);
 
     $di = container();
-    $di['db'] = $db;
+    $di['em'] = $em;
     $adminApi->setDi($di);
 
     $this->expectException(FOSSBilling\Exception::class);
@@ -225,24 +215,21 @@ test('email delete', function (): void {
         'id' => 1,
     ];
 
-    $model = new Model_ActivityClientEmail();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $model->id = 1;
+    $model = new Box\Mod\Email\Entity\ActivityClientEmail();
+    \Tests\Helpers\setEntityId($model, 1);
 
-    $db = Mockery::mock('Box_Database');
-    $db
-    ->shouldReceive('findOne')
-    ->atLeast()->once()
-    ->andReturn($model);
-    $db
-    ->shouldReceive('trash')
-    ->atLeast()->once()
-    ->andReturn(true);
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('find')
+        ->atLeast()->once()
+        ->with(Box\Mod\Email\Entity\ActivityClientEmail::class, 1)
+        ->andReturn($model);
+    $em->shouldReceive('remove')->atLeast()->once();
+    $em->shouldReceive('flush')->atLeast()->once();
 
     $loggerStub = $this->createStub('\Box_Log');
 
     $di = container();
-    $di['db'] = $db;
+    $di['em'] = $em;
     $di['logger'] = $loggerStub;
     $adminApi->setDi($di);
 

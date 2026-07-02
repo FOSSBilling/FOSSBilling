@@ -121,4 +121,39 @@ class Pagination implements InjectionAwareInterface
 
         return $this->buildPaginatedResponse($pagination->page, $pagination->perPage, $total, $result);
     }
+
+    /**
+     * Paginate results from a Doctrine QueryBuilder and apply a custom mapper to each entity.
+     *
+     * Use this when the entity's `toApiArray()` requires context (identity, deep flag,
+     * cross-module lookups) that the default `paginateDoctrineQuery()` cannot provide.
+     * The caller supplies a closure that performs the mapping.
+     *
+     * @param QueryBuilder      $qb         the Doctrine QueryBuilder instance to paginate
+     * @param PaginationOptions $pagination pagination options
+     * @param callable          $mapper     fn(object $entity): array applied to each row
+     *
+     * @return array{
+     *     pages: int,      // Total number of pages
+     *     page: int,       // Current page number
+     *     per_page: int,   // Items per page
+     *     total: int,      // Total number of items
+     *     list: array      // List of paginated items as arrays
+     * }
+     */
+    public function paginateMappedQuery(QueryBuilder $qb, PaginationOptions $pagination, callable $mapper): array
+    {
+        $offset = ($pagination->page - 1) * $pagination->perPage;
+        $qb->setFirstResult($offset)
+            ->setMaxResults($pagination->perPage);
+        $paginator = new DoctrinePaginator($qb, true);
+        $total = count($paginator);
+
+        $list = [];
+        foreach ($paginator as $entity) {
+            $list[] = $mapper($entity);
+        }
+
+        return $this->buildPaginatedResponse($pagination->page, $pagination->perPage, $total, $list);
+    }
 }

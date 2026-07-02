@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Support;
 
+use Box\Mod\Support\Entity\SupportTicket;
+
 class SupportTicketValidator
 {
     public static function validateTicketCreation(array $data): void
@@ -16,28 +18,28 @@ class SupportTicketValidator
         self::validateRelTask($rel_task);
         self::validateRelStatus($rel_status);
 
-        if ($rel_task === \Model_SupportTicket::REL_TASK_UPGRADE) {
+        if ($rel_task === SupportTicket::REL_TASK_UPGRADE) {
             self::validateUpgradeRequest($data, $rel_type);
         }
     }
 
     protected static function validateRelStatus(?string $rel_status): void
     {
-        if ($rel_status !== null && !in_array($rel_status, \Model_SupportTicket::ALLOWED_REL_STATUSES, true)) {
+        if ($rel_status !== null && !in_array($rel_status, [SupportTicket::REL_STATUS_PENDING, SupportTicket::REL_STATUS_COMPLETE], true)) {
             throw new \FOSSBilling\Exception('Invalid related status.');
         }
     }
 
     protected static function validateRelType(?string $rel_type): void
     {
-        if ($rel_type !== null && !in_array($rel_type, \Model_SupportTicket::ALLOWED_REL_TYPES, true)) {
+        if ($rel_type !== null && !in_array($rel_type, [SupportTicket::REL_TYPE_ORDER], true)) {
             throw new \FOSSBilling\Exception('Invalid related type.');
         }
     }
 
     protected static function validateRelTask(?string $rel_task): void
     {
-        if ($rel_task !== null && !in_array($rel_task, \Model_SupportTicket::ALLOWED_REL_TASKS, true)) {
+        if ($rel_task !== null && !in_array($rel_task, [SupportTicket::REL_TASK_CANCEL, SupportTicket::REL_TASK_UPGRADE], true)) {
             throw new \FOSSBilling\Exception('Invalid related task.');
         }
     }
@@ -46,7 +48,7 @@ class SupportTicketValidator
     {
         $rel_id = $data['rel_id'] ?? null;
         $rel_new_value = $data['rel_new_value'] ?? null;
-        if ($rel_type !== \Model_SupportTicket::REL_TYPE_ORDER || $rel_id === null || empty($rel_new_value)) {
+        if ($rel_type !== SupportTicket::REL_TYPE_ORDER || $rel_id === null || empty($rel_new_value)) {
             throw new \FOSSBilling\Exception('You must provide both an order ID and a new product ID in order to request an upgrade.');
         }
     }

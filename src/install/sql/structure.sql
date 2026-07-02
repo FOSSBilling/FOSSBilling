@@ -46,6 +46,7 @@ CREATE TABLE `activity_client_email` (
   `content_html` text,
   `content_text` text,
   `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `client_id_idx` (`client_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

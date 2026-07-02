@@ -481,6 +481,7 @@ class UpdatePatcher implements InjectionAwareInterface
             73 => 'patch73',
             74 => 'patch74',
             75 => 'patch75',
+            76 => 'patch76',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -1932,6 +1933,16 @@ class UpdatePatcher implements InjectionAwareInterface
         }
 
         $this->executeSql('ALTER TABLE `client` DROP COLUMN `document_type`, DROP COLUMN `document_nr`;');
+    }
+
+    private function patch76(): void
+    {
+        // The `activity_client_email` table was missing an `updated_at` column,
+        // but the Doctrine entity for it now expects one. Add the column for
+        // installations that were created before the entity was migrated.
+        if (!$this->tableHasColumn('activity_client_email', 'updated_at')) {
+            $this->executeSql('ALTER TABLE `activity_client_email` ADD COLUMN `updated_at` datetime DEFAULT NULL AFTER `created_at`');
+        }
     }
 
     private function generateDownloadableStoredFilename(): string

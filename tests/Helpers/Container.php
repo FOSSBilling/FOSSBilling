@@ -173,6 +173,9 @@ function container(): Container
         $cannedResponseRepository = \Mockery::mock(\Box\Mod\Support\Repository\CannedResponseRepository::class)->shouldIgnoreMissing();
         $cannedResponseCategoryRepository = \Mockery::mock(\Box\Mod\Support\Repository\CannedResponseCategoryRepository::class)->shouldIgnoreMissing();
         $helpdeskRepository = \Mockery::mock(\Box\Mod\Support\Repository\HelpdeskRepository::class)->shouldIgnoreMissing();
+        $supportTicketRepository = \Mockery::mock(\Box\Mod\Support\Repository\SupportTicketRepository::class)->shouldIgnoreMissing();
+        $supportTicketMessageRepository = \Mockery::mock(\Box\Mod\Support\Repository\SupportTicketMessageRepository::class)->shouldIgnoreMissing();
+        $supportTicketNoteRepository = \Mockery::mock(\Box\Mod\Support\Repository\SupportTicketNoteRepository::class)->shouldIgnoreMissing();
 
         $em = \Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
         $em->shouldReceive('getRepository')->byDefault()->andReturnUsing(static fn (string $class): object => match ($class) {
@@ -182,6 +185,10 @@ function container(): Container
             \Box\Mod\Support\Entity\CannedResponse::class => $cannedResponseRepository,
             \Box\Mod\Support\Entity\CannedResponseCategory::class => $cannedResponseCategoryRepository,
             \Box\Mod\Support\Entity\Helpdesk::class => $helpdeskRepository,
+            \Box\Mod\Support\Entity\SupportTicket::class => $supportTicketRepository,
+            \Box\Mod\Support\Entity\SupportTicketMessage::class => $supportTicketMessageRepository,
+            \Box\Mod\Support\Entity\SupportTicketNote::class => $supportTicketNoteRepository,
+            \Box\Mod\Extension\Entity\Extension::class => \Mockery::mock(\Box\Mod\Extension\Repository\ExtensionRepository::class)->shouldIgnoreMissing(),
             default => $extensionMetaRepository,
         });
 

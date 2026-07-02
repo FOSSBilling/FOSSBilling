@@ -16,8 +16,11 @@ declare(strict_types=1);
 
 namespace Box\Mod\Email\Api;
 
+use Box\Mod\Email\Entity\ActivityClientEmail;
+use Box\Mod\Email\Entity\ModEmailQueue;
+use Box\Mod\Email\Repository\ActivityClientEmailRepository;
+use Box\Mod\Email\Repository\ModEmailQueueRepository;
 use FOSSBilling\PaginationOptions;
-use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Admin extends \FOSSBilling\Api\AbstractApi
@@ -31,25 +34,12 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('email', 'view_email_history');
 
-        [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
-
-        foreach ($pager['list'] as $key => $item) {
-            if (!is_array($item)) {
-                continue;
-            }
-            $pager['list'][$key] = [
-                'id' => $item['id'],
-                'client_id' => $item['client_id'],
-                'sender' => $item['sender'] ?? '',
-                'recipients' => $item['recipients'] ?? '',
-                'subject' => $item['subject'] ?? '',
-                'content_html' => Tools::sanitizeContent($item['content_html'] ?? ''),
-                'content_text' => $item['content_text'] ?? '',
-                'created_at' => $item['created_at'] ?? '',
-                'updated_at' => $item['updated_at'] ?? '',
-            ];
-        }
+        $repo = $this->getDi()['em']->getRepository(ActivityClientEmail::class);
+        assert($repo instanceof ActivityClientEmailRepository);
+        $pager = $this->getDi()['pager']->paginateDoctrineQuery(
+            $repo->getSearchQueryBuilder($data),
+            PaginationOptions::fromArray($data),
+        );
 
         return $pager;
     }
@@ -113,9 +103,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('email', 'send_emails');
 
-        $model = $this->getDi()['db']->findOne('ActivityClientEmail', 'id = ?', [$data['id']]);
+        $model = $this->getDi()['em']->find(ActivityClientEmail::class, (int) $data['id']);
 
-        if (!$model instanceof \Model_ActivityClientEmail) {
+        if (!$model instanceof ActivityClientEmail) {
             throw new \FOSSBilling\Exception('Email not found');
         }
 
@@ -132,14 +122,16 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('email', 'delete_email_history');
 
-        $model = $this->getDi()['db']->findOne('ActivityClientEmail', 'id = ?', [$data['id']]);
+        $em = $this->getDi()['em'];
+        $model = $em->find(ActivityClientEmail::class, (int) $data['id']);
 
-        if (!$model instanceof \Model_ActivityClientEmail) {
+        if (!$model instanceof ActivityClientEmail) {
             throw new \FOSSBilling\Exception('Email not found');
         }
 
-        $id = $model->id;
-        $this->getDi()['db']->trash($model);
+        $id = $model->getId();
+        $em->remove($model);
+        $em->flush();
 
         $this->getDi()['logger']->info('Deleted email #%s', $id);
 
@@ -447,22 +439,12 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('email', 'view_email_history');
 
-        [$sql, $params] = $this->getService()->queueGetSearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
-
-        foreach ($pager['list'] as $key => $item) {
-            $pager['list'][$key] = [
-                'id' => $item['id'] ?? '',
-                'recipient' => $item['recipient'] ?? '',
-                'subject' => $item['subject'] ?? '',
-                'content' => $item['content'] ?? '',
-                'to_name' => $item['to_name'] ?? '',
-                'status' => $item['status'] ?? '',
-                'tries' => $item['tries'] ?? '',
-                'created_at' => $item['created_at'] ?? '',
-                'updated_at' => $item['updated_at'] ?? '',
-            ];
-        }
+        $repo = $this->getDi()['em']->getRepository(ModEmailQueue::class);
+        assert($repo instanceof ModEmailQueueRepository);
+        $pager = $this->getDi()['pager']->paginateDoctrineQuery(
+            $repo->getSearchQueryBuilder($data),
+            PaginationOptions::fromArray($data),
+        );
 
         return $pager;
     }
