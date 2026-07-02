@@ -612,7 +612,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function queueGetSearchQuery($data): array
     {
-        $query = 'SELECT * FROM mod_email_queue';
+        $query = 'SELECT * FROM email_queue';
 
         $id = $data['id'] ?? null;
         $search = $data['search'] ?? null;

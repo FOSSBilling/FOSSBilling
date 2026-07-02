@@ -482,6 +482,7 @@ class UpdatePatcher implements InjectionAwareInterface
             74 => 'patch74',
             75 => 'patch75',
             76 => 'patch76',
+            77 => 'patch77',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -1942,6 +1943,16 @@ class UpdatePatcher implements InjectionAwareInterface
         // installations that were created before the entity was migrated.
         if (!$this->tableHasColumn('activity_client_email', 'updated_at')) {
             $this->executeSql('ALTER TABLE `activity_client_email` ADD COLUMN `updated_at` datetime DEFAULT NULL AFTER `created_at`');
+        }
+    }
+
+    private function patch77(): void
+    {
+        // The email queue table was renamed from `mod_email_queue` to
+        // `email_queue` when the `QueuedEmail` Doctrine entity was introduced.
+        // Rename it for installations that still use the legacy table name.
+        if ($this->tableExists('mod_email_queue') && !$this->tableExists('email_queue')) {
+            $this->executeSql('RENAME TABLE `mod_email_queue` TO `email_queue`');
         }
     }
 

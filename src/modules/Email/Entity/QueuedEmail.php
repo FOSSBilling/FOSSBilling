@@ -21,7 +21,7 @@ use FOSSBilling\Interfaces\TimestampInterface;
  * Pending email in the queue processed by the email-batch cron task.
  */
 #[ORM\Entity(repositoryClass: \Box\Mod\Email\Repository\QueuedEmailRepository::class)]
-#[ORM\Table(name: 'mod_email_queue')]
+#[ORM\Table(name: 'email_queue')]
 #[ORM\HasLifecycleCallbacks]
 class QueuedEmail implements ApiArrayInterface, TimestampInterface
 {
