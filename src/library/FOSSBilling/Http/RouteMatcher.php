@@ -26,7 +26,7 @@ final readonly class RouteMatcher
         $paramNames = [];
         $paramValues = [];
 
-        preg_match_all('@:([a-zA-Z]+)@', $routePath, $paramNames, PREG_PATTERN_ORDER);
+        preg_match_all('@:([a-zA-Z_\-]+)@', $routePath, $paramNames, PREG_PATTERN_ORDER);
         $paramNames = $paramNames[1];
         $conditions ??= [];
 

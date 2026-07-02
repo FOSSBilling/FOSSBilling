@@ -48,9 +48,9 @@ test('route matcher accepts null conditions for routes without constrained param
     expect($match->matched)->toBeTrue();
 });
 
-test('route matcher preserves legacy alphabetical parameter-name extraction', function (): void {
+test('route matcher extracts full placeholder names', function (): void {
     $match = (new RouteMatcher())->match('get', '/item/:item_id', ['item_id' => '[0-9]+'], '/item/42', 'GET');
 
     expect($match->matched)->toBeTrue()
-        ->and($match->params)->toBe(['item' => '42']);
+        ->and($match->params)->toBe(['item_id' => '42']);
 });
