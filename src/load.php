@@ -13,8 +13,8 @@ declare(strict_types=1);
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\Http\ExceptionResponseFactory;
+use FOSSBilling\Http\Network;
 use FOSSBilling\Http\RequestFactory;
-use FOSSBilling\Http\ResponseEmitter;
 use FOSSBilling\SentryHelper;
 use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
@@ -28,7 +28,7 @@ function emitResponse(Response $response): never
     global $request;
 
     $currentRequest = $request instanceof Request ? $request : Request::createFromGlobals();
-    (new ResponseEmitter())->emit($response, $currentRequest);
+    $response->prepare($currentRequest)->send();
     exit;
 }
 
@@ -197,10 +197,10 @@ function preInit(): void
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Environment.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'ApiResponseFactory.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'ExceptionResponseFactory.php');
+    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'Network.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'RequestFactory.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'RequestPayloadParser.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'ResponseFactory.php');
-    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'ResponseEmitter.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'RouteMatch.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'RouteMatcher.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Config.php');
@@ -265,7 +265,7 @@ function init(): void
     define('SYSTEM_URL', $scheme . $url);
 
     // Set the default interface.
-    define('BIND_TO', Tools::getDefaultInterface());
+    define('BIND_TO', Network::getDefaultInterface());
 
     // Load the DI container.
     global $di;

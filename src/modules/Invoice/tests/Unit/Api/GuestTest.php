@@ -101,6 +101,7 @@ test('processes payment', function (): void {
         ->andReturn([]);
 
     $api->setService($serviceMock);
+    $api->setDi(container());
 
     $result = $api->payment($data);
     expect($result)->toBeArray();

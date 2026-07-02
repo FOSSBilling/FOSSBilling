@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace Box\Mod\System\Api;
 
 use FOSSBilling\Config;
+use FOSSBilling\Http\Network;
 use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
@@ -379,7 +380,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         if (isset($data['custom_interface'])) {
             $custom = $data['custom_interface'];
-            if ($custom !== '' && !Tools::isValidHttpInterface($custom)) {
+            if ($custom !== '' && !Network::isValidHttpInterface($custom)) {
                 throw new \FOSSBilling\Exception('Invalid custom interface. Must be a valid IP address or hostname.');
             }
             $config['custom_interface_ip'] = $custom;

@@ -21,39 +21,39 @@ dataset('sanitizeContentProvider', fn (): array => [
 ]);
 
 test('sanitize content', function (string $input, string $expected, bool $allowSafeHtml): void {
-    $result = FOSSBilling\Tools::sanitizeContent($input, $allowSafeHtml);
+    $result = FOSSBilling\Sanitizer\BrowserHtmlSanitizer::sanitizeContent($input, $allowSafeHtml);
     expect($result)->toEqual($expected);
 })->with('sanitizeContentProvider');
 
 test('sanitize content removes null bytes', function (): void {
     $input = "Hello\0World";
-    $result = FOSSBilling\Tools::sanitizeContent($input, false);
+    $result = FOSSBilling\Sanitizer\BrowserHtmlSanitizer::sanitizeContent($input, false);
     expect($result)->not->toContain("\0");
     expect($result)->toBe('HelloWorld');
 });
 
 test('sanitize content removes script tags', function (): void {
     $input = '<p>Hello</p><script>alert("xss")</script>';
-    $result = FOSSBilling\Tools::sanitizeContent($input, true);
+    $result = FOSSBilling\Sanitizer\BrowserHtmlSanitizer::sanitizeContent($input, true);
     expect($result)->not->toContain('<script>');
     expect($result)->not->toContain('alert');
 });
 
 test('sanitize content removes java script urls', function (): void {
     $input = '<a href="javascript:alert(1)">Click</a>';
-    $result = FOSSBilling\Tools::sanitizeContent($input, true);
+    $result = FOSSBilling\Sanitizer\BrowserHtmlSanitizer::sanitizeContent($input, true);
     expect($result)->not->toContain('javascript:');
 });
 
 test('sanitize content removes event handlers', function (): void {
     $input = '<p onclick="alert(1)">Hello</p>';
-    $result = FOSSBilling\Tools::sanitizeContent($input, true);
+    $result = FOSSBilling\Sanitizer\BrowserHtmlSanitizer::sanitizeContent($input, true);
     expect($result)->not->toContain('onclick');
 });
 
 test('sanitize content removes multiple event handlers', function (): void {
     $input = '<img src="x" onerror="alert(1)" onload="evil()" onmouseover="bad()">';
-    $result = FOSSBilling\Tools::sanitizeContent($input, true);
+    $result = FOSSBilling\Sanitizer\BrowserHtmlSanitizer::sanitizeContent($input, true);
     expect($result)->not->toContain('onerror');
     expect($result)->not->toContain('onload');
     expect($result)->not->toContain('onmouseover');
@@ -61,13 +61,13 @@ test('sanitize content removes multiple event handlers', function (): void {
 
 test('sanitize content allows safe links', function (): void {
     $input = '<a href="https://example.com" title="Example">Link</a>';
-    $result = FOSSBilling\Tools::sanitizeContent($input, true);
+    $result = FOSSBilling\Sanitizer\BrowserHtmlSanitizer::sanitizeContent($input, true);
     expect($result)->toContain('href="https://example.com"');
 });
 
 test('sanitize content strips unsafe attributes', function (): void {
     $input = '<p style="color:red">Text</p>';
-    $result = FOSSBilling\Tools::sanitizeContent($input, true);
+    $result = FOSSBilling\Sanitizer\BrowserHtmlSanitizer::sanitizeContent($input, true);
 
     // style attribute is not allowed, so it's stripped
     expect($result)->not->toContain('style=');
@@ -77,78 +77,78 @@ test('sanitize content strips unsafe attributes', function (): void {
 
 test('sanitize content handles nested tags', function (): void {
     $input = '<div><span>nested<span>deep</span></span></div>';
-    $result = FOSSBilling\Tools::sanitizeContent($input, true);
+    $result = FOSSBilling\Sanitizer\BrowserHtmlSanitizer::sanitizeContent($input, true);
     expect($result)->toContain('<div>');
     expect($result)->toContain('</div>');
 });
 
 test('sanitize content strips php tags', function (): void {
     $input = '<?php echo "test"; ?>';
-    $result = FOSSBilling\Tools::sanitizeContent($input, false);
+    $result = FOSSBilling\Sanitizer\BrowserHtmlSanitizer::sanitizeContent($input, false);
     expect($result)->not->toContain('<?php');
     expect($result)->not->toContain('?>');
 });
 
 test('sanitize content strips iframe tags', function (): void {
     $input = '<iframe src="https://evil.com"></iframe>';
-    $result = FOSSBilling\Tools::sanitizeContent($input, false);
+    $result = FOSSBilling\Sanitizer\BrowserHtmlSanitizer::sanitizeContent($input, false);
     expect($result)->not->toContain('<iframe');
 });
 
 test('sanitize content strips object tags', function (): void {
     $input = '<object data="evil.swf"></object>';
-    $result = FOSSBilling\Tools::sanitizeContent($input, false);
+    $result = FOSSBilling\Sanitizer\BrowserHtmlSanitizer::sanitizeContent($input, false);
     expect($result)->not->toContain('<object');
 });
 
 test('sanitize content strips embed tags', function (): void {
     $input = '<embed src="evil.swf">';
-    $result = FOSSBilling\Tools::sanitizeContent($input, false);
+    $result = FOSSBilling\Sanitizer\BrowserHtmlSanitizer::sanitizeContent($input, false);
     expect($result)->not->toContain('<embed');
 });
 
 test('sanitize content preserves text content', function (): void {
     $input = 'Plain text with special chars: < > & " \' /';
-    $result = FOSSBilling\Tools::sanitizeContent($input, false);
+    $result = FOSSBilling\Sanitizer\BrowserHtmlSanitizer::sanitizeContent($input, false);
     expect($result)->not->toContain('<');
     expect($result)->not->toContain('>');
 });
 
 test('sanitize markdown content preserves angle brackets as literal text', function (): void {
     $input = 'Hello <World> this text must not disappear';
-    $result = FOSSBilling\Tools::sanitizeMarkdownContent($input);
+    $result = FOSSBilling\Sanitizer\BrowserHtmlSanitizer::sanitizeMarkdownContent($input);
     expect($result)->toBe('Hello <World> this text must not disappear');
 });
 
 test('sanitize markdown content preserves comparison operators', function (): void {
     $input = 'Value must be 1 < x < 10 and y > 0';
-    $result = FOSSBilling\Tools::sanitizeMarkdownContent($input);
+    $result = FOSSBilling\Sanitizer\BrowserHtmlSanitizer::sanitizeMarkdownContent($input);
     expect($result)->toBe('Value must be 1 < x < 10 and y > 0');
 });
 
 test('sanitize markdown content removes null bytes', function (): void {
-    $result = FOSSBilling\Tools::sanitizeMarkdownContent("Hello\0World");
+    $result = FOSSBilling\Sanitizer\BrowserHtmlSanitizer::sanitizeMarkdownContent("Hello\0World");
     expect($result)->not->toContain("\0");
     expect($result)->toBe('HelloWorld');
 });
 
 test('sanitize markdown content returns empty string for empty input', function (): void {
-    expect(FOSSBilling\Tools::sanitizeMarkdownContent(''))->toBe('');
+    expect(FOSSBilling\Sanitizer\BrowserHtmlSanitizer::sanitizeMarkdownContent(''))->toBe('');
 });
 
 test('sanitize markdown content trims surrounding whitespace', function (): void {
-    $result = FOSSBilling\Tools::sanitizeMarkdownContent("  Hello World  \n");
+    $result = FOSSBilling\Sanitizer\BrowserHtmlSanitizer::sanitizeMarkdownContent("  Hello World  \n");
     expect($result)->toBe('Hello World');
 });
 
 test('sanitize markdown content preserves markdown bold syntax', function (): void {
     $input = 'This is **bold** and _italic_ text';
-    $result = FOSSBilling\Tools::sanitizeMarkdownContent($input);
+    $result = FOSSBilling\Sanitizer\BrowserHtmlSanitizer::sanitizeMarkdownContent($input);
     expect($result)->toBe($input);
 });
 
 test('sanitize markdown content preserves markdown inline code', function (): void {
     $input = 'Use `git clone` or `<tag>` syntax';
-    $result = FOSSBilling\Tools::sanitizeMarkdownContent($input);
+    $result = FOSSBilling\Sanitizer\BrowserHtmlSanitizer::sanitizeMarkdownContent($input);
     expect($result)->toBe($input);
 });

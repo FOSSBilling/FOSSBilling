@@ -20,6 +20,6 @@ class Payment_Exception extends FOSSBilling\Exception
      */
     public function __construct(string $message, ?array $variables = null, int $code = 0)
     {
-        parent::__construct($message, $variables, $code, true);
+        parent::__construct($message, $variables, $code);
     }
 }

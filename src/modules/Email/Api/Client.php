@@ -17,7 +17,6 @@ declare(strict_types=1);
 namespace Box\Mod\Email\Api;
 
 use FOSSBilling\PaginationOptions;
-use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Client extends \FOSSBilling\Api\AbstractApi
@@ -41,7 +40,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
                 'sender' => $item['sender'] ?? '',
                 'recipients' => $item['recipients'] ?? '',
                 'subject' => $item['subject'] ?? '',
-                'content_html' => Tools::sanitizeContent($item['content_html'] ?? ''),
+                'content_html' => \FOSSBilling\Sanitizer\BrowserHtmlSanitizer::sanitizeContent($item['content_html'] ?? ''),
                 'content_text' => $item['content_text'] ?? '',
                 'created_at' => $item['created_at'] ?? '',
                 'updated_at' => $item['updated_at'] ?? '',

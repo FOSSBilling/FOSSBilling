@@ -13,17 +13,4 @@ namespace FOSSBilling;
 
 class InformationException extends Exception
 {
-    /**
-     * Creates a new translated information exception.
-     *
-     * @param string     $message   error message
-     * @param array|null $variables translation variables
-     * @param int        $code      the exception code
-     * @param bool       $protected if the variables in this should be considered protect, if so, hide them from the stack trace
-     */
-    public function __construct(string $message, ?array $variables = null, int $code = 0, bool $protected = false)
-    {
-        // Pass the message to the parent
-        parent::__construct($message, $variables, $code, $protected);
-    }
 }

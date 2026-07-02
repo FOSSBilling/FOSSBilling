@@ -17,7 +17,6 @@ use Box\Mod\Email\Repository\EmailTemplateRepository;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\PaginationOptions;
-use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
@@ -194,7 +193,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'sender' => $model->sender,
             'recipients' => $model->recipients,
             'subject' => $model->subject,
-            'content_html' => Tools::sanitizeContent($model->content_html ?? ''),
+            'content_html' => \FOSSBilling\Sanitizer\BrowserHtmlSanitizer::sanitizeContent($model->content_html ?? ''),
             'content_text' => $model->content_text,
             'created_at' => $model->created_at,
             'updated_at' => $model->updated_at,

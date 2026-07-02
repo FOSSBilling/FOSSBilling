@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -146,7 +146,7 @@ class Config
         $output = '<?php' . PHP_EOL . 'return [';
         foreach ($array as $key => $value) {
             // Extra spacing between each "primary" key for slightly improved readability
-            $output .= PHP_EOL . '    ' . var_export($key, true) . self::recursivelyIdentAndFormat($value);
+            $output .= PHP_EOL . '    ' . var_export($key, true) . self::recursivelyIndentAndFormat($value);
         }
 
         return $output . '];';
@@ -157,7 +157,7 @@ class Config
      *
      * @throws Exception if the number of recursive iterations passes this class's MAX_RECURSION_LEVEL
      */
-    private static function recursivelyIdentAndFormat(array|string|bool|float|int $value, $level = 1): string
+    private static function recursivelyIndentAndFormat(array|string|bool|float|int $value, $level = 1): string
     {
         if ($level > self::MAX_RECURSION_LEVEL) {
             throw new Exception('Too many iterations were performed while formatting the config file');
@@ -183,7 +183,7 @@ class Config
 
                 continue;
             }
-            $result .= $additionalIndent . $formattedKey . self::recursivelyIdentAndFormat($value, $level + 1);
+            $result .= $additionalIndent . $formattedKey . self::recursivelyIndentAndFormat($value, $level + 1);
         }
 
         return $result . ($indent . '],' . PHP_EOL);

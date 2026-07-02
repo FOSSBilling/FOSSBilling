@@ -41,6 +41,39 @@ final class BrowserHtmlSanitizer
         return trim(self::$themeSettingsSanitizer->sanitize(self::preSanitize($html)));
     }
 
+    public static function sanitizeContent(string $content = '', bool $allowHtml = true): string
+    {
+        if (empty($content)) {
+            return '';
+        }
+
+        $content = str_replace("\0", '', $content);
+
+        if (!$allowHtml) {
+            return trim(htmlspecialchars(strip_tags($content), ENT_QUOTES | ENT_HTML5, 'UTF-8', false));
+        }
+
+        $config = (new HtmlSanitizerConfig())
+            ->allowSafeElements()
+            ->allowElement('a', ['href', 'title'])
+            ->allowElement('code')
+            ->allowElement('pre')
+            ->allowLinkSchemes(['http', 'https', 'mailto', 'tel']);
+
+        $sanitizer = new HtmlSanitizer($config);
+
+        return trim($sanitizer->sanitize($content));
+    }
+
+    public static function sanitizeMarkdownContent(string $content = ''): string
+    {
+        if (empty($content)) {
+            return '';
+        }
+
+        return trim(str_replace("\0", '', $content));
+    }
+
     private static function createThemeSettingsConfig(): HtmlSanitizerConfig
     {
         return self::createBaseConfig()

@@ -17,9 +17,10 @@ use DebugBar\StandardDebugBar;
 use FOSSBilling\Config;
 use FOSSBilling\Http\RequestFactory;
 use FOSSBilling\i18n;
-use FOSSBilling\Tools;
+use FOSSBilling\Sanitizer\BrowserHtmlSanitizer;
 use FOSSBilling\Twig\Enum\AppArea;
 use FOSSBilling\Twig\Extension\ApiExtension;
+use FOSSBilling\Twig\Extension\AssetExtension;
 use FOSSBilling\Twig\Extension\DebugBarExtension;
 use FOSSBilling\Twig\Extension\FOSSBillingExtension;
 use FOSSBilling\Twig\Extension\LegacyExtension;
@@ -61,38 +62,17 @@ class TwigFactory
      */
     public function createBaseEnvironment(): Environment
     {
-        // Get internationalisation settings from config, or use sensible defaults.
-        $locale = i18n::getActiveLocale();
-        $timezone = Config::getProperty('i18n.timezone', 'UTC');
-        $dateFormat = strtoupper((string) Config::getProperty('i18n.date_format', 'MEDIUM'));
-        $timeFormat = strtoupper((string) Config::getProperty('i18n.time_format', 'SHORT'));
-        $dateTimePattern = Config::getProperty('i18n.datetime_pattern');
-
-        // Create Twig environment with ArrayLoader (will be replaced in specific contexts).
         $loader = new ArrayLoader();
         $twig = new Environment($loader, $this->baseConfig);
 
-        $decimalDigits = $this->getDefaultCurrencyFractionDigits();
+        $this->applyI18nConfig($twig);
 
-        $twig->getExtension(CoreExtension::class)->setNumberFormat($decimalDigits, '.', '');
-        $twig->getExtension(CoreExtension::class)->setTimezone($timezone);
         $twig->addExtension(new DebugExtension());
         $twig->addExtension(new MarkdownExtension());
         $twig->addExtension(new StringLoaderExtension());
-
-        // Configure internationalization and register IntlExtension.
-        $dateFormatter = new \IntlDateFormatter(
-            $locale,
-            constant("\IntlDateFormatter::$dateFormat"),
-            constant("\IntlDateFormatter::$timeFormat"),
-            $timezone,
-            null,
-            $dateTimePattern
-        );
-        $twig->addExtension(new IntlExtension($dateFormatter));
-
         // Register custom extensions.
         $twig->addExtension(new AttributeExtension(ApiExtension::class));
+        $twig->addExtension(new AttributeExtension(AssetExtension::class));
         $twig->addExtension(new AttributeExtension(FOSSBillingExtension::class));
         $twig->addExtension(new AttributeExtension(LegacyExtension::class));
 
@@ -175,58 +155,20 @@ class TwigFactory
             return $this->emailEnvironment;
         }
 
-        // Get internationalisation settings from config
-        $locale = i18n::getActiveLocale();
-        $timezone = Config::getProperty('i18n.timezone', 'UTC');
-        $dateFormat = strtoupper((string) Config::getProperty('i18n.date_format', 'MEDIUM'));
-        $timeFormat = strtoupper((string) Config::getProperty('i18n.time_format', 'SHORT'));
-        $dateTimePattern = Config::getProperty('i18n.datetime_pattern');
-
         // Create Twig environment with ArrayLoader
         $loader = new ArrayLoader();
         $twig = new Environment($loader, $this->baseConfig);
 
-        $decimalDigits = $this->getDefaultCurrencyFractionDigits();
+        $this->applyI18nConfig($twig);
 
-        $twig->getExtension(CoreExtension::class)->setNumberFormat($decimalDigits, '.', '');
-        $twig->getExtension(CoreExtension::class)->setTimezone($timezone);
-
-        // Add only essential extensions for email templates
         $twig->addExtension(new StringLoaderExtension());
         $twig->addExtension(new MarkdownExtension());
-
-        // Intl extension for date/currency formatting
-        $dateFormatter = new \IntlDateFormatter(
-            $locale,
-            constant("\IntlDateFormatter::$dateFormat"),
-            constant("\IntlDateFormatter::$timeFormat"),
-            $timezone,
-            null,
-            $dateTimePattern
-        );
-        $twig->addExtension(new IntlExtension($dateFormatter));
 
         // FOSSBilling extensions for email-specific filters
         $twig->addExtension(new AttributeExtension(FOSSBillingExtension::class));
         $twig->addExtension(new AttributeExtension(LegacyExtension::class));
 
-        // Minimal runtime loader for email environment only
-        $runtimeLoader = new readonly class($this->di) implements RuntimeLoaderInterface {
-            public function __construct(private \Pimple\Container $di)
-            {
-            }
-
-            public function load($class)
-            {
-                return match ($class) {
-                    MarkdownRuntime::class => new MarkdownRuntime(new FOSSBillingMarkdown($this->di)),
-                    FOSSBillingExtension::class => new FOSSBillingExtension($this->di),
-                    LegacyExtension::class => new LegacyExtension($this->di),
-                    default => null,
-                };
-            }
-        };
-        $twig->addRuntimeLoader($runtimeLoader);
+        $twig->addRuntimeLoader($this->createRuntimeLoader());
 
         // Add sandbox extension with policy, enabled globally
         $policy = EmailPolicy::create();
@@ -261,7 +203,7 @@ class TwigFactory
         }
 
         return [
-            'signature' => new Markup(Tools::sanitizeContent($signature), 'UTF-8'),
+            'signature' => new Markup(BrowserHtmlSanitizer::sanitizeContent($signature), 'UTF-8'),
         ];
     }
 
@@ -298,39 +240,44 @@ class TwigFactory
 
     private function createSandboxedFragmentEnvironment(SecurityPolicyInterface $policy): Environment
     {
-        $locale = i18n::getActiveLocale();
-        $timezone = Config::getProperty('i18n.timezone', 'UTC');
-        $dateFormat = strtoupper((string) Config::getProperty('i18n.date_format', 'MEDIUM'));
-        $timeFormat = strtoupper((string) Config::getProperty('i18n.time_format', 'SHORT'));
-        $dateTimePattern = Config::getProperty('i18n.datetime_pattern');
-
         $twig = new Environment(new ArrayLoader(), $this->baseConfig);
 
-        $decimalDigits = $this->getDefaultCurrencyFractionDigits();
+        $this->applyI18nConfig($twig);
 
-        $twig->getExtension(CoreExtension::class)->setNumberFormat($decimalDigits, '.', '');
-        $twig->getExtension(CoreExtension::class)->setTimezone($timezone);
         $twig->addExtension(new StringLoaderExtension());
-
-        $dateFormatter = new \IntlDateFormatter(
-            $locale,
-            constant("\IntlDateFormatter::$dateFormat"),
-            constant("\IntlDateFormatter::$timeFormat"),
-            $timezone,
-            null,
-            $dateTimePattern
-        );
-        $twig->addExtension(new IntlExtension($dateFormatter));
         $twig->addExtension(new AttributeExtension(FOSSBillingExtension::class));
         $twig->addExtension(new AttributeExtension(LegacyExtension::class));
-        $twig->addRuntimeLoader($this->createSandboxedFragmentRuntimeLoader());
+        $twig->addRuntimeLoader($this->createRuntimeLoader());
         $twig->addExtension(new SandboxExtension($policy, true));
         $twig->addGlobal('FOSSBillingVersion', Version::VERSION);
 
         return $twig;
     }
 
-    private function createSandboxedFragmentRuntimeLoader(): RuntimeLoaderInterface
+    private function applyI18nConfig(Environment $twig): void
+    {
+        $locale = i18n::getActiveLocale();
+        $timezone = Config::getProperty('i18n.timezone', 'UTC');
+        $dateFormat = strtoupper((string) Config::getProperty('i18n.date_format', 'MEDIUM'));
+        $timeFormat = strtoupper((string) Config::getProperty('i18n.time_format', 'SHORT'));
+        $dateTimePattern = Config::getProperty('i18n.datetime_pattern');
+
+        $decimalDigits = $this->getDefaultCurrencyFractionDigits();
+
+        $twig->getExtension(CoreExtension::class)->setNumberFormat($decimalDigits, '.', '');
+        $twig->getExtension(CoreExtension::class)->setTimezone($timezone);
+
+        $twig->addExtension(new IntlExtension(new \IntlDateFormatter(
+            $locale,
+            constant("\IntlDateFormatter::$dateFormat"),
+            constant("\IntlDateFormatter::$timeFormat"),
+            $timezone,
+            null,
+            $dateTimePattern
+        )));
+    }
+
+    private function createRuntimeLoader(): RuntimeLoaderInterface
     {
         return new readonly class($this->di) implements RuntimeLoaderInterface {
             public function __construct(private \Pimple\Container $di)
@@ -340,6 +287,9 @@ class TwigFactory
             public function load($class)
             {
                 return match ($class) {
+                    MarkdownRuntime::class => new MarkdownRuntime(new FOSSBillingMarkdown($this->di)),
+                    ApiExtension::class => new ApiExtension($this->di),
+                    AssetExtension::class => new AssetExtension($this->di),
                     FOSSBillingExtension::class => new FOSSBillingExtension($this->di),
                     LegacyExtension::class => new LegacyExtension($this->di),
                     default => null,
@@ -350,24 +300,7 @@ class TwigFactory
 
     private function configureRuntimeLoaders(Environment $twig): void
     {
-        $runtimeLoader = new readonly class($this->di) implements RuntimeLoaderInterface {
-            public function __construct(private \Pimple\Container $di)
-            {
-            }
-
-            public function load($class)
-            {
-                return match ($class) {
-                    MarkdownRuntime::class => new MarkdownRuntime(new FOSSBillingMarkdown($this->di)),
-                    ApiExtension::class => new ApiExtension($this->di),
-                    FOSSBillingExtension::class => new FOSSBillingExtension($this->di),
-                    LegacyExtension::class => new LegacyExtension($this->di),
-                    default => null,
-                };
-            }
-        };
-
-        $twig->addRuntimeLoader($runtimeLoader);
+        $twig->addRuntimeLoader($this->createRuntimeLoader());
     }
 
     private function configureGlobals(Environment $twig): void

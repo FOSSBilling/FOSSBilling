@@ -14,7 +14,7 @@ namespace Box\Mod\Profile;
 
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
-use FOSSBilling\Tools;
+use FOSSBilling\Validate;
 use Symfony\Component\Intl\Countries;
 use Symfony\Component\Intl\Locales;
 
@@ -150,11 +150,11 @@ class Service implements InjectionAwareInterface
         }
 
         if (isset($data['phone_cc']) && $data['phone_cc'] !== '') {
-            $client->phone_cc = Tools::validatePhoneCC($data['phone_cc']);
+            $client->phone_cc = Validate::validatePhoneCC($data['phone_cc']);
         }
 
         if (isset($data['phone']) && is_string($data['phone']) && $data['phone'] !== '') {
-            $client->phone = Tools::validatePhoneNumber($data['phone']);
+            $client->phone = Validate::validatePhoneNumber($data['phone']);
         }
 
         $client->first_name = $data['first_name'] ?? $client->first_name;

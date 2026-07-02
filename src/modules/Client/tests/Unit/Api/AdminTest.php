@@ -93,8 +93,9 @@ test('get returns array', function (): void {
     ->atLeast()->once()
     ->andReturn([]);
 
+    $di = container();
+    $adminClient->setDi($di);
     $adminClient->setService($serviceMock);
-
     $result = $adminClient->get([]);
     expect($result)->toBeArray();
 });

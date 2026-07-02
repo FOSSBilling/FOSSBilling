@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Tests\Support;
 
 use FOSSBilling\Twig\Extension\ApiExtension;
+use FOSSBilling\Twig\Extension\AssetExtension;
 use FOSSBilling\Twig\Extension\FOSSBillingExtension;
 use FOSSBilling\Twig\Extension\LegacyExtension;
 use Symfony\Component\Finder\Finder;
@@ -247,6 +248,7 @@ final class StrictTemplateRenderer
         $twig->addExtension(new MarkdownExtension());
 
         $twig->addExtension(new AttributeExtension(ApiExtension::class));
+        $twig->addExtension(new AttributeExtension(AssetExtension::class));
         $twig->addExtension(new AttributeExtension(FOSSBillingExtension::class));
         $twig->addExtension(new AttributeExtension(LegacyExtension::class));
 
@@ -287,6 +289,10 @@ final class StrictTemplateRenderer
 
                 if ($class === ApiExtension::class) {
                     return new ApiExtension($this->di);
+                }
+
+                if ($class === AssetExtension::class) {
+                    return new AssetExtension($this->di);
                 }
 
                 return null;

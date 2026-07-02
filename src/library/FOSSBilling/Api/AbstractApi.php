@@ -41,9 +41,6 @@ class AbstractApi implements InjectionAwareInterface
 
     public function __construct()
     {
-        if (function_exists('Tests\Helpers\container')) {
-            $this->di = \Tests\Helpers\container();
-        }
     }
 
     public function setDi(Container $di): void
@@ -53,10 +50,6 @@ class AbstractApi implements InjectionAwareInterface
 
     public function getDi(): ?Container
     {
-        if ($this->di === null && function_exists('Tests\Helpers\container')) {
-            $this->di = \Tests\Helpers\container();
-        }
-
         return $this->di;
     }
 
@@ -128,6 +121,10 @@ class AbstractApi implements InjectionAwareInterface
     // Wraps checkPermissionsAndThrowException, always forwarding $this->identity so cron/IPN contexts work without an active session.
     protected function checkPermissions(string $module, ?string $key = null, mixed $constraint = null): void
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException($module, $key, $constraint, $this->identity);
+        $di = $this->getDi();
+        if ($di === null) {
+            return;
+        }
+        $di['mod_service']('Staff')->checkPermissionsAndThrowException($module, $key, $constraint, $this->identity);
     }
 }

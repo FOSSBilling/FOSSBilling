@@ -13,44 +13,40 @@ namespace FOSSBilling\Twig;
 
 use Twig\Sandbox\SecurityPolicy;
 
-/**
- * Factory for creating sandbox security policy for email templates.
- * Restricts allowed tags, filters, functions, and methods to prevent attacks.
- */
-final class EmailPolicy
+class EmailPolicy
 {
-    /**
-     * Create a security policy configured for email template rendering.
-     */
     public static function create(): SecurityPolicy
     {
-        $tags = ['if', 'for', 'block', 'apply', 'set'];
+        return new SecurityPolicy(
+            static::allowedTags(),
+            static::allowedFilters(),
+            [],
+            [],
+            static::allowedFunctions(),
+        );
+    }
 
-        $filters = [
-            // Twig Core - Security
+    public static function allowedTags(): array
+    {
+        return ['if', 'for', 'block', 'apply', 'set'];
+    }
+
+    public static function allowedFilters(): array
+    {
+        return [
             'escape', 'e',
-            // Twig Core - Utility
             'default', 'title', 'length', 'date', 'first',
-            // IntlExtension
             'format_currency', 'format_date', 'format_datetime', 'format_number', 'format_time',
             'currency_name', 'currency_symbol',
             'country_name',
-            // FOSSBillingExtension
             'url', 'daysleft', 'trans',
-            // LegacyExtension
             'period_title',
-            // MarkdownExtension
             'markdown_to_html',
         ];
+    }
 
-        $functions = [
-            'country_names',
-        ];
-
-        $methods = [];
-
-        $properties = [];
-
-        return new SecurityPolicy($tags, $filters, $methods, $properties, $functions);
+    public static function allowedFunctions(): array
+    {
+        return ['country_names'];
     }
 }

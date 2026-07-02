@@ -19,6 +19,7 @@ namespace Box\Mod\Client\Api;
 use FOSSBilling\InformationException;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Tools;
+use FOSSBilling\Validate;
 use FOSSBilling\Validation\Api\RequiredParams;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Intl\Countries;
@@ -269,13 +270,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         // Special handling for the phone country codes
         $phoneCountryCode = $data['phone_cc'] ?? $client->phone_cc;
         if (!empty($phoneCountryCode)) {
-            $client->phone_cc = Tools::validatePhoneCC($phoneCountryCode);
+            $client->phone_cc = Validate::validatePhoneCC($phoneCountryCode);
         }
 
         // Special handling for the phone number itself
         $phone = $data['phone'] ?? $client->phone;
         if (!empty($phone) && is_string($phone)) {
-            $client->phone = Tools::validatePhoneNumber($phone);
+            $client->phone = Validate::validatePhoneNumber($phone);
         }
 
         $previousStatus = $client->status;

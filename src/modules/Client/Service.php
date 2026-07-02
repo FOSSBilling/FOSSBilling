@@ -15,6 +15,7 @@ namespace Box\Mod\Client;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Tools;
+use FOSSBilling\Validate;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Intl\Countries;
 use Symfony\Component\Intl\Locales;
@@ -601,13 +602,13 @@ class Service implements InjectionAwareInterface
         // Special handling for the phone country codes
         $phoneCC = $data['phone_cc'] ?? null;
         if (!empty($phoneCC)) {
-            $client->phone_cc = Tools::validatePhoneCC($phoneCC);
+            $client->phone_cc = Validate::validatePhoneCC($phoneCC);
         }
 
         // Special handling for the phone number itself
         $phone = $data['phone'] ?? null;
         if (!empty($phone) && is_string($phone)) {
-            $client->phone = Tools::validatePhoneNumber($phone);
+            $client->phone = Validate::validatePhoneNumber($phone);
         }
 
         $client->aid = $data['aid'] ?? null;

@@ -10,6 +10,7 @@
 
 declare(strict_types=1);
 
+use FOSSBilling\Twig\Extension\AssetExtension;
 use FOSSBilling\Twig\Extension\FOSSBillingExtension;
 use Pimple\Container;
 use Symfony\Component\Filesystem\Filesystem;
@@ -24,6 +25,14 @@ function makeFossBillingTwigExtension(?Container $di = null): FOSSBillingExtensi
     $container['loaded_assets'] = [];
 
     return new FOSSBillingExtension($container);
+}
+
+function makeAssetTwigExtension(?Container $di = null): AssetExtension
+{
+    $container = $di ?? new Container();
+    $container['loaded_assets'] = [];
+
+    return new AssetExtension($container);
 }
 
 test('svgSprite uses current_theme global for client environments', function (): void {
@@ -69,17 +78,17 @@ test('svgSprite still supports theme code global for admin environments', functi
 });
 
 test('publicAssetUrl returns full URL for an asset', function (): void {
-    $extension = makeFossBillingTwigExtension();
+    $extension = makeAssetTwigExtension();
     expect($extension->publicAssetUrl('css/app.css'))->toBe(SYSTEM_URL . 'public/assets/css/app.css');
 });
 
 test('publicAssetUrl strips leading slashes', function (): void {
-    $extension = makeFossBillingTwigExtension();
+    $extension = makeAssetTwigExtension();
     expect($extension->publicAssetUrl('/css/app.css'))->toBe(SYSTEM_URL . 'public/assets/css/app.css');
 });
 
 test('publicAssetUrl returns empty string for null', function (): void {
-    $extension = makeFossBillingTwigExtension();
+    $extension = makeAssetTwigExtension();
     expect($extension->publicAssetUrl(null))->toBe('');
 });
 
@@ -131,7 +140,7 @@ test('truncate returns empty string for null', function (): void {
 });
 
 test('wysiwyg returns rendered HTML for a selector', function (): void {
-    $extension = makeFossBillingTwigExtension();
+    $extension = makeAssetTwigExtension();
     $output = $extension->wysiwyg('.editor');
 
     expect($output)->toBeString();
@@ -140,12 +149,12 @@ test('wysiwyg returns rendered HTML for a selector', function (): void {
 });
 
 test('wysiwyg returns empty string for null', function (): void {
-    $extension = makeFossBillingTwigExtension();
+    $extension = makeAssetTwigExtension();
     expect($extension->wysiwyg(null))->toBe('');
 });
 
 test('scriptTag returns script tag for a path', function (): void {
-    $extension = makeFossBillingTwigExtension();
+    $extension = makeAssetTwigExtension();
     $output = $extension->scriptTag('js/app.js');
 
     expect($output)->toBeString();
@@ -154,18 +163,18 @@ test('scriptTag returns script tag for a path', function (): void {
 });
 
 test('scriptTag returns empty string for null', function (): void {
-    $extension = makeFossBillingTwigExtension();
+    $extension = makeAssetTwigExtension();
     expect($extension->scriptTag(null))->toBe('');
 });
 
 test('scriptTag returns empty string when asset already loaded', function (): void {
-    $extension = makeFossBillingTwigExtension();
+    $extension = makeAssetTwigExtension();
     $extension->scriptTag('js/once.js');
     expect($extension->scriptTag('js/once.js'))->toBe('');
 });
 
 test('stylesheetTag returns link tag for a path', function (): void {
-    $extension = makeFossBillingTwigExtension();
+    $extension = makeAssetTwigExtension();
     $output = $extension->stylesheetTag('css/app.css');
 
     expect($output)->toBeString();
@@ -174,18 +183,18 @@ test('stylesheetTag returns link tag for a path', function (): void {
 });
 
 test('stylesheetTag returns empty string for null path', function (): void {
-    $extension = makeFossBillingTwigExtension();
+    $extension = makeAssetTwigExtension();
     expect($extension->stylesheetTag(null))->toBe('');
 });
 
 test('stylesheetTag returns empty string when asset already loaded', function (): void {
-    $extension = makeFossBillingTwigExtension();
+    $extension = makeAssetTwigExtension();
     $extension->stylesheetTag('css/once.css');
     expect($extension->stylesheetTag('css/once.css'))->toBe('');
 });
 
 test('stylesheetTag uses custom media type when provided', function (): void {
-    $extension = makeFossBillingTwigExtension();
+    $extension = makeAssetTwigExtension();
     $output = $extension->stylesheetTag('css/print.css', 'print');
 
     expect($output)->toContain('media="print"');

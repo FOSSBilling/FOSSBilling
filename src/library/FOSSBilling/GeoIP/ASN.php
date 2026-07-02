@@ -13,13 +13,13 @@ namespace FOSSBilling\GeoIP;
 
 class ASN implements \JsonSerializable
 {
-    public readonly int|float $asnNumber;
+    public readonly int $asnNumber;
     public readonly string $asnOrg;
 
     public function __construct(array $asnRecord)
     {
         if (!array_key_exists('autonomous_system_number', $asnRecord) || !array_key_exists('autonomous_system_organization', $asnRecord)) {
-            throw new IncompleteRecord('The is no ASN information for the provided IP address');
+            throw new IncompleteRecord('There is no ASN information for the provided IP address');
         }
 
         $this->asnNumber = $asnRecord['autonomous_system_number'];

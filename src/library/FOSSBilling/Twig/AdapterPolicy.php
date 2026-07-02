@@ -13,35 +13,23 @@ namespace FOSSBilling\Twig;
 
 use Twig\Sandbox\SecurityPolicy;
 
-final class AdapterPolicy
+final class AdapterPolicy extends EmailPolicy
 {
     public static function create(): SecurityPolicy
     {
-        $tags = ['if', 'for', 'block', 'apply', 'set', 'spaceless'];
-
-        $filters = [
-            'escape', 'e',
-            'default', 'title', 'length', 'date',
-            'format_currency', 'format_date', 'format_datetime', 'format_number', 'format_time',
-            'currency_name', 'currency_symbol',
-            'country_name',
-            'url', 'daysleft', 'trans',
-            'period_title',
-            'number_format',
-            'round', 'abs', 'json_encode',
-            'trim', 'lower', 'upper', 'nl2br', 'striptags',
-            'join', 'split', 'sort', 'merge', 'reverse',
-            'keys', 'length',
-        ];
-
-        $functions = [
-            'country_names',
-        ];
-
-        $methods = [];
-
-        $properties = [];
-
-        return new SecurityPolicy($tags, $filters, $methods, $properties, $functions);
+        return new SecurityPolicy(
+            [...self::allowedTags(), 'spaceless'],
+            [
+                ...self::allowedFilters(),
+                'number_format',
+                'round', 'abs', 'json_encode',
+                'trim', 'lower', 'upper', 'nl2br', 'striptags',
+                'join', 'split', 'sort', 'merge', 'reverse',
+                'keys', 'length',
+            ],
+            [],
+            [],
+            self::allowedFunctions(),
+        );
     }
 }

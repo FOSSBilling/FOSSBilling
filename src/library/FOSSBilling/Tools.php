@@ -39,31 +39,17 @@ class Tools
         return $this->di;
     }
 
-    /**
-     * Return site url.
-     */
     public function url($link = null): string
     {
-        $link = trim((string) $link, '/');
-
-        return SYSTEM_URL . $link;
+        return SYSTEM_URL . trim((string) $link, '/');
     }
 
-    /**
-     * Generates a password of a set length and complexity.
-     *
-     * @param int      $length         the length of the password to generate
-     * @param bool|int $includeSpecial If special characters should be included. If 4 is passed, that's considered to be true (added for backwards compatibility).
-     *
-     * @throws InformationException if it failed to generate a password meeting the requirements within 100 iterations
-     */
     public function generatePassword(int $length = 8, bool|int $includeSpecial = false): string
     {
         $characters = 'abcdefghijklmnopqrstuvwxyz';
         $numbers = '0123456789';
         $specialCharacters = '!@#$%&?()+-_';
 
-        // Backwards compatibility with previous behavior
         if (is_int($includeSpecial)) {
             $includeSpecial = $includeSpecial === 4;
         }
@@ -75,13 +61,11 @@ class Tools
 
         $charSetLength = strlen($charSet);
 
-        // Ensure minimum length for all required character types
         $minRequiredLength = $includeSpecial ? 4 : 3;
         if ($length < $minRequiredLength) {
             throw new InformationException('Password length must be at least ' . $minRequiredLength . ' characters to meet complexity requirements');
         }
 
-        // Deterministically build password with one from each required category, then fill the rest
         $password = '';
         $password .= $characters[random_int(0, strlen($characters) - 1)];
         $password .= strtoupper($characters)[random_int(0, strlen($characters) - 1)];
@@ -90,12 +74,10 @@ class Tools
             $password .= $specialCharacters[random_int(0, strlen($specialCharacters) - 1)];
         }
 
-        // Fill remaining length with random characters from the full set
         for ($i = strlen($password); $i < $length; ++$i) {
             $password .= $charSet[random_int(0, $charSetLength - 1)];
         }
 
-        // Shuffle to avoid predictable positions for required characters
         return str_shuffle($password);
     }
 
@@ -126,9 +108,6 @@ class Tools
         return preg_replace_callback('/([A-Z])/', $func, (string) $str);
     }
 
-    /**
-     * @return mixed[]
-     */
     public function sortByOneKey(array $array, $key, $asc = true): array
     {
         $result = [];
@@ -163,9 +142,6 @@ class Tools
         return new $class();
     }
 
-    /**
-     * @return mixed[]
-     */
     public function getPairsForTableByIds($table, $ids): array
     {
         if (empty($ids)) {
@@ -173,7 +149,7 @@ class Tools
         }
 
         $count = self::safeCount($ids);
-        $slots = $count ? implode(',', array_fill(0, $count, '?')) : ''; // same as RedBean genSlots() method
+        $slots = $count ? implode(',', array_fill(0, $count, '?')) : '';
 
         $rows = $this->di['db']->getAll('SELECT id, title FROM ' . $table . ' WHERE id in (' . $slots . ')', $ids);
 
@@ -185,11 +161,6 @@ class Tools
         return $result;
     }
 
-    /**
-     * Checks if a given email address is valid.
-     * In a production environment, this will both check that the email address matches RFC standards as well as validating the domain.
-     * In a testing / development environment it will only check the RFC standards.
-     */
     public function validateAndSanitizeEmail(string $email, bool $throw = true, bool $checkDNS = true)
     {
         $email = htmlspecialchars($email);
@@ -217,17 +188,11 @@ class Tools
         return $email;
     }
 
-    /**
-     * Safely count a value that may or may not be countable.
-     */
     public static function safeCount(mixed $value): int
     {
         return is_countable($value) ? count($value) : 0;
     }
 
-    /**
-     * Normalizes mixed input into a boolean value.
-     */
     public static function normalizeBoolean(mixed $value, bool $default = false): bool
     {
         if (is_bool($value)) {
@@ -247,9 +212,6 @@ class Tools
         return $default;
     }
 
-    /**
-     * Normalizes mixed input into a valid TCP/UDP port number.
-     */
     public static function normalizePort(mixed $value, ?int $default = null): ?int
     {
         if (!is_int($value) && !is_string($value)) {
@@ -267,139 +229,6 @@ class Tools
         return $port === false ? $default : $port;
     }
 
-    public static function isHTTPS(): bool
-    {
-        $protocol = $_SERVER['HTTPS'] ?? $_SERVER['REQUEST_SCHEME'] ?? '';
-
-        // $_SERVER['HTTPS'] will be set to `on` to indicate HTTPS and REQUEST_SCHEME may be set to `https`, so either one means we are connected via HTTPS.
-        return strcasecmp((string) $protocol, 'on') === 0 || strcasecmp((string) $protocol, 'https') === 0;
-    }
-
-    /**
-     * Tries to fetch a list of possible interfaces (IPs) to bind to when making requests.
-     * Attempts to make external requests for each interface & only works with IPv4.
-     */
-    public function listHttpInterfaces(): array
-    {
-        // Fetch a list of IP addresses for local interfaces
-        $validatedIps = [];
-
-        try {
-            $ips = gethostbynamel(gethostname());
-        } catch (\Exception) {
-            $ips = [];
-        }
-
-        if (!$ips) {
-            return [];
-        }
-
-        // For each of the found IPs, attempt a generic network request. If the request produces no errors, consider it valid
-        foreach ($ips as $ip) {
-            try {
-                $this->getExternalIP(true, $ip);
-                $validatedIps[] = $ip;
-            } catch (\Exception) {
-            }
-        }
-
-        return $validatedIps;
-    }
-
-    /**
-     * Validates an interface value for HTTP client binding.
-     * Accepts IP addresses and hostname/interface names like "eth0".
-     */
-    public static function isValidHttpInterface(string $interface): bool
-    {
-        if (filter_var($interface, FILTER_VALIDATE_IP) !== false) {
-            return true;
-        }
-
-        if (ctype_digit($interface)) {
-            return false;
-        }
-
-        return preg_match('/^[a-zA-Z0-9._-]*[a-zA-Z._-][a-zA-Z0-9._-]*$/', $interface) === 1;
-    }
-
-    /**
-     * Returns the currently configured default network interface.
-     * If a custom interface IP address, hostname, or interface name is entered, it is validated before being used.
-     * If we are using an interface IP address that was selected from a given list, we will validate that the IP address is still in the list of known IP address interfaces.
-     *
-     * @return string|int either the IP address of the interface to use (string) or 0 if there's none set / the set one is invalid
-     */
-    public static function getDefaultInterface(): string|int
-    {
-        $customInterface = Config::getProperty('custom_interface_ip', '');
-        if (!empty($customInterface) && self::isValidHttpInterface($customInterface)) {
-            return $customInterface;
-        }
-
-        $interface = Config::getProperty('interface_ip', '0');
-
-        try {
-            $knownInterfaces = gethostbynamel(gethostname());
-        } catch (\Exception) {
-            $knownInterfaces = [];
-        }
-
-        if ($interface !== '0' && in_array($interface, $knownInterfaces)) {
-            return $interface;
-        }
-
-        return 0;
-    }
-
-    /**
-     * Returns the public IP address of the current FOSSBilling instance.
-     * Will try multiple services in order if they time out.
-     * Try order: ipify.org, checkip.global.api.aws, ifconfig.io.
-     *
-     * @param bool    $throw if the function should throw an exception on an error
-     * @param ?string $bind  overrides the default network interface bind. When `null` (default), the configured default (BIND_TO) is used.
-     *
-     * @return ?string `null` if there was an error, otherwise an IP address will be returned
-     */
-    public function getExternalIP(bool $throw = true, ?string $bind = null): ?string
-    {
-        $services = ['https://api64.ipify.org', 'https://checkip.global.api.aws', 'https://ifconfig.io/ip'];
-        $httpClient = $this->di['http_client'];
-        if ($bind !== null) {
-            $httpClient = $httpClient->withOptions(['bindto' => $bind]);
-        }
-
-        foreach ($services as $service) {
-            try {
-                $response = $httpClient->request('GET', $service, [
-                    'timeout' => 2,
-                ]);
-
-                $ip = filter_var($response->getContent(), FILTER_VALIDATE_IP);
-                if ($ip) {
-                    return $ip;
-                }
-            } catch (\Exception $e) {
-                error_log(sprintf(
-                    'Error fetching external IP from "%s" (%s): %s',
-                    $service,
-                    $e::class,
-                    $e->getMessage()
-                ));
-            }
-        }
-
-        if ($throw) {
-            throw new \Exception('Unable to determine external IP address from any service.');
-        }
-
-        return null;
-    }
-
-    /**
-     * Converts bytes to a human-readable format (B, KB, MB, GB and TB).
-     */
     public static function humanReadableBytes(int $bytes): string
     {
         if ($bytes < 1024) {
@@ -418,93 +247,7 @@ class Tools
         return round($bytes / 1099511627776, 2) . ' TB';
     }
 
-    /**
-     * Sanitize user content to prevent XSS attacks.
-     * Uses Symfony's HTML Sanitizer component for robust protection.
-     *
-     * Use this only for content that is stored and rendered as HTML.
-     * For Markdown content (e.g. ticket messages, KB articles), use sanitizeMarkdownContent() instead,
-     * since the HTML sanitizer incorrectly strips text that follows unrecognized tags like <foo>.
-     *
-     * @param string $content   The content to sanitize. If empty, returns an empty string.
-     * @param bool   $allowHtml Whether to allow safe HTML tags (default: true for rich content)
-     *
-     * @return string Sanitized content safe for output
-     */
-    public static function sanitizeContent(string $content = '', bool $allowHtml = true): string
-    {
-        if (empty($content)) {
-            return '';
-        }
-
-        // Remove null bytes
-        $content = str_replace("\0", '', $content);
-
-        if (!$allowHtml) {
-            // Strip all HTML tags for plain text
-            return trim(htmlspecialchars(strip_tags($content), ENT_QUOTES | ENT_HTML5, 'UTF-8', false));
-        }
-
-        // Use Symfony's HTML Sanitizer
-        $config = (new \Symfony\Component\HtmlSanitizer\HtmlSanitizerConfig())
-            ->allowSafeElements()
-            ->allowElement('a', ['href', 'title'])
-            ->allowElement('code')
-            ->allowElement('pre')
-            ->allowLinkSchemes(['http', 'https', 'mailto', 'tel']);
-
-        $sanitizer = new \Symfony\Component\HtmlSanitizer\HtmlSanitizer($config);
-
-        return trim($sanitizer->sanitize($content));
-    }
-
-    /**
-     * Sanitize Markdown content for storage.
-     *
-     * Unlike sanitizeContent(), this does NOT run an HTML sanitizer because the content is Markdown,
-     * not HTML. Running an HTML sanitizer on Markdown corrupts it: characters like < and > that users
-     * type as literal text get misinterpreted as unknown HTML elements and dropped together with all
-     * subsequent text.
-     *
-     * XSS protection for Markdown content is handled at render time by the markdown_to_html Twig
-     * filter, which is configured with html_input=escape so any raw HTML in the Markdown is safely
-     * escaped rather than executed.
-     *
-     * @param string $content the Markdown content to sanitize
-     *
-     * @return string Sanitized Markdown content safe for storage
-     */
-    public static function sanitizeMarkdownContent(string $content = ''): string
-    {
-        if (empty($content)) {
-            return '';
-        }
-
-        return trim(str_replace("\0", '', $content));
-    }
-
-    public static function validatePhoneCC(string|int $countryCode): int
-    {
-        if (!is_numeric($countryCode) || $countryCode <= 0 || $countryCode > 999) {
-            throw new InformationException('The provided phone country code does not appear to be valid.');
-        }
-
-        return intval($countryCode);
-    }
-
-    public static function validatePhoneNumber(string $number): string
-    {
-        $digitsOnly = preg_replace('/\D+/', '', $number);
-        if (strlen((string) $digitsOnly) < 1 || strlen((string) $digitsOnly) > 12) {
-            throw new InformationException('The provided phone number does not appear to be valid.');
-        }
-
-        if (str_starts_with($number, '+')) {
-            throw new InformationException('Please use the separate field for the phone country code.');
-        }
-
-        return $number;
-    }
+    // --- Session tokens ---
 
     public static function createSessionRestoreToken(string $sessionId): string
     {

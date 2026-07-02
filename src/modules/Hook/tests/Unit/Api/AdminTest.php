@@ -65,6 +65,7 @@ test('call fires event', function (): void {
 
 test('call returns false when event param is missing', function (): void {
     $api = new Box\Mod\Hook\Api\Admin();
+    $api->setDi(container());
     $data['event'] = null;
 
     $result = $api->call($data);
