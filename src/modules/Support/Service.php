@@ -439,11 +439,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->getSupportTicketRepository()->countByStatus($status);
     }
 
-    public function getActiveTicketsCountForOrder(\Model_ClientOrder $model): int
-    {
-        return $this->getSupportTicketRepository()->countActiveTicketsForOrder((int) $model->id);
-    }
-
     public function checkIfTaskAlreadyExists(\Model_Client $client, int $rel_id, string $rel_type, string $rel_task): bool
     {
         return $this->getSupportTicketRepository()->findOneBy([
@@ -563,7 +558,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $data['client'] = $this->getClientApiArrayForTicket($model, $identity);
 
         if ($deep) {
-            $messages = $this->messageGetTicketMessages($model);
+            $messages = $this->getSupportTicketMessageRepository()->findByTicketId($model->getId() ?? 0);
             foreach ($messages as $msg) {
                 $data['messages'][] = $this->messageToApiArray($msg, true, $identity);
             }
@@ -970,11 +965,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['logger']->info('Deleted helpdesk #%s', $id);
 
         return true;
-    }
-
-    public function messageGetTicketMessages(SupportTicket $model): array
-    {
-        return $this->getSupportTicketMessageRepository()->findByTicketId($model->getId() ?? 0);
     }
 
     public function messageGetRepliesCount(SupportTicket $model): int

@@ -641,7 +641,7 @@ test('gets active tickets count for order', function (): void {
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
 
-    $result = $service->getActiveTicketsCountForOrder($order);
+    $result = $service->getSupportTicketRepository()->countActiveTicketsForOrder((int) $order->id);
     expect($result)->toBeInt();
 });
 
@@ -855,9 +855,13 @@ test('converts ticket to api array', function (): void {
     $serviceMock->shouldReceive('messageToApiArray')
         ->atLeast()->once()
         ->andReturn([]);
-    $serviceMock->shouldReceive('messageGetTicketMessages')
+    $messageRepo = Mockery::mock(SupportTicketMessageRepository::class)->shouldIgnoreMissing();
+    $messageRepo->shouldReceive('findByTicketId')
         ->atLeast()->once()
         ->andReturn($ticketMessages);
+    $serviceMock->shouldReceive('getSupportTicketMessageRepository')
+        ->atLeast()->once()
+        ->andReturn($messageRepo);
     $serviceMock->shouldReceive('noteToApiArray')
         ->atLeast()->once()
         ->andReturn([]);
@@ -933,9 +937,13 @@ test('converts ticket to api array with rel details', function (): void {
     $serviceMock->shouldReceive('messageToApiArray')
         ->atLeast()->once()
         ->andReturn([]);
-    $serviceMock->shouldReceive('messageGetTicketMessages')
+    $messageRepo = Mockery::mock(SupportTicketMessageRepository::class)->shouldIgnoreMissing();
+    $messageRepo->shouldReceive('findByTicketId')
         ->atLeast()->once()
         ->andReturn($ticketMessages);
+    $serviceMock->shouldReceive('getSupportTicketMessageRepository')
+        ->atLeast()->once()
+        ->andReturn($messageRepo);
     $serviceMock->shouldReceive('noteToApiArray')
         ->atLeast()->once()
         ->andReturn([]);
@@ -2113,7 +2121,7 @@ test('message get ticket messages', function (): void {
     $ticket = new SupportTicket();
     setEntityId($ticket, 1);
 
-    $result = $service->messageGetTicketMessages($ticket);
+    $result = $service->getSupportTicketMessageRepository()->findByTicketId($ticket->getId() ?? 0);
     expect($result)->toBeArray();
 });
 
