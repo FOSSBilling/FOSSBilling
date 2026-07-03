@@ -2127,9 +2127,11 @@ class UpdatePatcher implements InjectionAwareInterface
             ],
             'staff' => [
                 'access' => true,
+                'view' => true,
                 'create_and_edit_staff' => true,
                 'reset_staff_password' => true,
                 'manage_groups' => true,
+                'manage_settings' => true,
             ],
         ], JSON_THROW_ON_ERROR);
         $this->executeSql(
