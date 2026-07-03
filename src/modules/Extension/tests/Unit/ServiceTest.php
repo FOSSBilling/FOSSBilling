@@ -298,7 +298,7 @@ test('getAdminNavigation returns admin navigation', function (): void {
         ->andReturn([]);
 
     $di = container();
-    $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
+    $di['mod'] = $di->protect(fn ($name): Mockery\MockInterface => $modMock);
     $di['tools'] = new FOSSBilling\Tools();
     $di['em'] = extensionBuildEm($extensionRepository);
 
