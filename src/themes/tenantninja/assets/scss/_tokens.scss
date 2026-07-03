@@ -1,44 +1,48 @@
-// TenantNinja design tokens - source of truth, kept verbatim from the design spec.
+// TenantNinja design tokens v2 - source of truth, synced from the Claude Design
+// project (claude.ai/design/p/1ce8abd7-090b-4b82-84c9-50c189829746), 2026-07-03.
 // These are plain CSS custom properties (not Sass variables) so they can be
 // referenced directly in component overrides and remain toggleable via
 // [data-bs-theme="dark"] / default (light) exactly like Bootstrap's own tokens.
+//
+// v2 notes: colors now expressed in OKLCH. The blade accent ramp is locked to a
+// single hue (127) - only lightness/chroma vary. Success (teal, hue 177) and
+// info (blue, hue 225) are deliberately distinct hues from the accent so a
+// status badge never reads as "the same green" as an accent button. The
+// --volt token from v1 was unused and has been removed.
 
 :root {
-    --carbon-950: #070908;
-    --carbon-900: #0C0F0E;
-    --carbon-850: #111514;
-    --carbon-800: #161B19;
-    --carbon-700: #1E2422;
-    --carbon-600: #2A312E;
-    --carbon-500: #3A423F;
-    --carbon-400: #565F5B;
-    --smoke-400: #6E7873;
-    --smoke-300: #909A94;
-    --smoke-200: #B6BFB9;
-    --smoke-100: #D4DBD5;
-    --paper-200: #E7EAE3;
-    --paper-100: #F1F3EC;
-    --paper-50: #F8FAF3;
-    --white: #FFFFFF;
+    --carbon-950: #090807;
+    --carbon-900: #0F0E0C;
+    --carbon-850: #141210;
+    --carbon-800: #1A1816;
+    --carbon-700: #22201A;
+    --carbon-600: #2E2B24;
+    --carbon-500: #3F3D36;
+    --carbon-400: #57554E;
+    --smoke-400: #706E68;
+    --smoke-300: #929089;
+    --smoke-200: #B6B5AD;
+    --smoke-100: #D3D1C9;
+    --paper-200: #E8E6DC;
+    --paper-100: #F1EEDE;
+    --paper-50: #F9F7EF;
+    --white: #FDFCF8;
 
-    --blade-700: #7FA814;
-    --blade-600: #A1CE1F;
-    --blade-500: #C7F23C;
-    --blade-400: #D6F968;
-    --blade-300: #E6FCA0;
-    --blade-glow: rgba(199, 242, 60, 0.28);
+    --blade-700: oklch(42% 0.18 127);
+    --blade-600: oklch(60% 0.22 127);
+    --blade-500: oklch(88% 0.23 127);
+    --blade-400: oklch(93% 0.15 127);
+    --blade-300: oklch(96% 0.08 127);
+    --blade-glow: color-mix(in oklch, var(--blade-500) 25%, transparent);
 
-    --volt-500: #4FE3CF;
-    --volt-400: #79EEDD;
-
-    --success-500: #3FCF8E;
-    --success-bg: rgba(63, 207, 142, 0.12);
+    --success-500: oklch(72% 0.14 177);
+    --success-bg: oklch(72% 0.14 177 / 0.12);
     --warning-500: #F6B53C;
     --warning-bg: rgba(246, 181, 60, 0.12);
     --danger-500: #FF5468;
     --danger-bg: rgba(255, 84, 104, 0.12);
-    --info-500: #46C7E8;
-    --info-bg: rgba(70, 199, 232, 0.12);
+    --info-500: oklch(68% 0.16 225);
+    --info-bg: oklch(68% 0.16 225 / 0.12);
 
     // Light-mode surface/text values live here in :root because the app's
     // default `data-bs-theme` attribute is "light" (see settings.theme|default('light')
@@ -64,8 +68,9 @@
     --accent: var(--blade-500);
     --accent-hover: var(--blade-400);
     --accent-press: var(--blade-600);
-    --on-accent: #0C0F0E;
-    --accent-soft: rgba(127, 168, 20, 0.14);
+    --on-accent: #0F0E0C;
+    --accent-soft: color-mix(in oklch, var(--accent) 13%, transparent);
+    --accent-ring: color-mix(in oklch, var(--accent) 28%, transparent);
 
     --focus-ring: var(--blade-500);
 
@@ -121,7 +126,7 @@
     --container: 1200px;
     --container-wide: 1400px;
     --gutter: 24px;
-    --sidebar-w: 248px;
+    --sidebar-w: 224px;
 
     // Effects
     --r-xs: 4px;
@@ -165,11 +170,12 @@
     --border-strong: rgba(255, 255, 255, 0.16);
     --border-faint: rgba(255, 255, 255, 0.05);
 
-    --text: #F3F6EF;
+    --text: #F4F2EC;
     --text-muted: var(--smoke-300);
     --text-faint: var(--smoke-400);
     --text-inverse: var(--carbon-900);
 
-    --on-accent: #0C0F0E;
-    --accent-soft: rgba(199, 242, 60, 0.14);
+    --on-accent: #0F0E0C;
+    --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
+    --accent-ring: color-mix(in oklch, var(--accent) 28%, transparent);
 }

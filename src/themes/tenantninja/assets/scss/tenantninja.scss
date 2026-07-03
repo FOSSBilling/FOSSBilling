@@ -292,6 +292,27 @@ table > thead > tr > th {
 }
 
 // -----------------------------------------------------------------------
+// Switches
+// -----------------------------------------------------------------------
+.form-switch {
+    .form-check-input {
+        width: 2.25em;
+        background-color: var(--surface-3);
+        border-color: var(--border-strong);
+
+        &:checked {
+            background-color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        &:focus {
+            border-color: var(--focus-ring);
+            box-shadow: 0 0 0 0.2rem var(--accent-soft);
+        }
+    }
+}
+
+// -----------------------------------------------------------------------
 // Nav tabs
 // -----------------------------------------------------------------------
 .nav-tabs {
@@ -341,6 +362,35 @@ table > thead > tr > th {
         border-color: var(--accent);
         color: var(--on-accent);
     }
+}
+
+// -----------------------------------------------------------------------
+// Toasts
+// -----------------------------------------------------------------------
+.toast {
+    background-color: var(--surface-2);
+    border-color: var(--border-strong);
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow-pop);
+}
+
+.toast-header {
+    background-color: transparent;
+    color: var(--text);
+    border-bottom-color: var(--border);
+}
+
+.toast-body {
+    color: var(--text-muted);
+}
+
+// -----------------------------------------------------------------------
+// Tooltips
+// -----------------------------------------------------------------------
+.tooltip {
+    --bs-tooltip-bg: var(--carbon-900);
+    --bs-tooltip-color: var(--paper-50);
+    --bs-tooltip-opacity: 1;
 }
 
 // -----------------------------------------------------------------------
