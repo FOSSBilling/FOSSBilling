@@ -104,65 +104,6 @@ test('di returns dependency injection container', function (): void {
     expect($result)->toBe($di);
 });
 
-dataset('getSearchQueryProvider', fn (): array => [
-    [
-        [],
-        'SELECT * FROM activity_client_email ORDER BY id DESC',
-        [],
-    ],
-    [
-        [
-            'search' => 'search_query',
-        ],
-        'SELECT * FROM activity_client_email WHERE (sender LIKE :sender OR recipients LIKE :recipient OR subject LIKE :subject OR content_text LIKE :content_text OR content_html LIKE :content_html) ORDER BY id DESC',
-        [
-            ':sender' => '%search_query%',
-            ':recipient' => '%search_query%',
-            ':subject' => '%search_query%',
-            ':content_text' => '%search_query%',
-            ':content_html' => '%search_query%',
-        ],
-    ],
-    [
-        [
-            'client_id' => 5,
-        ],
-        'SELECT * FROM activity_client_email WHERE client_id = :client_id ORDER BY id DESC',
-        [
-            ':client_id' => 5,
-        ],
-    ],
-    [
-        [
-            'search' => 'search_query',
-            'client_id' => 5,
-        ],
-        'SELECT * FROM activity_client_email WHERE (sender LIKE :sender OR recipients LIKE :recipient OR subject LIKE :subject OR content_text LIKE :content_text OR content_html LIKE :content_html) AND client_id = :client_id ORDER BY id DESC',
-        [
-            ':sender' => '%search_query%',
-            ':recipient' => '%search_query%',
-            ':subject' => '%search_query%',
-            ':content_text' => '%search_query%',
-            ':content_html' => '%search_query%',
-            ':client_id' => 5,
-        ],
-    ],
-]);
-
-test('getSearchQuery returns query and bindings', function (array $data, string $query, array $bindings): void {
-    $service = new Box\Mod\Email\Service();
-    $di = container();
-
-    $service->setDi($di);
-    $result = $service->getSearchQuery($data);
-
-    expect($result[0])->toBeString();
-    expect($result[1])->toBeArray();
-
-    expect($result[0])->toBe($query);
-    expect($result[1])->toBe($bindings);
-})->with('getSearchQueryProvider');
-
 test('rmByClient removes emails for client', function (): void {
     $service = new Box\Mod\Email\Service();
     $di = container();
@@ -184,15 +125,13 @@ test('rmByClient removes emails for client', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('toApiArray returns API array for email', function (): void {
-    $service = new Box\Mod\Email\Service();
-
+test('ActivityClientEmail toApiArray returns sanitized API array', function (): void {
     $id = 10;
     $client_id = 5;
     $sender = 'sender@example.com';
     $recipients = 'recipient@example.com';
     $subject = 'Subject';
-    $content_html = 'HTML';
+    $content_html = '<script>alert("x")</script><p>HTML</p>';
     $content_text = 'TEXT';
     $created = new DateTime('-1 day');
     $updated = new DateTime();
@@ -214,13 +153,13 @@ test('toApiArray returns API array for email', function (): void {
         'sender' => $sender,
         'recipients' => $recipients,
         'subject' => $subject,
-        'content_html' => $content_html,
+        'content_html' => FOSSBilling\Tools::sanitizeContent($content_html),
         'content_text' => $content_text,
         'created_at' => $created->format('Y-m-d H:i:s'),
         'updated_at' => $updated->format('Y-m-d H:i:s'),
     ];
 
-    $result = $service->toApiArray($model);
+    $result = $model->toApiArray();
     expect($result)->toBeArray();
     expect($result)->toBe($expected);
 });
@@ -701,43 +640,6 @@ test('updateTemplate updates template', function (array $data, string $templateR
     $result = $emailService->updateTemplate($templateModel, $data['enabled'], $data['category'], $data['subject'], @$data['content']);
     expect($result)->toBeTrue();
 })->with('template_updateProvider');
-
-test('getEmailById returns email by ID', function (): void {
-    $service = new Box\Mod\Email\Service();
-
-    $id = 1;
-    $model = new Box\Mod\Email\Entity\ActivityClientEmail();
-    \Tests\Helpers\setEntityId($model, $id);
-
-    $repo = Mockery::mock(Box\Mod\Email\Repository\ActivityClientEmailRepository::class);
-    $repo->shouldReceive('findOneByIdOrFail')
-        ->once()
-        ->with($id)
-        ->andReturn($model);
-
-    $di = container();
-    $di['em'] = emailBuildEm($repo);
-    $service->setDi($di);
-
-    $result = $service->getEmailById($id);
-
-    expect($result->getId())->toBe($id);
-});
-
-test('getEmailById throws exception when email not found', function (): void {
-    $service = new Box\Mod\Email\Service();
-
-    $repo = Mockery::mock(Box\Mod\Email\Repository\ActivityClientEmailRepository::class);
-    $repo->shouldReceive('findOneByIdOrFail')
-        ->andThrow(new FOSSBilling\InformationException('Email not found'));
-
-    $di = container();
-    $di['em'] = emailBuildEm($repo);
-    $service->setDi($di);
-
-    expect(fn (): Box\Mod\Email\Entity\ActivityClientEmail => $service->getEmailById(5))
-        ->toThrow(FOSSBilling\InformationException::class);
-});
 
 test('templateCreate creates new template', function (): void {
     $service = new Box\Mod\Email\Service();

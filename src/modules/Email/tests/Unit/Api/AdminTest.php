@@ -79,15 +79,15 @@ test('email get', function (): void {
 
     $expected = $model->toApiArray();
 
+    $repo = Mockery::mock(Box\Mod\Email\Repository\ActivityClientEmailRepository::class);
+    $repo->shouldReceive('findOneByIdOrFail')
+        ->once()
+        ->with($data['id'])
+        ->andReturn($model);
+
     $service = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
-    $service
-    ->shouldReceive('getEmailById')
-    ->atLeast()->once()
-    ->andReturn($model);
-    $service
-    ->shouldReceive('toApiArray')
-    ->atLeast()->once()
-    ->andReturn($expected);
+    $service->shouldReceive('getActivityClientEmailRepository')->andReturn($repo);
+    $service->shouldNotReceive('toApiArray');
 
     $di = container();
     $adminApi->setDi($di);

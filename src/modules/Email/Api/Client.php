@@ -54,7 +54,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
             (int) $data['id'],
         );
 
-        return $this->getService()->toApiArray($model);
+        return $model->toApiArray();
     }
 
     /**

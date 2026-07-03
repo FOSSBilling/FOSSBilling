@@ -64,9 +64,7 @@ test('get', function (): void {
 
     $service = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
     $service->shouldReceive('getActivityClientEmailRepository')->andReturn($repo);
-    $service->shouldReceive('toApiArray')
-        ->atLeast()->once()
-        ->andReturn([]);
+    $service->shouldNotReceive('toApiArray');
     $clientApi->setService($service);
 
     $di = container();
