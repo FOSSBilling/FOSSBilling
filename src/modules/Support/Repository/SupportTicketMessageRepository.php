@@ -45,6 +45,16 @@ class SupportTicketMessageRepository extends EntityRepository
     }
 
     /**
+     * @param list<int> $ids
+     *
+     * @return SupportTicketMessage[]
+     */
+    public function findByIds(array $ids): array
+    {
+        return $ids === [] ? [] : $this->findBy(['id' => $ids]);
+    }
+
+    /**
      * Return the first (oldest) message on a ticket — used to show a preview
      * snippet in ticket listings. Returns null if the ticket has no messages.
      */

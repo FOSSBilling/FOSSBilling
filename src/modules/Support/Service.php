@@ -143,7 +143,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         try {
             $ticketObj = $supportService->getTicketById((int) $params['id']);
-            $isGuestTicket = $supportService->isGuestTicket($ticketObj);
+            $isGuestTicket = $ticketObj->isGuestTicket();
             $identity = $isGuestTicket ? null : $di['loggedin_client'];
             $ticketArr = $supportService->toApiArray($ticketObj, true, $identity);
 
@@ -175,7 +175,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $ticketArr = $supportService->toApiArray($ticketObj, true, $identity);
 
             $email = [];
-            if ($supportService->isGuestTicket($ticketObj)) {
+            if ($ticketObj->isGuestTicket()) {
                 $email['to'] = $ticketObj->getAuthorEmail();
                 $email['to_name'] = $ticketObj->getAuthorName();
             } else {
@@ -202,7 +202,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $ticketArr = $supportService->toApiArray($ticketObj, true, $identity);
 
             $email = [];
-            if ($supportService->isGuestTicket($ticketObj)) {
+            if ($ticketObj->isGuestTicket()) {
                 $email['to'] = $ticketObj->getAuthorEmail();
                 $email['to_name'] = $ticketObj->getAuthorName();
             } else {
@@ -229,7 +229,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $ticketArr = $supportService->toApiArray($ticketObj, true, $identity);
 
             $email = [];
-            if ($supportService->isGuestTicket($ticketObj)) {
+            if ($ticketObj->isGuestTicket()) {
                 $email['to'] = $ticketObj->getAuthorEmail();
                 $email['to_name'] = $ticketObj->getAuthorName();
             } else {
@@ -258,11 +258,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->getSupportTicketNoteRepository()->findOneByIdOrFail($id);
     }
 
-    public function isGuestTicket(SupportTicket $ticket): bool
-    {
-        return $ticket->isGuestTicket();
-    }
-
     /**
      * Return array of ticket statuses.
      */
@@ -281,135 +276,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function findOneByClient(\Model_Client $c, int $id): SupportTicket
     {
         return $this->getSupportTicketRepository()->findOneByClientOrFail((int) $c->id, $id);
-    }
-
-    public function getSearchQuery(array $data): array
-    {
-        $query = 'SELECT st.*
-                FROM support_ticket st
-                JOIN support_ticket_message stm ON stm.support_ticket_id = st.id
-                LEFT JOIN client c ON st.client_id = c.id';
-
-        $search = $data['search'] ?? null;
-        $id = $data['id'] ?? null;
-        $status = $data['status'] ?? null;
-        $client = $data['client'] ?? null;
-        $client_id = $data['client_id'] ?? null;
-        $order_id = $data['order_id'] ?? null;
-        $subject = $data['subject'] ?? null;
-        $content = $data['content'] ?? null;
-        $helpdesk = $data['support_helpdesk_id'] ?? null;
-        $created_at = $data['created_at'] ?? null;
-        $date_from = $data['date_from'] ?? null;
-        $date_to = $data['date_to'] ?? null;
-        $priority = $data['priority'] ?? null;
-        $auth = $data['auth'] ?? null;
-        $name = $data['name'] ?? null;
-        $email = $data['email'] ?? null;
-
-        $where = [];
-        $bindings = [];
-
-        if ($id) {
-            $where[] = 'st.id = :ticket_id';
-            $bindings[':ticket_id'] = $id;
-        }
-
-        if ($priority) {
-            $where[] = 'st.priority = :priority';
-            $bindings[':priority'] = $priority;
-        }
-
-        if ($helpdesk) {
-            $where[] = 'st.support_helpdesk_id = :support_helpdesk_id';
-            $bindings[':support_helpdesk_id'] = $helpdesk;
-        }
-
-        if ($client) {
-            $where[] = 'c.first_name LIKE :first_name';
-            $where[] = 'c.last_name LIKE :last_name';
-            $bindings[':first_name'] = '%' . $client . '%';
-            $bindings[':last_name'] = '%' . $client . '%';
-        }
-
-        if ($client_id) {
-            $where[] = 'c.id = :client_id';
-            $bindings[':client_id'] = $client_id;
-        }
-
-        if ($auth === 'guest') {
-            $where[] = 'st.client_id IS NULL AND st.access_hash IS NOT NULL';
-        } elseif ($auth === 'client') {
-            $where[] = 'st.client_id IS NOT NULL';
-        }
-
-        if ($name) {
-            $where[] = 'st.author_name LIKE :filter_author_name';
-            $bindings[':filter_author_name'] = '%' . $name . '%';
-        }
-
-        if ($email) {
-            $where[] = 'st.author_email LIKE :filter_author_email';
-            $bindings[':filter_author_email'] = '%' . $email . '%';
-        }
-
-        if ($content) {
-            $where[] = 'stm.content LIKE :content';
-            $bindings[':content'] = '%' . $content . '%';
-        }
-
-        if ($subject) {
-            $where[] = 'st.subject LIKE :subject';
-            $bindings[':subject'] = '%' . $subject . '%';
-        }
-
-        if ($status) {
-            $where[] = 'st.status = :status';
-            $bindings[':status'] = $status;
-        }
-
-        if ($order_id) {
-            $where[] = 'st.rel_type = :rel_type AND st.rel_id = :rel_id';
-            $bindings[':rel_type'] = SupportTicket::REL_TYPE_ORDER;
-            $bindings[':rel_id'] = $order_id;
-        }
-
-        if ($created_at) {
-            $where[] = "DATE_FORMAT(st.created_at, '%Y-%m-%d') = :created_at";
-            $bindings[':created_at'] = date('Y-m-d', strtotime((string) $created_at));
-        }
-
-        if ($date_from) {
-            $where[] = 'UNIX_TIMESTAMP(st.created_at) >= :date_from';
-            $bindings[':date_from'] = strtotime((string) $date_from);
-        }
-
-        if ($date_to) {
-            $where[] = 'UNIX_TIMESTAMP(st.created_at) <= :date_to';
-            $bindings[':date_to'] = strtotime((string) $date_to);
-        }
-        // smartSearch
-        if ($search) {
-            if (is_numeric($search)) {
-                $where[] = 'st.id = :ticket_id';
-                $bindings[':ticket_id'] = $search;
-            } else {
-                $search = '%' . $search . '%';
-                $where[] = '(stm.content LIKE :content OR st.subject LIKE :subject OR st.author_name LIKE :author_name OR st.author_email LIKE :author_email)';
-                $bindings[':content'] = $search;
-                $bindings[':subject'] = $search;
-                $bindings[':author_name'] = $search;
-                $bindings[':author_email'] = $search;
-            }
-        }
-
-        if (!empty($where)) {
-            $query = $query . ' WHERE ' . implode(' AND ', $where);
-        }
-
-        $query .= ' GROUP BY st.id ORDER BY st.priority ASC, st.id DESC';
-
-        return [$query, $bindings];
     }
 
     public function counter(): array
@@ -441,18 +307,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function checkIfTaskAlreadyExists(\Model_Client $client, int $rel_id, string $rel_type, string $rel_task): bool
     {
-        return $this->getSupportTicketRepository()->findOneBy([
-            'clientId' => (int) $client->id,
-            'relId' => $rel_id,
-            'relType' => $rel_type,
-            'relTask' => $rel_task,
-            'relStatus' => SupportTicket::REL_STATUS_PENDING,
-        ]) instanceof SupportTicket;
+        return $this->getSupportTicketRepository()->hasPendingTaskForClient((int) $client->id, $rel_id, $rel_type, $rel_task);
     }
 
     public function closeTicket(SupportTicket $ticket, \Model_Admin|\Model_Client|\Model_Guest $identity): bool
     {
-        $ticket->setStatus(SupportTicket::STATUS_CLOSED);
+        $ticket->close();
         $this->di['em']->flush();
 
         if ($identity instanceof \Model_Admin) {
@@ -468,7 +328,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function autoClose(SupportTicket $model): bool
     {
-        $model->setStatus(SupportTicket::STATUS_CLOSED);
+        $model->close();
         $this->di['em']->flush();
         $this->di['logger']->info('Ticket %s was closed', $model->getId());
 
@@ -516,7 +376,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function rmByClient(\Model_Client $client): void
     {
         $em = $this->di['em'];
-        foreach ($this->getSupportTicketRepository()->findBy(['clientId' => (int) $client->id]) as $ticket) {
+        foreach ($this->getSupportTicketRepository()->findByClientId((int) $client->id) as $ticket) {
             $em->remove($ticket);
         }
         $em->flush();
@@ -648,7 +508,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $firstMessageIdsByTicket = $this->getSupportTicketMessageRepository()->findFirstIdsByTicketIds($ticketIds);
             $messageIds = array_values($firstMessageIdsByTicket);
             if (!empty($messageIds)) {
-                $messages = $this->getSupportTicketMessageRepository()->findBy(['id' => $messageIds]);
+                $messages = $this->getSupportTicketMessageRepository()->findByIds($messageIds);
                 foreach ($messages as $message) {
                     $ticket = $message->getSupportTicket();
                     $firstMessages[$ticket instanceof SupportTicket ? ($ticket->getId() ?? 0) : 0] = $message;
@@ -658,7 +518,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $helpdesks = [];
         if (!empty($helpdeskIds)) {
-            $helpdeskModels = $this->getHelpdeskRepository()->findBy(['id' => $helpdeskIds]);
+            $helpdeskModels = $this->getHelpdeskRepository()->findByIds($helpdeskIds);
             foreach ($helpdeskModels as $helpdesk) {
                 $helpdesks[$helpdesk->getId()] = $helpdesk;
             }
@@ -729,7 +589,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     private function getBatchForApiWithModels(array $ids, bool $deep, $identity): array
     {
-        $tickets = $this->getSupportTicketRepository()->findBy(['id' => $ids]);
+        $tickets = $this->getSupportTicketRepository()->findByIds($ids);
         if (empty($tickets)) {
             return [];
         }
@@ -776,7 +636,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     private function getClientApiArrayForTicket(SupportTicket $ticket, \Model_Admin|\Model_Client|null $identity = null): array
     {
-        if ($this->isGuestTicket($ticket)) {
+        if ($ticket->isGuestTicket()) {
             return [];
         }
 
@@ -813,7 +673,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     private function getTicketAuthor(SupportTicket $ticket, \Model_Admin|\Model_Client|null $identity = null): array
     {
-        if ($this->isGuestTicket($ticket)) {
+        if ($ticket->isGuestTicket()) {
             $author = [
                 'name' => $ticket->getAuthorName(),
                 'role' => 'guest',
@@ -898,7 +758,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             ['id' => $clientId]
         );
 
-        if ($row === false) {
+        if ($row === false || !isset($row['id'], $row['first_name'], $row['last_name'], $row['email'])) {
             return null;
         }
 
@@ -987,7 +847,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $author = $this->fetchClientSummary($clientId);
             $role = 'client';
         } else {
-            if ($ticket instanceof SupportTicket && $this->isGuestTicket($ticket)) {
+            if ($ticket instanceof SupportTicket && $ticket->isGuestTicket()) {
                 return [
                     'name' => $ticket->getAuthorName(),
                     'email' => $ticket->getAuthorEmail(),
@@ -1051,7 +911,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function ticketMessageUpdate(SupportTicketMessage $model, string $content): bool
     {
         $model->setContent($content);
-        $model->setUpdatedAt(new \DateTime());
 
         $this->di['em']->flush();
 
@@ -1532,8 +1391,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function ticketTaskComplete(SupportTicket $model): bool
     {
-        $model->setRelStatus(SupportTicket::REL_STATUS_COMPLETE);
-        $model->setUpdatedAt(new \DateTime());
+        $model->markTaskComplete();
         $this->di['em']->flush();
 
         $this->di['logger']->info('Marked ticket #%s task as complete', $model->getId());
