@@ -394,6 +394,18 @@ table > thead > tr > th {
 }
 
 // -----------------------------------------------------------------------
+// Payment gateway logos
+// -----------------------------------------------------------------------
+// Gateway logo images (e.g. Stripe's) are often dark wordmarks on a
+// transparent background, designed for a light page - on our dark theme
+// they become near-invisible. Give them a light card to sit on regardless
+// of theme, same pattern most payment UIs use for gateway/card-brand badges.
+.invoice-gateway {
+    background: var(--paper-50);
+    border: var(--bw-hair) solid var(--border);
+}
+
+// -----------------------------------------------------------------------
 // Order flow step indicator
 // -----------------------------------------------------------------------
 .order-steps {
