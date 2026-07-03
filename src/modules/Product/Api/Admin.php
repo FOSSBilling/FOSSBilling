@@ -220,7 +220,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return array
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\InformationException
      */
     #[RequiredParams(['id' => 'Addon ID was not passed'])]
     public function addon_get($data)
@@ -229,7 +229,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getService()->findProductById((int) $data['id']);
         if (!$model instanceof Product || !$model->isAddon()) {
-            throw new \FOSSBilling\Exception('Addon not found');
+            throw new \FOSSBilling\InformationException('Addon not found');
         }
         $service = $this->getService();
 
@@ -257,7 +257,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\InformationException
      */
     #[RequiredParams(['id' => 'Addon ID was not passed'])]
     public function addon_update($data)
@@ -266,7 +266,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getService()->findProductById((int) $data['id']);
         if (!$model instanceof Product || !$model->isAddon()) {
-            throw new \FOSSBilling\Exception('Addon not found');
+            throw new \FOSSBilling\InformationException('Addon not found');
         }
         $this->di['logger']->info('Updated addon #%s', $model->getId());
 

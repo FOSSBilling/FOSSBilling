@@ -86,7 +86,7 @@ test('get not found exception', function (): void {
 
     $repo = Mockery::mock(Box\Mod\Email\Repository\ActivityClientEmailRepository::class);
     $repo->shouldReceive('findOneForClientByIdOrFail')
-        ->andThrow(new FOSSBilling\Exception('Email not found'));
+        ->andThrow(new FOSSBilling\InformationException('Email not found'));
 
     $service = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
     $service->shouldReceive('getActivityClientEmailRepository')->andReturn($repo);
@@ -101,7 +101,7 @@ test('get not found exception', function (): void {
 
     $clientApi->setService($service);
 
-    $this->expectException(FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\InformationException::class);
     $result = $clientApi->get(['id' => 1]);
     expect($result)->toBeArray();
 });
@@ -142,7 +142,7 @@ test('resend not found exception', function (): void {
 
     $repo = Mockery::mock(Box\Mod\Email\Repository\ActivityClientEmailRepository::class);
     $repo->shouldReceive('findOneForClientByIdOrFail')
-        ->andThrow(new FOSSBilling\Exception('Email not found'));
+        ->andThrow(new FOSSBilling\InformationException('Email not found'));
 
     $service = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
     $service->shouldReceive('getActivityClientEmailRepository')->andReturn($repo);
@@ -158,7 +158,7 @@ test('resend not found exception', function (): void {
 
     $clientApi->setService($service);
 
-    $this->expectException(FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\InformationException::class);
     $result = $clientApi->resend(['id' => 1]);
     expect($result)->toBeArray();
 });
@@ -197,7 +197,7 @@ test('delete not found exception', function (): void {
 
     $repo = Mockery::mock(Box\Mod\Email\Repository\ActivityClientEmailRepository::class);
     $repo->shouldReceive('findOneForClientByIdOrFail')
-        ->andThrow(new FOSSBilling\Exception('Email not found'));
+        ->andThrow(new FOSSBilling\InformationException('Email not found'));
 
     $service = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
     $service->shouldReceive('getActivityClientEmailRepository')->andReturn($repo);
@@ -213,7 +213,7 @@ test('delete not found exception', function (): void {
 
     $clientApi->setService($service);
 
-    $this->expectException(FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\InformationException::class);
     $result = $clientApi->delete(['id' => 1]);
     expect($result)->toBeArray();
 });

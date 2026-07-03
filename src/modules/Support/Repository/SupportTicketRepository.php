@@ -137,7 +137,7 @@ class SupportTicketRepository extends EntityRepository
     {
         $ticket = $this->find($id);
         if (!$ticket instanceof SupportTicket) {
-            throw new \FOSSBilling\Exception('Ticket not found');
+            throw new \FOSSBilling\InformationException('Ticket not found');
         }
 
         return $ticket;
@@ -158,7 +158,7 @@ class SupportTicketRepository extends EntityRepository
     {
         $ticket = $this->findOneByClient($clientId, $id);
         if (!$ticket instanceof SupportTicket) {
-            throw new \FOSSBilling\Exception('Ticket not found');
+            throw new \FOSSBilling\InformationException('Ticket not found');
         }
 
         return $ticket;

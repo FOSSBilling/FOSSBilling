@@ -1832,7 +1832,7 @@ test('throws exception when processing invoice not found', function (): void {
     $service->setDi($di);
 
     expect(fn (): array => $service->processInvoice($data))
-        ->toThrow(FOSSBilling\Exception::class, 'Invoice not found');
+        ->toThrow(FOSSBilling\InformationException::class, 'Invoice not found');
 });
 
 test('throws exception when processing invoice with gateway not found', function (): void {
@@ -1859,7 +1859,7 @@ test('throws exception when processing invoice with gateway not found', function
     $service->setDi($di);
 
     expect(fn (): array => $service->processInvoice($data))
-        ->toThrow(FOSSBilling\Exception::class, 'Payment method not found');
+        ->toThrow(FOSSBilling\InformationException::class, 'Payment method not found');
 });
 
 test('throws exception when processing invoice with gateway not enabled', function (): void {

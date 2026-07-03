@@ -729,14 +729,14 @@ test('getEmailById throws exception when email not found', function (): void {
 
     $repo = Mockery::mock(Box\Mod\Email\Repository\ActivityClientEmailRepository::class);
     $repo->shouldReceive('findOneByIdOrFail')
-        ->andThrow(new FOSSBilling\Exception('Email not found'));
+        ->andThrow(new FOSSBilling\InformationException('Email not found'));
 
     $di = container();
     $di['em'] = emailBuildEm($repo);
     $service->setDi($di);
 
     expect(fn (): Box\Mod\Email\Entity\ActivityClientEmail => $service->getEmailById(5))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\InformationException::class);
 });
 
 test('templateCreate creates new template', function (): void {

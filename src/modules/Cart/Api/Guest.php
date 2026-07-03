@@ -58,7 +58,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $currencyRepository = $currencyService->getCurrencyRepository();
         $currency = $currencyRepository->findOneByCode($data['currency']);
         if (!$currency instanceof Currency) {
-            throw new \FOSSBilling\Exception('Currency not found');
+            throw new \FOSSBilling\InformationException('Currency not found');
         }
         $cart = $this->getService()->getSessionCart();
 
@@ -156,7 +156,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
         $product = $productService->findOneActiveById((int) $data['id']);
         if (!$product instanceof \Box\Mod\Product\Entity\Product) {
-            throw new \FOSSBilling\Exception('Product not found');
+            throw new \FOSSBilling\InformationException('Product not found');
         }
 
         if ($product->isAddon()) {

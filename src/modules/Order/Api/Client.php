@@ -124,7 +124,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
 
         $order = $this->getService()->findForClientById($this->getIdentity(), $data['id']);
         if (!$order instanceof \Model_ClientOrder) {
-            throw new \FOSSBilling\Exception('Order not found');
+            throw new \FOSSBilling\InformationException('Order not found');
         }
 
         return $order;

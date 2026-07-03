@@ -124,7 +124,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
             $tld = $this->tldFindOneByTld($data['transfer_tld']);
             if (!$tld instanceof \Model_Tld) {
-                throw new \FOSSBilling\Exception('TLD not found');
+                throw new \FOSSBilling\InformationException('TLD not found');
             }
 
             $domain = $data['transfer_sld'] . $tld->tld;
@@ -153,7 +153,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
             $tld = $this->tldFindOneByTld($data['register_tld']);
             if (!$tld instanceof \Model_Tld) {
-                throw new \FOSSBilling\Exception('TLD not found');
+                throw new \FOSSBilling\InformationException('TLD not found');
             }
 
             $years = (int) $data['register_years'];
@@ -980,7 +980,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $file = Path::join(PATH_LIBRARY, 'Registrar', 'Adapter', "{$model->registrar}.php");
         if (!$this->filesystem->exists($file)) {
-            throw new \FOSSBilling\Exception('Domain registrar :adapter was not found', [':adapter' => $model->registrar]);
+            throw new \FOSSBilling\InformationException('Domain registrar :adapter was not found', [':adapter' => $model->registrar]);
         }
 
         $class = sprintf('Registrar_Adapter_%s', $model->registrar);
@@ -989,7 +989,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         if (!class_exists($class)) {
-            throw new \FOSSBilling\Exception('Registrar :adapter was not found', [':adapter' => $class]);
+            throw new \FOSSBilling\InformationException('Registrar :adapter was not found', [':adapter' => $class]);
         }
 
         return $class;

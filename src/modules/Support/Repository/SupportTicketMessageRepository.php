@@ -23,7 +23,7 @@ class SupportTicketMessageRepository extends EntityRepository
     {
         $message = $this->find($id);
         if (!$message instanceof SupportTicketMessage) {
-            throw new \FOSSBilling\Exception('Ticket message not found');
+            throw new \FOSSBilling\InformationException('Ticket message not found');
         }
 
         return $message;

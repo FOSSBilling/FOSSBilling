@@ -169,7 +169,7 @@ test('resend exception email not found', function (): void {
 
     $repo = Mockery::mock(Box\Mod\Email\Repository\ActivityClientEmailRepository::class);
     $repo->shouldReceive('findOneByIdOrFail')
-        ->andThrow(new FOSSBilling\Exception('Email not found'));
+        ->andThrow(new FOSSBilling\InformationException('Email not found'));
 
     $di = container();
     $adminApi->setDi($di);
@@ -178,7 +178,7 @@ test('resend exception email not found', function (): void {
     $emailService->shouldReceive('getActivityClientEmailRepository')->andReturn($repo);
     $adminApi->setService($emailService);
 
-    $this->expectException(FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\InformationException::class);
     $this->expectExceptionMessage('Email not found');
     $adminApi->email_resend($data);
 });
@@ -192,7 +192,7 @@ test('delete exception email not found', function (): void {
 
     $repo = Mockery::mock(Box\Mod\Email\Repository\ActivityClientEmailRepository::class);
     $repo->shouldReceive('findOneByIdOrFail')
-        ->andThrow(new FOSSBilling\Exception('Email not found'));
+        ->andThrow(new FOSSBilling\InformationException('Email not found'));
 
     $di = container();
     $adminApi->setDi($di);
@@ -201,7 +201,7 @@ test('delete exception email not found', function (): void {
     $emailService->shouldReceive('getActivityClientEmailRepository')->andReturn($repo);
     $adminApi->setService($emailService);
 
-    $this->expectException(FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\InformationException::class);
     $this->expectExceptionMessage('Email not found');
     $adminApi->email_delete($data);
 });

@@ -476,7 +476,7 @@ test('throws exception when ticket not found by client', function (): void {
     $service = Mockery::mock(Service::class)->makePartial();
     $repo = Mockery::mock(SupportTicketRepository::class);
     $repo->shouldReceive('findOneByClientOrFail')->atLeast()->once()
-        ->andThrow(new FOSSBilling\Exception('Ticket not found'));
+        ->andThrow(new FOSSBilling\InformationException('Ticket not found'));
     $service->shouldReceive('getSupportTicketRepository')->atLeast()->once()
         ->andReturn($repo);
 
@@ -488,7 +488,7 @@ test('throws exception when ticket not found by client', function (): void {
     $client->id = 1;
 
     $service->findOneByClient($client, 1);
-})->throws(FOSSBilling\Exception::class);
+})->throws(FOSSBilling\InformationException::class);
 
 dataset('searchQueryData', [
     [

@@ -826,7 +826,7 @@ class Service implements InjectionAwareInterface
     {
         $category = $this->getProductCategoryRepository()->findById($id);
         if (!$category instanceof ProductCategory) {
-            throw new \FOSSBilling\Exception('Category not found');
+            throw new \FOSSBilling\InformationException('Category not found');
         }
 
         return $category;
@@ -1188,7 +1188,7 @@ class Service implements InjectionAwareInterface
     {
         $promo = $this->getPromoRepository()->find($id);
         if (!$promo instanceof Promo) {
-            throw new \FOSSBilling\Exception('Promo not found');
+            throw new \FOSSBilling\InformationException('Promo not found');
         }
 
         return $promo;
@@ -1726,7 +1726,7 @@ class Service implements InjectionAwareInterface
     {
         $productPayment = $this->getProductPaymentRepository()->find($id);
         if (!$productPayment instanceof ProductPayment) {
-            throw new \FOSSBilling\Exception('Product payment not found');
+            throw new \FOSSBilling\InformationException('Product payment not found');
         }
 
         return $productPayment;
@@ -1832,7 +1832,7 @@ class Service implements InjectionAwareInterface
     {
         $product = $this->getProductRepository()->find($id);
         if (!$product instanceof Product) {
-            throw new \FOSSBilling\Exception('Product not found');
+            throw new \FOSSBilling\InformationException('Product not found');
         }
 
         return $product;
