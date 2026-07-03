@@ -787,7 +787,7 @@ class Service implements InjectionAwareInterface
 
         $targetGroupIds = $this->adminGroupMemberRepository->getGroupIdsForAdmin((int) $target->id);
         if ($targetGroupIds === []) {
-            return;
+            throw new \FOSSBilling\InformationException('You can only manage staff accounts in lower groups');
         }
 
         if (array_diff($targetGroupIds, $this->adminGroupRepository->getDescendantIdsForGroups($this->adminGroupMemberRepository->getGroupIdsForAdmin((int) $actor->id))) !== []) {

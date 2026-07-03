@@ -1679,6 +1679,37 @@ test('delete rejects staff outside actor group subtree', function (): void {
         ->toThrow(FOSSBilling\InformationException::class, 'You can only manage staff accounts in lower groups');
 });
 
+test('addAdminToGroup rejects groupless target staff', function (): void {
+    $actor = new Model_Admin();
+    $actor->loadBean(new Tests\Helpers\DummyBean());
+    $actor->id = 10;
+
+    $target = new Model_Admin();
+    $target->loadBean(new Tests\Helpers\DummyBean());
+    $target->id = 20;
+
+    $peerGroup = new AdminGroup();
+    staffSetEntityId($peerGroup, 2);
+
+    $groupRepository = Mockery::mock(AdminGroupRepository::class);
+    $groupRepository->shouldReceive('getDescendantIdsForGroups')->never();
+
+    $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
+    $groupMemberRepository->shouldReceive('adminBelongsToSystemGroup')->with(10, AdminGroup::SYSTEM_SUPER_ADMIN)->andReturn(false);
+    $groupMemberRepository->shouldReceive('getGroupIdsForAdmin')->with(20)->andReturn([]);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('hasPermission')->once()->andReturn(true);
+
+    $di = container();
+    $di['em'] = staffEntityManager($groupRepository, $groupMemberRepository);
+    $di['loggedin_admin'] = $actor;
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->addAdminToGroup($target, $peerGroup))
+        ->toThrow(FOSSBilling\InformationException::class, 'You can only manage staff accounts in lower groups');
+});
+
 test('addAdminToGroup rejects assigning groups outside actor subtree', function (): void {
     $actor = new Model_Admin();
     $actor->loadBean(new Tests\Helpers\DummyBean());
@@ -1697,7 +1728,7 @@ test('addAdminToGroup rejects assigning groups outside actor subtree', function 
     $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
     $groupMemberRepository->shouldReceive('adminBelongsToSystemGroup')->with(10, AdminGroup::SYSTEM_SUPER_ADMIN)->andReturn(false);
     $groupMemberRepository->shouldReceive('getGroupIdsForAdmin')->with(10)->andReturn([1]);
-    $groupMemberRepository->shouldReceive('getGroupIdsForAdmin')->with(20)->andReturn([]);
+    $groupMemberRepository->shouldReceive('getGroupIdsForAdmin')->with(20)->andReturn([3]);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('hasPermission')->once()->andReturn(true);

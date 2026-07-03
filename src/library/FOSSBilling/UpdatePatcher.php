@@ -482,7 +482,7 @@ class UpdatePatcher implements InjectionAwareInterface
             74 => 'patch74',
             75 => 'patch75',
             76 => 'patch76',
-            77 => 'patch77'
+            77 => 'patch77',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2008,6 +2008,13 @@ class UpdatePatcher implements InjectionAwareInterface
             );
         }
 
+        $this->executeSql(
+            "INSERT INTO admin_group (name, system_name, parent_id, permissions, protected, created_at, updated_at) VALUES ('Migrated staff', 'migrated_staff', :parent_id, NULL, 0, :created_at, :updated_at)
+             ON DUPLICATE KEY UPDATE name = 'Migrated staff', parent_id = :parent_id, permissions = NULL, protected = 0, updated_at = :updated_at",
+            ['parent_id' => $superAdminGroupId, 'created_at' => $now, 'updated_at' => $now],
+        );
+        $migratedStaffGroupId = (int) $this->fetchOne("SELECT id FROM admin_group WHERE system_name = 'migrated_staff' LIMIT 1");
+
         // Move legacy one-group-per-admin assignments into the new membership table before dropping the column.
         $this->executeSql('
             INSERT IGNORE INTO admin_group_member (admin_id, admin_group_id, created_at)
@@ -2016,6 +2023,19 @@ class UpdatePatcher implements InjectionAwareInterface
             WHERE admin_group_id IS NOT NULL
               AND (admin_group_id != :super_admin_group_id OR role = :role)
         ', [
+            'created_at' => $now,
+            'super_admin_group_id' => $superAdminGroupId,
+            'role' => 'admin',
+        ]);
+
+        $this->executeSql('
+            INSERT IGNORE INTO admin_group_member (admin_id, admin_group_id, created_at)
+            SELECT id, :admin_group_id, :created_at
+            FROM admin
+            WHERE admin_group_id = :super_admin_group_id
+              AND (role IS NULL OR role != :role)
+        ', [
+            'admin_group_id' => $migratedStaffGroupId,
             'created_at' => $now,
             'super_admin_group_id' => $superAdminGroupId,
             'role' => 'admin',
