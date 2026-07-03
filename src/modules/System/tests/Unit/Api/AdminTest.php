@@ -218,5 +218,5 @@ test('update finalization status rejects legacy non-admin while pending', functi
     $api->setDi($di);
 
     expect(fn () => $api->update_finalization_status())
-        ->toThrow(FOSSBilling\InformationException::class, 'You do not have permission to finalize this update');
+        ->toThrow(FOSSBilling\InformationException::class, 'You need to be a Super Administrator to finalize this update.');
 });

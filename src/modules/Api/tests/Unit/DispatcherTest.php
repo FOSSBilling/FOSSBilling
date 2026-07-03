@@ -148,8 +148,13 @@ test('api proxy requires the dispatcher service instead of creating one itself',
 });
 
 test('skips admin module permission check for allowed update finalization calls', function (): void {
+    $admin = new Model_Admin();
+    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin->id = 1;
+
     $staffService = Mockery::mock();
     $staffService->shouldReceive('hasPermission')->never();
+    $staffService->shouldReceive('isSuperAdministrator')->once()->with(1)->andReturn(true);
 
     $updateFinalization = Mockery::mock();
     $updateFinalization->shouldReceive('isRequired')->twice()->andReturn(true);
@@ -158,6 +163,6 @@ test('skips admin module permission check for allowed update finalization calls'
 
     $dispatcher = createApiDispatcher(createApiDispatcherDi(staffService: $staffService, updateFinalization: $updateFinalization));
 
-    expect($dispatcher->dispatch(new Model_Admin(), 'system_update_finalization_status'))
+    expect($dispatcher->dispatch($admin, 'system_update_finalization_status'))
         ->toBe(['required' => true]);
 });
