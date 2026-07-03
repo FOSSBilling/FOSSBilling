@@ -31,7 +31,7 @@
     --bs-border-radius-pill: var(--r-pill);
 
     --bs-primary: var(--accent);
-    --bs-primary-rgb: 199, 242, 60;
+    --bs-primary-rgb: 174, 241, 0;
     --bs-primary-text-emphasis: var(--accent-press);
     --bs-primary-bg-subtle: var(--accent-soft);
     --bs-primary-border-subtle: var(--accent);
@@ -47,6 +47,20 @@
 
     --bs-link-color: var(--accent-press);
     --bs-link-hover-color: var(--accent);
+
+    --bs-progress-bg: var(--surface-3);
+    --bs-progress-bar-bg: var(--accent);
+
+    --bs-dropdown-bg: var(--surface);
+    --bs-dropdown-border-color: var(--border);
+    --bs-dropdown-link-active-bg: var(--accent);
+    --bs-dropdown-link-active-color: var(--on-accent);
+
+    --bs-list-group-bg: var(--surface);
+    --bs-list-group-border-color: var(--border);
+    --bs-list-group-active-bg: var(--accent);
+    --bs-list-group-active-border-color: var(--accent);
+    --bs-list-group-active-color: var(--on-accent);
 
     --bs-card-bg: var(--surface);
     --bs-card-border-color: var(--border);
@@ -65,7 +79,7 @@
     --bs-border-color: var(--border);
     --bs-card-bg: var(--surface);
     --bs-card-cap-bg: var(--surface-2);
-    --bs-primary-rgb: 199, 242, 60;
+    --bs-primary-rgb: 174, 241, 0;
 }
 
 html {
