@@ -394,6 +394,29 @@ table > thead > tr > th {
 }
 
 // -----------------------------------------------------------------------
+// Order form field widths
+// -----------------------------------------------------------------------
+// Named, reusable classes replacing repeated inline max-width/width styles
+// scattered across the domain register/transfer forms and product config.
+.domain-input-group {
+    max-width: 480px;
+}
+
+.domain-tld-select {
+    width: 30%;
+    max-width: 120px;
+}
+
+.domain-transfer-code-input {
+    width: 200px;
+}
+
+.product-quantity-input {
+    max-width: 120px;
+    text-align: center;
+}
+
+// -----------------------------------------------------------------------
 // Payment gateway logos
 // -----------------------------------------------------------------------
 // Gateway logo images (e.g. Stripe's) are often dark wordmarks on a
