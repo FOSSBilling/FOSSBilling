@@ -2,6 +2,7 @@ import { Tooltip, Toast, Modal, Collapse, Tab } from 'bootstrap/dist/js/bootstra
 import './js/utils';
 import initTheme from './js/ui/theme.js';
 import initPhoneInput from './js/phone-input.js';
+import initBackToTop from './js/ui/back-to-top.js';
 
 globalThis.bootstrap = { Tooltip, Toast, Modal, Collapse, Tab };
 
@@ -38,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
    */
   initTheme();
   initPhoneInput();
+  initBackToTop();
 
   /**
    * Enable Bootstrap Tooltip

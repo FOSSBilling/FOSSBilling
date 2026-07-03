@@ -190,6 +190,13 @@ table > thead > tr > th {
 // Buttons
 // -----------------------------------------------------------------------
 .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 18px;
+    font-size: var(--fs-sm);
     border-radius: var(--r-sm);
     font-weight: var(--fw-semibold);
     transition: transform var(--dur-fast) var(--ease-snap), box-shadow var(--dur) var(--ease-out), background-color var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out);
@@ -197,6 +204,17 @@ table > thead > tr > th {
     &:active {
         transform: translateY(1px) scale(0.985);
     }
+}
+
+.btn-sm {
+    height: 32px;
+    padding: 0 12px;
+}
+
+.btn-lg {
+    height: 48px;
+    padding: 0 24px;
+    font-size: var(--fs-body);
 }
 
 .btn-primary {
@@ -243,6 +261,18 @@ table > thead > tr > th {
     &:hover {
         border-color: var(--border-strong);
     }
+}
+
+.card-body {
+    padding: var(--space-6);
+}
+
+.card-header {
+    padding: var(--space-4) var(--space-6);
+}
+
+.card-footer {
+    padding: var(--space-4) var(--space-6);
 }
 
 // -----------------------------------------------------------------------

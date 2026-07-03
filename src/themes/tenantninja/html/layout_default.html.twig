@@ -260,7 +260,7 @@
     </div>
     <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1070;"></div>
     {% if settings.footer_to_top_enabled %}
-        <a href="#top" class="position-fixed btn btn-primary bottom-0 end-0 m-3">
+        <a href="#top" id="js-back-to-top" class="position-fixed btn btn-primary bottom-0 end-0 m-3 d-none">
             <svg class="icon"><use href="#arrow-up" /></svg> {{ 'Top'|trans }}</a>
     {% endif %}
     <div class="wait" style="display:none" onclick="this.style.display='none'">
