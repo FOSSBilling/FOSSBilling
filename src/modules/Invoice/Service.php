@@ -1600,7 +1600,7 @@ class Service implements InjectionAwareInterface
         $pdf->loadHtml($html);
         $pdf->render();
 
-        return $this->createPdfResponse($pdf->output(), $invoice['serie_nr']);
+        return $this->createPdfResponse($pdf->output(), 'Invoice-' . $invoice['serie_nr']);
     }
 
     public function addNote(\Model_Invoice $model, $note): bool
@@ -1914,7 +1914,7 @@ class Service implements InjectionAwareInterface
         }
 
         $disposition = $response->headers->makeDisposition(
-            HeaderUtils::DISPOSITION_INLINE,
+            HeaderUtils::DISPOSITION_ATTACHMENT,
             $safeFileName . '.pdf',
             $fallbackFileName . '.pdf'
         );

@@ -1,0 +1,196 @@
+/**
+ * TenantNinja-branded invoice PDF stylesheet.
+ * Dompdf supports roughly CSS 2.1 — no flexbox/grid/CSS variables, so all
+ * tokens from the TenantNinja design system (src/themes/tenantninja/assets/scss/_tokens.scss)
+ * are inlined here as plain hex values.
+ */
+
+@font-face {
+    font-family: 'Space Grotesk';
+    src: url(/public/fonts/tenantninja-pdf/space-grotesk-700.ttf);
+    font-weight: 700;
+}
+
+@font-face {
+    font-family: 'Hanken Grotesk';
+    src: url(/public/fonts/tenantninja-pdf/hanken-grotesk-400.ttf);
+    font-weight: 400;
+}
+
+@font-face {
+    font-family: 'Hanken Grotesk';
+    src: url(/public/fonts/tenantninja-pdf/hanken-grotesk-600.ttf);
+    font-weight: 600;
+}
+
+@font-face {
+    font-family: 'Hanken Grotesk';
+    src: url(/public/fonts/tenantninja-pdf/hanken-grotesk-700.ttf);
+    font-weight: 700;
+}
+
+@font-face {
+    font-family: 'JetBrains Mono';
+    src: url(/public/fonts/tenantninja-pdf/jetbrains-mono-500.ttf);
+    font-weight: 500;
+}
+
+@font-face {
+    font-family: 'JetBrains Mono';
+    src: url(/public/fonts/tenantninja-pdf/jetbrains-mono-700.ttf);
+    font-weight: 700;
+}
+
+body {
+    font-family: 'Hanken Grotesk', DejaVu Sans, sans-serif;
+    color: #0C0F0E;
+    font-size: 12px;
+}
+
+hr.TopSectionDivider {
+    border: none;
+    border-top: 4px solid #C7F23C;
+    position: relative;
+    top: 40px;
+}
+
+div.InvoiceInfo {
+    position: absolute;
+    right: 30px;
+    top: 0px;
+    line-height: 1.5;
+    font-family: 'JetBrains Mono', DejaVu Sans, monospace;
+    font-size: 10px;
+    color: #565F5B;
+    text-align: right;
+}
+
+img.CompanyLogo {
+    position: relative;
+    left: 40px;
+    top: 7px;
+}
+
+.BrandWordmark {
+    position: relative;
+    left: 40px;
+    top: 12px;
+    font-family: 'Space Grotesk', DejaVu Sans, sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    color: #0C0F0E;
+}
+
+.BrandWordmark span {
+    color: #7FA814;
+}
+
+h3.CompanyInfo,
+h3.ClientInfo {
+    position: absolute;
+    top: 110px;
+    font-family: 'Space Grotesk', DejaVu Sans, sans-serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #565F5B;
+    margin: 0;
+}
+
+h3.CompanyInfo {
+    left: 25px;
+}
+
+h3.ClientInfo {
+    left: 410px;
+}
+
+div.CompanyInfo {
+    position: absolute;
+    left: 25px;
+    top: 132px;
+    white-space: normal;
+    line-height: 17px;
+    max-width: 300px;
+    font-size: 11px;
+}
+
+div.ClientInfo {
+    position: absolute;
+    top: 132px;
+    left: 410px;
+    white-space: normal;
+    line-height: 17px;
+    max-width: 45%;
+    font-size: 11px;
+}
+
+div.Breakdown {
+    position: absolute;
+    width: 100%;
+    z-index: 9999;
+}
+
+div.InvoiceText {
+    left: 25px;
+    width: 100%;
+    position: absolute;
+    font-size: 11px;
+    color: #3A423F;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+th {
+    font-family: 'Space Grotesk', DejaVu Sans, sans-serif;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background-color: #111514;
+    color: #F8FAF3;
+    padding: 8px 10px;
+}
+
+td {
+    padding: 8px 10px;
+    font-size: 11px;
+    border-bottom: 1px solid #E7EAE3;
+}
+
+tr:nth-of-type(even) td {
+    background-color: #F8FAF3;
+}
+
+.TotalRow th {
+    background-color: transparent;
+    color: #0C0F0E;
+    font-family: 'JetBrains Mono', DejaVu Sans, monospace;
+    font-size: 13px;
+    border-top: 2px solid #0C0F0E;
+    padding-top: 10px;
+}
+
+.TotalRow .TotalAmount {
+    color: #7FA814;
+    font-weight: bold;
+}
+
+div.InvoiceFooter {
+    z-index: 1;
+    position: absolute;
+    bottom: 0px;
+    width: 100%;
+    text-align: center;
+    font-size: 9px;
+    color: #6E7873;
+    border-top: 1px solid #E7EAE3;
+    padding-top: 8px;
+}
+
+.muted-text {
+    color: #909A94;
+    font-size: 0.75em;
+}
