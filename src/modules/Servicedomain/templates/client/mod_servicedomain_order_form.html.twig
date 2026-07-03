@@ -237,7 +237,7 @@
                         const ns2 = document.querySelector('#transferNameservers input[name="ns2"]');
                         const ns3 = document.querySelector('#transferNameservers input[name="ns3"]');
                         const ns4 = document.querySelector('#transferNameservers input[name="ns4"]');
-                        if (statusEl) statusEl.textContent = "{{ 'Scanning current nameservers...'|trans }}";
+                        if (statusEl) statusEl.textContent = "{{ 'Scanning current nameservers...'|trans|e('js') }}";
 
                         FOSSBilling.api.guest.post(
                             'servicedomain/scan_nameservers',
@@ -248,17 +248,17 @@
                                     if (ns2) ns2.value = scanned[1] || '';
                                     if (ns3) ns3.value = scanned[2] || '';
                                     if (ns4) ns4.value = scanned[3] || '';
-                                    if (statusEl) statusEl.textContent = "{{ 'Detected the domain\'s current nameservers below. Review and edit them, or uncheck to use our default nameservers instead.'|trans }}";
+                                    if (statusEl) statusEl.textContent = "{{ 'Detected the domain\'s current nameservers below. Review and edit them, or uncheck to use our default nameservers instead.'|trans|e('js') }}";
                                     if (transferNameserversCb) {
                                         transferNameserversCb.checked = true;
                                         transferNameserversCb.dispatchEvent(new Event('change'));
                                     }
                                 } else if (statusEl) {
-                                    statusEl.textContent = "{{ 'Could not detect current nameservers. Enter them manually if you want to keep them, or leave unchecked to use our default nameservers.'|trans }}";
+                                    statusEl.textContent = "{{ 'Could not detect current nameservers. Enter them manually if you want to keep them, or leave unchecked to use our default nameservers.'|trans|e('js') }}";
                                 }
                             },
                             function () {
-                                if (statusEl) statusEl.textContent = "{{ 'Could not detect current nameservers. Enter them manually if you want to keep them, or leave unchecked to use our default nameservers.'|trans }}";
+                                if (statusEl) statusEl.textContent = "{{ 'Could not detect current nameservers. Enter them manually if you want to keep them, or leave unchecked to use our default nameservers.'|trans|e('js') }}";
                             },
                         );
                     },
@@ -310,8 +310,8 @@
                         renewPrice = regPrice;
                     }
 
-                    const yearLabel = "{{ ' Year @ '|trans }}";
-                    const yearsLabel = "{{ ' Years @ '|trans }}";
+                    const yearLabel = "{{ ' Year @ '|trans|e('js') }}";
+                    const yearsLabel = "{{ ' Years @ '|trans|e('js') }}";
 
                     for (let i = 1; i <= 5; i++) {
                         const totalPrice = (i === 1) ? regPrice : regPrice + (i - 1) * renewPrice;
