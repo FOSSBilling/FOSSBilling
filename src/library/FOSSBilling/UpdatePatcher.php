@@ -481,6 +481,8 @@ class UpdatePatcher implements InjectionAwareInterface
             73 => 'patch73',
             74 => 'patch74',
             75 => 'patch75',
+            76 => 'patch76',
+            77 => 'patch77',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -641,8 +643,8 @@ class UpdatePatcher implements InjectionAwareInterface
             }
 
             // If the Kb extension exists, uninstall it.
-            $kb_ext = $ext_service->findExtension('mod', 'kb');
-            if ($kb_ext instanceof \Model_Extension) {
+            $kb_ext = $ext_service->getExtensionRepository()->findOneByTypeAndName('mod', 'kb');
+            if ($kb_ext instanceof \Box\Mod\Extension\Entity\Extension) {
                 $ext_service->deactivate($kb_ext);
                 $ext_service->uninstall('mod', 'kb');
             }
@@ -664,8 +666,8 @@ class UpdatePatcher implements InjectionAwareInterface
         try {
             $ext_service = $this->di['mod_service']('extension');
             // If the queue extension exists, uninstall it.
-            $queue_ext = $ext_service->findExtension('mod', 'queue');
-            if ($queue_ext instanceof \Model_Extension) {
+            $queue_ext = $ext_service->getExtensionRepository()->findOneByTypeAndName('mod', 'queue');
+            if ($queue_ext instanceof \Box\Mod\Extension\Entity\Extension) {
                 $ext_service->deactivate($queue_ext);
                 $ext_service->uninstall('mod', 'queue');
             }
@@ -1097,8 +1099,8 @@ class UpdatePatcher implements InjectionAwareInterface
 
             $this->executeSql("DELETE FROM extension_meta WHERE extension = 'mod_spamchecker' AND meta_key = 'config'");
 
-            $spamcheckerExt = $extService->findExtension('mod', 'spamchecker');
-            if ($spamcheckerExt instanceof \Model_Extension) {
+            $spamcheckerExt = $extService->getExtensionRepository()->findOneByTypeAndName('mod', 'spamchecker');
+            if ($spamcheckerExt instanceof \Box\Mod\Extension\Entity\Extension) {
                 $extService->deactivate($spamcheckerExt);
                 $extService->uninstall('mod', 'spamchecker');
             }
@@ -1932,6 +1934,26 @@ class UpdatePatcher implements InjectionAwareInterface
         }
 
         $this->executeSql('ALTER TABLE `client` DROP COLUMN `document_type`, DROP COLUMN `document_nr`;');
+    }
+
+    private function patch76(): void
+    {
+        // The `activity_client_email` table was missing an `updated_at` column,
+        // but the Doctrine entity for it now expects one. Add the column for
+        // installations that were created before the entity was migrated.
+        if (!$this->tableHasColumn('activity_client_email', 'updated_at')) {
+            $this->executeSql('ALTER TABLE `activity_client_email` ADD COLUMN `updated_at` datetime DEFAULT NULL AFTER `created_at`');
+        }
+    }
+
+    private function patch77(): void
+    {
+        // The email queue table was renamed from `mod_email_queue` to
+        // `email_queue` when the `QueuedEmail` Doctrine entity was introduced.
+        // Rename it for installations that still use the legacy table name.
+        if ($this->tableExists('mod_email_queue') && !$this->tableExists('email_queue')) {
+            $this->executeSql('RENAME TABLE `mod_email_queue` TO `email_queue`');
+        }
     }
 
     private function generateDownloadableStoredFilename(): string

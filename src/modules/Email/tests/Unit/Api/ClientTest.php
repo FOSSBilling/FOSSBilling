@@ -14,7 +14,6 @@ use function Tests\Helpers\container;
 
 test('get list', function (): void {
     $clientApi = new Box\Mod\Email\Api\Client();
-    $emailService = new Box\Mod\Email\Service();
 
     $willReturn = [
         'list' => [
@@ -23,17 +22,21 @@ test('get list', function (): void {
     ];
     $pager = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
     $pager
-    ->shouldReceive('getPaginatedResultSet')
-    ->atLeast()->once()
-    ->andReturn($willReturn);
+        ->shouldReceive('paginateDoctrineQuery')
+        ->atLeast()->once()
+        ->andReturn($willReturn);
+
+    $repo = Mockery::mock(Box\Mod\Email\Repository\ActivityClientEmailRepository::class);
+    $qb = Mockery::mock(Doctrine\ORM\QueryBuilder::class);
+    $repo->shouldReceive('getSearchQueryBuilder')->andReturn($qb);
+
+    $service = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
+    $service->shouldReceive('getActivityClientEmailRepository')->andReturn($repo);
 
     $di = container();
     $di['pager'] = $pager;
 
     $clientApi->setDi($di);
-    $emailService->setDi($di);
-
-    $service = $emailService;
     $clientApi->setService($service);
 
     $client = new Model_Client();
@@ -51,17 +54,19 @@ test('get list', function (): void {
 test('get', function (): void {
     $clientApi = new Box\Mod\Email\Api\Client();
 
-    $model = new Model_ActivityClientEmail();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = new Box\Mod\Email\Entity\ActivityClientEmail();
+    \Tests\Helpers\setEntityId($model, 1);
+
+    $repo = Mockery::mock(Box\Mod\Email\Repository\ActivityClientEmailRepository::class);
+    $repo->shouldReceive('findOneForClientByIdOrFail')
+        ->atLeast()->once()
+        ->andReturn($model);
+
     $service = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
-    $service
-    ->shouldReceive('findOneForClientById')
-    ->atLeast()->once()
-    ->andReturn($model);
-    $service
-    ->shouldReceive('toApiArray')
-    ->atLeast()->once()
-    ->andReturn([]);
+    $service->shouldReceive('getActivityClientEmailRepository')->andReturn($repo);
+    $service->shouldReceive('toApiArray')
+        ->atLeast()->once()
+        ->andReturn([]);
     $clientApi->setService($service);
 
     $di = container();
@@ -79,11 +84,12 @@ test('get', function (): void {
 test('get not found exception', function (): void {
     $clientApi = new Box\Mod\Email\Api\Client();
 
+    $repo = Mockery::mock(Box\Mod\Email\Repository\ActivityClientEmailRepository::class);
+    $repo->shouldReceive('findOneForClientByIdOrFail')
+        ->andThrow(new FOSSBilling\Exception('Email not found'));
+
     $service = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
-    $service
-    ->shouldReceive('findOneForClientById')
-    ->atLeast()->once()
-    ->andReturn(false);
+    $service->shouldReceive('getActivityClientEmailRepository')->andReturn($repo);
 
     $client = new Model_Client();
     $client->loadBean(new Tests\Helpers\DummyBean());
@@ -103,18 +109,19 @@ test('get not found exception', function (): void {
 test('resend', function (): void {
     $clientApi = new Box\Mod\Email\Api\Client();
 
-    $model = new Model_ActivityClientEmail();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = new Box\Mod\Email\Entity\ActivityClientEmail();
+    \Tests\Helpers\setEntityId($model, 1);
+
+    $repo = Mockery::mock(Box\Mod\Email\Repository\ActivityClientEmailRepository::class);
+    $repo->shouldReceive('findOneForClientByIdOrFail')
+        ->atLeast()->once()
+        ->andReturn($model);
 
     $service = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
-    $service
-    ->shouldReceive('findOneForClientById')
-    ->atLeast()->once()
-    ->andReturn($model);
-    $service
-    ->shouldReceive('resend')
-    ->atLeast()->once()
-    ->andReturn(true);
+    $service->shouldReceive('getActivityClientEmailRepository')->andReturn($repo);
+    $service->shouldReceive('resend')
+        ->atLeast()->once()
+        ->andReturn(true);
 
     $client = new Model_Client();
     $client->loadBean(new Tests\Helpers\DummyBean());
@@ -133,11 +140,12 @@ test('resend', function (): void {
 test('resend not found exception', function (): void {
     $clientApi = new Box\Mod\Email\Api\Client();
 
+    $repo = Mockery::mock(Box\Mod\Email\Repository\ActivityClientEmailRepository::class);
+    $repo->shouldReceive('findOneForClientByIdOrFail')
+        ->andThrow(new FOSSBilling\Exception('Email not found'));
+
     $service = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
-    $service
-    ->shouldReceive('findOneForClientById')
-    ->atLeast()->once()
-    ->andReturn(false);
+    $service->shouldReceive('getActivityClientEmailRepository')->andReturn($repo);
 
     $client = new Model_Client();
     $client->loadBean(new Tests\Helpers\DummyBean());
@@ -160,17 +168,16 @@ test('delete', function (): void {
 
     $di = container();
 
-    $model = new Model_ActivityClientEmail();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = new Box\Mod\Email\Entity\ActivityClientEmail();
+    \Tests\Helpers\setEntityId($model, 1);
+
+    $repo = Mockery::mock(Box\Mod\Email\Repository\ActivityClientEmailRepository::class);
+    $repo->shouldReceive('findOneForClientByIdOrFail')
+        ->atLeast()->once()
+        ->andReturn($model);
+
     $service = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
-    $service
-    ->shouldReceive('findOneForClientById')
-    ->atLeast()->once()
-    ->andReturn($model);
-    $service
-    ->shouldReceive('rm')
-    ->atLeast()->once()
-    ->andReturn(true);
+    $service->shouldReceive('getActivityClientEmailRepository')->andReturn($repo);
 
     $client = new Model_Client();
     $client->loadBean(new Tests\Helpers\DummyBean());
@@ -188,11 +195,12 @@ test('delete', function (): void {
 test('delete not found exception', function (): void {
     $clientApi = new Box\Mod\Email\Api\Client();
 
+    $repo = Mockery::mock(Box\Mod\Email\Repository\ActivityClientEmailRepository::class);
+    $repo->shouldReceive('findOneForClientByIdOrFail')
+        ->andThrow(new FOSSBilling\Exception('Email not found'));
+
     $service = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
-    $service
-    ->shouldReceive('findOneForClientById')
-    ->atLeast()->once()
-    ->andReturn(false);
+    $service->shouldReceive('getActivityClientEmailRepository')->andReturn($repo);
 
     $client = new Model_Client();
     $client->loadBean(new Tests\Helpers\DummyBean());

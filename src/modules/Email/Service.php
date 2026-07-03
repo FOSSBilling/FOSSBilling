@@ -12,8 +12,12 @@ declare(strict_types=1);
 
 namespace Box\Mod\Email;
 
+use Box\Mod\Email\Entity\ActivityClientEmail;
 use Box\Mod\Email\Entity\EmailTemplate;
+use Box\Mod\Email\Entity\QueuedEmail;
+use Box\Mod\Email\Repository\ActivityClientEmailRepository;
 use Box\Mod\Email\Repository\EmailTemplateRepository;
+use Box\Mod\Email\Repository\QueuedEmailRepository;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\PaginationOptions;
@@ -25,7 +29,9 @@ use Symfony\Component\Finder\Finder;
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
-    protected ?EmailTemplateRepository $templateRepository = null;
+    protected EmailTemplateRepository $templateRepository;
+    protected ActivityClientEmailRepository $activityClientEmailRepository;
+    protected QueuedEmailRepository $queuedEmailRepository;
     private readonly Filesystem $filesystem;
 
     public function __construct()
@@ -36,6 +42,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        $this->templateRepository = $di['em']->getRepository(EmailTemplate::class);
+        $this->activityClientEmailRepository = $di['em']->getRepository(ActivityClientEmail::class);
+        $this->queuedEmailRepository = $di['em']->getRepository(QueuedEmail::class);
     }
 
     public function getDi(): ?\Pimple\Container
@@ -45,14 +54,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function getTemplateRepository(): EmailTemplateRepository
     {
-        if ($this->templateRepository === null) {
-            if ($this->di === null) {
-                throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
-            }
-            $this->templateRepository = $this->di['em']->getRepository(EmailTemplate::class);
-        }
-
         return $this->templateRepository;
+    }
+
+    public function getActivityClientEmailRepository(): ActivityClientEmailRepository
+    {
+        return $this->activityClientEmailRepository;
+    }
+
+    public function getQueuedEmailRepository(): QueuedEmailRepository
+    {
+        return $this->queuedEmailRepository;
     }
 
     public function getModulePermissions(): array
@@ -156,48 +168,25 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return [$query, $bindings];
     }
 
-    public function findOneForClientById(\Model_Client $client, $id)
-    {
-        $bindings = [
-            ':id' => $id,
-            ':client_id' => $client->id,
-        ];
-
-        $db = $this->di['db'];
-
-        return $db->findOne('ActivityClientEmail', 'id = :id AND client_id = :client_id ORDER BY id DESC', $bindings);
-    }
-
     public function rmByClient(\Model_Client $client): bool
     {
-        $models = $this->di['db']->find('ActivityClientEmail', 'client_id = ?', [$client->id]);
-        foreach ($models as $model) {
-            $this->di['db']->trash($model);
-        }
+        $this->getActivityClientEmailRepository()->deleteByClientId((int) $client->id);
 
         return true;
     }
 
-    public function rm(\Model_ActivityClientEmail $email): bool
-    {
-        $db = $this->di['db'];
-        $db->trash($email);
-
-        return true;
-    }
-
-    public function toApiArray(\Model_ActivityClientEmail $model, $deep = true): array
+    public function toApiArray(ActivityClientEmail $model, $deep = true): array
     {
         return [
-            'id' => $model->id,
-            'client_id' => $model->client_id,
-            'sender' => $model->sender,
-            'recipients' => $model->recipients,
-            'subject' => $model->subject,
-            'content_html' => Tools::sanitizeContent($model->content_html ?? ''),
-            'content_text' => $model->content_text,
-            'created_at' => $model->created_at,
-            'updated_at' => $model->updated_at,
+            'id' => $model->getId(),
+            'client_id' => $model->getClientId(),
+            'sender' => $model->getSender(),
+            'recipients' => $model->getRecipients(),
+            'subject' => $model->getSubject(),
+            'content_html' => Tools::sanitizeContent($model->getContentHtml() ?? ''),
+            'content_text' => $model->getContentText(),
+            'created_at' => $model->getCreatedAt()?->format('Y-m-d H:i:s'),
+            'updated_at' => $model->getUpdatedAt()?->format('Y-m-d H:i:s'),
         ];
     }
 
@@ -260,13 +249,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         // send email to admins
         if (isset($data['to_admin']) && $data['to_admin'] > 0) {
-            $oneStaff = $this->di['db']->findOne('Admin', 'id=?', [$data['to_admin']]);
+            /** @todo Doctrine: use Admin entity once Staff is migrated */
+            $oneStaff = $this->di['dbal']->fetchAssociative('SELECT id, email, name, signature FROM admin WHERE id = :id', ['id' => $data['to_admin']]);
             // Convert to array with only safe fields
             $vars['c'] = [
-                'id' => $oneStaff->id,
-                'email' => $oneStaff->email,
-                'name' => $oneStaff->name,
-                'signature' => $oneStaff->signature,
+                'id' => $oneStaff['id'],
+                'email' => $oneStaff['email'],
+                'name' => $oneStaff['name'],
+                'signature' => $oneStaff['signature'],
             ];
         }
 
@@ -307,9 +297,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, null, $staff['id'], $send_now, $throw_exceptions);
             }
         } elseif (isset($oneStaff)) {
-            $to = $oneStaff->email;
-            $to_name = $oneStaff->name;
-            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, $oneStaff->id, null, $send_now, $throw_exceptions);
+            $to = $oneStaff['email'];
+            $to_name = $oneStaff['name'];
+            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, $oneStaff['id'], null, $send_now, $throw_exceptions);
         } elseif (isset($customer)) {
             $to = $customer['email'];
             $to_name = $customer['first_name'] . ' ' . $customer['last_name'];
@@ -523,27 +513,26 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return [$template->getSubject() ?? '', $template->getContent() ?? ''];
     }
 
-    private function _queue($to, $from, $subject, $content, $to_name = null, $from_name = null, $client_id = null, $admin_id = null)
+    private function _queue($to, $from, $subject, $content, $to_name = null, $from_name = null, $client_id = null, $admin_id = null): QueuedEmail
     {
-        $db = $this->di['db'];
+        $em = $this->di['em'];
 
-        $queue = $db->dispense('ModEmailQueue');
-        $queue->recipient = $to;
-        $queue->sender = $from;
-        $queue->subject = $subject;
-        $queue->content = $content;
-        $queue->to_name = $to_name;
-        $queue->from_name = $from_name;
-        $queue->client_id = $client_id;
-        $queue->admin_id = $admin_id;
-        $queue->status = 'unsent';
-        $queue->created_at = date('Y-m-d H:i:s');
-        $queue->updated_at = date('Y-m-d H:i:s');
-        $queue->priority = 1;
-        $queue->tries = 0;
+        $queue = new QueuedEmail();
+        $queue->setRecipient((string) $to);
+        $queue->setSender((string) $from);
+        $queue->setSubject((string) $subject);
+        $queue->setContent((string) $content);
+        $queue->setToName($to_name !== null ? (string) $to_name : null);
+        $queue->setFromName($from_name !== null ? (string) $from_name : null);
+        $queue->setClientId($client_id !== null ? (int) $client_id : null);
+        $queue->setAdminId($admin_id !== null ? (int) $admin_id : null);
+        $queue->setStatus(QueuedEmail::STATUS_PENDING);
+        $queue->setPriority(1);
+        $queue->setTries(0);
 
         try {
-            $db->store($queue);
+            $em->persist($queue);
+            $em->flush();
         } catch (\Exception $e) {
             error_log($e->getMessage());
         }
@@ -591,7 +580,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
     }
 
-    public function resend(\Model_ActivityClientEmail $email): bool
+    public function resend(ActivityClientEmail $email): bool
     {
         $extensionService = $this->di['mod_service']('extension');
         if ($extensionService->isExtensionActive('mod', 'demo')) {
@@ -608,22 +597,22 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         $clientService = $this->di['mod_service']('client');
-        $customer = $clientService->get(['id' => $email->client_id]);
+        $customer = $clientService->get(['id' => $email->getClientId()]);
         $customer = $clientService->toApiArray($customer);
 
         $systemService = $this->di['mod_service']('system');
         $from_name = $systemService->getParamValue('company_name');
 
-        $this->sendMail($email->recipients, $email->sender, $email->subject, $email->content_html, $customer['first_name'] . ' ' . $customer['last_name'], $from_name, $email->client_id);
+        $this->sendMail($email->getRecipients(), $email->getSender(), $email->getSubject(), $email->getContentHtml(), $customer['first_name'] . ' ' . $customer['last_name'], $from_name, $email->getClientId());
 
-        $this->di['logger']->info('Resent email #%s', $email->id);
+        $this->di['logger']->info('Resent email #%s', $email->getId());
 
         return true;
     }
 
     public function queueGetSearchQuery($data): array
     {
-        $query = 'SELECT * FROM mod_email_queue';
+        $query = 'SELECT * FROM email_queue';
 
         $id = $data['id'] ?? null;
         $search = $data['search'] ?? null;
@@ -823,14 +812,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function getEmailById($id)
+    public function getEmailById($id): ActivityClientEmail
     {
-        $model = $this->di['db']->findOne('ActivityClientEmail', 'id = ?', [$id]);
-        if (!$model instanceof \Model_ActivityClientEmail) {
-            throw new \FOSSBilling\Exception('Email not found');
-        }
-
-        return $model;
+        return $this->getActivityClientEmailRepository()->findOneByIdOrFail((int) $id);
     }
 
     public function templateCreate($actionCode, $subject, $content, $enabled = 0, $category = null): EmailTemplate
@@ -1016,34 +1000,26 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $start = time();
 
-        $query = 'ORDER BY created_at ASC';
-        if ($sendPerCron) {
-            $query .= ' LIMIT ' . intval($sendPerCron);
-            $mailQueue = $this->di['db']->findAll('mod_email_queue', $query);
-        } else {
-            $mailQueue = $this->di['db']->findAll('mod_email_queue', $query);
-        }
+        $mailQueue = $this->getQueuedEmailRepository()->findDueBatch((int) $sendPerCron);
 
         foreach ($mailQueue as $email) {
-            $mailModel = new \Model_ModEmailQueue();
-            $mailModel->loadBean($email);
-            $this->_sendFromQueue($mailModel);
+            $this->_sendFromQueue($email);
             if ($time_limit && time() - $start > $time_limit) {
                 break;
             }
         }
     }
 
-    private function _sendFromQueue(\Model_ModEmailQueue $queue, bool $throw_exceptions = false): bool
+    private function _sendFromQueue(QueuedEmail $queue, bool $throw_exceptions = false): bool
     {
         $extensionService = $this->di['mod_service']('extension');
         if ($extensionService->isExtensionActive('mod', 'demo')) {
             return false;
         }
-        $queue->status = 'sending';
-        $this->di['db']->store($queue);
+        $queue->setStatus('sending');
+        $this->di['em']->flush();
 
-        $queue->content .= PHP_EOL;
+        $queue->setContent($queue->getContent() . PHP_EOL);
 
         $mod = $this->di['mod']('email');
         $settings = $mod->getConfig();
@@ -1051,16 +1027,16 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $transport = $settings['mailer'] ?? 'sendmail';
         $sender = [
-            'email' => $queue->sender,
-            'name' => $queue->from_name,
+            'email' => $queue->getSender(),
+            'name' => $queue->getFromName(),
         ];
         $recipient = [
-            'email' => $queue->recipient,
-            'name' => $queue->to_name,
+            'email' => $queue->getRecipient(),
+            'name' => $queue->getToName(),
         ];
 
         try {
-            $mail = new \FOSSBilling\Mail($sender, $recipient, $queue->subject, $queue->content, $transport, $settings['custom_dsn'] ?? null);
+            $mail = new \FOSSBilling\Mail($sender, $recipient, $queue->getSubject(), $queue->getContent(), $transport, $settings['custom_dsn'] ?? null);
             if (!empty($settings['reply_to'])) {
                 if (filter_var($settings['reply_to'], FILTER_VALIDATE_EMAIL)) {
                     $mail->addReplyTo($settings['reply_to']);
@@ -1080,11 +1056,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             // It sent without causing an exception (error), so we are safe to log it now
             if ($log) {
                 $activityService = $this->di['mod_service']('activity');
-                $activityService->logEmail($queue->subject, $queue->client_id, $queue->sender, $queue->recipient, $queue->content);
+                $activityService->logEmail($queue->getSubject(), $queue->getClientId(), $queue->getSender(), $queue->getRecipient(), $queue->getContent());
             }
 
             try {
-                $this->di['db']->trash($queue);
+                $this->di['em']->remove($queue);
+                $this->di['em']->flush();
             } catch (\Exception $e) {
                 $this->di['logger']->setChannel('email')->error($e->getMessage());
             }
@@ -1092,23 +1069,23 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $message = $e->getMessage();
             $this->di['logger']->setChannel('email')->error($e->getMessage());
 
-            if ($queue->priority) {
-                --$queue->priority;
+            if ($queue->getPriority()) {
+                $queue->setPriority($queue->getPriority() - 1);
             }
 
-            $queue->status = 'unsent';
-            ++$queue->tries;
-            $queue->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($queue);
+            $queue->setStatus(QueuedEmail::STATUS_FAILED);
+            $queue->setTries($queue->getTries() + 1);
+            $this->di['em']->flush();
 
             $maxTries = $settings['cancel_after'] ?? 5;
-            if ($queue->tries > $maxTries) {
+            if ($queue->getTries() > $maxTries) {
                 // The email failed to send after the max number of tries. This might be because of a server error, so let's be sure to log it which gives the client the ability to resend it.
                 if ($log) {
                     $activityService = $this->di['mod_service']('activity');
-                    $activityService->logEmail($queue->subject, $queue->client_id, $queue->sender, $queue->recipient, $queue->content);
+                    $activityService->logEmail($queue->getSubject(), $queue->getClientId(), $queue->getSender(), $queue->getRecipient(), $queue->getContent());
                 }
-                $this->di['db']->trash($queue);
+                $this->di['em']->remove($queue);
+                $this->di['em']->flush();
             }
 
             if ($throw_exceptions) {
