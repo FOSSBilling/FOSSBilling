@@ -248,7 +248,7 @@
                                     if (ns2) ns2.value = scanned[1] || '';
                                     if (ns3) ns3.value = scanned[2] || '';
                                     if (ns4) ns4.value = scanned[3] || '';
-                                    if (statusEl) statusEl.textContent = "{{ 'Detected the domain\\'s current nameservers below. Review and edit them, or uncheck to use our default nameservers instead.'|trans }}";
+                                    if (statusEl) statusEl.textContent = "{{ 'Detected the domain\'s current nameservers below. Review and edit them, or uncheck to use our default nameservers instead.'|trans }}";
                                     if (transferNameserversCb) {
                                         transferNameserversCb.checked = true;
                                         transferNameserversCb.dispatchEvent(new Event('change'));
