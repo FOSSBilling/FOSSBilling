@@ -26,7 +26,6 @@ use Box\Mod\Product\Repository\PromoRedemptionRepository;
 use Box\Mod\Product\Repository\PromoRepository;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\QueryBuilder;
-use Doctrine\ORM\Tools\Pagination\Paginator as DoctrinePaginator;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\PaginationOptions;
 
@@ -425,9 +424,7 @@ class Service implements InjectionAwareInterface
             ->setSlug($slug)
             ->setType($type)
             ->setSetup(self::SETUP_AFTER_PAYMENT)
-            ->setPriority((int) $priority + 10)
-            ->setUpdatedAt(new \DateTime())
-            ->setCreatedAt(new \DateTime());
+            ->setPriority((int) $priority + 10);
 
         $this->di['em']->persist($model);
         $this->di['em']->flush();
@@ -587,9 +584,7 @@ class Service implements InjectionAwareInterface
             ->setSetup($setup ?? self::SETUP_AFTER_PAYMENT)
             ->setIsAddon(true)
             ->setIconUrl($iconUrl)
-            ->setDescription($description)
-            ->setUpdatedAt(new \DateTime())
-            ->setCreatedAt(new \DateTime());
+            ->setDescription($description);
 
         $this->di['em']->persist($model);
         $this->di['em']->flush();
@@ -636,8 +631,7 @@ class Service implements InjectionAwareInterface
         $productCategory
             ->setTitle($title)
             ->setIconUrl($icon_url)
-            ->setDescription($description)
-            ->setUpdatedAt(new \DateTime());
+            ->setDescription($description);
         $this->di['em']->flush();
 
         $this->di['logger']->info('Updated product category #%s', $productCategory->getId());
@@ -650,9 +644,7 @@ class Service implements InjectionAwareInterface
         $model = (new ProductCategory())
             ->setTitle($title)
             ->setDescription($description)
-            ->setIconUrl($icon_url)
-            ->setUpdatedAt(new \DateTime())
-            ->setCreatedAt(new \DateTime());
+            ->setIconUrl($icon_url);
         $this->di['em']->persist($model);
         $this->di['em']->flush();
         $id = $model->getId();
@@ -2087,24 +2079,7 @@ class Service implements InjectionAwareInterface
      */
     private function paginateMappedQuery(QueryBuilder $qb, PaginationOptions $pagination, callable $mapper): array
     {
-        $offset = ($pagination->page - 1) * $pagination->perPage;
-        $qb->setFirstResult($offset)
-            ->setMaxResults($pagination->perPage);
-        $paginator = new DoctrinePaginator($qb, true);
-        $total = count($paginator);
-
-        $list = [];
-        foreach ($paginator as $entity) {
-            $list[] = $mapper($entity);
-        }
-
-        return [
-            'pages' => $total > 0 ? (int) ceil($total / $pagination->perPage) : 0,
-            'page' => $pagination->page,
-            'per_page' => $pagination->perPage,
-            'total' => $total,
-            'list' => $list,
-        ];
+        return $this->di['pager']->paginateMappedQuery($qb, $pagination, $mapper);
     }
 
     public function getProductDiscount(Product $product, Promo $promo, ?array $config = null)

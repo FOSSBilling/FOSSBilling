@@ -46,6 +46,7 @@ CREATE TABLE `activity_client_email` (
   `content_html` text,
   `content_text` text,
   `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `client_id_idx` (`client_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -656,12 +657,12 @@ CREATE TABLE `support_kb_article_category` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `mod_email_queue`
+-- Table structure for table `email_queue`
 --
 
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `mod_email_queue` (
+CREATE TABLE `email_queue` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `recipient` varchar(255) NOT NULL,
   `sender` varchar(255) NOT NULL,

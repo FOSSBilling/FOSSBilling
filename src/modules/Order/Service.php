@@ -365,7 +365,7 @@ class Service implements InjectionAwareInterface
         $data['discount'] ??= 0;
         $data['title'] = $model->title;
         $data['meta'] = $this->di['db']->getAssoc('SELECT name, value FROM client_order_meta WHERE client_order_id = :id', [':id' => $model->id]);
-        $data['active_tickets'] = $supportService->getActiveTicketsCountForOrder($model);
+        $data['active_tickets'] = $supportService->getSupportTicketRepository()->countActiveTicketsForOrder((int) $model->id);
         $client = $this->di['db']->getExistingModelById('Client', $model->client_id, 'Client not found');
         $data['client'] = $clientService->toApiArray($client, false);
 

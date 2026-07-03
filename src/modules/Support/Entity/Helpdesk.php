@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Support\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Interfaces\ApiArrayInterface;
@@ -48,6 +50,17 @@ class Helpdesk implements ApiArrayInterface, TimestampInterface
 
     #[ORM\Column(name: 'updated_at', type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTime $updatedAt = null;
+
+    /**
+     * @var Collection<int, SupportTicket>
+     */
+    #[ORM\OneToMany(mappedBy: 'helpdesk', targetEntity: SupportTicket::class)]
+    private Collection $tickets;
+
+    public function __construct()
+    {
+        $this->tickets = new ArrayCollection();
+    }
 
     public function toApiArray(\Model_Admin|\Model_Client|\Model_Guest|null $identity = null): array
     {
@@ -168,5 +181,13 @@ class Helpdesk implements ApiArrayInterface, TimestampInterface
     public function setUpdatedAt(\DateTime $updatedAt): void
     {
         $this->updatedAt = $updatedAt;
+    }
+
+    /**
+     * @return Collection<int, SupportTicket>
+     */
+    public function getTickets(): Collection
+    {
+        return $this->tickets;
     }
 }

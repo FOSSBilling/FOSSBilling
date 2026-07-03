@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Box\Mod\Product\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use FOSSBilling\Doctrine\TimestampTrait;
 use FOSSBilling\Interfaces\ApiArrayInterface;
 use FOSSBilling\Interfaces\TimestampInterface;
 
@@ -21,6 +22,8 @@ use FOSSBilling\Interfaces\TimestampInterface;
 #[ORM\HasLifecycleCallbacks]
 class PromoRedemption implements ApiArrayInterface, TimestampInterface
 {
+    use TimestampTrait;
+
     final public const string PHASE_CHECKOUT = 'checkout';
     final public const string PHASE_RENEWAL = 'renewal';
     final public const string STATUS_RESERVED = 'reserved';
@@ -66,12 +69,6 @@ class PromoRedemption implements ApiArrayInterface, TimestampInterface
     #[ORM\Column(name: 'release_reason', type: \Doctrine\DBAL\Types\Types::STRING, length: 100, nullable: true)]
     private ?string $releaseReason = null;
 
-    #[ORM\Column(name: 'created_at', type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $createdAt = null;
-
-    #[ORM\Column(name: 'updated_at', type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $updatedAt = null;
-
     public function toApiArray(): array
     {
         return [
@@ -87,23 +84,9 @@ class PromoRedemption implements ApiArrayInterface, TimestampInterface
             'committed_at' => $this->committedAt?->format('Y-m-d H:i:s'),
             'released_at' => $this->releasedAt?->format('Y-m-d H:i:s'),
             'release_reason' => $this->releaseReason,
-            'created_at' => $this->createdAt?->format('Y-m-d H:i:s'),
-            'updated_at' => $this->updatedAt?->format('Y-m-d H:i:s'),
+            'created_at' => $this->getCreatedAt()?->format('Y-m-d H:i:s'),
+            'updated_at' => $this->getUpdatedAt()?->format('Y-m-d H:i:s'),
         ];
-    }
-
-    #[ORM\PrePersist]
-    public function onPrePersist(): void
-    {
-        $now = new \DateTime();
-        $this->createdAt ??= $now;
-        $this->updatedAt = $now;
-    }
-
-    #[ORM\PreUpdate]
-    public function updateTimestamp(): void
-    {
-        $this->updatedAt = new \DateTime();
     }
 
     public function getId(): ?int
@@ -241,25 +224,5 @@ class PromoRedemption implements ApiArrayInterface, TimestampInterface
         $this->releaseReason = $releaseReason;
 
         return $this;
-    }
-
-    public function getCreatedAt(): ?\DateTime
-    {
-        return $this->createdAt;
-    }
-
-    public function setCreatedAt(\DateTime $createdAt): void
-    {
-        $this->createdAt = $createdAt;
-    }
-
-    public function getUpdatedAt(): ?\DateTime
-    {
-        return $this->updatedAt;
-    }
-
-    public function setUpdatedAt(\DateTime $updatedAt): void
-    {
-        $this->updatedAt = $updatedAt;
     }
 }

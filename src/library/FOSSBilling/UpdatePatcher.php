@@ -483,6 +483,8 @@ class UpdatePatcher implements InjectionAwareInterface
             75 => 'patch75',
             76 => 'patch76',
             77 => 'patch77',
+            78 => 'patch78',
+            79 => 'patch79'
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -1938,6 +1940,26 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch76(): void
     {
+        // The `activity_client_email` table was missing an `updated_at` column,
+        // but the Doctrine entity for it now expects one. Add the column for
+        // installations that were created before the entity was migrated.
+        if (!$this->tableHasColumn('activity_client_email', 'updated_at')) {
+            $this->executeSql('ALTER TABLE `activity_client_email` ADD COLUMN `updated_at` datetime DEFAULT NULL AFTER `created_at`');
+        }
+    }
+
+    private function patch77(): void
+    {
+        // The email queue table was renamed from `mod_email_queue` to
+        // `email_queue` when the `QueuedEmail` Doctrine entity was introduced.
+        // Rename it for installations that still use the legacy table name.
+        if ($this->tableExists('mod_email_queue') && !$this->tableExists('email_queue')) {
+            $this->executeSql('RENAME TABLE `mod_email_queue` TO `email_queue`');
+        }
+    }
+
+    private function patch78(): void
+    {
         // Rework admin groups and permissions
         //
         // This patch migrates from individual admin-scoped permissions to group permissions.
@@ -2083,7 +2105,7 @@ class UpdatePatcher implements InjectionAwareInterface
         }
     }
 
-    private function patch77(): void
+    private function patch79(): void
     {
         // Create better default groups with sensible permissions
         //

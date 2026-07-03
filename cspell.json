@@ -55,7 +55,8 @@
         "mysite",
         "myhost",
         "inversed",
-        "Autoresponder"
+        "Autoresponder",
+        "initialises"
     ],
 
     "ignoreWords": [

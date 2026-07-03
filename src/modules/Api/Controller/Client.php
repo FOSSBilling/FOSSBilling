@@ -18,12 +18,12 @@ namespace Box\Mod\Api\Controller;
 
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
+use FOSSBilling\Http\ApiResponseFactory;
 use FOSSBilling\Http\HttpResponseException;
+use FOSSBilling\Http\RequestPayloadParser;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Security\AuthenticationRequiredException;
 use FOSSBilling\Security\EmailValidationRequiredException;
-use FOSSBilling\Security\RateLimitException;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -69,18 +69,10 @@ class Client implements InjectionAwareInterface
 
     public function post_method(\Box_App $app, $role, $class, $method): Response
     {
-        $request = $app->getRequest();
-        $p = $request->request->all();
-
-        // adding support for raw post input with json string
-        $input = $request->getContent();
-        if (empty($p) && !empty($input)) {
-            $p = json_decode($input, true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                $exc = new \FOSSBilling\Exception('Malformed JSON input: :error', [':error' => json_last_error_msg()], 400);
-
-                return $this->renderJson(null, $exc);
-            }
+        try {
+            $p = (new RequestPayloadParser())->all($app->getRequest());
+        } catch (\FOSSBilling\Exception $exc) {
+            return $this->renderJson(null, $exc);
         }
 
         $call = $class . '_' . $method;
@@ -440,39 +432,11 @@ class Client implements InjectionAwareInterface
     {
         $this->_loadConfig();
 
-        $headers = [
-            'Cache-Control' => 'no-cache, must-revalidate',
-            'Expires' => 'Mon, 26 Jul 1997 05:00:00 GMT',
-        ];
-        $statusCode = 200;
-
         if ($e instanceof \Exception) {
             error_log("{$e->getMessage()} {$e->getCode()}.");
-            $code = $e->getCode() ?: 9999;
-            $result = ['result' => null, 'error' => ['message' => $e->getMessage(), 'code' => $code]];
-            $authFailed = [201, 202, 206, 204, 205, 203, 1004, 1002];
-
-            if (in_array($code, $authFailed)) {
-                $statusCode = 401;
-            } elseif ($code == 403) {
-                $statusCode = 403;
-            } elseif ($code == 740) {
-                $statusCode = 404;
-            } elseif ($code == 429) {
-                $statusCode = 429;
-                if ($e instanceof RateLimitException && $e->hasRetryAfter()) {
-                    $headers['Retry-After'] = (string) $e->getRetryAfterSeconds();
-                }
-            } elseif ($code == 503) {
-                $statusCode = 503;
-            } elseif ($code == 701 || $code == 879) {
-                $statusCode = 400;
-            }
-        } else {
-            $result = ['result' => $data, 'error' => null];
         }
 
-        return new JsonResponse($result, $statusCode, $headers);
+        return (new ApiResponseFactory())->create($data, $e);
     }
 
     protected function sendResponse(Response $response): Response

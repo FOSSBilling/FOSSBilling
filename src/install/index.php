@@ -2,12 +2,14 @@
 
 declare(strict_types=1);
 
+use FOSSBilling\Http\ResponseEmitter;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 
 if (version_compare(PHP_VERSION, '8.3.0', '<')) {
-    (new Response('Error: PHP version 8.3.0 or higher is required. You have version ' . PHP_VERSION, 500))->send();
+    http_response_code(500);
+    header('Content-Type: text/plain; charset=UTF-8');
+    echo 'Error: PHP version 8.3.0 or higher is required. You have version ' . PHP_VERSION;
     exit;
 }
 
@@ -16,5 +18,6 @@ require dirname(__DIR__) . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR 
 $request = Request::createFromGlobals();
 $installPath = rtrim(dirname((string) $request->server->get('PHP_SELF', '')), '/');
 
-(new RedirectResponse($installPath . '/install.php'))->send();
+$response = new RedirectResponse($installPath . '/install.php');
+(new ResponseEmitter())->emit($response, $request);
 exit;

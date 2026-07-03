@@ -941,7 +941,9 @@ test('toApiArray returns expected keys', function (): void {
     $clientService->shouldReceive('toApiArray')->atLeast()->once()->andReturn([]);
 
     $supportService = Mockery::mock(Box\Mod\Support\Service::class);
-    $supportService->shouldReceive('getActiveTicketsCountForOrder')->atLeast()->once()->andReturn(1);
+    $supportTicketRepo = Mockery::mock(Box\Mod\Support\Repository\SupportTicketRepository::class);
+    $supportTicketRepo->shouldReceive('countActiveTicketsForOrder')->atLeast()->once()->andReturn(1);
+    $supportService->shouldReceive('getSupportTicketRepository')->atLeast()->once()->andReturn($supportTicketRepo);
 
     $dbMock = Mockery::mock(Box_Database::class);
     $dbMock->shouldReceive('toArray')->atLeast()->once()->andReturn([]);

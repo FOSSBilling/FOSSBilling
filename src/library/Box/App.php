@@ -15,11 +15,11 @@ use DebugBar\StandardDebugBar;
 use FOSSBilling\Config;
 use FOSSBilling\Http\HttpResponseException;
 use FOSSBilling\Http\RequestFactory;
+use FOSSBilling\Http\ResponseFactory;
+use FOSSBilling\Http\RouteMatcher;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Security\AuthenticationRequiredException;
 use FOSSBilling\Security\EmailValidationRequiredException;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -135,26 +135,17 @@ class Box_App
 
     protected function normalizeResponse(mixed $result): Response
     {
-        if ($result instanceof Response) {
-            return $result;
-        }
-
-        return new Response((string) ($result ?? ''));
+        return (new ResponseFactory())->normalize($result);
     }
 
     public function renderResponse(string $fileName, array $variableArray = [], int $statusCode = 200, array $headers = []): Response
     {
-        $response = new Response($this->render($fileName, $variableArray), $statusCode);
-        $response->headers->add($headers);
-
-        return $response;
+        return (new ResponseFactory())->html($this->render($fileName, $variableArray), $statusCode, $headers);
     }
 
     public function errorResponse(Exception $e, ?int $statusCode = null, array $headers = []): Response
     {
-        $statusCode ??= $e->getCode() > 0 ? $e->getCode() : 500;
-
-        return $this->renderResponse('error', ['exception' => $e], $statusCode, $headers);
+        return (new ResponseFactory())->error($this->render('error', ['exception' => $e]), $e, $statusCode, $headers);
     }
 
     public function abortWithResponse(Response $response): never
@@ -185,14 +176,14 @@ class Box_App
             if ($e->getArea() === 'admin') {
                 $this->di['set_return_uri'];
 
-                return new RedirectResponse($this->di['url']->adminLink('staff/login'));
+                return (new ResponseFactory())->redirect($this->di['url']->adminLink('staff/login'));
             }
 
             $this->di['set_return_uri'];
 
-            return new RedirectResponse($this->di['url']->link('login'));
+            return (new ResponseFactory())->redirect($this->di['url']->link('login'));
         } catch (EmailValidationRequiredException) {
-            return new RedirectResponse($this->di['url']->link('client/profile'));
+            return (new ResponseFactory())->redirect($this->di['url']->link('client/profile'));
         } catch (HttpResponseException $e) {
             return $e->getResponse();
         }
@@ -204,18 +195,18 @@ class Box_App
     public function redirect($path): never
     {
         $location = $this->di['url']->link($path);
-        $this->abortWithResponse(new RedirectResponse($location));
+        $this->abortWithResponse((new ResponseFactory())->redirect($location));
     }
 
     public function permanentRedirect($path): never
     {
         $location = $this->di['url']->link($path);
-        $this->abortWithResponse(new RedirectResponse($location, 301));
+        $this->abortWithResponse((new ResponseFactory())->redirect($location, 301));
     }
 
     public function redirectUrl(string $url, int $statusCode = 302): never
     {
-        $this->abortWithResponse(new RedirectResponse($url, $statusCode));
+        $this->abortWithResponse((new ResponseFactory())->redirect($url, $statusCode));
     }
 
     public function render($fileName, $variableArray = []): string
@@ -225,21 +216,12 @@ class Box_App
 
     public function sendFile($filename, $contentType, $path): never
     {
-        $response = new BinaryFileResponse($path);
-        $response->headers->set('Content-Type', $contentType);
-        $response->setContentDisposition('attachment', $filename);
-
-        $this->abortWithResponse($response);
+        $this->abortWithResponse((new ResponseFactory())->file($filename, $contentType, $path));
     }
 
     public function sendDownload($filename, $path): never
     {
-        $response = new BinaryFileResponse($path);
-        $response->headers->set('Content-Type', 'application/octet-stream');
-        $response->headers->set('Content-Description', 'File Transfer');
-        $response->setContentDisposition('attachment', $filename);
-
-        $this->abortWithResponse($response);
+        $this->abortWithResponse((new ResponseFactory())->download($filename, $path));
     }
 
     protected function executeShared($classname, $methodName, $params): mixed
@@ -390,13 +372,14 @@ class Box_App
 
         $timeCollector->startMeasure('sharedMapping', 'Checking shared mappings');
         $sharedCount = count($this->shared);
+        $routeMatcher = new RouteMatcher();
         for ($i = 0; $i < $sharedCount; ++$i) {
             $mapping = $this->shared[$i];
-            $url = new Box_UrlHelper($mapping[0], $mapping[1], $mapping[3], $this->url, $this->getRequest()->getMethod());
-            if ($url->match) {
+            $routeMatch = $routeMatcher->match($mapping[0], $mapping[1], $mapping[3], $this->url, $this->getRequest()->getMethod());
+            if ($routeMatch->matched) {
                 $timeCollector->stopMeasure('sharedMapping');
 
-                return $this->normalizeResponse($this->executeShared($mapping[4], $mapping[2], $url->params));
+                return $this->normalizeResponse($this->executeShared($mapping[4], $mapping[2], $routeMatch->params));
             }
         }
         $timeCollector->stopMeasure('sharedMapping');
@@ -406,11 +389,11 @@ class Box_App
         $mappingsCount = count($this->mappings);
         for ($i = 0; $i < $mappingsCount; ++$i) {
             $mapping = $this->mappings[$i];
-            $url = new Box_UrlHelper($mapping[0], $mapping[1], $mapping[3], $this->url, $this->getRequest()->getMethod());
-            if ($url->match) {
+            $routeMatch = $routeMatcher->match($mapping[0], $mapping[1], $mapping[3], $this->url, $this->getRequest()->getMethod());
+            if ($routeMatch->matched) {
                 $timeCollector->stopMeasure('mapping');
 
-                return $this->normalizeResponse($this->execute($mapping[2], $url->params));
+                return $this->normalizeResponse($this->execute($mapping[2], $routeMatch->params));
             }
         }
         $timeCollector->stopMeasure('mapping');

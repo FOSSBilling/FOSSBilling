@@ -15,6 +15,8 @@ namespace Box\Mod\Massmailer;
 use Box\Mod\Massmailer\Entity\MassmailerMessage;
 use Box\Mod\Massmailer\Repository\MassmailerMessageRepository;
 use Doctrine\DBAL\ArrayParameterType;
+use FOSSBilling\Enums\ClientOrderStatusEnum;
+use FOSSBilling\Enums\ClientStatusEnum;
 use FOSSBilling\Environment;
 use FOSSBilling\InformationException;
 
@@ -31,17 +33,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         self::FILTER_HAS_ORDER_WITH_STATUS,
     ];
     private const array CLIENT_STATUSES = [
-        \Model_Client::ACTIVE,
-        \Model_Client::SUSPENDED,
-        \Model_Client::CANCELED,
+        ClientStatusEnum::ACTIVE->value,
+        ClientStatusEnum::SUSPENDED->value,
+        ClientStatusEnum::CANCELED->value,
     ];
     private const array ORDER_STATUSES = [
-        \Model_ClientOrder::STATUS_PENDING_SETUP,
-        \Model_ClientOrder::STATUS_FAILED_SETUP,
-        \Model_ClientOrder::STATUS_FAILED_RENEW,
-        \Model_ClientOrder::STATUS_ACTIVE,
-        \Model_ClientOrder::STATUS_CANCELED,
-        \Model_ClientOrder::STATUS_SUSPENDED,
+        ClientOrderStatusEnum::PENDING_SETUP->value,
+        ClientOrderStatusEnum::FAILED_SETUP->value,
+        ClientOrderStatusEnum::FAILED_RENEW->value,
+        ClientOrderStatusEnum::ACTIVE->value,
+        ClientOrderStatusEnum::CANCELED->value,
+        ClientOrderStatusEnum::SUSPENDED->value,
     ];
 
     protected ?\Pimple\Container $di = null;
@@ -117,7 +119,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         PRIMARY KEY (`id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;
         ';
-        $this->di['db']->exec($sql);
+        $this->di['dbal']->executeStatement($sql);
 
         // default config values
         $extensionService->setConfig(['ext' => 'mod_massmailer', 'limit' => '2', 'interval' => '10', 'test_client_id' => 1]);

@@ -17,7 +17,6 @@ declare(strict_types=1);
 namespace Box\Mod\Email\Api;
 
 use FOSSBilling\PaginationOptions;
-use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Admin extends \FOSSBilling\Api\AbstractApi
@@ -31,27 +30,12 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('email', 'view_email_history');
 
-        [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $repo = $this->getService()->getActivityClientEmailRepository();
 
-        foreach ($pager['list'] as $key => $item) {
-            if (!is_array($item)) {
-                continue;
-            }
-            $pager['list'][$key] = [
-                'id' => $item['id'],
-                'client_id' => $item['client_id'],
-                'sender' => $item['sender'] ?? '',
-                'recipients' => $item['recipients'] ?? '',
-                'subject' => $item['subject'] ?? '',
-                'content_html' => Tools::sanitizeContent($item['content_html'] ?? ''),
-                'content_text' => $item['content_text'] ?? '',
-                'created_at' => $item['created_at'] ?? '',
-                'updated_at' => $item['updated_at'] ?? '',
-            ];
-        }
-
-        return $pager;
+        return $this->getDi()['pager']->paginateDoctrineQuery(
+            $repo->getSearchQueryBuilder($data),
+            PaginationOptions::fromArray($data),
+        );
     }
 
     /**
@@ -113,11 +97,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('email', 'send_emails');
 
-        $model = $this->getDi()['db']->findOne('ActivityClientEmail', 'id = ?', [$data['id']]);
-
-        if (!$model instanceof \Model_ActivityClientEmail) {
-            throw new \FOSSBilling\Exception('Email not found');
-        }
+        $model = $this->getService()->getActivityClientEmailRepository()->findOneByIdOrFail((int) $data['id']);
 
         return $this->getService()->resend($model);
     }
@@ -132,14 +112,12 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('email', 'delete_email_history');
 
-        $model = $this->getDi()['db']->findOne('ActivityClientEmail', 'id = ?', [$data['id']]);
+        $em = $this->getDi()['em'];
+        $model = $this->getService()->getActivityClientEmailRepository()->findOneByIdOrFail((int) $data['id']);
 
-        if (!$model instanceof \Model_ActivityClientEmail) {
-            throw new \FOSSBilling\Exception('Email not found');
-        }
-
-        $id = $model->id;
-        $this->getDi()['db']->trash($model);
+        $id = $model->getId();
+        $em->remove($model);
+        $em->flush();
 
         $this->getDi()['logger']->info('Deleted email #%s', $id);
 
@@ -447,23 +425,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('email', 'view_email_history');
 
-        [$sql, $params] = $this->getService()->queueGetSearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $repo = $this->getService()->getQueuedEmailRepository();
 
-        foreach ($pager['list'] as $key => $item) {
-            $pager['list'][$key] = [
-                'id' => $item['id'] ?? '',
-                'recipient' => $item['recipient'] ?? '',
-                'subject' => $item['subject'] ?? '',
-                'content' => $item['content'] ?? '',
-                'to_name' => $item['to_name'] ?? '',
-                'status' => $item['status'] ?? '',
-                'tries' => $item['tries'] ?? '',
-                'created_at' => $item['created_at'] ?? '',
-                'updated_at' => $item['updated_at'] ?? '',
-            ];
-        }
-
-        return $pager;
+        return $this->getDi()['pager']->paginateDoctrineQuery(
+            $repo->getSearchQueryBuilder($data),
+            PaginationOptions::fromArray($data),
+        );
     }
 }
