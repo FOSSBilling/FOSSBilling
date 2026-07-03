@@ -140,3 +140,83 @@ test('is allowed', function (): void {
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
 });
+
+test('update finalization status allows super administrator while pending', function (): void {
+    $api = new Box\Mod\System\Api\Admin();
+
+    $admin = new Model_Admin();
+    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin->id = 1;
+    $admin->role = 'staff';
+    $api->setIdentity($admin);
+
+    $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffService->shouldReceive('isSuperAdministrator')->once()->with(1)->andReturn(true);
+
+    $updateFinalization = Mockery::mock();
+    $updateFinalization->shouldReceive('isRequired')->once()->andReturn(true);
+    $updateFinalization->shouldReceive('getStatus')->once()->withNoArgs()->andReturn(['required' => true]);
+
+    $di = container();
+    $di['update_finalization'] = $updateFinalization;
+    $di['mod_service'] = $di->protect(fn (string $serviceName): mixed => $serviceName === 'Staff' ? $staffService : false);
+    $api->setDi($di);
+
+    expect($api->update_finalization_status())->toBe(['required' => true]);
+});
+
+test('update finalization status falls back to legacy admin while pending', function (): void {
+    $api = new Box\Mod\System\Api\Admin();
+
+    $admin = new Model_Admin();
+    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin->id = 1;
+    $api->setIdentity($admin);
+
+    $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffService->shouldReceive('isSuperAdministrator')->once()->with(1)->andThrow(new RuntimeException('admin groups unavailable'));
+
+    $updateFinalization = Mockery::mock();
+    $updateFinalization->shouldReceive('isRequired')->once()->andReturn(true);
+    $updateFinalization->shouldReceive('getStatus')->once()->withNoArgs()->andReturn(['required' => true]);
+
+    $db = Mockery::mock(Box_Database::class);
+    $db->shouldReceive('getCell')->once()->with("SHOW COLUMNS FROM `admin` LIKE 'role'")->andReturn('role');
+    $db->shouldReceive('getCell')->once()->with('SELECT role FROM admin WHERE id = :id', ['id' => 1])->andReturn('admin');
+
+    $di = container();
+    $di['update_finalization'] = $updateFinalization;
+    $di['mod_service'] = $di->protect(fn (string $serviceName): mixed => $serviceName === 'Staff' ? $staffService : false);
+    $di['db'] = $db;
+    $api->setDi($di);
+
+    expect($api->update_finalization_status())->toBe(['required' => true]);
+});
+
+test('update finalization status rejects legacy non-admin while pending', function (): void {
+    $api = new Box\Mod\System\Api\Admin();
+
+    $admin = new Model_Admin();
+    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin->id = 1;
+    $api->setIdentity($admin);
+
+    $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffService->shouldReceive('isSuperAdministrator')->once()->with(1)->andThrow(new RuntimeException('admin groups unavailable'));
+
+    $updateFinalization = Mockery::mock();
+    $updateFinalization->shouldReceive('isRequired')->once()->andReturn(true);
+
+    $db = Mockery::mock(Box_Database::class);
+    $db->shouldReceive('getCell')->once()->with("SHOW COLUMNS FROM `admin` LIKE 'role'")->andReturn('role');
+    $db->shouldReceive('getCell')->once()->with('SELECT role FROM admin WHERE id = :id', ['id' => 1])->andReturn('staff');
+
+    $di = container();
+    $di['update_finalization'] = $updateFinalization;
+    $di['mod_service'] = $di->protect(fn (string $serviceName): mixed => $serviceName === 'Staff' ? $staffService : false);
+    $di['db'] = $db;
+    $api->setDi($di);
+
+    expect(fn () => $api->update_finalization_status())
+        ->toThrow(FOSSBilling\InformationException::class, 'You do not have permission to finalize this update');
+});

@@ -280,17 +280,32 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         return true;
     }
 
-    /**
-     * Disable permission checks when an update is pending finalization.
-     * 
-     * This is to make sure update finalization still works when there are changes to the
-     * permission system and patches need to be applied before everything starts working again.
-     */
     private function checkUpdateFinalizationPermissions(): void
     {
         if (!$this->getDi()['update_finalization']->isRequired()) {
             $this->checkPermissions('system', 'system_update');
+
+            return;
         }
+
+        if ($this->identity instanceof \Model_Admin) {
+            try {
+                if ($this->getDi()['mod_service']('Staff')->isSuperAdministrator($this->identity->id)) {
+                    return;
+                }
+            } catch (\Throwable) {
+                // If the installation hasn't migrated to the new group structure yet,
+                // Manually look for the old "admin" role
+                if (
+                    $this->getDi()['db']->getCell("SHOW COLUMNS FROM `admin` LIKE 'role'")
+                    && $this->getDi()['db']->getCell('SELECT role FROM admin WHERE id = :id', ['id' => (int) $this->identity->id]) === 'admin'
+                ) {
+                    return;
+                }
+            }
+        }
+
+        throw new \FOSSBilling\InformationException('You need to be a Super Administrator to finalize this update.', [], 403);
     }
 
     /**
