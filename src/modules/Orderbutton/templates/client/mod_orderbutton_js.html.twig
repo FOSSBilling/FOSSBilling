@@ -34,6 +34,14 @@
             }
         }
 
+        document.getElementById('goToAccountStep')?.addEventListener('click', function() {
+            const registerPanel = document.getElementById('register');
+            if (registerPanel) {
+                bootstrap.Collapse.getOrCreateInstance(registerPanel).show();
+                registerPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+
         document.getElementById('show-promo-field')?.addEventListener('click', function() {
             document.getElementById('apply-promo').style.display = 'block';
             this.style.display = 'none';

@@ -204,7 +204,10 @@
                                             </div>
                                         {% endif %}
                                         <button id="checkoutButton" class="btn btn-primary btn-large" type="submit" {% if not client %} hidden="true" {% endif %}>{{ 'Checkout'|trans }}</button>
-                                        <p id="loginMessage" {% if client %} hidden="true" {% endif %}>{{ 'You must first login / create an account before you can checkout.'|trans }}</p>
+                                        <div id="loginMessage" {% if client %} hidden="true" {% endif %}>
+                                            <p class="mb-2">{{ 'You must first login or create an account before you can checkout.'|trans }}</p>
+                                            <button type="button" class="btn btn-primary btn-sm" id="goToAccountStep">{{ 'Login / Create account'|trans }}</button>
+                                        </div>
                                     </div>
                                 </div>
                             </fieldset>
