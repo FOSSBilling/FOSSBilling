@@ -1683,7 +1683,7 @@ test('delete rejects staff outside actor group subtree', function (): void {
         ->toThrow(FOSSBilling\InformationException::class, 'You can only manage staff accounts in lower groups');
 });
 
-test('addAdminToGroup rejects groupless target staff', function (): void {
+test('addAdminToGroup rejects target staff without a group', function (): void {
     $actor = new Model_Admin();
     $actor->loadBean(new Tests\Helpers\DummyBean());
     $actor->id = 10;
