@@ -71,7 +71,7 @@
 </table>
 
 <div class="card-footer d-flex flex-wrap gap-2 justify-content-end">
-    {{ order_actions }}
+    {{ order_actions|default('') }}
     <a class="btn btn-primary" href="{{ server.cpanel_url }}" target="_blank">
         <svg class="icon">
             <use href="#server" />
