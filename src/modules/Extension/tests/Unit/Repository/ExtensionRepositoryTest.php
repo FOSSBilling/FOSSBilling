@@ -60,6 +60,16 @@ test('findOneByTypeAndName delegates to findOneBy', function (): void {
     expect($repo->findOneByTypeAndName('mod', 'sample'))->toBeNull();
 });
 
+test('findByType delegates to findBy', function (): void {
+    $repo = Mockery::mock(ExtensionRepository::class)->makePartial();
+    $repo->shouldReceive('findBy')
+        ->once()
+        ->with(['type' => 'mod'])
+        ->andReturn([]);
+
+    expect($repo->findByType('mod'))->toBe([]);
+});
+
 test('findInstalledByType returns installed extensions', function (): void {
     $repo = Mockery::mock(ExtensionRepository::class)->makePartial();
     $repo->shouldReceive('findBy')
@@ -68,6 +78,19 @@ test('findInstalledByType returns installed extensions', function (): void {
         ->andReturn([]);
 
     expect($repo->findInstalledByType('mod'))->toBe([]);
+});
+
+test('findInstalledNamesByType returns names for installed extensions', function (): void {
+    $extension = new Extension();
+    $extension->setName('sample');
+
+    $repo = Mockery::mock(ExtensionRepository::class)->makePartial();
+    $repo->shouldReceive('findInstalledByType')
+        ->once()
+        ->with('mod')
+        ->andReturn([$extension]);
+
+    expect($repo->findInstalledNamesByType('mod'))->toBe(['sample']);
 });
 
 test('existsActiveByTypeAndName returns true when found', function (): void {

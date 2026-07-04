@@ -44,7 +44,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $order = $this->getDi()['db']->findOne('ClientOrder', 'id = :id AND client_id = :client_id', $bindings);
 
         if (!$order instanceof \Model_ClientOrder) {
-            throw new \FOSSBilling\Exception('Order not found');
+            throw new \FOSSBilling\InformationException('Order not found');
         }
 
         if ($order->status !== \Model_ClientOrder::STATUS_ACTIVE) {

@@ -476,7 +476,7 @@ test('throws exception when ticket not found by client', function (): void {
     $service = Mockery::mock(Service::class)->makePartial();
     $repo = Mockery::mock(SupportTicketRepository::class);
     $repo->shouldReceive('findOneByClientOrFail')->atLeast()->once()
-        ->andThrow(new FOSSBilling\Exception('Ticket not found'));
+        ->andThrow(new FOSSBilling\InformationException('Ticket not found'));
     $service->shouldReceive('getSupportTicketRepository')->atLeast()->once()
         ->andReturn($repo);
 
@@ -488,53 +488,7 @@ test('throws exception when ticket not found by client', function (): void {
     $client->id = 1;
 
     $service->findOneByClient($client, 1);
-})->throws(FOSSBilling\Exception::class);
-
-dataset('searchQueryData', [
-    [
-        [
-            'search' => 'query',
-            'id' => 1,
-            'status' => 'open',
-            'client_id' => 1,
-            'client' => 'Client name',
-            'order_id' => 1,
-            'subject' => 'subject',
-            'content' => 'Content',
-            'support_helpdesk_id' => 1,
-            'created_at' => date('Y-m-d H:i:s'),
-            'date_from' => date('Y-m-d H:i:s'),
-            'date_to' => date('Y-m-d H:i:s'),
-            'priority' => 1,
-        ],
-    ],
-    [
-        [
-            'search' => 1,
-            'id' => 1,
-            'status' => 'open',
-            'client_id' => 1,
-            'client' => 'Client name',
-            'order_id' => 1,
-            'subject' => 'subject',
-            'content' => 'Content',
-            'support_helpdesk_id' => 1,
-            'created_at' => date('Y-m-d H:i:s'),
-            'date_from' => date('Y-m-d H:i:s'),
-            'date_to' => date('Y-m-d H:i:s'),
-            'priority' => 1,
-        ],
-    ],
-]);
-
-test('gets search query', function ($data): void {
-    $service = new Service();
-    $di = container();
-    $service->setDi($di);
-    [$query, $bindings] = $service->getSearchQuery($data);
-    expect($query)->toBeString();
-    expect($bindings)->toBeArray();
-})->with('searchQueryData');
+})->throws(FOSSBilling\InformationException::class);
 
 test('counts tickets', function (): void {
     $service = new Service();
@@ -648,13 +602,10 @@ test('gets active tickets count for order', function (): void {
 test('checks if task already exists returns true', function (): void {
     $service = new Service();
 
-    $existingTicket = new SupportTicket();
-    setEntityId($existingTicket, 1);
-
     $repoMock = Mockery::mock(SupportTicketRepository::class);
-    $repoMock->shouldReceive('findOneBy')
+    $repoMock->shouldReceive('hasPendingTaskForClient')
         ->atLeast()->once()
-        ->andReturn($existingTicket);
+        ->andReturn(true);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
     supportWireKbRepositories($emMock, supportTicketRepo: $repoMock);
@@ -674,9 +625,9 @@ test('checks if task already exists returns false', function (): void {
     $service = new Service();
 
     $repoMock = Mockery::mock(SupportTicketRepository::class);
-    $repoMock->shouldReceive('findOneBy')
+    $repoMock->shouldReceive('hasPendingTaskForClient')
         ->atLeast()->once()
-        ->andReturn(null);
+        ->andReturn(false);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
     supportWireKbRepositories($emMock, supportTicketRepo: $repoMock);
@@ -717,6 +668,7 @@ test('closes a ticket', function ($identity): void {
 
     $result = $service->closeTicket($ticket, $identity);
     expect($result)->toBeTrue();
+    expect($ticket->getStatus())->toBe(SupportTicket::STATUS_CLOSED);
 })->with('closeTicketIdentities');
 
 test('auto closes a ticket', function (): void {
@@ -735,6 +687,7 @@ test('auto closes a ticket', function (): void {
 
     $result = $service->autoClose($ticket);
     expect($result)->toBeTrue();
+    expect($ticket->getStatus())->toBe(SupportTicket::STATUS_CLOSED);
 });
 
 test('checks if ticket can be reopened when not closed', function (): void {
@@ -781,7 +734,7 @@ test('removes tickets by client', function (): void {
     setEntityId($model, 1);
 
     $repo = Mockery::mock(SupportTicketRepository::class);
-    $repo->shouldReceive('findBy')->atLeast()->once()
+    $repo->shouldReceive('findByClientId')->atLeast()->once()
         ->andReturn([$model]);
     $service->shouldReceive('getSupportTicketRepository')->atLeast()->once()
         ->andReturn($repo);
@@ -1876,6 +1829,7 @@ test('ticket message update', function (): void {
 
     $result = $service->ticketMessageUpdate($message, 'Content');
     expect($result)->toBeTrue();
+    expect($message->getContent())->toBe('Content');
 });
 
 dataset('ticketReplyProvider', function () {
@@ -2101,6 +2055,7 @@ test('ticket task complete', function (): void {
 
     $result = $service->ticketTaskComplete($model);
     expect($result)->toBeTrue();
+    expect($model->getRelStatus())->toBe(SupportTicket::REL_STATUS_COMPLETE);
 });
 
 /*

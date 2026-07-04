@@ -93,7 +93,7 @@ class ActivityClientEmailRepository extends EntityRepository
     {
         $email = $this->find($id);
         if (!$email instanceof ActivityClientEmail) {
-            throw new \FOSSBilling\Exception('Email not found');
+            throw new \FOSSBilling\InformationException('Email not found');
         }
 
         return $email;
@@ -106,7 +106,7 @@ class ActivityClientEmailRepository extends EntityRepository
     {
         $email = $this->findOneForClientById($clientId, $id);
         if (!$email instanceof ActivityClientEmail) {
-            throw new \FOSSBilling\Exception('Email not found');
+            throw new \FOSSBilling\InformationException('Email not found');
         }
 
         return $email;

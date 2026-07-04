@@ -48,10 +48,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('email', 'view_email_history');
 
-        $service = $this->getService();
-        $model = $service->getEmailById($data['id']);
+        $model = $this->getService()->getActivityClientEmailRepository()->findOneByIdOrFail((int) $data['id']);
 
-        return $service->toApiArray($model);
+        return $model->toApiArray();
     }
 
     /**

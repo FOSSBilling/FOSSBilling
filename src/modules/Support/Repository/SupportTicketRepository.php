@@ -137,7 +137,7 @@ class SupportTicketRepository extends EntityRepository
     {
         $ticket = $this->find($id);
         if (!$ticket instanceof SupportTicket) {
-            throw new \FOSSBilling\Exception('Ticket not found');
+            throw new \FOSSBilling\InformationException('Ticket not found');
         }
 
         return $ticket;
@@ -152,13 +152,31 @@ class SupportTicketRepository extends EntityRepository
     }
 
     /**
+     * @return SupportTicket[]
+     */
+    public function findByClientId(int $clientId): array
+    {
+        return $this->findBy(['clientId' => $clientId]);
+    }
+
+    /**
+     * @param list<int> $ids
+     *
+     * @return SupportTicket[]
+     */
+    public function findByIds(array $ids): array
+    {
+        return $ids === [] ? [] : $this->findBy(['id' => $ids]);
+    }
+
+    /**
      * Find a single ticket owned by the given client, throwing if it does not exist.
      */
     public function findOneByClientOrFail(int $clientId, int $id): SupportTicket
     {
         $ticket = $this->findOneByClient($clientId, $id);
         if (!$ticket instanceof SupportTicket) {
-            throw new \FOSSBilling\Exception('Ticket not found');
+            throw new \FOSSBilling\InformationException('Ticket not found');
         }
 
         return $ticket;
@@ -216,6 +234,17 @@ class SupportTicketRepository extends EntityRepository
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();
+    }
+
+    public function hasPendingTaskForClient(int $clientId, int $relId, string $relType, string $relTask): bool
+    {
+        return $this->findOneBy([
+            'clientId' => $clientId,
+            'relId' => $relId,
+            'relType' => $relType,
+            'relTask' => $relTask,
+            'relStatus' => SupportTicket::REL_STATUS_PENDING,
+        ]) instanceof SupportTicket;
     }
 
     /**

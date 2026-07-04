@@ -70,7 +70,7 @@ test('throws exception when invoice is not found', function (): void {
 
     $data['hash'] = md5('1');
     expect(fn () => $api->get($data))
-        ->toThrow(FOSSBilling\Exception::class, 'Invoice was not found');
+        ->toThrow(FOSSBilling\InformationException::class, 'Invoice was not found');
 });
 
 test('gets active gateways', function (): void {
@@ -123,7 +123,7 @@ test('throws exception when payment gateway id is missing', function (): void {
     ];
 
     expect(fn () => $api->payment($data))
-        ->toThrow(FOSSBilling\Exception::class, 'Payment method not found. Missing param gateway_id');
+        ->toThrow(FOSSBilling\InformationException::class, 'Payment method not found. Missing param gateway_id');
 });
 
 test('generates PDF', function (): void {

@@ -16,6 +16,7 @@ use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Doctrine\TimestampTrait;
 use FOSSBilling\Interfaces\ApiArrayInterface;
 use FOSSBilling\Interfaces\TimestampInterface;
+use FOSSBilling\Tools;
 
 /**
  * One row per email that FOSSBilling sent to a client.
@@ -62,7 +63,7 @@ class ActivityClientEmail implements ApiArrayInterface, TimestampInterface
             'sender' => $this->sender,
             'recipients' => $this->recipients,
             'subject' => $this->subject,
-            'content_html' => $this->contentHtml,
+            'content_html' => Tools::sanitizeContent($this->contentHtml ?? ''),
             'content_text' => $this->contentText,
             'created_at' => $this->getCreatedAt()?->format('Y-m-d H:i:s'),
             'updated_at' => $this->getUpdatedAt()?->format('Y-m-d H:i:s'),

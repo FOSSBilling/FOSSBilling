@@ -42,7 +42,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      *
      * @param array $data ['id' => int|null, 'slug' => string|null]
      *
-     * @throws \FOSSBilling\Exception if ID/slug is missing or news item not found
+     * @throws \FOSSBilling\InformationException if ID/slug is missing or news item not found
      */
     public function get(array $data): array
     {
@@ -50,7 +50,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $slug = $data['slug'] ?? null;
 
         if (!$id && !$slug) {
-            throw new \FOSSBilling\Exception('ID or slug is required.');
+            throw new \FOSSBilling\InformationException('ID or slug is required.');
         }
 
         /** @var \Box\Mod\News\Repository\PostRepository $repo */
@@ -64,7 +64,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         }
 
         if (!$post || $post->getStatus() !== Post::STATUS_ACTIVE) {
-            throw new \FOSSBilling\Exception('News item not found.');
+            throw new \FOSSBilling\InformationException('News item not found.');
         }
 
         /**@todo Doctrine: Replace with actual Admin entity once it's migrated to Doctrine. */

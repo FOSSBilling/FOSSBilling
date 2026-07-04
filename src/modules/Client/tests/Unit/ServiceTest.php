@@ -681,7 +681,7 @@ test('get throws exception when client not found', function (): void {
 
     $data = ['id' => 0];
     $service->get($data);
-})->throws(FOSSBilling\Exception::class, 'Client not found');
+})->throws(FOSSBilling\InformationException::class, 'Client not found');
 
 test('getClientBalance returns numeric', function (): void {
     $service = new Box\Mod\Client\Service();
