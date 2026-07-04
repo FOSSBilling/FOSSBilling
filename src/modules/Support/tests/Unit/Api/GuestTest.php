@@ -45,7 +45,6 @@ function guestSupportServiceMock(): Mockery\MockInterface
 
 test('ticket create', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
-    $api = new Box\Mod\Support\Api\Guest();
     $serviceMock = guestSupportServiceMock();
     $serviceMock->shouldReceive('ticketCreateForGuest')->atLeast()->once()
         ->andReturn(bin2hex(random_bytes(random_int(100, 127))));
