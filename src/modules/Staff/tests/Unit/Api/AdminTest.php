@@ -32,7 +32,6 @@ function staffAdminSetEntityId(object $entity, int $id): void
 
 test('get di', function (): void {
     $api = new Box\Mod\Staff\Api\Admin();
-    $api = new Box\Mod\Staff\Api\Admin();
     $di = container();
     $api->setDi($di);
     $getDi = $api->getDi();
