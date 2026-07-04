@@ -484,7 +484,8 @@ class UpdatePatcher implements InjectionAwareInterface
             76 => 'patch76',
             77 => 'patch77',
             78 => 'patch78',
-            79 => 'patch79'
+            79 => 'patch79',
+            80 => 'patch80',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2153,6 +2154,45 @@ class UpdatePatcher implements InjectionAwareInterface
              ON DUPLICATE KEY UPDATE name = 'Support Staff', parent_id = :parent_id, permissions = :permissions, protected = 0, updated_at = :updated_at",
             ['parent_id' => $supportLeadGroupId, 'permissions' => $supportStaffPermissions, 'created_at' => $now, 'updated_at' => $now],
         );
+    }
+
+    private function patch80(): void
+    {
+        // #3856 started requiring an explicit "manage_settings" permission to view or edit a
+        // module's settings (e.g. Scheduled Tasks), but existing staff groups that already had
+        // general access to those modules never had the new permission granted, silently
+        // locking non-super-admin staff out of settings pages they could previously use.
+        // Grant it wherever a group already had module access, to preserve prior behavior.
+        // @see https://github.com/FOSSBilling/FOSSBilling/issues/3873
+        $modules = [
+            'activity', 'antispam', 'cookieconsent', 'cron', 'formbuilder',
+            'invoice', 'massmailer', 'order', 'orderbutton', 'seo', 'support', 'theme',
+        ];
+
+        $groups = $this->fetchAll('SELECT id, permissions FROM admin_group WHERE permissions IS NOT NULL');
+
+        foreach ($groups as $group) {
+            $permissions = json_decode((string) $group['permissions'], true);
+            if (!is_array($permissions)) {
+                continue;
+            }
+
+            $changed = false;
+            foreach ($modules as $module) {
+                if (($permissions[$module]['access'] ?? false) && !isset($permissions[$module]['manage_settings'])) {
+                    $permissions[$module]['manage_settings'] = true;
+                    $changed = true;
+                }
+            }
+
+            if ($changed) {
+                $this->executeSql('UPDATE admin_group SET permissions = :permissions, updated_at = :updated_at WHERE id = :id', [
+                    'permissions' => json_encode($permissions, JSON_THROW_ON_ERROR),
+                    'updated_at' => date('Y-m-d H:i:s'),
+                    'id' => $group['id'],
+                ]);
+            }
+        }
     }
 
     private function generateDownloadableStoredFilename(): string
