@@ -293,7 +293,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
                 if ($this->getDi()['mod_service']('Staff')->isSuperAdministrator($this->identity->id)) {
                     return;
                 }
-            } catch (\Throwable) {
+            } catch (\Doctrine\DBAL\Exception) {
                 // If the installation hasn't migrated to the new group structure yet,
                 // Manually look for the old "admin" role
                 if (

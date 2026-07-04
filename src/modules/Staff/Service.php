@@ -190,36 +190,21 @@ class Service implements InjectionAwareInterface
         $extensionService = $this->di['mod_service']('Extension');
         $modulePermissions = $extensionService->getSpecificModulePermissions($module);
         $permissions = $this->getPermissions($member->id);
-        $defaultPermissions = $permissions['default'] ?? [];
-        $hasWildcardAccess = is_array($defaultPermissions) && (bool) ($defaultPermissions['all'] ?? false);
-
         $canAlwaysAccess = $modulePermissions['can_always_access'] ?? false;
 
         if (!$canAlwaysAccess) {
             // They have no permissions or don't have any access to that module
             if (
                 empty($permissions)
-                || (
-                    !array_key_exists($module, $permissions)
-                    && !$hasWildcardAccess
-                )
-                || (
-                    array_key_exists($module, $permissions)
-                    && (
-                        !is_array($permissions[$module])
-                        || !($permissions[$module]['access'] ?? false)
-                    )
-                )
+                || !array_key_exists($module, $permissions)
+                || !is_array($permissions[$module])
+                || !($permissions[$module]['access'] ?? false)
             ) {
                 return false;
             }
         }
 
         if (!is_null($key)) {
-            if (!array_key_exists($module, $permissions) && $hasWildcardAccess) {
-                return true;
-            }
-
             $modulePermissions = $permissions[$module] ?? [];
 
             if (!is_array($modulePermissions) || !array_key_exists($key, $modulePermissions)) {
@@ -385,7 +370,7 @@ class Service implements InjectionAwareInterface
         $id = $data['id'] ?? null;
         $search = $data['search'] ?? null;
         $status = $data['status'] ?? null;
-        $no_cron = Tools::normalizeBoolean($data['no_cron'] ?? false);
+        $no_cron = Tools::normalizeBoolean($data['no_cron'] ?? null, true);
 
         $where = [];
         $bindings = [];
