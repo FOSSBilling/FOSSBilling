@@ -17,13 +17,13 @@ use Dompdf\Dompdf;
 use FOSSBilling\Environment;
 use FOSSBilling\Http\HttpResponseException;
 use FOSSBilling\Http\RequestFactory;
+use FOSSBilling\Http\ResponseFactory;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\HeaderUtils;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Twig\Loader\FilesystemLoader;
 
@@ -1817,25 +1817,30 @@ class Service implements InjectionAwareInterface
         $isOwner = $client !== null && (int) $invoiceClientId === (int) $client->id;
 
         if (!$isOwner && $this->isHashExpired($invoice)) {
-            $api_str = '/api/';
-            $url = RequestFactory::getRoutePath($this->di['request']);
-            if (strncasecmp($url, $api_str, strlen($api_str)) === 0) {
+            if ($this->isApiRouteRequest()) {
                 throw new InformationException('This invoice link has expired', [], 403);
             }
 
-            throw new HttpResponseException(new RedirectResponse($this->di['url']->link('invoice')));
+            $this->redirectToInvoiceList();
         }
 
         if (!$hashAccessAllowed && !$isOwner) {
-            $api_str = '/api/';
-            $url = RequestFactory::getRoutePath($this->di['request']);
-            if (strncasecmp($url, $api_str, strlen($api_str)) === 0) {
+            if ($this->isApiRouteRequest()) {
                 throw new InformationException('You do not have permission to perform this action', [], 403);
             }
-            $invoiceLink = $this->di['url']->link('invoice');
 
-            throw new HttpResponseException(new RedirectResponse($invoiceLink));
+            $this->redirectToInvoiceList();
         }
+    }
+
+    private function isApiRouteRequest(): bool
+    {
+        return str_starts_with(RequestFactory::getRoutePath($this->di['request']), '/api/');
+    }
+
+    private function redirectToInvoiceList(): never
+    {
+        throw new HttpResponseException((new ResponseFactory())->redirect($this->di['url']->link('invoice')));
     }
 
     /**
