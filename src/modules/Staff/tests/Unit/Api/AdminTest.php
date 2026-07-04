@@ -197,7 +197,7 @@ test('change password', function (): void {
     $api->setService($serviceMock);
     $result = $api->change_password($data);
 
-    expect(true)->toBeTrue();
+    expect($result)->toBeTrue();
 });
 
 test('change password password do not match', function (): void {
