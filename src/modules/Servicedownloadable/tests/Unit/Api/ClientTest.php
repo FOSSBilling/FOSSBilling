@@ -50,7 +50,7 @@ test('throws exception when sending file with order not found', function (): voi
     $api->setDi($di);
 
     expect(fn (): bool => $api->send_file($data))
-        ->toThrow(FOSSBilling\Exception::class, 'Order not found');
+        ->toThrow(FOSSBilling\InformationException::class, 'Order not found');
 });
 
 test('throws exception when sending file with order not activated', function (): void {

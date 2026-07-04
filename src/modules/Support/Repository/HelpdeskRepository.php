@@ -50,6 +50,16 @@ class HelpdeskRepository extends EntityRepository
         return $pairs;
     }
 
+    /**
+     * @param list<int> $ids
+     *
+     * @return Helpdesk[]
+     */
+    public function findByIds(array $ids): array
+    {
+        return $ids === [] ? [] : $this->findBy(['id' => $ids]);
+    }
+
     public function countTickets(int $helpdeskId): int
     {
         return (int) $this->getEntityManager()->getConnection()->fetchOne(

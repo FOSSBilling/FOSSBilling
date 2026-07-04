@@ -286,7 +286,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $service = $this->getService();
         $ext = $service->getExtensionRepository()->findOneByTypeAndName($data['type'], $data['id']);
         if (!$ext instanceof Extension) {
-            throw new \FOSSBilling\Exception('Extension not found');
+            throw new \FOSSBilling\InformationException('Extension not found');
         }
 
         return $ext;

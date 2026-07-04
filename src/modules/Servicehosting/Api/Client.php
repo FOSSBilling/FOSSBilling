@@ -85,13 +85,13 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $identity = $this->getIdentity();
         $order = $this->getDi()['db']->findOne('ClientOrder', 'id = ? and client_id = ?', [$data['order_id'], $identity->id]);
         if (!$order instanceof \Model_ClientOrder) {
-            throw new \FOSSBilling\Exception('Order not found');
+            throw new \FOSSBilling\InformationException('Order not found');
         }
 
         $orderService = $this->getDi()['mod_service']('order');
         $s = $orderService->getOrderService($order);
         if (!$s instanceof \Model_ServiceHosting || $order->status !== \Model_ClientOrder::STATUS_ACTIVE) {
-            throw new \FOSSBilling\Exception('Order is not activated');
+            throw new \FOSSBilling\InformationException('Order is not activated');
         }
 
         return [$order, $s];

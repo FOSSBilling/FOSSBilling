@@ -23,7 +23,7 @@ class SupportTicketMessageRepository extends EntityRepository
     {
         $message = $this->find($id);
         if (!$message instanceof SupportTicketMessage) {
-            throw new \FOSSBilling\Exception('Ticket message not found');
+            throw new \FOSSBilling\InformationException('Ticket message not found');
         }
 
         return $message;
@@ -42,6 +42,16 @@ class SupportTicketMessageRepository extends EntityRepository
             ->orderBy('m.id', 'ASC')
             ->getQuery()
             ->getResult();
+    }
+
+    /**
+     * @param list<int> $ids
+     *
+     * @return SupportTicketMessage[]
+     */
+    public function findByIds(array $ids): array
+    {
+        return $ids === [] ? [] : $this->findBy(['id' => $ids]);
     }
 
     /**

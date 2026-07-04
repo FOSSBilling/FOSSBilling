@@ -71,7 +71,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         }
 
         if (!$model instanceof Product) {
-            throw new \FOSSBilling\Exception('Product not found');
+            throw new \FOSSBilling\InformationException('Product not found');
         }
 
         return $service->toApiArray($model);

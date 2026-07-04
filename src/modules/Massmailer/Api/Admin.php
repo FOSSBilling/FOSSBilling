@@ -328,7 +328,7 @@ Order our services at {{ "order"|url }}
     {
         $model = $this->getService()->getMessageRepository()->find((int) $data['id']);
         if (!$model instanceof MassmailerMessage) {
-            throw new \FOSSBilling\Exception('Message not found');
+            throw new \FOSSBilling\InformationException('Message not found');
         }
 
         return $model;

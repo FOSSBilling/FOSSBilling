@@ -55,7 +55,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $identity = $this->getIdentity();
         $model = $this->getDi()['db']->findOne('Invoice', 'hash = :hash AND client_id = :client_id', ['hash' => $data['hash'], 'client_id' => $identity->id]);
         if (!$model) {
-            throw new \FOSSBilling\Exception('Invoice was not found');
+            throw new \FOSSBilling\InformationException('Invoice was not found');
         }
 
         return $this->getService()->toApiArray($model, true, $identity);
@@ -75,7 +75,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
     {
         $model = $this->getDi()['db']->findOne('ClientOrder', 'client_id = ? and id = ?', [$this->getIdentity()->id, $data['order_id']]);
         if (!$model instanceof \Model_ClientOrder) {
-            throw new \FOSSBilling\Exception('Order not found');
+            throw new \FOSSBilling\InformationException('Order not found');
         }
         if ($model->price <= 0) {
             throw new \FOSSBilling\InformationException('Order :id is free. No need to generate invoice.', [':id' => $model->id]);

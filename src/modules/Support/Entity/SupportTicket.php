@@ -186,6 +186,20 @@ class SupportTicket implements ApiArrayInterface, TimestampInterface
         return $helpdesk->canReopen();
     }
 
+    public function close(): self
+    {
+        $this->status = self::STATUS_CLOSED;
+
+        return $this;
+    }
+
+    public function markTaskComplete(): self
+    {
+        $this->relStatus = self::REL_STATUS_COMPLETE;
+
+        return $this;
+    }
+
     public function getId(): ?int
     {
         return $this->id;

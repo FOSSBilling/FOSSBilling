@@ -276,7 +276,7 @@ test('throws exception when getting tld not found', function (): void {
     ];
 
     expect(fn () => $adminApi->tld_get($data))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\InformationException::class);
 });
 
 test('deletes tld', function (): void {
@@ -333,7 +333,7 @@ test('throws exception when deleting tld not found', function (): void {
     ];
 
     expect(fn () => $adminApi->tld_delete($data))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\InformationException::class);
 });
 
 test('creates tld', function (): void {
@@ -380,7 +380,7 @@ test('throws exception when creating already registered tld', function (): void 
     ];
 
     expect(fn () => $adminApi->tld_create($data))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\InformationException::class);
 });
 
 test('updates tld', function (): void {
