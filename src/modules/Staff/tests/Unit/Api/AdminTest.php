@@ -648,11 +648,13 @@ test('login history get', function (): void {
     ->atLeast()->once()
     ->andReturn([]);
 
+    $model = new Model_ActivityAdminHistory();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock
     ->shouldReceive('getExistingModelById')
     ->atLeast()->once()
-    ->andReturn(new Model_ActivityAdminHistory());
+    ->andReturn($model);
 
     $di = container();
     $di['db'] = $dbMock;
