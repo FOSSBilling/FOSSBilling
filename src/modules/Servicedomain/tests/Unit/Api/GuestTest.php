@@ -85,7 +85,7 @@ test('throws exception when getting pricing for tld not found', function (): voi
     ];
 
     expect(fn () => $guestApi->pricing($data))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\InformationException::class);
 });
 
 test('checks domain availability', function (): void {

@@ -64,7 +64,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     {
         $model = $this->getService()->tldFindOneByTld($data['tld']);
         if (!$model instanceof \Model_Tld) {
-            throw new \FOSSBilling\Exception('TLD not found');
+            throw new \FOSSBilling\InformationException('TLD not found');
         }
 
         return $this->getService()->tldToApiArray($model);

@@ -145,8 +145,8 @@ test('removeNotExistingModules removes non-existing modules', function (): void 
     $modMock->shouldReceive('getManifest')->andThrow(new Exception());
 
     $extensionRepository = Mockery::mock(ExtensionRepository::class);
-    $extensionRepository->shouldReceive('findBy')
-        ->with(['type' => Extension::TYPE_MOD])
+    $extensionRepository->shouldReceive('findByType')
+        ->with(Extension::TYPE_MOD)
         ->atLeast()
         ->once()
         ->andReturn([$ext]);
@@ -211,7 +211,7 @@ test('getExtensionsList returns filtered extensions list', function (): void {
 
     $extensionRepository = Mockery::mock(ExtensionRepository::class);
     $extensionRepository->shouldReceive('getSearchQueryBuilder')->andReturn($qb);
-    $extensionRepository->shouldReceive('findBy')->andReturn([]);
+    $extensionRepository->shouldReceive('findByType')->andReturn([]);
 
     $em = extensionBuildEm($extensionRepository);
     $em->shouldReceive('remove')->andReturnNull();
@@ -260,7 +260,7 @@ test('getExtensionsList returns only installed extensions', function (): void {
 
     $extensionRepository = Mockery::mock(ExtensionRepository::class);
     $extensionRepository->shouldReceive('getSearchQueryBuilder')->andReturn($qb);
-    $extensionRepository->shouldReceive('findBy')->andReturn([]);
+    $extensionRepository->shouldReceive('findByType')->andReturn([]);
 
     $em = extensionBuildEm($extensionRepository);
     $em->shouldReceive('remove')->andReturnNull();
@@ -288,86 +288,19 @@ test('getExtensionsList returns only installed extensions', function (): void {
 
 test('getAdminNavigation returns admin navigation', function (): void {
     $service = new Service();
-    $extensionServiceMock = Mockery::mock(Service::class)->makePartial();
-    $extensionServiceMock->shouldAllowMockingProtectedMethods();
-    $extensionServiceMock->shouldReceive('getConfig')
-        ->atLeast()
+    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock->shouldReceive('getCoreModules')->once()->andReturn([]);
+
+    $extensionRepository = Mockery::mock(ExtensionRepository::class);
+    $extensionRepository->shouldReceive('findInstalledNamesByType')
         ->once()
+        ->with(Extension::TYPE_MOD)
         ->andReturn([]);
 
-    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
-    $staffServiceMock->shouldReceive('hasPermission')
-        ->atLeast()
-        ->once()
-        ->andReturn(true);
-
-    $dbalMock = new class {
-        public function createQueryBuilder(): object
-        {
-            return new class {
-                public function select($field)
-                {
-                    return $this;
-                }
-
-                public function from($table)
-                {
-                    return $this;
-                }
-
-                public function where($cond)
-                {
-                    return $this;
-                }
-
-                public function andWhere($cond)
-                {
-                    return $this;
-                }
-
-                public function setParameter($key, $val)
-                {
-                    return $this;
-                }
-
-                public function executeQuery()
-                {
-                    return $this;
-                }
-
-                public function fetchFirstColumn(): array
-                {
-                    return [];
-                }
-            };
-        }
-    };
-
-    $link = 'extension';
-
-    $urlMock = Mockery::mock('Box_Url');
-    $urlMock->shouldReceive('adminLink')
-        ->atLeast()
-        ->once()
-        ->andReturn('http://fossbilling.org/index.php?_url=/' . $link);
-
     $di = container();
-    $di['mod'] = $di->protect(function ($name) use ($di) {
-        $mod = new FOSSBilling\Module($name);
-        $mod->setDi($di);
-
-        return $mod;
-    });
+    $di['mod'] = $di->protect(fn ($name): Mockery\MockInterface => $modMock);
     $di['tools'] = new FOSSBilling\Tools();
-    $di['mod_service'] = $di->protect(function ($mod) use ($extensionServiceMock, $staffServiceMock) {
-        if ($mod == 'staff') {
-            return $staffServiceMock;
-        }
-
-        return $extensionServiceMock;
-    });
-    $di['url'] = $urlMock;
-    $di['dbal'] = $dbalMock;
+    $di['em'] = extensionBuildEm($extensionRepository);
 
     $service->setDi($di);
     $result = $service->getAdminNavigation(new Model_Admin());
@@ -666,51 +599,15 @@ test('downloadAndExtract throws exception when download URL is missing', functio
 
 test('getInstalledMods returns installed modules', function (): void {
     $service = new Service();
-    $dbalMock = new class {
-        public function createQueryBuilder(): object
-        {
-            return new class {
-                public function select($field)
-                {
-                    return $this;
-                }
 
-                public function from($table)
-                {
-                    return $this;
-                }
-
-                public function where($cond)
-                {
-                    return $this;
-                }
-
-                public function andWhere($cond)
-                {
-                    return $this;
-                }
-
-                public function setParameter($key, $val)
-                {
-                    return $this;
-                }
-
-                public function executeQuery()
-                {
-                    return $this;
-                }
-
-                public function fetchFirstColumn(): array
-                {
-                    return [];
-                }
-            };
-        }
-    };
+    $extensionRepository = Mockery::mock(ExtensionRepository::class);
+    $extensionRepository->shouldReceive('findInstalledNamesByType')
+        ->once()
+        ->with(Extension::TYPE_MOD)
+        ->andReturn([]);
 
     $di = new Pimple\Container();
-    $di['dbal'] = $dbalMock;
-    $di['em'] = extensionBuildEm();
+    $di['em'] = extensionBuildEm($extensionRepository);
 
     $service->setDi($di);
     $result = $service->getInstalledMods();

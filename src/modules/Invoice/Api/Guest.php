@@ -32,7 +32,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     public function get($data)
     {
         if (!preg_match('/^[a-f0-9]{30,60}$/', (string) $data['hash'])) {
-            throw new \FOSSBilling\Exception('Invalid invoice hash', null, 4001);
+            throw new \FOSSBilling\InformationException('Invalid invoice hash', null, 4001);
         }
 
         $this->getDi()['rate_limiter']->consumeOrThrow('invoice_get_ip', (string) $this->getIp());
@@ -40,7 +40,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getDi()['db']->findOne('Invoice', 'hash = :hash', ['hash' => $data['hash']]);
         if (!$model) {
-            throw new \FOSSBilling\Exception('Invoice was not found');
+            throw new \FOSSBilling\InformationException('Invoice was not found');
         }
         $service = $this->getService();
         $service->checkInvoiceAuth($model, InvoiceOperation::READ);
@@ -87,7 +87,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         }
 
         if (empty($data['gateway_id'])) {
-            throw new \FOSSBilling\Exception('Payment method not found. Missing param gateway_id', null, 811);
+            throw new \FOSSBilling\InformationException('Payment method not found. Missing param gateway_id', null, 811);
         }
 
         $this->getDi()['rate_limiter']->consumeOrThrow('invoice_payment_ip', (string) $this->getIp());

@@ -21,7 +21,6 @@ use Box\Mod\Email\Repository\QueuedEmailRepository;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\PaginationOptions;
-use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
@@ -99,95 +98,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         ];
     }
 
-    public function getSearchQuery($data): array
-    {
-        $query = 'SELECT * FROM activity_client_email';
-
-        $search = $data['search'] ?? null;
-        $id = $data['id'] ?? null;
-        $client_id = $data['client_id'] ?? null;
-        $sender = $data['sender'] ?? null;
-        $recipient = $data['recipient'] ?? null;
-        $subject = $data['subject'] ?? null;
-        $date_from = $data['date_from'] ?? null;
-        $date_to = $data['date_to'] ?? null;
-
-        $where = [];
-        $bindings = [];
-
-        if ($id !== null && $id !== '') {
-            $where[] = 'id = :id';
-            $bindings[':id'] = (int) $id;
-        }
-
-        if ($search) {
-            $search = "%$search%";
-            $where[] = '(sender LIKE :sender OR recipients LIKE :recipient OR subject LIKE :subject OR content_text LIKE :content_text OR content_html LIKE :content_html)';
-            $bindings[':sender'] = $search;
-            $bindings[':recipient'] = $search;
-            $bindings[':subject'] = $search;
-            $bindings[':content_text'] = $search;
-            $bindings[':content_html'] = $search;
-        }
-
-        if ($sender !== null && $sender !== '') {
-            $where[] = 'sender LIKE :filter_sender';
-            $bindings[':filter_sender'] = '%' . $sender . '%';
-        }
-
-        if ($recipient !== null && $recipient !== '') {
-            $where[] = 'recipients LIKE :filter_recipient';
-            $bindings[':filter_recipient'] = '%' . $recipient . '%';
-        }
-
-        if ($subject !== null && $subject !== '') {
-            $where[] = 'subject LIKE :filter_subject';
-            $bindings[':filter_subject'] = '%' . $subject . '%';
-        }
-
-        if ($client_id !== null) {
-            $where[] = 'client_id = :client_id';
-            $bindings[':client_id'] = $client_id;
-        }
-
-        if ($date_from !== null && $date_from !== '') {
-            $where[] = 'created_at >= :date_from';
-            $bindings[':date_from'] = date('Y-m-d 00:00:00', strtotime((string) $date_from));
-        }
-
-        if ($date_to !== null && $date_to !== '') {
-            $where[] = 'created_at <= :date_to';
-            $bindings[':date_to'] = date('Y-m-d 23:59:59', strtotime((string) $date_to));
-        }
-
-        if (!empty($where)) {
-            $query = $query . ' WHERE ' . implode(' AND ', $where);
-        }
-        $query .= ' ORDER BY id DESC';
-
-        return [$query, $bindings];
-    }
-
     public function rmByClient(\Model_Client $client): bool
     {
         $this->getActivityClientEmailRepository()->deleteByClientId((int) $client->id);
 
         return true;
-    }
-
-    public function toApiArray(ActivityClientEmail $model, $deep = true): array
-    {
-        return [
-            'id' => $model->getId(),
-            'client_id' => $model->getClientId(),
-            'sender' => $model->getSender(),
-            'recipients' => $model->getRecipients(),
-            'subject' => $model->getSubject(),
-            'content_html' => Tools::sanitizeContent($model->getContentHtml() ?? ''),
-            'content_text' => $model->getContentText(),
-            'created_at' => $model->getCreatedAt()?->format('Y-m-d H:i:s'),
-            'updated_at' => $model->getUpdatedAt()?->format('Y-m-d H:i:s'),
-        ];
     }
 
     public function setVars(EmailTemplate $template, array $vars): bool
@@ -810,11 +725,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['logger']->info('Reset email template: %s', $template->getActionCode());
 
         return true;
-    }
-
-    public function getEmailById($id): ActivityClientEmail
-    {
-        return $this->getActivityClientEmailRepository()->findOneByIdOrFail((int) $id);
     }
 
     public function templateCreate($actionCode, $subject, $content, $enabled = 0, $category = null): EmailTemplate

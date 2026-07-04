@@ -103,7 +103,7 @@ class Service implements InjectionAwareInterface
     {
         $meta = $this->getExtensionMetaRepository()->findOneByExtensionAndId('mod_notification', $id);
         if (!$meta instanceof ExtensionMeta || $meta->getMetaKey() !== 'message') {
-            throw new \FOSSBilling\Exception('Notification message was not found');
+            throw new \FOSSBilling\InformationException('Notification message was not found');
         }
 
         return $meta;

@@ -110,7 +110,7 @@ class Service implements InjectionAwareInterface
 
     public function removeNotExistingModules(): int
     {
-        $list = $this->getExtensionRepository()->findBy(['type' => Extension::TYPE_MOD]);
+        $list = $this->getExtensionRepository()->findByType(Extension::TYPE_MOD);
         $removedItems = 0;
         foreach ($list as $ext) {
             try {
@@ -136,9 +136,8 @@ class Service implements InjectionAwareInterface
     {
         $this->removeNotExistingModules();
 
-        $installedEntities = $this->getExtensionRepository()->getSearchQueryBuilder($filter)
-            ->andWhere('e.status = :status')
-            ->setParameter('status', Extension::STATUS_INSTALLED)
+        $installedEntities = $this->getExtensionRepository()
+            ->getSearchQueryBuilder([...$filter, 'status' => Extension::STATUS_INSTALLED])
             ->getQuery()
             ->getResult();
 
@@ -578,16 +577,7 @@ class Service implements InjectionAwareInterface
 
     public function getInstalledMods()
     {
-        $query = $this->di['dbal']->createQueryBuilder();
-        $query
-            ->select('name')
-            ->from('extension')
-            ->where('type = :type')
-            ->andWhere('status = :status')
-            ->setParameter('type', 'mod')
-            ->setParameter('status', 'installed');
-
-        return $query->executeQuery()->fetchFirstColumn();
+        return $this->getExtensionRepository()->findInstalledNamesByType(Extension::TYPE_MOD);
     }
 
     private function installModule(Extension $ext): bool
@@ -779,22 +769,7 @@ class Service implements InjectionAwareInterface
      */
     public function getCoreAndActiveModules(): array
     {
-        $query = $this->di['dbal']->createQueryBuilder();
-        $query
-            ->select('name', 'name')
-            ->from('extension')
-            ->where('type = :type')
-            ->andWhere('status = :status')
-            ->setParameter('type', 'mod')
-            ->setParameter('status', 'installed');
-        $result = $query->executeQuery();
-        $extensions = $result->fetchAllKeyValue();
-
-        if (!$extensions) {
-            $list = [];
-        } else {
-            $list = array_values($extensions);
-        }
+        $list = $this->getExtensionRepository()->findInstalledNamesByType(Extension::TYPE_MOD);
 
         $extensionMod = $this->di['mod']('extension');
         $mods = $extensionMod->getCoreModules();

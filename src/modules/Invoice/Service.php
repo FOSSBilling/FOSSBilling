@@ -1472,14 +1472,14 @@ class Service implements InjectionAwareInterface
 
         $invoice = $this->di['db']->findOne('Invoice', 'hash = ?', [$data['hash']]);
         if (!$invoice instanceof \Model_Invoice) {
-            throw new \FOSSBilling\Exception('Invoice not found', null, 812);
+            throw new \FOSSBilling\InformationException('Invoice not found', null, 812);
         }
 
         $this->checkInvoiceAuth($invoice, InvoiceOperation::PAYMENT);
 
         $gtw = $this->di['db']->load('PayGateway', $data['gateway_id']);
         if (!$gtw instanceof \Model_PayGateway) {
-            throw new \FOSSBilling\Exception('Payment method not found', null, 813);
+            throw new \FOSSBilling\InformationException('Payment method not found', null, 813);
         }
 
         if (!$gtw->enabled) {
@@ -1547,7 +1547,7 @@ class Service implements InjectionAwareInterface
         $invoice = $this->di['db']->findOne('Invoice', 'hash = :hash', [':hash' => $hash]);
 
         if (!$invoice instanceof \Model_Invoice) {
-            throw new \FOSSBilling\Exception('Invoice not found');
+            throw new \FOSSBilling\InformationException('Invoice not found');
         }
 
         $this->checkInvoiceAuth($invoice, InvoiceOperation::READ);

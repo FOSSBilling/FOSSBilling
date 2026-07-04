@@ -173,7 +173,7 @@ test('testGetServiceOrderNotActivated', function (): void {
     $clientModel->id = 1;
     $api->setIdentity($clientModel);
 
-    $this->expectException(FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\InformationException::class);
     $this->expectExceptionMessage('Order is not activated');
     $api->_getService($data);
 });
@@ -201,7 +201,7 @@ test('testGetServiceOrderNotFound', function (): void {
     $clientModel->id = 1;
     $api->setIdentity($clientModel);
 
-    $this->expectException(FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\InformationException::class);
     $this->expectExceptionMessage('Order not found');
     $api->_getService($data);
 });

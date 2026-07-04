@@ -60,6 +60,14 @@ class ExtensionRepository extends EntityRepository
     }
 
     /**
+     * @return Extension[]
+     */
+    public function findByType(string $type): array
+    {
+        return $this->findBy(['type' => $type]);
+    }
+
+    /**
      * Return all extensions of a given type that are currently installed.
      *
      * @return Extension[]
@@ -67,6 +75,17 @@ class ExtensionRepository extends EntityRepository
     public function findInstalledByType(string $type): array
     {
         return $this->findBy(['type' => $type, 'status' => Extension::STATUS_INSTALLED]);
+    }
+
+    /**
+     * @return string[]
+     */
+    public function findInstalledNamesByType(string $type): array
+    {
+        return array_map(
+            static fn (Extension $extension): string => (string) $extension->getName(),
+            $this->findInstalledByType($type),
+        );
     }
 
     /**

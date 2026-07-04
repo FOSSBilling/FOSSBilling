@@ -70,7 +70,7 @@ test('throws exception when product not found', function (): void {
     $api->setService($serviceMock);
 
     expect(fn () => $api->get($data))
-        ->toThrow(FOSSBilling\Exception::class, 'Product not found');
+        ->toThrow(FOSSBilling\InformationException::class, 'Product not found');
 });
 
 test('gets paginated product list', function (): void {

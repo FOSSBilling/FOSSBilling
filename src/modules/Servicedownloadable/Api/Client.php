@@ -34,7 +34,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $identity = $this->getIdentity();
         $order = $this->getDi()['db']->findOne('ClientOrder', 'id = :id AND client_id = :client_id', [':id' => $data['order_id'], ':client_id' => $identity->id]);
         if (!$order instanceof \Model_ClientOrder) {
-            throw new \FOSSBilling\Exception('Order not found');
+            throw new \FOSSBilling\InformationException('Order not found');
         }
 
         $orderService = $this->getDi()['mod_service']('order');

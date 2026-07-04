@@ -535,7 +535,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!$client instanceof \Model_Client) {
-            throw new \FOSSBilling\Exception('Client not found');
+            throw new \FOSSBilling\InformationException('Client not found');
         }
 
         return $client;
