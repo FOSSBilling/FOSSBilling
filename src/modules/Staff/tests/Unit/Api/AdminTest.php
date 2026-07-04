@@ -291,6 +291,27 @@ test('is super administrator returns true when admin is super administrator', fu
     expect($api->is_super_administrator([]))->toBeTrue();
 });
 
+test('is super administrator returns false when admin is not super administrator', function (): void {
+    $api = new Box\Mod\Staff\Api\Admin();
+    $admin = staffAdminIdentity();
+    $admin->id = 1;
+
+    $di = container();
+    $di['loggedin_admin'] = $admin;
+
+    $serviceMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $serviceMock
+        ->shouldReceive('isSuperAdministrator')
+        ->once()
+        ->withNoArgs()
+        ->andReturn(false);
+
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    expect($api->is_super_administrator([]))->toBeFalse();
+});
+
 test('group repository sorts list as tree', function (): void {
     $root = (new AdminGroup())->setName('Root');
     $child = (new AdminGroup())->setName('Child')->setParent($root);
