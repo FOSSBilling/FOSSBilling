@@ -21,10 +21,10 @@ use FOSSBilling\Environment;
 use FOSSBilling\Http\ApiResponseFactory;
 use FOSSBilling\Http\HttpResponseException;
 use FOSSBilling\Http\RequestPayloadParser;
+use FOSSBilling\Http\ResponseFactory;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Security\AuthenticationRequiredException;
 use FOSSBilling\Security\EmailValidationRequiredException;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
 
 class Client implements InjectionAwareInterface
@@ -227,7 +227,7 @@ class Client implements InjectionAwareInterface
                 $redirectUrl = $this->di['url']->link('');
             }
 
-            return new RedirectResponse($redirectUrl);
+            return (new ResponseFactory())->redirect($redirectUrl);
         }
 
         return $this->renderJson($result);
