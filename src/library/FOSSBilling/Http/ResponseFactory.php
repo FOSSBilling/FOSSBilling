@@ -36,7 +36,8 @@ final readonly class ResponseFactory
 
     public function error(string $content, \Exception $exception, ?int $statusCode = null, array $headers = []): Response
     {
-        $statusCode ??= $exception->getCode() > 0 ? $exception->getCode() : Response::HTTP_INTERNAL_SERVER_ERROR;
+        $exceptionCode = $exception->getCode();
+        $statusCode ??= $exceptionCode >= 100 && $exceptionCode < 600 ? $exceptionCode : Response::HTTP_INTERNAL_SERVER_ERROR;
 
         return $this->html($content, $statusCode, $headers);
     }

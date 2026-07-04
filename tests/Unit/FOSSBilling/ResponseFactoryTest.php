@@ -32,7 +32,8 @@ test('response factory creates error responses using exception codes or internal
     $factory = new ResponseFactory();
 
     expect($factory->error('not found', new RuntimeException('Missing', 404))->getStatusCode())->toBe(404)
-        ->and($factory->error('error', new RuntimeException('Broken'))->getStatusCode())->toBe(Response::HTTP_INTERNAL_SERVER_ERROR);
+        ->and($factory->error('error', new RuntimeException('Broken'))->getStatusCode())->toBe(Response::HTTP_INTERNAL_SERVER_ERROR)
+        ->and($factory->error('legacy', new RuntimeException('Legacy code', 981))->getStatusCode())->toBe(Response::HTTP_INTERNAL_SERVER_ERROR);
 });
 
 test('response factory creates redirect responses', function (): void {
