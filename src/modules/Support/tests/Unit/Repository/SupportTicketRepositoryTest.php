@@ -33,6 +33,13 @@ test('findByIds delegates to findBy', function (): void {
     expect($repo->findByIds([2, 3]))->toBe([]);
 });
 
+test('findByIds returns empty array without calling findBy for empty ids', function (): void {
+    $repo = Mockery::mock(SupportTicketRepository::class)->makePartial();
+    $repo->shouldReceive('findBy')->never();
+
+    expect($repo->findByIds([]))->toBe([]);
+});
+
 test('hasPendingTaskForClient checks pending task criteria', function (): void {
     $repo = Mockery::mock(SupportTicketRepository::class)->makePartial();
     $repo->shouldReceive('findOneBy')
