@@ -57,7 +57,7 @@ test('ticket create', function (): void {
 
     $data = [
         'name' => 'Name',
-        'email' => 'email@wxample.com',
+        'email' => 'email@example.com',
         'subject' => 'Subject',
         'content' => 'Message',
     ];
@@ -80,7 +80,7 @@ test('ticket create message too short exception', function (): void {
 
     $data = [
         'name' => 'Name',
-        'email' => 'email@wxample.com',
+        'email' => 'email@example.com',
         'subject' => 'Subject',
         'content' => '',
     ];
