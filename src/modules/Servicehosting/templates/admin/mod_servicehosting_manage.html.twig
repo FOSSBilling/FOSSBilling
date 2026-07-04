@@ -204,7 +204,7 @@
                     <label class="form-label">{{ 'Domain'|trans }}</label>
                     <div class="input-group">
                         <input class="form-control" type="text" name="sld" value="{{ request.domain|default(service.sld) }}" required>
-                        <input class="form-control" type="text" name="tld" value="{{ request.domain|default(service.tld) }}" required>
+                        <input class="form-control" type="text" name="tld" value="{{ request.tld|default(service.tld) }}" required>
                     </div>
                 </div>
             </div>
