@@ -273,7 +273,14 @@ class Tools
         $protocol = $_SERVER['HTTPS'] ?? $_SERVER['REQUEST_SCHEME'] ?? '';
 
         // $_SERVER['HTTPS'] will be set to `on` to indicate HTTPS and REQUEST_SCHEME may be set to `https`, so either one means we are connected via HTTPS.
-        return strcasecmp((string) $protocol, 'on') === 0 || strcasecmp((string) $protocol, 'https') === 0;
+        if (strcasecmp((string) $protocol, 'on') === 0 || strcasecmp((string) $protocol, 'https') === 0) {
+            return true;
+        }
+
+        // Behind a TLS-terminating reverse proxy/CDN (e.g. Cloudflare), the request
+        // reaches this app over plain HTTP even though the visitor is on HTTPS -
+        // fall back to the standard forwarded-proto header in that case.
+        return strcasecmp((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ''), 'https') === 0;
     }
 
     /**

@@ -5,7 +5,9 @@
 <html lang="{{ active_locale }}" data-bs-theme="{{ settings.theme|default('light') }}">
 <head>
     <meta charset="utf-8">
-    <title>{{ (settings.meta_title_prefix|default('') ~ ' ' ~ block('meta_title') ~ ' ' ~ settings.meta_title_suffix|default(''))|trim }}</title>
+    {# block('meta_title') is already HTML-escaped by Twig when the block renders;
+       printing it again normally here would escape it a second time (e.g. "&" -> "&amp;amp;"). #}
+    <title>{{ (settings.meta_title_prefix|default('') ~ ' ' ~ block('meta_title') ~ ' ' ~ settings.meta_title_suffix|default(''))|trim|raw }}</title>
 
     <meta name="description" content="{% block meta_description %}{{ settings.meta_description }}{% endblock %}">
     <meta name="keywords" content="{{ settings.meta_keywords }}">
@@ -83,110 +85,88 @@
 <div class="container">
     <header>
         {{ render_widgets('client.theme.header.start') }}
-        <nav class="navbar navbar-expand-md py-4">
-            <div class="container-fluid">
+        <nav class="navbar navbar-expand-md py-3 tn-topbar">
+            <div class="container-fluid d-flex align-items-center gap-3">
                 {{ include('partial_company_logo.html.twig', {
                     logo_url: settings.show_company_logo ? company.logo_url : null,
                     dark_logo_url: settings.show_company_logo ? company.logo_url_dark : null,
-                    link_class: 'navbar-brand',
+                    link_class: 'navbar-brand me-0',
                     image_class: 'd-none d-sm-block',
                     show_mobile_name: true
                 }) }}
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-                        data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="{{ 'Toggle navigation'|trans }}">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                    <ul class="navbar-nav me-auto mb-2 mb-lg-0 w-100 d-flex justify-content-end align-items-md-center">
-                        {% set languages = guest.extension_languages(true) %}
-                        {% if languages|length > 1 %}
-                            <li class="nav-item">
-                                <select name="lang" class="form-select js-locale-selector">
-                                    {% for lang in languages %}
-                                        <option value="{{ lang.locale }}" data-custom-properties="&lt;span class=&quot;fi fi-{{ lang.locale|split('_')[1]|lower }}&quot;&gt;&lt;/span&gt;"{% if lang.locale == guest.system_locale %} selected{% endif %}>{{ lang.title }}</option>
-                                    {% endfor %}
-                                </select>
-                            </li>
-                        {% endif %}
 
-                        <li class="nav-item d-md-flex">
-                            <a class="nav-link px-0 hide-theme-dark js-theme-toggler"
-                               href="?theme=dark"
-                               data-bs-toggle="tooltip"
-                               data-bs-placement="bottom"
-                               data-bs-original-title="{{ 'Enable dark mode'|trans }}">
-                                <svg class="icon text-dark"><use href="#moon" /></svg>
-                            </a>
-                            <a class="nav-link px-0 hide-theme-light js-theme-toggler"
-                               href="?theme=light"
-                               data-bs-toggle="tooltip"
-                               data-bs-placement="bottom"
-                               data-bs-original-title="{{ 'Enable light mode'|trans }}">
-                                <svg class="icon text-white"><use href="#sun" /></svg>
-                            </a>
-                        </li>
+                <ul class="navbar-nav flex-row gap-1 d-none d-md-flex flex-grow-1">
+                    {{ include('partial_topnav.html.twig', { variant: 'top' }) }}
+                </ul>
 
-                        {% if settings.top_menu_dashboard %}
-                            <li class="nav-item d-md-flex">
-                                <a class="nav-link{% if current_active_menu == 'dashboard' %} active{% endif %}" href="{{ ''|url }}"{% if current_active_menu == 'dashboard' %} aria-current="page"{% endif %}>{{ 'Dashboard'|trans }}</a>
-                            </li>
-                        {% endif %}
+                <div class="d-flex align-items-center gap-2 ms-auto">
+                    {% set languages = guest.extension_languages(true) %}
+                    {% if languages|length > 1 %}
+                        <select name="lang" class="form-select form-select-sm js-locale-selector d-none d-md-block">
+                            {% for lang in languages %}
+                                <option value="{{ lang.locale }}" data-custom-properties="&lt;span class=&quot;fi fi-{{ lang.locale|split('_')[1]|lower }}&quot;&gt;&lt;/span&gt;"{% if lang.locale == guest.system_locale %} selected{% endif %}>{{ lang.title }}</option>
+                            {% endfor %}
+                        </select>
+                    {% endif %}
 
-                        {% if settings.top_menu_order %}
-                            <li class="nav-item d-md-flex">
-                                <a class="nav-link{% if current_active_menu == 'order' %} active{% endif %}" href="{{ 'order'|url }}"{% if current_active_menu == 'order' %} aria-current="page"{% endif %}>{{ 'Order'|trans }}</a>
-                            </li>
-                        {% endif %}
+                    {% if client and profile.currency is not null %}
+                        <div class="tn-balance-chip d-none d-md-flex" title="{{ 'Account balance'|trans }}">
+                            <svg class="icon"><use href="#wallet" /></svg>
+                            <span class="font-mono">{{ profile.balance|format_currency(profile.currency) }}</span>
+                        </div>
+                    {% endif %}
 
-                        {% if settings.top_menu_profile and not client %}
-                            <li class="nav-item d-md-flex">
-                                <a class="nav-link{% if current_active_menu == 'login' %} active{% endif %}" href="{{ 'login'|url }}"{% if current_active_menu == 'login' %} aria-current="page"{% endif %}>{{ 'Login'|trans }}</a>
-                            </li>
-                        {% endif %}
+                    <a class="tn-icon-btn hide-theme-dark js-theme-toggler"
+                       href="?theme=dark"
+                       data-bs-toggle="tooltip"
+                       data-bs-placement="bottom"
+                       data-bs-original-title="{{ 'Enable dark mode'|trans }}">
+                        <svg class="icon"><use href="#moon" /></svg>
+                    </a>
+                    <a class="tn-icon-btn hide-theme-light js-theme-toggler"
+                       href="?theme=light"
+                       data-bs-toggle="tooltip"
+                       data-bs-placement="bottom"
+                       data-bs-original-title="{{ 'Enable light mode'|trans }}">
+                        <svg class="icon"><use href="#sun-medium" /></svg>
+                    </a>
 
-                        {% if settings.top_menu_signout %}
-                            <li class="nav-item d-md-flex">
-                                {% if client %}
-                                    <div class="dropdown client-dropdown">
-                                        <button class="nav-link dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                            {% set avatar_size = 25 %}
-                                            {{ avatar(profile.email, avatar_size, 'rounded-circle d-inline-block', null, 'div') }}
-                                            <span class="ms-1">{% if profile.company %}{{ profile.first_name }} {{ profile.last_name }} ({{ profile.company }}){% else %}{{ profile.first_name }} {{ profile.last_name }}{% endif %}</span>
-                                        </button>
-                                        <ul class="dropdown-menu">
-                                            <li><a class="dropdown-item"
-                                                   href="{{ 'client/profile'|url }}">{{ 'Profile'|trans }}</a></li>
-                                            <li><a class="dropdown-item"
-                                                   href="{{ 'client/logout'|url }}">{{ 'Sign Out'|trans }}</a></li>
-                                        </ul>
-                                    </div>
-                                {% else %}
-                                    <a class="ms-2 btn btn-outline-primary d-none d-md-block"
-                                       href="{{ 'signup'|url }}">{{ 'Register'|trans }}</a>
+                    {% if client %}
+                        <div class="dropdown client-dropdown">
+                            <button class="nav-link dropdown-toggle d-flex align-items-center" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                {{ avatar(profile.email, 28, 'rounded-circle d-inline-block', null, 'div') }}
+                                <span class="ms-2 d-none d-lg-inline">{% if profile.company %}{{ profile.first_name }} {{ profile.last_name }} ({{ profile.company }}){% else %}{{ profile.first_name }} {{ profile.last_name }}{% endif %}</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{{ 'client/profile'|url }}"><svg class="icon me-2"><use href="#user" /></svg>{{ 'Profile'|trans }}</a></li>
+                                {% if settings.side_menu_payments %}
+                                    <li><a class="dropdown-item" href="{{ 'client/balance'|url }}"><svg class="icon me-2"><use href="#wallet" /></svg>{{ 'Wallet'|trans }}</a></li>
                                 {% endif %}
-                            </li>
-                        {% endif %}
-
-                        <li class="d-md-none list-unstyled">
-                            <ul class="navbar-nav">
-                                {{ include('mobile_menu.html.twig') }}
+                                {% if settings.side_menu_emails %}
+                                    <li><a class="dropdown-item" href="{{ 'email'|url }}"><svg class="icon me-2"><use href="#mail" /></svg>{{ 'Email'|trans }}</a></li>
+                                {% endif %}
+                                {% if guest.support_kb_enabled() and settings.side_menu_kb %}
+                                    <li><a class="dropdown-item" href="{{ 'support/kb'|url }}"><svg class="icon me-2"><use href="#book" /></svg>{{ 'Knowledge Base'|trans }}</a></li>
+                                {% endif %}
+                                {% if guest.extension_is_on({"mod":"news"}) and settings.side_menu_news %}
+                                    <li><a class="dropdown-item" href="{{ 'news'|url }}"><svg class="icon me-2"><use href="#news" /></svg>{{ 'News'|trans }}</a></li>
+                                {% endif %}
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ 'client/logout'|url }}"><svg class="icon me-2"><use href="#log-out" /></svg>{{ 'Sign Out'|trans }}</a></li>
                             </ul>
-                        </li>
-                    </ul>
+                        </div>
+                    {% elseif settings.top_menu_profile or settings.top_menu_signout %}
+                        <a class="btn btn-outline-primary btn-sm" href="{{ 'login'|url }}">{{ 'Login'|trans }}</a>
+                        <a class="btn btn-primary btn-sm d-none d-sm-inline-flex" href="{{ 'signup'|url }}">{{ 'Register'|trans }}</a>
+                    {% endif %}
                 </div>
             </div>
         </nav>
         {{ render_widgets('client.theme.header.end') }}
     </header>
-    <div class="container">
+    <div class="container tn-content-container">
         <div class="row">
-        {% if client or not settings.hide_menu %}
-            <div class="col-3 d-none d-md-block">
-                {{ include('partial_menu.html.twig') }}
-            </div>
-        {% endif %}
-            <div class="col-12 col-md-9{% if not client and settings.hide_menu %} mx-auto{% endif %}">
+            <div class="col-12">
                 <div id="wrapper">
                     <section role="main">
                         {% block content_before %}{% endblock %}
@@ -216,6 +196,10 @@
                     </section>
                     <div id="push"></div>
                 </div>
+
+                <nav class="tn-bottom-nav d-md-none" aria-label="{{ 'Primary'|trans }}">
+                    {{ include('partial_topnav.html.twig', { variant: 'bottom' }) }}
+                </nav>
 
                 {% if settings.footer_enabled %}
                     <footer id="footer" class="small text-muted mt-2 mb-3">

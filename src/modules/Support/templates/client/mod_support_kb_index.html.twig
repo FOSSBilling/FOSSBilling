@@ -6,6 +6,7 @@
 
 {% block body_class %}kb-index{% endblock %}
 {% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{{ 'support'|url }}">{{ 'Support'|trans }}</a></li>
     {% if request.q %}
         <li class="breadcrumb-item">
             <a href="{{ 'support/kb'|url }}">{{ 'Knowledge Base'|trans }}</a>
@@ -17,6 +18,7 @@
 {% endblock %}
 
 {% block content %}
+    {% set views_enabled = guest.support_kb_article_views_enabled %}
     {% if request.q %}
         {% set kbcategories = guest.support_kb_category_get_list({ "q": request.q }) %}
         {% set kbarticles = guest.support_kb_article_get_list({ "search": request.q, "per_page": 10 }) %}
@@ -24,77 +26,91 @@
         {% set kbcategories = guest.support_kb_category_get_list %}
         {% set kbarticles = null %}
     {% endif %}
+    {% set total_articles = guest.support_kb_article_get_list({ 'per_page': 1 }).total %}
 
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card mb-4">
-                <div class="card-header py-3 py-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h1 class="mb-1">{{ 'Knowledge Base'|trans }}</h1>
-                            <span class="small text-muted">{{ 'Explore our knowledge base categories and their associated articles below.'|trans }}</span>
-                        </div>
-                        <form method="get" action="" class="form-inline">
-                            <div class="input-group">
-                                <input class="form-control" name="q" type="text" value="{{ request.q }}" placeholder="{{ 'What are you looking for?'|trans }}">
-                                <button class="btn btn-outline-secondary" type="submit">
-                                    <svg class="icon"><use href="#search" /></svg>
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-                <div class="card-body">
-                {% if kbarticles and kbarticles.list %}
-                    <h5 class="mb-3">{{ 'Matching articles'|trans }}</h5>
-                    <div class="list-group mb-4">
-                        {% for article in kbarticles.list %}
-                            <a class="list-group-item list-group-item-action" href='{{ "support/kb/#{article.category.slug}/#{article.slug}"|url }}'>{{ article.title }}</a>
-                        {% endfor %}
-                    </div>
-                    <h5 class="mb-3">{{ 'Matching categories'|trans }}</h5>
-                {% endif %}
-                {% for row in kbcategories.list|batch(3) %}
-                    <div class="row g-3 mb-3">
-                        {% for i, category in row %}
-                            <div class="col-md-4">
-                                <div class="card h-100">
-                                    <div class="card-body">
-                                        <h5 class="card-title">
-                                            <a href='{{ "support/kb/#{category.slug}"|url }}' class="link-underline link-underline-opacity-0">{{ category.title }}</a>
-                                        </h5>
-                                        <p class="card-subtitle mb-3 text-muted">{{ category.description }}</p>
-                                        {% if category.articles %}
-                                            <div class="list-group list-group-flush border-top">
-                                                {% for article in category.articles|slice(0, 3) %}
-                                                    <a class="list-group-item list-group-item-action px-0" href='{{ "support/kb/#{article.category.slug}/#{article.slug}"|url }}'>{{ article.title }}</a>
-                                                {% endfor %}
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                    <div class="card-footer bg-transparent border-0 pt-0">
-                                        <a href='{{ "support/kb/#{category.slug}"|url }}' class="btn btn-link px-0">{{ 'View all articles'|trans }}</a>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <div class="alert alert-info text-center mb-0">
-                        {% if request.q %}
-                            <h5>{{ 'No results found'|trans }}</h5>
-                            <p class="mb-3">{{ 'No articles or categories matched your search for:'|trans }} <strong>{{ request.q }}</strong></p>
-                            <div class="d-flex flex-wrap justify-content-center gap-2">
-                                <a class="btn btn-primary" href="{{ 'support/contact-us'|url }}">{{ 'Contact support'|trans }}</a>
-                                <a class="btn btn-outline-secondary" href="{{ 'support/kb'|url }}">{{ 'Browse all articles'|trans }}</a>
-                            </div>
-                        {% else %}
-                            {{ 'No knowledge base categories are available yet.'|trans }}
-                        {% endif %}
-                    </div>
+    <div class="text-center mx-auto mb-5" style="max-width: 640px;">
+        <h1 class="mb-2">{{ 'How can we help?'|trans }}</h1>
+        <form method="get" action="{{ 'support/kb'|url }}" class="d-flex gap-2 mt-3">
+            <div class="tn-input-wrap flex-grow-1">
+                <span class="tn-input__prefix"><svg class="icon"><use href="#search" /></svg></span>
+                <input class="tn-input" style="--_pl: 38px;" name="q" type="text" value="{{ request.q }}"
+                       placeholder="{{ '%count% articles — try...'|trans({ '%count%': total_articles }) }}">
+            </div>
+            <button class="tn-btn tn-btn--primary tn-btn--md" type="submit">{{ 'Search'|trans }}</button>
+        </form>
+    </div>
+
+    {% if kbarticles and kbarticles.list %}
+        <div class="tn-card mb-4">
+            <div class="tn-card__header">
+                <div class="tn-card__title">{{ 'Matching articles'|trans }}</div>
+            </div>
+            <div class="d-flex flex-column">
+                {% for article in kbarticles.list %}
+                    <a class="tn-kv-row tn-row-hover text-decoration-none px-2" href='{{ "support/kb/#{article.category.slug}/#{article.slug}"|url }}'>
+                        <span class="fw-semibold text-body">{{ article.title }}</span>
+                        <svg class="icon text-muted"><use href="#chevron-right" /></svg>
+                    </a>
                 {% endfor %}
-                </div>
             </div>
         </div>
-    </div>
+        <h5 class="mb-3">{{ 'Matching categories'|trans }}</h5>
+    {% endif %}
+
+    {% if kbcategories.list %}
+        <div class="tn-product-grid mb-4">
+            {% for i, category in kbcategories.list %}
+                <a href='{{ "support/kb/#{category.slug}"|url }}' class="tn-product-card">
+                    <span class="tn-product-card__icon"><svg class="icon"><use href="#book-open" /></svg></span>
+                    <span class="tn-product-card__body">
+                        <span class="tn-product-card__title">{{ category.title }}</span>
+                        <span class="tn-product-card__desc">
+                            {{ '%count% articles'|trans({ '%count%': category.articles|length }) }}
+                        </span>
+                    </span>
+                    <svg class="icon tn-product-card__arrow"><use href="#chevron-right" /></svg>
+                </a>
+            {% endfor %}
+        </div>
+
+        {% set recent_articles = guest.support_kb_article_get_list({ 'per_page': 8 }).list %}
+        {% if views_enabled %}
+            {% set recent_articles = recent_articles|sort((a, b) => b.views <=> a.views) %}
+        {% else %}
+            {% set recent_articles = recent_articles|sort((a, b) => b.updated_at <=> a.updated_at) %}
+        {% endif %}
+        {% if recent_articles is not empty %}
+            <div class="tn-card tn-card--compact">
+                <div class="tn-card__header">
+                    <div class="tn-card__title">{{ views_enabled ? 'Most read'|trans : 'Recently updated'|trans }}</div>
+                </div>
+                <div class="d-flex flex-column">
+                    {% for i, article in recent_articles %}
+                        <a class="tn-kv-row tn-row-hover text-decoration-none px-2" href='{{ "support/kb/#{article.category.slug}/#{article.slug}"|url }}'>
+                            <span class="d-flex align-items-center gap-2">
+                                <span class="text-muted fs-7" style="width: 20px;">{{ i + 1 }}.</span>
+                                <span class="text-body">{{ article.title }}</span>
+                            </span>
+                            {% if views_enabled %}
+                                <span class="text-muted fs-7">{{ '%count% views'|trans({ '%count%': article.views }) }}</span>
+                            {% endif %}
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="alert alert-info text-center mb-0">
+            {% if request.q %}
+                <h5>{{ 'No results found'|trans }}</h5>
+                <p class="mb-3">{{ 'No articles or categories matched your search for:'|trans }} <strong>{{ request.q }}</strong></p>
+                <div class="d-flex flex-wrap justify-content-center gap-2">
+                    <a class="btn btn-primary" href="{{ 'support/contact-us'|url }}">{{ 'Contact support'|trans }}</a>
+                    <a class="btn btn-outline-secondary" href="{{ 'support/kb'|url }}">{{ 'Browse all articles'|trans }}</a>
+                </div>
+            {% else %}
+                {{ 'No knowledge base categories are available yet.'|trans }}
+            {% endif %}
+        </div>
+    {% endif %}
 {% endblock %}

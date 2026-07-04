@@ -9,7 +9,9 @@
 <html lang="{{ active_locale }}" data-bs-theme="{{ settings.theme|default('light') }}">
 <head>
     <meta charset="utf-8">
-    <title>{{ page_title }}</title>
+    {# block('meta_title') is already HTML-escaped by Twig when the block renders;
+       printing page_title normally here would escape it a second time (e.g. "&" -> "&amp;amp;"). #}
+    <title>{{ page_title|raw }}</title>
     <meta name="color-scheme" content="light dark">
 
     <meta name="description" content="{% block meta_description %}{{ meta_description }}{% endblock %}">
@@ -24,7 +26,7 @@
     {% endblock %}
 
     {% block opengraph %}
-        <meta property="og:title" content="{{ page_title }}" />
+        <meta property="og:title" content="{{ page_title|raw }}" />
         <meta property="og:type" content="website" />
         <meta property="og:description" content="{{ meta_description }}" />
         <meta property="og:url" content="{{ canonical_url }}" />

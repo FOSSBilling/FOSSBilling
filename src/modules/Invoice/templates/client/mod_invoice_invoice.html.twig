@@ -17,27 +17,121 @@
 {% block content %}
 {% set seller = invoice.seller %}
 {% set buyer = invoice.buyer %}
-{% set company = guest.system_company %}
-    <div class="row mb-3">
-        <div class="col-md-12">
+
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
+        <div>
+            <h1 class="mb-1 font-monospace d-flex align-items-center gap-2">
+                #{{ nr }}
+                {{ mf.status_badge(invoice.status, 'invoice') }}
+            </h1>
+            <span class="text-muted">
+                {{ 'Issued'|trans }} {{ invoice.created_at|format_date }}
+                &middot; {{ 'due'|trans }} {{ invoice.due_at ? invoice.due_at|format_date : '—' }}
+                {% if buyer.company|trim %}
+                    &middot; {{ buyer.company }}{% if buyer.company_vat|trim %} ({{ buyer.company_vat }}){% endif %}
+                {% endif %}
+            </span>
+        </div>
+        <div class="d-flex gap-2">
+            <a href='{{ "invoice/pdf/#{invoice.hash}"|url }}' target="_blank" class="tn-btn tn-btn--ghost tn-btn--sm">
+                <svg class="icon"><use href="#download" /></svg>
+                {{ 'PDF'|trans }}
+            </a>
+            <a href='{{ "invoice/print/#{invoice.hash}"|url }}' target="_blank" class="tn-btn tn-btn--ghost tn-btn--sm">
+                <svg class="icon"><use href="#printer" /></svg>
+                {{ 'Print'|trans }}
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="tn-card tn-card--compact mb-3">
+                <div class="tn-card__header">
+                    <span class="tn-card__title">{{ 'Line items'|trans }}</span>
+                </div>
+
+                {% for item in invoice.lines %}
+                    <div class="tn-kv-row">
+                        <span class="tn-kv-row__key">
+                            <span class="d-block">
+                                {% if item.order_id %}
+                                    <a href='{{ "order/service/manage/#{item.order_id}"|url }}' class="text-reset">{{ item.title }}</a>
+                                {% else %}
+                                    {{ item.title }}
+                                {% endif %}
+                                {% if item.quantity > 1 %} x {{ item.quantity }} {{ item.unit }}{% endif %}
+                            </span>
+                            {% if item.period %}
+                                <span class="d-block small text-muted">{{ item.period }}</span>
+                            {% endif %}
+                        </span>
+                        <span class="tn-kv-row__value">{{ item.total|format_currency(invoice.currency ?? default_currency) }}</span>
+                    </div>
+                {% endfor %}
+
+                <div class="tn-kv-row">
+                    <span class="tn-kv-row__key">{{ 'Subtotal'|trans }}</span>
+                    <span class="tn-kv-row__value">{{ invoice.subtotal|format_currency(invoice.currency ?? default_currency) }}</span>
+                </div>
+                {% if invoice.tax > 0 %}
+                    <div class="tn-kv-row">
+                        <span class="tn-kv-row__key">{{ invoice.taxname }} {{ invoice.taxrate }}%</span>
+                        <span class="tn-kv-row__value">{{ invoice.tax|format_currency(invoice.currency ?? default_currency) }}</span>
+                    </div>
+                {% endif %}
+                {% if invoice.discount|default(0) > 0 %}
+                    <div class="tn-kv-row">
+                        <span class="tn-kv-row__key">{{ 'Discount'|trans }}</span>
+                        <span class="tn-kv-row__value">{{ invoice.discount|format_currency(invoice.currency ?? default_currency) }}</span>
+                    </div>
+                {% endif %}
+                <div class="tn-kv-row tn-kv-row--total">
+                    <span class="tn-kv-row__key">{{ 'Total due'|trans }}</span>
+                    <span class="tn-kv-row__value">{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</span>
+                </div>
+
+                {% if invoice.text_1 %}
+                    <div class="small text-muted border-top pt-3 mt-3">
+                        {{ (invoice.text_1 ?? '')|markdown_to_html }}
+                    </div>
+                {% endif %}
+                {% if invoice.text_2 %}
+                    <div class="small text-muted border-top pt-3 mt-3">
+                        {{ (invoice.text_2 ?? '')|markdown_to_html }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-lg-4">
             {% if invoice.status == 'unpaid' %}
-                <div class="card">
-                <div class="card-body">
-                    <h5 class="mb-1">{{ 'Payment methods'|trans }}</h5>
-                    <p class="small text-muted">{{ 'Please choose a payment type and pay for your chosen products.'|trans }}</p>
+                <div class="tn-card tn-card--compact mb-3">
+                    <div class="tn-card__header">
+                        <span class="tn-card__title">{{ 'Pay this invoice'|trans }}</span>
+                    </div>
+
+                    <div class="tn-kv-row tn-kv-row--total">
+                        <span class="tn-kv-row__key">{{ 'Amount'|trans }}</span>
+                        <span class="tn-kv-row__value">{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</span>
+                    </div>
+
+                    {# This page is served through the guest API (unauthenticated hash-based
+                       pay-link view - see Controller/Client.php get_invoice()); there is no
+                       authenticated client session/balance available here, so we go straight
+                       to the real existing payment-gateway selection UI. #}
                     <form method="post" action="{{ 'invoice/payment'|api_url(role: 'guest') }}"
                         {{ fb_api_form({ redirect: ("invoice/#{invoice.hash}")|url(query: { 'auto_redirect': 1 }) }) }}>
                         <input type="hidden" name="hash" value="{{ invoice.hash }}"/>
-                        <div class="d-flex gap-3">
+                        <div class="d-flex flex-wrap gap-2 mt-3">
                             {% for gtw in guest.invoice_gateways %}
                                 {% if invoice.currency in gtw.accepted_currencies and (gtw.allow_single or (invoice.subscribable and gtw.allow_recurrent)) %}
-                                {% set banklink = 'invoice/banklink'|url %}
-                                <div class="invoice-gateway rounded-2 p-2">
-                                    <input type="radio" class="btn-check border-0" name="gateway_id" gateway_id="{{ gtw.id }}" id="{{ gtw.id }}" autocomplete="off">
-                                    <label class="btn" for="{{ gtw.id }}"
-                                        style="background: transparent url('{{gtw.logo.logo}}') no-repeat center center; background-size: contain; height:{{gtw.logo.height}}; width:{{gtw.logo.width}};"
-                                        onclick="paymentPrompt('{{ gtw.id }}', {{ gtw.allow_recurrent ? 'true' : 'false' }}, {{ gtw.allow_single ? 'true' : 'false' }}, `{{ gtw.title }}`)"
-                                        data-bs-toggle="tooltip" data-bs-title="{{ gtw.title }}"></label>
+                                    <div class="invoice-gateway rounded-2 p-2">
+                                        <input type="radio" class="btn-check border-0" name="gateway_id" gateway_id="{{ gtw.id }}" id="{{ gtw.id }}" autocomplete="off">
+                                        <label class="btn" for="{{ gtw.id }}"
+                                            style="background: transparent url('{{gtw.logo.logo}}') no-repeat center center; background-size: contain; height:{{gtw.logo.height}}; width:{{gtw.logo.width}};"
+                                            onclick="paymentPrompt('{{ gtw.id }}', {{ gtw.allow_recurrent ? 'true' : 'false' }}, {{ gtw.allow_single ? 'true' : 'false' }}, `{{ gtw.title }}`)"
+                                            data-bs-toggle="tooltip" data-bs-title="{{ gtw.title }}"></label>
                                     </div>
                                 {% endif %}
                             {% endfor %}
@@ -45,212 +139,35 @@
                         <input type="hidden" name="gateway_id" id="gateway_id">
                     </form>
                 </div>
-            </div>
+            {% endif %}
+
+            {% if seller.account_number|trim or seller.bank_name|default('')|trim or seller.bic|default('')|trim %}
+                <div class="tn-card tn-card--compact">
+                    <div class="tn-card__header">
+                        <span class="tn-card__title">{{ 'Bank transfer'|trans }}</span>
+                    </div>
+                    {% if seller.bank_name|default('')|trim %}
+                        <div class="tn-kv-row">
+                            <span class="tn-kv-row__key">{{ 'Bank'|trans }}</span>
+                            <span class="tn-kv-row__value">{{ seller.bank_name }}</span>
+                        </div>
+                    {% endif %}
+                    {% if seller.account_number|trim %}
+                        <div class="tn-kv-row">
+                            <span class="tn-kv-row__key">{{ 'Account / IBAN'|trans }}</span>
+                            <span class="tn-kv-row__value font-monospace">{{ seller.account_number }}</span>
+                        </div>
+                    {% endif %}
+                    {% if seller.bic|default('')|trim %}
+                        <div class="tn-kv-row">
+                            <span class="tn-kv-row__key">{{ 'BIC / SWIFT'|trans }}</span>
+                            <span class="tn-kv-row__value font-monospace">{{ seller.bic }}</span>
+                        </div>
+                    {% endif %}
+                </div>
             {% endif %}
         </div>
     </div>
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card mb-4">
-                <div class="card-header py-3 py-3">
-                    <div class="d-flex justify-content-between">
-                        <div class="d-flex flex-column">
-                            <h5 class="mb-1 d-flex align-items-center">{{ 'Invoice'|trans }}</h5>
-                            <span class="small text-muted">{{ 'You can print this invoice or export it to a PDF file by clicking on the corresponding button.'|trans }}</span>
-                        </div>
-                        <div class="d-flex align-items-center">
-                            <div class="d-flex gap-2 align-items-center justify-content-end">
-                                <a href='{{ "invoice/pdf/#{invoice.hash}"|url }}' target="_blank" class="btn btn-sm btn-danger">{{ 'PDF'|trans }}</a>
-                                <a href='{{ "invoice/print/#{invoice.hash}"|url }}' target="_blank" class="btn btn-sm btn-dark">{{ 'Print'|trans }}</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card-body">
-                    <div class="container">
-                        <div class="row">
-                            <div class="col-md-6 mb-4">
-                                <div class="well small">
-                                    <h4 class="fw-light mt-2 mb-3">{{ 'Invoice'|trans }} #{{ nr }}</h4>
-                                    <dl class="row">
-                                        <dt class="col-sm-4 text-muted">{{ 'Invoice Date'|trans }}</dt>
-                                        <dd class="col-sm-8">
-                                            {% if invoice.paid_at|trim %}
-                                                {{ invoice.paid_at|format_date }}
-                                            {% else %}
-                                                {{ invoice.created_at|format_date }}
-                                            {% endif %}
-                                        </dd>
-                                        <dt class="col-sm-4 text-muted">{{ 'Due Date'|trans }}</dt>
-                                        <dd class="col-sm-8">
-                                            {% if invoice.due_at|trim %}
-                                                {{ invoice.due_at|format_date }}
-                                            {% else %}
-                                                -----
-                                            {% endif %}
-                                        </dd>
-                                        <dt class="col-sm-4 text-muted">{{ 'Status'|trans }}</dt>
-                                        <dd class="col-sm-8">
-                                        {{ mf.status_badge(invoice.status, 'invoice') }}
-                                        </dd>
-                                    </dl>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6 mb-4">
-                                <div class="well small">
-                                    <h5>{{ 'Company'|trans }}</h5>
-                                        <dl class="row">
-                                            {% if seller.company|trim %}
-                                                <dt class="col-sm-3 text-muted">{{ 'Name'|trans }}</dt>
-                                                <dd class="col-sm-9">{{ seller.company }}</dd>
-                                            {% endif %}
-
-                                            {% if seller.company_vat|trim %}
-                                                <dt class="col-sm-3 text-muted">{{ 'VAT'|trans }}</dt>
-                                                <dd class="col-sm-9">{{ seller.company_vat }}</dd>
-                                            {% endif %}
-
-                                            {% if seller.address|trim %}
-                                                <dt class="col-sm-3 text-muted">{{ 'Address'|trans }}</dt>
-                                                <dd class="col-sm-9">{{ seller.address }}</dd>
-                                            {% endif %}
-
-                                            {% if seller.phone|trim %}
-                                                <dt class="col-sm-3 text-muted">{{ 'Phone'|trans }}</dt>
-                                                <dd class="col-sm-9">{{ seller.phone }}</dd>
-                                            {% endif %}
-
-                                            {% if seller.email|trim %}
-                                                <dt class="col-sm-3 text-muted">{{ 'Email'|trans }}</dt>
-                                                <dd class="col-sm-9">{{ seller.email }}</dd>
-                                            {% endif %}
-
-                                            {% if seller.account_number|trim %}
-                                                <dt class="col-sm-3 text-muted">{{ 'Account'|trans }}</dt>
-                                                <dd class="col-sm-9">{{ seller.account_number }}</dd>
-                                            {% endif %}
-
-                                            {% if seller.note|default('')|trim %}
-                                                <dt class="col-sm-3 text-muted">{{ 'Note'|trans }}</dt>
-                                                <dd class="col-sm-9">{{ seller.note }}</dd>
-                                            {% endif %}
-                                        </dl>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="well small">
-                                        <h5>{{ 'Client'|trans }}</h5>
-                                        <dl class="row">
-                                            {% if buyer.first_name|trim or buyer.last_name|trim %}
-                                                <dt class="col-sm-4 text-muted">{{ 'Name'|trans }}</dt>
-                                                <dd class="col-sm-8">{{ buyer.first_name }} {{ buyer.last_name }}</dd>
-                                            {% endif %}
-
-                                            {% if buyer.company|trim %}
-                                                <dt class="col-sm-4 text-muted">{{ 'Company'|trans }}</dt>
-                                                <dd class="col-sm-8">{{ buyer.company }}</dd>
-                                            {% endif %}
-
-                                            {% if buyer.company_number|trim %}
-                                                <dt class="col-sm-4 text-muted">{{ 'Company Number'|trans }}</dt>
-                                                <dd class="col-sm-8">{{ buyer.company_number }}</dd>
-                                            {% endif %}
-
-                                            {% if buyer.company_vat|trim %}
-                                                <dt class="col-sm-4 text-muted">{{ 'Company VAT'|trans }}</dt>
-                                                <dd class="col-sm-8">{{ buyer.company_vat }}</dd>
-                                            {% endif %}
-
-                                            {% if buyer.address|trim %}
-                                                <dt class="col-sm-4 text-muted">{{ 'Address'|trans }}</dt>
-                                                <dd class="col-sm-8">{{ buyer.address }}</dd>
-                                                <dd class="col-sm-4">{{ buyer.city }}, {{ buyer.state }}</dd>
-                                                <dd class="col-sm-8">{{ buyer.zip }}, {{ buyer.country|country_name }}</dd>
-                                            {% endif %}
-
-                                            {% if buyer.phone|trim %}
-                                                <dt class="col-sm-4 text-muted">{{ 'Phone'|trans }}</dt>
-                                                <dd class="col-sm-8">{{ buyer.phone }}</dd>
-                                            {% endif %}
-                                        </dl>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {% if invoice.text_1 %}
-                            <div class="well mt-3">
-                                {{ (invoice.text_1 ?? '')|markdown_to_html }}
-                            </div>
-                        {% endif %}
-
-                        <table class="table table-hover mt-3 mb-0">
-                            <thead>
-                            <tr>
-                                <th>{{  '#'|trans }}</th>
-                                <th>{{ 'Title'|trans }}</th>
-                                <th>{{ 'Price'|trans }}</th>
-                                <th class="text-end">{{ 'Total'|trans }}</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {% for i, item in invoice.lines %}
-                                <tr>
-                                    <td>{{ i+1 }}</td>
-                                    <td>
-                                        {% if item.order_id %}
-                                            <a href='{{ "order/service/manage/#{item.order_id}"|url }}'>{{ item.title }}</a>
-                                        {% else %}
-                                            {{ item.title }}
-                                        {% endif %}
-                                        {% if item.quantity > 1 %}
-                                            x {{ item.quantity }} {{ item.unit }}
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ item.price|format_currency(invoice.currency ?? default_currency) }}</td>
-                                    <td class="text-end">{{ item.total|format_currency(invoice.currency ?? default_currency) }}</td>
-                                </tr>
-                            {% endfor %}
-                            </tbody>
-                        </table>
-
-                        <div class="row">
-                            <div class="col-md-4 offset-md-8">
-                                <table class="table table-striped">
-                                    {% if invoice.tax > 0 %}
-                                        <tr class="text-end">
-                                            <td>{{ invoice.taxname }} {{ invoice.taxrate }}%</td>
-                                            <td>{{ invoice.tax|format_currency(invoice.currency ?? default_currency) }}</td>
-                                        </tr>
-                                    {% endif %}
-                                    {% if invoice.discount|default(0) > 0 %}
-                                        <tr class="text-end">
-                                            <td>{{ 'Discount'|trans }}</td>
-                                            <td>{{ invoice.discount|format_currency(invoice.currency ?? default_currency) }}</td>
-                                        </tr>
-                                    {% endif %}
-                                    <tr class="text-end">
-                                        <td><strong>{{ 'Total'|trans }}</strong></td>
-                                        <td><strong>{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</strong></td>
-                                    </tr>
-                                </table>
-                            </div>
-                        </div>
-
-                        {% if invoice.text_2 %}
-                            <div class="well mt-3">
-                                {{ (invoice.text_2 ?? '')|markdown_to_html }}
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
 
         <div class="modal modal-lg fade" id="paymentPrompt" tabindex="-1" aria-labelledby="paymentPromptLabel" aria-hidden="true">
             <div class="modal-dialog">

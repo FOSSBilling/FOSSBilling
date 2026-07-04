@@ -1,62 +1,53 @@
 {% if product.addons is defined and product.addons|length > 0 %}
-<h4 class="mt-4 mb-1"><strong>{{ 'Addons & Extras'|trans }}</strong></h4>
-<table class="table table-sm table-borderless table-striped">
-  <tbody>
-    {% for addon in product.addons %}
-    <tr>
-      <td {% if not addon.icon_url %}style="display: none" {% endif %}>
-        <label><img src="{{ addon.icon_url }}" alt="" width="36" /></label>
-      </td>
+<h4 class="mt-4 mb-2"><strong>{{ 'Addons & Extras'|trans }}</strong></h4>
+<div class="tn-addon-list">
+  {% set cart_currency = guest.cart_get_currency %}
+  {% for addon in product.addons %}
+    <div class="tn-addon-row">
+      {% if addon.icon_url %}
+        <img src="{{ addon.icon_url }}" alt="" class="tn-addon-row__icon" />
+      {% endif %}
 
-      <td>
-        <label>
-          <h6><strong>{{ addon.title }}</strong></h6>
-        </label>
-        {{ (addon.description ?? '')|markdown_to_html }}
-      </td>
+      <div class="tn-addon-row__body">
+        <span class="tn-addon-row__title">{{ addon.title }}</span>
+        {% if addon.description %}
+          <span class="tn-addon-row__desc">{{ (addon.description ?? '')|markdown_to_html }}</span>
+        {% endif %}
+      </div>
 
-      <td>
-        <label class="currency">
-          {% set cart_currency = guest.cart_get_currency %}
-          {% if addon.pricing.type is same as('recurrent') %}
+      <div class="tn-addon-row__price">
+        {% if addon.pricing.type is same as('recurrent') %}
           {% set periods = guest.system_periods %}
-          <select class="form-select" name="addons[{{ addon.id }}][period]" rel="addon-periods-{{ addon.id }}">
+          <select class="form-select form-select-sm" name="addons[{{ addon.id }}][period]" rel="addon-periods-{{ addon.id }}">
             {% for code, prices in addon.pricing.recurrent %}
-            {% if prices.enabled %}
-            <option value="{{ code }}">{{ (prices.price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }} {% if prices.setup !=
-              '0.00' %}{{ 'Setup:'|trans }} {{ (prices.setup * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}{% endif %} ({{ periods[code] }})</option>
-            {% endif %}
+              {% if prices.enabled %}
+                <option value="{{ code }}">{{ (prices.price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }} {% if prices.setup != '0.00' %}{{ 'Setup:'|trans }} {{ (prices.setup * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}{% endif %} ({{ periods[code] }})</option>
+              {% endif %}
             {% endfor %}
           </select>
-          {% endif %}
-
-          {% if addon.pricing.type is same as('once') %}
+        {% elseif addon.pricing.type is same as('once') %}
           <span class="badge text-bg-success">{{ ((addon.pricing.once.price + addon.pricing.once.setup) * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</span>
-          {% endif %}
-
-          {% if addon.pricing.type is same as('free') %}
+        {% elseif addon.pricing.type is same as('free') %}
           <span class="badge text-bg-success">{{ 0|format_currency(cart_currency.code) }}</span>
-          {% endif %}
+        {% endif %}
+      </div>
+
+      <div class="tn-addon-row__toggle">
+        <input type="radio" class="btn-check" name="addons[{{ addon.id }}][selected]" value="1"
+          id="addon_{{ addon.id }}" autocomplete="off">
+        <label class="btn btn-outline-success btn-sm" for="addon_{{ addon.id }}" data-bs-toggle="tooltip"
+          data-bs-title="{{ 'Add to cart'|trans }}">
+          <svg class="icon"><use href="#check" /></svg>
         </label>
 
-        <div class="float-end">
-          <input type="radio" class="btn-check" name="addons[{{ addon.id }}][selected]" value="1"
-            id="addon_{{ addon.id }}" autocomplete="off">
-          <label class="btn btn-outline-success" for="addon_{{ addon.id }}" data-bs-toggle="tooltip"
-            data-bs-title="{{ 'Add to cart'|trans }}">
-            <svg class="icon"><use href="#check" /></svg>
-          </label>
-
-          <input type="radio" class="btn-check" name="addons[{{ addon.id }}][selected]" value="0"
-            id="addon_{{ addon.id }}_decline" autocomplete="off" checked>
-          <label class="btn btn-outline-danger" for="addon_{{ addon.id }}_decline" data-bs-toggle="tooltip"
-            data-bs-title="{{ 'Remove from cart'|trans }}">
-            <svg class="icon"><use href="#x" /></svg>
-          </label>
-        </div>
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+        <input type="radio" class="btn-check" name="addons[{{ addon.id }}][selected]" value="0"
+          id="addon_{{ addon.id }}_decline" autocomplete="off" checked>
+        <label class="btn btn-outline-danger btn-sm" for="addon_{{ addon.id }}_decline" data-bs-toggle="tooltip"
+          data-bs-title="{{ 'Remove from cart'|trans }}">
+          <svg class="icon"><use href="#x" /></svg>
+        </label>
+      </div>
+    </div>
+  {% endfor %}
+</div>
 {% endif %}

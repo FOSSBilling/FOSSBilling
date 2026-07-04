@@ -1,0 +1,163 @@
+<script>
+(function () {
+    "use strict";
+    var cfg = window.TN_CATALOG_CONFIG || {};
+
+    // ---- Tab switching -------------------------------------------------
+    var tabButtons = document.querySelectorAll(".tn-tabchip[data-tn-tab]");
+    tabButtons.forEach(function (btn) {
+        btn.addEventListener("click", function () {
+            var target = btn.getAttribute("data-tn-tab");
+            tabButtons.forEach(function (b) { b.removeAttribute("data-active"); });
+            btn.setAttribute("data-active", "true");
+            document.querySelectorAll(".tn-tabpanel[data-tn-panel]").forEach(function (p) {
+                p.hidden = p.getAttribute("data-tn-panel") !== target;
+            });
+        });
+    });
+
+    // ---- Domain search ---------------------------------------------------
+    var sldInput = document.getElementById("tn-domain-sld");
+    var searchBtn = document.getElementById("tn-domain-search-btn");
+    var hitWrap = document.getElementById("tn-domain-hit-wrap");
+    var altWrap = document.getElementById("tn-domain-alt-wrap");
+    var currentTld = "com";
+
+    document.querySelectorAll(".tn-tld-chip[data-tld]").forEach(function (chip) {
+        chip.style.cursor = "pointer";
+        chip.addEventListener("click", function () {
+            currentTld = chip.getAttribute("data-tld").replace(/^\./, "");
+            var suffix = document.getElementById("tn-domain-tld-suffix");
+            if (suffix) { suffix.textContent = "." + currentTld; }
+            if (sldInput && sldInput.value.trim()) { runSearch(); }
+        });
+    });
+
+    function escapeHtml(str) {
+        var div = document.createElement("div");
+        div.textContent = str;
+        return div.textContent;
+    }
+
+    function moneyHtml(amount, suffix) {
+        return '<span class="font-mono">' + escapeHtml("{{ guest.cart_get_currency.code }}") + '</span> '
+            + Number(amount).toFixed(0) + (suffix ? '<span class="text-faint">' + suffix + '</span>' : "");
+    }
+
+    function addDomainToCart(sld, tld) {
+        if (!cfg.domainProductId) { return; }
+        var params = {
+            id: cfg.domainProductId,
+            action: "register",
+            register_sld: sld,
+            register_tld: tld,
+            register_years: 1,
+            multiple: true
+        };
+        FOSSBilling.api.guest.post("cart/add_item", params, function () {
+            FOSSBilling.ui.notify("{{ 'Domain added to cart'|trans|e('js') }}", "success");
+            window.location.reload();
+        }, function (err) {
+            FOSSBilling.ui.notify(err.message, "error");
+        });
+    }
+
+    function renderHit(sld, tld, available, price) {
+        var domainText = escapeHtml(sld + "." + tld);
+        var borderStyle = available ? 'border-color: rgba(199,242,60,0.3);' : '';
+        var badge = available
+            ? '<span class="tn-badge tn-badge--success"><span class="tn-badge__dot"></span>{{ "Active"|trans|e("js") }}</span>'
+            : '<span class="tn-badge tn-badge--neutral"><span class="tn-badge__dot"></span>{{ "Canceled"|trans|e("js") }}</span>';
+        var subline = available
+            ? "{{ 'Free WHOIS privacy included. Renews at the same price.'|trans|e('js') }}"
+            : "{{ 'Registered — try an alternative below, or transfer it if it is yours.'|trans|e('js') }}";
+        var action = available
+            ? '<div class="text-end"><div class="tn-domainhit__price mb-2">' + moneyHtml(price, "/yr") + '</div>'
+                + '<button type="button" class="tn-btn tn-btn--primary tn-btn--md tn-domainhit__add">{{ "Add to cart"|trans|e("js") }}</button></div>'
+            : '<button type="button" class="tn-btn tn-btn--secondary tn-btn--md">{{ "Transfer this domain"|trans|e("js") }}</button>';
+
+        hitWrap.innerHTML = '<div class="tn-domainhit tn-card" style="' + borderStyle + '">'
+            + '<div class="tn-domainhit__body">'
+            + '<div class="tn-domainhit__name font-mono">' + domainText + '</div>' + badge
+            + '<div class="tn-domainhit__sub text-muted small mt-1">' + subline + '</div>'
+            + '</div>' + action + '</div>';
+
+        if (available) {
+            var addBtn = hitWrap.querySelector(".tn-domainhit__add");
+            if (addBtn) { addBtn.addEventListener("click", function () { addDomainToCart(sld, tld); }); }
+        }
+    }
+
+    function checkOne(sld, tld, cb) {
+        FOSSBilling.api.guest.get("servicedomain/check", { sld: sld, tld: tld }, function (available) {
+            if (!available) { cb(false, null); return; }
+            FOSSBilling.api.guest.get("servicedomain/pricing", { tld: tld }, function (pricing) {
+                cb(true, pricing && pricing.price_registration ? pricing.price_registration : 0);
+            }, function () { cb(true, 0); }, false);
+        }, function () { cb(false, null); }, false);
+    }
+
+    function runSearch() {
+        if (!sldInput) { return; }
+        var sld = sldInput.value.trim().toLowerCase().replace(/[^a-z0-9-]/g, "");
+        if (!sld) { return; }
+        hitWrap.innerHTML = '<p class="text-muted small">{{ "Checking availability…"|trans|e("js") }}</p>';
+        altWrap.innerHTML = "";
+
+        checkOne(sld, currentTld, function (available, price) {
+            renderHit(sld, currentTld, available, price);
+            renderAlternatives(sld, currentTld, available);
+        });
+    }
+
+    function renderAlternatives(sld, primaryTld, primaryAvailable) {
+        var chips = document.querySelectorAll(".tn-tld-chip[data-tld]");
+        var altTlds = [];
+        chips.forEach(function (chip) {
+            var t = chip.getAttribute("data-tld").replace(/^\./, "");
+            if (t !== primaryTld) { altTlds.push(t); }
+        });
+        if (!altTlds.length) { return; }
+
+        var results = [];
+        var remaining = altTlds.length;
+        altTlds.forEach(function (tld) {
+            checkOne(sld, tld, function (available, price) {
+                results.push({ tld: tld, available: available, price: price });
+                remaining--;
+                if (remaining === 0) { paintAltGrid(sld, results); }
+            });
+        });
+    }
+
+    function paintAltGrid(sld, results) {
+        var cols = results.length > 4 ? "tn-alt-grid--3col" : "tn-alt-grid--2col";
+        var html = '<div class="tn-alt-grid ' + cols + ' mt-3">';
+        results.forEach(function (r) {
+            var name = escapeHtml(sld + "." + r.tld);
+            var priceOrTaken = r.available
+                ? '<span class="font-mono text-muted small">' + moneyHtml(r.price, "/yr") + '</span>'
+                : '<span class="text-danger small">{{ "Taken"|trans|e("js") }}</span>';
+            html += '<div class="tn-alt-card">'
+                + '<span class="tn-alt-card__name font-mono">' + name + '</span>'
+                + priceOrTaken
+                + (r.available ? '<button type="button" class="tn-iconbtn tn-iconbtn--outline tn-iconbtn--sm tn-alt-card__add" data-sld="' + escapeHtml(sld) + '" data-tld="' + escapeHtml(r.tld) + '"><svg class="icon"><use href="#plus" /></svg></button>' : '')
+                + '</div>';
+        });
+        html += '</div>';
+        altWrap.innerHTML = html;
+        altWrap.querySelectorAll(".tn-alt-card__add").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+                addDomainToCart(btn.getAttribute("data-sld"), btn.getAttribute("data-tld"));
+            });
+        });
+    }
+
+    if (searchBtn) { searchBtn.addEventListener("click", runSearch); }
+    if (sldInput) {
+        sldInput.addEventListener("keydown", function (e) {
+            if (e.key === "Enter") { e.preventDefault(); runSearch(); }
+        });
+    }
+})();
+</script>

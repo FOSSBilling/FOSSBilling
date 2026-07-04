@@ -1,8 +1,10 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
 {% set active_menu = 'invoices' %}
 
+{% import "macro_functions.html.twig" as mf %}
+
 {% block meta_title %}{{ 'Invoice Management'|trans }}{% endblock %}
-{% block page_header %}{{ 'Invoice Management'|trans }}{% endblock %}
+{% block page_header %}{{ 'Invoices'|trans }}{% endblock %}
 
 {% block body_class %}invoice-index{% endblock %}
 {% block breadcrumb %}
@@ -10,99 +12,117 @@
 {% endblock %}
 
 {% block content %}
-    {% set unpaid_invoices = client.invoice_get_list({"status":"unpaid", "per_page":10, "page":request.page}) %}
-    {% set paid_invoices = client.invoice_get_list({"per_page":10, "page":request.page, "status":"paid"}) %}
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card mb-4">
-                <div class="card-header py-3 py-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h1 class="mb-1">{{ 'Invoices'|trans }}</h1>
-                            <span class="small text-muted">
-                                {{ 'All of your invoices can be found here. You can choose to see either paid or unpaid invoices by clicking corresponding button.'|trans }}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <nav>
-                        <div class="nav nav-tabs" id="invoice-tab" role="tablist">
-                            <button class="nav-link active" id="unpaid-tab" data-bs-toggle="tab"
-                                    data-bs-target="#nav-unpaid" type="button" role="tab" aria-controls="nav-unpaid"
-                                    aria-selected="true">{{ 'Unpaid'|trans }}{% if unpaid_invoices.total %}&nbsp;<span
-                                    class="badge text-bg-danger">{{ unpaid_invoices.total }}</span>{% endif %}</button>
-                            <button class="nav-link" id="paid-tab" data-bs-toggle="tab" data-bs-target="#nav-paid"
-                                    type="button" role="tab" aria-controls="nav-paid"
-                                    aria-selected="false">{{ 'Paid'|trans }}{% if paid_invoices.total %}&nbsp;<span
-                                    class="badge text-bg-secondary">{{ paid_invoices.total }}</span>{% endif %}</button>
-                        </div>
-                    </nav>
-                    <div class="tab-content" id="nav-tabContent">
-                        <div class="tab-pane fade show active table-responsive" id="nav-unpaid" role="tabpanel"
-                             aria-labelledby="nav-home-tab" tabindex="0">
-                            <table class="table table-bordered table-hover">
-                                <thead>
-                                <tr>
-                                    <th>{{ 'Title'|trans }}</th>
-                                    <th>{{ 'Invoice Date'|trans }}</th>
-                                    <th>{{ 'Due Date'|trans }}</th>
-                                    <th>{{ 'Total'|trans }}</th>
-                                    <th>{{ 'Actions'|trans }}</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                {% for i, invoice in unpaid_invoices.list %}
-                                    <tr>
-                                        <td>{{ 'Invoice'|trans }} #{{ invoice.serie ~ "%05s"|format(invoice.nr) }}</td>
-                                        <td>{{ invoice.created_at|format_date }}</td>
-                                        <td>{{ invoice.due_at|format_date }}</td>
-                                        <td>{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</td>
-                                        <td><a class="btn btn-sm btn-success" href='{{ "invoice/#{invoice.hash}"|url }}'>{{ 'Pay'|trans }}</a>
-                                        </td>
-                                    </tr>
-                                {% else %}
-                                    <tr>
-                                        <td colspan="5">{{ 'The list is empty'|trans }}</td>
-                                    </tr>
-                                {% endfor %}
-                                </tbody>
-                            </table>
-                            {{ include('partial_pagination.html.twig', { 'list': unpaid_invoices, 'url': 'invoice' }) }}
-                        </div>
-                        <div class="tab-pane fade table-responsive" id="nav-paid" role="tabpanel" aria-labelledby="nav-profile-tab"
-                             tabindex="0">
-                            <table class="table table-bordered table-hover">
-                                <thead>
-                                <tr>
-                                    <th>{{ 'Title'|trans }}</th>
-                                    <th>{{ 'Invoice Date'|trans }}</th>
-                                    <th>{{ 'Paid Date'|trans }}</th>
-                                    <th>{{ 'Total'|trans }}</th>
-                                    <th>{{ 'Actions'|trans }}</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                {% for i, invoice in paid_invoices.list %}
-                                    <tr>
-                                        <td>{{ 'Invoice'|trans }} #{{ invoice.serie ~ "%05s"|format(invoice.nr) }}</td>
-                                        <td>{{ invoice.created_at|format_date }}</td>
-                                        <td>{{ invoice.paid_at|format_date }}</td>
-                                        <td>{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</td>
-                                        <td><a href='{{ "invoice/#{invoice.hash}"|url }}' class="btn btn-outline-secondary btn-sm">{{ 'View'|trans }}</a></td>
-                                    </tr>
-                                {% else %}
-                                    <tr>
-                                        <td colspan="7">{{ 'The list is empty'|trans }}</td>
-                                    </tr>
-                                {% endfor %}
-                                </tbody>
-                            </table>
-                            {{ include('partial_pagination.html.twig', { 'list': paid_invoices, 'url': 'invoice', 'hash': '#nav-paid' }) }}
-                        </div>
-                    </div>
-                </div>
-            </div>
+    {% set active_status = request.status|default('') %}
+    {% set search_term = request.search|default('') %}
+
+    {# Real data pulled from client.invoice_get_list - the active tab drives which
+       status filter (if any) is applied server-side; search is applied server-side
+       too since invoice_get_list already supports a `search` parameter. #}
+    {% set list_params = { 'per_page': 20, 'page': request.page } %}
+    {% if active_status %}
+        {% set list_params = list_params|merge({ 'status': active_status }) %}
+    {% endif %}
+    {% if search_term %}
+        {% set list_params = list_params|merge({ 'search': search_term }) %}
+    {% endif %}
+    {% set invoices = client.invoice_get_list(list_params) %}
+
+    {# Stat strip - computed here from real invoice data already available on
+       this request, no new aggregation endpoints added. #}
+    {% set ns = namespace(outstanding: 0, paid_this_year: 0) %}
+    {% set unpaid_all = client.invoice_get_list({ 'status': 'unpaid', 'per_page': 200 }) %}
+    {% for inv in unpaid_all.list %}
+        {% set ns.outstanding = ns.outstanding + inv.total %}
+    {% endfor %}
+    {% set paid_all = client.invoice_get_list({ 'status': 'paid', 'per_page': 200 }) %}
+    {% set current_year = "now"|date("Y") %}
+    {% for inv in paid_all.list %}
+        {% if inv.paid_at and inv.paid_at|date("Y") == current_year %}
+            {% set ns.paid_this_year = ns.paid_this_year + inv.total %}
+        {% endif %}
+    {% endfor %}
+    {% set account_balance = client.client_balance_get_total() %}
+
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+        <div>
+            <h1 class="mb-1">{{ 'Invoices'|trans }}</h1>
+            <span class="text-muted">{{ 'Every charge, receipt and top-up — export anything as PDF.'|trans }}</span>
         </div>
     </div>
+
+    <div class="d-flex flex-wrap gap-3 mb-3">
+        <div class="tn-stat flex-fill">
+            <span class="tn-stat__label">{{ 'Outstanding'|trans }}</span>
+            <span class="tn-stat__value tn-stat__value--accent">{{ ns.outstanding|format_currency(default_currency) }}</span>
+        </div>
+        <div class="tn-stat flex-fill">
+            <span class="tn-stat__label">{{ 'Paid this year'|trans }}</span>
+            <span class="tn-stat__value">{{ ns.paid_this_year|format_currency(default_currency) }}</span>
+        </div>
+        <div class="tn-stat flex-fill">
+            <span class="tn-stat__label">{{ 'Account balance'|trans }}</span>
+            <span class="tn-stat__value">{{ account_balance|format_currency(default_currency) }}</span>
+        </div>
+    </div>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{{ 'invoice'|url }}" class="tn-tabchip" data-active="{{ active_status == '' ? 'true' : 'false' }}">{{ 'All'|trans }}</a>
+            <a href="{{ 'invoice'|url(query: { status: 'unpaid' }) }}" class="tn-tabchip" data-active="{{ active_status == 'unpaid' ? 'true' : 'false' }}">{{ 'Unpaid'|trans }}</a>
+            <a href="{{ 'invoice'|url(query: { status: 'paid' }) }}" class="tn-tabchip" data-active="{{ active_status == 'paid' ? 'true' : 'false' }}">{{ 'Paid'|trans }}</a>
+            <a href="{{ 'invoice'|url(query: { status: 'refunded' }) }}" class="tn-tabchip" data-active="{{ active_status == 'refunded' ? 'true' : 'false' }}">{{ 'Refunded'|trans }}</a>
+        </div>
+        <form method="get" action="{{ 'invoice'|url }}" class="tn-input-wrap" style="width: 240px;">
+            {% if active_status %}<input type="hidden" name="status" value="{{ active_status }}">{% endif %}
+            <span class="tn-input__prefix"><svg class="icon" width="16" height="16"><use href="#search" /></svg></span>
+            <input type="search" name="search" value="{{ search_term }}" placeholder="{{ 'Search invoices…'|trans }}" class="tn-input" style="--_pl: 34px;">
+        </form>
+    </div>
+
+    <div class="tn-card tn-card--compact">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>{{ 'Invoice'|trans }}</th>
+                        <th>{{ 'For'|trans }}</th>
+                        <th>{{ 'Issued'|trans }}</th>
+                        <th>{{ 'Due'|trans }}</th>
+                        <th class="text-end">{{ 'Amount'|trans }}</th>
+                        <th>{{ 'Status'|trans }}</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for invoice in invoices.list %}
+                        <tr>
+                            <td>
+                                <a href='{{ "invoice/#{invoice.hash}"|url }}' class="font-monospace fw-bold text-reset text-decoration-none">#{{ invoice.serie ~ "%05s"|format(invoice.nr) }}</a>
+                            </td>
+                            <td class="text-muted small">
+                                {% if invoice.lines[0] is defined %}
+                                    {{ invoice.lines[0].title }}{% if invoice.lines|length > 1 %} {{ '+ %count% more'|trans({'%count%': invoice.lines|length - 1}) }}{% endif %}
+                                {% endif %}
+                            </td>
+                            <td class="font-monospace small">{{ invoice.created_at|format_date }}</td>
+                            <td class="font-monospace small">{{ invoice.due_at ? invoice.due_at|format_date : '—' }}</td>
+                            <td class="text-end fw-semibold text-nowrap">{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</td>
+                            <td>{{ mf.status_badge(invoice.status, 'invoice') }}</td>
+                            <td class="text-end">
+                                <a href='{{ "invoice/pdf/#{invoice.hash}"|url }}' target="_blank" class="tn-iconbtn tn-iconbtn--sm" title="{{ 'Download PDF'|trans }}">
+                                    <svg class="icon"><use href="#download" /></svg>
+                                </a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-muted small text-center py-4">{{ 'The list is empty'|trans }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {{ include('partial_pagination.html.twig', { 'list': invoices, 'url': 'invoice' }) }}
 {% endblock %}

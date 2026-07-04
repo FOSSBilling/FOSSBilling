@@ -1,25 +1,223 @@
-{% set products = guest.product_get_list %}
-<div class="accordion-item">
+{% set categories = guest.product_category_get_list.list %}
+{% set cart = guest.cart_get %}
+{% set cart_currency = guest.cart_get_currency %}
+{% set domain_category = null %}
+{% set hosting_category = null %}
+{% set m365_category = null %}
+{% for cat in categories %}
+    {% for p in cat.products %}
+        {% if p.type == 'domain' and domain_category is null %}{% set domain_category = cat %}{% endif %}
+        {% if p.type starts with 'hosting' and hosting_category is null %}{% set hosting_category = cat %}{% endif %}
+        {% if cat.title starts with 'Microsoft' and m365_category is null %}{% set m365_category = cat %}{% endif %}
+    {% endfor %}
+{% endfor %}
+
+<div class="accordion-item tn-catalog" id="tn-catalog-item">
     <h3 class="accordion-header">
         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#products" aria-expanded="false" aria-controls="products">
             <svg class="icon me-2"><use href="#apps" /></svg>
-            <span>{{ 'Select Product'|trans }}</span>&nbsp;<span class="badge bg-info">{{ products.list|length }} {{ 'Items'|trans }}</span>
+            <span>{{ 'Select Product'|trans }}</span>&nbsp;<span class="badge bg-info">{{ guest.product_get_list.list|length }} {{ 'Items'|trans }}</span>
         </button>
     </h3>
     <div id="products" class="accordion-collapse collapse" data-bs-parent="#orderManager">
         <div class="accordion-body">
-            {% for i, category in guest.product_category_get_list.list %}
-                <h4 {% if i > 0 %} class="mt-3" {% endif %}>{{ category.title }}</h4>
-                <span>{{ (category.description ?? '')|markdown_to_html }}</span>
-                <div class="list-group">
-                    {% for i, product in category.products|sort((a, b) => a.priority <=> b.priority) %}
-                        <a class="list-group-item" href="{{ 'order'|url(query: { 'product': product.id, 'show_custom_form_values': request.show_custom_form_values }) }}">
-                            {{ product.title }}
-                            <svg class="icon"><use href="#arrow-right" /></svg>
-                        </a>
-                    {% endfor %}
+
+            <div class="tn-catalog__header mb-4">
+                <span class="tn-eyebrow">{{ 'Store'|trans }}</span>
+                <h1 class="tn-catalog__title">{{ 'Add to your stack'|trans }}</h1>
+                <p class="tn-catalog__sub text-muted">{{ 'Domains, hosting and Microsoft 365 — one cart, one invoice, prices in %currency%.'|trans({'%currency%': cart_currency.code}) }}</p>
+            </div>
+
+            <div class="tn-tabchip-row mb-4" role="tablist">
+                {% if domain_category %}
+                <button type="button" class="tn-tabchip" data-tn-tab="domains" data-active="true">
+                    <svg class="icon"><use href="#globe" /></svg> {{ 'Domains'|trans }}
+                </button>
+                {% endif %}
+                {% if hosting_category %}
+                <button type="button" class="tn-tabchip" data-tn-tab="hosting" {% if not domain_category %}data-active="true"{% endif %}>
+                    <svg class="icon"><use href="#server" /></svg> {{ hosting_category.title }}
+                </button>
+                {% endif %}
+                {% if m365_category %}
+                <button type="button" class="tn-tabchip" data-tn-tab="m365" {% if not domain_category and not hosting_category %}data-active="true"{% endif %}>
+                    <svg class="icon"><use href="#briefcase" /></svg> {{ m365_category.title }}
+                </button>
+                {% endif %}
+            </div>
+
+            <div class="tn-catalog__layout">
+                <div class="tn-catalog__main">
+
+                    {# ---------------- DOMAINS PANEL ---------------- #}
+                    {% if domain_category %}
+                    <div class="tn-tabpanel" data-tn-panel="domains" {% if not domain_category %}hidden{% endif %}>
+                        <div class="tn-input-wrap tn-domain-search mb-3">
+                            <span class="tn-input__prefix"><svg class="icon"><use href="#search" /></svg></span>
+                            <input type="text" id="tn-domain-sld" class="tn-input font-mono" style="--_pl:36px; --_pr:80px;" placeholder="{{ 'yourbusiness'|trans }}" autocomplete="off">
+                            <span class="tn-input__suffix font-mono text-faint" id="tn-domain-tld-suffix">.com</span>
+                        </div>
+                        <div class="d-flex justify-content-end mb-3">
+                            <button type="button" class="tn-btn tn-btn--primary tn-btn--md" id="tn-domain-search-btn">
+                                {{ 'Search'|trans }}
+                            </button>
+                        </div>
+
+                        {% set tlds = guest.extension_is_on({'mod':'servicedomain'}) ? guest.servicedomain_tlds({'allow_register': true}) : [] %}
+                        <div class="tn-tld-strip mb-4" id="tn-tld-strip">
+                            {% for t in tlds|slice(0, 6) %}
+                                <span class="tn-tld-chip" data-tld="{{ t.tld starts with '.' ? t.tld : '.' ~ t.tld }}" data-price="{{ t.price_registration }}">
+                                    <span class="font-mono tn-tld-chip__ext">{{ t.tld starts with '.' ? t.tld : '.' ~ t.tld }}</span>
+                                    <span class="font-mono text-muted tn-tld-chip__price">{{ (t.price_registration * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}/yr</span>
+                                </span>
+                            {% endfor %}
+                            {% if tlds|length > 6 %}
+                                <span class="tn-tld-chip tn-tld-chip--more">{{ 'All %count% extensions'|trans({'%count%': tlds|length}) }} <svg class="icon"><use href="#chevron-right" /></svg></span>
+                            {% endif %}
+                        </div>
+
+                        <div id="tn-domain-hit-wrap"></div>
+                        <div id="tn-domain-alt-wrap"></div>
+
+                        <div class="tn-transfer-cta mt-4">
+                            <svg class="icon"><use href="#arrow-right-left" /></svg>
+                            <span>{{ 'Already own a domain? Transfer it to Tenant Ninja and manage everything here.'|trans }}</span>
+                            <a href="{{ ('order'|url(query: { 'product': domain_category.products|first ? domain_category.products|first.id : '' })) }}" class="tn-transfer-cta__link">{{ 'Start transfer'|trans }} <svg class="icon"><use href="#arrow-right" /></svg></a>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {# ---------------- HOSTING PANEL ---------------- #}
+                    {% if hosting_category %}
+                    <div class="tn-tabpanel" data-tn-panel="hosting" {% if domain_category %}hidden{% endif %}>
+                        <div class="tn-plan-grid">
+                            {% for product in hosting_category.products|sort((a, b) => a.priority <=> b.priority) %}
+                                {% set is_middle = loop.index0 == 1 and hosting_category.products|length == 3 %}
+                                <div class="tn-plan-card{% if is_middle %} tn-plan-card--popular{% endif %}">
+                                    {% if is_middle %}<span class="tn-plan-card__badge">{{ 'MOST POPULAR'|trans }}</span>{% endif %}
+                                    <h3 class="tn-plan-card__name">{{ product.title }}</h3>
+                                    {% if product.description %}
+                                        <p class="tn-plan-card__desc text-muted small">{{ product.description|striptags|trim|truncate(90) }}</p>
+                                    {% endif %}
+                                    {% set pricing = product.pricing %}
+                                    {% set monthly_price = pricing.recurrent.month.price is defined ? pricing.recurrent.month.price : (pricing.recurrent|first).price|default(0) %}
+                                    <div class="tn-plan-card__price">
+                                        <span class="font-mono">{{ cart_currency.code }}</span> {{ (monthly_price * cart_currency.conversion_rate)|number_format(0) }}<span class="text-faint">/mo</span>
+                                    </div>
+                                    <a href="{{ 'order'|url(query: { 'product': product.id }) }}" class="tn-btn {% if is_middle %}tn-btn--primary{% else %}tn-btn--secondary{% endif %} tn-btn--md tn-btn--block mt-3">
+                                        {{ 'Choose'|trans }} {{ product.title }}
+                                    </a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {# ---------------- M365 PANEL ---------------- #}
+                    {% if m365_category %}
+                    <div class="tn-tabpanel" data-tn-panel="m365" {% if domain_category or hosting_category %}hidden{% endif %}>
+                        <div class="tn-m365-list">
+                            {% for product in m365_category.products|sort((a, b) => a.priority <=> b.priority) %}
+                                {% set pricing = product.pricing %}
+                                {% set is_popular = loop.index0 == 1 %}
+                                <div class="tn-m365-row{% if is_popular %} tn-m365-row--popular{% endif %}">
+                                    {% if is_popular %}<span class="tn-badge tn-badge--accent tn-m365-row__badge">{{ 'MOST POPULAR'|trans }}</span>{% endif %}
+                                    <div class="tn-m365-row__body">
+                                        <span class="tn-m365-row__name">{{ product.title }}</span>
+                                        {% if product.description %}
+                                            <span class="tn-m365-row__desc text-muted small">{{ product.description|striptags|trim|truncate(80) }}</span>
+                                        {% endif %}
+                                        <span class="tn-m365-row__note">
+                                            <svg class="icon"><use href="#badge-check" /></svg>
+                                            {{ 'Licensed via Tenant Ninja CSP — seat changes take effect same-day'|trans }}
+                                        </span>
+                                    </div>
+                                    <div class="tn-m365-row__price">
+                                        {% if pricing.recurrent is defined and pricing.recurrent|length > 0 %}
+                                            {% set p = pricing.recurrent|first %}
+                                            <span class="font-mono">{{ cart_currency.code }}</span> {{ (p.price * cart_currency.conversion_rate)|number_format(0) }}<span class="text-faint">{% if product.allow_quantity_select %}/user{% endif %}/mo</span>
+                                        {% endif %}
+                                    </div>
+                                    <a href="{{ 'order'|url(query: { 'product': product.id }) }}" class="tn-btn tn-btn--secondary tn-btn--sm">
+                                        {{ product.allow_quantity_select ? 'Add seats'|trans : 'Add'|trans }}
+                                    </a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <div class="tn-info-banner mt-3">
+                            <svg class="icon"><use href="#info" /></svg>
+                            <span>{{ 'Moving from another CSP? We migrate tenants and mailboxes free on Standard and Premium.'|trans }}</span>
+                            <a href="{{ 'support'|url }}">{{ 'Talk to us'|trans }}</a>
+                        </div>
+                    </div>
+                    {% endif %}
+
                 </div>
-            {% endfor %}
+
+                {# ---------------- CART RAIL ---------------- #}
+                <div class="tn-cart-rail d-none d-lg-block">
+                    <div class="tn-card tn-card--compact">
+                        <div class="tn-card__header">
+                            <span class="tn-card__title">{{ 'Cart'|trans }}</span>
+                            <span class="tn-badge tn-badge--accent">{{ cart.items|length }}</span>
+                        </div>
+                        {% if cart.items %}
+                            <div class="tn-cart-list mb-3">
+                                {% for i, item in cart.items %}
+                                    <div class="tn-cart-item">
+                                        <div class="tn-cart-item__body">
+                                            <span class="tn-cart-item__title font-mono">
+                                                {{ item.title }}
+                                                {% if item.quantity > 1 %}&times; {{ item.quantity }}{% endif %}
+                                            </span>
+                                            {% if item.period %}<span class="tn-cart-item__meta text-muted small">{{ item.period|period_title }}</span>{% endif %}
+                                        </div>
+                                        <div class="tn-cart-item__price font-mono">
+                                            {{ (item.total * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}
+                                        </div>
+                                        <a class="tn-iconbtn tn-iconbtn--sm" title="{{ 'Remove item'|trans }}"
+                                           {{ fb_api_link({href: 'cart/remove_item'|api_url(query: {id: item.id}, role: 'guest'), modal: {type: 'confirm', title: 'Are you sure?'|trans, content: 'Are you sure you want to remove this item from cart?'|trans}, reload: true}) }}>
+                                            <svg class="icon"><use href="#x" /></svg>
+                                        </a>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            {% set tax_amount = 0 %}
+                            {% if client and client.client_is_taxable %}
+                                {% set tax_rate = client.invoice_get_tax_rate %}
+                                {% set tax_amount = cart.total * tax_rate / 100 %}
+                            {% endif %}
+                            <div class="tn-kv-row"><span class="tn-kv-row__key">{{ 'Subtotal'|trans }}</span><span class="tn-kv-row__value font-mono">{{ (cart.subtotal * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</span></div>
+                            {% if tax_amount %}
+                                <div class="tn-kv-row"><span class="tn-kv-row__key">{{ 'VAT'|trans }} ({{ tax_rate }}%)</span><span class="tn-kv-row__value font-mono">{{ (tax_amount * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</span></div>
+                            {% endif %}
+                            <div class="tn-kv-row tn-kv-row--total"><span class="tn-kv-row__key">{{ 'Total'|trans }}</span><span class="tn-kv-row__value font-mono">{{ ((cart.total + tax_amount) * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</span></div>
+                            <a href="#checkout" class="tn-btn tn-btn--primary tn-btn--block mt-3" onclick="document.querySelector('[data-bs-target=%23checkout]')?.click();return false;">{{ 'Checkout'|trans }}</a>
+                            {% if client %}
+                                <div class="text-muted small mt-2">{{ 'Account balance'|trans }}: {{ client.client_balance_get_total|format_currency(cart_currency.code) }}</div>
+                            {% endif %}
+                        {% else %}
+                            <p class="text-muted small mb-0">{{ 'Your cart is empty. Search for a domain or pick a plan to get started.'|trans }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if cart.items %}
+                <div class="tn-cart-stickybar d-lg-none">
+                    <span class="font-mono">{{ cart.items|length }} {{ 'items'|trans }}</span>
+                    <span class="font-mono">{{ (cart.total * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</span>
+                    <a href="#checkout" class="tn-btn tn-btn--primary tn-btn--sm" onclick="document.querySelector('[data-bs-target=%23checkout]')?.click();return false;">{{ 'Checkout'|trans }}</a>
+                </div>
+                {% endif %}
+            </div>
+
         </div>
     </div>
 </div>
+
+<script>
+window.TN_CATALOG_CONFIG = {
+    domainProductId: {{ domain_category and domain_category.products|first ? domain_category.products|first.id : 'null' }}
+};
+</script>
+{{ include('mod_orderbutton_catalog_js.html.twig') }}

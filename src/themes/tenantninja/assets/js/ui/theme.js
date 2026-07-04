@@ -32,6 +32,10 @@ export default function initTheme() {
       if (!theme) {
         return;
       }
+      // The click swaps which toggle icon is visible (.hide-theme-light/-dark),
+      // so any tooltip open on this trigger would otherwise be left orphaned
+      // mid-fade with its anchor gone - hide it before switching.
+      globalThis.bootstrap?.Tooltip.getInstance(el)?.hide();
       try { localStorage.setItem(STORAGE_KEY, theme); } catch { /* private mode etc. */ }
       document.documentElement.setAttribute('data-bs-theme', theme);
     });

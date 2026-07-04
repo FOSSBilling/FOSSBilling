@@ -23,7 +23,7 @@
                             <div class="input-group domain-input-group">
                                 <input class="form-control form-control-sm" type="text" name="register_sld"
                                     value="{{ request.register_sld }}"
-                                    placeholder="{{ 'Enter new domain name to register'|trans }}">
+                                    placeholder="{{ 'Enter domain name'|trans }}">
                                 <select class="form-select form-select-sm domain-tld-select" name="register_tld">
                                     {% for tld in tlds %}
                                         <option value="{{ tld.tld }}" label="{{ tld.tld }}">{{ tld.tld }}</option>
@@ -73,7 +73,7 @@
                             <div class="input-group domain-input-group">
                                 <input class="form-control form-control-sm" type="text" name="transfer_sld"
                                        value="{{ request.transfer_sld }}"
-                                       placeholder="{{ 'Enter your domain name to transfer'|trans }}">
+                                       placeholder="{{ 'Enter domain name'|trans }}">
                                 <select class="form-select form-select-sm domain-tld-select" name="transfer_tld">
                                     {% for tld in transfer_tlds %}
                                         <option value="{{ tld.tld }}" label="{{ tld.tld }}">{{ tld.tld }}</option>

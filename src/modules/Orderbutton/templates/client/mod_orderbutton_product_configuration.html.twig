@@ -12,94 +12,220 @@
     <div id="order" class="accordion-collapse collapse {% if product %}show{%endif%}" data-bs-parent="#orderManager">
         <div class="accordion-body">
             <div class="accordion-inner">
+
+                <div class="tn-stepper mb-4">
+                    <div class="tn-stepper__step tn-stepper__step--done">
+                        <span class="tn-stepper__dot"><svg class="icon"><use href="#check" /></svg></span>
+                        <span class="tn-stepper__label">{{ 'Plan'|trans }}</span>
+                    </div>
+                    <div class="tn-stepper__line tn-stepper__line--done"></div>
+                    <div class="tn-stepper__step tn-stepper__step--current">
+                        <span class="tn-stepper__dot">2</span>
+                        <span class="tn-stepper__label">{{ 'Configure'|trans }}</span>
+                    </div>
+                    <div class="tn-stepper__line"></div>
+                    <div class="tn-stepper__step">
+                        <span class="tn-stepper__dot">3</span>
+                        <span class="tn-stepper__label">{{ 'Checkout'|trans }}</span>
+                    </div>
+                </div>
+
                 <form method="post" action="{{ 'cart/add_item'|api_url(role: 'guest') }}" style="background:none;" class="form-{{ product.form_id ? guest.formbuilder_get( {"id":product.form_id}).style.type : 0 }}"
                     {{ fb_api_form({message: 'Product Added to Shopping Cart'|trans, redirect: ('order'|url(query: { 'checkout' : 1 }) ~ (request.show_custom_form_values ? '&show_custom_form_values=1' : ''))}) }}>
-                    {% set product_details %}
-                        <div class="well">
-                            <h3>{{ product.title }}</h3>
-                            {% if product.description %}
-                                {{ (product.description ?? '')|markdown_to_html }}
-                            {% endif %}
 
-                            {% if product.pricing.type is defined %}
-                                <hr>
+                    <div class="tn-configure-layout">
+                        <div class="tn-configure-layout__main">
 
-                                <h4 class="mt-4 mb-1"><strong>{{ 'Billing'|trans }}</strong></h4>
+                            {% set product_details %}
+                                <div class="tn-card tn-card--compact mb-3">
+                                    <h3 class="mb-1">{{ product.title }}</h3>
+                                    {% if product.description %}
+                                        <div class="text-muted mb-3">{{ (product.description ?? '')|markdown_to_html }}</div>
+                                    {% endif %}
 
-                                <div class="row">
-                                    <div class="col-12 col-md-4 col-xl-3">
+                                    {% set cart_currency = guest.cart_get_currency %}
+                                    {% if product.pricing.type is defined %}
                                         {% if product.pricing.type == 'recurrent' %}
-                                        <span>{{ 'Billing Cycle'|trans }}</span>
-                                        {% else %}
-                                        <span>{{ 'One-time payment'|trans }}</span>
-                                        {% endif %}
-                                    </div>
-                                    <div class="col">
-                                        {% set cart_currency = guest.cart_get_currency %}
-                                        {% if product.pricing.type == 'recurrent' %}
-                                        {% set periods = guest.system_periods %}
-                                        <select class="form-select" name="period" id="period-selector">
-                                            {% for code,prices in product.pricing.recurrent %}
-                                                {% if prices.enabled %}
-                                                    <option value="{{ code }}"{% if request.period == code %} selected="selected"{% endif %}>{{ (prices.price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }} ({{ periods[code] }})</option>
-                                                {% endif %}
-                                            {% endfor %}
-                                        </select>
+                                            {% set periods = guest.system_periods %}
+                                            <div class="mb-3">
+                                                <h4 class="tn-configure-section__title">{{ 'Billing cycle'|trans }}</h4>
+                                                <div class="tn-cycle-row" id="tn-cycle-row">
+                                                    {% for code,prices in product.pricing.recurrent %}
+                                                        {% if prices.enabled %}
+                                                            {% set converted_price = prices.price * cart_currency.conversion_rate %}
+                                                            <label class="tn-cycle-card{% if request.period == code or (not request.period and loop.first) %} tn-cycle-card--selected{% endif %}" data-price="{{ converted_price }}">
+                                                                <input type="radio" name="period" value="{{ code }}" class="tn-cycle-card__input" {% if request.period == code or (not request.period and loop.first) %}checked{% endif %}>
+                                                                <span class="tn-cycle-card__label">{{ periods[code] }}</span>
+                                                                <span class="tn-cycle-card__price font-mono">{{ converted_price|format_currency(cart_currency.code) }}</span>
+                                                            </label>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
                                         {% elseif product.pricing.type == 'free' %}
-                                        <span class="badge text-bg-success">{{ 0|format_currency(cart_currency.code) }}</span>
+                                            <div class="tn-kv-row">
+                                                <span class="tn-kv-row__key">{{ 'One-time payment'|trans }}</span>
+                                                <span class="tn-kv-row__value"><span class="tn-badge tn-badge--success">{{ 0|format_currency(cart_currency.code) }}</span></span>
+                                            </div>
                                         {% else %}
-                                        <span class="badge text-bg-success">{{ (product.pricing.once.price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</span>
+                                            <div class="tn-kv-row">
+                                                <span class="tn-kv-row__key">{{ 'One-time payment'|trans }}</span>
+                                                <span class="tn-kv-row__value"><span class="tn-badge tn-badge--success" data-price="{{ product.pricing.once.price * cart_currency.conversion_rate }}">{{ (product.pricing.once.price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</span></span>
+                                            </div>
                                         {% endif %}
-                                    </div>
+                                    {% endif %}
+                                    {% if product.allow_quantity_select %}
+                                        <div class="tn-kv-row">
+                                            <span class="tn-kv-row__key">{{ 'Quantity'|trans }}</span>
+                                            <span class="tn-kv-row__value">
+                                                <input
+                                                    type="number"
+                                                    name="quantity"
+                                                    id="tn-quantity-input"
+                                                    value="1"
+                                                    min="1"
+                                                    {% if product.stock_control %}max="{{ product.quantity_in_stock }}"{% endif %}
+                                                    class="tn-input tn-input--sm"
+                                                    style="width:90px; text-align:right;"
+                                                >
+                                            </span>
+                                        </div>
+                                    {% endif %}
                                 </div>
+                            {% endset %}
+
+                            {% set tpl = "mod_service"~product.type~"_order_form.html.twig" %}
+                            {% if guest.system_template_exists({"file":tpl}) %}
+                                <div class="mb-3">
+                                    <h3>{{ product.title }}</h3>
+                                    {% if product.description %}
+                                        {{ (product.description ?? '')|markdown_to_html }}
+                                    {% endif %}
+                                </div>
+                                {{ include(tpl, product) }}
+                            {% elseif product.form_id and guest.extension_is_on({"mod":"formbuilder"}) %}
+                                {{ product_details }}
+                                {% set form = guest.formbuilder_get({"id":product.form_id}) %}
+                                {{ include('mod_formbuilder_build.html.twig', product) }}
+                            {% else %}
+                                {{ product_details }}
                             {% endif %}
-                            {% if product.allow_quantity_select %}
-                            <div class="row mt-3">
-                                <div class="col-12 col-md-4 col-xl-3">
-                                    <span>{{ 'Quantity'|trans }}</span>
+
+                            {% if product.addons is defined and product.addons|length > 0 %}
+                                <h4 class="tn-configure-section__title mt-3">{{ 'Extras'|trans }}</h4>
+                            {% endif %}
+                            {{ include('mod_orderbutton_addons.html.twig', product) }}
+
+                        </div>
+
+                        <div class="tn-configure-layout__rail">
+                            <div class="tn-card tn-card--compact" id="tn-config-summary">
+                                <div class="tn-card__header">
+                                    <span class="tn-card__title">{{ 'Order summary'|trans }}</span>
                                 </div>
-                                <div class="col">
-                                    <input
-                                        type="number"
-                                        name="quantity"
-                                        value="1"
-                                        min="1"
-                                        {% if product.stock_control %}max="{{ product.quantity_in_stock }}"{% endif %}
-                                        class="form-control w-50 product-quantity-input"
-                                    >
+                                <div class="tn-kv-row">
+                                    <span class="tn-kv-row__key">{{ product.title }}</span>
+                                    <span class="tn-kv-row__value font-mono" id="tn-config-summary-base"></span>
                                 </div>
+                                <div id="tn-config-summary-addons"></div>
+                                <div class="tn-kv-row tn-kv-row--total">
+                                    <span class="tn-kv-row__key">{{ 'Estimated total'|trans }}</span>
+                                    <span class="tn-kv-row__value font-mono" id="tn-config-summary-total"></span>
+                                </div>
+                                <p class="text-muted small mt-2 mb-3">{{ 'Final total, taxes and any promo codes are calculated at checkout.'|trans }}</p>
+                                <button type="submit" class="tn-btn tn-btn--primary tn-btn--md tn-btn--block" id="config-next">
+                                    {{ 'Continue to checkout'|trans }}
+                                    <svg class="icon"><use href="#arrow-right" /></svg>
+                                </button>
                             </div>
-                            {% endif %}
                         </div>
-                    {% endset %}
-
-                    {% set tpl = "mod_service"~product.type~"_order_form.html.twig" %}
-                    {% if guest.system_template_exists({"file":tpl}) %}
-                        <div class="mb-3">
-                            <h3>{{ product.title }}</h3>
-                            {% if product.description %}
-                                {{ (product.description ?? '')|markdown_to_html }}
-                            {% endif %}
-                        </div>
-                        {{ include(tpl, product) }}
-                    {% elseif product.form_id and guest.extension_is_on({"mod":"formbuilder"}) %}
-                        {{ product_details }}
-                        {% set form = guest.formbuilder_get({"id":product.form_id}) %}
-                        {{ include('mod_formbuilder_build.html.twig', product) }}
-                    {% else %}
-                        {{ product_details }}
-                    {% endif %}
-
-                    {{ include('mod_orderbutton_addons.html.twig', product) }}
+                    </div>
 
                     <input type="hidden" name="multiple" value="1" />
                     <input type="hidden" name="id" value="{{ product.id }}" />
-                    <div class="mt-2 mb-0">
-                        <button type="submit" class="btn btn-primary" id="config-next">{{ 'Next'|trans }}</button>
-                    </div>
                 </form>
             </div>
         </div>
     </div>
     {% endif %}
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const summaryEl = document.getElementById('tn-config-summary');
+    if (!summaryEl) { return; }
+
+    const cycleRow = document.getElementById('tn-cycle-row');
+    const quantityInput = document.getElementById('tn-quantity-input');
+    const baseEl = document.getElementById('tn-config-summary-base');
+    const addonsEl = document.getElementById('tn-config-summary-addons');
+    const totalEl = document.getElementById('tn-config-summary-total');
+    const currencyCode = {{ (guest.cart_get_currency.code)|json_encode|raw }};
+
+    function formatMoney(v) {
+        return currencyCode + ' ' + v.toFixed(2);
+    }
+
+    function selectedCyclePrice() {
+        if (cycleRow) {
+            const checked = cycleRow.querySelector('input[type="radio"]:checked');
+            const card = checked ? checked.closest('.tn-cycle-card') : null;
+            if (card) { return parseFloat(card.dataset.price) || 0; }
+        }
+        const onceBadge = summaryEl.closest('.tn-configure-layout')?.querySelector('.tn-badge[data-price]');
+        return onceBadge ? parseFloat(onceBadge.dataset.price) || 0 : 0;
+    }
+
+    function selectedAddonsTotal() {
+        let total = 0;
+        addonsEl.innerHTML = '';
+        document.querySelectorAll('.tn-addon-row').forEach(function (row) {
+            const onRadio = row.querySelector('input[type="radio"][value="1"]');
+            if (!onRadio || !onRadio.checked) { return; }
+            const select = row.querySelector('select');
+            let price = 0;
+            let label = row.querySelector('.tn-addon-row__title')?.textContent.trim() || '';
+            if (select && select.selectedOptions.length) {
+                const match = select.selectedOptions[0].textContent.match(/[\d.]+/);
+                price = match ? parseFloat(match[0]) : 0;
+            } else {
+                const badge = row.querySelector('.badge');
+                if (badge) {
+                    const match = badge.textContent.match(/[\d.]+/);
+                    price = match ? parseFloat(match[0]) : 0;
+                }
+            }
+            total += price;
+            const line = document.createElement('div');
+            line.className = 'tn-kv-row';
+            line.innerHTML = '<span class="tn-kv-row__key">' + label + '</span><span class="tn-kv-row__value font-mono">' + formatMoney(price) + '</span>';
+            addonsEl.appendChild(line);
+        });
+        return total;
+    }
+
+    function recompute() {
+        const qty = quantityInput ? (parseInt(quantityInput.value, 10) || 1) : 1;
+        const base = selectedCyclePrice() * qty;
+        baseEl.textContent = formatMoney(base);
+        const addonsTotal = selectedAddonsTotal();
+        totalEl.textContent = formatMoney(base + addonsTotal);
+    }
+
+    if (cycleRow) {
+        cycleRow.querySelectorAll('.tn-cycle-card').forEach(function (card) {
+            card.addEventListener('click', function () {
+                cycleRow.querySelectorAll('.tn-cycle-card').forEach(function (c) { c.classList.remove('tn-cycle-card--selected'); });
+                card.classList.add('tn-cycle-card--selected');
+                recompute();
+            });
+        });
+    }
+    quantityInput?.addEventListener('input', recompute);
+    document.getElementById('order')?.addEventListener('change', function (e) {
+        if (e.target.closest('.tn-addon-row')) { recompute(); }
+    });
+
+    recompute();
+});
+</script>

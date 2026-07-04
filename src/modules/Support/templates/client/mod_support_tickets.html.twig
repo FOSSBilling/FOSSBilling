@@ -14,66 +14,95 @@
 {% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-12">
-        <div class="card mb-4">
-            <div class="card-header py-3 py-3">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h1 class="mb-1">{{ 'Support Tickets'|trans }}</h1>
-                        <span class="mt-1 small text-secondary">{{ 'Need an answer? We are here to help!'|trans }}</span>
-                    </div>
-                    <div>
-                        <button type="button" class="ml-2 btn btn-primary" data-bs-toggle="modal" data-bs-target="#open-ticket-modal">{{ 'New Ticket'|trans }}</button>
-                    </div>
-                </div>
-            </div>
-            <div class="card-body table-responsive">
-                {% set tickets = client.support_ticket_get_list({"per_page":10, "page":request.page, "deep": 0, "include_first": 0}) %}
-                {% if tickets.list %}
-                <table class="table table-striped table-bordered table-hover">
-                    <thead>
-                    <tr>
-                        <th>{{ 'ID'|trans }}</th>
-                        <th>{{ 'Subject'|trans }}</th>
-                        <th>{{ 'Help Desk'|trans }}</th>
-                        <th>{{ 'Status'|trans }}</th>
-                        <th>{{ 'Submitted'|trans }}</th>
-                        <th>{{ 'Actions'|trans }}</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {% for i, ticket in tickets.list %}
-                        <tr>
-                            <td>#{{ticket.id}}</td>
-                            <td><a href='{{ "support/ticket/#{ticket.id}"|url }}'>{{ ticket.subject|truncate(40) }}</a></td>
-                            <td>{{ ticket.helpdesk.name }}</td>
-                            <td>
-                                {{ mf.status_badge(ticket.status, 'ticket') }}
-                            </td>
-                            <td>{{ ticket.created_at|timeago }} {{ 'ago'|trans }}</td>
-                            <td class="actions">
-                                {% if ticket.status == 'closed' %}
-                                    <a href='{{ "support/ticket/#{ticket.id}"|url }}' class="btn btn-sm btn-outline-secondary">{{ 'View'|trans }}</a>
-                                {% else %}
-                                    <a href='{{ "support/ticket/#{ticket.id}"|url }}#reply-to' class="btn btn-sm btn-outline-info">{{ 'Reply'|trans }}</a>
-                                {% endif %}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-                {{ include('partial_pagination.html.twig', { 'list': tickets, 'url': 'support' }) }}
-                {% else %}
-                    <div class="d-flex justify-content-center my-2 py-4">
-                        <span class="blockquote m-0">{{ 'No Support Tickets'|trans }}</span>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
+{% set status_filter = request.status|default('') %}
+{% set counts = {
+    'all': client.support_ticket_get_list({ 'per_page': 1 }).total,
+    'open': client.support_ticket_get_list({ 'per_page': 1, 'status': 'open' }).total,
+    'on_hold': client.support_ticket_get_list({ 'per_page': 1, 'status': 'on_hold' }).total,
+    'closed': client.support_ticket_get_list({ 'per_page': 1, 'status': 'closed' }).total,
+} %}
+{% set tickets = client.support_ticket_get_list({ 'per_page': 10, 'page': request.page, 'deep': 0, 'include_first': 0, 'status': status_filter ?: null }) %}
+{% set kb_articles = guest.support_kb_suggestions_enabled({ 'area': 'ticket' }) ? guest.support_kb_article_get_list({ 'per_page': 5 }).list : [] %}
+
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+    <div>
+        <h1 class="mb-1">{{ 'Support'|trans }}</h1>
+        <span class="text-muted">{{ 'Get help or track your open tickets.'|trans }}</span>
     </div>
+    <button type="button" class="tn-btn tn-btn--primary tn-btn--md" data-bs-toggle="modal" data-bs-target="#open-ticket-modal">
+        <svg class="icon"><use href="#plus" /></svg>
+        {{ 'New ticket'|trans }}
+    </button>
 </div>
 
+<div class="d-flex align-items-start gap-4 flex-wrap">
+    <div class="flex-grow-1" style="min-width: 320px;">
+        <div class="d-flex gap-2 flex-wrap mb-3">
+            <a href="{{ 'support'|url }}" class="tn-tabchip" data-active="{{ status_filter == '' ? 'true' : 'false' }}">
+                {{ 'All'|trans }} <span class="tn-tabchip__count">{{ counts.all }}</span>
+            </a>
+            <a href="{{ 'support'|url({ 'status': 'open' }) }}" class="tn-tabchip" data-active="{{ status_filter == 'open' ? 'true' : 'false' }}">
+                {{ 'Open'|trans }} <span class="tn-tabchip__count">{{ counts.open }}</span>
+            </a>
+            <a href="{{ 'support'|url({ 'status': 'on_hold' }) }}" class="tn-tabchip" data-active="{{ status_filter == 'on_hold' ? 'true' : 'false' }}">
+                {{ 'Waiting on you'|trans }} <span class="tn-tabchip__count">{{ counts.on_hold }}</span>
+            </a>
+            <a href="{{ 'support'|url({ 'status': 'closed' }) }}" class="tn-tabchip" data-active="{{ status_filter == 'closed' ? 'true' : 'false' }}">
+                {{ 'Closed'|trans }} <span class="tn-tabchip__count">{{ counts.closed }}</span>
+            </a>
+        </div>
+
+        <div class="tn-card tn-card--compact">
+            {% if tickets.list %}
+                <div class="d-flex flex-column">
+                {% for i, ticket in tickets.list %}
+                    <a href='{{ "support/ticket/#{ticket.id}"|url }}{{ ticket.status != "closed" ? "#reply-to" : "" }}' class="tn-kv-row tn-row-hover text-decoration-none px-2">
+                        <div class="d-flex flex-column min-width-0">
+                            <span class="fw-semibold text-body">{{ ticket.subject|truncate(60) }}</span>
+                            <span class="text-muted fs-7">
+                                #{{ ticket.id }} &middot; {{ ticket.helpdesk.name }} &middot; {{ ticket.created_at|timeago }} {{ 'ago'|trans }}
+                            </span>
+                        </div>
+                        <div class="d-flex align-items-center gap-3 flex-shrink-0">
+                            {{ mf.status_badge(ticket.status, 'ticket') }}
+                        </div>
+                    </a>
+                {% endfor %}
+                </div>
+                {{ include('partial_pagination.html.twig', { 'list': tickets, 'url': 'support' }) }}
+            {% else %}
+                <div class="d-flex justify-content-center my-2 py-4">
+                    <span class="blockquote m-0">{{ 'No Support Tickets'|trans }}</span>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if kb_articles is not empty %}
+        <div style="width: 330px; flex-shrink: 0;">
+            <div class="tn-card tn-card--compact">
+                <div class="tn-card__header">
+                    <div>
+                        <div class="tn-card__title">{{ 'Before you write in…'|trans }}</div>
+                        <div class="tn-card__subtitle">{{ 'Check these first:'|trans }}</div>
+                    </div>
+                </div>
+                <div class="d-flex flex-column">
+                    {% for article in kb_articles %}
+                        <a href='{{ "support/kb/#{article.category.slug}/#{article.slug}"|url }}' class="tn-kv-row tn-row-hover text-decoration-none px-2">
+                            <div class="d-flex align-items-center gap-2 min-width-0">
+                                <svg class="icon flex-shrink-0"><use href="#book-open" /></svg>
+                                <span class="text-body text-truncate">{{ article.title }}</span>
+                            </div>
+                            <svg class="icon flex-shrink-0 text-muted"><use href="#chevron-right" /></svg>
+                        </a>
+                    {% endfor %}
+                </div>
+                <a href="{{ 'support/kb'|url }}" class="tn-btn tn-btn--secondary tn-btn--sm tn-btn--block mt-3">{{ 'Browse knowledge base'|trans }}</a>
+            </div>
+        </div>
+    {% endif %}
+</div>
 
 <div class="modal modal-lg fade" id="open-ticket-modal" tabindex="-1" aria-labelledby="open-ticket-modal" aria-hidden="true">
     <div class="modal-dialog">
