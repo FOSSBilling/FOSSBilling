@@ -338,7 +338,6 @@ test('group get list', function (): void {
 
     $result = $api->group_get_list([]);
     expect(array_column($result['list'], 'name'))->toEqual(['Root', 'Child', 'Grandchild', 'Sibling']);
-    expect($result)->toHaveKey('list');
     expect($result)->not->toHaveKey('total');
 });
 
