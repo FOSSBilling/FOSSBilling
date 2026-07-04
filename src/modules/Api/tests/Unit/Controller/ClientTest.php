@@ -77,6 +77,19 @@ class ClientTestUpdateFinalizationDouble
     }
 }
 
+class ClientTestUrlDouble
+{
+    public function link(string $path): string
+    {
+        return 'https://client.example.test/' . ltrim($path, '/');
+    }
+
+    public function adminLink(string $path): string
+    {
+        return 'https://admin.example.test/' . ltrim($path, '/');
+    }
+}
+
 class TestableClient extends Client
 {
     public bool $hasValidSession = false;
@@ -144,10 +157,11 @@ class TestableClient extends Client
     }
 }
 
-function invokeApiCall(TestableClient $controller, string $role, string $class, string $method, array $params): void
+function invokeApiCall(TestableClient $controller, string $role, string $class, string $method, array $params): mixed
 {
     $reflection = new ReflectionMethod(Client::class, '_apiCall');
-    $reflection->invoke($controller, $role, $class, $method, $params);
+
+    return $reflection->invoke($controller, $role, $class, $method, $params);
 }
 
 function createTestController(array $sessionData = [], ?object $api = null, mixed $dispatcherResult = ['ok' => true]): array
@@ -167,6 +181,7 @@ function createTestController(array $sessionData = [], ?object $api = null, mixe
     $di['update_finalization'] = new ClientTestUpdateFinalizationDouble();
     $di['api_identity'] = $di->protect(fn (string $role): object => $api);
     $di['api_dispatcher'] = new ClientTestApiDispatcherDouble($dispatcherResult);
+    $di['url'] = new ClientTestUrlDouble();
 
     $controller = new TestableClient();
     $controller->setDi($di);
@@ -294,4 +309,14 @@ test('raw response bypasses JSON rendering', function (): void {
     expect($controller->sentResponse)->toBe($response);
     expect($controller->renderedData)->toBeNull();
     expect($controller->renderedException)->toBeNull();
+});
+
+test('non-AJAX client login returns a redirect response', function (): void {
+    [$controller] = createTestController();
+
+    $response = invokeApiCall($controller, 'guest', 'client', 'login', []);
+
+    expect($response)->toBeInstanceOf(Response::class)
+        ->and($response->isRedirect())->toBeTrue()
+        ->and($response->headers->get('Location'))->toBe('https://client.example.test/');
 });
