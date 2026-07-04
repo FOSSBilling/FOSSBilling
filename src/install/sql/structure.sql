@@ -96,22 +96,19 @@ CREATE TABLE `activity_system` (
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `admin` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `role` varchar(30) DEFAULT 'staff' COMMENT 'admin, staff',
-  `admin_group_id` bigint(20) DEFAULT '1',
+  `system_name` varchar(100) DEFAULT NULL,
   `email` varchar(255) DEFAULT NULL,
   `pass` varchar(255) DEFAULT NULL,
   `salt` varchar(255) DEFAULT NULL,
   `name` varchar(255) DEFAULT NULL,
   `signature` varchar(255) DEFAULT NULL,
-  `protected` tinyint(1) DEFAULT '0',
   `status` varchar(30) DEFAULT 'active' COMMENT 'active, inactive',
   `api_token` varchar(128) DEFAULT NULL,
-  `permissions` text,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`),
-  KEY `admin_group_id_idx` (`admin_group_id`)
+  UNIQUE KEY `system_name` (`system_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -124,9 +121,33 @@ CREATE TABLE `admin` (
 CREATE TABLE `admin_group` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) DEFAULT NULL,
+  `system_name` varchar(100) DEFAULT NULL,
+  `parent_id` bigint(20) DEFAULT NULL,
+  `permissions` json,
+  `protected` tinyint(1) DEFAULT '0',
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `system_name` (`system_name`),
+  KEY `admin_group_parent_id_idx` (`parent_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `admin_group_member`
+--
+
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `admin_group_member` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `admin_id` bigint(20) NOT NULL,
+  `admin_group_id` bigint(20) NOT NULL,
+  `created_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `admin_group_member_unique` (`admin_id`, `admin_group_id`),
+  KEY `admin_group_member_admin_id_idx` (`admin_id`),
+  KEY `admin_group_member_group_id_idx` (`admin_group_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

@@ -3,6 +3,7 @@
 {% block meta_title %}{{ staff.name }}{% endblock %}
 
 {% set active_menu = 'system' %}
+{% set can_manage_groups = has_permission('staff', 'manage_groups') %}
 
 {% block breadcrumbs %}
 	<ol class="breadcrumb">
@@ -24,7 +25,7 @@
 {% endblock %}
 
 {% block content %}
-	{% if staff.role == 'cron' %}
+	{% if staff.system_name == 'cron' %}
 		<div class="alert alert-info" role="alert" id="external-ip">
 			{{ 'This staff member is used by FOSSBilling to perform system tasks and cannot be removed.'|trans }}
 		</div>
@@ -32,14 +33,14 @@
 
 	{% embed 'partial_admin_detail_tabs.html.twig' with {
 		title: staff.name,
-		subtitle: 'Manage the staff profile, permissions, and password for this administrator account.'|trans
+		subtitle: 'Manage the staff profile, groups, and password for this administrator account.'|trans
 	} %}
 		{% block detail_tabs %}
 						<li class="nav-item" role="presentation">
 							<a class="nav-link active" href="#tab-profile" data-bs-toggle="tab" role="tab">{{ 'Profile'|trans }}</a>
 						</li>
 						<li class="nav-item" role="presentation">
-							<a class="nav-link" href="#tab-permissions" data-bs-toggle="tab" role="tab">{{ 'Permissions'|trans }}</a>
+							<a class="nav-link" href="#tab-groups" data-bs-toggle="tab" role="tab">{{ 'Groups'|trans }}</a>
 						</li>
 						<li class="nav-item" role="presentation">
 							<a class="nav-link" href="#tab-password" data-bs-toggle="tab" role="tab">{{ 'Password'|trans }}</a>
@@ -53,15 +54,11 @@
 					<form method="post" action="admin/staff/update" {{ fb_api_form({message: 'Staff Member Details Updated'|trans}) }}>
 						{% embed 'partial_admin_form_card.html.twig' with {
 							title: 'Staff Member Details'|trans,
-							subtitle: 'Update the staff member group, account identity, status, and signature.'|trans
+							subtitle: 'Update the staff member account identity, status, and signature.'|trans
 						} %}
 							{% import 'macro_functions.html.twig' as mf %}
 							{% block form_content %}
 								<div class="row g-3">
-									<div class="col-lg-6">
-										<label class="form-label">{{ 'Group'|trans }}</label>
-										{{ mf.selectbox('admin_group_id', admin.staff_group_get_pairs, staff.group.id, 1) }}
-									</div>
 									<div class="col-lg-6">
 										<label class="form-label" for="inputName">{{ 'Name'|trans }}</label>
 										<input class="form-control" id="inputName" type="text" name="name" value="{{ staff.name }}" required>
@@ -99,115 +96,55 @@
 				</div>
 			</div>
 
-			<div class="tab-pane fade" id="tab-permissions" role="tabpanel">
+			<div class="tab-pane fade" id="tab-groups" role="tabpanel">
 				<div class="p-3">
-					{% if staff.role == 'admin' %}
-						{% embed 'partial_admin_form_card.html.twig' with {
-							title: 'Permissions'|trans,
-							subtitle: 'Administrators always have unrestricted access to all modules and actions.'|trans
-						} %}
-							{% block form_content %}
-								<div class="alert alert-success d-flex align-items-center" role="alert">
-									<svg class="icon" style="width:24px;height:24px;"><use href="#check"/></svg>
-									<div>
-										<strong>{{ 'Full Access Granted'|trans }}</strong><br>
-										{{ 'This administrator has unrestricted access to all system modules and actions.'|trans }}
-									</div>
-								</div>
-
-								<ul class="list-group mt-3">
-									<li class="list-group-item d-flex align-items-center">
-										<svg class="icon text-success me-2" style="width:20px;height:20px;"><use href="#check"/></svg>
-										{{ 'Can manage staff and assign permissions'|trans }}
-									</li>
-									<li class="list-group-item d-flex align-items-center">
-										<svg class="icon text-success me-2" style="width:20px;height:20px;"><use href="#check"/></svg>
-										{{ 'Can access all client and billing records'|trans }}
-									</li>
-									<li class="list-group-item d-flex align-items-center">
-										<svg class="icon text-success me-2" style="width:20px;height:20px;"><use href="#check"/></svg>
-										{{ 'Can configure system settings and modules'|trans }}
-									</li>
-								</ul>
-
-								<div class="mt-3 text-muted">
-									<small>{{ 'Administrators cannot have their permissions restricted.'|trans }}</small>
-								</div>
-							{% endblock %}
-						{% endembed %}
-					{% else %}
-						{% set prms = admin.staff_permissions_get({ 'id': staff.id }) %}
-						<form method="post" action="admin/staff/permissions_update" {{ fb_api_form({message: 'Permissions Updated'|trans}) }}>
-							{% embed 'partial_admin_form_card.html.twig' with {
-								title: 'Permissions'|trans,
-								subtitle: 'Grant module access and fine-grained permissions for this staff account.'|trans
-							} %}
-								{% block form_header_actions %}
-									<button class="btn btn-secondary" type="button" onclick="toggleAll(true);">{{ 'Grant All Permissions'|trans }}</button>
-									<button class="btn btn-danger" type="button" onclick="toggleAll(false);">{{ 'Revoke All Permissions'|trans }}</button>
-								{% endblock %}
-
-								{% block form_content %}
-									<input type="hidden" name="permissions[default][all]" id="permissions-default-all" value="{% if prms.default is defined and prms.default.all is defined and prms.default.all %}1{% endif %}">
-
-									{% for modName, mod in mods|filter(mod => mod.permissions.hide_permissions|default(false) is not true) %}
-										<section class="mb-4 pb-4 border-bottom">
-											<div class="row g-3">
-												<div class="col-lg-3">
-													<h6 class="card-title mb-0">{{ modName|replace({'_': ' '})|title|trim }}</h6>
-												</div>
-												<div class="col-lg-9">
-													{% if not mod.permissions.can_always_access|default(false) %}
-														<div class="form-check mb-3">
-															<input class="form-check-input permission-box" id="input-{{ modName }}" type="checkbox" name="permissions[{{ modName }}][access]" value="1" {% if prms[modName]|default({}) %} checked {% endif %}>
-															<label class="form-check-label" for="input-{{ modName }}">{{ 'Module access'|trans }}
-																<svg class="icon" data-bs-toggle="tooltip" data-bs-title="{{ 'Can be disabled to prevent the staff member from using any part of this module.'|trans }}" data-bs-placement="right"><use href="#info-circle"/></svg>
-															</label>
-														</div>
-													{% endif %}
-
-													<div class="row g-3">
-													{% for permissionName, permission in mod.permissions %}
-														{% if permission.type == 'bool' %}
-															<div class="col-lg-6">
-																<div class="form-check mt-1">
-																	<input class="form-check-input permission-box" id="input-{{ modName }}-{{ permissionName }}" type="checkbox" name="permissions[{{ modName }}][{{ permissionName }}]" value="1"{% if prms[modName]|default({})[permissionName]|default(false) %} checked {% endif %}>
-																	<label class="form-check-label" for="input-{{ modName }}-{{ permissionName }}">{{ permission.display_name }}
-																		<svg class="icon" data-bs-toggle="tooltip" data-bs-title="{{ permission.description }}" data-bs-placement="right"><use href="#info-circle"/></svg>
-																	</label>
-																</div>
-															</div>
-														{% endif %}
-
-														{% if permission.type == 'select' %}
-															<div class="col-lg-6">
-																<label for="input-{{ modName }}-{{ permissionName }}" class="form-label">{{ permission.display_name }}
-																	<svg class="icon" data-bs-toggle="tooltip" data-bs-title="{{ permission.description }}" data-bs-placement="right"><use href="#info-circle"/></svg>
-																</label>
-																<select class="form-select permission-select" id="input-{{ modName }}-{{ permissionName }}" name="permissions[{{ modName }}][{{ permissionName }}]">
-																	<option value="">{{ 'None'|trans }}</option>
-																	{% for optionName, option in permission.options %}
-																		<option value="{{ optionName }}" {% if prms[modName]|default({})[permissionName]|default(false) == optionName %} selected {% endif %}>{{ option }}</option>
-																	{% endfor %}
-																</select>
-															</div>
-														{% endif %}
-													{% endfor %}
-													</div>
-												</div>
-											</div>
-										</section>
-									{% endfor %}
-
-									<input type="hidden" name="id" value="{{ staff.id }}">
-								{% endblock %}
-
-								{% block form_actions %}
-									<button class="btn btn-primary" type="submit">{{ 'Save'|trans }}</button>
-								{% endblock %}
-							{% endembed %}
-						</form>
+					{% set assigned_groups = [] %}
+					{% if can_manage_groups %}
+						{% set assigned_groups = admin.staff_admin_group_get_list({ 'admin_id': staff.id }) %}
 					{% endif %}
+					{% embed 'partial_admin_form_card.html.twig' with {
+						title: 'Groups'|trans,
+						subtitle: 'Manage this staff member\'s group memberships.'|trans
+					} %}
+						{% import 'macro_functions.html.twig' as mf %}
+						{% block form_content %}
+							{% if can_manage_groups %}
+								<form method="post" action="{{ 'staff/group_member_add'|api_url }}" class="row g-3 align-items-end mb-4" {{ fb_api_form({message: 'Group added'|trans, reload: true}) }}>
+									<input type="hidden" name="admin_id" value="{{ staff.id }}">
+									<div class="col-lg-8">
+										<label class="form-label" for="staff-group-add">{{ 'Add group'|trans }}</label>
+										{{ mf.selectbox('group_id', admin.staff_group_get_pairs, '', 0, 'Select group'|trans) }}
+									</div>
+									<div class="col-lg-4">
+										<button class="btn btn-primary w-100" type="submit">{{ 'Add group'|trans }}</button>
+									</div>
+								</form>
+
+								{% if assigned_groups|length > 0 %}
+									<div class="list-group">
+										{% for group in assigned_groups %}
+											<div class="list-group-item d-flex align-items-center justify-content-between gap-3">
+												<div>
+													<a href='{{ "staff/group/#{group.id}"|url }}'>{{ group.name }}</a>
+													{% if group.protected %}
+														<span class="badge bg-blue-lt ms-2">{{ 'System'|trans }}</span>
+													{% endif %}
+												</div>
+												<a class="btn btn-outline-danger" href="{{ 'staff/group_member_remove'|api_url(query: { 'admin_id': staff.id, 'group_id': group.id }) }}"
+													{{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
+													{{ 'Remove from group'|trans }}
+												</a>
+											</div>
+										{% endfor %}
+									</div>
+								{% else %}
+									<div class="alert alert-warning mb-0" role="alert">{{ 'This staff member is not assigned to any groups.'|trans }}</div>
+								{% endif %}
+							{% else %}
+								<div class="alert alert-info mb-0" role="alert">{{ 'You do not have permission to manage this staff member\'s groups.'|trans }}</div>
+							{% endif %}
+						{% endblock %}
+					{% endembed %}
 				</div>
 			</div>
 
@@ -241,33 +178,4 @@
 			</div>
 		{% endblock %}
 	{% endembed %}
-{% endblock %}
-
-{% block js %}
-<script>
-    function toggleAll(check){
-        const elements = document.getElementsByClassName('permission-box');
-        Array.from(elements).forEach((element) => {
-            element.checked = element.dataset.alwaysGiven ? true : check;
-        });
-
-        const wildcardInput = document.getElementById('permissions-default-all');
-        if (wildcardInput) {
-            wildcardInput.value = check ? '1' : '';
-        }
-    }
-
-    document.addEventListener('DOMContentLoaded', function () {
-        const wildcardInput = document.getElementById('permissions-default-all');
-        if (!wildcardInput) {
-            return;
-        }
-
-        document.querySelectorAll('.permission-box, .permission-select').forEach((element) => {
-            element.addEventListener('change', function () {
-                wildcardInput.value = '';
-            });
-        });
-    });
-</script>
 {% endblock %}

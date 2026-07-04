@@ -78,21 +78,27 @@ class Admin implements InjectionAwareInterface
         $api = $this->di['api_admin'];
         $staff = $api->staff_get(['id' => $id]);
 
-        $extensionService = $this->di['mod_service']('Extension');
-        $mods = $extensionService->getCoreAndActiveModulesAndPermissions();
-
-        return $app->render('mod_staff_manage', ['staff' => $staff, 'mods' => $mods]);
+        return $app->render('mod_staff_manage', ['staff' => $staff]);
     }
 
     public function get_group(\Box_App $app, $id): string
     {
         $api = $this->di['api_admin'];
         $group = $api->staff_group_get(['id' => $id]);
+        $members = $api->staff_group_member_get_list(['group_id' => $id]);
+        $staffService = $this->di['mod_service']('staff');
+        $parentPairs = $staffService->getAdminGroupRepository()->getParentPairs((int) $id);
 
         $extensionService = $this->di['mod_service']('Extension');
-        $mods = $extensionService->getCoreAndActiveModules();
+        $mods = $extensionService->getCoreAndActiveModulesAndPermissions();
 
-        return $app->render('mod_staff_group', ['group' => $group, 'mods' => $mods]);
+        return $app->render('mod_staff_group', [
+            'group' => $group,
+            'members' => $members,
+            'mods' => $mods,
+            'parent_pairs' => $parentPairs,
+            'is_super_admin' => $staffService->isSuperAdministrator(),
+        ]);
     }
 
     public function get_history(\Box_App $app): string

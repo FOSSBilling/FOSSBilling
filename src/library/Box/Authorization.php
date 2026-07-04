@@ -43,7 +43,7 @@ class Box_Authorization
         }
 
         $adminModel = $this->di['db']->load('Admin', $admin['id']);
-        if (!$adminModel || $adminModel->status !== Model_Admin::STATUS_ACTIVE) {
+        if (!$adminModel || $adminModel->status !== Model_Admin::STATUS_ACTIVE || $adminModel->isCron()) {
             $this->session->delete('admin');
 
             return false;

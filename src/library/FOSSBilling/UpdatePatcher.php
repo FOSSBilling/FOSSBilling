@@ -483,6 +483,8 @@ class UpdatePatcher implements InjectionAwareInterface
             75 => 'patch75',
             76 => 'patch76',
             77 => 'patch77',
+            78 => 'patch78',
+            79 => 'patch79'
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -643,8 +645,8 @@ class UpdatePatcher implements InjectionAwareInterface
             }
 
             // If the Kb extension exists, uninstall it.
-            $kb_ext = $ext_service->getExtensionRepository()->findOneByTypeAndName('mod', 'kb');
-            if ($kb_ext instanceof \Box\Mod\Extension\Entity\Extension) {
+            $kb_ext = $ext_service->findExtension('mod', 'kb');
+            if ($kb_ext instanceof \Model_Extension) {
                 $ext_service->deactivate($kb_ext);
                 $ext_service->uninstall('mod', 'kb');
             }
@@ -666,8 +668,8 @@ class UpdatePatcher implements InjectionAwareInterface
         try {
             $ext_service = $this->di['mod_service']('extension');
             // If the queue extension exists, uninstall it.
-            $queue_ext = $ext_service->getExtensionRepository()->findOneByTypeAndName('mod', 'queue');
-            if ($queue_ext instanceof \Box\Mod\Extension\Entity\Extension) {
+            $queue_ext = $ext_service->findExtension('mod', 'queue');
+            if ($queue_ext instanceof \Model_Extension) {
                 $ext_service->deactivate($queue_ext);
                 $ext_service->uninstall('mod', 'queue');
             }
@@ -1099,8 +1101,8 @@ class UpdatePatcher implements InjectionAwareInterface
 
             $this->executeSql("DELETE FROM extension_meta WHERE extension = 'mod_spamchecker' AND meta_key = 'config'");
 
-            $spamcheckerExt = $extService->getExtensionRepository()->findOneByTypeAndName('mod', 'spamchecker');
-            if ($spamcheckerExt instanceof \Box\Mod\Extension\Entity\Extension) {
+            $spamcheckerExt = $extService->findExtension('mod', 'spamchecker');
+            if ($spamcheckerExt instanceof \Model_Extension) {
                 $extService->deactivate($spamcheckerExt);
                 $extService->uninstall('mod', 'spamchecker');
             }
@@ -1954,6 +1956,203 @@ class UpdatePatcher implements InjectionAwareInterface
         if ($this->tableExists('mod_email_queue') && !$this->tableExists('email_queue')) {
             $this->executeSql('RENAME TABLE `mod_email_queue` TO `email_queue`');
         }
+    }
+
+    private function patch78(): void
+    {
+        // Rework admin groups and permissions
+        //
+        // This patch migrates from individual admin-scoped permissions to group permissions.
+        // It allows admins to be a part of multiple groups,
+        // sets up a hierarchy between admin groups and creates
+        // a new protected group named Super Administrator.
+        //
+        // See https://github.com/FOSSBilling/FOSSBilling/pull/3821.
+        if (!$this->tableHasColumn('admin_group', 'system_name')) {
+            $this->executeSql('ALTER TABLE `admin_group` ADD COLUMN `system_name` VARCHAR(100) DEFAULT NULL AFTER `name`;');
+        }
+
+        if (!$this->tableHasColumn('admin_group', 'parent_id')) {
+            $this->executeSql('ALTER TABLE `admin_group` ADD COLUMN `parent_id` bigint(20) DEFAULT NULL AFTER `system_name`;');
+        }
+
+        if (!$this->tableHasColumn('admin_group', 'permissions')) {
+            $this->executeSql('ALTER TABLE `admin_group` ADD COLUMN `permissions` JSON AFTER `parent_id`;');
+        }
+
+        if (!$this->tableHasColumn('admin_group', 'protected')) {
+            $this->executeSql("ALTER TABLE `admin_group` ADD COLUMN `protected` TINYINT(1) DEFAULT '0' AFTER `permissions`;");
+        }
+
+        if (!$this->tableHasIndex('admin_group', 'system_name')) {
+            $this->executeSql('ALTER TABLE `admin_group` ADD UNIQUE INDEX `system_name` (`system_name`);');
+        }
+
+        if (!$this->tableHasIndex('admin_group', 'admin_group_parent_id_idx')) {
+            $this->executeSql('ALTER TABLE `admin_group` ADD KEY `admin_group_parent_id_idx` (`parent_id`);');
+        }
+
+        if (!$this->tableExists('admin_group_member')) {
+            $this->executeSql('CREATE TABLE `admin_group_member` (
+                `id` bigint(20) NOT NULL AUTO_INCREMENT,
+                `admin_id` bigint(20) NOT NULL,
+                `admin_group_id` bigint(20) NOT NULL,
+                `created_at` datetime DEFAULT NULL,
+                PRIMARY KEY (`id`),
+                UNIQUE KEY `admin_group_member_unique` (`admin_id`, `admin_group_id`),
+                KEY `admin_group_member_admin_id_idx` (`admin_id`),
+                KEY `admin_group_member_group_id_idx` (`admin_group_id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8;');
+        }
+
+        // Convert the existing admin group into the protected Super Administrator group.
+        $now = date('Y-m-d H:i:s');
+        $superAdminGroupId = $this->fetchOne("SELECT id FROM admin_group WHERE system_name = 'super_admin' LIMIT 1");
+        if (!$superAdminGroupId) {
+            $firstGroupId = $this->fetchOne('SELECT id FROM admin_group WHERE id = 1 LIMIT 1');
+            if ($firstGroupId) {
+                $this->executeSql(
+                    "UPDATE admin_group SET name = 'Super Administrator', system_name = 'super_admin', permissions = NULL, protected = 1, updated_at = :updated_at WHERE id = 1",
+                    ['updated_at' => $now],
+                );
+                $superAdminGroupId = 1;
+            } else {
+                $this->executeSql(
+                    "INSERT INTO admin_group (name, system_name, permissions, protected, created_at, updated_at) VALUES ('Super Administrator', 'super_admin', NULL, 1, :created_at, :updated_at)",
+                    ['created_at' => $now, 'updated_at' => $now],
+                );
+                $superAdminGroupId = (int) $this->getPdo()->lastInsertId();
+            }
+        } else {
+            $this->executeSql(
+                'UPDATE admin_group SET protected = 1, permissions = NULL, updated_at = :updated_at WHERE id = :id',
+                ['updated_at' => $now, 'id' => $superAdminGroupId],
+            );
+        }
+
+        $this->executeSql(
+            "INSERT INTO admin_group (name, system_name, parent_id, permissions, protected, created_at, updated_at) VALUES ('Migrated staff', 'migrated_staff', :parent_id, NULL, 0, :created_at, :updated_at)
+             ON DUPLICATE KEY UPDATE name = 'Migrated staff', parent_id = :parent_id, permissions = NULL, protected = 0, updated_at = :updated_at",
+            ['parent_id' => $superAdminGroupId, 'created_at' => $now, 'updated_at' => $now],
+        );
+        $migratedStaffGroupId = (int) $this->fetchOne("SELECT id FROM admin_group WHERE system_name = 'migrated_staff' LIMIT 1");
+
+        // Move legacy one-group-per-admin assignments into the new membership table before dropping the column.
+        $this->executeSql('
+            INSERT IGNORE INTO admin_group_member (admin_id, admin_group_id, created_at)
+            SELECT id, admin_group_id, :created_at
+            FROM admin
+            WHERE admin_group_id IS NOT NULL
+              AND (admin_group_id != :super_admin_group_id OR role = :role)
+        ', [
+            'created_at' => $now,
+            'super_admin_group_id' => $superAdminGroupId,
+            'role' => 'admin',
+        ]);
+
+        $this->executeSql('
+            INSERT IGNORE INTO admin_group_member (admin_id, admin_group_id, created_at)
+            SELECT id, :admin_group_id, :created_at
+            FROM admin
+            WHERE admin_group_id = :super_admin_group_id
+              AND (role IS NULL OR role != :role)
+        ', [
+            'admin_group_id' => $migratedStaffGroupId,
+            'created_at' => $now,
+            'super_admin_group_id' => $superAdminGroupId,
+            'role' => 'admin',
+        ]);
+
+        $this->executeSql('
+            INSERT IGNORE INTO admin_group_member (admin_id, admin_group_id, created_at)
+            SELECT id, :admin_group_id, :created_at
+            FROM admin
+            WHERE role = :role
+        ', [
+            'admin_group_id' => $superAdminGroupId,
+            'created_at' => $now,
+            'role' => 'admin',
+        ]);
+
+        // Drop legacy staff-level group ID columns after their data has been migrated.
+        if ($this->tableHasColumn('admin', 'admin_group_id')) {
+            if ($this->tableHasIndex('admin', 'admin_group_id_idx')) {
+                $this->executeSql('ALTER TABLE `admin` DROP INDEX `admin_group_id_idx`;');
+            }
+
+            $this->executeSql('ALTER TABLE `admin` DROP COLUMN `admin_group_id`;');
+        }
+
+        if (!$this->tableHasColumn('admin', 'system_name')) {
+            $this->executeSql('ALTER TABLE `admin` ADD COLUMN `system_name` varchar(100) DEFAULT NULL AFTER `id`;');
+        }
+
+        if ($this->tableHasColumn('admin', 'role')) {
+            $this->executeSql("UPDATE `admin` SET `system_name` = 'cron' WHERE `role` = 'cron' AND (`system_name` IS NULL OR `system_name` = '') ORDER BY `id` ASC LIMIT 1;");
+            $this->executeSql('ALTER TABLE `admin` DROP COLUMN `role`;');
+        }
+
+        if (!$this->tableHasIndex('admin', 'system_name')) {
+            $this->executeSql('ALTER TABLE `admin` ADD UNIQUE KEY `system_name` (`system_name`);');
+        }
+
+        if ($this->tableHasColumn('admin', 'permissions')) {
+            $this->executeSql('ALTER TABLE `admin` DROP COLUMN `permissions`;');
+        }
+
+        if ($this->tableHasColumn('admin', 'protected')) {
+            $this->executeSql('ALTER TABLE `admin` DROP COLUMN `protected`;');
+        }
+    }
+
+    private function patch79(): void
+    {
+        // Create better default groups with sensible permissions
+        //
+        // This patch creates new default groups named Support Lead and Support Staff
+        // Support Lead is allowed to create/edit staff members and appoint them to groups below itself (in this case, the Support Staff group)
+        // Support Staff is allowed to access and manage support tickets without any additional permissions
+        //
+        // This is part of the admin groups and permissions rework. See https://github.com/FOSSBilling/FOSSBilling/pull/3821
+        $now = date('Y-m-d H:i:s');
+        $superAdminGroupId = $this->fetchOne("SELECT id FROM admin_group WHERE system_name = 'super_admin' LIMIT 1");
+        $supportLeadPermissions = json_encode([
+            'support' => [
+                'access' => true,
+                'view' => true,
+                'manage_tickets' => true,
+                'manage_helpdesk' => true,
+                'manage_canned' => true,
+                'manage_kb' => true,
+            ],
+            'staff' => [
+                'access' => true,
+                'view' => true,
+                'create_and_edit_staff' => true,
+                'reset_staff_password' => true,
+                'manage_groups' => true,
+                'manage_settings' => true,
+            ],
+        ], JSON_THROW_ON_ERROR);
+        $this->executeSql(
+            "INSERT INTO admin_group (name, system_name, parent_id, permissions, protected, created_at, updated_at) VALUES ('Support Lead', 'support_lead', :parent_id, :permissions, 0, :created_at, :updated_at)
+             ON DUPLICATE KEY UPDATE name = 'Support Lead', parent_id = :parent_id, permissions = :permissions, protected = 0, updated_at = :updated_at",
+            ['parent_id' => $superAdminGroupId, 'permissions' => $supportLeadPermissions, 'created_at' => $now, 'updated_at' => $now],
+        );
+        $supportLeadGroupId = (int) $this->fetchOne("SELECT id FROM admin_group WHERE system_name = 'support_lead' LIMIT 1");
+
+        $supportStaffPermissions = json_encode([
+            'support' => [
+                'access' => true,
+                'view' => true,
+                'manage_tickets' => true,
+            ],
+        ], JSON_THROW_ON_ERROR);
+        $this->executeSql(
+            "INSERT INTO admin_group (name, system_name, parent_id, permissions, protected, created_at, updated_at) VALUES ('Support Staff', 'support_staff', :parent_id, :permissions, 0, :created_at, :updated_at)
+             ON DUPLICATE KEY UPDATE name = 'Support Staff', parent_id = :parent_id, permissions = :permissions, protected = 0, updated_at = :updated_at",
+            ['parent_id' => $supportLeadGroupId, 'permissions' => $supportStaffPermissions, 'created_at' => $now, 'updated_at' => $now],
+        );
     }
 
     private function generateDownloadableStoredFilename(): string

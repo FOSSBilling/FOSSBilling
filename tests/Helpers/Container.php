@@ -157,6 +157,9 @@ function container(): Container
     };
     $di['mod_config'] = $di->protect(fn (string $name): array => []);
     $di['em'] = static function (): object {
+        $adminGroupRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminGroupRepository::class)->shouldIgnoreMissing();
+        $adminGroupMemberRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminGroupMemberRepository::class)->shouldIgnoreMissing();
+
         $extensionMetaRepository = \Mockery::mock(\Box\Mod\Extension\Repository\ExtensionMetaRepository::class)->shouldIgnoreMissing();
         $extensionMetaRepository->shouldReceive('findOneByExtensionAndScope')->byDefault()->andReturn(null);
         $extensionMetaRepository->shouldReceive('findByExtensionAndScope')->byDefault()->andReturn([]);
@@ -182,6 +185,8 @@ function container(): Container
 
         $em = \Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
         $em->shouldReceive('getRepository')->byDefault()->andReturnUsing(static fn (string $class): object => match ($class) {
+            \Box\Mod\Staff\Entity\AdminGroup::class => $adminGroupRepository,
+            \Box\Mod\Staff\Entity\AdminGroupMember::class => $adminGroupMemberRepository,
             \Box\Mod\Email\Entity\EmailTemplate::class => $emailTemplateRepository,
             \Box\Mod\Email\Entity\ActivityClientEmail::class => $activityClientEmailRepository,
             \Box\Mod\Email\Entity\QueuedEmail::class => $queuedEmailRepository,
