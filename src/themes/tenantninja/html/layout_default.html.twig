@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+{% set active_locale = guest.system_locale|default('en')|replace({'_': '-'}) %}
+{% set canonical_url = guest.system_current_url|url %}
+{% set current_active_menu = active_menu|default('') %}
+<html lang="{{ active_locale }}" data-bs-theme="{{ settings.theme|default('light') }}">
+<head>
+    <meta charset="utf-8">
+    {# block('meta_title') is already HTML-escaped by Twig when the block renders;
+       printing it again normally here would escape it a second time (e.g. "&" -> "&amp;amp;"). #}
+    <title>{{ (settings.meta_title_prefix|default('') ~ ' ' ~ block('meta_title') ~ ' ' ~ settings.meta_title_suffix|default(''))|trim|raw }}</title>
+
+    <meta name="description" content="{% block meta_description %}{{ settings.meta_description }}{% endblock %}">
+    <meta name="keywords" content="{{ settings.meta_keywords }}">
+    <meta name="robots" content="{{ settings.meta_robots }}">
+    <meta name="author" content="{{ settings.meta_author }}">
+    <meta name="generator" content="FOSSBilling">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
+
+    {% block canonical %}
+        <link rel="canonical" href="{{ canonical_url }}">
+    {% endblock %}
+
+    {% block opengraph %}
+        <meta property="og:title" content="{{ (settings.meta_title_prefix|default('') ~ ' ' ~ block('meta_title') ~ ' ' ~ settings.meta_title_suffix|default(''))|trim }}" />
+        <meta property="og:type" content="website" />
+        <meta property="og:description" content="{{ block('meta_description') }}" />
+        <meta property="og:url" content="{{ canonical_url }}" />
+        <meta property="og:site_name" content="{{ guest.system_company.name }}" />
+    {% endblock %}
+
+    {{ include('partials/theme_init.html.twig') }}
+
+    <link rel="stylesheet" href="{{ 'build/css/vendor.css' | asset_url }}">
+    <link rel="stylesheet" href="{{ 'build/css/tenantninja.css' | asset_url }}">
+    <link rel="shortcut icon" href="{{ guest.system_company.favicon_url }}">
+
+    {{ 'js/fossbilling.js' | public_asset_url | script_tag }}
+    {{ 'js/api.js' | public_asset_url | script_tag }}
+    <script type="module" src="{{ 'build/js/tenantninja.js' | asset_url }}"></script>
+
+    {{ debug_bar_render_head() }}
+
+    {% block head %}{% endblock %}
+    {% block js %}{% endblock %}
+</head>
+
+<body class="{% block body_class %}{% endblock %}">
+
+<div class="d-none">{{ svg_sprite() }}</div>
+
+{{ render_widgets('client.theme.body.start') }}
+
+{% block body %}
+{% if not client and settings.require_login %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const publicPaths = [
+                '/news',
+                '/tos',
+                '/privacy-policy'
+                {% if guest.support_guest_tickets_enabled() %}
+                ,'/support/contact-us'
+                ,'/support/contact-us/conversation'
+                ,'/support/ticket'
+                {% endif %}
+            ];
+            const currentPath = window.location.pathname;
+
+            const isAllowed = publicPaths.some(path => currentPath.startsWith(path));
+            if (!isAllowed) {
+                window.location.href = '{{ "login"|url }}';
+            }
+        });
+    </script>
+{% endif %}
+
+{% if client and profile is not defined %}
+    {% set profile = client.profile_get %}
+{% endif %}
+{% set company = guest.system_company %}
+{% set guest_support_url = guest.support_guest_tickets_enabled() ? 'support/contact-us'|url : 'login'|url %}
+{% set support_url = client ? 'support'|url : guest_support_url %}
+
+<div class="container">
+    <header>
+        {{ render_widgets('client.theme.header.start') }}
+        <nav class="navbar navbar-expand-md py-3 tn-topbar">
+            <div class="container-fluid d-flex align-items-center gap-3">
+                {{ include('partial_company_logo.html.twig', {
+                    logo_url: settings.show_company_logo ? company.logo_url : null,
+                    dark_logo_url: settings.show_company_logo ? company.logo_url_dark : null,
+                    link_class: 'navbar-brand me-0',
+                    image_class: 'd-none d-sm-block',
+                    show_mobile_name: true
+                }) }}
+
+                <ul class="navbar-nav flex-row gap-1 d-none d-md-flex flex-grow-1">
+                    {{ include('partial_topnav.html.twig', { variant: 'top' }) }}
+                </ul>
+
+                <div class="d-flex align-items-center gap-2 ms-auto">
+                    {% set languages = guest.extension_languages(true) %}
+                    {% if languages|length > 1 %}
+                        <select name="lang" class="form-select form-select-sm js-locale-selector d-none d-md-block">
+                            {% for lang in languages %}
+                                <option value="{{ lang.locale }}" data-custom-properties="&lt;span class=&quot;fi fi-{{ lang.locale|split('_')[1]|lower }}&quot;&gt;&lt;/span&gt;"{% if lang.locale == guest.system_locale %} selected{% endif %}>{{ lang.title }}</option>
+                            {% endfor %}
+                        </select>
+                    {% endif %}
+
+                    {% if client and profile.currency is not null %}
+                        <div class="tn-balance-chip d-none d-md-flex" title="{{ 'Account balance'|trans }}">
+                            <svg class="icon"><use href="#wallet" /></svg>
+                            <span class="font-mono">{{ profile.balance|format_currency(profile.currency) }}</span>
+                        </div>
+                    {% endif %}
+
+                    <a class="tn-icon-btn hide-theme-dark js-theme-toggler"
+                       href="?theme=dark"
+                       data-bs-toggle="tooltip"
+                       data-bs-placement="bottom"
+                       data-bs-original-title="{{ 'Enable dark mode'|trans }}">
+                        <svg class="icon"><use href="#moon" /></svg>
+                    </a>
+                    <a class="tn-icon-btn hide-theme-light js-theme-toggler"
+                       href="?theme=light"
+                       data-bs-toggle="tooltip"
+                       data-bs-placement="bottom"
+                       data-bs-original-title="{{ 'Enable light mode'|trans }}">
+                        <svg class="icon"><use href="#sun-medium" /></svg>
+                    </a>
+
+                    {% if client %}
+                        <div class="dropdown client-dropdown">
+                            <button class="nav-link dropdown-toggle d-flex align-items-center" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                {{ avatar(profile.email, 28, 'rounded-circle d-inline-block', null, 'div') }}
+                                <span class="ms-2 d-none d-lg-inline">{% if profile.company %}{{ profile.first_name }} {{ profile.last_name }} ({{ profile.company }}){% else %}{{ profile.first_name }} {{ profile.last_name }}{% endif %}</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{{ 'client/profile'|url }}"><svg class="icon me-2"><use href="#user" /></svg>{{ 'Profile'|trans }}</a></li>
+                                {% if settings.side_menu_payments %}
+                                    <li><a class="dropdown-item" href="{{ 'client/balance'|url }}"><svg class="icon me-2"><use href="#wallet" /></svg>{{ 'Wallet'|trans }}</a></li>
+                                {% endif %}
+                                {% if settings.side_menu_emails %}
+                                    <li><a class="dropdown-item" href="{{ 'email'|url }}"><svg class="icon me-2"><use href="#mail" /></svg>{{ 'Email'|trans }}</a></li>
+                                {% endif %}
+                                {% if guest.support_kb_enabled() and settings.side_menu_kb %}
+                                    <li><a class="dropdown-item" href="{{ 'support/kb'|url }}"><svg class="icon me-2"><use href="#book" /></svg>{{ 'Knowledge Base'|trans }}</a></li>
+                                {% endif %}
+                                {% if guest.extension_is_on({"mod":"news"}) and settings.side_menu_news %}
+                                    <li><a class="dropdown-item" href="{{ 'news'|url }}"><svg class="icon me-2"><use href="#news" /></svg>{{ 'News'|trans }}</a></li>
+                                {% endif %}
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ 'client/logout'|url }}"><svg class="icon me-2"><use href="#log-out" /></svg>{{ 'Sign Out'|trans }}</a></li>
+                            </ul>
+                        </div>
+                    {% elseif settings.top_menu_profile or settings.top_menu_signout %}
+                        <a class="btn btn-outline-primary btn-sm" href="{{ 'login'|url }}">{{ 'Login'|trans }}</a>
+                        <a class="btn btn-primary btn-sm d-none d-sm-inline-flex" href="{{ 'signup'|url }}">{{ 'Register'|trans }}</a>
+                    {% endif %}
+                </div>
+            </div>
+        </nav>
+        {{ render_widgets('client.theme.header.end') }}
+    </header>
+    <div class="container tn-content-container">
+        <div class="row">
+            <div class="col-12">
+                <div id="wrapper">
+                    <section role="main">
+                        {% block content_before %}{% endblock %}
+                        <div class="content-block" role="main">
+                            {% if settings.show_breadcrumb %}
+                                {% block breadcrumbs %}
+                                    <nav aria-label="{{ 'breadcrumb'|trans }}">
+                                        <ol class="breadcrumb d-none d-md-flex">
+                                            <li class="breadcrumb-item"><a href="{{ '/'|url }}">{{ 'Home'|trans }}</a>
+                                            </li>
+                                            {% block breadcrumb %}
+                                                <li class="active breadcrumb-item">{{ 'Dashboard'|trans }}</li>
+                                            {% endblock %}
+                                        </ol>
+                                    </nav>
+                                {% endblock %}
+                            {% endif %}
+
+                            {{ render_widgets('client.theme.content.before') }}
+                            {% block content %}{% endblock %}
+                            {{ render_widgets('client.theme.content.after') }}
+
+                            {{ include('partial_message.html.twig') }}
+
+                            {% block content_after %}{% endblock %}
+                        </div>
+                    </section>
+                    <div id="push"></div>
+                </div>
+
+                <nav class="tn-bottom-nav d-md-none" aria-label="{{ 'Primary'|trans }}">
+                    {{ include('partial_topnav.html.twig', { variant: 'bottom' }) }}
+                </nav>
+
+                {% if settings.footer_enabled %}
+                    <footer id="footer" class="small text-muted mt-2 mb-3">
+                        <div class="d-flex flex-column">
+                            {{ render_widgets('client.theme.footer.start') }}
+                            <div class="d-flex justify-content-center">
+                                <span>&copy; {{ 'now'|date('Y') }} {{ settings.footer_signature|default(company.signature) }}
+                                    {% if company.bank_info_pagebottom == 1 %}
+                                        <br/>
+                                        <b>{{'Payment Information'|trans}}</b> - {{'Bank Name'|trans}}: {{ company.bank_name }} | {{'BIC / SWIFT Code'|trans}}: {{ company.bic }} | {{'Account Number'|trans}}: {{ company.account_number }}
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="d-flex justify-content-center">
+                                {% set first_link_rendered = false %}
+                                {% for i in 1..5 %}
+                                    {% set enabled_key = 'footer_link_' ~ i ~ '_enabled' %}
+                                    {% set page_key = 'footer_link_' ~ i ~ '_page' %}
+                                    {% set title_key = 'footer_link_' ~ i ~ '_title' %}
+                                    {% set link_enabled = attribute(settings, enabled_key) is defined ? attribute(settings, enabled_key) : false %}
+                                    {% if link_enabled %}
+                                        {% if first_link_rendered %}&nbsp;&#x2022;&nbsp;{% endif %}
+                                        {% set link_page = attribute(settings, page_key)|default('') %}
+                                        {% set link_title = attribute(settings, title_key)|default('') %}
+                                        {% if 'http://' in link_page or 'https://' in link_page %}
+                                            <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover"
+                                               href="{{ link_page }}">{{ link_title }}</a>
+                                        {% else %}
+                                            <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover"
+                                               href="{{ link_page|url }}">{{ link_title }}</a>
+                                        {% endif %}
+                                        {% set first_link_rendered = true %}
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            {{ render_widgets('client.theme.footer.end') }}
+                        </div>
+                    </footer>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1070;"></div>
+    {% if settings.footer_to_top_enabled %}
+        <a href="#top" id="js-back-to-top" class="position-fixed btn btn-primary bottom-0 end-0 m-3 d-none">
+            <svg class="icon"><use href="#arrow-up" /></svg> {{ 'Top'|trans }}</a>
+    {% endif %}
+    <div class="wait" style="display:none" onclick="this.style.display='none'">
+        <div class="spinner-border"
+             style="width: 4rem; height: 4rem; top: 50%; left: 50%; position: fixed; z-index: 999"></div>
+    </div>
+    <noscript>{{ "NOTE: Many features on FOSSBilling require Javascript and cookies. You can enable both in your browser's preference settings."|trans }}</noscript>
+
+    {% endblock %}
+
+    {% if settings.inject_javascript %}
+        {{ settings.inject_javascript|raw }}
+    {% endif %}
+    {{ include('partial_pending_messages.html.twig', ignore_missing: true) }}
+    {% if guest.extension_is_on({ "mod": "cookieconsent" }) %}
+        {{ include('mod_cookieconsent_index.html.twig', ignore_missing: true) }}
+    {% endif %}
+</div>
+{{ render_widgets('client.theme.body.end') }}
+{{ debug_bar_render() }}
+</body>
+</html>

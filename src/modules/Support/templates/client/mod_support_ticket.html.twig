@@ -17,144 +17,117 @@
     {% if is_guest_ticket %}
         <li class="breadcrumb-item"><a href="{{ 'support/contact-us'|url }}">{{ 'Contact Us'|trans }}</a></li>
     {% else %}
-        <li class="breadcrumb-item"><a href="{{ 'support'|url }}">{{ 'Support Tickets'|trans }}</a></li>
+        <li class="breadcrumb-item"><a href="{{ 'support'|url }}">{{ 'Support'|trans }}</a></li>
     {% endif %}
-    <li class="breadcrumb-item active" aria-current="page">{{ ticket.subject }}</li>
+    <li class="breadcrumb-item active" aria-current="page">#{{ ticket.id }}</li>
 {% endblock %}
 
 {% block content %}
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card mb-3">
-                <div class="card-header py-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h5 class="mb-2">{{ 'Ticket'|trans }} #{{ ticket.id }}</h5>
-                        </div>
-                        <div class="">
-                            <div class="d-flex gap-2">
+{% set related_service_name = null %}
+{% if ticket.rel_type|default('') == 'order' and ticket.rel_id %}
+    {% set related_order = client.order_get({ 'id': ticket.rel_id }) %}
+    {% set related_service_name = related_order.title|default('Service #' ~ ticket.rel_id) %}
+{% endif %}
+
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-1">
+    <div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <h1 class="mb-1">{{ ticket.subject }}</h1>
+            {{ mf.status_badge(ticket.status, 'ticket') }}
+        </div>
+        <span class="text-muted">
+            #{{ ticket.id }} &middot; {{ ticket.helpdesk.name }}{% if related_service_name %} &middot; {{ 'relates to'|trans }} {{ related_service_name }}{% endif %}
+        </span>
+    </div>
+    {% if ticket.status != 'closed' %}
+        <button class="tn-btn tn-btn--ghost tn-btn--sm" type="button" id="ticket-close">{{ 'Close ticket'|trans }}</button>
+    {% endif %}
+</div>
+
+<div class="d-flex align-items-start gap-4 flex-wrap mt-4">
+    <div class="flex-grow-1" style="min-width: 320px;">
+        <div class="tn-card p-0 overflow-hidden">
+            <div class="d-flex flex-column gap-3 p-3">
+                {% for i, message in ticket.messages %}
+                    {% set is_mine = message.author.role != 'admin' %}
+                    <div class="tn-chat-row {{ is_mine ? 'tn-chat-row--mine' : '' }}">
+                        {{ avatar(message.author.email|default(''), 36, 'tn-chat-row__avatar tn-avatar tn-avatar--circle d-none d-md-flex' ~ (is_mine ? '' : ' tn-card--accent'), null, 'div') }}
+                        <div class="tn-chat-bubble {{ is_mine ? 'tn-chat-bubble--mine' : '' }}">
+                            <div class="tn-chat-bubble__head">
+                                <span class="tn-chat-bubble__name">{{ message.author.name }}{% if message.author.role == 'admin' %} &middot; {{ 'Tenant Ninja'|trans }}{% endif %}</span>
+                                <span class="tn-chat-bubble__time">{{ message.created_at|timeago }} {{ 'ago'|trans }}</span>
                                 {% if can_reply %}
-                                    <button class="btn btn-info btn-sm" id="reply-to-btn">{{ 'Reply'|trans }}</button>
-                                {% endif %}
-                                {% if ticket.status != 'closed' %}
-                                    <button class="btn btn-secondary btn-sm" type="button" id="ticket-close">{{ 'Close Ticket'|trans }}</button>
+                                    <button class="tn-iconbtn tn-iconbtn--sm btn-quote-reply ms-auto"
+                                            message-quote="{{ mf.markdown_quote(message.content) }}"
+                                            data-bs-toggle="tooltip" data-bs-title="{{ 'Quote Reply'|trans }}">
+                                        <svg class="icon"><use href="#quote" /></svg>
+                                    </button>
                                 {% endif %}
                             </div>
+                            <article class="markdown-body bg-transparent text-reset" id="message-{{ message.id }}">
+                                {{ (message.content ?? '')|markdown_to_html }}
+                            </article>
                         </div>
                     </div>
-                </div>
-                <div class="card-body">
-                    <table class="table table-hover table-sm">
-                        <tbody>
-                        <tr>
-                            <td>{{ 'Help Desk'|trans }}</td>
-                            <td>{{ ticket.helpdesk.name }}</td>
-                        </tr>
-
-                        <tr>
-                            <td>{{ 'Status'|trans }}</td>
-                            <td>
-                                {{ mf.status_badge(ticket.status, 'ticket') }}
-                            </td>
-                        </tr>
-
-                        <tr>
-                            <td>{{ 'Time Opened'|trans }}</td>
-                            <td>{{ ticket.created_at|format_date }}</td>
-                        </tr>
-
-                        {% if ticket.rel_type|default('') == 'order' and ticket.rel_id %}
-                            <tr>
-                                <td>{{ 'Related To'|trans }}</td>
-                                <td>
-                                    <a href='{{ "order/service/manage/#{ticket.rel_id}"|url }}'>{{ 'Service #'|trans }} {{ ticket.rel_id }}</a>
-                                </td>
-                            </tr>
-                        {% endif %}
-                        </tbody>
-                    </table>
-                </div>
+                {% endfor %}
             </div>
-        </div>
-        <div class="d-flex flex-column gap-3">
-            {% for i, message in ticket.messages %}
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="card {% if message.author.role == 'admin' %}border-primary{% endif %}">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <div class="d-flex align-items-center gap-2">
-                                    {{ avatar(message.author.email|default(''), 40, 'img-thumbnail d-none d-md-block', null, 'div') }}
-                                    <div class="d-flex flex-column">
-                                        <span class="text-muted">
-                                            {{ message.author.name }}
-                                        </span>
-                                        {% if message.author.role == 'admin' %}
-                                            <span class="badge text-bg-primary">
-                                                    {{ 'Operator'|trans }}
-                                                </span>
-                                        {% else %}
-                                            <span class="badge text-bg-secondary">
-                                                    {{ 'You'|trans }}
-                                                </span>
-                                        {% endif %}
-                                    </div>
-                                    <span class="text-muted fs-7">on {{ message.created_at|format_date }}</span>
-                                </div>
-                                {% if can_reply %}
-                                    <div class="d-flex gap-3 align-items-center">
-                                        <span class="text-muted fs-7">#{{ message.id }}</span>
-                                        <button class="btn btn-outline-secondary btn-quote-reply"
-                                                message-quote="{{ mf.markdown_quote(message.content) }}"
-                                                data-bs-toggle="tooltip" data-bs-title="{{ 'Quote Reply'|trans }}">
-                                            <svg class="icon"><use href="#quote" /></svg>
-                                        </button>
-                                    </div>
-                                {% endif %}
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-12">
-                                        <article class="markdown-body bg-transparent text-reset" id="message-{{ message.id }}">
-                                            {{ (message.content ?? '')|markdown_to_html }}
-                                        </article>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
-        <div>
-            <div class="row">
-                <div class="col-md-12">
-                    {% if not can_reply %}
-                        <div class="mt-3 alert alert-secondary text-center">{{ 'Ticket was closed and cannot be reopened.'|trans }}</div>
-                    {% else %}
-                        {% if ticket.status == 'closed' %}
-                            <div class="mt-3 alert alert-secondary text-center">{{ 'This ticket was closed, but you can still reopen it by replying.'|trans }}</div>
+
+            {% if not can_reply %}
+                <div class="alert alert-secondary text-center m-3">{{ 'Ticket was closed and cannot be reopened.'|trans }}</div>
+            {% else %}
+                {% if ticket.status == 'closed' %}
+                    <div class="alert alert-secondary text-center mx-3">{{ 'This ticket was closed, but you can still reopen it by replying.'|trans }}</div>
+                {% endif %}
+                <div class="border-top p-3" id="reply-to" style="background: var(--surface-2, #f8f9fa);">
+                    <form id="ticket-reply-form">
+                        {% if is_guest_ticket %}
+                            <input type="hidden" name="hash" value="{{ ticket.hash }}">
+                        {% else %}
+                            <input type="hidden" name="id" value="{{ ticket.id }}">
                         {% endif %}
-                        <div class="card mt-3" id="reply-to">
-                            <div class="card-body">
-                                <form id="ticket-reply-form">
-                                    {% if is_guest_ticket %}
-                                        <input type="hidden" name="hash" value="{{ ticket.hash }}">
-                                    {% else %}
-                                        <input type="hidden" name="id" value="{{ ticket.id }}">
-                                    {% endif %}
-                                    <textarea name="content" cols="5" rows="10" class="editor-textarea form-control" required="required"
-                                              id="ticket-reply-text"></textarea>
-                                    <button class="mt-2 btn btn-primary" type="submit" id="post-reply-btn"
-                                            value="{{ 'Post'|trans }}"
-                                            onclick="">{{ 'Post'|trans }}</button>
-                                </form>
-                            </div>
+                        <textarea name="content" cols="5" rows="6" class="editor-textarea form-control tn-input" required="required"
+                                  id="ticket-reply-text" placeholder="{{ 'Write a reply…'|trans }}"></textarea>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <button type="button" class="tn-iconbtn tn-iconbtn--md" data-bs-toggle="tooltip" data-bs-title="{{ 'Attach a file'|trans }}">
+                                <svg class="icon"><use href="#paperclip" /></svg>
+                            </button>
+                            <button class="tn-btn tn-btn--primary tn-btn--md" type="submit" id="post-reply-btn">
+                                <svg class="icon"><use href="#send" /></svg>
+                                {{ 'Post'|trans }}
+                            </button>
                         </div>
-                    {% endif %}
+                    </form>
                 </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="width: 300px; flex-shrink: 0;">
+        <div class="tn-card tn-card--compact mb-3">
+            <div class="tn-card__header">
+                <div class="tn-card__title">{{ 'Details'|trans }}</div>
+            </div>
+            <div class="d-flex flex-column">
+                <div class="tn-kv-row">
+                    <span class="tn-kv-row__key">{{ 'Department'|trans }}</span>
+                    <span class="tn-kv-row__value">{{ ticket.helpdesk.name }}</span>
+                </div>
+                <div class="tn-kv-row">
+                    <span class="tn-kv-row__key">{{ 'Opened'|trans }}</span>
+                    <span class="tn-kv-row__value">{{ ticket.created_at|format_date }}</span>
+                </div>
+                {% if related_service_name %}
+                    <div class="tn-kv-row">
+                        <span class="tn-kv-row__key">{{ 'Related to'|trans }}</span>
+                        <span class="tn-kv-row__value">
+                            <a href='{{ "order/service/manage/#{ticket.rel_id}"|url }}'>{{ related_service_name }}</a>
+                        </span>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
+</div>
 {% endblock %}
 
 {% block js %}

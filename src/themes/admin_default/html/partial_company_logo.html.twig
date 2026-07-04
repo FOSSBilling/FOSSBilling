@@ -11,6 +11,10 @@
         <img class="hide-theme-light{% if image_class %} {{ image_class }}{% endif %}" src="{{ dark_logo_url|default(logo_url) }}" alt="{{ company.name }}"{% if image_style %} style="{{ image_style }}"{% endif %}>
         <img class="hide-theme-dark{% if image_class %} {{ image_class }}{% endif %}" src="{{ logo_url|default(dark_logo_url) }}" alt="{{ company.name }}"{% if image_style %} style="{{ image_style }}"{% endif %}>
     {% else %}
-        <span{% if fallback_class %} class="{{ fallback_class }}"{% endif %}>{{ company.name }}</span>
+        {# TenantNinja shuriken mark: currentColor so it follows the surrounding text color. Matches the client theme's inline mark exactly. #}
+        <svg class="tn-logo-mark{% if image_class %} {{ image_class }}{% endif %}" viewBox="0 0 100 100" fill="none" width="24" height="24" role="img" aria-label="{{ company.name }}" style="vertical-align: -6px; margin-right: 6px;">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M50 3 L60.2 39.8 L97 50 L60.2 60.2 L50 97 L39.8 60.2 L3 50 L39.8 39.8 Z
+                 M41 50 a9 9 0 1 0 18 0 a9 9 0 1 0 -18 0 Z" fill="currentColor"></path>
+        </svg><span{% if fallback_class %} class="{{ fallback_class }}"{% endif %}>{{ company.name }}</span>
     {% endif %}
 </a>

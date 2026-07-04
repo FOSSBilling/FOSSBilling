@@ -1,0 +1,31 @@
+{# Primary horizontal nav — desktop topbar item list and mobile bottom-tab item
+   list share this single source of truth so active-state logic never drifts
+   between the two. `variant` is 'top' (topbar link) or 'bottom' (tab). #}
+{% set nav_items = [
+    { key: 'dashboard', enabled: settings.side_menu_dashboard, url: '/'|url, icon: 'layout-dashboard', label: 'Dashboard'|trans },
+    { key: 'services', enabled: settings.side_menu_services, url: 'order/service'|url, icon: 'server', label: 'Services'|trans },
+    { key: 'invoices', enabled: settings.side_menu_invoices, url: 'invoice'|url, icon: 'receipt', label: 'Invoices'|trans },
+    { key: 'support', enabled: settings.side_menu_support, url: support_url, icon: 'life-buoy', label: 'Support'|trans },
+    { key: 'order', enabled: settings.side_menu_order, url: 'order'|url, icon: 'shopping-bag', label: 'Store'|trans },
+] %}
+
+{% if variant == 'bottom' %}
+    {% for item in nav_items %}
+        {% if item.enabled %}
+            <a class="tn-bottom-tab{% if current_active_menu == item.key %} active{% endif %}"
+               href="{{ item.url }}"{% if current_active_menu == item.key %} aria-current="page"{% endif %}>
+                <svg class="icon"><use href="#{{ item.icon }}" /></svg>
+                <span>{{ item.label }}</span>
+            </a>
+        {% endif %}
+    {% endfor %}
+{% else %}
+    {% for item in nav_items %}
+        {% if item.enabled %}
+            <li class="nav-item">
+                <a class="tn-nav-item{% if current_active_menu == item.key %} active{% endif %}"
+                   href="{{ item.url }}"{% if current_active_menu == item.key %} aria-current="page"{% endif %}>{{ item.label }}</a>
+            </li>
+        {% endif %}
+    {% endfor %}
+{% endif %}

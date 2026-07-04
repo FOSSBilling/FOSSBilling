@@ -1,0 +1,2101 @@
+@use "flags";
+@forward "tokens";
+@forward "fonts";
+@forward "tn-ds";
+
+// -----------------------------------------------------------------------
+// Bootstrap variable overrides
+// -----------------------------------------------------------------------
+// Bootstrap 5.3's CSS (vendor.css, loaded before this file) reads its own
+// look from --bs-* custom properties defined in :root / [data-bs-theme="dark"].
+// Because tenantninja.css loads after vendor.css in the layout twigs, these
+// overrides win the cascade (same selector specificity, later source wins)
+// without needing to recompile Bootstrap's Sass from source.
+// Bootstrap's compiled `a { color: rgba(var(--bs-link-color-rgb), ...) }`
+// reads an RGB triplet, not a color value, so --bs-link-color/-hover-color
+// tokens below can't feed it directly. Override the rule itself instead.
+a {
+    color: var(--accent-press);
+}
+a:hover,
+a:focus {
+    color: var(--accent);
+}
+
+:root {
+    --bs-body-bg: var(--bg);
+    --bs-body-color: var(--text);
+    --bs-secondary-color: var(--text-muted);
+    --bs-tertiary-bg: var(--surface-2);
+    --bs-tertiary-color: var(--text-muted);
+    --bs-border-color: var(--border);
+    --bs-border-color-translucent: var(--border);
+    --bs-emphasis-color: var(--text);
+
+    --bs-body-font-family: var(--font-sans);
+    --bs-body-font-size: var(--fs-body);
+    --bs-body-line-height: var(--lh-normal);
+
+    --bs-border-radius: var(--r-sm);
+    --bs-border-radius-sm: var(--r-xs);
+    --bs-border-radius-lg: var(--r-lg);
+    --bs-border-radius-xl: var(--r-xl);
+    --bs-border-radius-pill: var(--r-pill);
+
+    --bs-primary: var(--accent);
+    --bs-primary-rgb: 174, 241, 0;
+    --bs-primary-text-emphasis: var(--accent-press);
+    --bs-primary-bg-subtle: var(--accent-soft);
+    --bs-primary-border-subtle: var(--accent);
+
+    --bs-success: var(--success-500);
+    --bs-success-bg-subtle: var(--success-bg);
+    --bs-warning: var(--warning-500);
+    --bs-warning-bg-subtle: var(--warning-bg);
+    --bs-danger: var(--danger-500);
+    --bs-danger-bg-subtle: var(--danger-bg);
+    --bs-info: var(--info-500);
+    --bs-info-bg-subtle: var(--info-bg);
+
+    --bs-link-color: var(--accent-press);
+    --bs-link-hover-color: var(--accent);
+
+    --bs-progress-bg: var(--surface-3);
+    --bs-progress-bar-bg: var(--accent);
+
+    --bs-dropdown-bg: var(--surface);
+    --bs-dropdown-border-color: var(--border);
+    --bs-dropdown-link-active-bg: var(--accent);
+    --bs-dropdown-link-active-color: var(--on-accent);
+
+    --bs-list-group-bg: var(--surface);
+    --bs-list-group-border-color: var(--border);
+    --bs-list-group-active-bg: var(--accent);
+    --bs-list-group-active-border-color: var(--accent);
+    --bs-list-group-active-color: var(--on-accent);
+
+    --bs-card-bg: var(--surface);
+    --bs-card-border-color: var(--border);
+    --bs-card-cap-bg: var(--surface-2);
+
+    --bs-transition-base: all var(--dur) var(--ease-out);
+    --bs-transition-fade: opacity var(--dur-slow) linear;
+    --bs-transition-collapse: height var(--dur) var(--ease-in-out);
+    --bs-transition-collapse-width: width var(--dur) var(--ease-in-out);
+}
+
+[data-bs-theme="dark"] {
+    --bs-body-bg: var(--bg);
+    --bs-body-color: var(--text);
+    --bs-tertiary-bg: var(--surface-2);
+    --bs-border-color: var(--border);
+    --bs-card-bg: var(--surface);
+    --bs-card-cap-bg: var(--surface-2);
+    --bs-primary-rgb: 174, 241, 0;
+}
+
+html {
+    font-size: 1rem;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+}
+
+body {
+    font-family: var(--font-sans);
+    font-size: var(--fs-body);
+    line-height: var(--lh-normal);
+    background-color: var(--bg);
+    color: var(--text);
+}
+
+h1, h2, h3, h4, h5, h6,
+.display-1, .display-2, .display-3, .display-4, .display-5, .display-6 {
+    font-family: var(--font-display);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--ls-snug);
+    line-height: var(--lh-snug);
+}
+
+// Generic monospace utility.
+.text-mono,
+.font-mono {
+    font-family: var(--font-mono) !important;
+}
+
+// Low-risk generic hooks: numeric/eyebrow contexts get the mono treatment
+// automatically. Per-template mono-izing of specific numeric values
+// elsewhere (prices, invoice totals, etc.) is a follow-up - we deliberately
+// do not regex the whole codebase's templates here.
+.badge,
+table td.text-end,
+table th.text-end {
+    font-family: var(--font-mono);
+}
+
+.badge {
+    text-transform: uppercase;
+    letter-spacing: var(--ls-eyebrow);
+    font-weight: var(--fw-semibold);
+    border-radius: var(--r-xs);
+}
+
+table > thead > tr > th {
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-eyebrow);
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    color: var(--text-muted);
+}
+
+.eyebrow {
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-eyebrow);
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+}
+
+.modal-dialog {
+    margin-right: auto;
+    margin-left: auto;
+}
+
+.fs-7 {
+    font-size: .875rem;
+}
+
+.offcanvas-item {
+    border-bottom: 1px solid var(--border);
+
+    &:first-child {
+        border-top: 1px solid var(--border);
+    }
+
+    &:hover {
+        background: var(--surface-2);
+    }
+
+    > a {
+        color: var(--text-muted);
+    }
+}
+
+.card-header h1, .page-password-reset .card h1, .page-login .card h1, .page-signup .card h1 {
+    font-size: 1.25rem;
+    font-family: var(--font-display);
+}
+
+.card-body {
+    @at-root table {
+        > thead > tr > th {
+            font-size: 0.765625rem;
+        }
+
+        > tbody > tr > td {
+            vertical-align: middle;
+        }
+    }
+}
+
+.icon {
+    height: 20px;
+    width: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+// -----------------------------------------------------------------------
+// Buttons
+// -----------------------------------------------------------------------
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 18px;
+    font-size: var(--fs-sm);
+    border-radius: var(--r-sm);
+    font-weight: var(--fw-semibold);
+    transition: transform var(--dur-fast) var(--ease-snap), box-shadow var(--dur) var(--ease-out), background-color var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out);
+
+    &:active {
+        transform: translateY(1px) scale(0.985);
+    }
+}
+
+.btn-sm {
+    height: 32px;
+    padding: 0 12px;
+}
+
+.btn-lg {
+    height: 48px;
+    padding: 0 24px;
+    font-size: var(--fs-body);
+}
+
+.btn-primary {
+    background-color: var(--accent);
+    border-color: var(--accent);
+    color: var(--on-accent);
+
+    &:hover, &:focus {
+        background-color: var(--accent-hover);
+        border-color: var(--accent-hover);
+        color: var(--on-accent);
+        box-shadow: var(--glow-blade);
+    }
+
+    &:active, &:focus-visible {
+        background-color: var(--accent-press) !important;
+        border-color: var(--accent-press) !important;
+        color: var(--on-accent) !important;
+    }
+}
+
+.btn-outline-primary {
+    color: var(--accent-press);
+    border-color: var(--accent);
+
+    &:hover {
+        background-color: var(--accent);
+        border-color: var(--accent);
+        color: var(--on-accent);
+        box-shadow: var(--glow-blade-soft);
+    }
+}
+
+// -----------------------------------------------------------------------
+// Cards
+// -----------------------------------------------------------------------
+.card {
+    background-color: var(--surface);
+    border: var(--bw-hair) solid var(--border);
+    border-radius: var(--r-lg);
+    box-shadow: var(--inset-top);
+    transition: border-color var(--dur) var(--ease-out);
+
+    &:hover {
+        border-color: var(--border-strong);
+    }
+}
+
+.card-body {
+    padding: var(--space-6);
+}
+
+.card-header {
+    padding: var(--space-4) var(--space-6);
+}
+
+.card-footer {
+    padding: var(--space-4) var(--space-6);
+}
+
+// -----------------------------------------------------------------------
+// Forms
+// -----------------------------------------------------------------------
+.form-control,
+.form-select {
+    border-radius: var(--r-xs);
+    background-color: var(--surface-inset);
+    border-color: var(--border);
+    color: var(--text);
+
+    &:focus {
+        border-color: var(--focus-ring);
+        box-shadow: 0 0 0 0.2rem var(--accent-soft);
+    }
+}
+
+// -----------------------------------------------------------------------
+// Switches
+// -----------------------------------------------------------------------
+.form-switch {
+    .form-check-input {
+        width: 2.25em;
+        background-color: var(--surface-3);
+        border-color: var(--border-strong);
+
+        &:checked {
+            background-color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        &:focus {
+            border-color: var(--focus-ring);
+            box-shadow: 0 0 0 0.2rem var(--accent-soft);
+        }
+    }
+}
+
+// -----------------------------------------------------------------------
+// Nav tabs
+// -----------------------------------------------------------------------
+.nav-tabs {
+    border-bottom-color: var(--border);
+
+    .nav-link {
+        border-radius: var(--r-sm) var(--r-sm) 0 0;
+
+        &.active {
+            color: var(--accent-press);
+            border-color: var(--border) var(--border) var(--surface);
+        }
+    }
+}
+
+// -----------------------------------------------------------------------
+// Table
+// -----------------------------------------------------------------------
+.table {
+    --bs-table-border-color: var(--border);
+    color: var(--text);
+}
+
+// -----------------------------------------------------------------------
+// Modal
+// -----------------------------------------------------------------------
+.modal-content {
+    background-color: var(--surface);
+    border: var(--bw-hair) solid var(--border);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-pop);
+}
+
+// -----------------------------------------------------------------------
+// Pagination
+// -----------------------------------------------------------------------
+.pagination {
+    .page-link {
+        border-radius: var(--r-xs);
+        color: var(--text);
+        background-color: var(--surface);
+        border-color: var(--border);
+    }
+
+    .page-item.active .page-link {
+        background-color: var(--accent);
+        border-color: var(--accent);
+        color: var(--on-accent);
+    }
+}
+
+// -----------------------------------------------------------------------
+// Toasts
+// -----------------------------------------------------------------------
+.toast {
+    background-color: var(--surface-2);
+    border-color: var(--border-strong);
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow-pop);
+}
+
+.toast-header {
+    background-color: transparent;
+    color: var(--text);
+    border-bottom-color: var(--border);
+}
+
+.toast-body {
+    color: var(--text-muted);
+}
+
+// -----------------------------------------------------------------------
+// Tooltips
+// -----------------------------------------------------------------------
+.tooltip {
+    --bs-tooltip-bg: var(--carbon-900);
+    --bs-tooltip-color: var(--paper-50);
+    --bs-tooltip-opacity: 1;
+}
+
+// -----------------------------------------------------------------------
+// Order form field widths
+// -----------------------------------------------------------------------
+// Named, reusable classes replacing repeated inline max-width/width styles
+// scattered across the domain register/transfer forms and product config.
+.domain-input-group {
+    max-width: 560px;
+
+    input {
+        min-width: 0; // let flex shrink the sibling select/button instead of the text input
+    }
+}
+
+.domain-tld-select {
+    width: 30%;
+    max-width: 120px;
+}
+
+.domain-transfer-code-input {
+    width: 200px;
+}
+
+.product-quantity-input {
+    max-width: 120px;
+    text-align: center;
+}
+
+// -----------------------------------------------------------------------
+// Payment gateway logos
+// -----------------------------------------------------------------------
+// Gateway logo images (e.g. Stripe's) are often dark wordmarks on a
+// transparent background, designed for a light page - on our dark theme
+// they become near-invisible. Give them a light card to sit on regardless
+// of theme, same pattern most payment UIs use for gateway/card-brand badges.
+.invoice-gateway {
+    background: var(--paper-50);
+    border: var(--bw-hair) solid var(--border);
+}
+
+// -----------------------------------------------------------------------
+// Order flow step indicator
+// -----------------------------------------------------------------------
+.order-steps {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    list-style: none;
+    padding: var(--space-3) var(--space-4);
+    margin: 0 0 var(--space-3);
+    border-bottom: var(--bw-hair) solid var(--border);
+
+    &__item {
+        font-family: var(--font-mono);
+        font-size: var(--fs-xs);
+        font-weight: 600;
+        letter-spacing: var(--ls-wide);
+        text-transform: uppercase;
+        color: var(--text-faint);
+
+        &:not(:last-child)::after {
+            content: "→";
+            margin-left: var(--space-2);
+            color: var(--border-strong);
+            font-weight: 400;
+        }
+
+        &--done {
+            color: var(--text-muted);
+        }
+
+        &--active {
+            color: var(--accent);
+        }
+    }
+}
+
+// -----------------------------------------------------------------------
+// Alerts
+// -----------------------------------------------------------------------
+.alert {
+    align-items: center;
+    flex-direction: column !important;
+    border-radius: var(--r-sm);
+}
+
+.alert p {
+    margin-bottom: 0;
+}
+
+.alert-danger {
+    --bs-alert-bg: var(--danger-bg);
+    --bs-alert-border-color: var(--danger-500);
+    --bs-alert-color: var(--danger-500);
+}
+
+.alert-warning {
+    --bs-alert-bg: var(--warning-bg);
+    --bs-alert-border-color: var(--warning-500);
+    --bs-alert-color: var(--warning-500);
+}
+
+.alert-info {
+    --bs-alert-bg: var(--info-bg);
+    --bs-alert-border-color: var(--info-500);
+    --bs-alert-color: var(--info-500);
+}
+
+.alert-success {
+    --bs-alert-bg: var(--success-bg);
+    --bs-alert-border-color: var(--success-500);
+    --bs-alert-color: var(--success-500);
+}
+
+// Order management accordion
+#orderManager {
+    --bs-accordion-btn-icon: none;
+    --bs-accordion-btn-active-icon: none;
+}
+
+// TomSelect dropdown
+.ts-input {
+    color: inherit;
+}
+
+.ts-wrapper {
+    &.form-select {
+        background-color: inherit;
+    }
+
+    .ts-control {
+        font-size: 14px;
+        width: 100%;
+        color: inherit;
+
+        &.locale {
+            width: 205px;
+        }
+
+        .dropdown-menu {
+            width: 100%;
+            height: auto;
+        }
+    }
+
+    .ts-dropdown {
+        font-size: 14px;
+
+        .active {
+            background-color: var(--surface-2);
+            color: inherit;
+        }
+
+        .selected {
+            background-color: var(--surface-3);
+        }
+    }
+}
+
+@media (max-width: 768px) {
+    .ts-wrapper.js-locale-selector {
+        width: 180px
+    }
+}
+
+.invoice-gateway {
+    border: 1px solid var(--border);
+
+    &:hover {
+        border: 1px solid var(--accent);
+    }
+}
+
+.fb-phone-country-code {
+    width: 5.5rem;
+    flex: 0 0 5.5rem;
+    max-width: 5.5rem;
+}
+
+.iti {
+    --iti-border-color: var(--border);
+    --iti-country-selector-bg: var(--surface-inset);
+    --iti-hover-color: var(--accent-soft);
+    --iti-icon-color: var(--text-muted);
+
+    width: 100%;
+}
+
+.iti__country-selector,
+.iti__search-input {
+    color: var(--text);
+}
+
+.iti__search-input {
+    background-color: var(--surface-inset);
+}
+
+.email-list {
+    border-radius: 0;
+
+    .list-group-item {
+        border: 0;
+        border-bottom: 1px solid var(--border);
+        border-left: 2px solid transparent;
+
+        &.active {
+            border-left: 2px solid var(--accent);
+            background: var(--accent-soft);
+            color: var(--text);
+        }
+    }
+}
+
+.badge:empty {
+    display: none;
+}
+
+.card-header {
+    padding: 0.75rem 1.25rem;
+    background-color: var(--surface-2);
+}
+
+// Navbar and logo styling
+.navbar {
+    background-color: var(--bg);
+    box-shadow: none;
+}
+
+.navbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 45px;
+    font-family: var(--font-display);
+    font-weight: var(--fw-semibold);
+}
+
+.navbar-brand img {
+    display: block;
+    height: 45px;
+    width: auto;
+}
+
+.tn-logo-mark {
+    display: block;
+    color: var(--accent);
+}
+
+.locale-selector-dropdown {
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    box-shadow: var(--shadow-md);
+
+    .dropdown-item {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+
+        .locale-flag {
+            flex: 0 0 1.25em;
+        }
+    }
+}
+
+.fi {
+    border-radius: 4px;
+    vertical-align: middle;
+}
+
+.locale-flag {
+    display: inline-block;
+    width: 1.25em;
+    height: 1em;
+    line-height: 1em;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+}
+
+.breadcrumb {
+    margin-bottom: 1.25rem;
+}
+
+.nav-link {
+    color: var(--text);
+}
+
+.nav-link:hover {
+    color: var(--accent-press) !important;
+}
+
+.nav-link.active,
+.offcanvas-item.active > .nav-link {
+    color: var(--accent-press) !important;
+    font-weight: 600;
+}
+
+.nav-pills .nav-link.active {
+    background-color: var(--accent);
+    color: var(--on-accent) !important;
+}
+
+.offcanvas-item.active {
+    background: var(--accent-soft);
+}
+
+// Client profile dropdown - inline with nav items, transparent background
+.client-dropdown {
+    .nav-link.dropdown-toggle {
+        color: var(--text);
+        background-color: transparent;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.5rem 0.75rem;
+
+        &:hover {
+            color: var(--accent-press);
+        }
+
+        &::after {
+            margin-left: 0.25rem;
+        }
+    }
+
+    .dropdown-menu {
+        background-color: var(--surface);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-md);
+    }
+
+    .dropdown-item {
+        padding: 0.5rem 1rem;
+    }
+}
+
+// Order page text sizing
+.mod_orderbutton {
+    .accordion-body {
+        span:not(.badge) {
+            font-size: 0.875rem;
+        }
+    }
+}
+
+// Dashboard and client area styling
+.dashboard,
+.mod_client {
+    .card-header {
+        h6 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 0;
+            color: var(--text);
+        }
+    }
+}
+
+// Language selector vertical alignment in navbar
+.nav-item {
+    display: flex;
+    align-items: center;
+
+    .form-select.js-locale-selector {
+        color: var(--text);
+        padding: 0.5rem 2rem 0.5rem 0.75rem;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        min-height: auto;
+        height: auto;
+        background-position: right 0.5rem center;
+    }
+}
+
+// Nav-link vertical alignment with language selector
+.navbar-nav {
+    align-items: center;
+    gap: 0.25rem;
+
+    .nav-link {
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+    }
+
+    > .btn {
+        margin-top: 0;
+        margin-bottom: 0;
+        display: inline-flex;
+        align-items: center;
+    }
+}
+
+// Dark mode support uses Bootstrap's native color mode system via
+// data-bs-theme attribute on the <html> tag (same mechanism as huraga).
+// Dual logo: show only the logo matching the current color mode.
+[data-bs-theme="light"] .hide-theme-light,
+[data-bs-theme="dark"] .hide-theme-dark { display: none !important; }
+
+// Theme toggler links share the navbar's icon style.
+.js-theme-toggler {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+}
+
+.db-avatar {
+    display: inline-block;
+    flex-shrink: 0;
+    vertical-align: middle;
+    background-color: var(--surface-3);
+    background-size: 100% 100%;
+    background-position: center;
+    background-repeat: no-repeat;
+    border-radius: var(--r-pill);
+    overflow: hidden;
+}
+
+// -----------------------------------------------------------------------
+// Topbar shell (replaces the old sidebar + navbar split)
+// -----------------------------------------------------------------------
+.tn-topbar {
+    border-bottom: var(--bw-hair) solid var(--border);
+    background-color: var(--bg);
+}
+
+.tn-content-container {
+    padding-top: var(--space-6);
+}
+
+.tn-nav-item {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--r-sm);
+    font-size: var(--fs-sm);
+    font-weight: var(--fw-semibold);
+    color: var(--text-muted);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out);
+
+    &:hover {
+        background-color: var(--surface-2);
+        color: var(--text);
+    }
+
+    &.active {
+        background-color: var(--accent-soft);
+        color: var(--text);
+    }
+}
+
+.tn-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--r-sm);
+    color: var(--text-muted);
+    transition: background-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out);
+
+    &:hover {
+        background-color: var(--surface-2);
+        color: var(--text);
+    }
+}
+
+.tn-balance-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--r-pill);
+    background-color: var(--surface-2);
+    border: var(--bw-hair) solid var(--border-faint);
+    font-size: var(--fs-xs);
+    color: var(--text);
+
+    .icon {
+        width: 14px;
+        height: 14px;
+        color: var(--text-faint);
+    }
+}
+
+// Mobile bottom tab bar - replaces the hamburger/offcanvas sidebar below the
+// md breakpoint. Fixed so it always reads as app chrome, not page content;
+// `#push`/footer padding-bottom keeps real content from hiding behind it.
+.tn-bottom-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1030;
+    display: flex;
+    background-color: var(--bg);
+    border-top: var(--bw-hair) solid var(--border);
+    padding: var(--space-1) var(--space-2) max(var(--space-1), env(safe-area-inset-bottom));
+}
+
+.tn-bottom-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: var(--space-2) 0;
+    min-height: 44px;
+    color: var(--text-faint);
+    text-decoration: none;
+
+    .icon {
+        width: 20px;
+        height: 20px;
+    }
+
+    span {
+        font-size: 10px;
+        font-weight: var(--fw-semibold);
+    }
+
+    &.active {
+        color: var(--accent-press);
+    }
+}
+
+@media (max-width: 767.98px) {
+    #wrapper {
+        padding-bottom: 64px;
+    }
+}
+
+// -----------------------------------------------------------------------
+// Shared list/card patterns reused across the order flow, dashboard,
+// services, invoices, support and account pages.
+// -----------------------------------------------------------------------
+.tn-product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: var(--space-3);
+}
+
+.tn-product-card {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    background-color: var(--surface);
+    border: var(--bw-hair) solid var(--border);
+    border-radius: var(--r-md);
+    text-decoration: none;
+    color: inherit;
+    transition: border-color var(--dur) var(--ease-out);
+
+    &:hover {
+        border-color: var(--border-strong);
+        color: inherit;
+    }
+
+    &__icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        flex-shrink: 0;
+        border-radius: var(--r-sm);
+        background-color: var(--accent-soft);
+        color: var(--accent-press);
+    }
+
+    &__body {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+        flex: 1;
+    }
+
+    &__title {
+        font-weight: var(--fw-semibold);
+        font-size: var(--fs-sm);
+        color: var(--text);
+    }
+
+    &__desc {
+        font-size: var(--fs-xs);
+        color: var(--text-muted);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__arrow {
+        flex-shrink: 0;
+        color: var(--text-faint);
+        width: 16px;
+        height: 16px;
+    }
+}
+
+.tn-addon-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.tn-addon-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background-color: var(--surface);
+    border: var(--bw-hair) solid var(--border);
+    border-radius: var(--r-md);
+
+    &__icon {
+        width: 32px;
+        height: 32px;
+        flex-shrink: 0;
+        border-radius: var(--r-sm);
+        object-fit: cover;
+    }
+
+    &__body {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        flex: 1;
+    }
+
+    &__title {
+        font-weight: var(--fw-semibold);
+        font-size: var(--fs-sm);
+        color: var(--text);
+    }
+
+    &__desc {
+        font-size: var(--fs-xs);
+        color: var(--text-muted);
+    }
+
+    &__price {
+        flex-shrink: 0;
+    }
+
+    &__toggle {
+        flex-shrink: 0;
+        display: flex;
+        gap: var(--space-1);
+    }
+}
+
+// Key/value row - reused for order summaries, invoice detail, service
+// manage panels, etc.
+.tn-kv-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding: var(--space-2) 0;
+    border-bottom: var(--bw-hair) solid var(--border-faint);
+
+    &:last-child {
+        border-bottom: none;
+    }
+
+    &__key {
+        font-size: var(--fs-sm);
+        color: var(--text-muted);
+        flex-shrink: 0;
+    }
+
+    &__value {
+        font-size: var(--fs-sm);
+        font-weight: var(--fw-semibold);
+        color: var(--text);
+        text-align: right;
+        min-width: 0;
+    }
+
+    &--total {
+        border-top: var(--bw-hair) solid var(--border);
+        border-bottom: none;
+        padding-top: var(--space-3);
+        margin-top: var(--space-1);
+
+        .tn-kv-row__key,
+        .tn-kv-row__value {
+            font-weight: var(--fw-bold);
+            font-size: var(--fs-body);
+            color: var(--text);
+        }
+    }
+}
+
+.tn-cart-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.tn-cart-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background-color: var(--surface);
+    border: var(--bw-hair) solid var(--border);
+    border-radius: var(--r-md);
+
+    &__body {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        flex: 1;
+    }
+
+    &__title {
+        font-weight: var(--fw-semibold);
+        font-size: var(--fs-sm);
+        color: var(--text);
+    }
+
+    &__meta {
+        font-size: var(--fs-xs);
+        color: var(--text-muted);
+    }
+
+    &__price {
+        flex-shrink: 0;
+        font-size: var(--fs-sm);
+    }
+}
+
+// Generic row-hover used on clickable list rows (dashboard services,
+// invoice/ticket lists, DNS records, etc.)
+.tn-row-hover {
+    transition: background-color var(--dur-fast) var(--ease-out);
+
+    &:hover {
+        background-color: var(--surface-2);
+    }
+}
+
+// Pill filter chip - used for the "All / Hosting / Domains / ..." filter
+// row above list views (services, invoices, tickets).
+.tn-tabchip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-sans);
+    font-size: var(--fs-sm);
+    font-weight: 500;
+    color: var(--text-muted);
+    background: var(--surface-2);
+    border: var(--bw-hair) solid var(--border);
+    border-radius: var(--r-pill);
+    padding: 6px 14px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out);
+    text-decoration: none;
+
+    &:hover {
+        color: var(--text);
+        border-color: var(--border-strong);
+    }
+
+    &__count {
+        font-family: var(--font-mono);
+        font-size: var(--fs-micro);
+        color: var(--text-faint);
+    }
+
+    &[data-active="true"] {
+        background: var(--accent-soft);
+        border-color: rgba(199, 242, 60, 0.3);
+        color: var(--accent);
+
+        .tn-tabchip__count { color: var(--accent); }
+    }
+}
+
+// Service row - used on the services list to show one order/service per
+// row with a type icon, plan sub-text, status badge and renewal/price.
+.tn-servicerow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-2);
+    text-decoration: none;
+    color: inherit;
+
+    &__icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        flex-shrink: 0;
+        border-radius: var(--r-sm);
+        background-color: var(--accent-soft);
+        color: var(--accent-press);
+    }
+
+    &__body {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        flex: 1;
+        gap: 1px;
+    }
+
+    &__name {
+        font-family: var(--font-mono);
+        font-size: var(--fs-sm);
+        font-weight: 600;
+        color: var(--text);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__sub {
+        font-size: var(--fs-xs);
+        color: var(--text-muted);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__status {
+        flex-shrink: 0;
+        width: 108px;
+    }
+
+    &__meta {
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 1px;
+        min-width: 90px;
+    }
+
+    &__meta-label {
+        font-size: var(--fs-xs);
+        color: var(--text-faint);
+    }
+
+    &__meta-value {
+        font-size: var(--fs-sm);
+        font-weight: 600;
+        color: var(--text);
+    }
+
+    &__chevron {
+        flex-shrink: 0;
+        color: var(--text-faint);
+    }
+}
+
+// Dashed "transfer in" row below the services list card.
+.tn-transfer-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border: var(--bw-hair) dashed var(--border-strong);
+    border-radius: var(--r-lg);
+    margin-top: var(--space-3);
+
+    &__icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        flex-shrink: 0;
+        border-radius: var(--r-sm);
+        background-color: var(--surface-3);
+        color: var(--text-muted);
+    }
+
+    &__text {
+        flex: 1;
+        font-size: var(--fs-sm);
+        color: var(--text-muted);
+    }
+
+    &__link {
+        flex-shrink: 0;
+        font-size: var(--fs-sm);
+        font-weight: 600;
+        color: var(--accent);
+        text-decoration: none;
+
+        &:hover { text-decoration: underline; }
+    }
+}
+
+// NOTE: .tn-manage-action / .tn-manage-grid are defined further below
+// (existing "Manage action card" block) and reused as-is for the 2x2
+// quick-action grid on hosting/domain manage pages.
+
+// Attention/alert row used on the dashboard "needs attention" card.
+.tn-attention-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border-bottom: var(--bw-hair) solid var(--border-faint);
+
+    &:last-child {
+        border-bottom: none;
+    }
+
+    &__icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        flex-shrink: 0;
+        border-radius: 50%;
+
+        &--warning {
+            background-color: var(--warning-bg);
+            color: var(--warning-500);
+        }
+
+        &--danger {
+            background-color: var(--danger-bg);
+            color: var(--danger-500);
+        }
+    }
+
+    &__body {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        flex: 1;
+    }
+
+    &__title {
+        font-weight: var(--fw-semibold);
+        font-size: var(--fs-sm);
+        color: var(--text);
+    }
+
+    &__sub {
+        font-size: var(--fs-xs);
+        color: var(--text-muted);
+    }
+}
+
+// Small status dot used in the dashboard support snapshot row.
+.tn-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+
+    &--info {
+        background-color: var(--info-500);
+    }
+}
+
+// Dashboard header row - greeting + right-aligned action buttons.
+.tn-dashboard-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+
+    &__title {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: var(--fs-h2);
+        color: var(--text);
+        margin: 0;
+    }
+
+    &__sub {
+        font-size: var(--fs-sm);
+        color: var(--text-muted);
+        margin-top: 4px;
+    }
+
+    &__actions {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        flex-wrap: wrap;
+    }
+}
+
+// KPI strip - 4-column stat grid on the dashboard.
+.tn-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: var(--space-4);
+
+    @media (max-width: 991.98px) {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+// Two-column dashboard body: left flexible, right fixed-width rail.
+.tn-dashboard-body {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+
+    &__main {
+        flex: 1;
+        min-width: 0;
+    }
+
+    &__rail {
+        flex: 0 0 330px;
+        width: 330px;
+        min-width: 0;
+    }
+
+    @media (max-width: 991.98px) {
+        flex-direction: column;
+
+        &__rail {
+            flex: 1 1 auto;
+            width: 100%;
+        }
+    }
+}
+
+// Service row used in the dashboard "Your services" card.
+.tn-service-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border-bottom: var(--bw-hair) solid var(--border-faint);
+    text-decoration: none;
+    color: inherit;
+
+    &:last-child {
+        border-bottom: none;
+    }
+
+    &:hover {
+        color: inherit;
+    }
+
+    &__icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        flex-shrink: 0;
+        border-radius: var(--r-sm);
+        background-color: var(--surface-3);
+        color: var(--text-muted);
+    }
+
+    &__body {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        flex: 1;
+        gap: 1px;
+    }
+
+    &__name {
+        font-family: var(--font-mono);
+        font-weight: var(--fw-semibold);
+        font-size: var(--fs-sm);
+        color: var(--text);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__detail {
+        font-size: var(--fs-xs);
+        color: var(--text-muted);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__status {
+        flex: 0 0 108px;
+        width: 108px;
+    }
+
+    &__meta {
+        flex-shrink: 0;
+        text-align: right;
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        min-width: 90px;
+    }
+
+    &__date {
+        font-size: var(--fs-xs);
+        color: var(--text-muted);
+
+        &--danger {
+            color: var(--danger-500);
+        }
+    }
+
+    &__price {
+        font-size: var(--fs-sm);
+        font-weight: var(--fw-semibold);
+        color: var(--text);
+    }
+
+    &__chevron {
+        flex-shrink: 0;
+        color: var(--text-faint);
+        width: 16px;
+        height: 16px;
+    }
+}
+
+// Usage meter label row (hosting manage, service quotas).
+.tn-usage-row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+
+    &__head {
+        display: flex;
+        justify-content: space-between;
+        font-size: var(--fs-xs);
+    }
+}
+
+// Chat message bubble - support ticket conversation thread. Staff messages
+// left-aligned on the surface color; the client's own messages right-aligned
+// with an accent-soft tint, similar to a typical messaging UI.
+.tn-chat-row {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+
+    &--mine {
+        flex-direction: row-reverse;
+    }
+
+    &__avatar {
+        flex-shrink: 0;
+    }
+}
+
+.tn-chat-bubble {
+    max-width: 80%;
+    padding: var(--space-3) var(--space-4);
+    background-color: var(--surface);
+    border: var(--bw-hair) solid var(--border);
+    border-radius: var(--r-md);
+
+    &--mine {
+        background-color: var(--accent-soft);
+        border-color: transparent;
+    }
+
+    &__head {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        margin-bottom: var(--space-2);
+    }
+
+    &__name {
+        font-weight: var(--fw-semibold);
+        font-size: var(--fs-sm);
+        color: var(--text);
+    }
+
+    &__time {
+        font-size: var(--fs-xs);
+        color: var(--text-faint);
+    }
+}
+
+// Manage action card - clickable/actionable tile used on service manage
+// pages (control panel login, change password/domain/username, etc).
+.tn-manage-action {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    background-color: var(--surface);
+    border: var(--bw-hair) solid var(--border);
+    border-radius: var(--r-md);
+    height: 100%;
+
+    &__icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        flex-shrink: 0;
+        border-radius: var(--r-sm);
+        background-color: var(--accent-soft);
+        color: var(--accent-press);
+    }
+
+    &__title {
+        font-weight: var(--fw-semibold);
+        font-size: var(--fs-sm);
+        color: var(--text);
+    }
+
+    &__desc {
+        font-size: var(--fs-xs);
+        color: var(--text-muted);
+        flex: 1;
+    }
+
+    &__footer {
+        display: flex;
+        gap: var(--space-2);
+    }
+}
+
+.tn-manage-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: var(--space-3);
+}
+
+// DNS/nameserver-style record row - a label + value + trailing actions.
+.tn-record-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border-bottom: var(--bw-hair) solid var(--border-faint);
+
+    &:last-child {
+        border-bottom: none;
+    }
+
+    &__type {
+        flex-shrink: 0;
+        min-width: 64px;
+    }
+
+    &__body {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        flex: 1;
+        gap: 2px;
+    }
+
+    &__value {
+        font-family: var(--font-mono);
+        font-size: var(--fs-sm);
+        color: var(--text);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__meta {
+        font-size: var(--fs-xs);
+        color: var(--text-muted);
+    }
+
+    &__actions {
+        flex-shrink: 0;
+        display: flex;
+        gap: var(--space-1);
+    }
+}
+
+// -----------------------------------------------------------------------
+// Store catalog page (order-catalog rebuild)
+// -----------------------------------------------------------------------
+.tn-eyebrow {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: var(--fs-micro);
+    font-weight: 600;
+    letter-spacing: var(--ls-eyebrow);
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: var(--space-2);
+}
+.tn-catalog__title {
+    font-family: var(--font-display);
+    font-size: var(--fs-h2);
+    font-weight: 700;
+    letter-spacing: var(--ls-tight);
+    color: var(--text);
+    margin-bottom: var(--space-2);
+}
+.tn-catalog__sub { font-size: var(--fs-body); margin-bottom: 0; }
+
+.tn-tabchip-row {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+.tn-tabchip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-family: var(--font-sans);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    color: var(--text-muted);
+    background: var(--surface);
+    border: var(--bw-hair) solid var(--border);
+    border-radius: var(--r-pill);
+    padding: var(--space-2) var(--space-4);
+    cursor: pointer;
+    transition: background var(--dur) var(--ease-out), color var(--dur), border-color var(--dur);
+
+    &:hover { border-color: var(--border-strong); color: var(--text); }
+    &[data-active="true"] {
+        background: var(--text);
+        color: var(--bg);
+        border-color: var(--text);
+        .icon { color: var(--bg); }
+    }
+}
+
+.tn-catalog__layout {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-6);
+
+    @media (max-width: 991.98px) {
+        flex-direction: column;
+    }
+}
+.tn-catalog__main { flex: 1 1 auto; min-width: 0; }
+.tn-cart-rail { flex: 0 0 316px; width: 316px; position: sticky; top: var(--space-4); }
+
+.tn-domain-search .tn-input { height: 48px; }
+
+.tn-tld-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+.tn-tld-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border: var(--bw-hair) solid var(--border);
+    border-radius: var(--r-pill);
+    background: var(--surface);
+    transition: border-color var(--dur), background var(--dur);
+    &:hover { border-color: var(--accent); }
+    &__ext { font-weight: 700; }
+    &--more { color: var(--accent); cursor: pointer; }
+}
+
+.tn-domainhit {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    &__body { display: flex; flex-direction: column; gap: var(--space-1); }
+    &__name { font-size: var(--fs-h4); font-weight: 700; }
+}
+
+.tn-alt-grid {
+    display: grid;
+    gap: var(--space-3);
+    &--2col { grid-template-columns: repeat(2, 1fr); }
+    &--3col { grid-template-columns: repeat(3, 1fr); }
+    @media (max-width: 575.98px) { grid-template-columns: 1fr !important; }
+}
+.tn-alt-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border: var(--bw-hair) solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    &__name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+}
+
+.tn-transfer-cta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--r-md);
+    color: var(--text-muted);
+    font-size: var(--fs-sm);
+    &__link { color: var(--accent); font-weight: 600; margin-left: auto; white-space: nowrap; display: inline-flex; align-items: center; gap: var(--space-1); }
+}
+
+.tn-plan-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-4);
+    @media (max-width: 767.98px) { grid-template-columns: 1fr; }
+}
+.tn-plan-card {
+    position: relative;
+    background: var(--surface);
+    border: var(--bw-hair) solid var(--border);
+    border-radius: var(--r-lg);
+    padding: var(--space-6);
+    &--popular {
+        border-color: rgba(199,242,60,0.35);
+        box-shadow: var(--glow-blade-soft);
+    }
+    &__badge {
+        position: absolute;
+        top: -12px;
+        left: var(--space-6);
+        background: var(--accent);
+        color: var(--on-accent);
+        font-family: var(--font-mono);
+        font-size: var(--fs-micro);
+        font-weight: 700;
+        letter-spacing: var(--ls-wide);
+        padding: 4px 10px;
+        border-radius: var(--r-pill);
+    }
+    &__name { font-family: var(--font-display); font-size: var(--fs-h4); margin-bottom: var(--space-1); }
+    &__price { font-family: var(--font-mono); font-size: var(--fs-h3); font-weight: 700; margin-top: var(--space-3); }
+}
+
+.tn-m365-list { display: flex; flex-direction: column; gap: var(--space-3); }
+.tn-m365-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-4);
+    border: var(--bw-hair) solid var(--border);
+    border-radius: var(--r-md);
+    &--popular { border-color: rgba(199,242,60,0.3); }
+    &__badge { position: absolute; top: -10px; left: var(--space-4); }
+    &__body { display: flex; flex-direction: column; gap: 2px; flex: 1 1 auto; min-width: 0; }
+    &__name { font-weight: 600; }
+    &__note { display: flex; align-items: center; gap: var(--space-1); font-size: var(--fs-xs); color: var(--text-faint); margin-top: var(--space-1); }
+    &__price { font-family: var(--font-mono); font-weight: 700; white-space: nowrap; }
+}
+
+.tn-info-banner {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background: var(--accent-soft);
+    border-radius: var(--r-md);
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+    a { color: var(--accent); font-weight: 600; margin-left: auto; white-space: nowrap; }
+}
+
+.tn-cart-stickybar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface);
+    border-top: var(--bw-hair) solid var(--border);
+    z-index: 20;
+    .tn-btn { margin-left: auto; }
+}
+
+// -----------------------------------------------------------------------
+// Order flow — Configure & Checkout steps (shared with the catalog page's
+// cart-rail pattern above; reuses .tn-kv-row / .tn-cart-* / .tn-badge / .tn-card)
+// -----------------------------------------------------------------------
+
+// Stepper: Plan -> Configure -> Checkout
+.tn-stepper {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+.tn-stepper__step {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+.tn-stepper__dot {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-faint);
+    border: 1.5px solid var(--border-strong);
+    background: transparent;
+    .icon { width: 12px; height: 12px; }
+}
+.tn-stepper__label {
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    color: var(--text-faint);
+    white-space: nowrap;
+}
+.tn-stepper__line {
+    width: 34px;
+    height: 1px;
+    background: var(--border-strong);
+    flex-shrink: 0;
+    @media (max-width: 575.98px) { width: 18px; }
+}
+.tn-stepper__line--done { background: var(--blade-600); }
+.tn-stepper__step--current {
+    .tn-stepper__dot { background: var(--accent-soft); border-color: var(--blade-600); color: var(--accent); }
+    .tn-stepper__label { color: var(--text); font-weight: 700; }
+}
+.tn-stepper__step--done {
+    .tn-stepper__dot { background: var(--accent); border-color: var(--blade-600); color: var(--on-accent); }
+    .tn-stepper__label { color: var(--text-muted); }
+}
+
+// Two-column layout: main content + sticky order-summary rail
+.tn-configure-layout {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-6);
+    @media (max-width: 991.98px) { flex-direction: column; }
+}
+.tn-configure-layout__main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: var(--space-4); }
+.tn-configure-layout__rail {
+    flex: 0 0 316px;
+    width: 316px;
+    position: sticky;
+    top: var(--space-4);
+    @media (max-width: 991.98px) { width: 100%; position: static; }
+}
+.tn-configure-section__title {
+    font-family: var(--font-display);
+    font-size: var(--fs-h4);
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: var(--space-2);
+}
+
+// Billing-cycle radio cards (Configure step)
+.tn-cycle-row {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+.tn-cycle-card {
+    position: relative;
+    flex: 1 1 120px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: var(--space-3) var(--space-4);
+    border: var(--bw-hair) solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    cursor: pointer;
+    transition: border-color var(--dur) var(--ease-out), background var(--dur);
+
+    &:hover { border-color: var(--border-strong); }
+    &--selected { border-color: var(--blade-600); background: var(--accent-soft); }
+    &__input { position: absolute; opacity: 0; width: 0; height: 0; }
+    &__label {
+        font-family: var(--font-mono);
+        font-size: var(--fs-micro);
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        color: var(--text-muted);
+        text-transform: uppercase;
+    }
+    &__price { font-size: var(--fs-body); font-weight: 700; color: var(--text); }
+}
+
+// Identity chip (Checkout step, signed-in client)
+.tn-identity-chip {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface);
+    border: var(--bw-hair) solid var(--border);
+    border-radius: var(--r-md);
+    &__body { display: flex; flex-direction: column; min-width: 0; flex: 1; gap: 1px; }
+    &__name { font-weight: var(--fw-semibold); font-size: var(--fs-sm); color: var(--text); }
+    &__meta { font-size: var(--fs-xs); }
+}
+
+// Payment-method rows (Checkout step)
+.tn-paymethod-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.tn-paymethod {
+    display: block;
+    border: var(--bw-hair) solid var(--border);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    cursor: pointer;
+    transition: border-color var(--dur) var(--ease-out), background var(--dur);
+
+    &--selected { border-color: var(--blade-600); }
+    &__row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--space-3) var(--space-4);
+    }
+    &__input { position: absolute; opacity: 0; width: 0; height: 0; }
+    &__radio {
+        flex-shrink: 0;
+        width: 17px; height: 17px;
+        border-radius: 50%;
+        border: 1.5px solid var(--border-strong);
+        position: relative;
+        &--on, .tn-paymethod--selected & { border-color: var(--blade-500); background: var(--accent); }
+        &--on::after, .tn-paymethod--selected &::after {
+            content: ''; position: absolute; inset: 5px; border-radius: 50%; background: var(--on-accent);
+        }
+    }
+    &__body { display: flex; flex-direction: column; min-width: 0; flex: 1; gap: 1px; }
+    &__title { font-weight: var(--fw-semibold); font-size: var(--fs-sm); color: var(--text); }
+    &__sub { font-size: var(--fs-xs); color: var(--text-muted); }
+    &__logo {
+        flex-shrink: 0;
+        background: transparent no-repeat center center;
+        background-size: contain;
+    }
+}
+
+// Billing details block (Checkout step)
+.tn-billing-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface);
+    border: var(--bw-hair) solid var(--border);
+    border-radius: var(--r-md);
+    &__name { font-weight: var(--fw-semibold); font-size: var(--fs-sm); color: var(--text); }
+}
+
+.tn-promo-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    color: var(--accent);
+}

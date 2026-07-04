@@ -1,0 +1,181 @@
+// TenantNinja design tokens v2 - source of truth, synced from the Claude Design
+// project (claude.ai/design/p/1ce8abd7-090b-4b82-84c9-50c189829746), 2026-07-03.
+// These are plain CSS custom properties (not Sass variables) so they can be
+// referenced directly in component overrides and remain toggleable via
+// [data-bs-theme="dark"] / default (light) exactly like Bootstrap's own tokens.
+//
+// v2 notes: colors now expressed in OKLCH. The blade accent ramp is locked to a
+// single hue (127) - only lightness/chroma vary. Success (teal, hue 177) and
+// info (blue, hue 225) are deliberately distinct hues from the accent so a
+// status badge never reads as "the same green" as an accent button. The
+// --volt token from v1 was unused and has been removed.
+
+:root {
+    --carbon-950: #090807;
+    --carbon-900: #0F0E0C;
+    --carbon-850: #141210;
+    --carbon-800: #1A1816;
+    --carbon-700: #22201A;
+    --carbon-600: #2E2B24;
+    --carbon-500: #3F3D36;
+    --carbon-400: #57554E;
+    --smoke-400: #706E68;
+    --smoke-300: #929089;
+    --smoke-200: #B6B5AD;
+    --smoke-100: #D3D1C9;
+    --paper-200: #E8E6DC;
+    --paper-100: #F1EEDE;
+    --paper-50: #F9F7EF;
+    --white: #FDFCF8;
+
+    --blade-700: oklch(42% 0.18 127);
+    --blade-600: oklch(60% 0.22 127);
+    --blade-500: oklch(88% 0.23 127);
+    --blade-400: oklch(93% 0.15 127);
+    --blade-300: oklch(96% 0.08 127);
+    --blade-glow: color-mix(in oklch, var(--blade-500) 25%, transparent);
+
+    --success-500: oklch(72% 0.14 177);
+    --success-bg: oklch(72% 0.14 177 / 0.12);
+    --warning-500: #F6B53C;
+    --warning-bg: rgba(246, 181, 60, 0.12);
+    --danger-500: #FF5468;
+    --danger-bg: rgba(255, 84, 104, 0.12);
+    --info-500: oklch(68% 0.16 225);
+    --info-bg: oklch(68% 0.16 225 / 0.12);
+
+    // Light-mode surface/text values live here in :root because the app's
+    // default `data-bs-theme` attribute is "light" (see settings.theme|default('light')
+    // in layout_default/layout_public). The dark-mode (carbon) values are applied
+    // via the [data-bs-theme="dark"] override block below - same mechanism
+    // huraga uses for Bootstrap's own color modes, just repointed at these tokens.
+    --bg: var(--paper-50);
+    --bg-deep: var(--paper-100);
+    --surface: var(--white);
+    --surface-2: var(--paper-100);
+    --surface-3: var(--paper-200);
+    --surface-inset: var(--paper-100);
+
+    --border: rgba(12, 15, 14, 0.10);
+    --border-strong: rgba(12, 15, 14, 0.18);
+    --border-faint: rgba(12, 15, 14, 0.06);
+
+    --text: var(--carbon-900);
+    --text-muted: var(--carbon-400);
+    --text-faint: var(--smoke-400);
+    --text-inverse: var(--paper-50);
+
+    --accent: var(--blade-500);
+    --accent-hover: var(--blade-400);
+    --accent-press: var(--blade-600);
+    --on-accent: #0F0E0C;
+    --accent-soft: color-mix(in oklch, var(--accent) 13%, transparent);
+    --accent-ring: color-mix(in oklch, var(--accent) 28%, transparent);
+
+    --focus-ring: var(--blade-500);
+
+    // Typography
+    --font-display: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+    --font-sans: 'Hanken Grotesk', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+    --fw-regular: 400;
+    --fw-medium: 500;
+    --fw-semibold: 600;
+    --fw-bold: 700;
+    --fw-black: 800;
+
+    --fs-display: 64px;
+    --fs-h1: 44px;
+    --fs-h2: 32px;
+    --fs-h3: 24px;
+    --fs-h4: 20px;
+    --fs-lg: 18px;
+    --fs-body: 16px;
+    --fs-sm: 14px;
+    --fs-xs: 13px;
+    --fs-micro: 11px;
+
+    --lh-tight: 1.05;
+    --lh-snug: 1.2;
+    --lh-normal: 1.45;
+    --lh-relaxed: 1.6;
+
+    --ls-tight: -0.02em;
+    --ls-snug: -0.01em;
+    --ls-normal: 0;
+    --ls-wide: 0.04em;
+    --ls-eyebrow: 0.16em;
+
+    // Spacing
+    --space-0: 0;
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-10: 40px;
+    --space-12: 48px;
+    --space-16: 64px;
+    --space-20: 80px;
+    --space-24: 96px;
+    --space-32: 128px;
+
+    --container: 1200px;
+    --container-wide: 1400px;
+    --gutter: 24px;
+    --sidebar-w: 224px;
+
+    // Effects
+    --r-xs: 4px;
+    --r-sm: 6px;
+    --r-md: 10px;
+    --r-lg: 14px;
+    --r-xl: 20px;
+    --r-pill: 999px;
+
+    --bw-hair: 1px;
+    --bw: 1.5px;
+    --bw-bold: 2px;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45);
+    --shadow-lg: 0 18px 48px rgba(0, 0, 0, 0.55);
+    --shadow-pop: 0 12px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.06);
+
+    --glow-blade: 0 0 0 1px var(--blade-600), 0 6px 24px var(--blade-glow);
+    --glow-blade-soft: 0 4px 20px var(--blade-glow);
+
+    --inset-top: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+    --ease-snap: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --dur-fast: 120ms;
+    --dur: 200ms;
+    --dur-slow: 360ms;
+}
+
+[data-bs-theme="dark"] {
+    --bg: var(--carbon-900);
+    --bg-deep: var(--carbon-950);
+    --surface: var(--carbon-800);
+    --surface-2: var(--carbon-700);
+    --surface-3: var(--carbon-600);
+    --surface-inset: var(--carbon-850);
+
+    --border: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.16);
+    --border-faint: rgba(255, 255, 255, 0.05);
+
+    --text: #F4F2EC;
+    --text-muted: var(--smoke-300);
+    --text-faint: var(--smoke-400);
+    --text-inverse: var(--carbon-900);
+
+    --on-accent: #0F0E0C;
+    --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
+    --accent-ring: color-mix(in oklch, var(--accent) 28%, transparent);
+}

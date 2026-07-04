@@ -18,114 +18,168 @@
         </div>
     {% endif %}
 
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header">
-                    <nav class="nav nav-tabs card-header-tabs">
-                        <a class="nav-link active" id="details-tab" data-bs-toggle="tab"
-                           data-bs-target="#details-tab-pane" href="#details-tab-pane">{{ 'Details'|trans }}</a>
-                        <a class="nav-link" id="pass-tab" data-bs-toggle="tab" data-bs-target="#pass-tab-pane"
-                           href="#pass-tab-pane">{{ 'Change Password'|trans }}</a>
-                        <a class="nav-link" id="apikey-tab" data-bs-toggle="tab"
-                           data-bs-target="#apikey-tab-pane" href="#apikey-tab-pane">{{ 'API Key'|trans }}</a>
-                        <a class="nav-link" id="currency-tab" data-bs-toggle="tab"
-                           data-bs-target="#currency-tab-pane" href="#currency-tab-pane">{{ 'Currency'|trans }}</a>
-                    </nav>
+    <div class="mb-4">
+        <h1 class="mb-1">{{ 'Account'|trans }}</h1>
+        <span class="text-muted">{{ 'Profile, company details and security.'|trans }}</span>
+    </div>
+
+    <div class="tn-tabs mb-4">
+        <div class="tn-tabs__nav">
+            <a class="tn-tabs__tab tn-tabs__tab--active" href="{{ 'client/profile'|url }}">
+                <svg class="icon" width="16" height="16"><use href="#icon-user" /></svg>
+                {{ 'Profile'|trans }}
+            </a>
+            <a class="tn-tabs__tab" href="{{ 'client/balance'|url }}">
+                <svg class="icon" width="16" height="16"><use href="#icon-wallet" /></svg>
+                {{ 'Balance'|trans }}
+            </a>
+        </div>
+    </div>
+
+    <div class="d-flex flex-column flex-lg-row gap-4 align-items-start">
+        <div class="flex-fill" style="min-width:0;">
+            <form method="post" action="client/profile/update" id="profile-update" {{ fb_api_form({message: 'Profile Updated'|trans}) }}>
+
+                <div class="row mb-3 d-flex justify-content-center">
+                    <div class="col-md-2">
+                        {{ avatar(profile.email, 72, 'img-thumbnail', null, 'div') }}
+                    </div>
+                    <div class="col-md-10 d-flex align-items-center">
+                        <span class="fs-7 text-muted">{{ 'Avatar is derived deterministically from your email address.'|trans }}</span>
+                    </div>
                 </div>
-                <div class="tab-content">
-                    <div class="card-body tab-pane active" id="details-tab-pane" role="tabpanel" tabindex="0">
-                        <h5 class="card-title mb-1">{{ 'Update Details'|trans }}</h5>
-                        <p class="card-text fs-7 text-muted">{{ 'Keep your personal data up to date.'|trans }}</p>
-                        <form method="post" action="client/profile/update" id="profile-update" {{ fb_api_form({message: 'Profile Updated'|trans}) }}>
-                            <div class="row mb-4 d-flex justify-content-center">
-                                <div class="col-md-2">
-                                    {{ avatar(profile.email, 100, 'img-thumbnail', null, 'div') }}
-                                </div>
-                                <div class="col-md-10 d-flex align-items-center">
-                                    {{ 'Avatar is derived deterministically from your email address.'|trans }}
+
+                <div class="tn-card tn-card--compact mb-3">
+                    <div class="tn-card__header">
+                        <div>
+                            <div class="tn-card__title">{{ 'Personal'|trans }}</div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="mb-3 col-md-6">
+                            <div class="tn-field">
+                                <label class="tn-field__label" for="first_name">{{ 'First Name'|trans }}</label>
+                                <input type="text" class="tn-input" name="first_name" id="first_name" value="{{ profile.first_name }}" required>
+                            </div>
+                        </div>
+                        <div class="mb-3 col-md-6">
+                            <div class="tn-field">
+                                <label class="tn-field__label" for="last_name">{{ 'Last Name'|trans }}</label>
+                                <input type="text" class="tn-input" id="last_name" name="last_name" value="{{ profile.last_name }}" {% if "last_name" in required %} required {% endif %}>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="mb-3 col-md-6">
+                            <div class="tn-field">
+                                <label class="tn-field__label" for="email">{{ 'Email Address'|trans }}</label>
+                                <div class="d-flex align-items-center gap-2">
+                                    <input type="email" class="tn-input" id="email" name="email" value="{{ profile.email }}" required>
+                                    {% if profile.email_approved %}
+                                        <span class="tn-badge tn-badge--success">
+                                            <svg class="icon" width="12" height="12"><use href="#icon-check" /></svg>
+                                            {{ 'VERIFIED'|trans }}
+                                        </span>
+                                    {% endif %}
                                 </div>
                             </div>
-                            <div class="row">
-                                <div class="mb-3 col-md-5">
-                                    <label class="form-label" for="first_name">{{ 'First Name'|trans }}</label>
-                                    <input type="text" class="form-control" name="first_name" id="first_name" value="{{ profile.first_name }}" required>
-                                </div>
-                                <div class="mb-3 col-md-5">
-                                    <label class="form-label" for="last_name">{{ 'Last Name'|trans }}</label>
-                                    <input type="text" class="form-control" id="last_name" name="last_name" value="{{ profile.last_name }}" {% if "last_name" in required %} required {% endif %}>
-                                </div>
+                        </div>
+                        <div class="mb-3 col-md-6">
+                            <div class="tn-field">
+                                <label class="tn-field__label" for="phone">{{ 'Phone Number'|trans }}</label>
+                                <input type="hidden" name="phone_cc" id="phone_cc" value="{{ profile.phone_cc }}">
+                                <input type="tel" class="tn-input js-phone-input" name="phone" id="phone" value="{{ profile.phone }}" autocomplete="tel" data-initial-country="{{ profile.country|lower }}" {% if "phone" in required %} required {% endif %}>
                             </div>
-                            <div class="row">
-                                <div class="mb-3 col-md-5">
-                                    <label class="form-label" for="email">{{ 'Email Address'|trans }}</label>
-                                    <input type="email" class="form-control" id="email" name="email" value="{{ profile.email }}" required>
-                                </div>
-                                <div class="mb-3 col-md-5">
-                                    <label class="form-label" for="phone">{{ 'Phone Number'|trans }}</label>
-                                    <input type="hidden" name="phone_cc" id="phone_cc" value="{{ profile.phone_cc }}">
-                                    <input type="tel" class="form-control js-phone-input" name="phone" id="phone" value="{{ profile.phone }}" autocomplete="tel" data-initial-country="{{ profile.country|lower }}" {% if "phone" in required %} required {% endif %}>
-                                </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tn-card tn-card--compact mb-3">
+                    <div class="tn-card__header">
+                        <div>
+                            <div class="tn-card__title">{{ 'Company & tax'|trans }}</div>
+                            <div class="tn-card__subtitle">{{ 'Appears on every invoice.'|trans }}</div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="mb-3 col-md-6">
+                            <div class="tn-field">
+                                <label class="tn-field__label" for="company">{{ 'Company'|trans }}</label>
+                                <input type="text" class="tn-input" name="company" id="company" value="{{ profile.company }}" {% if "company" in required %} required {% endif %}>
                             </div>
-                            <div class="row">
-                                <div class="mb-3 col-md-5">
-                                    <label class="form-label" for="birthday">{{ 'Birthdate'|trans }}</label>
-                                    <input type="date" class="form-control" id="birthday" name="birthday"
-                                           value="{{ profile.birthday }}" {% if "birthday" in required %} required {% endif %}>
-                                </div>
-                                <div class="mb-3 col-md-5">
-                                    <label class="form-label" for="gender">{{ 'Gender'|trans }}</label>
-                                    <select class="form-select" name="gender" id="gender" {% if "gender" in required %} required {% endif %}>
-                                        <option value="male" {{ profile.gender == 'male' ? 'selected' : '' }}>Male
-                                        </option>
-                                        <option value="female" {{ profile.gender == 'female' ? 'selected' : '' }}>
-                                            Female
-                                        </option>
-                                        <option
-                                            value="nonbinary" {{ profile.gender == 'nonbinary' ? 'selected' : '' }}>
-                                            Non-binary
-                                        </option>
-                                        <option
-                                            value="other" {% if profile.gender not in ['male', 'female', 'nonbinary'] %} selected {% endif %}>
-                                            Other
-                                        </option>
+                        </div>
+                        <div class="mb-3 col-md-6">
+                            <div class="tn-field">
+                                <label class="tn-field__label" for="company_vat">{{ 'TRN (VAT number)'|trans }}</label>
+                                <input type="text" class="tn-input" style="font-family: var(--font-mono);" name="company_vat" id="company_vat" value="{{ profile.company_vat }}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="mb-3 col-md-12">
+                            <div class="tn-field">
+                                <label class="tn-field__label" for="address_1">{{ 'Address'|trans }}</label>
+                                <input type="text" class="tn-input" name="address_1" id="address_1" value="{{ profile.address_1 }}" {% if "address_1" in required %} required {% endif %}>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tn-card tn-card--compact mb-3">
+                    <div class="tn-card__header">
+                        <div>
+                            <div class="tn-card__title">{{ 'Additional information'|trans }}</div>
+                            <div class="tn-card__subtitle">{{ 'Rest of your billing address and profile details.'|trans }}</div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="mb-3 col-md-6">
+                            <div class="tn-field">
+                                <label class="tn-field__label" for="company_number">{{ 'Company Number'|trans }}</label>
+                                <input type="text" class="tn-input" name="company_number" id="company_number" value="{{ profile.company_number }}">
+                            </div>
+                        </div>
+                        <div class="mb-3 col-md-6">
+                            <div class="tn-field">
+                                <label class="tn-field__label" for="birthday">{{ 'Birthdate'|trans }}</label>
+                                <input type="date" class="tn-input" id="birthday" name="birthday"
+                                       value="{{ profile.birthday }}" {% if "birthday" in required %} required {% endif %}>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="mb-3 col-md-6">
+                            <div class="tn-field">
+                                <label class="tn-field__label" for="gender">{{ 'Gender'|trans }}</label>
+                                <div class="tn-select-wrap">
+                                    <select class="tn-select" name="gender" id="gender" {% if "gender" in required %} required {% endif %}>
+                                        <option value="male" {{ profile.gender == 'male' ? 'selected' : '' }}>{{ 'Male'|trans }}</option>
+                                        <option value="female" {{ profile.gender == 'female' ? 'selected' : '' }}>{{ 'Female'|trans }}</option>
+                                        <option value="nonbinary" {{ profile.gender == 'nonbinary' ? 'selected' : '' }}>{{ 'Non-binary'|trans }}</option>
+                                        <option value="other" {% if profile.gender not in ['male', 'female', 'nonbinary'] %} selected {% endif %}>{{ 'Other'|trans }}</option>
                                     </select>
                                 </div>
                             </div>
-                            <div class="row">
-                                <div class="mb-3 col-md-10">
-                                    <label class="form-label" for="company">{{ 'Company Name'|trans }}</label>
-                                    <input type="text" class="form-control" name="company" id="company" value="{{ profile.company }}" {% if "company" in required %} required {% endif %}>
-                                </div>
+                        </div>
+                        <div class="mb-3 col-md-6">
+                            <div class="tn-field">
+                                <label class="tn-field__label" for="address_2">{{ 'Address 2'|trans }}</label>
+                                <input type="text" class="tn-input" name="address_2" id="address_2" value="{{ profile.address_2 }}" {% if "address_2" in required %} required {% endif %}>
                             </div>
-                            <div class="row">
-                                <div class="mb-3 col-md-5">
-                                    <label class="form-label" for="company_vat">{{ 'Company VAT'|trans }}</label>
-                                    <input type="text" class="form-control" name="company_vat" id="company_vat" value="{{ profile.company_vat }}">
-                                </div>
-                                <div class="mb-3 col-md-5">
-                                    <label class="form-label" for="company_number">{{ 'Company Number'|trans }}</label>
-                                    <input type="text" class="form-control" name="company_number" id="company_number" value="{{ profile.company_number }}">
-                                </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="mb-3 col-md-6">
+                            <div class="tn-field">
+                                <label class="tn-field__label" for="city">{{ 'City'|trans }}</label>
+                                <input type="text" class="tn-input" name="city" id="city" value="{{ profile.city }}" {% if "city" in required %} required {% endif %}>
                             </div>
-                            <div class="row">
-                                <div class="mb-3 col-md-5">
-                                    <label class="form-label" for="address_1">{{ 'Address'|trans }}</label>
-                                    <input type="text" class="form-control" name="address_1" id="address_1" value="{{ profile.address_1 }}" {% if "address_1" in required %} required {% endif %}>
-                                </div>
-                                <div class="mb-3 col-md-5">
-                                    <label class="form-label" for="address_2">{{ 'Address 2'|trans }}</label>
-                                    <input type="text" class="form-control" name="address_2" id="address_2" value="{{ profile.address_2 }}" {% if "address_2" in required %} required {% endif %}>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="mb-3 col-md-5">
-                                    <label class="form-label" for="city">{{ 'City'|trans }}</label>
-                                    <input type="text" class="form-control" name="city" id="city" value="{{ profile.city }}" {% if "city" in required %} required {% endif %}>
-                                </div>
-                                <div class="mb-3 col-md-5">
-                                    <label class="form-label" for="country">{{ 'Country'|trans }}</label>
-                                    <select class="form-select" id="country" name="country" {% if "country" in required %} required {% endif %}>
+                        </div>
+                        <div class="mb-3 col-md-6">
+                            <div class="tn-field">
+                                <label class="tn-field__label" for="country">{{ 'Country'|trans }}</label>
+                                <div class="tn-select-wrap">
+                                    <select class="tn-select" id="country" name="country" {% if "country" in required %} required {% endif %}>
                                         <option value="">{{ '-- Select Country --'|trans }}</option>
                                         {% for val,label in guest.system_countries %}
                                             <option value="{{ val }}" label="{{ label|e }}"
@@ -134,83 +188,147 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="row">
-                                <div class="mb-3 col-md-5">
-                                    <label class="form-label" for="state">{{ 'State'|trans }}</label>
-                                    <input type="text" class="form-control" name="state" id="state" value="{{ profile.state }}" {% if "state" in required %} required {% endif %}>
-                                </div>
-                                <div class="mb-3 col-md-5">
-                                    <label class="form-label" for="postcode">{{ 'Zip/Postal Code'|trans }}</label>
-                                    <input type="text" class="form-control" id="postcode" name="postcode" value="{{ profile.postcode }}" {% if "postcode" in required %} required {% endif %}>
-                                </div>
-                            </div>
-                            {% for i in 1..10 %}
-                                {% set custom = 'custom_' ~ i %}
-                                {% set current = guest.client_custom_fields|default({})[custom]|default(null) %}
-                                {% if current and current.active %}
-                                    <div class="mb-3">
-                                        <label class="form-label" for="{{ custom }}">{{ current.title }}</label>
-                                        <input type="text" class="form-control" name="{{ custom }}" id="{{ custom }}" value="{{ profile[custom] }}" {% if current.required %} required {% endif %}>
-                                    </div>
-                                {% endif %}
-                            {% endfor %}
-                            <button class="btn btn-primary" type="submit">{{ 'Update Profile'|trans }}</button>
-                        </form>
+                        </div>
                     </div>
-                    <div class="card-body tab-pane" id="pass-tab-pane" role="tabpanel" tabindex="0">
-                        <h5 class="card-title mb-1">{{ 'Change Password'|trans }}</h5>
-                        <p class="card-text fs-7 text-muted">{{ 'Enter your new password twice to avoid mistakes. '|trans }}</p>
-                        <form method="post" action="{{ 'profile/change_password'|api_url }}" {{ fb_api_form() }}>
-                            <div class="mb-3">
-                                <label class="form-label" for="current_password">{{ 'Current Password'|trans }}</label>
-                                <input class="form-control" type="password" name="current_password"
-                                       id="current_password" required>
+                    <div class="row">
+                        <div class="mb-3 col-md-6">
+                            <div class="tn-field">
+                                <label class="tn-field__label" for="state">{{ 'State'|trans }}</label>
+                                <input type="text" class="tn-input" name="state" id="state" value="{{ profile.state }}" {% if "state" in required %} required {% endif %}>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label" for="new_password">{{ 'New Password'|trans }}</label>
-                                <input class="form-control" type="password" name="new_password" id="new_password"
-                                       required>
+                        </div>
+                        <div class="mb-3 col-md-6">
+                            <div class="tn-field">
+                                <label class="tn-field__label" for="postcode">{{ 'Zip/Postal Code'|trans }}</label>
+                                <input type="text" class="tn-input" id="postcode" name="postcode" value="{{ profile.postcode }}" {% if "postcode" in required %} required {% endif %}>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label" for="confirm_password">{{ 'Confirm Password'|trans }}</label>
-                                <input class="form-control" type="password" name="confirm_password"
-                                       id="confirm_password" required>
-                            </div>
-                            <button class="btn btn-primary" type="submit">{{ 'Change Password'|trans }}</button>
-                        </form>
+                        </div>
                     </div>
-                    <div class="card-body tab-pane" id="apikey-tab-pane" role="tabpanel" tabindex="0">
-                        <h5 class="card-title mb-1">{{ 'API Key'|trans }}</h5>
-                        <p class="card-text fs-7 text-muted">{{ 'API key allows integration with external applications. You will need this key for authentication.'|trans }}</p>
-                        <form method="post" action="client/profile/api_key_reset" id="change-api-key" {{ fb_api_form({message: 'API Key Changed'|trans}) }}>
-                            {% if client.profile_api_key_get %}
-                                <div class="alert alert-warning" role="alert">
-                                    <strong>{{ 'Warning!'|trans }}</strong>&nbsp;{{ 'Resetting the key will break existing applications using it!'|trans }}
+
+                    {% for i in 1..10 %}
+                        {% set custom = 'custom_' ~ i %}
+                        {% set current = guest.client_custom_fields|default({})[custom]|default(null) %}
+                        {% if current and current.active %}
+                            <div class="mb-3">
+                                <div class="tn-field">
+                                    <label class="tn-field__label" for="{{ custom }}">{{ current.title }}</label>
+                                    <input type="text" class="tn-input" name="{{ custom }}" id="{{ custom }}" value="{{ profile[custom] }}" {% if current.required %} required {% endif %}>
                                 </div>
-                            {% endif %}
-                            <div class="mb-3">
-                                <label for="api-key" class="form-label">{{ 'Your API Key'|trans }}</label>
-                                <input class="form-control" readonly type="text"
-                                       value="{{ client.profile_api_key_get }}" id="api-key">
-                            </div>
-                            <button class="btn btn-primary" type="submit">{{ 'Generate a New Key'|trans }}</button>
-                        </form>
-                    </div>
-                    <div class="card-body tab-pane" id="currency-tab-pane" role="tabpanel" tabindex="0">
-                        <h5 class="card-title mb-1">{{ 'Currency'|trans }}</h5>
-                        <p class="card-text fs-7 text-muted">{{ 'Your profile currency is defined after your first order. Once your currency is set, all your profile accounting will be managed in that currency and cannot be changed.'|trans }}</p>
-                        {% if profile.currency %}
-                            <p>{{ 'Your profile currency is'|trans }} <strong>{{ profile.currency|currency_name }}</strong></p>
-                            <p>{{ 'You will need to create a new client profile to use an alternative currency.'|trans }}</p>
-                        {% else %}
-                            <div class="alert alert-info" role="alert">
-                                {{ 'You do not yet have a currency associated with your profile. You can select the correct one when making your first order.'|trans }}
                             </div>
                         {% endif %}
+                    {% endfor %}
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <button class="tn-btn tn-btn--ghost tn-btn--md" type="reset">{{ 'Discard'|trans }}</button>
+                    <button class="tn-btn tn-btn--primary tn-btn--md" type="submit">{{ 'Save changes'|trans }}</button>
+                </div>
+            </form>
+        </div>
+
+        <div style="width:320px; flex:none;" class="w-100 w-lg-auto">
+            <div class="tn-card tn-card--compact mb-3">
+                <div class="tn-card__header">
+                    <div class="tn-card__title">{{ 'Security'|trans }}</div>
+                </div>
+                <div class="tn-kv-row">
+                    <div class="tn-kv-row__key">{{ 'Password'|trans }}</div>
+                    <div class="tn-kv-row__value">
+                        <a href="#pass-card" class="tn-btn tn-btn--ghost tn-btn--sm">
+                            <svg class="icon" width="14" height="14"><use href="#icon-lock" /></svg>
+                            {{ 'Change'|trans }}
+                        </a>
+                    </div>
+                </div>
+                <div class="tn-kv-row">
+                    <div class="tn-kv-row__key">{{ 'API key'|trans }}</div>
+                    <div class="tn-kv-row__value">
+                        <a href="#apikey-card" class="tn-btn tn-btn--ghost tn-btn--sm">
+                            <svg class="icon" width="14" height="14"><use href="#icon-key-round" /></svg>
+                            {{ 'Manage'|trans }}
+                        </a>
                     </div>
                 </div>
             </div>
-        </div>
 
+            <div class="tn-card tn-card--compact">
+                <div class="tn-card__header">
+                    <div class="tn-card__title">{{ 'Currency'|trans }}</div>
+                </div>
+                {% if profile.currency %}
+                    <p class="fs-7 mb-1">{{ 'Your profile currency is'|trans }} <strong>{{ profile.currency|currency_name }}</strong></p>
+                    <p class="fs-7 text-muted mb-0">{{ 'You will need to create a new client profile to use an alternative currency.'|trans }}</p>
+                {% else %}
+                    <p class="fs-7 text-muted mb-0">{{ 'Your currency is set automatically on your first order.'|trans }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex flex-column flex-lg-row gap-4 align-items-start mt-4" id="security-forms-row">
+        <div class="flex-fill" style="min-width:0;">
+            <div class="tn-card tn-card--compact mb-3" id="pass-card">
+                <div class="tn-card__header">
+                    <div>
+                        <div class="tn-card__title d-flex align-items-center gap-2">
+                            <svg class="icon" width="18" height="18"><use href="#icon-lock" /></svg>
+                            {{ 'Change Password'|trans }}
+                        </div>
+                        <div class="tn-card__subtitle">{{ 'Enter your new password twice to avoid mistakes.'|trans }}</div>
+                    </div>
+                </div>
+                <form method="post" action="{{ 'profile/change_password'|api_url }}" {{ fb_api_form() }}>
+                    <div class="row">
+                        <div class="mb-3 col-md-4">
+                            <div class="tn-field">
+                                <label class="tn-field__label" for="current_password">{{ 'Current Password'|trans }}</label>
+                                <input class="tn-input" type="password" name="current_password" id="current_password" required>
+                            </div>
+                        </div>
+                        <div class="mb-3 col-md-4">
+                            <div class="tn-field">
+                                <label class="tn-field__label" for="new_password">{{ 'New Password'|trans }}</label>
+                                <input class="tn-input" type="password" name="new_password" id="new_password" required>
+                            </div>
+                        </div>
+                        <div class="mb-3 col-md-4">
+                            <div class="tn-field">
+                                <label class="tn-field__label" for="confirm_password">{{ 'Confirm Password'|trans }}</label>
+                                <input class="tn-input" type="password" name="confirm_password" id="confirm_password" required>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="tn-btn tn-btn--primary tn-btn--md" type="submit">{{ 'Change Password'|trans }}</button>
+                </form>
+            </div>
+
+            <div class="tn-card tn-card--compact" id="apikey-card">
+                <div class="tn-card__header">
+                    <div>
+                        <div class="tn-card__title d-flex align-items-center gap-2">
+                            <svg class="icon" width="18" height="18"><use href="#icon-key-round" /></svg>
+                            {{ 'API Key'|trans }}
+                        </div>
+                        <div class="tn-card__subtitle">{{ 'API key allows integration with external applications. You will need this key for authentication.'|trans }}</div>
+                    </div>
+                </div>
+                <form method="post" action="client/profile/api_key_reset" id="change-api-key" {{ fb_api_form({message: 'API Key Changed'|trans}) }}>
+                    {% if client.profile_api_key_get %}
+                        <div class="alert alert-warning" role="alert">
+                            <strong>{{ 'Warning!'|trans }}</strong>&nbsp;{{ 'Resetting the key will break existing applications using it!'|trans }}
+                        </div>
+                    {% endif %}
+                    <div class="mb-3">
+                        <div class="tn-field">
+                            <label class="tn-field__label" for="api-key">{{ 'Your API Key'|trans }}</label>
+                            <input class="tn-input" readonly type="text" style="font-family: var(--font-mono);"
+                                   value="{{ client.profile_api_key_get }}" id="api-key">
+                        </div>
+                    </div>
+                    <button class="tn-btn tn-btn--secondary tn-btn--md" type="submit">{{ 'Generate a New Key'|trans }}</button>
+                </form>
+            </div>
+        </div>
+        <div style="width:320px; flex:none;" class="w-100 w-lg-auto d-none d-lg-block"></div>
     </div>
 {% endblock %}

@@ -1,0 +1,4 @@
+/* Huraga theme vendor dependencies */
+@import "bootstrap/dist/css/bootstrap.css";
+@import "intl-tel-input/styles";
+@import "tom-select/dist/css/tom-select.bootstrap5.css";

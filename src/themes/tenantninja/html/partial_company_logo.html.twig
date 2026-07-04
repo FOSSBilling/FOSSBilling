@@ -1,0 +1,25 @@
+{% set logo_url = logo_url|default(null) %}
+{% set dark_logo_url = dark_logo_url|default(null) %}
+{% set link_url = link_url|default('/'|url) %}
+{% set link_class = link_class|default('') %}
+{% set link_rel = link_rel|default(null) %}
+{% set image_class = image_class|default('') %}
+{% set image_height = image_height|default('45px') %}
+{% set show_mobile_name = show_mobile_name|default(false) %}
+
+<a{% if link_class %} class="{{ link_class }}"{% endif %} href="{{ link_url }}"{% if link_target is defined %} target="{{ link_target }}"{% endif %}{% if link_rel %} rel="{{ link_rel }}"{% endif %}>
+    {% if logo_url or dark_logo_url %}
+        <img class="hide-theme-light{% if image_class %} {{ image_class }}{% endif %}" src="{{ dark_logo_url|default(logo_url) }}" alt="{{ company.name }}" height="{{ image_height }}" title="{{ company.name }}">
+        <img class="hide-theme-dark{% if image_class %} {{ image_class }}{% endif %}" src="{{ logo_url|default(dark_logo_url) }}" alt="{{ company.name }}" height="{{ image_height }}" title="{{ company.name }}">
+        {% if show_mobile_name %}
+            <span class="d-sm-none">{{ company.name }}</span>
+        {% endif %}
+    {% else %}
+        {# TenantNinja shuriken mark: currentColor so it follows the surrounding text color in both themes. #}
+        <svg class="tn-logo-mark{% if image_class %} {{ image_class }}{% endif %}" viewBox="0 0 100 100" fill="none" width="{{ image_height }}" height="{{ image_height }}" role="img" aria-label="{{ company.name }}">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M50 3 L60.2 39.8 L97 50 L60.2 60.2 L50 97 L39.8 60.2 L3 50 L39.8 39.8 Z
+                 M41 50 a9 9 0 1 0 18 0 a9 9 0 1 0 -18 0 Z" fill="currentColor"></path>
+        </svg>
+        <span{% if show_mobile_name %} class="d-none d-sm-inline"{% endif %}>{{ company.name }}</span>
+    {% endif %}
+</a>

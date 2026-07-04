@@ -103,6 +103,30 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
+     * Scan the current nameservers for a domain via DNS. Used to pre-fill the
+     * nameserver fields at transfer time, so the admin/client can confirm or edit
+     * them before submitting rather than having them applied silently.
+     *
+     * @return array<int, string> up to 4 nameserver hostnames, in order
+     */
+    #[RequiredParams([
+        'tld' => 'TLD is missing',
+        'sld' => 'SLD is missing',
+    ])]
+    public function scan_nameservers($data): array
+    {
+        $this->getDi()['rate_limiter']->consumeOrThrow('domain_lookup_ip', (string) $this->getIp());
+
+        $sld = htmlspecialchars((string) $data['sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $validator = $this->getDi()['validator'];
+        if (!$validator->isSldValid($sld)) {
+            throw new \FOSSBilling\InformationException('Domain :domain is invalid', [':domain' => $sld]);
+        }
+
+        return $this->getService()->lookupNameservers($sld . $data['tld']);
+    }
+
+    /**
      * Check if domain can be transferred. Domain registrar must be
      * configured in order to get correct results.
      *

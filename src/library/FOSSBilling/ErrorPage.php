@@ -145,8 +145,8 @@ class ErrorPage
             <title>FOSSBilling Error | ' . $error['title'] . '</title>
             <style>
             body {
-                background-color: #222;
-                color: #fff;
+                background-color: #0F0E0C;
+                color: #F4F2EC;
                 font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
                 font-size: 16px;
                 line-height: 1.5;
@@ -162,11 +162,23 @@ class ErrorPage
                 height: 100vh;
             }
 
+            .brand {
+                font-weight: 700;
+                letter-spacing: -0.02em;
+                margin-bottom: 24px;
+                font-size: 1.1rem;
+            }
+
+            .brand .accent {
+                color: #AEF100;
+            }
+
             .error-container {
                 width: 75%;
-                background-color: #313131;
-                border-radius: 25px;
-                padding: 1%;
+                background-color: #1A1816;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 14px;
+                padding: 1.5% 2%;
             }
 
             .error-title {
@@ -182,30 +194,31 @@ class ErrorPage
             }
 
             code {
-                background-color: #f2f2f2;
-                color: #333;
-                border-radius: 3px;
+                background-color: #F1EEDE;
+                color: #0F0E0C;
+                border-radius: 4px;
             }
 
             .footer {
-                color: #fff;
+                color: #929089;
                 padding: 5px;
                 text-align: center;
                 font-size: 14px;
             }
 
             .footer a {
-                color: #fff;
+                color: #929089;
                 text-decoration: none;
                 margin: 0 10px;
             }
 
             .footer a:hover {
+                color: #F4F2EC;
                 text-decoration: underline;
             }
 
             a {
-                color: #3291ff;
+                color: #AEF100;
             }
 
             a:visited {
@@ -218,19 +231,20 @@ class ErrorPage
             }
 
             .button {
-                background-color: #3291ff;
+                background-color: #AEF100;
                 border: none;
-                color: #fff;
+                color: #0F0E0C;
                 padding: 10px 20px;
-                border-radius: 5px;
+                border-radius: 6px;
                 font-size: 15px;
+                font-weight: 600;
                 cursor: pointer;
-                transition: all 0.3s ease;
+                transition: all 0.2s ease;
                 text-decoration: none;
             }
 
             .button:hover {
-                background-color: #3d9dff;
+                background-color: #D6F968;
                 text-decoration: none;
             }
 
@@ -240,7 +254,7 @@ class ErrorPage
 
             .list-horizontal li:before {
                 content: "\2022";
-                color:#fff;
+                color:#929089;
                 font-size:11px;
                 margin-left: 1.5em;
                 margin-right: 0.5em;
@@ -248,7 +262,7 @@ class ErrorPage
 
             .list-horizontal li:first-child:before {
                 content: "\2022";
-                color:#fff;
+                color:#929089;
                 font-size:11px;
                 margin-left: -2em;
                 margin-right: 0.5em;
@@ -259,6 +273,7 @@ class ErrorPage
             <body>
                 <div class="container">
                 <div class="error-container">
+                    <p class="brand">tenant<span class="accent">ninja</span></p>
                     <p class="error-title">' . $error['title'] . '</p>
                     <ul class="list-horizontal">
                         <li>' . "Instance ID: $instanceID" . '</li>

@@ -1,0 +1,11 @@
+{% set pending_messages = guest.system_get_pending_messages %}
+{% if pending_messages %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const pendingMessages = {{ pending_messages|json_encode|raw }};
+        pendingMessages.forEach((message) => {
+            FOSSBilling.message(message);
+        });
+    });
+</script>
+{% endif %}

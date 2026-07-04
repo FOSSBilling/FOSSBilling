@@ -1069,6 +1069,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 }
             }
 
+            // Global BCC: blind-copy every outgoing email to a configured admin address.
+            // Useful for audit trails, compliance, or monitoring without exposing the BCC
+            // address to the primary recipient. Configured via Admin → Email → Settings.
+            if (!empty($settings['bcc'])) {
+                if (filter_var($settings['bcc'], FILTER_VALIDATE_EMAIL)) {
+                    $mail->addBcc($settings['bcc']);
+                } else {
+                    $this->di['logger']->setChannel('email')->warning('Skipping invalid BCC address: ' . $settings['bcc']);
+                }
+            }
+
             if (!Environment::isProduction()) {
                 $this->di['logger']->setChannel('email')->info('Skip email sending. Application ENV: ' . Environment::getCurrentEnvironment());
 

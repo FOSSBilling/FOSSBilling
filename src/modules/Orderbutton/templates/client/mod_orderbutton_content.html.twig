@@ -5,6 +5,15 @@
     <div class="col-md-12">
         <div class="card border-0" id="orderbutton" style="margin-bottom: 0">
             <div class="card-body p-1">
+                <ol class="order-steps" id="order-steps">
+                    <li class="order-steps__item" data-step-target="products">{{ 'Product'|trans }}</li>
+                    <li class="order-steps__item" data-step-target="order">{{ 'Configure'|trans }}</li>
+                    {% if not client %}
+                        <li class="order-steps__item" data-step-target="register">{{ 'Account'|trans }}</li>
+                    {% endif %}
+                    <li class="order-steps__item" data-step-target="checkout">{{ 'Cart'|trans }}</li>
+                    <li class="order-steps__item" data-step-target="payment-html">{{ 'Payment'|trans }}</li>
+                </ol>
                 <div id="orderManager" class="accordion">
 
                     {{ include('mod_orderbutton_choose_product.html.twig') }}

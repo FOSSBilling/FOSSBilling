@@ -1,11 +1,14 @@
-<div class="fb-kb-suggestions alert alert-light border" data-input-id="{{ input_id|default('subject') }}" data-limit="{{ limit|default(5) }}" aria-live="polite">
-    <div class="fb-kb-suggestions-hint">
-        {{ 'Try the knowledge base before opening a ticket.'|trans }}
-        <a href="{{ 'support/kb'|url }}">{{ 'Browse articles'|trans }}</a>
-    </div>
-    <div class="fb-kb-suggestions-results d-none">
-        <div class="fw-bold mb-2">{{ 'Suggested knowledge base articles'|trans }}</div>
-        <div class="list-group list-group-flush"></div>
+<div class="fb-kb-suggestions card mb-3" data-input-id="{{ input_id|default('subject') }}" data-limit="{{ limit|default(5) }}" aria-live="polite">
+    <div class="card-body py-2 px-3">
+        <div class="fb-kb-suggestions-hint text-muted fs-7 d-flex align-items-center gap-2">
+            <svg class="icon" style="width:16px;height:16px;"><use href="#book-open" /></svg>
+            {{ 'Try the knowledge base before opening a ticket.'|trans }}
+            <a href="{{ 'support/kb'|url }}">{{ 'Browse articles'|trans }}</a>
+        </div>
+        <div class="fb-kb-suggestions-results d-none">
+            <div class="fw-semibold fs-7 text-muted mb-2">{{ 'Suggested knowledge base articles'|trans }}</div>
+            <div class="d-flex flex-column"></div>
+        </div>
     </div>
 </div>
 
@@ -27,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const renderSuggestions = (container, articles) => {
         const hint = container.querySelector('.fb-kb-suggestions-hint');
         const results = container.querySelector('.fb-kb-suggestions-results');
-        const list = container.querySelector('.list-group');
+        const list = container.querySelector('.fb-kb-suggestions-results > div:last-child');
         list.replaceChildren();
 
         if (!articles.length) {
@@ -38,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         articles.forEach((article) => {
             const link = document.createElement('a');
-            link.className = 'list-group-item list-group-item-action px-0 bg-transparent';
+            link.className = 'tn-row-hover text-decoration-none px-2 py-1 d-block';
             link.href = `{{ 'support/kb'|url }}/${encodeURIComponent(article.category.slug)}/${encodeURIComponent(article.slug)}`;
             link.target = '_blank';
             link.rel = 'noopener';

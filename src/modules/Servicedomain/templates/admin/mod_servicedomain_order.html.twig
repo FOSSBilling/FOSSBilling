@@ -31,6 +31,26 @@
                 </div>
             </div>
         </div>
+        <div class="form-check form-switch mt-3">
+            <input class="form-check-input" type="checkbox" role="switch" id="registerNameserversCb">
+            <label class="form-check-label" for="registerNameserversCb">
+                {{ 'I want to use my nameservers'|trans }}
+            </label>
+        </div>
+        <div id="registerNameservers" class="row g-2 mt-1 d-none">
+            <div class="col-lg-3">
+                <input class="form-control" type="text" name="config[ns1]" value="" placeholder="{{ 'Nameserver 1'|trans }}">
+            </div>
+            <div class="col-lg-3">
+                <input class="form-control" type="text" name="config[ns2]" value="" placeholder="{{ 'Nameserver 2'|trans }}">
+            </div>
+            <div class="col-lg-3">
+                <input class="form-control" type="text" name="config[ns3]" value="" placeholder="{{ 'Nameserver 3'|trans }}">
+            </div>
+            <div class="col-lg-3">
+                <input class="form-control" type="text" name="config[ns4]" value="" placeholder="{{ 'Nameserver 4'|trans }}">
+            </div>
+        </div>
     </div>
 
     <div class="col-12 domain-action domain-transfer d-none">
@@ -44,6 +64,30 @@
             </div>
             <div class="col-lg-4">
                 <input class="form-control" type="text" name="config[transfer_code]" value="{{ request.transfer_code }}" placeholder="{{ 'Domain transfer code'|trans }}">
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2 mt-2">
+            <button class="btn btn-sm btn-dark" type="button" id="scan-nameservers-btn">{{ 'Scan current nameservers'|trans }}</button>
+            <span class="text-muted fs-7" id="transfer-ns-scan-status"></span>
+        </div>
+        <div class="form-check form-switch mt-3">
+            <input class="form-check-input" type="checkbox" role="switch" id="transferNameserversCb">
+            <label class="form-check-label" for="transferNameserversCb">
+                {{ 'I want to use my nameservers'|trans }}
+            </label>
+        </div>
+        <div id="transferNameservers" class="row g-2 mt-1 d-none">
+            <div class="col-lg-3">
+                <input class="form-control" type="text" name="config[ns1]" value="" placeholder="{{ 'Nameserver 1'|trans }}">
+            </div>
+            <div class="col-lg-3">
+                <input class="form-control" type="text" name="config[ns2]" value="" placeholder="{{ 'Nameserver 2'|trans }}">
+            </div>
+            <div class="col-lg-3">
+                <input class="form-control" type="text" name="config[ns3]" value="" placeholder="{{ 'Nameserver 3'|trans }}">
+            </div>
+            <div class="col-lg-3">
+                <input class="form-control" type="text" name="config[ns4]" value="" placeholder="{{ 'Nameserver 4'|trans }}">
             </div>
         </div>
     </div>
@@ -64,5 +108,60 @@
                 }
             });
         });
+
+        function wireNameserverToggle(cbId, fieldsId) {
+            const cb = document.getElementById(cbId);
+            const fields = document.getElementById(fieldsId);
+            if (!cb || !fields) return;
+            cb.addEventListener('change', function () {
+                fields.classList.toggle('d-none', !this.checked);
+            });
+        }
+
+        wireNameserverToggle('registerNameserversCb', 'registerNameservers');
+        wireNameserverToggle('transferNameserversCb', 'transferNameservers');
+
+        const scanBtn = document.getElementById('scan-nameservers-btn');
+        if (scanBtn) {
+            scanBtn.addEventListener('click', function () {
+                const sld = document.querySelector('input[name="config[transfer_sld]"]').value.toLowerCase();
+                const tld = document.querySelector('select[name="config[transfer_tld]"]').value.toLowerCase();
+                const statusEl = document.getElementById('transfer-ns-scan-status');
+                if (!sld || !tld) {
+                    if (statusEl) statusEl.textContent = "{{ 'Enter a domain name to transfer first.'|trans }}";
+                    return;
+                }
+
+                if (statusEl) statusEl.textContent = "{{ 'Scanning current nameservers...'|trans }}";
+
+                FOSSBilling.api.guest.post(
+                    'servicedomain/scan_nameservers',
+                    {sld: sld, tld: tld},
+                    function (scanned) {
+                        const ns1 = document.querySelector('#transferNameservers input[name="config[ns1]"]');
+                        const ns2 = document.querySelector('#transferNameservers input[name="config[ns2]"]');
+                        const ns3 = document.querySelector('#transferNameservers input[name="config[ns3]"]');
+                        const ns4 = document.querySelector('#transferNameservers input[name="config[ns4]"]');
+                        if (Array.isArray(scanned) && scanned.length > 0) {
+                            if (ns1) ns1.value = scanned[0] || '';
+                            if (ns2) ns2.value = scanned[1] || '';
+                            if (ns3) ns3.value = scanned[2] || '';
+                            if (ns4) ns4.value = scanned[3] || '';
+                            if (statusEl) statusEl.textContent = "{{ 'Detected. Review and edit below, or leave the toggle off to use the default nameservers.'|trans }}";
+                            const transferNameserversCb = document.getElementById('transferNameserversCb');
+                            if (transferNameserversCb) {
+                                transferNameserversCb.checked = true;
+                                transferNameserversCb.dispatchEvent(new Event('change'));
+                            }
+                        } else if (statusEl) {
+                            statusEl.textContent = "{{ 'Could not detect current nameservers. Enter them manually, or leave the toggle off to use the default nameservers.'|trans }}";
+                        }
+                    },
+                    function () {
+                        if (statusEl) statusEl.textContent = "{{ 'Could not detect current nameservers. Enter them manually, or leave the toggle off to use the default nameservers.'|trans }}";
+                    },
+                );
+            });
+        }
     });
 </script>

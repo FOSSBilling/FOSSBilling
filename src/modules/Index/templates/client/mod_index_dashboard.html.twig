@@ -15,6 +15,35 @@
 {% endblock %}
 
 {% import "macro_functions.html.twig" as mf %}
+{% import _self as tn %}
+
+{% macro badge(status, type) %}
+    {% set s = status|lower %}
+    {% if type == 'order' %}
+        {% if s == 'active' %}
+            {% set variant, label = 'success', 'Active' %}
+        {% elseif s == 'pending_setup' %}
+            {% set variant, label = 'warning', 'Pending' %}
+        {% elseif s in ['suspended', 'failed_setup', 'failed_renew'] %}
+            {% set variant, label = 'danger', 'Action needed' %}
+        {% elseif s == 'canceled' %}
+            {% set variant, label = 'neutral', 'Canceled' %}
+        {% else %}
+            {% set variant, label = 'neutral', status|title %}
+        {% endif %}
+    {% else %}
+        {% if s == 'paid' %}
+            {% set variant, label = 'success', 'Paid' %}
+        {% elseif s == 'unpaid' %}
+            {% set variant, label = 'warning', 'Unpaid' %}
+        {% elseif s == 'refunded' %}
+            {% set variant, label = 'info', 'Refunded' %}
+        {% else %}
+            {% set variant, label = 'neutral', status|title %}
+        {% endif %}
+    {% endif %}
+    <span class="tn-badge tn-badge--{{ variant }}">{{ label|trans }}</span>
+{% endmacro %}
 
 {% block content %}
     {{ render_widgets('client.index.dashboard.content.before') }}
@@ -52,167 +81,310 @@
             </div>
         {% endif %}
 
-        <div>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="card mb-4">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h6 class="m-0 pt-1">{{ 'Profile'|trans }}</h6>
-                            <div class="py-2">
-                                <a class="btn btn-sm btn-dark"
-                                   href="{{ 'client/profile'|url }}">{{ 'Update'|trans }}</a>
-                            </div>
+        {# Real client-owned data, fetched directly from the client API for the
+           pieces the shared dashboard payload doesn't already cover (unpaid
+           invoice totals, expiring orders, active services list). #}
+        {% set unpaid_invoices = client.invoice_get_list({ 'status': 'unpaid', 'per_page': 100 }) %}
+        {% set expiring_orders = client.order_get_list({ 'expiring': true, 'per_page': 10 }) %}
+        {% set active_services = client.order_get_list({ 'status': 'active', 'per_page': 50 }) %}
+        {% set recent_invoices = client.invoice_get_list({ 'per_page': 3 }) %}
+
+        {% set ns = namespace(
+            amount_due = 0,
+            soonest_days = null,
+            soonest_title = null,
+            soonest_expires = null,
+            hosting = 0,
+            domain = 0,
+            other = 0
+        ) %}
+        {% for invoice in unpaid_invoices.list %}
+            {% set ns.amount_due = ns.amount_due + invoice.total %}
+        {% endfor %}
+        {% for order in active_services.list %}
+            {% if order.service_type == 'hosting' %}
+                {% set ns.hosting = ns.hosting + 1 %}
+            {% elseif order.service_type == 'domain' %}
+                {% set ns.domain = ns.domain + 1 %}
+            {% else %}
+                {% set ns.other = ns.other + 1 %}
+            {% endif %}
+            {% if order.expires_at %}
+                {% set days_left = ((order.expires_at|date('U')) - ('now'|date('U'))) // 86400 %}
+                {% if days_left >= 0 and (ns.soonest_days is null or days_left < ns.soonest_days) %}
+                    {% set ns.soonest_days = days_left %}
+                    {% set ns.soonest_title = order.title %}
+                    {% set ns.soonest_expires = order.expires_at %}
+                {% endif %}
+            {% endif %}
+        {% endfor %}
+
+        {% set services_parts = [] %}
+        {% if ns.hosting > 0 %}{% set services_parts = services_parts|merge([ns.hosting ~ ' hosting']) %}{% endif %}
+        {% if ns.domain > 0 %}{% set services_parts = services_parts|merge([ns.domain ~ ' domain' ~ (ns.domain > 1 ? 's' : '')]) %}{% endif %}
+        {% if ns.other > 0 %}{% set services_parts = services_parts|merge([ns.other ~ ' other']) %}{% endif %}
+
+        {% set unpaid_count = unpaid_invoices.list|length %}
+        {% set expiring_count = expiring_orders.list|length %}
+        {% set attention_count = unpaid_count + expiring_count %}
+
+        {% set soonest_due = null %}
+        {% for invoice in unpaid_invoices.list %}
+            {% if invoice.due_at and (soonest_due is null or invoice.due_at < soonest_due) %}
+                {% set soonest_due = invoice.due_at %}
+            {% endif %}
+        {% endfor %}
+
+        {# ---------------------------------------------------------------
+           Header
+        --------------------------------------------------------------- #}
+        <div class="tn-dashboard-header">
+            <div>
+                <h1 class="tn-dashboard-header__title">{{ 'Good morning, %first_name%'|trans({'%first_name%': profile.first_name}) }}</h1>
+                <p class="tn-dashboard-header__sub">
+                    {% if attention_count == 0 %}
+                        {{ 'Everything is running smoothly.'|trans }}
+                    {% elseif attention_count == 1 %}
+                        {{ 'One thing needs your attention this week — everything else is running.'|trans }}
+                    {% else %}
+                        {{ '%count% things need your attention this week — everything else is running.'|trans({'%count%': attention_count}) }}
+                    {% endif %}
+                </p>
+            </div>
+            <div class="tn-dashboard-header__actions">
+                <a class="tn-btn tn-btn--ghost tn-btn--sm" href="{{ 'support'|url(query: { 'ticket': 1 }) }}">
+                    <svg class="icon"><use href="#icon-life-buoy" /></svg>{{ 'New ticket'|trans }}
+                </a>
+                <a class="tn-btn tn-btn--secondary tn-btn--sm" href="{{ 'client/balance'|url }}">
+                    <svg class="icon"><use href="#icon-wallet" /></svg>{{ 'Add funds'|trans }}
+                </a>
+                <a class="tn-btn tn-btn--primary tn-btn--sm" href="{{ 'order'|url }}">
+                    <svg class="icon"><use href="#icon-plus" /></svg>{{ 'Add a service'|trans }}
+                </a>
+            </div>
+        </div>
+
+        {# ---------------------------------------------------------------
+           KPI strip
+        --------------------------------------------------------------- #}
+        <div class="tn-kpi-grid">
+            <div class="tn-stat">
+                <span class="tn-stat__label">{{ 'Active services'|trans }}</span>
+                <span class="tn-stat__value">{{ dashboard.orders.active }}</span>
+                {% if services_parts %}
+                    <span class="tn-stat__sub">{{ services_parts|join(' · ') }}</span>
+                {% endif %}
+            </div>
+
+            <div class="tn-stat">
+                <span class="tn-stat__label">{{ 'Amount due'|trans }}</span>
+                {% if unpaid_count > 0 %}
+                    <span class="tn-stat__value tn-stat__value--accent">{{ ns.amount_due|format_currency(profile.currency ?? '') }}</span>
+                    <span class="tn-stat__sub">
+                        {{ unpaid_count }} {{ 'unpaid invoice(s)'|trans }}{% if soonest_due %} · {{ 'due'|trans }} {{ soonest_due|format_date }}{% endif %}
+                    </span>
+                {% else %}
+                    <span class="tn-stat__value tn-stat__value--accent">{{ 0|format_currency(profile.currency ?? '') }}</span>
+                {% endif %}
+            </div>
+
+            <div class="tn-stat">
+                <span class="tn-stat__label">{{ 'Next renewal'|trans }}</span>
+                {% if ns.soonest_days is null %}
+                    <span class="tn-stat__value">&mdash;</span>
+                {% elseif ns.soonest_days == 0 %}
+                    <span class="tn-stat__value">{{ 'Today'|trans }}</span>
+                {% else %}
+                    <span class="tn-stat__value">{{ ns.soonest_days }} {{ 'days'|trans }}</span>
+                    <span class="tn-stat__sub">{{ ns.soonest_title|truncate(28) }} · {{ ns.soonest_expires|format_date }}</span>
+                {% endif %}
+            </div>
+
+            <div class="tn-stat">
+                <span class="tn-stat__label">{{ 'Account balance'|trans }}</span>
+                {% if profile.currency is not null %}
+                    <span class="tn-stat__value">{{ profile.balance|format_currency(profile.currency) }}</span>
+                    <span class="tn-stat__sub">{{ 'Auto-applies at checkout'|trans }}</span>
+                {% else %}
+                    <span class="tn-stat__value">&mdash;</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="tn-dashboard-body">
+            <div class="tn-dashboard-body__main">
+                {# -----------------------------------------------------------
+                   Needs attention
+                ----------------------------------------------------------- #}
+                {% if attention_count > 0 %}
+                    <div class="tn-card tn-card--compact mb-4">
+                        <div class="tn-card__header">
+                            <span class="tn-card__title">{{ 'Needs attention'|trans }}</span>
+                            <span class="tn-badge tn-badge--warning">{{ attention_count }}</span>
                         </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <dt class="col-sm-4 text-muted small fw-normal">{{ 'Client ID'|trans }}</dt>
-                                <dd class="col-sm-8">#{{ profile.id }}</dd>
-                                <dt class="col-sm-4 text-muted small fw-normal">{{ 'Email'|trans }}</dt>
-                                <dd class="col-sm-8">{{ profile.email }}</dd>
-                                <dt class="col-sm-4 text-muted small fw-normal">{{ 'Balance'|trans }}</dt>
-                                {% if profile.currency is not null %}
-                                    <dd class="col-sm-8">{{ profile.balance|format_currency(profile.currency) }}</dd>
-                                {% else %}
-                                    <dd class="col-sm-8">-</dd>
-                                {% endif %}
-                            </div>
+                        <div>
+                            {% for invoice in unpaid_invoices.list|slice(0, 5) %}
+                                <div class="tn-attention-row">
+                                    <span class="tn-attention-row__icon tn-attention-row__icon--warning">
+                                        <svg class="icon"><use href="#icon-receipt" /></svg>
+                                    </span>
+                                    <div class="tn-attention-row__body">
+                                        <span class="tn-attention-row__title">{{ 'Invoice'|trans }} #{{ invoice.serie_nr ?? invoice.nr }}</span>
+                                        <span class="tn-attention-row__sub">
+                                            {{ invoice.total|format_currency(invoice.currency) }}
+                                            {% if invoice.due_at %} · {{ 'due'|trans }} {{ invoice.due_at|format_date }}{% endif %}
+                                        </span>
+                                    </div>
+                                    <a class="tn-btn tn-btn--secondary tn-btn--sm" href='{{ "invoice/#{invoice.hash}"|url }}'>{{ 'Pay now'|trans }}</a>
+                                </div>
+                            {% endfor %}
+
+                            {% for order in expiring_orders.list|slice(0, 5) %}
+                                <div class="tn-attention-row">
+                                    <span class="tn-attention-row__icon tn-attention-row__icon--danger">
+                                        <svg class="icon"><use href="#icon-triangle-alert" /></svg>
+                                    </span>
+                                    <div class="tn-attention-row__body">
+                                        <span class="tn-attention-row__title">{{ order.title|truncate(45) }}</span>
+                                        <span class="tn-attention-row__sub">
+                                            {% if order.expires_at %}
+                                                {{ 'Expires'|trans }} {{ order.expires_at|format_date }}
+                                            {% else %}
+                                                {{ 'Expires soon'|trans }}
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    <a class="tn-btn tn-btn--secondary tn-btn--sm" href='{{ "order/service/manage/#{order.id}"|url }}'>
+                                        {{ 'Renew'|trans }} · {{ order.total|format_currency(order.currency) }}
+                                    </a>
+                                </div>
+                            {% endfor %}
                         </div>
                     </div>
-                </div>
+                {% else %}
+                    <div class="tn-card tn-card--compact mb-4">
+                        <div class="d-flex align-items-center gap-2">
+                            <svg class="icon text-success"><use href="#icon-circle-check" /></svg>
+                            <span>{{ 'You\'re all caught up - no unpaid invoices or services expiring soon.'|trans }}</span>
+                        </div>
+                    </div>
+                {% endif %}
 
-                <div class="col-md-6">
-                    <div class="card mb-4">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h6 class="m-0 pt-1">{{ 'Invoices'|trans }}</h6>
-                            <div class="py-2">
-                                <a class="btn btn-sm btn-dark"
-                                   href="{{ 'invoice'|url }}">{{ 'All Invoices'|trans }}</a>
+                {# -----------------------------------------------------------
+                   Your services
+                ----------------------------------------------------------- #}
+                <div class="tn-card tn-card--compact mb-4">
+                    <div class="tn-card__header">
+                        <span class="tn-card__title">{{ 'Your services'|trans }}</span>
+                        <a class="tn-btn tn-btn--ghost tn-btn--sm" href="{{ 'order/service'|url }}">
+                            {{ 'All services'|trans }}<svg class="icon"><use href="#icon-arrow-right" /></svg>
+                        </a>
+                    </div>
+                    <div>
+                        {% if active_services.list %}
+                            {% for order in active_services.list|slice(0, 5) %}
+                                {% set is_expiring = order.expires_at and ((order.expires_at|date('U')) - ('now'|date('U'))) // 86400 <= 7 %}
+                                <a href='{{ "order/service/manage/#{order.id}"|url }}' class="tn-row-hover tn-service-row">
+                                    <span class="tn-service-row__icon">
+                                        {% if order.service_type == 'domain' %}
+                                            <svg class="icon"><use href="#icon-globe" /></svg>
+                                        {% elseif order.service_type == 'hosting' %}
+                                            <svg class="icon"><use href="#icon-server" /></svg>
+                                        {% else %}
+                                            <svg class="icon"><use href="#icon-briefcase" /></svg>
+                                        {% endif %}
+                                    </span>
+                                    <div class="tn-service-row__body">
+                                        <span class="tn-service-row__name">{{ order.title|truncate(50) }}</span>
+                                        <span class="tn-service-row__detail">{{ order.service_type|title }}</span>
+                                    </div>
+                                    <span class="tn-service-row__status">{{ tn.badge(order.status, 'order') }}</span>
+                                    <span class="tn-service-row__meta">
+                                        {% if order.expires_at %}
+                                            <span class="tn-service-row__date{% if is_expiring %} tn-service-row__date--danger{% endif %}">{{ order.expires_at|format_date }}</span>
+                                        {% endif %}
+                                        <span class="tn-service-row__price">{{ order.total|format_currency(order.currency) }}</span>
+                                    </span>
+                                    <svg class="icon tn-service-row__chevron"><use href="#icon-chevron-right" /></svg>
+                                </a>
+                            {% endfor %}
+                        {% else %}
+                            <div class="d-flex justify-content-center my-2 p-4">
+                                <span class="m-0 text-secondary">{{ 'No active services yet'|trans }}</span>
                             </div>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <dt class="col-sm-4 text-muted small fw-normal">{{ 'Total'|trans }}</dt>
-                                <dd class="col-sm-8">{{ dashboard.invoices.total }}</dd>
-                                <dt class="col-sm-4 text-muted small fw-normal">{{ 'Paid'|trans }}</dt>
-                                <dd class="col-sm-8">{{ dashboard.invoices.paid }}</dd>
-                                <dt class="col-sm-4 text-muted small fw-normal">{{ 'Unpaid'|trans }}</dt>
-                                <dd class="col-sm-8">{{ dashboard.invoices.unpaid }}</dd>
-                            </div>
-                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
 
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="card mb-4">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h6 class="m-0 pt-1">{{ 'Orders'|trans }}</h6>
-                            <div class="py-2">
-                                <a class="btn btn-sm btn-primary order-button"
-                                   href="{{ 'order'|url }}">{{ 'New Order'|trans }}</a>
-                                <a class="btn btn-sm btn-dark"
-                                   href="{{ 'order/service'|url }}">{{ 'All Orders'|trans }}</a>
+            <div class="tn-dashboard-body__rail">
+                {# -----------------------------------------------------------
+                   Recent invoices
+                ----------------------------------------------------------- #}
+                <div class="tn-card tn-card--compact mb-4">
+                    <div class="tn-card__header">
+                        <span class="tn-card__title">{{ 'Recent invoices'|trans }}</span>
+                        <a class="tn-btn tn-btn--ghost tn-btn--sm" href="{{ 'invoice'|url }}">
+                            {{ 'All'|trans }}<svg class="icon"><use href="#icon-arrow-right" /></svg>
+                        </a>
+                    </div>
+                    <div>
+                        {% if recent_invoices.list %}
+                            {% for invoice in recent_invoices.list %}
+                                <a href='{{ "invoice/#{invoice.hash}"|url }}'
+                                   class="tn-row-hover d-flex justify-content-between align-items-center px-3 py-2 text-decoration-none text-reset">
+                                    <div class="min-width-0">
+                                        <div class="fw-bold" style="font-family: var(--font-mono);">#{{ invoice.serie_nr ?? invoice.nr }}</div>
+                                        <span class="text-secondary small">
+                                            {% if invoice.status == 'paid' %}
+                                                {{ 'Paid'|trans }} {{ invoice.paid_at ? invoice.paid_at|format_date : invoice.updated_at|format_date }}
+                                            {% elseif invoice.due_at %}
+                                                {{ 'Due'|trans }} {{ invoice.due_at|format_date }}
+                                            {% else %}
+                                                {{ invoice.created_at|format_date }}
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    <div class="text-end flex-shrink-0 ms-2">
+                                        <div>{{ invoice.total|format_currency(invoice.currency) }}</div>
+                                        {{ tn.badge(invoice.status, 'invoice') }}
+                                    </div>
+                                </a>
+                            {% endfor %}
+                        {% else %}
+                            <div class="d-flex justify-content-center my-2 p-4">
+                                <span class="m-0 text-secondary">{{ 'No invoices yet'|trans }}</span>
                             </div>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <dt class="col-sm-4 text-muted small fw-normal">{{ 'Total'|trans }}</dt>
-                                <dd class="col-sm-8">{{ dashboard.orders.total }}</dd>
-                                <dt class="col-sm-4 text-muted small fw-normal">{{ 'Active'|trans }}</dt>
-                                <dd class="col-sm-8">{{ dashboard.orders.active }}</dd>
-                                <dt class="col-sm-4 text-muted small fw-normal">{{ 'Expiring'|trans }}</dt>
-                                <dd class="col-sm-8">{{ dashboard.orders.expiring }}</dd>
-                            </div>
-                        </div>
+                        {% endif %}
                     </div>
                 </div>
 
-                <div class="col-md-6">
-                    <div class="card mb-4">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h6 class="m-0 pt-1">{{ 'Tickets'|trans }}</h6>
-                            <div class="py-2">
-                                <a class="btn btn-sm btn-primary"
-                                   href="{{ 'support'|url(query: { 'ticket': 1 }) }}">{{ 'New Ticket'|trans }}</a>
-                                <a class="btn btn-sm btn-dark" href="{{ 'support'|url }}">{{ 'All Tickets'|trans }}</a>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <dt class="col-sm-4 text-muted small fw-normal">{{ 'Total'|trans }}</dt>
-                                <dd class="col-sm-8">{{ dashboard.tickets.total }}</dd>
-                                <dt class="col-sm-4 text-muted small fw-normal">{{ 'Open'|trans }}</dt>
-                                <dd class="col-sm-8">{{ dashboard.tickets.open }}</dd>
-                                <dt class="col-sm-4 text-muted small fw-normal">{{ 'On Hold'|trans }}</dt>
-                                <dd class="col-sm-8">{{ dashboard.tickets.on_hold }}</dd>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                {# -----------------------------------------------------------
+                   Support snapshot
+                ----------------------------------------------------------- #}
+                {% set open_ticket = null %}
+                {% for ticket in dashboard.recent_tickets %}
+                    {% if open_ticket is null and ticket.status == 'open' %}
+                        {% set open_ticket = ticket %}
+                    {% endif %}
+                {% endfor %}
 
-                <div class="col-md-6">
-                    <div class="card mb-4">
-                        <div class="card-header py-3">
-                            <h6 class="m-0 pt-1">{{ 'Recent Orders'|trans }}</h6>
-                        </div>
-                        <div class="card-body p-1">
-                            {% if dashboard.recent_orders %}
-                                <div class="list-group list-group-flush">
-                                    {% for order in dashboard.recent_orders %}
-                                        <a href='{{ "order/service/manage/#{order.id}"|url }}'
-                                           class="list-group-item d-flex justify-content-between align-items-center" aria-current="true">
-                                            <div>
-                                                <div>
-                                                    <span><strong>#{{ order.id }}</strong></span>&nbsp;<span>{{ order.title|truncate(45) }}</span>
-                                                </div>
-                                                <span class="text-secondary small" title="{{ order.updated_at|format_date }}">{{ order.updated_at|timeago }} {{ 'ago'|trans }}</span>
-                                            </div>
-                                            <div>
-                                                {{ mf.status_badge(order.status, 'order') }}
-                                            </div>
-                                        </a>
-                                    {% endfor %}
-                                </div>
-                            {% else %}
-                                <div class="d-flex justify-content-center my-2 p-2">
-                                    <span class="m-0">{{ 'No recent orders'|trans }}</span>
-                                </div>
-                            {% endif %}
-                        </div>
+                <div class="tn-card tn-card--compact mb-4">
+                    <div class="tn-card__header">
+                        <span class="tn-card__title">{{ 'Support'|trans }}</span>
                     </div>
-                </div>
-
-                <div class="col-md-6">
-                    <div class="card mb-4">
-                        <div class="card-header py-3">
-                            <h6 class="m-0 pt-1">{{ 'Support Tickets'|trans }}</h6>
+                    {% if open_ticket %}
+                        <div class="d-flex align-items-start gap-2">
+                            <span class="tn-dot tn-dot--info mt-1"></span>
+                            <div class="flex-grow-1 min-width-0">
+                                <div class="fw-bold small text-truncate">{{ open_ticket.subject|truncate(40) }}</div>
+                                <span class="text-secondary small">#{{ open_ticket.id }} · {{ 'replied'|trans }} {{ open_ticket.updated_at|timeago }} {{ 'ago'|trans }}</span>
+                            </div>
+                            <span class="tn-badge tn-badge--info">{{ 'Open'|trans }}</span>
                         </div>
-                        <div class="card-body p-1">
-                            {% if dashboard.recent_tickets %}
-                                <div class="list-group list-group-flush">
-                                    {% for ticket in dashboard.recent_tickets %}
-                                        <a href='{{ "support/ticket/#{ticket.id}"|url }}'
-                                           class="list-group-item d-flex justify-content-between align-items-center" aria-current="true">
-                                            <div>
-                                                <div>
-                                                    <span><strong>#{{ ticket.id }}</strong></span>&nbsp;<span>{{ ticket.subject|truncate(45) }}</span>
-                                                </div>
-                                                <span class="text-secondary small" title="{{ ticket.updated_at|format_date }}">{{ ticket.updated_at|timeago }} {{ 'ago'|trans }}</span>
-                                            </div>
-                                            <div>
-                                                {{ mf.status_badge(ticket.status, 'ticket') }}
-                                            </div>
-                                        </a>
-                                    {% endfor %}
-                                </div>
-                            {% else %}
-                                <div class="d-flex justify-content-center my-2 p-2">
-                                    <span class="m-0">{{ 'No recent support tickets'|trans }}</span>
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
+                    {% else %}
+                        <span class="text-secondary small">{{ 'No open tickets'|trans }}</span>
+                    {% endif %}
                 </div>
             </div>
         </div>

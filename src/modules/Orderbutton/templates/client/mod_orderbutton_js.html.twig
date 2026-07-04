@@ -6,6 +6,42 @@
             });
         });
 
+        const orderSteps = document.getElementById('order-steps');
+        if (orderSteps) {
+            const setActiveStep = (targetId) => {
+                orderSteps.querySelectorAll('.order-steps__item').forEach(item => {
+                    const isActive = item.getAttribute('data-step-target') === targetId;
+                    item.classList.toggle('order-steps__item--active', isActive);
+                });
+                let reachedActive = false;
+                [...orderSteps.querySelectorAll('.order-steps__item')].forEach(item => {
+                    if (item.classList.contains('order-steps__item--active')) {
+                        reachedActive = true;
+                        item.classList.remove('order-steps__item--done');
+                    } else {
+                        item.classList.toggle('order-steps__item--done', !reachedActive);
+                    }
+                });
+            };
+
+            document.querySelectorAll('#orderManager .accordion-collapse').forEach(panel => {
+                panel.addEventListener('shown.bs.collapse', () => setActiveStep(panel.id));
+            });
+
+            const initiallyShown = document.querySelector('#orderManager .accordion-collapse.show');
+            if (initiallyShown) {
+                setActiveStep(initiallyShown.id);
+            }
+        }
+
+        document.getElementById('goToAccountStep')?.addEventListener('click', function() {
+            const registerPanel = document.getElementById('register');
+            if (registerPanel) {
+                bootstrap.Collapse.getOrCreateInstance(registerPanel).show();
+                registerPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+
         document.getElementById('show-promo-field')?.addEventListener('click', function() {
             document.getElementById('apply-promo').style.display = 'block';
             this.style.display = 'none';

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+{% set active_locale = guest.system_locale|default('en')|replace({'_': '-'}) %}
+{% set canonical_url = guest.system_current_url|url %}
+{% set company = guest.system_company %}
+{% set public_logo_url = company.logo_url %}
+{% set public_dark_logo_url = company.logo_url_dark %}
+{% set page_title = (settings.meta_title_prefix ~ ' ' ~ block('meta_title') ~ ' ' ~ settings.meta_title_suffix)|trim %}
+{% set meta_description = block('meta_description')|default(settings.meta_description) %}
+<html lang="{{ active_locale }}" data-bs-theme="{{ settings.theme|default('light') }}">
+<head>
+    <meta charset="utf-8">
+    {# block('meta_title') is already HTML-escaped by Twig when the block renders;
+       printing page_title normally here would escape it a second time (e.g. "&" -> "&amp;amp;"). #}
+    <title>{{ page_title|raw }}</title>
+    <meta name="color-scheme" content="light dark">
+
+    <meta name="description" content="{% block meta_description %}{{ meta_description }}{% endblock %}">
+    <meta name="keywords" content="{{ settings.meta_keywords }}">
+    <meta name="robots" content="{{ settings.meta_robots }}">
+    <meta name="author" content="{{ settings.meta_author }}">
+    <meta name="generator" content="FOSSBilling">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    {% block canonical %}
+        <link rel="canonical" href="{{ canonical_url }}">
+    {% endblock %}
+
+    {% block opengraph %}
+        <meta property="og:title" content="{{ page_title|raw }}" />
+        <meta property="og:type" content="website" />
+        <meta property="og:description" content="{{ meta_description }}" />
+        <meta property="og:url" content="{{ canonical_url }}" />
+        <meta property="og:site_name" content="{{ guest.system_company.name }}" />
+    {% endblock %}
+
+    {{ include('partials/theme_init.html.twig') }}
+
+    <link rel="stylesheet" href="{{ 'build/css/vendor.css' | asset_url }}">
+    <link rel="stylesheet" href="{{ 'build/css/tenantninja.css' | asset_url }}">
+
+    <link rel="shortcut icon" href="{{ guest.system_company.favicon_url }}">
+
+    {{ 'js/fossbilling.js' | public_asset_url | script_tag }}
+    {{ 'js/api.js' | public_asset_url | script_tag }}
+    <script type="module" src="{{ 'build/js/tenantninja.js' | asset_url }}"></script>
+    {% block head %}{% endblock %}
+    {% block js %}{% endblock %}
+</head>
+
+<body class="{% block body_class %}{% endblock %}">
+    {{ render_widgets('client.theme.body.start') }}
+    {% block body %}{% endblock %}
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1070;" aria-live="polite" aria-atomic="true"></div>
+    {{ include('partial_pending_messages.html.twig', ignore_missing: true) }}
+    {{ render_widgets('client.theme.body.end') }}
+</body>
+</html>

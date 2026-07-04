@@ -1,0 +1,16 @@
+{
+  "name": "tenantninja",
+  "scripts": {
+    "dev": "node ./esbuild.mjs",
+    "build": "node ./esbuild.mjs"
+  },
+  "dependencies": {
+    "bootstrap": "^5.3.3",
+    "flag-icons": "^7.2.3",
+    "intl-tel-input": "^29.1.0",
+    "tom-select": "^2.3.1"
+  },
+  "devDependencies": {
+    "lucide-static": "^0.500.0"
+  }
+}

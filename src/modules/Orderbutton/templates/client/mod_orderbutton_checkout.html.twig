@@ -3,220 +3,267 @@
     <h3 class="accordion-header">
         <button class="accordion-button {% if not request.checkout %}collapsed{%endif%}" type="button" data-bs-toggle="collapse" data-bs-target="#checkout" aria-expanded="false" aria-controls="checkout">
             <svg class="icon me-2"><use href="#shopping-cart" /></svg>
-            <span>{{ 'Cart'|trans }}</span>&nbsp;<span class="badge text-bg-success">{{ cart.items | length }}</span>
+            <span>{{ 'Cart'|trans }}</span>&nbsp;<span class="tn-badge tn-badge--accent">{{ cart.items | length }}</span>
         </button>
     </h3>
     {% if cart.items %}
     {% set cart_currency = guest.cart_get_currency %}
+    {% set tax_amount = 0 %}
+    {% if client and client.client_is_taxable %}
+        {% set tax_rate = client.invoice_get_tax_rate %}
+        {% set tax_amount = cart.total * tax_rate / 100 %}
+    {% endif %}
+    {% set enough_in_balance = client ? client.client_balance_get_total >= cart.total : false %}
+    {% set balance_applied = client ? min(client.client_balance_get_total, cart.total) : 0 %}
     <div id="checkout" class="accordion-collapse collapse {% if request.checkout and client %}show{%endif%}" data-bs-parent="#orderManager">
         <div class="accordion-body">
             <div class="accordion-inner" id="checkout-inner">
-                <table class="table table-striped table-bordered table-sm">
-                    <thead>
-                    <tr>
-                        <th>{{ 'Product'|trans }}</th>
-                        <th>{{ 'Price'|trans }}</th>
-                        <th style="width: 3%; text-align: center"></th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {% for i, item in cart.items %}
-                        <tr>
-                            <td>
-                                {{ item.title }}
-                                {% if item.quantity > 1 %}
-                                    x {{ item.quantity }}
-                                {% endif %}
 
-                                {% if item.period %}
-                                    ({{ item.period|period_title }})
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if item.discount_price %}
-                                    <del>{{ (item.total * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</del>
-                                    <strong class="text-success">{{ ((item.total - item.discount_price) * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</strong>
-                                {% else %}
-                                    {{ (item.total * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}
-                                {% endif %}
-                            </td>
-                            <td>
-                                <a class="btn btn-dark btn-sm" title="{{ 'Remove item'|trans }}"
-                                   {{ fb_api_link({href: 'cart/remove_item'|api_url(query: {id: item.id}, role: 'guest'), modal: {type: 'confirm', title: 'Are you sure?'|trans, content: 'Are you sure you want to remove this item from cart?'|trans}, reload: true}) }}>
-                                    <svg class="icon"><use href="#x" /></svg>
-                                </a>
-                            </td>
-                        </tr>
+                <div class="tn-stepper mb-4">
+                    <div class="tn-stepper__step tn-stepper__step--done">
+                        <span class="tn-stepper__dot"><svg class="icon"><use href="#check" /></svg></span>
+                        <span class="tn-stepper__label">{{ 'Plan'|trans }}</span>
+                    </div>
+                    <div class="tn-stepper__line tn-stepper__line--done"></div>
+                    <div class="tn-stepper__step tn-stepper__step--done">
+                        <span class="tn-stepper__dot"><svg class="icon"><use href="#check" /></svg></span>
+                        <span class="tn-stepper__label">{{ 'Configure'|trans }}</span>
+                    </div>
+                    <div class="tn-stepper__line tn-stepper__line--done"></div>
+                    <div class="tn-stepper__step tn-stepper__step--current">
+                        <span class="tn-stepper__dot">3</span>
+                        <span class="tn-stepper__label">{{ 'Checkout'|trans }}</span>
+                    </div>
+                </div>
 
-                        {% if request.show_custom_form_values %}
-                            <tr>
-                                <td>
-                                    {% if item.form_id and guest.extension_is_on({"mod":"formbuilder"}) %}
-                                        {% set form = guest.formbuilder_get({"id": item.form_id}) %}
-                                        {# debug form #}
-                                        <div class="well">
-                                            <dl class="row">
+                <div class="tn-configure-layout">
+                    <div class="tn-configure-layout__main">
+
+                        {% if client %}
+                            <div class="tn-identity-chip mb-3">
+                                <span class="tn-avatar tn-avatar--circle" style="width:36px;height:36px;">{{ client.first_name|slice(0,1)|upper }}{{ client.last_name|slice(0,1)|upper }}</span>
+                                <div class="tn-identity-chip__body">
+                                    <span class="tn-identity-chip__name">{{ client.first_name }} {{ client.last_name }}</span>
+                                    <span class="tn-identity-chip__meta text-muted small">{{ client.email }}{% if client.company %} &middot; {{ client.company }}{% endif %}</span>
+                                </div>
+                                <span class="tn-badge tn-badge--success tn-badge--pill"><span class="tn-badge__dot"></span>{{ 'Signed in'|trans }}</span>
+                            </div>
+                        {% endif %}
+
+                        <div class="tn-cart-list mb-3">
+                            {% for i, item in cart.items %}
+                                <div class="tn-cart-item">
+                                    <div class="tn-cart-item__body">
+                                        <span class="tn-cart-item__title">
+                                            {{ item.title }}
+                                            {% if item.quantity > 1 %}&times; {{ item.quantity }}{% endif %}
+                                            {% if item.period %}<span class="text-muted small">({{ item.period|period_title }})</span>{% endif %}
+                                        </span>
+                                        {% if item.setup_price != 0 %}
+                                            <span class="tn-cart-item__meta">
+                                                {{ 'setup'|trans }}:
+                                                {% if item.discount_setup %}
+                                                    <del>{{ (item.setup_price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</del>
+                                                    {{ ((item.setup_price - item.discount_setup) * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}
+                                                {% else %}
+                                                    {{ (item.setup_price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}
+                                                {% endif %}
+                                            </span>
+                                        {% endif %}
+                                        {% if request.show_custom_form_values and item.form_id and guest.extension_is_on({"mod":"formbuilder"}) %}
+                                            {% set form = guest.formbuilder_get({"id": item.form_id}) %}
+                                            <dl class="row small text-muted mb-0 mt-1">
                                                 {% for field, value in item %}
                                                     {% for form_field in form.fields %}
-                                                        {% if value is not empty %}
-                                                            {% if form_field.name == field%}
-                                                                <dt>
-                                                                    {{form_field.label}}
-                                                                </dt>
-                                                                <dd>
-                                                                    {% if form_field.type == "checkbox"%}
-                                                                        {% for selection in value %}
-                                                                            {% for field_key,field_value in form_field.options%}
-                                                                                {% if field_value == selection %}
-                                                                                    {{ field_key }}
-                                                                                {% endif %}
-                                                                            {% endfor %}
-                                                                        {% endfor%}
-                                                                    {% elseif form_field.type == "select" or form_field.type == "radio" %}
-                                                                        {% for field_key,field_value in form_field.options%}
-                                                                            {% if field_value == value %}
-                                                                                {{ field_key }}
-                                                                            {% endif %}
+                                                        {% if value is not empty and form_field.name == field %}
+                                                            <dt class="col-5">{{ form_field.label }}</dt>
+                                                            <dd class="col-7">
+                                                                {% if form_field.type == "checkbox" %}
+                                                                    {% for selection in value %}
+                                                                        {% for field_key,field_value in form_field.options %}
+                                                                            {% if field_value == selection %}{{ field_key }}{% endif %}
                                                                         {% endfor %}
-                                                                    {% else %}
-                                                                        {{value}}
-                                                                    {% endif %}
-                                                                </dd>
-                                                            {% endif %}
+                                                                    {% endfor %}
+                                                                {% elseif form_field.type == "select" or form_field.type == "radio" %}
+                                                                    {% for field_key,field_value in form_field.options %}
+                                                                        {% if field_value == value %}{{ field_key }}{% endif %}
+                                                                    {% endfor %}
+                                                                {% else %}
+                                                                    {{ value }}
+                                                                {% endif %}
+                                                            </dd>
                                                         {% endif %}
                                                     {% endfor %}
                                                 {% endfor %}
                                             </dl>
+                                        {% endif %}
+                                    </div>
+                                    <div class="tn-cart-item__price">
+                                        {% if item.discount_price %}
+                                            <del class="text-muted small">{{ (item.total * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</del>
+                                            <strong class="text-success">{{ ((item.total - item.discount_price) * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</strong>
+                                        {% else %}
+                                            <strong>{{ (item.total * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</strong>
+                                        {% endif %}
+                                    </div>
+                                    <a class="tn-iconbtn tn-iconbtn--sm" title="{{ 'Remove item'|trans }}"
+                                       {{ fb_api_link({href: 'cart/remove_item'|api_url(query: {id: item.id}, role: 'guest'), modal: {type: 'confirm', title: 'Are you sure?'|trans, content: 'Are you sure you want to remove this item from cart?'|trans}, reload: true}) }}>
+                                        <svg class="icon"><use href="#x" /></svg>
+                                    </a>
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="mb-3">
+                            {% if not cart.promocode %}
+                                <a href="#" id="show-promo-field" class="tn-promo-link">
+                                    <svg class="icon"><use href="#ticket-percent" /></svg> {{ 'Have a coupon code?'|trans }}
+                                </a>
+                            {% endif %}
+                            <form method="post" action="{{ 'cart/apply_promo'|api_url(role: 'guest') }}" {{ fb_api_form({message: 'Promo Code Applied to Order'|trans, reload: true}) }}
+                                {% if not cart.promocode %}style="display:none"{% endif %} id="apply-promo">
+                                <div class="d-flex gap-2 mt-2">
+                                    <input class="tn-input" style="max-width:220px;" type="text" name="promocode" id="promocode" value="{{ request.promocode|default(cart.promocode) }}" {% if promo|default({}).required|default(false) %}required="required"{% endif %} placeholder="{{ 'Enter code'|trans }}">
+                                    {% if cart.promocode %}
+                                        <a class="tn-btn tn-btn--secondary tn-btn--sm" href="{{ 'cart/remove_promo'|api_url(role: 'guest') }}" type="button" {{ fb_api_link({reload: true}) }}>{{ 'Remove'|trans }}</a>
+                                    {% else %}
+                                        <button class="tn-btn tn-btn--primary tn-btn--sm" type="submit">{{ 'Apply'|trans }}</button>
+                                    {% endif %}
+                                </div>
+                            </form>
+                        </div>
+
+                        <form method="post" action="{{ 'cart/checkout'|api_url }}" id="tn-checkout-form" {{ fb_api_form({callback: 'onOrderCheckout'}) }}>
+                            <fieldset>
+                                <div class="tn-configure-section mb-3">
+                                    <h4 class="tn-configure-section__title">{{ 'Payment'|trans }}</h4>
+
+                                    {% if enough_in_balance %}
+                                        <div class="tn-paymethod tn-paymethod--selected">
+                                            <div class="tn-paymethod__row">
+                                                <span class="tn-paymethod__radio tn-paymethod__radio--on"></span>
+                                                <svg class="icon" style="color:var(--accent);"><use href="#wallet" /></svg>
+                                                <div class="tn-paymethod__body">
+                                                    <span class="tn-paymethod__title">{{ 'Account balance'|trans }}</span>
+                                                    <span class="tn-paymethod__sub">{{ 'Total amount will be deducted from your account balance'|trans }} ({{ client.client_balance_get_total|format_currency(cart_currency.code) }} {{ 'available'|trans }})</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <p class="small text-muted mb-2">{{ 'Choose a payment method to continue with your order.'|trans }}</p>
+                                        <div class="tn-paymethod-list">
+                                            {% for gtw in guest.invoice_gateways %}
+                                                {% if cart.currency.code in gtw.accepted_currencies and gtw.allow_single %}
+                                                    {% set gateway_input_id = 'order-gateway-' ~ gtw.id %}
+                                                    <label class="tn-paymethod {% if loop.first %}tn-paymethod--selected{% endif %}" for="{{ gateway_input_id }}">
+                                                        <div class="tn-paymethod__row">
+                                                            <input type="radio" class="tn-paymethod__input" name="gateway_id" id="{{ gateway_input_id }}" value="{{ gtw.id }}" autocomplete="off" {{ loop.first ? 'checked' : '' }}/>
+                                                            <span class="tn-paymethod__radio"></span>
+                                                            <svg class="icon"><use href="#credit-card" /></svg>
+                                                            <div class="tn-paymethod__body">
+                                                                <span class="tn-paymethod__title">{{ gtw.title }}</span>
+                                                            </div>
+                                                            {% if gtw.logo.logo %}
+                                                                <span class="tn-paymethod__logo" style="background-image:url('{{ gtw.logo.logo }}'); height:{{ gtw.logo.height }}; width:{{ gtw.logo.width }};"></span>
+                                                            {% endif %}
+                                                        </div>
+                                                    </label>
+                                                {% endif %}
+                                            {% endfor %}
                                         </div>
                                     {% endif %}
-                                </td>
-                                <td></td>
-                            </tr>
-                        {% endif %}
-
-                        {% if item.setup_price != 0 %}
-                            <tr>
-                                <td>{{ item.title }} {{ 'setup'|trans }}</td>
-                                <td>
-                                    {% if item.discount_setup %}
-                                    <del>{{ (item.setup_price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</del>
-                                    {{ ((item.setup_price - item.discount_setup) * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}
-                                    {% else %}
-                                    {{ (item.setup_price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</td>
-                                {% endif %}
-                            </tr>
-                        {% endif %}
-
-                    {% endfor %}
-                    </tbody>
-                </table>
-
-                <div class="row">
-                    <div class="col-md-6">
-                        {% if not cart.promocode %}
-                            <a href="#" id="show-promo-field">{{ 'Have a coupon code?'|trans }}</a>
-                        {% endif %}
-
-                        <form method="post" action="{{ 'cart/apply_promo'|api_url(role: 'guest') }}" {{ fb_api_form({message: 'Promo Code Applied to Order'|trans, reload: true}) }}
-                            {% if not cart.promocode %}style="display:none"{% endif %} id="apply-promo">
-                            <div class="control-group">
-                                <div class="form-controls">
-                                    <div class="input-append">
-                                        <input class="span8" type="text" name="promocode" id="promocode" value="{{ request.promocode|default(cart.promocode) }}" {% if promo|default({}).required|default(false) %}required="required"{% endif %} placeholder="{{ 'Enter code'|trans }}">
-                                        {% if cart.promocode %}
-                                            <a class="btn btn-warning btn-sm mb-1" href="{{ 'cart/remove_promo'|api_url(role: 'guest') }}" type="button" {{ fb_api_link({reload: true}) }}>{{ 'Remove'|trans }}</a>
-                                        {% else %}
-                                            <button class="btn btn-primary btn-sm mb-1" type="submit">{{ 'Apply'|trans }}</button>
-                                        {% endif %}
-                                    </div>
                                 </div>
-                            </div>
-                        </form>
-                    </div>
 
-                    <div class="col-md-6">
-                        <table class="table table-bordered table-striped">
-                            {% if cart.discount >0 %}
-                                <tr>
-                                    <td><strong>{{ 'Subtotal:'|trans }}</strong></td>
-                                    <td><strong>{{ (cart.subtotal * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</strong></td>
-                                </tr>
-                                <tr>
-                                    <td><strong>{{ 'Discount:'|trans }}</strong></td>
-                                    <td><strong>- {{ (cart.discount * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</strong></td>
-                                </tr>
-                            {% endif %}
-
-                            {% set tax_amount = 0 %}
-                            {% if client and client.client_is_taxable %}
-                                {% set tax_rate = client.invoice_get_tax_rate %}
-                                {% set tax_amount = cart.total * tax_rate / 100 %}
-                                <tr>
-                                    <td><strong>{{ 'VAT'|trans }} ({{ tax_rate }}%) :</strong></td>
-                                    <td><strong>{{ (tax_amount * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</strong></td>
-                                </tr>
-                            {% endif %}
-                            <tr>
-                                <td><strong>{{ 'Total:'|trans }}</strong></td>
-                                <td><strong>{{ ((cart.total + tax_amount) * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</strong></td>
-                            </tr>
-
-                        </table>
-
-                        <form method="post" action="{{ 'cart/checkout'|api_url }}" {{ fb_api_form({callback: 'onOrderCheckout'}) }}>
-                            <fieldset>
-                                {% set enough_in_balance = client ? client.client_balance_get_total >= cart.total : false %}
-                                {% if cart.total and not enough_in_balance %}
-                                    <div class="control-group">
-                                        <p class="small text-muted mb-2">{{ 'Choose a payment method to continue with your order.'|trans }}</p>
-                                        <div class="d-flex flex-wrap gap-3">
-                                        {% for gtw in guest.invoice_gateways %}
-                                            {% if cart.currency.code in gtw.accepted_currencies and gtw.allow_single %}
-                                                {% set gateway_input_id = 'order-gateway-' ~ gtw.id %}
-                                                <div class="invoice-gateway rounded-2 p-2">
-                                                    <input type="radio" class="btn-check border-0" name="gateway_id" id="{{ gateway_input_id }}" value="{{ gtw.id }}" autocomplete="off" {{ loop.first ? 'checked' : '' }}/>
-                                                    {% if gtw.logo.logo %}
-                                                        <label class="btn" for="{{ gateway_input_id }}"
-                                                            style="background: transparent url('{{ gtw.logo.logo }}') no-repeat center center; background-size: contain; height:{{ gtw.logo.height }}; width:{{ gtw.logo.width }};"
-                                                            data-bs-toggle="tooltip" data-bs-title="{{ gtw.title }}"
-                                                            aria-label="{{ gtw.title }}"></label>
-                                                    {% else %}
-                                                        <label class="btn text-nowrap" for="{{ gateway_input_id }}">{{ gtw.title }}</label>
-                                                    {% endif %}
-                                                </div>
+                                {% if client.company or client.address_1 or client.city or client.country %}
+                                    <div class="tn-configure-section mb-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h4 class="tn-configure-section__title mb-0">{{ 'Billing details'|trans }}</h4>
+                                            <a href="{{ 'client/profile'|url }}" class="small fw-bold" style="color:var(--accent);">{{ 'Edit'|trans }}</a>
+                                        </div>
+                                        <div class="tn-billing-details">
+                                            <span class="tn-billing-details__name">
+                                                {{ client.company ?: (client.first_name ~ ' ' ~ client.last_name) }}
+                                                {% if client.company_vat|default('')|trim %} &middot; {{ 'TRN'|trans }} {{ client.company_vat }}{% endif %}
+                                            </span>
+                                            {% if client.address_1 or client.city %}
+                                                <span class="tn-billing-details__addr text-muted small">
+                                                    {{ [client.address_1, client.address_2, client.city, client.state, client.postcode, (client.country ? client.country|country_name : null)]|filter(v => v is not empty and v is not null)|join(', ') }}
+                                                </span>
                                             {% endif %}
-                                        {% endfor %}
                                         </div>
                                     </div>
                                 {% endif %}
-                                <div class="control-group">
-                                    <div class="controls mt-3">
-                                        {% if enough_in_balance %}
-                                            <p>{{ 'Total amount will be deducted from account balance'|trans }}</p>
-                                        {% endif %}
-                                        {% if settings.checkout_tos|default('0') == 'explicit' %}
-                                            <div class="form-check mb-1">
-                                                <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault" required>
-                                                <label class="form-check-label" for="flexCheckDefault">
-                                                    {# TODO: Make this translatable once support for placeholders is implemented #}
-                                                    <span>I agree to the <a href="{{ 'tos'|url }}" target="_blank">{{ 'Terms of Service'|trans }}</a> and <a href="{{ 'privacy-policy'|url }}" target="_blank">{{ 'Privacy Policy'|trans }}</a>.</span>
-                                                </label>
-                                            </div>
-                                        {% endif %}
-                                        <button id="checkoutButton" class="btn btn-primary btn-large" type="submit" {% if not client %} hidden="true" {% endif %}>{{ 'Checkout'|trans }}</button>
-                                        <p id="loginMessage" {% if client %} hidden="true" {% endif %}>{{ 'You must first login / create an account before you can checkout.'|trans }}</p>
+
+                                {% if settings.checkout_tos|default('0') == 'explicit' %}
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault" required>
+                                        <label class="form-check-label" for="flexCheckDefault">
+                                            {# TODO: Make this translatable once support for placeholders is implemented #}
+                                            <span>I agree to the <a href="{{ 'tos'|url }}" target="_blank">{{ 'Terms of Service'|trans }}</a> and <a href="{{ 'privacy-policy'|url }}" target="_blank">{{ 'Privacy Policy'|trans }}</a>.</span>
+                                        </label>
                                     </div>
+                                {% endif %}
+                                {% if settings.checkout_tos|default('0') == 'implicit' %}
+                                    {# TODO: Make this translatable once support for placeholders is implemented #}
+                                    <span class="text-muted small d-block mb-3">By completing your order, you agree to our <a href="{{ 'tos'|url }}" target="_blank">{{ 'Terms of Service'|trans }}</a> and <a href="{{ 'privacy-policy'|url }}" target="_blank">{{ 'Privacy Policy'|trans }}</a>.</span>
+                                {% endif %}
+
+                                <div id="loginMessage" class="d-lg-none" {% if client %} hidden="true" {% endif %}>
+                                    <p class="mb-2">{{ 'You must first login or create an account before you can checkout.'|trans }}</p>
+                                    <button type="button" class="tn-btn tn-btn--primary tn-btn--sm" id="goToAccountStep">{{ 'Login / Create account'|trans }}</button>
                                 </div>
                             </fieldset>
-                            {% if settings.checkout_tos|default('0') == 'implicit' %}
-                                {# TODO: Make this translatable once support for placeholders is implemented #}
-                                <span class="text-muted">By completing your order, you agree to our <a href="{{ 'tos'|url }}" target="_blank">{{ 'Terms of Service'|trans }}</a> and <a href="{{ 'privacy-policy'|url }}" target="_blank">{{ 'Privacy Policy'|trans }}</a>.</span>
-                            {% endif %}
                         </form>
                     </div>
+
+                    <div class="tn-configure-layout__rail">
+                        <div class="tn-card tn-card--compact">
+                            <div class="tn-card__header">
+                                <span class="tn-card__title">{{ 'Order summary'|trans }}</span>
+                            </div>
+                            {% if cart.discount > 0 %}
+                                <div class="tn-kv-row"><span class="tn-kv-row__key">{{ 'Subtotal'|trans }}</span><span class="tn-kv-row__value font-mono">{{ (cart.subtotal * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</span></div>
+                                <div class="tn-kv-row"><span class="tn-kv-row__key">{{ 'Discount'|trans }}</span><span class="tn-kv-row__value font-mono">- {{ (cart.discount * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</span></div>
+                            {% else %}
+                                <div class="tn-kv-row"><span class="tn-kv-row__key">{{ 'Subtotal'|trans }}</span><span class="tn-kv-row__value font-mono">{{ (cart.subtotal * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</span></div>
+                            {% endif %}
+                            {% if balance_applied > 0 %}
+                                <div class="tn-kv-row"><span class="tn-kv-row__key">{{ 'Account balance applied'|trans }}</span><span class="tn-kv-row__value font-mono" style="color:var(--accent);">- {{ (balance_applied * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</span></div>
+                            {% endif %}
+                            {% if tax_amount %}
+                                <div class="tn-kv-row"><span class="tn-kv-row__key">{{ 'VAT'|trans }} ({{ tax_rate }}%)</span><span class="tn-kv-row__value font-mono">{{ (tax_amount * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</span></div>
+                            {% endif %}
+                            <div class="tn-kv-row tn-kv-row--total"><span class="tn-kv-row__key">{{ 'Due today'|trans }}</span><span class="tn-kv-row__value font-mono">{{ ((cart.total + tax_amount) * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</span></div>
+
+                            <button id="checkoutButton" form="tn-checkout-form" class="tn-btn tn-btn--primary tn-btn--md tn-btn--block mt-3" type="submit" {% if not client %} hidden="true" {% endif %}>
+                                <svg class="icon"><use href="#lock" /></svg>
+                                {{ 'Pay'|trans }} {{ ((cart.total + tax_amount) * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}
+                            </button>
+                            <div id="loginMessage-rail" class="d-none d-lg-block" {% if client %} hidden="true" {% endif %}>
+                                <p class="text-muted small mb-2 mt-3">{{ 'You must first login or create an account before you can checkout.'|trans }}</p>
+                                <button type="button" class="tn-btn tn-btn--secondary tn-btn--sm tn-btn--block goToAccountStep-rail" id="goToAccountStepRail">{{ 'Login / Create account'|trans }}</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
             </div>
         </div>
     </div>
     {% endif %}
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.tn-paymethod').forEach(function (label) {
+        const input = label.querySelector('.tn-paymethod__input');
+        if (!input) { return; }
+        input.addEventListener('change', function () {
+            document.querySelectorAll('.tn-paymethod').forEach(function (l) { l.classList.remove('tn-paymethod--selected'); });
+            label.classList.add('tn-paymethod--selected');
+        });
+    });
+    document.getElementById('goToAccountStepRail')?.addEventListener('click', function () {
+        document.getElementById('goToAccountStep')?.click();
+    });
+});
+</script>

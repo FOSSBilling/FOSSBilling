@@ -7,8 +7,9 @@
     "build": "npm run check && npm run build-core && npm run build-themes",
     "build:production": "NODE_ENV=production npm run build",
     "build-core": "node ./frontend/esbuild.mjs",
-    "build-themes": "npm run build-admin_default && npm run build -w huraga",
+    "build-themes": "npm run build-admin_default && npm run build -w huraga && npm run build -w tenantninja",
     "build-huraga": "npm run build -w huraga",
+    "build-tenantninja": "npm run build -w tenantninja",
     "build-admin_default": "npm run build -w admin_default",
     "check": "npm run check-js-syntax && npm run check-icons",
     "check-js-syntax": "node ./frontend/tools/check-js-syntax.mjs",
@@ -26,7 +27,8 @@
   },
   "workspaces": [
     "src/themes/huraga",
-    "src/themes/admin_default"
+    "src/themes/admin_default",
+    "src/themes/tenantninja"
   ],
   "devDependencies": {
     "autoprefixer": "10.5.2",
