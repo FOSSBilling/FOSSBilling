@@ -21,6 +21,8 @@ use Box\Mod\Invoice\ServicePayGateway;
 use Box\Mod\Invoice\ServiceSubscription;
 use Box\Mod\Invoice\ServiceTax;
 use Box\Mod\Order\Service as OrderService;
+use Box\Mod\Product\Entity\Product;
+use Box\Mod\Product\Service as ProductService;
 use Box\Mod\System\Service as SystemService;
 
 use function Tests\Helpers\container;
@@ -667,7 +669,7 @@ test('marks invoice as paid', function (): void {
         ->atLeast()->once();
 
     $di = container();
-    $productServiceMock = Mockery::mock(Box\Mod\Product\Service::class)->shouldIgnoreMissing();
+    $productServiceMock = Mockery::mock(ProductService::class)->shouldIgnoreMissing();
     $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($systemService, $itemInvoiceServiceMock, $currencyServiceMock, $productServiceMock) {
         if ($serviceName == 'system') {
             return $systemService;
@@ -1461,6 +1463,66 @@ test('generates invoice for order', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $invoiceItemServiceMock);
+
+    $serviceMock->setDi($di);
+    $result = $serviceMock->generateForOrder($orderModel);
+    expect($result)->toBeInstanceOf(Model_Invoice::class);
+});
+
+test('generates invoice for active order using the order price, not the product price', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('setInvoiceDefaults')
+        ->once();
+
+    $orderModel = new Model_ClientOrder();
+    $orderModel->loadBean(new Tests\Helpers\DummyBean());
+    $orderModel->status = Model_ClientOrder::STATUS_ACTIVE;
+    $orderModel->product_id = 5;
+    $orderModel->currency = 'USD';
+    $orderModel->price = 25;
+    $orderModel->quantity = 1;
+
+    $clientModel = new Model_Client();
+    $clientModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $product = Mockery::mock(Product::class)->makePartial();
+    $product->shouldReceive('getType')->andReturn('hosting');
+
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('findProductById')
+        ->with(5)
+        ->once()
+        ->andReturn($product);
+    $productService->shouldReceive('getProductRenewalLineConfig')
+        ->never();
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getExistingModelById')
+        ->atLeast()->once()
+        ->andReturn($clientModel);
+    $dbMock->shouldReceive('dispense')
+        ->atLeast()->once()
+        ->andReturn($invoiceModel);
+    $dbMock->shouldReceive('store')
+        ->atLeast()->once();
+
+    $invoiceItemServiceMock = Mockery::mock(ServiceInvoiceItem::class);
+    $invoiceItemServiceMock->shouldReceive('generateFromOrder')
+        ->with($invoiceModel, $orderModel, Model_InvoiceItem::TASK_RENEW, 25, Mockery::on(fn ($line): bool => $line['price'] === 25 && $line['quantity'] === 1))
+        ->once();
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(function (string $module) use ($productService, $invoiceItemServiceMock): Mockery\MockInterface {
+        if ($module === 'Product') {
+            return $productService;
+        }
+
+        return $invoiceItemServiceMock;
+    });
 
     $serviceMock->setDi($di);
     $result = $serviceMock->generateForOrder($orderModel);
@@ -2403,7 +2465,7 @@ test('markAsPaid transitions a deposit invoice to paid status', function (): voi
     $di = container();
     $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $productService = Mockery::mock(Box\Mod\Product\Service::class)->shouldIgnoreMissing();
+    $productService = Mockery::mock(ProductService::class)->shouldIgnoreMissing();
     $di['mod_service'] = $di->protect(fn ($name, $sub = '') => match ([$name, $sub]) {
         ['system', ''] => $systemService,
         ['currency', ''] => $currencyService,

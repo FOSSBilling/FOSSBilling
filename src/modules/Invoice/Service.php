@@ -1247,6 +1247,9 @@ class Service implements InjectionAwareInterface
             'quantity' => $order->quantity,
         ];
 
+        // Domain renewal pricing is resolved from the registrar/config rather than
+        // the order, since it legitimately changes between registration and renewal.
+        // Other products keep the order's own price so admin-edited prices are respected.
         if (in_array($order->status, [
             \Model_ClientOrder::STATUS_ACTIVE,
             \Model_ClientOrder::STATUS_FAILED_RENEW,
@@ -1254,9 +1257,9 @@ class Service implements InjectionAwareInterface
         ], true)) {
             $productService = $this->di['mod_service']('Product');
             $product = $productService->findProductById((int) $order->product_id);
-            $config = json_decode($order->config ?? '', true) ?? [];
 
-            if ($productService instanceof \Box\Mod\Product\Service) {
+            if ($productService instanceof \Box\Mod\Product\Service && $product->getType() === \Box\Mod\Product\Service::DOMAIN) {
+                $config = json_decode($order->config ?? '', true) ?? [];
                 $currencyService = $this->di['mod_service']('Currency');
                 $currencyRepository = $currencyService->getCurrencyRepository();
                 $rate = $currencyRepository->getRateByCode($order->currency);
