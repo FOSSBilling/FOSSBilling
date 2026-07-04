@@ -270,7 +270,7 @@ test('group get pairs', function (): void {
     expect($result)->toBeArray();
 });
 
-test('group can manage structure', function (): void {
+test('is super administrator returns true when admin is super administrator', function (): void {
     $api = new Box\Mod\Staff\Api\Admin();
     $admin = staffAdminIdentity();
     $admin->id = 1;
