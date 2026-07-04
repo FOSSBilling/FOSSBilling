@@ -2187,7 +2187,7 @@ class UpdatePatcher implements InjectionAwareInterface
 
             if ($changed) {
                 $this->executeSql('UPDATE admin_group SET permissions = :permissions, updated_at = :updated_at WHERE id = :id', [
-                    'permissions' => json_encode($permissions, JSON_THROW_ON_ERROR),
+                    'permissions' => json_encode($permissions),
                     'updated_at' => date('Y-m-d H:i:s'),
                     'id' => $group['id'],
                 ]);
