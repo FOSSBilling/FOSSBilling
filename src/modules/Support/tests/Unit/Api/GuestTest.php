@@ -45,7 +45,6 @@ function guestSupportServiceMock(): Mockery\MockInterface
 
 test('ticket create', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
-    $api = new Box\Mod\Support\Api\Guest();
     $serviceMock = guestSupportServiceMock();
     $serviceMock->shouldReceive('ticketCreateForGuest')->atLeast()->once()
         ->andReturn(bin2hex(random_bytes(random_int(100, 127))));
@@ -57,7 +56,7 @@ test('ticket create', function (): void {
 
     $data = [
         'name' => 'Name',
-        'email' => 'email@wxample.com',
+        'email' => 'email@example.com',
         'subject' => 'Subject',
         'content' => 'Message',
     ];
@@ -80,7 +79,7 @@ test('ticket create message too short exception', function (): void {
 
     $data = [
         'name' => 'Name',
-        'email' => 'email@wxample.com',
+        'email' => 'email@example.com',
         'subject' => 'Subject',
         'content' => '',
     ];
