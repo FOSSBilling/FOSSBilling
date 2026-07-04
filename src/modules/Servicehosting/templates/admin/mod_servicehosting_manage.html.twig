@@ -156,7 +156,7 @@
             <div class="row g-3">
                 <div class="col-lg-6">
                     <label class="form-label">{{ 'IP'|trans }}</label>
-                    <input class="form-control" type="text" name="ip" value="{{ request.ip|default(service.ip) }}" required>
+                    <input class="form-control" type="text" name="ip" value="{{ request.ip|default(service.ip) }}" pattern="^((25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})(\.(25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})){3}|([0-9A-Fa-f]{1,4}:){1,7}[0-9A-Fa-f]{1,4})$" title="{{ 'Enter a valid IPv4 or IPv6 address'|trans }}" required>
                 </div>
             </div>
 
