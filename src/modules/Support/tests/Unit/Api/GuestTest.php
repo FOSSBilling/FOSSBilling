@@ -492,7 +492,7 @@ test('kb category get not found by slug', function (): void {
     $repo = Mockery::mock(KbArticleCategoryRepository::class);
     $repo->shouldReceive('findOneBySlug')
         ->once()
-        ->with('article-slug')
+        ->with('category-slug-not-found')
         ->andReturn(null);
 
     $kbService = guestSupportServiceMock();
@@ -502,7 +502,7 @@ test('kb category get not found by slug', function (): void {
     $guestApi->setService($kbService);
 
     $data = [
-        'slug' => 'article-slug',
+        'slug' => 'category-slug-not-found',
     ];
 
     $di = container();
