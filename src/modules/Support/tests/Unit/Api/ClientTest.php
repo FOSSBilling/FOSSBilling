@@ -17,7 +17,6 @@ use function Tests\Helpers\container;
 
 test('ticket get list', function (): void {
     $clientApi = new Box\Mod\Support\Api\Client();
-    $api = new Box\Mod\Support\Api\Client();
     $simpleResultArr = [
         'list' => [
             ['id' => 1],
