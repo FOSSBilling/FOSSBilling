@@ -174,7 +174,7 @@ test('update finalization status falls back to legacy admin while pending', func
     $api->setIdentity($admin);
 
     $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
-    $staffService->shouldReceive('isSuperAdministrator')->once()->with(1)->andThrow(new RuntimeException('admin groups unavailable'));
+    $staffService->shouldReceive('isSuperAdministrator')->once()->with(1)->andThrow(new class('admin groups unavailable') extends RuntimeException implements Doctrine\DBAL\Exception {});
 
     $updateFinalization = Mockery::mock();
     $updateFinalization->shouldReceive('isRequired')->once()->andReturn(true);
@@ -202,7 +202,7 @@ test('update finalization status rejects legacy non-admin while pending', functi
     $api->setIdentity($admin);
 
     $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
-    $staffService->shouldReceive('isSuperAdministrator')->once()->with(1)->andThrow(new RuntimeException('admin groups unavailable'));
+    $staffService->shouldReceive('isSuperAdministrator')->once()->with(1)->andThrow(new class('admin groups unavailable') extends RuntimeException implements Doctrine\DBAL\Exception {});
 
     $updateFinalization = Mockery::mock();
     $updateFinalization->shouldReceive('isRequired')->once()->andReturn(true);
@@ -219,4 +219,27 @@ test('update finalization status rejects legacy non-admin while pending', functi
 
     expect(fn () => $api->update_finalization_status())
         ->toThrow(FOSSBilling\InformationException::class, 'You need to be a Super Administrator to finalize this update.');
+});
+
+test('update finalization status does not mask unrelated errors from isSuperAdministrator while pending', function (): void {
+    $api = new Box\Mod\System\Api\Admin();
+
+    $admin = new Model_Admin();
+    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin->id = 1;
+    $api->setIdentity($admin);
+
+    $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffService->shouldReceive('isSuperAdministrator')->once()->with(1)->andThrow(new RuntimeException('unexpected failure'));
+
+    $updateFinalization = Mockery::mock();
+    $updateFinalization->shouldReceive('isRequired')->once()->andReturn(true);
+
+    $di = container();
+    $di['update_finalization'] = $updateFinalization;
+    $di['mod_service'] = $di->protect(fn (string $serviceName): mixed => $serviceName === 'Staff' ? $staffService : false);
+    $api->setDi($di);
+
+    expect(fn () => $api->update_finalization_status())
+        ->toThrow(RuntimeException::class, 'unexpected failure');
 });

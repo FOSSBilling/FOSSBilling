@@ -830,20 +830,20 @@ test('getList returns paginated result', function (): void {
 
 // Data provider for searchFilters
 dataset('searchFilters', fn (): array => [
-    'empty filters' => [
+    'empty filters exclude cron by default' => [
         [],
-        'SELECT * FROM admin',
-        [],
+        'system_name != :system_name',
+        [':system_name' => Model_Admin::SYSTEM_CRON],
     ],
     'search by keyword' => [
         ['search' => 'keyword'],
         '(name LIKE :name OR email LIKE :email )',
-        [':name' => '%keyword%', ':email' => '%keyword%'],
+        [':name' => '%keyword%', ':email' => '%keyword%', ':system_name' => Model_Admin::SYSTEM_CRON],
     ],
     'filter by status' => [
         ['status' => 'active'],
         'status = :status',
-        [':status' => 'active'],
+        [':status' => 'active', ':system_name' => Model_Admin::SYSTEM_CRON],
     ],
     'filter by no_cron' => [
         ['no_cron' => 'true'],
