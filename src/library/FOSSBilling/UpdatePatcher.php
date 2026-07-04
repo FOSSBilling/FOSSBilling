@@ -2164,12 +2164,20 @@ class UpdatePatcher implements InjectionAwareInterface
         // locking non-super-admin staff out of settings pages they could previously use.
         // Grant it wherever a group already had module access, to preserve prior behavior.
         // @see https://github.com/FOSSBilling/FOSSBilling/issues/3873
+        //
+        // The staff group form only submits checked checkboxes, so a group edited on or after
+        // #3856 (2026-06-28, when the manage_settings checkbox first existed) that has no
+        // manage_settings key made a deliberate choice to leave it unchecked, not a legacy gap.
+        // Restrict the backfill to groups untouched since before that date so we don't clobber
+        // an intentional choice, including the default groups patch79 just created above.
         $modules = [
             'activity', 'antispam', 'cookieconsent', 'cron', 'formbuilder',
             'invoice', 'massmailer', 'order', 'orderbutton', 'seo', 'support', 'theme',
         ];
 
-        $groups = $this->fetchAll('SELECT id, permissions FROM admin_group WHERE permissions IS NOT NULL');
+        $groups = $this->fetchAll('SELECT id, permissions FROM admin_group WHERE permissions IS NOT NULL AND updated_at < :cutoff', [
+            'cutoff' => '2026-06-28 00:00:00',
+        ]);
 
         foreach ($groups as $group) {
             $permissions = json_decode((string) $group['permissions'], true);
