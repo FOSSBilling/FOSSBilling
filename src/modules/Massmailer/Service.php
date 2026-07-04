@@ -279,7 +279,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $model = $this->getMessageRepository()->find((int) $params['msg_id']);
         if (!$model instanceof MassmailerMessage) {
-            throw new \FOSSBilling\InformationException('Mass mail message not found');
+            throw new InformationException('Mass mail message not found');
         }
         $this->sendMessage($model, (int) $params['client_id']);
     }

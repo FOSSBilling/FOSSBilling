@@ -58,9 +58,9 @@ final class Dispatcher implements InjectionAwareInterface
             throw new Exception('FOSSBilling module :mod is not installed/activated', [':mod' => $mod], 715);
         }
 
-        /**
+        /*
          * Disable permission checks when an update is pending finalization.
-         * 
+         *
          * This is to make sure update finalization still works when there are changes to the
          * permission system and patches need to be applied before everything starts working again.
          */
