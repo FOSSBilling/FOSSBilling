@@ -282,7 +282,7 @@ test('is super administrator returns true when admin is super administrator', fu
     $serviceMock
         ->shouldReceive('isSuperAdministrator')
         ->once()
-        ->with($admin)
+        ->withNoArgs()
         ->andReturn(true);
 
     $api->setDi($di);
@@ -303,7 +303,7 @@ test('is super administrator returns false when admin is not super administrator
     $serviceMock
         ->shouldReceive('isSuperAdministrator')
         ->once()
-        ->with($admin)
+        ->withNoArgs()
         ->andReturn(false);
 
     $api->setDi($di);
