@@ -15,8 +15,10 @@
             <span class="d-sm-none">{{ company.name }}</span>
         {% endif %}
     {% else %}
-        {# TenantNinja shuriken mark: currentColor so it follows the surrounding text color in both themes. #}
-        <svg class="tn-logo-mark{% if image_class %} {{ image_class }}{% endif %}" viewBox="0 0 100 100" fill="none" width="{{ image_height }}" height="{{ image_height }}" role="img" aria-label="{{ company.name }}">
+        {# TenantNinja shuriken mark: currentColor so it follows the surrounding text color in both themes.
+           Always visible, regardless of image_class — it's a compact icon mark, not a full logo image,
+           so unlike the img branch above it doesn't need to be hidden on narrow viewports. #}
+        <svg class="tn-logo-mark" viewBox="0 0 100 100" fill="none" width="{{ image_height }}" height="{{ image_height }}" role="img" aria-label="{{ company.name }}">
             <path fill-rule="evenodd" clip-rule="evenodd" d="M50 3 L60.2 39.8 L97 50 L60.2 60.2 L50 97 L39.8 60.2 L3 50 L39.8 39.8 Z
                  M41 50 a9 9 0 1 0 18 0 a9 9 0 1 0 -18 0 Z" fill="currentColor"></path>
         </svg>

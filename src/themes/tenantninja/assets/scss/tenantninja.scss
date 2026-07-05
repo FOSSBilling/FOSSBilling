@@ -1402,6 +1402,19 @@ table > thead > tr > th {
         font-size: var(--fs-xs);
         color: var(--text-muted);
     }
+
+    // The trailing action button gets squeezed against the title/amount on
+    // narrow screens, so drop it to its own full-width line underneath.
+    @media (max-width: 575.98px) {
+        flex-wrap: wrap;
+        row-gap: var(--space-2);
+
+        .tn-btn {
+            flex: 1 1 100%;
+            margin-left: calc(32px + var(--space-3));
+            width: auto;
+        }
+    }
 }
 
 // Small status dot used in the dashboard support snapshot row.
@@ -1445,6 +1458,20 @@ table > thead > tr > th {
         align-items: center;
         gap: var(--space-2);
         flex-wrap: wrap;
+    }
+
+    // Three inline buttons wrap unevenly at phone widths (third one stranded
+    // alone). Stack them full-width instead so the row reads as one block.
+    @media (max-width: 575.98px) {
+        &__actions {
+            width: 100%;
+            flex-direction: column;
+            align-items: stretch;
+
+            .tn-btn {
+                width: 100%;
+            }
+        }
     }
 }
 
@@ -1577,6 +1604,32 @@ table > thead > tr > th {
         color: var(--text-faint);
         width: 16px;
         height: 16px;
+    }
+
+    // Fixed-width status/meta columns don't fit alongside the name on narrow
+    // screens, so wrap them onto their own line below the name/icon instead.
+    @media (max-width: 575.98px) {
+        flex-wrap: wrap;
+        row-gap: var(--space-2);
+
+        &__body {
+            flex-basis: 100%;
+        }
+
+        &__status {
+            flex: 0 0 auto;
+            width: auto;
+            margin-left: calc(34px + var(--space-3));
+        }
+
+        &__meta {
+            min-width: 0;
+            margin-left: auto;
+        }
+
+        &__chevron {
+            display: none;
+        }
     }
 }
 
