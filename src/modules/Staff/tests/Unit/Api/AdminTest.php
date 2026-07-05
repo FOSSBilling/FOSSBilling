@@ -214,6 +214,31 @@ test('change password password do not match', function (): void {
         ->toThrow(FOSSBilling\Exception::class, 'Passwords do not match');
 });
 
+test('change password weak password', function (): void {
+    $api = new Box\Mod\Staff\Api\Admin();
+    $data = [
+        'id' => '1',
+        'password' => 'weak',
+        'password_confirm' => 'weak',
+    ];
+
+    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock
+        ->shouldReceive('passwordsMatch')
+        ->atLeast()->once();
+    $validatorMock
+        ->shouldReceive('isPasswordStrong')
+        ->atLeast()->once()
+        ->andReturn(false);
+
+    $di = container();
+    $di['validator'] = $validatorMock;
+
+    $api->setDi($di);
+    expect(fn () => $api->change_password($data))
+        ->toThrow(FOSSBilling\Exception::class);
+});
+
 test('create', function (): void {
     $api = new Box\Mod\Staff\Api\Admin();
     $data = [
