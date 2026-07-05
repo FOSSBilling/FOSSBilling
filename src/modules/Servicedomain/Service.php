@@ -386,9 +386,76 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->details = serialize($whois);
         $model->expires_at = $this->formatRegistrarTimestamp($whois->getExpirationTime());
         $model->registered_at = $this->formatRegistrarTimestamp($whois->getRegistrationTime());
+        $model->synced_at = date('Y-m-d H:i:s');
         $model->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($model);
+    }
+
+    /**
+     * Re-pull a single domain's status (lock, privacy, auto-renew, expiry, contact) from
+     * the registrar and overwrite the local copy with it - the registrar is always the
+     * source of truth. Retries a few times before giving up, since this is also used by
+     * the unattended daily batch sync where nobody is around to click "try again".
+     */
+    public function refreshDomainStatus(\Model_ServiceDomain $model, int $maxAttempts = 3): bool
+    {
+        $orderService = $this->di['mod_service']('order');
+        $order = $orderService->getServiceOrder($model);
+
+        if (!$order instanceof \Model_ClientOrder) {
+            return false;
+        }
+
+        $attempt = 0;
+        while ($attempt < $maxAttempts) {
+            ++$attempt;
+
+            try {
+                $this->syncWhois($model, $order);
+
+                return true;
+            } catch (\Exception $e) {
+                $this->di['logger']->warning('Attempt %s of %s to sync domain #%s status with registrar failed: %s', $attempt, $maxAttempts, $model->id, $e->getMessage());
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Daily (by default) sweep that re-checks every active domain's status against its
+     * registrar, so lock/privacy/auto-renew/expiry data can never silently drift out of
+     * date beyond the configured interval. Also reachable on demand via the admin
+     * "Sync All Domains Now" action, which passes $force to bypass the interval check.
+     */
+    public function batchSyncDomainStatuses(bool $force = false): bool
+    {
+        $key = 'servicedomain_status_sync_last_run';
+        $ss = $this->di['mod_service']('system');
+
+        if (!$force) {
+            $lastRun = $ss->getParamValue($key);
+            $frequencyHours = (int) ($ss->getParamValue('servicedomain_status_sync_frequency_hours') ?: 24);
+            if ($lastRun && (time() - strtotime((string) $lastRun)) < $frequencyHours * 3600) {
+                return false;
+            }
+        }
+
+        $list = $this->di['db']->find('ServiceDomain');
+
+        $failures = 0;
+        foreach ($list as $domain) {
+            if (!$this->refreshDomainStatus($domain)) {
+                ++$failures;
+            }
+        }
+
+        $ss->setParamValue($key, date('Y-m-d H:i:s'));
+        $ss->setParamValue('servicedomain_status_sync_last_failures', $failures);
+        $this->di['logger']->info('Executed registrar status sync for all domains (%s failed)', $failures);
+
+        return true;
     }
 
     public function updateNameservers(\Model_ServiceDomain $model, $data): bool
@@ -672,6 +739,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'autorenew' => $model->autorenew,
             'registered_at' => $model->registered_at,
             'expires_at' => $model->expires_at,
+            'synced_at' => $model->synced_at,
             'contact' => [
                 'first_name' => $model->contact_first_name,
                 'last_name' => $model->contact_last_name,
@@ -809,10 +877,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public static function onBeforeAdminCronRun(\Box_Event $event): bool
     {
+        $di = $event->getDi();
+        $domainService = $di['mod_service']('servicedomain');
+
         try {
-            $di = $event->getDi();
-            $domainService = $di['mod_service']('servicedomain');
             $domainService->batchSyncExpirationDates();
+        } catch (\Exception $e) {
+            error_log($e->getMessage());
+        }
+
+        try {
+            $domainService->batchSyncDomainStatuses();
         } catch (\Exception $e) {
             error_log($e->getMessage());
         }
