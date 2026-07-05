@@ -29,16 +29,17 @@
 
     {# Stat strip - computed here from real invoice data already available on
        this request, no new aggregation endpoints added. #}
-    {% set ns = namespace(outstanding: 0, paid_this_year: 0) %}
+    {% set outstanding = 0 %}
+    {% set paid_this_year = 0 %}
     {% set unpaid_all = client.invoice_get_list({ 'status': 'unpaid', 'per_page': 200 }) %}
     {% for inv in unpaid_all.list %}
-        {% set ns.outstanding = ns.outstanding + inv.total %}
+        {% set outstanding = outstanding + inv.total %}
     {% endfor %}
     {% set paid_all = client.invoice_get_list({ 'status': 'paid', 'per_page': 200 }) %}
     {% set current_year = "now"|date("Y") %}
     {% for inv in paid_all.list %}
         {% if inv.paid_at and inv.paid_at|date("Y") == current_year %}
-            {% set ns.paid_this_year = ns.paid_this_year + inv.total %}
+            {% set paid_this_year = paid_this_year + inv.total %}
         {% endif %}
     {% endfor %}
     {% set account_balance = client.client_balance_get_total() %}
@@ -53,11 +54,11 @@
     <div class="d-flex flex-wrap gap-3 mb-3">
         <div class="tn-stat flex-fill">
             <span class="tn-stat__label">{{ 'Outstanding'|trans }}</span>
-            <span class="tn-stat__value tn-stat__value--accent">{{ ns.outstanding|format_currency(default_currency) }}</span>
+            <span class="tn-stat__value tn-stat__value--accent">{{ outstanding|format_currency(default_currency) }}</span>
         </div>
         <div class="tn-stat flex-fill">
             <span class="tn-stat__label">{{ 'Paid this year'|trans }}</span>
-            <span class="tn-stat__value">{{ ns.paid_this_year|format_currency(default_currency) }}</span>
+            <span class="tn-stat__value">{{ paid_this_year|format_currency(default_currency) }}</span>
         </div>
         <div class="tn-stat flex-fill">
             <span class="tn-stat__label">{{ 'Account balance'|trans }}</span>

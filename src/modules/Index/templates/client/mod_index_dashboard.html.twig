@@ -89,40 +89,38 @@
         {% set active_services = client.order_get_list({ 'status': 'active', 'per_page': 50 }) %}
         {% set recent_invoices = client.invoice_get_list({ 'per_page': 3 }) %}
 
-        {% set ns = namespace(
-            amount_due = 0,
-            soonest_days = null,
-            soonest_title = null,
-            soonest_expires = null,
-            hosting = 0,
-            domain = 0,
-            other = 0
-        ) %}
+        {% set amount_due = 0 %}
+        {% set soonest_days = null %}
+        {% set soonest_title = null %}
+        {% set soonest_expires = null %}
+        {% set hosting_count = 0 %}
+        {% set domain_count = 0 %}
+        {% set other_count = 0 %}
         {% for invoice in unpaid_invoices.list %}
-            {% set ns.amount_due = ns.amount_due + invoice.total %}
+            {% set amount_due = amount_due + invoice.total %}
         {% endfor %}
         {% for order in active_services.list %}
             {% if order.service_type == 'hosting' %}
-                {% set ns.hosting = ns.hosting + 1 %}
+                {% set hosting_count = hosting_count + 1 %}
             {% elseif order.service_type == 'domain' %}
-                {% set ns.domain = ns.domain + 1 %}
+                {% set domain_count = domain_count + 1 %}
             {% else %}
-                {% set ns.other = ns.other + 1 %}
+                {% set other_count = other_count + 1 %}
             {% endif %}
             {% if order.expires_at %}
                 {% set days_left = ((order.expires_at|date('U')) - ('now'|date('U'))) // 86400 %}
-                {% if days_left >= 0 and (ns.soonest_days is null or days_left < ns.soonest_days) %}
-                    {% set ns.soonest_days = days_left %}
-                    {% set ns.soonest_title = order.title %}
-                    {% set ns.soonest_expires = order.expires_at %}
+                {% if days_left >= 0 and (soonest_days is null or days_left < soonest_days) %}
+                    {% set soonest_days = days_left %}
+                    {% set soonest_title = order.title %}
+                    {% set soonest_expires = order.expires_at %}
                 {% endif %}
             {% endif %}
         {% endfor %}
 
         {% set services_parts = [] %}
-        {% if ns.hosting > 0 %}{% set services_parts = services_parts|merge([ns.hosting ~ ' hosting']) %}{% endif %}
-        {% if ns.domain > 0 %}{% set services_parts = services_parts|merge([ns.domain ~ ' domain' ~ (ns.domain > 1 ? 's' : '')]) %}{% endif %}
-        {% if ns.other > 0 %}{% set services_parts = services_parts|merge([ns.other ~ ' other']) %}{% endif %}
+        {% if hosting_count > 0 %}{% set services_parts = services_parts|merge([hosting_count ~ ' hosting']) %}{% endif %}
+        {% if domain_count > 0 %}{% set services_parts = services_parts|merge([domain_count ~ ' domain' ~ (domain_count > 1 ? 's' : '')]) %}{% endif %}
+        {% if other_count > 0 %}{% set services_parts = services_parts|merge([other_count ~ ' other']) %}{% endif %}
 
         {% set unpaid_count = unpaid_invoices.list|length %}
         {% set expiring_count = expiring_orders.list|length %}
@@ -179,7 +177,7 @@
             <div class="tn-stat">
                 <span class="tn-stat__label">{{ 'Amount due'|trans }}</span>
                 {% if unpaid_count > 0 %}
-                    <span class="tn-stat__value tn-stat__value--accent">{{ ns.amount_due|format_currency(profile.currency ?? '') }}</span>
+                    <span class="tn-stat__value tn-stat__value--accent">{{ amount_due|format_currency(profile.currency ?? '') }}</span>
                     <span class="tn-stat__sub">
                         {{ unpaid_count }} {{ 'unpaid invoice(s)'|trans }}{% if soonest_due %} · {{ 'due'|trans }} {{ soonest_due|format_date }}{% endif %}
                     </span>
@@ -190,13 +188,13 @@
 
             <div class="tn-stat">
                 <span class="tn-stat__label">{{ 'Next renewal'|trans }}</span>
-                {% if ns.soonest_days is null %}
+                {% if soonest_days is null %}
                     <span class="tn-stat__value">&mdash;</span>
-                {% elseif ns.soonest_days == 0 %}
+                {% elseif soonest_days == 0 %}
                     <span class="tn-stat__value">{{ 'Today'|trans }}</span>
                 {% else %}
-                    <span class="tn-stat__value">{{ ns.soonest_days }} {{ 'days'|trans }}</span>
-                    <span class="tn-stat__sub">{{ ns.soonest_title|truncate(28) }} · {{ ns.soonest_expires|format_date }}</span>
+                    <span class="tn-stat__value">{{ soonest_days }} {{ 'days'|trans }}</span>
+                    <span class="tn-stat__sub">{{ soonest_title|truncate(28) }} · {{ soonest_expires|format_date }}</span>
                 {% endif %}
             </div>
 
