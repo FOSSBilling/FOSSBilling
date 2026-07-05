@@ -12,7 +12,7 @@ declare(strict_types=1);
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'load.php';
 
 use FOSSBilling\Http\ApiResponseFactory;
-use FOSSBilling\Http\ResponseEmitter;
+
 use FOSSBilling\Http\ResponseFactory;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -69,7 +69,7 @@ try {
     if ($isJsonWebhook && function_exists('fastcgi_finish_request')) {
         $transactionId = $service->create($ipn);
         $response = $apiResponseFactory->create($transactionId);
-        (new ResponseEmitter())->emit($response, $request);
+        $response->prepare($request)->send();
         fastcgi_finish_request();
 
         // Process in the background — errors are logged on the transaction.

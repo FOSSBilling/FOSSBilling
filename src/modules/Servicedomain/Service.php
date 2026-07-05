@@ -132,7 +132,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 throw new \FOSSBilling\InformationException(':domain cannot be transferred!', [':domain' => $domain]);
             }
 
-            // return by reference
             $data['period'] = '1Y';
             $data['quantity'] = 1;
         }
@@ -166,7 +165,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 throw new \FOSSBilling\InformationException(':domain is already registered!', [':domain' => $domain]);
             }
 
-            // return by reference
             $data['period'] = $years . 'Y';
         }
     }

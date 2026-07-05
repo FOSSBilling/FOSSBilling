@@ -362,7 +362,6 @@ class Service implements InjectionAwareInterface
         // Check if update_orders is true and update all orders
         if (isset($config['update_orders']) && $config['update_orders']) {
             $orderService = $this->di['mod_service']('order');
-            // get all orders with this product
             $orders = $productService->getOrdersForProduct($productModel);
 
             foreach ($orders as $order) {

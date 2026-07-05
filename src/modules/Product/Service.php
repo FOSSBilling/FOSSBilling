@@ -2088,7 +2088,6 @@ class Service implements InjectionAwareInterface
             return 0;
         }
 
-        // check if promo code applies to specific period only
         if (isset($config['period'])) {
             $periods = $this->getPeriods($promo);
             if (!empty($periods) && !in_array($config['period'], $periods)) {

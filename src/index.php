@@ -15,7 +15,7 @@ global $di;
 
 use DebugBar\DataCollector\TimeDataCollector;
 use FOSSBilling\Http\RequestFactory;
-use FOSSBilling\Http\ResponseEmitter;
+
 use Symfony\Component\HttpFoundation\Response;
 
 $config = FOSSBilling\Config::getConfig();
@@ -114,5 +114,5 @@ if (!is_null($http_err_code)) {
     $response = $app->run();
 }
 
-(new ResponseEmitter())->emit($response, $request);
+$response->prepare($request)->send();
 exit;
