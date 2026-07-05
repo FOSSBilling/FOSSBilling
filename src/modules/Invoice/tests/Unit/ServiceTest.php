@@ -823,7 +823,6 @@ test('admin mark as paid with custom gateway rejects transaction linked to anoth
 });
 
 test('counts income', function (): void {
-    $service = new Service();
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
 
     $invoiceModel = new Model_Invoice();
