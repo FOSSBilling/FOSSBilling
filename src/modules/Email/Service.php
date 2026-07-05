@@ -175,9 +175,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $systemService = $this->di['mod_service']('system');
 
         // Pick a timezone for the date filters. Client-bound and individual
-        // staff-bound emails render in the recipient's timezone; broadcast / misc
-        // fall through to the config default. Staff broadcasts parse per recipient
-        // in the send loop below.
+        // staff-bound emails render in the recipient's timezone; broadcasts and
+        // misc fall through to the config default. Staff broadcasts parse per
+        // recipient in the send loop below; the value computed here is unused
+        // for that branch.
         $recipientTimezone = null;
         if (isset($customer) && !empty($customer['timezone'])) {
             $recipientTimezone = (string) $customer['timezone'];
@@ -185,11 +186,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $recipientTimezone = (string) $oneStaff['timezone'];
         }
 
-        $subject = null;
-        $content = null;
-        if (!isset($staff)) {
-            [$subject, $content] = $this->_parse($template, $vars, $recipientTimezone);
-        }
+        [$subject, $content] = $this->_parse($template, $vars, $recipientTimezone);
 
         $emailMod = $this->di['mod']('email');
         $emailSettings = $emailMod->getConfig();
