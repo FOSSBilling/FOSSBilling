@@ -331,7 +331,6 @@ test('regenerateThemeSettingsDataFile regenerates settings file', function (): v
         ->once();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    injectMockFilesystem($serviceMock, $filesystemMock);
     $serviceMock->shouldReceive('getThemePresets')
         ->with($themeMock)
         ->andReturn($presets);
@@ -344,6 +343,7 @@ test('regenerateThemeSettingsDataFile regenerates settings file', function (): v
 
     $di = container();
     $serviceMock->setDi($di);
+    injectMockFilesystem($serviceMock, $filesystemMock);
 
     $result = $serviceMock->regenerateThemeSettingsDataFile($themeMock);
     expect($result)->toBeBool();

@@ -670,25 +670,6 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         return preg_replace('~%5B(\d+)%5D~', '', $params);
     }
 
-    /**
-     * Check if all required params are present, if not add default values.
-     *
-     * @param array $required_params - list of required params with default values
-     * @param array $params          - given params
-     *
-     * @return array
-     */
-    private function _checkRequiredParams($required_params, $params)
-    {
-        foreach ($required_params as $param => $value) {
-            if (!isset($params[$param])) {
-                $params[$param] = $value;
-            }
-        }
-
-        return $params;
-    }
-
     private function _getAllContacts($tld, $customer_id, Registrar_Domain_Contact $client): array
     {
         if ($tld[0] != '.') {

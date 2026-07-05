@@ -50,11 +50,6 @@ class UpdateFinalization implements InjectionAwareInterface
 
     public function __construct()
     {
-        $this->statePath = Path::join(PATH_DATA, self::STATE_FILENAME);
-    }
-
-    public function __construct()
-    {
         $this->filesystem = new Filesystem();
         $this->statePath = Path::join(PATH_DATA, self::STATE_FILENAME);
     }

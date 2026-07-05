@@ -43,7 +43,7 @@ class Service implements InjectionAwareInterface
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
-        if (isset($di['filesystem']) && !isset($this->filesystem)) {
+        if (isset($di['filesystem'])) {
             $this->filesystem = $di['filesystem'];
         }
         $this->extensionMetaRepository = isset($this->di['em'])
