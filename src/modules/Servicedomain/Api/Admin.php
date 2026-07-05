@@ -176,6 +176,35 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
+     * Re-pull this domain's status (lock, privacy, auto-renew, expiry) from its registrar
+     * right now, instead of waiting for the scheduled daily sync.
+     *
+     * @return bool
+     */
+    #[RequiredParams(['order_id' => 'Order ID is missing'])]
+    public function refresh_status($data)
+    {
+        $this->checkPermissions('servicedomain', 'manage_domains');
+
+        $s = $this->_getService($data);
+
+        return $this->getService()->refreshDomainStatus($s);
+    }
+
+    /**
+     * Re-pull every domain's status from its registrar right now, instead of waiting for
+     * the scheduled sync.
+     *
+     * @return bool
+     */
+    public function refresh_all_statuses($data)
+    {
+        $this->checkPermissions('servicedomain', 'manage_domains');
+
+        return $this->getService()->batchSyncDomainStatuses(true);
+    }
+
+    /**
      * Get paginated top level domains list.
      *
      * @return array

@@ -65,6 +65,16 @@
                         <td class="text-end">{{ 'Expires At'|trans }}:</td>
                         <td>{{ service.expires_at|format_date }}</td>
                     </tr>
+                    <tr>
+                        <td class="text-end">{{ 'Registrar Data Last Synced'|trans }}:</td>
+                        <td id="synced-at-value">
+                            {% if service.synced_at %}
+                                {{ service.synced_at|format_datetime }} ({{ service.synced_at|timeago }} {{ 'ago'|trans }})
+                            {% else %}
+                                {{ 'Never'|trans }}
+                            {% endif %}
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -114,6 +124,12 @@
                         <use href="#refresh" />
                     </svg>
                     <span>{{ 'Turn On Auto-renew'|trans }}</span>
+                </a>
+                <a class="btn btn-outline-secondary" type="button" id="domain-refresh-status">
+                    <svg class="icon">
+                        <use href="#refresh" />
+                    </svg>
+                    <span>{{ 'Refresh Status Now'|trans }}</span>
                 </a>
                 {% endif %}
             </div>
@@ -326,6 +342,18 @@
                     document.getElementById('domain-autorenew-on').classList.remove('d-none');
 
                     document.getElementById('autorenew-value').innerHTML = '<span class="badge text-bg-danger">{{ "Off"|trans }}</span>';
+                });
+        });
+
+        document.getElementById('domain-refresh-status').addEventListener('click', function(event) {
+            FOSSBilling.api.admin.post('servicedomain/refresh_status', { order_id: {{ order.id }} },
+                (result) => {
+                    if (result) {
+                        FOSSBilling.message("{{ 'Status refreshed from registrar'|trans }}");
+                        window.location.reload();
+                    } else {
+                        FOSSBilling.message("{{ 'Could not reach the registrar - please try again shortly'|trans }}");
+                    }
                 });
         });
 

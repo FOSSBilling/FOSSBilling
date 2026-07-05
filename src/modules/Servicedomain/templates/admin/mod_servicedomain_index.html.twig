@@ -44,6 +44,9 @@
                         <li class="nav-item">
                             <a class="nav-link" href="#tab-nameservers" data-bs-toggle="tab">{{ 'Nameservers'|trans }}</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#tab-status-sync" data-bs-toggle="tab">{{ 'Status Sync'|trans }}</a>
+                        </li>
                     </ul>
                 </div>
                 <div class="tab-content border-top">
@@ -204,6 +207,61 @@
 
                                     {% block form_actions %}
                                         <button class="btn btn-primary" type="submit">{{ 'Update Nameservers'|trans }}</button>
+                                    {% endblock %}
+                                {% endembed %}
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="tab-status-sync" role="tabpanel">
+                        <div class="p-3">
+                            <form method="post" action="{{ 'system/update_params'|api_url }}" {{ fb_api_form({message: 'Sync Settings Updated'|trans, reload: true}) }}>
+                                {% embed 'partial_admin_form_card.html.twig' with {
+                                    title: 'Registrar Status Sync'|trans,
+                                    subtitle: 'Domain lock, privacy, auto-renew, and expiry data is kept in sync with the registrar automatically. The registrar is always treated as the source of truth.'|trans
+                                } %}
+                                    {% block form_content %}
+                                        {% set params = admin.system_get_params %}
+                                        {% set last_run = params.servicedomain_status_sync_last_run %}
+                                        {% set last_failures = params.servicedomain_status_sync_last_failures %}
+                                        <div class="row row-cards mb-3">
+                                            <div class="col-md-6">
+                                                <section class="card card-sm h-100">
+                                                    <div class="card-body">
+                                                        <div class="text-secondary small mb-1">{{ 'Last Sync'|trans }}</div>
+                                                        {% if last_run %}
+                                                            <div class="fw-semibold">{{ last_run|format_datetime }}</div>
+                                                            <div class="text-secondary">{{ last_run|timeago }} {{ 'ago'|trans }}</div>
+                                                        {% else %}
+                                                            <div class="fw-semibold">{{ 'Never run yet'|trans }}</div>
+                                                        {% endif %}
+                                                    </div>
+                                                </section>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <section class="card card-sm h-100">
+                                                    <div class="card-body">
+                                                        <div class="text-secondary small mb-1">{{ 'Domains That Failed To Sync Last Run'|trans }}</div>
+                                                        <div class="fw-semibold {% if last_failures %}text-danger{% endif %}">{{ last_failures ?: 0 }}</div>
+                                                    </div>
+                                                </section>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <label class="form-label">{{ 'Automatic Sync Frequency (hours)'|trans }}</label>
+                                            <input class="form-control" type="number" min="1" name="servicedomain_status_sync_frequency_hours" value="{{ params.servicedomain_status_sync_frequency_hours ?: 24 }}">
+                                            <small class="text-secondary">{{ 'How often every domain is automatically re-checked against its registrar. Default is every 24 hours.'|trans }}</small>
+                                        </div>
+                                    {% endblock %}
+
+                                    {% block form_actions %}
+                                        <a class="btn btn-outline-primary" href="{{ 'servicedomain/refresh_all_statuses'|api_url }}" {{ fb_api_link({message: 'Sync Started'|trans, reload: true}) }}>
+                                            <svg class="icon">
+                                                <use href="#refresh" />
+                                            </svg>
+                                            {{ 'Sync All Domains Now'|trans }}
+                                        </a>
+                                        <button class="btn btn-primary" type="submit">{{ 'Save Frequency'|trans }}</button>
                                     {% endblock %}
                                 {% endembed %}
                             </form>
