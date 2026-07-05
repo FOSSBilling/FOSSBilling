@@ -118,6 +118,9 @@ class Server_Manager_Directadmin extends Server_Manager
 
     /**
      * Checks whether an account still exists on the DirectAdmin server.
+     * If the check itself fails, the account is assumed to still exist so a
+     * transport, authentication, or permission error is never mistaken for a
+     * successful deletion.
      *
      * @param Server_Account $account the account to check
      *
@@ -126,12 +129,12 @@ class Server_Manager_Directadmin extends Server_Manager
     private function accountExists(Server_Account $account): bool
     {
         try {
-            $info = $this->getAccountInfo($account);
+            $users = $this->request('API_SHOW_USERS');
         } catch (Server_Exception) {
-            return false;
+            return true;
         }
 
-        return !empty($info);
+        return in_array($account->getUsername(), $users['list'] ?? [], true);
     }
 
     /**
