@@ -481,6 +481,7 @@ class UpdatePatcher implements InjectionAwareInterface
             73 => 'patch73',
             74 => 'patch74',
             75 => 'patch75',
+            76 => 'patch76',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -1932,6 +1933,16 @@ class UpdatePatcher implements InjectionAwareInterface
         }
 
         $this->executeSql('ALTER TABLE `client` DROP COLUMN `document_type`, DROP COLUMN `document_nr`;');
+    }
+
+    private function patch76(): void
+    {
+        // Add autorenew column to service_domain, mirroring the existing locked/privacy
+        // columns, so a domain's auto-renew state can be tracked and controlled locally
+        // instead of only living on the registrar's side.
+        if (!$this->tableHasColumn('service_domain', 'autorenew')) {
+            $this->executeSql("ALTER TABLE `service_domain` ADD COLUMN `autorenew` TINYINT(1) DEFAULT '1' AFTER `locked`;");
+        }
     }
 
     private function generateDownloadableStoredFilename(): string

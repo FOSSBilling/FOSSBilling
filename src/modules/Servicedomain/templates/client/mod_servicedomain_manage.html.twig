@@ -91,19 +91,33 @@
                             </div>
                             <label class="tn-switch-wrap d-flex justify-content-between align-items-center py-2" style="width:100%;">
                                 <span>{{ 'WHOIS privacy'|trans }}</span>
-                                <span class="tn-switch-track {{ service.privacy == 1 ? '--on' : '' }}" id="privacy-switch">
+                                <span class="tn-switch-track{{ service.privacy == 1 ? ' tn-switch-track--on' : '' }}" id="privacy-switch">
                                     <input class="tn-switch-input" type="checkbox" {% if service.privacy == 1 %}checked{% endif %} id="domain-privacy-toggle">
                                     <span class="tn-switch-thumb"></span>
                                 </span>
                             </label>
                             <label class="tn-switch-wrap d-flex justify-content-between align-items-center py-2" style="width:100%;">
                                 <span>{{ 'Transfer lock'|trans }}</span>
-                                <span class="tn-switch-track {{ service.locked == 1 ? '--on' : '' }}" id="lock-switch">
+                                <span class="tn-switch-track{{ service.locked == 1 ? ' tn-switch-track--on' : '' }}" id="lock-switch">
                                     <input class="tn-switch-input" type="checkbox" {% if service.locked == 1 %}checked{% endif %} id="domain-lock-toggle">
                                     <span class="tn-switch-thumb"></span>
                                 </span>
                             </label>
                             {# DNSSEC is not a field exposed anywhere on Model_ServiceDomain / this Client API - omitted rather than fabricated. #}
+                        </div>
+
+                        <div class="tn-card tn-card--compact mb-3">
+                            <div class="tn-card__header">
+                                <span class="tn-card__title">{{ 'Renewal'|trans }}</span>
+                            </div>
+                            <label class="tn-switch-wrap d-flex justify-content-between align-items-center py-2" style="width:100%;">
+                                <span>{{ 'Auto-renew'|trans }}</span>
+                                <span class="tn-switch-track{{ service.autorenew == 1 ? ' tn-switch-track--on' : '' }}" id="autorenew-switch">
+                                    <input class="tn-switch-input" type="checkbox" {% if service.autorenew == 1 %}checked{% endif %} id="domain-autorenew-toggle">
+                                    <span class="tn-switch-thumb"></span>
+                                </span>
+                            </label>
+                            <span class="small text-muted d-block mt-1">{{ 'When off, this domain won\'t be automatically invoiced or renewed near its expiry date.'|trans }}</span>
                         </div>
 
                         <div class="tn-card tn-card--compact mb-3">
@@ -283,6 +297,18 @@
                     FOSSBilling.api.client.post(endpoint, { order_id: {{ order.id }} },
                         () => {
                             FOSSBilling.message(event.target.checked ? 'Privacy Protection enabled' : 'Privacy Protection disabled');
+                            toggleSwitch(track, event.target.checked);
+                        },
+                        () => { event.target.checked = !event.target.checked; }
+                    );
+                });
+
+                document.getElementById('domain-autorenew-toggle').addEventListener('change', function (event) {
+                    var track = document.getElementById('autorenew-switch');
+                    var endpoint = event.target.checked ? 'servicedomain/enable_autorenew' : 'servicedomain/disable_autorenew';
+                    FOSSBilling.api.client.post(endpoint, { order_id: {{ order.id }} },
+                        () => {
+                            FOSSBilling.message(event.target.checked ? 'Auto-renew enabled' : 'Auto-renew disabled');
                             toggleSwitch(track, event.target.checked);
                         },
                         () => { event.target.checked = !event.target.checked; }

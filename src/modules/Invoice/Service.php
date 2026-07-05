@@ -1318,6 +1318,14 @@ class Service implements InjectionAwareInterface
         foreach ($orders as $order) {
             try {
                 $model = $this->di['db']->getExistingModelById('ClientOrder', $order['id'] ?? null);
+
+                // A domain with auto-renew turned off shouldn't be silently re-invoiced ahead
+                // of expiry - the client has explicitly said they don't want it to continue.
+                $service = $orderService->getOrderService($model);
+                if ($service instanceof \Model_ServiceDomain && (int) $service->autorenew === 0) {
+                    continue;
+                }
+
                 $invoice = $this->generateForOrder($model);
                 $this->approveInvoice($invoice, ['id' => $invoice->id, 'use_credits' => true]);
             } catch (\Exception $e) {

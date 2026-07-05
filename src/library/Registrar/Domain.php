@@ -19,6 +19,7 @@ class Registrar_Domain implements Stringable
     private $_epp;
     private ?bool $_privacy = null;
     private $_locked;
+    private ?bool $_autorenew = null;
     private $_ns1;
     private $_ns2;
     private $_ns3;
@@ -231,6 +232,18 @@ class Registrar_Domain implements Stringable
     public function getLocked()
     {
         return $this->_locked;
+    }
+
+    public function setAutoRenew($param)
+    {
+        $this->_autorenew = (bool) $param;
+
+        return $this;
+    }
+
+    public function getAutoRenew(): ?bool
+    {
+        return $this->_autorenew;
     }
 
     public function __toString(): string

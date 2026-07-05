@@ -362,6 +362,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $model->privacy = $privacy;
         }
 
+        $autorenew = $whois->getAutoRenew();
+        if ($autorenew !== null) {
+            $model->autorenew = $autorenew;
+        }
+
         // sync whois
         $contact = $whois->getContactRegistrar();
 
@@ -542,6 +547,38 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
+    public function enableAutoRenew(\Model_ServiceDomain $model): bool
+    {
+        // @adapterAction
+        [$domain, $adapter] = $this->_getD($model);
+        $adapter->enableAutoRenew($domain);
+
+        $model->autorenew = true;
+        $model->updated_at = date('Y-m-d H:i:s');
+
+        $id = $this->di['db']->store($model);
+
+        $this->di['logger']->info('Enabled auto-renew of #%s domain', $id);
+
+        return true;
+    }
+
+    public function disableAutoRenew(\Model_ServiceDomain $model): bool
+    {
+        // @adapterAction
+        [$domain, $adapter] = $this->_getD($model);
+        $adapter->disableAutoRenew($domain);
+
+        $model->autorenew = false;
+        $model->updated_at = date('Y-m-d H:i:s');
+
+        $id = $this->di['db']->store($model);
+
+        $this->di['logger']->info('Disabled auto-renew of #%s domain', $id);
+
+        return true;
+    }
+
     public function canBeTransferred(\Model_Tld $model, $sld)
     {
         if (empty($sld)) {
@@ -632,6 +669,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'period' => $model->period,
             'privacy' => $model->privacy,
             'locked' => $model->locked,
+            'autorenew' => $model->autorenew,
             'registered_at' => $model->registered_at,
             'expires_at' => $model->expires_at,
             'contact' => [
@@ -705,7 +743,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $d->setNs4($model->ns4);
 
         // merge info with current profile
+        // Some domain records have a missing or stale client_id on the service_domain
+        // row itself (e.g. pointing at a deleted/merged client); fall back to the
+        // owning order's client in that case so this doesn't blow up for
+        // lock/privacy/autorenew actions.
         $client = $this->di['db']->load('Client', $model->client_id);
+        if (!$client instanceof \Model_Client) {
+            $client = $this->di['db']->load('Client', $order->client_id ?? null);
+        }
 
         $email = empty($model->contact_email) ? $client->email : $model->contact_email;
         $first_name = empty($model->contact_first_name) ? $client->first_name : $model->contact_first_name;

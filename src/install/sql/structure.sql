@@ -934,6 +934,7 @@ CREATE TABLE `service_domain` (
   `period` int(11) DEFAULT NULL,
   `privacy` int(11) DEFAULT NULL,
   `locked` tinyint(1) DEFAULT '1',
+  `autorenew` tinyint(1) DEFAULT '1',
   `transfer_code` varchar(255) DEFAULT NULL,
   `action` varchar(30) DEFAULT NULL,
   `contact_email` varchar(255) DEFAULT NULL,

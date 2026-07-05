@@ -148,6 +148,34 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
+     * Enable domain auto-renew.
+     *
+     * @return bool
+     */
+    public function enable_autorenew($data)
+    {
+        $this->checkPermissions('servicedomain', 'manage_domains');
+
+        $s = $this->_getService($data);
+
+        return $this->getService()->enableAutoRenew($s);
+    }
+
+    /**
+     * Disable domain auto-renew.
+     *
+     * @return bool
+     */
+    public function disable_autorenew($data)
+    {
+        $this->checkPermissions('servicedomain', 'manage_domains');
+
+        $s = $this->_getService($data);
+
+        return $this->getService()->disableAutoRenew($s);
+    }
+
+    /**
      * Get paginated top level domains list.
      *
      * @return array
