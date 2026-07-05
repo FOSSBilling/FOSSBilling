@@ -34,7 +34,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     protected EmailTemplateGroupRepository $templateGroupRepository;
     protected ActivityClientEmailRepository $activityClientEmailRepository;
     protected QueuedEmailRepository $queuedEmailRepository;
-    private readonly Filesystem $filesystem;
+    private Filesystem $filesystem;
 
     public function __construct()
     {
@@ -48,6 +48,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->templateGroupRepository = $di['em']->getRepository(EmailTemplateGroup::class);
         $this->activityClientEmailRepository = $di['em']->getRepository(ActivityClientEmail::class);
         $this->queuedEmailRepository = $di['em']->getRepository(QueuedEmail::class);
+        if (isset($di['filesystem'])) {
+            $this->filesystem = $di['filesystem'];
+        }
     }
 
     public function getDi(): ?\Pimple\Container

@@ -525,7 +525,8 @@
         "rdsh",
         "uppercases",
         "inpay",
-        "seti"
+        "seti",
+        "unassigns"
     ],
     "ignorePaths": [
         "node_modules/**",

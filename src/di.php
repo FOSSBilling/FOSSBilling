@@ -290,6 +290,8 @@ $di['http_client'] = fn (): HttpClientInterface => HttpClient::create([
     ],
 ]);
 
+$di['filesystem'] = fn (): Filesystem => new Filesystem();
+
 $di['rate_limiter'] = function () use ($di) {
     $rateLimiter = new FOSSBilling\Security\RateLimiter();
     $rateLimiter->setDi($di);
@@ -622,7 +624,7 @@ $di['server_manager'] = $di->protect(function ($manager, $config) use ($di) {
 
     if (!class_exists($class)) {
         $file = Path::join(PATH_LIBRARY, 'Server', 'Manager', $managerName . '.php');
-        if ((new Filesystem())->exists($file)) {
+        if ($di['filesystem']->exists($file)) {
             require_once $file;
         }
     }

@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use FOSSBilling\Http\ResponseEmitter;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -19,5 +18,5 @@ $request = Request::createFromGlobals();
 $installPath = rtrim(dirname((string) $request->server->get('PHP_SELF', '')), '/');
 
 $response = new RedirectResponse($installPath . '/install.php');
-(new ResponseEmitter())->emit($response, $request);
+$response->prepare($request)->send();
 exit;

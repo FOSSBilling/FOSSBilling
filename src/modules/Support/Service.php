@@ -1118,7 +1118,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $productService->assertUpgradeAllowedByIds((int) $order->product_id, (int) $rel_new_value);
         }
 
-        // check if support ticket with same uncompleted task already exists
         if ($rel_id && $rel_type && $rel_task && $this->checkIfTaskAlreadyExists($client, $rel_id, $rel_type, $rel_task)) {
             throw new InformationException('We have already received this request.');
         }
