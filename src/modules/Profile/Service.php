@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Profile;
 
+use FOSSBilling\i18n;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Tools;
@@ -84,6 +85,9 @@ class Service implements InjectionAwareInterface
         $admin->email = $data['email'] ?? $admin->email;
         $admin->name = $data['name'] ?? $admin->name;
         $admin->signature = $data['signature'] ?? $admin->signature;
+        if (array_key_exists('timezone', $data)) {
+            $admin->timezone = i18n::validateTimezone($data['timezone']);
+        }
         $admin->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($admin);
 
@@ -105,6 +109,7 @@ class Service implements InjectionAwareInterface
             'signature' => $identity->signature,
             'status' => $identity->status,
             'api_token' => $identity->api_token,
+            'timezone' => $identity->timezone,
             'created_at' => $identity->created_at,
             'updated_at' => $identity->updated_at,
         ];
@@ -178,6 +183,9 @@ class Service implements InjectionAwareInterface
             throw new InformationException('Invalid locale code: :code', [':code' => $lang]);
         }
         $client->lang = $lang;
+        if (array_key_exists('timezone', $data)) {
+            $client->timezone = i18n::validateTimezone($data['timezone']);
+        }
         $client->notes = $data['notes'] ?? $client->notes;
         $client->custom_1 = $data['custom_1'] ?? $client->custom_1;
         $client->custom_2 = $data['custom_2'] ?? $client->custom_2;

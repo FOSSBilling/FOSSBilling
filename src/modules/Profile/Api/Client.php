@@ -52,6 +52,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
      * @optional string $phone_cc - Phone country code
      * @optional string $notes - Notes about client. Visible for admin only
      * @optional string $lang - language option
+     * @optional string $timezone - IANA timezone identifier (e.g. "America/New_York"). Used to localize dates and times shown to the client.
      * @optional string $custom_1 - Custom field 1
      * @optional string $custom_2 - Custom field 2
      * @optional string $custom_3 - Custom field 3

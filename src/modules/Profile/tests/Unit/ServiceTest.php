@@ -352,3 +352,18 @@ test('logs out client', function (): void {
     $result = $service->logoutClient();
     expect($result)->toBeTrue();
 });
+
+test('i18n::validateTimezone returns null for null and empty input', function (): void {
+    expect(FOSSBilling\i18n::validateTimezone(null))->toBeNull();
+    expect(FOSSBilling\i18n::validateTimezone(''))->toBeNull();
+});
+
+test('i18n::validateTimezone accepts any IANA identifier', function (): void {
+    expect(FOSSBilling\i18n::validateTimezone('America/New_York'))->toBe('America/New_York');
+    expect(FOSSBilling\i18n::validateTimezone('Asia/Tokyo'))->toBe('Asia/Tokyo');
+    expect(FOSSBilling\i18n::validateTimezone('UTC'))->toBe('UTC');
+});
+
+test('i18n::validateTimezone throws InformationException for unknown identifier', function (): void {
+    expect(fn (): ?string => FOSSBilling\i18n::validateTimezone('Mars/Olympus'))->toThrow(FOSSBilling\InformationException::class);
+});

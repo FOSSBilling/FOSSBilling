@@ -185,7 +185,25 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
         $systemService = $this->di['mod_service']('system');
 
-        [$subject, $content] = $this->_parse($template, $vars);
+        // Pick a timezone for the date filters. Client-bound emails render in the
+        // recipient's timezone; staff-bound use the trigger's; broadcast / misc
+        // fall through to the config default.
+        $recipientTimezone = null;
+        if (isset($customer) && !empty($customer['timezone'])) {
+            $recipientTimezone = (string) $customer['timezone'];
+        } elseif (isset($oneStaff) && !empty($oneStaff['timezone'] ?? null)) {
+            $recipientTimezone = (string) $oneStaff['timezone'];
+        } elseif (isset($staff)) {
+            foreach ($staff['list'] ?? [] as $staffMember) {
+                if (!empty($staffMember['timezone'] ?? null)) {
+                    $recipientTimezone = (string) $staffMember['timezone'];
+
+                    break;
+                }
+            }
+        }
+
+        [$subject, $content] = $this->_parse($template, $vars, $recipientTimezone);
 
         $emailMod = $this->di['mod']('email');
         $emailSettings = $emailMod->getConfig();
@@ -471,14 +489,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $str . '{% endapply %}';
     }
 
-    private function _parse(EmailTemplate $template, array $vars): array
+    private function _parse(EmailTemplate $template, array $vars, ?string $timezone = null): array
     {
         $systemService = $this->di['mod_service']('System');
         [$subjectTemplate, $contentTemplate] = $this->getEffectiveTemplateParts($template);
 
         try {
-            $pc = $systemService->renderEmailTplString($contentTemplate, $vars);
-            $ps = $systemService->renderEmailTplString($subjectTemplate, $vars);
+            $pc = $systemService->renderEmailTplString($contentTemplate, $vars, $timezone);
+            $ps = $systemService->renderEmailTplString($subjectTemplate, $vars, $timezone);
 
             if ($template->hasError()) {
                 $template->clearError();

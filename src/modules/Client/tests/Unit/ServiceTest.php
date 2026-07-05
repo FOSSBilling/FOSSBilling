@@ -1137,3 +1137,18 @@ test('resolveDocumentNumber returns null when no custom_fields config exists', f
     $service->setDi($di);
     expect($service->resolveDocumentNumber($client))->toBeNull();
 });
+
+test('i18n::validateTimezone returns null for null and empty input', function (): void {
+    expect(FOSSBilling\i18n::validateTimezone(null))->toBeNull();
+    expect(FOSSBilling\i18n::validateTimezone(''))->toBeNull();
+});
+
+test('i18n::validateTimezone returns the value when it is a known IANA identifier', function (): void {
+    expect(FOSSBilling\i18n::validateTimezone('America/New_York'))->toBe('America/New_York');
+    expect(FOSSBilling\i18n::validateTimezone('Europe/Berlin'))->toBe('Europe/Berlin');
+    expect(FOSSBilling\i18n::validateTimezone('UTC'))->toBe('UTC');
+});
+
+test('i18n::validateTimezone throws InformationException for an unknown identifier', function (): void {
+    expect(fn (): ?string => FOSSBilling\i18n::validateTimezone('Mars/Olympus_Mons'))->toThrow(FOSSBilling\InformationException::class);
+});

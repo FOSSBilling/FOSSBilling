@@ -41,6 +41,20 @@
                                     <label class="form-label">{{ 'Signature'|trans }}</label>
                                     <textarea class="form-control" name="signature" rows="3">{{ profile.signature }}</textarea>
                                 </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="timezone">{{ 'Timezone'|trans }}</label>
+                                    <select class="form-select" name="timezone" id="timezone" data-timezone-select>
+                                        <option value="">{{ '-- Use system default --'|trans }}</option>
+                                        {% for region, identifiers in guest.system_timezones %}
+                                            <optgroup label="{{ region }}">
+                                                {% for identifier in identifiers %}
+                                                    <option value="{{ identifier }}" {% if identifier == profile.timezone %}selected="selected"{% endif %}>{{ identifier }}</option>
+                                                {% endfor %}
+                                            </optgroup>
+                                        {% endfor %}
+                                    </select>
+                                    <small class="form-hint text-muted">{{ 'Used to display dates and times in your local time across tickets, invoices, and the admin dashboard.'|trans }}</small>
+                                </div>
                             </div>
                         {% endblock %}
 

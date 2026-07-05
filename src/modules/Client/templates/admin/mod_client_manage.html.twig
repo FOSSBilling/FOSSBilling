@@ -382,7 +382,7 @@
                                             >
                                             <span class="input-icon-addon">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                    <path stroke="none" d="M0 0h24 24H0z" fill="none"></path>
                                                     <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
                                                     <path d="M16 3l0 4"></path>
                                                     <path d="M8 3l0 4"></path>
@@ -393,6 +393,20 @@
                                             </span>
                                         </div>
                                     </div>
+                                </div>
+                                <div class="col-xl-6">
+                                    <label class="form-label" for="timezone">{{ 'Timezone'|trans }}</label>
+                                    <select class="form-select" name="timezone" id="timezone" data-timezone-select>
+                                        <option value="">{{ '-- Use system default --'|trans }}</option>
+                                        {% for region, identifiers in guest.system_timezones %}
+                                            <optgroup label="{{ region }}">
+                                                {% for identifier in identifiers %}
+                                                    <option value="{{ identifier }}" {% if identifier == client.timezone %}selected="selected"{% endif %}>{{ identifier }}</option>
+                                                {% endfor %}
+                                            </optgroup>
+                                        {% endfor %}
+                                    </select>
+                                    <small class="form-hint text-muted">{{ 'Used to display dates and times in the client\'s local time across tickets, invoices, and order history.'|trans }}</small>
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label">{{ 'Notes'|trans }}</label>

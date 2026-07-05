@@ -196,6 +196,16 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         return i18n::getActiveLocale();
     }
 
+    /**
+     * IANA timezone identifiers grouped by region, suitable for a `<select>` with `<optgroup>`.
+     *
+     * @return array<string, list<string>>
+     */
+    public function timezones(): array
+    {
+        return i18n::getTimezones();
+    }
+
     public function get_pending_messages()
     {
         $messages = $this->getService()->getPendingMessages();

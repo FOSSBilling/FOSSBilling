@@ -486,6 +486,7 @@ class UpdatePatcher implements InjectionAwareInterface
             78 => 'patch78',
             79 => 'patch79',
             80 => 'patch80',
+            81 => 'patch81',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2200,6 +2201,18 @@ class UpdatePatcher implements InjectionAwareInterface
                     'id' => $group['id'],
                 ]);
             }
+        }
+    }
+
+    private function patch81(): void
+    {
+        // Per-user timezone for clients and staff. NULL falls back to the system `i18n.timezone` config.
+        // @see https://github.com/FOSSBilling/FOSSBilling/issues/1028
+        if (!$this->tableHasColumn('client', 'timezone')) {
+            $this->executeSql('ALTER TABLE `client` ADD COLUMN `timezone` VARCHAR(64) DEFAULT NULL AFTER `lang`');
+        }
+        if (!$this->tableHasColumn('admin', 'timezone')) {
+            $this->executeSql('ALTER TABLE `admin` ADD COLUMN `timezone` VARCHAR(64) DEFAULT NULL AFTER `api_token`');
         }
     }
 
