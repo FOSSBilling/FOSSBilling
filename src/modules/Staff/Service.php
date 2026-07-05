@@ -628,6 +628,10 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Cannot remove group which has staff members');
         }
 
+        if ($this->di['mod_service']('email')->getTemplateGroupRepository()->countTemplatesUsingGroup((int) $id) > 0) {
+            throw new \FOSSBilling\InformationException('Cannot remove group which is used to restrict email templates');
+        }
+
         if ($this->adminGroupRepository->getDescendantIdsForGroups([(int) $id]) !== []) {
             throw new \FOSSBilling\InformationException('Cannot remove group which has child groups');
         }

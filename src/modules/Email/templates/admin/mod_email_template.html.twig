@@ -53,6 +53,7 @@
         {% endblock %}
 
         {% block detail_tab_content %}
+            {% import 'macro_functions.html.twig' as mf %}
                 <div class="tab-pane fade show active" id="tab-template" role="tabpanel">
                     <div class="p-3">
                         <form method="post" action="admin/email/template_update" {{ fb_api_form({message: 'Template Updated'|trans}) }}>
@@ -164,6 +165,47 @@
                                 {% endblock %}
                             {% endembed %}
                         </form>
+
+                        {% set assigned_groups = admin.email_template_group_get_list({ 'id': template.id }) %}
+                        {% embed 'partial_admin_form_card.html.twig' with {
+                            title: 'Staff Group Restrictions'|trans,
+                            subtitle: 'Restrict this notification to specific staff groups. This only applies to notifications sent to staff.'|trans
+                        } %}
+                            {% import 'macro_functions.html.twig' as mf %}
+                            {% block form_content %}
+                                <form method="post" action="{{ 'email/template_group_add'|api_url }}" class="row g-3 align-items-end mb-4" {{ fb_api_form({message: 'Group added'|trans, reload: true}) }}>
+                                    <input type="hidden" name="id" value="{{ template.id }}">
+                                    <div class="col-lg-8">
+                                        <label class="form-label" for="template-group-add">{{ 'Add staff group'|trans }}</label>
+                                        {{ mf.selectbox('group_id', admin.staff_group_get_pairs, '', 0, 'Select group'|trans) }}
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <button class="btn btn-primary w-100" type="submit">{{ 'Add group'|trans }}</button>
+                                    </div>
+                                </form>
+
+                                {% if assigned_groups|length > 0 %}
+                                    <div class="list-group">
+                                        {% for group in assigned_groups %}
+                                            <div class="list-group-item d-flex align-items-center justify-content-between gap-3">
+                                                <div>
+                                                    <a href='{{ "staff/group/#{group.id}"|url }}'>{{ group.name }}</a>
+                                                    {% if group.protected %}
+                                                        <span class="badge bg-blue-lt ms-2">{{ 'System'|trans }}</span>
+                                                    {% endif %}
+                                                </div>
+                                                <a class="btn btn-outline-danger" href="{{ 'email/template_group_remove'|api_url(query: { 'id': template.id, 'group_id': group.id }) }}"
+                                                    {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
+                                                    {{ 'Remove'|trans }}
+                                                </a>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <div class="alert alert-warning mb-0" role="alert">{{ 'No staff groups are assigned. This notification will not be sent to any staff member until at least one group is added.'|trans }}</div>
+                                {% endif %}
+                            {% endblock %}
+                        {% endembed %}
                     </div>
                 </div>
                 {% endif %}

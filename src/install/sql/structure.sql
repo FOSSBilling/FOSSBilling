@@ -447,6 +447,24 @@ CREATE TABLE `email_template` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `email_template_group`
+--
+
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `email_template_group` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `email_template_id` bigint(20) NOT NULL,
+  `admin_group_id` bigint(20) NOT NULL,
+  `created_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `email_template_group_unique` (`email_template_id`, `admin_group_id`),
+  KEY `email_template_group_template_id_idx` (`email_template_id`),
+  KEY `email_template_group_group_id_idx` (`admin_group_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `extension`
 --
 
