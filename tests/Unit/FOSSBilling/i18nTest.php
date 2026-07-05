@@ -104,7 +104,7 @@ test('getActiveTimezone treats empty string as not set', function (): void {
 test('getActiveTimezone falls back to UTC when no config exists', function (): void {
     // Simulate a missing config by pointing at a known-empty key.
     Config::setProperty('i18n.timezone', '');
-    $_COOKIE = [];
+    unset($_COOKIE['fb_timezone']);
 
     expect(i18n::getActiveTimezone())->toBe('UTC');
 });
