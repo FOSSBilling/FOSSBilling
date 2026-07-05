@@ -110,6 +110,30 @@ class Client extends \FOSSBilling\Api\AbstractApi
         return $this->getService()->unlock($s);
     }
 
+    /**
+     * Enable domain auto-renew.
+     *
+     * @return true
+     */
+    public function enable_autorenew($data)
+    {
+        $s = $this->_getService($data);
+
+        return $this->getService()->enableAutoRenew($s);
+    }
+
+    /**
+     * Disable domain auto-renew.
+     *
+     * @return true
+     */
+    public function disable_autorenew($data)
+    {
+        $s = $this->_getService($data);
+
+        return $this->getService()->disableAutoRenew($s);
+    }
+
     protected function _getService($data)
     {
         if (!isset($data['order_id'])) {

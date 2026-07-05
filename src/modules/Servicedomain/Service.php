@@ -362,6 +362,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $model->privacy = $privacy;
         }
 
+        $autorenew = $whois->getAutoRenew();
+        if ($autorenew !== null) {
+            $model->autorenew = $autorenew;
+        }
+
         // sync whois
         $contact = $whois->getContactRegistrar();
 
@@ -542,6 +547,38 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
+    public function enableAutoRenew(\Model_ServiceDomain $model): bool
+    {
+        // @adapterAction
+        [$domain, $adapter] = $this->_getD($model);
+        $adapter->enableAutoRenew($domain);
+
+        $model->autorenew = true;
+        $model->updated_at = date('Y-m-d H:i:s');
+
+        $id = $this->di['db']->store($model);
+
+        $this->di['logger']->info('Enabled auto-renew of #%s domain', $id);
+
+        return true;
+    }
+
+    public function disableAutoRenew(\Model_ServiceDomain $model): bool
+    {
+        // @adapterAction
+        [$domain, $adapter] = $this->_getD($model);
+        $adapter->disableAutoRenew($domain);
+
+        $model->autorenew = false;
+        $model->updated_at = date('Y-m-d H:i:s');
+
+        $id = $this->di['db']->store($model);
+
+        $this->di['logger']->info('Disabled auto-renew of #%s domain', $id);
+
+        return true;
+    }
+
     public function canBeTransferred(\Model_Tld $model, $sld)
     {
         if (empty($sld)) {
@@ -632,6 +669,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'period' => $model->period,
             'privacy' => $model->privacy,
             'locked' => $model->locked,
+            'autorenew' => $model->autorenew,
             'registered_at' => $model->registered_at,
             'expires_at' => $model->expires_at,
             'contact' => [

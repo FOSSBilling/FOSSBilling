@@ -50,6 +50,10 @@
                         <td id="privacy-value">{{ mf.boolean_badge(service.privacy, 'Enabled'|trans, 'Disabled'|trans, 'text-bg-danger', 'text-bg-success') }}</td>
                     </tr>
                     <tr>
+                        <td class="text-end">{{ 'Auto-renew'|trans }}:</td>
+                        <td id="autorenew-value">{{ mf.boolean_badge(service.autorenew, 'On'|trans, 'Off'|trans, 'text-bg-success', 'text-bg-danger') }}</td>
+                    </tr>
+                    <tr>
                         <td class="text-end">{{ 'Registration/Renewal Years'|trans }}:</td>
                         <td>{{ service.period }}</td>
                     </tr>
@@ -98,6 +102,18 @@
                         <use href="#eye-off" />
                     </svg>
                     <span>{{ 'Enable Privacy'|trans }}</span>
+                </a>
+                <a class="btn btn-warning{% if service.autorenew == 0 %} d-none{% endif %}" type="button" id="domain-autorenew-off">
+                    <svg class="icon">
+                        <use href="#refresh-off" />
+                    </svg>
+                    <span>{{ 'Turn Off Auto-renew'|trans }}</span>
+                </a>
+                <a class="btn btn-primary{% if service.autorenew == 1 %} d-none{% endif %}" type="button" id="domain-autorenew-on">
+                    <svg class="icon">
+                        <use href="#refresh" />
+                    </svg>
+                    <span>{{ 'Turn On Auto-renew'|trans }}</span>
                 </a>
                 {% endif %}
             </div>
@@ -286,6 +302,30 @@
                     document.getElementById('domain-enable-pp').classList.remove('d-none');
 
                     document.getElementById('privacy-value').innerHTML = '<span class="badge text-bg-success">{{ "Disabled"|trans }}</span>';
+                });
+        });
+
+        document.getElementById('domain-autorenew-on').addEventListener('click', function(event) {
+            FOSSBilling.api.admin.post('servicedomain/enable_autorenew', { order_id: {{ order.id }} },
+                (result) => {
+                    FOSSBilling.message("{{ 'Auto-renew turned on'|trans }}");
+
+                    document.getElementById('domain-autorenew-on').classList.add('d-none');
+                    document.getElementById('domain-autorenew-off').classList.remove('d-none');
+
+                    document.getElementById('autorenew-value').innerHTML = '<span class="badge text-bg-success">{{ "On"|trans }}</span>';
+                });
+        });
+
+        document.getElementById('domain-autorenew-off').addEventListener('click', function(event) {
+            FOSSBilling.api.admin.post('servicedomain/disable_autorenew', { order_id: {{ order.id }} },
+                (result) => {
+                    FOSSBilling.message("{{ 'Auto-renew turned off'|trans }}");
+
+                    document.getElementById('domain-autorenew-off').classList.add('d-none');
+                    document.getElementById('domain-autorenew-on').classList.remove('d-none');
+
+                    document.getElementById('autorenew-value').innerHTML = '<span class="badge text-bg-danger">{{ "Off"|trans }}</span>';
                 });
         });
 
