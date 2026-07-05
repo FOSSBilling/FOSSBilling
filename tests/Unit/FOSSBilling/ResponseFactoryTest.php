@@ -55,9 +55,11 @@ test('response factory creates binary file and download responses', function ():
 
         expect($fileResponse)->toBeInstanceOf(BinaryFileResponse::class)
             ->and($fileResponse->headers->get('Content-Type'))->toBe('text/plain')
+            ->and($fileResponse->getContentDisposition())->toBe('inline')
             ->and($fileResponse->headers->get('Content-Disposition'))->toContain('report.txt')
             ->and($downloadResponse->headers->get('Content-Type'))->toBe('application/octet-stream')
             ->and($downloadResponse->headers->get('Content-Description'))->toBe('File Transfer')
+            ->and($downloadResponse->getContentDisposition())->toBe('attachment')
             ->and($downloadResponse->headers->get('Content-Disposition'))->toContain('archive.zip');
     } finally {
         if (is_string($file) && file_exists($file)) {
