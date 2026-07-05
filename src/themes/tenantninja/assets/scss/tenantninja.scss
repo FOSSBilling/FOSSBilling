@@ -853,6 +853,24 @@ table > thead > tr > th {
     background-color: var(--bg);
 }
 
+// Minimal header for auth pages (login/signup/password-reset) — just the
+// logo linking home, since the full nav doesn't apply pre-login (issue #18).
+.tn-public-header {
+    display: flex;
+    align-items: center;
+    padding: var(--space-4) var(--space-5);
+
+    a {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        color: var(--text);
+        text-decoration: none;
+        font-family: var(--font-display);
+        font-weight: 600;
+    }
+}
+
 .tn-content-container {
     padding-top: var(--space-6);
 }

@@ -49,6 +49,17 @@
 
 <body class="{% block body_class %}{% endblock %}">
     {{ render_widgets('client.theme.body.start') }}
+    {# Minimal header so auth pages (login/signup/password-reset) aren't a
+       dead end with no way back to the site — the full nav (Dashboard,
+       Services, etc.) doesn't apply pre-login, so just the logo. #}
+    <header class="tn-public-header">
+        {{ include('partial_company_logo.html.twig', {
+            logo_url: public_logo_url,
+            dark_logo_url: public_dark_logo_url,
+            link_url: '/'|url,
+            image_height: '32px'
+        }) }}
+    </header>
     {% block body %}{% endblock %}
     <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1070;" aria-live="polite" aria-atomic="true"></div>
     {{ include('partial_pending_messages.html.twig', ignore_missing: true) }}
