@@ -414,9 +414,17 @@ table > thead > tr > th {
 // Tooltips
 // -----------------------------------------------------------------------
 .tooltip {
-    --bs-tooltip-bg: var(--carbon-900);
+    // Always a dark bubble regardless of page theme, but --carbon-900 is the
+    // dark-mode page background itself — same color made the tooltip
+    // invisible against the page, leaving only floating text (issue #20).
+    // --carbon-700 keeps it dark while staying visibly elevated above the page.
+    --bs-tooltip-bg: var(--carbon-700);
     --bs-tooltip-color: var(--paper-50);
     --bs-tooltip-opacity: 1;
+
+    .tooltip-inner {
+        box-shadow: var(--shadow-md);
+    }
 }
 
 // -----------------------------------------------------------------------
