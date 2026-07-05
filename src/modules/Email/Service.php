@@ -14,8 +14,10 @@ namespace Box\Mod\Email;
 
 use Box\Mod\Email\Entity\ActivityClientEmail;
 use Box\Mod\Email\Entity\EmailTemplate;
+use Box\Mod\Email\Entity\EmailTemplateGroup;
 use Box\Mod\Email\Entity\QueuedEmail;
 use Box\Mod\Email\Repository\ActivityClientEmailRepository;
+use Box\Mod\Email\Repository\EmailTemplateGroupRepository;
 use Box\Mod\Email\Repository\EmailTemplateRepository;
 use Box\Mod\Email\Repository\QueuedEmailRepository;
 use FOSSBilling\Config;
@@ -29,6 +31,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
     protected EmailTemplateRepository $templateRepository;
+    protected EmailTemplateGroupRepository $templateGroupRepository;
     protected ActivityClientEmailRepository $activityClientEmailRepository;
     protected QueuedEmailRepository $queuedEmailRepository;
     private Filesystem $filesystem;
@@ -42,6 +45,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $this->di = $di;
         $this->templateRepository = $di['em']->getRepository(EmailTemplate::class);
+        $this->templateGroupRepository = $di['em']->getRepository(EmailTemplateGroup::class);
         $this->activityClientEmailRepository = $di['em']->getRepository(ActivityClientEmail::class);
         $this->queuedEmailRepository = $di['em']->getRepository(QueuedEmail::class);
         if (isset($di['filesystem'])) {
@@ -57,6 +61,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function getTemplateRepository(): EmailTemplateRepository
     {
         return $this->templateRepository;
+    }
+
+    public function getTemplateGroupRepository(): EmailTemplateGroupRepository
+    {
+        return $this->templateGroupRepository;
     }
 
     public function getActivityClientEmailRepository(): ActivityClientEmailRepository
@@ -144,12 +153,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $send_now = $data['send_now'] ?? false;
         $throw_exceptions = $data['throw_exceptions'] ?? false;
 
+        $template = $this->getOrCreateTemplateByCode($data['code'], $data);
+
         // add additional variables to template
         if (isset($data['to_staff']) && $data['to_staff']) {
             $staffService = $this->di['mod_service']('staff');
-            $staff = $staffService->getList(['status' => 'active', 'no_cron' => true]);
-            $staffMember = $staff['list'][0];
-            $vars['staff'] = $this->safeStaffTemplateVars($staffMember);
+            $groupIds = $this->templateGroupRepository->getGroupIdsForTemplate((int) $template->getId());
+            $staffList = $groupIds === [] ? [] : $staffService->getAdminGroupMemberRepository()->getActiveStaffInGroups($groupIds);
+            $staff = ['list' => $staffList];
+            if ($staffList !== []) {
+                $vars['staff'] = $this->safeStaffTemplateVars($staffList[0]);
+            }
         }
 
         // add additional variables to template
@@ -166,8 +180,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $oneStaff = $this->di['dbal']->fetchAssociative('SELECT id, email, name, signature, timezone FROM admin WHERE id = :id', ['id' => $data['to_admin']]);
             $vars['c'] = $this->safeStaffTemplateVars($oneStaff);
         }
-
-        $template = $this->getOrCreateTemplateByCode($data['code'], $data);
 
         $this->setVars($template, $vars);
 
@@ -353,7 +365,27 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $em->persist($template);
         $em->flush();
 
+        if ($default['category'] === 'staff') {
+            $this->assignAllGroupsToTemplate($template);
+        }
+
         return $template;
+    }
+
+    /**
+     * Assigns every currently existing staff group to a freshly created staff
+     * notification template, so it reaches everyone by default until an admin
+     * narrows it down.
+     */
+    private function assignAllGroupsToTemplate(EmailTemplate $template): void
+    {
+        $groups = $this->di['mod_service']('staff')->getAdminGroupRepository()->findAll();
+
+        foreach ($groups as $group) {
+            $this->di['em']->persist(new EmailTemplateGroup($template, (int) $group->getId()));
+        }
+
+        $this->di['em']->flush();
     }
 
     private function createTemplateRecordFromData(string $code, array $data): EmailTemplate
@@ -721,6 +753,48 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->di['em']->flush();
         $this->di['logger']->info('Updated email template #%s', $template->getId());
+
+        return true;
+    }
+
+    /**
+     * @return int[]
+     */
+    public function getTemplateGroupIds(EmailTemplate $template): array
+    {
+        return $this->templateGroupRepository->getGroupIdsForTemplate((int) $template->getId());
+    }
+
+    public function addTemplateToGroup(EmailTemplate $template, int $groupId): bool
+    {
+        $group = $this->di['mod_service']('staff')->getAdminGroupRepository()->find($groupId);
+        if ($group === null) {
+            throw new \FOSSBilling\InformationException('Staff group not found');
+        }
+
+        if ($this->templateGroupRepository->findAssociation((int) $template->getId(), $groupId) instanceof EmailTemplateGroup) {
+            return true;
+        }
+
+        $this->di['em']->persist(new EmailTemplateGroup($template, $groupId));
+        $this->di['em']->flush();
+
+        $this->di['logger']->info('Assigned email template #%s to staff group #%s', $template->getId(), $groupId);
+
+        return true;
+    }
+
+    public function removeTemplateFromGroup(EmailTemplate $template, int $groupId): bool
+    {
+        $association = $this->templateGroupRepository->findAssociation((int) $template->getId(), $groupId);
+        if (!$association instanceof EmailTemplateGroup) {
+            return true;
+        }
+
+        $this->di['em']->remove($association);
+        $this->di['em']->flush();
+
+        $this->di['logger']->info('Removed email template #%s from staff group #%s', $template->getId(), $groupId);
 
         return true;
     }

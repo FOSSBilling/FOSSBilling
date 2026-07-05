@@ -93,6 +93,7 @@ test('getActiveTimezone ignores an invalid fb_timezone cookie', function (): voi
 test('getActiveTimezone ignores invalid client / admin values and falls back', function (): void {
     expect(i18n::getActiveTimezone('Mars/Olympus_Mons', null))->toBe('UTC');
     expect(i18n::getActiveTimezone(null, 'Mars/Olympus_Mons'))->toBe('UTC');
+    expect(i18n::getActiveTimezone('Mars/Olympus_Mons', 'Mars/Olympus_Mons'))->toBe('UTC');
 });
 
 test('getActiveTimezone treats empty string as not set', function (): void {

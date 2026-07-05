@@ -173,6 +173,10 @@ function container(): Container
         $emailTemplateRepository->shouldReceive('findOneByActionCode')->byDefault()->andReturn(null);
         $emailTemplateRepository->shouldReceive('getSearchQueryBuilder')->byDefault()->andReturn($templateQueryBuilder);
 
+        $emailTemplateGroupRepository = \Mockery::mock(\Box\Mod\Email\Repository\EmailTemplateGroupRepository::class)->shouldIgnoreMissing();
+        $emailTemplateGroupRepository->shouldReceive('getGroupIdsForTemplate')->byDefault()->andReturn([]);
+        $emailTemplateGroupRepository->shouldReceive('countTemplatesUsingGroup')->byDefault()->andReturn(0);
+
         $activityClientEmailRepository = \Mockery::mock(\Box\Mod\Email\Repository\ActivityClientEmailRepository::class)->shouldIgnoreMissing();
         $queuedEmailRepository = \Mockery::mock(\Box\Mod\Email\Repository\QueuedEmailRepository::class)->shouldIgnoreMissing();
 
@@ -190,6 +194,7 @@ function container(): Container
             \Box\Mod\Staff\Entity\AdminGroup::class => $adminGroupRepository,
             \Box\Mod\Staff\Entity\AdminGroupMember::class => $adminGroupMemberRepository,
             \Box\Mod\Email\Entity\EmailTemplate::class => $emailTemplateRepository,
+            \Box\Mod\Email\Entity\EmailTemplateGroup::class => $emailTemplateGroupRepository,
             \Box\Mod\Email\Entity\ActivityClientEmail::class => $activityClientEmailRepository,
             \Box\Mod\Email\Entity\QueuedEmail::class => $queuedEmailRepository,
             \Box\Mod\Support\Entity\KbArticle::class => $kbArticleRepository,
@@ -210,9 +215,19 @@ function container(): Container
     $staffService = \Mockery::mock(\Box\Mod\Staff\Service::class)->shouldIgnoreMissing();
     $staffService->shouldReceive('hasPermission')->byDefault()->andReturn(true);
     $staffService->shouldReceive('checkPermissionsAndThrowException')->byDefault()->andReturn(true);
-    $di['mod_service'] = $di->protect(static function (string $name = '', string $sub = '') use ($staffService): object {
+
+    $emailService = \Mockery::mock(\Box\Mod\Email\Service::class)->shouldIgnoreMissing();
+    $emailTemplateGroupRepositoryDefault = \Mockery::mock(\Box\Mod\Email\Repository\EmailTemplateGroupRepository::class)->shouldIgnoreMissing();
+    $emailTemplateGroupRepositoryDefault->shouldReceive('countTemplatesUsingGroup')->byDefault()->andReturn(0);
+    $emailService->shouldReceive('getTemplateGroupRepository')->byDefault()->andReturn($emailTemplateGroupRepositoryDefault);
+
+    $di['mod_service'] = $di->protect(static function (string $name = '', string $sub = '') use ($staffService, $emailService): object {
         if (strtolower($name) === 'staff') {
             return $staffService;
+        }
+
+        if (strtolower($name) === 'email') {
+            return $emailService;
         }
 
         return \Mockery::mock()->shouldIgnoreMissing();
@@ -231,6 +246,13 @@ function moduleService(array $services = []): \Closure
     $staffService = $services['staff'] ?? \Mockery::mock(\Box\Mod\Staff\Service::class)->shouldIgnoreMissing();
     $staffService->shouldReceive('hasPermission')->byDefault()->andReturn(true);
     $staffService->shouldReceive('checkPermissionsAndThrowException')->byDefault()->andReturn(true);
+
+    if (!isset($services['email'])) {
+        $emailTemplateGroupRepositoryDefault = \Mockery::mock(\Box\Mod\Email\Repository\EmailTemplateGroupRepository::class)->shouldIgnoreMissing();
+        $emailTemplateGroupRepositoryDefault->shouldReceive('countTemplatesUsingGroup')->byDefault()->andReturn(0);
+        $services['email'] = \Mockery::mock(\Box\Mod\Email\Service::class)->shouldIgnoreMissing();
+        $services['email']->shouldReceive('getTemplateGroupRepository')->byDefault()->andReturn($emailTemplateGroupRepositoryDefault);
+    }
 
     return static function (string $name = '', string $sub = '') use ($services, $staffService): object {
         if (strtolower($name) === 'staff') {

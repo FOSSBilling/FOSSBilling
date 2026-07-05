@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Email\Api;
 
+use Box\Mod\Staff\Entity\AdminGroup;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
@@ -187,6 +188,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         }
 
         $id = $template->getId();
+        $service->getTemplateGroupRepository()->deleteAssociationsForTemplate((int) $id);
         $this->getDi()['em']->remove($template);
         $this->getDi()['em']->flush();
 
@@ -240,6 +242,64 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $model = $this->getService()->getTemplate((int) $data['id']);
 
         return $this->getService()->updateTemplate($model, $enabled, $category, $subject, $content);
+    }
+
+    /**
+     * List the staff groups a template is restricted to.
+     *
+     * @return array
+     */
+    #[RequiredParams(['id' => 'Email ID was not passed'])]
+    public function template_group_get_list($data)
+    {
+        $this->checkPermissions('email', 'view_templates');
+
+        $service = $this->getService();
+        $template = $service->getTemplate((int) $data['id']);
+        $groupIds = $service->getTemplateGroupIds($template);
+
+        if ($groupIds === []) {
+            return [];
+        }
+
+        $groups = $this->getDi()['mod_service']('staff')->getAdminGroupRepository()->findBy(['id' => $groupIds]);
+
+        return array_map(
+            static fn (AdminGroup $group): array => [
+                'id' => $group->getId(),
+                'name' => $group->getName(),
+                'protected' => $group->isProtected(),
+            ],
+            $groups,
+        );
+    }
+
+    /**
+     * Restrict an email template to an additional staff group.
+     */
+    #[RequiredParams(['id' => 'Email ID was not passed', 'group_id' => 'Staff group ID was not passed'])]
+    public function template_group_add($data): bool
+    {
+        $this->checkPermissions('email', 'manage_templates');
+
+        $service = $this->getService();
+        $template = $service->getTemplate((int) $data['id']);
+
+        return $service->addTemplateToGroup($template, (int) $data['group_id']);
+    }
+
+    /**
+     * Remove a staff group restriction from an email template.
+     */
+    #[RequiredParams(['id' => 'Email ID was not passed', 'group_id' => 'Staff group ID was not passed'])]
+    public function template_group_remove($data): bool
+    {
+        $this->checkPermissions('email', 'manage_templates');
+
+        $service = $this->getService();
+        $template = $service->getTemplate((int) $data['id']);
+
+        return $service->removeTemplateFromGroup($template, (int) $data['group_id']);
     }
 
     /**

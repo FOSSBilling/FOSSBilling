@@ -74,10 +74,12 @@ function emailBuildEm(
     ?Box\Mod\Email\Repository\EmailTemplateRepository $templateRepo = null,
     ?Box\Mod\Email\Repository\QueuedEmailRepository $queueRepo = null,
     bool $ignoreMissing = true,
+    ?Box\Mod\Email\Repository\EmailTemplateGroupRepository $templateGroupRepo = null,
 ) {
     $activityRepo ??= Mockery::mock(Box\Mod\Email\Repository\ActivityClientEmailRepository::class)->shouldIgnoreMissing();
     $templateRepo ??= Mockery::mock(Box\Mod\Email\Repository\EmailTemplateRepository::class)->shouldIgnoreMissing();
     $queueRepo ??= Mockery::mock(Box\Mod\Email\Repository\QueuedEmailRepository::class)->shouldIgnoreMissing();
+    $templateGroupRepo ??= Mockery::mock(Box\Mod\Email\Repository\EmailTemplateGroupRepository::class)->shouldIgnoreMissing();
 
     $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     if ($ignoreMissing) {
@@ -87,6 +89,7 @@ function emailBuildEm(
         Box\Mod\Email\Entity\ActivityClientEmail::class => $activityRepo,
         EmailTemplate::class => $templateRepo,
         Box\Mod\Email\Entity\QueuedEmail::class => $queueRepo,
+        Box\Mod\Email\Entity\EmailTemplateGroup::class => $templateGroupRepo,
         default => $activityRepo,
     });
 
@@ -347,7 +350,7 @@ dataset('sendTemplateExistsStaffProvider', fn (): array => [
     ],
 ]);
 
-test('sendTemplate handles to_staff and to_client options', function (array $data, string $clientGetExpects, string $staffGetListExpects): void {
+test('sendTemplate handles to_staff and to_client options', function (array $data, string $clientGetExpects, string $staffResolveExpects): void {
     $service = new Box\Mod\Email\Service();
 
     $di = container();
@@ -357,7 +360,10 @@ test('sendTemplate handles to_staff and to_client options', function (array $dat
     $templateRepo = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateRepository::class);
     $templateRepo->shouldReceive('findOneByActionCode')->andReturn($emailTemplate);
 
-    $em = emailBuildEm(null, $templateRepo);
+    $templateGroupRepo = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateGroupRepository::class);
+    $templateGroupRepo->shouldReceive('getGroupIdsForTemplate')->andReturn([3]);
+
+    $em = emailBuildEm(null, $templateRepo, null, true, $templateGroupRepo);
 
     $system = Mockery::mock(Box\Mod\System\Service::class);
     $system->shouldReceive('getParamValue')
@@ -369,21 +375,24 @@ test('sendTemplate handles to_staff and to_client options', function (array $dat
         ->andReturn('value');
 
     $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
-    if ($staffGetListExpects === 'atLeastOnce') {
-        $staffServiceMock->shouldReceive('getList')
+    $groupMemberRepo = Mockery::mock(Box\Mod\Staff\Repository\AdminGroupMemberRepository::class);
+    if ($staffResolveExpects === 'atLeastOnce') {
+        $groupMemberRepo->shouldReceive('getActiveStaffInGroups')
             ->atLeast()->once()
+            ->with([3])
             ->andReturn([
-                'list' => [
-                    0 => [
-                        'id' => 1,
-                        'email' => 'staff@fossbilling.org',
-                        'name' => 'George',
-                        'signature' => '',
-                    ],
+                0 => [
+                    'id' => 1,
+                    'email' => 'staff@fossbilling.org',
+                    'name' => 'George',
+                    'signature' => '',
+                    'timezone' => null,
                 ],
             ]);
+        $staffServiceMock->shouldReceive('getAdminGroupMemberRepository')->atLeast()->once()->andReturn($groupMemberRepo);
     } else {
-        $staffServiceMock->shouldReceive('getList')->never();
+        $groupMemberRepo->shouldReceive('getActiveStaffInGroups')->never();
+        $staffServiceMock->shouldReceive('getAdminGroupMemberRepository')->never();
     }
 
     $clientServiceMock = Mockery::mock(Box\Mod\Client\Service::class);
@@ -433,6 +442,7 @@ test('sendTemplate handles to_staff and to_client options', function (array $dat
             'from_email' => 'test@test.com',
         ]);
 
+    $di['em'] = $em;
     $di['mod'] = $di->protect(fn () => $modMock);
     $di['twig'] = $twigStub;
     $di['crypt'] = $cryptMock;
@@ -449,6 +459,228 @@ test('sendTemplate handles to_staff and to_client options', function (array $dat
 
     expect($result)->toBeTrue();
 })->with('sendTemplateExistsStaffProvider');
+
+test('sendTemplate does not send to staff when template has no assigned groups', function (): void {
+    $service = new Box\Mod\Email\Service();
+
+    $di = container();
+
+    $emailTemplate = emailTemplate(data: ['enabled' => true]);
+
+    $templateRepo = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateRepository::class);
+    $templateRepo->shouldReceive('findOneByActionCode')->andReturn($emailTemplate);
+
+    $templateGroupRepo = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateGroupRepository::class);
+    $templateGroupRepo->shouldReceive('getGroupIdsForTemplate')->andReturn([]);
+
+    $em = emailBuildEm(null, $templateRepo, null, true, $templateGroupRepo);
+
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffServiceMock->shouldReceive('getAdminGroupMemberRepository')->never();
+
+    $systemService = Mockery::mock(Box\Mod\System\Service::class);
+    $systemService->shouldReceive('getParamValue')->atLeast()->once()->andReturn('value');
+    $systemService->shouldReceive('renderEmailTplString')->atLeast()->once()->andReturn('rendered');
+
+    $modMock = Mockery::mock(FOSSBilling\Module::class)->makePartial();
+    $modMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([
+        'from_name' => 'Test',
+        'from_email' => 'test@test.com',
+    ]);
+
+    $cryptMock = Mockery::mock('\Box_Crypt');
+    $cryptMock->shouldReceive('encrypt')->atLeast()->once();
+
+    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock->shouldReceive('checkRequiredParamsForArray')->byDefault();
+
+    $twigStub = Mockery::mock(Twig\Environment::class);
+
+    $di['em'] = $em;
+    $di['crypt'] = $cryptMock;
+    $di['validator'] = $validatorMock;
+    $di['twig'] = $twigStub;
+    $di['mod'] = $di->protect(fn () => $modMock);
+    $di['mod_service'] = $di->protect(moduleService(['staff' => $staffServiceMock, 'system' => $systemService]));
+
+    $service->setDi($di);
+
+    $result = $service->sendTemplate([
+        'code' => 'mod_email_test',
+        'to_staff' => 1,
+        'default_subject' => 'SUBJECT',
+        'default_template' => 'TEMPLATE',
+        'default_description' => 'DESCRIPTION',
+    ]);
+
+    expect($result)->toBeFalse();
+});
+
+test('getTemplateGroupIds delegates to the template group repository', function (): void {
+    $service = new Box\Mod\Email\Service();
+    $di = container();
+
+    $templateGroupRepo = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateGroupRepository::class);
+    $templateGroupRepo->shouldReceive('getGroupIdsForTemplate')->once()->with(5)->andReturn([1, 2]);
+
+    $service->setDi($di);
+    $ref = new ReflectionProperty($service, 'templateGroupRepository');
+    $ref->setValue($service, $templateGroupRepo);
+
+    $template = emailTemplate(id: 5);
+
+    expect($service->getTemplateGroupIds($template))->toBe([1, 2]);
+});
+
+test('addTemplateToGroup assigns a template to an existing staff group', function (): void {
+    $service = new Box\Mod\Email\Service();
+    $di = container();
+
+    $template = emailTemplate(id: 5);
+    $group = new Box\Mod\Staff\Entity\AdminGroup();
+    Tests\Helpers\setEntityId($group, 3);
+
+    $adminGroupRepo = Mockery::mock(Box\Mod\Staff\Repository\AdminGroupRepository::class);
+    $adminGroupRepo->shouldReceive('find')->once()->with(3)->andReturn($group);
+
+    $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffService->shouldReceive('getAdminGroupRepository')->andReturn($adminGroupRepo);
+
+    $templateGroupRepo = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateGroupRepository::class);
+    $templateGroupRepo->shouldReceive('findAssociation')->once()->with(5, 3)->andReturn(null);
+
+    $em = emailBuildEm(null, null, null, true, $templateGroupRepo);
+    $em->shouldReceive('persist')->once()->with(Mockery::type(Box\Mod\Email\Entity\EmailTemplateGroup::class));
+    $em->shouldReceive('flush')->atLeast()->once();
+
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(moduleService(['staff' => $staffService]));
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    expect($service->addTemplateToGroup($template, 3))->toBeTrue();
+});
+
+test('addTemplateToGroup is idempotent when the association already exists', function (): void {
+    $service = new Box\Mod\Email\Service();
+    $di = container();
+
+    $template = emailTemplate(id: 5);
+    $group = new Box\Mod\Staff\Entity\AdminGroup();
+    Tests\Helpers\setEntityId($group, 3);
+
+    $adminGroupRepo = Mockery::mock(Box\Mod\Staff\Repository\AdminGroupRepository::class);
+    $adminGroupRepo->shouldReceive('find')->once()->with(3)->andReturn($group);
+
+    $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffService->shouldReceive('getAdminGroupRepository')->andReturn($adminGroupRepo);
+
+    $templateGroupRepo = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateGroupRepository::class);
+    $templateGroupRepo->shouldReceive('findAssociation')->once()->with(5, 3)
+        ->andReturn(new Box\Mod\Email\Entity\EmailTemplateGroup($template, 3));
+
+    $em = emailBuildEm(null, null, null, true, $templateGroupRepo);
+    $em->shouldReceive('persist')->never();
+
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(moduleService(['staff' => $staffService]));
+    $service->setDi($di);
+
+    expect($service->addTemplateToGroup($template, 3))->toBeTrue();
+});
+
+test('addTemplateToGroup throws when the staff group does not exist', function (): void {
+    $service = new Box\Mod\Email\Service();
+    $di = container();
+
+    $template = emailTemplate(id: 5);
+
+    $adminGroupRepo = Mockery::mock(Box\Mod\Staff\Repository\AdminGroupRepository::class);
+    $adminGroupRepo->shouldReceive('find')->once()->with(3)->andReturn(null);
+
+    $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffService->shouldReceive('getAdminGroupRepository')->andReturn($adminGroupRepo);
+
+    $di['mod_service'] = $di->protect(moduleService(['staff' => $staffService]));
+    $service->setDi($di);
+
+    $service->addTemplateToGroup($template, 3);
+})->throws(FOSSBilling\InformationException::class, 'Staff group not found');
+
+test('removeTemplateFromGroup removes an existing association', function (): void {
+    $service = new Box\Mod\Email\Service();
+    $di = container();
+
+    $template = emailTemplate(id: 5);
+    $association = new Box\Mod\Email\Entity\EmailTemplateGroup($template, 3);
+
+    $templateGroupRepo = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateGroupRepository::class);
+    $templateGroupRepo->shouldReceive('findAssociation')->once()->with(5, 3)->andReturn($association);
+
+    $em = emailBuildEm(null, null, null, true, $templateGroupRepo);
+    $em->shouldReceive('remove')->once()->with($association);
+    $em->shouldReceive('flush')->atLeast()->once();
+
+    $di['em'] = $em;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    expect($service->removeTemplateFromGroup($template, 3))->toBeTrue();
+});
+
+test('removeTemplateFromGroup is a no-op when no association exists', function (): void {
+    $service = new Box\Mod\Email\Service();
+    $di = container();
+
+    $template = emailTemplate(id: 5);
+
+    $templateGroupRepo = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateGroupRepository::class);
+    $templateGroupRepo->shouldReceive('findAssociation')->once()->with(5, 3)->andReturn(null);
+
+    $em = emailBuildEm(null, null, null, true, $templateGroupRepo);
+    $em->shouldReceive('remove')->never();
+
+    $di['em'] = $em;
+    $service->setDi($di);
+
+    expect($service->removeTemplateFromGroup($template, 3))->toBeTrue();
+});
+
+test('assignAllGroupsToTemplate links a template to every existing staff group', function (): void {
+    $service = new Box\Mod\Email\Service();
+    $di = container();
+
+    $groupA = new Box\Mod\Staff\Entity\AdminGroup();
+    Tests\Helpers\setEntityId($groupA, 10);
+    $groupB = new Box\Mod\Staff\Entity\AdminGroup();
+    Tests\Helpers\setEntityId($groupB, 20);
+
+    $adminGroupRepo = Mockery::mock(Box\Mod\Staff\Repository\AdminGroupRepository::class);
+    $adminGroupRepo->shouldReceive('findAll')->once()->andReturn([$groupA, $groupB]);
+
+    $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffService->shouldReceive('getAdminGroupRepository')->andReturn($adminGroupRepo);
+
+    $em = emailBuildEm();
+    $persistedGroupIds = [];
+    $em->shouldReceive('persist')->andReturnUsing(function ($entity) use (&$persistedGroupIds): void {
+        if ($entity instanceof Box\Mod\Email\Entity\EmailTemplateGroup) {
+            $persistedGroupIds[] = $entity->getAdminGroupId();
+        }
+    });
+    $em->shouldReceive('flush')->atLeast()->once();
+
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(moduleService(['staff' => $staffService]));
+    $service->setDi($di);
+
+    $template = emailTemplate('mod_staff_client_order', 1);
+
+    $ref = new ReflectionMethod($service, 'assignAllGroupsToTemplate');
+    $ref->invoke($service, $template);
+
+    expect($persistedGroupIds)->toBe([10, 20]);
+});
 
 test('resend resends email', function (): void {
     $service = new Box\Mod\Email\Service();
