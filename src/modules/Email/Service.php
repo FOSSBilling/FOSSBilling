@@ -185,6 +185,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $recipientTimezone = (string) $oneStaff['timezone'];
         }
 
+        $subject = null;
+        $content = null;
         if (!isset($staff)) {
             [$subject, $content] = $this->_parse($template, $vars, $recipientTimezone);
         }
