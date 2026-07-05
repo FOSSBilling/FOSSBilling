@@ -229,7 +229,7 @@ test('change password weak password', function (): void {
     $validatorMock
         ->shouldReceive('isPasswordStrong')
         ->atLeast()->once()
-        ->andReturn(false);
+        ->andThrow(new FOSSBilling\InformationException('Password is too weak.'));
 
     $di = container();
     $di['validator'] = $validatorMock;

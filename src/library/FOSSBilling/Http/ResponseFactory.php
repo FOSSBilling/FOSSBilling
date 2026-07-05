@@ -14,6 +14,7 @@ namespace FOSSBilling\Http;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 
 final readonly class ResponseFactory
 {
@@ -51,7 +52,7 @@ final readonly class ResponseFactory
     {
         $response = new BinaryFileResponse($path);
         $response->headers->set('Content-Type', $contentType);
-        $response->setContentDisposition('attachment', $filename);
+        $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_INLINE, $filename);
 
         return $response;
     }
@@ -59,6 +60,7 @@ final readonly class ResponseFactory
     public function download(string $filename, mixed $path): BinaryFileResponse
     {
         $response = $this->file($filename, 'application/octet-stream', $path);
+        $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $filename);
         $response->headers->set('Content-Description', 'File Transfer');
 
         return $response;

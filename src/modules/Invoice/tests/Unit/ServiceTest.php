@@ -108,31 +108,31 @@ test('gets search query with various parameters', function (array $data, string 
         ],
     ],
     [
-        ['created_at' => '1353715200'],
+        ['created_at' => '2012-11-23 12:34:56'],
         "AND DATE_FORMAT(p.created_at, '%Y-%m-%d') = :created_at",
         [
-            'created_at' => '1353715200',
+            'created_at' => '2012-11-23',
         ],
     ],
     [
-        ['date_from' => '1353715200'],
+        ['date_from' => '2012-11-23 12:34:56'],
         'AND UNIX_TIMESTAMP(p.created_at) >= :date_from',
         [
-            'date_from' => '1353715200',
+            'date_from' => 1353674096,
         ],
     ],
     [
-        ['date_to' => '1353715200'],
+        ['date_to' => '2012-11-23 12:34:56'],
         'AND UNIX_TIMESTAMP(p.created_at) <= :date_to',
         [
-            'date_to' => '1353715200',
+            'date_to' => 1353674096,
         ],
     ],
     [
-        ['paid_at' => '1353715200'],
+        ['paid_at' => '2012-11-23 12:34:56'],
         "AND DATE_FORMAT(p.paid_at, '%Y-%m-%d') = :paid_at",
         [
-            'paid_at' => '1353715200',
+            'paid_at' => '2012-11-23',
         ],
     ],
     [
