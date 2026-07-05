@@ -195,10 +195,9 @@ class Reader
     {
         $httpClient = $this->di['http_client'];
         $response = $httpClient->request('GET', $url);
-        $filesystem = new Filesystem();
 
         if ($response->getStatusCode() === 200) {
-            $filesystem->dumpFile($path, $response->getContent());
+            $this->di['filesystem']->dumpFile($path, $response->getContent());
         } else {
             throw new \Exception("Got a {$response->getStatusCode()} status code when attempting to download {$url}.");
         }

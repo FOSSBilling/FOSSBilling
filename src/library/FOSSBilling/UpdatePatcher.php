@@ -20,7 +20,7 @@ use Symfony\Component\Uid\Uuid;
 class UpdatePatcher implements InjectionAwareInterface
 {
     private ?\Pimple\Container $di = null;
-    private readonly Filesystem $filesystem;
+    private Filesystem $filesystem;
     private array $downloadableStorageMigrationMap = [];
 
     public function __construct()
@@ -31,6 +31,9 @@ class UpdatePatcher implements InjectionAwareInterface
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        if (isset($di['filesystem'])) {
+            $this->filesystem = $di['filesystem'];
+        }
     }
 
     public function getDi(): ?\Pimple\Container

@@ -31,13 +31,19 @@ class Service
 
     protected ?Container $di = null;
 
-    public function __construct(private readonly ?Filesystem $filesystem = new Filesystem())
+    private Filesystem $filesystem;
+
+    public function __construct(?Filesystem $filesystem = null)
     {
+        $this->filesystem = $filesystem ?? new Filesystem();
     }
 
     public function setDi(Container $di): void
     {
         $this->di = $di;
+        if (isset($di['filesystem'])) {
+            $this->filesystem = $di['filesystem'];
+        }
     }
 
     public function getModulePermissions(): array

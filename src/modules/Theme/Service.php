@@ -25,7 +25,7 @@ class Service implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
     private ?ExtensionMetaRepository $extensionMetaRepository = null;
-    private readonly Filesystem $filesystem;
+    private Filesystem $filesystem;
 
     /**
      * In-request cache for the current admin theme name.
@@ -43,6 +43,9 @@ class Service implements InjectionAwareInterface
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        if (isset($di['filesystem']) && !isset($this->filesystem)) {
+            $this->filesystem = $di['filesystem'];
+        }
         $this->extensionMetaRepository = isset($this->di['em'])
             ? $this->di['em']->getRepository(ExtensionMeta::class)
             : null;

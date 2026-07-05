@@ -32,12 +32,14 @@ class Service implements InjectionAwareInterface
 
     public function __construct(private ?Filesystem $filesystem = null)
     {
-        $this->filesystem ??= new Filesystem();
     }
 
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        if (isset($di['filesystem'])) {
+            $this->filesystem ??= $di['filesystem'];
+        }
         $this->extensionRepository = $di['em']->getRepository(Extension::class);
         $this->extensionMetaRepository = $di['em']->getRepository(ExtensionMeta::class);
     }
