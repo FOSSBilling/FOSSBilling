@@ -46,7 +46,7 @@ test('gets search query with various parameters', function (array $data, string 
     expect($result[1])->toBeArray();
 
     expect(str_contains((string) $result[0], $expectedStr))->toBeTrue($result[0]);
-    expect(array_diff_key($result[1], $expectedParams))->toBe([]);
+    expect($result[1])->toMatchArray($expectedParams);
 })->with([
     [[], 'FROM invoice p', []],
     [
