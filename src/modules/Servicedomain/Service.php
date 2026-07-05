@@ -743,7 +743,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $d->setNs4($model->ns4);
 
         // merge info with current profile
+        // Some domain records have a missing or stale client_id on the service_domain
+        // row itself (e.g. pointing at a deleted/merged client); fall back to the
+        // owning order's client in that case so this doesn't blow up for
+        // lock/privacy/autorenew actions.
         $client = $this->di['db']->load('Client', $model->client_id);
+        if (!$client instanceof \Model_Client) {
+            $client = $this->di['db']->load('Client', $order->client_id ?? null);
+        }
 
         $email = empty($model->contact_email) ? $client->email : $model->contact_email;
         $first_name = empty($model->contact_first_name) ? $client->first_name : $model->contact_first_name;
