@@ -26,6 +26,7 @@ test('gets admin profile', function (): void {
     $model->status = 'active';
     $model->created_at = '2014-01-01';
     $model->updated_at = '2014-01-01';
+    $model->timezone = null;
 
     $adminApi = new Admin();
     $adminApi->setIdentity($model);
@@ -38,6 +39,7 @@ test('gets admin profile', function (): void {
         'signature' => $model->signature,
         'status' => $model->status,
         'api_token' => null,
+        'timezone' => null,
         'created_at' => $model->created_at,
         'updated_at' => $model->updated_at,
     ];

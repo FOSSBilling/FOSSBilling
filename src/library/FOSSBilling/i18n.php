@@ -112,6 +112,86 @@ class i18n
     }
 
     /**
+     * Returns the timezone the current request should be rendered in.
+     *
+     * Resolves in order: client -> admin -> `fb_timezone` cookie -> `i18n.timezone` config -> `UTC`.
+     * Invalid values are silently dropped so a stale cookie or corrupt DB value can't crash the date formatter.
+     */
+    public static function getActiveTimezone(?string $clientTimezone = null, ?string $adminTimezone = null): string
+    {
+        $valid = self::getTimezoneList();
+
+        foreach ([$clientTimezone, $adminTimezone, $_COOKIE['fb_timezone'] ?? null] as $candidate) {
+            if (is_string($candidate) && $candidate !== '' && in_array($candidate, $valid, true)) {
+                return $candidate;
+            }
+        }
+
+        $configured = Config::getProperty('i18n.timezone', 'UTC');
+        if (is_string($configured) && in_array($configured, $valid, true)) {
+            return $configured;
+        }
+
+        return 'UTC';
+    }
+
+    /**
+     * IANA timezone identifiers grouped by region, suitable for rendering a `<select>` with `<optgroup>`.
+     * UTC is always present in its own bucket.
+     *
+     * @return array<string, list<string>>
+     */
+    public static function getTimezones(): array
+    {
+        $identifiers = \DateTimeZone::listIdentifiers();
+        sort($identifiers);
+
+        $grouped = ['UTC' => ['UTC']];
+        foreach ($identifiers as $identifier) {
+            if ($identifier === 'UTC') {
+                continue;
+            }
+
+            $region = strstr($identifier, '/', true) ?: 'Other';
+            $grouped[$region] ??= [];
+            $grouped[$region][] = $identifier;
+        }
+
+        return $grouped;
+    }
+
+    /**
+     * Flat list of supported timezone identifiers, sorted alphabetically.
+     *
+     * @return list<string>
+     */
+    public static function getTimezoneList(): array
+    {
+        $list = \DateTimeZone::listIdentifiers();
+        sort($list);
+
+        return $list;
+    }
+
+    /**
+     * Returns `$timezone` if it is a valid IANA identifier, `null` for empty input.
+     *
+     * @throws InformationException when the value is non-empty and not a known timezone
+     */
+    public static function validateTimezone(?string $timezone): ?string
+    {
+        if ($timezone === null || $timezone === '') {
+            return null;
+        }
+
+        if (!in_array($timezone, self::getTimezoneList(), true)) {
+            throw new InformationException('Invalid timezone: :tz', [':tz' => $timezone]);
+        }
+
+        return $timezone;
+    }
+
+    /**
      * Retrieve a list of available locales, optionally including their details.
      *
      * @param bool $includeLocaleDetails (optional) Whether to include locale details or not. Defaults to false.

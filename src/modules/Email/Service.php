@@ -146,12 +146,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $staffService = $this->di['mod_service']('staff');
             $staff = $staffService->getList(['status' => 'active', 'no_cron' => true]);
             $staffMember = $staff['list'][0];
-            $vars['staff'] = [
-                'id' => $staffMember['id'],
-                'email' => $staffMember['email'],
-                'name' => $staffMember['name'],
-                'signature' => $staffMember['signature'],
-            ];
+            $vars['staff'] = $this->safeStaffTemplateVars($staffMember);
         }
 
         // add additional variables to template
@@ -165,14 +160,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         // send email to admins
         if (isset($data['to_admin']) && $data['to_admin'] > 0) {
             /** @todo Doctrine: use Admin entity once Staff is migrated */
-            $oneStaff = $this->di['dbal']->fetchAssociative('SELECT id, email, name, signature FROM admin WHERE id = :id', ['id' => $data['to_admin']]);
-            // Convert to array with only safe fields
-            $vars['c'] = [
-                'id' => $oneStaff['id'],
-                'email' => $oneStaff['email'],
-                'name' => $oneStaff['name'],
-                'signature' => $oneStaff['signature'],
-            ];
+            $oneStaff = $this->di['dbal']->fetchAssociative('SELECT id, email, name, signature, timezone FROM admin WHERE id = :id', ['id' => $data['to_admin']]);
+            $vars['c'] = $this->safeStaffTemplateVars($oneStaff);
         }
 
         $template = $this->getOrCreateTemplateByCode($data['code'], $data);
@@ -185,7 +174,19 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
         $systemService = $this->di['mod_service']('system');
 
-        [$subject, $content] = $this->_parse($template, $vars);
+        // Pick a timezone for the date filters. Client-bound and individual
+        // staff-bound emails render in the recipient's timezone; broadcasts and
+        // misc fall through to the config default. Staff broadcasts parse per
+        // recipient in the send loop below; the value computed here is unused
+        // for that branch.
+        $recipientTimezone = null;
+        if (isset($customer) && !empty($customer['timezone'])) {
+            $recipientTimezone = (string) $customer['timezone'];
+        } elseif (isset($oneStaff) && !empty($oneStaff['timezone'] ?? null)) {
+            $recipientTimezone = (string) $oneStaff['timezone'];
+        }
+
+        [$subject, $content] = $this->_parse($template, $vars, $recipientTimezone);
 
         $emailMod = $this->di['mod']('email');
         $emailSettings = $emailMod->getConfig();
@@ -207,6 +208,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         if (isset($staff)) {
             foreach ($staff['list'] as $staff) {
+                $staffVars = $vars;
+                $staffVars['staff'] = $this->safeStaffTemplateVars($staff);
+                $staffTimezone = !empty($staff['timezone'] ?? null) ? (string) $staff['timezone'] : null;
+                [$subject, $content] = $this->_parse($template, $staffVars, $staffTimezone);
+
                 $to = $staff['email'];
                 $to_name = $staff['name'];
                 $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, null, $staff['id'], $send_now, $throw_exceptions);
@@ -226,6 +232,16 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         return $sent;
+    }
+
+    private function safeStaffTemplateVars(array $staff): array
+    {
+        return [
+            'id' => $staff['id'],
+            'email' => $staff['email'],
+            'name' => $staff['name'],
+            'signature' => $staff['signature'],
+        ];
     }
 
     public function sendMail($to, $from, $subject, $content, $to_name = null, $from_name = null, $client_id = null, $admin_id = null, bool $send_now = false, bool $throw_exceptions = false): bool
@@ -471,14 +487,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $str . '{% endapply %}';
     }
 
-    private function _parse(EmailTemplate $template, array $vars): array
+    private function _parse(EmailTemplate $template, array $vars, ?string $timezone = null): array
     {
         $systemService = $this->di['mod_service']('System');
         [$subjectTemplate, $contentTemplate] = $this->getEffectiveTemplateParts($template);
 
         try {
-            $pc = $systemService->renderEmailTplString($contentTemplate, $vars);
-            $ps = $systemService->renderEmailTplString($subjectTemplate, $vars);
+            $pc = $systemService->renderEmailTplString($contentTemplate, $vars, $timezone);
+            $ps = $systemService->renderEmailTplString($subjectTemplate, $vars, $timezone);
 
             if ($template->hasError()) {
                 $template->clearError();

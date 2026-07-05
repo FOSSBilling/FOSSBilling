@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Client;
 
+use FOSSBilling\i18n;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Tools;
@@ -462,6 +463,8 @@ class Service implements InjectionAwareInterface
             'postcode' => $model->postcode,
             'country' => $model->country,
             'currency' => $model->currency,
+            'lang' => $model->lang,
+            'timezone' => $model->timezone,
         ];
 
         if ($deep) {
@@ -634,6 +637,7 @@ class Service implements InjectionAwareInterface
         if ($client->lang !== null && $client->lang !== '' && !Locales::exists($client->lang)) {
             throw new InformationException('Invalid locale code: :code', [':code' => $client->lang]);
         }
+        $client->timezone = i18n::validateTimezone($data['timezone'] ?? null);
         $client->currency = $data['currency'] ?? null;
 
         $client->custom_1 = $data['custom_1'] ?? null;
@@ -684,6 +688,7 @@ class Service implements InjectionAwareInterface
             'phone', 'phone_cc', 'gender', 'birthday',
             'company', 'company_vat', 'company_number', 'type',
             'address_1', 'address_2', 'city', 'state', 'postcode', 'country',
+            'lang', 'timezone',
             'custom_1', 'custom_2', 'custom_3', 'custom_4', 'custom_5',
             'custom_6', 'custom_7', 'custom_8', 'custom_9', 'custom_10',
         ];

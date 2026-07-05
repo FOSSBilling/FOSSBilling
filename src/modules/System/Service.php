@@ -554,17 +554,21 @@ class Service
      * Render a template string using the sandboxed email Twig environment.
      * Use this for database-stored templates (email templates, mass mailer).
      *
-     * @param string $tpl  The template string to render
-     * @param array  $vars Variables to pass to the template
+     * @param string      $tpl      The template string to render
+     * @param array       $vars     Variables to pass to the template
+     * @param string|null $timezone Optional IANA timezone for date formatting;
+     *                              pass the recipient's so emails render in
+     *                              their local time. Falls back to the active
+     *                              user's timezone, then the config.
      *
      * @return string The rendered template
      *
      * @throws \FOSSBilling\InformationException If template violates sandbox policy or has syntax errors
      */
-    public function renderEmailTplString(string $tpl, array $vars): string
+    public function renderEmailTplString(string $tpl, array $vars, ?string $timezone = null): string
     {
         $twigFactory = $this->di['twig_factory'];
-        $twig = $twigFactory->createEmailEnvironment();
+        $twig = $twigFactory->createEmailEnvironment($timezone);
 
         return SandboxedStringRenderer::render(
             $twig,

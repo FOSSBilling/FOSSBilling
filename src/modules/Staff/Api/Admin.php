@@ -88,6 +88,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $name - new name
      * @optional string $status - new status
      * @optional string $signature - new signature
+     * @optional string $timezone - IANA timezone identifier (e.g. "America/New_York"). Used to localize dates and times shown to the staff member.
      *
      * @return bool
      *
@@ -150,6 +151,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * Create new staff member.
      *
      * @optional string $signature - signature of new staff member
+     * @optional string $timezone - IANA timezone identifier (e.g. "America/New_York"). Used to localize dates and times shown to the staff member.
      *
      * @return int - ID of newly created staff member
      *

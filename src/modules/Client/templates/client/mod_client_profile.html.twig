@@ -144,6 +144,22 @@
                                     <input type="text" class="form-control" id="postcode" name="postcode" value="{{ profile.postcode }}" {% if "postcode" in required %} required {% endif %}>
                                 </div>
                             </div>
+                            <div class="row">
+                                <div class="mb-3 col-md-10">
+                                    <label class="form-label" for="timezone">{{ 'Timezone'|trans }}</label>
+                                    <select class="form-select" name="timezone" id="timezone" data-timezone-select>
+                                        <option value="">{{ '-- Use system default --'|trans }}</option>
+                                        {% for region, identifiers in guest.system_timezones %}
+                                            <optgroup label="{{ region }}">
+                                                {% for identifier in identifiers %}
+                                                    <option value="{{ identifier }}" {% if identifier == profile.timezone %}selected="selected"{% endif %}>{{ identifier }}</option>
+                                                {% endfor %}
+                                            </optgroup>
+                                        {% endfor %}
+                                    </select>
+                                    <small class="form-hint text-muted">{{ 'Used to display dates and times in your local time across tickets, invoices, and order history.'|trans }}</small>
+                                </div>
+                            </div>
                             {% for i in 1..10 %}
                                 {% set custom = 'custom_' ~ i %}
                                 {% set current = guest.client_custom_fields|default({})[custom]|default(null) %}

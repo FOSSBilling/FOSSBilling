@@ -17,6 +17,7 @@ use Box\Mod\Staff\Entity\AdminGroupMember;
 use Box\Mod\Staff\Repository\AdminGroupMemberRepository;
 use Box\Mod\Staff\Repository\AdminGroupRepository;
 use Box\Mod\Support\Entity\Helpdesk;
+use FOSSBilling\i18n;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Tools;
@@ -443,6 +444,7 @@ class Service implements InjectionAwareInterface
             'system_name' => $model->system_name,
             'status' => $model->status,
             'signature' => $model->signature,
+            'timezone' => $model->timezone,
             'created_at' => $model->created_at,
             'updated_at' => $model->updated_at,
         ];
@@ -481,6 +483,9 @@ class Service implements InjectionAwareInterface
             $model->api_token = null;
         }
         $model->signature = $data['signature'] ?? $model->signature;
+        if (array_key_exists('timezone', $data)) {
+            $model->timezone = i18n::validateTimezone($data['timezone']);
+        }
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
 
@@ -567,6 +572,7 @@ class Service implements InjectionAwareInterface
         $model->name = $data['name'];
         $model->status = $model->getStatus($data['status']);
         $model->signature = $signature;
+        $model->timezone = i18n::validateTimezone($data['timezone'] ?? null);
         $model->created_at = date('Y-m-d H:i:s');
         $model->updated_at = date('Y-m-d H:i:s');
 

@@ -1928,3 +1928,18 @@ test('authorizeAdmin returns admin model on success', function (): void {
     $result = $service->authorizeAdmin($email, $password);
     expect($result)->toBeInstanceOf(Model_Admin::class);
 });
+
+test('i18n::validateTimezone returns null for null and empty input', function (): void {
+    expect(FOSSBilling\i18n::validateTimezone(null))->toBeNull();
+    expect(FOSSBilling\i18n::validateTimezone(''))->toBeNull();
+});
+
+test('i18n::validateTimezone accepts any IANA identifier', function (): void {
+    expect(FOSSBilling\i18n::validateTimezone('America/New_York'))->toBe('America/New_York');
+    expect(FOSSBilling\i18n::validateTimezone('Europe/Berlin'))->toBe('Europe/Berlin');
+    expect(FOSSBilling\i18n::validateTimezone('UTC'))->toBe('UTC');
+});
+
+test('i18n::validateTimezone throws InformationException for unknown identifier', function (): void {
+    expect(fn (): ?string => FOSSBilling\i18n::validateTimezone('Not/A_Zone'))->toThrow(FOSSBilling\InformationException::class);
+});

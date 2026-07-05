@@ -130,6 +130,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $phone_cc - Phone country code
      * @optional string $notes - Notes about client. Visible for admin only
      * @optional string $lang - Client language
+     * @optional string $timezone - IANA timezone identifier (e.g. "America/New_York"). Used to localize dates and times shown to the client.
      * @optional string $custom_1 - Custom field 1
      * @optional string $custom_2 - Custom field 2
      * @optional string $custom_3 - Custom field 3
@@ -222,6 +223,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $phone - Phone number
      * @optional string $phone_cc - Phone country code
      * @optional string $lang - Client language
+     * @optional string $timezone - IANA timezone identifier (e.g. "America/New_York"). Used to localize dates and times shown to the client.
      * @optional string $notes - Notes about client. Visible for admin only
      * @optional string $custom_1 - Custom field 1
      * @optional string $custom_2 - Custom field 2
@@ -288,6 +290,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             throw new InformationException('Invalid locale code: :code', [':code' => $data['lang']]);
         }
 
+        if (array_key_exists('timezone', $data) && $data['timezone'] !== null && $data['timezone'] !== '' && !in_array($data['timezone'], \DateTimeZone::listIdentifiers(), true)) {
+            throw new InformationException('Invalid timezone: :tz', [':tz' => $data['timezone']]);
+        }
+
         $allowedFields = [
             'email', 'first_name', 'last_name', 'aid', 'gender', 'birthday',
             'company', 'company_vat', 'address_1', 'address_2',
@@ -295,7 +301,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             'status', 'email_approved', 'tax_exempt', 'created_at',
             'custom_1', 'custom_2', 'custom_3', 'custom_4', 'custom_5',
             'custom_6', 'custom_7', 'custom_8', 'custom_9', 'custom_10',
-            'client_group_id', 'company_number', 'type', 'lang',
+            'client_group_id', 'company_number', 'type', 'lang', 'timezone',
         ];
 
         foreach ($allowedFields as $field) {
