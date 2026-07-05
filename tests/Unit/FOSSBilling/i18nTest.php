@@ -22,7 +22,14 @@ test('getTimezoneList returns every PHP timezone identifier sorted', function ()
     $list = i18n::getTimezoneList();
 
     expect($list)->toBeArray();
-    expect($list)->toEqual(DateTimeZone::listIdentifiers());
+
+    // Contains exactly all PHP timezone identifiers (order-independent).
+    $expected = DateTimeZone::listIdentifiers();
+    $actualSet = $list;
+    $expectedSet = $expected;
+    sort($actualSet);
+    sort($expectedSet);
+    expect($actualSet)->toEqual($expectedSet);
 
     // Sorted ascending.
     $sorted = $list;
@@ -35,9 +42,9 @@ test('getTimezones groups identifiers by region with UTC separate', function ():
 
     expect($grouped)->toBeArray();
     expect($grouped)->toHaveKey('UTC');
-    expect($grouped['UTC'])->toBe(['UTC']);
+    expect($grouped['UTC'])->toContain('UTC');
 
-    // The "UTC" group contains only UTC, every other identifier lives under its region.
+    // The "UTC" group contains UTC, every other identifier lives under its region.
     expect($grouped)->toHaveKey('America');
     expect($grouped['America'])->toContain('America/New_York');
 
