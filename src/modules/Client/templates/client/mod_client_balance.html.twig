@@ -32,7 +32,11 @@
                 <div class="tn-card__header">
                     <div class="tn-card__title">{{ 'History'|trans }}</div>
                 </div>
-                {% set transactions = client.balance_get_list({ "per_page": 10, "page": request.page }) %}
+                {# FOSSBilling's API dispatch convention is <module>_<method> — this
+                   resolves to the Client module's balance_get_list(), not a
+                   nonexistent "Balance" module. Do not "simplify" this to
+                   balance_get_list(), that breaks module resolution entirely. #}
+                {% set transactions = client.client_balance_get_list({ "per_page": 10, "page": request.page }) %}
                 {% for i, tx in transactions.list %}
                     {% set tx_amount = tx.amount ?? 0 %}
                     <div class="tn-kv-row tn-row-hover">

@@ -12,7 +12,8 @@
 
 {% block content %}
     {% set active_type = request.type|default('') %}
-    {% set all_orders = client.order_get_list({ 'per_page': 1000, 'hide_addons': 1 }) %}
+    {# PaginationOptions::MAX_PER_PAGE is 500 — 1000 throws an InformationException #}
+    {% set all_orders = client.order_get_list({ 'per_page': 500, 'hide_addons': 1 }) %}
     {% set counts = { 'hosting': 0, 'domain': 0, 'microsoft365': 0 } %}
     {% for i, o in all_orders.list %}
         {% if o.service_type and counts[o.service_type] is defined %}
