@@ -305,6 +305,10 @@ test('template delete', function (): void {
     $emailService->shouldReceive('getTemplate')->atLeast()->once()->with(1)->andReturn($model);
     $emailService->shouldReceive('hasDefaultTemplate')->never();
 
+    $templateGroupRepo = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateGroupRepository::class);
+    $templateGroupRepo->shouldReceive('deleteAssociationsForTemplate')->atLeast()->once()->with(1);
+    $emailService->shouldReceive('getTemplateGroupRepository')->andReturn($templateGroupRepo);
+
     $loggerStub = $this->createStub('\Box_Log');
     $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $em->shouldReceive('remove')->atLeast()->once()->with($model);
@@ -402,6 +406,93 @@ test('template update', function (): void {
     $adminApi->setDi($di);
 
     $result = $adminApi->template_update($data);
+    expect($result)->toBeTrue();
+});
+
+test('template group get list returns assigned groups', function (): void {
+    $adminApi = new Box\Mod\Email\Api\Admin();
+
+    $id = 1;
+    $emailTemplateModel = new EmailTemplate('mod_staff_client_order', $id);
+
+    $group = new Box\Mod\Staff\Entity\AdminGroup();
+    Tests\Helpers\setEntityId($group, 5);
+    $group->setName('Support Staff');
+
+    $emailService = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
+    $emailService->shouldReceive('getTemplate')->atLeast()->once()->with($id)->andReturn($emailTemplateModel);
+    $emailService->shouldReceive('getTemplateGroupIds')->atLeast()->once()->with($emailTemplateModel)->andReturn([5]);
+
+    $adminGroupRepo = Mockery::mock(Box\Mod\Staff\Repository\AdminGroupRepository::class);
+    $adminGroupRepo->shouldReceive('findBy')->atLeast()->once()->with(['id' => [5]])->andReturn([$group]);
+
+    $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffService->shouldReceive('getAdminGroupRepository')->andReturn($adminGroupRepo);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(moduleService(['staff' => $staffService]));
+    $adminApi->setService($emailService);
+    $adminApi->setDi($di);
+
+    $result = $adminApi->template_group_get_list(['id' => $id]);
+
+    expect($result)->toBe([
+        ['id' => 5, 'name' => 'Support Staff', 'protected' => false],
+    ]);
+});
+
+test('template group get list returns empty array when no groups are assigned', function (): void {
+    $adminApi = new Box\Mod\Email\Api\Admin();
+
+    $id = 1;
+    $emailTemplateModel = new EmailTemplate('mod_staff_client_order', $id);
+
+    $emailService = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
+    $emailService->shouldReceive('getTemplate')->atLeast()->once()->with($id)->andReturn($emailTemplateModel);
+    $emailService->shouldReceive('getTemplateGroupIds')->atLeast()->once()->andReturn([]);
+
+    $di = container();
+    $adminApi->setService($emailService);
+    $adminApi->setDi($di);
+
+    $result = $adminApi->template_group_get_list(['id' => $id]);
+
+    expect($result)->toBe([]);
+});
+
+test('template group add assigns a group to a template', function (): void {
+    $adminApi = new Box\Mod\Email\Api\Admin();
+
+    $id = 1;
+    $emailTemplateModel = new EmailTemplate('mod_staff_client_order', $id);
+
+    $emailService = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
+    $emailService->shouldReceive('getTemplate')->atLeast()->once()->with($id)->andReturn($emailTemplateModel);
+    $emailService->shouldReceive('addTemplateToGroup')->atLeast()->once()->with($emailTemplateModel, 5)->andReturn(true);
+
+    $di = container();
+    $adminApi->setService($emailService);
+    $adminApi->setDi($di);
+
+    $result = $adminApi->template_group_add(['id' => $id, 'group_id' => 5]);
+    expect($result)->toBeTrue();
+});
+
+test('template group remove unassigns a group from a template', function (): void {
+    $adminApi = new Box\Mod\Email\Api\Admin();
+
+    $id = 1;
+    $emailTemplateModel = new EmailTemplate('mod_staff_client_order', $id);
+
+    $emailService = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
+    $emailService->shouldReceive('getTemplate')->atLeast()->once()->with($id)->andReturn($emailTemplateModel);
+    $emailService->shouldReceive('removeTemplateFromGroup')->atLeast()->once()->with($emailTemplateModel, 5)->andReturn(true);
+
+    $di = container();
+    $adminApi->setService($emailService);
+    $adminApi->setDi($di);
+
+    $result = $adminApi->template_group_remove(['id' => $id, 'group_id' => 5]);
     expect($result)->toBeTrue();
 });
 

@@ -1406,6 +1406,33 @@ test('deleteGroup throws exception when group has members', function (): void {
         ->toThrow(FOSSBilling\Exception::class, 'Cannot remove group which has staff members');
 });
 
+test('deleteGroup throws exception when group restricts email templates', function (): void {
+    $adminGroupModel = new AdminGroup();
+    staffSetEntityId($adminGroupModel, 2);
+
+    $groupRepository = Mockery::mock(AdminGroupRepository::class);
+    $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
+    $groupMemberRepository->shouldReceive('adminBelongsToSystemGroup')->atLeast()->once()->andReturn(true);
+    $groupMemberRepository->shouldReceive('countMembersInGroup')->once()->with(2)->andReturn(0);
+
+    $templateGroupRepo = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateGroupRepository::class);
+    $templateGroupRepo->shouldReceive('countTemplatesUsingGroup')->once()->with(2)->andReturn(1);
+    $emailService = Mockery::mock(Box\Mod\Email\Service::class);
+    $emailService->shouldReceive('getTemplateGroupRepository')->andReturn($templateGroupRepo);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+
+    $di = container();
+    $di['em'] = staffEntityManager($groupRepository, $groupMemberRepository);
+    $di['loggedin_admin'] = staffRegularAdmin();
+    $di['mod_service'] = $di->protect(fn (string $name = ''): object => strtolower($name) === 'email' ? $emailService : Mockery::mock()->shouldIgnoreMissing());
+
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->deleteGroup($adminGroupModel))
+        ->toThrow(FOSSBilling\Exception::class, 'Cannot remove group which is used to restrict email templates');
+});
+
 test('deleteGroup throws exception when group has child groups', function (): void {
     $adminGroupModel = new AdminGroup();
     staffSetEntityId($adminGroupModel, 2);

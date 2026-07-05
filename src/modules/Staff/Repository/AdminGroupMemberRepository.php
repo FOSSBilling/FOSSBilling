@@ -13,6 +13,7 @@ namespace Box\Mod\Staff\Repository;
 
 use Box\Mod\Staff\Entity\AdminGroup;
 use Box\Mod\Staff\Entity\AdminGroupMember;
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\ORM\EntityRepository;
 
 class AdminGroupMemberRepository extends EntityRepository
@@ -114,6 +115,36 @@ class AdminGroupMemberRepository extends EntityRepository
                 'system_name' => \Model_Admin::SYSTEM_CRON,
             ],
         ));
+    }
+
+    /**
+     * @param int[] $groupIds
+     *
+     * @return array<int, array{id: int, email: string, name: string, signature: ?string, timezone: ?string}>
+     */
+    public function getActiveStaffInGroups(array $groupIds): array
+    {
+        if ($groupIds === []) {
+            return [];
+        }
+
+        return $this->getEntityManager()->getConnection()->fetchAllAssociative(
+            'SELECT DISTINCT a.id, a.email, a.name, a.signature, a.timezone
+             FROM admin a
+             INNER JOIN admin_group_member m ON m.admin_id = a.id
+             WHERE m.admin_group_id IN (:group_ids)
+             AND a.status = :status
+             AND (a.system_name IS NULL OR a.system_name != :system_name)
+             ORDER BY a.id ASC',
+            [
+                'group_ids' => $groupIds,
+                'status' => \Model_Admin::STATUS_ACTIVE,
+                'system_name' => \Model_Admin::SYSTEM_CRON,
+            ],
+            [
+                'group_ids' => ArrayParameterType::INTEGER,
+            ],
+        );
     }
 
     /**
