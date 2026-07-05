@@ -396,7 +396,7 @@
                                 </div>
                                 <div class="col-xl-6">
                                     <label class="form-label" for="timezone">{{ 'Timezone'|trans }}</label>
-                                    <select class="form-select" name="timezone" id="timezone" data-timezone-select>
+                                    <select class="form-select" name="timezone" id="timezone">
                                         <option value="">{{ '-- Use system default --'|trans }}</option>
                                         {% for region, identifiers in guest.system_timezones %}
                                             <optgroup label="{{ region }}">
