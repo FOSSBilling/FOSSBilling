@@ -18,6 +18,13 @@ use Symfony\Component\Intl\Locales;
 
 class i18n
 {
+    private static ?Filesystem $filesystem = null;
+
+    private static function getFilesystem(): Filesystem
+    {
+        return self::$filesystem ??= new Filesystem();
+    }
+
     /**
      * Attempts to get the correct locale for the current user, or a suitable fallback option if it's unavailable.
      *
@@ -203,7 +210,7 @@ class i18n
      */
     public static function getLocales(bool $includeLocaleDetails = false, bool $disabled = false): array
     {
-        $filesystem = new Filesystem();
+        $filesystem = self::getFilesystem();
         $locales = self::getLocaleList($disabled);
         if (!$includeLocaleDetails) {
             return $locales;
@@ -237,7 +244,7 @@ class i18n
      */
     public static function toggleLocale(string $locale): bool
     {
-        $filesystem = new Filesystem();
+        $filesystem = self::getFilesystem();
         $availableLocales = array_merge(self::getLocaleList(), self::getLocaleList(true));
         if (!in_array($locale, $availableLocales, true)) {
             throw new InformationException('Unable to enable / disable the locale as it is not present in the locale folder.');
@@ -267,7 +274,7 @@ class i18n
      */
     public static function getLocaleCompletionPercent(string $locale): int
     {
-        $filesystem = new Filesystem();
+        $filesystem = self::getFilesystem();
         if ($locale === 'en_US') {
             return 100;
         }
@@ -291,7 +298,7 @@ class i18n
      */
     private static function getLocaleList(bool $disabled = false): array
     {
-        $filesystem = new Filesystem();
+        $filesystem = self::getFilesystem();
 
         $finder = new Finder();
         $finder->directories()->in(PATH_LANGS)->depth('== 0');

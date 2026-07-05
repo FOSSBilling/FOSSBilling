@@ -1128,7 +1128,6 @@ class Service implements InjectionAwareInterface
             throw $e;
         }
 
-        // set automatic order expiration
         if (!empty($order->period)) {
             $from_time = ($order->expires_at === null) ? time() : strtotime($order->expires_at); // from expiration date
 
@@ -1298,7 +1297,6 @@ class Service implements InjectionAwareInterface
     public function rmOrder(\Model_ClientOrder $model): void
     {
         if ($model->group_master) {
-            // set addons as separate orders
             $list = $this->getOrderAddonsList($model);
             foreach ($list as $addon) {
                 $addon->group_master = 1;

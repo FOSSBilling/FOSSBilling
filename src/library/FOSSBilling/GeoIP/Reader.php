@@ -12,7 +12,6 @@ declare(strict_types=1);
 namespace FOSSBilling\GeoIP;
 
 use FOSSBilling\i18n;
-use FOSSBilling\StandardsHelper;
 use MaxMind\Db\Reader as MaxMindReader;
 use MaxMind\Db\Reader\InvalidDatabaseException;
 use Pimple\Container;
@@ -106,7 +105,11 @@ class Reader
             $locale = i18n::getActiveLocale();
         }
 
-        $this->language = StandardsHelper::getLanguageObject(false, $locale);
+        $original = $locale;
+        if (str_contains($locale, '_')) {
+            $locale = explode('_', $locale)[0];
+        }
+        $this->language = strlen($locale) === 2 ? LanguageAlpha2::from($locale) : throw new \ValueError("No matching Alpha2 language found for {$original}");
     }
 
     /**
@@ -192,10 +195,9 @@ class Reader
     {
         $httpClient = $this->di['http_client'];
         $response = $httpClient->request('GET', $url);
-        $filesystem = new Filesystem();
 
         if ($response->getStatusCode() === 200) {
-            $filesystem->dumpFile($path, $response->getContent());
+            $this->di['filesystem']->dumpFile($path, $response->getContent());
         } else {
             throw new \Exception("Got a {$response->getStatusCode()} status code when attempting to download {$url}.");
         }

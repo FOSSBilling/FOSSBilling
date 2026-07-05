@@ -480,12 +480,6 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
             $params['NUOrgNo'] = $domain->getContactRegistrar()->getDocumentNr();
         }
 
-        // need to check if user is a canadian resident or if coorporation is registered in canada
-        // if ($domain->getTld() == '.ca') {
-        //     $params['CIRALegalType'] = 'CCT';
-        //     $params['EUAgreeDeletePolicy'] = 'YES';
-        // }
-
         if ($domain->getTld() == '.co.uk' || $domain->getTld() == '.me.uk' || $domain->getTld() == '.org.uk') {
             if ($domain->getContactRegistrar()->getCountry() == 'UK') {
                 $params['COUKLegalType'] = 'IND';
@@ -495,19 +489,6 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
             $params['COUKRegisteredfor'] = $domain->getContactRegistrar()->getName();
         }
-
-        // unsure how to handle this
-        // if ($domain->getTld() == '.com.au' || $domain->getTld() == '.net.au' || $domain->getTld() == '.org.au') {
-        //     $params['COMAURegistrantId'] = '';
-        //     $params['COMAURegistrantIdType'] = '';
-        // }
-
-        // .de domains require an admin address in Germany
-        // if ($domain->getTld() == '.de') {
-        //     //confirm here that the admin address is in fact germany
-        //     $params['DEConfirmAddress'] = 'DE';
-        //     $params['DEAgreeDelete'] = 'Yes';
-        // }
 
         if ($domain->getTld() == '.fr') {
             $params['FRLegalType'] = 'Individual';

@@ -20,6 +20,7 @@ use Twig\Loader\ArrayLoader;
 function makeFossBillingTwigExtension(?Container $di = null): FOSSBillingExtension
 {
     $container = $di ?? new Container();
+    $container['filesystem'] = new Filesystem();
     // Seed an empty loaded_assets array so internal helpers don't blow up.
     $container['loaded_assets'] = [];
 

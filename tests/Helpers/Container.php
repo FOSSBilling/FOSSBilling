@@ -28,6 +28,7 @@ function container(): Container
     ];
     $di['validator'] = fn (): \FOSSBilling\Validate => new \FOSSBilling\Validate();
     $di['tools'] = fn (): \FOSSBilling\Tools => new \FOSSBilling\Tools();
+    $di['filesystem'] = fn (): \Symfony\Component\Filesystem\Filesystem => new \Symfony\Component\Filesystem\Filesystem();
     $di['logger'] = fn (): \Psr\Log\LoggerInterface => new class extends AbstractLogger {
         public array $calls = [];
 
@@ -44,6 +45,7 @@ function container(): Container
         }
     };
     $di['request'] = fn (): Request => Request::create('http://localhost/');
+    $di['filesystem'] = fn (): \Symfony\Component\Filesystem\Filesystem => new \Symfony\Component\Filesystem\Filesystem();
     $di['session'] = static function (): object {
         $session = \Mockery::mock(\FOSSBilling\Session::class)->shouldIgnoreMissing();
         $session->shouldReceive('regenerateId')->byDefault()->andReturnNull();

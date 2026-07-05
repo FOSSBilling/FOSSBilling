@@ -273,23 +273,6 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
-     * Check if given vat number is valid EU country VAT number
-     * This method uses http://isvat.appspot.com/ method to validate VAT.
-     *
-     * @return bool true if VAT is valid, false if not
-     */
-    #[RequiredParams(['country' => 'Country code', 'vat' => 'Country VAT is required'])]
-    public function is_vat($data): bool
-    {
-        $cc = $data['country'];
-        $vatnum = $data['vat'];
-
-        // @todo add new service provider https://vatlayer.com/ check
-        //         $url    = 'http://isvat.appspot.com/' . rawurlencode($cc) . '/' . rawurlencode($vatnum) . '/';
-        return true;
-    }
-
-    /**
      * List of required fields for client registration.
      */
     public function required()

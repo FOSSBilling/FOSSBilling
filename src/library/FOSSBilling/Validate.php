@@ -19,7 +19,7 @@ use Symfony\Contracts\Cache\ItemInterface;
 class Validate
 {
     protected ?\Pimple\Container $di = null;
-    private readonly Filesystem $filesystem;
+    private Filesystem $filesystem;
 
     public function __construct()
     {
@@ -29,6 +29,9 @@ class Validate
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        if (isset($di['filesystem'])) {
+            $this->filesystem = $di['filesystem'];
+        }
     }
 
     public function getDi(): ?\Pimple\Container

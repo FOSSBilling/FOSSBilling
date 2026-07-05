@@ -780,7 +780,6 @@ class Server_Manager_Directadmin extends Server_Manager
                 $request = $httpClient->request('GET', $url);
             }
 
-            // Get the content of the response
             $data = $request->getContent();
         } catch (TransportExceptionInterface|HttpExceptionInterface $error) {
             // If there is an error while sending the request, throw an exception

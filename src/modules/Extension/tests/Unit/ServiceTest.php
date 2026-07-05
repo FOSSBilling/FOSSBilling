@@ -607,6 +607,7 @@ test('getInstalledMods returns installed modules', function (): void {
         ->andReturn([]);
 
     $di = new Pimple\Container();
+    $di['filesystem'] = new Symfony\Component\Filesystem\Filesystem();
     $di['em'] = extensionBuildEm($extensionRepository);
 
     $service->setDi($di);

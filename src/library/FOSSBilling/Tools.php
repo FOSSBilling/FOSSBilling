@@ -21,8 +21,8 @@ use Symfony\Component\Filesystem\Path;
 
 class Tools
 {
-    private readonly Filesystem $filesystem;
     protected ?\Pimple\Container $di = null;
+    private Filesystem $filesystem;
 
     public function __construct()
     {
@@ -32,6 +32,9 @@ class Tools
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        if (isset($di['filesystem'])) {
+            $this->filesystem = $di['filesystem'];
+        }
     }
 
     public function getDi(): ?\Pimple\Container

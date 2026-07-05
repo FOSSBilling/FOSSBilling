@@ -20,7 +20,7 @@ use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\Http\ApiResponseFactory;
 use FOSSBilling\Http\HttpResponseException;
-use FOSSBilling\Http\RequestPayloadParser;
+
 use FOSSBilling\Http\ResponseFactory;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Security\AuthenticationRequiredException;
@@ -70,9 +70,11 @@ class Client implements InjectionAwareInterface
     public function post_method(\Box_App $app, $role, $class, $method): Response
     {
         try {
-            $p = (new RequestPayloadParser())->all($app->getRequest());
-        } catch (\FOSSBilling\Exception $exc) {
-            return $this->renderJson(null, $exc);
+            $p = $app->getRequest()->getPayload()->all();
+        } catch (\Symfony\Component\HttpFoundation\Exception\JsonException $e) {
+            $message = $e->getPrevious()?->getMessage() ?? $e->getMessage();
+
+            return $this->renderJson(null, new \FOSSBilling\Exception('Malformed JSON input: :error', [':error' => $message], 400));
         }
 
         $call = $class . '_' . $method;

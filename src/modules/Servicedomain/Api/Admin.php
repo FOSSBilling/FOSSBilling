@@ -228,7 +228,6 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         if (!$model instanceof \Model_Tld) {
             throw new \FOSSBilling\InformationException('TLD not found');
         }
-        // check if tld is used by any domain
         $service_domains = $this->getDi()['db']->find('ServiceDomain', 'tld = :tld', [':tld' => $data['tld']]);
         $count = \FOSSBilling\Tools::safeCount($service_domains);
         if ($count > 0) {
