@@ -201,6 +201,7 @@ function preInit(): void
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'RequestPayloadParser.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'ResponseFactory.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'ResponseEmitter.php');
+    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'RouteDefinition.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'RouteMatch.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'RouteMatcher.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Config.php');

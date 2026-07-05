@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 use FOSSBilling\Http\HttpResponseException;
 use Symfony\Component\Filesystem\Path;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class Box_AppAdmin extends Box_App
 {
@@ -62,7 +61,7 @@ class Box_AppAdmin extends Box_App
     public function redirect($path): never
     {
         $location = $this->di['url']->adminLink($path);
-        $this->abortWithResponse(new RedirectResponse($location));
+        $this->abortWithResponse($this->responseFactory()->redirect($location));
     }
 
     /**
