@@ -117,7 +117,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         `created_at` varchar(35) DEFAULT NULL,
         `updated_at` varchar(35) DEFAULT NULL,
         PRIMARY KEY (`id`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=1;
         ';
         $this->di['dbal']->executeStatement($sql);
 
