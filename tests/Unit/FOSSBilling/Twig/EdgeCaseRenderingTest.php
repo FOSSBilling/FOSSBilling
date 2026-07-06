@@ -309,7 +309,7 @@ test('activity index renders a mixed list of all three event shapes', function (
                     'pages' => 1,
                     'per_page' => 25,
                     'page' => 1,
-                    'total' => 1,
+                    'total' => 3,
                 ],
             ]),
         ],
