@@ -197,6 +197,16 @@ class Service implements InjectionAwareInterface
         $client->custom_8 = $data['custom_8'] ?? $client->custom_8;
         $client->custom_9 = $data['custom_9'] ?? $client->custom_9;
         $client->custom_10 = $data['custom_10'] ?? $client->custom_10;
+        $client->custom_11 = $data['custom_11'] ?? $client->custom_11;
+        $client->custom_12 = $data['custom_12'] ?? $client->custom_12;
+        $client->custom_13 = $data['custom_13'] ?? $client->custom_13;
+        $client->custom_14 = $data['custom_14'] ?? $client->custom_14;
+        $client->custom_15 = $data['custom_15'] ?? $client->custom_15;
+        $client->custom_16 = $data['custom_16'] ?? $client->custom_16;
+        $client->custom_17 = $data['custom_17'] ?? $client->custom_17;
+        $client->custom_18 = $data['custom_18'] ?? $client->custom_18;
+        $client->custom_19 = $data['custom_19'] ?? $client->custom_19;
+        $client->custom_20 = $data['custom_20'] ?? $client->custom_20;
 
         $client->updated_at = date('Y-m-d H:i:s');
 

@@ -186,6 +186,8 @@ test('updates client', function (): void {
         'custom_8' => 'string',
         'custom_9' => 'string',
         'custom_10' => 'string',
+        'custom_11' => 'string',
+        'custom_20' => 'string',
     ];
 
     $service = new Service();
