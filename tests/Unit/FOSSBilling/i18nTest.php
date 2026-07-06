@@ -88,6 +88,7 @@ test('getActiveTimezone prefers explicit client/admin arguments over a valid fb_
     $_COOKIE['fb_timezone'] = 'Europe/Berlin';
 
     expect(i18n::getActiveTimezone('America/New_York', 'Asia/Tokyo'))->toBe('America/New_York');
+    expect(i18n::getActiveTimezone(null, 'Asia/Tokyo'))->toBe('Asia/Tokyo');
 });
 
 test('getActiveTimezone ignores an invalid fb_timezone cookie', function (): void {
