@@ -141,6 +141,16 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $custom_8 - Custom field 8
      * @optional string $custom_9 - Custom field 9
      * @optional string $custom_10 - Custom field 10
+     * @optional string $custom_11 - Custom field 11
+     * @optional string $custom_12 - Custom field 12
+     * @optional string $custom_13 - Custom field 13
+     * @optional string $custom_14 - Custom field 14
+     * @optional string $custom_15 - Custom field 15
+     * @optional string $custom_16 - Custom field 16
+     * @optional string $custom_17 - Custom field 17
+     * @optional string $custom_18 - Custom field 18
+     * @optional string $custom_19 - Custom field 19
+     * @optional string $custom_20 - Custom field 20
      *
      * @return int - client id
      */
@@ -235,6 +245,16 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $custom_8 - Custom field 8
      * @optional string $custom_9 - Custom field 9
      * @optional string $custom_10 - Custom field 10
+     * @optional string $custom_11 - Custom field 11
+     * @optional string $custom_12 - Custom field 12
+     * @optional string $custom_13 - Custom field 13
+     * @optional string $custom_14 - Custom field 14
+     * @optional string $custom_15 - Custom field 15
+     * @optional string $custom_16 - Custom field 16
+     * @optional string $custom_17 - Custom field 17
+     * @optional string $custom_18 - Custom field 18
+     * @optional string $custom_19 - Custom field 19
+     * @optional string $custom_20 - Custom field 20
      */
     #[RequiredParams(['id' => 'Client ID was not passed'])]
     public function update($data = []): bool
@@ -301,6 +321,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             'status', 'email_approved', 'tax_exempt', 'created_at',
             'custom_1', 'custom_2', 'custom_3', 'custom_4', 'custom_5',
             'custom_6', 'custom_7', 'custom_8', 'custom_9', 'custom_10',
+            'custom_11', 'custom_12', 'custom_13', 'custom_14', 'custom_15',
+            'custom_16', 'custom_17', 'custom_18', 'custom_19', 'custom_20',
             'client_group_id', 'company_number', 'type', 'lang', 'timezone',
         ];
 

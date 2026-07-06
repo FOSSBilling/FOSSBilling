@@ -481,7 +481,7 @@ class Service implements InjectionAwareInterface
             );
         }
 
-        for ($i = 1; $i < 11; ++$i) {
+        for ($i = 1; $i < 21; ++$i) {
             $k = 'custom_' . $i;
             if (isset($m[$k]) && !empty($m[$k]) && ($isAdmin || isset($clientVisibleCustomFields[$k]))) {
                 $details[$k] = $m[$k];
@@ -650,6 +650,16 @@ class Service implements InjectionAwareInterface
         $client->custom_8 = $data['custom_8'] ?? null;
         $client->custom_9 = $data['custom_9'] ?? null;
         $client->custom_10 = $data['custom_10'] ?? null;
+        $client->custom_11 = $data['custom_11'] ?? null;
+        $client->custom_12 = $data['custom_12'] ?? null;
+        $client->custom_13 = $data['custom_13'] ?? null;
+        $client->custom_14 = $data['custom_14'] ?? null;
+        $client->custom_15 = $data['custom_15'] ?? null;
+        $client->custom_16 = $data['custom_16'] ?? null;
+        $client->custom_17 = $data['custom_17'] ?? null;
+        $client->custom_18 = $data['custom_18'] ?? null;
+        $client->custom_19 = $data['custom_19'] ?? null;
+        $client->custom_20 = $data['custom_20'] ?? null;
 
         $client->ip = $data['ip'] ?? null;
 
@@ -691,6 +701,8 @@ class Service implements InjectionAwareInterface
             'lang', 'timezone',
             'custom_1', 'custom_2', 'custom_3', 'custom_4', 'custom_5',
             'custom_6', 'custom_7', 'custom_8', 'custom_9', 'custom_10',
+            'custom_11', 'custom_12', 'custom_13', 'custom_14', 'custom_15',
+            'custom_16', 'custom_17', 'custom_18', 'custom_19', 'custom_20',
         ];
 
         $safeData = [
@@ -888,7 +900,7 @@ class Service implements InjectionAwareInterface
 
         $keywords = ['passport', 'document', 'identity', 'id number'];
 
-        foreach (range(1, 10) as $i) {
+        foreach (range(1, 20) as $i) {
             $fieldName = 'custom_' . $i;
             $fieldConfig = $customFields[$fieldName] ?? null;
             if (!is_array($fieldConfig) || !($fieldConfig['active'] ?? false)) {

@@ -493,6 +493,7 @@ class UpdatePatcher implements InjectionAwareInterface
             82 => 'patch82',
             83 => 'patch83',
             84 => 'patch84',
+            85 => 'patch85',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2276,6 +2277,17 @@ class UpdatePatcher implements InjectionAwareInterface
                 PRIMARY KEY (`id`),
                 KEY `support_ticket_message_id_idx` (`support_ticket_message_id`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8;');
+        }
+    }
+
+    private function patch85(): void
+    {
+        // Raises the client custom field cap from 10 to 20.
+        // @see https://github.com/FOSSBilling/FOSSBilling/issues/3174
+        for ($i = 11; $i <= 20; ++$i) {
+            if (!$this->tableHasColumn('client', "custom_{$i}")) {
+                $this->executeSql("ALTER TABLE `client` ADD COLUMN `custom_{$i}` text");
+            }
         }
     }
 
