@@ -315,6 +315,7 @@ class Box_App
                 continue;
             }
 
+            /** @var TimeDataCollector $timeCollector */
             $timeCollector = $this->debugBar->getCollector('time');
             if ($mappingMeasureName !== null && $timeCollector->hasStartedMeasure($mappingMeasureName)) {
                 $timeCollector->stopMeasure($mappingMeasureName);
