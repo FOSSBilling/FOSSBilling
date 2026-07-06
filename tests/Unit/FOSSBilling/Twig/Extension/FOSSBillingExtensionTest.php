@@ -224,6 +224,17 @@ test('avatar returns escaped fallback for null email', function (): void {
     expect($extension->avatar(null, fallback: '<script>'))->toBe('&lt;script&gt;');
 });
 
+test('avatar ignores fallback for valid email', function (): void {
+    $extension = makeFossBillingTwigExtension();
+    $output = $extension->avatar('user@example.com', fallback: '<script>alert(1)</script>');
+
+    expect($output)->toBeString();
+    expect($output)->toStartWith('<span class="db-avatar avatar"');
+    expect($output)->toEndWith('</span>');
+    expect($output)->not->toContain('<script>alert(1)</script>');
+    expect($output)->not->toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
+});
+
 test('avatar returns span element with quoted data URI for valid email', function (): void {
     $extension = makeFossBillingTwigExtension();
     $output = $extension->avatar('user@example.com');
