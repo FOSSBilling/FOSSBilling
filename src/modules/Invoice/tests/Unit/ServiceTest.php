@@ -75,7 +75,7 @@ test('gets search query with various parameters', function (array $data, string 
         ['approved' => true],
         'AND p.approved = :approved',
         [
-            'approved' => true,
+            'approved' => 1,
         ],
     ],
     [
