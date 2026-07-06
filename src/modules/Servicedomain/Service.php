@@ -390,6 +390,32 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($model);
+
+        $this->reconcileOrderExpirationDate($order, $model);
+    }
+
+    /**
+     * The order's expiry date (which drives renewal invoicing) and the domain's registrar
+     * expiry date (just pulled from the registrar above) are stored separately and can
+     * drift apart - e.g. if the domain was renewed directly at the registrar. Since the
+     * registrar is always the source of truth, bring the order's billing date back in line
+     * with it whenever they disagree, so invoices are never generated against a stale date.
+     */
+    protected function reconcileOrderExpirationDate(\Model_ClientOrder $order, \Model_ServiceDomain $model): void
+    {
+        if (empty($model->expires_at)) {
+            return;
+        }
+
+        if ($order->expires_at !== null && date('Y-m-d', strtotime($order->expires_at)) === date('Y-m-d', strtotime($model->expires_at))) {
+            return;
+        }
+
+        $this->di['logger']->info('Order #%s billing expiry (%s) did not match registrar expiry (%s) for domain #%s - updating order to match registrar', $order->id, $order->expires_at, $model->expires_at, $model->id);
+
+        $order->expires_at = date('Y-m-d H:i:s', strtotime($model->expires_at));
+        $order->updated_at = date('Y-m-d H:i:s');
+        $this->di['db']->store($order);
     }
 
     /**
