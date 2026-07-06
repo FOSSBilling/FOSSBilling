@@ -491,6 +491,7 @@ class UpdatePatcher implements InjectionAwareInterface
             80 => 'patch80',
             81 => 'patch81',
             82 => 'patch82',
+            83 => 'patch83',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2250,6 +2251,13 @@ class UpdatePatcher implements InjectionAwareInterface
                 SELECT 1 FROM email_template_group etg
                 WHERE etg.email_template_id = et.id AND etg.admin_group_id = ag.id
             )");
+    }
+
+    private function patch83(): void
+    {
+        if (!$this->tableHasIndex('invoice_item', 'invoice_item_pending_renewal_idx')) {
+            $this->executeSql('ALTER TABLE `invoice_item` ADD INDEX `invoice_item_pending_renewal_idx` (`rel_id`(20), `type`(32), `task`(32), `status`(32), `invoice_id`)');
+        }
     }
 
     private function generateDownloadableStoredFilename(): string
