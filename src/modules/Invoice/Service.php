@@ -397,6 +397,10 @@ class Service implements InjectionAwareInterface
                 $email['to_client'] = $invoiceModel->client_id;
                 $email['code'] = 'mod_invoice_paid';
                 $email['invoice'] = $invoice;
+                $attachment = $service->getInvoicePdfAttachment($invoiceModel);
+                if ($attachment !== null) {
+                    $email['attachment'] = $attachment;
+                }
                 $emailService = $di['mod_service']('email');
                 $emailService->sendTemplate($email);
             }
@@ -420,6 +424,10 @@ class Service implements InjectionAwareInterface
             $email['to_client'] = $invoiceModel->client_id;
             $email['code'] = 'mod_invoice_created';
             $email['invoice'] = $invoice;
+            $attachment = $service->getInvoicePdfAttachment($invoiceModel);
+            if ($attachment !== null) {
+                $email['attachment'] = $attachment;
+            }
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
@@ -433,8 +441,11 @@ class Service implements InjectionAwareInterface
     {
         $params = $event->getParameters();
         $di = $event->getDi();
+        $service = $di['mod_service']('invoice');
 
         try {
+            $invoiceModel = $di['db']->load('Invoice', $params['id'] ?? 0);
+
             if (($params['total'] ?? 0) > 0
                 && ($params['status'] ?? null) !== \Model_Invoice::STATUS_PAID
                 && isset($params['client']['id'])
@@ -443,15 +454,19 @@ class Service implements InjectionAwareInterface
                 $email['to_client'] = $params['client']['id'];
                 $email['code'] = 'mod_invoice_created';
                 $email['invoice'] = $params;
+                if ($invoiceModel instanceof \Model_Invoice) {
+                    $attachment = $service->getInvoicePdfAttachment($invoiceModel);
+                    if ($attachment !== null) {
+                        $email['attachment'] = $attachment;
+                    }
+                }
                 $emailService = $di['mod_service']('email');
                 $emailService->sendTemplate($email);
             }
 
             // Sending the created-email extends the hash lifetime so the
             // recipient has a fresh window to act on the link.
-            $invoiceModel = $di['db']->load('Invoice', $params['id'] ?? 0);
             if ($invoiceModel instanceof \Model_Invoice) {
-                $service = $di['mod_service']('invoice');
                 $service->extendInvoiceHashLifetime($invoiceModel);
             }
         } catch (\Exception $exc) {
@@ -478,6 +493,10 @@ class Service implements InjectionAwareInterface
             $email['to_client'] = $invoiceModel->client_id;
             $email['code'] = 'mod_invoice_payment_reminder';
             $email['invoice'] = $invoice;
+            $attachment = $service->getInvoicePdfAttachment($invoiceModel);
+            if ($attachment !== null) {
+                $email['attachment'] = $attachment;
+            }
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
 
@@ -540,6 +559,10 @@ class Service implements InjectionAwareInterface
             $email['code'] = 'mod_invoice_due_after';
             $email['days_passed'] = $params['days_passed'];
             $email['invoice'] = $invoice;
+            $attachment = $service->getInvoicePdfAttachment($invoiceModel);
+            if ($attachment !== null) {
+                $email['attachment'] = $attachment;
+            }
 
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
@@ -1561,27 +1584,62 @@ class Service implements InjectionAwareInterface
 
     public function generatePDF($hash, $identity): Response
     {
+        $invoiceModel = $this->di['db']->findOne('Invoice', 'hash = :hash', [':hash' => $hash]);
+
+        if (!$invoiceModel instanceof \Model_Invoice) {
+            throw new InformationException('Invoice not found');
+        }
+
+        $this->checkInvoiceAuth($invoiceModel, InvoiceOperation::READ);
+
+        $invoice = $this->toApiArray($invoiceModel, false, $identity);
+        $content = $this->renderInvoicePdfContent($invoiceModel, $invoice);
+
+        return $this->createPdfResponse($content, $invoice['serie_nr']);
+    }
+
+    /**
+     * Build the PDF invoice as an email attachment, provided the admin has opted into it via
+     * the "Attach PDF invoice to invoice emails" setting. Returns null if the setting is off
+     * or the PDF could not be generated, so callers can skip attaching without failing the send.
+     *
+     * @return array{content: string, name: string, mime: string}|null
+     */
+    public function getInvoicePdfAttachment(\Model_Invoice $invoiceModel): ?array
+    {
+        $systemService = $this->di['mod_service']('system');
+        if (!$systemService->getParamValue('invoice_email_attach_pdf')) {
+            return null;
+        }
+
+        try {
+            $invoice = $this->toApiArray($invoiceModel, false);
+            $content = $this->renderInvoicePdfContent($invoiceModel, $invoice);
+
+            return [
+                'content' => $content,
+                'name' => $this->sanitizePdfFileName((string) $invoice['serie_nr']) . '.pdf',
+                'mime' => 'application/pdf',
+            ];
+        } catch (\Exception $e) {
+            $this->di['logger']->setChannel('email')->error('Failed to generate PDF invoice attachment: ' . $e->getMessage());
+
+            return null;
+        }
+    }
+
+    protected function renderInvoicePdfContent(\Model_Invoice $invoiceModel, array $invoice): string
+    {
         $systemService = $this->di['mod_service']('system');
         $c = $systemService->getCompany();
         $document_format = $systemService->getParamValue('invoice_document_format', 'Letter');
 
-        $invoice = $this->di['db']->findOne('Invoice', 'hash = :hash', [':hash' => $hash]);
-
-        if (!$invoice instanceof \Model_Invoice) {
-            throw new InformationException('Invoice not found');
-        }
-
-        $this->checkInvoiceAuth($invoice, InvoiceOperation::READ);
-
-        if (isset($invoice->currency)) {
-            $currencyCode = $invoice->currency;
+        if (isset($invoiceModel->currency)) {
+            $currencyCode = $invoiceModel->currency;
         } else {
-            $client = $this->di['db']->getExistingModelById('Client', $invoice->client_id, 'Client not found');
+            $client = $this->di['db']->getExistingModelById('Client', $invoiceModel->client_id, 'Client not found');
             $currencyCode = $client->currency;
         }
-
-        $invoice = $this->toApiArray($invoice, false, $identity);
-        $company = $this->di['mod_service']('System')->getCompany();
 
         $CSS = $this->getPdfCss();
 
@@ -1594,8 +1652,8 @@ class Service implements InjectionAwareInterface
         $buyerLines = 0;
         $logoSource = '';
 
-        if (!empty($company['logo_url'])) {
-            [$logoSource, $remote] = $this->getPdfLogoSource($company['logo_url']);
+        if (!empty($c['logo_url'])) {
+            [$logoSource, $remote] = $this->getPdfLogoSource($c['logo_url']);
             $options->set('isRemoteEnabled', $remote);
         }
 
@@ -1621,7 +1679,7 @@ class Service implements InjectionAwareInterface
         $pdf->loadHtml($html);
         $pdf->render();
 
-        return $this->createPdfResponse($pdf->output(), $invoice['serie_nr']);
+        return $pdf->output();
     }
 
     public function addNote(\Model_Invoice $model, $note): bool
@@ -1971,11 +2029,7 @@ class Service implements InjectionAwareInterface
             $safeFileName = 'invoice';
         }
 
-        $fallbackFileName = preg_replace('/[^A-Za-z0-9._-]/', '-', $safeFileName);
-        $fallbackFileName = trim((string) $fallbackFileName, '.-');
-        if ($fallbackFileName === '') {
-            $fallbackFileName = 'invoice';
-        }
+        $fallbackFileName = $this->sanitizePdfFileName($fileName);
 
         $disposition = $response->headers->makeDisposition(
             HeaderUtils::DISPOSITION_INLINE,
@@ -1987,6 +2041,18 @@ class Service implements InjectionAwareInterface
         $response->headers->set('Content-Disposition', $disposition);
 
         return $response;
+    }
+
+    /**
+     * Reduce a file name to a plain ASCII form safe for both HTTP fallback
+     * Content-Disposition names and MIME attachment part headers.
+     */
+    private function sanitizePdfFileName(string $fileName): string
+    {
+        $fallbackFileName = preg_replace('/[^A-Za-z0-9._-]/', '-', trim($fileName));
+        $fallbackFileName = trim((string) $fallbackFileName, '.-');
+
+        return $fallbackFileName !== '' ? $fallbackFileName : 'invoice';
     }
 
     protected function getPdfCss(): string

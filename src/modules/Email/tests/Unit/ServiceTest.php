@@ -158,6 +158,7 @@ test('ActivityClientEmail toApiArray returns sanitized API array', function (): 
         'subject' => $subject,
         'content_html' => FOSSBilling\Tools::sanitizeContent($content_html),
         'content_text' => $content_text,
+        'has_attachment' => false,
         'created_at' => $created->format('Y-m-d H:i:s'),
         'updated_at' => $updated->format('Y-m-d H:i:s'),
     ];
@@ -321,6 +322,98 @@ test('sendTemplate sends email when template exists', function (): void {
     $result = $service->sendTemplate($data);
 
     expect($result)->toBeTrue();
+});
+
+test('sendTemplate forwards the attachment to the queue and strips it from the stored vars', function (): void {
+    $data = [
+        'code' => 'mod_email_test',
+        'to' => 'example@example.com',
+        'default_subject' => 'SUBJECT',
+        'default_template' => 'TEMPLATE',
+        'default_description' => 'DESCRIPTION',
+        'attachment' => [
+            'content' => '%PDF-1.4 fake invoice contents',
+            'name' => 'Invoice-BB0001.pdf',
+            'mime' => 'application/pdf',
+        ],
+    ];
+    $service = new Box\Mod\Email\Service();
+
+    $di = container();
+
+    $emailTemplate = emailTemplate(data: ['enabled' => true]);
+
+    $templateRepo = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateRepository::class);
+    $templateRepo->shouldReceive('findOneByActionCode')->andReturn($emailTemplate);
+
+    /** @var Box\Mod\Email\Entity\QueuedEmail|null $persistedQueue */
+    $persistedQueue = null;
+    $em = emailBuildEm(null, $templateRepo);
+    $em->shouldReceive('persist')
+        ->atLeast()->once()
+        ->with(Mockery::on(function ($entity) use (&$persistedQueue): bool {
+            if ($entity instanceof Box\Mod\Email\Entity\QueuedEmail) {
+                $persistedQueue = $entity;
+            }
+
+            return true;
+        }));
+    $em->shouldReceive('flush')->atLeast()->once();
+
+    $systemService = Mockery::mock(Box\Mod\System\Service::class);
+    $systemService->shouldReceive('getParamValue')
+        ->atLeast()->once()
+        ->andReturn('value');
+    $systemService->shouldReceive('renderEmailTplString')
+        ->atLeast()->once()
+        ->andReturn('rendered content');
+
+    $di['api_admin'] = function () use ($di) {
+        $api = new FOSSBilling\Api\Proxy(new Model_Admin());
+        $api->setDi($di);
+
+        return $api;
+    };
+    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock->shouldReceive('checkRequiredParamsForArray')->byDefault();
+    $di['validator'] = $validatorMock;
+
+    $encryptedVars = null;
+    $cryptMock = Mockery::mock('\Box_Crypt');
+    $cryptMock->shouldReceive('encrypt')
+        ->atLeast()->once()
+        ->with(Mockery::on(function ($json) use (&$encryptedVars): bool {
+            $encryptedVars = $json;
+
+            return true;
+        }), Mockery::any())
+        ->andReturn('encrypted');
+
+    $modMock = Mockery::mock(FOSSBilling\Module::class)->makePartial();
+    $modMock->shouldReceive('getConfig')
+        ->atLeast()->once()
+        ->andReturn([
+            'from_name' => 'Test',
+            'from_email' => 'test@test.com',
+        ]);
+
+    $di['em'] = $em;
+    $di['crypt'] = $cryptMock;
+    $di['twig'] = Mockery::mock(Twig\Environment::class);
+    $di['mod'] = $di->protect(fn () => $modMock);
+    $di['mod_service'] = $di->protect(moduleService(['system' => $systemService]));
+    $di['tools'] = new FOSSBilling\Tools();
+
+    $service->setDi($di);
+
+    $result = $service->sendTemplate($data);
+
+    expect($result)->toBeTrue();
+    expect($persistedQueue)->not->toBeNull();
+    expect($persistedQueue->getAttachmentName())->toBe('Invoice-BB0001.pdf');
+    expect($persistedQueue->getAttachmentContent())->toBe('%PDF-1.4 fake invoice contents');
+    expect($persistedQueue->getAttachmentMime())->toBe('application/pdf');
+    expect($encryptedVars)->not->toContain('fake invoice contents');
 });
 
 dataset('sendTemplateExistsStaffProvider', fn (): array => [
@@ -1007,6 +1100,42 @@ test('sendMail queues email for sending', function (): void {
     expect($result)->toBeTrue();
 });
 
+test('sendMail queues the given attachment onto the queued email', function (): void {
+    $em = emailBuildEm();
+    /** @var Box\Mod\Email\Entity\QueuedEmail|null $persistedQueue */
+    $persistedQueue = null;
+    $em->shouldReceive('persist')
+        ->atLeast()->once()
+        ->with(Mockery::on(function ($queue) use (&$persistedQueue): bool {
+            if ($queue instanceof Box\Mod\Email\Entity\QueuedEmail) {
+                $persistedQueue = $queue;
+            }
+
+            return true;
+        }));
+    $em->shouldReceive('flush')->atLeast()->once();
+
+    $di = container();
+    $di['em'] = $em;
+
+    $service = new Box\Mod\Email\Service();
+    $service->setDi($di);
+
+    $attachment = [
+        'content' => '%PDF-1.4 fake invoice contents',
+        'name' => 'Invoice-BB0001.pdf',
+        'mime' => 'application/pdf',
+    ];
+
+    $result = $service->sendMail('receiver@example.com', 'sender@example.com', 'Invoice created', 'content', null, null, null, null, false, false, $attachment);
+
+    expect($result)->toBeTrue();
+    expect($persistedQueue)->not->toBeNull();
+    expect($persistedQueue->getAttachmentName())->toBe('Invoice-BB0001.pdf');
+    expect($persistedQueue->getAttachmentContent())->toBe('%PDF-1.4 fake invoice contents');
+    expect($persistedQueue->getAttachmentMime())->toBe('application/pdf');
+});
+
 test('getBrokenTemplateCount returns count from repository', function (): void {
     $service = new Box\Mod\Email\Service();
     $di = container();
@@ -1267,4 +1396,58 @@ test('EmailTemplate toApiArray includes has_error and last_error in deep mode', 
 
     expect($result['has_error'])->toBeTrue();
     expect($result['last_error'])->toBe('Some syntax error');
+});
+
+test('queuedAttachmentToArray returns null when the queue has no attachment', function (): void {
+    $service = new Box\Mod\Email\Service();
+    $queue = new Box\Mod\Email\Entity\QueuedEmail();
+
+    $ref = new ReflectionMethod($service, 'queuedAttachmentToArray');
+    $result = $ref->invoke($service, $queue);
+
+    expect($result)->toBeNull();
+});
+
+test('queuedAttachmentToArray converts a queued attachment into a mail-ready array', function (): void {
+    $service = new Box\Mod\Email\Service();
+    $queue = new Box\Mod\Email\Entity\QueuedEmail();
+    $queue->setAttachmentName('Invoice-BB0001.pdf');
+    $queue->setAttachmentContent('%PDF-1.4 fake invoice contents');
+    $queue->setAttachmentMime('application/pdf');
+
+    $ref = new ReflectionMethod($service, 'queuedAttachmentToArray');
+    $result = $ref->invoke($service, $queue);
+
+    expect($result)->toBe([
+        'content' => '%PDF-1.4 fake invoice contents',
+        'name' => 'Invoice-BB0001.pdf',
+        'mime' => 'application/pdf',
+    ]);
+});
+
+test('loggedAttachmentToArray returns null when the logged email has no attachment', function (): void {
+    $service = new Box\Mod\Email\Service();
+    $email = new Box\Mod\Email\Entity\ActivityClientEmail();
+
+    $ref = new ReflectionMethod($service, 'loggedAttachmentToArray');
+    $result = $ref->invoke($service, $email);
+
+    expect($result)->toBeNull();
+});
+
+test('loggedAttachmentToArray converts a logged attachment into a mail-ready array', function (): void {
+    $service = new Box\Mod\Email\Service();
+    $email = new Box\Mod\Email\Entity\ActivityClientEmail();
+    $email->setAttachmentName('Invoice-BB0001.pdf');
+    $email->setAttachmentContent('%PDF-1.4 fake invoice contents');
+    $email->setAttachmentMime('application/pdf');
+
+    $ref = new ReflectionMethod($service, 'loggedAttachmentToArray');
+    $result = $ref->invoke($service, $email);
+
+    expect($result)->toBe([
+        'content' => '%PDF-1.4 fake invoice contents',
+        'name' => 'Invoice-BB0001.pdf',
+        'mime' => 'application/pdf',
+    ]);
 });

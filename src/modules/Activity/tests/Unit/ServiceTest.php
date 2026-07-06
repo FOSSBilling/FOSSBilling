@@ -68,13 +68,48 @@ test('log email', function (): void {
             && $values['subject'] === $data['subject']
             && $values['content_html'] === $data['content_html']
             && $values['content_text'] === $data['content_text']
-            && isset($values['created_at'])))
+            && $values['attachment_name'] === null
+            && $values['attachment_content'] === null
+            && $values['attachment_mime'] === null
+            && isset($values['created_at'])), Mockery::any())
         ->andReturn(1);
 
     $di['dbal'] = $dbalMock;
     $service->setDi($di);
 
     $result = $service->logEmail($data['subject'], $data['client_id'], $data['sender'], $data['recipients'], $data['content_html'], $data['content_text']);
+    expect($result)->toBeTrue();
+});
+
+test('log email stores the given attachment', function (): void {
+    $service = new Box\Mod\Activity\Service();
+    $data = [
+        'client_id' => 1,
+        'sender' => 'sender',
+        'recipients' => 'recipients',
+        'subject' => 'subject',
+        'content_html' => 'html',
+        'content_text' => 'text',
+    ];
+    $attachment = [
+        'content' => '%PDF-1.4 fake invoice contents',
+        'name' => 'Invoice-BB0001.pdf',
+        'mime' => 'application/pdf',
+    ];
+
+    $di = container();
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('insert')
+        ->once()
+        ->with('activity_client_email', Mockery::on(static fn (array $values) => $values['attachment_name'] === $attachment['name']
+            && $values['attachment_content'] === $attachment['content']
+            && $values['attachment_mime'] === $attachment['mime']), Mockery::on(static fn (array $types) => ($types['attachment_content'] ?? null) === Doctrine\DBAL\Types\Types::BLOB))
+        ->andReturn(1);
+
+    $di['dbal'] = $dbalMock;
+    $service->setDi($di);
+
+    $result = $service->logEmail($data['subject'], $data['client_id'], $data['sender'], $data['recipients'], $data['content_html'], $data['content_text'], $attachment);
     expect($result)->toBeTrue();
 });
 
