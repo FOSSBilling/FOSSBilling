@@ -304,6 +304,13 @@ class Box_App
         }
     }
 
+    private function stopMeasureIfStarted(TimeDataCollector $timeCollector, string $measureName): void
+    {
+        if ($timeCollector->hasStartedMeasure($measureName)) {
+            $timeCollector->stopMeasure($measureName);
+        }
+    }
+
     /**
      * @param RouteDefinition[] $routes
      */
@@ -317,8 +324,8 @@ class Box_App
 
             /** @var TimeDataCollector $timeCollector */
             $timeCollector = $this->debugBar->getCollector('time');
-            if ($mappingMeasureName !== null && $timeCollector->hasStartedMeasure($mappingMeasureName)) {
-                $timeCollector->stopMeasure($mappingMeasureName);
+            if ($mappingMeasureName !== null) {
+                $this->stopMeasureIfStarted($timeCollector, $mappingMeasureName);
             }
 
             if ($route->controllerClass !== null) {
@@ -447,9 +454,7 @@ class Box_App
         if ($response instanceof Response) {
             return $response;
         }
-        if ($timeCollector->hasStartedMeasure('sharedMapping')) {
-            $timeCollector->stopMeasure('sharedMapping');
-        }
+        $this->stopMeasureIfStarted($timeCollector, 'sharedMapping');
 
         // this class mappings
         $timeCollector->startMeasure('mapping', 'Checking mappings');
@@ -457,9 +462,7 @@ class Box_App
         if ($response instanceof Response) {
             return $response;
         }
-        if ($timeCollector->hasStartedMeasure('mapping')) {
-            $timeCollector->stopMeasure('mapping');
-        }
+        $this->stopMeasureIfStarted($timeCollector, 'mapping');
 
         $e = new FOSSBilling\InformationException('Page :url not found', [':url' => $this->url], 404);
 
