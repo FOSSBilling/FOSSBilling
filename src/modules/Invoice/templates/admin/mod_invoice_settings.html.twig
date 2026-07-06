@@ -122,6 +122,15 @@
                             <input class="form-control" type="number" min="0" id="invoice_hash_lifetime_days" name="invoice_hash_lifetime_days" value="{{ params.invoice_hash_lifetime_days|default('90') }}">
                             <small class="form-hint">{{ 'Number of days an invoice hash link remains valid after issue. Set to 0 to never expire. The lifetime is automatically extended when the invoice email is re-sent.'|trans }}</small>
                         </div>
+
+                        <div class="mt-3">
+                            <input type="hidden" name="invoice_email_attach_pdf" value="0">
+                            <label class="form-check form-switch form-switch-2">
+                                <input class="form-check-input" type="checkbox" name="invoice_email_attach_pdf" value="1" {% if params.invoice_email_attach_pdf|default('') == '1' %}checked{% endif %}>
+                                <span class="form-check-label">{{ 'Attach PDF Copy to Invoice Emails'|trans }}</span>
+                            </label>
+                            <small class="form-hint">{{ 'Attaches a PDF copy of the invoice to the created, paid, reminder, and overdue emails, so clients who pay by bank transfer can view it without logging in.'|trans }}</small>
+                        </div>
                     </div>
                 </div>
             </div>

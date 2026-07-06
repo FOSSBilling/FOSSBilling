@@ -454,6 +454,9 @@ test('handles after admin invoice payment received event', function (): void {
     $serviceMock->shouldReceive('toApiArray')
         ->atLeast()->once()
         ->andReturn($arr);
+    $serviceMock->shouldReceive('getInvoicePdfAttachment')
+        ->atLeast()->once()
+        ->andReturn(null);
 
     $eventMock = Mockery::mock('\Box_Event');
     $eventMock->shouldReceive('getParameters')
@@ -503,6 +506,9 @@ test('handles after admin invoice reminder sent event', function (): void {
     $serviceMock->shouldReceive('toApiArray')
         ->atLeast()->once()
         ->andReturn($arr);
+    $serviceMock->shouldReceive('getInvoicePdfAttachment')
+        ->atLeast()->once()
+        ->andReturn(null);
 
     $eventMock = Mockery::mock('\Box_Event');
     $eventMock->shouldReceive('getParameters')
@@ -588,6 +594,9 @@ test('handles event after invoice is due', function (): void {
     $serviceMock->shouldReceive('toApiArray')
         ->atLeast()->once()
         ->andReturn($arr);
+    $serviceMock->shouldReceive('getInvoicePdfAttachment')
+        ->atLeast()->once()
+        ->andReturn(null);
 
     $eventMock = Mockery::mock('\Box_Event');
     $params = ['days_passed' => 5, 'id' => 1];
@@ -2480,4 +2489,95 @@ test('markAsPaid transitions a deposit invoice to paid status', function (): voi
     expect($result)->toBeTrue();
     expect($depositInvoice->status)->toBe(Model_Invoice::STATUS_PAID);
     expect($depositInvoice->paid_at)->not->toBeNull();
+});
+
+test('getInvoicePdfAttachment returns null when the setting is disabled', function (): void {
+    $service = new Service();
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_email_attach_pdf')
+        ->atLeast()->once()
+        ->andReturn(false);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn ($name) => match ($name) {
+        'system' => $systemService,
+        default => throw new RuntimeException("Unexpected service: {$name}"),
+    });
+    $service->setDi($di);
+
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+
+    expect($service->getInvoicePdfAttachment($invoiceModel))->toBeNull();
+});
+
+test('getInvoicePdfAttachment builds a sanitized PDF attachment when enabled', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_email_attach_pdf')
+        ->atLeast()->once()
+        ->andReturn(true);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn ($name) => match ($name) {
+        'system' => $systemService,
+        default => throw new RuntimeException("Unexpected service: {$name}"),
+    });
+    $serviceMock->setDi($di);
+
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $serviceMock->shouldReceive('toApiArray')
+        ->once()
+        ->with($invoiceModel, false)
+        ->andReturn(['serie_nr' => 'BB/2026/00042']);
+    $serviceMock->shouldReceive('renderInvoicePdfContent')
+        ->once()
+        ->with($invoiceModel, ['serie_nr' => 'BB/2026/00042'])
+        ->andReturn('%PDF-1.4 fake invoice contents');
+
+    $result = $serviceMock->getInvoicePdfAttachment($invoiceModel);
+
+    expect($result)->toBe([
+        'content' => '%PDF-1.4 fake invoice contents',
+        'name' => 'BB-2026-00042.pdf',
+        'mime' => 'application/pdf',
+    ]);
+});
+
+test('getInvoicePdfAttachment returns null and logs when PDF generation fails', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_email_attach_pdf')
+        ->atLeast()->once()
+        ->andReturn(true);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn ($name) => match ($name) {
+        'system' => $systemService,
+        default => throw new RuntimeException("Unexpected service: {$name}"),
+    });
+    $logger = new Tests\Helpers\TestLogger();
+    $di['logger'] = $logger;
+    $serviceMock->setDi($di);
+
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $serviceMock->shouldReceive('toApiArray')
+        ->once()
+        ->andThrow(new Exception('boom'));
+
+    $result = $serviceMock->getInvoicePdfAttachment($invoiceModel);
+
+    expect($result)->toBeNull();
+    $errors = array_filter($logger->calls, fn ($c): bool => $c['method'] === 'error');
+    expect($errors)->not->toBeEmpty();
 });

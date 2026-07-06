@@ -55,6 +55,15 @@ class ActivityClientEmail implements ApiArrayInterface, TimestampInterface
     #[ORM\Column(name: 'content_text', type: Types::TEXT, nullable: true)]
     private ?string $contentText = null;
 
+    #[ORM\Column(name: 'attachment_name', type: Types::STRING, length: 255, nullable: true)]
+    private ?string $attachmentName = null;
+
+    #[ORM\Column(name: 'attachment_content', type: Types::BLOB, nullable: true)]
+    private mixed $attachmentContent = null;
+
+    #[ORM\Column(name: 'attachment_mime', type: Types::STRING, length: 100, nullable: true)]
+    private ?string $attachmentMime = null;
+
     public function toApiArray(): array
     {
         return [
@@ -65,6 +74,7 @@ class ActivityClientEmail implements ApiArrayInterface, TimestampInterface
             'subject' => $this->subject,
             'content_html' => Tools::sanitizeContent($this->contentHtml ?? ''),
             'content_text' => $this->contentText,
+            'has_attachment' => $this->attachmentName !== null,
             'created_at' => $this->getCreatedAt()?->format('Y-m-d H:i:s'),
             'updated_at' => $this->getUpdatedAt()?->format('Y-m-d H:i:s'),
         ];
@@ -143,6 +153,46 @@ class ActivityClientEmail implements ApiArrayInterface, TimestampInterface
     public function setContentText(?string $contentText): self
     {
         $this->contentText = $contentText;
+
+        return $this;
+    }
+
+    public function getAttachmentName(): ?string
+    {
+        return $this->attachmentName;
+    }
+
+    public function setAttachmentName(?string $attachmentName): self
+    {
+        $this->attachmentName = $attachmentName;
+
+        return $this;
+    }
+
+    public function getAttachmentContent(): ?string
+    {
+        if (is_resource($this->attachmentContent)) {
+            return stream_get_contents($this->attachmentContent) ?: null;
+        }
+
+        return $this->attachmentContent;
+    }
+
+    public function setAttachmentContent(?string $attachmentContent): self
+    {
+        $this->attachmentContent = $attachmentContent;
+
+        return $this;
+    }
+
+    public function getAttachmentMime(): ?string
+    {
+        return $this->attachmentMime;
+    }
+
+    public function setAttachmentMime(?string $attachmentMime): self
+    {
+        $this->attachmentMime = $attachmentMime;
 
         return $this;
     }

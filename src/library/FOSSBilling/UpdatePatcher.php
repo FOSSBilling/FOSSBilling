@@ -494,6 +494,8 @@ class UpdatePatcher implements InjectionAwareInterface
             83 => 'patch83',
             84 => 'patch84',
             85 => 'patch85',
+            86 => 'patch86',
+            87 => 'patch87',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2288,6 +2290,41 @@ class UpdatePatcher implements InjectionAwareInterface
             if (!$this->tableHasColumn('client', "custom_{$i}")) {
                 $this->executeSql("ALTER TABLE `client` ADD COLUMN `custom_{$i}` text");
             }
+        }
+    }
+
+    private function patch86(): void
+    {
+        // Allows queued emails (e.g. invoice notifications) to carry a file attachment such as a PDF copy.
+        // @see https://github.com/FOSSBilling/FOSSBilling/issues/1724
+        if (!$this->tableHasColumn('email_queue', 'attachment_name')) {
+            $this->executeSql('ALTER TABLE `email_queue` ADD COLUMN `attachment_name` varchar(255) DEFAULT NULL');
+        }
+
+        if (!$this->tableHasColumn('email_queue', 'attachment_content')) {
+            $this->executeSql('ALTER TABLE `email_queue` ADD COLUMN `attachment_content` longblob DEFAULT NULL');
+        }
+
+        if (!$this->tableHasColumn('email_queue', 'attachment_mime')) {
+            $this->executeSql('ALTER TABLE `email_queue` ADD COLUMN `attachment_mime` varchar(100) DEFAULT NULL');
+        }
+    }
+
+    private function patch87(): void
+    {
+        // Carries the same attachment (e.g. a PDF invoice) into the sent-email activity log, so
+        // resending a logged email (client or admin "resend") can reattach it.
+        // @see https://github.com/FOSSBilling/FOSSBilling/issues/1724
+        if (!$this->tableHasColumn('activity_client_email', 'attachment_name')) {
+            $this->executeSql('ALTER TABLE `activity_client_email` ADD COLUMN `attachment_name` varchar(255) DEFAULT NULL');
+        }
+
+        if (!$this->tableHasColumn('activity_client_email', 'attachment_content')) {
+            $this->executeSql('ALTER TABLE `activity_client_email` ADD COLUMN `attachment_content` longblob DEFAULT NULL');
+        }
+
+        if (!$this->tableHasColumn('activity_client_email', 'attachment_mime')) {
+            $this->executeSql('ALTER TABLE `activity_client_email` ADD COLUMN `attachment_mime` varchar(100) DEFAULT NULL');
         }
     }
 
