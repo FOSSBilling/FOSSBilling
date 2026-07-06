@@ -462,10 +462,10 @@
         document.querySelectorAll('.message-history-modal').forEach(function(modalEl) {
             modalEl.addEventListener('shown.bs.modal', function() {
                 if (modalEl.dataset.loaded) return;
-                modalEl.dataset.loaded = '1';
 
                 var body = modalEl.querySelector('.message-history-body');
                 FOSSBilling.api.admin.get('support/ticket_message_history_get_list', { id: modalEl.dataset.messageId }, function(history) {
+                    modalEl.dataset.loaded = '1';
                     body.innerHTML = '';
 
                     if (!history || history.length === 0) {
@@ -493,6 +493,13 @@
                         entry.appendChild(content);
                         body.appendChild(entry);
                     });
+                }, function() {
+                    body.innerHTML = '';
+
+                    var error = document.createElement('p');
+                    error.className = 'text-danger mb-0';
+                    error.textContent = '{{ 'Could not load edit history. Please try again.'|trans|e('js') }}';
+                    body.appendChild(error);
                 });
             });
         });
