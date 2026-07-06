@@ -526,7 +526,8 @@
         "uppercases",
         "inpay",
         "seti",
-        "unassigns"
+        "unassigns",
+        "docstrings"
     ],
     "ignorePaths": [
         "node_modules/**",
