@@ -5,14 +5,18 @@ reviews:
   estimate_code_review_effort: false
   in_progress_fortune: false
   poem: false
+  high_level_summary_in_walkthrough: true
   slop_detection:
     label: slop
   auto_review:
     enabled: false
     auto_incremental_review: false
-    auto_pause_after_reviewed_commits: 2
     ignore_usernames:
-      - renovate
+      - "renovate[bot]"
+      - "dependabot[bot]"
+      - "github-code-quality[bot]"
+      - "github-advanced-security[bot]"
+      - "github-actions[bot]"
   finishing_touches:
     docstrings:
       enabled: false
