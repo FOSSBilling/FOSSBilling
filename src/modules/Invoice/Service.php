@@ -508,6 +508,26 @@ class Service implements InjectionAwareInterface
         }
     }
 
+    public static function onEventBeforeInvoiceIsDue(\Box_Event $event): void
+    {
+        $params = $event->getParameters();
+        $di = $event->getDi();
+        $service = $di['mod_service']('invoice');
+
+        try {
+            if (!$service->isInvoiceReminderIntervalEnabled('invoice_reminder_before_due_days', (int) ($params['days_left'] ?? 0), '', $params['reminder_intervals'] ?? null)) {
+                return;
+            }
+
+            $invoiceModel = $di['db']->load('Invoice', $params['id'] ?? 0);
+            if ($invoiceModel instanceof \Model_Invoice) {
+                $service->sendInvoiceReminder($invoiceModel);
+            }
+        } catch (\Exception $exc) {
+            $di['logger']->setChannel('email')->error('Failed to send invoice reminder email', ['exception' => $exc->getMessage()]);
+        }
+    }
+
     public static function onAfterAdminCronRun(\Box_Event $event): void
     {
         $di = $event->getDi();
@@ -527,12 +547,11 @@ class Service implements InjectionAwareInterface
         $di = $event->getDi();
         $service = $di['mod_service']('invoice');
 
-        // send reminder once a day when 5 days has passed
-        if ($params['days_passed'] != 5) {
-            return;
-        }
-
         try {
+            if (!$service->isInvoiceReminderIntervalEnabled('invoice_reminder_after_due_days', (int) ($params['days_passed'] ?? 0), '5', $params['reminder_intervals'] ?? null)) {
+                return;
+            }
+
             $invoiceModel = $di['db']->load('Invoice', $params['id']);
             $invoice = $service->toApiArray($invoiceModel, true);
             $email = [];
@@ -1380,13 +1399,10 @@ class Service implements InjectionAwareInterface
     public function doBatchRemindersSend(): bool
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceSendReminders']);
-        $list = $this->getUnpaidInvoicesLateFor();
-        foreach ($list as $invoice) {
-            $this->sendInvoiceReminder($invoice);
-        }
+        $result = $this->doBatchInvokeDueEvent(['once_per_day' => false]);
         $this->di['logger']->info('Executed action to send invoice payment reminders.');
 
-        return true;
+        return $result;
     }
 
     public function doBatchInvokeDueEvent(array $data): bool
@@ -1402,13 +1418,18 @@ class Service implements InjectionAwareInterface
             return false;
         }
 
+        $beforeDueReminderIntervals = $this->parseInvoiceReminderIntervals($ss->getParamValue('invoice_reminder_before_due_days', ''));
+        $afterDueReminderIntervals = $this->parseInvoiceReminderIntervals($ss->getParamValue('invoice_reminder_after_due_days', '5'));
+
         $before_due_list = $this->di['db']->getAll("SELECT id, DATEDIFF(due_at, NOW()) as days_left FROM invoice WHERE status = 'unpaid' AND approved = 1 AND due_at > NOW()");
         foreach ($before_due_list as $params) {
+            $params['reminder_intervals'] = $beforeDueReminderIntervals;
             $this->di['events_manager']->fire(['event' => 'onEventBeforeInvoiceIsDue', 'params' => $params]);
         }
 
         $after_due_list = $this->di['db']->getAll("SELECT id, ABS(DATEDIFF(due_at, NOW())) as days_passed FROM invoice WHERE status = 'unpaid' AND approved = 1 AND ((due_at < NOW()) OR (ABS(DATEDIFF(due_at, NOW())) = 0 ))");
         foreach ($after_due_list as $params) {
+            $params['reminder_intervals'] = $afterDueReminderIntervals;
             $this->di['events_manager']->fire(['event' => 'onEventAfterInvoiceIsDue', 'params' => $params]);
         }
 
@@ -1719,6 +1740,46 @@ class Service implements InjectionAwareInterface
         $conditions = 'status = ? and approved = 1 and reminded_at is null and DATEDIFF(NOW(), created_at) > ?';
 
         return $this->di['db']->find('Invoice', $conditions, [\Model_Invoice::STATUS_UNPAID, $days_after_issue]);
+    }
+
+    public function isInvoiceReminderIntervalEnabled(string $param, int $days, string $default = '', mixed $intervals = null): bool
+    {
+        if ($days < 1) {
+            return false;
+        }
+
+        if ($intervals === null) {
+            $systemService = $this->di['mod_service']('system');
+            $intervals = $systemService->getParamValue($param, $default);
+        }
+
+        return in_array($days, $this->parseInvoiceReminderIntervals($intervals), true);
+    }
+
+    public function parseInvoiceReminderIntervals(mixed $value): array
+    {
+        if (is_array($value)) {
+            $parts = $value;
+        } else {
+            $parts = preg_split('/[,\s]+/', (string) $value) ?: [];
+        }
+
+        $days = [];
+        foreach ($parts as $part) {
+            if ($part === '' || !is_numeric($part)) {
+                continue;
+            }
+
+            $day = (int) $part;
+            if ($day > 0) {
+                $days[] = $day;
+            }
+        }
+
+        $days = array_values(array_unique($days));
+        sort($days);
+
+        return $days;
     }
 
     private function _isAutoApproved(): bool
