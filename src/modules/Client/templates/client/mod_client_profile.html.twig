@@ -160,10 +160,8 @@
                                     <small class="form-hint text-muted">{{ 'Used to display dates and times in your local time across tickets, invoices, and order history.'|trans }}</small>
                                 </div>
                             </div>
-                            {% for i in 1..10 %}
-                                {% set custom = 'custom_' ~ i %}
-                                {% set current = guest.client_custom_fields|default({})[custom]|default(null) %}
-                                {% if current and current.active %}
+                            {% for custom, current in guest.client_custom_fields|default({}) %}
+                                {% if current.active %}
                                     <div class="mb-3">
                                         <label class="form-label" for="{{ custom }}">{{ current.title }}</label>
                                         <input type="text" class="form-control" name="{{ custom }}" id="{{ custom }}" value="{{ profile[custom] }}" {% if current.required %} required {% endif %}>

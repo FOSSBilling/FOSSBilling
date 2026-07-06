@@ -63,6 +63,16 @@ class Client extends \FOSSBilling\Api\AbstractApi
      * @optional string $custom_8 - Custom field 8
      * @optional string $custom_9 - Custom field 9
      * @optional string $custom_10 - Custom field 10
+     * @optional string $custom_11 - Custom field 11
+     * @optional string $custom_12 - Custom field 12
+     * @optional string $custom_13 - Custom field 13
+     * @optional string $custom_14 - Custom field 14
+     * @optional string $custom_15 - Custom field 15
+     * @optional string $custom_16 - Custom field 16
+     * @optional string $custom_17 - Custom field 17
+     * @optional string $custom_18 - Custom field 18
+     * @optional string $custom_19 - Custom field 19
+     * @optional string $custom_20 - Custom field 20
      *
      * @return bool
      *

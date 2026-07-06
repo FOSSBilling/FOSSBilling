@@ -733,6 +733,36 @@ test('toApiArray returns array', function (): void {
     expect($result)->toBeArray();
 });
 
+test('toApiArray includes custom fields beyond the original cap of 10', function (): void {
+    $service = new Box\Mod\Client\Service();
+    $model = new Model_Client();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+
+    $clientGroup = new Model_ClientGroup();
+    $clientGroup->loadBean(new Tests\Helpers\DummyBean());
+    $clientGroup->title = 'Group Title';
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('toArray')
+        ->atLeast()->once()
+        ->andReturn(['custom_15' => 'Extra field value']);
+    $dbMock->shouldReceive('load')
+        ->atLeast()->once()
+        ->andReturn($clientGroup);
+
+    $di = container();
+    $di['db'] = $dbMock;
+
+    $serviceMock = Mockery::mock(Box\Mod\Client\Service::class)->makePartial();
+    $serviceMock->shouldReceive('getClientBalance')
+        ->atLeast()->once();
+
+    $serviceMock->setDi($di);
+
+    $result = $serviceMock->toApiArray($model, true, new Model_Admin());
+    expect($result['custom_15'])->toBe('Extra field value');
+});
+
 dataset('isClientTaxableProvider', [
     [
         false,
@@ -1124,6 +1154,24 @@ test('resolveDocumentNumber returns null when matching custom field value is emp
 
     $service->setDi($di);
     expect($service->resolveDocumentNumber($client))->toBeNull();
+});
+
+test('resolveDocumentNumber matches a custom field beyond the original cap of 10', function (): void {
+    $service = new Box\Mod\Client\Service();
+    $config = [
+        'custom_fields' => [
+            'custom_15' => ['active' => true, 'title' => 'Passport Number'],
+        ],
+    ];
+    $di = container();
+    $di['mod_config'] = $di->protect(fn ($modName): array => $config);
+
+    $client = new Model_Client();
+    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client->custom_15 = 'P-15';
+
+    $service->setDi($di);
+    expect($service->resolveDocumentNumber($client))->toBe('P-15');
 });
 
 test('resolveDocumentNumber returns null when no custom_fields config exists', function (): void {

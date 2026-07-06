@@ -54,6 +54,16 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      * @optional string $custom_8 - Custom field 8
      * @optional string $custom_9 - Custom field 9
      * @optional string $custom_10 - Custom field 10
+     * @optional string $custom_11 - Custom field 11
+     * @optional string $custom_12 - Custom field 12
+     * @optional string $custom_13 - Custom field 13
+     * @optional string $custom_14 - Custom field 14
+     * @optional string $custom_15 - Custom field 15
+     * @optional string $custom_16 - Custom field 16
+     * @optional string $custom_17 - Custom field 17
+     * @optional string $custom_18 - Custom field 18
+     * @optional string $custom_19 - Custom field 19
+     * @optional string $custom_20 - Custom field 20
      */
     #[RequiredParams(['email' => 'Email required', 'first_name' => 'First name required', 'password' => 'Password required', 'password_confirm' => 'Password confirmation required'])]
     public function create($data = []): int
@@ -283,13 +293,16 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
-     * Array of custom fields for client registration.
+     * Array of custom fields for client registration, sorted alphabetically by title.
      */
     public function custom_fields()
     {
         $config = $this->getDi()['mod_config']('client');
+        $customFields = $config['custom_fields'] ?? [];
 
-        return $config['custom_fields'] ?? [];
+        uasort($customFields, fn ($a, $b): int => strnatcasecmp((string) ($a['title'] ?? ''), (string) ($b['title'] ?? '')));
+
+        return $customFields;
     }
 
     public function is_email_validation_required(): bool

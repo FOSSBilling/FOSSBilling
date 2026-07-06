@@ -186,6 +186,16 @@ test('updates client', function (): void {
         'custom_8' => 'string',
         'custom_9' => 'string',
         'custom_10' => 'string',
+        'custom_11' => 'string',
+        'custom_12' => 'string',
+        'custom_13' => 'string',
+        'custom_14' => 'string',
+        'custom_15' => 'string',
+        'custom_16' => 'string',
+        'custom_17' => 'string',
+        'custom_18' => 'string',
+        'custom_19' => 'string',
+        'custom_20' => 'string',
     ];
 
     $service = new Service();
