@@ -86,13 +86,13 @@ test('publicAssetUrl returns empty string for null', function (): void {
 
 test('daysleft returns integer days for a future date', function (): void {
     $extension = makeFossBillingTwigExtension();
-    $future = date('Y-m-d H:i:s', time() + 86400 * 5 + 3600);
+    $future = date('Y-m-d H:i:s', time() + 86400 * 5 + 43200);
     expect($extension->daysleft($future))->toBe(5);
 });
 
 test('daysleft returns negative integer for a past date', function (): void {
     $extension = makeFossBillingTwigExtension();
-    $past = date('Y-m-d H:i:s', time() - 86400 * 3 - 3600);
+    $past = date('Y-m-d H:i:s', time() - 86400 * 3 - 43200);
     expect($extension->daysleft($past))->toBe(-3);
 });
 
