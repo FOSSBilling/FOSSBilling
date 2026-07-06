@@ -71,6 +71,15 @@ class QueuedEmail implements ApiArrayInterface, TimestampInterface
     #[ORM\Column(type: Types::STRING, length: 20, options: ['default' => self::STATUS_PENDING])]
     private string $status = self::STATUS_PENDING;
 
+    #[ORM\Column(name: 'attachment_name', type: Types::STRING, length: 255, nullable: true)]
+    private ?string $attachmentName = null;
+
+    #[ORM\Column(name: 'attachment_content', type: Types::BLOB, nullable: true)]
+    private mixed $attachmentContent = null;
+
+    #[ORM\Column(name: 'attachment_mime', type: Types::STRING, length: 100, nullable: true)]
+    private ?string $attachmentMime = null;
+
     public function toApiArray(): array
     {
         return [
@@ -81,6 +90,7 @@ class QueuedEmail implements ApiArrayInterface, TimestampInterface
             'to_name' => $this->toName,
             'status' => $this->status,
             'tries' => $this->tries,
+            'has_attachment' => $this->attachmentName !== null,
             'created_at' => $this->getCreatedAt()?->format('Y-m-d H:i:s'),
             'updated_at' => $this->getUpdatedAt()?->format('Y-m-d H:i:s'),
         ];
@@ -219,6 +229,46 @@ class QueuedEmail implements ApiArrayInterface, TimestampInterface
     public function setStatus(string $status): self
     {
         $this->status = $status;
+
+        return $this;
+    }
+
+    public function getAttachmentName(): ?string
+    {
+        return $this->attachmentName;
+    }
+
+    public function setAttachmentName(?string $attachmentName): self
+    {
+        $this->attachmentName = $attachmentName;
+
+        return $this;
+    }
+
+    public function getAttachmentContent(): ?string
+    {
+        if (is_resource($this->attachmentContent)) {
+            return stream_get_contents($this->attachmentContent) ?: null;
+        }
+
+        return $this->attachmentContent;
+    }
+
+    public function setAttachmentContent(?string $attachmentContent): self
+    {
+        $this->attachmentContent = $attachmentContent;
+
+        return $this;
+    }
+
+    public function getAttachmentMime(): ?string
+    {
+        return $this->attachmentMime;
+    }
+
+    public function setAttachmentMime(?string $attachmentMime): self
+    {
+        $this->attachmentMime = $attachmentMime;
 
         return $this;
     }

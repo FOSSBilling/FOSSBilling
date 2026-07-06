@@ -148,10 +148,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
         $vars = $data;
         unset($vars['to'], $vars['to_client'], $vars['to_staff'], $vars['to_name'], $vars['from'], $vars['from_name'], $vars['to_admin']);
-        unset($vars['default_description'], $vars['default_subject'], $vars['default_template'], $vars['code'], $vars['send_now'], $vars['throw_exceptions']);
+        unset($vars['default_description'], $vars['default_subject'], $vars['default_template'], $vars['code'], $vars['send_now'], $vars['throw_exceptions'], $vars['attachment']);
 
         $send_now = $data['send_now'] ?? false;
         $throw_exceptions = $data['throw_exceptions'] ?? false;
+        $attachment = $data['attachment'] ?? null;
 
         $template = $this->getOrCreateTemplateByCode($data['code'], $data);
 
@@ -230,20 +231,20 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
                 $to = $staff['email'];
                 $to_name = $staff['name'];
-                $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, null, $staff['id'], $send_now, $throw_exceptions);
+                $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, null, $staff['id'], $send_now, $throw_exceptions, $attachment);
             }
         } elseif (isset($oneStaff)) {
             $to = $oneStaff['email'];
             $to_name = $oneStaff['name'];
-            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, $oneStaff['id'], null, $send_now, $throw_exceptions);
+            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, $oneStaff['id'], null, $send_now, $throw_exceptions, $attachment);
         } elseif (isset($customer)) {
             $to = $customer['email'];
             $to_name = $customer['first_name'] . ' ' . $customer['last_name'];
-            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, $customer['id'], null, $send_now, $throw_exceptions);
+            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, $customer['id'], null, $send_now, $throw_exceptions, $attachment);
         } else {
             $to = $data['to'];
             $to_name = $data['to_name'] ?? null;
-            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, null, null, $send_now, $throw_exceptions);
+            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, null, null, $send_now, $throw_exceptions, $attachment);
         }
 
         return $sent;
@@ -259,10 +260,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         ];
     }
 
-    public function sendMail($to, $from, $subject, $content, $to_name = null, $from_name = null, $client_id = null, $admin_id = null, bool $send_now = false, bool $throw_exceptions = false): bool
+    /**
+     * @param array{content: string, name: string, mime?: string}|null $attachment a file to attach to the email, e.g. a generated invoice PDF
+     */
+    public function sendMail($to, $from, $subject, $content, $to_name = null, $from_name = null, $client_id = null, $admin_id = null, bool $send_now = false, bool $throw_exceptions = false, ?array $attachment = null): bool
     {
         // Add the email to the queue
-        $email = $this->_queue($to, $from, $subject, $content, $to_name, $from_name, $client_id, $admin_id);
+        $email = $this->_queue($to, $from, $subject, $content, $to_name, $from_name, $client_id, $admin_id, $attachment);
         if ($send_now) {
             $this->_sendFromQueue($email, $throw_exceptions);
         }
@@ -479,7 +483,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return [$template->getSubject() ?? '', $template->getContent() ?? ''];
     }
 
-    private function _queue($to, $from, $subject, $content, $to_name = null, $from_name = null, $client_id = null, $admin_id = null): QueuedEmail
+    private function _queue($to, $from, $subject, $content, $to_name = null, $from_name = null, $client_id = null, $admin_id = null, ?array $attachment = null): QueuedEmail
     {
         $em = $this->di['em'];
 
@@ -495,6 +499,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $queue->setStatus(QueuedEmail::STATUS_PENDING);
         $queue->setPriority(1);
         $queue->setTries(0);
+
+        if ($attachment !== null && isset($attachment['content'], $attachment['name'])) {
+            $queue->setAttachmentName((string) $attachment['name']);
+            $queue->setAttachmentContent((string) $attachment['content']);
+            $queue->setAttachmentMime((string) ($attachment['mime'] ?? 'application/octet-stream'));
+        }
 
         try {
             $em->persist($queue);
@@ -569,11 +579,28 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $systemService = $this->di['mod_service']('system');
         $from_name = $systemService->getParamValue('company_name');
 
-        $this->sendMail($email->getRecipients(), $email->getSender(), $email->getSubject(), $email->getContentHtml(), $customer['first_name'] . ' ' . $customer['last_name'], $from_name, $email->getClientId());
+        $this->sendMail($email->getRecipients(), $email->getSender(), $email->getSubject(), $email->getContentHtml(), $customer['first_name'] . ' ' . $customer['last_name'], $from_name, $email->getClientId(), null, false, false, $this->loggedAttachmentToArray($email));
 
         $this->di['logger']->info('Resent email #%s', $email->getId());
 
         return true;
+    }
+
+    /**
+     * @return array{content: string, name: string, mime: string}|null
+     */
+    private function loggedAttachmentToArray(ActivityClientEmail $email): ?array
+    {
+        $content = $email->getAttachmentContent();
+        if ($content === null) {
+            return null;
+        }
+
+        return [
+            'content' => $content,
+            'name' => $email->getAttachmentName() ?? 'attachment',
+            'mime' => $email->getAttachmentMime() ?? 'application/octet-stream',
+        ];
     }
 
     public function queueGetSearchQuery($data): array
@@ -1013,6 +1040,23 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
     }
 
+    /**
+     * @return array{content: string, name: string, mime: string}|null
+     */
+    private function queuedAttachmentToArray(QueuedEmail $queue): ?array
+    {
+        $content = $queue->getAttachmentContent();
+        if ($content === null) {
+            return null;
+        }
+
+        return [
+            'content' => $content,
+            'name' => $queue->getAttachmentName() ?? 'attachment',
+            'mime' => $queue->getAttachmentMime() ?? 'application/octet-stream',
+        ];
+    }
+
     private function _sendFromQueue(QueuedEmail $queue, bool $throw_exceptions = false): bool
     {
         $extensionService = $this->di['mod_service']('extension');
@@ -1038,8 +1082,15 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'name' => $queue->getToName(),
         ];
 
+        $attachment = $this->queuedAttachmentToArray($queue);
+
         try {
             $mail = new \FOSSBilling\Mail($sender, $recipient, $queue->getSubject(), $queue->getContent(), $transport, $settings['custom_dsn'] ?? null);
+
+            if ($attachment !== null) {
+                $mail->attach($attachment['content'], $attachment['name'], $attachment['mime']);
+            }
+
             if (!empty($settings['reply_to'])) {
                 if (filter_var($settings['reply_to'], FILTER_VALIDATE_EMAIL)) {
                     $mail->addReplyTo($settings['reply_to']);
@@ -1059,7 +1110,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             // It sent without causing an exception (error), so we are safe to log it now
             if ($log) {
                 $activityService = $this->di['mod_service']('activity');
-                $activityService->logEmail($queue->getSubject(), $queue->getClientId(), $queue->getSender(), $queue->getRecipient(), $queue->getContent());
+                $activityService->logEmail($queue->getSubject(), $queue->getClientId(), $queue->getSender(), $queue->getRecipient(), $queue->getContent(), null, $attachment);
             }
 
             try {
@@ -1085,7 +1136,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 // The email failed to send after the max number of tries. This might be because of a server error, so let's be sure to log it which gives the client the ability to resend it.
                 if ($log) {
                     $activityService = $this->di['mod_service']('activity');
-                    $activityService->logEmail($queue->getSubject(), $queue->getClientId(), $queue->getSender(), $queue->getRecipient(), $queue->getContent());
+                    $activityService->logEmail($queue->getSubject(), $queue->getClientId(), $queue->getSender(), $queue->getRecipient(), $queue->getContent(), null, $attachment);
                 }
                 $this->di['em']->remove($queue);
                 $this->di['em']->flush();
