@@ -64,14 +64,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             isset($data['action']) && $data['action'] == 'register'
             && isset($data['register_tld']) && isset($data['register_sld'])
         ) {
-            return __trans('Domain :domain registration', [':domain' => $data['register_sld'] . $data['register_tld']]);
+            return $data['register_sld'] . $data['register_tld'];
         }
 
         if (
             isset($data['action']) && $data['action'] == 'transfer'
             && isset($data['transfer_tld']) && isset($data['transfer_sld'])
         ) {
-            return __trans('Domain :domain transfer', [':domain' => $data['transfer_sld'] . $data['transfer_tld']]);
+            return $data['transfer_sld'] . $data['transfer_tld'];
         }
 
         return $product->getTitle();
