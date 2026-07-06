@@ -993,7 +993,6 @@ test('counts income', function (): void {
 });
 
 test('prepares invoice with undefined currency', function (): void {
-    $service = new Service();
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('setInvoiceDefaults')
         ->atLeast()->once();
