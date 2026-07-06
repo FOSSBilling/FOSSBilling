@@ -492,6 +492,7 @@ class UpdatePatcher implements InjectionAwareInterface
             81 => 'patch81',
             82 => 'patch82',
             83 => 'patch83',
+            84 => 'patch84',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2254,6 +2255,13 @@ class UpdatePatcher implements InjectionAwareInterface
     }
 
     private function patch83(): void
+    {
+        if (!$this->tableHasIndex('invoice_item', 'invoice_item_pending_renewal_idx')) {
+            $this->executeSql('ALTER TABLE `invoice_item` ADD INDEX `invoice_item_pending_renewal_idx` (`rel_id`(20), `type`, `task`, `status`, `invoice_id`)');
+        }
+    }
+
+    private function patch84(): void
     {
         // Admins can now edit ticket replies; this table snapshots a message's prior content on each edit.
         // @see https://github.com/FOSSBilling/FOSSBilling/issues/2317
