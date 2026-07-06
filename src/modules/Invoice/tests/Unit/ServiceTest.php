@@ -75,7 +75,7 @@ test('gets search query with various parameters', function (array $data, string 
         ['approved' => true],
         'AND p.approved = :approved',
         [
-            'approved' => true,
+            'approved' => 1,
         ],
     ],
     [
@@ -993,7 +993,6 @@ test('counts income', function (): void {
 });
 
 test('prepares invoice with undefined currency', function (): void {
-    $service = new Service();
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('setInvoiceDefaults')
         ->atLeast()->once();
