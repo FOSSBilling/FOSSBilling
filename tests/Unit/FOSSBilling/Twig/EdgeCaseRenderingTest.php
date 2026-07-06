@@ -507,7 +507,7 @@ test('support admin ticket renders admin and client messages, including an edite
     );
 
     expect($html)->toBeString();
-    expect($html)->not->toContain('editMessage2');
+    expect($html)->toContain('editMessage2');
     expect($html)->toContain('editMessage3');
     expect($html)->not->toContain('editMessage1');
     expect($html)->toContain('messageHistory3');
