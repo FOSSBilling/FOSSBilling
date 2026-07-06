@@ -30,6 +30,13 @@ use Twig\Loader\ArrayLoader;
  * Twig\Error\RuntimeError (template has the bug). There is no in-between.
  */
 
+/**
+ * Build a default request payload for edge-case Twig rendering tests.
+ *
+ * @param array<string, mixed> $overrides Optional request keys to override.
+ *
+ * @return array<string, mixed>
+ */
 function edgeCaseRequest(array $overrides = []): array
 {
     return array_replace([
@@ -49,6 +56,11 @@ function edgeCaseRequest(array $overrides = []): array
     ], $overrides);
 }
 
+/**
+ * Build an admin API stub with sensible defaults for edge-case tests.
+ *
+ * @param array<string, mixed> $methods Optional method map overrides for the stub.
+ */
 function edgeCaseAdmin(array $methods = []): PermissiveCallableStub
 {
     return new PermissiveCallableStub(array_replace([
@@ -58,6 +70,11 @@ function edgeCaseAdmin(array $methods = []): PermissiveCallableStub
     ], $methods));
 }
 
+/**
+ * Build a guest API stub with defaults used by edge-case rendering scenarios.
+ *
+ * @param array<string, mixed> $methods Optional method map overrides for the stub.
+ */
 function edgeCaseGuest(array $methods = []): PermissiveCallableStub
 {
     return new PermissiveCallableStub(array_replace([
@@ -71,6 +88,11 @@ function edgeCaseGuest(array $methods = []): PermissiveCallableStub
     ], $methods));
 }
 
+/**
+ * Return a default cart currency payload for edge-case rendering tests.
+ *
+ * @return array{code: string, conversion_rate: float}
+ */
 function edgeCaseCartCurrency(): array
 {
     return [
