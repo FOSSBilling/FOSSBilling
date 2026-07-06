@@ -88,6 +88,7 @@ test('getActiveTimezone prefers explicit client/admin arguments over a valid fb_
     $_COOKIE['fb_timezone'] = 'Europe/Berlin';
 
     expect(i18n::getActiveTimezone('America/New_York', 'Asia/Tokyo'))->toBe('America/New_York');
+    expect(i18n::getActiveTimezone('America/New_York', null))->toBe('America/New_York');
     expect(i18n::getActiveTimezone(null, 'Asia/Tokyo'))->toBe('Asia/Tokyo');
 });
 
@@ -101,6 +102,7 @@ test('getActiveTimezone ignores invalid client / admin values and falls back', f
     expect(i18n::getActiveTimezone('Mars/Olympus_Mons', null))->toBe('UTC');
     expect(i18n::getActiveTimezone(null, 'Mars/Olympus_Mons'))->toBe('UTC');
     expect(i18n::getActiveTimezone('Mars/Olympus_Mons', 'Mars/Olympus_Mons'))->toBe('UTC');
+    expect(i18n::getActiveTimezone('Mars/Olympus_Mons', 'Asia/Tokyo'))->toBe('Asia/Tokyo');
 });
 
 test('getActiveTimezone treats empty string as not set', function (): void {
