@@ -1310,7 +1310,7 @@ CREATE TABLE `support_ticket_message` (
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `support_ticket_message_history` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `support_ticket_message_id` bigint(20) DEFAULT NULL,
+  `support_ticket_message_id` bigint(20) NOT NULL,
   `admin_id` bigint(20) DEFAULT NULL,
   `content` text,
   `created_at` datetime DEFAULT NULL,

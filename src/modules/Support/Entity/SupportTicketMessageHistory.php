@@ -38,7 +38,7 @@ class SupportTicketMessageHistory implements ApiArrayInterface, TimestampInterfa
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: SupportTicketMessage::class)]
-    #[ORM\JoinColumn(name: 'support_ticket_message_id', referencedColumnName: 'id', nullable: true, onDelete: 'CASCADE')]
+    #[ORM\JoinColumn(name: 'support_ticket_message_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
     private ?SupportTicketMessage $message = null;
 
     #[ORM\Column(name: 'admin_id', type: Types::INTEGER, nullable: true)]
