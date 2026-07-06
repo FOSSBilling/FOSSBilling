@@ -304,15 +304,28 @@ class Box_App
         }
     }
 
+    private function stopMeasureIfStarted(TimeDataCollector $timeCollector, string $measureName): void
+    {
+        if ($timeCollector->hasStartedMeasure($measureName)) {
+            $timeCollector->stopMeasure($measureName);
+        }
+    }
+
     /**
      * @param RouteDefinition[] $routes
      */
-    private function dispatchRouteDefinitions(array $routes): ?Response
+    private function dispatchRouteDefinitions(array $routes, ?string $mappingMeasureName = null): ?Response
     {
         foreach ($routes as $route) {
             $routeMatch = $this->routeMatcher()->match($route->httpMethod, $route->path, $route->conditions, $this->url, $this->getRequest()->getMethod());
             if (!$routeMatch->matched) {
                 continue;
+            }
+
+            /** @var TimeDataCollector $timeCollector */
+            $timeCollector = $this->debugBar->getCollector('time');
+            if ($mappingMeasureName !== null) {
+                $this->stopMeasureIfStarted($timeCollector, $mappingMeasureName);
             }
 
             if ($route->controllerClass !== null) {
@@ -437,23 +450,19 @@ class Box_App
         $timeCollector = $this->debugBar->getCollector('time');
 
         $timeCollector->startMeasure('sharedMapping', 'Checking shared mappings');
-        $response = $this->dispatchRouteDefinitions($this->sharedRouteDefinitions);
+        $response = $this->dispatchRouteDefinitions($this->sharedRouteDefinitions, 'sharedMapping');
         if ($response instanceof Response) {
-            $timeCollector->stopMeasure('sharedMapping');
-
             return $response;
         }
-        $timeCollector->stopMeasure('sharedMapping');
+        $this->stopMeasureIfStarted($timeCollector, 'sharedMapping');
 
         // this class mappings
         $timeCollector->startMeasure('mapping', 'Checking mappings');
-        $response = $this->dispatchRouteDefinitions($this->routeDefinitions);
+        $response = $this->dispatchRouteDefinitions($this->routeDefinitions, 'mapping');
         if ($response instanceof Response) {
-            $timeCollector->stopMeasure('mapping');
-
             return $response;
         }
-        $timeCollector->stopMeasure('mapping');
+        $this->stopMeasureIfStarted($timeCollector, 'mapping');
 
         $e = new FOSSBilling\InformationException('Page :url not found', [':url' => $this->url], 404);
 
