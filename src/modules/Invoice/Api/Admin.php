@@ -287,7 +287,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
-     * Send buyer reminders about upcoming payment.
+     * Legacy hook point for buyer payment reminders.
+     *
+     * Automatic reminder intervals are processed by batch_invoke_due_event().
      *
      * @return bool
      */

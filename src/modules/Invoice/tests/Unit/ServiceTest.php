@@ -599,6 +599,11 @@ test('handles event after invoice is due', function (): void {
     $emailService->shouldReceive('sendTemplate')
         ->atLeast()->once();
 
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_reminder_after_due_days', '5')
+        ->andReturn('1, 5, 7');
+
     $invoiceModel = new Model_Invoice();
     $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
     $dbMock = Mockery::mock('\Box_Database');
@@ -607,12 +612,15 @@ test('handles event after invoice is due', function (): void {
         ->andReturn($invoiceModel);
 
     $di = container();
-    $di['mod_service'] = $di->protect(function ($serviceName) use ($emailService, $serviceMock) {
+    $di['mod_service'] = $di->protect(function ($serviceName) use ($emailService, $serviceMock, $systemService) {
         if ($serviceName == 'invoice') {
             return $serviceMock;
         }
         if ($serviceName == 'email') {
             return $emailService;
+        }
+        if ($serviceName == 'system') {
+            return $systemService;
         }
     });
     $di['db'] = $dbMock;
@@ -622,6 +630,51 @@ test('handles event after invoice is due', function (): void {
         ->atLeast()->once()
         ->andReturn($di);
     $serviceMock->onEventAfterInvoiceIsDue($eventMock);
+});
+
+test('handles event before invoice is due', function (): void {
+    $service = new Service();
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('sendInvoiceReminder')
+        ->once()
+        ->andReturnTrue();
+
+    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock->shouldReceive('getParameters')
+        ->atLeast()->once()
+        ->andReturn(['days_left' => 7, 'id' => 1]);
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_reminder_before_due_days', '')
+        ->andReturn('14, 7, 1');
+
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('load')
+        ->once()
+        ->with('Invoice', 1)
+        ->andReturn($invoiceModel);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(function ($serviceName) use ($serviceMock, $systemService) {
+        if ($serviceName == 'invoice') {
+            return $serviceMock;
+        }
+        if ($serviceName == 'system') {
+            return $systemService;
+        }
+    });
+    $di['db'] = $dbMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $serviceMock->setDi($di);
+    $eventMock->shouldReceive('getDi')
+        ->atLeast()->once()
+        ->andReturn($di);
+
+    $service->onEventBeforeInvoiceIsDue($eventMock);
 });
 
 test('marks invoice as paid', function (): void {
@@ -1648,15 +1701,6 @@ test('handles exception during batch paid invoice activation', function (): void
 
 test('sends reminders in batch', function (): void {
     $service = new Service();
-    $invoiceModel = new Model_Invoice();
-    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
-
-    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('sendInvoiceReminder')
-        ->once();
-    $serviceMock->shouldReceive('getUnpaidInvoicesLateFor')
-        ->once()
-        ->andReturn([$invoiceModel]);
 
     $eventManagerMock = Mockery::mock('\Box_EventManager');
     $eventManagerMock->shouldReceive('fire')
@@ -1666,8 +1710,8 @@ test('sends reminders in batch', function (): void {
     $di['events_manager'] = $eventManagerMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
-    $serviceMock->setDi($di);
-    $result = $serviceMock->doBatchRemindersSend();
+    $service->setDi($di);
+    $result = $service->doBatchRemindersSend();
     expect($result)->toBeBool()->toBeTrue();
 });
 
@@ -1708,6 +1752,13 @@ test('protects from sending reminders to paid invoices', function (): void {
 
     $result = $service->sendInvoiceReminder($invoiceModel);
     expect($result)->toBeBool()->toBeTrue();
+});
+
+test('parses invoice reminder intervals', function (): void {
+    $service = new Service();
+
+    expect($service->parseInvoiceReminderIntervals('14, 7 1,7, 0, no'))
+        ->toBe([1, 7, 14]);
 });
 
 test('sends invoice reminder', function (): void {
