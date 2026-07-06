@@ -188,6 +188,7 @@ test('ticket message update', function (): void {
     $api->setDi($di);
 
     $api->setService($serviceMock);
+    $api->setIdentity(new Model_Admin());
 
     $data = [
         'id' => 1,
@@ -196,6 +197,30 @@ test('ticket message update', function (): void {
     $result = $api->ticket_message_update($data);
 
     expect($result)->toBeTrue();
+});
+
+test('ticket message history get list', function (): void {
+    $api = new Box\Mod\Support\Api\Admin();
+    $message = new Box\Mod\Support\Entity\SupportTicketMessage();
+
+    $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $serviceMock->shouldReceive('getTicketMessageById')->atLeast()->once()
+        ->andReturn($message);
+    $serviceMock->shouldReceive('getMessageHistory')->atLeast()->once()
+        ->with($message)
+        ->andReturn([['id' => 1, 'content' => 'Old content']]);
+
+    $di = container();
+    $api->setDi($di);
+
+    $api->setService($serviceMock);
+
+    $data = [
+        'id' => 1,
+    ];
+    $result = $api->ticket_message_history_get_list($data);
+
+    expect($result)->toBe([['id' => 1, 'content' => 'Old content']]);
 });
 
 test('ticket delete', function (): void {

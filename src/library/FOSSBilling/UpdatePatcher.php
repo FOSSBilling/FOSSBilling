@@ -491,6 +491,7 @@ class UpdatePatcher implements InjectionAwareInterface
             80 => 'patch80',
             81 => 'patch81',
             82 => 'patch82',
+            83 => 'patch83',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2250,6 +2251,24 @@ class UpdatePatcher implements InjectionAwareInterface
                 SELECT 1 FROM email_template_group etg
                 WHERE etg.email_template_id = et.id AND etg.admin_group_id = ag.id
             )");
+    }
+
+    private function patch83(): void
+    {
+        // Admins can now edit ticket replies; this table snapshots a message's prior content on each edit.
+        // @see https://github.com/FOSSBilling/FOSSBilling/issues/2317
+        if (!$this->tableExists('support_ticket_message_history')) {
+            $this->executeSql('CREATE TABLE `support_ticket_message_history` (
+                `id` bigint(20) NOT NULL AUTO_INCREMENT,
+                `support_ticket_message_id` bigint(20) DEFAULT NULL,
+                `admin_id` bigint(20) DEFAULT NULL,
+                `content` text,
+                `created_at` datetime DEFAULT NULL,
+                `updated_at` datetime DEFAULT NULL,
+                PRIMARY KEY (`id`),
+                KEY `support_ticket_message_id_idx` (`support_ticket_message_id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8;');
+        }
     }
 
     private function generateDownloadableStoredFilename(): string

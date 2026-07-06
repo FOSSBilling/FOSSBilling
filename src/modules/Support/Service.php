@@ -19,6 +19,7 @@ use Box\Mod\Support\Entity\KbArticle;
 use Box\Mod\Support\Entity\KbArticleCategory;
 use Box\Mod\Support\Entity\SupportTicket;
 use Box\Mod\Support\Entity\SupportTicketMessage;
+use Box\Mod\Support\Entity\SupportTicketMessageHistory;
 use Box\Mod\Support\Entity\SupportTicketNote;
 use Box\Mod\Support\Repository\CannedResponseCategoryRepository;
 use Box\Mod\Support\Repository\CannedResponseRepository;
@@ -908,13 +909,42 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function ticketMessageUpdate(SupportTicketMessage $model, string $content): bool
+    public function ticketMessageUpdate(SupportTicketMessage $model, string $content, \Model_Admin $identity): bool
     {
-        $model->setContent($content);
+        if ($model->getAdminId() === null) {
+            throw new InformationException('Only admin replies can be edited');
+        }
 
+        $previousContent = (string) $model->getContent();
+        if ($previousContent === $content) {
+            return true;
+        }
+
+        $history = new SupportTicketMessageHistory();
+        $history->setMessage($model);
+        $history->setAdminId((int) $identity->id);
+        $history->setContent($previousContent);
+        $this->di['em']->persist($history);
+
+        $model->setContent($content);
         $this->di['em']->flush();
 
+        $this->di['logger']->info('Edited ticket message #%s', $model->getId());
+
         return true;
+    }
+
+    /**
+     * @return array[]
+     */
+    public function getMessageHistory(SupportTicketMessage $message): array
+    {
+        $repo = $this->di['em']->getRepository(SupportTicketMessageHistory::class);
+
+        return array_map(
+            fn (SupportTicketMessageHistory $history): array => $history->toApiArray(),
+            $repo->findByMessageId((int) $message->getId()),
+        );
     }
 
     /**

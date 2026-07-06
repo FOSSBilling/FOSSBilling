@@ -91,9 +91,24 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_tickets');
 
+        $data['content'] = \FOSSBilling\Tools::sanitizeMarkdownContent($data['content']);
+
         $model = $this->getService()->getTicketMessageById((int) $data['id']);
 
-        return $this->getService()->ticketMessageUpdate($model, $data['content']);
+        return $this->getService()->ticketMessageUpdate($model, $data['content'], $this->getIdentity());
+    }
+
+    /**
+     * Return the edit history of a ticket message, most recent edit first.
+     */
+    #[RequiredParams(['id' => 'Ticket message ID is missing'])]
+    public function ticket_message_history_get_list(array $data): array
+    {
+        $this->checkPermissions('support', 'view');
+
+        $model = $this->getService()->getTicketMessageById((int) $data['id']);
+
+        return $this->getService()->getMessageHistory($model);
     }
 
     /**

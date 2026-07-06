@@ -19,6 +19,7 @@ use Box\Mod\Support\Entity\KbArticle;
 use Box\Mod\Support\Entity\KbArticleCategory;
 use Box\Mod\Support\Entity\SupportTicket;
 use Box\Mod\Support\Entity\SupportTicketMessage;
+use Box\Mod\Support\Entity\SupportTicketMessageHistory;
 use Box\Mod\Support\Entity\SupportTicketNote;
 use Box\Mod\Support\Repository\CannedResponseCategoryRepository;
 use Box\Mod\Support\Repository\CannedResponseRepository;
@@ -1819,6 +1820,14 @@ test('ticket message update', function (): void {
     supportWireKbRepositories($emMock);
     $emMock->shouldReceive('flush')->atLeast()->once();
 
+    $capturedHistory = null;
+    $emMock->shouldReceive('persist')->atLeast()->once()
+        ->with(Mockery::on(function ($entity) use (&$capturedHistory): bool {
+            $capturedHistory = $entity;
+
+            return $entity instanceof SupportTicketMessageHistory;
+        }));
+
     $di = container();
     $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -1826,10 +1835,66 @@ test('ticket message update', function (): void {
 
     $message = new SupportTicketMessage();
     setEntityId($message, 1);
+    $message->setAdminId(1);
+    $message->setContent('Original content');
 
-    $result = $service->ticketMessageUpdate($message, 'Content');
+    $admin = new Model_Admin();
+    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin->id = 7;
+
+    $result = $service->ticketMessageUpdate($message, 'Edited content', $admin);
     expect($result)->toBeTrue();
-    expect($message->getContent())->toBe('Content');
+    expect($message->getContent())->toBe('Edited content');
+    expect($capturedHistory)->not->toBeNull();
+    expect($capturedHistory->getContent())->toBe('Original content');
+    expect($capturedHistory->getAdminId())->toBe(7);
+});
+
+test('ticket message update rejects editing a client-authored message', function (): void {
+    $service = new Service();
+    $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    supportWireKbRepositories($emMock);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    $message = new SupportTicketMessage();
+    setEntityId($message, 1);
+    $message->setClientId(1);
+    $message->setContent('Client wrote this');
+
+    $admin = new Model_Admin();
+    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin->id = 7;
+
+    $service->ticketMessageUpdate($message, 'Tampered content', $admin);
+})->throws(FOSSBilling\InformationException::class);
+
+test('ticket message update skips creating history when content is unchanged', function (): void {
+    $service = new Service();
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock);
+    $emMock->shouldNotReceive('persist');
+    $emMock->shouldNotReceive('flush');
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    $message = new SupportTicketMessage();
+    setEntityId($message, 1);
+    $message->setAdminId(1);
+    $message->setContent('Same content');
+
+    $admin = new Model_Admin();
+    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin->id = 7;
+
+    $result = $service->ticketMessageUpdate($message, 'Same content', $admin);
+    expect($result)->toBeTrue();
 });
 
 dataset('ticketReplyProvider', function () {
