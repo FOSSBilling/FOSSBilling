@@ -309,7 +309,7 @@ test('activity index renders a mixed list of all three event shapes', function (
                     'pages' => 1,
                     'per_page' => 25,
                     'page' => 1,
-                    'total' => 1,
+                    'total' => 3,
                 ],
             ]),
         ],
@@ -490,6 +490,7 @@ test('support admin ticket renders admin and client messages, including an edite
     expect($html)->not->toContain('editMessage1');
     expect($html)->toContain('messageHistory3');
     expect($html)->not->toContain('messageHistory2');
+    expect($html)->not->toContain('messageHistory1');
 });
 
 test('support admin ticket renders with a related order and a note', function (): void {
