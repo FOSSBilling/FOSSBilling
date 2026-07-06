@@ -12,6 +12,40 @@ declare(strict_types=1);
 
 use Tests\Support\StrictTemplateRenderer;
 
+test('cron settings renders when module config has not been saved', function (): void {
+    $renderer = new StrictTemplateRenderer();
+    $admin = new class {
+        public function __isset(string $name): bool
+        {
+            return $name === 'cron_info';
+        }
+
+        public function __get(string $name): mixed
+        {
+            return match ($name) {
+                'cron_info' => [
+                    'cron_path' => '/var/www/fossbilling/cron.php',
+                    'last_cron_exec' => null,
+                ],
+                default => null,
+            };
+        }
+
+        public function extension_config_get(array $data): array
+        {
+            return ['ext' => $data['ext']];
+        }
+    };
+
+    $html = $renderer->renderTemplate(PATH_MODS . '/Cron/templates/admin/mod_cron_settings.html.twig', [
+        'admin' => $admin,
+    ]);
+
+    expect($html)->toContain('Guest Cron Endpoint')
+        ->and($html)->not->toContain('checked="checked"')
+        ->and($html)->not->toContain('Guest Cron URL');
+});
+
 /*
  * Verify that every FOSSBilling template compiles and renders successfully under
  * `strict_variables => true`. This catches undefined variable/attribute/key access,
