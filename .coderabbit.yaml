@@ -11,6 +11,9 @@ reviews:
   auto_review:
     enabled: false
     auto_incremental_review: false
+    ignore_title_keywords:
+      - "[WIP]"
+      - "[Draft]"
     ignore_usernames:
       - "renovate[bot]"
       - "dependabot[bot]"
