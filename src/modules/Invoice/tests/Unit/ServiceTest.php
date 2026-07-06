@@ -686,6 +686,86 @@ test('handles event before invoice is due', function (): void {
     $service->onEventBeforeInvoiceIsDue($eventMock);
 });
 
+test('skips before due invoice reminder when interval does not match', function (): void {
+    $service = new Service();
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('sendInvoiceReminder')
+        ->never();
+
+    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock->shouldReceive('getParameters')
+        ->atLeast()->once()
+        ->andReturn(['days_left' => 3, 'id' => 1]);
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_reminder_before_due_days', '')
+        ->andReturn('14, 7, 1');
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('load')
+        ->never();
+
+    $di = container();
+    $di['mod_service'] = $di->protect(function ($serviceName) use ($serviceMock, $systemService) {
+        if ($serviceName == 'invoice') {
+            return $serviceMock;
+        }
+        if ($serviceName == 'system') {
+            return $systemService;
+        }
+    });
+    $di['db'] = $dbMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $serviceMock->setDi($di);
+    $eventMock->shouldReceive('getDi')
+        ->atLeast()->once()
+        ->andReturn($di);
+
+    $service->onEventBeforeInvoiceIsDue($eventMock);
+});
+
+test('skips before due invoice reminder when intervals are blank', function (): void {
+    $service = new Service();
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('sendInvoiceReminder')
+        ->never();
+
+    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock->shouldReceive('getParameters')
+        ->atLeast()->once()
+        ->andReturn(['days_left' => 7, 'id' => 1]);
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_reminder_before_due_days', '')
+        ->andReturn('');
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('load')
+        ->never();
+
+    $di = container();
+    $di['mod_service'] = $di->protect(function ($serviceName) use ($serviceMock, $systemService) {
+        if ($serviceName == 'invoice') {
+            return $serviceMock;
+        }
+        if ($serviceName == 'system') {
+            return $systemService;
+        }
+    });
+    $di['db'] = $dbMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $serviceMock->setDi($di);
+    $eventMock->shouldReceive('getDi')
+        ->atLeast()->once()
+        ->andReturn($di);
+
+    $service->onEventBeforeInvoiceIsDue($eventMock);
+});
+
 test('marks invoice as paid', function (): void {
     $service = new Service();
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
@@ -1709,7 +1789,11 @@ test('handles exception during batch paid invoice activation', function (): void
 });
 
 test('sends reminders in batch', function (): void {
-    $service = new Service();
+    $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $service->shouldReceive('doBatchInvokeDueEvent')
+        ->once()
+        ->with(['once_per_day' => false])
+        ->andReturnTrue();
 
     $eventManagerMock = Mockery::mock('\Box_EventManager');
     $eventManagerMock->shouldReceive('fire')
@@ -1728,7 +1812,14 @@ test('invokes due event in batch', function (): void {
     $service = new Service();
     $systemService = Mockery::mock(SystemService::class);
     $systemService->shouldReceive('getParamValue')
-        ->atLeast()->once();
+        ->with('invoice_overdue_invoked')
+        ->andReturn(null);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_reminder_before_due_days', '')
+        ->andReturn('14, 7, 1');
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_reminder_after_due_days', '5')
+        ->andReturn('5');
     $systemService->shouldReceive('setParamValue')
         ->atLeast()->once();
 

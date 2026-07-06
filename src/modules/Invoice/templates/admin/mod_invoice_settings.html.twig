@@ -67,7 +67,7 @@
                     </div>
                     <div class="col-lg-6">
                         <label class="form-label" for="invoice_reminder_after_due_days">{{ 'Payment Reminder Days After Due'|trans }}</label>
-                        <input class="form-control" id="invoice_reminder_after_due_days" type="text" name="invoice_reminder_after_due_days" value="{{ params.invoice_reminder_after_due_days|default('5') }}" placeholder="1, 7">
+                        <input class="form-control" id="invoice_reminder_after_due_days" type="text" name="invoice_reminder_after_due_days" value="{{ params.invoice_reminder_after_due_days is defined ? params.invoice_reminder_after_due_days : '5' }}" placeholder="1, 7">
                         <small class="form-hint">{{ 'Comma-separated day intervals. Leave empty to disable automatic reminders after the invoice due date.'|trans }}</small>
                     </div>
                 </div>
