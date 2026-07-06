@@ -32,7 +32,11 @@ class ActivityClientEmailRepository extends EntityRepository
      */
     public function getSearchQueryBuilder(array $data = []): QueryBuilder
     {
+        // Excludes the attachment_content blob: list responses only need has_attachment
+        // (derived from attachmentName), and hydrating every PDF for a page of results
+        // would pull megabytes into memory just to render a list.
         $qb = $this->createQueryBuilder('e')
+            ->select('partial e.{id, clientId, sender, recipients, subject, contentHtml, contentText, attachmentName, attachmentMime, createdAt, updatedAt}')
             ->orderBy('e.id', 'DESC');
 
         if (!empty($data['id'])) {
