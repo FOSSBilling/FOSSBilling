@@ -26,6 +26,7 @@ use Box\Mod\Support\Repository\CannedResponseRepository;
 use Box\Mod\Support\Repository\HelpdeskRepository;
 use Box\Mod\Support\Repository\KbArticleCategoryRepository;
 use Box\Mod\Support\Repository\KbArticleRepository;
+use Box\Mod\Support\Repository\SupportTicketMessageHistoryRepository;
 use Box\Mod\Support\Repository\SupportTicketMessageRepository;
 use Box\Mod\Support\Repository\SupportTicketNoteRepository;
 use Box\Mod\Support\Repository\SupportTicketRepository;
@@ -43,6 +44,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     protected SupportTicketRepository $supportTicketRepository;
     protected SupportTicketMessageRepository $supportTicketMessageRepository;
     protected SupportTicketNoteRepository $supportTicketNoteRepository;
+    protected SupportTicketMessageHistoryRepository $supportTicketMessageHistoryRepository;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -56,6 +58,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->supportTicketRepository = $em->getRepository(SupportTicket::class);
         $this->supportTicketMessageRepository = $em->getRepository(SupportTicketMessage::class);
         $this->supportTicketNoteRepository = $em->getRepository(SupportTicketNote::class);
+        $this->supportTicketMessageHistoryRepository = $em->getRepository(SupportTicketMessageHistory::class);
     }
 
     public function getDi(): ?\Pimple\Container
@@ -96,6 +99,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function getSupportTicketNoteRepository(): SupportTicketNoteRepository
     {
         return $this->supportTicketNoteRepository;
+    }
+
+    public function getSupportTicketMessageHistoryRepository(): SupportTicketMessageHistoryRepository
+    {
+        return $this->supportTicketMessageHistoryRepository;
     }
 
     public function getHelpdeskRepository(): HelpdeskRepository
@@ -392,6 +400,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $em->remove($note);
         }
         foreach ($this->getSupportTicketMessageRepository()->findByTicketId($id ?? 0) as $message) {
+            foreach ($this->getSupportTicketMessageHistoryRepository()->findByMessageId((int) $message->getId()) as $history) {
+                $em->remove($history);
+            }
             $em->remove($message);
         }
 
@@ -939,11 +950,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
      */
     public function getMessageHistory(SupportTicketMessage $message): array
     {
-        $repo = $this->di['em']->getRepository(SupportTicketMessageHistory::class);
-
         return array_map(
             fn (SupportTicketMessageHistory $history): array => $history->toApiArray(),
-            $repo->findByMessageId((int) $message->getId()),
+            $this->getSupportTicketMessageHistoryRepository()->findByMessageId((int) $message->getId()),
         );
     }
 

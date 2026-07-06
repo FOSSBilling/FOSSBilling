@@ -26,6 +26,7 @@ use Box\Mod\Support\Repository\CannedResponseRepository;
 use Box\Mod\Support\Repository\HelpdeskRepository;
 use Box\Mod\Support\Repository\KbArticleCategoryRepository;
 use Box\Mod\Support\Repository\KbArticleRepository;
+use Box\Mod\Support\Repository\SupportTicketMessageHistoryRepository;
 use Box\Mod\Support\Repository\SupportTicketMessageRepository;
 use Box\Mod\Support\Repository\SupportTicketNoteRepository;
 use Box\Mod\Support\Repository\SupportTicketRepository;
@@ -121,7 +122,7 @@ function helpdeskFixture(): Helpdesk
     return $helpdesk;
 }
 
-function supportWireKbRepositories(EntityManagerInterface $em, ?KbArticleRepository $articleRepo = null, ?KbArticleCategoryRepository $categoryRepo = null, ?CannedResponseRepository $cannedRepo = null, ?CannedResponseCategoryRepository $cannedCategoryRepo = null, ?HelpdeskRepository $helpdeskRepo = null, ?SupportTicketRepository $supportTicketRepo = null, ?SupportTicketMessageRepository $supportTicketMessageRepo = null, ?SupportTicketNoteRepository $supportTicketNoteRepo = null): void
+function supportWireKbRepositories(EntityManagerInterface $em, ?KbArticleRepository $articleRepo = null, ?KbArticleCategoryRepository $categoryRepo = null, ?CannedResponseRepository $cannedRepo = null, ?CannedResponseCategoryRepository $cannedCategoryRepo = null, ?HelpdeskRepository $helpdeskRepo = null, ?SupportTicketRepository $supportTicketRepo = null, ?SupportTicketMessageRepository $supportTicketMessageRepo = null, ?SupportTicketNoteRepository $supportTicketNoteRepo = null, ?SupportTicketMessageHistoryRepository $supportTicketMessageHistoryRepo = null): void
 {
     $articleRepo ??= Mockery::mock(KbArticleRepository::class)->shouldIgnoreMissing();
     $categoryRepo ??= Mockery::mock(KbArticleCategoryRepository::class)->shouldIgnoreMissing();
@@ -131,6 +132,7 @@ function supportWireKbRepositories(EntityManagerInterface $em, ?KbArticleReposit
     $supportTicketRepo ??= Mockery::mock(SupportTicketRepository::class)->shouldIgnoreMissing();
     $supportTicketMessageRepo ??= Mockery::mock(SupportTicketMessageRepository::class)->shouldIgnoreMissing();
     $supportTicketNoteRepo ??= Mockery::mock(SupportTicketNoteRepository::class)->shouldIgnoreMissing();
+    $supportTicketMessageHistoryRepo ??= Mockery::mock(SupportTicketMessageHistoryRepository::class)->shouldIgnoreMissing();
 
     $em->shouldReceive('getRepository')
         ->with(KbArticle::class)
@@ -164,6 +166,10 @@ function supportWireKbRepositories(EntityManagerInterface $em, ?KbArticleReposit
         ->with(SupportTicketNote::class)
         ->byDefault()
         ->andReturn($supportTicketNoteRepo);
+    $em->shouldReceive('getRepository')
+        ->with(SupportTicketMessageHistory::class)
+        ->byDefault()
+        ->andReturn($supportTicketMessageHistoryRepo);
 }
 
 /*
@@ -757,12 +763,14 @@ test('removes tickets by client', function (): void {
     expect($result)->toBeNull();
 });
 
-test('removes a ticket', function (): void {
+test('removes a ticket, its messages, and their edit history', function (): void {
     $service = Mockery::mock(Service::class)->makePartial();
     $note = new SupportTicketNote();
     setEntityId($note, 1);
     $message = new SupportTicketMessage();
     setEntityId($message, 1);
+    $history = new SupportTicketMessageHistory();
+    setEntityId($history, 1);
 
     $noteRepo = Mockery::mock(SupportTicketNoteRepository::class);
     $noteRepo->shouldReceive('findByTicketId')->atLeast()->once()
@@ -770,14 +778,26 @@ test('removes a ticket', function (): void {
     $messageRepo = Mockery::mock(SupportTicketMessageRepository::class);
     $messageRepo->shouldReceive('findByTicketId')->atLeast()->once()
         ->andReturn([$message]);
+    $historyRepo = Mockery::mock(SupportTicketMessageHistoryRepository::class);
+    $historyRepo->shouldReceive('findByMessageId')->atLeast()->once()
+        ->with(1)
+        ->andReturn([$history]);
     $service->shouldReceive('getSupportTicketNoteRepository')->atLeast()->once()
         ->andReturn($noteRepo);
     $service->shouldReceive('getSupportTicketMessageRepository')->atLeast()->once()
         ->andReturn($messageRepo);
+    $service->shouldReceive('getSupportTicketMessageHistoryRepository')->atLeast()->once()
+        ->andReturn($historyRepo);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
     supportWireKbRepositories($emMock);
-    $emMock->shouldReceive('remove')->atLeast()->once();
+    $removed = [];
+    $emMock->shouldReceive('remove')->atLeast()->once()
+        ->with(Mockery::on(function ($entity) use (&$removed): bool {
+            $removed[] = $entity;
+
+            return true;
+        }));
     $emMock->shouldReceive('flush')->atLeast()->once();
 
     $di = container();
@@ -790,6 +810,7 @@ test('removes a ticket', function (): void {
 
     $result = $service->rm($ticket);
     expect($result)->toBeTrue();
+    expect($removed)->toContain($note, $message, $history, $ticket);
 });
 
 test('converts ticket to api array', function (): void {
@@ -1895,6 +1916,33 @@ test('ticket message update skips creating history when content is unchanged', f
 
     $result = $service->ticketMessageUpdate($message, 'Same content', $admin);
     expect($result)->toBeTrue();
+});
+
+test('gets message history', function (): void {
+    $service = new Service();
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+
+    $message = new SupportTicketMessage();
+    setEntityId($message, 1);
+
+    $history = new SupportTicketMessageHistory();
+    setEntityId($history, 1);
+    $history->setMessage($message);
+    $history->setAdminId(7);
+    $history->setContent('Original content');
+
+    $historyRepo = Mockery::mock(SupportTicketMessageHistoryRepository::class);
+    $historyRepo->shouldReceive('findByMessageId')->atLeast()->once()
+        ->with(1)
+        ->andReturn([$history]);
+    supportWireKbRepositories($emMock, supportTicketMessageHistoryRepo: $historyRepo);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $service->setDi($di);
+
+    $result = $service->getMessageHistory($message);
+    expect($result)->toBe([$history->toApiArray()]);
 });
 
 dataset('ticketReplyProvider', function () {
