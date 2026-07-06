@@ -19,12 +19,14 @@ use Box\Mod\Support\Entity\KbArticle;
 use Box\Mod\Support\Entity\KbArticleCategory;
 use Box\Mod\Support\Entity\SupportTicket;
 use Box\Mod\Support\Entity\SupportTicketMessage;
+use Box\Mod\Support\Entity\SupportTicketMessageHistory;
 use Box\Mod\Support\Entity\SupportTicketNote;
 use Box\Mod\Support\Repository\CannedResponseCategoryRepository;
 use Box\Mod\Support\Repository\CannedResponseRepository;
 use Box\Mod\Support\Repository\HelpdeskRepository;
 use Box\Mod\Support\Repository\KbArticleCategoryRepository;
 use Box\Mod\Support\Repository\KbArticleRepository;
+use Box\Mod\Support\Repository\SupportTicketMessageHistoryRepository;
 use Box\Mod\Support\Repository\SupportTicketMessageRepository;
 use Box\Mod\Support\Repository\SupportTicketNoteRepository;
 use Box\Mod\Support\Repository\SupportTicketRepository;
@@ -42,6 +44,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     protected SupportTicketRepository $supportTicketRepository;
     protected SupportTicketMessageRepository $supportTicketMessageRepository;
     protected SupportTicketNoteRepository $supportTicketNoteRepository;
+    protected SupportTicketMessageHistoryRepository $supportTicketMessageHistoryRepository;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -55,6 +58,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->supportTicketRepository = $em->getRepository(SupportTicket::class);
         $this->supportTicketMessageRepository = $em->getRepository(SupportTicketMessage::class);
         $this->supportTicketNoteRepository = $em->getRepository(SupportTicketNote::class);
+        $this->supportTicketMessageHistoryRepository = $em->getRepository(SupportTicketMessageHistory::class);
     }
 
     public function getDi(): ?\Pimple\Container
@@ -95,6 +99,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function getSupportTicketNoteRepository(): SupportTicketNoteRepository
     {
         return $this->supportTicketNoteRepository;
+    }
+
+    public function getSupportTicketMessageHistoryRepository(): SupportTicketMessageHistoryRepository
+    {
+        return $this->supportTicketMessageHistoryRepository;
     }
 
     public function getHelpdeskRepository(): HelpdeskRepository
@@ -391,6 +400,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $em->remove($note);
         }
         foreach ($this->getSupportTicketMessageRepository()->findByTicketId($id ?? 0) as $message) {
+            foreach ($this->getSupportTicketMessageHistoryRepository()->findByMessageId((int) $message->getId()) as $history) {
+                $em->remove($history);
+            }
             $em->remove($message);
         }
 
@@ -908,13 +920,40 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function ticketMessageUpdate(SupportTicketMessage $model, string $content): bool
+    public function ticketMessageUpdate(SupportTicketMessage $model, string $content, \Model_Admin $identity): bool
     {
-        $model->setContent($content);
+        if ($model->getAdminId() === null) {
+            throw new InformationException('Only admin replies can be edited');
+        }
 
+        $previousContent = (string) $model->getContent();
+        if ($previousContent === $content) {
+            return true;
+        }
+
+        $history = new SupportTicketMessageHistory();
+        $history->setMessage($model);
+        $history->setAdminId((int) $identity->id);
+        $history->setContent($previousContent);
+        $this->di['em']->persist($history);
+
+        $model->setContent($content);
         $this->di['em']->flush();
 
+        $this->di['logger']->info('Edited ticket message #%s', $model->getId());
+
         return true;
+    }
+
+    /**
+     * @return array[]
+     */
+    public function getMessageHistory(SupportTicketMessage $message): array
+    {
+        return array_map(
+            fn (SupportTicketMessageHistory $history): array => $history->toApiArray(),
+            $this->getSupportTicketMessageHistoryRepository()->findByMessageId((int) $message->getId()),
+        );
     }
 
     /**

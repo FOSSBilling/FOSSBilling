@@ -492,6 +492,7 @@ class UpdatePatcher implements InjectionAwareInterface
             81 => 'patch81',
             82 => 'patch82',
             83 => 'patch83',
+            84 => 'patch84',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2257,6 +2258,24 @@ class UpdatePatcher implements InjectionAwareInterface
     {
         if (!$this->tableHasIndex('invoice_item', 'invoice_item_pending_renewal_idx')) {
             $this->executeSql('ALTER TABLE `invoice_item` ADD INDEX `invoice_item_pending_renewal_idx` (`rel_id`(20), `type`, `task`, `status`, `invoice_id`)');
+        }
+    }
+
+    private function patch84(): void
+    {
+        // Admins can now edit ticket replies; this table snapshots a message's prior content on each edit.
+        // @see https://github.com/FOSSBilling/FOSSBilling/issues/2317
+        if (!$this->tableExists('support_ticket_message_history')) {
+            $this->executeSql('CREATE TABLE `support_ticket_message_history` (
+                `id` bigint(20) NOT NULL AUTO_INCREMENT,
+                `support_ticket_message_id` bigint(20) NOT NULL,
+                `admin_id` bigint(20) DEFAULT NULL,
+                `content` text,
+                `created_at` datetime DEFAULT NULL,
+                `updated_at` datetime DEFAULT NULL,
+                PRIMARY KEY (`id`),
+                KEY `support_ticket_message_id_idx` (`support_ticket_message_id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8;');
         }
     }
 

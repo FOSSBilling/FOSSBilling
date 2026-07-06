@@ -188,6 +188,7 @@ function container(): Container
         $supportTicketRepository = \Mockery::mock(\Box\Mod\Support\Repository\SupportTicketRepository::class)->shouldIgnoreMissing();
         $supportTicketMessageRepository = \Mockery::mock(\Box\Mod\Support\Repository\SupportTicketMessageRepository::class)->shouldIgnoreMissing();
         $supportTicketNoteRepository = \Mockery::mock(\Box\Mod\Support\Repository\SupportTicketNoteRepository::class)->shouldIgnoreMissing();
+        $supportTicketMessageHistoryRepository = \Mockery::mock(\Box\Mod\Support\Repository\SupportTicketMessageHistoryRepository::class)->shouldIgnoreMissing();
 
         $em = \Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
         $em->shouldReceive('getRepository')->byDefault()->andReturnUsing(static fn (string $class): object => match ($class) {
@@ -205,6 +206,7 @@ function container(): Container
             \Box\Mod\Support\Entity\SupportTicket::class => $supportTicketRepository,
             \Box\Mod\Support\Entity\SupportTicketMessage::class => $supportTicketMessageRepository,
             \Box\Mod\Support\Entity\SupportTicketNote::class => $supportTicketNoteRepository,
+            \Box\Mod\Support\Entity\SupportTicketMessageHistory::class => $supportTicketMessageHistoryRepository,
             \Box\Mod\Extension\Entity\Extension::class => \Mockery::mock(\Box\Mod\Extension\Repository\ExtensionRepository::class)->shouldIgnoreMissing(),
             default => $extensionMetaRepository,
         });
