@@ -1082,6 +1082,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
      */
     public function tldFindOneByTld($tld)
     {
+        $tld = '.' . ltrim((string) $tld, '.');
+
         return $this->di['db']->findOne('Tld', 'tld = :tld ORDER by id ASC', [':tld' => $tld]);
     }
 
