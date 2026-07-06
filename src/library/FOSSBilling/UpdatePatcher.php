@@ -2256,7 +2256,7 @@ class UpdatePatcher implements InjectionAwareInterface
     private function patch83(): void
     {
         if (!$this->tableHasIndex('invoice_item', 'invoice_item_pending_renewal_idx')) {
-            $this->executeSql('ALTER TABLE `invoice_item` ADD INDEX `invoice_item_pending_renewal_idx` (`rel_id`(20), `type`(32), `task`(32), `status`(32), `invoice_id`)');
+            $this->executeSql('ALTER TABLE `invoice_item` ADD INDEX `invoice_item_pending_renewal_idx` (`rel_id`(20), `type`, `task`, `status`, `invoice_id`)');
         }
     }
 

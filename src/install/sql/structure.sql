@@ -633,7 +633,7 @@ CREATE TABLE `invoice_item` (
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `invoice_id_idx` (`invoice_id`),
-  KEY `invoice_item_pending_renewal_idx` (`rel_id`(20), `type`(32), `task`(32), `status`(32), `invoice_id`)
+  KEY `invoice_item_pending_renewal_idx` (`rel_id`(20), `type`, `task`, `status`, `invoice_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
