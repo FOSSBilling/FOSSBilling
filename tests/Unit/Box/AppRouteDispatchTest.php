@@ -32,6 +32,13 @@ class BoxAppRouteDispatchSharedController implements FOSSBilling\InjectionAwareI
             ? 'di:available'
             : 'di:missing';
     }
+
+    public function collectDebugbar(Box_App $app): string
+    {
+        $app->getDebugBar()->getData();
+
+        return 'shared-debugbar:collected';
+    }
 }
 
 class BoxAppRouteDispatchApp extends Box_App
@@ -55,8 +62,20 @@ class BoxAppRouteDispatchApp extends Box_App
             return;
         }
 
+        if ($this->routeMode === 'shared-debugbar-collect') {
+            $this->get('/shared-debugbar-collect', 'collectDebugbar', [], BoxAppRouteDispatchSharedController::class);
+
+            return;
+        }
+
         if ($this->routeMode === 'default-argument') {
             $this->get('/default', 'withDefault');
+
+            return;
+        }
+
+        if ($this->routeMode === 'debugbar-collect') {
+            $this->get('/debugbar-collect', 'collectDebugbar');
 
             return;
         }
@@ -77,6 +96,13 @@ class BoxAppRouteDispatchApp extends Box_App
     public function withDefault(string $tab = 'overview'): string
     {
         return 'default:' . $tab;
+    }
+
+    public function collectDebugbar(): string
+    {
+        $this->getDebugBar()->getData();
+
+        return 'debugbar:collected';
     }
 
     public function render($fileName, $variableArray = []): string
@@ -148,6 +174,20 @@ test('app dispatch uses controller default arguments when route params are absen
 
     expect($response->getStatusCode())->toBe(200)
         ->and($response->getContent())->toBe('default:overview');
+});
+
+test('app route mapping timing stops before debug bar data is collected during render', function (): void {
+    $response = routeDispatchApp('debugbar-collect', '/debugbar-collect')->run();
+
+    expect($response->getStatusCode())->toBe(200)
+        ->and($response->getContent())->toBe('debugbar:collected');
+});
+
+test('app shared route mapping timing stops before debug bar data is collected during render', function (): void {
+    $response = routeDispatchApp('shared-debugbar-collect', '/shared-debugbar-collect')->run();
+
+    expect($response->getStatusCode())->toBe(200)
+        ->and($response->getContent())->toBe('shared-debugbar:collected');
 });
 
 test('maintenance path allowlist uses literal prefixes and explicit wildcards', function (): void {
