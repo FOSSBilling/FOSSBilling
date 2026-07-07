@@ -723,14 +723,14 @@ $di['password'] = fn (): FOSSBilling\PasswordManager => new FOSSBilling\Password
  *
  * @return \Box_Translate The new translation object that was just created.
  */
-$di['translate'] = $di->protect(function ($textDomain = '') {
+$di['translate'] = $di->protect(function ($textDomain = '') use ($di) {
     $tr = new Box_Translate();
 
     if (!empty($textDomain)) {
         $tr->setDomain($textDomain);
     }
 
-    $locale = FOSSBilling\i18n::getActiveLocale();
+    $locale = FOSSBilling\i18n::getActiveLocale($di['request']);
 
     $tr->setLocale($locale);
     $tr->setup();

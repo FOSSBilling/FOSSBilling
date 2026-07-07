@@ -192,7 +192,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      */
     public function locale(): string
     {
-        return i18n::getActiveLocale();
+        return i18n::getActiveLocale($this->getDi()['request']);
     }
 
     /**

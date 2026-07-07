@@ -16,10 +16,12 @@ use Symfony\Component\HttpFoundation\Request;
 
 beforeEach(function (): void {
     Config::setProperty('i18n.timezone', 'UTC');
+    Config::setProperty('i18n.locale', 'en_US');
 });
 
 afterEach(function (): void {
     Config::setProperty('i18n.timezone', 'UTC');
+    Config::setProperty('i18n.locale', 'en_US');
 });
 
 function requestWithTimezoneCookie(?string $timezone = null): Request
@@ -169,4 +171,28 @@ test('validateTimezone rejects clearly invalid timezone identifiers', function (
 
 test('validateTimezone throws InformationException for an unknown identifier', function (): void {
     expect(fn (): ?string => i18n::validateTimezone('Mars/Olympus_Mons'))->toThrow(FOSSBilling\InformationException::class);
+});
+
+test('getActiveLocale returns the fb_locale cookie when it matches an enabled locale', function (): void {
+    $request = Request::create('/');
+    $request->cookies->set('fb_locale', 'de_DE');
+
+    expect(i18n::getActiveLocale($request, false))->toBe('de_DE');
+});
+
+test('getActiveLocale ignores an invalid fb_locale cookie and falls back to config default', function (): void {
+    $request = Request::create('/');
+    $request->cookies->set('fb_locale', 'xx_XX');
+
+    expect(i18n::getActiveLocale($request, false))->toBe('en_US');
+});
+
+test('getActiveLocale falls back to config default when no cookie is set and autoDetect is false', function (): void {
+    Config::setProperty('i18n.locale', 'de_DE');
+
+    expect(i18n::getActiveLocale(Request::create('/'), false))->toBe('de_DE');
+});
+
+test('getActiveLocale returns the configured default when no cookie and no Accept-Language header', function (): void {
+    expect(i18n::getActiveLocale(Request::create('/'), false))->toBe('en_US');
 });

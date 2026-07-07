@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling\GeoIP;
 
-use FOSSBilling\i18n;
+use FOSSBilling\Config;
 use MaxMind\Db\Reader as MaxMindReader;
 use MaxMind\Db\Reader\InvalidDatabaseException;
 use Pimple\Container;
@@ -90,7 +90,7 @@ class Reader
      * Constructs a new GeoIP reader instance.
      *
      * @param string|null $database (Optional) a path to the database to load> Will default to the system's country database
-     * @param string|null $locale   (Optional) the locale to use for country names. Defaults to the locale being used by FOSSBilling.
+     * @param string|null $locale   (Optional) the locale to use for country names. Defaults to the configured default locale.
      *
      * @throws \InvalidArgumentException for invalid database path or unknown arguments
      * @throws InvalidDatabaseException  if the database is invalid or there is an error reading from it
@@ -102,7 +102,7 @@ class Reader
         $this->reader = new MaxMindReader($database);
 
         if ($locale === null) {
-            $locale = i18n::getActiveLocale();
+            $locale = Config::getProperty('i18n.locale', 'en_US');
         }
 
         $original = $locale;

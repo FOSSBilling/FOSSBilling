@@ -29,28 +29,32 @@ class i18n
     /**
      * Attempts to get the correct locale for the current user, or a suitable fallback option if it's unavailable.
      *
-     * @param bool $autoDetect indicates if the user's Accept-Language header should be used to select the correct locale for them
+     * @param Request $request    the current HTTP request (for cookie / Accept-Language header reads)
+     * @param bool    $autoDetect indicates if the user's Accept-Language header should be used to select the correct locale for them
      *
      * @return string the locale code to use for the system
      */
-    public static function getActiveLocale(bool $autoDetect = true): string
+    public static function getActiveLocale(Request $request, bool $autoDetect = true): string
     {
         $locale = null;
+
+        $cookieLocale = $request->cookies->get('fb_locale');
+        $cookieBBLANG = $request->cookies->get('BBLANG');
 
         /*
          * If the locale cookie is set and it's one of the enabled locales, use that.
          * Otherwise, fallback to auto-detection when enable.
          */
-        if (!empty($_COOKIE['fb_locale']) && in_array($_COOKIE['fb_locale'], self::getLocales())) {
-            $locale = $_COOKIE['fb_locale'];
-        } elseif (!empty($_COOKIE['BBLANG']) && in_array($_COOKIE['BBLANG'], self::getLocales())) {
-            $locale = $_COOKIE['BBLANG'];
+        if (!empty($cookieLocale) && in_array($cookieLocale, self::getLocales())) {
+            $locale = $cookieLocale;
+        } elseif (!empty($cookieBBLANG) && in_array($cookieBBLANG, self::getLocales())) {
+            $locale = $cookieBBLANG;
             if (!headers_sent()) {
                 setcookie('fb_locale', (string) $locale, ['expires' => strtotime('+1 month'), 'path' => '/']);
                 setcookie('BBLANG', '', ['expires' => time() - 3600, 'path' => '/']);
             }
         } elseif ($autoDetect && self::isBrowserLocaleDetectionEnabled()) {
-            $locale = self::getBrowserLocale();
+            $locale = self::getBrowserLocale($request);
         }
 
         // If we somehow still don't have a locale, use the default / fallback.
@@ -71,9 +75,9 @@ class i18n
      *
      * @return string|null the user's preferred language/locale or null if not found
      */
-    private static function getBrowserLocale(): ?string
+    private static function getBrowserLocale(Request $request): ?string
     {
-        $header = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
+        $header = $request->headers->get('Accept-Language', '');
 
         try {
             $detectedLocale = @\Locale::acceptFromHttp($header);
@@ -220,7 +224,7 @@ class i18n
 
         // Handle when FOSSBilling is running with a dummy locale folder.
         $localePhpPath = Path::join(PATH_LANGS, 'locales.php');
-        $array = ($filesystem->exists($localePhpPath)) ? include $localePhpPath : Locales::getNames(self::getActiveLocale(false));
+        $array = ($filesystem->exists($localePhpPath)) ? include $localePhpPath : Locales::getNames(Config::getProperty('i18n.locale', 'en_US'));
 
         foreach ($locales as $locale) {
             $title = $array[$locale] ?? $locale;
