@@ -1776,7 +1776,7 @@ test('guest ticket reply', function (): void {
     $emMock = Mockery::mock(EntityManagerInterface::class);
     supportWireKbRepositories($emMock);
     $emMock->shouldReceive('persist')->atLeast()->once()
-        ->andReturnUsing(function ($entity) {
+        ->andReturnUsing(function ($entity): void {
             if ($entity->getId() === null) {
                 \Tests\Helpers\setEntityId($entity, 1);
             }
@@ -1969,7 +1969,7 @@ test('ticket reply', function (Model_Admin|Model_Client $identity): void {
     $emMock = Mockery::mock(EntityManagerInterface::class);
     supportWireKbRepositories($emMock);
     $emMock->shouldReceive('persist')->atLeast()->once()
-        ->andReturnUsing(function ($entity) {
+        ->andReturnUsing(function ($entity): void {
             if ($entity->getId() === null) {
                 \Tests\Helpers\setEntityId($entity, 1);
             }
@@ -2009,7 +2009,7 @@ test('ticket create for admin', function (): void {
     $emMock = Mockery::mock(EntityManagerInterface::class);
     supportWireKbRepositories($emMock);
     $emMock->shouldReceive('persist')->atLeast()->once()
-        ->andReturnUsing(function ($entity) {
+        ->andReturnUsing(function ($entity): void {
             if ($entity->getId() === null) {
                 \Tests\Helpers\setEntityId($entity, 1);
             }
@@ -2057,7 +2057,7 @@ test('ticket create for client', function (): void {
     $emMock = Mockery::mock(EntityManagerInterface::class);
     supportWireKbRepositories($emMock);
     $emMock->shouldReceive('persist')->atLeast()->once()
-        ->andReturnUsing(function ($entity) {
+        ->andReturnUsing(function ($entity): void {
             if ($entity->getId() === null) {
                 \Tests\Helpers\setEntityId($entity, 1);
             }
@@ -2292,7 +2292,7 @@ test('message create for ticket', function (Model_Admin|Model_Client $identity):
     $emMock = Mockery::mock(EntityManagerInterface::class);
     supportWireKbRepositories($emMock);
     $emMock->shouldReceive('persist')->atLeast()->once()
-        ->andReturnUsing(function ($entity) {
+        ->andReturnUsing(function ($entity): void {
             if ($entity->getId() === null) {
                 \Tests\Helpers\setEntityId($entity, 1);
             }
@@ -2389,7 +2389,7 @@ test('note create', function (): void {
     $emMock = Mockery::mock(EntityManagerInterface::class);
     supportWireKbRepositories($emMock);
     $emMock->shouldReceive('persist')->atLeast()->once()
-        ->andReturnUsing(function ($entity) {
+        ->andReturnUsing(function ($entity): void {
             if ($entity->getId() === null) {
                 \Tests\Helpers\setEntityId($entity, 1);
             }

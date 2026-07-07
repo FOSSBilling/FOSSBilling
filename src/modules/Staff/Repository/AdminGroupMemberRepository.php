@@ -103,7 +103,7 @@ class AdminGroupMemberRepository extends EntityRepository
      */
     public function getMemberIdsInGroup(int $groupId): array
     {
-        return array_map('intval', $this->getEntityManager()->getConnection()->fetchFirstColumn(
+        return array_map(intval(...), $this->getEntityManager()->getConnection()->fetchFirstColumn(
             'SELECT DISTINCT a.id
              FROM admin a
              INNER JOIN admin_group_member m ON m.admin_id = a.id

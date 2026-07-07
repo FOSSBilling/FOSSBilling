@@ -101,7 +101,7 @@ function staffEntityManager(object $groupRepository, ?object $groupMemberReposit
         public array $persisted = [];
         public array $removed = [];
 
-        public function __construct(private object $groupRepository, private object $groupMemberRepository)
+        public function __construct(private readonly object $groupRepository, private readonly object $groupMemberRepository)
         {
         }
 

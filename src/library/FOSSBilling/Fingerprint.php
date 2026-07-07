@@ -226,7 +226,7 @@ class Fingerprint
         ];
     }
 
-    private function getIpCountry()
+    private function getIpCountry(): string
     {
         // Use the CF header if it is set.
         $cfIpCountry = $this->request->headers->get('CF-IPCountry');

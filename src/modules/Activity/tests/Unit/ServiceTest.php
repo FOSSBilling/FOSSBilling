@@ -101,9 +101,9 @@ test('log email stores the given attachment', function (): void {
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
     $dbalMock->shouldReceive('insert')
         ->once()
-        ->with('activity_client_email', Mockery::on(static fn (array $values) => $values['attachment_name'] === $attachment['name']
+        ->with('activity_client_email', Mockery::on(static fn (array $values): bool => $values['attachment_name'] === $attachment['name']
             && $values['attachment_content'] === $attachment['content']
-            && $values['attachment_mime'] === $attachment['mime']), Mockery::on(static fn (array $types) => ($types['attachment_content'] ?? null) === Doctrine\DBAL\Types\Types::BLOB))
+            && $values['attachment_mime'] === $attachment['mime']), Mockery::on(static fn (array $types): bool => ($types['attachment_content'] ?? null) === Doctrine\DBAL\Types\Types::BLOB))
         ->andReturn(1);
 
     $di['dbal'] = $dbalMock;
