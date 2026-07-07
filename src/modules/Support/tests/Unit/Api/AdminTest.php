@@ -320,16 +320,9 @@ test('ticket close already closed', function (): void {
 
 test('ticket create', function (): void {
     $api = new Box\Mod\Support\Api\Admin();
-    $clientModel = new Model_Client();
-    $clientModel->loadBean(new Tests\Helpers\DummyBean());
 
     $helpdeskModel = adminHelpdeskFixture();
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn($clientModel);
     $repoMock = Mockery::mock(HelpdeskRepository::class);
     $repoMock->shouldReceive('find')
         ->atLeast()->once()
@@ -343,7 +336,6 @@ test('ticket create', function (): void {
         ->andReturn($randID);
 
     $di = container();
-    $di['db'] = $dbMock;
     $api->setDi($di);
 
     $api->setService($serviceMock);

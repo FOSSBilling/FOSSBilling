@@ -13,7 +13,6 @@ use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\Http\ExceptionResponseFactory;
 use FOSSBilling\Http\RequestFactory;
-
 use FOSSBilling\SentryHelper;
 use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;

@@ -19,7 +19,6 @@ use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\Http\ApiResponseFactory;
 use FOSSBilling\Http\HttpResponseException;
-
 use FOSSBilling\Http\ResponseFactory;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Security\AuthenticationRequiredException;

@@ -11,7 +11,6 @@ declare(strict_types=1);
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'load.php';
 
 use FOSSBilling\Http\ApiResponseFactory;
-
 use FOSSBilling\Http\ResponseFactory;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\JsonResponse;

@@ -142,10 +142,9 @@ class Service implements InjectionAwareInterface
             $params['search'] = '%' . $data['search'] . '%';
         }
 
-        // Limit results for performance
         $sql .= sprintf(' ORDER BY name ASC LIMIT %u', $limit);
 
-        return $this->di['db']->getAssoc($sql, $params);
+        return $this->di['dbal']->fetchAllKeyValue($sql, $params);
     }
 
     public function getPermissions($member_id): array

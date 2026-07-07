@@ -1327,6 +1327,9 @@ class Service implements InjectionAwareInterface
      * When the RedBean transaction rolls back, Doctrine-side changes persist
      * orphaned unless explicitly cleaned up.
      *
+     * Idempotent: safe to call multiple times. Returns early if redemptions
+     * were already cleaned up by a previous invocation.
+     *
      * @param int[] $orderIds      Order IDs from the rolled-back RedBean transaction
      * @param int   $reservedCount Number of successful reservePromoForOrder() calls
      */
@@ -1341,20 +1344,24 @@ class Service implements InjectionAwareInterface
             return;
         }
 
-        if ($orderIds !== []) {
-            $redemptions = $this->getPromoRedemptionRepository()->findBy([
-                'promoId' => $promoId,
-                'clientOrderId' => $orderIds,
-            ]);
-            foreach ($redemptions as $redemption) {
-                $this->di['em']->remove($redemption);
-            }
-            if ($redemptions !== []) {
-                $this->di['em']->flush();
-            }
+        if ($orderIds === []) {
+            return;
         }
 
-        $this->getPromoRepository()->decrementUsage($promoId, $reservedCount, new \DateTimeImmutable());
+        $redemptions = $this->getPromoRedemptionRepository()->findBy([
+            'promoId' => $promoId,
+            'clientOrderId' => $orderIds,
+        ]);
+        if ($redemptions === []) {
+            return;
+        }
+
+        foreach ($redemptions as $redemption) {
+            $this->di['em']->remove($redemption);
+        }
+        $this->di['em']->flush();
+
+        $this->getPromoRepository()->decrementUsage($promoId, count($redemptions), new \DateTimeImmutable());
     }
 
     /**

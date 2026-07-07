@@ -96,7 +96,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
-     * @deprecated Use guest_tickets_enabled() instead.
+     * @deprecated use guest_tickets_enabled() instead
      */
     public function public_tickets_enabled(): bool
     {

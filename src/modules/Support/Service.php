@@ -367,14 +367,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         if ($model->getRelType() === SupportTicket::REL_TYPE_ORDER) {
             $clientId = $model->getClientId();
-            /** @todo Doctrine: use Client entity once Client is migrated.
-             *        Kept as Model_Client because the order module's
-             *        findForClientById() still expects it. */
-            $client = $clientId !== null ? $this->di['db']->load('Client', $clientId) : null;
-            $orderService = $this->di['mod_service']('order');
-            $o = $client instanceof \Model_Client ? $orderService->findForClientById($client, $model->getRelId()) : null;
-            if ($o instanceof \Model_ClientOrder) {
-                $result['order'] = $orderService->toApiArray($o, false);
+            if ($clientId !== null && $this->fetchClientSummary($clientId) !== null) {
+                $order = $this->di['mod_service']('order')->findByClientIdAndOrderId($clientId, (int) $model->getRelId());
+                if ($order instanceof \Model_ClientOrder) {
+                    $result['order'] = $this->di['mod_service']('order')->toApiArray($order, false);
+                }
             }
         }
 
@@ -652,10 +649,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         if ($identity instanceof \Model_Admin) {
-            // Admin view needs the full client module api array, which still
-            // expects a Model_Client. Keep the legacy loader until the Client
-            // module is migrated.
-            /** @todo Doctrine: use Client entity once Client is migrated */
+            // Requires Model_Client until Client::toApiArray() is migrated to Doctrine.
             $client = $this->di['db']->load('Client', $clientId);
 
             return $client instanceof \Model_Client
@@ -987,7 +981,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return (int) $msg->getId();
     }
 
-    public function ticketCreateForAdmin(\Model_Client $client, Helpdesk $helpdesk, array $data, \Model_Admin $identity): int
+    public function ticketCreateForAdmin(int $clientId, Helpdesk $helpdesk, array $data, \Model_Admin $identity): int
     {
         $status = $data['status'] ?? SupportTicket::STATUS_ONHOLD;
 
@@ -995,7 +989,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $em = $this->di['em'];
         $ticket = new SupportTicket();
-        $ticket->setClientId((int) $client->id);
+        $ticket->setClientId($clientId);
         $ticket->setStatus($status);
         $ticket->setSubject($data['subject']);
         $ticket->setSupportHelpdesk($helpdesk);

@@ -590,5 +590,4 @@ class Server_Manager_Plesk extends Server_Manager
             'state' => $client->getState(),
         ];
     }
-
 }

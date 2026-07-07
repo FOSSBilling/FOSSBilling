@@ -42,5 +42,4 @@ class Simple
 
         return $prefix . $string;
     }
-
 }

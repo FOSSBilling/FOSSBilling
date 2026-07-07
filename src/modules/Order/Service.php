@@ -1548,6 +1548,18 @@ class Service implements InjectionAwareInterface
         return $this->di['db']->findOne('ClientOrder', 'id = :id AND client_id = :client_id', $bindings);
     }
 
+    public function findByClientIdAndOrderId(int $clientId, int $orderId): ?\Model_ClientOrder
+    {
+        $bindings = [
+            ':id' => $orderId,
+            ':client_id' => $clientId,
+        ];
+
+        $order = $this->di['db']->findOne('ClientOrder', 'id = :id AND client_id = :client_id', $bindings);
+
+        return $order instanceof \Model_ClientOrder ? $order : null;
+    }
+
     public function getOrderServiceData(\Model_ClientOrder $order, $identity = null)
     {
         $orderId = $order->id;

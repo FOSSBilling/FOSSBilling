@@ -14,7 +14,6 @@ global $di;
 
 use DebugBar\DataCollector\TimeDataCollector;
 use FOSSBilling\Http\RequestFactory;
-
 use Symfony\Component\HttpFoundation\Response;
 
 $config = FOSSBilling\Config::getConfig();
