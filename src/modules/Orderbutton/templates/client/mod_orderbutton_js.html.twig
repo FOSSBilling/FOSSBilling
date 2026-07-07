@@ -32,6 +32,17 @@
             if (initiallyShown) {
                 setActiveStep(initiallyShown.id);
             }
+
+            orderSteps.querySelectorAll('.order-steps__item').forEach(item => {
+                item.addEventListener('click', function () {
+                    if (!item.classList.contains('order-steps__item--done')) { return; }
+                    const panel = document.getElementById(item.getAttribute('data-step-target'));
+                    if (panel) {
+                        bootstrap.Collapse.getOrCreateInstance(panel).show();
+                        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+            });
         }
 
         document.getElementById('goToAccountStep')?.addEventListener('click', function() {
@@ -93,7 +104,9 @@
         let checkoutEl = document.getElementById('checkout');
         bootstrap.Collapse.getOrCreateInstance(registerEl).hide();
         document.querySelector("#checkoutButton").hidden = false;
-        document.querySelector("#loginMessage").hidden = true;
+        document.querySelector("#loginMessage").classList.add('d-none');
+        const loginMessageRail = document.getElementById('loginMessage-rail');
+        if (loginMessageRail) { loginMessageRail.classList.add('d-none'); }
         setTimeout(() => {
             registerEl.parentElement.remove();
             bootstrap.Collapse.getOrCreateInstance(checkoutEl).show();
@@ -111,7 +124,9 @@
                 let registerEl = document.getElementById('register');
                 bootstrap.Collapse.getOrCreateInstance(registerEl).hide();
                 document.querySelector("#checkoutButton").hidden = false;
-                document.querySelector("#loginMessage").hidden = true;
+                document.querySelector("#loginMessage").classList.add('d-none');
+                const loginMessageRail = document.getElementById('loginMessage-rail');
+                if (loginMessageRail) { loginMessageRail.classList.add('d-none'); }
                 setTimeout(() => {
                     registerEl.parentElement.remove();
                     bootstrap.Collapse.getOrCreateInstance(document.getElementById('checkout')).show();

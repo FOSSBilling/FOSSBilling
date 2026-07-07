@@ -9,6 +9,7 @@
     {% if cart.items %}
     {% set cart_currency = guest.cart_get_currency %}
     {% set tax_amount = 0 %}
+    {% set profile = client ? client.profile_get : null %}
     {% if client and client.client_is_taxable %}
         {% set tax_rate = client.invoice_get_tax_rate %}
         {% set tax_amount = cart.total * tax_rate / 100 %}
@@ -39,12 +40,12 @@
                 <div class="tn-configure-layout">
                     <div class="tn-configure-layout__main">
 
-                        {% if client %}
+                        {% if client and profile %}
                             <div class="tn-identity-chip mb-3">
-                                <span class="tn-avatar tn-avatar--circle" style="width:36px;height:36px;">{{ client.first_name|slice(0,1)|upper }}{{ client.last_name|slice(0,1)|upper }}</span>
+                                <span class="tn-avatar tn-avatar--circle" style="width:36px;height:36px;">{{ profile.first_name|slice(0,1)|upper }}{{ profile.last_name|slice(0,1)|upper }}</span>
                                 <div class="tn-identity-chip__body">
-                                    <span class="tn-identity-chip__name">{{ client.first_name }} {{ client.last_name }}</span>
-                                    <span class="tn-identity-chip__meta text-muted small">{{ client.email }}{% if client.company %} &middot; {{ client.company }}{% endif %}</span>
+                                    <span class="tn-identity-chip__name">{{ profile.first_name }} {{ profile.last_name }}</span>
+                                    <span class="tn-identity-chip__meta text-muted small">{{ profile.email }}{% if profile.company %} &middot; {{ profile.company }}{% endif %}</span>
                                 </div>
                                 <span class="tn-badge tn-badge--success tn-badge--pill"><span class="tn-badge__dot"></span>{{ 'Signed in'|trans }}</span>
                             </div>
@@ -174,7 +175,7 @@
                                     {% endif %}
                                 </div>
 
-                                {% if client.company or client.address_1 or client.city or client.country %}
+                                {% if profile and (profile.company or profile.address_1 or profile.city or profile.country) %}
                                     <div class="tn-configure-section mb-3">
                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                             <h4 class="tn-configure-section__title mb-0">{{ 'Billing details'|trans }}</h4>
@@ -182,12 +183,12 @@
                                         </div>
                                         <div class="tn-billing-details">
                                             <span class="tn-billing-details__name">
-                                                {{ client.company ?: (client.first_name ~ ' ' ~ client.last_name) }}
-                                                {% if client.company_vat|default('')|trim %} &middot; {{ 'TRN'|trans }} {{ client.company_vat }}{% endif %}
+                                                {{ profile.company ?: (profile.first_name ~ ' ' ~ profile.last_name) }}
+                                                {% if profile.company_vat|default('')|trim %} &middot; {{ 'TRN'|trans }} {{ profile.company_vat }}{% endif %}
                                             </span>
-                                            {% if client.address_1 or client.city %}
+                                            {% if profile.address_1 or profile.city %}
                                                 <span class="tn-billing-details__addr text-muted small">
-                                                    {{ [client.address_1, client.address_2, client.city, client.state, client.postcode, (client.country ? client.country|country_name : null)]|filter(v => v is not empty and v is not null)|join(', ') }}
+                                                    {{ [profile.address_1, profile.address_2, profile.city, profile.state, profile.postcode, (profile.country ? profile.country|country_name : null)]|filter(v => v is not empty and v is not null)|join(', ') }}
                                                 </span>
                                             {% endif %}
                                         </div>
@@ -208,7 +209,7 @@
                                     <span class="text-muted small d-block mb-3">By completing your order, you agree to our <a href="{{ 'tos'|url }}" target="_blank">{{ 'Terms of Service'|trans }}</a> and <a href="{{ 'privacy-policy'|url }}" target="_blank">{{ 'Privacy Policy'|trans }}</a>.</span>
                                 {% endif %}
 
-                                <div id="loginMessage" class="d-lg-none" {% if client %} hidden="true" {% endif %}>
+                                <div id="loginMessage" class="{% if client %}d-none{% else %}d-lg-none{% endif %}">
                                     <p class="mb-2">{{ 'You must first login or create an account before you can checkout.'|trans }}</p>
                                     <button type="button" class="tn-btn tn-btn--primary tn-btn--sm" id="goToAccountStep">{{ 'Login / Create account'|trans }}</button>
                                 </div>
@@ -239,7 +240,7 @@
                                 <svg class="icon"><use href="#lock" /></svg>
                                 {{ 'Pay'|trans }} {{ ((cart.total + tax_amount) * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}
                             </button>
-                            <div id="loginMessage-rail" class="d-none d-lg-block" {% if client %} hidden="true" {% endif %}>
+                            <div id="loginMessage-rail" class="{% if client %}d-none{% else %}d-none d-lg-block{% endif %}">
                                 <p class="text-muted small mb-2 mt-3">{{ 'You must first login or create an account before you can checkout.'|trans }}</p>
                                 <button type="button" class="tn-btn tn-btn--secondary tn-btn--sm tn-btn--block goToAccountStep-rail" id="goToAccountStepRail">{{ 'Login / Create account'|trans }}</button>
                             </div>

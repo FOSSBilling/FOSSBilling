@@ -482,6 +482,7 @@ class UpdatePatcher implements InjectionAwareInterface
             74 => 'patch74',
             75 => 'patch75',
             76 => 'patch76',
+            77 => 'patch77',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -1942,6 +1943,17 @@ class UpdatePatcher implements InjectionAwareInterface
         // instead of only living on the registrar's side.
         if (!$this->tableHasColumn('service_domain', 'autorenew')) {
             $this->executeSql("ALTER TABLE `service_domain` ADD COLUMN `autorenew` TINYINT(1) DEFAULT '1' AFTER `locked`;");
+        }
+    }
+
+    private function patch77(): void
+    {
+        // Not every TLD requires an auth/EPP code to transfer (e.g. .co.za). Track this
+        // per TLD so the transfer form and order validation only require the code when
+        // the registry actually needs it, instead of assuming all TLDs behave like .com.
+        if (!$this->tableHasColumn('tld', 'requires_transfer_code')) {
+            $this->executeSql("ALTER TABLE `tld` ADD COLUMN `requires_transfer_code` TINYINT(1) DEFAULT '1' AFTER `allow_transfer`;");
+            $this->executeSql("UPDATE `tld` SET `requires_transfer_code` = 0 WHERE `tld` = '.co.za';");
         }
     }
 

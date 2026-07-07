@@ -541,10 +541,34 @@ table > thead > tr > th {
     --bs-alert-color: var(--success-500);
 }
 
-// Order management accordion
+// Order management flow — rendered as flat single-page steps (only the
+// order-steps bar above shows progress); the underlying accordion/collapse
+// markup and JS is kept for its show/hide + API wiring, but its header
+// chrome (icon, label, item-count badge, chevron) is not shown to the user.
 #orderManager {
     --bs-accordion-btn-icon: none;
     --bs-accordion-btn-active-icon: none;
+
+    > .accordion-item {
+        border: none;
+        background: transparent;
+    }
+
+    > .accordion-item > .accordion-header {
+        display: none;
+    }
+
+    > .accordion-item > .accordion-collapse > .accordion-body {
+        padding: 0;
+    }
+}
+
+.order-steps__item--done {
+    cursor: pointer;
+
+    &:hover {
+        color: var(--accent);
+    }
 }
 
 // TomSelect dropdown
@@ -1979,6 +2003,44 @@ table > thead > tr > th {
     font-size: var(--fs-sm);
     color: var(--text-muted);
     a { color: var(--accent); font-weight: 600; margin-left: auto; white-space: nowrap; }
+}
+
+.tn-cart-protect {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin: var(--space-4) 0;
+    padding: var(--space-3) var(--space-4);
+    background: var(--accent-soft);
+    border-radius: var(--r-md);
+
+    &__title {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        font-weight: 700;
+        font-size: var(--fs-xs);
+        color: var(--text);
+    }
+
+    &__row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-2);
+        font-size: var(--fs-xs);
+        color: var(--text-muted);
+    }
+
+    &__add {
+        color: var(--accent);
+        font-weight: 700;
+        cursor: pointer;
+        background: none;
+        border: none;
+        padding: 0;
+        font-size: var(--fs-xs);
+    }
 }
 
 .tn-cart-stickybar {

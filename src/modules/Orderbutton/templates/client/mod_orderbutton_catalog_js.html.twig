@@ -21,6 +21,7 @@
     var searchBtn = document.getElementById("tn-domain-search-btn");
     var hitWrap = document.getElementById("tn-domain-hit-wrap");
     var altWrap = document.getElementById("tn-domain-alt-wrap");
+    var altLabel = document.getElementById("tn-domain-alt-label");
     var currentTld = "com";
 
     document.querySelectorAll(".tn-tld-chip[data-tld]").forEach(function (chip) {
@@ -50,7 +51,7 @@
             id: cfg.domainProductId,
             action: "register",
             register_sld: sld,
-            register_tld: tld,
+            register_tld: tld.charAt(0) === "." ? tld : "." + tld,
             register_years: 1,
             multiple: true
         };
@@ -60,6 +61,12 @@
         }, function (err) {
             FOSSBilling.ui.notify(err.message, "error");
         });
+    }
+
+    function goToTransfer(sld, tld) {
+        if (!cfg.domainProductId) { return; }
+        var params = new URLSearchParams({ product: cfg.domainProductId, name: sld, tld: tld, tab: "transfer" });
+        window.location.href = "{{ 'order'|url }}?" + params.toString();
     }
 
     function renderHit(sld, tld, available, price) {
@@ -74,7 +81,7 @@
         var action = available
             ? '<div class="text-end"><div class="tn-domainhit__price mb-2">' + moneyHtml(price, "/yr") + '</div>'
                 + '<button type="button" class="tn-btn tn-btn--primary tn-btn--md tn-domainhit__add">{{ "Add to cart"|trans|e("js") }}</button></div>'
-            : '<button type="button" class="tn-btn tn-btn--secondary tn-btn--md">{{ "Transfer this domain"|trans|e("js") }}</button>';
+            : '<button type="button" class="tn-btn tn-btn--secondary tn-btn--md tn-domainhit__transfer">{{ "Transfer this domain"|trans|e("js") }}</button>';
 
         hitWrap.innerHTML = '<div class="tn-domainhit tn-card" style="' + borderStyle + '">'
             + '<div class="tn-domainhit__body">'
@@ -85,6 +92,9 @@
         if (available) {
             var addBtn = hitWrap.querySelector(".tn-domainhit__add");
             if (addBtn) { addBtn.addEventListener("click", function () { addDomainToCart(sld, tld); }); }
+        } else {
+            var transferBtn = hitWrap.querySelector(".tn-domainhit__transfer");
+            if (transferBtn) { transferBtn.addEventListener("click", function () { goToTransfer(sld, tld); }); }
         }
     }
 
@@ -103,6 +113,7 @@
         if (!sld) { return; }
         hitWrap.innerHTML = '<p class="text-muted small">{{ "Checking availability…"|trans|e("js") }}</p>';
         altWrap.innerHTML = "";
+        if (altLabel) { altLabel.hidden = true; }
 
         checkOne(sld, currentTld, function (available, price) {
             renderHit(sld, currentTld, available, price);
@@ -146,6 +157,7 @@
         });
         html += '</div>';
         altWrap.innerHTML = html;
+        if (altLabel) { altLabel.hidden = false; }
         altWrap.querySelectorAll(".tn-alt-card__add").forEach(function (btn) {
             btn.addEventListener("click", function () {
                 addDomainToCart(btn.getAttribute("data-sld"), btn.getAttribute("data-tld"));

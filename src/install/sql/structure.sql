@@ -1313,6 +1313,7 @@ CREATE TABLE `tld` (
   `price_transfer` decimal(18,2) DEFAULT '0.00',
   `allow_register` tinyint(1) DEFAULT NULL,
   `allow_transfer` tinyint(1) DEFAULT NULL,
+  `requires_transfer_code` tinyint(1) DEFAULT '1',
   `active` tinyint(1) DEFAULT '1',
   `min_years` tinyint(4) DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,

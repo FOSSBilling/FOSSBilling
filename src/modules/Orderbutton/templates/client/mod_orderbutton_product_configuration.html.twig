@@ -166,7 +166,14 @@ document.addEventListener('DOMContentLoaded', function () {
         return currencyCode + ' ' + v.toFixed(2);
     }
 
+    let externalBasePrice = null;
+    window.tnSetConfigSummaryBase = function (amount) {
+        externalBasePrice = amount;
+        recompute();
+    };
+
     function selectedCyclePrice() {
+        if (externalBasePrice !== null) { return externalBasePrice; }
         if (cycleRow) {
             const checked = cycleRow.querySelector('input[type="radio"]:checked');
             const card = checked ? checked.closest('.tn-cycle-card') : null;

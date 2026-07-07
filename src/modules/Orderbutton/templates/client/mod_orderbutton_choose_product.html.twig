@@ -19,7 +19,7 @@
             <span>{{ 'Select Product'|trans }}</span>&nbsp;<span class="badge bg-info">{{ guest.product_get_list.list|length }} {{ 'Items'|trans }}</span>
         </button>
     </h3>
-    <div id="products" class="accordion-collapse collapse" data-bs-parent="#orderManager">
+    <div id="products" class="accordion-collapse collapse {% if not request.product and not request.checkout %}show{% endif %}" data-bs-parent="#orderManager">
         <div class="accordion-body">
 
             <div class="tn-catalog__header mb-4">
@@ -77,6 +77,7 @@
                         </div>
 
                         <div id="tn-domain-hit-wrap"></div>
+                        <div id="tn-domain-alt-label" class="tn-eyebrow mt-4 mb-2" hidden>{{ 'Also available'|trans }}</div>
                         <div id="tn-domain-alt-wrap"></div>
 
                         <div class="tn-transfer-cta mt-4">
@@ -182,6 +183,26 @@
                                     </div>
                                 {% endfor %}
                             </div>
+                            {% set has_domain_item = false %}
+                            {% for i, item in cart.items %}
+                                {% if item.type == 'domain' %}{% set has_domain_item = true %}{% endif %}
+                            {% endfor %}
+                            {% if has_domain_item %}
+                                <div class="tn-cart-protect">
+                                    <div class="tn-cart-protect__title">
+                                        <svg class="icon"><use href="#shield-check" /></svg>
+                                        <span>{{ 'Protect your domains'|trans }}</span>
+                                    </div>
+                                    <div class="tn-cart-protect__row">
+                                        <span>{{ 'WHOIS privacy —'|trans }} <strong style="color: var(--accent);">{{ 'Free'|trans }}</strong></span>
+                                        <span class="tn-badge tn-badge--accent">{{ 'ADDED'|trans }}</span>
+                                    </div>
+                                    <div class="tn-cart-protect__row">
+                                        <span>{{ 'Business email — %price%/mo'|trans({'%price%': (29 * cart_currency.conversion_rate)|format_currency(cart_currency.code)}) }}</span>
+                                        <button type="button" class="tn-cart-protect__add" id="tn-cart-add-email">+ {{ 'Add'|trans }}</button>
+                                    </div>
+                                </div>
+                            {% endif %}
                             {% set tax_amount = 0 %}
                             {% if client and client.client_is_taxable %}
                                 {% set tax_rate = client.invoice_get_tax_rate %}

@@ -132,6 +132,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 throw new \FOSSBilling\InformationException(':domain cannot be transferred!', [':domain' => $domain]);
             }
 
+            if ($tld->requires_transfer_code && empty($data['transfer_code'])) {
+                throw new \FOSSBilling\InformationException(':tld domains require an auth/EPP code to transfer', [':tld' => $tld->tld]);
+            }
+
             // return by reference
             $data['period'] = '1Y';
             $data['quantity'] = 1;
@@ -580,7 +584,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         // @adapterAction
         [$domain, $adapter] = $this->_getD($model);
-        $epp = $adapter->lock($domain);
+        if (!$adapter->lock($domain)) {
+            throw new \FOSSBilling\Exception('Registrar rejected the request to lock this domain. The local record was not changed.');
+        }
 
         $model->locked = true;
         $model->updated_at = date('Y-m-d H:i:s');
@@ -596,7 +602,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         // @adapterAction
         [$domain, $adapter] = $this->_getD($model);
-        $epp = $adapter->unlock($domain);
+        if (!$adapter->unlock($domain)) {
+            throw new \FOSSBilling\Exception('Registrar rejected the request to unlock this domain. The local record was not changed.');
+        }
 
         $model->locked = false;
         $model->updated_at = date('Y-m-d H:i:s');
@@ -612,7 +620,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         // @adapterAction
         [$domain, $adapter] = $this->_getD($model);
-        $adapter->enablePrivacyProtection($domain);
+        if (!$adapter->enablePrivacyProtection($domain)) {
+            throw new \FOSSBilling\Exception('Registrar rejected the request to enable privacy protection on this domain. The local record was not changed.');
+        }
 
         $model->privacy = true;
         $model->updated_at = date('Y-m-d H:i:s');
@@ -628,7 +638,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         // @adapterAction
         [$domain, $adapter] = $this->_getD($model);
-        $adapter->disablePrivacyProtection($domain);
+        if (!$adapter->disablePrivacyProtection($domain)) {
+            throw new \FOSSBilling\Exception('Registrar rejected the request to disable privacy protection on this domain. The local record was not changed.');
+        }
 
         $model->privacy = false;
         $model->updated_at = date('Y-m-d H:i:s');
@@ -644,7 +656,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         // @adapterAction
         [$domain, $adapter] = $this->_getD($model);
-        $adapter->enableAutoRenew($domain);
+        if (!$adapter->enableAutoRenew($domain)) {
+            throw new \FOSSBilling\Exception('Registrar rejected the request to enable auto-renew on this domain. The local record was not changed.');
+        }
 
         $model->autorenew = true;
         $model->updated_at = date('Y-m-d H:i:s');
@@ -660,7 +674,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         // @adapterAction
         [$domain, $adapter] = $this->_getD($model);
-        $adapter->disableAutoRenew($domain);
+        if (!$adapter->disableAutoRenew($domain)) {
+            throw new \FOSSBilling\Exception('Registrar rejected the request to disable auto-renew on this domain. The local record was not changed.');
+        }
 
         $model->autorenew = false;
         $model->updated_at = date('Y-m-d H:i:s');
@@ -1062,6 +1078,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'active' => $model->active,
             'allow_register' => $model->allow_register,
             'allow_transfer' => $model->allow_transfer,
+            'requires_transfer_code' => $model->requires_transfer_code,
             'min_years' => $model->min_years,
         ];
 
