@@ -385,7 +385,7 @@ document.addEventListener('DOMContentLoaded', function() {
     public function getInvoiceTitle(array $invoice): string
     {
         $p = [
-            ':id' => sprintf('%05s', $invoice['nr']),
+            ':id' => sprintf('%05d', (int) $invoice['nr']),
             ':serie' => $invoice['serie'],
             ':title' => $invoice['lines'][0]['title'],
         ];
