@@ -150,68 +150,67 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                     break;
                 }
 
-                    // Reload transaction to get updated status
-                    $tx = $api_admin->invoice_transaction_get(['id' => $id]);
+                // Reload transaction to get updated status
+                $tx = $api_admin->invoice_transaction_get(['id' => $id]);
 
-                    // Update to Completed so transaction record reflects final PayPal status
-                    if (!isset($tx['txn_status']) || $tx['txn_status'] !== 'Completed') {
-                        $api_admin->invoice_transaction_update(['id' => $id, 'txn_status' => 'Completed']);
-                        $tx['txn_status'] = 'Completed';
-                    }
+                // Update to Completed so transaction record reflects final PayPal status
+                if (!isset($tx['txn_status']) || $tx['txn_status'] !== 'Completed') {
+                    $api_admin->invoice_transaction_update(['id' => $id, 'txn_status' => 'Completed']);
+                    $tx['txn_status'] = 'Completed';
+                }
 
-                    if ($this->isIpnDuplicate($ipn)) {
-                        throw new Payment_Exception('Cannot process duplicate IPN');
-                    }
+                if ($this->isIpnDuplicate($ipn)) {
+                    throw new Payment_Exception('Cannot process duplicate IPN');
+                }
 
-                    $invoiceService = $this->di['mod_service']('Invoice');
-                    $invoiceDbModel = null;
-                    if (!empty($tx['invoice_id'])) {
-                        $invoiceDbModel = $this->di['db']->load('Invoice', $tx['invoice_id']);
-                    }
+                $invoiceService = $this->di['mod_service']('Invoice');
+                $invoiceDbModel = null;
+                if (!empty($tx['invoice_id'])) {
+                    $invoiceDbModel = $this->di['db']->load('Invoice', $tx['invoice_id']);
+                }
 
-                    // For subscription renewals, generate a renewal invoice so
-                    // we validate against the correct amount. Skip this for the
-                    // initial payment (original invoice still unpaid) — that
-                    // payment should go to the original invoice.
-                    if ($ipn['txn_type'] === 'subscr_payment' && isset($ipn['subscr_id'])) {
-                        $originalAlreadyPaid = $invoiceDbModel instanceof Model_Invoice
-                            && $invoiceDbModel->status === Model_Invoice::STATUS_PAID;
+                // For subscription renewals, generate a renewal invoice so
+                // we validate against the correct amount. Skip this for the
+                // initial payment (original invoice still unpaid) — that
+                // payment should go to the original invoice.
+                if ($ipn['txn_type'] === 'subscr_payment' && isset($ipn['subscr_id'])) {
+                    $originalAlreadyPaid = $invoiceDbModel instanceof Model_Invoice
+                        && $invoiceDbModel->status === Model_Invoice::STATUS_PAID;
 
-                        if ($originalAlreadyPaid) {
-                            $renewalInvoice = $invoiceService->generateRenewalInvoiceForSubscriptionPayment($ipn['subscr_id'], $client_id);
-                            if ($renewalInvoice instanceof Model_Invoice) {
-                                $api_admin->invoice_transaction_update(['id' => $id, 'invoice_id' => $renewalInvoice->id]);
-                                $tx['invoice_id'] = $renewalInvoice->id;
-                                $invoiceDbModel = $renewalInvoice;
-                            }
+                    if ($originalAlreadyPaid) {
+                        $renewalInvoice = $invoiceService->generateRenewalInvoiceForSubscriptionPayment($ipn['subscr_id'], $client_id);
+                        if ($renewalInvoice instanceof Model_Invoice) {
+                            $api_admin->invoice_transaction_update(['id' => $id, 'invoice_id' => $renewalInvoice->id]);
+                            $tx['invoice_id'] = $renewalInvoice->id;
+                            $invoiceDbModel = $renewalInvoice;
                         }
                     }
+                }
 
-                    if ($invoiceDbModel instanceof Model_Invoice) {
-                        $expected = $invoiceService->getTotalWithTax($invoiceDbModel);
-                        $invoiceService->validatePaymentAmount((float) $ipn['mc_gross'], $expected);
+                if ($invoiceDbModel instanceof Model_Invoice) {
+                    $expected = $invoiceService->getTotalWithTax($invoiceDbModel);
+                    $invoiceService->validatePaymentAmount((float) $ipn['mc_gross'], $expected);
+                }
+
+                $bd = [
+                    'id' => $client_id,
+                    'amount' => $ipn['mc_gross'],
+                    'description' => 'PayPal transaction ' . $ipn['txn_id'],
+                    'type' => 'PayPal',
+                    'rel_id' => $ipn['txn_id'],
+                ];
+
+                $api_admin->client_balance_add_funds($bd);
+
+                if (!empty($tx['invoice_id']) && $invoiceDbModel instanceof Model_Invoice && !$invoiceService->isInvoiceTypeDeposit($invoiceDbModel)) {
+                    if (!$invoiceDbModel->approved) {
+                        $invoiceService->approveInvoice($invoiceDbModel, ['use_credits' => false]);
                     }
-
-                    $bd = [
-                        'id' => $client_id,
-                        'amount' => $ipn['mc_gross'],
-                        'description' => 'PayPal transaction ' . $ipn['txn_id'],
-                        'type' => 'PayPal',
-                        'rel_id' => $ipn['txn_id'],
-                    ];
-
-                    $api_admin->client_balance_add_funds($bd);
-
-                    if (!empty($tx['invoice_id']) && $invoiceDbModel instanceof Model_Invoice && !$invoiceService->isInvoiceTypeDeposit($invoiceDbModel)) {
-                        if (!$invoiceDbModel->approved) {
-                            $invoiceService->approveInvoice($invoiceDbModel, ['use_credits' => false]);
-                        }
-                        $api_admin->invoice_pay_with_credits(['id' => $tx['invoice_id']]);
-                    } elseif (!empty($tx['invoice_id']) && $invoiceDbModel instanceof Model_Invoice && $invoiceService->isInvoiceTypeDeposit($invoiceDbModel)) {
-                        $invoiceService->markAsPaid($invoiceDbModel);
-                    } elseif (empty($tx['invoice_id'])) {
-                        $api_admin->invoice_batch_pay_with_credits(['client_id' => $client_id]);
-                    }
+                    $api_admin->invoice_pay_with_credits(['id' => $tx['invoice_id']]);
+                } elseif (!empty($tx['invoice_id']) && $invoiceDbModel instanceof Model_Invoice && $invoiceService->isInvoiceTypeDeposit($invoiceDbModel)) {
+                    $invoiceService->markAsPaid($invoiceDbModel);
+                } elseif (empty($tx['invoice_id'])) {
+                    $api_admin->invoice_batch_pay_with_credits(['client_id' => $client_id]);
                 }
 
                 break;
