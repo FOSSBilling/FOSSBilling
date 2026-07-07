@@ -2240,3 +2240,16 @@ table > thead > tr > th {
     font-weight: 600;
     color: var(--accent);
 }
+
+// Fixed-width sidebar that stacks full-width on mobile. Bootstrap's dist
+// build has no responsive width utilities (no w-lg-auto), so `w-100
+// w-lg-auto` silently did nothing above mobile and the !important w-100
+// starved the adjacent flex-fill column of all its space.
+.tn-sidebar-fixed {
+    width: 100%;
+    flex: none;
+
+    @media (min-width: 992px) {
+        width: 320px;
+    }
+}
