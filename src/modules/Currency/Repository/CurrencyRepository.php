@@ -19,6 +19,16 @@ use Symfony\Component\Intl\Currencies;
 
 class CurrencyRepository extends EntityRepository
 {
+    public function getClientCurrencyCode(int $clientId): ?string
+    {
+        $currencyCode = $this->getEntityManager()->getConnection()->fetchOne(
+            'SELECT currency FROM client WHERE id = :client_id',
+            ['client_id' => $clientId],
+        );
+
+        return is_string($currencyCode) && $currencyCode !== '' ? $currencyCode : null;
+    }
+
     /**
      * Build a QueryBuilder for searching currencies.
      *

@@ -18,6 +18,35 @@ use Doctrine\ORM\QueryBuilder;
 
 class ProductRepository extends EntityRepository
 {
+    public function getMaxPriority(): int
+    {
+        return (int) $this->createQueryBuilder('p')
+            ->select('MAX(p.priority)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * @return array<int, string|null>
+     */
+    public function getAddonPairs(): array
+    {
+        $rows = $this->createQueryBuilder('p')
+            ->select('p.id, p.title')
+            ->where('p.isAddon = :isAddon')
+            ->setParameter('isAddon', true)
+            ->orderBy('p.id', 'ASC')
+            ->getQuery()
+            ->getArrayResult();
+
+        $pairs = [];
+        foreach ($rows as $row) {
+            $pairs[(int) $row['id']] = $row['title'];
+        }
+
+        return $pairs;
+    }
+
     /**
      * @return array<int, string|null>
      */

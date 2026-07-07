@@ -71,7 +71,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         }
 
         /** @todo Doctrine: Replace with actual Admin entity once it's migrated to Doctrine. */
-        $admin = $this->getDi()['db']->getRow('SELECT name FROM admin WHERE id = :id', ['id' => $post->getAdminId()]);
+        $admin = $repo->findAdminSummary((int) $post->getAdminId()) ?? [];
 
         $post->setAdminData($admin);
 
