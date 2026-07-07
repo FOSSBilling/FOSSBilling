@@ -254,7 +254,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         ) {
             $refd = [
                 'id' => $invoice['id'],
-                'note' => 'PayPal refund ' . $ipn['parent_txn_id'],
+                'note' => 'PayPal refund ' . ($ipn['parent_txn_id'] ?? ''),
             ];
             $api_admin->invoice_refund($refd);
         }
