@@ -18,6 +18,11 @@ beforeEach(function (): void {
     Config::setProperty('i18n.timezone', 'UTC');
 });
 
+afterEach(function (): void {
+    unset($_COOKIE['fb_locale'], $_COOKIE['fb_timezone']);
+    Config::setProperty('i18n.timezone', 'UTC');
+});
+
 test('getTimezoneList returns every PHP timezone identifier sorted', function (): void {
     $list = i18n::getTimezoneList();
 
