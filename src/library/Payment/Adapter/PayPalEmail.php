@@ -246,7 +246,11 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                 break;
         }
 
-        if (isset($ipn['payment_status']) && $ipn['payment_status'] == 'Refunded') {
+        if (
+            isset($ipn['payment_status'], $ipn['txn_type'])
+            && $ipn['payment_status'] == 'Refunded'
+            && in_array($ipn['txn_type'], ['web_accept', 'subscr_payment'], true)
+        ) {
             $refd = [
                 'id' => $invoice['id'],
                 'note' => 'PayPal refund ' . $ipn['parent_txn_id'],
