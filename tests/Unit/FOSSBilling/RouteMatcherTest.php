@@ -48,6 +48,13 @@ test('route matcher accepts null conditions for routes without constrained param
     expect($match->matched)->toBeTrue();
 });
 
+test('route matcher uses default parameter pattern when conditions are null', function (): void {
+    $match = (new RouteMatcher())->match('get', '/item/:id', null, '/item/42', 'GET');
+
+    expect($match->matched)->toBeTrue()
+        ->and($match->params)->toBe(['id' => '42']);
+});
+
 test('route matcher extracts full placeholder names', function (): void {
     $match = (new RouteMatcher())->match('get', '/item/:item_id', ['item_id' => '[0-9]+'], '/item/42', 'GET');
 
