@@ -291,10 +291,10 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
     /**
      * @param string $url
      */
-    private function download($url, $post_vars = false): string
+    private function download($url, array|string|null $post_vars = null): string
     {
         $post_contents = '';
-        if ($post_vars) {
+        if ($post_vars !== null) {
             if (is_array($post_vars)) {
                 foreach ($post_vars as $key => $val) {
                     $post_contents .= ($post_contents ? '&' : '') . urlencode((string) $key) . '=' . urlencode((string) $val);
