@@ -11,6 +11,12 @@ test('route matcher matches exact routes for the same HTTP method', function ():
         ->and($match->params)->toBe([]);
 });
 
+test('route matcher rejects non-matching paths for the same HTTP method', function (): void {
+    $match = (new RouteMatcher())->match('get', '/invoice', [], '/invoices', 'GET');
+
+    expect($match->matched)->toBeFalse();
+});
+
 test('route matcher rejects different HTTP methods', function (): void {
     $match = (new RouteMatcher())->match('post', '/invoice', [], '/invoice', 'GET');
 
