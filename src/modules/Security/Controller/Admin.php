@@ -72,9 +72,10 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $this->di['is_admin_logged'];
         $record = [];
 
-        if (isset($_GET['ip']) && filter_var($_GET['ip'], FILTER_VALIDATE_IP)) {
+        $ip = $app->getRequest()->query->get('ip');
+        if ($ip !== null && filter_var($ip, FILTER_VALIDATE_IP)) {
             try {
-                $record = $this->di['api_admin']->Security_IP_Lookup(['ip' => $_GET['ip']]);
+                $record = $this->di['api_admin']->Security_IP_Lookup(['ip' => $ip]);
             } catch (\Exception) {
             }
         }

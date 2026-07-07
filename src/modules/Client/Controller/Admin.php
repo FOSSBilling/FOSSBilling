@@ -105,7 +105,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
         $redirect_to = '/';
 
-        $query = $_GET['r'] ?? null;
+        $query = $app->getRequest()->query->get('r');
         if ($query) {
             $r = $query;
             $redirect_to = '/' . trim((string) $r, '/');

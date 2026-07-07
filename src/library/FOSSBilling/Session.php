@@ -140,7 +140,7 @@ class Session implements InjectionAwareInterface
         }
         $maxAge = time() - Config::getProperty('security.session_lifespan', 7200);
 
-        $fingerprint = new Fingerprint();
+        $fingerprint = new Fingerprint($this->di['request']);
         /** @var \RedBeanPHP\OODBBean $session */
         $session = $this->di['db']->findOne('session', 'id = :id', [':id' => $sessionID]);
 
@@ -195,7 +195,7 @@ class Session implements InjectionAwareInterface
         }
 
         $session = $this->di['db']->findOne('session', 'id = :id', [':id' => $sessionID]);
-        $fingerprint = new Fingerprint();
+        $fingerprint = new Fingerprint($this->di['request']);
 
         if (Config::getProperty('security.perform_session_fingerprinting', true)) {
             $updatedFingerprint = $fingerprint->fingerprint();

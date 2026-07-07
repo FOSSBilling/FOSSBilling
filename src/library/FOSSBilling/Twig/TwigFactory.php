@@ -80,7 +80,7 @@ class TwigFactory
             }
         }
 
-        return i18n::getActiveTimezone($clientTimezone, $adminTimezone);
+        return i18n::getActiveTimezone($this->di['request'], $clientTimezone, $adminTimezone);
     }
 
     /**

@@ -14,6 +14,7 @@ namespace FOSSBilling;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Intl\Locales;
 
 class i18n
@@ -124,11 +125,11 @@ class i18n
      * Resolves in order: client -> admin -> `fb_timezone` cookie -> `i18n.timezone` config -> `UTC`.
      * Invalid values are silently dropped so a stale cookie or corrupt DB value can't crash the date formatter.
      */
-    public static function getActiveTimezone(?string $clientTimezone = null, ?string $adminTimezone = null): string
+    public static function getActiveTimezone(Request $request, ?string $clientTimezone = null, ?string $adminTimezone = null): string
     {
         $valid = self::getTimezoneList();
 
-        foreach ([$clientTimezone, $adminTimezone, $_COOKIE['fb_timezone'] ?? null] as $candidate) {
+        foreach ([$clientTimezone, $adminTimezone, $request->cookies->get('fb_timezone')] as $candidate) {
             if (is_string($candidate) && $candidate !== '' && in_array($candidate, $valid, true)) {
                 return $candidate;
             }

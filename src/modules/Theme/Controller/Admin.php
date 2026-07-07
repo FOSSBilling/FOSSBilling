@@ -38,7 +38,8 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
      */
     public function save_theme_settings(\Box_App $app, $theme): Response
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeThemeSettingsSave', 'params' => $_POST]);
+        $body = $app->getRequest()->request->all();
+        $this->di['events_manager']->fire(['event' => 'onBeforeThemeSettingsSave', 'params' => $body]);
 
         $api = $this->di['api_admin'];
 
@@ -46,16 +47,15 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $service = $mod->getService();
         $t = $service->getTheme($theme);
 
-        $isNewPreset = isset($_POST['save-current-setting']) && (bool) $_POST['save-current-setting'];
+        $isNewPreset = isset($body['save-current-setting']) && (bool) $body['save-current-setting'];
         $preset = $service->getCurrentThemePreset($t);
-        if ($isNewPreset && isset($_POST['save-current-setting-preset']) && !empty($_POST['save-current-setting-preset'])) {
-            $preset = $_POST['save-current-setting-preset'];
+        if ($isNewPreset && isset($body['save-current-setting-preset']) && !empty($body['save-current-setting-preset'])) {
+            $preset = $body['save-current-setting-preset'];
             $preset = str_replace(' ', '', $preset);
             $service->setCurrentThemePreset($t, $preset);
         }
 
-        unset($_POST['save-current-setting-preset']);
-        unset($_POST['save-current-setting']);
+        unset($body['save-current-setting-preset'], $body['save-current-setting']);
 
         $error = null;
 
@@ -63,7 +63,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
             if (!$t->isAssetsPathWritable()) {
                 throw new \FOSSBilling\Exception('Theme ":name" assets folder is not writable. Files cannot be uploaded and settings cannot be saved. Set folder permissions to 755', [':name' => $t->getName()]);
             }
-            $service->updateSettings($t, $preset, $_POST);
+            $service->updateSettings($t, $preset, $body);
             $service->regenerateThemeCssAndJsFiles($t, $preset, $api);
         } catch (\Exception $e) {
             $error = $e->getMessage();
@@ -81,6 +81,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         if ($error) {
             $red_url .= '?error=' . $error;
         }
+
         return $app->redirect($red_url);
     }
 
@@ -93,7 +94,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $t = $service->getTheme($theme);
         $preset = $service->getCurrentThemePreset($t);
         $settings = $service->getThemeSettings($t, $preset);
-        $error = $_GET['error'] ?? null;
+        $error = $app->getRequest()->query->get('error');
 
         try {
             $html = $service->renderThemeSettingsPageHtml($t, $settings);
