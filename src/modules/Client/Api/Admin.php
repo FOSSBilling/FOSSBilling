@@ -110,7 +110,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $password - client password
      * @optional string $auth_type - client authorization type. Default null
      * @optional string $last_name - client last name
-     * @optional string $aid - alternative ID. If you import clients from other systems you can use this field to store foreign system ID
+     * @optional string $aid - Custom client ID. If you import clients from other systems you can use this field to store the existing customer ID.
      * @optional string $group_id - client group id
      * @optional string $status - client status: "active, suspended, canceled"
      * @optional string $created_at - ISO 8601 date for client creation date
@@ -217,7 +217,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $first_name - client first_name
      * @optional string $last_name - client last_name
      * @optional string $status - client status
-     * @optional string $aid - Alternative id. Usually used by import tools.
+     * @optional string $aid - Custom client ID. Usually used by import tools to store an existing customer ID.
      * @optional string $gender - Gender - values: male|female|nonbinary|other
      * @optional string $country - Country
      * @optional string $city - city

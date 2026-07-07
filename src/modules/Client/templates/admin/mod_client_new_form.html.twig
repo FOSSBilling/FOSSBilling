@@ -26,6 +26,10 @@
                             <input id="new-client-email" type="email" name="email" class="form-control" placeholder="client@fossbilling.org" required>
                         </div>
                         <div class="col-12">
+                            <label class="form-label" for="new-client-aid">{{ 'Custom Client ID'|trans }}</label>
+                            <input id="new-client-aid" type="text" name="aid" class="form-control" placeholder="{{ 'Existing customer ID from another system'|trans }}">
+                        </div>
+                        <div class="col-12">
                             <label class="form-label" for="new-client-password">{{ 'Password'|trans }}</label>
                             <input id="new-client-password" type="password" name="password" class="form-control" placeholder="{{ 'Optional initial password'|trans }}">
                             <div class="form-text">{{ 'Leave blank to let the client set a password from the welcome email.'|trans }}</div>
