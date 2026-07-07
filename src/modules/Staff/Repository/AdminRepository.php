@@ -24,7 +24,7 @@ class AdminRepository extends EntityRepository
     }
 
     /**
-     * @return array<int, array{id: int, name: string}>
+     * @return array<int, string>
      */
     public function getIdNamePairs(): array
     {
