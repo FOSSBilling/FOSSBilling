@@ -99,6 +99,13 @@ test('getActiveTimezone ignores an invalid fb_timezone cookie', function (): voi
     expect(i18n::getActiveTimezone())->toBe('UTC');
 });
 
+test('getActiveTimezone falls back to valid fb_timezone cookie when client timezone is invalid', function (): void {
+    $_COOKIE['fb_timezone'] = 'Europe/Berlin';
+
+    expect(i18n::getActiveTimezone('Mars/Olympus_Mons', null))->toBe('Europe/Berlin');
+    expect(i18n::getActiveTimezone('Mars/Olympus_Mons', 'Mars/Olympus_Mons'))->toBe('Europe/Berlin');
+});
+
 test('getActiveTimezone ignores invalid client / admin values and falls back', function (): void {
     expect(i18n::getActiveTimezone('Mars/Olympus_Mons', null))->toBe('UTC');
     expect(i18n::getActiveTimezone(null, 'Mars/Olympus_Mons'))->toBe('UTC');
