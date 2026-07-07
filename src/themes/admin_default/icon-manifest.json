@@ -49,6 +49,7 @@
     "plus",
     "receipt-refund",
     "refresh",
+    "refresh-off",
     "search",
     "server",
     { "name": "headset", "dynamic": true },

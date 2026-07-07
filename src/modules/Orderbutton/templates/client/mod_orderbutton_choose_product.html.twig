@@ -81,7 +81,7 @@
                         <div id="tn-domain-alt-wrap"></div>
 
                         <div class="tn-transfer-cta mt-4">
-                            <svg class="icon"><use href="#arrow-right-left" /></svg>
+                            <svg class="icon"><use href="#arrows-right-left" /></svg>
                             <span>{{ 'Already own a domain? Transfer it to Tenant Ninja and manage everything here.'|trans }}</span>
                             <a href="{{ ('order'|url(query: { 'product': domain_category.products|first ? domain_category.products|first.id : '' })) }}" class="tn-transfer-cta__link">{{ 'Start transfer'|trans }} <svg class="icon"><use href="#arrow-right" /></svg></a>
                         </div>
@@ -129,7 +129,7 @@
                                             <span class="tn-m365-row__desc text-muted small">{{ product.description|striptags|trim|truncate(80) }}</span>
                                         {% endif %}
                                         <span class="tn-m365-row__note">
-                                            <svg class="icon"><use href="#badge-check" /></svg>
+                                            <svg class="icon"><use href="#rosette-discount-check" /></svg>
                                             {{ 'Licensed via Tenant Ninja CSP — seat changes take effect same-day'|trans }}
                                         </span>
                                     </div>
@@ -146,7 +146,7 @@
                             {% endfor %}
                         </div>
                         <div class="tn-info-banner mt-3">
-                            <svg class="icon"><use href="#info" /></svg>
+                            <svg class="icon"><use href="#info-circle" /></svg>
                             <span>{{ 'Moving from another CSP? We migrate tenants and mailboxes free on Standard and Premium.'|trans }}</span>
                             <a href="{{ 'support'|url }}">{{ 'Talk to us'|trans }}</a>
                         </div>

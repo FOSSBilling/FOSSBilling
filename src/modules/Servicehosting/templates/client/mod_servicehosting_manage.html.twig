@@ -20,7 +20,7 @@
                 <svg class="icon"><use href="#arrow-up-right" /></svg>
             </a>
             <a class="tn-btn tn-btn--secondary tn-btn--sm" href="{{ 'servicehosting/get_login_url'|api_url(query: { 'order_id': order.id }) }}" {{ fb_api_link({callback: 'onAfterLoginLinkCreated'}) }}>
-                <svg class="icon"><use href="#key-round" /></svg>
+                <svg class="icon"><use href="#key" /></svg>
                 {{ 'Control panel login'|trans }}
             </a>
             {% if upgradables %}
@@ -64,7 +64,7 @@
                                 <span class="tn-manage-action__desc">{{ 'Log in to your hosting control panel.'|trans }}</span>
                             </a>
                             <button type="button" class="tn-manage-action" style="text-align:left; border:var(--bw-hair) solid var(--border); width:100%;" data-tn-tab="#password">
-                                <span class="tn-manage-action__icon"><svg class="icon"><use href="#key-round" /></svg></span>
+                                <span class="tn-manage-action__icon"><svg class="icon"><use href="#key" /></svg></span>
                                 <span class="tn-manage-action__title">{{ 'Password'|trans }}</span>
                                 <span class="tn-manage-action__desc">{{ 'Change your control panel / FTP / SSH password.'|trans }}</span>
                             </button>

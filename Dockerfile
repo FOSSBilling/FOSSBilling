@@ -80,11 +80,13 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY src/themes/admin_default/package.json src/themes/admin_default/package.json
 COPY src/themes/huraga/package.json src/themes/huraga/package.json
+COPY src/themes/tenantninja/package.json src/themes/tenantninja/package.json
 
 RUN --mount=type=cache,target=/root/.npm CYPRESS_INSTALL_BINARY=0 npm ci
 
 COPY src/themes/admin_default ./src/themes/admin_default
 COPY src/themes/huraga ./src/themes/huraga
+COPY src/themes/tenantninja ./src/themes/tenantninja
 COPY src/modules ./src/modules
 COPY frontend ./frontend
 
@@ -109,6 +111,7 @@ COPY --from=php-vendor /app/src/vendor ./src/vendor
 COPY --from=frontend-assets /app/src/public/assets ./src/public/assets
 COPY --from=frontend-assets /app/src/themes/admin_default/assets/build ./src/themes/admin_default/assets/build
 COPY --from=frontend-assets /app/src/themes/huraga/assets/build ./src/themes/huraga/assets/build
+COPY --from=frontend-assets /app/src/themes/tenantninja/assets/build ./src/themes/tenantninja/assets/build
 
 RUN set -eux; \
   mkdir -p ./src/locale; \

@@ -118,7 +118,7 @@
                         <div class="mb-3">
                             {% if not cart.promocode %}
                                 <a href="#" id="show-promo-field" class="tn-promo-link">
-                                    <svg class="icon"><use href="#ticket-percent" /></svg> {{ 'Have a coupon code?'|trans }}
+                                    <svg class="icon"><use href="#ticket" /></svg> {{ 'Have a coupon code?'|trans }}
                                 </a>
                             {% endif %}
                             <form method="post" action="{{ 'cart/apply_promo'|api_url(role: 'guest') }}" {{ fb_api_form({message: 'Promo Code Applied to Order'|trans, reload: true}) }}

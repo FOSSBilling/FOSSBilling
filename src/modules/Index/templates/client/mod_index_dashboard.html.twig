@@ -151,7 +151,7 @@
             </div>
             <div class="tn-dashboard-header__actions">
                 <a class="tn-btn tn-btn--ghost tn-btn--sm" href="{{ 'support'|url(query: { 'ticket': 1 }) }}">
-                    <svg class="icon"><use href="#life-buoy" /></svg>{{ 'New ticket'|trans }}
+                    <svg class="icon"><use href="#lifebuoy" /></svg>{{ 'New ticket'|trans }}
                 </a>
                 <a class="tn-btn tn-btn--secondary tn-btn--sm" href="{{ 'client/balance'|url }}">
                     <svg class="icon"><use href="#wallet" /></svg>{{ 'Add funds'|trans }}
@@ -240,7 +240,7 @@
                             {% for order in expiring_orders.list|slice(0, 5) %}
                                 <div class="tn-attention-row">
                                     <span class="tn-attention-row__icon tn-attention-row__icon--danger">
-                                        <svg class="icon"><use href="#triangle-alert" /></svg>
+                                        <svg class="icon"><use href="#alert-triangle" /></svg>
                                     </span>
                                     <div class="tn-attention-row__body">
                                         <span class="tn-attention-row__title">{{ order.title|truncate(45) }}</span>
