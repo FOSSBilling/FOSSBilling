@@ -1649,7 +1649,7 @@ class Service implements InjectionAwareInterface
         $pdf = $this->createPdfGenerator();
         $pdf->setPaper($document_format, 'portrait');
         $options = $pdf->getOptions();
-        $options->setChroot($_SERVER['DOCUMENT_ROOT']);
+        $options->setChroot($this->di['request']->server->get('DOCUMENT_ROOT', ''));
 
         $sellerLines = 0;
         $buyerLines = 0;
@@ -2077,7 +2077,7 @@ class Service implements InjectionAwareInterface
 
         // prevent openbasedir error from preventing pdf creation when debug mode is enabled
         if (@!$this->filesystem->exists($source)) {
-            $source = Path::join($_SERVER['DOCUMENT_ROOT'], $source);
+            $source = Path::join($this->di['request']->server->get('DOCUMENT_ROOT', ''), $source);
             if (!$this->filesystem->exists($source)) {
                 // Assume the URL points to an image not hosted on this server
                 $source = $originalUrl;

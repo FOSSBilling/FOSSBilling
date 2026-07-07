@@ -145,8 +145,8 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             $this->getDi()['logger']->info('Client #%s logged in', $client->id);
             $this->getDi()['session']->delete('redirect_uri');
 
-            if (!headers_sent() && !empty($client->lang)) {
-                setcookie('fb_locale', (string) $client->lang, ['expires' => strtotime('+1 month'), 'path' => '/']);
+            if (!empty($client->lang)) {
+                $this->getDi()['cookie_queue']->queue('fb_locale', (string) $client->lang, strtotime('+1 month'), '/');
             }
 
             $this->getDi()['mod_service']('cart')->transferFromOtherSession($oldSession);

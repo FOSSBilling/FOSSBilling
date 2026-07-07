@@ -99,5 +99,66 @@ test('getTheme renders theme preset', function (): void {
     $di['is_admin_logged'] = true;
     $di['mod'] = $di->protect(fn () => $modMock);
     $controller->setDi($di);
+
+    $boxAppMock->shouldReceive('getRequest')->andReturn(Symfony\Component\HttpFoundation\Request::create('/theme/huraga'));
     $controller->get_theme($boxAppMock, 'huraga');
+});
+
+test('save theme settings reads body from request and strips preset control keys', function (): void {
+    $controller = new Box\Mod\Theme\Controller\Admin();
+    $di = container();
+
+    $themeMock = Mockery::mock(Box\Mod\Theme\Model\Theme::class);
+    $themeMock->shouldReceive('getName')->andReturn('huraga');
+    $themeMock->shouldReceive('isAssetsPathWritable')->andReturn(true);
+
+    $themeServiceMock = Mockery::mock(Box\Mod\Theme\Service::class);
+    $themeServiceMock->shouldReceive('getTheme')->andReturn($themeMock);
+    $themeServiceMock->shouldReceive('getCurrentThemePreset')->andReturn('default');
+    $themeServiceMock->shouldReceive('setCurrentThemePreset')
+        ->once()
+        ->with($themeMock, 'MyPreset');
+    $themeServiceMock->shouldReceive('updateSettings')
+        ->once()
+        ->with($themeMock, 'MyPreset', Mockery::on(function (array $body): bool {
+            return !array_key_exists('save-current-setting', $body)
+                && !array_key_exists('save-current-setting-preset', $body)
+                && $body['color'] === 'blue';
+        }));
+    $themeServiceMock->shouldReceive('regenerateThemeCssAndJsFiles');
+    $themeServiceMock->shouldReceive('regenerateThemeSettingsDataFile');
+
+    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock->shouldReceive('getService')->andReturn($themeServiceMock);
+
+    $eventsManager = Mockery::mock();
+    $eventsManager->shouldReceive('fire')
+        ->once()
+        ->with(Mockery::on(function (array $event): bool {
+            return $event['event'] === 'onBeforeThemeSettingsSave'
+                && $event['params']['color'] === 'blue'
+                && $event['params']['save-current-setting'] === '1';
+        }));
+
+    $di['api_admin'] = Mockery::mock();
+    $di['is_admin_logged'] = true;
+    $di['mod'] = $di->protect(fn () => $modMock);
+    $di['events_manager'] = $eventsManager;
+    $controller->setDi($di);
+
+    $request = Symfony\Component\HttpFoundation\Request::create('/theme/huraga', 'POST', [
+        'color' => 'blue',
+        'save-current-setting' => '1',
+        'save-current-setting-preset' => 'My Preset',
+    ]);
+
+    $boxAppMock = Mockery::mock('\Box_App');
+    $boxAppMock->shouldReceive('getRequest')->once()->andReturn($request);
+    $boxAppMock->shouldReceive('redirect')
+        ->once()
+        ->with('/theme/huraga')
+        ->andReturn(new Symfony\Component\HttpFoundation\RedirectResponse('/theme/huraga'));
+
+    $response = $controller->save_theme_settings($boxAppMock, 'huraga');
+    expect($response)->toBeInstanceOf(Symfony\Component\HttpFoundation\RedirectResponse::class);
 });

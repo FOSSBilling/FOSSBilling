@@ -11,11 +11,13 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
+use Symfony\Component\HttpFoundation\Request;
+
 class Fingerprint
 {
     private readonly array $fingerprintProperties;
 
-    public function __construct()
+    public function __construct(private readonly Request $request)
     {
         $agentDetails = $this->extractAgentInfo();
 
@@ -44,35 +46,35 @@ class Fingerprint
                 'weight' => 100, // Always fail if this doesn't match.
             ],
             'ip' => [
-                'source' => $_SERVER['REMOTE_ADDR'] ?? '',
+                'source' => $this->request->server->get('REMOTE_ADDR', ''),
                 'weight' => 2,
             ],
             'referrer' => [
-                'source' => $_SERVER['HTTP_REFERER'] ?? '',
+                'source' => $this->request->headers->get('Referer', ''),
                 'weight' => 1,
             ],
             'forwardedFor' => [
-                'source' => $_SERVER['HTTP_X_FORWARDED_FOR'] ?? '',
+                'source' => $this->request->headers->get('X-Forwarded-For', ''),
                 'weight' => 1,
             ],
             'language' => [
-                'source' => $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '',
+                'source' => $this->request->headers->get('Accept-Language', ''),
                 'weight' => 3,
             ],
             'encoding' => [
-                'source' => $_SERVER['HTTP_ACCEPT_ENCODING'] ?? '',
+                'source' => $this->request->headers->get('Accept-Encoding', ''),
                 'weight' => 1,
             ],
             'upgradeRequests' => [
-                'source' => $_SERVER['HTTP_UPGRADE_INSECURE_REQUESTS'] ?? '',
+                'source' => $this->request->headers->get('Upgrade-Insecure-Requests', ''),
                 'weight' => 1,
             ],
             'platform' => [
-                'source' => $_SERVER['HTTP_SEC_CH_UA_PLATFORM'] ?? '',
+                'source' => $this->request->headers->get('Sec-Ch-Ua-Platform', ''),
                 'weight' => 100, // Should more-or-less match the 'OS'. This also should never randomly change
             ],
             'mobile' => [
-                'source' => $_SERVER['HTTP_SEC_CH_UA_MOBILE'] ?? '',
+                'source' => $this->request->headers->get('Sec-Ch-Ua-Mobile', ''),
                 'weight' => 2,
             ],
             'geoIpCountry' => [
@@ -167,7 +169,7 @@ class Fingerprint
 
         // If fingerprint debugging is enabled and it failed, print some debug info to the log
         if (!$valid && Config::getProperty('security.debug_fingerprint', false)) {
-            $ID = $_COOKIE['PHPSESSID'] ?? null;
+            $ID = $this->request->cookies->get('PHPSESSID');
             if (!$ID) {
                 return $valid;
             }
@@ -188,7 +190,7 @@ class Fingerprint
 
     private function extractAgentInfo(): array
     {
-        $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+        $userAgent = $this->request->headers->get('User-Agent', '');
 
         // Extract the browser name
         if (preg_match('/(?:Chrome|CriOS)\/([0-9\.]+)/', (string) $userAgent, $matches)) {
@@ -227,14 +229,15 @@ class Fingerprint
     private function getIpCountry()
     {
         // Use the CF header if it is set.
-        if (isset($_SERVER['HTTP_CF_IPCOUNTRY'])) {
-            return $_SERVER['HTTP_CF_IPCOUNTRY'];
+        $cfIpCountry = $this->request->headers->get('CF-IPCountry');
+        if ($cfIpCountry !== null) {
+            return $cfIpCountry;
         }
 
         // Otherwise, instance the system's GeoIP reader and read the country from there.
         try {
             $reader = new GeoIP\Reader();
-            $remoteAddr = $_SERVER['REMOTE_ADDR'] ?? '';
+            $remoteAddr = $this->request->server->get('REMOTE_ADDR', '');
 
             if (empty($remoteAddr)) {
                 return '';
@@ -249,7 +252,7 @@ class Fingerprint
     private function getIpAsn()
     {
         try {
-            $remoteAddr = $_SERVER['REMOTE_ADDR'] ?? '';
+            $remoteAddr = $this->request->server->get('REMOTE_ADDR', '');
 
             if (empty($remoteAddr)) {
                 return '';

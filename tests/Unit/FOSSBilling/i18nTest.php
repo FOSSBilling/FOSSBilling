@@ -12,16 +12,27 @@ declare(strict_types=1);
 
 use FOSSBilling\Config;
 use FOSSBilling\i18n;
+use Symfony\Component\HttpFoundation\Request;
 
 beforeEach(function (): void {
-    unset($_COOKIE['fb_locale'], $_COOKIE['fb_timezone']);
     Config::setProperty('i18n.timezone', 'UTC');
+    Config::setProperty('i18n.locale', 'en_US');
 });
 
 afterEach(function (): void {
-    unset($_COOKIE['fb_locale'], $_COOKIE['fb_timezone']);
     Config::setProperty('i18n.timezone', 'UTC');
+    Config::setProperty('i18n.locale', 'en_US');
 });
+
+function requestWithTimezoneCookie(?string $timezone = null): Request
+{
+    $request = Request::create('/');
+    if ($timezone !== null) {
+        $request->cookies->set('fb_timezone', $timezone);
+    }
+
+    return $request;
+}
 
 test('getTimezoneList returns every PHP timezone identifier sorted', function (): void {
     $list = i18n::getTimezoneList();
@@ -68,76 +79,79 @@ test('getTimezones groups identifiers by region with UTC separate', function ():
 test('getActiveTimezone returns the system config default when no user is set', function (): void {
     Config::setProperty('i18n.timezone', 'Europe/Paris');
 
-    expect(i18n::getActiveTimezone())->toBe('Europe/Paris');
+    expect(i18n::getActiveTimezone(Request::create('/')))->toBe('Europe/Paris');
 });
 
 test('getActiveTimezone returns the client timezone when provided and valid', function (): void {
-    expect(i18n::getActiveTimezone('America/New_York'))->toBe('America/New_York');
+    expect(i18n::getActiveTimezone(Request::create('/'), 'America/New_York'))->toBe('America/New_York');
 });
 
 test('getActiveTimezone returns the admin timezone when no client timezone is set', function (): void {
-    expect(i18n::getActiveTimezone(null, 'Asia/Tokyo'))->toBe('Asia/Tokyo');
+    expect(i18n::getActiveTimezone(Request::create('/'), null, 'Asia/Tokyo'))->toBe('Asia/Tokyo');
 });
 
 test('getActiveTimezone prefers the client timezone over the admin timezone', function (): void {
-    expect(i18n::getActiveTimezone('America/New_York', 'Asia/Tokyo'))->toBe('America/New_York');
+    expect(i18n::getActiveTimezone(Request::create('/'), 'America/New_York', 'Asia/Tokyo'))->toBe('America/New_York');
 });
 
 test('getActiveTimezone reads the fb_timezone cookie when set and valid', function (): void {
-    $_COOKIE['fb_timezone'] = 'Europe/Berlin';
+    $request = requestWithTimezoneCookie('Europe/Berlin');
 
-    expect(i18n::getActiveTimezone())->toBe('Europe/Berlin');
+    expect(i18n::getActiveTimezone($request))->toBe('Europe/Berlin');
 });
 
 test('getActiveTimezone prefers explicit client/admin arguments over a valid fb_timezone cookie', function (): void {
-    $_COOKIE['fb_timezone'] = 'Europe/Berlin';
+    $request = requestWithTimezoneCookie('Europe/Berlin');
 
-    expect(i18n::getActiveTimezone('America/New_York', 'Asia/Tokyo'))->toBe('America/New_York');
-    expect(i18n::getActiveTimezone('America/New_York', null))->toBe('America/New_York');
-    expect(i18n::getActiveTimezone(null, 'Asia/Tokyo'))->toBe('Asia/Tokyo');
-    expect(i18n::getActiveTimezone(null, null))->toBe('Europe/Berlin');
+    expect(i18n::getActiveTimezone($request, 'America/New_York', 'Asia/Tokyo'))->toBe('America/New_York');
+    expect(i18n::getActiveTimezone($request, 'America/New_York', null))->toBe('America/New_York');
+    expect(i18n::getActiveTimezone($request, null, 'Asia/Tokyo'))->toBe('Asia/Tokyo');
+    expect(i18n::getActiveTimezone($request, null, null))->toBe('Europe/Berlin');
 });
 
 test('getActiveTimezone ignores an invalid fb_timezone cookie', function (): void {
-    $_COOKIE['fb_timezone'] = 'Definitely/Not_Real';
+    $request = requestWithTimezoneCookie('Definitely/Not_Real');
 
-    expect(i18n::getActiveTimezone())->toBe('UTC');
+    expect(i18n::getActiveTimezone($request))->toBe('UTC');
 });
 
 test('getActiveTimezone ignores an invalid fb_timezone cookie when explicit arguments are valid', function (): void {
-    $_COOKIE['fb_timezone'] = 'Definitely/Not_Real';
+    $request = requestWithTimezoneCookie('Definitely/Not_Real');
 
-    expect(i18n::getActiveTimezone('America/New_York', 'Asia/Tokyo'))->toBe('America/New_York');
-    expect(i18n::getActiveTimezone('America/New_York', null))->toBe('America/New_York');
-    expect(i18n::getActiveTimezone(null, 'Asia/Tokyo'))->toBe('Asia/Tokyo');
+    expect(i18n::getActiveTimezone($request, 'America/New_York', 'Asia/Tokyo'))->toBe('America/New_York');
+    expect(i18n::getActiveTimezone($request, 'America/New_York', null))->toBe('America/New_York');
+    expect(i18n::getActiveTimezone($request, null, 'Asia/Tokyo'))->toBe('Asia/Tokyo');
 });
 
 test('getActiveTimezone falls back to valid fb_timezone cookie when client timezone is invalid', function (): void {
-    $_COOKIE['fb_timezone'] = 'Europe/Berlin';
+    $request = requestWithTimezoneCookie('Europe/Berlin');
 
-    expect(i18n::getActiveTimezone('Mars/Olympus_Mons', null))->toBe('Europe/Berlin');
-    expect(i18n::getActiveTimezone('Mars/Olympus_Mons', 'Mars/Olympus_Mons'))->toBe('Europe/Berlin');
-    expect(i18n::getActiveTimezone(null, 'Mars/Olympus_Mons'))->toBe('Europe/Berlin');
+    expect(i18n::getActiveTimezone($request, 'Mars/Olympus_Mons', null))->toBe('Europe/Berlin');
+    expect(i18n::getActiveTimezone($request, 'Mars/Olympus_Mons', 'Mars/Olympus_Mons'))->toBe('Europe/Berlin');
+    expect(i18n::getActiveTimezone($request, null, 'Mars/Olympus_Mons'))->toBe('Europe/Berlin');
 });
 
 test('getActiveTimezone ignores invalid client / admin values and falls back', function (): void {
-    expect(i18n::getActiveTimezone('Mars/Olympus_Mons', null))->toBe('UTC');
-    expect(i18n::getActiveTimezone(null, 'Mars/Olympus_Mons'))->toBe('UTC');
-    expect(i18n::getActiveTimezone('Mars/Olympus_Mons', 'Mars/Olympus_Mons'))->toBe('UTC');
-    expect(i18n::getActiveTimezone('Mars/Olympus_Mons', 'Asia/Tokyo'))->toBe('Asia/Tokyo');
+    $request = Request::create('/');
+
+    expect(i18n::getActiveTimezone($request, 'Mars/Olympus_Mons', null))->toBe('UTC');
+    expect(i18n::getActiveTimezone($request, null, 'Mars/Olympus_Mons'))->toBe('UTC');
+    expect(i18n::getActiveTimezone($request, 'Mars/Olympus_Mons', 'Mars/Olympus_Mons'))->toBe('UTC');
+    expect(i18n::getActiveTimezone($request, 'Mars/Olympus_Mons', 'Asia/Tokyo'))->toBe('Asia/Tokyo');
 });
 
 test('getActiveTimezone treats empty string as not set', function (): void {
-    expect(i18n::getActiveTimezone('', null))->toBe('UTC');
-    expect(i18n::getActiveTimezone(null, ''))->toBe('UTC');
+    $request = Request::create('/');
+
+    expect(i18n::getActiveTimezone($request, '', null))->toBe('UTC');
+    expect(i18n::getActiveTimezone($request, null, ''))->toBe('UTC');
 });
 
 test('getActiveTimezone falls back to UTC when no config exists', function (): void {
     // Simulate a missing config by pointing at a known-empty key.
     Config::setProperty('i18n.timezone', '');
-    unset($_COOKIE['fb_timezone']);
 
-    expect(i18n::getActiveTimezone())->toBe('UTC');
+    expect(i18n::getActiveTimezone(Request::create('/')))->toBe('UTC');
 });
 
 test('validateTimezone returns null for null and empty input', function (): void {
@@ -157,4 +171,32 @@ test('validateTimezone rejects clearly invalid timezone identifiers', function (
 
 test('validateTimezone throws InformationException for an unknown identifier', function (): void {
     expect(fn (): ?string => i18n::validateTimezone('Mars/Olympus_Mons'))->toThrow(FOSSBilling\InformationException::class);
+});
+
+test('getActiveLocale returns the fb_locale cookie when it matches an enabled locale', function (): void {
+    // Only en_US is guaranteed to be installed (translations are not fetched in CI),
+    // so use a different config default to prove the cookie takes precedence.
+    Config::setProperty('i18n.locale', 'de_DE');
+
+    $request = Request::create('/');
+    $request->cookies->set('fb_locale', 'en_US');
+
+    expect(i18n::getActiveLocale($request, false))->toBe('en_US');
+});
+
+test('getActiveLocale ignores an invalid fb_locale cookie and falls back to config default', function (): void {
+    $request = Request::create('/');
+    $request->cookies->set('fb_locale', 'xx_XX');
+
+    expect(i18n::getActiveLocale($request, false))->toBe('en_US');
+});
+
+test('getActiveLocale falls back to config default when no cookie is set and autoDetect is false', function (): void {
+    Config::setProperty('i18n.locale', 'de_DE');
+
+    expect(i18n::getActiveLocale(Request::create('/'), false))->toBe('de_DE');
+});
+
+test('getActiveLocale returns the configured default when no cookie and no Accept-Language header', function (): void {
+    expect(i18n::getActiveLocale(Request::create('/'), false))->toBe('en_US');
 });

@@ -81,10 +81,10 @@ function checkSSL(): void
  */
 function checkWebServer(): void
 {
-    global $filesystem;
+    global $filesystem, $request;
 
     // Check for missing required .htaccess on Apache and Apache-compatible web servers.
-    $webServer = SentryHelper::estimateWebServer();
+    $webServer = SentryHelper::estimateWebServer($request->server->get('SERVER_SOFTWARE', ''));
     if ($webServer === 'Apache' || $webServer === 'Litespeed') {
         if (!$filesystem->exists('.htaccess')) {
             throw new Exception('Missing .htaccess file', 5);
@@ -278,7 +278,7 @@ function init(): void
     }
 
     // Now that the config file is loaded, we can enable Sentry.
-    SentryHelper::registerSentry();
+    SentryHelper::registerSentry($request->server->get('SERVER_SOFTWARE', ''));
 }
 
 /*

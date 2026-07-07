@@ -73,7 +73,8 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             $p = $price * $c['conversion_rate'];
         }
 
-        $locale = i18n::getActiveLocale();
+        $di = $this->getDi();
+        $locale = i18n::getActiveLocale($di['request'], true, $di['cookie_queue']);
 
         if ($withoutCurrency) {
             $fractionDigits = Currencies::getFractionDigits($c['code']);

@@ -67,8 +67,9 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
     {
         $api = $this->di['api_admin'];
 
-        $product = $api->product_get(['id' => $_POST['product_id'] ?? null]);
-        $client = $api->client_get(['id' => $_POST['client_id'] ?? null]);
+        $request = $app->getRequest();
+        $product = $api->product_get(['id' => $request->request->get('product_id')]);
+        $client = $api->client_get(['id' => $request->request->get('client_id')]);
 
         return $app->render('mod_order_new', ['product' => $product, 'client' => $client]);
     }

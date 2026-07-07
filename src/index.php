@@ -111,4 +111,6 @@ if (!is_null($http_err_code)) {
     $response = $app->run();
 }
 
+$di['cookie_queue']->applyToResponse($response);
+
 emitResponse($response);

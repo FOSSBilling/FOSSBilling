@@ -90,7 +90,7 @@ class SentryHelper
     /**
      * Registers Sentry for error reporting. Skips the steps to enable Sentry if error reporting is not enabled.
      */
-    public static function registerSentry(): void
+    public static function registerSentry(string $serverSoftware = ''): void
     {
         $sentryDSN = '--replace--this--during--release--process--';
 
@@ -127,7 +127,7 @@ class SentryHelper
             // We explicitly set the HTTP client to use the Symfony HTTP client to provide wider support VS their default cURL client.
             'http_client' => $httpClient,
 
-            'before_send' => function (Event $event, ?EventHint $hint): ?Event {
+            'before_send' => function (Event $event, ?EventHint $hint) use ($serverSoftware): ?Event {
                 $module = null;
                 $theme = null;
 
@@ -165,7 +165,7 @@ class SentryHelper
                     return null;
                 }
 
-                $event->setTag('webserver.used', self::estimateWebServer());
+                $event->setTag('webserver.used', self::estimateWebServer($serverSoftware));
 
                 return $event;
             },
@@ -223,14 +223,13 @@ class SentryHelper
     /**
      * Tries to guess what type of webserver is in use.
      */
-    public static function estimateWebServer(): string
+    public static function estimateWebServer(string $serverSoftware = ''): string
     {
-        $serverSoftware = $_SERVER['SERVER_SOFTWARE'] ?? '';
-        if (function_exists('apache_get_version') || (stripos(strtolower((string) $serverSoftware), 'apache') !== false)) {
+        if (function_exists('apache_get_version') || (stripos(strtolower($serverSoftware), 'apache') !== false)) {
             return 'Apache';
-        } elseif (stripos(strtolower((string) $serverSoftware), 'litespeed') !== false) {
+        } elseif (stripos(strtolower($serverSoftware), 'litespeed') !== false) {
             return 'Litespeed';
-        } elseif (stripos(strtolower((string) $serverSoftware), 'nginx') !== false) {
+        } elseif (stripos(strtolower($serverSoftware), 'nginx') !== false) {
             return 'NGINX';
         } elseif (PHP_SAPI === 'cli-server') {
             return 'PHP Development Server';

@@ -269,14 +269,6 @@ class Tools
         return $port === false ? $default : $port;
     }
 
-    public static function isHTTPS(): bool
-    {
-        $protocol = $_SERVER['HTTPS'] ?? $_SERVER['REQUEST_SCHEME'] ?? '';
-
-        // $_SERVER['HTTPS'] will be set to `on` to indicate HTTPS and REQUEST_SCHEME may be set to `https`, so either one means we are connected via HTTPS.
-        return strcasecmp((string) $protocol, 'on') === 0 || strcasecmp((string) $protocol, 'https') === 0;
-    }
-
     /**
      * Tries to fetch a list of possible interfaces (IPs) to bind to when making requests.
      * Attempts to make external requests for each interface & only works with IPv4.
