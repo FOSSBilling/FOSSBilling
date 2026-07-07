@@ -95,6 +95,12 @@
                                         <td class="w-50 text-end">{{ 'Client ID'|trans }}:</td>
                                         <td>{{ client.id }}</td>
                                     </tr>
+                                    {% if client.aid %}
+                                    <tr>
+                                        <td class="text-end">{{ 'Custom Client ID'|trans }}:</td>
+                                        <td>{{ client.aid }}</td>
+                                    </tr>
+                                    {% endif %}
                                     <tr>
                                         <td class="text-end">{{ 'Name'|trans }}:</td>
                                         <td>{{ client.first_name }} {{ client.last_name }}</td>
@@ -351,8 +357,8 @@
                             <h6 class="card-title text-secondary mb-3">{{ 'Additional Settings'|trans }}</h6>
                             <div class="row g-3">
                                 <div class="col-xl-6">
-                                    <label class="form-label">{{ 'Alternative ID'|trans }}</label>
-                                    <input class="form-control" type="text" name="aid" value="{{ client.aid }}" placeholder="{{ 'Used to identify client on foreign system. Usually used by importers'|trans }}">
+                                    <label class="form-label">{{ 'Custom Client ID'|trans }}</label>
+                                    <input class="form-control" type="text" name="aid" value="{{ client.aid }}" placeholder="{{ 'Existing customer ID from another system'|trans }}">
                                 </div>
                                 <div class="col-xl-3">
                                     <label class="form-label">{{ 'Currency'|trans }}</label>

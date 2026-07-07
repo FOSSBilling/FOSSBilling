@@ -811,6 +811,7 @@ test('adminCreateClient returns int', function (): void {
         'password' => uniqid(),
         'email' => 'test@unit.vm',
         'first_name' => 'test',
+        'aid' => 'LEGACY-1001',
     ];
 
     $dbMock = Mockery::mock('\Box_Database');
@@ -845,6 +846,7 @@ test('adminCreateClient returns int', function (): void {
 
     $result = $service->adminCreateClient($data);
     expect($result)->toBeInt();
+    expect($clientModel->aid)->toBe('LEGACY-1001');
 });
 
 test('deleteGroup returns true', function (): void {
