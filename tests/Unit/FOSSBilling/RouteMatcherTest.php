@@ -11,6 +11,12 @@ test('route matcher matches exact routes for the same HTTP method', function ():
         ->and($match->params)->toBe([]);
 });
 
+test('route matcher rejects non-matching paths for the same HTTP method', function (): void {
+    $match = (new RouteMatcher())->match('get', '/invoice', [], '/invoices', 'GET');
+
+    expect($match->matched)->toBeFalse();
+});
+
 test('route matcher rejects different HTTP methods', function (): void {
     $match = (new RouteMatcher())->match('post', '/invoice', [], '/invoice', 'GET');
 
@@ -46,6 +52,13 @@ test('route matcher accepts null conditions for routes without constrained param
     $match = (new RouteMatcher())->match('get', '/servicehosting', null, '/servicehosting', 'GET');
 
     expect($match->matched)->toBeTrue();
+});
+
+test('route matcher uses default parameter pattern when conditions are null', function (): void {
+    $match = (new RouteMatcher())->match('get', '/item/:id', null, '/item/42', 'GET');
+
+    expect($match->matched)->toBeTrue()
+        ->and($match->params)->toBe(['id' => '42']);
 });
 
 test('route matcher extracts full placeholder names', function (): void {
