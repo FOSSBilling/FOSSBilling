@@ -114,7 +114,8 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         $invoice = $api_admin->invoice_get(['id' => $tx['invoice_id']]);
         $client_id = $invoice['client']['id'];
 
-        switch ($ipn['txn_type']) {
+        $txnType = $ipn['txn_type'] ?? '';
+        switch ($txnType) {
             case 'web_accept':
             case 'subscr_payment':
                 if ($ipn['payment_status'] == 'Completed') {
@@ -246,7 +247,11 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                 break;
         }
 
-        if (isset($ipn['payment_status']) && $ipn['payment_status'] == 'Refunded') {
+        if (
+            isset($ipn['payment_status'], $ipn['txn_type'])
+            && $ipn['payment_status'] == 'Refunded'
+            && in_array($ipn['txn_type'], ['web_accept', 'subscr_payment'], true)
+        ) {
             $refd = [
                 'id' => $invoice['id'],
                 'note' => 'PayPal refund ' . $ipn['parent_txn_id'],
@@ -291,10 +296,10 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
     /**
      * @param string $url
      */
-    private function download($url, $post_vars = false): string
+    private function download($url, array|string|null $post_vars = null): string
     {
         $post_contents = '';
-        if ($post_vars) {
+        if ($post_vars !== null) {
             if (is_array($post_vars)) {
                 foreach ($post_vars as $key => $val) {
                     $post_contents .= ($post_contents ? '&' : '') . urlencode((string) $key) . '=' . urlencode((string) $val);
@@ -322,7 +327,9 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         $form = '';
         $form .= '<form name="payment_form" action="' . $url . '" method="' . $method . '">' . PHP_EOL;
         foreach ($data as $key => $value) {
-            $form .= sprintf('<input type="hidden" name="%s" value="%s" />', $key, $value) . PHP_EOL;
+            $safeKey = htmlspecialchars((string) $key, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+            $safeValue = htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+            $form .= sprintf('<input type="hidden" name="%s" value="%s" />', $safeKey, $safeValue) . PHP_EOL;
         }
         $form .= '<input class="btn btn-primary" type="submit" value="Pay with PayPal" id="payment_button"/>' . PHP_EOL;
         $form .= '</form>' . PHP_EOL . PHP_EOL;
