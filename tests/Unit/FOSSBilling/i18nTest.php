@@ -174,10 +174,14 @@ test('validateTimezone throws InformationException for an unknown identifier', f
 });
 
 test('getActiveLocale returns the fb_locale cookie when it matches an enabled locale', function (): void {
-    $request = Request::create('/');
-    $request->cookies->set('fb_locale', 'de_DE');
+    // Only en_US is guaranteed to be installed (translations are not fetched in CI),
+    // so use a different config default to prove the cookie takes precedence.
+    Config::setProperty('i18n.locale', 'de_DE');
 
-    expect(i18n::getActiveLocale($request, false))->toBe('de_DE');
+    $request = Request::create('/');
+    $request->cookies->set('fb_locale', 'en_US');
+
+    expect(i18n::getActiveLocale($request, false))->toBe('en_US');
 });
 
 test('getActiveLocale ignores an invalid fb_locale cookie and falls back to config default', function (): void {
