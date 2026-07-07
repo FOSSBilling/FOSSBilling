@@ -205,23 +205,27 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                 break;
 
             case 'subscr_signup':
-                $sd = [
-                    'client_id' => $client_id,
-                    'gateway_id' => $gateway_id,
-                    'currency' => $ipn['mc_currency'],
-                    'sid' => $ipn['subscr_id'],
-                    'status' => 'active',
-                    'period' => str_replace(' ', '', $ipn['period3']),
-                    'amount' => $ipn['amount3'],
-                    'rel_type' => 'invoice',
-                    'rel_id' => $invoice['id'],
-                ];
-                $api_admin->invoice_subscription_create($sd);
+                $existingSubscription = $this->di['db']->findOne('Subscription', 'sid = :sid', [':sid' => $ipn['subscr_id']]);
+
+                if (!$existingSubscription instanceof Model_Subscription) {
+                    $sd = [
+                        'client_id' => $client_id,
+                        'gateway_id' => $gateway_id,
+                        'currency' => $ipn['mc_currency'],
+                        'sid' => $ipn['subscr_id'],
+                        'status' => 'active',
+                        'period' => str_replace(' ', '', $ipn['period3']),
+                        'amount' => $ipn['amount3'],
+                        'rel_type' => 'invoice',
+                        'rel_id' => $invoice['id'],
+                    ];
+                    $api_admin->invoice_subscription_create($sd);
+                }
 
                 $t = [
                     'id' => $id,
-                    's_id' => $sd['sid'],
-                    's_period' => $sd['period'],
+                    's_id' => $ipn['subscr_id'],
+                    's_period' => str_replace(' ', '', $ipn['period3']),
                 ];
                 $api_admin->invoice_transaction_update($t);
 
