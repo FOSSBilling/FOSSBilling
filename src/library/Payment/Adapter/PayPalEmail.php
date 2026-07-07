@@ -335,7 +335,9 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
     private function _generateForm($url, $data, $method = 'post'): string
     {
         $form = '';
-        $form .= '<form name="payment_form" action="' . $url . '" method="' . $method . '">' . PHP_EOL;
+        $safeUrl = htmlspecialchars((string) $url, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $safeMethod = htmlspecialchars((string) $method, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $form .= '<form name="payment_form" action="' . $safeUrl . '" method="' . $safeMethod . '">' . PHP_EOL;
         foreach ($data as $key => $value) {
             $safeKey = htmlspecialchars((string) $key, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
             $safeValue = htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
@@ -385,7 +387,7 @@ document.addEventListener('DOMContentLoaded', function() {
     public function getInvoiceTitle(array $invoice): string
     {
         $p = [
-            ':id' => sprintf('%05s', $invoice['nr']),
+            ':id' => sprintf('%05d', (int) $invoice['nr']),
             ':serie' => $invoice['serie'],
             ':title' => $invoice['lines'][0]['title'],
         ];
