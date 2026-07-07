@@ -56,7 +56,7 @@ class Admin implements InjectionAwareInterface
         $app->get('/staff/email/:hash', 'get_updatepassword', ['hash' => '[a-zA-Z0-9]+'], static::class);
     }
 
-    public function get_login(\Box_App $app)
+    public function get_login(\Box_App $app): string|Response
     {
         if ($this->di['auth']->isAdminLoggedIn()) {
             return $app->redirect('');

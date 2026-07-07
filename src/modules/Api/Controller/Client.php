@@ -18,7 +18,6 @@ namespace Box\Mod\Api\Controller;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\Http\ApiResponseFactory;
-use FOSSBilling\Http\HttpResponseException;
 use FOSSBilling\Http\ResponseFactory;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Security\AuthenticationRequiredException;
@@ -87,8 +86,6 @@ class Client implements InjectionAwareInterface
     {
         try {
             return $this->_apiCall($role, $class, $call, $p);
-        } catch (HttpResponseException $exc) {
-            return $exc->getResponse();
         } catch (AuthenticationRequiredException) {
             return $this->renderJson(null, new \FOSSBilling\InformationException('Authentication Failed', null, 201));
         } catch (EmailValidationRequiredException $exc) {

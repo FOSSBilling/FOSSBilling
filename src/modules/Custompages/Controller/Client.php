@@ -16,6 +16,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Custompages\Controller;
 
+use Symfony\Component\HttpFoundation\Response;
+
 class Client implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
@@ -42,7 +44,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         $app->get('/custompages/:slug', 'get_page', ['slug' => '[a-z0-9-]+'], static::class);
     }
 
-    public function get_page(\Box_App $app, $slug): string
+    public function get_page(\Box_App $app, $slug): string|Response
     {
         $service = new \Box\Mod\Custompages\Service();
         $service->setDi($this->di);
@@ -50,6 +52,6 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         if (isset($page['id'])) {
             return $app->render('mod_custompages_content', ['page' => $page]);
         }
-        $app->redirectUrl($this->di['url']->get(''));
+        return $app->redirectUrl($this->di['url']->get(''));
     }
 }

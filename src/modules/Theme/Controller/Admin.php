@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Theme\Controller;
 
+use Symfony\Component\HttpFoundation\Response;
+
 class Admin implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
@@ -34,7 +36,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
     /**
      * Save theme settings.
      */
-    public function save_theme_settings(\Box_App $app, $theme): void
+    public function save_theme_settings(\Box_App $app, $theme): Response
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeThemeSettingsSave', 'params' => $_POST]);
 
@@ -79,7 +81,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         if ($error) {
             $red_url .= '?error=' . $error;
         }
-        $app->redirect($red_url);
+        return $app->redirect($red_url);
     }
 
     public function get_theme(\Box_App $app, $theme): string

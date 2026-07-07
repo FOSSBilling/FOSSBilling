@@ -14,7 +14,6 @@ global $di;
 
 use DebugBar\DataCollector\TimeDataCollector;
 use FOSSBilling\Http\RequestFactory;
-use Symfony\Component\HttpFoundation\Response;
 
 $config = FOSSBilling\Config::getConfig();
 $debugBar = null;
@@ -105,12 +104,11 @@ if (!is_null($http_err_code)) {
             break;
         default:
             $e = new FOSSBilling\Exception('HTTP Error :err_code occurred while attempting to load :url', [':err_code' => $http_err_code, ':url' => $url], $http_err_code);
-            $response = new Response($app->render('error', ['exception' => $e]), $http_err_code);
+            $response = $app->errorResponse($e);
     }
 } else {
     // If no HTTP error passed, run the app.
     $response = $app->run();
 }
 
-$response->prepare($request)->send();
-exit;
+emitResponse($response);

@@ -14,8 +14,6 @@ namespace Box\Mod\Invoice;
 use Box\Mod\Currency\Entity\Currency;
 use Dompdf\Dompdf;
 use FOSSBilling\Environment;
-use FOSSBilling\Http\HttpResponseException;
-use FOSSBilling\Http\RequestFactory;
 use FOSSBilling\Http\ResponseFactory;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
@@ -1938,30 +1936,12 @@ class Service implements InjectionAwareInterface
         $isOwner = $client !== null && (int) $invoiceClientId === (int) $client->id;
 
         if (!$isOwner && $this->isHashExpired($invoice)) {
-            if ($this->isApiRouteRequest()) {
-                throw new InformationException('This invoice link has expired', [], 403);
-            }
-
-            $this->redirectToInvoiceList();
+            throw new InformationException('This invoice link has expired', [], 403);
         }
 
         if (!$hashAccessAllowed && !$isOwner) {
-            if ($this->isApiRouteRequest()) {
-                throw new InformationException('You do not have permission to perform this action', [], 403);
-            }
-
-            $this->redirectToInvoiceList();
+            throw new InformationException('You do not have permission to perform this action', [], 403);
         }
-    }
-
-    private function isApiRouteRequest(): bool
-    {
-        return str_starts_with(RequestFactory::getRoutePath($this->di['request']), '/api/');
-    }
-
-    private function redirectToInvoiceList(): never
-    {
-        throw new HttpResponseException((new ResponseFactory())->redirect($this->di['url']->link('invoice')));
     }
 
     /**
@@ -2030,7 +2010,7 @@ class Service implements InjectionAwareInterface
 
     protected function createPdfResponse(string $content, string $fileName): Response
     {
-        $response = new Response($content);
+        $response = (new ResponseFactory())->html($content);
         $safeFileName = str_replace(['/', '\\', '%'], '-', trim($fileName));
         if ($safeFileName === '') {
             $safeFileName = 'invoice';

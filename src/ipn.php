@@ -67,12 +67,13 @@ try {
     if ($isJsonWebhook && function_exists('fastcgi_finish_request')) {
         $transactionId = $service->create($ipn);
         $response = $apiResponseFactory->create($transactionId);
-        $response->prepare($request)->send();
+        sendResponse($response);
         fastcgi_finish_request();
 
-        // Process in the background — errors are logged on the transaction.
+        // Process in the background; errors are logged on the transaction.
         $service->processAndCatchErrors((int) $transactionId);
-        exit;
+
+        return;
     }
 
     $output = $service->createAndProcess($ipn);
