@@ -104,6 +104,7 @@ test('getActiveTimezone falls back to valid fb_timezone cookie when client timez
 
     expect(i18n::getActiveTimezone('Mars/Olympus_Mons', null))->toBe('Europe/Berlin');
     expect(i18n::getActiveTimezone('Mars/Olympus_Mons', 'Mars/Olympus_Mons'))->toBe('Europe/Berlin');
+    expect(i18n::getActiveTimezone(null, 'Mars/Olympus_Mons'))->toBe('Europe/Berlin');
 });
 
 test('getActiveTimezone ignores invalid client / admin values and falls back', function (): void {
