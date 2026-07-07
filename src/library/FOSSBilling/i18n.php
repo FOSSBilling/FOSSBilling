@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
+use FOSSBilling\Http\CookieQueue;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
@@ -29,12 +30,13 @@ class i18n
     /**
      * Attempts to get the correct locale for the current user, or a suitable fallback option if it's unavailable.
      *
-     * @param Request $request    the current HTTP request (for cookie / Accept-Language header reads)
-     * @param bool    $autoDetect indicates if the user's Accept-Language header should be used to select the correct locale for them
+     * @param Request          $request    the current HTTP request (for cookie / Accept-Language header reads)
+     * @param bool             $autoDetect indicates if the user's Accept-Language header should be used to select the correct locale for them
+     * @param CookieQueue|null $cookies    cookie queue for caching the detected locale
      *
      * @return string the locale code to use for the system
      */
-    public static function getActiveLocale(Request $request, bool $autoDetect = true): string
+    public static function getActiveLocale(Request $request, bool $autoDetect = true, ?CookieQueue $cookies = null): string
     {
         $locale = null;
 
@@ -49,12 +51,10 @@ class i18n
             $locale = $cookieLocale;
         } elseif (!empty($cookieBBLANG) && in_array($cookieBBLANG, self::getLocales())) {
             $locale = $cookieBBLANG;
-            if (!headers_sent()) {
-                setcookie('fb_locale', (string) $locale, ['expires' => strtotime('+1 month'), 'path' => '/']);
-                setcookie('BBLANG', '', ['expires' => time() - 3600, 'path' => '/']);
-            }
+            $cookies?->queue('fb_locale', (string) $locale, strtotime('+1 month'), '/');
+            $cookies?->queue('BBLANG', '', time() - 3600, '/');
         } elseif ($autoDetect && self::isBrowserLocaleDetectionEnabled()) {
-            $locale = self::getBrowserLocale($request);
+            $locale = self::getBrowserLocale($request, $cookies);
         }
 
         // If we somehow still don't have a locale, use the default / fallback.
@@ -75,7 +75,7 @@ class i18n
      *
      * @return string|null the user's preferred language/locale or null if not found
      */
-    private static function getBrowserLocale(Request $request): ?string
+    private static function getBrowserLocale(Request $request, ?CookieQueue $cookies = null): ?string
     {
         $header = $request->headers->get('Accept-Language', '');
 
@@ -107,18 +107,14 @@ class i18n
             }
             foreach (self::getLocales() as $locale) {
                 if (str_starts_with((string) $locale, substr($detectedLocale, 0, 2))) {
-                    if (!headers_sent()) {
-                        setcookie('fb_locale', (string) $locale, ['expires' => strtotime('+1 month'), 'path' => '/']);
-                    }
+                    $cookies?->queue('fb_locale', (string) $locale, strtotime('+1 month'), '/');
 
                     return $locale;
                 }
             }
         }
 
-        if (!headers_sent()) {
-            setcookie('fb_locale', (string) $matchingLocale, ['expires' => strtotime('+1 month'), 'path' => '/']);
-        }
+        $cookies?->queue('fb_locale', (string) $matchingLocale, strtotime('+1 month'), '/');
 
         return $matchingLocale;
     }

@@ -224,6 +224,8 @@ $di['mod_service'] = $di->protect(fn ($mod, $sub = '') => $di['mod']($mod)->getS
  */
 $di['mod_config'] = $di->protect(fn ($name) => $di['mod']($name)->getConfig());
 
+$di['cookie_queue'] = fn (): FOSSBilling\Http\CookieQueue => new FOSSBilling\Http\CookieQueue();
+
 /*
  *
  * @param void
@@ -730,7 +732,7 @@ $di['translate'] = $di->protect(function ($textDomain = '') use ($di) {
         $tr->setDomain($textDomain);
     }
 
-    $locale = FOSSBilling\i18n::getActiveLocale($di['request']);
+    $locale = FOSSBilling\i18n::getActiveLocale($di['request'], true, $di['cookie_queue']);
 
     $tr->setLocale($locale);
     $tr->setup();

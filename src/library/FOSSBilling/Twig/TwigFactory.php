@@ -89,7 +89,7 @@ class TwigFactory
     public function createBaseEnvironment(): Environment
     {
         // Get internationalisation settings from config, or use sensible defaults.
-        $locale = i18n::getActiveLocale($this->di['request']);
+        $locale = i18n::getActiveLocale($this->di['request'], true, $this->di['cookie_queue']);
         $timezone = $this->resolveTimezoneForActiveUser();
         $dateFormat = strtoupper((string) Config::getProperty('i18n.date_format', 'MEDIUM'));
         $timeFormat = strtoupper((string) Config::getProperty('i18n.time_format', 'SHORT'));
@@ -207,7 +207,7 @@ class TwigFactory
     public function createEmailEnvironment(?string $timezone = null): Environment
     {
         // Get internationalisation settings from config
-        $locale = i18n::getActiveLocale($this->di['request']);
+        $locale = i18n::getActiveLocale($this->di['request'], true, $this->di['cookie_queue']);
         $timezone ??= $this->resolveTimezoneForActiveUser();
         $dateFormat = strtoupper((string) Config::getProperty('i18n.date_format', 'MEDIUM'));
         $timeFormat = strtoupper((string) Config::getProperty('i18n.time_format', 'SHORT'));
@@ -327,7 +327,7 @@ class TwigFactory
 
     private function createSandboxedFragmentEnvironment(SecurityPolicyInterface $policy): Environment
     {
-        $locale = i18n::getActiveLocale($this->di['request']);
+        $locale = i18n::getActiveLocale($this->di['request'], true, $this->di['cookie_queue']);
         $timezone = Config::getProperty('i18n.timezone', 'UTC');
         $dateFormat = strtoupper((string) Config::getProperty('i18n.date_format', 'MEDIUM'));
         $timeFormat = strtoupper((string) Config::getProperty('i18n.time_format', 'SHORT'));
@@ -469,12 +469,16 @@ class TwigFactory
     public function configureCsrf(): void
     {
         $csrfToken = $this->getCsrfToken();
-        setcookie('csrf_token', $csrfToken, [
-            'expires' => 0,
-            'path' => '/',
-            'samesite' => 'Strict',
-            'secure' => $this->di['request']->isSecure(),
-        ]);
+        $this->di['cookie_queue']->queue(
+            'csrf_token',
+            $csrfToken,
+            0,
+            '/',
+            null,
+            $this->di['request']->isSecure(),
+            false,
+            'Strict',
+        );
     }
 
     private function getCsrfToken(): string
