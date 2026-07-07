@@ -170,7 +170,7 @@ test('validateTimezone rejects clearly invalid timezone identifiers', function (
 });
 
 test('validateTimezone throws InformationException for an unknown identifier', function (): void {
-    expect(fn (): ?string => i18n::validateTimezone('Mars/Olympus_Mons'))->toThrow(FOSSBilling\InformationException::class);
+    expect(fn (): ?string => i18n::validateTimezone('Europe/'))->toThrow(FOSSBilling\InformationException::class);
 });
 
 test('getActiveLocale returns the fb_locale cookie when it matches an enabled locale', function (): void {
