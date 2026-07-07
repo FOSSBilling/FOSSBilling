@@ -17,8 +17,7 @@ jobs:
       - name: 'Set up Docker Compose'
         uses: docker/setup-compose-action@4eb059ff7f16592f9c84d5ca339c53cb7c5064e2 # v2.3.0
 
-      # Reuses the image already built once in the PHP Build and Test (8.5) job
-      # instead of rebuilding it here.
+      # Reuses the image already built once in the PHP Build and Test (8.5) job.
       - name: 'Download Test Image Artifact'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:

@@ -86,7 +86,6 @@ jobs:
             ./src/vendor/bin/pest --test-directory ../tests --configuration phpunit.xml.dist --ci
 
       - name: 'Export Test Image Artifact'
-        id: export_image
         # Shared with live-tests/cypress-tests so they don't each rebuild the same image.
         if: matrix.php == '8.5'
         run: docker save --output /tmp/test-image-8.5.tar fossbilling:test-8.5
