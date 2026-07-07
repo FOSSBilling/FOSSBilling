@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -426,7 +425,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $data['helpdesk'] = $helpdesk instanceof Helpdesk ? $helpdesk->toApiArray($identity) : null;
         $data['author'] = $this->getTicketAuthor($model, $identity);
 
-        // @deprecated 0.9.0 Use author instead.
         $data['client'] = $this->getClientApiArrayForTicket($model, $identity);
 
         if ($deep) {
@@ -467,7 +465,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             return $data;
         }
 
-        // @deprecated 0.9.0 Use author.id/name/email instead of client_id/author_name/author_email.
         unset(
             $data['support_helpdesk_id'],
             $data['client_id'],
@@ -580,16 +577,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                     'email' => $ticket['author_email'],
                     'role' => 'guest',
                 ];
-                // @deprecated 0.9.0 Use author instead.
                 $data['client'] = [];
             } elseif (!isset($clients[$ticket['client_id']])) {
                 $this->di['logger']->error('Missing client for ticket ' . $ticket['id']);
                 $data['author'] = [];
-                // @deprecated 0.9.0 Use author instead.
                 $data['client'] = [];
             } else {
                 $data['author'] = $clientAuthors[$ticket['client_id']];
-                // @deprecated 0.9.0 Use author instead.
                 $data['client'] = $clients[$ticket['client_id']];
             }
 
@@ -1087,7 +1081,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $extensionService = $this->di['mod_service']('extension');
         $config = $extensionService->getConfig('mod_support');
 
-        // @deprecated 0.9.0 Use disable_guest_tickets instead.
         $disableGuestTickets = $config['disable_guest_tickets'] ?? $config['disable_public_tickets'] ?? false;
 
         return !$disableGuestTickets;
