@@ -165,12 +165,10 @@ test('validateTimezone returns the value when it is a known IANA identifier', fu
     expect(i18n::validateTimezone('UTC'))->toBe('UTC');
 });
 
-test('validateTimezone rejects clearly invalid timezone identifiers', function (): void {
-    expect(fn (): ?string => i18n::validateTimezone('Mars/Olympus_Mons'))->toThrow(FOSSBilling\InformationException::class);
-});
-
-test('validateTimezone throws InformationException for an unknown identifier', function (): void {
-    expect(fn (): ?string => i18n::validateTimezone('Europe/'))->toThrow(FOSSBilling\InformationException::class);
+test('validateTimezone throws InformationException for invalid timezone identifiers', function (): void {
+    foreach (['Mars/Olympus_Mons', 'Europe/'] as $timezone) {
+        expect(fn (): ?string => i18n::validateTimezone($timezone))->toThrow(FOSSBilling\InformationException::class);
+    }
 });
 
 test('getActiveLocale returns the fb_locale cookie when it matches an enabled locale', function (): void {
