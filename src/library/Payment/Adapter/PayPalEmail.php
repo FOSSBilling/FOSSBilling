@@ -138,6 +138,17 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                     if (!$api_admin->invoice_transaction_claim_for_processing(['id' => $id])) {
                         return;
                     }
+                } else {
+                    $api_admin->invoice_transaction_update([
+                        'id' => $id,
+                        'txn_status' => (string) ($ipn['payment_status'] ?? ''),
+                        'status' => Model_Transaction::STATUS_RECEIVED,
+                        'error' => sprintf('PayPal payment not completed: %s', (string) ($ipn['payment_status'] ?? 'unknown')),
+                        'updated_at' => date('Y-m-d H:i:s'),
+                    ]);
+
+                    break;
+                }
 
                     // Reload transaction to get updated status
                     $tx = $api_admin->invoice_transaction_get(['id' => $id]);
