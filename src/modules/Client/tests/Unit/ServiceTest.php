@@ -681,7 +681,7 @@ test('get throws exception when client not found', function (): void {
 
     $data = ['id' => 0];
     $service->get($data);
-})->throws(FOSSBilling\Exception::class, 'Client not found');
+})->throws(FOSSBilling\InformationException::class, 'Client not found');
 
 test('getClientBalance returns numeric', function (): void {
     $service = new Box\Mod\Client\Service();
@@ -733,6 +733,36 @@ test('toApiArray returns array', function (): void {
     expect($result)->toBeArray();
 });
 
+test('toApiArray includes custom fields beyond the original cap of 10', function (): void {
+    $service = new Box\Mod\Client\Service();
+    $model = new Model_Client();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+
+    $clientGroup = new Model_ClientGroup();
+    $clientGroup->loadBean(new Tests\Helpers\DummyBean());
+    $clientGroup->title = 'Group Title';
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('toArray')
+        ->atLeast()->once()
+        ->andReturn(['custom_15' => 'Extra field value']);
+    $dbMock->shouldReceive('load')
+        ->atLeast()->once()
+        ->andReturn($clientGroup);
+
+    $di = container();
+    $di['db'] = $dbMock;
+
+    $serviceMock = Mockery::mock(Box\Mod\Client\Service::class)->makePartial();
+    $serviceMock->shouldReceive('getClientBalance')
+        ->atLeast()->once();
+
+    $serviceMock->setDi($di);
+
+    $result = $serviceMock->toApiArray($model, true, new Model_Admin());
+    expect($result['custom_15'])->toBe('Extra field value');
+});
+
 dataset('isClientTaxableProvider', [
     [
         false,
@@ -781,6 +811,7 @@ test('adminCreateClient returns int', function (): void {
         'password' => uniqid(),
         'email' => 'test@unit.vm',
         'first_name' => 'test',
+        'aid' => 'LEGACY-1001',
     ];
 
     $dbMock = Mockery::mock('\Box_Database');
@@ -815,6 +846,7 @@ test('adminCreateClient returns int', function (): void {
 
     $result = $service->adminCreateClient($data);
     expect($result)->toBeInt();
+    expect($clientModel->aid)->toBe('LEGACY-1001');
 });
 
 test('deleteGroup returns true', function (): void {
@@ -1126,6 +1158,24 @@ test('resolveDocumentNumber returns null when matching custom field value is emp
     expect($service->resolveDocumentNumber($client))->toBeNull();
 });
 
+test('resolveDocumentNumber matches a custom field beyond the original cap of 10', function (): void {
+    $service = new Box\Mod\Client\Service();
+    $config = [
+        'custom_fields' => [
+            'custom_15' => ['active' => true, 'title' => 'Passport Number'],
+        ],
+    ];
+    $di = container();
+    $di['mod_config'] = $di->protect(fn ($modName): array => $config);
+
+    $client = new Model_Client();
+    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client->custom_15 = 'P-15';
+
+    $service->setDi($di);
+    expect($service->resolveDocumentNumber($client))->toBe('P-15');
+});
+
 test('resolveDocumentNumber returns null when no custom_fields config exists', function (): void {
     $service = new Box\Mod\Client\Service();
     $di = container();
@@ -1136,4 +1186,19 @@ test('resolveDocumentNumber returns null when no custom_fields config exists', f
 
     $service->setDi($di);
     expect($service->resolveDocumentNumber($client))->toBeNull();
+});
+
+test('i18n::validateTimezone returns null for null and empty input', function (): void {
+    expect(FOSSBilling\i18n::validateTimezone(null))->toBeNull();
+    expect(FOSSBilling\i18n::validateTimezone(''))->toBeNull();
+});
+
+test('i18n::validateTimezone returns the value when it is a known IANA identifier', function (): void {
+    expect(FOSSBilling\i18n::validateTimezone('America/New_York'))->toBe('America/New_York');
+    expect(FOSSBilling\i18n::validateTimezone('Europe/Berlin'))->toBe('Europe/Berlin');
+    expect(FOSSBilling\i18n::validateTimezone('UTC'))->toBe('UTC');
+});
+
+test('i18n::validateTimezone throws InformationException for an unknown identifier', function (): void {
+    expect(fn (): ?string => FOSSBilling\i18n::validateTimezone('Mars/Olympus_Mons'))->toThrow(FOSSBilling\InformationException::class);
 });

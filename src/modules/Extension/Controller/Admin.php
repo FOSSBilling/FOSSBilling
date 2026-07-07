@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -11,6 +10,9 @@ declare(strict_types=1);
  */
 
 namespace Box\Mod\Extension\Controller;
+
+use FOSSBilling\InformationException;
+use Symfony\Component\HttpFoundation\Response;
 
 class Admin implements \FOSSBilling\InjectionAwareInterface
 {
@@ -75,11 +77,15 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_extension_languages');
     }
 
-    public function get_settings(\Box_App $app, $mod): string
+    public function get_settings(\Box_App $app, $mod): string|Response
     {
         $this->di['is_admin_logged'];
         $extensionService = $this->di['mod_service']('Extension');
-        $extensionService->hasManagePermission($mod, $app);
+        try {
+            $extensionService->hasManagePermission($mod);
+        } catch (InformationException $e) {
+            return $app->errorResponse($e, 403);
+        }
 
         $file = 'mod_' . $mod . '_settings';
 

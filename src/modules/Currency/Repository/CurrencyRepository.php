@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -19,6 +18,16 @@ use Symfony\Component\Intl\Currencies;
 
 class CurrencyRepository extends EntityRepository
 {
+    public function getClientCurrencyCode(int $clientId): ?string
+    {
+        $currencyCode = $this->getEntityManager()->getConnection()->fetchOne(
+            'SELECT currency FROM client WHERE id = :client_id',
+            ['client_id' => $clientId],
+        );
+
+        return is_string($currencyCode) && $currencyCode !== '' ? $currencyCode : null;
+    }
+
     /**
      * Build a QueryBuilder for searching currencies.
      *

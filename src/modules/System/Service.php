@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -18,7 +17,6 @@ use FOSSBilling\Environment;
 use FOSSBilling\GeoIP\Reader;
 use FOSSBilling\Sanitizer\BrowserHtmlSanitizer;
 use FOSSBilling\SentryHelper;
-use FOSSBilling\Tools;
 use FOSSBilling\Twig\SandboxedStringRenderer;
 use FOSSBilling\Version;
 use Pimple\Container;
@@ -32,13 +30,19 @@ class Service
 
     protected ?Container $di = null;
 
-    public function __construct(private readonly ?Filesystem $filesystem = new Filesystem())
+    private Filesystem $filesystem;
+
+    public function __construct(?Filesystem $filesystem = null)
     {
+        $this->filesystem = $filesystem ?? new Filesystem();
     }
 
     public function setDi(Container $di): void
     {
         $this->di = $di;
+        if (isset($di['filesystem'])) {
+            $this->filesystem = $di['filesystem'];
+        }
     }
 
     public function getModulePermissions(): array
@@ -555,17 +559,21 @@ class Service
      * Render a template string using the sandboxed email Twig environment.
      * Use this for database-stored templates (email templates, mass mailer).
      *
-     * @param string $tpl  The template string to render
-     * @param array  $vars Variables to pass to the template
+     * @param string      $tpl      The template string to render
+     * @param array       $vars     Variables to pass to the template
+     * @param string|null $timezone Optional IANA timezone for date formatting;
+     *                              pass the recipient's so emails render in
+     *                              their local time. Falls back to the active
+     *                              user's timezone, then the config.
      *
      * @return string The rendered template
      *
      * @throws \FOSSBilling\InformationException If template violates sandbox policy or has syntax errors
      */
-    public function renderEmailTplString(string $tpl, array $vars): string
+    public function renderEmailTplString(string $tpl, array $vars, ?string $timezone = null): string
     {
         $twigFactory = $this->di['twig_factory'];
-        $twig = $twigFactory->createEmailEnvironment();
+        $twig = $twigFactory->createEmailEnvironment($timezone);
 
         return SandboxedStringRenderer::render(
             $twig,

@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -19,7 +18,7 @@ class Module implements InjectionAwareInterface
 {
     private ?\Pimple\Container $di = null;
     private readonly string $module;
-    private readonly Filesystem $filesystem;
+    private Filesystem $filesystem;
 
     public const MANIFEST_FILENAME = 'manifest.json';
     public const SERVICE_CLASS_PREFIX = 'Box\\Mod\\';
@@ -38,6 +37,9 @@ class Module implements InjectionAwareInterface
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        if (isset($di['filesystem'])) {
+            $this->filesystem = $di['filesystem'];
+        }
     }
 
     public function getDi(): ?\Pimple\Container
@@ -52,7 +54,6 @@ class Module implements InjectionAwareInterface
         }
 
         $this->module = strtolower($mod);
-        $this->filesystem = new Filesystem();
     }
 
     public function hasManifest(): bool
@@ -89,8 +90,8 @@ class Module implements InjectionAwareInterface
             'icon_url' => null,
             'download_url' => null,
             'project_url' => 'https://extensions.fossbilling.org/',
-            'minimum_boxbilling_version' => null, // @TODO: Rename these
-            'maximum_boxbilling_version' => null,
+            'minimum_fossbilling_version' => null,
+            'maximum_fossbilling_version' => null,
         ];
 
         $info = array_merge($info, $json);

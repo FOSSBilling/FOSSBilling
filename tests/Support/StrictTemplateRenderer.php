@@ -36,6 +36,7 @@ class UrlAwarePermissiveContainer extends \Pimple\Container
         parent::__construct();
         $this->stub = new PermissiveStub();
         $this->store['loaded_assets'] = [];
+        $this['filesystem'] = new \Symfony\Component\Filesystem\Filesystem();
     }
 
     #[\Override]

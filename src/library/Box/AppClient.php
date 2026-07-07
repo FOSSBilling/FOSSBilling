@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -62,15 +61,29 @@ class Box_AppClient extends Box_App
             $content = $this->render($tpl, ['post' => $this->getRequest()->request->all()], $ext);
 
             if ("{$tpl}.{$ext}" === 'mod_page_sitemap.xml') {
-                return new Response($content, 200, ['Content-Type' => 'application/xml']);
+                return $this->responseFactory()->html($content, 200, ['Content-Type' => 'application/xml']);
             }
 
-            return new Response($content);
-        } catch (Exception $e) {
+            return $this->responseFactory()->html($content);
+        } catch (FOSSBilling\InformationException $e) {
             // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
             if (DEBUG) {
                 error_log($e->getMessage());
             }
+        } catch (Twig\Error\LoaderError|Twig\Error\RuntimeError|Twig\Error\SyntaxError $e) {
+            // A real template bug, not a missing page. Surface as a 500 so the
+            // next regression of this shape (issue #3818) cannot hide behind a
+            // generic 404.
+            $this->di['logger']->setChannel('routing')->error(sprintf(
+                'Template rendering failed for "%s" (page "%s"): %s',
+                $tpl,
+                (string) $page,
+                $e->getMessage(),
+            ), ['exception' => $e]);
+
+            $internal = new FOSSBilling\InformationException('The requested page could not be rendered.', [], 500);
+
+            return $this->errorResponse($internal);
         }
         $e = new FOSSBilling\InformationException('Page :url not found', [':url' => $this->url], 404);
 

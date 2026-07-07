@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -43,7 +42,7 @@ class Box_Authorization
         }
 
         $adminModel = $this->di['db']->load('Admin', $admin['id']);
-        if (!$adminModel || $adminModel->status !== Model_Admin::STATUS_ACTIVE) {
+        if (!$adminModel || $adminModel->status !== Model_Admin::STATUS_ACTIVE || $adminModel->isCron()) {
             $this->session->delete('admin');
 
             return false;

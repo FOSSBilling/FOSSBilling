@@ -204,8 +204,28 @@
                             </div>
                         </div>
                     </div>
+                    <div class="row">
+                        <div class="mb-3 col-md-12">
+                            <div class="tn-field">
+                                <label class="tn-field__label" for="timezone">{{ 'Timezone'|trans }}</label>
+                                <div class="tn-select-wrap">
+                                    <select class="tn-select" name="timezone" id="timezone" data-timezone-select>
+                                        <option value="">{{ '-- Use system default --'|trans }}</option>
+                                        {% for region, identifiers in guest.system_timezones %}
+                                            <optgroup label="{{ region }}">
+                                                {% for identifier in identifiers %}
+                                                    <option value="{{ identifier }}" {% if identifier == profile.timezone %}selected="selected"{% endif %}>{{ identifier }}</option>
+                                                {% endfor %}
+                                            </optgroup>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <small class="fs-7 text-muted">{{ 'Used to display dates and times in your local time across tickets, invoices, and order history.'|trans }}</small>
+                            </div>
+                        </div>
+                    </div>
 
-                    {% for i in 1..10 %}
+                    {% for i in 1..20 %}
                         {% set custom = 'custom_' ~ i %}
                         {% set current = guest.client_custom_fields|default({})[custom]|default(null) %}
                         {% if current and current.active %}

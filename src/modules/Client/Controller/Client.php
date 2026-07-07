@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -62,14 +61,16 @@ class Client implements \FOSSBilling\InjectionAwareInterface
 
         $systemService = $this->di['mod_service']('System');
         $systemService->setPendingMessage(__trans('Email address was confirmed'));
-        $app->redirect('/');
+
+        return $app->redirect('/');
     }
 
-    public function get_client_logout(\Box_App $app): never
+    public function get_client_logout(\Box_App $app): Response
     {
         $api = $this->di['api_client'];
         $api->profile_logout();
-        $app->redirect('/');
+
+        return $app->redirect('/');
     }
 
     public function get_client_page(\Box_App $app, $page): string

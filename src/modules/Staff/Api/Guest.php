@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -94,8 +93,8 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
             $admin = $this->getDi()['db']->getExistingModelById('Admin', $reset->admin_id, 'Admin not found');
 
-            if ($admin->status !== \Model_Admin::STATUS_ACTIVE || $admin->role === \Model_Admin::ROLE_CRON) {
-                $this->getDi()['logger']->setChannel('security')->info('Staff password reset confirmation failed for admin #%s from IP %s: account status %s, role %s', $admin->id, $this->getIp(), $admin->status, $admin->role);
+            if ($admin->status !== \Model_Admin::STATUS_ACTIVE || $admin->isCron()) {
+                $this->getDi()['logger']->setChannel('security')->info('Staff password reset confirmation failed for admin #%s from IP %s: account status %s, system name %s', $admin->id, $this->getIp(), $admin->status, $admin->system_name);
 
                 throw new \FOSSBilling\InformationException('The link has expired or you have already confirmed the password reset.');
             }
@@ -162,8 +161,8 @@ class Guest extends \FOSSBilling\Api\AbstractApi
                 return true;
             }
 
-            if ($c->status !== \Model_Admin::STATUS_ACTIVE || $c->role === \Model_Admin::ROLE_CRON) {
-                $this->getDi()['logger']->setChannel('security')->info('Staff password reset requested for ineligible admin #%s from IP %s: email %s, account status %s, role %s', $c->id, $this->getIp(), $data['email'], $c->status, $c->role);
+            if ($c->status !== \Model_Admin::STATUS_ACTIVE || $c->isCron()) {
+                $this->getDi()['logger']->setChannel('security')->info('Staff password reset requested for ineligible admin #%s from IP %s: email %s, account status %s, system name %s', $c->id, $this->getIp(), $data['email'], $c->status, $c->system_name);
 
                 return true;
             }

@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -11,6 +10,9 @@ declare(strict_types=1);
  */
 
 namespace Box\Mod\Redirect\Controller;
+
+use FOSSBilling\Http\ResponseFactory;
+use Symfony\Component\HttpFoundation\Response;
 
 class Client implements \FOSSBilling\InjectionAwareInterface
 {
@@ -47,16 +49,16 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         }
     }
 
-    public function do_redirect(\Box_App $app): never
+    public function do_redirect(\Box_App $app): Response
     {
         $service = $this->di['mod_service']('redirect');
         $target = $service->getRedirectByPath($app->uri);
 
         if ($target === null || !$this->isTargetAllowed($target)) {
-            $app->abortWithResponse(new \Symfony\Component\HttpFoundation\Response('', 404));
+            return (new ResponseFactory())->html('', 404);
         }
 
-        $app->redirectUrl($target, 301);
+        return $app->redirectUrl($target, 301);
     }
 
     private function isTargetAllowed(string $target): bool

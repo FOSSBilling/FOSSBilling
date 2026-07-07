@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -16,8 +15,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Email\Api;
 
+use Box\Mod\Staff\Entity\AdminGroup;
 use FOSSBilling\PaginationOptions;
-use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Admin extends \FOSSBilling\Api\AbstractApi
@@ -31,27 +30,12 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('email', 'view_email_history');
 
-        [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $repo = $this->getService()->getActivityClientEmailRepository();
 
-        foreach ($pager['list'] as $key => $item) {
-            if (!is_array($item)) {
-                continue;
-            }
-            $pager['list'][$key] = [
-                'id' => $item['id'],
-                'client_id' => $item['client_id'],
-                'sender' => $item['sender'] ?? '',
-                'recipients' => $item['recipients'] ?? '',
-                'subject' => $item['subject'] ?? '',
-                'content_html' => Tools::sanitizeContent($item['content_html'] ?? ''),
-                'content_text' => $item['content_text'] ?? '',
-                'created_at' => $item['created_at'] ?? '',
-                'updated_at' => $item['updated_at'] ?? '',
-            ];
-        }
-
-        return $pager;
+        return $this->getDi()['pager']->paginateDoctrineQuery(
+            $repo->getSearchQueryBuilder($data),
+            PaginationOptions::fromArray($data),
+        );
     }
 
     /**
@@ -64,10 +48,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('email', 'view_email_history');
 
-        $service = $this->getService();
-        $model = $service->getEmailById($data['id']);
+        $model = $this->getService()->getActivityClientEmailRepository()->findOneByIdOrFail((int) $data['id']);
 
-        return $service->toApiArray($model);
+        return $model->toApiArray();
     }
 
     /**
@@ -113,11 +96,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('email', 'send_emails');
 
-        $model = $this->getDi()['db']->findOne('ActivityClientEmail', 'id = ?', [$data['id']]);
-
-        if (!$model instanceof \Model_ActivityClientEmail) {
-            throw new \FOSSBilling\Exception('Email not found');
-        }
+        $model = $this->getService()->getActivityClientEmailRepository()->findOneByIdOrFail((int) $data['id']);
 
         return $this->getService()->resend($model);
     }
@@ -132,14 +111,12 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('email', 'delete_email_history');
 
-        $model = $this->getDi()['db']->findOne('ActivityClientEmail', 'id = ?', [$data['id']]);
+        $em = $this->getDi()['em'];
+        $model = $this->getService()->getActivityClientEmailRepository()->findOneByIdOrFail((int) $data['id']);
 
-        if (!$model instanceof \Model_ActivityClientEmail) {
-            throw new \FOSSBilling\Exception('Email not found');
-        }
-
-        $id = $model->id;
-        $this->getDi()['db']->trash($model);
+        $id = $model->getId();
+        $em->remove($model);
+        $em->flush();
 
         $this->getDi()['logger']->info('Deleted email #%s', $id);
 
@@ -210,6 +187,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         }
 
         $id = $template->getId();
+        $service->getTemplateGroupRepository()->deleteAssociationsForTemplate((int) $id);
         $this->getDi()['em']->remove($template);
         $this->getDi()['em']->flush();
 
@@ -263,6 +241,64 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $model = $this->getService()->getTemplate((int) $data['id']);
 
         return $this->getService()->updateTemplate($model, $enabled, $category, $subject, $content);
+    }
+
+    /**
+     * List the staff groups a template is restricted to.
+     *
+     * @return array
+     */
+    #[RequiredParams(['id' => 'Email ID was not passed'])]
+    public function template_group_get_list($data)
+    {
+        $this->checkPermissions('email', 'view_templates');
+
+        $service = $this->getService();
+        $template = $service->getTemplate((int) $data['id']);
+        $groupIds = $service->getTemplateGroupIds($template);
+
+        if ($groupIds === []) {
+            return [];
+        }
+
+        $groups = $this->getDi()['mod_service']('staff')->getAdminGroupRepository()->findBy(['id' => $groupIds]);
+
+        return array_map(
+            static fn (AdminGroup $group): array => [
+                'id' => $group->getId(),
+                'name' => $group->getName(),
+                'protected' => $group->isProtected(),
+            ],
+            $groups,
+        );
+    }
+
+    /**
+     * Restrict an email template to an additional staff group.
+     */
+    #[RequiredParams(['id' => 'Email ID was not passed', 'group_id' => 'Staff group ID was not passed'])]
+    public function template_group_add($data): bool
+    {
+        $this->checkPermissions('email', 'manage_templates');
+
+        $service = $this->getService();
+        $template = $service->getTemplate((int) $data['id']);
+
+        return $service->addTemplateToGroup($template, (int) $data['group_id']);
+    }
+
+    /**
+     * Remove a staff group restriction from an email template.
+     */
+    #[RequiredParams(['id' => 'Email ID was not passed', 'group_id' => 'Staff group ID was not passed'])]
+    public function template_group_remove($data): bool
+    {
+        $this->checkPermissions('email', 'manage_templates');
+
+        $service = $this->getService();
+        $template = $service->getTemplate((int) $data['id']);
+
+        return $service->removeTemplateFromGroup($template, (int) $data['group_id']);
     }
 
     /**
@@ -447,23 +483,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('email', 'view_email_history');
 
-        [$sql, $params] = $this->getService()->queueGetSearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $repo = $this->getService()->getQueuedEmailRepository();
 
-        foreach ($pager['list'] as $key => $item) {
-            $pager['list'][$key] = [
-                'id' => $item['id'] ?? '',
-                'recipient' => $item['recipient'] ?? '',
-                'subject' => $item['subject'] ?? '',
-                'content' => $item['content'] ?? '',
-                'to_name' => $item['to_name'] ?? '',
-                'status' => $item['status'] ?? '',
-                'tries' => $item['tries'] ?? '',
-                'created_at' => $item['created_at'] ?? '',
-                'updated_at' => $item['updated_at'] ?? '',
-            ];
-        }
-
-        return $pager;
+        return $this->getDi()['pager']->paginateDoctrineQuery(
+            $repo->getSearchQueryBuilder($data),
+            PaginationOptions::fromArray($data),
+        );
     }
 }

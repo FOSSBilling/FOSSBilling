@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -12,14 +11,29 @@ declare(strict_types=1);
 
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
+use FOSSBilling\Http\ExceptionResponseFactory;
 use FOSSBilling\Http\RequestFactory;
 use FOSSBilling\SentryHelper;
 use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Whoops\Handler\PrettyPageHandler;
-use Whoops\Run;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+function emitResponse(Response $response): never
+{
+    sendResponse($response);
+    exit;
+}
+
+function sendResponse(Response $response): void
+{
+    global $request;
+
+    $currentRequest = $request instanceof Request ? $request : Request::createFromGlobals();
+    $response->prepare($currentRequest)->send();
+}
 
 /*
  * Check if the installer is present.
@@ -57,8 +71,7 @@ function checkSSL(): void
 
     if (Config::getProperty('security.force_https') && !Environment::isCLI()) {
         if (!$request->isSecure()) {
-            (new RedirectResponse('https://' . $request->getHost() . $request->getRequestUri()))->send();
-            exit;
+            emitResponse(new RedirectResponse('https://' . $request->getHost() . $request->getRequestUri()));
         }
     }
 }
@@ -68,10 +81,10 @@ function checkSSL(): void
  */
 function checkWebServer(): void
 {
-    global $filesystem;
+    global $filesystem, $request;
 
     // Check for missing required .htaccess on Apache and Apache-compatible web servers.
-    $webServer = SentryHelper::estimateWebServer();
+    $webServer = SentryHelper::estimateWebServer($request->server->get('SERVER_SOFTWARE', ''));
     if ($webServer === 'Apache' || $webServer === 'Litespeed') {
         if (!$filesystem->exists('.htaccess')) {
             throw new Exception('Missing .htaccess file', 5);
@@ -138,52 +151,17 @@ function errorHandler(int $number, string $message, string $file, int $line): bo
  */
 function exceptionHandler(Exception|Error $e)
 {
-    global $filesystem;
+    $exceptionResponseFactory = new ExceptionResponseFactory();
 
     if (Environment::isTesting()) {
-        $msg = $e::class . ': ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine() . PHP_EOL;
+        $msg = $exceptionResponseFactory->formatTestingMessage($e);
         @file_put_contents(Path::join(PATH_LOG, 'exception_handler.log'), date('c') . ' ' . $msg, FILE_APPEND);
         @file_put_contents(Path::join(PATH_ROOT, 'data', 'log', 'exception_handler.log'), date('c') . ' ' . $msg, FILE_APPEND);
-        echo $msg;
-
-        return;
-    }
-    error_log("{$e->getMessage()} at {$e->getFile()} : {$e->getLine()}");
-
-    $message = htmlspecialchars($e->getMessage());
-
-    if (defined('API_MODE')) {
-        $code = $e->getCode() ?: 9998;
-        $result = ['result' => null, 'error' => ['message' => $message, 'code' => $code]];
-        echo json_encode($result);
-
-        return false;
-    }
-
-    // @phpstan-ignore booleanAnd.alwaysFalse, booleanAnd.rightAlwaysFalse (DEBUG is a runtime constant)
-    if (defined('DEBUG') && DEBUG && $filesystem->exists(PATH_VENDOR)) {
-        /**
-         * If advanced debugging is enabled, print Whoops instead of our error page.
-         * filp/whoops documentation: https://github.com/filp/whoops/blob/master/docs/API%20Documentation.md.
-         */
-        $whoops = new Run();
-        $prettyPage = new PrettyPageHandler();
-        $prettyPage->setPageTitle('An error occurred');
-        $prettyPage->addDataTable('FOSSBilling environment', [
-            'PHP Version' => PHP_VERSION,
-            'Error code' => $e->getCode(),
-            // @phpstan-ignore nullCoalesce.expr (INSTANCE_ID is a runtime constant that may not be defined during analysis)
-            'Instance ID' => INSTANCE_ID ?? 'Unknown',
-        ]);
-        $whoops->pushHandler($prettyPage);
-        $whoops->allowQuit(false);
-        $whoops->writeToOutput(false);
-
-        echo $whoops->handleException($e);
     } else {
-        $errorPage = new FOSSBilling\ErrorPage();
-        $errorPage->generatePage($e->getCode(), $message);
+        error_log("{$e->getMessage()} at {$e->getFile()} : {$e->getLine()}");
     }
+
+    emitResponse($exceptionResponseFactory->create($e));
 }
 
 /*
@@ -220,7 +198,13 @@ function preInit(): void
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'ErrorPage.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'SentryHelper.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Environment.php');
+    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'ApiResponseFactory.php');
+    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'ExceptionResponseFactory.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'RequestFactory.php');
+    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'ResponseFactory.php');
+    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'RouteDefinition.php');
+    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'RouteMatch.php');
+    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'RouteMatcher.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Config.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Tools.php');
 }
@@ -246,17 +230,13 @@ function init(): void
     $installerExists = $filesystem->exists(Path::join('install', 'install.php'));
 
     if (!$configExists && $installerExists) {
-        $response = new RedirectResponse($request->getBasePath() . '/install/install.php', 307);
-        $response->send();
-        exit;
+        emitResponse(new RedirectResponse($request->getBasePath() . '/install/install.php', 307));
     } elseif (!$configIsValid) {
         throw new Exception('The FOSSBilling configuration file is empty or invalid.', 3);
     }
 
     if (Environment::isDevelopment() && Config::getProperty('debug_and_monitoring.debug', false) && $installerExists && !hasDatabaseTables()) {
-        $response = new RedirectResponse($request->getBasePath() . '/install/install.php', 307);
-        $response->send();
-        exit;
+        emitResponse(new RedirectResponse($request->getBasePath() . '/install/install.php', 307));
     }
 
     RequestFactory::configureFromConfig($request);
@@ -298,7 +278,7 @@ function init(): void
     }
 
     // Now that the config file is loaded, we can enable Sentry.
-    SentryHelper::registerSentry();
+    SentryHelper::registerSentry($request->server->get('SERVER_SOFTWARE', ''));
 }
 
 /*

@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -18,6 +17,19 @@ use Doctrine\ORM\QueryBuilder;
 
 class PostRepository extends EntityRepository
 {
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findAdminSummary(int $adminId): ?array
+    {
+        $row = $this->getEntityManager()->getConnection()->fetchAssociative(
+            'SELECT name FROM admin WHERE id = :id',
+            ['id' => $adminId],
+        );
+
+        return $row !== false ? $row : null;
+    }
+
     /**
      * Build a QueryBuilder for searching posts with optional filters.
      *

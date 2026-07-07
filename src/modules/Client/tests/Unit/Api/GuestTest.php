@@ -352,3 +352,22 @@ test('required returns array', function (): void {
     $result = $guestClient->required();
     expect($result)->toBeArray();
 });
+
+test('custom_fields returns fields sorted alphabetically by title', function (): void {
+    $guestClient = new Box\Mod\Client\Api\Guest();
+    $configArr = [
+        'custom_fields' => [
+            'custom_2' => ['active' => true, 'title' => 'VAT Number'],
+            'custom_1' => ['active' => true, 'title' => 'Company Name'],
+            'custom_3' => ['active' => true, 'title' => 'Address'],
+        ],
+    ];
+
+    $di = container();
+    $di['mod_config'] = $di->protect(fn ($name): array => $configArr);
+
+    $guestClient->setDi($di);
+
+    $result = $guestClient->custom_fields();
+    expect(array_keys($result))->toBe(['custom_3', 'custom_1', 'custom_2']);
+});

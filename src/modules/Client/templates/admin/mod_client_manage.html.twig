@@ -95,6 +95,12 @@
                                         <td class="w-50 text-end">{{ 'Client ID'|trans }}:</td>
                                         <td>{{ client.id }}</td>
                                     </tr>
+                                    {% if client.aid %}
+                                    <tr>
+                                        <td class="text-end">{{ 'Custom Client ID'|trans }}:</td>
+                                        <td>{{ client.aid }}</td>
+                                    </tr>
+                                    {% endif %}
                                     <tr>
                                         <td class="text-end">{{ 'Name'|trans }}:</td>
                                         <td>{{ client.first_name }} {{ client.last_name }}</td>
@@ -351,8 +357,8 @@
                             <h6 class="card-title text-secondary mb-3">{{ 'Additional Settings'|trans }}</h6>
                             <div class="row g-3">
                                 <div class="col-xl-6">
-                                    <label class="form-label">{{ 'Alternative ID'|trans }}</label>
-                                    <input class="form-control" type="text" name="aid" value="{{ client.aid }}" placeholder="{{ 'Used to identify client on foreign system. Usually used by importers'|trans }}">
+                                    <label class="form-label">{{ 'Custom Client ID'|trans }}</label>
+                                    <input class="form-control" type="text" name="aid" value="{{ client.aid }}" placeholder="{{ 'Existing customer ID from another system'|trans }}">
                                 </div>
                                 <div class="col-xl-3">
                                     <label class="form-label">{{ 'Currency'|trans }}</label>
@@ -382,7 +388,7 @@
                                             >
                                             <span class="input-icon-addon">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                    <path stroke="none" d="M0 0h24 24H0z" fill="none"></path>
                                                     <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path>
                                                     <path d="M16 3l0 4"></path>
                                                     <path d="M8 3l0 4"></path>
@@ -393,6 +399,20 @@
                                             </span>
                                         </div>
                                     </div>
+                                </div>
+                                <div class="col-xl-6">
+                                    <label class="form-label" for="timezone">{{ 'Timezone'|trans }}</label>
+                                    <select class="form-select" name="timezone" id="timezone">
+                                        <option value="">{{ '-- Use system default --'|trans }}</option>
+                                        {% for region, identifiers in guest.system_timezones %}
+                                            <optgroup label="{{ region }}">
+                                                {% for identifier in identifiers %}
+                                                    <option value="{{ identifier }}" {% if identifier == client.timezone %}selected="selected"{% endif %}>{{ identifier }}</option>
+                                                {% endfor %}
+                                            </optgroup>
+                                        {% endfor %}
+                                    </select>
+                                    <small class="form-hint text-muted">{{ 'Used to display dates and times in the client\'s local time across tickets, invoices, and order history.'|trans }}</small>
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label">{{ 'Notes'|trans }}</label>
@@ -447,7 +467,7 @@
                         {% import 'macro_functions.html.twig' as mf %}
                         {% block form_content %}
                         <div class="row g-3">
-                            {% for i in 1..10 %}
+                            {% for i in 1..20 %}
                             {% set fn = 'custom_' ~ i %}
                             <div class="col-xl-6">
                                 <label class="form-label">{{ 'Custom field'|trans }} {{ i }}</label>

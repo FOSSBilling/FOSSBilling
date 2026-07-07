@@ -17,7 +17,6 @@ use function Tests\Helpers\container;
 
 test('ticket get list', function (): void {
     $clientApi = new Box\Mod\Support\Api\Client();
-    $api = new Box\Mod\Support\Api\Client();
     $simpleResultArr = [
         'list' => [
             ['id' => 1],
@@ -25,29 +24,21 @@ test('ticket get list', function (): void {
     ];
     $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
     $paginatorMock
-    ->shouldReceive('getPaginatedResultSet')
+    ->shouldReceive('paginateMappedQuery')
     ->atLeast()->once()
     ->andReturn($simpleResultArr);
 
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
-    $serviceMock->shouldReceive('getSearchQuery')->atLeast()->once()
-        ->andReturn(['query', []]);
-    $serviceMock
-    ->shouldReceive('toApiArray')
-    ->atLeast()->once()
-    ->andReturn([]);
 
-    $model = new Model_SupportTicket();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn($model);
+    $repo = Mockery::mock(Box\Mod\Support\Repository\SupportTicketRepository::class);
+    $qb = Mockery::mock(Doctrine\ORM\QueryBuilder::class);
+    $repo->shouldReceive('getSearchQueryBuilder')->andReturn($qb);
+
+    $serviceMock->shouldReceive('getSupportTicketRepository')->andReturn($repo);
 
     $di = container();
     $di['pager'] = $paginatorMock;
-    $di['db'] = $dbMock;
+    $di['em'] = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
 
     $clientApi->setDi($di);
 
@@ -66,9 +57,12 @@ test('ticket get list', function (): void {
 
 test('ticket get', function (): void {
     $clientApi = new Box\Mod\Support\Api\Client();
+    $ticket = new Box\Mod\Support\Entity\SupportTicket();
+    \Tests\Helpers\setEntityId($ticket, 1);
+
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
     $serviceMock->shouldReceive('findOneByClient')->atLeast()->once()
-        ->andReturn(new Model_SupportTicket());
+        ->andReturn($ticket);
     $serviceMock->shouldReceive('toApiArray')->atLeast()->once()
         ->andReturn([]);
 
@@ -147,14 +141,15 @@ test('ticket reply', function (): void {
     $serviceMock->shouldReceive('ticketReply')->atLeast()->once()
         ->andReturn(1);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('findOne')
-    ->atLeast()->once()
-    ->andReturn(new Model_SupportTicket());
+    $ticket = new Box\Mod\Support\Entity\SupportTicket();
+    Tests\Helpers\setEntityId($ticket, 1);
+    $ticketRepoMock = Mockery::mock(Box\Mod\Support\Repository\SupportTicketRepository::class);
+    $ticketRepoMock->shouldReceive('findOneByClient')->atLeast()->once()
+        ->andReturn($ticket);
+    $serviceMock->shouldReceive('getSupportTicketRepository')->atLeast()->once()
+        ->andReturn($ticketRepoMock);
 
     $di = container();
-    $di['db'] = $dbMock;
     $clientApi->setDi($di);
 
     $client = new Model_Client();
@@ -182,15 +177,15 @@ test('ticket reply can not be reopened exception', function (): void {
     $serviceMock->shouldReceive('ticketReply')
         ->andReturn(1);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('findOne')
-    ->atLeast()->once()
-    ->andReturn(new Model_SupportTicket());
+    $ticket = new Box\Mod\Support\Entity\SupportTicket();
+    Tests\Helpers\setEntityId($ticket, 1);
+    $ticketRepoMock = Mockery::mock(Box\Mod\Support\Repository\SupportTicketRepository::class);
+    $ticketRepoMock->shouldReceive('findOneByClient')->atLeast()->once()
+        ->andReturn($ticket);
+    $serviceMock->shouldReceive('getSupportTicketRepository')->atLeast()->once()
+        ->andReturn($ticketRepoMock);
 
     $di = container();
-    $di['db'] = $dbMock;
-
     $clientApi->setDi($di);
 
     $client = new Model_Client();
@@ -211,7 +206,7 @@ test('ticket close', function (): void {
     $clientApi = new Box\Mod\Support\Api\Client();
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
     $serviceMock->shouldReceive('findOneByClient')->atLeast()->once()
-        ->andReturn(new Model_SupportTicket());
+        ->andReturn(new Box\Mod\Support\Entity\SupportTicket());
     $serviceMock->shouldReceive('closeTicket')->atLeast()->once()
         ->andReturn(true);
 

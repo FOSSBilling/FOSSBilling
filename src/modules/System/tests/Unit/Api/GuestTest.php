@@ -146,3 +146,36 @@ test('get_pending_messages returns and clears pending messages', function (): vo
     $result = $api->get_pending_messages();
     expect($result)->toBeArray()->toEqual($messageArr);
 });
+
+test('timezones returns the grouped IANA timezone list', function (): void {
+    $api = new Box\Mod\System\Api\Guest();
+    $api->setDi(container());
+
+    $result = $api->timezones();
+
+    expect($result)->toBeArray();
+    expect($result)->toHaveKey('UTC');
+    expect($result['UTC'])->toContain('UTC');
+    expect($result)->toHaveKey('America');
+    expect($result['America'])->toContain('America/New_York');
+    expect($result)->toHaveKey('Europe');
+    expect($result['Europe'])->toContain('Europe/London');
+
+    // The list should not contain invalid or empty entries.
+    foreach ($result as $identifiers) {
+        expect($identifiers)->toBeArray();
+        foreach ($identifiers as $identifier) {
+            expect($identifier)->toBeString()->not->toBeEmpty();
+            expect(in_array($identifier, DateTimeZone::listIdentifiers(), true))->toBeTrue();
+        }
+    }
+});
+
+test('locale returns the active locale string', function (): void {
+    $api = new Box\Mod\System\Api\Guest();
+    $api->setDi(container());
+
+    $result = $api->locale();
+
+    expect($result)->toBeString()->not->toBeEmpty();
+});

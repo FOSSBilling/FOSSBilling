@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -250,14 +249,14 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     public function update_finalization_status(): array
     {
-        $this->checkPermissions('system', 'system_update');
+        $this->checkUpdateFinalizationPermissions();
 
         return $this->getDi()['update_finalization']->getStatus();
     }
 
     public function finalize_update(): bool
     {
-        $this->checkPermissions('system', 'system_update');
+        $this->checkUpdateFinalizationPermissions();
 
         if (function_exists('set_time_limit')) {
             set_time_limit(180);
@@ -272,12 +271,40 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     public function complete_update_finalization(): bool
     {
-        $this->checkPermissions('system', 'system_update');
+        $this->checkUpdateFinalizationPermissions();
 
         $this->getDi()['update_finalization']->completeFinalization();
         $this->getDi()['logger']->info('Completed FOSSBilling update finalization for %s.', \FOSSBilling\Version::VERSION);
 
         return true;
+    }
+
+    private function checkUpdateFinalizationPermissions(): void
+    {
+        if (!$this->getDi()['update_finalization']->isRequired()) {
+            $this->checkPermissions('system', 'system_update');
+
+            return;
+        }
+
+        if ($this->identity instanceof \Model_Admin) {
+            try {
+                if ($this->getDi()['mod_service']('Staff')->isSuperAdministrator($this->identity->id)) {
+                    return;
+                }
+            } catch (\Doctrine\DBAL\Exception) {
+                // If the installation hasn't migrated to the new group structure yet,
+                // Manually look for the old "admin" role
+                if (
+                    $this->getDi()['db']->getCell("SHOW COLUMNS FROM `admin` LIKE 'role'")
+                    && $this->getDi()['db']->getCell('SELECT role FROM admin WHERE id = :id', ['id' => (int) $this->identity->id]) === 'admin'
+                ) {
+                    return;
+                }
+            }
+        }
+
+        throw new \FOSSBilling\InformationException('You need to be a Super Administrator to finalize this update.', [], 403);
     }
 
     /**

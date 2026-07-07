@@ -28,6 +28,7 @@ function container(): Container
     ];
     $di['validator'] = fn (): \FOSSBilling\Validate => new \FOSSBilling\Validate();
     $di['tools'] = fn (): \FOSSBilling\Tools => new \FOSSBilling\Tools();
+    $di['filesystem'] = fn (): \Symfony\Component\Filesystem\Filesystem => new \Symfony\Component\Filesystem\Filesystem();
     $di['logger'] = fn (): \Psr\Log\LoggerInterface => new class extends AbstractLogger {
         public array $calls = [];
 
@@ -44,6 +45,7 @@ function container(): Container
         }
     };
     $di['request'] = fn (): Request => Request::create('http://localhost/');
+    $di['filesystem'] = fn (): \Symfony\Component\Filesystem\Filesystem => new \Symfony\Component\Filesystem\Filesystem();
     $di['session'] = static function (): object {
         $session = \Mockery::mock(\FOSSBilling\Session::class)->shouldIgnoreMissing();
         $session->shouldReceive('regenerateId')->byDefault()->andReturnNull();
@@ -156,7 +158,11 @@ function container(): Container
         }
     };
     $di['mod_config'] = $di->protect(fn (string $name): array => []);
+    $di['cookie_queue'] = fn (): \FOSSBilling\Http\CookieQueue => new \FOSSBilling\Http\CookieQueue();
     $di['em'] = static function (): object {
+        $adminGroupRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminGroupRepository::class)->shouldIgnoreMissing();
+        $adminGroupMemberRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminGroupMemberRepository::class)->shouldIgnoreMissing();
+
         $extensionMetaRepository = \Mockery::mock(\Box\Mod\Extension\Repository\ExtensionMetaRepository::class)->shouldIgnoreMissing();
         $extensionMetaRepository->shouldReceive('findOneByExtensionAndScope')->byDefault()->andReturn(null);
         $extensionMetaRepository->shouldReceive('findByExtensionAndScope')->byDefault()->andReturn([]);
@@ -168,20 +174,41 @@ function container(): Container
         $emailTemplateRepository->shouldReceive('findOneByActionCode')->byDefault()->andReturn(null);
         $emailTemplateRepository->shouldReceive('getSearchQueryBuilder')->byDefault()->andReturn($templateQueryBuilder);
 
+        $emailTemplateGroupRepository = \Mockery::mock(\Box\Mod\Email\Repository\EmailTemplateGroupRepository::class)->shouldIgnoreMissing();
+        $emailTemplateGroupRepository->shouldReceive('getGroupIdsForTemplate')->byDefault()->andReturn([]);
+        $emailTemplateGroupRepository->shouldReceive('countTemplatesUsingGroup')->byDefault()->andReturn(0);
+
+        $activityClientEmailRepository = \Mockery::mock(\Box\Mod\Email\Repository\ActivityClientEmailRepository::class)->shouldIgnoreMissing();
+        $queuedEmailRepository = \Mockery::mock(\Box\Mod\Email\Repository\QueuedEmailRepository::class)->shouldIgnoreMissing();
+
         $kbArticleRepository = \Mockery::mock(\Box\Mod\Support\Repository\KbArticleRepository::class)->shouldIgnoreMissing();
         $kbArticleCategoryRepository = \Mockery::mock(\Box\Mod\Support\Repository\KbArticleCategoryRepository::class)->shouldIgnoreMissing();
         $cannedResponseRepository = \Mockery::mock(\Box\Mod\Support\Repository\CannedResponseRepository::class)->shouldIgnoreMissing();
         $cannedResponseCategoryRepository = \Mockery::mock(\Box\Mod\Support\Repository\CannedResponseCategoryRepository::class)->shouldIgnoreMissing();
         $helpdeskRepository = \Mockery::mock(\Box\Mod\Support\Repository\HelpdeskRepository::class)->shouldIgnoreMissing();
+        $supportTicketRepository = \Mockery::mock(\Box\Mod\Support\Repository\SupportTicketRepository::class)->shouldIgnoreMissing();
+        $supportTicketMessageRepository = \Mockery::mock(\Box\Mod\Support\Repository\SupportTicketMessageRepository::class)->shouldIgnoreMissing();
+        $supportTicketNoteRepository = \Mockery::mock(\Box\Mod\Support\Repository\SupportTicketNoteRepository::class)->shouldIgnoreMissing();
+        $supportTicketMessageHistoryRepository = \Mockery::mock(\Box\Mod\Support\Repository\SupportTicketMessageHistoryRepository::class)->shouldIgnoreMissing();
 
         $em = \Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
         $em->shouldReceive('getRepository')->byDefault()->andReturnUsing(static fn (string $class): object => match ($class) {
+            \Box\Mod\Staff\Entity\AdminGroup::class => $adminGroupRepository,
+            \Box\Mod\Staff\Entity\AdminGroupMember::class => $adminGroupMemberRepository,
             \Box\Mod\Email\Entity\EmailTemplate::class => $emailTemplateRepository,
+            \Box\Mod\Email\Entity\EmailTemplateGroup::class => $emailTemplateGroupRepository,
+            \Box\Mod\Email\Entity\ActivityClientEmail::class => $activityClientEmailRepository,
+            \Box\Mod\Email\Entity\QueuedEmail::class => $queuedEmailRepository,
             \Box\Mod\Support\Entity\KbArticle::class => $kbArticleRepository,
             \Box\Mod\Support\Entity\KbArticleCategory::class => $kbArticleCategoryRepository,
             \Box\Mod\Support\Entity\CannedResponse::class => $cannedResponseRepository,
             \Box\Mod\Support\Entity\CannedResponseCategory::class => $cannedResponseCategoryRepository,
             \Box\Mod\Support\Entity\Helpdesk::class => $helpdeskRepository,
+            \Box\Mod\Support\Entity\SupportTicket::class => $supportTicketRepository,
+            \Box\Mod\Support\Entity\SupportTicketMessage::class => $supportTicketMessageRepository,
+            \Box\Mod\Support\Entity\SupportTicketNote::class => $supportTicketNoteRepository,
+            \Box\Mod\Support\Entity\SupportTicketMessageHistory::class => $supportTicketMessageHistoryRepository,
+            \Box\Mod\Extension\Entity\Extension::class => \Mockery::mock(\Box\Mod\Extension\Repository\ExtensionRepository::class)->shouldIgnoreMissing(),
             default => $extensionMetaRepository,
         });
 
@@ -191,9 +218,19 @@ function container(): Container
     $staffService = \Mockery::mock(\Box\Mod\Staff\Service::class)->shouldIgnoreMissing();
     $staffService->shouldReceive('hasPermission')->byDefault()->andReturn(true);
     $staffService->shouldReceive('checkPermissionsAndThrowException')->byDefault()->andReturn(true);
-    $di['mod_service'] = $di->protect(static function (string $name = '', string $sub = '') use ($staffService): object {
+
+    $emailService = \Mockery::mock(\Box\Mod\Email\Service::class)->shouldIgnoreMissing();
+    $emailTemplateGroupRepositoryDefault = \Mockery::mock(\Box\Mod\Email\Repository\EmailTemplateGroupRepository::class)->shouldIgnoreMissing();
+    $emailTemplateGroupRepositoryDefault->shouldReceive('countTemplatesUsingGroup')->byDefault()->andReturn(0);
+    $emailService->shouldReceive('getTemplateGroupRepository')->byDefault()->andReturn($emailTemplateGroupRepositoryDefault);
+
+    $di['mod_service'] = $di->protect(static function (string $name = '', string $sub = '') use ($staffService, $emailService): object {
         if (strtolower($name) === 'staff') {
             return $staffService;
+        }
+
+        if (strtolower($name) === 'email') {
+            return $emailService;
         }
 
         return \Mockery::mock()->shouldIgnoreMissing();
@@ -212,6 +249,13 @@ function moduleService(array $services = []): \Closure
     $staffService = $services['staff'] ?? \Mockery::mock(\Box\Mod\Staff\Service::class)->shouldIgnoreMissing();
     $staffService->shouldReceive('hasPermission')->byDefault()->andReturn(true);
     $staffService->shouldReceive('checkPermissionsAndThrowException')->byDefault()->andReturn(true);
+
+    if (!isset($services['email'])) {
+        $emailTemplateGroupRepositoryDefault = \Mockery::mock(\Box\Mod\Email\Repository\EmailTemplateGroupRepository::class)->shouldIgnoreMissing();
+        $emailTemplateGroupRepositoryDefault->shouldReceive('countTemplatesUsingGroup')->byDefault()->andReturn(0);
+        $services['email'] = \Mockery::mock(\Box\Mod\Email\Service::class)->shouldIgnoreMissing();
+        $services['email']->shouldReceive('getTemplateGroupRepository')->byDefault()->andReturn($emailTemplateGroupRepositoryDefault);
+    }
 
     return static function (string $name = '', string $sub = '') use ($services, $staffService): object {
         if (strtolower($name) === 'staff') {

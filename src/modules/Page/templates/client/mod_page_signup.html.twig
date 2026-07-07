@@ -13,6 +13,7 @@
                 {% if settings.login_page_show_logo %}
                     <div class="d-flex justify-content-center">
                         {{ include('partial_company_logo.html.twig', {
+                            company: company,
                             logo_url: public_logo_url,
                             dark_logo_url: public_dark_logo_url,
                             link_url: settings.login_page_logo_url|default('/'),
@@ -135,6 +136,21 @@
                                     <input class="form-control js-phone-input" id="phone" type="tel" name="phone" value="{{ request.phone }}" autocomplete="tel" data-initial-country="{{ request.country|default(guest.system_default_country)|lower }}" required="required"/>
                                 </div>
                             {% endif %}
+
+                            <div class="mb-3">
+                                <label class="form-label" for="reg-timezone">{{ 'Timezone'|trans }}</label>
+                                <select class="form-select" id="reg-timezone" name="timezone" data-timezone-select>
+                                    <option value="">{{ '-- Use system default --'|trans }}</option>
+                                    {% for region, identifiers in guest.system_timezones %}
+                                        <optgroup label="{{ region }}">
+                                            {% for identifier in identifiers %}
+                                                <option value="{{ identifier }}" {% if request.timezone|default('') == identifier %}selected="selected"{% endif %}>{{ identifier }}</option>
+                                            {% endfor %}
+                                        </optgroup>
+                                    {% endfor %}
+                                </select>
+                                <small class="form-hint text-muted">{{ 'Pre-selected from your browser. Used to display dates and times in your local time.'|trans }}</small>
+                            </div>
 
                             {% set custom_fields = guest.client_custom_fields %}
                             {% for field_name, field in custom_fields %}

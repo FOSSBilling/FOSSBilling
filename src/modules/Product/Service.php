@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -26,7 +25,6 @@ use Box\Mod\Product\Repository\PromoRedemptionRepository;
 use Box\Mod\Product\Repository\PromoRepository;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\QueryBuilder;
-use Doctrine\ORM\Tools\Pagination\Paginator as DoctrinePaginator;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\PaginationOptions;
 
@@ -408,8 +406,7 @@ class Service implements InjectionAwareInterface
 
     public function createProduct($title, $type, $categoryId = null): int
     {
-        $sql = 'SELECT MAX(priority) FROM product LIMIT 1';
-        $priority = $this->di['db']->getCell($sql);
+        $priority = $this->getProductRepository()->getMaxPriority();
 
         $productPayment = $this->createDefaultProductPayment();
         $paymentId = (int) $productPayment->getId();
@@ -425,9 +422,7 @@ class Service implements InjectionAwareInterface
             ->setSlug($slug)
             ->setType($type)
             ->setSetup(self::SETUP_AFTER_PAYMENT)
-            ->setPriority((int) $priority + 10)
-            ->setUpdatedAt(new \DateTime())
-            ->setCreatedAt(new \DateTime());
+            ->setPriority((int) $priority + 10);
 
         $this->di['em']->persist($model);
         $this->di['em']->flush();
@@ -555,18 +550,7 @@ class Service implements InjectionAwareInterface
      */
     public function getAddons(): array
     {
-        $sql = 'SELECT id, title
-                FROM product
-                WHERE is_addon =1
-                ORDER by id asc';
-        $addons = $this->di['db']->getAll($sql);
-
-        $result = [];
-        foreach ($addons as $addon) {
-            $result[$addon['id']] = $addon['title'];
-        }
-
-        return $result;
+        return $this->getProductRepository()->getAddonPairs();
     }
 
     public function createAddon($title, $description = null, $setup = null, $status = null, $iconUrl = null): ?int
@@ -587,9 +571,7 @@ class Service implements InjectionAwareInterface
             ->setSetup($setup ?? self::SETUP_AFTER_PAYMENT)
             ->setIsAddon(true)
             ->setIconUrl($iconUrl)
-            ->setDescription($description)
-            ->setUpdatedAt(new \DateTime())
-            ->setCreatedAt(new \DateTime());
+            ->setDescription($description);
 
         $this->di['em']->persist($model);
         $this->di['em']->flush();
@@ -636,8 +618,7 @@ class Service implements InjectionAwareInterface
         $productCategory
             ->setTitle($title)
             ->setIconUrl($icon_url)
-            ->setDescription($description)
-            ->setUpdatedAt(new \DateTime());
+            ->setDescription($description);
         $this->di['em']->flush();
 
         $this->di['logger']->info('Updated product category #%s', $productCategory->getId());
@@ -650,9 +631,7 @@ class Service implements InjectionAwareInterface
         $model = (new ProductCategory())
             ->setTitle($title)
             ->setDescription($description)
-            ->setIconUrl($icon_url)
-            ->setUpdatedAt(new \DateTime())
-            ->setCreatedAt(new \DateTime());
+            ->setIconUrl($icon_url);
         $this->di['em']->persist($model);
         $this->di['em']->flush();
         $id = $model->getId();
@@ -834,7 +813,7 @@ class Service implements InjectionAwareInterface
     {
         $category = $this->getProductCategoryRepository()->findById($id);
         if (!$category instanceof ProductCategory) {
-            throw new \FOSSBilling\Exception('Category not found');
+            throw new \FOSSBilling\InformationException('Category not found');
         }
 
         return $category;
@@ -1196,7 +1175,7 @@ class Service implements InjectionAwareInterface
     {
         $promo = $this->getPromoRepository()->find($id);
         if (!$promo instanceof Promo) {
-            throw new \FOSSBilling\Exception('Promo not found');
+            throw new \FOSSBilling\InformationException('Promo not found');
         }
 
         return $promo;
@@ -1348,6 +1327,9 @@ class Service implements InjectionAwareInterface
      * When the RedBean transaction rolls back, Doctrine-side changes persist
      * orphaned unless explicitly cleaned up.
      *
+     * Idempotent: safe to call multiple times. Returns early if redemptions
+     * were already cleaned up by a previous invocation.
+     *
      * @param int[] $orderIds      Order IDs from the rolled-back RedBean transaction
      * @param int   $reservedCount Number of successful reservePromoForOrder() calls
      */
@@ -1362,20 +1344,24 @@ class Service implements InjectionAwareInterface
             return;
         }
 
-        if ($orderIds !== []) {
-            $redemptions = $this->getPromoRedemptionRepository()->findBy([
-                'promoId' => $promoId,
-                'clientOrderId' => $orderIds,
-            ]);
-            foreach ($redemptions as $redemption) {
-                $this->di['em']->remove($redemption);
-            }
-            if ($redemptions !== []) {
-                $this->di['em']->flush();
-            }
+        if ($orderIds === []) {
+            return;
         }
 
-        $this->getPromoRepository()->decrementUsage($promoId, $reservedCount, new \DateTimeImmutable());
+        $redemptions = $this->getPromoRedemptionRepository()->findBy([
+            'promoId' => $promoId,
+            'clientOrderId' => $orderIds,
+        ]);
+        if ($redemptions === []) {
+            return;
+        }
+
+        foreach ($redemptions as $redemption) {
+            $this->di['em']->remove($redemption);
+        }
+        $this->di['em']->flush();
+
+        $this->getPromoRepository()->decrementUsage($promoId, count($redemptions), new \DateTimeImmutable());
     }
 
     /**
@@ -1458,10 +1444,7 @@ class Service implements InjectionAwareInterface
         $result['invoice'] = null;
 
         if (!empty($result['client_id'])) {
-            $client = $this->di['db']->getRow(
-                'SELECT id, first_name, last_name, email FROM client WHERE id = :id',
-                [':id' => $result['client_id']]
-            );
+            $client = $this->getPromoRedemptionRepository()->findClientSummary((int) $result['client_id']);
 
             $result['client'] = [
                 'id' => (int) $result['client_id'],
@@ -1472,10 +1455,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!empty($result['client_order_id'])) {
-            $order = $this->di['db']->getRow(
-                'SELECT id, title, created_at FROM client_order WHERE id = :id',
-                [':id' => $result['client_order_id']]
-            );
+            $order = $this->getPromoRedemptionRepository()->findOrderSummary((int) $result['client_order_id']);
 
             $result['order'] = [
                 'id' => (int) $result['client_order_id'],
@@ -1485,10 +1465,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!empty($result['invoice_id'])) {
-            $invoice = $this->di['db']->getRow(
-                'SELECT id, serie_nr, status, created_at FROM invoice WHERE id = :id',
-                [':id' => $result['invoice_id']]
-            );
+            $invoice = $this->getPromoRedemptionRepository()->findInvoiceSummary((int) $result['invoice_id']);
 
             $result['invoice'] = [
                 'id' => (int) $result['invoice_id'],
@@ -1734,7 +1711,7 @@ class Service implements InjectionAwareInterface
     {
         $productPayment = $this->getProductPaymentRepository()->find($id);
         if (!$productPayment instanceof ProductPayment) {
-            throw new \FOSSBilling\Exception('Product payment not found');
+            throw new \FOSSBilling\InformationException('Product payment not found');
         }
 
         return $productPayment;
@@ -1840,7 +1817,7 @@ class Service implements InjectionAwareInterface
     {
         $product = $this->getProductRepository()->find($id);
         if (!$product instanceof Product) {
-            throw new \FOSSBilling\Exception('Product not found');
+            throw new \FOSSBilling\InformationException('Product not found');
         }
 
         return $product;
@@ -2087,24 +2064,7 @@ class Service implements InjectionAwareInterface
      */
     private function paginateMappedQuery(QueryBuilder $qb, PaginationOptions $pagination, callable $mapper): array
     {
-        $offset = ($pagination->page - 1) * $pagination->perPage;
-        $qb->setFirstResult($offset)
-            ->setMaxResults($pagination->perPage);
-        $paginator = new DoctrinePaginator($qb, true);
-        $total = count($paginator);
-
-        $list = [];
-        foreach ($paginator as $entity) {
-            $list[] = $mapper($entity);
-        }
-
-        return [
-            'pages' => $total > 0 ? (int) ceil($total / $pagination->perPage) : 0,
-            'page' => $pagination->page,
-            'per_page' => $pagination->perPage,
-            'total' => $total,
-            'list' => $list,
-        ];
+        return $this->di['pager']->paginateMappedQuery($qb, $pagination, $mapper);
     }
 
     public function getProductDiscount(Product $product, Promo $promo, ?array $config = null)
@@ -2113,7 +2073,6 @@ class Service implements InjectionAwareInterface
             return 0;
         }
 
-        // check if promo code applies to specific period only
         if (isset($config['period'])) {
             $periods = $this->getPeriods($promo);
             if (!empty($periods) && !in_array($config['period'], $periods)) {

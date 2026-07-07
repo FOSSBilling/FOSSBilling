@@ -20,6 +20,7 @@ use Twig\Loader\ArrayLoader;
 function makeFossBillingTwigExtension(?Container $di = null): FOSSBillingExtension
 {
     $container = $di ?? new Container();
+    $container['filesystem'] = new Filesystem();
     // Seed an empty loaded_assets array so internal helpers don't blow up.
     $container['loaded_assets'] = [];
 
@@ -85,13 +86,13 @@ test('publicAssetUrl returns empty string for null', function (): void {
 
 test('daysleft returns integer days for a future date', function (): void {
     $extension = makeFossBillingTwigExtension();
-    $future = date('Y-m-d H:i:s', time() + 86400 * 5 + 3600);
+    $future = date('Y-m-d H:i:s', time() + 86400 * 5 + 43200);
     expect($extension->daysleft($future))->toBe(5);
 });
 
 test('daysleft returns negative integer for a past date', function (): void {
     $extension = makeFossBillingTwigExtension();
-    $past = date('Y-m-d H:i:s', time() - 86400 * 3 - 3600);
+    $past = date('Y-m-d H:i:s', time() - 86400 * 3 - 43200);
     expect($extension->daysleft($past))->toBe(-3);
 });
 
@@ -221,6 +222,17 @@ test('avatar returns empty string for empty email', function (): void {
 test('avatar returns escaped fallback for null email', function (): void {
     $extension = makeFossBillingTwigExtension();
     expect($extension->avatar(null, fallback: '<script>'))->toBe('&lt;script&gt;');
+});
+
+test('avatar ignores fallback for valid email', function (): void {
+    $extension = makeFossBillingTwigExtension();
+    $output = $extension->avatar('user@example.com', fallback: '<script>alert(1)</script>');
+
+    expect($output)->toBeString();
+    expect($output)->toStartWith('<span class="db-avatar avatar"');
+    expect($output)->toEndWith('</span>');
+    expect($output)->not->toContain('<script>alert(1)</script>');
+    expect($output)->not->toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
 });
 
 test('avatar returns span element with quoted data URI for valid email', function (): void {

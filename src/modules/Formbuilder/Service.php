@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -266,7 +265,7 @@ class Service implements InjectionAwareInterface
         )->fetchAssociative();
 
         if ($result === false) {
-            throw new \FOSSBilling\Exception('Form was not found');
+            throw new \FOSSBilling\InformationException('Form was not found');
         }
 
         $result['style'] = json_decode($result['style'] ?? '', true);
@@ -328,7 +327,7 @@ class Service implements InjectionAwareInterface
         )->fetchAssociative();
 
         if ($result === false) {
-            throw new \FOSSBilling\Exception('Field was not found');
+            throw new \FOSSBilling\InformationException('Field was not found');
         }
 
         $required = [
@@ -359,7 +358,7 @@ class Service implements InjectionAwareInterface
     {
         $deleted = $this->getDbal()->executeStatement('DELETE FROM form_field WHERE id = ?', [$data['id']]);
         if ($deleted === 0) {
-            throw new \FOSSBilling\Exception('Field was not found');
+            throw new \FOSSBilling\InformationException('Field was not found');
         }
 
         $this->di['logger']->info('Deleted custom field %s', $data['id']);

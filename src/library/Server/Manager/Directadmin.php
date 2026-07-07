@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -85,11 +84,15 @@ class Server_Manager_Directadmin extends Server_Manager
      * Cancels an account on the DirectAdmin server.
      * This method sends a request to the server to delete the account.
      *
+     * Some DirectAdmin servers return an error for this request even though the
+     * deletion already succeeded, so on failure we double check whether the
+     * account still exists before giving up.
+     *
      * @param Server_Account $account the account to be cancelled
      *
      * @return bool returns true if the account is successfully cancelled
      *
-     * @throws Server_Exception if there is an error while sending the request to the server
+     * @throws Server_Exception if there is an error while sending the request to the server and the account still exists
      */
     public function cancelAccount(Server_Account $account): bool
     {
@@ -99,9 +102,38 @@ class Server_Manager_Directadmin extends Server_Manager
             'select0' => $account->getUsername(),
         ];
 
-        $this->request('API_SELECT_USERS', $fields);
+        try {
+            $this->request('API_SELECT_USERS', $fields);
+        } catch (Server_Exception $e) {
+            if ($this->accountExists($account)) {
+                throw $e;
+            }
+
+            $this->getLog()->info("Deletion of {$account->getUsername()} reported an error, but the account no longer exists on the server.");
+        }
 
         return true;
+    }
+
+    /**
+     * Checks whether an account still exists on the DirectAdmin server.
+     * If the check itself fails, the account is assumed to still exist so a
+     * transport, authentication, or permission error is never mistaken for a
+     * successful deletion.
+     *
+     * @param Server_Account $account the account to check
+     *
+     * @return bool true if the account still exists, false otherwise
+     */
+    private function accountExists(Server_Account $account): bool
+    {
+        try {
+            $users = $this->request('API_SHOW_USERS');
+        } catch (Server_Exception) {
+            return true;
+        }
+
+        return in_array($account->getUsername(), $users['list'] ?? [], true);
     }
 
     /**
@@ -747,7 +779,6 @@ class Server_Manager_Directadmin extends Server_Manager
                 $request = $httpClient->request('GET', $url);
             }
 
-            // Get the content of the response
             $data = $request->getContent();
         } catch (TransportExceptionInterface|HttpExceptionInterface $error) {
             // If there is an error while sending the request, throw an exception

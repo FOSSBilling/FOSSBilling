@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -12,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Profile;
 
+use FOSSBilling\i18n;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Tools;
@@ -84,6 +84,9 @@ class Service implements InjectionAwareInterface
         $admin->email = $data['email'] ?? $admin->email;
         $admin->name = $data['name'] ?? $admin->name;
         $admin->signature = $data['signature'] ?? $admin->signature;
+        if (array_key_exists('timezone', $data)) {
+            $admin->timezone = i18n::validateTimezone($data['timezone']);
+        }
         $admin->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($admin);
 
@@ -100,13 +103,12 @@ class Service implements InjectionAwareInterface
     {
         return [
             'id' => $identity->id,
-            'role' => $identity->role,
-            'admin_group_id' => $identity->admin_group_id,
             'email' => $identity->email,
             'name' => $identity->name,
             'signature' => $identity->signature,
             'status' => $identity->status,
             'api_token' => $identity->api_token,
+            'timezone' => $identity->timezone,
             'created_at' => $identity->created_at,
             'updated_at' => $identity->updated_at,
         ];
@@ -180,6 +182,9 @@ class Service implements InjectionAwareInterface
             throw new InformationException('Invalid locale code: :code', [':code' => $lang]);
         }
         $client->lang = $lang;
+        if (array_key_exists('timezone', $data)) {
+            $client->timezone = i18n::validateTimezone($data['timezone']);
+        }
         $client->notes = $data['notes'] ?? $client->notes;
         $client->custom_1 = $data['custom_1'] ?? $client->custom_1;
         $client->custom_2 = $data['custom_2'] ?? $client->custom_2;
@@ -191,6 +196,16 @@ class Service implements InjectionAwareInterface
         $client->custom_8 = $data['custom_8'] ?? $client->custom_8;
         $client->custom_9 = $data['custom_9'] ?? $client->custom_9;
         $client->custom_10 = $data['custom_10'] ?? $client->custom_10;
+        $client->custom_11 = $data['custom_11'] ?? $client->custom_11;
+        $client->custom_12 = $data['custom_12'] ?? $client->custom_12;
+        $client->custom_13 = $data['custom_13'] ?? $client->custom_13;
+        $client->custom_14 = $data['custom_14'] ?? $client->custom_14;
+        $client->custom_15 = $data['custom_15'] ?? $client->custom_15;
+        $client->custom_16 = $data['custom_16'] ?? $client->custom_16;
+        $client->custom_17 = $data['custom_17'] ?? $client->custom_17;
+        $client->custom_18 = $data['custom_18'] ?? $client->custom_18;
+        $client->custom_19 = $data['custom_19'] ?? $client->custom_19;
+        $client->custom_20 = $data['custom_20'] ?? $client->custom_20;
 
         $client->updated_at = date('Y-m-d H:i:s');
 

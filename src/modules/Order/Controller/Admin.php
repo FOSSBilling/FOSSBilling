@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -68,8 +67,9 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
     {
         $api = $this->di['api_admin'];
 
-        $product = $api->product_get(['id' => $_POST['product_id'] ?? null]);
-        $client = $api->client_get(['id' => $_POST['client_id'] ?? null]);
+        $request = $app->getRequest();
+        $product = $api->product_get(['id' => $request->request->get('product_id')]);
+        $client = $api->client_get(['id' => $request->request->get('client_id')]);
 
         return $app->render('mod_order_new', ['product' => $product, 'client' => $client]);
     }

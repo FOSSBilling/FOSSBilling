@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -11,6 +10,8 @@ declare(strict_types=1);
  */
 
 namespace Box\Mod\Client\Controller;
+
+use Symfony\Component\HttpFoundation\Response;
 
 class Admin implements \FOSSBilling\InjectionAwareInterface
 {
@@ -97,19 +98,19 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_client_login_history');
     }
 
-    public function get_login(\Box_App $app, $id): void
+    public function get_login(\Box_App $app, $id): Response
     {
         $api = $this->di['api_admin'];
         $api->client_login(['id' => $id]);
 
         $redirect_to = '/';
 
-        $query = $_GET['r'] ?? null;
+        $query = $app->getRequest()->query->get('r');
         if ($query) {
             $r = $query;
             $redirect_to = '/' . trim((string) $r, '/');
         }
 
-        $app->redirectUrl($this->di['tools']->url($redirect_to), 301);
+        return $app->redirectUrl($this->di['tools']->url($redirect_to), 301);
     }
 }

@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -228,7 +227,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return array
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\InformationException
      */
     #[RequiredParams(['tld' => 'TLD is missing'])]
     public function tld_get($data)
@@ -242,7 +241,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getService()->tldFindOneByTld($tld);
         if (!$model instanceof \Model_Tld) {
-            throw new \FOSSBilling\Exception('TLD not found');
+            throw new \FOSSBilling\InformationException('TLD not found');
         }
 
         return $this->getService()->tldToApiArray($model, $this->identity);
@@ -253,7 +252,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return array
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\InformationException
      */
     #[RequiredParams(['id' => 'ID is missing'])]
     public function tld_get_id($data)
@@ -262,7 +261,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getService()->tldFindOneById($data['id']);
         if (!$model instanceof \Model_Tld) {
-            throw new \FOSSBilling\Exception('ID not found');
+            throw new \FOSSBilling\InformationException('TLD not found');
         }
 
         return $this->getService()->tldToApiArray($model, $this->identity);
@@ -273,7 +272,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\InformationException
      */
     #[RequiredParams(['tld' => 'TLD is missing'])]
     public function tld_delete($data)
@@ -283,9 +282,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $model = $this->getService()->tldFindOneByTld($data['tld']);
 
         if (!$model instanceof \Model_Tld) {
-            throw new \FOSSBilling\Exception('TLD not found');
+            throw new \FOSSBilling\InformationException('TLD not found');
         }
-        // check if tld is used by any domain
         $service_domains = $this->getDi()['db']->find('ServiceDomain', 'tld = :tld', [':tld' => $data['tld']]);
         $count = \FOSSBilling\Tools::safeCount($service_domains);
         if ($count > 0) {
@@ -330,7 +328,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\InformationException
      */
     #[RequiredParams(['tld' => 'TLD is missing'])]
     public function tld_update($data)
@@ -339,7 +337,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getService()->tldFindOneByTld($data['tld']);
         if (!$model instanceof \Model_Tld) {
-            throw new \FOSSBilling\Exception('TLD not found');
+            throw new \FOSSBilling\InformationException('TLD not found');
         }
 
         return $this->getService()->tldUpdate($model, $data);

@@ -47,7 +47,6 @@ use Twig\Sandbox\SecurityPolicyInterface;
 class TwigFactory
 {
     private readonly array $baseConfig;
-    private ?Environment $emailEnvironment = null;
     private ?Environment $adapterEnvironment = null;
     private ?Environment $themeSettingsEnvironment = null;
 
@@ -57,13 +56,41 @@ class TwigFactory
     }
 
     /**
+     * Timezone the current request should be rendered in. Falls back to the
+     * `i18n.timezone` config (and ultimately UTC) when the auth service is
+     * unavailable or no user is logged in, so this is safe to call during
+     * Twig environment construction.
+     */
+    private function resolveTimezoneForActiveUser(): string
+    {
+        $clientTimezone = null;
+        $adminTimezone = null;
+
+        $auth = $this->di['auth'] ?? null;
+        if ($auth instanceof \Box_Authorization) {
+            if ($auth->isClientLoggedIn()) {
+                $client = $this->di['db']->load('Client', $this->di['session']->get('client_id'));
+                $clientTimezone = $client->timezone ?? null;
+            } elseif ($auth->isAdminLoggedIn()) {
+                $admin = $this->di['session']->get('admin');
+                if (is_array($admin) && !empty($admin['id'])) {
+                    $adminModel = $this->di['db']->load('Admin', $admin['id']);
+                    $adminTimezone = $adminModel->timezone ?? null;
+                }
+            }
+        }
+
+        return i18n::getActiveTimezone($this->di['request'], $clientTimezone, $adminTimezone);
+    }
+
+    /**
      * Create base Twig environment with extensions and configuration.
      */
     public function createBaseEnvironment(): Environment
     {
         // Get internationalisation settings from config, or use sensible defaults.
-        $locale = i18n::getActiveLocale();
-        $timezone = Config::getProperty('i18n.timezone', 'UTC');
+        $locale = i18n::getActiveLocale($this->di['request'], true, $this->di['cookie_queue']);
+        $timezone = $this->resolveTimezoneForActiveUser();
         $dateFormat = strtoupper((string) Config::getProperty('i18n.date_format', 'MEDIUM'));
         $timeFormat = strtoupper((string) Config::getProperty('i18n.time_format', 'SHORT'));
         $dateTimePattern = Config::getProperty('i18n.datetime_pattern');
@@ -168,16 +195,20 @@ class TwigFactory
     /**
      * Create sandboxed Twig environment for email template rendering.
      * Used for database-stored templates (email templates, mass mailer).
+     *
+     * The env is built per-call (not memoized) so each email can be rendered
+     * with the recipient's timezone.
+     *
+     * @param string|null $timezone IANA timezone to use for date formatting;
+     *                              pass the recipient's timezone so emails
+     *                              render in their local time. Defaults to
+     *                              the active user's timezone / config.
      */
-    public function createEmailEnvironment(): Environment
+    public function createEmailEnvironment(?string $timezone = null): Environment
     {
-        if ($this->emailEnvironment !== null) {
-            return $this->emailEnvironment;
-        }
-
         // Get internationalisation settings from config
-        $locale = i18n::getActiveLocale();
-        $timezone = Config::getProperty('i18n.timezone', 'UTC');
+        $locale = i18n::getActiveLocale($this->di['request'], true, $this->di['cookie_queue']);
+        $timezone ??= $this->resolveTimezoneForActiveUser();
         $dateFormat = strtoupper((string) Config::getProperty('i18n.date_format', 'MEDIUM'));
         $timeFormat = strtoupper((string) Config::getProperty('i18n.time_format', 'SHORT'));
         $dateTimePattern = Config::getProperty('i18n.datetime_pattern');
@@ -243,8 +274,6 @@ class TwigFactory
         $twig->addGlobal('default_currency', $this->getDefaultCurrencyCode());
         $twig->addGlobal('FOSSBillingVersion', Version::VERSION);
 
-        $this->emailEnvironment = $twig;
-
         return $twig;
     }
 
@@ -298,7 +327,7 @@ class TwigFactory
 
     private function createSandboxedFragmentEnvironment(SecurityPolicyInterface $policy): Environment
     {
-        $locale = i18n::getActiveLocale();
+        $locale = i18n::getActiveLocale($this->di['request'], true, $this->di['cookie_queue']);
         $timezone = Config::getProperty('i18n.timezone', 'UTC');
         $dateFormat = strtoupper((string) Config::getProperty('i18n.date_format', 'MEDIUM'));
         $timeFormat = strtoupper((string) Config::getProperty('i18n.time_format', 'SHORT'));
@@ -440,12 +469,16 @@ class TwigFactory
     public function configureCsrf(): void
     {
         $csrfToken = $this->getCsrfToken();
-        setcookie('csrf_token', $csrfToken, [
-            'expires' => 0,
-            'path' => '/',
-            'samesite' => 'Strict',
-            'secure' => $this->di['request']->isSecure(),
-        ]);
+        $this->di['cookie_queue']->queue(
+            'csrf_token',
+            $csrfToken,
+            0,
+            '/',
+            null,
+            $this->di['request']->isSecure(),
+            false,
+            'Strict',
+        );
     }
 
     private function getCsrfToken(): string

@@ -140,7 +140,7 @@ class Session implements InjectionAwareInterface
         }
         $maxAge = time() - Config::getProperty('security.session_lifespan', 7200);
 
-        $fingerprint = new Fingerprint();
+        $fingerprint = new Fingerprint($this->di['request']);
         /** @var \RedBeanPHP\OODBBean $session */
         $session = $this->di['db']->findOne('session', 'id = :id', [':id' => $sessionID]);
 
@@ -155,10 +155,8 @@ class Session implements InjectionAwareInterface
 
         $storedFingerprint = json_decode($session->fingerprint ?? '', true);
         if (!$fingerprint->checkFingerprint($storedFingerprint) && Config::getProperty('security.perform_session_fingerprinting', true)) {
-            // TODO: Trying to use monolog here causes a 503 error with an empty error log. Would love to find out why and use it instead of error_log
             $invalid = true;
             error_log("Session ID $sessionID has potentially been hijacked as it failed the fingerprint check. The session has automatically been destroyed.");
-            // $this->di['logger']->setChannel('security')->info("Session ID $sessionID has potentially been hijacked as it failed the fingerprint check. The session has automatically been destroyed.");
         }
 
         if ($session->created_at <= $maxAge) {
@@ -197,7 +195,7 @@ class Session implements InjectionAwareInterface
         }
 
         $session = $this->di['db']->findOne('session', 'id = :id', [':id' => $sessionID]);
-        $fingerprint = new Fingerprint();
+        $fingerprint = new Fingerprint($this->di['request']);
 
         if (Config::getProperty('security.perform_session_fingerprinting', true)) {
             $updatedFingerprint = $fingerprint->fingerprint();

@@ -55,7 +55,8 @@
         "mysite",
         "myhost",
         "inversed",
-        "Autoresponder"
+        "Autoresponder",
+        "initialises"
     ],
 
     "ignoreWords": [
@@ -521,9 +522,12 @@
         "missingmodule",
         "FOUC",
         "kbarticles",
+        "rdsh",
         "uppercases",
         "inpay",
-        "seti"
+        "seti",
+        "unassigns",
+        "docstrings"
     ],
     "ignorePaths": [
         "node_modules/**",

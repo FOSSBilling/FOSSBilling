@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -103,7 +102,7 @@ class Service implements InjectionAwareInterface
     {
         $meta = $this->getExtensionMetaRepository()->findOneByExtensionAndId('mod_notification', $id);
         if (!$meta instanceof ExtensionMeta || $meta->getMetaKey() !== 'message') {
-            throw new \FOSSBilling\Exception('Notification message was not found');
+            throw new \FOSSBilling\InformationException('Notification message was not found');
         }
 
         return $meta;

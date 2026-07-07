@@ -45,7 +45,7 @@ class UpdateFinalization implements InjectionAwareInterface
     ];
 
     private ?\Pimple\Container $di = null;
-    private readonly Filesystem $filesystem;
+    private Filesystem $filesystem;
     private readonly string $statePath;
 
     public function __construct()
@@ -57,6 +57,9 @@ class UpdateFinalization implements InjectionAwareInterface
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        if (isset($di['filesystem'])) {
+            $this->filesystem = $di['filesystem'];
+        }
     }
 
     public function getDi(): ?\Pimple\Container

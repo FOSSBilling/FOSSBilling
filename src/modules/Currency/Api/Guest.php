@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2026 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -74,7 +73,8 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             $p = $price * $c['conversion_rate'];
         }
 
-        $locale = i18n::getActiveLocale();
+        $di = $this->getDi();
+        $locale = i18n::getActiveLocale($di['request'], true, $di['cookie_queue']);
 
         if ($withoutCurrency) {
             $fractionDigits = Currencies::getFractionDigits($c['code']);

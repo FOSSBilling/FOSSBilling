@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -81,7 +80,7 @@ $installer = new FOSSBilling_Installer($request, $preConfigProxyCandidate);
 
 // Run the installer only in non-CLI mode
 if (!Environment::isCLI()) {
-    $installer->run($action)->send();
+    $installer->run($action)->prepare($request)->send();
 }
 
 // Inline installer class.
@@ -407,12 +406,17 @@ final class FOSSBilling_Installer
 
         // Create default administrator
         $passwordObject = new FOSSBilling\PasswordManager();
-        $stmt = $this->pdo->prepare("INSERT INTO admin (role, name, email, pass, protected, created_at, updated_at, api_token) VALUES('admin', :admin_name, :admin_email, :admin_password, 1, NOW(), NOW(), :api_token);");
+        $stmt = $this->pdo->prepare('INSERT INTO admin (name, email, pass, created_at, updated_at, api_token) VALUES(:admin_name, :admin_email, :admin_password, NOW(), NOW(), :api_token);');
         $stmt->execute([
             'admin_name' => $this->session->get('admin_name'),
             'admin_email' => $this->session->get('admin_email'),
             'admin_password' => $passwordObject->hashIt($this->session->get('admin_password')),
             'api_token' => $this->session->get('admin_api_token'),
+        ]);
+
+        $stmt = $this->pdo->prepare('INSERT INTO admin_group_member (admin_id, admin_group_id, created_at) VALUES (:admin_id, 1, NOW())');
+        $stmt->execute([
+            'admin_id' => $this->pdo->lastInsertId(),
         ]);
 
         // Delete default currency from content file and use currency passed in the installer

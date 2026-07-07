@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -25,7 +24,7 @@ class Service implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
     private ?ExtensionMetaRepository $extensionMetaRepository = null;
-    private readonly Filesystem $filesystem;
+    private Filesystem $filesystem;
 
     /**
      * In-request cache for the current admin theme name.
@@ -43,6 +42,9 @@ class Service implements InjectionAwareInterface
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        if (isset($di['filesystem'])) {
+            $this->filesystem = $di['filesystem'];
+        }
         $this->extensionMetaRepository = isset($this->di['em'])
             ? $this->di['em']->getRepository(ExtensionMeta::class)
             : null;

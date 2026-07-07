@@ -99,7 +99,8 @@ jobs:
     if: ${{ github.event_name == 'push' }}
     uses: ./.github/workflows/php-build-test.yml
     with:
-      write-cache: true
+      # Only main writes the shared registry cache, so concurrent branch pushes don't stomp on it.
+      write-cache: ${{ github.ref == 'refs/heads/main' }}
 
   live-tests-pr:
     name: 'Live Tests'
@@ -160,7 +161,8 @@ jobs:
     if: ${{ github.event_name == 'push' && github.ref != 'refs/heads/main' }}
     uses: ./.github/workflows/preview-build.yml
     with:
-      write-cache: true
+      # This job only runs for non-main branches; main's preview-docker job keeps the cache warm.
+      write-cache: false
 
   preview-docker:
     name: 'Build and Push Preview Docker Image'

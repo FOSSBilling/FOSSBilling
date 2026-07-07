@@ -833,11 +833,26 @@ test('getSoonExpiringActiveOrdersQuery builds expected SQL and bindings', functi
                 AND co.invoice_option = :invoice_option
                 AND co.period IS NOT NULL
                 AND co.expires_at IS NOT NULL
-                AND i.id IS NULL AND co.client_id = :client_id HAVING DATEDIFF(co.expires_at, NOW()) <= :days_until_expiration ORDER BY co.client_id DESC';
+                AND i.id IS NULL
+                /* Pair non-executed renewal items with paid invoices to skip renewals already queued for activation. */
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM invoice_item pending_item
+                    INNER JOIN invoice pending_invoice ON pending_invoice.id = pending_item.invoice_id
+                    WHERE pending_item.rel_id = co.id
+                    AND pending_item.type = :pending_item_type
+                    AND pending_item.task = :pending_item_task
+                    AND pending_item.status != :pending_item_status
+                    AND pending_invoice.status = :pending_invoice_status
+                ) AND co.client_id = :client_id HAVING DATEDIFF(co.expires_at, NOW()) <= :days_until_expiration ORDER BY co.client_id DESC';
 
     $expectedBindings = [
         ':client_id' => $randId,
         ':unpaid_invoice_status' => Model_Invoice::STATUS_UNPAID,
+        ':pending_item_type' => Model_InvoiceItem::TYPE_ORDER,
+        ':pending_item_task' => Model_InvoiceItem::TASK_RENEW,
+        ':pending_item_status' => Model_InvoiceItem::STATUS_EXECUTED,
+        ':pending_invoice_status' => Model_Invoice::STATUS_PAID,
         ':status' => Model_ClientOrder::STATUS_ACTIVE,
         ':invoice_option' => 'issue-invoice',
         ':days_until_expiration' => $randId,
@@ -941,7 +956,9 @@ test('toApiArray returns expected keys', function (): void {
     $clientService->shouldReceive('toApiArray')->atLeast()->once()->andReturn([]);
 
     $supportService = Mockery::mock(Box\Mod\Support\Service::class);
-    $supportService->shouldReceive('getActiveTicketsCountForOrder')->atLeast()->once()->andReturn(1);
+    $supportTicketRepo = Mockery::mock(Box\Mod\Support\Repository\SupportTicketRepository::class);
+    $supportTicketRepo->shouldReceive('countActiveTicketsForOrder')->atLeast()->once()->andReturn(1);
+    $supportService->shouldReceive('getSupportTicketRepository')->atLeast()->once()->andReturn($supportTicketRepo);
 
     $dbMock = Mockery::mock(Box_Database::class);
     $dbMock->shouldReceive('toArray')->atLeast()->once()->andReturn([]);

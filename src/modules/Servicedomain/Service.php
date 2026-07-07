@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -20,7 +19,7 @@ use Symfony\Component\Finder\Finder;
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
-    private readonly Filesystem $filesystem;
+    private Filesystem $filesystem;
 
     public function __construct()
     {
@@ -30,6 +29,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        if (isset($di['filesystem'])) {
+            $this->filesystem = $di['filesystem'];
+        }
     }
 
     public function getDi(): ?\Pimple\Container
@@ -124,7 +126,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
             $tld = $this->tldFindOneByTld($data['transfer_tld']);
             if (!$tld instanceof \Model_Tld) {
-                throw new \FOSSBilling\Exception('TLD not found');
+                throw new \FOSSBilling\InformationException('TLD not found');
             }
 
             $domain = $data['transfer_sld'] . $tld->tld;
@@ -136,7 +138,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 throw new \FOSSBilling\InformationException(':tld domains require an auth/EPP code to transfer', [':tld' => $tld->tld]);
             }
 
-            // return by reference
             $data['period'] = '1Y';
             $data['quantity'] = 1;
         }
@@ -157,7 +158,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
             $tld = $this->tldFindOneByTld($data['register_tld']);
             if (!$tld instanceof \Model_Tld) {
-                throw new \FOSSBilling\Exception('TLD not found');
+                throw new \FOSSBilling\InformationException('TLD not found');
             }
 
             $years = (int) $data['register_years'];
@@ -170,7 +171,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 throw new \FOSSBilling\InformationException(':domain is already registered!', [':domain' => $domain]);
             }
 
-            // return by reference
             $data['period'] = $years . 'Y';
         }
     }
@@ -1168,7 +1168,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $file = Path::join(PATH_LIBRARY, 'Registrar', 'Adapter', "{$model->registrar}.php");
         if (!$this->filesystem->exists($file)) {
-            throw new \FOSSBilling\Exception('Domain registrar :adapter was not found', [':adapter' => $model->registrar]);
+            throw new \FOSSBilling\InformationException('Domain registrar :adapter was not found', [':adapter' => $model->registrar]);
         }
 
         $class = sprintf('Registrar_Adapter_%s', $model->registrar);
@@ -1177,7 +1177,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         if (!class_exists($class)) {
-            throw new \FOSSBilling\Exception('Registrar :adapter was not found', [':adapter' => $class]);
+            throw new \FOSSBilling\InformationException('Registrar :adapter was not found', [':adapter' => $class]);
         }
 
         return $class;

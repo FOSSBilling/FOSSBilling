@@ -37,6 +37,7 @@
     while (readyCallbacks.length > 0) {
       runReadyCallback(readyCallbacks.shift());
     }
+    initTimezone();
   });
 
   FOSSBilling.ui = Object.assign({
@@ -83,6 +84,51 @@
 
     return null;
   };
+
+  // Returns the IANA timezone identifier the browser is running in, or null.
+  // Used by signup and the public layout so guests see dates in their own zone.
+  FOSSBilling.detectTimezone = FOSSBilling.detectTimezone || function () {
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (typeof tz === 'string' && tz.length > 0) {
+        return tz;
+      }
+    } catch (error) {
+      // Intl not available - silently fall through.
+    }
+
+    return null;
+  };
+
+  // Seeds the `fb_timezone` cookie and pre-selects the detected timezone on any
+  // `<select data-timezone-select>` that doesn't already have a value. Lets the
+  // server pre-fill a stored timezone without being clobbered by the auto-detect.
+  function initTimezone() {
+    const detected = FOSSBilling.detectTimezone();
+    if (!detected) {
+      return;
+    }
+
+    if (!FOSSBilling.cookieRead('fb_timezone')) {
+      FOSSBilling.cookieCreate('fb_timezone', detected, 365);
+    }
+
+    const selects = document.querySelectorAll('select[data-timezone-select]');
+    selects.forEach(function (select) {
+      if (select.value) {
+        return;
+      }
+
+      const option = Array.from(select.options).find(function (opt) {
+        return opt.value === detected;
+      });
+      if (option) {
+        select.value = detected;
+      }
+    });
+  }
+
+  FOSSBilling.initTimezone = initTimezone;
 
   function getEditorName(element) {
     return element.getAttribute('name') || element.id || null;

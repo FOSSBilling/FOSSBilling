@@ -144,12 +144,12 @@ test('getCurrencyByClientId returns currency for client', function (?string $cur
     $model = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
 
     $di = new Pimple\Container();
-    $db = Mockery::mock('Box_Database');
-    $db->shouldReceive('getCell')
-        ->atLeast()->once()
-        ->andReturn($currency);
 
     $repositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
+    $repositoryMock->shouldReceive('getClientCurrencyCode')
+        ->once()
+        ->with(1)
+        ->andReturn($currency);
     if ($expectsGetDefault === 'atLeastOnce') {
         $repositoryMock->shouldReceive('findDefault')
             ->atLeast()->once()
@@ -170,7 +170,6 @@ test('getCurrencyByClientId returns currency for client', function (?string $cur
         ->atLeast()->once()
         ->andReturn($repositoryMock);
 
-    $di['db'] = $db;
     $di['em'] = $emMock;
 
     $service = new Box\Mod\Currency\Service();

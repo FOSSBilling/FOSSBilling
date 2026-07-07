@@ -59,6 +59,18 @@
                         <span class="form-check-label">{{ 'Enable Auto Invoice Approval'|trans }}</span>
                     </label>
                 </div>
+                <div class="row g-3 mt-1">
+                    <div class="col-lg-6">
+                        <label class="form-label" for="invoice_reminder_before_due_days">{{ 'Payment Reminder Days Before Due'|trans }}</label>
+                        <input class="form-control" id="invoice_reminder_before_due_days" type="text" name="invoice_reminder_before_due_days" value="{{ params.invoice_reminder_before_due_days|default('') }}" placeholder="14, 7, 1">
+                        <small class="form-hint">{{ 'Comma-separated day intervals. Leave empty to disable automatic reminders before the invoice due date.'|trans }}</small>
+                    </div>
+                    <div class="col-lg-6">
+                        <label class="form-label" for="invoice_reminder_after_due_days">{{ 'Payment Reminder Days After Due'|trans }}</label>
+                        <input class="form-control" id="invoice_reminder_after_due_days" type="text" name="invoice_reminder_after_due_days" value="{{ params.invoice_reminder_after_due_days is defined ? params.invoice_reminder_after_due_days : '5' }}" placeholder="1, 7">
+                        <small class="form-hint">{{ 'Comma-separated day intervals. Leave empty to disable automatic reminders after the invoice due date.'|trans }}</small>
+                    </div>
+                </div>
                 <div class="mt-3">
                     <label class="form-label" for="invoice_default_note">{{ 'Default Invoice Note'|trans }}</label>
                     <textarea class="form-control editor-textarea" id="invoice_default_note" name="invoice_default_note" rows="5">{{ params.invoice_default_note|default('') }}</textarea>
@@ -121,6 +133,15 @@
                             <label class="form-label" for="invoice_hash_lifetime_days">{{ 'Invoice hash lifetime (days)'|trans }}</label>
                             <input class="form-control" type="number" min="0" id="invoice_hash_lifetime_days" name="invoice_hash_lifetime_days" value="{{ params.invoice_hash_lifetime_days|default('90') }}">
                             <small class="form-hint">{{ 'Number of days an invoice hash link remains valid after issue. Set to 0 to never expire. The lifetime is automatically extended when the invoice email is re-sent.'|trans }}</small>
+                        </div>
+
+                        <div class="mt-3">
+                            <input type="hidden" name="invoice_email_attach_pdf" value="0">
+                            <label class="form-check form-switch form-switch-2">
+                                <input class="form-check-input" type="checkbox" name="invoice_email_attach_pdf" value="1" {% if params.invoice_email_attach_pdf|default('') == '1' %}checked{% endif %}>
+                                <span class="form-check-label">{{ 'Attach PDF Copy to Invoice Emails'|trans }}</span>
+                            </label>
+                            <small class="form-hint">{{ 'Attaches a PDF copy of the invoice to the created, paid, reminder, and overdue emails, so clients who pay by bank transfer can view it without logging in.'|trans }}</small>
                         </div>
                     </div>
                 </div>

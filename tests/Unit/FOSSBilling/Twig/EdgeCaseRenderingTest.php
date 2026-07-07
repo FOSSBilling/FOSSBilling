@@ -30,6 +30,13 @@ use Twig\Loader\ArrayLoader;
  * Twig\Error\RuntimeError (template has the bug). There is no in-between.
  */
 
+/**
+ * Build a default request payload for edge-case Twig rendering tests.
+ *
+ * @param array<string, mixed> $overrides optional request keys to override
+ *
+ * @return array<string, mixed>
+ */
 function edgeCaseRequest(array $overrides = []): array
 {
     return array_replace([
@@ -49,6 +56,11 @@ function edgeCaseRequest(array $overrides = []): array
     ], $overrides);
 }
 
+/**
+ * Build an admin API stub with sensible defaults for edge-case tests.
+ *
+ * @param array<string, mixed> $methods optional method map overrides for the stub
+ */
 function edgeCaseAdmin(array $methods = []): PermissiveCallableStub
 {
     return new PermissiveCallableStub(array_replace([
@@ -58,6 +70,11 @@ function edgeCaseAdmin(array $methods = []): PermissiveCallableStub
     ], $methods));
 }
 
+/**
+ * Build a guest API stub with defaults used by edge-case rendering scenarios.
+ *
+ * @param array<string, mixed> $methods optional method map overrides for the stub
+ */
 function edgeCaseGuest(array $methods = []): PermissiveCallableStub
 {
     return new PermissiveCallableStub(array_replace([
@@ -71,6 +88,11 @@ function edgeCaseGuest(array $methods = []): PermissiveCallableStub
     ], $methods));
 }
 
+/**
+ * Return a default cart currency payload for edge-case rendering tests.
+ *
+ * @return array{code: string, conversion_rate: float}
+ */
 function edgeCaseCartCurrency(): array
 {
     return [
@@ -309,7 +331,7 @@ test('activity index renders a mixed list of all three event shapes', function (
                     'pages' => 1,
                     'per_page' => 25,
                     'page' => 1,
-                    'total' => 1,
+                    'total' => 3,
                 ],
             ]),
         ],
@@ -413,6 +435,84 @@ test('support admin ticket renders with no notes and no rel', function (): void 
     );
 
     expect($html)->toBeString();
+});
+
+test('support admin ticket renders admin and client messages, including an edited one', function (): void {
+    $html = (new StrictTemplateRenderer())->renderTemplate(
+        PATH_MODS . '/Support/templates/admin/mod_support_ticket.html.twig',
+        [
+            'app_area' => 'admin',
+            'request' => edgeCaseRequest(['id' => 1]),
+            'admin' => edgeCaseAdmin(),
+            'profile' => [
+                'id' => 1,
+                'name' => 'Test Admin',
+                'email' => 'admin@example.com',
+                'signature' => '-- Admin',
+            ],
+            'canned_delay_message' => '',
+            'request_message' => null,
+            'ticket' => [
+                'id' => 1,
+                'status' => 'open',
+                'subject' => 'Test ticket',
+                'priority' => 6,
+                'created_at' => '2026-01-01 00:00:00',
+                'updated_at' => '2026-01-01 00:00:00',
+                'support_helpdesk_id' => 1,
+                'client_id' => 1,
+                'rel_type' => null,
+                'rel_id' => null,
+                'rel_task' => null,
+                'rel_new_value' => null,
+                'rel_status' => null,
+                'rel' => [
+                    'id' => null,
+                    'type' => null,
+                    'task' => null,
+                    'new_value' => null,
+                    'status' => null,
+                ],
+                'notes' => [],
+                'messages' => [
+                    [
+                        'id' => 1,
+                        'content' => 'Client message, not editable',
+                        'created_at' => '2026-01-01 00:00:00',
+                        'updated_at' => '2026-01-01 00:00:00',
+                        'author' => ['role' => 'client', 'name' => 'Test Client', 'email' => 'client@example.com'],
+                    ],
+                    [
+                        'id' => 2,
+                        'content' => 'Admin message, never edited',
+                        'created_at' => '2026-01-01 00:05:00',
+                        'updated_at' => '2026-01-01 00:05:00',
+                        'author' => ['role' => 'admin', 'name' => 'Test Admin', 'email' => 'admin@example.com'],
+                    ],
+                    [
+                        'id' => 3,
+                        'content' => 'Admin message, edited after the fact',
+                        'created_at' => '2026-01-01 00:10:00',
+                        'updated_at' => '2026-01-01 00:15:00',
+                        'author' => ['role' => 'admin', 'name' => 'Test Admin', 'email' => 'admin@example.com'],
+                    ],
+                ],
+                'replies' => 2,
+                'first' => ['author' => ['email' => 'client@example.com']],
+                'helpdesk' => ['id' => 1, 'name' => 'Helpdesk', 'can_reopen' => true, 'signature' => ''],
+                'client' => ['id' => 1, 'first_name' => 'Test', 'last_name' => 'Client'],
+                'author' => ['id' => 1, 'role' => 'client', 'name' => 'Test Client', 'first_name' => 'Test', 'last_name' => 'Client', 'email' => 'client@example.com'],
+            ],
+        ],
+    );
+
+    expect($html)->toBeString();
+    expect($html)->toContain('editMessage2');
+    expect($html)->toContain('editMessage3');
+    expect($html)->not->toContain('editMessage1');
+    expect($html)->toContain('messageHistory3');
+    expect($html)->not->toContain('messageHistory2');
+    expect($html)->not->toContain('messageHistory1');
 });
 
 test('support admin ticket renders with a related order and a note', function (): void {

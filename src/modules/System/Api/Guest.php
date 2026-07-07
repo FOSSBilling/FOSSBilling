@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -193,7 +192,17 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      */
     public function locale(): string
     {
-        return i18n::getActiveLocale();
+        return i18n::getActiveLocale($this->getDi()['request'], true, $this->getDi()['cookie_queue']);
+    }
+
+    /**
+     * IANA timezone identifiers grouped by region, suitable for a `<select>` with `<optgroup>`.
+     *
+     * @return array<string, list<string>>
+     */
+    public function timezones(): array
+    {
+        return i18n::getTimezones();
     }
 
     public function get_pending_messages()

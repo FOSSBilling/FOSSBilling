@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -328,7 +327,7 @@ Order our services at {{ "order"|url }}
     {
         $model = $this->getService()->getMessageRepository()->find((int) $data['id']);
         if (!$model instanceof MassmailerMessage) {
-            throw new \FOSSBilling\Exception('Message not found');
+            throw new \FOSSBilling\InformationException('Message not found');
         }
 
         return $model;

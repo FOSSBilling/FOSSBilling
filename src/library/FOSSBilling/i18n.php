@@ -11,38 +11,50 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
+use FOSSBilling\Http\CookieQueue;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Intl\Locales;
 
 class i18n
 {
+    private static ?Filesystem $filesystem = null;
+
+    private static function getFilesystem(): Filesystem
+    {
+        return self::$filesystem ??= new Filesystem();
+    }
+
     /**
      * Attempts to get the correct locale for the current user, or a suitable fallback option if it's unavailable.
      *
-     * @param bool $autoDetect indicates if the user's Accept-Language header should be used to select the correct locale for them
+     * @param Request          $request    the current HTTP request (for cookie / Accept-Language header reads)
+     * @param bool             $autoDetect indicates if the user's Accept-Language header should be used to select the correct locale for them
+     * @param CookieQueue|null $cookies    cookie queue for caching the detected locale
      *
      * @return string the locale code to use for the system
      */
-    public static function getActiveLocale(bool $autoDetect = true): string
+    public static function getActiveLocale(Request $request, bool $autoDetect = true, ?CookieQueue $cookies = null): string
     {
         $locale = null;
+
+        $cookieLocale = $request->cookies->get('fb_locale');
+        $cookieBBLANG = $request->cookies->get('BBLANG');
 
         /*
          * If the locale cookie is set and it's one of the enabled locales, use that.
          * Otherwise, fallback to auto-detection when enable.
          */
-        if (!empty($_COOKIE['fb_locale']) && in_array($_COOKIE['fb_locale'], self::getLocales())) {
-            $locale = $_COOKIE['fb_locale'];
-        } elseif (!empty($_COOKIE['BBLANG']) && in_array($_COOKIE['BBLANG'], self::getLocales())) {
-            $locale = $_COOKIE['BBLANG'];
-            if (!headers_sent()) {
-                setcookie('fb_locale', (string) $locale, ['expires' => strtotime('+1 month'), 'path' => '/']);
-                setcookie('BBLANG', '', ['expires' => time() - 3600, 'path' => '/']);
-            }
+        if (!empty($cookieLocale) && in_array($cookieLocale, self::getLocales())) {
+            $locale = $cookieLocale;
+        } elseif (!empty($cookieBBLANG) && in_array($cookieBBLANG, self::getLocales())) {
+            $locale = $cookieBBLANG;
+            $cookies?->queue('fb_locale', (string) $locale, strtotime('+1 month'), '/');
+            $cookies?->queue('BBLANG', '', time() - 3600, '/');
         } elseif ($autoDetect && self::isBrowserLocaleDetectionEnabled()) {
-            $locale = self::getBrowserLocale();
+            $locale = self::getBrowserLocale($request, $cookies);
         }
 
         // If we somehow still don't have a locale, use the default / fallback.
@@ -63,9 +75,9 @@ class i18n
      *
      * @return string|null the user's preferred language/locale or null if not found
      */
-    private static function getBrowserLocale(): ?string
+    private static function getBrowserLocale(Request $request, ?CookieQueue $cookies = null): ?string
     {
-        $header = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
+        $header = $request->headers->get('Accept-Language', '');
 
         try {
             $detectedLocale = @\Locale::acceptFromHttp($header);
@@ -95,20 +107,96 @@ class i18n
             }
             foreach (self::getLocales() as $locale) {
                 if (str_starts_with((string) $locale, substr($detectedLocale, 0, 2))) {
-                    if (!headers_sent()) {
-                        setcookie('fb_locale', (string) $locale, ['expires' => strtotime('+1 month'), 'path' => '/']);
-                    }
+                    $cookies?->queue('fb_locale', (string) $locale, strtotime('+1 month'), '/');
 
                     return $locale;
                 }
             }
         }
 
-        if (!headers_sent()) {
-            setcookie('fb_locale', (string) $matchingLocale, ['expires' => strtotime('+1 month'), 'path' => '/']);
-        }
+        $cookies?->queue('fb_locale', (string) $matchingLocale, strtotime('+1 month'), '/');
 
         return $matchingLocale;
+    }
+
+    /**
+     * Returns the timezone the current request should be rendered in.
+     *
+     * Resolves in order: client -> admin -> `fb_timezone` cookie -> `i18n.timezone` config -> `UTC`.
+     * Invalid values are silently dropped so a stale cookie or corrupt DB value can't crash the date formatter.
+     */
+    public static function getActiveTimezone(Request $request, ?string $clientTimezone = null, ?string $adminTimezone = null): string
+    {
+        $valid = self::getTimezoneList();
+
+        foreach ([$clientTimezone, $adminTimezone, $request->cookies->get('fb_timezone')] as $candidate) {
+            if (is_string($candidate) && $candidate !== '' && in_array($candidate, $valid, true)) {
+                return $candidate;
+            }
+        }
+
+        $configured = Config::getProperty('i18n.timezone', 'UTC');
+        if (is_string($configured) && in_array($configured, $valid, true)) {
+            return $configured;
+        }
+
+        return 'UTC';
+    }
+
+    /**
+     * IANA timezone identifiers grouped by region, suitable for rendering a `<select>` with `<optgroup>`.
+     * UTC is always present in its own bucket.
+     *
+     * @return array<string, list<string>>
+     */
+    public static function getTimezones(): array
+    {
+        $identifiers = \DateTimeZone::listIdentifiers();
+        sort($identifiers);
+
+        $grouped = ['UTC' => ['UTC']];
+        foreach ($identifiers as $identifier) {
+            if ($identifier === 'UTC') {
+                continue;
+            }
+
+            $region = strstr($identifier, '/', true) ?: 'Other';
+            $grouped[$region] ??= [];
+            $grouped[$region][] = $identifier;
+        }
+
+        return $grouped;
+    }
+
+    /**
+     * Flat list of supported timezone identifiers, sorted alphabetically.
+     *
+     * @return list<string>
+     */
+    public static function getTimezoneList(): array
+    {
+        $list = \DateTimeZone::listIdentifiers();
+        sort($list);
+
+        return $list;
+    }
+
+    /**
+     * Returns `$timezone` if it is a valid IANA identifier, `null` for empty input.
+     *
+     * @throws InformationException when the value is non-empty and not a known timezone
+     */
+    public static function validateTimezone(?string $timezone): ?string
+    {
+        if ($timezone === null || $timezone === '') {
+            return null;
+        }
+
+        if (!in_array($timezone, self::getTimezoneList(), true)) {
+            throw new InformationException('Invalid timezone: :tz', [':tz' => $timezone]);
+        }
+
+        return $timezone;
     }
 
     /**
@@ -123,7 +211,7 @@ class i18n
      */
     public static function getLocales(bool $includeLocaleDetails = false, bool $disabled = false): array
     {
-        $filesystem = new Filesystem();
+        $filesystem = self::getFilesystem();
         $locales = self::getLocaleList($disabled);
         if (!$includeLocaleDetails) {
             return $locales;
@@ -132,7 +220,7 @@ class i18n
 
         // Handle when FOSSBilling is running with a dummy locale folder.
         $localePhpPath = Path::join(PATH_LANGS, 'locales.php');
-        $array = ($filesystem->exists($localePhpPath)) ? include $localePhpPath : Locales::getNames(self::getActiveLocale(false));
+        $array = ($filesystem->exists($localePhpPath)) ? include $localePhpPath : Locales::getNames(Config::getProperty('i18n.locale', 'en_US'));
 
         foreach ($locales as $locale) {
             $title = $array[$locale] ?? $locale;
@@ -157,7 +245,7 @@ class i18n
      */
     public static function toggleLocale(string $locale): bool
     {
-        $filesystem = new Filesystem();
+        $filesystem = self::getFilesystem();
         $availableLocales = array_merge(self::getLocaleList(), self::getLocaleList(true));
         if (!in_array($locale, $availableLocales, true)) {
             throw new InformationException('Unable to enable / disable the locale as it is not present in the locale folder.');
@@ -187,7 +275,7 @@ class i18n
      */
     public static function getLocaleCompletionPercent(string $locale): int
     {
-        $filesystem = new Filesystem();
+        $filesystem = self::getFilesystem();
         if ($locale === 'en_US') {
             return 100;
         }
@@ -211,7 +299,7 @@ class i18n
      */
     private static function getLocaleList(bool $disabled = false): array
     {
-        $filesystem = new Filesystem();
+        $filesystem = self::getFilesystem();
 
         $finder = new Finder();
         $finder->directories()->in(PATH_LANGS)->depth('== 0');

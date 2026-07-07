@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -15,7 +14,6 @@ global $di;
 
 use DebugBar\DataCollector\TimeDataCollector;
 use FOSSBilling\Http\RequestFactory;
-use Symfony\Component\HttpFoundation\Response;
 
 $config = FOSSBilling\Config::getConfig();
 $debugBar = null;
@@ -101,16 +99,18 @@ if (!is_null($http_err_code)) {
     switch ($http_err_code) {
         case 404:
             $e = new FOSSBilling\Exception('Page :url not found', [':url' => $url], 404);
-            $app->show404($e)->send();
+            $response = $app->show404($e);
 
             break;
         default:
             $e = new FOSSBilling\Exception('HTTP Error :err_code occurred while attempting to load :url', [':err_code' => $http_err_code, ':url' => $url], $http_err_code);
-            (new Response($app->render('error', ['exception' => $e]), $http_err_code))->send();
+            $response = $app->errorResponse($e);
     }
-    exit;
+} else {
+    // If no HTTP error passed, run the app.
+    $response = $app->run();
 }
 
-// If no HTTP error passed, run the app.
-$app->run()->send();
-exit;
+$di['cookie_queue']->applyToResponse($response);
+
+emitResponse($response);

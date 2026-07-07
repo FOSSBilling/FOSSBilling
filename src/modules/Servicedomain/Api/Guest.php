@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -64,7 +63,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     {
         $model = $this->getService()->tldFindOneByTld($data['tld']);
         if (!$model instanceof \Model_Tld) {
-            throw new \FOSSBilling\Exception('TLD not found');
+            throw new \FOSSBilling\InformationException('TLD not found');
         }
 
         return $this->getService()->tldToApiArray($model);

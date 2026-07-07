@@ -16,7 +16,6 @@ use DiceBear\Avatar;
 use DiceBear\Style;
 use FOSSBilling\Environment as AppEnvironment;
 use FOSSBilling\Twig\Enum\AppArea;
-use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Twig\Attribute\AsTwigFilter;
 use Twig\Attribute\AsTwigFunction;
@@ -135,13 +134,12 @@ class FOSSBillingExtension
         }
 
         $spritePath = Path::join(PATH_THEMES, $themeCode, 'assets/build/symbol/icons-sprite.svg');
-        $filesystem = new Filesystem();
 
-        if (!$filesystem->exists($spritePath)) {
+        if (!$this->di['filesystem']->exists($spritePath)) {
             return '';
         }
 
-        return $filesystem->readFile($spritePath);
+        return $this->di['filesystem']->readFile($spritePath);
     }
 
     #[AsTwigFunction('has_permission')]
@@ -268,13 +266,12 @@ class FOSSBillingExtension
             }
 
             $definitionPath = Path::join($basePath, 'src/identicon.json');
-            $filesystem = new Filesystem();
 
-            if (!$filesystem->exists($definitionPath)) {
+            if (!$this->di['filesystem']->exists($definitionPath)) {
                 throw new \RuntimeException(sprintf('DiceBear style definition "%s" was not found.', $definitionPath));
             }
 
-            $this->avatarStyle = Style::fromJson($filesystem->readFile($definitionPath));
+            $this->avatarStyle = Style::fromJson($this->di['filesystem']->readFile($definitionPath));
         }
 
         $avatar = new Avatar($this->avatarStyle, [

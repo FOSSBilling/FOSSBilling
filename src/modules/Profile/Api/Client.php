@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -52,6 +51,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
      * @optional string $phone_cc - Phone country code
      * @optional string $notes - Notes about client. Visible for admin only
      * @optional string $lang - language option
+     * @optional string $timezone - IANA timezone identifier (e.g. "America/New_York"). Used to localize dates and times shown to the client.
      * @optional string $custom_1 - Custom field 1
      * @optional string $custom_2 - Custom field 2
      * @optional string $custom_3 - Custom field 3
@@ -62,6 +62,16 @@ class Client extends \FOSSBilling\Api\AbstractApi
      * @optional string $custom_8 - Custom field 8
      * @optional string $custom_9 - Custom field 9
      * @optional string $custom_10 - Custom field 10
+     * @optional string $custom_11 - Custom field 11
+     * @optional string $custom_12 - Custom field 12
+     * @optional string $custom_13 - Custom field 13
+     * @optional string $custom_14 - Custom field 14
+     * @optional string $custom_15 - Custom field 15
+     * @optional string $custom_16 - Custom field 16
+     * @optional string $custom_17 - Custom field 17
+     * @optional string $custom_18 - Custom field 18
+     * @optional string $custom_19 - Custom field 19
+     * @optional string $custom_20 - Custom field 20
      *
      * @return bool
      *

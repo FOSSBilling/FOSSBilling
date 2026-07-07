@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -30,8 +29,6 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * Array
      * (
      * 		[id] => 1
-     *		[role] => staff
-     *		[admin_group_id] => 1
      *		[email] => demo@fossbilling.org
      *		[pass] => 89e495e7941cf9e40e6980d14a16bf023ccd4c91
      *		[name] => Demo Administrator
@@ -65,6 +62,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $email - new email
      * @optional string $name - new name
      * @optional string $signature - new signature
+     * @optional string $timezone - IANA timezone identifier (e.g. "America/New_York"). Used to localize dates and times shown to the staff member.
      *
      * @return bool
      *

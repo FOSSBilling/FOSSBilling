@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -12,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Client;
 
+use FOSSBilling\i18n;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Tools;
@@ -462,6 +462,8 @@ class Service implements InjectionAwareInterface
             'postcode' => $model->postcode,
             'country' => $model->country,
             'currency' => $model->currency,
+            'lang' => $model->lang,
+            'timezone' => $model->timezone,
         ];
 
         if ($deep) {
@@ -478,7 +480,7 @@ class Service implements InjectionAwareInterface
             );
         }
 
-        for ($i = 1; $i < 11; ++$i) {
+        for ($i = 1; $i < 21; ++$i) {
             $k = 'custom_' . $i;
             if (isset($m[$k]) && !empty($m[$k]) && ($isAdmin || isset($clientVisibleCustomFields[$k]))) {
                 $details[$k] = $m[$k];
@@ -535,7 +537,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!$client instanceof \Model_Client) {
-            throw new \FOSSBilling\Exception('Client not found');
+            throw new InformationException('Client not found');
         }
 
         return $client;
@@ -634,6 +636,7 @@ class Service implements InjectionAwareInterface
         if ($client->lang !== null && $client->lang !== '' && !Locales::exists($client->lang)) {
             throw new InformationException('Invalid locale code: :code', [':code' => $client->lang]);
         }
+        $client->timezone = i18n::validateTimezone($data['timezone'] ?? null);
         $client->currency = $data['currency'] ?? null;
 
         $client->custom_1 = $data['custom_1'] ?? null;
@@ -646,6 +649,16 @@ class Service implements InjectionAwareInterface
         $client->custom_8 = $data['custom_8'] ?? null;
         $client->custom_9 = $data['custom_9'] ?? null;
         $client->custom_10 = $data['custom_10'] ?? null;
+        $client->custom_11 = $data['custom_11'] ?? null;
+        $client->custom_12 = $data['custom_12'] ?? null;
+        $client->custom_13 = $data['custom_13'] ?? null;
+        $client->custom_14 = $data['custom_14'] ?? null;
+        $client->custom_15 = $data['custom_15'] ?? null;
+        $client->custom_16 = $data['custom_16'] ?? null;
+        $client->custom_17 = $data['custom_17'] ?? null;
+        $client->custom_18 = $data['custom_18'] ?? null;
+        $client->custom_19 = $data['custom_19'] ?? null;
+        $client->custom_20 = $data['custom_20'] ?? null;
 
         $client->ip = $data['ip'] ?? null;
 
@@ -684,8 +697,11 @@ class Service implements InjectionAwareInterface
             'phone', 'phone_cc', 'gender', 'birthday',
             'company', 'company_vat', 'company_number', 'type',
             'address_1', 'address_2', 'city', 'state', 'postcode', 'country',
+            'lang', 'timezone',
             'custom_1', 'custom_2', 'custom_3', 'custom_4', 'custom_5',
             'custom_6', 'custom_7', 'custom_8', 'custom_9', 'custom_10',
+            'custom_11', 'custom_12', 'custom_13', 'custom_14', 'custom_15',
+            'custom_16', 'custom_17', 'custom_18', 'custom_19', 'custom_20',
         ];
 
         $safeData = [
@@ -883,7 +899,7 @@ class Service implements InjectionAwareInterface
 
         $keywords = ['passport', 'document', 'identity', 'id number'];
 
-        foreach (range(1, 10) as $i) {
+        foreach (range(1, 20) as $i) {
             $fieldName = 'custom_' . $i;
             $fieldConfig = $customFields[$fieldName] ?? null;
             if (!is_array($fieldConfig) || !($fieldConfig['active'] ?? false)) {

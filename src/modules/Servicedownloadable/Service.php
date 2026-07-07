@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -82,11 +81,14 @@ class Service implements InjectionAwareInterface
     ];
 
     protected ?\Pimple\Container $di = null;
-    private readonly Filesystem $filesystem;
+    private Filesystem $filesystem;
 
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        if (isset($di['filesystem'])) {
+            $this->filesystem = $di['filesystem'];
+        }
     }
 
     public function getDi(): ?\Pimple\Container
@@ -362,7 +364,6 @@ class Service implements InjectionAwareInterface
         // Check if update_orders is true and update all orders
         if (isset($config['update_orders']) && $config['update_orders']) {
             $orderService = $this->di['mod_service']('order');
-            // get all orders with this product
             $orders = $productService->getOrdersForProduct($productModel);
 
             foreach ($orders as $order) {

@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -13,6 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Activity;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Types\Types;
 use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
@@ -209,7 +209,7 @@ class Service implements InjectionAwareInterface
         return [$sql, $params];
     }
 
-    public function logEmail($subject, $clientId = null, $sender = null, $recipients = null, $content_html = null, $content_text = null): bool
+    public function logEmail($subject, $clientId = null, $sender = null, $recipients = null, $content_html = null, $content_text = null, ?array $attachment = null): bool
     {
         $this->getDbal()->insert('activity_client_email', [
             'client_id' => $clientId,
@@ -218,7 +218,12 @@ class Service implements InjectionAwareInterface
             'subject' => $subject,
             'content_html' => $content_html,
             'content_text' => $content_text,
+            'attachment_name' => $attachment['name'] ?? null,
+            'attachment_content' => $attachment['content'] ?? null,
+            'attachment_mime' => $attachment['mime'] ?? ($attachment !== null ? 'application/octet-stream' : null),
             'created_at' => date('Y-m-d H:i:s'),
+        ], [
+            'attachment_content' => Types::BLOB,
         ]);
 
         return true;

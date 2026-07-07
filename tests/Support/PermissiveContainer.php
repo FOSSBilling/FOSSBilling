@@ -31,6 +31,7 @@ final class PermissiveContainer extends \Pimple\Container
 
         // FOSSBillingExtension tracks loaded assets via $di['loaded_assets'].
         $this['loaded_assets'] = [];
+        $this['filesystem'] = new \Symfony\Component\Filesystem\Filesystem();
     }
 
     #[\Override]

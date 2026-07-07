@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -21,6 +20,7 @@ use Box\Mod\Support\Entity\CannedResponseCategory;
 use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Entity\KbArticle;
 use Box\Mod\Support\Entity\KbArticleCategory;
+use Box\Mod\Support\Entity\SupportTicket;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
@@ -37,15 +37,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'view');
 
-        [$sql, $bindings] = $this->getService()->getSearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $bindings, PaginationOptions::fromArray($data));
+        $repo = $this->getService()->getSupportTicketRepository();
 
-        foreach ($pager['list'] as $key => $ticketArr) {
-            $ticket = $this->getDi()['db']->getExistingModelById('SupportTicket', $ticketArr['id'], 'Ticket not found');
-            $pager['list'][$key] = $this->getService()->toApiArray($ticket, true, $this->getIdentity());
-        }
-
-        return $pager;
+        return $this->getDi()['pager']->paginateMappedQuery(
+            $repo->getSearchQueryBuilder($data),
+            PaginationOptions::fromArray($data),
+            fn (SupportTicket $ticket): array => $this->getService()->toApiArray($ticket, false, $this->getIdentity()),
+        );
     }
 
     /**
@@ -56,7 +54,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'view');
 
-        $model = $this->getDi()['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
+        $model = $this->getService()->getTicketById((int) $data['id']);
 
         return $this->getService()->toApiArray($model, true, $this->getIdentity());
     }
@@ -74,7 +72,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_tickets');
 
-        $model = $this->getDi()['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
+        $model = $this->getService()->getTicketById((int) $data['id']);
 
         // Sanitize subject if provided
         if (isset($data['subject'])) {
@@ -92,9 +90,24 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_tickets');
 
-        $model = $this->getDi()['db']->getExistingModelById('SupportTicketMessage', $data['id'], 'Ticket message not found');
+        $data['content'] = \FOSSBilling\Tools::sanitizeMarkdownContent($data['content']);
 
-        return $this->getService()->ticketMessageUpdate($model, $data['content']);
+        $model = $this->getService()->getTicketMessageById((int) $data['id']);
+
+        return $this->getService()->ticketMessageUpdate($model, $data['content'], $this->getIdentity());
+    }
+
+    /**
+     * Return the edit history of a ticket message, most recent edit first.
+     */
+    #[RequiredParams(['id' => 'Ticket message ID is missing'])]
+    public function ticket_message_history_get_list(array $data): array
+    {
+        $this->checkPermissions('support', 'view');
+
+        $model = $this->getService()->getTicketMessageById((int) $data['id']);
+
+        return $this->getService()->getMessageHistory($model);
     }
 
     /**
@@ -105,7 +118,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_tickets');
 
-        $model = $this->getDi()['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
+        $model = $this->getService()->getTicketById((int) $data['id']);
 
         return $this->getService()->rm($model);
     }
@@ -122,7 +135,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $data['content'] = \FOSSBilling\Tools::sanitizeMarkdownContent($data['content']);
 
-        $ticket = $this->getDi()['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
+        $ticket = $this->getService()->getTicketById((int) $data['id']);
 
         return $this->getService()->ticketReply($ticket, $this->getIdentity(), $data['content']);
     }
@@ -135,9 +148,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_tickets');
 
-        $ticket = $this->getDi()['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
+        $ticket = $this->getService()->getTicketById((int) $data['id']);
 
-        if ($ticket->status == \Model_SupportTicket::CLOSED) {
+        if ($ticket->getStatus() === SupportTicket::STATUS_CLOSED) {
             return true;
         }
 
@@ -159,8 +172,6 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $data['content'] = \FOSSBilling\Tools::sanitizeMarkdownContent($data['content']);
 
-        $client = $this->getDi()['db']->getExistingModelById('Client', $data['client_id'], 'Client not found');
-
         /** @var \Box\Mod\Support\Repository\HelpdeskRepository $repo */
         $repo = $this->getService()->getHelpdeskRepository();
 
@@ -169,7 +180,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             throw new \FOSSBilling\InformationException('Helpdesk invalid');
         }
 
-        return $this->getService()->ticketCreateForAdmin($client, $helpdesk, $data, $this->getIdentity());
+        return $this->getService()->ticketCreateForAdmin((int) $data['client_id'], $helpdesk, $data, $this->getIdentity());
     }
 
     /**
@@ -186,9 +197,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $expiredArr = $this->getService()->getExpired();
 
         foreach ($expiredArr as $ticketArr) {
-            $ticketModel = $this->getDi()['db']->getExistingModelById('SupportTicket', $ticketArr['id'], 'Ticket not found');
+            $ticketModel = $this->getService()->getTicketById((int) $ticketArr['id']);
             if (!$this->getService()->autoClose($ticketModel)) {
-                $this->getDi()['logger']->info('Ticket %s was not closed', $ticketModel->id);
+                $this->getDi()['logger']->info('Ticket %s was not closed', $ticketModel->getId());
             }
         }
 
@@ -542,7 +553,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_tickets');
 
-        $ticket = $this->getDi()['db']->getExistingModelById('SupportTicket', $data['ticket_id'], 'Ticket not found');
+        $ticket = $this->getService()->getTicketById((int) $data['ticket_id']);
 
         return $this->getService()->noteCreate($ticket, $this->getIdentity(), $data['note']);
     }
@@ -557,7 +568,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_tickets');
 
-        $model = $this->getDi()['db']->getExistingModelById('SupportTicketNote', $data['id'], 'Note not found');
+        $model = $this->getService()->getTicketNoteById((int) $data['id']);
 
         return $this->getService()->noteRm($model);
     }
@@ -572,7 +583,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_tickets');
 
-        $model = $this->getDi()['db']->getExistingModelById('SupportTicket', $data['id'], 'Ticket not found');
+        $model = $this->getService()->getTicketById((int) $data['id']);
 
         return $this->getService()->ticketTaskComplete($model);
     }

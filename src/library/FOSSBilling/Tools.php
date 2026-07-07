@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -18,12 +17,11 @@ use Egulias\EmailValidator\Validation\MultipleValidationWithAnd;
 use Egulias\EmailValidator\Validation\RFCValidation;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
-use Symfony\Component\HttpClient\HttpClient;
 
 class Tools
 {
-    private readonly Filesystem $filesystem;
     protected ?\Pimple\Container $di = null;
+    private Filesystem $filesystem;
 
     public function __construct()
     {
@@ -33,6 +31,9 @@ class Tools
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        if (isset($di['filesystem'])) {
+            $this->filesystem = $di['filesystem'];
+        }
     }
 
     public function getDi(): ?\Pimple\Container
@@ -266,21 +267,6 @@ class Tools
         ]);
 
         return $port === false ? $default : $port;
-    }
-
-    public static function isHTTPS(): bool
-    {
-        $protocol = $_SERVER['HTTPS'] ?? $_SERVER['REQUEST_SCHEME'] ?? '';
-
-        // $_SERVER['HTTPS'] will be set to `on` to indicate HTTPS and REQUEST_SCHEME may be set to `https`, so either one means we are connected via HTTPS.
-        if (strcasecmp((string) $protocol, 'on') === 0 || strcasecmp((string) $protocol, 'https') === 0) {
-            return true;
-        }
-
-        // Behind a TLS-terminating reverse proxy/CDN (e.g. Cloudflare), the request
-        // reaches this app over plain HTTP even though the visitor is on HTTPS -
-        // fall back to the standard forwarded-proto header in that case.
-        return strcasecmp((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ''), 'https') === 0;
     }
 
     /**

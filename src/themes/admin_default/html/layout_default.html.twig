@@ -33,13 +33,17 @@
         } else {
             document.documentElement.removeAttribute("data-bs-theme");
         }
-
-        {% if not admin %}
-            document.addEventListener("DOMContentLoaded", function() {
-                window.location = "{{ 'staff/login'|url }}";
-            });
-        {% else %}
     </script>
+
+    {% if not admin %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            window.location = "{{ 'staff/login'|url }}";
+        });
+    </script>
+    {% endif %}
+
+    {% if admin %}
     {% if hide_menu is defined and hide_menu %}
     {% block content_wide %}{% endblock %}
     {% else %}
@@ -55,6 +59,7 @@
                        </button>
                        <h1 class="d-none d-sm-flex navbar-brand d-none-navbar-horizontal pe-0 pe-md-3">
                            {{ include('partial_company_logo.html.twig', {
+                               company: company,
                                image_class: 'navbar-brand-image'
                            }) }}
                        </h1>
@@ -75,6 +80,20 @@
                            <a href="https://github.com/FOSSBilling/FOSSBilling" class="btn px-3" target="_blank" rel="noreferrer" title="GitHub">
                               <svg class="icon m-0">
                                  <use href="#brand-github" />
+                              </svg>
+                           </a>
+                           <a href="https://fossbilling.org/discord"
+                              class="btn px-3"
+                              id="discord-community-btn"
+                              target="_blank"
+                              rel="noreferrer"
+                              title="{{ 'Discord'|trans }}"
+                              data-bs-toggle="popover"
+                              data-bs-trigger="manual"
+                              data-bs-placement="bottom"
+                              data-bs-content="{{ 'Join our Discord community for support and discussion!'|trans }}">
+                              <svg class="icon m-0">
+                                 <use href="#brand-discord" />
                               </svg>
                            </a>
                            <a href="https://github.com/sponsors/FOSSBilling" class="btn px-3" target="_blank" rel="noreferrer" title="{{ 'Sponsor'|trans }}">
@@ -113,7 +132,7 @@
                             {{ avatar(profile.email, 32, 'avatar avatar-sm') }}
                             <div class="d-none d-xl-block ps-2">
                               <div>{{ profile.name }}</div>
-                              <div class="mt-1 small text-muted">{{ profile.role }}</div>
+                              <div class="mt-1 small text-muted">{{ profile.email }}</div>
                            </div>
                         </a>
                         <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
@@ -179,6 +198,7 @@
                                             <a class="dropdown-item" href="https://docs.fossbilling.org/" target="_blank" rel="noopener">{{ 'Documentation'|trans }}</a>
                                             <a class="dropdown-item" href="https://github.com/FOSSBilling/FOSSBilling" target="_blank" rel="noopener">GitHub</a>
                                             <a class="dropdown-item" href="https://github.com/FOSSBilling/FOSSBilling/issues" target="_blank" rel="noopener">{{ 'Report a Bug'|trans }}</a>
+                                            <a class="dropdown-item" href="https://fossbilling.org/discord" target="_blank" rel="noopener">{{ 'Discord'|trans }}</a>
                                         </div>
                                     </div>
                                 </div>
@@ -239,7 +259,7 @@
     {% block js %}{% endblock %}
 
     <noscript id="noscript">
-        <div class="msg error">NOTE: Many features on FOSSBilling require Javascript and cookies. You can enable both via your browser's preference settings.</div>
+        <div class="msg error">NOTE: Many features on FOSSBilling require JavaScript and cookies. You can enable both via your browser's preference settings.</div>
     </noscript>
     {% endif %}
 

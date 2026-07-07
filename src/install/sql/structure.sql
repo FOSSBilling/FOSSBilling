@@ -45,7 +45,11 @@ CREATE TABLE `activity_client_email` (
   `subject` varchar(255) DEFAULT NULL,
   `content_html` text,
   `content_text` text,
+  `attachment_name` varchar(255) DEFAULT NULL,
+  `attachment_content` longblob DEFAULT NULL,
+  `attachment_mime` varchar(100) DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `client_id_idx` (`client_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -95,22 +99,20 @@ CREATE TABLE `activity_system` (
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `admin` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `role` varchar(30) DEFAULT 'staff' COMMENT 'admin, staff',
-  `admin_group_id` bigint(20) DEFAULT '1',
+  `system_name` varchar(100) DEFAULT NULL,
   `email` varchar(255) DEFAULT NULL,
   `pass` varchar(255) DEFAULT NULL,
   `salt` varchar(255) DEFAULT NULL,
   `name` varchar(255) DEFAULT NULL,
   `signature` varchar(255) DEFAULT NULL,
-  `protected` tinyint(1) DEFAULT '0',
   `status` varchar(30) DEFAULT 'active' COMMENT 'active, inactive',
   `api_token` varchar(128) DEFAULT NULL,
-  `permissions` text,
+  `timezone` varchar(64) DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`),
-  KEY `admin_group_id_idx` (`admin_group_id`)
+  UNIQUE KEY `system_name` (`system_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -123,9 +125,33 @@ CREATE TABLE `admin` (
 CREATE TABLE `admin_group` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) DEFAULT NULL,
+  `system_name` varchar(100) DEFAULT NULL,
+  `parent_id` bigint(20) DEFAULT NULL,
+  `permissions` json,
+  `protected` tinyint(1) DEFAULT '0',
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `system_name` (`system_name`),
+  KEY `admin_group_parent_id_idx` (`parent_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `admin_group_member`
+--
+
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `admin_group_member` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `admin_id` bigint(20) NOT NULL,
+  `admin_group_id` bigint(20) NOT NULL,
+  `created_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `admin_group_member_unique` (`admin_id`, `admin_group_id`),
+  KEY `admin_group_member_admin_id_idx` (`admin_id`),
+  KEY `admin_group_member_group_id_idx` (`admin_group_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -222,6 +248,7 @@ CREATE TABLE `client` (
   `notes` text,
   `currency` varchar(10) DEFAULT NULL,
   `lang` varchar(10) DEFAULT NULL,
+  `timezone` varchar(64) DEFAULT NULL,
   `ip` varchar(45) DEFAULT NULL,
   `api_token` varchar(128) DEFAULT NULL,
   `referred_by` varchar(255) DEFAULT NULL,
@@ -235,6 +262,16 @@ CREATE TABLE `client` (
   `custom_8` text,
   `custom_9` text,
   `custom_10` text,
+  `custom_11` text,
+  `custom_12` text,
+  `custom_13` text,
+  `custom_14` text,
+  `custom_15` text,
+  `custom_16` text,
+  `custom_17` text,
+  `custom_18` text,
+  `custom_19` text,
+  `custom_20` text,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -423,6 +460,24 @@ CREATE TABLE `email_template` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `email_template_group`
+--
+
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `email_template_group` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `email_template_id` bigint(20) NOT NULL,
+  `admin_group_id` bigint(20) NOT NULL,
+  `created_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `email_template_group_unique` (`email_template_id`, `admin_group_id`),
+  KEY `email_template_group_template_id_idx` (`email_template_id`),
+  KEY `email_template_group_group_id_idx` (`admin_group_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `extension`
 --
 
@@ -590,7 +645,8 @@ CREATE TABLE `invoice_item` (
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `invoice_id_idx` (`invoice_id`)
+  KEY `invoice_id_idx` (`invoice_id`),
+  KEY `invoice_item_pending_renewal_idx` (`rel_id`(20), `type`, `task`, `status`, `invoice_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -635,12 +691,12 @@ CREATE TABLE `support_kb_article_category` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `mod_email_queue`
+-- Table structure for table `email_queue`
 --
 
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `mod_email_queue` (
+CREATE TABLE `email_queue` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `recipient` varchar(255) NOT NULL,
   `sender` varchar(255) NOT NULL,
@@ -653,6 +709,9 @@ CREATE TABLE `mod_email_queue` (
   `priority` int(11) DEFAULT NULL,
   `tries` int(11) NOT NULL,
   `status` varchar(20) NOT NULL,
+  `attachment_name` varchar(255) DEFAULT NULL,
+  `attachment_content` longblob DEFAULT NULL,
+  `attachment_mime` varchar(100) DEFAULT NULL,
   `created_at` datetime NOT NULL,
   `updated_at` datetime NOT NULL,
   PRIMARY KEY (`id`)
@@ -1257,6 +1316,24 @@ CREATE TABLE `support_ticket_message` (
   KEY `client_id_idx` (`client_id`),
   KEY `admin_id_idx` (`admin_id`),
   FULLTEXT KEY `content_idx` (`content`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `support_ticket_message_history`
+--
+
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `support_ticket_message_history` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `support_ticket_message_id` bigint(20) NOT NULL,
+  `admin_id` bigint(20) DEFAULT NULL,
+  `content` text,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `support_ticket_message_id_idx` (`support_ticket_message_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

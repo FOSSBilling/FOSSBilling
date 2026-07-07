@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -331,7 +330,18 @@ class Service implements InjectionAwareInterface
                 AND co.invoice_option = :invoice_option
                 AND co.period IS NOT NULL
                 AND co.expires_at IS NOT NULL
-                AND i.id IS NULL';
+                AND i.id IS NULL
+                /* Pair non-executed renewal items with paid invoices to skip renewals already queued for activation. */
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM invoice_item pending_item
+                    INNER JOIN invoice pending_invoice ON pending_invoice.id = pending_item.invoice_id
+                    WHERE pending_item.rel_id = co.id
+                    AND pending_item.type = :pending_item_type
+                    AND pending_item.task = :pending_item_task
+                    AND pending_item.status != :pending_item_status
+                    AND pending_invoice.status = :pending_invoice_status
+                )';
 
         $where = [];
         $bindings = [];
@@ -349,6 +359,10 @@ class Service implements InjectionAwareInterface
         $bindings[':status'] = \Model_ClientOrder::STATUS_ACTIVE;
         $bindings[':invoice_option'] = 'issue-invoice';
         $bindings[':unpaid_invoice_status'] = \Model_Invoice::STATUS_UNPAID;
+        $bindings[':pending_item_type'] = \Model_InvoiceItem::TYPE_ORDER;
+        $bindings[':pending_item_task'] = \Model_InvoiceItem::TASK_RENEW;
+        $bindings[':pending_item_status'] = \Model_InvoiceItem::STATUS_EXECUTED;
+        $bindings[':pending_invoice_status'] = \Model_Invoice::STATUS_PAID;
         $bindings[':days_until_expiration'] = $days_until_expiration;
 
         return [$query, $bindings];
@@ -365,7 +379,7 @@ class Service implements InjectionAwareInterface
         $data['discount'] ??= 0;
         $data['title'] = $model->title;
         $data['meta'] = $this->di['db']->getAssoc('SELECT name, value FROM client_order_meta WHERE client_order_id = :id', [':id' => $model->id]);
-        $data['active_tickets'] = $supportService->getActiveTicketsCountForOrder($model);
+        $data['active_tickets'] = $supportService->getSupportTicketRepository()->countActiveTicketsForOrder((int) $model->id);
         $client = $this->di['db']->getExistingModelById('Client', $model->client_id, 'Client not found');
         $data['client'] = $clientService->toApiArray($client, false);
 
@@ -1128,7 +1142,6 @@ class Service implements InjectionAwareInterface
             throw $e;
         }
 
-        // set automatic order expiration
         if (!empty($order->period)) {
             $from_time = ($order->expires_at === null) ? time() : strtotime($order->expires_at); // from expiration date
 
@@ -1298,7 +1311,6 @@ class Service implements InjectionAwareInterface
     public function rmOrder(\Model_ClientOrder $model): void
     {
         if ($model->group_master) {
-            // set addons as separate orders
             $list = $this->getOrderAddonsList($model);
             foreach ($list as $addon) {
                 $addon->group_master = 1;
@@ -1534,6 +1546,18 @@ class Service implements InjectionAwareInterface
         ];
 
         return $this->di['db']->findOne('ClientOrder', 'id = :id AND client_id = :client_id', $bindings);
+    }
+
+    public function findByClientIdAndOrderId(int $clientId, int $orderId): ?\Model_ClientOrder
+    {
+        $bindings = [
+            ':id' => $orderId,
+            ':client_id' => $clientId,
+        ];
+
+        $order = $this->di['db']->findOne('ClientOrder', 'id = :id AND client_id = :client_id', $bindings);
+
+        return $order instanceof \Model_ClientOrder ? $order : null;
     }
 
     public function getOrderServiceData(\Model_ClientOrder $order, $identity = null)

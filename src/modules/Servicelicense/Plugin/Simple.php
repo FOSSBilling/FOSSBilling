@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -31,9 +30,6 @@ class Simple
      */
     public function generate(\Model_ServiceLicense $service, \Model_ClientOrder $order, array $config): string
     {
-        // Optional: to get customer data
-        // $client = $this->di['db']->load('Client', $order->client_id);
-
         $length = $config['length'] ?? 25;
         $prefix = $config['prefix'] ?? null;
 
@@ -46,32 +42,4 @@ class Simple
 
         return $prefix . $string;
     }
-
-    /*
-     * This method is optional.
-     * Additional validation rules can be applied to license validation logic.
-     * Method is called after "expiration, ip, version, path, hostname validations are passed".
-     *
-     * Should throw "LogicException" if validation fails
-     *
-     * @param Model_ServiceLicense $service
-     * @param array                $data
-     *
-     * @return array - list of params to be attached to response message
-     *
-     * @throws LogicException
-     */
-    /*
-    public function validate(Model_ServiceLicense $service, array $data)
-    {
-        if(!$validation_rule) {
-            throw new LogicException('Some validation rule did not pass', 1020);
-        }
-
-        return array(
-            'key'   =>  'value',
-            'key2'  =>  'value2'
-        );
-    }
-     */
 }

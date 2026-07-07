@@ -23,6 +23,8 @@
 {% block content %}
     {% set cron = admin.cron_info %}
     {% set params = admin.extension_config_get({ 'ext': 'mod_cron' }) %}
+    {% set guest_cron = params.guest_cron|default(false) %}
+    {% set cron_hash = params.cron_hash|default('') %}
     <div class="card">
         <div class="card-header">
             <div>
@@ -76,13 +78,13 @@
                         <p class="text-secondary mb-0">{{ 'Toggle to enable or disable the guest cron URL. A security hash is generated automatically when enabled.'|trans }}</p>
                     </div>
                     <label class="form-check form-switch form-switch-2 m-0">
-                        <input class="form-check-input" name="guest_cron" type="checkbox" {% if params.guest_cron %}checked="checked"{% endif %} onchange="document.getElementById('guest-cron-form').requestSubmit()">
+                        <input class="form-check-input" name="guest_cron" type="checkbox" {% if guest_cron %}checked="checked"{% endif %} onchange="document.getElementById('guest-cron-form').requestSubmit()">
                         <span class="form-check-label">{{ 'Enable Guest Access'|trans }}</span>
                     </label>
                 </div>
-                {% if params.guest_cron and params.cron_hash %}
+                {% if guest_cron and cron_hash %}
                     <label class="form-label" for="guest-cron-url">{{ 'Guest Cron URL'|trans }}</label>
-                    <input id="guest-cron-url" class="form-control font-monospace mb-2" type="text" value="{{ 'cron/run'|api_url(role: 'guest', query: {hash: params.cron_hash}) }}" readonly>
+                    <input id="guest-cron-url" class="form-control font-monospace mb-2" type="text" value="{{ 'cron/run'|api_url(role: 'guest', query: {hash: cron_hash}) }}" readonly>
                     <div class="d-flex justify-content-end mb-3">
                         <a class="btn btn-outline-warning" href="{{ 'cron/regenerate_cron_hash'|api_url }}" {{ fb_api_link({message: 'Hash Regenerated'|trans, reload: true}) }}>
                             {{ 'Regenerate Hash'|trans }}

@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -16,6 +15,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Staff\Api;
 
+use Box\Mod\Staff\Entity\AdminGroup;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
@@ -29,8 +29,6 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     public function get_list($data)
     {
         $this->checkPermissions('staff', 'view');
-
-        $data['no_cron'] = true;
 
         [$sql, $params] = $this->getService()->getSearchQuery($data);
         $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
@@ -75,13 +73,21 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
+     * Returns whether the logged-in staff member is a Super Administrator.
+     */
+    public function is_super_administrator($data): bool
+    {
+        return $this->getService()->isSuperAdministrator();
+    }
+
+    /**
      * Update staff member.
      *
      * @optional string $email - new email
      * @optional string $name - new name
      * @optional string $status - new status
      * @optional string $signature - new signature
-     * @optional int $admin_group_id - new group id
+     * @optional string $timezone - IANA timezone identifier (e.g. "America/New_York"). Used to localize dates and times shown to the staff member.
      *
      * @return bool
      *
@@ -91,8 +97,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     public function update($data)
     {
         $model = $this->getDi()['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
-        $role = $model->role === 'admin' ? 'admin' : 'staff';
-        $this->checkPermissions('staff', $role === 'admin' ? 'create_and_edit_admin' : 'create_and_edit_staff');
+        $this->checkPermissions('staff', 'create_and_edit_staff');
 
         if (isset($data['email'])) {
             $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
@@ -112,8 +117,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     public function delete($data)
     {
         $model = $this->getDi()['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
-        $role = $model->role === 'admin' ? 'admin' : 'staff';
-        $this->checkPermissions('staff', $role === 'admin' ? 'delete_admin' : 'delete_staff');
+        $this->checkPermissions('staff', 'delete_staff');
 
         return $this->getService()->delete($model);
     }
@@ -137,8 +141,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->getDi()['validator']->isPasswordStrong($data['password']);
 
         $model = $this->getDi()['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
-        $role = $model->role === 'admin' ? 'admin' : 'staff';
-        $this->checkPermissions('staff', $role === 'admin' ? 'reset_admin_password' : 'reset_staff_password');
+        $this->checkPermissions('staff', 'reset_staff_password');
 
         return $this->getService()->changePassword($model, $data['password']);
     }
@@ -147,6 +150,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * Create new staff member.
      *
      * @optional string $signature - signature of new staff member
+     * @optional string $timezone - IANA timezone identifier (e.g. "America/New_York"). Used to localize dates and times shown to the staff member.
      *
      * @return int - ID of newly created staff member
      *
@@ -156,12 +160,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         'email' => 'Email address was not passed',
         'password' => 'Password was not passed',
         'name' => 'Name was not passed',
-        'admin_group_id' => 'Group ID was not passed',
+        'group_id' => 'Group ID was not passed',
     ])]
     public function create($data)
     {
-        $role = $data['role'] ?? 'staff';
-        $this->checkPermissions('staff', $role === 'admin' ? 'create_and_edit_admin' : 'create_and_edit_staff');
+        $this->checkPermissions('staff', 'create_and_edit_staff');
 
         $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
 
@@ -170,40 +173,19 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         return $this->getService()->create($data);
     }
 
-    /**
-     * Return staff member permissions.
-     *
-     * @return array
-     */
-    #[RequiredParams(['id' => 'ID was not passed'])]
-    public function permissions_get($data)
+    private function getAdminGroupById(int $id): AdminGroup
     {
-        $this->checkPermissions('staff', 'create_and_edit_staff');
-
-        $model = $this->getDi()['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
-
-        return $this->getService()->getPermissions($model->id);
-    }
-
-    /**
-     * Update staff member permissions.
-     */
-    #[RequiredParams(['id' => 'ID was not passed', 'permissions' => 'Missing "permissions" parameter'])]
-    public function permissions_update($data): bool
-    {
-        $this->checkPermissions('staff', 'manage_settings');
-
-        $model = $this->getDi()['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
-
-        if (!is_array($data['permissions'])) {
-            throw new \FOSSBilling\InformationException('Parameter "permissions" must be an array');
+        $group = $this->getService()->getAdminGroupRepository()->findById($id);
+        if (!$group instanceof AdminGroup) {
+            throw new \FOSSBilling\Exception('Group not found');
         }
 
-        $this->getService()->setPermissions($model, $data['permissions']);
+        return $group;
+    }
 
-        $this->getDi()['logger']->info('Changed staff member %s permissions', $model->id);
-
-        return true;
+    private function getAdminById(int $id): \Model_Admin
+    {
+        return $this->getDi()['db']->getExistingModelById('Admin', $id, 'Staff member not found');
     }
 
     /**
@@ -215,11 +197,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('staff', 'view');
 
-        return $this->getService()->getAdminGroupPair();
+        return $this->getService()->getAdminGroupRepository()->getParentPairs();
     }
 
     /**
-     * Return paginate list of staff members groups.
+     * Return list of staff members groups.
      *
      * @return array
      */
@@ -227,15 +209,14 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('staff', 'manage_groups');
 
-        [$sql, $params] = $this->getService()->getAdminGroupSearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $groups = $this->getService()->getAdminGroupRepository()->findTreeSorted($data);
 
-        foreach ($pager['list'] as $key => $item) {
-            $model = $this->getDi()['db']->getExistingModelById('AdminGroup', $item['id'], 'Post not found');
-            $pager['list'][$key] = $this->getService()->toAdminGroupApiArray($model, false, $this->getIdentity());
-        }
-
-        return $pager;
+        return [
+            'list' => array_map(
+                static fn (AdminGroup $group): array => $group->toApiArray(),
+                $groups,
+            ),
+        ];
     }
 
     /**
@@ -250,7 +231,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('staff', 'manage_groups');
 
-        return $this->getService()->createGroup($data['name']);
+        $parent = empty($data['parent_id']) ? null : $this->getAdminGroupById((int) $data['parent_id']);
+
+        return $this->getService()->createGroup($data['name'], $parent);
     }
 
     /**
@@ -265,9 +248,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('staff', 'manage_groups');
 
-        $model = $this->getDi()['db']->getExistingModelById('AdminGroup', $data['id'], 'Group not found');
+        $model = $this->getAdminGroupById((int) $data['id']);
 
-        return $this->getService()->toAdminGroupApiArray($model, true, $this->getIdentity());
+        return $model->toApiArray();
     }
 
     /**
@@ -282,7 +265,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('staff', 'manage_groups');
 
-        $model = $this->getDi()['db']->getExistingModelById('AdminGroup', $data['id'], 'Group not found');
+        $model = $this->getAdminGroupById((int) $data['id']);
 
         return $this->getService()->deleteGroup($model);
     }
@@ -301,9 +284,69 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('staff', 'manage_groups');
 
-        $model = $this->getDi()['db']->getExistingModelById('AdminGroup', $data['id'], 'Group not found');
+        $model = $this->getAdminGroupById((int) $data['id']);
 
         return $this->getService()->updateGroup($model, $data);
+    }
+
+    /**
+     * Add a staff member to a group.
+     */
+    #[RequiredParams(['admin_id' => 'Staff member ID was not passed', 'group_id' => 'Group ID was not passed'])]
+    public function group_member_add($data): bool
+    {
+        $this->checkPermissions('staff', 'manage_groups');
+
+        return $this->getService()->addAdminToGroup(
+            $this->getAdminById((int) $data['admin_id']),
+            $this->getAdminGroupById((int) $data['group_id']),
+        );
+    }
+
+    /**
+     * Remove a staff member from a group.
+     */
+    #[RequiredParams(['admin_id' => 'Staff member ID was not passed', 'group_id' => 'Group ID was not passed'])]
+    public function group_member_remove($data): bool
+    {
+        $this->checkPermissions('staff', 'manage_groups');
+
+        return $this->getService()->removeAdminFromGroup(
+            $this->getAdminById((int) $data['admin_id']),
+            $this->getAdminGroupById((int) $data['group_id']),
+        );
+    }
+
+    /**
+     * List staff members in a group.
+     */
+    #[RequiredParams(['group_id' => 'Group ID was not passed'])]
+    public function group_member_get_list($data): array
+    {
+        $this->checkPermissions('staff', 'manage_groups');
+
+        $group = $this->getAdminGroupById((int) $data['group_id']);
+
+        return array_map(
+            fn (int $adminId): array => $this->getService()->toModel_AdminApiArray($this->getAdminById($adminId)),
+            $this->getService()->getAdminGroupMemberRepository()->getMemberIdsInGroup((int) $group->getId()),
+        );
+    }
+
+    /**
+     * List groups assigned to a staff member.
+     */
+    #[RequiredParams(['admin_id' => 'Staff member ID was not passed'])]
+    public function admin_group_get_list($data): array
+    {
+        $this->checkPermissions('staff', 'manage_groups');
+
+        $admin = $this->getAdminById((int) $data['admin_id']);
+
+        return array_map(
+            static fn (AdminGroup $group): array => $group->toApiArray(),
+            $this->getService()->getAdminGroupMemberRepository()->findGroupsForAdmin((int) $admin->id),
+        );
     }
 
     /**

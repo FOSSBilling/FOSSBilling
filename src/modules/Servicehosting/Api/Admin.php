@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -275,7 +274,6 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getDi()['db']->getExistingModelById('ServiceHostingServer', $data['id'], 'Server not found');
 
-        // check if server is not used by any service_hostings
         $hosting_services = $this->getDi()['db']->find('ServiceHosting', 'service_hosting_server_id = :server_id', [':server_id' => $data['id']]);
         $count = is_array($hosting_services) ? count($hosting_services) : 0; // Handle the case where $hosting_services might be null
 
@@ -396,7 +394,6 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getDi()['db']->getExistingModelById('ServiceHostingHp', $data['id'], 'Hosting plan not found');
 
-        // check if hosting plan is not used by any service_hostings
         $hosting_services = $this->getDi()['db']->find('ServiceHosting', 'service_hosting_hp_id = :hp_id', [':hp_id' => $data['id']]);
 
         // Ensure $hosting_services is an array before counting its elements

@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -17,12 +16,16 @@ use Symfony\Component\Filesystem\Path;
 
 class Theme
 {
-    private readonly Filesystem $filesystem;
+    private static ?Filesystem $filesystem = null;
+
+    private static function getFilesystem(): Filesystem
+    {
+        return self::$filesystem ??= new Filesystem();
+    }
 
     public function __construct(private $name)
     {
-        $this->filesystem = new Filesystem();
-        if (!$this->filesystem->exists($this->getPath())) {
+        if (!self::getFilesystem()->exists($this->getPath())) {
             throw new \FOSSBilling\Exception("Theme ':name' does not exist.", [':name' => $name]);
         }
     }
@@ -51,7 +54,7 @@ class Theme
         $files = $this->getSettingsPageFiles();
         $uploaded = [];
         foreach ($files as $file) {
-            if ($this->filesystem->exists(Path::join($assets_folder, $file))) {
+            if (self::getFilesystem()->exists(Path::join($assets_folder, $file))) {
                 $uploaded[] = [
                     'name' => $file,
                     'url' => $this->getUrl() . "/assets/{$file}",
@@ -93,13 +96,13 @@ class Theme
     public function getSettingsPageHtml()
     {
         $spp = Path::join($this->getPathConfig(), 'settings.html.twig');
-        if (!$this->filesystem->exists($spp)) {
+        if (!self::getFilesystem()->exists($spp)) {
             error_log('Theme ' . $this->getName() . ' does not have settings page');
 
             return '';
         }
 
-        $settings_page = $this->filesystem->readFile($spp);
+        $settings_page = self::getFilesystem()->readFile($spp);
         $settings_page = $this->strip_tags_content($settings_page, '<script><style>');
 
         // remove style attributes
@@ -114,11 +117,11 @@ class Theme
     private function getSettingsData()
     {
         $cp = $this->getPathSettingsDataFile();
-        if (!$this->filesystem->exists($cp)) {
+        if (!self::getFilesystem()->exists($cp)) {
             return [];
         }
 
-        $json = $this->filesystem->readFile($cp);
+        $json = self::getFilesystem()->readFile($cp);
 
         return json_decode($json, true) ?? [];
     }

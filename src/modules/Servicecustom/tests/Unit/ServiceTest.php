@@ -557,7 +557,7 @@ test('get service custom by order id rejects order owned by another client', fun
     $service->setDi($di);
 
     expect(fn () => $service->getServiceCustomByOrderId(1, 42))
-        ->toThrow(Exception::class, 'Order not found');
+        ->toThrow(FOSSBilling\InformationException::class, 'Order not found');
 });
 
 test('get service custom by order id order service not found exception', function (): void {

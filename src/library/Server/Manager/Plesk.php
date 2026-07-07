@@ -5,7 +5,6 @@ use PleskX\Api\Client;
 
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -152,15 +151,6 @@ class Server_Manager_Plesk extends Server_Manager
 
         $this->setSubscription($account);
 
-        // We need to improve the way we handle the IP address before we should enable this.
-        /*
-        if ($a->getReseller()) {
-            $this->_setIp($a);
-            $this->_changeIpType($a);
-            $this->_addNs($a, $domainId);
-        }
-        */
-
         return true;
     }
 
@@ -245,13 +235,6 @@ class Server_Manager_Plesk extends Server_Manager
 
         $account->setPackage($package);
         $this->updateSubscription($account);
-
-        // TODO: Implement NS record management for resellers
-        // This requires fetching the domain ID from Plesk API first
-        // if ($account->getReseller()) {
-        //     $domainId = $this->getDomainId($account);
-        //     $this->addNs($account, $domainId);
-        // }
 
         return true;
     }
@@ -376,31 +359,6 @@ class Server_Manager_Plesk extends Server_Manager
         }
 
         return $ips;
-    }
-
-    /**
-     * Sets the IP address for a given account.
-     * Sends a request to the Plesk API to add the IP address to the reseller's IP pool.
-     *
-     * @param Server_Account $account the account for which the IP should be set
-     * @param string         $newIp   the new IP address
-     *
-     * @phpstan-ignore method.unused (part of API, reserved for future use)
-     */
-    private function setIp(Server_Account $account, string $newIp): void
-    {
-        $params = [
-            'reseller' => [
-                'ippool-add-ip' => [
-                    'reseller-id' => $account->getUsername(),
-                    'ip' => [
-                        'ip-address' => $newIp,
-                    ],
-                ],
-            ],
-        ];
-
-        $this->_client->request($params);
     }
 
     /**
@@ -631,123 +589,5 @@ class Server_Manager_Plesk extends Server_Manager
             'city' => $client->getCity(),
             'state' => $client->getState(),
         ];
-    }
-
-    /**
-     * Adds a nameserver (NS) record for a given account and domain ID.
-     * This method is not yet implemented and currently always returns true.
-     *
-     * @param Server_Account $account  the account for which the NS record should be added
-     * @param string         $domainId the ID of the domain for which the NS record should be added
-     *
-     * @return bool always returns true
-     *
-     * @phpstan-ignore method.unused (part of API, reserved for future use)
-     */
-    private function addNs(Server_Account $account, string $domainId): bool
-    {
-        // Will be done in the future
-        return true;
-    }
-
-    /**
-     * Retrieves the nameserver (NS) records for a given account and domain ID.
-     * Sends a request to the Plesk API to get the DNS records for the domain.
-     * Then, iterates over the DNS records and adds the IDs of the NS records to an array.
-     *
-     * @param Server_Account $account  the account for which the NS records should be retrieved
-     * @param string         $domainId the ID of the domain for which the NS records should be retrieved
-     *
-     * @return array the array of NS record IDs
-     *
-     * @phpstan-ignore method.unused (part of API, reserved for future use)
-     */
-    private function getNs(Server_Account $account, string $domainId): array
-    {
-        $response = $this->_client->dns()->get('domain_id', $domainId);
-
-        $ns = [];
-
-        foreach ($response->dns->get_rec->result as $dns) {
-            if ($dns->data->type == 'NS') {
-                $ns[] = (string) $dns->id;
-            }
-        }
-
-        return $ns;
-    }
-
-    /**
-     * Removes DNS records from the Plesk server.
-     * Sends a request to the Plesk API to remove DNS records.
-     * The DNS records to be removed are identified by their IDs.
-     *
-     * @param array $ns an array of DNS record IDs to be removed
-     *
-     * @return bool returns true after the DNS records have been removed
-     *
-     * @throws Exception
-     *
-     * @phpstan-ignore method.unused (part of API, reserved for future use)
-     */
-    private function removeDns(array $ns): bool
-    {
-        $params = [];
-
-        // Iterate over each DNS record ID
-        foreach ($ns as $key => $id) {
-            // Prepare the parameters for the API request
-            $params['dns']['del_rec']['filter']['id' . $key] = $id;
-        }
-
-        // If there are no DNS records to remove, return true
-        if (empty($params)) {
-            return true;
-        }
-
-        // Send the request to the Plesk API to remove the DNS records
-        $response = $this->_client->request($params);
-
-        // Return true after the DNS records have been removed
-        return true;
-    }
-
-    /**
-     * Changes the IP type of a given account to 'shared'.
-     * Sends a request to the Plesk API to change the IP type of the given account to 'shared'.
-     * The account is identified by its reseller ID and IP address.
-     *
-     * @param Server_Account $account the account for which the IP type should be changed
-     *
-     * @return bool returns true if the IP type was successfully changed to 'shared', false otherwise
-     *
-     * @phpstan-ignore method.unused (part of API, reserved for future use)
-     */
-    private function changeIpType(Server_Account $account): bool
-    {
-        // Get the client associated with the account
-        $client = $account->getClient();
-
-        // Prepare the parameters for the API request
-        $params = [
-            'reseller' => [
-                'ippool-set-ip' => [
-                    'reseller-id' => $client->getId(),
-                    'filter' => [
-                        'ip-address' => $account->getIp(),
-                    ],
-                    'values' => [
-                        'ip-type' => 'shared',
-                    ],
-                ],
-            ],
-        ];
-
-        // Send the request to the Plesk API
-        $response = $this->_client->reseller()->request($params);
-
-        // Check if the IP type was successfully changed to 'shared'
-        return isset($response->reseller->{'ippool-set-ip'}->result->status)
-            && $response->reseller->{'ippool-set-ip'}->result->status == 'ok';
     }
 }

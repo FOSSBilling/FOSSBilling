@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -42,6 +41,8 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      * @optional string $phone - Phone number
      * @optional string $phone_cc - Phone country code
      * @optional string $notes - Notes about client. Visible for admin only
+     * @optional string $lang - Client language
+     * @optional string $timezone - IANA timezone identifier (e.g. "America/New_York"). Used to localize dates and times shown to the client.
      * @optional string $custom_1 - Custom field 1
      * @optional string $custom_2 - Custom field 2
      * @optional string $custom_3 - Custom field 3
@@ -52,6 +53,16 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      * @optional string $custom_8 - Custom field 8
      * @optional string $custom_9 - Custom field 9
      * @optional string $custom_10 - Custom field 10
+     * @optional string $custom_11 - Custom field 11
+     * @optional string $custom_12 - Custom field 12
+     * @optional string $custom_13 - Custom field 13
+     * @optional string $custom_14 - Custom field 14
+     * @optional string $custom_15 - Custom field 15
+     * @optional string $custom_16 - Custom field 16
+     * @optional string $custom_17 - Custom field 17
+     * @optional string $custom_18 - Custom field 18
+     * @optional string $custom_19 - Custom field 19
+     * @optional string $custom_20 - Custom field 20
      */
     #[RequiredParams(['email' => 'Email required', 'first_name' => 'First name required', 'password' => 'Password required', 'password_confirm' => 'Password confirmation required'])]
     public function create($data = []): int
@@ -134,8 +145,8 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             $this->getDi()['logger']->info('Client #%s logged in', $client->id);
             $this->getDi()['session']->delete('redirect_uri');
 
-            if (!headers_sent() && !empty($client->lang)) {
-                setcookie('fb_locale', (string) $client->lang, ['expires' => strtotime('+1 month'), 'path' => '/']);
+            if (!empty($client->lang)) {
+                $this->getDi()['cookie_queue']->queue('fb_locale', (string) $client->lang, strtotime('+1 month'), '/');
             }
 
             $this->getDi()['mod_service']('cart')->transferFromOtherSession($oldSession);
@@ -271,23 +282,6 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
-     * Check if given vat number is valid EU country VAT number
-     * This method uses http://isvat.appspot.com/ method to validate VAT.
-     *
-     * @return bool true if VAT is valid, false if not
-     */
-    #[RequiredParams(['country' => 'Country code', 'vat' => 'Country VAT is required'])]
-    public function is_vat($data): bool
-    {
-        $cc = $data['country'];
-        $vatnum = $data['vat'];
-
-        // @todo add new service provider https://vatlayer.com/ check
-        //         $url    = 'http://isvat.appspot.com/' . rawurlencode($cc) . '/' . rawurlencode($vatnum) . '/';
-        return true;
-    }
-
-    /**
      * List of required fields for client registration.
      */
     public function required()
@@ -298,13 +292,16 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
-     * Array of custom fields for client registration.
+     * Array of custom fields for client registration, sorted alphabetically by title.
      */
     public function custom_fields()
     {
         $config = $this->getDi()['mod_config']('client');
+        $customFields = $config['custom_fields'] ?? [];
 
-        return $config['custom_fields'] ?? [];
+        uasort($customFields, fn ($a, $b): int => strnatcasecmp((string) ($a['title'] ?? ''), (string) ($b['title'] ?? '')));
+
+        return $customFields;
     }
 
     public function is_email_validation_required(): bool

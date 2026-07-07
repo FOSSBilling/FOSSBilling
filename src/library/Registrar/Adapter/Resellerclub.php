@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -533,75 +532,6 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         return $this->_makeRequest('contacts/add', $contact, 'POST');
     }
 
-    /**
-     * @phpstan-ignore method.unused (part of API, reserved for future use)
-     */
-    private function getResellerDetails()
-    {
-        return $this->_makeRequest('resellers/details');
-    }
-
-    /**
-     * @phpstan-ignore method.unused (part of API, reserved for future use)
-     */
-    private function getPromoPrices()
-    {
-        return $this->_makeRequest('resellers/promo-details');
-    }
-
-    /**
-     * @see http://manage.resellerclub.com/kb/answer/808
-     *
-     * @param array $params
-     *
-     * @return stdClass
-     *
-     * @phpstan-ignore method.unused (part of API, reserved for future use)
-     */
-    private function addSubReseller($params)
-    {
-        // default values
-        $required_params = [
-            'username' => '',
-            'passwd' => '',
-            'name' => '',
-            'company' => '',
-            'address-line-1' => '',
-            'city' => '',
-            'state' => '',
-            'country' => '',
-            'zipcode' => '',
-            'phone-cc' => '',
-            'phone' => '',
-            'lang-pref' => 'en',
-            'sales-contact-id' => '',
-            'accounting-currency-symbol' => 'USD',
-            'selling-currency-symbol' => 'USD',
-            'request-headers' => '',
-        ];
-
-        $optional_params = [
-            'address-line-2' => '',
-            'address-line-3' => '',
-            'alt-phone-cc' => '',
-            'alt-phone' => '',
-            'fax-cc' => '',
-            'fax' => '',
-            'mobile-cc' => '',
-            'mobile' => '',
-        ];
-
-        $params = $this->_checkRequiredParams($required_params, $params);
-        $params = array_merge($optional_params, $params);
-        $result = $this->_makeRequest('resellers/signup', $params, 'POST');
-
-        if (isset($result['status']) && $result['status'] == 'AlreadyReseller') {
-            throw new Registrar_Exception('You are already registered as reseller');
-        }
-
-        return $result;
-    }
-
     private function _getDefaultContactDetails(Registrar_Domain $domain, $customerid)
     {
         $params = [
@@ -610,20 +540,6 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         ];
 
         return $this->_makeRequest('contacts/default', $params, 'POST');
-    }
-
-    /**
-     * @phpstan-ignore method.unused (part of API, reserved for future use)
-     */
-    private function removeCustomer($params): bool
-    {
-        $required_params = [
-            'customer-id' => '',
-        ];
-        $params = $this->_checkRequiredParams($required_params, $params);
-        $result = $this->_makeRequest('customers/delete', $params, 'POST');
-
-        return $result == 'true';
     }
 
     private function _hasCompletedOrder(Registrar_Domain $domain)
@@ -751,25 +667,6 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         $params = http_build_query($params);
 
         return preg_replace('~%5B(\d+)%5D~', '', $params);
-    }
-
-    /**
-     * Check if all required params are present, if not add default values.
-     *
-     * @param array $required_params - list of required params with default values
-     * @param array $params          - given params
-     *
-     * @return array
-     */
-    private function _checkRequiredParams($required_params, $params)
-    {
-        foreach ($required_params as $param => $value) {
-            if (!isset($params[$param])) {
-                $params[$param] = $value;
-            }
-        }
-
-        return $params;
     }
 
     private function _getAllContacts($tld, $customer_id, Registrar_Domain_Contact $client): array

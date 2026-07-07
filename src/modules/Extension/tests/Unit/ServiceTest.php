@@ -5,12 +5,19 @@
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
- * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
+ * @license http://www.apache.org/licenses/LICENSE-2.0
  */
 
 declare(strict_types=1);
 
+use Box\Mod\Extension\Entity\Extension;
+use Box\Mod\Extension\Entity\ExtensionMeta;
+use Box\Mod\Extension\Repository\ExtensionMetaRepository;
+use Box\Mod\Extension\Repository\ExtensionRepository;
+use Box\Mod\Extension\Service;
+
 use function Tests\Helpers\container;
+use function Tests\Helpers\setEntityId;
 
 class ExtensionPdoMock extends PDO
 {
@@ -26,8 +33,53 @@ class ExtensionPdoStatementsMock extends PDOStatement
     }
 }
 
+function extensionCreateEntity(int $id, string $type = 'mod', string $name = 'extensionName', string $status = 'installed', ?string $version = '1'): Extension
+{
+    $entity = new Extension();
+    setEntityId($entity, $id);
+    $entity->setType($type);
+    $entity->setName($name);
+    $entity->setStatus($status);
+    $entity->setVersion($version);
+
+    return $entity;
+}
+
+function extensionCreateExtensionMetaEntity(int $id, string $extensionName = 'extensionName', string $metaKey = 'config', ?string $metaValue = null): ExtensionMeta
+{
+    $entity = new ExtensionMeta();
+    setEntityId($entity, $id);
+    $entity->setExtension($extensionName);
+    $entity->setMetaKey($metaKey);
+    $entity->setMetaValue($metaValue);
+
+    return $entity;
+}
+
+/**
+ * Build a partial Mockery EntityManager that returns the right repository mock
+ * for each entity class requested.
+ */
+function extensionBuildEm(?ExtensionRepository $extensionRepository = null, ?ExtensionMetaRepository $metaRepository = null, bool $ignoreMissing = true): Doctrine\ORM\EntityManagerInterface&Mockery\MockInterface
+{
+    $extensionRepository ??= Mockery::mock(ExtensionRepository::class)->shouldIgnoreMissing();
+    $metaRepository ??= Mockery::mock(ExtensionMetaRepository::class)->shouldIgnoreMissing();
+
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    if ($ignoreMissing) {
+        $em->shouldIgnoreMissing();
+    }
+    $em->shouldReceive('getRepository')->andReturnUsing(static fn (string $class): object => match ($class) {
+        Extension::class => $extensionRepository,
+        ExtensionMeta::class => $metaRepository,
+        default => $metaRepository,
+    });
+
+    return $em;
+}
+
 test('getDi returns the dependency injection container', function (): void {
-    $service = new Box\Mod\Extension\Service();
+    $service = new Service();
     $di = container();
     $service->setDi($di);
     $getDi = $service->getDi();
@@ -35,7 +87,7 @@ test('getDi returns the dependency injection container', function (): void {
 });
 
 test('isCoreModule checks if module is core module', function (): void {
-    $service = new Box\Mod\Extension\Service();
+    $service = new Service();
     $coreModules = ['extension', 'cron', 'staff'];
     $modMock = Mockery::mock(FOSSBilling\Module::class);
     $modMock->shouldReceive('getCoreModules')
@@ -58,7 +110,7 @@ test('isCoreModule checks if module is core module', function (): void {
 });
 
 test('isExtensionActive returns false when module not found', function (): void {
-    $service = new Box\Mod\Extension\Service();
+    $service = new Service();
     $coreModules = ['extension', 'cron', 'staff'];
     $modMock = Mockery::mock(FOSSBilling\Module::class);
     $modMock->shouldReceive('getCoreModules')
@@ -66,14 +118,16 @@ test('isExtensionActive returns false when module not found', function (): void 
         ->once()
         ->andReturn($coreModules);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getCell')
+    $extensionRepository = Mockery::mock(ExtensionRepository::class);
+    $extensionRepository->shouldReceive('existsActiveByTypeAndName')
         ->atLeast()
         ->once()
-        ->andReturn(null);
+        ->andReturn(false);
+
+    $em = extensionBuildEm($extensionRepository);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $em;
     $di['mod'] = $di->protect(fn ($name): Mockery\MockInterface => $modMock);
 
     $service->setDi($di);
@@ -84,25 +138,25 @@ test('isExtensionActive returns false when module not found', function (): void 
 });
 
 test('removeNotExistingModules removes non-existing modules', function (): void {
-    $service = new Box\Mod\Extension\Service();
-    $model = new Model_Extension();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $model->name = 'extensionName';
+    $service = new Service();
+    $ext = extensionCreateEntity(1, 'mod', 'extensionName');
 
     $modMock = Mockery::mock(FOSSBilling\Module::class);
     $modMock->shouldReceive('getManifest')->andThrow(new Exception());
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('find')
+    $extensionRepository = Mockery::mock(ExtensionRepository::class);
+    $extensionRepository->shouldReceive('findByType')
+        ->with(Extension::TYPE_MOD)
         ->atLeast()
         ->once()
-        ->andReturn([$model]);
-    $dbMock->shouldReceive('trash')
-        ->atLeast()
-        ->once();
+        ->andReturn([$ext]);
+
+    $em = extensionBuildEm($extensionRepository);
+    $em->shouldReceive('remove')->atLeast()->once();
+    $em->shouldReceive('flush')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $em;
     $di['mod'] = $di->protect(fn ($name): Mockery\MockInterface => $modMock);
 
     $service->setDi($di);
@@ -112,54 +166,56 @@ test('removeNotExistingModules removes non-existing modules', function (): void 
     expect($result > 0)->toBeTrue();
 });
 
-// Data provider for search query tests
-$searchQueryData = [
-    [[], 'SELECT * FROM extension', []],
-    [['type' => 'mod'], 'AND type = :type', [':type' => 'mod']],
-    [['search' => 'FindUp'], 'AND name LIKE :search', [':search' => 'FindUp']],
-];
+test('getSearchQueryBuilder returns a QueryBuilder', function (): void {
+    $service = new Service();
 
-test('getSearchQuery returns correct SQL and params', function (array $data, string $expectedStr, array $expectedParams): void {
-    $service = new Box\Mod\Extension\Service();
+    $qb = Mockery::mock(Doctrine\ORM\QueryBuilder::class);
+    $qb->shouldReceive('andWhere')->andReturnSelf();
+    $qb->shouldReceive('setParameter')->andReturnSelf();
+    $qb->shouldReceive('orderBy')->andReturnSelf();
+    $qb->shouldReceive('addOrderBy')->andReturnSelf();
+
+    $extensionRepository = Mockery::mock(ExtensionRepository::class);
+    $extensionRepository->shouldReceive('getSearchQueryBuilder')
+        ->atLeast()
+        ->once()
+        ->andReturn($qb);
+
+    $em = extensionBuildEm($extensionRepository);
+
     $di = container();
+    $di['em'] = $em;
 
     $service->setDi($di);
-    [$sql, $params] = $service->getSearchQuery($data);
 
-    expect($sql)->toBeString();
-    expect($params)->toBeArray();
-
-    expect(str_contains((string) $sql, $expectedStr))->toBeTrue();
-    expect([])->toBe(array_diff_key($params, $expectedParams));
-})->with($searchQueryData);
+    $result = $service->getExtensionRepository()->getSearchQueryBuilder([]);
+    expect($result)->toBeInstanceOf(Doctrine\ORM\QueryBuilder::class);
+});
 
 test('getExtensionsList returns filtered extensions list', function (): void {
-    $service = new Box\Mod\Extension\Service();
+    $service = new Service();
     $data = [
         'has_settings' => true,
         'active' => true,
     ];
 
-    $model['manifest'] = '{"J":5,"0":"N"}';
-    $model['type'] = 'mod';
-    $model['status'] = 'installed';
-    $model['name'] = 'extensionName';
-    $model['version'] = '1';
+    $ext = extensionCreateEntity(1, 'mod', 'extensionName', 'installed', '1');
 
-    $modelFind = new Model_Extension();
-    $modelFind->loadBean(new Tests\Helpers\DummyBean());
-    $modelFind->name = 'extensionName';
+    $query = Mockery::mock(Doctrine\ORM\Query::class);
+    $query->shouldReceive('getResult')->andReturn([$ext]);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')
-        ->atLeast()
-        ->once()
-        ->andReturn([$model]);
+    $qb = Mockery::mock(Doctrine\ORM\QueryBuilder::class);
+    $qb->shouldReceive('andWhere')->andReturnSelf();
+    $qb->shouldReceive('setParameter')->andReturnSelf();
+    $qb->shouldReceive('getQuery')->andReturn($query);
 
-    $dbMock->shouldReceive('find')
-        ->atLeast()
-        ->once()
-        ->andReturn([$modelFind]);
+    $extensionRepository = Mockery::mock(ExtensionRepository::class);
+    $extensionRepository->shouldReceive('getSearchQueryBuilder')->andReturn($qb);
+    $extensionRepository->shouldReceive('findByType')->andReturn([]);
+
+    $em = extensionBuildEm($extensionRepository);
+    $em->shouldReceive('remove')->andReturnNull();
+    $em->shouldReceive('flush')->andReturnNull();
 
     $coreModules = ['extension', 'cron', 'staff'];
     $modMock = Mockery::mock(FOSSBilling\Module::class);
@@ -177,7 +233,7 @@ test('getExtensionsList returns filtered extensions list', function (): void {
         ->andReturn(true);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $em;
     $di['mod'] = $di->protect(fn ($name): Mockery\MockInterface => $modMock);
 
     $service->setDi($di);
@@ -187,31 +243,28 @@ test('getExtensionsList returns filtered extensions list', function (): void {
 });
 
 test('getExtensionsList returns only installed extensions', function (): void {
-    $service = new Box\Mod\Extension\Service();
+    $service = new Service();
     $data = [
         'installed' => true,
     ];
 
-    $model['manifest'] = '{"J":5,"0":"N"}';
-    $model['type'] = 'mod';
-    $model['status'] = 'installed';
-    $model['name'] = 'extensionName';
-    $model['version'] = '1';
+    $ext = extensionCreateEntity(1, 'mod', 'extensionName', 'installed', '1');
 
-    $modelFind = new Model_Extension();
-    $modelFind->loadBean(new Tests\Helpers\DummyBean());
-    $modelFind->name = 'extensionName';
+    $query = Mockery::mock(Doctrine\ORM\Query::class);
+    $query->shouldReceive('getResult')->andReturn([$ext]);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')
-        ->atLeast()
-        ->once()
-        ->andReturn([$model]);
+    $qb = Mockery::mock(Doctrine\ORM\QueryBuilder::class);
+    $qb->shouldReceive('andWhere')->andReturnSelf();
+    $qb->shouldReceive('setParameter')->andReturnSelf();
+    $qb->shouldReceive('getQuery')->andReturn($query);
 
-    $dbMock->shouldReceive('find')
-        ->atLeast()
-        ->once()
-        ->andReturn([$modelFind]);
+    $extensionRepository = Mockery::mock(ExtensionRepository::class);
+    $extensionRepository->shouldReceive('getSearchQueryBuilder')->andReturn($qb);
+    $extensionRepository->shouldReceive('findByType')->andReturn([]);
+
+    $em = extensionBuildEm($extensionRepository);
+    $em->shouldReceive('remove')->andReturnNull();
+    $em->shouldReceive('flush')->andReturnNull();
 
     $modMock = Mockery::mock(FOSSBilling\Module::class);
     $modMock->shouldReceive('getManifest')
@@ -224,7 +277,7 @@ test('getExtensionsList returns only installed extensions', function (): void {
         ->andReturn(true);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $em;
     $di['mod'] = $di->protect(fn ($name): Mockery\MockInterface => $modMock);
 
     $service->setDi($di);
@@ -234,87 +287,20 @@ test('getExtensionsList returns only installed extensions', function (): void {
 });
 
 test('getAdminNavigation returns admin navigation', function (): void {
-    $service = new Box\Mod\Extension\Service();
-    $extensionServiceMock = Mockery::mock(Box\Mod\Extension\Service::class)->makePartial();
-    $extensionServiceMock->shouldAllowMockingProtectedMethods();
-    $extensionServiceMock->shouldReceive('getConfig')
-        ->atLeast()
+    $service = new Service();
+    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock->shouldReceive('getCoreModules')->once()->andReturn([]);
+
+    $extensionRepository = Mockery::mock(ExtensionRepository::class);
+    $extensionRepository->shouldReceive('findInstalledNamesByType')
         ->once()
+        ->with(Extension::TYPE_MOD)
         ->andReturn([]);
 
-    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
-    $staffServiceMock->shouldReceive('hasPermission')
-        ->atLeast()
-        ->once()
-        ->andReturn(true);
-
-    $dbalMock = new class {
-        public function createQueryBuilder(): object
-        {
-            return new class {
-                public function select($field)
-                {
-                    return $this;
-                }
-
-                public function from($table)
-                {
-                    return $this;
-                }
-
-                public function where($cond)
-                {
-                    return $this;
-                }
-
-                public function andWhere($cond)
-                {
-                    return $this;
-                }
-
-                public function setParameter($key, $val)
-                {
-                    return $this;
-                }
-
-                public function executeQuery()
-                {
-                    return $this;
-                }
-
-                public function fetchFirstColumn(): array
-                {
-                    return [];
-                }
-            };
-        }
-    };
-
-    $link = 'extension';
-
-    $urlMock = Mockery::mock('Box_Url');
-    $urlMock->shouldReceive('adminLink')
-        ->atLeast()
-        ->once()
-        ->andReturn('http://fossbilling.org/index.php?_url=/' . $link);
-
     $di = container();
-    $di['mod'] = $di->protect(function ($name) use ($di) {
-        $mod = new FOSSBilling\Module($name);
-        $mod->setDi($di);
-
-        return $mod;
-    });
+    $di['mod'] = $di->protect(fn ($name): Mockery\MockInterface => $modMock);
     $di['tools'] = new FOSSBilling\Tools();
-    $di['mod_service'] = $di->protect(function ($mod) use ($extensionServiceMock, $staffServiceMock) {
-        if ($mod == 'staff') {
-            return $staffServiceMock;
-        }
-
-        return $extensionServiceMock;
-    });
-    $di['url'] = $urlMock;
-    $di['dbal'] = $dbalMock;
+    $di['em'] = extensionBuildEm($extensionRepository);
 
     $service->setDi($di);
     $result = $service->getAdminNavigation(new Model_Admin());
@@ -322,28 +308,28 @@ test('getAdminNavigation returns admin navigation', function (): void {
 });
 
 test('findExtension finds an extension', function (): void {
-    $service = new Box\Mod\Extension\Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')
+    $service = new Service();
+    $ext = extensionCreateEntity(1);
+
+    $extensionRepository = Mockery::mock(ExtensionRepository::class);
+    $extensionRepository->shouldReceive('findOneByTypeAndName')
         ->atLeast()
         ->once()
-        ->andReturn(new Model_Extension());
+        ->andReturn($ext);
+
+    $em = extensionBuildEm($extensionRepository);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $em;
 
     $service->setDi($di);
-    $result = $service->findExtension('mod', 'id');
-    expect($result)->toBeInstanceOf('\Model_Extension');
+    $result = $service->getExtensionRepository()->findOneByTypeAndName('mod', 'id');
+    expect($result)->toBeInstanceOf(Extension::class);
 });
 
 test('update throws exception for extensions that need manual update', function (): void {
-    $service = new Box\Mod\Extension\Service();
-    $model = new Model_Extension();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $model->type = 'mod';
-    $model->name = 'testExtension';
-    $model->version = '2';
+    $service = new Service();
+    $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'installed', '2');
 
     $extensionStub = Mockery::mock(FOSSBilling\ExtensionManager::class);
 
@@ -356,23 +342,13 @@ test('update throws exception for extensions that need manual update', function 
 
     $service->setDi($di);
 
-    expect(fn () => $service->update($model))
+    expect(fn () => $service->update($ext))
         ->toThrow(FOSSBilling\Exception::class, 'Visit the extension directory for more information on updating this extension.');
 });
 
 test('activate activates an extension', function (): void {
-    $service = new Box\Mod\Extension\Service();
-    $ext = new Model_Extension();
-    $ext->loadBean(new Tests\Helpers\DummyBean());
-    $ext->type = 'mod';
-    $ext->name = 'testExtension';
-
-    $expectedResult = [
-        'id' => $ext->name,
-        'type' => $ext->type,
-        'redirect' => true,
-        'has_settings' => true,
-    ];
+    $service = new Service();
+    $ext = extensionCreateEntity(1, 'mod', 'testExtension', 'deactivated');
 
     $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
     $staffService->shouldReceive('checkPermissionsAndThrowException')->atLeast()->once();
@@ -382,52 +358,42 @@ test('activate activates an extension', function (): void {
         ->atLeast()
         ->once()
         ->andReturn(['version' => 1]);
-
     $modMock->shouldReceive('hasAdminController')
         ->atLeast()
         ->once()
         ->andReturn(true);
-
     $modMock->shouldReceive('hasSettingsPage')
         ->atLeast()
         ->once()
         ->andReturn(true);
-
     $modMock->shouldReceive('isCore')
         ->atLeast()
         ->once()
         ->andReturn(false);
-
     $modMock->shouldReceive('install')
         ->atLeast()
         ->once();
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()
-        ->once()
-        ->andReturn(1);
+    $em = extensionBuildEm();
+    $em->shouldReceive('flush')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $em;
     $di['mod'] = $di->protect(fn ($name): Mockery\MockInterface => $modMock);
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $staffService);
 
     $service->setDi($di);
     $result = $service->activate($ext);
     expect($result)->toBeArray();
-    expect($result)->toBe($expectedResult);
+    expect($result['id'])->toBe('testExtension');
+    expect($result['type'])->toBe('mod');
+    expect($result['redirect'])->toBeTrue();
+    expect($result['has_settings'])->toBeTrue();
 });
 
 test('deactivate deactivates an extension', function (): void {
-    $service = new Box\Mod\Extension\Service();
-    $ext = new Model_Extension();
-    $ext->loadBean(new Tests\Helpers\DummyBean());
-    $ext->type = 'mod';
-    $ext->name = 'extensionTest';
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('trash')->atLeast()->once();
+    $service = new Service();
+    $ext = extensionCreateEntity(1, 'mod', 'extensionTest', 'installed');
 
     $modMock = Mockery::mock(FOSSBilling\Module::class);
     $modMock->shouldReceive('getCoreModules')
@@ -438,10 +404,13 @@ test('deactivate deactivates an extension', function (): void {
     $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
     $staffService->shouldReceive('checkPermissionsAndThrowException')->atLeast()->once();
 
-    $di = container();
-    $di['db'] = $dbMock;
-    $di['mod'] = $di->protect(fn ($name): Mockery\MockInterface => $modMock);
+    $em = extensionBuildEm();
+    $em->shouldReceive('remove')->atLeast()->once();
+    $em->shouldReceive('flush')->atLeast()->once();
 
+    $di = container();
+    $di['em'] = $em;
+    $di['mod'] = $di->protect(fn ($name): Mockery\MockInterface => $modMock);
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $staffService);
 
     $service->setDi($di);
@@ -451,24 +420,23 @@ test('deactivate deactivates an extension', function (): void {
 });
 
 test('deactivate throws exception for core modules', function (): void {
-    $service = new Box\Mod\Extension\Service();
-    $ext = new Model_Extension();
-    $ext->loadBean(new Tests\Helpers\DummyBean());
-    $ext->type = 'mod';
-    $ext->name = 'extensionTest';
+    $service = new Service();
+    $ext = extensionCreateEntity(1, 'mod', 'extensionTest', 'installed');
 
     $modMock = Mockery::mock(FOSSBilling\Module::class);
     $modMock->shouldReceive('getCoreModules')
         ->atLeast()
         ->once()
-        ->andReturn([$ext->name]);
+        ->andReturn([$ext->getName()]);
 
     $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
     $staffService->shouldReceive('checkPermissionsAndThrowException')->atLeast()->once();
 
-    $di = container();
-    $di['mod'] = $di->protect(fn ($name): Mockery\MockInterface => $modMock);
+    $em = extensionBuildEm();
 
+    $di = container();
+    $di['em'] = $em;
+    $di['mod'] = $di->protect(fn ($name): Mockery\MockInterface => $modMock);
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $staffService);
 
     $service->setDi($di);
@@ -478,14 +446,7 @@ test('deactivate throws exception for core modules', function (): void {
 });
 
 test('deactivate deactivates hook extension', function (): void {
-    $service = new Box\Mod\Extension\Service();
-    $ext = new Model_Extension();
-    $ext->loadBean(new Tests\Helpers\DummyBean());
-    $ext->type = 'hook';
-    $ext->name = 'extensionTest';
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('trash')->atLeast()->once();
+    $ext = extensionCreateEntity(1, 'hook', 'extensionTest', 'installed');
 
     $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
     $staffService->shouldReceive('checkPermissionsAndThrowException')->atLeast()->once();
@@ -494,10 +455,14 @@ test('deactivate deactivates hook extension', function (): void {
     $filesystemMock->shouldReceive('exists')->atLeast()->once()->andReturn(true);
     $filesystemMock->shouldReceive('remove')->atLeast()->once();
 
-    $service = new Box\Mod\Extension\Service($filesystemMock);
+    $service = new Service($filesystemMock);
+
+    $em = extensionBuildEm();
+    $em->shouldReceive('remove')->atLeast()->once();
+    $em->shouldReceive('flush')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $em;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $staffService);
 
     $service->setDi($di);
@@ -506,11 +471,7 @@ test('deactivate deactivates hook extension', function (): void {
 });
 
 test('deactivate deactivates module', function (): void {
-    $service = new Box\Mod\Extension\Service();
-    $ext = new Model_Extension();
-    $ext->loadBean(new Tests\Helpers\DummyBean());
-    $ext->type = 'mod';
-    $ext->name = 'extensionTest';
+    $ext = extensionCreateEntity(1, 'mod', 'extensionTest', 'installed');
 
     $modMock = Mockery::mock(FOSSBilling\Module::class);
     $modMock->shouldReceive('getCoreModules')
@@ -521,15 +482,16 @@ test('deactivate deactivates module', function (): void {
     $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
     $staffService->shouldReceive('checkPermissionsAndThrowException')->atLeast()->once();
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('trash')->atLeast()->once();
+    $em = extensionBuildEm();
+    $em->shouldReceive('remove')->atLeast()->once();
+    $em->shouldReceive('flush')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $em;
     $di['mod'] = $di->protect(fn ($name): Mockery\MockInterface => $modMock);
-
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $staffService);
 
+    $service = new Service();
     $service->setDi($di);
 
     $result = $service->deactivate($ext);
@@ -537,10 +499,6 @@ test('deactivate deactivates module', function (): void {
 });
 
 test('uninstall uninstalls an extension', function (): void {
-    $service = new Box\Mod\Extension\Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getCell')->andReturn(null);
-
     $modMock = Mockery::mock(FOSSBilling\Module::class);
     $modMock->shouldReceive('getCoreModules')
         ->atLeast()
@@ -569,14 +527,18 @@ test('uninstall uninstalls an extension', function (): void {
     $tmpDir = sys_get_temp_dir() . '/fb_test_ext_' . uniqid();
     mkdir($tmpDir, 0o755, true);
 
-    // Create the service with filesystem in constructor, then make it a partial mock
-    $serviceMock = Mockery::mock(Box\Mod\Extension\Service::class . '[getExtensionPath]', [$filesystemMock]);
+    $serviceMock = Mockery::mock(Service::class . '[getExtensionPath]', [$filesystemMock]);
     $serviceMock->shouldReceive('getExtensionPath')
         ->atLeast()
         ->once()
         ->andReturn($tmpDir);
 
-    $di['db'] = $dbMock;
+    $extensionRepository = Mockery::mock(ExtensionRepository::class);
+    $extensionRepository->shouldReceive('existsActiveByTypeAndName')->andReturn(false);
+
+    $em = extensionBuildEm($extensionRepository);
+
+    $di['em'] = $em;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod'] = $di->protect(fn ($name): Mockery\MockInterface => $modMock);
 
@@ -602,7 +564,7 @@ test('uninstall uninstalls an extension', function (): void {
 });
 
 test('getExtensionPath rejects unsafe extension IDs', function (string $type, string $id): void {
-    $service = new Box\Mod\Extension\Service();
+    $service = new Service();
 
     expect(fn (): string => $service->getExtensionPath($type, $id))
         ->toThrow(FOSSBilling\InformationException::class, 'Extension ID contains invalid characters.');
@@ -614,7 +576,7 @@ test('getExtensionPath rejects unsafe extension IDs', function (string $type, st
 ]);
 
 test('downloadAndExtract throws exception when download URL is missing', function (): void {
-    $service = new Box\Mod\Extension\Service();
+    $service = new Service();
     $extensionMock = Mockery::mock(FOSSBilling\ExtensionManager::class);
 
     $extensionMock->shouldReceive('getLatestExtensionRelease')
@@ -636,51 +598,17 @@ test('downloadAndExtract throws exception when download URL is missing', functio
 });
 
 test('getInstalledMods returns installed modules', function (): void {
-    $service = new Box\Mod\Extension\Service();
-    $dbalMock = new class {
-        public function createQueryBuilder(): object
-        {
-            return new class {
-                public function select($field)
-                {
-                    return $this;
-                }
+    $service = new Service();
 
-                public function from($table)
-                {
-                    return $this;
-                }
-
-                public function where($cond)
-                {
-                    return $this;
-                }
-
-                public function andWhere($cond)
-                {
-                    return $this;
-                }
-
-                public function setParameter($key, $val)
-                {
-                    return $this;
-                }
-
-                public function executeQuery()
-                {
-                    return $this;
-                }
-
-                public function fetchFirstColumn(): array
-                {
-                    return [];
-                }
-            };
-        }
-    };
+    $extensionRepository = Mockery::mock(ExtensionRepository::class);
+    $extensionRepository->shouldReceive('findInstalledNamesByType')
+        ->once()
+        ->with(Extension::TYPE_MOD)
+        ->andReturn([]);
 
     $di = new Pimple\Container();
-    $di['dbal'] = $dbalMock;
+    $di['filesystem'] = new Symfony\Component\Filesystem\Filesystem();
+    $di['em'] = extensionBuildEm($extensionRepository);
 
     $service->setDi($di);
     $result = $service->getInstalledMods();
@@ -688,46 +616,33 @@ test('getInstalledMods returns installed modules', function (): void {
 });
 
 test('activateExistingExtension activates existing extension', function (): void {
-    $service = new Box\Mod\Extension\Service();
     $data = [
         'id' => 'extensionId',
         'type' => 'extensionType',
     ];
 
-    $model = new Model_Extension();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-
-    $serviceMock = Mockery::mock(Box\Mod\Extension\Service::class)->makePartial();
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('findExtension')
-        ->atLeast()
-        ->once()
-        ->andReturnUsing(function () use ($model) {
-            static $callCount = 0;
-            ++$callCount;
-
-            return $callCount === 1 ? null : $model;
-        });
     $serviceMock->shouldReceive('activate')
         ->atLeast()
         ->once()
         ->andReturn([]);
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('dispense')
+    $extensionRepository = Mockery::mock(ExtensionRepository::class);
+    $extensionRepository->shouldReceive('findOneByTypeAndName')
         ->atLeast()
         ->once()
-        ->andReturn($model);
-    $dbMock->shouldReceive('store')
-        ->atLeast()
-        ->once()
-        ->andReturn(1);
+        ->andReturn(null);
+
+    $em = extensionBuildEm($extensionRepository);
+    $em->shouldReceive('persist')->atLeast()->once();
+    $em->shouldReceive('flush')->atLeast()->once();
 
     $eventMock = Mockery::mock(Box_EventManager::class);
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $em;
     $di['events_manager'] = $eventMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
@@ -738,30 +653,33 @@ test('activateExistingExtension activates existing extension', function (): void
 });
 
 test('activateExistingExtension throws exception on activation failure', function (): void {
-    $service = new Box\Mod\Extension\Service();
     $data = [
         'id' => 'extensionId',
         'type' => 'extensionType',
     ];
 
-    $model = new Model_Extension();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = extensionCreateEntity(1);
 
-    $serviceMock = Mockery::mock(Box\Mod\Extension\Service::class)->makePartial();
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('findExtension')
-        ->atLeast()
-        ->once()
-        ->andReturn($model);
     $serviceMock->shouldReceive('activate')
         ->atLeast()
         ->once()
         ->andThrow(new Exception());
 
+    $extensionRepository = Mockery::mock(ExtensionRepository::class);
+    $extensionRepository->shouldReceive('findOneByTypeAndName')
+        ->atLeast()
+        ->once()
+        ->andReturn($model);
+
     $eventMock = Mockery::mock(Box_EventManager::class);
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
+    $em = extensionBuildEm($extensionRepository);
+
     $di = container();
+    $di['em'] = $em;
     $di['events_manager'] = $eventMock;
 
     $serviceMock->setDi($di);
@@ -771,25 +689,26 @@ test('activateExistingExtension throws exception on activation failure', functio
 });
 
 test('getConfig returns extension config', function (): void {
-    $service = new Box\Mod\Extension\Service();
+    $service = new Service();
     $data = [
         'ext' => 'extensionName',
     ];
 
-    $model = new Model_ExtensionMeta();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $meta = extensionCreateExtensionMetaEntity(1, 'extensionName', 'config', 'encryptedConfig');
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('findOne')
+    $metaRepo = Mockery::mock(ExtensionMetaRepository::class);
+    $metaRepo->shouldReceive('findOneByExtensionAndScope')
         ->atLeast()
         ->once()
-        ->andReturn($model);
+        ->andReturn($meta);
 
     $cryptMock = Mockery::mock(Box_Crypt::class);
     $cryptMock->shouldReceive('decrypt')->atLeast()->once();
 
+    $em = extensionBuildEm(null, $metaRepo);
+
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $em;
     $di['crypt'] = $cryptMock;
     $di['cache'] = new Symfony\Component\Cache\Adapter\ArrayAdapter();
 
@@ -800,30 +719,23 @@ test('getConfig returns extension config', function (): void {
 });
 
 test('getConfig creates new ExtensionMeta when not found', function (): void {
-    $service = new Box\Mod\Extension\Service();
+    $service = new Service();
     $data = [
         'ext' => 'extensionName',
     ];
 
-    $model = new Model_ExtensionMeta();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('findOne')
+    $metaRepo = Mockery::mock(ExtensionMetaRepository::class);
+    $metaRepo->shouldReceive('findOneByExtensionAndScope')
         ->atLeast()
         ->once()
         ->andReturn(null);
-    $dbMock->shouldReceive('dispense')
-        ->atLeast()
-        ->once()
-        ->andReturn($model);
-    $dbMock->shouldReceive('store')
-        ->atLeast()
-        ->once()
-        ->andReturn(1);
+
+    $em = extensionBuildEm(null, $metaRepo);
+    $em->shouldReceive('persist')->atLeast()->once();
+    $em->shouldReceive('flush')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $em;
     $di['cache'] = new Symfony\Component\Cache\Adapter\ArrayAdapter();
 
     $service->setDi($di);
@@ -834,12 +746,11 @@ test('getConfig creates new ExtensionMeta when not found', function (): void {
 });
 
 test('setConfig sets extension config', function (): void {
-    $service = new Box\Mod\Extension\Service();
     $data = [
         'ext' => 'extensionName',
     ];
 
-    $serviceMock = Mockery::mock(Box\Mod\Extension\Service::class)->makePartial();
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('hasManagePermission')
         ->with('extensionName')
@@ -859,19 +770,21 @@ test('setConfig sets extension config', function (): void {
         ->once()
         ->andReturn('encryptedConfig');
 
-    $model = new Model_ExtensionMeta();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('exec')
+    $metaRepo = Mockery::mock(ExtensionMetaRepository::class);
+    $metaRepo->shouldReceive('findOneByExtensionAndScope')
         ->atLeast()
         ->once()
-        ->andReturn([]);
+        ->andReturn(null);
+
+    $em = extensionBuildEm(null, $metaRepo);
+    $em->shouldReceive('persist')->atLeast()->once();
+    $em->shouldReceive('flush')->atLeast()->once();
 
     $eventMock = Mockery::mock(Box_EventManager::class);
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $em;
     $di['tools'] = $toolsMock;
     $di['crypt'] = $cryptMock;
     $di['events_manager'] = $eventMock;
@@ -885,7 +798,7 @@ test('setConfig sets extension config', function (): void {
 });
 
 test('hasManagePermission denies access when module does not declare manage_settings', function (): void {
-    $serviceMock = Mockery::mock(Box\Mod\Extension\Service::class)->makePartial();
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldAllowMockingProtectedMethods();
 
     $staffMock = Mockery::mock(Box\Mod\Staff\Service::class);
@@ -901,14 +814,16 @@ test('hasManagePermission denies access when module does not declare manage_sett
         ->once()
         ->andReturn([]);
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('getCell')
+    $extensionRepository = Mockery::mock(ExtensionRepository::class);
+    $extensionRepository->shouldReceive('existsActiveByTypeAndName')
         ->atLeast()
         ->once()
-        ->andReturn(1);
+        ->andReturn(true);
+
+    $em = extensionBuildEm($extensionRepository);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $em;
     $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $staffMock);
 
@@ -921,11 +836,11 @@ test('hasManagePermission denies access when module does not declare manage_sett
         ]);
 
     expect(fn () => $serviceMock->hasManagePermission('mod_support'))
-->toThrow(new FOSSBilling\InformationException('You do not have permission to perform this action', [], 403));
+        ->toThrow(new FOSSBilling\InformationException('You do not have permission to perform this action', [], 403));
 });
 
 test('hasManagePermission allows access when module declares manage_settings and user has it', function (): void {
-    $serviceMock = Mockery::mock(Box\Mod\Extension\Service::class)->makePartial();
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldAllowMockingProtectedMethods();
 
     $staffMock = Mockery::mock(Box\Mod\Staff\Service::class);
@@ -946,14 +861,16 @@ test('hasManagePermission allows access when module declares manage_settings and
         ->once()
         ->andReturn([]);
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('getCell')
+    $extensionRepository = Mockery::mock(ExtensionRepository::class);
+    $extensionRepository->shouldReceive('existsActiveByTypeAndName')
         ->atLeast()
         ->once()
-        ->andReturn(1);
+        ->andReturn(true);
+
+    $em = extensionBuildEm($extensionRepository);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $em;
     $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $staffMock);
 

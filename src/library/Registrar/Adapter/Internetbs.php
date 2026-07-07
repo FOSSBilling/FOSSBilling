@@ -465,22 +465,4 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
 
         return $domain;
     }
-
-    /**
-     * Checks whether privacy is enabled.
-     *
-     * @phpstan-ignore method.unused (part of API, reserved for future use)
-     */
-    private function _isPrivacyEnabled(Registrar_Domain $domain): bool
-    {
-        $params = [
-            'domain' => $domain->getName(),
-        ];
-
-        $result = $this->_process('/Domain/PrivateWhois/Status', $params);
-
-        return ($result['status'] == 'SUCCESS')
-                && (($result['privatewhoisstatus'] == 'FULL')
-                || ($result['privatewhoisstatus'] == 'PARTIAL'));
-    }
 }

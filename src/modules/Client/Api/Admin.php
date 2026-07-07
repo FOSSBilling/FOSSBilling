@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -110,7 +109,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $password - client password
      * @optional string $auth_type - client authorization type. Default null
      * @optional string $last_name - client last name
-     * @optional string $aid - alternative ID. If you import clients from other systems you can use this field to store foreign system ID
+     * @optional string $aid - Custom client ID. If you import clients from other systems you can use this field to store the existing customer ID.
      * @optional string $group_id - client group id
      * @optional string $status - client status: "active, suspended, canceled"
      * @optional string $created_at - ISO 8601 date for client creation date
@@ -130,6 +129,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $phone_cc - Phone country code
      * @optional string $notes - Notes about client. Visible for admin only
      * @optional string $lang - Client language
+     * @optional string $timezone - IANA timezone identifier (e.g. "America/New_York"). Used to localize dates and times shown to the client.
      * @optional string $custom_1 - Custom field 1
      * @optional string $custom_2 - Custom field 2
      * @optional string $custom_3 - Custom field 3
@@ -140,6 +140,16 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $custom_8 - Custom field 8
      * @optional string $custom_9 - Custom field 9
      * @optional string $custom_10 - Custom field 10
+     * @optional string $custom_11 - Custom field 11
+     * @optional string $custom_12 - Custom field 12
+     * @optional string $custom_13 - Custom field 13
+     * @optional string $custom_14 - Custom field 14
+     * @optional string $custom_15 - Custom field 15
+     * @optional string $custom_16 - Custom field 16
+     * @optional string $custom_17 - Custom field 17
+     * @optional string $custom_18 - Custom field 18
+     * @optional string $custom_19 - Custom field 19
+     * @optional string $custom_20 - Custom field 20
      *
      * @return int - client id
      */
@@ -206,7 +216,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $first_name - client first_name
      * @optional string $last_name - client last_name
      * @optional string $status - client status
-     * @optional string $aid - Alternative id. Usually used by import tools.
+     * @optional string $aid - Custom client ID. Usually used by import tools to store an existing customer ID.
      * @optional string $gender - Gender - values: male|female|nonbinary|other
      * @optional string $country - Country
      * @optional string $city - city
@@ -222,6 +232,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $phone - Phone number
      * @optional string $phone_cc - Phone country code
      * @optional string $lang - Client language
+     * @optional string $timezone - IANA timezone identifier (e.g. "America/New_York"). Used to localize dates and times shown to the client.
      * @optional string $notes - Notes about client. Visible for admin only
      * @optional string $custom_1 - Custom field 1
      * @optional string $custom_2 - Custom field 2
@@ -233,6 +244,16 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $custom_8 - Custom field 8
      * @optional string $custom_9 - Custom field 9
      * @optional string $custom_10 - Custom field 10
+     * @optional string $custom_11 - Custom field 11
+     * @optional string $custom_12 - Custom field 12
+     * @optional string $custom_13 - Custom field 13
+     * @optional string $custom_14 - Custom field 14
+     * @optional string $custom_15 - Custom field 15
+     * @optional string $custom_16 - Custom field 16
+     * @optional string $custom_17 - Custom field 17
+     * @optional string $custom_18 - Custom field 18
+     * @optional string $custom_19 - Custom field 19
+     * @optional string $custom_20 - Custom field 20
      */
     #[RequiredParams(['id' => 'Client ID was not passed'])]
     public function update($data = []): bool
@@ -288,6 +309,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             throw new InformationException('Invalid locale code: :code', [':code' => $data['lang']]);
         }
 
+        if (array_key_exists('timezone', $data) && $data['timezone'] !== null && $data['timezone'] !== '' && !in_array($data['timezone'], \DateTimeZone::listIdentifiers(), true)) {
+            throw new InformationException('Invalid timezone: :tz', [':tz' => $data['timezone']]);
+        }
+
         $allowedFields = [
             'email', 'first_name', 'last_name', 'aid', 'gender', 'birthday',
             'company', 'company_vat', 'address_1', 'address_2',
@@ -295,7 +320,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             'status', 'email_approved', 'tax_exempt', 'created_at',
             'custom_1', 'custom_2', 'custom_3', 'custom_4', 'custom_5',
             'custom_6', 'custom_7', 'custom_8', 'custom_9', 'custom_10',
-            'client_group_id', 'company_number', 'type', 'lang',
+            'custom_11', 'custom_12', 'custom_13', 'custom_14', 'custom_15',
+            'custom_16', 'custom_17', 'custom_18', 'custom_19', 'custom_20',
+            'client_group_id', 'company_number', 'type', 'lang', 'timezone',
         ];
 
         foreach ($allowedFields as $field) {

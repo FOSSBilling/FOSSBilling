@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -13,6 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Index\Controller;
 
 use FOSSBilling\InjectionAwareInterface;
+use Symfony\Component\HttpFoundation\Response;
 
 class Admin implements InjectionAwareInterface
 {
@@ -36,7 +36,7 @@ class Admin implements InjectionAwareInterface
         $app->get('/index/', 'get_index', [], static::class);
     }
 
-    public function get_index(\Box_App $app)
+    public function get_index(\Box_App $app): string|Response
     {
         if ($this->di['auth']->isAdminLoggedIn()) {
             return $app->render('mod_index_dashboard');

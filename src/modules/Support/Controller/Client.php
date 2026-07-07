@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -11,6 +10,8 @@ declare(strict_types=1);
  */
 
 namespace Box\Mod\Support\Controller;
+
+use Symfony\Component\HttpFoundation\Response;
 
 class Client implements \FOSSBilling\InjectionAwareInterface
 {
@@ -60,10 +61,10 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_support_ticket', ['ticket' => $ticket]);
     }
 
-    public function get_contact_us(\Box_App $app): string
+    public function get_contact_us(\Box_App $app): string|Response
     {
         if ($this->di['auth']->isClientLoggedIn()) {
-            $app->redirect('support');
+            return $app->redirect('support');
         }
 
         return $app->render('mod_support_contact_us');
@@ -74,9 +75,9 @@ class Client implements \FOSSBilling\InjectionAwareInterface
      *
      * /support/contact-us/conversation/:hash -> /support/ticket/:hash
      */
-    public function get_ticket_redirect(\Box_App $app, $hash): never
+    public function get_ticket_redirect(\Box_App $app, $hash): Response
     {
-        $app->redirect('support/ticket/' . $hash);
+        return $app->redirect('support/ticket/' . $hash);
     }
 
     /*

@@ -45,7 +45,6 @@ function guestSupportServiceMock(): Mockery\MockInterface
 
 test('ticket create', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
-    $api = new Box\Mod\Support\Api\Guest();
     $serviceMock = guestSupportServiceMock();
     $serviceMock->shouldReceive('ticketCreateForGuest')->atLeast()->once()
         ->andReturn(bin2hex(random_bytes(random_int(100, 127))));
@@ -57,7 +56,7 @@ test('ticket create', function (): void {
 
     $data = [
         'name' => 'Name',
-        'email' => 'email@wxample.com',
+        'email' => 'email@example.com',
         'subject' => 'Subject',
         'content' => 'Message',
     ];
@@ -80,7 +79,7 @@ test('ticket create message too short exception', function (): void {
 
     $data = [
         'name' => 'Name',
-        'email' => 'email@wxample.com',
+        'email' => 'email@example.com',
         'subject' => 'Subject',
         'content' => '',
     ];
@@ -92,7 +91,7 @@ test('ticket get', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
     $serviceMock = guestSupportServiceMock();
     $serviceMock->shouldReceive('findOneByHash')->atLeast()->once()
-        ->andReturn(new Model_SupportTicket());
+        ->andReturn(new Box\Mod\Support\Entity\SupportTicket());
     $serviceMock->shouldReceive('toApiArray')->atLeast()->once()
         ->andReturn([]);
 
@@ -113,7 +112,7 @@ test('ticket close', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
     $serviceMock = guestSupportServiceMock();
     $serviceMock->shouldReceive('findOneByHash')->atLeast()->once()
-        ->andReturn(new Model_SupportTicket());
+        ->andReturn(new Box\Mod\Support\Entity\SupportTicket());
     $serviceMock->shouldReceive('closeTicket')->atLeast()->once()
         ->andReturn(true);
 
@@ -135,7 +134,7 @@ test('ticket reply', function (): void {
     $guestApi = new Box\Mod\Support\Api\Guest();
     $serviceMock = guestSupportServiceMock();
     $serviceMock->shouldReceive('findOneByHash')->atLeast()->once()
-        ->andReturn(new Model_SupportTicket());
+        ->andReturn(new Box\Mod\Support\Entity\SupportTicket());
     $serviceMock->shouldReceive('ticketReply')->atLeast()->once()
         ->andReturn(1);
 
@@ -492,7 +491,7 @@ test('kb category get not found by slug', function (): void {
     $repo = Mockery::mock(KbArticleCategoryRepository::class);
     $repo->shouldReceive('findOneBySlug')
         ->once()
-        ->with('article-slug')
+        ->with('category-slug-not-found')
         ->andReturn(null);
 
     $kbService = guestSupportServiceMock();
@@ -502,7 +501,7 @@ test('kb category get not found by slug', function (): void {
     $guestApi->setService($kbService);
 
     $data = [
-        'slug' => 'article-slug',
+        'slug' => 'category-slug-not-found',
     ];
 
     $di = container();

@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -18,13 +17,11 @@ namespace Box\Mod\Api\Controller;
 
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
-use FOSSBilling\Http\HttpResponseException;
+use FOSSBilling\Http\ApiResponseFactory;
+use FOSSBilling\Http\ResponseFactory;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Security\AuthenticationRequiredException;
 use FOSSBilling\Security\EmailValidationRequiredException;
-use FOSSBilling\Security\RateLimitException;
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
 
 class Client implements InjectionAwareInterface
@@ -69,18 +66,12 @@ class Client implements InjectionAwareInterface
 
     public function post_method(\Box_App $app, $role, $class, $method): Response
     {
-        $request = $app->getRequest();
-        $p = $request->request->all();
+        try {
+            $p = $app->getRequest()->getPayload()->all();
+        } catch (\Symfony\Component\HttpFoundation\Exception\JsonException $e) {
+            $message = $e->getPrevious()?->getMessage() ?? $e->getMessage();
 
-        // adding support for raw post input with json string
-        $input = $request->getContent();
-        if (empty($p) && !empty($input)) {
-            $p = json_decode($input, true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                $exc = new \FOSSBilling\Exception('Malformed JSON input: :error', [':error' => json_last_error_msg()], 400);
-
-                return $this->renderJson(null, $exc);
-            }
+            return $this->renderJson(null, new \FOSSBilling\Exception('Malformed JSON input: :error', [':error' => $message], 400));
         }
 
         $call = $class . '_' . $method;
@@ -95,8 +86,6 @@ class Client implements InjectionAwareInterface
     {
         try {
             return $this->_apiCall($role, $class, $call, $p);
-        } catch (HttpResponseException $exc) {
-            return $exc->getResponse();
         } catch (AuthenticationRequiredException) {
             return $this->renderJson(null, new \FOSSBilling\InformationException('Authentication Failed', null, 201));
         } catch (EmailValidationRequiredException $exc) {
@@ -235,7 +224,7 @@ class Client implements InjectionAwareInterface
                 $redirectUrl = $this->di['url']->link('');
             }
 
-            return new RedirectResponse($redirectUrl);
+            return (new ResponseFactory())->redirect($redirectUrl);
         }
 
         return $this->renderJson($result);
@@ -288,7 +277,7 @@ class Client implements InjectionAwareInterface
                 break;
 
             case 'admin':
-                $model = $this->di['db']->findOne('Admin', 'api_token = ? AND status = ? AND role != ?', [$password, \Model_Admin::STATUS_ACTIVE, \Model_Admin::ROLE_CRON]);
+                $model = $this->di['db']->findOne('Admin', 'api_token = ? AND status = ? AND (system_name IS NULL OR system_name != ?)', [$password, \Model_Admin::STATUS_ACTIVE, \Model_Admin::SYSTEM_CRON]);
                 if (!$model instanceof \Model_Admin) {
                     throw new \FOSSBilling\InformationException('Authentication Failed', null, 205);
                 }
@@ -302,7 +291,6 @@ class Client implements InjectionAwareInterface
                     'id' => $model->id,
                     'email' => $model->email,
                     'name' => $model->name,
-                    'role' => $model->role,
                 ];
                 $this->di['session']->set('admin', $sessionAdminArray);
 
@@ -441,39 +429,11 @@ class Client implements InjectionAwareInterface
     {
         $this->_loadConfig();
 
-        $headers = [
-            'Cache-Control' => 'no-cache, must-revalidate',
-            'Expires' => 'Mon, 26 Jul 1997 05:00:00 GMT',
-        ];
-        $statusCode = 200;
-
         if ($e instanceof \Exception) {
             error_log("{$e->getMessage()} {$e->getCode()}.");
-            $code = $e->getCode() ?: 9999;
-            $result = ['result' => null, 'error' => ['message' => $e->getMessage(), 'code' => $code]];
-            $authFailed = [201, 202, 206, 204, 205, 203, 1004, 1002];
-
-            if (in_array($code, $authFailed)) {
-                $statusCode = 401;
-            } elseif ($code == 403) {
-                $statusCode = 403;
-            } elseif ($code == 740) {
-                $statusCode = 404;
-            } elseif ($code == 429) {
-                $statusCode = 429;
-                if ($e instanceof RateLimitException && $e->hasRetryAfter()) {
-                    $headers['Retry-After'] = (string) $e->getRetryAfterSeconds();
-                }
-            } elseif ($code == 503) {
-                $statusCode = 503;
-            } elseif ($code == 701 || $code == 879) {
-                $statusCode = 400;
-            }
-        } else {
-            $result = ['result' => $data, 'error' => null];
         }
 
-        return new JsonResponse($result, $statusCode, $headers);
+        return (new ApiResponseFactory())->create($data, $e);
     }
 
     protected function sendResponse(Response $response): Response

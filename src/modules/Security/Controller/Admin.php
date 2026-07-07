@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -73,9 +72,10 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $this->di['is_admin_logged'];
         $record = [];
 
-        if (isset($_GET['ip']) && filter_var($_GET['ip'], FILTER_VALIDATE_IP)) {
+        $ip = $app->getRequest()->query->get('ip');
+        if ($ip !== null && filter_var($ip, FILTER_VALIDATE_IP)) {
             try {
-                $record = $this->di['api_admin']->Security_IP_Lookup(['ip' => $_GET['ip']]);
+                $record = $this->di['api_admin']->Security_IP_Lookup(['ip' => $ip]);
             } catch (\Exception) {
             }
         }

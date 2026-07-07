@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -96,9 +95,11 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         return $this->getService()->guestTicketsEnabled();
     }
 
+    /**
+     * @deprecated use guest_tickets_enabled() instead
+     */
     public function public_tickets_enabled(): bool
     {
-        // @deprecated 0.9.0 Use guest_tickets_enabled instead.
         return $this->guest_tickets_enabled();
     }
 

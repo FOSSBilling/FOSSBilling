@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -17,7 +16,6 @@ declare(strict_types=1);
 namespace Box\Mod\Email\Api;
 
 use FOSSBilling\PaginationOptions;
-use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Client extends \FOSSBilling\Api\AbstractApi
@@ -31,24 +29,13 @@ class Client extends \FOSSBilling\Api\AbstractApi
     {
         $client = $this->getIdentity();
         $data['client_id'] = $client->id;
-        [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
-        foreach ($pager['list'] as $key => $item) {
-            $pager['list'][$key] = [
-                'id' => $item['id'] ?? '',
-                'client_id' => $item['client_id'] ?? '',
-                'sender' => $item['sender'] ?? '',
-                'recipients' => $item['recipients'] ?? '',
-                'subject' => $item['subject'] ?? '',
-                'content_html' => Tools::sanitizeContent($item['content_html'] ?? ''),
-                'content_text' => $item['content_text'] ?? '',
-                'created_at' => $item['created_at'] ?? '',
-                'updated_at' => $item['updated_at'] ?? '',
-            ];
-        }
+        $repo = $this->getService()->getActivityClientEmailRepository();
 
-        return $pager;
+        return $this->getDi()['pager']->paginateDoctrineQuery(
+            $repo->getSearchQueryBuilder($data),
+            PaginationOptions::fromArray($data),
+        );
     }
 
     /**
@@ -61,13 +48,12 @@ class Client extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function get($data)
     {
-        $model = $this->getService()->findOneForClientById($this->getIdentity(), $data['id']);
+        $model = $this->getService()->getActivityClientEmailRepository()->findOneForClientByIdOrFail(
+            (int) $this->getIdentity()->id,
+            (int) $data['id'],
+        );
 
-        if (!$model instanceof \Model_ActivityClientEmail) {
-            throw new \FOSSBilling\Exception('Email not found');
-        }
-
-        return $this->getService()->toApiArray($model);
+        return $model->toApiArray();
     }
 
     /**
@@ -85,10 +71,10 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $this->getDi()['rate_limiter']->consumeOrThrow('client_email_resend_ip', (string) $this->getIp());
         $this->getDi()['rate_limiter']->consumeOrThrow('client_email_resend_account', 'client:' . $client->id);
 
-        $model = $this->getService()->findOneForClientById($client, $data['id']);
-        if (!$model instanceof \Model_ActivityClientEmail) {
-            throw new \FOSSBilling\Exception('Email not found');
-        }
+        $model = $this->getService()->getActivityClientEmailRepository()->findOneForClientByIdOrFail(
+            (int) $client->id,
+            (int) $data['id'],
+        );
 
         return $this->getService()->resend($model);
     }
@@ -96,18 +82,19 @@ class Client extends \FOSSBilling\Api\AbstractApi
     /**
      * Remove email from system.
      *
-     * @return bool
-     *
      * @throws \FOSSBilling\Exception
      */
     #[RequiredParams(['id' => 'Email ID was not passed'])]
-    public function delete($data)
+    public function delete($data): bool
     {
-        $model = $this->getService()->findOneForClientById($this->getIdentity(), $data['id']);
-        if (!$model instanceof \Model_ActivityClientEmail) {
-            throw new \FOSSBilling\Exception('Email not found');
-        }
+        $em = $this->getDi()['em'];
+        $model = $this->getService()->getActivityClientEmailRepository()->findOneForClientByIdOrFail(
+            (int) $this->getIdentity()->id,
+            (int) $data['id'],
+        );
+        $em->remove($model);
+        $em->flush();
 
-        return $this->getService()->rm($model);
+        return true;
     }
 }

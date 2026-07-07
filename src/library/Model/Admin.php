@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -11,9 +10,7 @@ declare(strict_types=1);
  */
 class Model_Admin extends RedBeanPHP\SimpleModel
 {
-    final public const string ROLE_ADMIN = 'admin';
-    final public const string ROLE_STAFF = 'staff';
-    final public const string ROLE_CRON = 'cron';
+    final public const string SYSTEM_CRON = 'cron';
 
     final public const string STATUS_ACTIVE = 'active';
     final public const string STATUS_INACTIVE = 'inactive';
@@ -34,5 +31,10 @@ class Model_Admin extends RedBeanPHP\SimpleModel
         }
 
         return self::STATUS_INACTIVE;
+    }
+
+    public function isCron(): bool
+    {
+        return $this->system_name === self::SYSTEM_CRON;
     }
 }

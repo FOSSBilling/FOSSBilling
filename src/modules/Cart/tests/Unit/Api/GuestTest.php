@@ -113,7 +113,7 @@ test('setCurrency throws exception when currency is not found', function (): voi
         'currency' => 'EUR',
     ];
 
-    expect(fn () => $guestApi->set_currency($data))->toThrow(FOSSBilling\Exception::class, 'Currency not found');
+    expect(fn () => $guestApi->set_currency($data))->toThrow(FOSSBilling\InformationException::class, 'Currency not found');
 });
 
 test('getCurrency returns array when currency found', function (): void {

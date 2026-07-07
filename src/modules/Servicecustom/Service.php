@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -20,7 +19,7 @@ use Symfony\Component\Filesystem\Path;
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
-    private readonly Filesystem $filesystem;
+    private Filesystem $filesystem;
 
     public function __construct()
     {
@@ -30,6 +29,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        if (isset($di['filesystem'])) {
+            $this->filesystem = $di['filesystem'];
+        }
     }
 
     public function getDi(): ?\Pimple\Container
@@ -92,7 +94,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $product = $this->di['mod_service']('product')->findProductById((int) $order->product_id);
         if (!$product instanceof Product) {
-            throw new \FOSSBilling\Exception('Product not found');
+            throw new \FOSSBilling\InformationException('Product not found');
         }
 
         $model = $this->di['db']->dispense('ServiceCustom');
@@ -261,7 +263,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         if ($clientId !== null) {
             $order = $this->di['db']->findOne('ClientOrder', 'id = ? AND client_id = ?', [$orderId, $clientId]);
             if (!$order instanceof \Model_ClientOrder) {
-                throw new \FOSSBilling\Exception('Order not found');
+                throw new \FOSSBilling\InformationException('Order not found');
             }
 
             if ($order->status !== \Model_ClientOrder::STATUS_ACTIVE) {
@@ -292,7 +294,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         // check if plugin exists. If plugin does not exist, do not throw error. Simply add to log
         $file = Path::join('Plugin', $plugin, "{$plugin}.php");
         if (!Environment::isTesting() && !$this->filesystem->exists(Path::join(PATH_LIBRARY, $file))) {
-            $e = new \FOSSBilling\Exception('Plugin class file :file was not found', [':file' => $file], 3124);
+            $e = new \FOSSBilling\InformationException('Plugin class file :file was not found', [':file' => $file], 3124);
             // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
             if (DEBUG) {
                 error_log($e->getMessage());

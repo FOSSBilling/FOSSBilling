@@ -142,6 +142,21 @@
                                             <use href="#link" />
                                         </svg>
                                     </a>
+                                    {% if message.author.role == 'admin' %}
+                                    <a class="ms-2" href="#" title="{{ 'Edit'|trans }}" data-bs-toggle="modal" data-bs-target="#editMessage{{ message.id }}" onclick="event.stopPropagation()">
+                                        <svg class="icon">
+                                            <use href="#edit" />
+                                        </svg>
+                                    </a>
+                                    {% endif %}
+                                    {% if message.updated_at != message.created_at %}
+                                    <a class="ms-2 text-muted" href="#" title="{{ 'View edit history'|trans }}" data-bs-toggle="modal" data-bs-target="#messageHistory{{ message.id }}" onclick="event.stopPropagation()">
+                                        <svg class="icon">
+                                            <use href="#info-circle" />
+                                        </svg>
+                                        {{ 'Edited'|trans }}
+                                    </a>
+                                    {% endif %}
                                     <span class="ms-auto text-muted">{{ message.created_at|format_datetime }}</span>
                                 </div>
                                 <div class="card-body" style="display:{{ loop.last or loop.index + 1 == ticket.messages|length ? 'block' : 'none' }};">
@@ -150,6 +165,43 @@
                                     </article>
                                 </div>
                             </div>
+
+                            {% if message.author.role == 'admin' %}
+                            <div class="modal modal-blur fade" id="editMessage{{ message.id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-scrollable modal-lg modal-fullscreen-md-down">
+                                    <form class="modal-content" method="post" action="{{ 'support/ticket_message_update'|api_url }}" {{ fb_api_form({reload: true}) }}>
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">{{ 'Edit Reply'|trans }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <input type="hidden" name="id" value="{{ message.id }}">
+                                            <textarea class="form-control" name="content" rows="8" required>{{ message.content }}</textarea>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-link link-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
+                                            <button type="submit" class="btn btn-primary">{{ 'Save'|trans }}</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if message.updated_at != message.created_at %}
+                            <div class="modal modal-blur fade message-history-modal" id="messageHistory{{ message.id }}" tabindex="-1" aria-hidden="true" data-message-id="{{ message.id }}">
+                                <div class="modal-dialog modal-dialog-scrollable modal-lg modal-fullscreen-md-down">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">{{ 'Edit History'|trans }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                                        </div>
+                                        <div class="modal-body message-history-body">
+                                            <p class="text-secondary mb-0">{{ 'Loading...'|trans }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
                             {% endfor %}
                         </div>
                     </div>
@@ -404,6 +456,51 @@
             showAllMessages = !showAllMessages;
             document.querySelectorAll('.conversation .card-body').forEach(function(element) {
                 element.style.display = showAllMessages ? 'block' : 'none';
+            });
+        });
+
+        document.querySelectorAll('.message-history-modal').forEach(function(modalEl) {
+            modalEl.addEventListener('shown.bs.modal', function() {
+                if (modalEl.dataset.loaded) return;
+
+                var body = modalEl.querySelector('.message-history-body');
+                FOSSBilling.api.admin.get('support/ticket_message_history_get_list', { id: modalEl.dataset.messageId }, function(history) {
+                    modalEl.dataset.loaded = '1';
+                    body.innerHTML = '';
+
+                    if (!history || history.length === 0) {
+                        var empty = document.createElement('p');
+                        empty.className = 'text-secondary mb-0';
+                        empty.textContent = '{{ 'No edit history for this message yet.'|trans|e('js') }}';
+                        body.appendChild(empty);
+                        return;
+                    }
+
+                    history.forEach(function(revision) {
+                        var entry = document.createElement('div');
+                        entry.className = 'mb-3 pb-3 border-bottom';
+
+                        var meta = document.createElement('div');
+                        meta.className = 'text-muted small mb-1';
+                        meta.textContent = revision.created_at;
+
+                        var content = document.createElement('pre');
+                        content.className = 'mb-0';
+                        content.style.whiteSpace = 'pre-wrap';
+                        content.textContent = revision.content;
+
+                        entry.appendChild(meta);
+                        entry.appendChild(content);
+                        body.appendChild(entry);
+                    });
+                }, function() {
+                    body.innerHTML = '';
+
+                    var error = document.createElement('p');
+                    error.className = 'text-danger mb-0';
+                    error.textContent = '{{ 'Could not load edit history. Please try again.'|trans|e('js') }}';
+                    body.appendChild(error);
+                });
             });
         });
     });

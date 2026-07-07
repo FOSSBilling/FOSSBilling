@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -13,6 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Currency\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use FOSSBilling\Doctrine\TimestampTrait;
 use FOSSBilling\Interfaces\ApiArrayInterface;
 use FOSSBilling\Interfaces\TimestampInterface;
 use Symfony\Component\Intl\Currencies;
@@ -22,6 +22,8 @@ use Symfony\Component\Intl\Currencies;
 #[ORM\HasLifecycleCallbacks]
 class Currency implements ApiArrayInterface, TimestampInterface
 {
+    use TimestampTrait;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::INTEGER)]
@@ -35,12 +37,6 @@ class Currency implements ApiArrayInterface, TimestampInterface
     private string $conversionRate = '1.000000';
 
     private ?float $conversionRateFloat = null;
-
-    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $createdAt = null;
-
-    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $updatedAt = null;
 
     public function __construct(
         #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 3, unique: true)]
@@ -57,20 +53,6 @@ class Currency implements ApiArrayInterface, TimestampInterface
             'conversion_rate' => $this->getConversionRate(),
             'default' => $this->isDefault(),
         ];
-    }
-
-    #[ORM\PrePersist]
-    public function onPrePersist(): void
-    {
-        $now = new \DateTime();
-        $this->createdAt = $now;
-        $this->updatedAt = $now;
-    }
-
-    #[ORM\PreUpdate]
-    public function updateTimestamp(): void
-    {
-        $this->updatedAt = new \DateTime();
     }
 
     public function getId(): int
@@ -140,15 +122,5 @@ class Currency implements ApiArrayInterface, TimestampInterface
         $this->conversionRateFloat = null;
 
         return $this;
-    }
-
-    public function setCreatedAt(?\DateTime $createdAt): void
-    {
-        $this->createdAt = $createdAt;
-    }
-
-    public function setUpdatedAt(?\DateTime $updatedAt): void
-    {
-        $this->updatedAt = $updatedAt;
     }
 }
