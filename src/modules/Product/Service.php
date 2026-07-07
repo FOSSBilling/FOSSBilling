@@ -406,8 +406,7 @@ class Service implements InjectionAwareInterface
 
     public function createProduct($title, $type, $categoryId = null): int
     {
-        $sql = 'SELECT MAX(priority) FROM product LIMIT 1';
-        $priority = $this->di['db']->getCell($sql);
+        $priority = $this->getProductRepository()->getMaxPriority();
 
         $productPayment = $this->createDefaultProductPayment();
         $paymentId = (int) $productPayment->getId();
@@ -551,18 +550,7 @@ class Service implements InjectionAwareInterface
      */
     public function getAddons(): array
     {
-        $sql = 'SELECT id, title
-                FROM product
-                WHERE is_addon =1
-                ORDER by id asc';
-        $addons = $this->di['db']->getAll($sql);
-
-        $result = [];
-        foreach ($addons as $addon) {
-            $result[$addon['id']] = $addon['title'];
-        }
-
-        return $result;
+        return $this->getProductRepository()->getAddonPairs();
     }
 
     public function createAddon($title, $description = null, $setup = null, $status = null, $iconUrl = null): ?int
@@ -1449,10 +1437,7 @@ class Service implements InjectionAwareInterface
         $result['invoice'] = null;
 
         if (!empty($result['client_id'])) {
-            $client = $this->di['db']->getRow(
-                'SELECT id, first_name, last_name, email FROM client WHERE id = :id',
-                [':id' => $result['client_id']]
-            );
+            $client = $this->getPromoRedemptionRepository()->findClientSummary((int) $result['client_id']);
 
             $result['client'] = [
                 'id' => (int) $result['client_id'],
@@ -1463,10 +1448,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!empty($result['client_order_id'])) {
-            $order = $this->di['db']->getRow(
-                'SELECT id, title, created_at FROM client_order WHERE id = :id',
-                [':id' => $result['client_order_id']]
-            );
+            $order = $this->getPromoRedemptionRepository()->findOrderSummary((int) $result['client_order_id']);
 
             $result['order'] = [
                 'id' => (int) $result['client_order_id'],
@@ -1476,10 +1458,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!empty($result['invoice_id'])) {
-            $invoice = $this->di['db']->getRow(
-                'SELECT id, serie_nr, status, created_at FROM invoice WHERE id = :id',
-                [':id' => $result['invoice_id']]
-            );
+            $invoice = $this->getPromoRedemptionRepository()->findInvoiceSummary((int) $result['invoice_id']);
 
             $result['invoice'] = [
                 'id' => (int) $result['invoice_id'],

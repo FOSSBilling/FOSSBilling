@@ -18,6 +18,19 @@ use Doctrine\ORM\QueryBuilder;
 class PostRepository extends EntityRepository
 {
     /**
+     * @return array<string, mixed>|null
+     */
+    public function findAdminSummary(int $adminId): ?array
+    {
+        $row = $this->getEntityManager()->getConnection()->fetchAssociative(
+            'SELECT name FROM admin WHERE id = :id',
+            ['id' => $adminId],
+        );
+
+        return $row !== false ? $row : null;
+    }
+
+    /**
      * Build a QueryBuilder for searching posts with optional filters.
      *
      * @param array $data array of filters: 'status', 'search', etc
