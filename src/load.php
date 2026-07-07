@@ -23,11 +23,16 @@ use Symfony\Component\HttpFoundation\Response;
 
 function emitResponse(Response $response): never
 {
+    sendResponse($response);
+    exit;
+}
+
+function sendResponse(Response $response): void
+{
     global $request;
 
     $currentRequest = $request instanceof Request ? $request : Request::createFromGlobals();
     $response->prepare($currentRequest)->send();
-    exit;
 }
 
 /*

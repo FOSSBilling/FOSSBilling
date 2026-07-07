@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Client\Controller;
 
+use Symfony\Component\HttpFoundation\Response;
+
 class Admin implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
@@ -96,7 +98,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_client_login_history');
     }
 
-    public function get_login(\Box_App $app, $id): void
+    public function get_login(\Box_App $app, $id): Response
     {
         $api = $this->di['api_admin'];
         $api->client_login(['id' => $id]);
@@ -109,6 +111,6 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
             $redirect_to = '/' . trim((string) $r, '/');
         }
 
-        $app->redirectUrl($this->di['tools']->url($redirect_to), 301);
+        return $app->redirectUrl($this->di['tools']->url($redirect_to), 301);
     }
 }

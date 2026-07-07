@@ -30,20 +30,9 @@ final readonly class RouteMatcher
         $paramNames = $paramNames[1];
         $conditions ??= [];
 
-        $regexedRoute = preg_replace_callback(
-            '@:[a-zA-Z_\-]+@',
-            static function (array $matches) use ($conditions): string {
-                $key = str_replace(':', '', $matches[0]);
-                if (array_key_exists($key, $conditions)) {
-                    return '(' . $conditions[$key] . ')';
-                }
+        $regexedRoute = $this->buildRouteRegex($routePath, $conditions);
 
-                return '([a-zA-Z0-9_\-]+)';
-            },
-            $routePath,
-        );
-
-        if (!is_string($regexedRoute) || preg_match('@^' . $regexedRoute . '$@', $requestPath, $paramValues) !== 1) {
+        if (preg_match('@^' . $regexedRoute . '$@', $requestPath, $paramValues) !== 1) {
             return new RouteMatch(false);
         }
 
@@ -55,5 +44,29 @@ final readonly class RouteMatcher
         }
 
         return new RouteMatch(true, $params);
+    }
+
+    private function buildRouteRegex(string $routePath, array $conditions): string
+    {
+        $parts = preg_split('@(:[a-zA-Z_\-]+)@', $routePath, -1, PREG_SPLIT_DELIM_CAPTURE);
+        assert(is_array($parts));
+
+        $regex = '';
+        foreach ($parts as $part) {
+            if ($part === '') {
+                continue;
+            }
+
+            if (str_starts_with($part, ':')) {
+                $key = substr($part, 1);
+                $regex .= '(' . ($conditions[$key] ?? '[a-zA-Z0-9_\-]+') . ')';
+
+                continue;
+            }
+
+            $regex .= preg_quote($part, '@');
+        }
+
+        return $regex;
     }
 }

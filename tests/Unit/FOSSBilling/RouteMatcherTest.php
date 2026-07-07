@@ -54,3 +54,13 @@ test('route matcher extracts full placeholder names', function (): void {
     expect($match->matched)->toBeTrue()
         ->and($match->params)->toBe(['item_id' => '42']);
 });
+
+test('route matcher treats literal route path characters as literals', function (): void {
+    $matcher = new RouteMatcher();
+
+    $matched = $matcher->match('get', '/asset/app.js', [], '/asset/app.js', 'GET');
+    $rejected = $matcher->match('get', '/asset/app.js', [], '/asset/appxjs', 'GET');
+
+    expect($matched->matched)->toBeTrue()
+        ->and($rejected->matched)->toBeFalse();
+});

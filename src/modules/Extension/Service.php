@@ -828,7 +828,7 @@ class Service implements InjectionAwareInterface
     }
 
     // Checks if the current user has permission to edit a module's settings
-    public function hasManagePermission(string $module, ?\Box_App $app = null): void
+    public function hasManagePermission(string $module): void
     {
         $staff_service = $this->di['mod_service']('Staff');
         $permission_module = str_starts_with($module, 'mod_') ? substr($module, 4) : $module;
@@ -840,30 +840,14 @@ class Service implements InjectionAwareInterface
 
         // First check if any access is allowed to the module for this person
         if (!$staff_service->hasPermission(null, $permission_module)) {
-            $e = new \FOSSBilling\InformationException('You do not have permission to access the :mod: module', [':mod:' => $permission_module], 403);
-            if (!is_null($app)) {
-                $app->abortWithResponse(new \Symfony\Component\HttpFoundation\Response(
-                    $app->render('error', ['exception' => $e]),
-                    403
-                ));
-            }
-
-            throw $e;
+            throw new \FOSSBilling\InformationException('You do not have permission to access the :mod: module', [':mod:' => $permission_module], 403);
         }
 
         $module_permissions = $this->getSpecificModulePermissions($permission_module);
 
         // If they have access, let's see if that module has a permission specifically for managing settings and check if they have that permission.
         if (!array_key_exists('manage_settings', $module_permissions) || !$staff_service->hasPermission(null, $permission_module, 'manage_settings')) {
-            $e = new \FOSSBilling\InformationException('You do not have permission to perform this action', [], 403);
-            if (!is_null($app)) {
-                $app->abortWithResponse(new \Symfony\Component\HttpFoundation\Response(
-                    $app->render('error', ['exception' => $e]),
-                    403
-                ));
-            }
-
-            throw $e;
+            throw new \FOSSBilling\InformationException('You do not have permission to perform this action', [], 403);
         }
     }
 }
