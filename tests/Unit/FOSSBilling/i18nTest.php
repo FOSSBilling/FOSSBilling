@@ -146,8 +146,8 @@ test('validateTimezone returns the value when it is a known IANA identifier', fu
     expect(i18n::validateTimezone('UTC'))->toBe('UTC');
 });
 
-test('validateTimezone accepts deprecated/alias timezone identifiers', function (): void {
-    expect(i18n::validateTimezone('US/Eastern'))->toBe('US/Eastern');
+test('validateTimezone rejects deprecated/alias timezone identifiers not in the canonical IANA list', function (): void {
+    expect(fn (): ?string => i18n::validateTimezone('US/Eastern'))->toThrow(FOSSBilling\InformationException::class);
 });
 
 test('validateTimezone throws InformationException for an unknown identifier', function (): void {
