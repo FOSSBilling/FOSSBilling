@@ -25,11 +25,11 @@ test('getTimezoneList returns every PHP timezone identifier sorted', function ()
 
     // Contains exactly all PHP timezone identifiers (order-independent).
     $expected = DateTimeZone::listIdentifiers();
-    $actualSet = $list;
-    $expectedSet = $expected;
-    sort($actualSet);
-    sort($expectedSet);
-    expect($actualSet)->toEqual($expectedSet);
+    $sortedList = $list;
+    $sortedExpected = $expected;
+    sort($sortedList);
+    sort($sortedExpected);
+    expect($sortedList)->toEqual($sortedExpected);
 
     // Sorted ascending.
     $sorted = $list;
@@ -97,6 +97,14 @@ test('getActiveTimezone ignores an invalid fb_timezone cookie', function (): voi
     $_COOKIE['fb_timezone'] = 'Definitely/Not_Real';
 
     expect(i18n::getActiveTimezone())->toBe('UTC');
+});
+
+test('getActiveTimezone falls back to valid fb_timezone cookie when client timezone is invalid', function (): void {
+    $_COOKIE['fb_timezone'] = 'Europe/Berlin';
+
+    expect(i18n::getActiveTimezone('Mars/Olympus_Mons', null))->toBe('Europe/Berlin');
+    expect(i18n::getActiveTimezone('Mars/Olympus_Mons', 'Mars/Olympus_Mons'))->toBe('Europe/Berlin');
+    expect(i18n::getActiveTimezone(null, 'Mars/Olympus_Mons'))->toBe('Europe/Berlin');
 });
 
 test('getActiveTimezone ignores invalid client / admin values and falls back', function (): void {
