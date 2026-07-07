@@ -114,7 +114,8 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         $invoice = $api_admin->invoice_get(['id' => $tx['invoice_id']]);
         $client_id = $invoice['client']['id'];
 
-        switch ($ipn['txn_type']) {
+        $txnType = $ipn['txn_type'] ?? '';
+        switch ($txnType) {
             case 'web_accept':
             case 'subscr_payment':
                 if ($ipn['payment_status'] == 'Completed') {
