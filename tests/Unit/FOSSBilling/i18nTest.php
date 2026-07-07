@@ -25,11 +25,11 @@ test('getTimezoneList returns every PHP timezone identifier sorted', function ()
 
     // Contains exactly all PHP timezone identifiers (order-independent).
     $expected = DateTimeZone::listIdentifiers();
-    $actualSet = $list;
-    $expectedSet = $expected;
-    sort($actualSet);
-    sort($expectedSet);
-    expect($actualSet)->toEqual($expectedSet);
+    $sortedList = $list;
+    $sortedExpected = $expected;
+    sort($sortedList);
+    sort($sortedExpected);
+    expect($sortedList)->toEqual($sortedExpected);
 
     // Sorted ascending.
     $sorted = $list;
