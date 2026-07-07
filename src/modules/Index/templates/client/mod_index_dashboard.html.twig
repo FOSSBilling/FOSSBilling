@@ -151,13 +151,13 @@
             </div>
             <div class="tn-dashboard-header__actions">
                 <a class="tn-btn tn-btn--ghost tn-btn--sm" href="{{ 'support'|url(query: { 'ticket': 1 }) }}">
-                    <svg class="icon"><use href="#icon-life-buoy" /></svg>{{ 'New ticket'|trans }}
+                    <svg class="icon"><use href="#life-buoy" /></svg>{{ 'New ticket'|trans }}
                 </a>
                 <a class="tn-btn tn-btn--secondary tn-btn--sm" href="{{ 'client/balance'|url }}">
-                    <svg class="icon"><use href="#icon-wallet" /></svg>{{ 'Add funds'|trans }}
+                    <svg class="icon"><use href="#wallet" /></svg>{{ 'Add funds'|trans }}
                 </a>
                 <a class="tn-btn tn-btn--primary tn-btn--sm" href="{{ 'order'|url }}">
-                    <svg class="icon"><use href="#icon-plus" /></svg>{{ 'Add a service'|trans }}
+                    <svg class="icon"><use href="#plus" /></svg>{{ 'Add a service'|trans }}
                 </a>
             </div>
         </div>
@@ -224,7 +224,7 @@
                             {% for invoice in unpaid_invoices.list|slice(0, 5) %}
                                 <div class="tn-attention-row">
                                     <span class="tn-attention-row__icon tn-attention-row__icon--warning">
-                                        <svg class="icon"><use href="#icon-receipt" /></svg>
+                                        <svg class="icon"><use href="#receipt" /></svg>
                                     </span>
                                     <div class="tn-attention-row__body">
                                         <span class="tn-attention-row__title">{{ 'Invoice'|trans }} #{{ invoice.serie_nr ?? invoice.nr }}</span>
@@ -240,7 +240,7 @@
                             {% for order in expiring_orders.list|slice(0, 5) %}
                                 <div class="tn-attention-row">
                                     <span class="tn-attention-row__icon tn-attention-row__icon--danger">
-                                        <svg class="icon"><use href="#icon-triangle-alert" /></svg>
+                                        <svg class="icon"><use href="#triangle-alert" /></svg>
                                     </span>
                                     <div class="tn-attention-row__body">
                                         <span class="tn-attention-row__title">{{ order.title|truncate(45) }}</span>
@@ -262,7 +262,7 @@
                 {% else %}
                     <div class="tn-card tn-card--compact mb-4">
                         <div class="d-flex align-items-center gap-2">
-                            <svg class="icon text-success"><use href="#icon-circle-check" /></svg>
+                            <svg class="icon text-success"><use href="#circle-check" /></svg>
                             <span>{{ 'You\'re all caught up - no unpaid invoices or services expiring soon.'|trans }}</span>
                         </div>
                     </div>
@@ -275,7 +275,7 @@
                     <div class="tn-card__header">
                         <span class="tn-card__title">{{ 'Your services'|trans }}</span>
                         <a class="tn-btn tn-btn--ghost tn-btn--sm" href="{{ 'order/service'|url }}">
-                            {{ 'All services'|trans }}<svg class="icon"><use href="#icon-arrow-right" /></svg>
+                            {{ 'All services'|trans }}<svg class="icon"><use href="#arrow-right" /></svg>
                         </a>
                     </div>
                     <div>
@@ -285,11 +285,11 @@
                                 <a href='{{ "order/service/manage/#{order.id}"|url }}' class="tn-row-hover tn-service-row">
                                     <span class="tn-service-row__icon">
                                         {% if order.service_type == 'domain' %}
-                                            <svg class="icon"><use href="#icon-globe" /></svg>
+                                            <svg class="icon"><use href="#globe" /></svg>
                                         {% elseif order.service_type == 'hosting' %}
-                                            <svg class="icon"><use href="#icon-server" /></svg>
+                                            <svg class="icon"><use href="#server" /></svg>
                                         {% else %}
-                                            <svg class="icon"><use href="#icon-briefcase" /></svg>
+                                            <svg class="icon"><use href="#briefcase" /></svg>
                                         {% endif %}
                                     </span>
                                     <div class="tn-service-row__body">
@@ -303,7 +303,7 @@
                                         {% endif %}
                                         <span class="tn-service-row__price">{{ order.total|format_currency(order.currency) }}</span>
                                     </span>
-                                    <svg class="icon tn-service-row__chevron"><use href="#icon-chevron-right" /></svg>
+                                    <svg class="icon tn-service-row__chevron"><use href="#chevron-right" /></svg>
                                 </a>
                             {% endfor %}
                         {% else %}
@@ -323,7 +323,7 @@
                     <div class="tn-card__header">
                         <span class="tn-card__title">{{ 'Recent invoices'|trans }}</span>
                         <a class="tn-btn tn-btn--ghost tn-btn--sm" href="{{ 'invoice'|url }}">
-                            {{ 'All'|trans }}<svg class="icon"><use href="#icon-arrow-right" /></svg>
+                            {{ 'All'|trans }}<svg class="icon"><use href="#arrow-right" /></svg>
                         </a>
                     </div>
                     <div>

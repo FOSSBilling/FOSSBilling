@@ -393,10 +393,11 @@
 
         const tldParam = urlParams.get('tld');
         if (tldParam) {
+            const normalizedTldParam = tldParam.charAt(0) === '.' ? tldParam : '.' + tldParam;
             const registerTldSelect = document.querySelector('select[name="register_tld"]');
             if (registerTldSelect) {
                 for (let i = 0; i < registerTldSelect.options.length; i++) {
-                    if (registerTldSelect.options[i].value === tldParam) {
+                    if (registerTldSelect.options[i].value === normalizedTldParam) {
                         registerTldSelect.selectedIndex = i;
                         break;
                     }
@@ -405,7 +406,7 @@
             const transferTldSelect = document.querySelector('select[name="transfer_tld"]');
             if (transferTldSelect) {
                 for (let i = 0; i < transferTldSelect.options.length; i++) {
-                    if (transferTldSelect.options[i].value === tldParam) {
+                    if (transferTldSelect.options[i].value === normalizedTldParam) {
                         transferTldSelect.selectedIndex = i;
                         break;
                     }
