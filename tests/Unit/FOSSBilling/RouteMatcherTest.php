@@ -59,7 +59,7 @@ test('route matcher treats literal route path characters as literals', function 
     $matcher = new RouteMatcher();
 
     $matched = $matcher->match('get', '/asset/app.js', [], '/asset/app.js', 'GET');
-    $rejected = $matcher->match('get', '/asset/app.js', [], '/asset/appxjs', 'GET');
+    $rejected = $matcher->match('get', '/asset/app.js', [], '/asset/app-json', 'GET');
 
     expect($matched->matched)->toBeTrue()
         ->and($rejected->matched)->toBeFalse();
