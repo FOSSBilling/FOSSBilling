@@ -165,12 +165,10 @@ test('validateTimezone returns the value when it is a known IANA identifier', fu
     expect(i18n::validateTimezone('UTC'))->toBe('UTC');
 });
 
-test('validateTimezone rejects clearly invalid timezone identifiers', function (): void {
-    expect(fn (): ?string => i18n::validateTimezone('Mars/Olympus_Mons'))->toThrow(FOSSBilling\InformationException::class);
-});
-
-test('validateTimezone throws InformationException for an unknown identifier', function (): void {
-    expect(fn (): ?string => i18n::validateTimezone('Europe/'))->toThrow(FOSSBilling\InformationException::class);
+test('validateTimezone throws InformationException for invalid timezone identifiers', function (): void {
+    foreach (['Mars/Olympus_Mons', 'Europe/'] as $timezone) {
+        expect(fn (): ?string => i18n::validateTimezone($timezone))->toThrow(FOSSBilling\InformationException::class);
+    }
 });
 
 test('getActiveLocale returns the fb_locale cookie when it matches an enabled locale', function (): void {
@@ -195,6 +193,14 @@ test('getActiveLocale falls back to config default when no cookie is set and aut
     Config::setProperty('i18n.locale', 'de_DE');
 
     expect(i18n::getActiveLocale(Request::create('/'), false))->toBe('de_DE');
+});
+
+test('getActiveLocale auto-detects locale from Accept-Language header when enabled', function (): void {
+    Config::setProperty('i18n.locale', 'de_DE');
+
+    $request = Request::create('/', 'GET', [], [], [], ['HTTP_ACCEPT_LANGUAGE' => 'en-US,en;q=0.9']);
+
+    expect(i18n::getActiveLocale($request, true))->toBe('en_US');
 });
 
 test('getActiveLocale returns the configured default when no cookie and no Accept-Language header', function (): void {
