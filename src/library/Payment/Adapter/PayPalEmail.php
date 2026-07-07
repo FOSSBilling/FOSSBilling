@@ -322,7 +322,9 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         $form = '';
         $form .= '<form name="payment_form" action="' . $url . '" method="' . $method . '">' . PHP_EOL;
         foreach ($data as $key => $value) {
-            $form .= sprintf('<input type="hidden" name="%s" value="%s" />', $key, $value) . PHP_EOL;
+            $safeKey = htmlspecialchars((string) $key, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+            $safeValue = htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+            $form .= sprintf('<input type="hidden" name="%s" value="%s" />', $safeKey, $safeValue) . PHP_EOL;
         }
         $form .= '<input class="btn btn-primary" type="submit" value="Pay with PayPal" id="payment_button"/>' . PHP_EOL;
         $form .= '</form>' . PHP_EOL . PHP_EOL;
