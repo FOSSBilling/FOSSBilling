@@ -80,6 +80,12 @@ class BoxAppRouteDispatchApp extends Box_App
             return;
         }
 
+        if ($this->routeMode === 'redirect') {
+            $this->get('/redirect-me', 'redirectMe');
+
+            return;
+        }
+
         $this->get('/local/:id', 'local', ['id' => '[0-9]+']);
     }
 
@@ -103,6 +109,11 @@ class BoxAppRouteDispatchApp extends Box_App
         $this->getDebugBar()->getData();
 
         return 'debugbar:collected';
+    }
+
+    public function redirectMe(): Symfony\Component\HttpFoundation\Response
+    {
+        return $this->redirect('/target');
     }
 
     public function render($fileName, $variableArray = []): string
@@ -131,6 +142,12 @@ function routeDispatchApp(string $routeMode, string $path): BoxAppRouteDispatchA
     $di = new Pimple\Container();
     $di['request'] = Request::create('http://localhost' . $path);
     $di['shared_marker'] = 'available';
+    $di['url'] = new class {
+        public function link(string $path): string
+        {
+            return '/' . ltrim($path, '/');
+        }
+    };
     $di['logger'] = new class {
         public function setChannel(string $channel): self
         {
@@ -188,6 +205,13 @@ test('app shared route mapping timing stops before debug bar data is collected d
 
     expect($response->getStatusCode())->toBe(200)
         ->and($response->getContent())->toBe('shared-debugbar:collected');
+});
+
+test('app redirect helper returns redirect responses from controllers', function (): void {
+    $response = routeDispatchApp('redirect', '/redirect-me')->run();
+
+    expect($response->getStatusCode())->toBe(302)
+        ->and($response->headers->get('Location'))->toBe('/target');
 });
 
 test('maintenance path allowlist uses literal prefixes and explicit wildcards', function (): void {

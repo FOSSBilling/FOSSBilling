@@ -11,6 +11,9 @@ declare(strict_types=1);
 
 namespace Box\Mod\Redirect\Controller;
 
+use FOSSBilling\Http\ResponseFactory;
+use Symfony\Component\HttpFoundation\Response;
+
 class Client implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
@@ -46,16 +49,16 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         }
     }
 
-    public function do_redirect(\Box_App $app): never
+    public function do_redirect(\Box_App $app): Response
     {
         $service = $this->di['mod_service']('redirect');
         $target = $service->getRedirectByPath($app->uri);
 
         if ($target === null || !$this->isTargetAllowed($target)) {
-            $app->abortWithResponse(new \Symfony\Component\HttpFoundation\Response('', 404));
+            return (new ResponseFactory())->html('', 404);
         }
 
-        $app->redirectUrl($target, 301);
+        return $app->redirectUrl($target, 301);
     }
 
     private function isTargetAllowed(string $target): bool

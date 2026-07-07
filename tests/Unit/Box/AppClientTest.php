@@ -65,6 +65,16 @@ test('get_custom_page returns 200 on successful render', function (): void {
     expect($response->getContent())->toBe('<html>ok</html>');
 });
 
+test('get_custom_page returns XML content type for sitemap', function (): void {
+    $app = appClientWithRender(fn (): string => '<urlset></urlset>');
+
+    $response = $app->get_custom_page('sitemap.xml');
+
+    expect($response->getStatusCode())->toBe(200)
+        ->and($response->headers->get('Content-Type'))->toContain('application/xml')
+        ->and($response->getContent())->toBe('<urlset></urlset>');
+});
+
 test('get_custom_page returns 500 (not 404) when the template throws a RuntimeError (regression for #3818)', function (): void {
     $app = appClientWithRender(function (string $fileName): string {
         if ($fileName === 'error') {

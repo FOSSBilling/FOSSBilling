@@ -61,14 +61,16 @@ class Client implements \FOSSBilling\InjectionAwareInterface
 
         $systemService = $this->di['mod_service']('System');
         $systemService->setPendingMessage(__trans('Email address was confirmed'));
-        $app->redirect('/');
+
+        return $app->redirect('/');
     }
 
-    public function get_client_logout(\Box_App $app): never
+    public function get_client_logout(\Box_App $app): Response
     {
         $api = $this->di['api_client'];
         $api->profile_logout();
-        $app->redirect('/');
+
+        return $app->redirect('/');
     }
 
     public function get_client_page(\Box_App $app, $page): string
@@ -103,7 +105,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
             return $app->render('mod_client_set_new_password');
         }
 
-        $app->redirect('/');
+        return $app->redirect('/');
     }
 
     private function checkPageRateLimit(\Box_App $app, string $policy): ?Response

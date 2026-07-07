@@ -12,7 +12,6 @@ declare(strict_types=1);
 use DebugBar\DataCollector\TimeDataCollector;
 use DebugBar\StandardDebugBar;
 use FOSSBilling\Config;
-use FOSSBilling\Http\HttpResponseException;
 use FOSSBilling\Http\RequestFactory;
 use FOSSBilling\Http\ResponseFactory;
 use FOSSBilling\Http\RouteDefinition;
@@ -21,6 +20,7 @@ use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Security\AuthenticationRequiredException;
 use FOSSBilling\Security\EmailValidationRequiredException;
 use Symfony\Component\HttpFoundation\IpUtils;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -97,8 +97,9 @@ class Box_App
     {
     }
 
-    protected function checkPermission(): void
+    protected function checkPermission(): ?Response
     {
+        return null;
     }
 
     public function show404(Exception $e): Response
@@ -163,11 +164,6 @@ class Box_App
         return $this->responseFactory()->error($this->render('error', ['exception' => $e]), $e, $statusCode, $headers);
     }
 
-    public function abortWithResponse(Response $response): never
-    {
-        throw new HttpResponseException($response);
-    }
-
     public function run(): Response
     {
         /** @var TimeDataCollector $timeCollector */
@@ -183,8 +179,11 @@ class Box_App
             $timeCollector->stopMeasure('init');
 
             $timeCollector->startMeasure('checkperm', 'Checking access to module');
-            $this->checkPermission();
+            $permissionResponse = $this->checkPermission();
             $timeCollector->stopMeasure('checkperm');
+            if ($permissionResponse instanceof Response) {
+                return $permissionResponse;
+            }
 
             return $this->processRequest();
         } catch (AuthenticationRequiredException $e) {
@@ -199,44 +198,30 @@ class Box_App
             return $this->responseFactory()->redirect($this->di['url']->link('login'));
         } catch (EmailValidationRequiredException) {
             return $this->responseFactory()->redirect($this->di['url']->link('client/profile'));
-        } catch (HttpResponseException $e) {
-            return $e->getResponse();
         }
     }
 
     /**
      * @param string $path
      */
-    public function redirect($path): never
+    public function redirect($path): RedirectResponse
     {
-        $location = $this->di['url']->link($path);
-        $this->abortWithResponse($this->responseFactory()->redirect($location));
+        return $this->responseFactory()->redirect($this->di['url']->link($path));
     }
 
-    public function permanentRedirect($path): never
+    public function permanentRedirect($path): RedirectResponse
     {
-        $location = $this->di['url']->link($path);
-        $this->abortWithResponse($this->responseFactory()->redirect($location, 301));
+        return $this->responseFactory()->redirect($this->di['url']->link($path), 301);
     }
 
-    public function redirectUrl(string $url, int $statusCode = 302): never
+    public function redirectUrl(string $url, int $statusCode = 302): RedirectResponse
     {
-        $this->abortWithResponse($this->responseFactory()->redirect($url, $statusCode));
+        return $this->responseFactory()->redirect($url, $statusCode);
     }
 
     public function render($fileName, $variableArray = []): string
     {
         return 'Rendering ' . $fileName;
-    }
-
-    public function sendFile($filename, $contentType, $path): never
-    {
-        $this->abortWithResponse($this->responseFactory()->file($filename, $contentType, $path));
-    }
-
-    public function sendDownload($filename, $path): never
-    {
-        $this->abortWithResponse($this->responseFactory()->download($filename, $path));
     }
 
     private function invokeSharedController(string $classname, string $methodName, array $params): mixed

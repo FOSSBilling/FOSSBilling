@@ -61,10 +61,10 @@ class Box_AppClient extends Box_App
             $content = $this->render($tpl, ['post' => $this->getRequest()->request->all()], $ext);
 
             if ("{$tpl}.{$ext}" === 'mod_page_sitemap.xml') {
-                return new Response($content, 200, ['Content-Type' => 'application/xml']);
+                return $this->responseFactory()->html($content, 200, ['Content-Type' => 'application/xml']);
             }
 
-            return new Response($content);
+            return $this->responseFactory()->html($content);
         } catch (FOSSBilling\InformationException $e) {
             // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
             if (DEBUG) {
