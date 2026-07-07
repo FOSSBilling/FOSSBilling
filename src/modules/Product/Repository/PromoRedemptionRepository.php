@@ -18,6 +18,45 @@ use Doctrine\ORM\QueryBuilder;
 
 class PromoRedemptionRepository extends EntityRepository
 {
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findClientSummary(int $clientId): ?array
+    {
+        $row = $this->getEntityManager()->getConnection()->fetchAssociative(
+            'SELECT id, first_name, last_name, email FROM client WHERE id = :id',
+            ['id' => $clientId],
+        );
+
+        return $row !== false ? $row : null;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findOrderSummary(int $orderId): ?array
+    {
+        $row = $this->getEntityManager()->getConnection()->fetchAssociative(
+            'SELECT id, title, created_at FROM client_order WHERE id = :id',
+            ['id' => $orderId],
+        );
+
+        return $row !== false ? $row : null;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findInvoiceSummary(int $invoiceId): ?array
+    {
+        $row = $this->getEntityManager()->getConnection()->fetchAssociative(
+            'SELECT id, serie_nr, status, created_at FROM invoice WHERE id = :id',
+            ['id' => $invoiceId],
+        );
+
+        return $row !== false ? $row : null;
+    }
+
     public function getSearchQueryBuilder(array $data): QueryBuilder
     {
         $qb = $this->createQueryBuilder('pr');
