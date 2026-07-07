@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -143,10 +142,9 @@ class Service implements InjectionAwareInterface
             $params['search'] = '%' . $data['search'] . '%';
         }
 
-        // Limit results for performance
         $sql .= sprintf(' ORDER BY name ASC LIMIT %u', $limit);
 
-        return $this->di['db']->getAssoc($sql, $params);
+        return $this->di['dbal']->fetchAllKeyValue($sql, $params);
     }
 
     public function getPermissions($member_id): array

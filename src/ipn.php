@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -12,7 +11,6 @@ declare(strict_types=1);
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'load.php';
 
 use FOSSBilling\Http\ApiResponseFactory;
-
 use FOSSBilling\Http\ResponseFactory;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\JsonResponse;

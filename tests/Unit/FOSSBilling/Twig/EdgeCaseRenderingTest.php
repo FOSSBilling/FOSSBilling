@@ -33,7 +33,7 @@ use Twig\Loader\ArrayLoader;
 /**
  * Build a default request payload for edge-case Twig rendering tests.
  *
- * @param array<string, mixed> $overrides Optional request keys to override.
+ * @param array<string, mixed> $overrides optional request keys to override
  *
  * @return array<string, mixed>
  */
@@ -59,7 +59,7 @@ function edgeCaseRequest(array $overrides = []): array
 /**
  * Build an admin API stub with sensible defaults for edge-case tests.
  *
- * @param array<string, mixed> $methods Optional method map overrides for the stub.
+ * @param array<string, mixed> $methods optional method map overrides for the stub
  */
 function edgeCaseAdmin(array $methods = []): PermissiveCallableStub
 {
@@ -73,7 +73,7 @@ function edgeCaseAdmin(array $methods = []): PermissiveCallableStub
 /**
  * Build a guest API stub with defaults used by edge-case rendering scenarios.
  *
- * @param array<string, mixed> $methods Optional method map overrides for the stub.
+ * @param array<string, mixed> $methods optional method map overrides for the stub
  */
 function edgeCaseGuest(array $methods = []): PermissiveCallableStub
 {

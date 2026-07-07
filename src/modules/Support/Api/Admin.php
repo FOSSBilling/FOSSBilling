@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -173,9 +172,6 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $data['content'] = \FOSSBilling\Tools::sanitizeMarkdownContent($data['content']);
 
-        /** @todo Doctrine: use Client entity once Client is migrated */
-        $client = $this->getDi()['db']->getExistingModelById('Client', $data['client_id'], 'Client not found');
-
         /** @var \Box\Mod\Support\Repository\HelpdeskRepository $repo */
         $repo = $this->getService()->getHelpdeskRepository();
 
@@ -184,7 +180,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             throw new \FOSSBilling\InformationException('Helpdesk invalid');
         }
 
-        return $this->getService()->ticketCreateForAdmin($client, $helpdesk, $data, $this->getIdentity());
+        return $this->getService()->ticketCreateForAdmin((int) $data['client_id'], $helpdesk, $data, $this->getIdentity());
     }
 
     /**

@@ -2038,16 +2038,12 @@ test('ticket create for admin', function (): void {
     $admin->loadBean(new Tests\Helpers\DummyBean());
     $admin->id = 1;
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->id = 1;
-
     $data = [
         'subject' => 'Subject',
         'content' => 'Content',
     ];
 
-    $result = $service->ticketCreateForAdmin($client, $helpdesk, $data, $admin);
+    $result = $service->ticketCreateForAdmin(1, $helpdesk, $data, $admin);
     expect($result)->toBeInt();
     expect($result)->toEqual($randId);
 });

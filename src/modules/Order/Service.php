@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -1547,6 +1546,18 @@ class Service implements InjectionAwareInterface
         ];
 
         return $this->di['db']->findOne('ClientOrder', 'id = :id AND client_id = :client_id', $bindings);
+    }
+
+    public function findByClientIdAndOrderId(int $clientId, int $orderId): ?\Model_ClientOrder
+    {
+        $bindings = [
+            ':id' => $orderId,
+            ':client_id' => $clientId,
+        ];
+
+        $order = $this->di['db']->findOne('ClientOrder', 'id = :id AND client_id = :client_id', $bindings);
+
+        return $order instanceof \Model_ClientOrder ? $order : null;
     }
 
     public function getOrderServiceData(\Model_ClientOrder $order, $identity = null)

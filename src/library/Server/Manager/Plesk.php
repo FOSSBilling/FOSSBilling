@@ -5,7 +5,6 @@ use PleskX\Api\Client;
 
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -591,5 +590,4 @@ class Server_Manager_Plesk extends Server_Manager
             'state' => $client->getState(),
         ];
     }
-
 }

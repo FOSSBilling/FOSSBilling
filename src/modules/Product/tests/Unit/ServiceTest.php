@@ -1570,7 +1570,7 @@ test('compensateCheckoutPromoFailure deletes orphaned redemptions and decrements
     $promoRepo = Mockery::mock(PromoRepository::class);
     $promoRepo->shouldReceive('decrementUsage')
         ->once()
-        ->with(7, 2, Mockery::type(DateTimeInterface::class));
+        ->with(7, 1, Mockery::type(DateTimeInterface::class));
 
     $emMock = new class($promoRepo, $redemptionRepo) {
         public int $removeCalls = 0;

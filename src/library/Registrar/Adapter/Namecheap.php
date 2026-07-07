@@ -222,10 +222,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
 
         $result = $this->_makeRequest($params);
 
-        // TODO
-        // problem here: FOSSBilling doesn't display our error and will display 'nameservers updates' evern when this fails
-
-        if (!isset($result->CommandResponse->DomainDNSSetCustomResult['Updated']) && $result->CommandResponse->DomainDNSSetCustomResult['Updated'] != 'true') {
+        if (!isset($result->CommandResponse->DomainDNSSetCustomResult['Updated']) || $result->CommandResponse->DomainDNSSetCustomResult['Updated'] != 'true') {
             $placeholders = [':action:' => __trans('update nameservers'), ':type:' => 'Namecheap'];
 
             throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);

@@ -140,7 +140,6 @@ class SupportTicket implements ApiArrayInterface, TimestampInterface
             return $data;
         }
 
-        // @deprecated 0.9.0 Use author.id/name/email instead of client_id/author_name/author_email.
         unset(
             $data['support_helpdesk_id'],
             $data['client_id'],

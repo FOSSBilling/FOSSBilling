@@ -178,11 +178,8 @@ return [
         // Empty array will allow all IPs to access the API
         'allowed_ips' => [],
 
-        /*
-        * This enables the usage of a token to protect the system from CSRF attacks.
-        * Disabling this is highly discouraged and opens your instance to a known vulnerability.
-        * This option is only here for backwards compatibility.
-        */
+        // Enables CSRF token protection.
+        // Disabling this is highly discouraged and opens your instance to a known vulnerability.
         'CSRFPrevention' => true,
     ],
 

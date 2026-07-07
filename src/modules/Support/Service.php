@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -368,14 +367,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         if ($model->getRelType() === SupportTicket::REL_TYPE_ORDER) {
             $clientId = $model->getClientId();
-            /** @todo Doctrine: use Client entity once Client is migrated.
-             *        Kept as Model_Client because the order module's
-             *        findForClientById() still expects it. */
-            $client = $clientId !== null ? $this->di['db']->load('Client', $clientId) : null;
-            $orderService = $this->di['mod_service']('order');
-            $o = $client instanceof \Model_Client ? $orderService->findForClientById($client, $model->getRelId()) : null;
-            if ($o instanceof \Model_ClientOrder) {
-                $result['order'] = $orderService->toApiArray($o, false);
+            if ($clientId !== null && $this->fetchClientSummary($clientId) !== null) {
+                $order = $this->di['mod_service']('order')->findByClientIdAndOrderId($clientId, (int) $model->getRelId());
+                if ($order instanceof \Model_ClientOrder) {
+                    $result['order'] = $this->di['mod_service']('order')->toApiArray($order, false);
+                }
             }
         }
 
@@ -426,7 +422,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $data['helpdesk'] = $helpdesk instanceof Helpdesk ? $helpdesk->toApiArray($identity) : null;
         $data['author'] = $this->getTicketAuthor($model, $identity);
 
-        // @deprecated 0.9.0 Use author instead.
         $data['client'] = $this->getClientApiArrayForTicket($model, $identity);
 
         if ($deep) {
@@ -467,7 +462,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             return $data;
         }
 
-        // @deprecated 0.9.0 Use author.id/name/email instead of client_id/author_name/author_email.
         unset(
             $data['support_helpdesk_id'],
             $data['client_id'],
@@ -580,16 +574,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                     'email' => $ticket['author_email'],
                     'role' => 'guest',
                 ];
-                // @deprecated 0.9.0 Use author instead.
                 $data['client'] = [];
             } elseif (!isset($clients[$ticket['client_id']])) {
                 $this->di['logger']->error('Missing client for ticket ' . $ticket['id']);
                 $data['author'] = [];
-                // @deprecated 0.9.0 Use author instead.
                 $data['client'] = [];
             } else {
                 $data['author'] = $clientAuthors[$ticket['client_id']];
-                // @deprecated 0.9.0 Use author instead.
                 $data['client'] = $clients[$ticket['client_id']];
             }
 
@@ -658,10 +649,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         if ($identity instanceof \Model_Admin) {
-            // Admin view needs the full client module api array, which still
-            // expects a Model_Client. Keep the legacy loader until the Client
-            // module is migrated.
-            /** @todo Doctrine: use Client entity once Client is migrated */
+            // Requires Model_Client until Client::toApiArray() is migrated to Doctrine.
             $client = $this->di['db']->load('Client', $clientId);
 
             return $client instanceof \Model_Client
@@ -993,7 +981,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return (int) $msg->getId();
     }
 
-    public function ticketCreateForAdmin(\Model_Client $client, Helpdesk $helpdesk, array $data, \Model_Admin $identity): int
+    public function ticketCreateForAdmin(int $clientId, Helpdesk $helpdesk, array $data, \Model_Admin $identity): int
     {
         $status = $data['status'] ?? SupportTicket::STATUS_ONHOLD;
 
@@ -1001,7 +989,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $em = $this->di['em'];
         $ticket = new SupportTicket();
-        $ticket->setClientId((int) $client->id);
+        $ticket->setClientId($clientId);
         $ticket->setStatus($status);
         $ticket->setSubject($data['subject']);
         $ticket->setSupportHelpdesk($helpdesk);
@@ -1087,7 +1075,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $extensionService = $this->di['mod_service']('extension');
         $config = $extensionService->getConfig('mod_support');
 
-        // @deprecated 0.9.0 Use disable_guest_tickets instead.
         $disableGuestTickets = $config['disable_guest_tickets'] ?? $config['disable_public_tickets'] ?? false;
 
         return !$disableGuestTickets;

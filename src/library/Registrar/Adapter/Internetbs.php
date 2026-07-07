@@ -465,5 +465,4 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
 
         return $domain;
     }
-
 }

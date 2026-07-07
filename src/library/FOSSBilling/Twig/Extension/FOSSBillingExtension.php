@@ -16,7 +16,6 @@ use DiceBear\Avatar;
 use DiceBear\Style;
 use FOSSBilling\Environment as AppEnvironment;
 use FOSSBilling\Twig\Enum\AppArea;
-use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Twig\Attribute\AsTwigFilter;
 use Twig\Attribute\AsTwigFunction;

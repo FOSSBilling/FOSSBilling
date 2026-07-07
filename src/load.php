@@ -3,7 +3,6 @@
 declare(strict_types=1);
 /**
  * Copyright 2022-2025 FOSSBilling
- * Copyright 2011-2021 BoxBilling, Inc.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -14,7 +13,6 @@ use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\Http\ExceptionResponseFactory;
 use FOSSBilling\Http\RequestFactory;
-
 use FOSSBilling\SentryHelper;
 use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
