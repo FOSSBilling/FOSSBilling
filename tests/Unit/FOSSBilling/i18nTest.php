@@ -99,6 +99,14 @@ test('getActiveTimezone ignores an invalid fb_timezone cookie', function (): voi
     expect(i18n::getActiveTimezone())->toBe('UTC');
 });
 
+test('getActiveTimezone ignores an invalid fb_timezone cookie when explicit arguments are valid', function (): void {
+    $_COOKIE['fb_timezone'] = 'Definitely/Not_Real';
+
+    expect(i18n::getActiveTimezone('America/New_York', 'Asia/Tokyo'))->toBe('America/New_York');
+    expect(i18n::getActiveTimezone('America/New_York', null))->toBe('America/New_York');
+    expect(i18n::getActiveTimezone(null, 'Asia/Tokyo'))->toBe('Asia/Tokyo');
+});
+
 test('getActiveTimezone falls back to valid fb_timezone cookie when client timezone is invalid', function (): void {
     $_COOKIE['fb_timezone'] = 'Europe/Berlin';
 
@@ -136,6 +144,10 @@ test('validateTimezone returns the value when it is a known IANA identifier', fu
     expect(i18n::validateTimezone('America/New_York'))->toBe('America/New_York');
     expect(i18n::validateTimezone('Europe/Berlin'))->toBe('Europe/Berlin');
     expect(i18n::validateTimezone('UTC'))->toBe('UTC');
+});
+
+test('validateTimezone rejects deprecated/alias timezone identifiers not in the canonical IANA list', function (): void {
+    expect(fn (): ?string => i18n::validateTimezone('US/Eastern'))->toThrow(FOSSBilling\InformationException::class);
 });
 
 test('validateTimezone throws InformationException for an unknown identifier', function (): void {
