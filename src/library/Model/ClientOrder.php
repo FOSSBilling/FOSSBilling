@@ -11,6 +11,7 @@ declare(strict_types=1);
 class Model_ClientOrder extends RedBeanPHP\SimpleModel
 {
     final public const string STATUS_PENDING_SETUP = 'pending_setup';
+    final public const string STATUS_PENDING_REGISTRAR = 'pending_registrar';
     final public const string STATUS_FAILED_SETUP = 'failed_setup';
     final public const string STATUS_FAILED_RENEW = 'failed_renew';
     final public const string STATUS_ACTIVE = 'active';
@@ -30,6 +31,7 @@ class Model_ClientOrder extends RedBeanPHP\SimpleModel
     {
         return [
             self::STATUS_PENDING_SETUP,
+            self::STATUS_PENDING_REGISTRAR,
             self::STATUS_FAILED_SETUP,
             self::STATUS_FAILED_RENEW,
             self::STATUS_ACTIVE,

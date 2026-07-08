@@ -76,6 +76,8 @@
         {{ 'Active'|trans }}
     {% elseif status == 'Pending Setup' %}
         {{ 'Pending Setup'|trans }}
+    {% elseif status == 'Pending Registrar' %}
+        {{ 'Pending Registrar'|trans }}
     {% elseif status == 'Failed Setup' %}
         {{ 'Failed Setup'|trans }}
     {% elseif status == 'Failed Renew' %}
@@ -267,6 +269,7 @@
         'order': {
             'active': 'text-bg-success',
             'pending_setup': 'text-bg-warning',
+            'pending_registrar': 'text-bg-warning',
             'failed_setup': 'text-bg-danger',
             'suspended': 'text-bg-danger',
             'failed_renew': 'text-bg-danger',
@@ -355,6 +358,7 @@
         'paid': 'text-bg-success',
         'published': 'text-bg-success',
         'pending_setup': 'text-bg-warning',
+        'pending_registrar': 'text-bg-warning',
         'on_hold': 'text-bg-warning',
         'unpaid': 'text-bg-warning',
         'pending': 'text-bg-warning',

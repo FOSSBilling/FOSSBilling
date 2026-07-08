@@ -261,11 +261,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         // @adapterAction
         [$domain, $adapter] = $this->_getD($model);
         if ($model->action == 'register') {
-            $adapter->registerDomain($domain);
+            $accepted = $adapter->registerDomain($domain);
         }
 
         if ($model->action == 'transfer') {
-            $adapter->transferDomain($domain);
+            $accepted = $adapter->transferDomain($domain);
+        }
+
+        // The registrar rejected the request outright (e.g. bad auth code, domain not
+        // transferable). Don't let the order go active on a domain we never actually got.
+        if (isset($accepted) && $accepted === false) {
+            throw new \FOSSBilling\Exception('Registrar rejected the :action request for :domain', [':action' => $model->action, ':domain' => $model->sld . $model->tld]);
         }
 
         // reset action
@@ -282,7 +288,39 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             error_log($e->getMessage());
         }
 
+        // Registrar accepted the request initially but the immediate status check already
+        // shows it was dropped/rejected (e.g. failed payment on the registrar's end).
+        if ($this->isRejectedRegistrarStatus($model->registrar_status)) {
+            throw new \FOSSBilling\Exception('Registrar rejected the :action request for :domain (status: :status)', [':action' => $model->action, ':domain' => $model->sld . $model->tld, ':status' => $model->registrar_status]);
+        }
+
+        // The registrar accepted the request but hasn't finished processing it yet (e.g.
+        // OpenProvider's "REQ" status). Park the order rather than marking it active - the
+        // cron sync in batchSyncDomainStatuses() will promote it once the registrar confirms.
+        if ($this->isPendingRegistrarStatus($model->registrar_status)) {
+            throw new \FOSSBilling\OrderPendingRegistrarConfirmationException('Registrar has not confirmed the :action yet for :domain (status: :status)', [':action' => $model->action, ':domain' => $model->sld . $model->tld, ':status' => $model->registrar_status]);
+        }
+
         return $model;
+    }
+
+    /**
+     * Registrar status codes that mean "still processing" - not yet confirmed active, and
+     * not (yet) rejected. Currently modelled on OpenProvider's status codes; a null/unknown
+     * status is treated as confirmed so registrars/adapters that don't report one don't get
+     * stuck pending forever.
+     */
+    protected function isPendingRegistrarStatus(?string $status): bool
+    {
+        return in_array($status, ['REQ', 'ACP'], true);
+    }
+
+    /**
+     * Registrar status codes that mean the registrar rejected/dropped the request.
+     */
+    protected function isRejectedRegistrarStatus(?string $status): bool
+    {
+        return in_array($status, ['FAI', 'CAN', 'DEL'], true);
     }
 
     public function action_renew(\Model_ClientOrder $order): bool
@@ -459,6 +497,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
             try {
                 $this->syncWhois($model, $order);
+                $this->reconcilePendingRegistrarOrder($model, $order, $orderService);
 
                 return true;
             } catch (\Exception $e) {
@@ -467,6 +506,46 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         return false;
+    }
+
+    /**
+     * If the order is parked in STATUS_PENDING_REGISTRAR (registrar had accepted the
+     * register/transfer request but hadn't confirmed it yet at activation time), check
+     * whether the freshly-synced registrar_status has since resolved it one way or the
+     * other, and promote or fail the order accordingly. No-op for orders in any other state.
+     */
+    protected function reconcilePendingRegistrarOrder(\Model_ServiceDomain $model, \Model_ClientOrder $order, $orderService): void
+    {
+        if ($order->status !== \Model_ClientOrder::STATUS_PENDING_REGISTRAR) {
+            return;
+        }
+
+        if ($this->isRejectedRegistrarStatus($model->registrar_status)) {
+            $order->status = \Model_ClientOrder::STATUS_FAILED_SETUP;
+            $order->updated_at = date('Y-m-d H:i:s');
+            $this->di['db']->store($order);
+            $orderService->saveStatusChange($order, "Registrar rejected the domain request (status: {$model->registrar_status})");
+            $this->notifyStaffOfRegistrarRejection($order, $model);
+
+            return;
+        }
+
+        if (!$this->isPendingRegistrarStatus($model->registrar_status)) {
+            // Confirmed (or an adapter that doesn't report a pending code at all) - activate.
+            $orderService->finalizeActivation($order);
+        }
+    }
+
+    /**
+     * Staff alert for a rejected domain order. This is a plain error-level log entry, not an
+     * email - wiring up a proper staff email template (see mod_staff_client_order in the
+     * Staff module for the pattern) is a natural follow-up, but needs an actual DB-seeded
+     * template + install migration, which is out of scope here. The rejection is also
+     * recorded on the order's own status history via saveStatusChange() either way.
+     */
+    protected function notifyStaffOfRegistrarRejection(\Model_ClientOrder $order, \Model_ServiceDomain $model): void
+    {
+        $this->di['logger']->error('Domain order #%s (%s) rejected by registrar - status: %s', $order->id, $model->sld . $model->tld, $model->registrar_status);
     }
 
     /**

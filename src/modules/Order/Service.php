@@ -67,6 +67,7 @@ class Service implements InjectionAwareInterface
         return [
             'total' => array_sum($data),
             \Model_ClientOrder::STATUS_PENDING_SETUP => $data[\Model_ClientOrder::STATUS_PENDING_SETUP] ?? 0,
+            \Model_ClientOrder::STATUS_PENDING_REGISTRAR => $data[\Model_ClientOrder::STATUS_PENDING_REGISTRAR] ?? 0,
             \Model_ClientOrder::STATUS_FAILED_SETUP => $data[\Model_ClientOrder::STATUS_FAILED_SETUP] ?? 0,
             \Model_ClientOrder::STATUS_FAILED_RENEW => $data[\Model_ClientOrder::STATUS_FAILED_RENEW] ?? 0,
             \Model_ClientOrder::STATUS_ACTIVE => $data[\Model_ClientOrder::STATUS_ACTIVE] ?? 0,
@@ -924,6 +925,18 @@ class Service implements InjectionAwareInterface
 
         try {
             $result = $this->_callOnService($order, \Model_ClientOrder::ACTION_ACTIVATE);
+        } catch (\FOSSBilling\OrderPendingRegistrarConfirmationException $e) {
+            // Accepted by the upstream provider but not confirmed yet - not a failure, just
+            // not done. Leave the service in place; batchSyncDomainStatuses() (or whichever
+            // module owns the async confirmation) will call finalizeActivation() once
+            // confirmed, or fail the order if the provider ends up rejecting it.
+            $order->status = \Model_ClientOrder::STATUS_PENDING_REGISTRAR;
+            $order->updated_at = date('Y-m-d H:i:s');
+            $this->di['db']->store($order);
+
+            $this->saveStatusChange($order, $e->getMessage());
+
+            return null;
         } catch (\Exception $e) {
             $order->status = \Model_ClientOrder::STATUS_FAILED_SETUP;
             $this->di['db']->store($order);
@@ -933,6 +946,19 @@ class Service implements InjectionAwareInterface
             throw $e;
         }
 
+        $this->finalizeActivation($order);
+
+        return $result;
+    }
+
+    /**
+     * Marks an order active: extends expiry by one period, reduces stock, logs the status
+     * change. Split out of createFromOrder() so that a service which confirms asynchronously
+     * (e.g. a domain registration/transfer accepted by the registrar but still processing)
+     * can call this later, once confirmed, instead of at request-accept time.
+     */
+    public function finalizeActivation(\Model_ClientOrder $order): void
+    {
         // set automatic order expiration
         if (!empty($order->period)) {
             $from_time = ($order->expires_at === null) ? time() : strtotime($order->expires_at);
@@ -956,8 +982,6 @@ class Service implements InjectionAwareInterface
         }
 
         $this->saveStatusChange($order, 'Order activated');
-
-        return $result;
     }
 
     public function getOrderAddonsList(\Model_ClientOrder $order)

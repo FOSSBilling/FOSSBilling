@@ -97,6 +97,8 @@
         {{ 'Active'|trans }}
     {% elseif status == 'Pending Setup' %}
         {{ 'Pending Setup'|trans }}
+    {% elseif status == 'Pending Registrar' %}
+        {{ 'Pending Registrar'|trans }}
     {% elseif status == 'Failed Setup' %}
         {{ 'Failed Setup'|trans }}
     {% elseif status == 'Failed Renew' %}
@@ -142,7 +144,7 @@
 {% endif %}
 {% if type == 'order' %}
     {% if status == 'active' %}{% set badge_class = 'bg-success' %}
-    {% elseif status == 'pending_setup' %}{% set badge_class = 'bg-warning' %}
+    {% elseif status == 'pending_setup' or status == 'pending_registrar' %}{% set badge_class = 'bg-warning' %}
     {% elseif status == 'failed_setup' or status == 'suspended' or status == 'failed_renew' %}{% set badge_class = 'bg-danger' %}
     {% elseif status == 'canceled' %}{% set badge_class = 'bg-secondary' %}
     {% else %}{% set badge_class = 'bg-primary' %}
@@ -185,7 +187,7 @@
     {% endif %}
 {% else %}
     {% if status == 'active' or status == 'open' or status == 'paid' or status == 'published' %}{% set badge_class = 'bg-success' %}
-    {% elseif status == 'pending_setup' or status == 'on_hold' or status == 'unpaid' or status == 'pending' %}{% set badge_class = 'bg-warning' %}
+    {% elseif status == 'pending_setup' or status == 'pending_registrar' or status == 'on_hold' or status == 'unpaid' or status == 'pending' %}{% set badge_class = 'bg-warning' %}
     {% elseif status == 'failed_setup' or status == 'suspended' or status == 'failed_renew' or status == 'canceled' or status == 'closed' or status == 'failed' %}{% set badge_class = 'bg-danger' %}
     {% else %}{% set badge_class = 'bg-primary' %}
     {% endif %}
