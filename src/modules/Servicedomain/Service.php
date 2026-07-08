@@ -138,6 +138,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 throw new \FOSSBilling\InformationException(':tld domains require an auth/EPP code to transfer', [':tld' => $tld->tld]);
             }
 
+            $lockState = $this->getTransferLockState($domain);
+            if ($lockState !== null) {
+                throw new \FOSSBilling\InformationException(':domain is locked at its current registrar (:state). Ask them to unlock the domain (and disable any transfer lock in their control panel) before starting a transfer.', [':domain' => $domain, ':state' => $lockState]);
+            }
+
             $data['period'] = '1Y';
             $data['quantity'] = 1;
         }
@@ -272,6 +277,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
             if ($model->action == 'transfer' && !$this->canBeTransferred($tld, $model->sld)) {
                 throw new \FOSSBilling\Exception('Domain :domain is no longer eligible for transfer', [':domain' => $model->sld . $model->tld]);
+            }
+
+            if ($model->action == 'transfer') {
+                $lockState = $this->getTransferLockState($model->sld . $model->tld);
+                if ($lockState !== null) {
+                    throw new \FOSSBilling\Exception('Domain :domain is locked at its current registrar (:state)', [':domain' => $model->sld . $model->tld, ':state' => $lockState]);
+                }
             }
         }
 
@@ -819,6 +831,39 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $adapter = $this->registrarGetRegistrarAdapter($tldRegistrar);
 
         return $adapter->isDomaincanBeTransferred($domain);
+    }
+
+    /**
+     * Public WHOIS lookup for a transfer-lock status (e.g. clientTransferProhibited) on a
+     * domain that isn't in our account yet. This is registry-level data, visible regardless
+     * of which registrar currently holds the domain - unlike OpenProvider's own
+     * /domains/check, which only reports free/registered and can't see lock state on a
+     * domain it doesn't control. Surfacing this before checkout lets the customer unlock the
+     * domain at their current registrar first, instead of paying and then hitting a
+     * transfer rejection.
+     *
+     * Returns the matched WHOIS status string if the domain looks locked, or null if it
+     * doesn't (including when the lookup itself fails/times out - a failed WHOIS lookup is
+     * treated as "unknown", not "locked", since this is a convenience pre-check rather than
+     * a hard gate; the registrar's own transfer attempt is still the authority).
+     */
+    public function getTransferLockState(string $domain): ?string
+    {
+        try {
+            $info = \Iodev\Whois\Factory::get()->createWhois()->loadDomainInfo($domain);
+        } catch (\Exception $e) {
+            $this->di['logger']->warning('WHOIS lock lookup failed for %s: %s', $domain, $e->getMessage());
+
+            return null;
+        }
+
+        foreach ($info->states as $state) {
+            if (stripos((string) $state, 'transferprohibited') !== false) {
+                return $state;
+            }
+        }
+
+        return null;
     }
 
     /**
