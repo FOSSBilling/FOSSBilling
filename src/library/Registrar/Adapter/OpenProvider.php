@@ -302,6 +302,7 @@ class Registrar_Adapter_OpenProvider extends Registrar_AdapterAbstract
         $domain->setExpirationTime(strtotime($opDomain['expiration_date']));
         $domain->setPrivacyEnabled($opDomain['is_private_whois_enabled']);
         $domain->setLocked($opDomain['is_locked']);
+        $domain->setStatus($opDomain['status'] ?? null);
         // OpenProvider's GET /domains response can report 'default' instead of a resolved
         // on/off value for domains that were registered/transferred with autorenew=default
         // (i.e. "follow the account-wide setting"). There is no documented API endpoint to

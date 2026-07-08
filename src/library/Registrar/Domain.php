@@ -19,6 +19,7 @@ class Registrar_Domain implements Stringable
     private ?bool $_privacy = null;
     private $_locked;
     private ?bool $_autorenew = null;
+    private ?string $_status = null;
     private $_ns1;
     private $_ns2;
     private $_ns3;
@@ -231,6 +232,23 @@ class Registrar_Domain implements Stringable
     public function getLocked()
     {
         return $this->_locked;
+    }
+
+    /**
+     * Registrar's own status for this domain (e.g. OpenProvider's "ACT"/"REQ"/"CAN") -
+     * distinct from FOSSBilling's order status, which flips to active as soon as a
+     * register/transfer request is accepted, not when the registrar finishes processing it.
+     */
+    public function setStatus(?string $param)
+    {
+        $this->_status = $param;
+
+        return $this;
+    }
+
+    public function getStatus(): ?string
+    {
+        return $this->_status;
     }
 
     public function setAutoRenew($param)
