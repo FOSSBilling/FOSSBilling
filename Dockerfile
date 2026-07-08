@@ -156,7 +156,7 @@ RUN set -eux; \
   '; \
   chown -R www-data:www-data data /var/log/cron.log
 
-CMD ["sh", "-c", "cron & exec apache2-foreground"]
+CMD ["sh", "-c", "printenv | grep -Ev '^(HOME|PWD|SHLVL|_)=' > /etc/environment && cron & exec apache2-foreground"]
 
 FROM runtime AS test
 
