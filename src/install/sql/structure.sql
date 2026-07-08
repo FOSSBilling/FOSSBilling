@@ -1009,6 +1009,7 @@ CREATE TABLE `service_domain` (
   `contact_phone_cc` varchar(255) DEFAULT NULL,
   `contact_phone` varchar(255) DEFAULT NULL,
   `details` text,
+  `registrar_status` varchar(30) DEFAULT NULL,
   `synced_at` datetime DEFAULT NULL,
   `registered_at` datetime DEFAULT NULL,
   `expires_at` datetime DEFAULT NULL,

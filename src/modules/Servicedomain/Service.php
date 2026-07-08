@@ -377,6 +377,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $model->autorenew = $autorenew;
         }
 
+        // Registrar's own status (e.g. OpenProvider's "REQ" while a transfer is still being
+        // processed) - separate from FOSSBilling's order status, which goes active as soon as
+        // the transfer/registration request is accepted, not when the registrar finishes it.
+        $status = $whois->getStatus();
+        if ($status !== null) {
+            $model->registrar_status = $status;
+        }
+
         // sync whois
         $contact = $whois->getContactRegistrar();
 

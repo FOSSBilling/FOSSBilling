@@ -42,6 +42,19 @@
                         <td>{{ service.transfer_code }}</td>
                     </tr>
                     <tr>
+                        <td class="text-end">{{ 'Registrar Status'|trans }}:</td>
+                        <td id="registrar-status-value">
+                            {% if service.registrar_status %}
+                                <span class="badge {{ service.registrar_status == 'ACT' ? 'text-bg-success' : 'text-bg-warning' }}">{{ service.registrar_status }}</span>
+                                {% if service.registrar_status != 'ACT' %}
+                                    <span class="text-muted small">{{ '(may not match the order status below yet - the registrar hasn\'t finished processing this domain)'|trans }}</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted">{{ 'Unknown - sync to check'|trans }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
                         <td class="text-end">{{ 'Locked'|trans }}:</td>
                         <td id="locked-value">{{ mf.boolean_badge(service.locked, 'Yes'|trans, 'No'|trans, 'text-bg-danger', 'text-bg-success') }}</td>
                     </tr>
