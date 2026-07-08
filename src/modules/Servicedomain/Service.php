@@ -795,6 +795,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'privacy' => $model->privacy,
             'locked' => $model->locked,
             'autorenew' => $model->autorenew,
+            'registrar_status' => $model->registrar_status,
             'registered_at' => $model->registered_at,
             'expires_at' => $model->expires_at,
             'synced_at' => $model->synced_at,
