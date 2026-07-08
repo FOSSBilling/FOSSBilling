@@ -258,6 +258,23 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             throw new \FOSSBilling\Exception('Could not activate order. Service was not created');
         }
 
+        // Re-check availability/transferability right before the real (paid, committal)
+        // registrar call. validateOrderData() only ran once, at cart-add time - an arbitrary
+        // amount of time can pass before payment clears and we get here (cart abandonment,
+        // an invoice sitting unpaid, manual admin approval), during which someone else may
+        // have grabbed the domain or it may have dropped out of transfer eligibility. Catching
+        // that here gives a clear, specific failure instead of a generic registrar rejection.
+        $tld = $this->tldFindOneByTld($model->tld);
+        if ($tld instanceof \Model_Tld) {
+            if ($model->action == 'register' && !$this->isDomainAvailable($tld, $model->sld)) {
+                throw new \FOSSBilling\Exception('Domain :domain is no longer available to register', [':domain' => $model->sld . $model->tld]);
+            }
+
+            if ($model->action == 'transfer' && !$this->canBeTransferred($tld, $model->sld)) {
+                throw new \FOSSBilling\Exception('Domain :domain is no longer eligible for transfer', [':domain' => $model->sld . $model->tld]);
+            }
+        }
+
         // @adapterAction
         [$domain, $adapter] = $this->_getD($model);
         if ($model->action == 'register') {
