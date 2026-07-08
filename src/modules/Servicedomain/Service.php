@@ -273,7 +273,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['db']->store($model);
 
         try {
-            $this->syncWhois($model, $order);
+            // Order/Service.php::createFromOrder() extends $order->expires_at by one period
+            // right after this action runs, starting from whatever it's currently set to.
+            // Reconciling it to the registrar's expiry here would just get overwritten by
+            // that extension anyway - skip it to avoid stacking a period on top of a period.
+            $this->syncWhois($model, $order, reconcileOrderExpiry: false);
         } catch (\Exception $e) {
             error_log($e->getMessage());
         }
@@ -292,7 +296,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         [$domain, $adapter] = $this->_getD($model);
         $adapter->renewDomain($domain);
 
-        $this->syncWhois($model, $order);
+        // Same reasoning as action_activate() above: Order/Service.php::renewFromOrder()
+        // extends $order->expires_at by one period right after this returns.
+        $this->syncWhois($model, $order, reconcileOrderExpiry: false);
 
         return true;
     }
@@ -348,7 +354,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
     }
 
-    protected function syncWhois(\Model_ServiceDomain $model, \Model_ClientOrder $order)
+    protected function syncWhois(\Model_ServiceDomain $model, \Model_ClientOrder $order, bool $reconcileOrderExpiry = true)
     {
         // @adapterAction
         [$domain, $adapter] = $this->_getD($model);
@@ -395,7 +401,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->di['db']->store($model);
 
-        $this->reconcileOrderExpirationDate($order, $model);
+        if ($reconcileOrderExpiry) {
+            $this->reconcileOrderExpirationDate($order, $model);
+        }
     }
 
     /**
