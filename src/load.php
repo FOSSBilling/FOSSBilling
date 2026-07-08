@@ -192,7 +192,10 @@ function preInit(): void
         }
     }
     define('PATH_UPLOADS', $pathUploads);
-    define('PATH_CONFIG', Path::join(PATH_ROOT, 'config.php'));
+    // Lives under data/ (not app root) so it can be a plain directory volume/mount in
+    // Docker: a temp-file+rename write (see Config::setConfig) needs the temp file and
+    // the target on the same filesystem, which fails if config.php itself is the mount point.
+    define('PATH_CONFIG', Path::join(PATH_ROOT, 'data', 'config', 'config.php'));
 
     // Load required FOSSBilling libraries.
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'ErrorPage.php');

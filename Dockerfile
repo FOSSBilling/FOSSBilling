@@ -144,8 +144,6 @@ COPY --from=release-tree --chown=www-data:www-data /app/src/ ./
 
 RUN set -eux; \
   mkdir -p data/cache data/log data/uploads data/config; \
-  if [ -f config.php ] && [ ! -L config.php ]; then mv config.php data/config/config.php; fi; \
-  ln -sf data/config/config.php config.php; \
   touch /var/log/cron.log; \
   chown -R www-data:www-data data /var/log/cron.log; \
   echo '*/5 * * * * /usr/local/bin/php /var/www/html/cron.php >> /var/log/cron.log 2>&1' > /tmp/www-data.cron; \
