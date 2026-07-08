@@ -102,4 +102,36 @@
             </a>
         </div>
     </div>
+
+    <div class="card mt-3">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">{{ 'What Runs on Every Cron Tick'|trans }}</h3>
+                <p class="card-subtitle">{{ 'This runs every 5 minutes. Most of the tasks below happen every single time; a few only check in occasionally and skip themselves the rest of the time.'|trans }}</p>
+            </div>
+        </div>
+        <div class="card-body">
+            <h4 class="mb-2">{{ 'Runs every time (every 5 minutes)'|trans }}</h4>
+            <ul class="mb-4">
+                <li>{{ 'Pay invoices automatically using any account credit the client already has'|trans }}</li>
+                <li>{{ 'Activate an order once its invoice has been paid'|trans }}</li>
+                <li>{{ 'Send payment reminder emails for invoices coming due'|trans }}</li>
+                <li>{{ 'Generate new invoices for upcoming renewals'|trans }}</li>
+                <li>{{ 'Send the actual emails sitting in the outgoing mail queue - this is what "sends" every email the system generates'|trans }}</li>
+                <li>{{ 'Suspend orders whose invoice is overdue'|trans }}</li>
+                <li>{{ 'Cancel orders that have been suspended too long without being fixed'|trans }}</li>
+                <li>{{ 'Auto-close support tickets that have had no reply for a while'|trans }}</li>
+                <li>{{ 'Clear out expired "forgot password" links'|trans }}</li>
+                <li>{{ 'Clear out abandoned shopping carts'|trans }}</li>
+                <li>{{ 'Clean up old, expired login sessions from the database'|trans }}</li>
+            </ul>
+
+            <h4 class="mb-2">{{ 'Checks in every time, but only actually does something on its own schedule'|trans }}</h4>
+            <ul class="mb-0">
+                <li>{{ 'Domain status check with the registrar (e.g. OpenProvider) - confirms things like lock status and expiry date are still accurate. Runs once every 24 hours per domain by default (adjustable above under Domain Management).'|trans }}</li>
+                <li>{{ 'Domain expiration date re-check against the registrar - a slower, once-a-month safety net alongside the daily check above.'|trans }}</li>
+                <li>{{ 'Zoho Books sync - keeps invoices/payments in sync with Zoho Books. Runs every 5 minutes by default (adjustable in the Zoho Books extension settings).'|trans }}</li>
+            </ul>
+        </div>
+    </div>
 {% endblock %}
