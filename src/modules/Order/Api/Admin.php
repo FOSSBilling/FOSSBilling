@@ -406,6 +406,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         return [
             \Model_ClientOrder::STATUS_PENDING_SETUP => 'Pending Setup',
+            \Model_ClientOrder::STATUS_PENDING_REGISTRAR => 'Pending Registrar',
             \Model_ClientOrder::STATUS_FAILED_SETUP => 'Setup Failed',
             \Model_ClientOrder::STATUS_ACTIVE => 'Active',
             \Model_ClientOrder::STATUS_SUSPENDED => 'Suspended',

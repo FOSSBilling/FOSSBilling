@@ -138,6 +138,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 throw new \FOSSBilling\InformationException(':tld domains require an auth/EPP code to transfer', [':tld' => $tld->tld]);
             }
 
+            $lockState = $this->getTransferLockState($domain);
+            if ($lockState !== null) {
+                throw new \FOSSBilling\InformationException(':domain is locked at its current registrar (:state). Ask them to unlock the domain (and disable any transfer lock in their control panel) before starting a transfer.', [':domain' => $domain, ':state' => $lockState]);
+            }
+
             $data['period'] = '1Y';
             $data['quantity'] = 1;
         }
@@ -258,14 +263,44 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             throw new \FOSSBilling\Exception('Could not activate order. Service was not created');
         }
 
+        // Re-check availability/transferability right before the real (paid, committal)
+        // registrar call. validateOrderData() only ran once, at cart-add time - an arbitrary
+        // amount of time can pass before payment clears and we get here (cart abandonment,
+        // an invoice sitting unpaid, manual admin approval), during which someone else may
+        // have grabbed the domain or it may have dropped out of transfer eligibility. Catching
+        // that here gives a clear, specific failure instead of a generic registrar rejection.
+        $tld = $this->tldFindOneByTld($model->tld);
+        if ($tld instanceof \Model_Tld) {
+            if ($model->action == 'register' && !$this->isDomainAvailable($tld, $model->sld)) {
+                throw new \FOSSBilling\Exception('Domain :domain is no longer available to register', [':domain' => $model->sld . $model->tld]);
+            }
+
+            if ($model->action == 'transfer' && !$this->canBeTransferred($tld, $model->sld)) {
+                throw new \FOSSBilling\Exception('Domain :domain is no longer eligible for transfer', [':domain' => $model->sld . $model->tld]);
+            }
+
+            if ($model->action == 'transfer') {
+                $lockState = $this->getTransferLockState($model->sld . $model->tld);
+                if ($lockState !== null) {
+                    throw new \FOSSBilling\Exception('Domain :domain is locked at its current registrar (:state)', [':domain' => $model->sld . $model->tld, ':state' => $lockState]);
+                }
+            }
+        }
+
         // @adapterAction
         [$domain, $adapter] = $this->_getD($model);
         if ($model->action == 'register') {
-            $adapter->registerDomain($domain);
+            $accepted = $adapter->registerDomain($domain);
         }
 
         if ($model->action == 'transfer') {
-            $adapter->transferDomain($domain);
+            $accepted = $adapter->transferDomain($domain);
+        }
+
+        // The registrar rejected the request outright (e.g. bad auth code, domain not
+        // transferable). Don't let the order go active on a domain we never actually got.
+        if (isset($accepted) && $accepted === false) {
+            throw new \FOSSBilling\Exception('Registrar rejected the :action request for :domain', [':action' => $model->action, ':domain' => $model->sld . $model->tld]);
         }
 
         // reset action
@@ -282,7 +317,39 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             error_log($e->getMessage());
         }
 
+        // Registrar accepted the request initially but the immediate status check already
+        // shows it was dropped/rejected (e.g. failed payment on the registrar's end).
+        if ($this->isRejectedRegistrarStatus($model->registrar_status)) {
+            throw new \FOSSBilling\Exception('Registrar rejected the :action request for :domain (status: :status)', [':action' => $model->action, ':domain' => $model->sld . $model->tld, ':status' => $model->registrar_status]);
+        }
+
+        // The registrar accepted the request but hasn't finished processing it yet (e.g.
+        // OpenProvider's "REQ" status). Park the order rather than marking it active - the
+        // cron sync in batchSyncDomainStatuses() will promote it once the registrar confirms.
+        if ($this->isPendingRegistrarStatus($model->registrar_status)) {
+            throw new \FOSSBilling\OrderPendingRegistrarConfirmationException('Registrar has not confirmed the :action yet for :domain (status: :status)', [':action' => $model->action, ':domain' => $model->sld . $model->tld, ':status' => $model->registrar_status]);
+        }
+
         return $model;
+    }
+
+    /**
+     * Registrar status codes that mean "still processing" - not yet confirmed active, and
+     * not (yet) rejected. Currently modelled on OpenProvider's status codes; a null/unknown
+     * status is treated as confirmed so registrars/adapters that don't report one don't get
+     * stuck pending forever.
+     */
+    protected function isPendingRegistrarStatus(?string $status): bool
+    {
+        return in_array($status, ['REQ', 'ACP'], true);
+    }
+
+    /**
+     * Registrar status codes that mean the registrar rejected/dropped the request.
+     */
+    protected function isRejectedRegistrarStatus(?string $status): bool
+    {
+        return in_array($status, ['FAI', 'CAN', 'DEL'], true);
     }
 
     public function action_renew(\Model_ClientOrder $order): bool
@@ -459,6 +526,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
             try {
                 $this->syncWhois($model, $order);
+                $this->reconcilePendingRegistrarOrder($model, $order, $orderService);
 
                 return true;
             } catch (\Exception $e) {
@@ -467,6 +535,46 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         return false;
+    }
+
+    /**
+     * If the order is parked in STATUS_PENDING_REGISTRAR (registrar had accepted the
+     * register/transfer request but hadn't confirmed it yet at activation time), check
+     * whether the freshly-synced registrar_status has since resolved it one way or the
+     * other, and promote or fail the order accordingly. No-op for orders in any other state.
+     */
+    protected function reconcilePendingRegistrarOrder(\Model_ServiceDomain $model, \Model_ClientOrder $order, $orderService): void
+    {
+        if ($order->status !== \Model_ClientOrder::STATUS_PENDING_REGISTRAR) {
+            return;
+        }
+
+        if ($this->isRejectedRegistrarStatus($model->registrar_status)) {
+            $order->status = \Model_ClientOrder::STATUS_FAILED_SETUP;
+            $order->updated_at = date('Y-m-d H:i:s');
+            $this->di['db']->store($order);
+            $orderService->saveStatusChange($order, "Registrar rejected the domain request (status: {$model->registrar_status})");
+            $this->notifyStaffOfRegistrarRejection($order, $model);
+
+            return;
+        }
+
+        if (!$this->isPendingRegistrarStatus($model->registrar_status)) {
+            // Confirmed (or an adapter that doesn't report a pending code at all) - activate.
+            $orderService->finalizeActivation($order);
+        }
+    }
+
+    /**
+     * Staff alert for a rejected domain order. This is a plain error-level log entry, not an
+     * email - wiring up a proper staff email template (see mod_staff_client_order in the
+     * Staff module for the pattern) is a natural follow-up, but needs an actual DB-seeded
+     * template + install migration, which is out of scope here. The rejection is also
+     * recorded on the order's own status history via saveStatusChange() either way.
+     */
+    protected function notifyStaffOfRegistrarRejection(\Model_ClientOrder $order, \Model_ServiceDomain $model): void
+    {
+        $this->di['logger']->error('Domain order #%s (%s) rejected by registrar - status: %s', $order->id, $model->sld . $model->tld, $model->registrar_status);
     }
 
     /**
@@ -723,6 +831,39 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $adapter = $this->registrarGetRegistrarAdapter($tldRegistrar);
 
         return $adapter->isDomaincanBeTransferred($domain);
+    }
+
+    /**
+     * Public WHOIS lookup for a transfer-lock status (e.g. clientTransferProhibited) on a
+     * domain that isn't in our account yet. This is registry-level data, visible regardless
+     * of which registrar currently holds the domain - unlike OpenProvider's own
+     * /domains/check, which only reports free/registered and can't see lock state on a
+     * domain it doesn't control. Surfacing this before checkout lets the customer unlock the
+     * domain at their current registrar first, instead of paying and then hitting a
+     * transfer rejection.
+     *
+     * Returns the matched WHOIS status string if the domain looks locked, or null if it
+     * doesn't (including when the lookup itself fails/times out - a failed WHOIS lookup is
+     * treated as "unknown", not "locked", since this is a convenience pre-check rather than
+     * a hard gate; the registrar's own transfer attempt is still the authority).
+     */
+    public function getTransferLockState(string $domain): ?string
+    {
+        try {
+            $info = \Iodev\Whois\Factory::get()->createWhois()->loadDomainInfo($domain);
+        } catch (\Exception $e) {
+            $this->di['logger']->warning('WHOIS lock lookup failed for %s: %s', $domain, $e->getMessage());
+
+            return null;
+        }
+
+        foreach ($info->states as $state) {
+            if (stripos((string) $state, 'transferprohibited') !== false) {
+                return $state;
+            }
+        }
+
+        return null;
     }
 
     /**
