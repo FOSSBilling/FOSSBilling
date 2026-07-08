@@ -145,10 +145,16 @@ COPY --from=release-tree --chown=www-data:www-data /app/src/ ./
 RUN set -eux; \
   mkdir -p data/cache data/log data/uploads data/config; \
   touch /var/log/cron.log; \
-  chown -R www-data:www-data data /var/log/cron.log; \
   echo '*/5 * * * * /usr/local/bin/php /var/www/html/cron.php >> /var/log/cron.log 2>&1' > /tmp/www-data.cron; \
   crontab -u www-data /tmp/www-data.cron; \
-  rm /tmp/www-data.cron
+  rm /tmp/www-data.cron; \
+  php -r ' \
+    require "library/FOSSBilling/Version.php"; \
+    $now = date(DATE_ATOM); \
+    $state = ["status" => "complete", "version" => FOSSBilling\Version::VERSION, "from_version" => null, "target_version" => FOSSBilling\Version::VERSION, "finalized_at" => $now, "completed_at" => $now]; \
+    file_put_contents("data/update-finalization.json", json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . PHP_EOL); \
+  '; \
+  chown -R www-data:www-data data /var/log/cron.log
 
 CMD ["sh", "-c", "cron & exec apache2-foreground"]
 
