@@ -13,7 +13,10 @@ namespace FOSSBilling;
 
 final class Version
 {
-    public const string VERSION = '0.0.1';
+    // Locally patched: upstream sets this via the Dockerfile's FOSSBILLING_VERSION build-arg,
+    // but this file is bind-mounted from host source in our compose setup, overriding that.
+    // Bump this on each merge from upstream to match the upstream release tag.
+    public const string VERSION = '0.8.3';
     public const int PATCH = 0;
     public const int MINOR = 1;
     public const int MAJOR = 2;
