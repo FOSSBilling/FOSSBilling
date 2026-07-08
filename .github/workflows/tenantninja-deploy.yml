@@ -17,6 +17,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Checkout extensions repo
+        uses: actions/checkout@v4
+        with:
+          repository: tenantninja/fossbilling-extensions
+          path: extensions
+
+      - name: Bake in Zoho Books module
+        run: cp -r extensions/fossbilling-zoho-books/modules/Zohobooks src/modules/Zohobooks
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
