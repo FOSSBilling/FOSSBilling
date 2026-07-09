@@ -252,8 +252,13 @@
         </div>
     {% endif %}
 
-    {{ include('partial_dashboard_invoices_card.html.twig') }}
-    {{ include('partial_dashboard_orders_card.html.twig') }}
+    {% if admin.system_is_allowed({ 'mod': 'invoice' }) %}
+        {{ include('partial_dashboard_invoices_card.html.twig') }}
+    {% endif %}
+
+    {% if admin.system_is_allowed({ 'mod': 'order' }) %}
+        {{ include('partial_dashboard_orders_card.html.twig') }}
+    {% endif %}
 
     {% if admin.system_is_allowed({ 'mod': 'stats' }) %}
         {{ include('partial_dashboard_product_sales_card.html.twig') }}
