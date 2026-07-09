@@ -284,6 +284,11 @@
                     el.querySelector('.tn-switch-input').checked = on;
                 }
 
+                function handleToggleError(event, error) {
+                    event.target.checked = !event.target.checked;
+                    FOSSBilling.message(error?.message || 'Request failed', 'error');
+                }
+
                 document.getElementById('domain-lock-toggle').addEventListener('change', function (event) {
                     var track = document.getElementById('lock-switch');
                     var endpoint = event.target.checked ? 'servicedomain/lock' : 'servicedomain/unlock';
@@ -292,7 +297,7 @@
                             FOSSBilling.message(event.target.checked ? 'Domain locked' : 'Domain unlocked');
                             toggleSwitch(track, event.target.checked);
                         },
-                        () => { event.target.checked = !event.target.checked; }
+                        (error) => handleToggleError(event, error)
                     );
                 });
 
@@ -304,7 +309,7 @@
                             FOSSBilling.message(event.target.checked ? 'Privacy Protection enabled' : 'Privacy Protection disabled');
                             toggleSwitch(track, event.target.checked);
                         },
-                        () => { event.target.checked = !event.target.checked; }
+                        (error) => handleToggleError(event, error)
                     );
                 });
 
@@ -316,7 +321,7 @@
                             FOSSBilling.message(event.target.checked ? 'Auto-renew enabled' : 'Auto-renew disabled');
                             toggleSwitch(track, event.target.checked);
                         },
-                        () => { event.target.checked = !event.target.checked; }
+                        (error) => handleToggleError(event, error)
                     );
                 });
 
