@@ -1216,6 +1216,54 @@ table > thead > tr > th {
     }
 }
 
+// Entrance animation for rows that appear on page load (service lists,
+// dashboard widgets). Occasional (once per page view), so a brief fade +
+// rise is justified. Staggered via nth-child so rows cascade in rather
+// than popping together.
+@keyframes tn-row-in {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+// Gentle opacity breathing for the pending-registrar clock icon - state
+// indication for an in-progress background process, not decoration.
+// Opacity-only (no scale/transform) so it stays calm under
+// prefers-reduced-motion without extra overrides.
+@keyframes tn-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.45; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    [class*="__pending-icon"] {
+        animation: none;
+    }
+}
+
+@mixin tn-row-stagger($selector) {
+    #{$selector} {
+        animation: tn-row-in var(--dur-slow) var(--ease-out) both;
+
+        @for $i from 1 through 8 {
+            &:nth-child(#{$i}) {
+                animation-delay: #{($i - 1) * 45}ms;
+            }
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        #{$selector} {
+            animation: none;
+        }
+    }
+}
+
 // Pill filter chip - used for the "All / Hosting / Domains / ..." filter
 // row above list views (services, invoices, tickets).
 .tn-tabchip {
@@ -1257,6 +1305,8 @@ table > thead > tr > th {
 
 // Service row - used on the services list to show one order/service per
 // row with a type icon, plan sub-text, status badge and renewal/price.
+@include tn-row-stagger('.tn-servicerow');
+
 .tn-servicerow {
     display: flex;
     align-items: center;
@@ -1348,6 +1398,15 @@ table > thead > tr > th {
     &__chevron {
         flex-shrink: 0;
         color: var(--text-faint);
+        transition: transform var(--dur-fast) var(--ease-out);
+    }
+
+    &:hover &__chevron {
+        transform: translateX(2px);
+    }
+
+    &__pending-icon {
+        animation: tn-pulse 2s var(--ease-in-out) infinite;
     }
 
     @media (max-width: 640px) {
@@ -1574,6 +1633,8 @@ table > thead > tr > th {
 }
 
 // Service row used in the dashboard "Your services" card.
+@include tn-row-stagger('.tn-service-row');
+
 .tn-service-row {
     display: flex;
     align-items: center;
@@ -1657,6 +1718,7 @@ table > thead > tr > th {
         width: 14px;
         height: 14px;
         color: var(--warning-500, #d97706);
+        animation: tn-pulse 2s var(--ease-in-out) infinite;
     }
 
     &__date {
@@ -1679,6 +1741,11 @@ table > thead > tr > th {
         color: var(--text-faint);
         width: 16px;
         height: 16px;
+        transition: transform var(--dur-fast) var(--ease-out);
+    }
+
+    &:hover &__chevron {
+        transform: translateX(2px);
     }
 
     // Fixed-width status/meta columns don't fit alongside the name on narrow
