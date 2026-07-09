@@ -880,7 +880,11 @@ class Service implements InjectionAwareInterface
     public function activateOrder(\Model_ClientOrder $order, $data = []): bool
     {
         // re-fetch in case the caller's order object is stale (e.g. already activated by another code path)
-        $order = $this->di['db']->load('ClientOrder', $order->id);
+        $orderId = $order->id;
+        $order = $this->di['db']->load('ClientOrder', $orderId);
+        if (!$order instanceof \Model_ClientOrder) {
+            throw new \FOSSBilling\Exception('Order :id not found', [':id' => $orderId]);
+        }
         $force = !empty($data['force']);
 
         // Already active and not a forced re-activation: nothing to do.
