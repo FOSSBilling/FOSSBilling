@@ -407,12 +407,16 @@ const API = {
       headers['Content-Type'] = 'application/json';
     }
 
-    return fetch(url.toString(), {
+    const fetchOptions = {
       method: method,
       headers: headers,
-      body: body,
       signal: controller.signal
-    })
+    };
+    if (methodLower !== 'get') {
+      fetchOptions.body = body;
+    }
+
+    return fetch(url.toString(), fetchOptions)
       .then(async (response) => {
         clearTimeout(timeoutId);
 

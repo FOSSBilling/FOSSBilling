@@ -109,6 +109,7 @@ input,
 textarea,
 .uneditable-input {
   width: 206px;
+  margin-left: 0;
 }
 textarea {
   height: auto;
@@ -307,11 +308,7 @@ textarea[class*="span"],
 .row-fluid .input-append [class*="span"] {
   display: inline-block;
 }
-input,
-textarea,
-.uneditable-input {
-  margin-left: 0;
-}
+
 .controls-row [class*="span"] + [class*="span"] {
   margin-left: 20px;
 }
