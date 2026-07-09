@@ -75,7 +75,7 @@ class PromoRepository extends EntityRepository
     public function incrementUsageIfAvailable(int $promoId, \DateTimeInterface $updatedAt): int
     {
         return $this->getEntityManager()->getConnection()->executeStatement(
-            'UPDATE promo SET used = used + 1, updated_at = ? WHERE id = ? AND (maxuses = 0 OR maxuses IS NULL OR maxuses > used)',
+            'UPDATE promo SET used = COALESCE(used, 0) + 1, updated_at = ? WHERE id = ? AND (maxuses = 0 OR maxuses IS NULL OR maxuses > COALESCE(used, 0))',
             [$updatedAt->format('Y-m-d H:i:s'), $promoId]
         );
     }
@@ -83,7 +83,7 @@ class PromoRepository extends EntityRepository
     public function decrementUsage(int $promoId, int $count, \DateTimeInterface $updatedAt): int
     {
         return $this->getEntityManager()->getConnection()->executeStatement(
-            'UPDATE promo SET used = GREATEST(used - ?, 0), updated_at = ? WHERE id = ?',
+            'UPDATE promo SET used = GREATEST(COALESCE(used, 0) - ?, 0), updated_at = ? WHERE id = ?',
             [$count, $updatedAt->format('Y-m-d H:i:s'), $promoId]
         );
     }
