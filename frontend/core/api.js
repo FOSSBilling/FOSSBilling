@@ -9,6 +9,15 @@
  */
 
 import { parseDataAttr } from './parse-data-attr.mjs';
+import {
+  injectCSRFToken,
+  buildRequestBody,
+  buildHeaders,
+  parseResponseBody,
+  validateHttpResponse,
+  interpretResponse,
+  normalizeApiError,
+} from './api-helpers.mjs';
 
 /**
  * Tools for the API wrapper.
@@ -228,79 +237,23 @@ const API = {
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-    const parseResponseBody = async (response) => {
-      if (response.status === 204) {
-        return { payload: null, rawText: '' };
-      }
+    const csrfToken = Tools.getCSRFToken();
+    const urlObj = new URL(url);
 
-      const text = await response.text();
-      if (!text) {
-        return { payload: null, rawText: '' };
-      }
-
-      try {
-        return { payload: JSON.parse(text), rawText: text };
-      } catch (error) {
-        return { payload: null, rawText: text };
-      }
-    };
-
-    url = new URL(url);
-    const isFormData = params instanceof FormData;
-
-    if (isFormData) {
-      if (!params.has('CSRFToken')) {
-        params.append('CSRFToken', Tools.getCSRFToken());
-      }
-    } else if (params && typeof params === 'object') {
-      if (!params.CSRFToken) {
-        params.CSRFToken = Tools.getCSRFToken();
-      }
-    }
-
-    let body = null;
-    const methodLower = method.toLowerCase();
-    if (methodLower === 'get') {
-      if (isFormData) {
-        for (const [key, value] of params.entries()) {
-          url.searchParams.append(key, value);
-        }
-      } else if (params && typeof params === 'object') {
-        Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
-      } else if (params) {
-        url.search = params;
-      }
-    } else if (['post', 'put', 'patch', 'delete'].includes(methodLower)) {
-      if (isFormData) {
-        body = params;
-      } else if (typeof params === 'string') {
-        body = params;
-      } else {
-        body = JSON.stringify(params);
-      }
-    }
-
-    const headers = {
-      'Accept': 'application/json',
-      'X-CSRF-Token': Tools.getCSRFToken() || '',
-    };
-    if (url.origin === window.location.origin) {
-      headers['X-Requested-With'] = 'XMLHttpRequest';
-    }
-    if (body && !isFormData) {
-      headers['Content-Type'] = 'application/json';
-    }
+    injectCSRFToken(params, csrfToken);
+    const { body, isFormData } = buildRequestBody(method, params, urlObj);
+    const headers = buildHeaders({ url: urlObj, body, isFormData, csrfToken, origin: window.location.origin });
 
     const fetchOptions = {
       method: method,
       headers: headers,
       signal: controller.signal
     };
-    if (methodLower !== 'get') {
+    if (method.toLowerCase() !== 'get') {
       fetchOptions.body = body;
     }
 
-    return fetch(url.toString(), fetchOptions)
+    return fetch(urlObj.toString(), fetchOptions)
       .then(async (response) => {
         clearTimeout(timeoutId);
 
@@ -309,64 +262,20 @@ const API = {
           return;
         }
 
-        const { payload, rawText } = await parseResponseBody(response);
-
-        if (!response.ok) {
-          const error = new Error(payload?.error?.message || `HTTP error ${response.status}: ${response.statusText}`);
-          error.code = payload?.error?.code || `http_${response.status}`;
-          error.status = response.status;
-          error.rawBody = rawText;
-          throw error;
-        }
-
-        if (rawText && payload === null) {
-          throw new Error('Invalid or non-JSON response from server');
-        }
-
-        return payload;
+        const parsed = await parseResponseBody(response);
+        return validateHttpResponse(response, parsed);
       })
-      .then((response) => {
-        if (!response) {
-          if (typeof successHandler === 'function') {
-            successHandler(null);
-          }
-
-          return null;
-        }
-
-        if (response.error) {
-          const error = new Error(response.error.message || 'Unknown API error');
-          error.code = response.error.code;
-          throw error;
-        }
-
+      .then((payload) => {
+        const result = interpretResponse(payload);
         if (typeof successHandler === 'function') {
-          successHandler(response.result);
+          successHandler(result);
         }
-
-        return response.result;
+        return result;
       })
       .catch((error) => {
         clearTimeout(timeoutId);
 
-        let errorObj;
-        if (error.name === 'AbortError') {
-          errorObj = {
-            message: timeoutMessage || `Request timed out after ${timeoutMs / 1000} seconds`,
-            code: 'timeout_error'
-          };
-        } else if (error.name === 'TypeError' && error.message.includes('NetworkError')) {
-          errorObj = {
-            message: 'Network connection error',
-            code: 'network_error'
-          };
-        } else {
-          errorObj = {
-            message: error.message || 'Unknown error occurred',
-            code: error.code || 'unknown_error'
-          };
-        }
-
+        const errorObj = normalizeApiError(error, { timeoutMs, timeoutMessage });
         console.error(`API Error: ${errorObj.message}`);
 
         if (typeof errorHandler === 'function') {
