@@ -44,23 +44,29 @@ class Promo implements ApiArrayInterface, TimestampInterface
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::DECIMAL, precision: 18, scale: 2, nullable: true)]
     private ?string $value = null;
 
-    #[ORM\Column(name: 'maxuses', type: \Doctrine\DBAL\Types\Types::INTEGER, options: ['default' => 0])]
-    private int $maxUses = 0;
+    #[ORM\Column(name: 'maxuses', type: \Doctrine\DBAL\Types\Types::INTEGER, nullable: true, options: ['default' => 0])]
+    /** @phpstan-ignore property.unusedType (column is nullable in the DB) */
+    private ?int $maxUses = 0;
 
-    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::INTEGER, options: ['default' => 0])]
-    private int $used = 0;
+    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::INTEGER, nullable: true, options: ['default' => 0])]
+    /** @phpstan-ignore property.unusedType (column is nullable in the DB) */
+    private ?int $used = 0;
 
-    #[ORM\Column(name: 'freesetup', type: \Doctrine\DBAL\Types\Types::BOOLEAN, options: ['default' => false])]
-    private bool $freeSetup = false;
+    #[ORM\Column(name: 'freesetup', type: \Doctrine\DBAL\Types\Types::BOOLEAN, nullable: true, options: ['default' => false])]
+    /** @phpstan-ignore property.unusedType (column is nullable in the DB) */
+    private ?bool $freeSetup = false;
 
-    #[ORM\Column(name: 'once_per_client', type: \Doctrine\DBAL\Types\Types::BOOLEAN, options: ['default' => false])]
-    private bool $oncePerClient = false;
+    #[ORM\Column(name: 'once_per_client', type: \Doctrine\DBAL\Types\Types::BOOLEAN, nullable: true, options: ['default' => false])]
+    /** @phpstan-ignore property.unusedType (column is nullable in the DB) */
+    private ?bool $oncePerClient = false;
 
-    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::BOOLEAN, options: ['default' => false])]
-    private bool $recurring = false;
+    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::BOOLEAN, nullable: true, options: ['default' => false])]
+    /** @phpstan-ignore property.unusedType (column is nullable in the DB) */
+    private ?bool $recurring = false;
 
-    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::BOOLEAN, options: ['default' => false])]
-    private bool $active = false;
+    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::BOOLEAN, nullable: true, options: ['default' => false])]
+    /** @phpstan-ignore property.unusedType (column is nullable in the DB) */
+    private ?bool $active = false;
 
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::TEXT, nullable: true)]
     private ?string $products = null;
@@ -85,12 +91,12 @@ class Promo implements ApiArrayInterface, TimestampInterface
             'description' => $this->description,
             'type' => $this->type,
             'value' => $this->value !== null ? (float) $this->value : null,
-            'maxuses' => $this->maxUses,
-            'used' => $this->used,
-            'freesetup' => $this->freeSetup,
-            'once_per_client' => $this->oncePerClient,
-            'recurring' => $this->recurring,
-            'active' => $this->active,
+            'maxuses' => $this->maxUses ?? 0,
+            'used' => $this->used ?? 0,
+            'freesetup' => $this->freeSetup ?? false,
+            'once_per_client' => $this->oncePerClient ?? false,
+            'recurring' => $this->recurring ?? false,
+            'active' => $this->active ?? false,
             'products' => $this->products,
             'periods' => $this->periods,
             'client_groups' => $this->clientGroups,
@@ -156,7 +162,7 @@ class Promo implements ApiArrayInterface, TimestampInterface
 
     public function getMaxUses(): int
     {
-        return $this->maxUses;
+        return $this->maxUses ?? 0;
     }
 
     public function setMaxUses(?int $maxUses): self
@@ -168,7 +174,7 @@ class Promo implements ApiArrayInterface, TimestampInterface
 
     public function getUsed(): int
     {
-        return $this->used;
+        return $this->used ?? 0;
     }
 
     public function setUsed(?int $used): self
@@ -180,7 +186,7 @@ class Promo implements ApiArrayInterface, TimestampInterface
 
     public function isFreeSetup(): bool
     {
-        return $this->freeSetup;
+        return $this->freeSetup ?? false;
     }
 
     public function setFreeSetup(bool $freeSetup): self
@@ -192,7 +198,7 @@ class Promo implements ApiArrayInterface, TimestampInterface
 
     public function isOncePerClient(): bool
     {
-        return $this->oncePerClient;
+        return $this->oncePerClient ?? false;
     }
 
     public function setOncePerClient(bool $oncePerClient): self
@@ -204,7 +210,7 @@ class Promo implements ApiArrayInterface, TimestampInterface
 
     public function isRecurring(): bool
     {
-        return $this->recurring;
+        return $this->recurring ?? false;
     }
 
     public function setRecurring(bool $recurring): self
@@ -216,7 +222,7 @@ class Promo implements ApiArrayInterface, TimestampInterface
 
     public function isActive(): bool
     {
-        return $this->active;
+        return $this->active ?? false;
     }
 
     public function setActive(bool $active): self
