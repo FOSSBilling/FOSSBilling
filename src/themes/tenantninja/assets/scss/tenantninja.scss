@@ -1303,20 +1303,19 @@ table > thead > tr > th {
         white-space: nowrap;
     }
 
-    &__status {
-        flex-shrink: 0;
-        display: flex;
-        justify-content: flex-end;
-        white-space: nowrap;
-    }
-
     &__meta {
         flex-shrink: 0;
         display: flex;
         flex-direction: column;
         align-items: flex-end;
-        gap: 1px;
+        gap: var(--space-1);
         min-width: 90px;
+    }
+
+    &__status {
+        display: flex;
+        white-space: nowrap;
+        margin-bottom: 1px;
     }
 
     &__meta-label {
@@ -1343,17 +1342,13 @@ table > thead > tr > th {
             order: 1;
         }
 
-        &__status {
-            order: 2;
-        }
-
         &__meta {
-            order: 3;
+            order: 2;
             margin-left: auto;
         }
 
         &__chevron {
-            order: 4;
+            order: 3;
         }
     }
 }
