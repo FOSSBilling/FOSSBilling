@@ -78,7 +78,7 @@ class Fingerprint
                 'weight' => 2,
             ],
             'geoIpCountry' => [
-                'source' => $this->getIpCountry() ?? '',
+                'source' => $this->getIpCountry(),
                 'weight' => 4,
             ],
             'asn' => [
