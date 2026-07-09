@@ -76,7 +76,7 @@
                                         <span class="tn-servicerow__meta-label">{{ 'Renews'|trans }} {% if order.expires_at %}{{ order.expires_at|format_date }}{% else %}&mdash;{% endif %}</span>
                                         <span class="tn-servicerow__status">{{ mf.status_badge(order.status, 'order') }}</span>
                                     </span>
-                                    <span class="tn-servicerow__meta-value">{{ order.total|format_currency(order.currency ?? default_currency) }}</span>
+                                    <span class="tn-servicerow__meta-value">{{ (order.renewal_price ?? order.total)|format_currency(order.currency ?? default_currency) }}</span>
                                 </span>
                                 <span class="tn-servicerow__chevron"><svg class="icon"><use href="#chevron-right" /></svg></span>
                             </a>

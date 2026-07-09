@@ -253,7 +253,7 @@
                                         </span>
                                     </div>
                                     <a class="tn-btn tn-btn--secondary tn-btn--sm" href='{{ "order/service/manage/#{order.id}"|url }}'>
-                                        {{ 'Renew'|trans }} · {{ order.total|format_currency(order.currency) }}
+                                        {{ 'Renew'|trans }} · {{ (order.renewal_price ?? order.total)|format_currency(order.currency) }}
                                     </a>
                                 </div>
                             {% endfor %}
@@ -296,12 +296,14 @@
                                         <span class="tn-service-row__name">{{ order.title|truncate(50) }}</span>
                                         <span class="tn-service-row__detail">{{ order.service_type|title }}</span>
                                     </div>
-                                    <span class="tn-service-row__status">{{ tn.badge(order.status, 'order') }}</span>
                                     <span class="tn-service-row__meta">
-                                        {% if order.expires_at %}
-                                            <span class="tn-service-row__date{% if is_expiring %} tn-service-row__date--danger{% endif %}">{{ order.expires_at|format_date }}</span>
-                                        {% endif %}
-                                        <span class="tn-service-row__price">{{ order.total|format_currency(order.currency) }}</span>
+                                        <span class="tn-service-row__meta-top">
+                                            {% if order.expires_at %}
+                                                <span class="tn-service-row__date{% if is_expiring %} tn-service-row__date--danger{% endif %}">{{ order.expires_at|format_date }}</span>
+                                            {% endif %}
+                                            <span class="tn-service-row__status">{{ tn.badge(order.status, 'order') }}</span>
+                                        </span>
+                                        <span class="tn-service-row__price">{{ (order.renewal_price ?? order.total)|format_currency(order.currency) }}</span>
                                     </span>
                                     <svg class="icon tn-service-row__chevron"><use href="#chevron-right" /></svg>
                                 </a>

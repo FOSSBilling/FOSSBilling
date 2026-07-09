@@ -125,6 +125,8 @@
     {% set status_label = 'Active'|trans %}
 {% elseif status_title == 'Pending Setup' %}
     {% set status_label = 'Pending Setup'|trans %}
+{% elseif status_title == 'Pending Registrar' %}
+    {% set status_label = 'Active · Registrar Pending'|trans %}
 {% elseif status_title == 'Failed Setup' %}
     {% set status_label = 'Failed Setup'|trans %}
 {% elseif status_title == 'Failed Renew' %}

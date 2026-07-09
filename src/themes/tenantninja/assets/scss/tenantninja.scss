@@ -1622,18 +1622,27 @@ table > thead > tr > th {
         white-space: nowrap;
     }
 
-    &__status {
-        flex: 0 0 108px;
-        width: 108px;
-    }
-
     &__meta {
         flex-shrink: 0;
         text-align: right;
         display: flex;
         flex-direction: column;
+        align-items: flex-end;
         gap: 1px;
         min-width: 90px;
+    }
+
+    &__meta-top {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+        row-gap: 2px;
+    }
+
+    &__status {
+        white-space: nowrap;
     }
 
     &__date {
@@ -1666,12 +1675,6 @@ table > thead > tr > th {
 
         &__body {
             flex-basis: 100%;
-        }
-
-        &__status {
-            flex: 0 0 auto;
-            width: auto;
-            margin-left: calc(34px + var(--space-3));
         }
 
         &__meta {

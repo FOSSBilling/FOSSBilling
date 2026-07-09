@@ -384,6 +384,14 @@ class Service implements InjectionAwareInterface
         $client = $this->di['db']->getExistingModelById('Client', $model->client_id, 'Client not found');
         $data['client'] = $clientService->toApiArray($client, false);
 
+        // See getBatchForApi() for why domain orders need a separate renewal_price field.
+        if ($model->service_type === 'domain' && $model->service_id !== null) {
+            $priceRenew = $this->di['db']->getCell('SELECT price_renew FROM service_domain WHERE id = :id', [':id' => $model->service_id]);
+            if ($priceRenew !== null) {
+                $data['renewal_price'] = (float) $priceRenew;
+            }
+        }
+
         if ($identity instanceof \Model_Admin) {
             $data['config'] = $this->getConfig($model);
             $productService = $this->di['mod_service']('product');
@@ -466,6 +474,26 @@ class Service implements InjectionAwareInterface
             $plugins = $productService->getProductPluginMap($productIds);
         }
 
+        // Domain orders keep their original purchase price in client_order.price forever
+        // (renewFromOrder() never updates it), so it can read 0.00 for a free/promo/transfer-in
+        // order even though the registrar charges a real amount at renewal. service_domain.price_renew
+        // holds the actual renewal cost, so surface it separately for domain orders.
+        $renewalPrices = [];
+        $domainServiceIds = array_column(
+            array_filter($orders, static fn ($o) => $o['service_type'] === 'domain' && !empty($o['service_id'])),
+            'service_id'
+        );
+        if (!empty($domainServiceIds)) {
+            $placeholders = implode(',', array_fill(0, count($domainServiceIds), '?'));
+            $rows = $this->di['db']->getAll(
+                "SELECT id, price_renew FROM service_domain WHERE id IN ($placeholders)",
+                $domainServiceIds
+            );
+            foreach ($rows as $row) {
+                $renewalPrices[$row['id']] = $row['price_renew'];
+            }
+        }
+
         $result = [];
         foreach ($orders as $order) {
             $clientId = $order['client_id'];
@@ -475,6 +503,9 @@ class Service implements InjectionAwareInterface
             $data['title'] = $order['title'];
             $data['meta'] = $meta[$order['id']] ?? [];
             $data['active_tickets'] = $activeTickets[$order['id']] ?? 0;
+            if ($order['service_type'] === 'domain' && isset($renewalPrices[$order['service_id']])) {
+                $data['renewal_price'] = (float) $renewalPrices[$order['service_id']];
+            }
             if (!isset($clients[$clientId])) {
                 $this->di['logger']->error('Missing client for order ' . $order['id']);
                 $data['client'] = [];
