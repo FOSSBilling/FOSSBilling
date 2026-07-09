@@ -18,6 +18,10 @@ import {
   interpretResponse,
   normalizeApiError,
 } from './api-helpers.mjs';
+import {
+  dispatchLinkAction,
+  createLinkLoadingState,
+} from './link-helpers.mjs';
 
 /**
  * Tools for the API wrapper.
@@ -451,107 +455,12 @@ const API = {
         }
 
         linkElement.dataset.fbApiBound = 'true';
-        let requestInProgress = false;
-        let loadingAlert = null;
-        let beforeUnloadHandler = null;
-        let originalHtml = null;
-        let originalAriaBusy = null;
-        let originalAriaDisabled = null;
-        let originallyDisabled = false;
-
-        const getLoadingTarget = (selector) => {
-          if (selector) {
-            try {
-              const target = document.querySelector(selector);
-              if (target) {
-                return target;
-              }
-            } catch (error) {
-              console.warn('Invalid loading target selector:', selector);
-            }
-          }
-
-          return linkElement.closest('.card-footer') || linkElement.parentElement;
-        };
-
-        const setLoadingState = (apiData) => {
-          requestInProgress = true;
-          originalHtml = linkElement.innerHTML;
-          originalAriaBusy = linkElement.getAttribute('aria-busy');
-          originalAriaDisabled = linkElement.getAttribute('aria-disabled');
-          originallyDisabled = linkElement.classList.contains('disabled');
-
-          linkElement.setAttribute('aria-busy', 'true');
-          linkElement.setAttribute('aria-disabled', 'true');
-          linkElement.classList.add('disabled');
-
-          if (apiData.loading?.button) {
-            const spinner = document.createElement('span');
-            spinner.className = 'spinner-border spinner-border-sm me-2';
-            spinner.setAttribute('aria-hidden', 'true');
-
-            linkElement.replaceChildren(spinner, document.createTextNode(apiData.loading.button));
-          }
-
-          if (apiData.loading?.message) {
-            const target = getLoadingTarget(apiData.loading.target);
-            if (target) {
-              loadingAlert = document.createElement('div');
-              loadingAlert.className = apiData.loading.alertClass || 'alert alert-info mt-3 mb-0';
-              loadingAlert.setAttribute('role', 'status');
-              loadingAlert.textContent = apiData.loading.message;
-              target.appendChild(loadingAlert);
-            }
-          }
-
-          if (apiData.preventNavigation) {
-            beforeUnloadHandler = (event) => {
-              event.preventDefault();
-              event.returnValue = '';
-            };
-            window.addEventListener('beforeunload', beforeUnloadHandler);
-          }
-        };
-
-        const resetLoadingState = () => {
-          if (!requestInProgress) {
-            return;
-          }
-
-          requestInProgress = false;
-
-          if (originalHtml !== null) {
-            linkElement.innerHTML = originalHtml;
-          }
-          if (originalAriaBusy === null) {
-            linkElement.removeAttribute('aria-busy');
-          } else {
-            linkElement.setAttribute('aria-busy', originalAriaBusy);
-          }
-          if (originalAriaDisabled === null) {
-            linkElement.removeAttribute('aria-disabled');
-          } else {
-            linkElement.setAttribute('aria-disabled', originalAriaDisabled);
-          }
-          if (!originallyDisabled) {
-            linkElement.classList.remove('disabled');
-          }
-
-          if (loadingAlert) {
-            loadingAlert.remove();
-            loadingAlert = null;
-          }
-
-          if (beforeUnloadHandler) {
-            window.removeEventListener('beforeunload', beforeUnloadHandler);
-            beforeUnloadHandler = null;
-          }
-        };
+        const loadingState = createLinkLoadingState(linkElement);
 
         linkElement.addEventListener('click', function (event) {
           event.preventDefault();
 
-          if (requestInProgress) {
+          if (loadingState.isInProgress()) {
             return;
           }
 
@@ -575,7 +484,7 @@ const API = {
 
           const handleApiRequest = (method, href, params = {}) => {
             if (apiData.loading || apiData.preventNavigation) {
-              setLoadingState(apiData);
+              loadingState.set(apiData);
             }
 
             const url = apiData.href || href;
@@ -584,11 +493,11 @@ const API = {
               : params;
             API.makeRequest(method, Tools.getBaseURL(url), mergedParams,
               (result) => {
-                resetLoadingState();
+                loadingState.reset();
                 API._afterComplete(linkElement, result);
               },
               (error) => {
-                resetLoadingState();
+                loadingState.reset();
                 FOSSBilling.ui.notify(`${error.message} (${error.code})`, 'error');
               },
               true,
@@ -597,48 +506,8 @@ const API = {
             );
           };
 
-          if (apiData.hasOwnProperty('modal')) {
-            if (typeof Modals === 'undefined' || typeof Modals.create !== 'function') {
-              if (apiData.modal.type === 'prompt') {
-                const value = window.prompt(apiData.modal.label ?? apiData.modal.title ?? '', apiData.modal.value ?? '');
-                if (value) {
-                  const p = {};
-                  p[apiData.modal.key] = value;
-                  handleApiRequest('GET', linkElement.getAttribute('href'), p);
-                }
-              } else if (window.confirm(apiData.modal.content || apiData.modal.title || 'Are you sure?')) {
-                handleApiRequest('GET', linkElement.getAttribute('href'));
-              }
-            } else if (apiData.modal.type === 'prompt') {
-              Modals.create({
-                type: apiData.modal.type,
-                title: apiData.modal.title,
-                label: apiData.modal.label ?? 'Label',
-                value: apiData.modal.value ?? '',
-                promptConfirmCallback: (value) => {
-                  if (value) {
-                    const p = {};
-                    const name = apiData.modal.key;
-                    p[name] = value;
-                    handleApiRequest('GET', linkElement.getAttribute('href'), p);
-                  }
-                },
-              });
-            } else {
-              Modals.create({
-                type: (apiData.modal.type === 'confirm') ? 'small-confirm' : apiData.modal.type,
-                title: apiData.modal.title,
-                content: apiData.modal.content ?? '',
-                confirmButton: apiData.modal.button ?? 'Confirm',
-                confirmButtonColor: apiData.modal.buttonColor ?? 'primary',
-                confirmCallback: () => {
-                  handleApiRequest('GET', linkElement.getAttribute('href'));
-                },
-              });
-            }
-          } else {
-            handleApiRequest('GET', linkElement.getAttribute('href'));
-          }
+          const modalsLib = typeof Modals !== 'undefined' ? Modals : null;
+          dispatchLinkAction(apiData, rawHref, modalsLib, handleApiRequest);
         });
       });
     }
