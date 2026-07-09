@@ -77,7 +77,7 @@ FROM node:${NODE_VERSION}-bookworm-slim AS frontend-assets
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json tsconfig.json ./
 COPY src/themes/admin_default/package.json src/themes/admin_default/package.json
 COPY src/themes/huraga/package.json src/themes/huraga/package.json
 
