@@ -190,7 +190,7 @@ jobs:
           build-args: |
             FOSSBILLING_VERSION=${{ inputs.version }}
             SENTRY_DSN=${{ vars.SENTRY_DSN }}
-          cache-from: type=registry,ref=${{ env.CACHE_IMAGE }}:cache-release
+          cache-from: type=registry,ref=${{ env.CACHE_IMAGE }}:cache-release-amd64
           context: .
           target: release-artifact
           outputs: type=local,dest=./release-tree

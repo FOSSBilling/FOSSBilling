@@ -17,7 +17,7 @@ jobs:
   cleanup:
     name: 'Delete Untagged GHCR Versions'
     if: ${{ github.repository == 'FOSSBilling/FOSSBilling' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     timeout-minutes: 10
     steps:
       - name: 'Delete Untagged GHCR Versions'

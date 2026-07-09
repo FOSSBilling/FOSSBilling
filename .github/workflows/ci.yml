@@ -20,7 +20,7 @@ jobs:
   merge-hold:
     name: 'Check for Merge Hold'
     if: ${{ github.event_name == 'pull_request' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     timeout-minutes: 5
     steps:
       - name: 'Check merge-hold label'
@@ -40,7 +40,7 @@ jobs:
       contents: read
       pull-requests: write
     if: ${{ github.event_name == 'pull_request_target' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     timeout-minutes: 5
     steps:
       - uses: actions/labeler@b8dd2d9be0f68b860e7dae5dae7d772984eacd6d # v6
@@ -54,7 +54,7 @@ jobs:
       contents: write
       pull-requests: read
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     timeout-minutes: 5
     steps:
       - uses: release-drafter/release-drafter@4d75298e00d9e34c483e5ff8c68d0ea1c1940c1e # v7
@@ -65,7 +65,7 @@ jobs:
 
   spellcheck:
     name: 'Spellcheck'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     timeout-minutes: 10
     if: ${{ (github.event_name == 'pull_request' && github.event.action != 'labeled' && github.event.action != 'unlabeled' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
     steps:
@@ -84,7 +84,6 @@ jobs:
     # Keep PR and push callers separate because job permissions cannot be conditional.
     permissions:
       contents: read
-    needs: [ spellcheck ]
     if: ${{ github.event_name == 'pull_request' && github.event.action != 'labeled' && github.event.action != 'unlabeled' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id }}
     uses: ./.github/workflows/php-build-test.yml
     with:
@@ -95,7 +94,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-    needs: [ spellcheck ]
     if: ${{ github.event_name == 'push' }}
     uses: ./.github/workflows/php-build-test.yml
     with:
@@ -194,7 +192,7 @@ jobs:
     name: 'Upload Preview Release'
     needs: [ preview-build-pr, preview-build-push, preview-docker ]
     if: ${{ !cancelled() && (needs['preview-build-pr'].result == 'success' || needs['preview-build-push'].result == 'success' || needs['preview-docker'].result == 'success') }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     timeout-minutes: 15
     steps:
       - name: 'Download Preview Release Archive'
@@ -220,9 +218,12 @@ jobs:
 
       - name: 'Upload Downloadable Preview to S3'
         if: ${{ github.ref == 'refs/heads/main' }}
-        uses: jakejarvis/s3-sync-action@7ed8b112447abb09f1da74f3466e4194fc7a6311 # master
-        with:
-          args: '--acl public-read --follow-symlinks'
+        run: |
+          aws s3 sync "${SOURCE_DIR}" "s3://${AWS_S3_BUCKET}/" \
+            --endpoint-url "${AWS_S3_ENDPOINT}" \
+            --acl public-read \
+            --follow-symlinks \
+            --no-progress
         env:
           AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}

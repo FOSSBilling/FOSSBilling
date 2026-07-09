@@ -14,7 +14,7 @@ jobs:
     name: 'Check if Release is Latest'
     permissions:
       contents: read
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     timeout-minutes: 10
     outputs:
       is_latest: ${{ steps.compare-latest.outputs.is_latest }}
@@ -49,8 +49,6 @@ jobs:
     with:
       target: runtime
       cache-scope: cache-release
-      extract-release-tree: true
-      release-tree-artifact-name: release-build
       meta-images: fossbilling/fossbilling
       meta-tags: |
         type=semver,pattern={{version}}
