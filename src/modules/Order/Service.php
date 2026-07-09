@@ -386,7 +386,13 @@ class Service implements InjectionAwareInterface
 
         // See getBatchForApi() for why domain orders need a separate renewal_price field.
         if ($model->service_type === 'domain' && $model->service_id !== null) {
-            $priceRenew = $this->di['db']->getCell('SELECT price_renew FROM service_domain WHERE id = :id', [':id' => $model->service_id]);
+            $priceRenew = $this->di['db']->getCell(
+                'SELECT t.price_renew * GREATEST(sd.period, 1)
+                FROM service_domain sd
+                JOIN tld t ON t.tld = sd.tld
+                WHERE sd.id = :id',
+                [':id' => $model->service_id]
+            );
             if ($priceRenew !== null) {
                 $data['renewal_price'] = (float) $priceRenew;
             }
@@ -476,8 +482,8 @@ class Service implements InjectionAwareInterface
 
         // Domain orders keep their original purchase price in client_order.price forever
         // (renewFromOrder() never updates it), so it can read 0.00 for a free/promo/transfer-in
-        // order even though the registrar charges a real amount at renewal. service_domain.price_renew
-        // holds the actual renewal cost, so surface it separately for domain orders.
+        // order even though the registrar charges a real amount at renewal. tld.price_renew
+        // (per-TLD, joined via service_domain.tld) holds the actual per-year renewal cost.
         $renewalPrices = [];
         $domainServiceIds = array_column(
             array_filter($orders, static fn ($o) => $o['service_type'] === 'domain' && !empty($o['service_id'])),
@@ -486,7 +492,10 @@ class Service implements InjectionAwareInterface
         if (!empty($domainServiceIds)) {
             $placeholders = implode(',', array_fill(0, count($domainServiceIds), '?'));
             $rows = $this->di['db']->getAll(
-                "SELECT id, price_renew FROM service_domain WHERE id IN ($placeholders)",
+                'SELECT sd.id, t.price_renew * GREATEST(sd.period, 1) AS price_renew
+                FROM service_domain sd
+                JOIN tld t ON t.tld = sd.tld
+                WHERE sd.id IN (' . $placeholders . ')',
                 $domainServiceIds
             );
             foreach ($rows as $row) {
