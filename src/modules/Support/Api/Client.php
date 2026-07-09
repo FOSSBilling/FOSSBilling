@@ -105,11 +105,6 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $data['content'] = \FOSSBilling\Tools::sanitizeMarkdownContent($data['content']);
 
         $client = $this->getIdentity();
-
-        $bindings = [
-            ':id' => $data['id'],
-            ':client_id' => $client->id,
-        ];
         $ticket = $this->getService()->getSupportTicketRepository()->findOneByClient((int) $client->id, (int) $data['id']);
 
         if (!$ticket instanceof SupportTicket) {
