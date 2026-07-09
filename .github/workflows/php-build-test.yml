@@ -88,14 +88,14 @@ jobs:
       - name: 'Export Test Image Artifact'
         # Shared with live-tests/cypress-tests so they don't each rebuild the same image.
         if: matrix.php == '8.5'
-        run: docker save --output /tmp/test-image-8.5.tar fossbilling:test-8.5
+        run: docker save fossbilling:test-8.5 | zstd -T0 -6 --stdout > /tmp/test-image-8.5.tar.zst
 
       - name: 'Upload Test Image Artifact'
         if: matrix.php == '8.5'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: docker-test-image-8.5
-          path: /tmp/test-image-8.5.tar
+          archive: false
+          path: /tmp/test-image-8.5.tar.zst
           retention-days: 1
 
       - name: 'Write Job Summary'
