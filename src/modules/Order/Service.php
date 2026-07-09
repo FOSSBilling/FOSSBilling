@@ -881,15 +881,19 @@ class Service implements InjectionAwareInterface
     {
         // re-fetch in case the caller's order object is stale (e.g. already activated by another code path)
         $order = $this->di['db']->load('ClientOrder', $order->id);
+        $force = !empty($data['force']);
+
+        // Already active and not a forced re-activation: nothing to do.
+        if ($order->status === \Model_ClientOrder::STATUS_ACTIVE && !$force) {
+            return true;
+        }
 
         $statues = [
             \Model_ClientOrder::STATUS_PENDING_SETUP,
             \Model_ClientOrder::STATUS_FAILED_SETUP,
         ];
-        if (!in_array($order->status, $statues)) {
-            if (!isset($data['force']) || !$data['force']) {
-                throw new \FOSSBilling\Exception('Only pending setup or failed orders can be activated');
-            }
+        if (!in_array($order->status, $statues) && !$force) {
+            throw new \FOSSBilling\Exception('Only pending setup or failed orders can be activated');
         }
 
         $event_params = ['id' => $order->id];

@@ -1711,7 +1711,7 @@ test('activateOrder activates pending order', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('activateOrder is idempotent when order was already activated by a stale reference', function (): void {
+test('activateOrder is a no-op when order was already activated by a stale reference', function (): void {
     $staleOrderModel = new Model_ClientOrder();
     $staleOrderModel->loadBean(new Tests\Helpers\DummyBean());
     $staleOrderModel->status = Model_ClientOrder::STATUS_PENDING_SETUP;
@@ -1727,11 +1727,45 @@ test('activateOrder is idempotent when order was already activated by a stale re
     $di = container();
     $di['db'] = $dbMock;
 
-    $svc = new Service();
-    $svc->setDi($di);
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('createFromOrder')->never();
+    $serviceMock->shouldReceive('activateOrderAddons')->never();
 
-    expect(fn (): bool => $svc->activateOrder($staleOrderModel))
-        ->toThrow(FOSSBilling\Exception::class, 'Only pending setup or failed orders can be activated');
+    $serviceMock->setDi($di);
+
+    $result = $serviceMock->activateOrder($staleOrderModel);
+
+    expect($result)->toBeTrue();
+});
+
+test('activateOrder force re-activates an already active order', function (): void {
+    $activeOrderModel = new Model_ClientOrder();
+    $activeOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $activeOrderModel->status = Model_ClientOrder::STATUS_ACTIVE;
+    $activeOrderModel->group_master = 1;
+
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('load')->atLeast()->once()->with('ClientOrder', Mockery::any())->andReturn($activeOrderModel);
+
+    $eventMock = Mockery::mock(Box_EventManager::class);
+    $eventMock->shouldReceive('fire')->atLeast()->once();
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['events_manager'] = $eventMock;
+    $di['logger'] = new Box_Log();
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('createFromOrder')->atLeast()->once()->andReturn([]);
+    $serviceMock->shouldReceive('activateOrderAddons')->atLeast()->once();
+
+    $serviceMock->setDi($di);
+
+    $result = $serviceMock->activateOrder($activeOrderModel, ['force' => true]);
+
+    expect($result)->toBeTrue();
 });
 
 test('activateOrderAddons activates addons', function (): void {
