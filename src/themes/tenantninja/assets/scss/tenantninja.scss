@@ -1305,7 +1305,9 @@ table > thead > tr > th {
 
     &__status {
         flex-shrink: 0;
-        width: 108px;
+        display: flex;
+        justify-content: flex-end;
+        white-space: nowrap;
     }
 
     &__meta {
@@ -1331,6 +1333,28 @@ table > thead > tr > th {
     &__chevron {
         flex-shrink: 0;
         color: var(--text-faint);
+    }
+
+    @media (max-width: 640px) {
+        flex-wrap: wrap;
+
+        &__body {
+            width: 100%;
+            order: 1;
+        }
+
+        &__status {
+            order: 2;
+        }
+
+        &__meta {
+            order: 3;
+            margin-left: auto;
+        }
+
+        &__chevron {
+            order: 4;
+        }
     }
 }
 
