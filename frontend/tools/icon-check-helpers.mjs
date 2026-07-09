@@ -1,4 +1,4 @@
-export function normalizeIconEntry(entry, defaultVariant) {
+function normalizeIconEntry(entry, defaultVariant) {
   if (typeof entry === 'string') {
     return {
       name: entry,
@@ -18,10 +18,9 @@ export function parseManifest(manifest) {
   const defaultVariant = manifest.defaultVariant || 'outline';
   const manifestIcons = manifest.icons.map((entry) => normalizeIconEntry(entry, defaultVariant));
   const manifestNames = new Set(manifestIcons.map((icon) => icon.name));
-  const declaredDynamicManifestNames = new Set(manifestIcons.filter((icon) => icon.dynamic).map((icon) => icon.name));
-  const dynamicManifestNames = new Set(declaredDynamicManifestNames);
+  const dynamicManifestNames = new Set(manifestIcons.filter((icon) => icon.dynamic).map((icon) => icon.name));
 
-  return { manifestIcons, manifestNames, declaredDynamicManifestNames, dynamicManifestNames };
+  return { manifestIcons, manifestNames, dynamicManifestNames };
 }
 
 const ICON_REF_REGEX = /<use\b[^>]*\b(?:href|xlink:href)=["'](?:[^#"']*)#([A-Za-z0-9_-]+)["']/g;
@@ -53,7 +52,7 @@ export function computeIconErrors(theme, manifestData, scanData, dynamicIcons) {
 
   const missing = [...scanData.referencedIcons, ...dynamicIcons].filter((icon) => !manifestData.manifestNames.has(icon)).sort();
   const unused = [...manifestData.manifestNames].filter((icon) => !scanData.referencedIcons.has(icon) && !manifestData.dynamicManifestNames.has(icon)).sort();
-  const undocumentedDynamic = [...dynamicIcons].filter((icon) => !manifestData.declaredDynamicManifestNames.has(icon)).sort();
+  const undocumentedDynamic = [...dynamicIcons].filter((icon) => !manifestData.dynamicManifestNames.has(icon)).sort();
 
   if (scanData.legacyReferences.length > 0) {
     errors.push(`${theme.code}: legacy xlink:href references remain in ${[...new Set(scanData.legacyReferences)].join(', ')}`);

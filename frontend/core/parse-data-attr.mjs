@@ -141,14 +141,3 @@ export function parseDataAttr(dataAttrValue) {
 
   return data;
 }
-
-export {
-  assertString,
-  assertBoolean,
-  assertPositiveNumber,
-  assertPlainObject,
-  validateLoading,
-  validateModal,
-  TOP_LEVEL_SCHEMA,
-  MODAL_ALLOWED_TYPES,
-};

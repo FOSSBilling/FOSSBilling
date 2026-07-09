@@ -9,19 +9,6 @@
  */
 
 /**
- * Build a params object from a prompt modal configuration and the user-entered value.
- *
- * @param {object} modalConfig  The `modal` sub-object from parsed data-fb-api.
- * @param {string} value        The value entered by the user.
- * @returns {object}            Single-key object, e.g. `{ key: value }`.
- */
-export function buildPromptParams(modalConfig, value) {
-  const p = {};
-  p[modalConfig.key] = value;
-  return p;
-}
-
-/**
  * Dispatch a link click through the appropriate modal flow (or directly) and
  * invoke `onRequest` when the user confirms.
  *
@@ -42,7 +29,7 @@ export function dispatchLinkAction(apiData, rawHref, modalsLib, onRequest) {
     if (modal.type === 'prompt') {
       const value = window.prompt(modal.label ?? modal.title ?? '', modal.value ?? '');
       if (value) {
-        onRequest('GET', rawHref, buildPromptParams(modal, value));
+        onRequest('GET', rawHref, { [modal.key]: value });
       }
     } else if (window.confirm(modal.content || modal.title || 'Are you sure?')) {
       onRequest('GET', rawHref);
@@ -55,7 +42,7 @@ export function dispatchLinkAction(apiData, rawHref, modalsLib, onRequest) {
       value: modal.value ?? '',
       promptConfirmCallback: (value) => {
         if (value) {
-          onRequest('GET', rawHref, buildPromptParams(modal, value));
+          onRequest('GET', rawHref, { [modal.key]: value });
         }
       },
     });
