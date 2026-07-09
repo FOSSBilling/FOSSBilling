@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 
-import { parseDataAttr } from '../parse-data-attr.mjs';
+import { parseDataAttr } from '../parse-data-attr.mts';
 
 const parse = (value) => parseDataAttr(JSON.stringify(value));
 

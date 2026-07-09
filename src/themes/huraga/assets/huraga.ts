@@ -1,7 +1,8 @@
+// @ts-nocheck -- Runtime DOM/widget integration; converted to TS without changing behavior.
 import { Tooltip, Toast, Modal, Collapse, Tab } from 'bootstrap/dist/js/bootstrap.esm.js';
-import './js/utils';
-import initTheme from './js/ui/theme.js';
-import initPhoneInput from './js/phone-input.js';
+import './js/utils.ts';
+import initTheme from './js/ui/theme.ts';
+import initPhoneInput from './js/phone-input.ts';
 
 globalThis.bootstrap = { Tooltip, Toast, Modal, Collapse, Tab };
 
@@ -126,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const languageSelector = document.querySelector('.js-locale-selector');
   if (languageSelector) {
     // Dynamically import TomSelect module with error handling
-    import('./js/tomselect.js')
+    import('./js/tomselect.ts')
       .then(module => {
         if (typeof module.default === 'function') {
           module.default();

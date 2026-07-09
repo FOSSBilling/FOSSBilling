@@ -1,11 +1,10 @@
 /**
  * Huraga theme utilities - minimal version of FOSSBilling utilities
- * Only includes functionality actually used by the Huraga theme
  */
 
-globalThis.FOSSBilling = Object.assign(globalThis.FOSSBilling || {}, {
-  message: (message, type = "info") => {
-    let color;
+window.FOSSBilling = Object.assign(window.FOSSBilling || {}, {
+  message: (message: string, type = "info") => {
+    let color: string;
     switch (type) {
       case "error":
         color = "danger";
@@ -30,7 +29,6 @@ globalThis.FOSSBilling = Object.assign(globalThis.FOSSBilling || {}, {
     element.setAttribute("aria-live", "assertive");
     element.setAttribute("aria-atomic", "true");
 
-    // Create header div and its children elements
     const headerDiv = document.createElement("div");
     headerDiv.className = "toast-header";
 
@@ -52,7 +50,6 @@ globalThis.FOSSBilling = Object.assign(globalThis.FOSSBilling || {}, {
 
     element.appendChild(headerDiv);
 
-    // Create body div and set its text content
     const bodyDiv = document.createElement("div");
     bodyDiv.className = "toast-body";
     bodyDiv.textContent = message;
@@ -62,7 +59,6 @@ globalThis.FOSSBilling = Object.assign(globalThis.FOSSBilling || {}, {
       container.removeChild(element);
     });
 
-    // Create a new Bootstrap toast instance and show it
     const toast = new bootstrap.Toast(element);
     toast.show();
   }

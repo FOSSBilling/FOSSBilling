@@ -1,3 +1,4 @@
+// @ts-nocheck -- Runtime DOM/widget integration; converted to TS without changing behavior.
 /**
  * FOSSBilling API for JavaScript.
  *
@@ -8,7 +9,7 @@
  * with this source code in the file LICENSE
  */
 
-import { parseDataAttr } from './parse-data-attr.mjs';
+import { parseDataAttr } from './parse-data-attr.mts';
 import {
   injectCSRFToken,
   buildRequestBody,
@@ -17,11 +18,11 @@ import {
   validateHttpResponse,
   interpretResponse,
   normalizeApiError,
-} from './api-helpers.mjs';
+} from './api-helpers.mts';
 import {
   dispatchLinkAction,
   createLinkLoadingState,
-} from './link-helpers.mjs';
+} from './link-helpers.mts';
 
 /**
  * Tools for the API wrapper.

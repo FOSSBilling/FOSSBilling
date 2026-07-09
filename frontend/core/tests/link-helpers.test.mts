@@ -1,52 +1,54 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 
-import { createLinkLoadingState, dispatchLinkAction } from '../link-helpers.mjs';
+import { createLinkLoadingState, dispatchLinkAction } from '../link-helpers.mts';
 
-globalThis.window = globalThis;
+const testGlobal = globalThis as any;
 
-const createClassList = (classes = []) => ({
+testGlobal.window = testGlobal;
+
+const createClassList = (classes: string[] = []) => ({
   classes: new Set(classes),
-  add(value) { this.classes.add(value); },
-  remove(value) { this.classes.delete(value); },
-  contains(value) { return this.classes.has(value); },
+  add(value: string) { this.classes.add(value); },
+  remove(value: string) { this.classes.delete(value); },
+  contains(value: string) { return this.classes.has(value); },
 });
 
-const createElement = () => ({
+const createElement = (): any => ({
   className: '',
   attributes: {},
   classList: createClassList(),
-  getAttribute(name) { return this.attributes[name] ?? null; },
-  setAttribute(name, value) { this.attributes[name] = String(value); },
+  getAttribute(name: string) { return this.attributes[name] ?? null; },
+  setAttribute(name: string, value: string) { this.attributes[name] = String(value); },
 });
 
-globalThis.document = {
+testGlobal.document = {
   createElement,
-  createTextNode: (text) => ({ textContent: text }),
+  createTextNode: (text: string) => ({ textContent: text }),
   querySelector: () => null,
 };
 
-const createLink = ({ disabled = false, parent = null } = {}) => ({
+const createLink = ({ disabled = false, parent = null }: { disabled?: boolean; parent?: any } = {}): any => ({
   innerHTML: '<span>Original</span>',
   attributes: {},
   classList: createClassList(disabled ? ['disabled'] : []),
   parentElement: parent,
-  getAttribute(name) { return this.attributes[name] ?? null; },
-  setAttribute(name, value) { this.attributes[name] = String(value); },
-  removeAttribute(name) { delete this.attributes[name]; },
-  replaceChildren(...children) { this.children = children; },
+  getAttribute(name: string) { return this.attributes[name] ?? null; },
+  setAttribute(name: string, value: string) { this.attributes[name] = String(value); },
+  removeAttribute(name: string) { delete this.attributes[name]; },
+  replaceChildren(...children: any[]) { this.children = children; },
   closest() { return parent; },
 });
 
 describe('dispatchLinkAction', () => {
   test('dispatches links without a modal directly', () => {
-    let request;
+    let request: unknown;
     dispatchLinkAction({}, '/endpoint', null, (...args) => { request = args; });
     assert.deepEqual(request, ['GET', '/endpoint']);
   });
 
   test('uses native confirm when the modal library is unavailable', () => {
-    let request;
+    let request: unknown;
     window.confirm = (message) => {
       assert.equal(message, 'Continue?');
       return true;
@@ -78,7 +80,7 @@ describe('dispatchLinkAction', () => {
       return 'Because';
     };
 
-    let request;
+    let request: unknown;
     dispatchLinkAction(
       { modal: { type: 'prompt', key: 'reason', label: 'Reason', value: 'Default' } },
       '/endpoint',
@@ -89,9 +91,9 @@ describe('dispatchLinkAction', () => {
   });
 
   test('configures library confirm and prompt callbacks', () => {
-    const created = [];
-    const modals = { create: (config) => created.push(config) };
-    const requests = [];
+    const created: any[] = [];
+    const modals = { create: (config: any) => created.push(config) };
+    const requests: unknown[] = [];
 
     dispatchLinkAction(
       { modal: { type: 'confirm', title: 'Delete', button: 'Delete', buttonColor: 'danger' } },
@@ -157,7 +159,7 @@ describe('createLinkLoadingState', () => {
       children: [],
       appendChild(child) { this.children.push(child); },
     };
-    const removed = [];
+    const removed: unknown[] = [];
     const listeners = new Map();
     window.addEventListener = (name, listener) => listeners.set(name, listener);
     window.removeEventListener = (name, listener) => {
@@ -167,11 +169,11 @@ describe('createLinkLoadingState', () => {
     };
 
     const originalCreateElement = document.createElement;
-    document.createElement = () => {
-      const element = originalCreateElement();
+    document.createElement = (() => {
+      const element = originalCreateElement('span');
       element.remove = () => removed.push(element);
       return element;
-    };
+    }) as typeof document.createElement;
 
     const state = createLinkLoadingState(createLink({ parent }));
     state.set({

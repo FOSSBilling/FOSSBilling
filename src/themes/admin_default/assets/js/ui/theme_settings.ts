@@ -78,7 +78,7 @@ export default function initThemeSettings() {
     hrEl.classList.add('my-3');
     headingEl.classList.add('mb-3');
     el.before(hrEl); el.before(headingEl);
-    headingEl.innerText = el.innerText;
+    headingEl.textContent = el.textContent;
     el.remove();
   });
 

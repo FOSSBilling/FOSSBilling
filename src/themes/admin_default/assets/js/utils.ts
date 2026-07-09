@@ -12,7 +12,7 @@
  * Get CSRF token from cookie
  * @returns {string|null} CSRF token or null if not found
  */
-export function getCSRFToken() {
+export function getCSRFToken(): string | null {
   const match = document.cookie.match(/csrf_token=([^;]*)/);
   return match ? decodeURIComponent(match[1]) : null;
 }
@@ -22,7 +22,7 @@ export function getCSRFToken() {
  * @param {string} path - Relative path
  * @returns {string} Absolute URL
  */
-export function getBaseURL(path) {
+export function getBaseURL(path: string): string {
   if (!path) return '';
   if (path.startsWith('http://') || path.startsWith('https://')) {
     return path;
@@ -36,7 +36,7 @@ export function getBaseURL(path) {
  * @param {HTMLElement|Document} [scope=document] - Scope to search within
  * @returns {HTMLElement|null} Found element or null
  */
-export function safeQuerySelector(selector, scope = document) {
+export function safeQuerySelector(selector: string, scope: ParentNode = document): Element | null {
   try {
     return scope.querySelector(selector);
   } catch (error) {
@@ -51,7 +51,7 @@ export function safeQuerySelector(selector, scope = document) {
  * @param {HTMLElement|Document} [scope=document] - Scope to search within
  * @returns {NodeList|[]} Found elements or empty array
  */
-export function safeQuerySelectorAll(selector, scope = document) {
+export function safeQuerySelectorAll(selector: string, scope: ParentNode = document): NodeListOf<Element> | [] {
   try {
     return scope.querySelectorAll(selector);
   } catch (error) {
@@ -66,9 +66,9 @@ export function safeQuerySelectorAll(selector, scope = document) {
  * @param {number} wait - Time to wait in milliseconds
  * @returns {Function} Debounced function
  */
-export function debounce(func, wait) {
-  let timeout;
-  return function executedFunction(...args) {
+export function debounce<T extends (...args: unknown[]) => void>(func: T, wait: number) {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  return function executedFunction(this: unknown, ...args: Parameters<T>) {
     const context = this;
     const later = () => {
       clearTimeout(timeout);
@@ -85,10 +85,10 @@ export function debounce(func, wait) {
  * @param {number} limit - Time limit in milliseconds
  * @returns {Function} Throttled function
  */
-export function throttle(func, limit) {
-  let lastFunc;
-  let lastRan;
-  return function(...args) {
+export function throttle<T extends (...args: unknown[]) => void>(func: T, limit: number) {
+  let lastFunc: ReturnType<typeof setTimeout> | undefined;
+  let lastRan: number | undefined;
+  return function(this: unknown, ...args: Parameters<T>) {
     const context = this;
     if (!lastRan) {
       func.apply(context, args);
@@ -110,7 +110,7 @@ export function throttle(func, limit) {
  * @param {HTMLElement} element - Element to check
  * @returns {boolean} True if element is in viewport
  */
-export function isElementInViewport(element) {
+export function isElementInViewport(element: Element | null): boolean {
   if (!element) return false;
 
   const rect = element.getBoundingClientRect();
@@ -127,7 +127,7 @@ export function isElementInViewport(element) {
  * @param {HTMLElement|string} target - Element or selector
  * @param {Object} [options] - Scroll options
  */
-export function scrollToElement(target, options = {}) {
+export function scrollToElement(target: Element | string, options: ScrollIntoViewOptions = {}) {
   const element = typeof target === 'string' ? safeQuerySelector(target) : target;
   if (!element) return;
 
@@ -146,7 +146,7 @@ export function scrollToElement(target, options = {}) {
  * @param {number} [decimals=2] - Number of decimals
  * @returns {string} Formatted string
  */
-export function formatBytes(bytes, decimals = 2) {
+export function formatBytes(bytes: number, decimals = 2): string {
   if (!Number.isFinite(bytes) || bytes < 0) return '0 Bytes';
   if (bytes === 0) return '0 Bytes';
 
@@ -165,14 +165,17 @@ export function formatBytes(bytes, decimals = 2) {
  * @param {...Object} objects - Objects to merge
  * @returns {Object} Merged object
  */
-export function deepMerge(...objects) {
-  const result = {};
+export function deepMerge(...objects: Array<Record<string, unknown>>): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
 
   for (const obj of objects) {
     for (const key in obj) {
       if (Object.prototype.hasOwnProperty.call(obj, key)) {
         if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
-          result[key] = deepMerge(result[key] || {}, obj[key]);
+          const current = typeof result[key] === 'object' && result[key] !== null && !Array.isArray(result[key])
+            ? result[key] as Record<string, unknown>
+            : {};
+          result[key] = deepMerge(current, obj[key] as Record<string, unknown>);
         } else {
           result[key] = obj[key];
         }

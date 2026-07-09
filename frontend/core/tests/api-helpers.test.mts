@@ -9,11 +9,11 @@ import {
   normalizeApiError,
   parseResponseBody,
   validateHttpResponse,
-} from '../api-helpers.mjs';
+} from '../api-helpers.mts';
 
 describe('API request helpers', () => {
   test('injects a missing CSRF token without replacing an existing one', () => {
-    const params = {};
+    const params: Record<string, unknown> = {};
     assert.equal(injectCSRFToken(params, 'token'), params);
     assert.equal(params.CSRFToken, 'token');
 
@@ -103,7 +103,7 @@ describe('API response helpers', () => {
         { ok: false, status: 422, statusText: 'Invalid' },
         { payload: { error: { message: 'Bad input', code: 'bad_input' } }, rawText: 'body' },
       ),
-      (error) => error.message === 'Bad input' && error.code === 'bad_input' && error.status === 422,
+      (error: any) => error.message === 'Bad input' && error.code === 'bad_input' && error.status === 422,
     );
     assert.throws(
       () => validateHttpResponse({ ok: true }, { payload: null, rawText: '<html>' }),
@@ -116,7 +116,7 @@ describe('API response helpers', () => {
     assert.equal(interpretResponse({ result: 0 }), 0);
     assert.throws(
       () => interpretResponse({ error: { message: 'Denied', code: 'denied' } }),
-      (error) => error.message === 'Denied' && error.code === 'denied',
+      (error: any) => error.message === 'Denied' && error.code === 'denied',
     );
   });
 

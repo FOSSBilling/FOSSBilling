@@ -1,7 +1,8 @@
-import backToTop from "./ui/backToTop";
+// @ts-nocheck -- Runtime DOM/widget integration; converted to TS without changing behavior.
+import backToTop from "./ui/backToTop.ts";
 
 function renderTimeSeriesSparkline(...args) {
-  return import("./ui/charts").then(({ renderTimeSeriesSparkline: renderChart }) => renderChart(...args));
+  return import("./ui/charts.ts").then(({ renderTimeSeriesSparkline: renderChart }) => renderChart(...args));
 }
 
 globalThis.FOSSBilling = Object.assign(globalThis.FOSSBilling || {}, {

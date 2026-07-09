@@ -1,3 +1,4 @@
+// @ts-nocheck -- Runtime DOM/widget integration; converted to TS without changing behavior.
 /**
  * Huraga theme TomSelect setup - lazy loaded only when needed
  */

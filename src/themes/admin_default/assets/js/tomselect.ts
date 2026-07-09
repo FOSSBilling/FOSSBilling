@@ -1,5 +1,6 @@
+// @ts-nocheck -- Runtime DOM/widget integration; converted to TS without changing behavior.
 import TomSelect from 'tom-select';
-import { getCSRFToken, getBaseURL } from './utils';
+import { getCSRFToken, getBaseURL } from './utils.ts';
 globalThis.TomSelect = TomSelect;
 
 const createTomSelectTemplate = (data, escape, options = {}) => {

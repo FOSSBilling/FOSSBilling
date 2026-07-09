@@ -1,4 +1,38 @@
-function injectCSRFToken(params, token) {
+type ApiParams = FormData | Record<string, unknown> | string | null | undefined;
+type RequestBody = FormData | string | null;
+
+interface ParsedResponse {
+  payload: unknown;
+  rawText: string;
+}
+
+interface ApiErrorPayload {
+  error?: {
+    code?: string;
+    message?: string;
+  };
+  result?: unknown;
+}
+
+interface MinimalResponse {
+  ok?: boolean;
+  status?: number;
+  statusText?: string;
+  text?: () => Promise<string>;
+}
+
+interface ApiErrorLike {
+  code?: string;
+  message?: string;
+  name?: string;
+}
+
+interface ApiTimeoutOptions {
+  timeoutMs?: number;
+  timeoutMessage?: string | null;
+}
+
+function injectCSRFToken<T extends ApiParams>(params: T, token: string): T {
   if (params instanceof FormData) {
     if (!params.has('CSRFToken')) {
       params.append('CSRFToken', token);
@@ -11,29 +45,29 @@ function injectCSRFToken(params, token) {
   return params;
 }
 
-function buildRequestBody(method, params, url) {
+function buildRequestBody(method: string, params: ApiParams, url: URL): { body: RequestBody; isFormData: boolean } {
   const methodLower = method.toLowerCase();
   const isFormData = params instanceof FormData;
-  let body = null;
+  let body: RequestBody = null;
 
   if (methodLower === 'get') {
     if (isFormData) {
       for (const [key, value] of params.entries()) {
         if (key !== 'CSRFToken') {
-          url.searchParams.append(key, value);
+          url.searchParams.append(key, String(value));
         }
       }
     } else if (params && typeof params === 'object') {
       Object.keys(params)
         .filter((key) => key !== 'CSRFToken')
-        .forEach((key) => url.searchParams.append(key, params[key]));
+        .forEach((key) => url.searchParams.append(key, String(params[key])));
     } else if (params) {
-      url.search = params;
+      url.search = String(params);
       url.searchParams.delete('CSRFToken');
     }
   } else if (['post', 'put', 'patch', 'delete'].includes(methodLower)) {
     if (isFormData || typeof params === 'string') {
-      body = params;
+      body = params as RequestBody;
     } else {
       body = JSON.stringify(params);
     }
@@ -42,8 +76,16 @@ function buildRequestBody(method, params, url) {
   return { body, isFormData };
 }
 
-function buildHeaders({ url, body, isFormData, csrfToken, origin }) {
-  const headers = {
+function buildHeaders(
+  { url, body, isFormData, csrfToken, origin }: {
+    url: URL;
+    body: RequestBody;
+    isFormData: boolean;
+    csrfToken?: string | null;
+    origin: string;
+  },
+): Record<string, string> {
+  const headers: Record<string, string> = {
     'Accept': 'application/json',
   };
   if (url.origin === origin) {
@@ -56,12 +98,12 @@ function buildHeaders({ url, body, isFormData, csrfToken, origin }) {
   return headers;
 }
 
-async function parseResponseBody(response) {
+async function parseResponseBody(response: MinimalResponse): Promise<ParsedResponse> {
   if (response.status === 204) {
     return { payload: null, rawText: '' };
   }
 
-  const text = await response.text();
+  const text = await response.text?.() ?? '';
   if (!text) {
     return { payload: null, rawText: '' };
   }
@@ -73,10 +115,11 @@ async function parseResponseBody(response) {
   }
 }
 
-function validateHttpResponse(response, parsed) {
+function validateHttpResponse(response: MinimalResponse, parsed: ParsedResponse) {
   if (!response.ok) {
-    const error = new Error(parsed.payload?.error?.message || `HTTP error ${response.status}: ${response.statusText}`);
-    error.code = parsed.payload?.error?.code || `http_${response.status}`;
+    const payload = parsed.payload as ApiErrorPayload | null;
+    const error = new Error(payload?.error?.message || `HTTP error ${response.status}: ${response.statusText}`);
+    error.code = payload?.error?.code || `http_${response.status}`;
     error.status = response.status;
     error.rawBody = parsed.rawText;
     throw error;
@@ -89,7 +132,7 @@ function validateHttpResponse(response, parsed) {
   return parsed.payload;
 }
 
-function interpretResponse(payload) {
+function interpretResponse(payload: ApiErrorPayload | null) {
   if (!payload) {
     return null;
   }
@@ -103,7 +146,7 @@ function interpretResponse(payload) {
   return payload.result;
 }
 
-function normalizeApiError(error, { timeoutMs, timeoutMessage }) {
+function normalizeApiError(error: ApiErrorLike, { timeoutMs = 30000, timeoutMessage = null }: ApiTimeoutOptions = {}) {
   if (error.name === 'AbortError') {
     return {
       message: timeoutMessage || `Request timed out after ${timeoutMs / 1000} seconds`,

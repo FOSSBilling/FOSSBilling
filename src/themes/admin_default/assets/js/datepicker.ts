@@ -1,3 +1,4 @@
+// @ts-nocheck -- Runtime DOM/widget integration; converted to TS without changing behavior.
 import Litepicker from 'litepicker';
 
 export default function initDatepickers() {
