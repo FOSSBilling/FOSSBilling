@@ -84,7 +84,6 @@ jobs:
     # Keep PR and push callers separate because job permissions cannot be conditional.
     permissions:
       contents: read
-    needs: [ spellcheck ]
     if: ${{ github.event_name == 'pull_request' && github.event.action != 'labeled' && github.event.action != 'unlabeled' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id }}
     uses: ./.github/workflows/php-build-test.yml
     with:
@@ -95,7 +94,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-    needs: [ spellcheck ]
     if: ${{ github.event_name == 'push' }}
     uses: ./.github/workflows/php-build-test.yml
     with:

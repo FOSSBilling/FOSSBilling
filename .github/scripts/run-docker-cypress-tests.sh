@@ -27,6 +27,11 @@ compose() {
 cleanup() {
   status=$?
 
+  if [[ -n "${cypress_pull_pid:-}" ]]; then
+    kill "${cypress_pull_pid}" 2>/dev/null || true
+    wait "${cypress_pull_pid}" 2>/dev/null || true
+  fi
+
   if [[ $status -ne 0 ]]; then
     compose exec -T app sh -c '
       cd /var/www/html
@@ -104,6 +109,9 @@ fi
 
 trap cleanup EXIT
 
+docker pull "${cypress_image}" &
+cypress_pull_pid=$!
+
 export FOSSBILLING_TEST_IMAGE="${image}"
 export FOSSBILLING_DB_NAME="${db_name}"
 export FOSSBILLING_DB_PASS="${db_pass}"
@@ -146,6 +154,9 @@ $config = require $configPath;
 $config["security"]["perform_session_fingerprinting"] = false;
 file_put_contents($configPath, "<?php\n\nreturn " . var_export($config, true) . ";\n");
 '
+
+wait "${cypress_pull_pid}"
+cypress_pull_pid=""
 
 # Chromium-based browsers are sensitive to Docker's default 64 MB /dev/shm size.
 docker run --rm \

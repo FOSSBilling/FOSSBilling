@@ -49,8 +49,6 @@ jobs:
     with:
       target: runtime
       cache-scope: cache-release
-      extract-release-tree: true
-      release-tree-artifact-name: release-build
       meta-images: fossbilling/fossbilling
       meta-tags: |
         type=semver,pattern={{version}}

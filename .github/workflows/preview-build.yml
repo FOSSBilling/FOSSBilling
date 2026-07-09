@@ -41,7 +41,7 @@ jobs:
             FOSSBILLING_VERSION=${{ github.sha }}
             FOSSBILLING_VERSION_TRUNCATE=7
             SENTRY_DSN=${{ vars.SENTRY_DSN }}
-          cache-from: type=registry,ref=${{ env.CACHE_IMAGE }}:cache-preview
+          cache-from: type=registry,ref=${{ env.CACHE_IMAGE }}:cache-preview-amd64
           context: .
           target: release-artifact
           outputs: type=local,dest=./release-tree
@@ -56,8 +56,8 @@ jobs:
             FOSSBILLING_VERSION=${{ github.sha }}
             FOSSBILLING_VERSION_TRUNCATE=7
             SENTRY_DSN=${{ vars.SENTRY_DSN }}
-          cache-from: type=registry,ref=${{ env.CACHE_IMAGE }}:cache-preview
-          cache-to: type=registry,ref=${{ env.CACHE_IMAGE }}:cache-preview,mode=max
+          cache-from: type=registry,ref=${{ env.CACHE_IMAGE }}:cache-preview-amd64
+          cache-to: type=registry,ref=${{ env.CACHE_IMAGE }}:cache-preview-amd64,mode=max
           context: .
           target: release-artifact
           outputs: type=local,dest=./release-tree
@@ -87,7 +87,7 @@ jobs:
           | Item | Value |
           | --- | --- |
           | Release version | `${{ github.sha }}` |
-          | Registry cache | `${{ env.CACHE_IMAGE }}:cache-preview` |
+          | Registry cache | `${{ env.CACHE_IMAGE }}:cache-preview-amd64` |
           | Cache mode | `${{ inputs.write-cache && 'read/write' || 'read-only' }}` |
           | Build target | `release-artifact` |
           | Build output | `./release-tree` |
