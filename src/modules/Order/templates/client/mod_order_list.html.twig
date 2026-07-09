@@ -72,8 +72,10 @@
                                     </span>
                                 </span>
                                 <span class="tn-servicerow__meta">
-                                    <span class="tn-servicerow__status">{{ mf.status_badge(order.status, 'order') }}</span>
-                                    <span class="tn-servicerow__meta-label">{{ 'Renews'|trans }} {% if order.expires_at %}{{ order.expires_at|format_date }}{% else %}&mdash;{% endif %}</span>
+                                    <span class="tn-servicerow__meta-top">
+                                        <span class="tn-servicerow__meta-label">{{ 'Renews'|trans }} {% if order.expires_at %}{{ order.expires_at|format_date }}{% else %}&mdash;{% endif %}</span>
+                                        <span class="tn-servicerow__status">{{ mf.status_badge(order.status, 'order') }}</span>
+                                    </span>
                                     <span class="tn-servicerow__meta-value">{{ order.total|format_currency(order.currency ?? default_currency) }}</span>
                                 </span>
                                 <span class="tn-servicerow__chevron"><svg class="icon"><use href="#chevron-right" /></svg></span>
@@ -90,7 +92,7 @@
             {{ include('partial_pagination.html.twig', { 'list': orders, 'url': 'order/service' }) }}
 
             <div class="tn-transfer-row">
-                <span class="tn-transfer-row__icon"><svg class="icon"><use href="#arrows-right-left" /></svg></span>
+                <span class="tn-transfer-row__icon"><svg class="icon"><use href="#arrow-right-left" /></svg></span>
                 <span class="tn-transfer-row__text">{{ 'Hosting or domains elsewhere? Transfer them in and manage everything from one place.'|trans }}</span>
                 {# No dedicated "transfer domain" list route exists in this codebase — transfer vs.
                    register is chosen as an action inside the domain product's own order form, so this
