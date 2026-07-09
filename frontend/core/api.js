@@ -8,6 +8,8 @@
  * with this source code in the file LICENSE
  */
 
+import { parseDataAttr } from './parse-data-attr.mjs';
+
 /**
  * Tools for the API wrapper.
  */
@@ -70,126 +72,6 @@ const Tools = {
     } catch (error) {
       return false;
     }
-  },
-
-  /**
-   * Parses the data attribute value from a DOM element and validates known fields.
-   *
-   * @param {string} dataAttrValue The value of the data attribute to parse.
-   * @returns {object} The parsed and validated data.
-   * @throws {Error} If the data attribute value is invalid or does not match the schema.
-   **/
-  parseDataAttr: function (dataAttrValue) {
-    if (!dataAttrValue) {
-      return {};
-    }
-
-    let data;
-    try {
-      data = JSON.parse(dataAttrValue);
-    } catch (error) {
-      throw new Error('Invalid JSON in data-fb-api attribute.');
-    }
-
-    if (typeof data !== 'object' || data === null || Array.isArray(data)) {
-      throw new Error('data-fb-api must be a JSON object.');
-    }
-
-    const assertString = (value, key) => {
-      if (typeof value !== 'string') {
-        throw new Error(`data-fb-api.${key} must be a string.`);
-      }
-    };
-
-    const assertBoolean = (value, key) => {
-      if (typeof value !== 'boolean') {
-        throw new Error(`data-fb-api.${key} must be a boolean.`);
-      }
-    };
-
-    const assertPositiveNumber = (value, key) => {
-      if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
-        throw new Error(`data-fb-api.${key} must be a positive number.`);
-      }
-    };
-
-    if (Object.prototype.hasOwnProperty.call(data, 'href')) {
-      assertString(data.href, 'href');
-    }
-    if (Object.prototype.hasOwnProperty.call(data, 'type')) {
-      assertString(data.type, 'type');
-    }
-    if (Object.prototype.hasOwnProperty.call(data, 'endpoint')) {
-      assertString(data.endpoint, 'endpoint');
-    }
-    if (Object.prototype.hasOwnProperty.call(data, 'callback')) {
-      assertString(data.callback, 'callback');
-    }
-    if (Object.prototype.hasOwnProperty.call(data, 'message')) {
-      assertString(data.message, 'message');
-    }
-    if (Object.prototype.hasOwnProperty.call(data, 'redirect')) {
-      assertString(data.redirect, 'redirect');
-    }
-    if (Object.prototype.hasOwnProperty.call(data, 'reload')) {
-      assertBoolean(data.reload, 'reload');
-    }
-    if (Object.prototype.hasOwnProperty.call(data, 'preventNavigation')) {
-      assertBoolean(data.preventNavigation, 'preventNavigation');
-    }
-    if (Object.prototype.hasOwnProperty.call(data, 'timeoutMs')) {
-      assertPositiveNumber(data.timeoutMs, 'timeoutMs');
-    }
-    if (Object.prototype.hasOwnProperty.call(data, 'timeoutMessage')) {
-      assertString(data.timeoutMessage, 'timeoutMessage');
-    }
-    if (Object.prototype.hasOwnProperty.call(data, 'params')) {
-      if (typeof data.params !== 'object' || data.params === null || Array.isArray(data.params)) {
-        throw new Error('data-fb-api.params must be an object.');
-      }
-    }
-
-    if (Object.prototype.hasOwnProperty.call(data, 'loading')) {
-      const loading = data.loading;
-      if (typeof loading !== 'object' || loading === null || Array.isArray(loading)) {
-        throw new Error('data-fb-api.loading must be an object.');
-      }
-
-      const loadingStringFields = ['message', 'button', 'target', 'alertClass'];
-      loadingStringFields.forEach((field) => {
-        if (Object.prototype.hasOwnProperty.call(loading, field)) {
-          assertString(loading[field], `loading.${field}`);
-        }
-      });
-    }
-
-    if (Object.prototype.hasOwnProperty.call(data, 'modal')) {
-      const modal = data.modal;
-      if (typeof modal !== 'object' || modal === null || Array.isArray(modal)) {
-        throw new Error('data-fb-api.modal must be an object.');
-      }
-      if (typeof modal.type !== 'string') {
-        throw new Error('data-fb-api.modal.type must be a string.');
-      }
-
-      const allowedTypes = ['confirm', 'danger', 'prompt'];
-      if (!allowedTypes.includes(modal.type)) {
-        throw new Error(`data-fb-api.modal.type must be one of: ${allowedTypes.join(', ')}.`);
-      }
-
-      if (modal.type === 'prompt' && typeof modal.key !== 'string') {
-        throw new Error('data-fb-api.modal.key is required for prompt modals.');
-      }
-
-      const modalStringFields = ['title', 'content', 'button', 'buttonColor', 'label', 'value', 'key'];
-      modalStringFields.forEach((field) => {
-        if (Object.prototype.hasOwnProperty.call(modal, field)) {
-          assertString(modal[field], `modal.${field}`);
-        }
-      });
-    }
-
-    return data;
   },
 
   /**
@@ -273,6 +155,8 @@ const Tools = {
     return JSON.stringify(this.serializeFormDataToObject(formData));
   }
 };
+
+Tools.parseDataAttr = parseDataAttr;
 
 /**
  * Creates an API for a specific role (admin, client, guest).
