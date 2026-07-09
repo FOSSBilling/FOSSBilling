@@ -13,6 +13,7 @@
     "check": "npm run check-js-syntax && npm run check-icons",
     "check-js-syntax": "node ./frontend/tools/check-js-syntax.mjs",
     "check-icons": "node ./frontend/tools/check-icons.mjs",
+    "test:js": "node --test 'frontend/core/tests/**/*.test.mjs' 'frontend/tools/tests/**/*.test.mjs'",
     "cy:open": "npm exec --yes cypress@15.15.0 -- open",
     "cy:run": "npm exec --yes cypress@15.15.0 -- run",
     "cy:run:record": "npm exec --yes cypress@15.15.0 -- run --record"

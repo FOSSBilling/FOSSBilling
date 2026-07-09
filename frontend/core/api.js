@@ -8,6 +8,21 @@
  * with this source code in the file LICENSE
  */
 
+import { parseDataAttr } from './parse-data-attr.mjs';
+import {
+  injectCSRFToken,
+  buildRequestBody,
+  buildHeaders,
+  parseResponseBody,
+  validateHttpResponse,
+  interpretResponse,
+  normalizeApiError,
+} from './api-helpers.mjs';
+import {
+  dispatchLinkAction,
+  createLinkLoadingState,
+} from './link-helpers.mjs';
+
 /**
  * Tools for the API wrapper.
  */
@@ -70,126 +85,6 @@ const Tools = {
     } catch (error) {
       return false;
     }
-  },
-
-  /**
-   * Parses the data attribute value from a DOM element and validates known fields.
-   *
-   * @param {string} dataAttrValue The value of the data attribute to parse.
-   * @returns {object} The parsed and validated data.
-   * @throws {Error} If the data attribute value is invalid or does not match the schema.
-   **/
-  parseDataAttr: function (dataAttrValue) {
-    if (!dataAttrValue) {
-      return {};
-    }
-
-    let data;
-    try {
-      data = JSON.parse(dataAttrValue);
-    } catch (error) {
-      throw new Error('Invalid JSON in data-fb-api attribute.');
-    }
-
-    if (typeof data !== 'object' || data === null || Array.isArray(data)) {
-      throw new Error('data-fb-api must be a JSON object.');
-    }
-
-    const assertString = (value, key) => {
-      if (typeof value !== 'string') {
-        throw new Error(`data-fb-api.${key} must be a string.`);
-      }
-    };
-
-    const assertBoolean = (value, key) => {
-      if (typeof value !== 'boolean') {
-        throw new Error(`data-fb-api.${key} must be a boolean.`);
-      }
-    };
-
-    const assertPositiveNumber = (value, key) => {
-      if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
-        throw new Error(`data-fb-api.${key} must be a positive number.`);
-      }
-    };
-
-    if (Object.prototype.hasOwnProperty.call(data, 'href')) {
-      assertString(data.href, 'href');
-    }
-    if (Object.prototype.hasOwnProperty.call(data, 'type')) {
-      assertString(data.type, 'type');
-    }
-    if (Object.prototype.hasOwnProperty.call(data, 'endpoint')) {
-      assertString(data.endpoint, 'endpoint');
-    }
-    if (Object.prototype.hasOwnProperty.call(data, 'callback')) {
-      assertString(data.callback, 'callback');
-    }
-    if (Object.prototype.hasOwnProperty.call(data, 'message')) {
-      assertString(data.message, 'message');
-    }
-    if (Object.prototype.hasOwnProperty.call(data, 'redirect')) {
-      assertString(data.redirect, 'redirect');
-    }
-    if (Object.prototype.hasOwnProperty.call(data, 'reload')) {
-      assertBoolean(data.reload, 'reload');
-    }
-    if (Object.prototype.hasOwnProperty.call(data, 'preventNavigation')) {
-      assertBoolean(data.preventNavigation, 'preventNavigation');
-    }
-    if (Object.prototype.hasOwnProperty.call(data, 'timeoutMs')) {
-      assertPositiveNumber(data.timeoutMs, 'timeoutMs');
-    }
-    if (Object.prototype.hasOwnProperty.call(data, 'timeoutMessage')) {
-      assertString(data.timeoutMessage, 'timeoutMessage');
-    }
-    if (Object.prototype.hasOwnProperty.call(data, 'params')) {
-      if (typeof data.params !== 'object' || data.params === null || Array.isArray(data.params)) {
-        throw new Error('data-fb-api.params must be an object.');
-      }
-    }
-
-    if (Object.prototype.hasOwnProperty.call(data, 'loading')) {
-      const loading = data.loading;
-      if (typeof loading !== 'object' || loading === null || Array.isArray(loading)) {
-        throw new Error('data-fb-api.loading must be an object.');
-      }
-
-      const loadingStringFields = ['message', 'button', 'target', 'alertClass'];
-      loadingStringFields.forEach((field) => {
-        if (Object.prototype.hasOwnProperty.call(loading, field)) {
-          assertString(loading[field], `loading.${field}`);
-        }
-      });
-    }
-
-    if (Object.prototype.hasOwnProperty.call(data, 'modal')) {
-      const modal = data.modal;
-      if (typeof modal !== 'object' || modal === null || Array.isArray(modal)) {
-        throw new Error('data-fb-api.modal must be an object.');
-      }
-      if (typeof modal.type !== 'string') {
-        throw new Error('data-fb-api.modal.type must be a string.');
-      }
-
-      const allowedTypes = ['confirm', 'danger', 'prompt'];
-      if (!allowedTypes.includes(modal.type)) {
-        throw new Error(`data-fb-api.modal.type must be one of: ${allowedTypes.join(', ')}.`);
-      }
-
-      if (modal.type === 'prompt' && typeof modal.key !== 'string') {
-        throw new Error('data-fb-api.modal.key is required for prompt modals.');
-      }
-
-      const modalStringFields = ['title', 'content', 'button', 'buttonColor', 'label', 'value', 'key'];
-      modalStringFields.forEach((field) => {
-        if (Object.prototype.hasOwnProperty.call(modal, field)) {
-          assertString(modal[field], `modal.${field}`);
-        }
-      });
-    }
-
-    return data;
   },
 
   /**
@@ -274,6 +169,8 @@ const Tools = {
   }
 };
 
+Tools.parseDataAttr = parseDataAttr;
+
 /**
  * Creates an API for a specific role (admin, client, guest).
  *
@@ -344,75 +241,26 @@ const API = {
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-    const parseResponseBody = async (response) => {
-      if (response.status === 204) {
-        return { payload: null, rawText: '' };
-      }
+    const csrfToken = Tools.getCSRFToken();
+    const urlObj = new URL(url);
+    const isSameOrigin = urlObj.origin === window.location.origin;
 
-      const text = await response.text();
-      if (!text) {
-        return { payload: null, rawText: '' };
-      }
-
-      try {
-        return { payload: JSON.parse(text), rawText: text };
-      } catch (error) {
-        return { payload: null, rawText: text };
-      }
-    };
-
-    url = new URL(url);
-    const isFormData = params instanceof FormData;
-
-    if (isFormData) {
-      if (!params.has('CSRFToken')) {
-        params.append('CSRFToken', Tools.getCSRFToken());
-      }
-    } else if (params && typeof params === 'object') {
-      if (!params.CSRFToken) {
-        params.CSRFToken = Tools.getCSRFToken();
-      }
+    if (isSameOrigin) {
+      injectCSRFToken(params, csrfToken);
     }
+    const { body, isFormData } = buildRequestBody(method, params, urlObj);
+    const headers = buildHeaders({ url: urlObj, body, isFormData, csrfToken, origin: window.location.origin });
 
-    let body = null;
-    const methodLower = method.toLowerCase();
-    if (methodLower === 'get') {
-      if (isFormData) {
-        for (const [key, value] of params.entries()) {
-          url.searchParams.append(key, value);
-        }
-      } else if (params && typeof params === 'object') {
-        Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
-      } else if (params) {
-        url.search = params;
-      }
-    } else if (['post', 'put', 'patch', 'delete'].includes(methodLower)) {
-      if (isFormData) {
-        body = params;
-      } else if (typeof params === 'string') {
-        body = params;
-      } else {
-        body = JSON.stringify(params);
-      }
-    }
-
-    const headers = {
-      'Accept': 'application/json',
-      'X-CSRF-Token': Tools.getCSRFToken() || '',
-    };
-    if (url.origin === window.location.origin) {
-      headers['X-Requested-With'] = 'XMLHttpRequest';
-    }
-    if (body && !isFormData) {
-      headers['Content-Type'] = 'application/json';
-    }
-
-    return fetch(url.toString(), {
+    const fetchOptions = {
       method: method,
       headers: headers,
-      body: body,
       signal: controller.signal
-    })
+    };
+    if (method.toLowerCase() !== 'get') {
+      fetchOptions.body = body;
+    }
+
+    return fetch(urlObj.toString(), fetchOptions)
       .then(async (response) => {
         clearTimeout(timeoutId);
 
@@ -421,64 +269,20 @@ const API = {
           return;
         }
 
-        const { payload, rawText } = await parseResponseBody(response);
-
-        if (!response.ok) {
-          const error = new Error(payload?.error?.message || `HTTP error ${response.status}: ${response.statusText}`);
-          error.code = payload?.error?.code || `http_${response.status}`;
-          error.status = response.status;
-          error.rawBody = rawText;
-          throw error;
-        }
-
-        if (rawText && payload === null) {
-          throw new Error('Invalid or non-JSON response from server');
-        }
-
-        return payload;
+        const parsed = await parseResponseBody(response);
+        return validateHttpResponse(response, parsed);
       })
-      .then((response) => {
-        if (!response) {
-          if (typeof successHandler === 'function') {
-            successHandler(null);
-          }
-
-          return null;
-        }
-
-        if (response.error) {
-          const error = new Error(response.error.message || 'Unknown API error');
-          error.code = response.error.code;
-          throw error;
-        }
-
+      .then((payload) => {
+        const result = interpretResponse(payload);
         if (typeof successHandler === 'function') {
-          successHandler(response.result);
+          successHandler(result);
         }
-
-        return response.result;
+        return result;
       })
       .catch((error) => {
         clearTimeout(timeoutId);
 
-        let errorObj;
-        if (error.name === 'AbortError') {
-          errorObj = {
-            message: timeoutMessage || `Request timed out after ${timeoutMs / 1000} seconds`,
-            code: 'timeout_error'
-          };
-        } else if (error.name === 'TypeError' && error.message.includes('NetworkError')) {
-          errorObj = {
-            message: 'Network connection error',
-            code: 'network_error'
-          };
-        } else {
-          errorObj = {
-            message: error.message || 'Unknown error occurred',
-            code: error.code || 'unknown_error'
-          };
-        }
-
+        const errorObj = normalizeApiError(error, { timeoutMs, timeoutMessage });
         console.error(`API Error: ${errorObj.message}`);
 
         if (typeof errorHandler === 'function') {
@@ -654,107 +458,12 @@ const API = {
         }
 
         linkElement.dataset.fbApiBound = 'true';
-        let requestInProgress = false;
-        let loadingAlert = null;
-        let beforeUnloadHandler = null;
-        let originalHtml = null;
-        let originalAriaBusy = null;
-        let originalAriaDisabled = null;
-        let originallyDisabled = false;
-
-        const getLoadingTarget = (selector) => {
-          if (selector) {
-            try {
-              const target = document.querySelector(selector);
-              if (target) {
-                return target;
-              }
-            } catch (error) {
-              console.warn('Invalid loading target selector:', selector);
-            }
-          }
-
-          return linkElement.closest('.card-footer') || linkElement.parentElement;
-        };
-
-        const setLoadingState = (apiData) => {
-          requestInProgress = true;
-          originalHtml = linkElement.innerHTML;
-          originalAriaBusy = linkElement.getAttribute('aria-busy');
-          originalAriaDisabled = linkElement.getAttribute('aria-disabled');
-          originallyDisabled = linkElement.classList.contains('disabled');
-
-          linkElement.setAttribute('aria-busy', 'true');
-          linkElement.setAttribute('aria-disabled', 'true');
-          linkElement.classList.add('disabled');
-
-          if (apiData.loading?.button) {
-            const spinner = document.createElement('span');
-            spinner.className = 'spinner-border spinner-border-sm me-2';
-            spinner.setAttribute('aria-hidden', 'true');
-
-            linkElement.replaceChildren(spinner, document.createTextNode(apiData.loading.button));
-          }
-
-          if (apiData.loading?.message) {
-            const target = getLoadingTarget(apiData.loading.target);
-            if (target) {
-              loadingAlert = document.createElement('div');
-              loadingAlert.className = apiData.loading.alertClass || 'alert alert-info mt-3 mb-0';
-              loadingAlert.setAttribute('role', 'status');
-              loadingAlert.textContent = apiData.loading.message;
-              target.appendChild(loadingAlert);
-            }
-          }
-
-          if (apiData.preventNavigation) {
-            beforeUnloadHandler = (event) => {
-              event.preventDefault();
-              event.returnValue = '';
-            };
-            window.addEventListener('beforeunload', beforeUnloadHandler);
-          }
-        };
-
-        const resetLoadingState = () => {
-          if (!requestInProgress) {
-            return;
-          }
-
-          requestInProgress = false;
-
-          if (originalHtml !== null) {
-            linkElement.innerHTML = originalHtml;
-          }
-          if (originalAriaBusy === null) {
-            linkElement.removeAttribute('aria-busy');
-          } else {
-            linkElement.setAttribute('aria-busy', originalAriaBusy);
-          }
-          if (originalAriaDisabled === null) {
-            linkElement.removeAttribute('aria-disabled');
-          } else {
-            linkElement.setAttribute('aria-disabled', originalAriaDisabled);
-          }
-          if (!originallyDisabled) {
-            linkElement.classList.remove('disabled');
-          }
-
-          if (loadingAlert) {
-            loadingAlert.remove();
-            loadingAlert = null;
-          }
-
-          if (beforeUnloadHandler) {
-            window.removeEventListener('beforeunload', beforeUnloadHandler);
-            beforeUnloadHandler = null;
-          }
-        };
+        const loadingState = createLinkLoadingState(linkElement);
 
         linkElement.addEventListener('click', function (event) {
           event.preventDefault();
 
-          if (requestInProgress) {
+          if (loadingState.isInProgress()) {
             return;
           }
 
@@ -778,7 +487,7 @@ const API = {
 
           const handleApiRequest = (method, href, params = {}) => {
             if (apiData.loading || apiData.preventNavigation) {
-              setLoadingState(apiData);
+              loadingState.set(apiData);
             }
 
             const url = apiData.href || href;
@@ -787,11 +496,11 @@ const API = {
               : params;
             API.makeRequest(method, Tools.getBaseURL(url), mergedParams,
               (result) => {
-                resetLoadingState();
+                loadingState.reset();
                 API._afterComplete(linkElement, result);
               },
               (error) => {
-                resetLoadingState();
+                loadingState.reset();
                 FOSSBilling.ui.notify(`${error.message} (${error.code})`, 'error');
               },
               true,
@@ -800,48 +509,8 @@ const API = {
             );
           };
 
-          if (apiData.hasOwnProperty('modal')) {
-            if (typeof Modals === 'undefined' || typeof Modals.create !== 'function') {
-              if (apiData.modal.type === 'prompt') {
-                const value = window.prompt(apiData.modal.label ?? apiData.modal.title ?? '', apiData.modal.value ?? '');
-                if (value) {
-                  const p = {};
-                  p[apiData.modal.key] = value;
-                  handleApiRequest('GET', linkElement.getAttribute('href'), p);
-                }
-              } else if (window.confirm(apiData.modal.content || apiData.modal.title || 'Are you sure?')) {
-                handleApiRequest('GET', linkElement.getAttribute('href'));
-              }
-            } else if (apiData.modal.type === 'prompt') {
-              Modals.create({
-                type: apiData.modal.type,
-                title: apiData.modal.title,
-                label: apiData.modal.label ?? 'Label',
-                value: apiData.modal.value ?? '',
-                promptConfirmCallback: (value) => {
-                  if (value) {
-                    const p = {};
-                    const name = apiData.modal.key;
-                    p[name] = value;
-                    handleApiRequest('GET', linkElement.getAttribute('href'), p);
-                  }
-                },
-              });
-            } else {
-              Modals.create({
-                type: (apiData.modal.type === 'confirm') ? 'small-confirm' : apiData.modal.type,
-                title: apiData.modal.title,
-                content: apiData.modal.content ?? '',
-                confirmButton: apiData.modal.button ?? 'Confirm',
-                confirmButtonColor: apiData.modal.buttonColor ?? 'primary',
-                confirmCallback: () => {
-                  handleApiRequest('GET', linkElement.getAttribute('href'));
-                },
-              });
-            }
-          } else {
-            handleApiRequest('GET', linkElement.getAttribute('href'));
-          }
+          const modalsLib = typeof Modals !== 'undefined' ? Modals : null;
+          dispatchLinkAction(apiData, rawHref, modalsLib, handleApiRequest);
         });
       });
     }
