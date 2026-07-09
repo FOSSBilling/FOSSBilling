@@ -19,12 +19,17 @@ function buildRequestBody(method, params, url) {
   if (methodLower === 'get') {
     if (isFormData) {
       for (const [key, value] of params.entries()) {
-        url.searchParams.append(key, value);
+        if (key !== 'CSRFToken') {
+          url.searchParams.append(key, value);
+        }
       }
     } else if (params && typeof params === 'object') {
-      Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+      Object.keys(params)
+        .filter((key) => key !== 'CSRFToken')
+        .forEach((key) => url.searchParams.append(key, params[key]));
     } else if (params) {
       url.search = params;
+      url.searchParams.delete('CSRFToken');
     }
   } else if (['post', 'put', 'patch', 'delete'].includes(methodLower)) {
     if (isFormData || typeof params === 'string') {
@@ -40,10 +45,10 @@ function buildRequestBody(method, params, url) {
 function buildHeaders({ url, body, isFormData, csrfToken, origin }) {
   const headers = {
     'Accept': 'application/json',
-    'X-CSRF-Token': csrfToken || '',
   };
   if (url.origin === origin) {
     headers['X-Requested-With'] = 'XMLHttpRequest';
+    headers['X-CSRF-Token'] = csrfToken || '';
   }
   if (body && !isFormData) {
     headers['Content-Type'] = 'application/json';
@@ -106,7 +111,7 @@ function normalizeApiError(error, { timeoutMs, timeoutMessage }) {
     };
   }
 
-  if (error.name === 'TypeError' && error.message.includes('NetworkError')) {
+  if (error.name === 'TypeError' && /NetworkError|Failed to fetch|Load failed/i.test(error.message)) {
     return {
       message: 'Network connection error',
       code: 'network_error',

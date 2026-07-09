@@ -243,8 +243,11 @@ const API = {
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
     const csrfToken = Tools.getCSRFToken();
     const urlObj = new URL(url);
+    const isSameOrigin = urlObj.origin === window.location.origin;
 
-    injectCSRFToken(params, csrfToken);
+    if (isSameOrigin) {
+      injectCSRFToken(params, csrfToken);
+    }
     const { body, isFormData } = buildRequestBody(method, params, urlObj);
     const headers = buildHeaders({ url: urlObj, body, isFormData, csrfToken, origin: window.location.origin });
 

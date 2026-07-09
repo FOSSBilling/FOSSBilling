@@ -28,14 +28,21 @@ describe('API request helpers', () => {
 
   test('puts GET parameters in the URL', () => {
     const url = new URL('https://example.test/api');
-    assert.deepEqual(buildRequestBody('GET', { id: 1 }, url), { body: null, isFormData: false });
+    assert.deepEqual(buildRequestBody('GET', { id: 1, CSRFToken: 'secret' }, url), { body: null, isFormData: false });
     assert.equal(url.searchParams.get('id'), '1');
+    assert.equal(url.searchParams.has('CSRFToken'), false);
 
     const form = new FormData();
     form.append('name', 'Ada');
+    form.append('CSRFToken', 'secret');
     const formUrl = new URL('https://example.test/api');
     assert.equal(buildRequestBody('GET', form, formUrl).body, null);
     assert.equal(formUrl.searchParams.get('name'), 'Ada');
+    assert.equal(formUrl.searchParams.has('CSRFToken'), false);
+
+    const stringUrl = new URL('https://example.test/api');
+    buildRequestBody('GET', 'name=Ada&CSRFToken=secret', stringUrl);
+    assert.equal(stringUrl.search, '?name=Ada');
   });
 
   test('builds mutation request bodies', () => {
@@ -70,6 +77,7 @@ describe('API request helpers', () => {
       origin: 'https://other.test',
     });
     assert.equal(crossOrigin['X-Requested-With'], undefined);
+    assert.equal(crossOrigin['X-CSRF-Token'], undefined);
     assert.equal(crossOrigin['Content-Type'], undefined);
   });
 });
@@ -119,6 +127,14 @@ describe('API response helpers', () => {
     );
     assert.deepEqual(
       normalizeApiError({ name: 'TypeError', message: 'NetworkError failed' }, {}),
+      { message: 'Network connection error', code: 'network_error' },
+    );
+    assert.deepEqual(
+      normalizeApiError({ name: 'TypeError', message: 'Failed to fetch' }, {}),
+      { message: 'Network connection error', code: 'network_error' },
+    );
+    assert.deepEqual(
+      normalizeApiError({ name: 'TypeError', message: 'Load failed' }, {}),
       { message: 'Network connection error', code: 'network_error' },
     );
     assert.deepEqual(

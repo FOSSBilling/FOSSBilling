@@ -45,20 +45,20 @@ describe('icon manifest helpers', () => {
       { code: 'test', disallowFilled: true },
       manifestData,
       {
-        referencedIcons: new Set(['missing']),
+        referencedIcons: new Set(['missing', 'shared']),
         legacyReferences: ['template.twig', 'template.twig'],
         externalSpriteReferences: ['other.twig'],
       },
-      new Set(['undocumented']),
+      new Set(['undocumented', 'shared']),
     );
 
     assert.deepEqual(errors, [
       'test: "filled" requests the filled variant, but this theme styles icons as outline SVGs.',
       'test: legacy xlink:href references remain in template.twig',
       'test: external sprite references remain in other.twig',
-      'test: missing manifest icons: missing, undocumented',
+      'test: missing manifest icons: missing, shared, undocumented',
       'test: unused manifest icons: filled, unused',
-      'test: dynamic icons should be marked in the manifest: undocumented',
+      'test: dynamic icons should be marked in the manifest: shared, undocumented',
     ]);
   });
 

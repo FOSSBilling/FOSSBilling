@@ -50,7 +50,7 @@ export function computeIconErrors(theme, manifestData, scanData, dynamicIcons) {
     }
   }
 
-  const missing = [...scanData.referencedIcons, ...dynamicIcons].filter((icon) => !manifestData.manifestNames.has(icon)).sort();
+  const missing = [...new Set([...scanData.referencedIcons, ...dynamicIcons])].filter((icon) => !manifestData.manifestNames.has(icon)).sort();
   const unused = [...manifestData.manifestNames].filter((icon) => !scanData.referencedIcons.has(icon) && !manifestData.dynamicManifestNames.has(icon)).sort();
   const undocumentedDynamic = [...dynamicIcons].filter((icon) => !manifestData.dynamicManifestNames.has(icon)).sort();
 
