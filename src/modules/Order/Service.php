@@ -879,6 +879,9 @@ class Service implements InjectionAwareInterface
 
     public function activateOrder(\Model_ClientOrder $order, $data = []): bool
     {
+        // re-fetch in case the caller's order object is stale (e.g. already activated by another code path)
+        $order = $this->di['db']->load('ClientOrder', $order->id);
+
         $statues = [
             \Model_ClientOrder::STATUS_PENDING_SETUP,
             \Model_ClientOrder::STATUS_FAILED_SETUP,

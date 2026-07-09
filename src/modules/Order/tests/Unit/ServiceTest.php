@@ -1669,7 +1669,14 @@ test('activateOrder throws for non-pending order', function (): void {
     $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
     $clientOrderModel->status = Model_ClientOrder::STATUS_CANCELED;
 
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('load')->atLeast()->once()->with('ClientOrder', Mockery::any())->andReturn($clientOrderModel);
+
+    $di = container();
+    $di['db'] = $dbMock;
+
     $svc = new Service();
+    $svc->setDi($di);
 
     expect(fn (): bool => $svc->activateOrder($clientOrderModel))
         ->toThrow(FOSSBilling\Exception::class, 'Only pending setup or failed orders can be activated');
@@ -1681,10 +1688,14 @@ test('activateOrder activates pending order', function (): void {
     $clientOrderModel->status = Model_ClientOrder::STATUS_PENDING_SETUP;
     $clientOrderModel->group_master = 1;
 
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('load')->atLeast()->once()->with('ClientOrder', Mockery::any())->andReturn($clientOrderModel);
+
     $eventMock = Mockery::mock(Box_EventManager::class);
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $di = container();
+    $di['db'] = $dbMock;
     $di['events_manager'] = $eventMock;
     $di['logger'] = new Box_Log();
 
@@ -1698,6 +1709,29 @@ test('activateOrder activates pending order', function (): void {
     $result = $serviceMock->activateOrder($clientOrderModel);
 
     expect($result)->toBeTrue();
+});
+
+test('activateOrder is idempotent when order was already activated by a stale reference', function (): void {
+    $staleOrderModel = new Model_ClientOrder();
+    $staleOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $staleOrderModel->status = Model_ClientOrder::STATUS_PENDING_SETUP;
+
+    $activeOrderModel = new Model_ClientOrder();
+    $activeOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $activeOrderModel->status = Model_ClientOrder::STATUS_ACTIVE;
+    $activeOrderModel->group_master = 1;
+
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('load')->atLeast()->once()->with('ClientOrder', Mockery::any())->andReturn($activeOrderModel);
+
+    $di = container();
+    $di['db'] = $dbMock;
+
+    $svc = new Service();
+    $svc->setDi($di);
+
+    expect(fn (): bool => $svc->activateOrder($staleOrderModel))
+        ->toThrow(FOSSBilling\Exception::class, 'Only pending setup or failed orders can be activated');
 });
 
 test('activateOrderAddons activates addons', function (): void {
