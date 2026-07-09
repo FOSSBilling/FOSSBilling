@@ -21,12 +21,12 @@ jobs:
       - name: 'Download Test Image Artifact'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
-          name: docker-test-image-8.5
+          name: test-image-8.5.tar.zst
           path: /tmp
 
       - name: 'Load Test Image'
         id: build
-        run: docker load --input /tmp/test-image-8.5.tar
+        run: zstd --decompress --stdout /tmp/test-image-8.5.tar.zst | docker load
 
       - name: 'Run Live Tests'
         id: live_tests
