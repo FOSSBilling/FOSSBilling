@@ -29,7 +29,7 @@
     "arrows-exchange",
     "moon",
     "sun",
-    "arrows-right-left",
+    { "name": "arrow-right-left", "variant": "custom" },
     "arrow-up-right",
     "rosette-discount-check",
     "book-2",
