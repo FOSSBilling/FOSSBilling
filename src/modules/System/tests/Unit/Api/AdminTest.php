@@ -217,7 +217,7 @@ test('update finalization status rejects legacy non-admin while pending', functi
     $di['db'] = $db;
     $api->setDi($di);
 
-    expect(fn () => $api->update_finalization_status())
+    expect(fn (): array => $api->update_finalization_status())
         ->toThrow(FOSSBilling\InformationException::class, 'You need to be a Super Administrator to finalize this update.');
 });
 
@@ -240,6 +240,6 @@ test('update finalization status does not mask unrelated errors from isSuperAdmi
     $di['mod_service'] = $di->protect(fn (string $serviceName): mixed => $serviceName === 'Staff' ? $staffService : false);
     $api->setDi($di);
 
-    expect(fn () => $api->update_finalization_status())
+    expect(fn (): array => $api->update_finalization_status())
         ->toThrow(RuntimeException::class, 'unexpected failure');
 });

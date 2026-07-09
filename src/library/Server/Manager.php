@@ -166,8 +166,6 @@ abstract class Server_Manager
      * Sets the logger object.
      *
      * @param Box_Log $value the logger object
-     *
-     * @return $this
      */
     public function setLog(Box_Log $value): static
     {

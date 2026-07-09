@@ -116,6 +116,7 @@ class BoxAppRouteDispatchApp extends Box_App
         return $this->redirect('/target');
     }
 
+    #[Override]
     public function render($fileName, $variableArray = []): string
     {
         return 'error';

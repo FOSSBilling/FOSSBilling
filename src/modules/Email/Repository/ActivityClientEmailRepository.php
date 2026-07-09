@@ -71,12 +71,12 @@ class ActivityClientEmailRepository extends EntityRepository
 
         if (!empty($data['date_from'])) {
             $qb->andWhere('e.createdAt >= :date_from')
-                ->setParameter('date_from', new \DateTime((string) $data['date_from'] . ' 00:00:00'));
+                ->setParameter('date_from', new \DateTime($data['date_from'] . ' 00:00:00'));
         }
 
         if (!empty($data['date_to'])) {
             $qb->andWhere('e.createdAt <= :date_to')
-                ->setParameter('date_to', new \DateTime((string) $data['date_to'] . ' 23:59:59'));
+                ->setParameter('date_to', new \DateTime($data['date_to'] . ' 23:59:59'));
         }
 
         return $qb;

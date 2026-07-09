@@ -78,7 +78,7 @@ class Fingerprint
                 'weight' => 2,
             ],
             'geoIpCountry' => [
-                'source' => $this->getIpCountry() ?? '',
+                'source' => $this->getIpCountry(),
                 'weight' => 4,
             ],
             'asn' => [
@@ -226,7 +226,7 @@ class Fingerprint
         ];
     }
 
-    private function getIpCountry()
+    private function getIpCountry(): string
     {
         // Use the CF header if it is set.
         $cfIpCountry = $this->request->headers->get('CF-IPCountry');

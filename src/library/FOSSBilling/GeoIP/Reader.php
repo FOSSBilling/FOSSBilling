@@ -106,10 +106,10 @@ class Reader
         }
 
         $original = $locale;
-        if (str_contains($locale, '_')) {
-            $locale = explode('_', $locale)[0];
+        if (str_contains((string) $locale, '_')) {
+            $locale = explode('_', (string) $locale)[0];
         }
-        $this->language = strlen($locale) === 2 ? LanguageAlpha2::from($locale) : throw new \ValueError("No matching Alpha2 language found for {$original}");
+        $this->language = strlen((string) $locale) === 2 ? LanguageAlpha2::from($locale) : throw new \ValueError("No matching Alpha2 language found for {$original}");
     }
 
     /**

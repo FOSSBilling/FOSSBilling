@@ -120,11 +120,9 @@ test('save theme settings reads body from request and strips preset control keys
         ->with($themeMock, 'MyPreset');
     $themeServiceMock->shouldReceive('updateSettings')
         ->once()
-        ->with($themeMock, 'MyPreset', Mockery::on(function (array $body): bool {
-            return !array_key_exists('save-current-setting', $body)
-                && !array_key_exists('save-current-setting-preset', $body)
-                && $body['color'] === 'blue';
-        }));
+        ->with($themeMock, 'MyPreset', Mockery::on(fn (array $body): bool => !array_key_exists('save-current-setting', $body)
+            && !array_key_exists('save-current-setting-preset', $body)
+            && $body['color'] === 'blue'));
     $themeServiceMock->shouldReceive('regenerateThemeCssAndJsFiles');
     $themeServiceMock->shouldReceive('regenerateThemeSettingsDataFile');
 
@@ -134,11 +132,9 @@ test('save theme settings reads body from request and strips preset control keys
     $eventsManager = Mockery::mock();
     $eventsManager->shouldReceive('fire')
         ->once()
-        ->with(Mockery::on(function (array $event): bool {
-            return $event['event'] === 'onBeforeThemeSettingsSave'
-                && $event['params']['color'] === 'blue'
-                && $event['params']['save-current-setting'] === '1';
-        }));
+        ->with(Mockery::on(fn (array $event): bool => $event['event'] === 'onBeforeThemeSettingsSave'
+            && $event['params']['color'] === 'blue'
+            && $event['params']['save-current-setting'] === '1'));
 
     $di['api_admin'] = Mockery::mock();
     $di['is_admin_logged'] = true;

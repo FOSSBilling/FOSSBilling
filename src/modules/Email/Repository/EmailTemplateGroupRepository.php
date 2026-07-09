@@ -21,7 +21,7 @@ class EmailTemplateGroupRepository extends EntityRepository
      */
     public function getGroupIdsForTemplate(int $templateId): array
     {
-        return array_map('intval', $this->createQueryBuilder('g')
+        return array_map(intval(...), $this->createQueryBuilder('g')
             ->select('g.adminGroupId')
             ->andWhere('g.emailTemplate = :template_id')
             ->setParameter('template_id', $templateId)

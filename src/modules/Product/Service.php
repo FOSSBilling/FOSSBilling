@@ -422,7 +422,7 @@ class Service implements InjectionAwareInterface
             ->setSlug($slug)
             ->setType($type)
             ->setSetup(self::SETUP_AFTER_PAYMENT)
-            ->setPriority((int) $priority + 10);
+            ->setPriority($priority + 10);
 
         $this->di['em']->persist($model);
         $this->di['em']->flush();
