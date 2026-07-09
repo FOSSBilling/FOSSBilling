@@ -75,6 +75,9 @@
                                     <span class="tn-servicerow__meta-top">
                                         <span class="tn-servicerow__meta-label">{{ 'Renews'|trans }} {% if order.expires_at %}{{ order.expires_at|format_date }}{% else %}&mdash;{% endif %}</span>
                                         <span class="tn-servicerow__status">{{ mf.status_badge(order.status, 'order') }}</span>
+                                        {% if order.status == 'pending_registrar' %}
+                                            <svg class="icon tn-servicerow__pending-icon" title="{{ 'Waiting on registrar confirmation'|trans }}"><use href="#clock" /></svg>
+                                        {% endif %}
                                     </span>
                                     <span class="tn-servicerow__meta-value">{{ (order.renewal_price ?? order.total)|format_currency(order.currency ?? default_currency) }}</span>
                                 </span>

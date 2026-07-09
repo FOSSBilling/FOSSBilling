@@ -20,7 +20,7 @@
 {% macro badge(status, type) %}
     {% set s = status|lower %}
     {% if type == 'order' %}
-        {% if s == 'active' %}
+        {% if s == 'active' or s == 'pending_registrar' %}
             {% set variant, label = 'success', 'Active' %}
         {% elseif s == 'pending_setup' %}
             {% set variant, label = 'warning', 'Pending' %}
@@ -302,6 +302,9 @@
                                                 <span class="tn-service-row__date{% if is_expiring %} tn-service-row__date--danger{% endif %}">{{ order.expires_at|format_date }}</span>
                                             {% endif %}
                                             <span class="tn-service-row__status">{{ tn.badge(order.status, 'order') }}</span>
+                                            {% if order.status == 'pending_registrar' %}
+                                                <svg class="icon tn-service-row__pending-icon" title="{{ 'Waiting on registrar confirmation'|trans }}"><use href="#clock" /></svg>
+                                            {% endif %}
                                         </span>
                                         <span class="tn-service-row__price">{{ (order.renewal_price ?? order.total)|format_currency(order.currency) }}</span>
                                     </span>

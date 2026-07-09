@@ -1326,6 +1326,13 @@ table > thead > tr > th {
         white-space: nowrap;
     }
 
+    &__pending-icon {
+        flex-shrink: 0;
+        width: 14px;
+        height: 14px;
+        color: var(--warning-500, #d97706);
+    }
+
     &__meta-label {
         font-size: var(--fs-xs);
         color: var(--text-faint);
@@ -1347,7 +1354,7 @@ table > thead > tr > th {
         flex-wrap: wrap;
 
         &__body {
-            width: 100%;
+            flex-basis: 100%;
             order: 1;
         }
 
@@ -1643,6 +1650,13 @@ table > thead > tr > th {
 
     &__status {
         white-space: nowrap;
+    }
+
+    &__pending-icon {
+        flex-shrink: 0;
+        width: 14px;
+        height: 14px;
+        color: var(--warning-500, #d97706);
     }
 
     &__date {

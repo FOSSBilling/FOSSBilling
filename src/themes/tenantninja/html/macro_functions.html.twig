@@ -126,7 +126,7 @@
 {% elseif status_title == 'Pending Setup' %}
     {% set status_label = 'Pending Setup'|trans %}
 {% elseif status_title == 'Pending Registrar' %}
-    {% set status_label = 'Active · Registrar Pending'|trans %}
+    {% set status_label = 'Active'|trans %}
 {% elseif status_title == 'Failed Setup' %}
     {% set status_label = 'Failed Setup'|trans %}
 {% elseif status_title == 'Failed Renew' %}
@@ -145,8 +145,8 @@
     {% set status_label = status_title|trans %}
 {% endif %}
 {% if type == 'order' %}
-    {% if status == 'active' %}{% set badge_class = 'bg-success' %}
-    {% elseif status == 'pending_setup' or status == 'pending_registrar' %}{% set badge_class = 'bg-warning' %}
+    {% if status == 'active' or status == 'pending_registrar' %}{% set badge_class = 'bg-success' %}
+    {% elseif status == 'pending_setup' %}{% set badge_class = 'bg-warning' %}
     {% elseif status == 'failed_setup' or status == 'suspended' or status == 'failed_renew' %}{% set badge_class = 'bg-danger' %}
     {% elseif status == 'canceled' %}{% set badge_class = 'bg-secondary' %}
     {% else %}{% set badge_class = 'bg-primary' %}
