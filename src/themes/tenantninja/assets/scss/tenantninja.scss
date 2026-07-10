@@ -2376,3 +2376,204 @@ table > thead > tr > th {
         linear-gradient(to left, rgba(0, 0, 0, 0.08) 0%, transparent 100%) right / 24px 100% no-repeat scroll;
     background-attachment: local, local, scroll, scroll;
 }
+
+// -----------------------------------------------------------------------
+// Home — Logged Out (mod_index guest branch)
+// A front door: welcome + one clear sign-in path, store/KB/announcements
+// quick paths, latest news inline. Ported from redesign/home.jsx.
+// -----------------------------------------------------------------------
+.tn-home {
+    position: relative;
+
+    &__wash {
+        position: absolute;
+        top: -140px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: min(900px, 120%);
+        height: 420px;
+        pointer-events: none;
+        z-index: 0;
+        background: radial-gradient(ellipse at center,
+            color-mix(in oklch, var(--blade-500) 8%, transparent), transparent 70%);
+    }
+
+    &__grid {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 360px;
+        gap: var(--space-12);
+        align-items: start;
+        padding-top: var(--space-2);
+    }
+
+    &__intro {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-8);
+        min-width: 0;
+        padding-top: var(--space-2);
+    }
+
+    &__hero { display: flex; flex-direction: column; gap: var(--space-3); }
+    &__title {
+        font-family: var(--font-display);
+        font-size: clamp(30px, 4vw, 42px);
+        font-weight: var(--fw-black);
+        line-height: var(--lh-tight);
+        letter-spacing: var(--ls-tight);
+        color: var(--text);
+        max-width: 480px;
+        margin: 0;
+    }
+    &__lede {
+        font-size: var(--fs-sm);
+        color: var(--text-muted);
+        line-height: var(--lh-relaxed);
+        max-width: 460px;
+        margin: 0;
+    }
+
+    &__cards {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-4);
+    }
+
+    &__news {
+        border-top: var(--bw-hair) solid var(--border-faint);
+        max-width: 560px;
+    }
+    &__news-row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-4);
+        padding: 11px 4px;
+        border-bottom: var(--bw-hair) solid var(--border-faint);
+        text-decoration: none;
+        cursor: pointer;
+        &:last-child { border-bottom: none; }
+    }
+    &__news-date {
+        font-family: var(--font-mono);
+        font-size: var(--fs-micro);
+        color: var(--text-faint);
+        flex-shrink: 0;
+    }
+    &__news-title {
+        font-size: var(--fs-xs);
+        font-weight: var(--fw-semibold);
+        color: var(--text);
+        flex: 1;
+        min-width: 0;
+    }
+    &__news-row .icon { color: var(--text-faint); width: 14px; height: 14px; }
+}
+
+// Quick-path card (also used elsewhere via .tn-card-link)
+.tn-card-link {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 20px 20px 18px;
+    border: var(--bw-hair) solid var(--border);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+    text-decoration: none;
+    transition: border-color var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out),
+        transform var(--dur) var(--ease-out);
+
+    &:hover {
+        border-color: var(--border-strong);
+        box-shadow: var(--shadow-md);
+        transform: translateY(-2px);
+    }
+
+    &__icon {
+        width: 34px; height: 34px; border-radius: var(--r-sm);
+        background: var(--surface-2);
+        display: flex; align-items: center; justify-content: center;
+        .icon { color: var(--text); width: 16px; height: 16px; }
+    }
+    &__title {
+        font-family: var(--font-display);
+        font-size: var(--fs-h4);
+        font-weight: var(--fw-bold);
+        color: var(--text);
+        line-height: var(--lh-snug);
+    }
+    &__sub {
+        font-size: 12.5px;
+        color: var(--text-muted);
+        line-height: var(--lh-normal);
+    }
+    &__cta {
+        margin-top: auto;
+        display: inline-flex; align-items: center; gap: 5px;
+        font-size: var(--fs-xs);
+        font-weight: var(--fw-bold);
+        color: var(--text);
+        .icon { width: 13px; height: 13px; }
+    }
+}
+
+// Sign-in card
+.tn-signin {
+    border: var(--bw-hair) solid var(--border);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+    padding: 26px 24px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+
+    &__head { display: flex; flex-direction: column; gap: 4px; }
+    &__title {
+        font-family: var(--font-display);
+        font-size: var(--fs-h3);
+        font-weight: var(--fw-bold);
+        color: var(--text);
+        margin: 0;
+    }
+    &__sub { font-size: 12.5px; color: var(--text-muted); margin: 0; }
+
+    &__form { display: flex; flex-direction: column; gap: var(--space-4); }
+    &__meta { display: flex; justify-content: flex-end; margin-top: -6px; }
+    &__forgot {
+        font-size: var(--fs-xs);
+        font-weight: var(--fw-bold);
+        color: var(--accent-text, var(--text));
+        text-decoration: none;
+        &:hover { text-decoration: underline; }
+    }
+
+    &__divider {
+        display: flex; align-items: center; gap: var(--space-3);
+        color: var(--text-faint);
+        &::before, &::after {
+            content: ''; flex: 1; height: 1px; background: var(--border-faint);
+        }
+        span {
+            font-size: 10.5px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-faint);
+        }
+    }
+
+    &__signup {
+        font-size: var(--fs-xs);
+        color: var(--text-muted);
+        text-align: center;
+        margin: 0;
+        a { color: var(--text); font-weight: var(--fw-bold); text-decoration: none;
+            &:hover { text-decoration: underline; } }
+    }
+}
+
+@media (max-width: 900px) {
+    .tn-home__grid { grid-template-columns: 1fr; gap: var(--space-8); }
+    .tn-home__aside { order: -1; }
+    .tn-home__cards { grid-template-columns: 1fr; }
+}

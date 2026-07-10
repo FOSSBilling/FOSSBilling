@@ -396,59 +396,107 @@
     {% else %}
         {{ render_widgets('client.index.dashboard.guest.before') }}
 
-        <div class="row">
-            <div class="col-md-6">
-                <div class="card mb-4">
-                    <div class="card-header h6 py-3">{{ 'Profile'|trans }}</div>
-                    <div class="card-body">
-                        <p>{{ 'You are currently logged out'|trans }}</p>
-                        <div class="d-flex gap-2">
-                            <a class="btn btn-sm btn-primary" href="{{ 'login'|url }}">{{ 'Login'|trans }}</a>
-                            <a class="btn btn-sm btn-dark" href="{{ 'signup'|url }}">{{ 'Register'|trans }}</a>
+        {# ---------------------------------------------------------------
+           Logged-out home: a front door, not a card grid. Welcome + one
+           clear sign-in path (with optional Microsoft SSO), plus three
+           purposeful quick paths and the latest announcements inline.
+        --------------------------------------------------------------- #}
+        {% set news_on = guest.extension_is_on({"mod":"news"}) %}
+        {% set kb_on = guest.support_kb_enabled() %}
+        {% set latest_news = news_on ? guest.news_get_list({ 'per_page': 2 }).list : [] %}
+
+        <div class="tn-home">
+            <div class="tn-home__wash" aria-hidden="true"></div>
+
+            <div class="tn-home__grid">
+                {# left — welcome + quick paths #}
+                <div class="tn-home__intro">
+                    <div class="tn-home__hero">
+                        <span class="tn-eyebrow">{{ 'Client portal'|trans }}</span>
+                        <h1 class="tn-home__title">{{ 'Your cloud services, mastered.'|trans }}</h1>
+                        <p class="tn-home__lede">
+                            {{ 'Domains, hosting and Microsoft 365 for your business — tracked, renewed and supported in one place.'|trans }}
+                        </p>
+                    </div>
+
+                    <div class="tn-home__cards">
+                        <a class="tn-card-link" href="{{ 'order'|url }}">
+                            <span class="tn-card-link__icon"><svg class="icon"><use href="#shopping-bag" /></svg></span>
+                            <span class="tn-card-link__title">{{ 'Browse the store'|trans }}</span>
+                            <span class="tn-card-link__sub">{{ 'Domains, hosting plans and Microsoft 365 seats.'|trans }}</span>
+                            <span class="tn-card-link__cta">{{ 'Go to store'|trans }}<svg class="icon"><use href="#arrow-right" /></svg></span>
+                        </a>
+                        {% if kb_on %}
+                            <a class="tn-card-link" href="{{ 'support/kb'|url }}">
+                                <span class="tn-card-link__icon"><svg class="icon"><use href="#book-open" /></svg></span>
+                                <span class="tn-card-link__title">{{ 'Knowledge base'|trans }}</span>
+                                <span class="tn-card-link__sub">{{ 'Setup guides, DNS how-tos and billing answers.'|trans }}</span>
+                                <span class="tn-card-link__cta">{{ 'Find answers'|trans }}<svg class="icon"><use href="#arrow-right" /></svg></span>
+                            </a>
+                        {% endif %}
+                        {% if news_on %}
+                            <a class="tn-card-link" href="{{ 'news'|url }}">
+                                <span class="tn-card-link__icon"><svg class="icon"><use href="#megaphone" /></svg></span>
+                                <span class="tn-card-link__title">{{ 'Announcements'|trans }}</span>
+                                <span class="tn-card-link__sub">{{ 'Maintenance windows and product updates.'|trans }}</span>
+                                <span class="tn-card-link__cta">{{ 'Latest news'|trans }}<svg class="icon"><use href="#arrow-right" /></svg></span>
+                            </a>
+                        {% endif %}
+                    </div>
+
+                    {% if latest_news %}
+                        <div class="tn-home__news">
+                            {% for post in latest_news %}
+                                <a class="tn-rowhover tn-home__news-row" href='{{ "news/#{post.slug}"|url }}'>
+                                    <span class="tn-home__news-date">{{ post.created_at|date('d M') }}</span>
+                                    <span class="tn-home__news-title">{{ post.title|truncate(72) }}</span>
+                                    <svg class="icon"><use href="#chevron-right" /></svg>
+                                </a>
+                            {% endfor %}
                         </div>
+                    {% endif %}
+                </div>
+
+                {# right — sign in card #}
+                <div class="tn-home__aside">
+                    <div class="tn-signin">
+                        <div class="tn-signin__head">
+                            <h2 class="tn-signin__title">{{ 'Sign in'|trans }}</h2>
+                            <p class="tn-signin__sub">{{ 'Manage services, invoices and support tickets.'|trans }}</p>
+                        </div>
+                        <form method="post" action="{{ 'client/login'|api_url(role: 'guest') }}" class="auth tn-signin__form" {{ fb_api_form({redirect: '/'|url}) }}>
+                            <div class="tn-field">
+                                <label class="tn-field__label" for="tn-home-email">{{ 'Email'|trans }}</label>
+                                <input class="tn-input" id="tn-home-email" type="email" name="email" placeholder="you@company.com" value="{{ request.email }}" required="required">
+                            </div>
+                            <div class="tn-field">
+                                <label class="tn-field__label" for="tn-home-password">{{ 'Password'|trans }}</label>
+                                <input class="tn-input" id="tn-home-password" type="password" name="password" placeholder="••••••••••" required="required">
+                            </div>
+                            <div class="tn-signin__meta">
+                                {% if settings.show_password_reset_link %}
+                                    <a class="tn-signin__forgot" href="{{ 'password-reset'|url }}">{{ 'Forgot password?'|trans }}</a>
+                                {% endif %}
+                            </div>
+                            <button type="submit" class="tn-btn tn-btn--primary tn-btn--lg tn-btn--block">{{ 'Sign in'|trans }}</button>
+                        </form>
+
+                        {% if settings.microsoft_sso_url|default('') %}
+                            <div class="tn-signin__divider"><span>{{ 'or'|trans }}</span></div>
+                            <a class="tn-btn tn-btn--secondary tn-btn--block" href="{{ settings.microsoft_sso_url }}">
+                                <svg class="icon"><use href="#layout-grid" /></svg>{{ 'Continue with Microsoft'|trans }}
+                            </a>
+                        {% endif %}
+
+                        {% if settings.show_signup_link %}
+                            <p class="tn-signin__signup">
+                                {{ 'New here?'|trans }}
+                                <a href="{{ 'signup'|url }}">{{ 'Create an account'|trans }}</a> — {{ 'it takes a minute.'|trans }}
+                            </p>
+                        {% endif %}
                     </div>
                 </div>
             </div>
-
-            <div class="col-md-6">
-                <div class="card mb-4">
-                    <div class="card-header h6 py-3">{{ 'Order'|trans }}</div>
-                    <div class="card-body">
-                        <p>{{ 'Order new products and services'|trans }}</p>
-                        <div class="d-flex gap-2">
-                            <a class="btn btn-sm btn-dark" href="{{ 'order'|url }}">{{ 'Order'|trans }}</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {% if guest.extension_is_on({"mod":"news"}) %}
-                <div class="col-md-6">
-                    <div class="card mb-4">
-                        <div class="card-header h6 py-3">{{ 'News'|trans }}</div>
-                        <div class="card-body">
-                            <p>{{ 'Latest news and announcements'|trans }}</p>
-                            <div class="d-flex gap-2">
-                                <a class="btn btn-sm btn-dark" href="{{ 'news'|url }}">{{ 'Announcements'|trans }}</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            {% endif %}
-
-            {% if guest.support_kb_enabled() %}
-                <div class="col-md-6">
-                    <div class="card mb-4">
-                        <div class="card-header h6 py-3">{{ 'Knowledge Base'|trans }}</div>
-                        <div class="card-body">
-                            <p>{{ 'Find answers to frequent questions'|trans }}</p>
-                            <div class="d-flex gap-2">
-                                <a class="btn btn-sm btn-dark" href="{{ 'support/kb'|url }}">{{ 'Knowledge Base'|trans }}</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            {% endif %}
         </div>
 
         {{ render_widgets('client.index.dashboard.guest.after') }}

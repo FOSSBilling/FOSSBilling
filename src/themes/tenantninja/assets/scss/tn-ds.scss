@@ -383,3 +383,144 @@
 
 // ---- Logo -------------------------------------------------------------------------------
 .tn-logo-mark svg { display: block; flex: none; }
+
+// ---- Toast v2 ---------------------------------------------------------------------------
+// Ported from redesign/ds-extra/Toast.jsx. Solid raised surface, tinted icon
+// chip carrying the severity, inline action, countdown hairline, rise-in.
+.tn-toast {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: var(--surface-3, var(--surface-2));
+    border: var(--bw-hair) solid var(--border-strong);
+    border-radius: var(--r-lg);
+    padding: 13px 14px 14px;
+    box-shadow: var(--shadow-lg), var(--inset-top);
+    min-width: 300px;
+    max-width: 400px;
+    overflow: hidden;
+    animation: tn-toast-in var(--dur-slow) var(--ease-out) both;
+
+    &__chip {
+        width: 30px; height: 30px; border-radius: var(--r-sm); flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+        background: var(--surface-inset); color: var(--text-faint);
+        svg { display: block; }
+    }
+    &--success .tn-toast__chip { background: var(--success-bg); color: var(--success-500); }
+    &--warning .tn-toast__chip { background: var(--warning-bg); color: var(--warning-500); }
+    &--danger  .tn-toast__chip { background: var(--danger-bg);  color: var(--danger-500); }
+    &--info    .tn-toast__chip { background: var(--info-bg);    color: var(--info-500); }
+
+    &__body { flex: 1; min-width: 0; padding-top: 2px; }
+    &__title {
+        font-family: var(--font-sans); font-weight: var(--fw-bold);
+        font-size: 13.5px; color: var(--text); line-height: 1.35;
+    }
+    &__desc {
+        font-family: var(--font-sans); font-size: 12.5px; color: var(--text-muted);
+        margin-top: 2px; line-height: 1.45; text-wrap: pretty;
+    }
+    &__action {
+        margin-top: 8px; display: inline-flex; align-items: center; gap: 5px;
+        font-family: var(--font-sans); font-size: 12.5px; font-weight: var(--fw-bold);
+        color: var(--text); background: transparent; border: none; padding: 0 0 1px;
+        cursor: pointer; text-decoration: none;
+        border-bottom: var(--bw-hair) solid var(--border-strong);
+        transition: border-color var(--dur) var(--ease-out);
+        &:hover { border-color: var(--text); }
+        svg { display: block; }
+    }
+    &__close {
+        flex-shrink: 0; width: 22px; height: 22px; border-radius: var(--r-xs);
+        border: none; background: transparent; color: var(--text-faint); cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+        &:hover { background: var(--surface-inset); color: var(--text); }
+        &:active { transform: scale(.9); }
+        svg { display: block; }
+    }
+    // countdown hairline
+    &__timer {
+        position: absolute; left: 0; bottom: 0; height: 2px; width: 100%;
+        transform-origin: left; background: var(--text-faint); opacity: .5;
+        animation: tn-toast-timer linear both;
+    }
+    &--success .tn-toast__timer { background: var(--success-500); }
+    &--warning .tn-toast__timer { background: var(--warning-500); }
+    &--danger  .tn-toast__timer { background: var(--danger-500); }
+    &--info    .tn-toast__timer { background: var(--info-500); }
+
+    &.tn-toast--out { animation: tn-toast-out var(--dur) var(--ease-out) both; }
+}
+[data-bs-theme="light"] .tn-toast { box-shadow: 0 10px 28px rgba(12, 15, 14, .14); }
+
+@keyframes tn-toast-in  { from { opacity: 0; transform: translateY(10px) scale(.98); } }
+@keyframes tn-toast-out { to   { opacity: 0; transform: translateY(6px)  scale(.98); } }
+@keyframes tn-toast-timer { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+// New v2 stack. The legacy Bootstrap `.toast-container` is retargeted in JS to
+// use these; this class powers the live lab and any local stacks.
+.tn-toast-stack {
+    position: fixed; bottom: 20px; right: 20px;
+    display: flex; flex-direction: column; gap: 10px; z-index: 1080;
+    &--local { position: absolute; }
+}
+
+// ---- Skeleton loading -------------------------------------------------------------------
+// Ported from redesign/skeletons.jsx. One utility class; every skeleton mirrors
+// its real page 1:1 so content swaps in with zero layout shift.
+.tn-sk {
+    position: relative; overflow: hidden;
+    background: var(--surface-2); border-radius: var(--r-xs); flex-shrink: 0;
+    &::after {
+        content: ''; position: absolute; inset: 0;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .055), transparent);
+        transform: translateX(-100%);
+        animation: tn-sk-sweep 1.6s var(--ease-out) infinite;
+    }
+    &--round { border-radius: var(--r-pill); }
+}
+[data-bs-theme="light"] .tn-sk {
+    background: var(--paper-200);
+    &::after { background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .55), transparent); }
+}
+@keyframes tn-sk-sweep { to { transform: translateX(100%); } }
+
+// A skeleton row reuses the card chrome; only the data regions shimmer.
+.tn-sk-row {
+    display: flex; align-items: center; gap: 14px; padding: 13px 18px;
+    border-bottom: var(--bw-hair) solid var(--border-faint);
+    &:last-child, &--last { border-bottom: none; }
+}
+
+// ---- Micro-interactions -----------------------------------------------------------------
+// Ported from redesign/motion.jsx. CSS-only; all disabled under reduced-motion.
+// Chevron / arrow nudge on hover of a linked row or quick card.
+.tn-rowhover > svg,
+.tn-card-link svg { transition: transform var(--dur) var(--ease-out); }
+.tn-rowhover:hover > svg,
+.tn-card-link:hover svg { transform: translateX(3px); }
+
+// Staggered rise-in for content that mounts on demand (lab, swapped regions).
+.tn-rise > * { animation: tn-rise .5s var(--ease-out) both; }
+@for $i from 1 through 6 {
+    .tn-rise > *:nth-child(#{$i}) { animation-delay: #{($i - 1) * 50}ms; }
+}
+@keyframes tn-rise { from { opacity: 0; transform: translateY(8px); } }
+
+// Badge pop — snap easing, used on cart count / notification bumps.
+.tn-pop { animation: tn-pop .32s var(--ease-snap) both; }
+@keyframes tn-pop { 0% { transform: scale(.4); } 65% { transform: scale(1.18); } 100% { transform: scale(1); } }
+
+// Press feedback for any pressable surface not already covered by .tn-btn.
+.tn-pressable { transition: transform var(--dur-fast) var(--ease-snap); }
+.tn-pressable:active { transform: translateY(1px) scale(.985); }
+
+@media (prefers-reduced-motion: reduce) {
+    .tn-toast, .tn-toast__timer,
+    .tn-sk::after,
+    .tn-rise > *, .tn-pop { animation: none; }
+    .tn-rowhover:hover > svg, .tn-card-link:hover svg { transform: none; }
+}
