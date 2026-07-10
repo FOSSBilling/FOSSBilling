@@ -78,6 +78,29 @@
                         </div>
                     {% endif %}
 
+                    {% if order.service_type == 'domain' and order.config.action %}
+                        <div class="tn-kv-row">
+                            <span class="tn-kv-row__key">{{ 'Registration Type'|trans }}</span>
+                            <span class="tn-kv-row__value">
+                                {% if order.config.action == 'transfer' %}{{ 'Domain transfer'|trans }}
+                                {% elseif order.config.action == 'register' %}{{ 'New registration'|trans }}
+                                {% elseif order.config.action == 'owndomain' %}{{ 'Own domain (self-managed)'|trans }}
+                                {% else %}{{ order.config.action }}
+                                {% endif %}
+                            </span>
+                        </div>
+                    {% endif %}
+
+                    {% if order.meta.original_price is defined %}
+                        <div class="tn-kv-row">
+                            <span class="tn-kv-row__key">{{ 'Original Price'|trans }}</span>
+                            <span class="tn-kv-row__value">
+                                {{ order.meta.original_price|format_currency(order.currency ?? default_currency) }}
+                                {% if order.meta.transfer_type == 'free' %}<span class="text-secondary small">({{ 'free transfer'|trans }})</span>{% endif %}
+                            </span>
+                        </div>
+                    {% endif %}
+
                     {% if order.notes %}
                         <div class="tn-kv-row">
                             <span class="tn-kv-row__key">{{ 'Order Notes'|trans }}</span>
