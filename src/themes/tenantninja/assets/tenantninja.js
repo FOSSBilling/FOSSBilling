@@ -3,6 +3,7 @@ import './js/utils';
 import initTheme from './js/ui/theme.js';
 import initPhoneInput from './js/phone-input.js';
 import initBackToTop from './js/ui/back-to-top.js';
+import initSkeleton from './js/ui/skeleton.js';
 
 globalThis.bootstrap = { Tooltip, Toast, Modal, Collapse, Tab };
 
@@ -40,6 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   initPhoneInput();
   initBackToTop();
+  initSkeleton();
 
   /**
    * Enable Bootstrap Tooltip

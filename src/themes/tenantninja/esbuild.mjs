@@ -12,7 +12,10 @@ import { buildIconSprite } from '../../../frontend/tools/icon-sprite.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === 'production';
-const purgeSafelist = [/^hide-/, /^iti/];
+// `tn-pop` / `tn-rise` (and their keyframe-bearing siblings) are only ever
+// attached to JS-injected nodes — the toast stack, the cart-badge pop and the
+// micro-interactions lab — so PurgeCSS can't see them in any Twig template.
+const purgeSafelist = [/^hide-/, /^iti/, /^tn-pop/, /^tn-rise/, /^tn-toast/, /^tn-sk/];
 const rootDir = resolve(__dirname, '../../..');
 const nodeModulesDir = resolve(rootDir, 'node_modules');
 
