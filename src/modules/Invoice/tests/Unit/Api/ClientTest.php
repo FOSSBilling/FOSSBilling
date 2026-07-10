@@ -112,8 +112,22 @@ test('creates renewal invoice', function (): void {
     expect($result)->toBeString()->toBe($generatedHash);
 });
 
-test('throws exception when creating renewal invoice for free order', function (): void {
+test('creates renewal invoice for order with stale zero price', function (): void {
+    // Free transfer-in domains keep price 0.00 in client_order but still cost money
+    // to renew. The API must not block on the stored price; generateForOrder()
+    // resolves the real renewal amount and rejects genuinely free orders itself.
     $api = new Client();
+    $generatedHash = 'generatedHashString';
+
+    $serviceMock = Mockery::mock(Service::class);
+    $model = new Model_Invoice();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->hash = $generatedHash;
+    $serviceMock->shouldReceive('generateForOrder')
+        ->atLeast()->once()
+        ->andReturn($model);
+    $serviceMock->shouldReceive('approveInvoice');
+
     $dbMock = Mockery::mock('\Box_Database');
     $clientOrder = new Model_ClientOrder();
     $clientOrder->loadBean(new Tests\Helpers\DummyBean());
@@ -129,14 +143,14 @@ test('throws exception when creating renewal invoice for free order', function (
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $api->setDi($di);
+    $api->setService($serviceMock);
     $identity = new Model_Admin();
     $identity->loadBean(new Tests\Helpers\DummyBean());
     $api->setIdentity($identity);
 
     $data['order_id'] = 1;
-
-    expect(fn () => $api->renewal_invoice($data))
-        ->toThrow(FOSSBilling\Exception::class, sprintf('Order %d is free. No need to generate invoice.', $clientOrder->id));
+    $result = $api->renewal_invoice($data);
+    expect($result)->toBeString()->toBe($generatedHash);
 });
 
 test('throws exception when creating renewal invoice for order not found', function (): void {

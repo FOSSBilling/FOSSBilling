@@ -1315,6 +1315,16 @@ class Service implements InjectionAwareInterface
                     'price' => $price,
                     'quantity' => $renewalLine['quantity'],
                 ];
+
+                // Persist the resolved renewal price back to the order. Domain orders
+                // created as free transfers keep a stale 0.00 in client_order.price
+                // otherwise, which misleads admin/client order pages and any code that
+                // trusts the stored price.
+                if ($price > 0 && (float) $order->price !== (float) $price) {
+                    $order->price = $price;
+                    $order->updated_at = date('Y-m-d H:i:s');
+                    $this->di['db']->store($order);
+                }
             }
         }
 

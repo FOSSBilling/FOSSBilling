@@ -1669,6 +1669,84 @@ test('generates invoice for active order using the order price, not the product 
     expect($result)->toBeInstanceOf(Model_Invoice::class);
 });
 
+test('generates renewal invoice for active domain order with stale zero price and persists resolved price', function (): void {
+    // Free transfer-in domains keep 0.00 in client_order.price even though renewal
+    // costs real money. The domain branch must resolve the renewal price from the
+    // TLD pricing and write it back to the order so the stored price self-heals.
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('setInvoiceDefaults')
+        ->once();
+
+    $orderModel = new Model_ClientOrder();
+    $orderModel->loadBean(new Tests\Helpers\DummyBean());
+    $orderModel->status = Model_ClientOrder::STATUS_ACTIVE;
+    $orderModel->product_id = 1;
+    $orderModel->currency = 'AED';
+    $orderModel->price = 0;
+    $orderModel->quantity = 1;
+    $orderModel->config = json_encode(['action' => 'transfer', 'transfer_tld' => '.co.za', 'period' => '1Y']);
+
+    $clientModel = new Model_Client();
+    $clientModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $product = Mockery::mock(Product::class)->makePartial();
+    $product->shouldReceive('getType')->andReturn(ProductService::DOMAIN);
+
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('findProductById')
+        ->with(1)
+        ->once()
+        ->andReturn($product);
+    $productService->shouldReceive('getProductRenewalLineConfig')
+        ->once()
+        ->andReturn(['price' => 25.0, 'quantity' => 1]);
+
+    $currencyRepositoryMock = Mockery::mock(CurrencyRepository::class);
+    $currencyRepositoryMock->shouldReceive('getRateByCode')
+        ->with('AED')
+        ->andReturn(1.0);
+    $currencyServiceMock = Mockery::mock(CurrencyService::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $currencyServiceMock->shouldReceive('getCurrencyRepository')
+        ->andReturn($currencyRepositoryMock);
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getExistingModelById')
+        ->atLeast()->once()
+        ->andReturn($clientModel);
+    $dbMock->shouldReceive('dispense')
+        ->atLeast()->once()
+        ->andReturn($invoiceModel);
+    $dbMock->shouldReceive('store')
+        ->atLeast()->once();
+
+    $invoiceItemServiceMock = Mockery::mock(ServiceInvoiceItem::class);
+    $invoiceItemServiceMock->shouldReceive('generateFromOrder')
+        ->with($invoiceModel, $orderModel, Model_InvoiceItem::TASK_RENEW, 25.0, Mockery::on(fn ($line): bool => $line['price'] === 25.0 && $line['quantity'] === 1))
+        ->once();
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(function (string $module, ?string $submodule = null) use ($productService, $currencyServiceMock, $invoiceItemServiceMock): Mockery\MockInterface {
+        if ($module === 'Product') {
+            return $productService;
+        }
+
+        if ($module === 'Currency') {
+            return $currencyServiceMock;
+        }
+
+        return $invoiceItemServiceMock;
+    });
+
+    $serviceMock->setDi($di);
+    $result = $serviceMock->generateForOrder($orderModel);
+    expect($result)->toBeInstanceOf(Model_Invoice::class);
+    expect((float) $orderModel->price)->toBe(25.0);
+});
+
 test('throws exception when generating invoice for zero amount order', function (): void {
     $service = new Service();
     $clientOrder = new Model_ClientOrder();
@@ -1716,6 +1794,9 @@ test('generates invoices for expiring orders', function (): void {
     $orderService->shouldReceive('getSoonExpiringActiveOrders')
         ->atLeast()->once()
         ->andReturn([[]]);
+    $orderService->shouldReceive('getOrderService')
+        ->with($clientOrder)
+        ->andReturn(null);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getExistingModelById')
