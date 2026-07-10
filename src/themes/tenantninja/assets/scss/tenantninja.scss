@@ -2365,3 +2365,14 @@ table > thead > tr > th {
         width: 320px;
     }
 }
+
+// Hints that a table scrolls horizontally on narrow viewports (mobile
+// tables have no other affordance showing there's more content off-screen).
+.table-responsive {
+    background:
+        linear-gradient(to right, var(--bs-body-bg) 0%, transparent 100%) left / 24px 100% no-repeat,
+        linear-gradient(to left, var(--bs-body-bg) 0%, transparent 100%) right / 24px 100% no-repeat local,
+        linear-gradient(to right, rgba(0, 0, 0, 0.08) 0%, transparent 100%) left / 24px 100% no-repeat scroll,
+        linear-gradient(to left, rgba(0, 0, 0, 0.08) 0%, transparent 100%) right / 24px 100% no-repeat scroll;
+    background-attachment: local, local, scroll, scroll;
+}

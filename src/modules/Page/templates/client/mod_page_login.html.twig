@@ -42,12 +42,12 @@
                         <div class="row">
                             {% if settings.show_signup_link %}
                                 <div class="col">
-                                    <a class="btn btn-outline-primary mb-2 w-100" href="{{ 'signup'|url }}">{{ 'Create Account'|trans }}</a>
+                                    <a class="btn btn-outline-primary mb-2 w-100 d-flex align-items-center justify-content-center text-center" href="{{ 'signup'|url }}">{{ 'Create Account'|trans }}</a>
                                 </div>
                             {% endif %}
                             {% if settings.show_password_reset_link %}
                                 <div class="col">
-                                    <a class="btn btn-outline-primary mb-2 w-100" href="{{ 'password-reset'|url }}">{{ 'Forgot Password?'|trans }}</a>
+                                    <a class="btn btn-outline-primary mb-2 w-100 d-flex align-items-center justify-content-center text-center" href="{{ 'password-reset'|url }}">{{ 'Forgot Password?'|trans }}</a>
                                 </div>
                             {% endif %}
                         </div>

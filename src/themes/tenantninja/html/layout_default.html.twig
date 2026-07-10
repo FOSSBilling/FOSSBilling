@@ -85,7 +85,7 @@
 <div class="container">
     <header>
         {{ render_widgets('client.theme.header.start') }}
-        <nav class="navbar navbar-expand-md py-3 tn-topbar">
+        <nav class="navbar navbar-expand-lg py-3 tn-topbar">
             <div class="container-fluid d-flex align-items-center gap-3">
                 {{ include('partial_company_logo.html.twig', {
                     logo_url: settings.show_company_logo ? company.logo_url : null,
@@ -95,14 +95,14 @@
                     show_mobile_name: true
                 }) }}
 
-                <ul class="navbar-nav flex-row gap-1 d-none d-md-flex flex-grow-1">
+                <ul class="navbar-nav flex-row gap-1 d-none d-lg-flex flex-grow-1">
                     {{ include('partial_topnav.html.twig', { variant: 'top' }) }}
                 </ul>
 
                 <div class="d-flex align-items-center gap-2 ms-auto">
                     {% set languages = guest.extension_languages(true) %}
                     {% if languages|length > 1 %}
-                        <select name="lang" class="form-select form-select-sm js-locale-selector d-none d-md-block">
+                        <select name="lang" class="form-select form-select-sm js-locale-selector d-none d-lg-block">
                             {% for lang in languages %}
                                 <option value="{{ lang.locale }}" data-custom-properties="&lt;span class=&quot;fi fi-{{ lang.locale|split('_')[1]|lower }}&quot;&gt;&lt;/span&gt;"{% if lang.locale == guest.system_locale %} selected{% endif %}>{{ lang.title }}</option>
                             {% endfor %}
@@ -110,7 +110,7 @@
                     {% endif %}
 
                     {% if client and profile.currency is not null %}
-                        <div class="tn-balance-chip d-none d-md-flex" title="{{ 'Account balance'|trans }}">
+                        <div class="tn-balance-chip d-none d-lg-flex" title="{{ 'Account balance'|trans }}">
                             <svg class="icon"><use href="#wallet" /></svg>
                             <span class="font-mono">{{ profile.balance|format_currency(profile.currency) }}</span>
                         </div>
@@ -174,7 +174,7 @@
                             {% if settings.show_breadcrumb %}
                                 {% block breadcrumbs %}
                                     <nav aria-label="{{ 'breadcrumb'|trans }}">
-                                        <ol class="breadcrumb d-none d-md-flex">
+                                        <ol class="breadcrumb d-none d-lg-flex">
                                             <li class="breadcrumb-item"><a href="{{ '/'|url }}">{{ 'Home'|trans }}</a>
                                             </li>
                                             {% block breadcrumb %}
@@ -197,7 +197,7 @@
                     <div id="push"></div>
                 </div>
 
-                <nav class="tn-bottom-nav d-md-none" aria-label="{{ 'Primary'|trans }}">
+                <nav class="tn-bottom-nav d-lg-none" aria-label="{{ 'Primary'|trans }}">
                     {{ include('partial_topnav.html.twig', { variant: 'bottom' }) }}
                 </nav>
 
