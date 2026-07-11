@@ -2411,12 +2411,24 @@ table > thead > tr > th {
     // site's light/dark mode, same reasoning a photo hero always uses -
     // text needs to sit on the image, not on a token that might be
     // light.
+    // Full-bleed: breaks out of the centered .tn-content-container to span
+    // the full viewport width, and stands at nearly full viewport height
+    // (nav bar height is subtracted) so it reads as an actual hero, not a
+    // rounded card floating inside page padding.
     &--photo {
-        margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-6)) 0;
-        padding: var(--space-16) var(--space-6) var(--space-12);
-        border-radius: var(--r-xl);
+        width: 100vw;
+        margin-left: calc(50% - 50vw);
+        margin-right: calc(50% - 50vw);
+        margin-top: calc(-1 * var(--space-8));
+        min-height: calc(100dvh - 72px);
+        display: flex;
+        align-items: center;
+        padding: var(--space-16) var(--space-6);
+        border-radius: 0;
         overflow: hidden;
         color: var(--white);
+
+        .tn-home__grid { width: 100%; max-width: var(--container-wide); margin: 0 auto; }
 
         .tn-home__grid { position: relative; z-index: 3; }
         .tn-eyebrow { color: var(--blade-300); }
@@ -2779,6 +2791,7 @@ table > thead > tr > th {
     .tn-home__grid { grid-template-columns: 1fr; gap: var(--space-8); }
     .tn-home__aside { order: -1; }
     .tn-home__cards { grid-template-columns: 1fr; }
+    .tn-home--photo { min-height: 0; padding: var(--space-10) var(--space-4); }
 }
 
 // -----------------------------------------------------------------------
