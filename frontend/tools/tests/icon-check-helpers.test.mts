@@ -5,7 +5,7 @@ import {
   computeIconErrors,
   extractIconReferencesFromContent,
   parseManifest,
-} from '../icon-check-helpers.mjs';
+} from '../icon-check-helpers.mts';
 
 describe('icon manifest helpers', () => {
   test('normalizes manifest entries and tracks dynamic icons', () => {

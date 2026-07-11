@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true,
+    "isolatedModules": true,
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "module": "Preserve",
+    "moduleDetection": "force",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "noImplicitAny": false,
+    "skipLibCheck": true,
+    "strict": false,
+    "target": "ES2022",
+    "types": ["node"]
+  },
+  "include": [
+    "frontend/types/**/*.d.ts",
+    "frontend/**/*.ts",
+    "frontend/**/*.mts",
+    "src/themes/admin_default/**/*.ts",
+    "src/themes/admin_default/**/*.mts",
+    "src/themes/huraga/**/*.ts",
+    "src/themes/huraga/**/*.mts"
+  ],
+  "exclude": [
+    "**/assets/build/**",
+    "**/node_modules/**"
+  ]
+}

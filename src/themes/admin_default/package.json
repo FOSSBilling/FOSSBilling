@@ -1,8 +1,11 @@
 {
   "name": "admin_default",
   "scripts": {
-    "build": "node ./esbuild.mjs",
-    "dev": "node ./esbuild.mjs"
+    "build": "node ./esbuild.mts",
+    "dev": "node ./esbuild.mts"
+  },
+  "engines": {
+    "node": ">=24"
   },
   "dependencies": {
     "@tabler/core": "^1.2.0",

@@ -7,17 +7,17 @@ import {
   prepareThemeBuildDirs,
   sharedLoaders,
   writeAssetManifest,
-} from '../../../frontend/tools/esbuild-helpers.mjs';
-import { buildIconSprite } from '../../../frontend/tools/icon-sprite.mjs';
+} from '../../../frontend/tools/esbuild-helpers.mts';
+import { buildIconSprite } from '../../../frontend/tools/icon-sprite.mts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === 'production';
-const purgeSafelist = [/^hide-/, /^iti/];
 const rootDir = resolve(__dirname, '../../..');
 const nodeModulesDir = resolve(rootDir, 'node_modules');
+const adminLoaders = { ...sharedLoaders, '.svg': 'dataurl' } as const;
 
 async function build() {
-  console.log(`Building huraga theme (${isProduction ? 'production' : 'development'}) with esbuild ...`);
+  console.log(`Building admin_default theme (${isProduction ? 'production' : 'development'}) with esbuild ...`);
 
   const startTime = Date.now();
 
@@ -35,27 +35,16 @@ async function build() {
       ],
     });
 
-    await buildJsFile({
-      entryPoint: resolve(__dirname, 'assets/huraga.js'),
-      outdir: paths.jsDir,
-      entryNames: '[name]',
-      chunkNames: 'chunks/[name]-[hash]',
-      isProduction,
-      loader: sharedLoaders,
-      splitting: true,
-      drop: isProduction ? ['console', 'debugger'] : []
-    });
-
     await buildCssFile({
-      entryPoint: resolve(__dirname, 'assets/scss/huraga.scss'),
-      outfile: join(paths.cssDir, 'huraga.css'),
+      entryPoint: resolve(__dirname, 'assets/scss/fossbilling.scss'),
+      outfile: join(paths.cssDir, 'fossbilling.css'),
       nodeModulesDir,
       isProduction,
-      loader: sharedLoaders,
+      loader: adminLoaders,
       themePath: __dirname,
       purge: {
-        area: 'client',
-        additionalStandardSafelist: purgeSafelist,
+        area: 'admin',
+        additionalStandardSafelist: [/^flag-country-/, /^clr-/],
       },
     });
 
@@ -64,26 +53,36 @@ async function build() {
       outfile: join(paths.cssDir, 'vendor.css'),
       nodeModulesDir,
       isProduction,
-      loader: sharedLoaders,
+      loader: adminLoaders,
       themePath: __dirname,
       purge: {
-        area: 'client',
-        additionalStandardSafelist: purgeSafelist,
+        area: 'admin',
+        additionalStandardSafelist: [/^flag-country-/, /^clr-/],
       },
     });
 
+    await buildJsFile({
+      entryPoint: resolve(__dirname, 'assets/fossbilling.ts'),
+      outdir: paths.jsDir,
+      entryNames: '[name]',
+      chunkNames: 'chunks/[name]-[hash]',
+      isProduction,
+      loader: adminLoaders,
+      splitting: true,
+    });
+
     await writeAssetManifest(paths.buildDir, {
-      'build/huraga.js': '/themes/huraga/assets/build/js/huraga.js',
-      'build/vendor.css': '/themes/huraga/assets/build/css/vendor.css',
-      'build/huraga.css': '/themes/huraga/assets/build/css/huraga.css',
-      'build/symbol/icons-sprite.svg': '/themes/huraga/assets/build/symbol/icons-sprite.svg',
+      'build/fossbilling.js': '/themes/admin_default/assets/build/js/fossbilling.js',
+      'build/vendor.css': '/themes/admin_default/assets/build/css/vendor.css',
+      'build/fossbilling.css': '/themes/admin_default/assets/build/css/fossbilling.css',
+      'build/symbol/icons-sprite.svg': '/themes/admin_default/assets/build/symbol/icons-sprite.svg',
     });
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
-    console.log(`✓ Build complete in ${duration}s\n`);
+    console.log(`Build complete in ${duration}s\n`);
 
   } catch (error) {
-    console.error('✗ Build failed:', error);
+    console.error('Build failed:', error);
     process.exit(1);
   }
 }

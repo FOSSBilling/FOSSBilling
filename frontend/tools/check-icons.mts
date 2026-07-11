@@ -3,7 +3,7 @@ import { dirname, extname, join, relative, resolve } from 'path';
 import { readdirSync } from 'fs';
 import { fileURLToPath } from 'url';
 
-import { parseManifest, extractIconReferencesFromContent, computeIconErrors } from './icon-check-helpers.mjs';
+import { parseManifest, extractIconReferencesFromContent, computeIconErrors } from './icon-check-helpers.mts';
 
 const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -32,7 +32,7 @@ const themes = [
   },
 ];
 
-const sourceExtensions = new Set(['.twig', '.js', '.mjs', '.php']);
+const sourceExtensions = new Set(['.twig', '.ts', '.php']);
 
 function walkFiles(dir) {
   const files = [];

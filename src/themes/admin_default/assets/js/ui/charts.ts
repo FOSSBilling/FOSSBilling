@@ -1,3 +1,4 @@
+// @ts-nocheck -- Runtime DOM/widget integration; converted to TS without changing behavior.
 import Chart from 'chart.js/auto';
 
 const chartInstances = new WeakMap();
