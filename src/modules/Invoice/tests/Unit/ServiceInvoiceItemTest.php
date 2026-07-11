@@ -237,6 +237,7 @@ test('updates an item', function (): void {
     $service = new ServiceInvoiceItem();
     $invoiceItemModel = new Model_InvoiceItem();
     $invoiceItemModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceItemModel->quantity = 3;
 
     $data = [
         'title' => 'New Engine',
@@ -254,6 +255,8 @@ test('updates an item', function (): void {
     $service->setDi($di);
 
     $service->update($invoiceItemModel, $data);
+
+    expect($invoiceItemModel->quantity)->toBe(3);
 });
 
 test('removes an item', function (): void {

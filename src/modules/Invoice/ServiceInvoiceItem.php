@@ -193,10 +193,8 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             $item->price = PriceValidator::validateSignedAmount($data['price']);
         }
 
-        $item_quantity = PriceValidator::validateQuantity($data['quantity'] ?? 1);
-
-        if ($item_quantity != $item->quantity) {
-            $item->quantity = $item_quantity;
+        if (array_key_exists('quantity', $data)) {
+            $item->quantity = PriceValidator::validateQuantity($data['quantity']);
         }
 
         if (isset($data['taxed']) && !empty($data['taxed'])) {

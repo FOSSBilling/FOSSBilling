@@ -37,7 +37,12 @@ final class PriceValidator
             throw new InformationException('Quantity must be a valid number.');
         }
 
-        return max(1, (int) $value);
+        $quantity = (float) $value;
+        if (!is_finite($quantity) || $quantity > PHP_INT_MAX || $quantity < PHP_INT_MIN) {
+            throw new InformationException('Quantity must be a valid number.');
+        }
+
+        return max(1, (int) $quantity);
     }
 
     private static function validateNumericAmount(mixed $value, string $fieldName): float
