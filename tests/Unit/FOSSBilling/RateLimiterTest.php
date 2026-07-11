@@ -42,7 +42,7 @@ test('consume allows until limit is reached', function (): void {
     $limit = $limiter->getStatus('api_guest', $subject)->getLimit();
     $lastAllowed = null;
 
-    for ($i = 0; $i < $limit; $i++) {
+    for ($i = 0; $i < $limit; ++$i) {
         $lastAllowed = $limiter->consume('api_guest', $subject);
     }
 
@@ -81,17 +81,14 @@ test('consume or throw raises rate limit exception', function (): void {
     $limiter->consume('client_password_reset_email', $subject, 3);
 
     expect(fn (): RateLimitResult => $limiter->consumeOrThrow('client_password_reset_email', $subject))
-        ->toThrow(
-            FOSSBilling\Security\RateLimitException::class,
-            function (FOSSBilling\Security\RateLimitException $exception): void {
-                expect($exception->getCode())->toBe(429);
-                expect($exception->getMessage())->toBe('Rate limit exceeded. Please try again later.');
-                expect($exception->getRateLimitResult()->getPolicy())->toBe('client_password_reset_email');
-                expect($exception->hasRetryAfter())->toBeTrue();
-                expect($exception->getRetryAfterSeconds())->toBeGreaterThan(0);
-                expect($exception->getRetryAfterSeconds())->toBeLessThanOrEqual(3600);
-            }
-        );
+        ->toThrow(function (FOSSBilling\Security\RateLimitException $exception): void {
+            expect($exception->getCode())->toBe(429);
+            expect($exception->getMessage())->toBe('Rate limit exceeded. Please try again later.');
+            expect($exception->getRateLimitResult()->getPolicy())->toBe('client_password_reset_email');
+            expect($exception->hasRetryAfter())->toBeTrue();
+            expect($exception->getRetryAfterSeconds())->toBeGreaterThan(0);
+            expect($exception->getRetryAfterSeconds())->toBeLessThanOrEqual(3600);
+        });
 });
 
 test('unknown policy throws exception', function (): void {
