@@ -1194,6 +1194,38 @@ test('gets total with tax', function (): void {
     expect($result)->toBe($expected);
 });
 
+test('pays a zero-total invoice without recording a balance transaction', function (): void {
+    $invoice = new Model_Invoice();
+    $invoice->loadBean(new Tests\Helpers\DummyBean());
+    $invoice->id = 10;
+    $invoice->client_id = 20;
+    $invoice->approved = 1;
+    $invoice->status = Model_Invoice::STATUS_UNPAID;
+
+    $client = new Model_Client();
+    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client->id = 20;
+
+    $balanceService = Mockery::mock(Box\Mod\Client\ServiceBalance::class);
+    $balanceService->shouldReceive('getClientBalance')->once()->with($client)->andReturn(0.0);
+
+    $db = Mockery::mock(Box_Database::class);
+    $db->shouldReceive('load')->once()->with('Client', 20)->andReturn($client);
+    $db->shouldNotReceive('dispense');
+    $db->shouldNotReceive('store');
+
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(0.0);
+    $service->shouldReceive('markAsPaid')->once()->with($invoice, false, true)->andReturn(true);
+
+    $di = container();
+    $di['db'] = $db;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $balanceService);
+    $service->setDi($di);
+
+    expect($service->tryPayWithCredits($invoice))->toBeTrue();
+});
+
 test('gets total', function (): void {
     $service = new Service();
     $invoiceModel = new Model_Invoice();

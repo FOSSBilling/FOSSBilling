@@ -693,8 +693,10 @@ class Server_Manager_Directadmin extends Server_Manager
         // Log the raw response data for debugging purposes
         $this->getLog()->debug('Raw Response: ' . $data);
 
-        // Replace certain HTML entities in the data with their corresponding characters
-        $data = str_replace('&#39', '"', $data);
+        // Replace certain HTML entities in the data with their corresponding characters.
+        // The fully-terminated entity is replaced first so the legacy unterminated
+        // form (missing the trailing semicolon) doesn't leave a stray ";" behind.
+        $data = str_replace(['&#39;', '&#39'], "'", $data);
         $data = preg_replace('|(\&\#\d+)|', '$1;', $data);
         $data = html_entity_decode((string) $data);
 

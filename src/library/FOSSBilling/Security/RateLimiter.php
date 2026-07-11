@@ -13,8 +13,8 @@ namespace FOSSBilling\Security;
 
 use FOSSBilling\Config;
 use FOSSBilling\InjectionAwareInterface;
-use Psr\Cache\CacheItemPoolInterface;
 use Pimple\Container;
+use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\RateLimiter\Storage\CacheStorage;
@@ -158,6 +158,7 @@ class RateLimiter implements InjectionAwareInterface
                 if (!is_array($entry) || !isset($entry['policy'], $entry['ip'])) {
                     unset($index[$key]);
                     $changed = true;
+
                     continue;
                 }
 
@@ -170,12 +171,14 @@ class RateLimiter implements InjectionAwareInterface
                 } catch (\Throwable) {
                     unset($index[$key]);
                     $changed = true;
+
                     continue;
                 }
 
                 if (!$state['limited']) {
                     unset($index[$key]);
                     $changed = true;
+
                     continue;
                 }
 
@@ -272,7 +275,7 @@ class RateLimiter implements InjectionAwareInterface
         $this->getFactory($policyName, $policy)->create($this->hashSubject($subject))->reset();
     }
 
-    private function getRateLimitState(string $policyName, string $subject): array
+    public function getStatus(string $policyName, string $subject): RateLimitResult
     {
         $policy = $this->getConfig()['policies'][$policyName] ?? null;
         if (!is_array($policy)) {
@@ -281,7 +284,8 @@ class RateLimiter implements InjectionAwareInterface
 
         $limit = $this->getFactory($policyName, $policy)->create($this->hashSubject($subject))->consume(0);
         $limited = $limit->getRemainingTokens() < 1;
-        $result = new RateLimitResult(
+
+        return new RateLimitResult(
             $policyName,
             $limited,
             $limit->getLimit(),
@@ -289,6 +293,11 @@ class RateLimiter implements InjectionAwareInterface
             $limit->getRetryAfter(),
             $limited ? RateLimitResult::REASON_LIMITED : RateLimitResult::REASON_ALLOWED,
         );
+    }
+
+    private function getRateLimitState(string $policyName, string $subject): array
+    {
+        $result = $this->getStatus($policyName, $subject);
 
         return [
             'limit' => $result->getLimit(),
