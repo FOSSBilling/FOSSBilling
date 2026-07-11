@@ -98,7 +98,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 'webhook_secret' => [
                     'text', [
                         'label' => 'Live Webhook signing secret:',
-                        'required' => false,
+                        'required_when' => ['enabled' => true, 'test_mode' => false],
                     ],
                 ],
                 'test_pub_key' => [
@@ -116,7 +116,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 'test_webhook_secret' => [
                     'text', [
                         'label' => 'Test Webhook signing secret:',
-                        'required' => false,
+                        'required_when' => ['enabled' => true, 'test_mode' => true],
                     ],
                 ],
             ],
