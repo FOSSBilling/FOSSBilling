@@ -14,6 +14,10 @@ interface ApiErrorPayload {
   result?: unknown;
 }
 
+function isApiResponsePayload(payload: unknown): payload is ApiErrorPayload | null {
+  return payload === null || (typeof payload === 'object' && !Array.isArray(payload));
+}
+
 interface MinimalResponse {
   ok?: boolean;
   status?: number;
@@ -115,9 +119,9 @@ async function parseResponseBody(response: MinimalResponse): Promise<ParsedRespo
   }
 }
 
-function validateHttpResponse(response: MinimalResponse, parsed: ParsedResponse) {
+function validateHttpResponse(response: MinimalResponse, parsed: ParsedResponse): ApiErrorPayload | null {
   if (!response.ok) {
-    const payload = parsed.payload as ApiErrorPayload | null;
+    const payload = isApiResponsePayload(parsed.payload) ? parsed.payload : null;
     const error = new Error(payload?.error?.message || `HTTP error ${response.status}: ${response.statusText}`);
     error.code = payload?.error?.code || `http_${response.status}`;
     error.status = response.status;
@@ -129,7 +133,7 @@ function validateHttpResponse(response: MinimalResponse, parsed: ParsedResponse)
     throw new Error('Invalid or non-JSON response from server');
   }
 
-  return parsed.payload;
+  return isApiResponsePayload(parsed.payload) ? parsed.payload : null;
 }
 
 function interpretResponse(payload: ApiErrorPayload | null) {

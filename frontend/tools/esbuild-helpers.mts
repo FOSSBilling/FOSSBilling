@@ -151,6 +151,10 @@ export async function purgeCssFile(cssFilePath: string, options: PurgeOptions) {
     return;
   }
 
+  if (!themePath) {
+    throw new Error('PurgeCSS requires a themePath when enabled');
+  }
+
   try {
     const css = await readFile(cssFilePath, 'utf8');
     const modulesPath = resolve(themePath, '../../modules');
@@ -263,8 +267,12 @@ export async function buildCssFile(options: CssBuildOptions) {
   await postprocessCssFile(outfile, isProduction);
 
   if (purge) {
+    if (isProduction && !themePath) {
+      throw new Error(`Cannot purge ${outfile}: themePath is required`);
+    }
+
     await purgeCssFile(outfile, {
-      themePath: themePath ?? '',
+      themePath,
       enabled: isProduction,
       ...purge,
     });

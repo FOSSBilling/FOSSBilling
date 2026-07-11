@@ -77,12 +77,13 @@ FROM node:${NODE_VERSION}-bookworm-slim AS frontend-assets
 
 WORKDIR /app
 
-COPY package.json package-lock.json tsconfig.json ./
+COPY package.json package-lock.json ./
 COPY src/themes/admin_default/package.json src/themes/admin_default/package.json
 COPY src/themes/huraga/package.json src/themes/huraga/package.json
 
 RUN --mount=type=cache,target=/root/.npm CYPRESS_INSTALL_BINARY=0 npm ci
 
+COPY tsconfig.json ./
 COPY src/themes/admin_default ./src/themes/admin_default
 COPY src/themes/huraga ./src/themes/huraga
 COPY src/modules ./src/modules

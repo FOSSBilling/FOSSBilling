@@ -4,6 +4,9 @@
     "dev": "node ./esbuild.mts",
     "build": "node ./esbuild.mts"
   },
+  "engines": {
+    "node": ">=24"
+  },
   "dependencies": {
     "bootstrap": "^5.3.3",
     "flag-icons": "^7.2.3",

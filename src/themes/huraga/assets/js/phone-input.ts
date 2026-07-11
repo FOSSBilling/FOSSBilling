@@ -24,7 +24,7 @@ export default function initPhoneInput() {
     const countrySelect = form.querySelector<HTMLSelectElement>('select[name="country"], select[name$="[country]"]');
     const selectedCountry = (countrySelect?.value || input.dataset.initialCountry || '').toLowerCase();
     const initialCountry = countries.find((country) => country.dialCode === initialPhoneCountryCode)?.iso2
-      || (isSupportedCountry(selectedCountry) ? selectedCountry : undefined);
+      || (isSupportedCountry(selectedCountry) ? selectedCountry : '');
 
     const iti = intlTelInput(input, {
       initialCountry,
