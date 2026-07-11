@@ -225,9 +225,6 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('invoice', 'manage_invoices');
 
         $model = $this->getDi()['db']->getExistingModelById('ClientOrder', $data['id'], 'Order not found');
-        if ($model->price <= 0) {
-            throw new InformationException('Order :id is free. No need to generate invoice.', [':id' => $model->id]);
-        }
 
         return $this->getService()->renewInvoice($model, $data);
     }

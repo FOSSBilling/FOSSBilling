@@ -800,13 +800,14 @@ class Service implements InjectionAwareInterface
                 }
             }
 
-            if ($invoiceOption == 'issue-invoice' && $order->price > 0) {
+            if ($invoiceOption == 'issue-invoice') {
                 $invoiceService = $this->di['mod_service']('invoice');
 
                 try {
                     $invoice = $invoiceService->generateForOrder($order);
                 } catch (InformationException $e) {
-                    // Invoice generation errors should not roll back an order that was already created.
+                    // Order price resolved to a negative amount (e.g. via a misconfigured
+                    // pricing rule); don't let a failed invoice attempt roll back order creation.
                     $this->di['logger']->warning($e->getMessage());
                 }
             }

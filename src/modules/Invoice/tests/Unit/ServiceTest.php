@@ -1701,14 +1701,55 @@ test('generates invoice for active order using the order price, not the product 
     expect($result)->toBeInstanceOf(Model_Invoice::class);
 });
 
-test('throws exception when generating invoice for zero amount order', function (): void {
+test('generates invoice for zero amount order', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('setInvoiceDefaults')
+        ->once();
+
+    $orderModel = new Model_ClientOrder();
+    $orderModel->loadBean(new Tests\Helpers\DummyBean());
+    $orderModel->price = 0;
+    $orderModel->quantity = 1;
+    $orderModel->currency = 'USD';
+
+    $clientModel = new Model_Client();
+    $clientModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getExistingModelById')
+        ->atLeast()->once()
+        ->andReturn($clientModel);
+    $dbMock->shouldReceive('dispense')
+        ->atLeast()->once()
+        ->andReturn($invoiceModel);
+    $dbMock->shouldReceive('store')
+        ->atLeast()->once();
+
+    $invoiceItemServiceMock = Mockery::mock(ServiceInvoiceItem::class);
+    $invoiceItemServiceMock->shouldReceive('generateFromOrder')
+        ->atLeast()->once();
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $invoiceItemServiceMock);
+
+    $serviceMock->setDi($di);
+    $result = $serviceMock->generateForOrder($orderModel);
+    expect($result)->toBeInstanceOf(Model_Invoice::class);
+});
+
+test('throws exception when generating invoice for negative amount order', function (): void {
     $service = new Service();
     $clientOrder = new Model_ClientOrder();
     $clientOrder->loadBean(new Tests\Helpers\DummyBean());
-    $clientOrder->price = 0;
+    $clientOrder->price = -1;
+    $clientOrder->quantity = 1;
 
     expect(fn () => $service->generateForOrder($clientOrder))
-        ->toThrow(FOSSBilling\Exception::class, 'Invoices are not generated for 0 amount orders');
+        ->toThrow(FOSSBilling\Exception::class, 'Invoices are not generated for negative amount orders.');
 });
 
 test('returns true when no expiring orders found', function (): void {
