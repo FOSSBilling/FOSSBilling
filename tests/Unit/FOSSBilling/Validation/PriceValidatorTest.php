@@ -45,7 +45,7 @@ dataset('invalidQuantities', fn (): array => [
     'null' => [null],
     'infinite' => [INF],
     'overflowed numeric string' => ['1e999'],
-    'integer overflow' => [(string) PHP_INT_MAX . '0'],
+    'integer overflow' => [PHP_INT_MAX . '0'],
 ]);
 
 test('validateAmount accepts valid amounts', function (mixed $input, float $expected): void {
@@ -56,17 +56,17 @@ test('validateAmount accepts valid amounts', function (mixed $input, float $expe
 })->with('validAmounts');
 
 test('validateAmount rejects invalid amounts', function (mixed $input): void {
-    expect(fn () => PriceValidator::validateAmount($input))
+    expect(fn (): float => PriceValidator::validateAmount($input))
         ->toThrow(InformationException::class);
 })->with('invalidAmounts');
 
 test('validateAmount uses custom field name in error', function (): void {
-    expect(fn () => PriceValidator::validateAmount(-5, 'Setup fee'))
+    expect(fn (): float => PriceValidator::validateAmount(-5, 'Setup fee'))
         ->toThrow(InformationException::class, 'Setup fee cannot be negative.');
 });
 
 test('validateAmount rejects non-numeric with field name', function (): void {
-    expect(fn () => PriceValidator::validateAmount('abc', 'Unit price'))
+    expect(fn (): float => PriceValidator::validateAmount('abc', 'Unit price'))
         ->toThrow(InformationException::class, 'Unit price must be a valid number.');
 });
 
@@ -75,7 +75,7 @@ test('validateSignedAmount accepts negative adjustments', function (): void {
 });
 
 test('validateSignedAmount rejects non-numeric values', function (): void {
-    expect(fn () => PriceValidator::validateSignedAmount('not-a-price'))
+    expect(fn (): float => PriceValidator::validateSignedAmount('not-a-price'))
         ->toThrow(InformationException::class, 'Price must be a valid number.');
 });
 
@@ -94,6 +94,6 @@ test('validateQuantity floors to minimum 1', function (mixed $input, int $expect
 })->with('flooredQuantities');
 
 test('validateQuantity rejects invalid values', function (mixed $input): void {
-    expect(fn () => PriceValidator::validateQuantity($input))
+    expect(fn (): int => PriceValidator::validateQuantity($input))
         ->toThrow(InformationException::class);
 })->with('invalidQuantities');
