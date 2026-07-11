@@ -45,7 +45,7 @@
     {% block js %}{% endblock %}
 </head>
 
-<body class="{% block body_class %}{% endblock %}">
+<body class="{% if client %}has-bottom-nav {% endif %}{% block body_class %}{% endblock %}">
 
 <div class="d-none">{{ svg_sprite() }}</div>
 
@@ -197,9 +197,11 @@
                     <div id="push"></div>
                 </div>
 
-                <nav class="tn-bottom-nav d-lg-none" aria-label="{{ 'Primary'|trans }}">
-                    {{ include('partial_topnav.html.twig', { variant: 'bottom' }) }}
-                </nav>
+                {% if client %}
+                    <nav class="tn-bottom-nav d-lg-none" aria-label="{{ 'Primary'|trans }}">
+                        {{ include('partial_topnav.html.twig', { variant: 'bottom' }) }}
+                    </nav>
+                {% endif %}
 
                 {% if settings.footer_enabled %}
                     <footer id="footer" class="small text-muted mt-2 mb-3">

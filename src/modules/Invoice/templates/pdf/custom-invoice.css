@@ -7,8 +7,8 @@
 
 @font-face {
     font-family: 'Space Grotesk';
-    src: url(/public/fonts/tenantninja-pdf/space-grotesk-700.ttf);
-    font-weight: 700;
+    src: url(/public/fonts/tenantninja-pdf/space-grotesk-600.ttf);
+    font-weight: 600;
 }
 
 @font-face {
@@ -37,6 +37,12 @@
 
 @font-face {
     font-family: 'JetBrains Mono';
+    src: url(/public/fonts/tenantninja-pdf/jetbrains-mono-600.ttf);
+    font-weight: 600;
+}
+
+@font-face {
+    font-family: 'JetBrains Mono';
     src: url(/public/fonts/tenantninja-pdf/jetbrains-mono-700.ttf);
     font-weight: 700;
 }
@@ -45,39 +51,30 @@ body {
     font-family: 'Hanken Grotesk', DejaVu Sans, sans-serif;
     color: #0C0F0E;
     font-size: 12px;
+    margin: 0;
+    padding: 40px 46px 0;
 }
 
-hr.TopSectionDivider {
-    border: none;
-    border-top: 4px solid #C7F23C;
-    position: relative;
-    top: 40px;
+/* ---- header ---- */
+table.HeaderTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 26px;
 }
 
-div.InvoiceInfo {
-    position: absolute;
-    right: 30px;
-    top: 0px;
-    line-height: 1.5;
-    font-family: 'JetBrains Mono', DejaVu Sans, monospace;
-    font-size: 10px;
-    color: #565F5B;
-    text-align: right;
+td.HeaderBrand {
+    vertical-align: top;
+    text-align: left;
 }
 
 img.CompanyLogo {
-    position: relative;
-    left: 40px;
-    top: 7px;
+    display: block;
 }
 
 .BrandWordmark {
-    position: relative;
-    left: 40px;
-    top: 12px;
     font-family: 'Space Grotesk', DejaVu Sans, sans-serif;
-    font-weight: 700;
-    font-size: 22px;
+    font-weight: 600;
+    font-size: 17px;
     color: #0C0F0E;
 }
 
@@ -85,112 +82,242 @@ img.CompanyLogo {
     color: #7FA814;
 }
 
-h3.CompanyInfo,
-h3.ClientInfo {
-    position: absolute;
-    top: 110px;
+.SellerContact {
+    margin-top: 10px;
+    line-height: 1.6;
+    font-size: 10px;
+    color: #6E7873;
+}
+
+td.HeaderMeta {
+    vertical-align: top;
+    text-align: right;
+}
+
+.InvoiceTitle {
     font-family: 'Space Grotesk', DejaVu Sans, sans-serif;
-    font-size: 11px;
+    font-weight: 600;
+    font-size: 22px;
+    color: #0C0F0E;
+}
+
+.InvoiceNumber {
+    font-family: 'JetBrains Mono', DejaVu Sans, monospace;
+    font-weight: 600;
+    font-size: 12px;
+    color: #0C0F0E;
+    margin-top: 6px;
+}
+
+.StatusBadge {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 3px 9px;
+    border-radius: 4px;
+    font-family: 'Space Grotesk', DejaVu Sans, sans-serif;
+    font-weight: 600;
+    font-size: 9px;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    color: #565F5B;
-    margin: 0;
+    letter-spacing: 0.06em;
 }
 
-h3.CompanyInfo {
-    left: 25px;
+.Status-Paid {
+    background-color: #DCF5E9;
+    color: #1F7A4D;
 }
 
-h3.ClientInfo {
-    left: 410px;
+.Status-Unpaid {
+    background-color: #FCEECB;
+    color: #8A5A0C;
 }
 
-div.CompanyInfo {
-    position: absolute;
-    left: 25px;
-    top: 132px;
-    white-space: normal;
-    line-height: 17px;
-    max-width: 300px;
-    font-size: 11px;
+.Status-Refunded {
+    background-color: #DBF1F8;
+    color: #206A80;
 }
 
-div.ClientInfo {
-    position: absolute;
-    top: 132px;
-    left: 410px;
-    white-space: normal;
-    line-height: 17px;
-    max-width: 45%;
-    font-size: 11px;
-}
-
-div.Breakdown {
-    position: absolute;
+/* ---- meta strip ---- */
+table.MetaStrip {
     width: 100%;
-    z-index: 9999;
+    border-collapse: collapse;
+    border: 1px solid #E7EAE3;
+    border-radius: 8px;
+    margin-bottom: 30px;
 }
 
-div.InvoiceText {
-    left: 25px;
+td.MetaCell {
+    padding: 12px 16px;
+    border-left: 1px solid #E7EAE3;
+    vertical-align: top;
+    width: 20%;
+}
+
+td.MetaCell-wide {
+    border-left: none;
+    width: 40%;
+}
+
+.MetaLabel {
+    font-family: 'JetBrains Mono', DejaVu Sans, monospace;
+    font-size: 8.5px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #909A94;
+    margin-bottom: 6px;
+}
+
+.MetaValueStrong {
+    font-weight: 700;
+    font-size: 11.5px;
+    color: #0C0F0E;
+}
+
+.MetaValueSub {
+    font-size: 10px;
+    color: #6E7873;
+    margin-top: 2px;
+}
+
+.MetaValueMono {
+    font-family: 'JetBrains Mono', DejaVu Sans, monospace;
+    font-weight: 600;
+    font-size: 11.5px;
+    color: #0C0F0E;
+}
+
+.MetaValueTotal {
+    font-size: 13px;
+}
+
+/* ---- line items ---- */
+table.LineItems {
     width: 100%;
-    position: absolute;
+    border-collapse: collapse;
+}
+
+table.LineItems th {
+    font-family: 'JetBrains Mono', DejaVu Sans, monospace;
+    font-size: 8.5px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #909A94;
+    text-align: right;
+    padding: 0 4px 10px;
+    border-bottom: 1px solid #E7EAE3;
+    background: none;
+}
+
+table.LineItems th.ColDescription {
+    text-align: left;
+}
+
+table.LineItems td {
+    padding: 14px 4px;
+    font-size: 11.5px;
+    border-bottom: 1px solid #F1F3EC;
+    text-align: right;
+    background: none;
+}
+
+table.LineItems td.ColDescription {
+    text-align: left;
+    font-weight: 600;
+    color: #0C0F0E;
+}
+
+table.LineItems td.ColQty {
+    color: #909A94;
+}
+
+table.LineItems td.ColTotal {
+    font-weight: 600;
+}
+
+/* ---- totals ---- */
+table.Totals {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+td.TotalsSpacer {
+    width: 60%;
+}
+
+td.TotalsBox {
+    width: 40%;
+    vertical-align: top;
+}
+
+table.TotalsInner {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.SubtotalRow td {
+    padding: 6px 4px;
     font-size: 11px;
     color: #3A423F;
 }
 
-table {
-    border-collapse: collapse;
-    width: 100%;
-}
-
-th {
-    font-family: 'Space Grotesk', DejaVu Sans, sans-serif;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    background-color: #111514;
-    color: #F8FAF3;
-    padding: 8px 10px;
-}
-
-td {
-    padding: 8px 10px;
-    font-size: 11px;
-    border-bottom: 1px solid #E7EAE3;
-}
-
-tr:nth-of-type(even) td {
-    background-color: #F8FAF3;
-}
-
-.TotalRow th {
-    background-color: transparent;
-    color: #0C0F0E;
-    font-family: 'JetBrains Mono', DejaVu Sans, monospace;
-    font-size: 13px;
-    border-top: 2px solid #0C0F0E;
-    padding-top: 10px;
-}
-
-.TotalRow .TotalAmount {
-    color: #7FA814;
-    font-weight: bold;
-}
-
-div.InvoiceFooter {
-    z-index: 1;
-    position: absolute;
-    bottom: 0px;
-    width: 100%;
-    text-align: center;
-    font-size: 9px;
-    color: #6E7873;
+.GrandTotalRow td {
+    padding: 10px 4px 2px;
     border-top: 1px solid #E7EAE3;
-    padding-top: 8px;
+    font-weight: 700;
+    font-size: 12px;
+    color: #0C0F0E;
 }
 
-.muted-text {
+.TotalsValue {
+    text-align: right;
+}
+
+.TotalsValueBig {
+    font-size: 15px;
+}
+
+/* ---- pay note ---- */
+.PayNote {
+    margin-top: 24px;
+    padding: 12px 16px;
+    background-color: rgba(127, 168, 20, 0.14);
+    border-radius: 8px;
+    font-size: 11px;
+    color: #0C0F0E;
+}
+
+/* ---- text blocks (seller-authored) ---- */
+div.InvoiceText {
+    margin-top: 20px;
+    font-size: 10.5px;
+    color: #3A423F;
+}
+
+/* ---- footer ---- */
+div.InvoiceFooter {
+    margin-top: 26px;
+    padding: 12px 0 16px;
+    border-top: 1px solid #E7EAE3;
+    font-size: 9px;
     color: #909A94;
-    font-size: 0.75em;
+}
+
+.FooterBank {
+    margin-bottom: 8px;
+}
+
+table.FooterRow {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.FooterLeft {
+    text-align: left;
+}
+
+.FooterRight {
+    text-align: right;
+    font-family: 'JetBrains Mono', DejaVu Sans, monospace;
 }

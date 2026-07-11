@@ -1,32 +1,16 @@
-{% set base_top_offset = 275 %}
-{% set line_height = 25 %}
-{% set text_1_base_offset = 185 %}
-{% set text_2_base_offset = 420 %}
-
-{% if buyer_lines >= seller_lines %}
-	{% set top = base_top_offset + (line_height * buyer_lines) %}
-{% else %}
-	{% set top = base_top_offset + (line_height * seller_lines) %}
-{% endif %}
-
-{% set max_lines = (top - base_top_offset) / line_height %}
-{% set text_1_top = text_1_base_offset + (max_lines * line_height) %}
-
-{% set line_items = invoice.lines|length %}
-{% set text_2_top = text_2_base_offset
-	+ (line_height * max_lines)
-	+ (line_items * line_height)
-	+ (invoice.tax > 0 ? line_height : 0)
-	+ ((invoice.discount|default(0) > 0) ? line_height : 0)
-%}
+{% set status_label = invoice.status|capitalize %}
+{% set status_class = invoice.status == 'paid' ? 'Paid' : (invoice.status == 'refunded' ? 'Refunded' : 'Unpaid') %}
 
 {% set address_lines = [] %}
-	{% for line in [footer.address_1, footer.address_2, footer.address_3] %}
-		{% if line|length > 0 %}
-			{% set address_lines = address_lines|merge([line]) %}
-		{% endif %}
-	{% endfor %}
+{% for line in [footer.address_1, footer.address_2, footer.address_3] %}
+	{% if line|length > 0 %}
+		{% set address_lines = address_lines|merge([line]) %}
+	{% endif %}
+{% endfor %}
 {% set address = address_lines|join(', ') %}
+
+{% set buyer_name = buyer.Company is defined and buyer.Company|trim ? buyer.Company : (buyer.Name is defined ? buyer.Name : '') %}
+{% set buyer_address = buyer.Address is defined ? buyer.Address : '' %}
 
 <!DOCTYPE html>
 <html>
@@ -38,110 +22,121 @@
 		</style>
 	</head>
 	<body>
-		{% if logo_source is not empty %}
-			<img src='{{ logo_source }}' height='50' class='CompanyLogo'>
-		{% else %}
-			<div class='BrandWordmark'>Tenant<span>Ninja</span></div>
-		{% endif %}
-		<hr class='TopSectionDivider'>
-		<div class='InvoiceInfo'>
-			<p>{{ 'Invoice Number'|trans }}: {{ invoice.serie_nr }}</p>
-			<p>{{ 'Invoice Date'|trans }}: {{ invoice.created_at|format_date }}</p>
-			<p>{{ 'Due Date'|trans }}: {{ invoice.due_at|format_date }}</p>
-			<p>{{ 'Invoice Status'|trans }}: {{ invoice.status|capitalize }}</p>
-		</div>
+		<table class="HeaderTable">
+			<tr>
+				<td class="HeaderBrand">
+					{% if logo_source is not empty %}
+						<img src='{{ logo_source }}' height='24' class='CompanyLogo'>
+					{% else %}
+						<div class='BrandWordmark'>Tenant<span>Ninja</span></div>
+					{% endif %}
+					<div class="SellerContact">
+						{% if address %}<div>{{ address }}</div>{% endif %}
+						<div>{{ footer.email }}{% if footer.phone|default('') %} &middot; {{ footer.phone }}{% endif %}{% if footer.www %} &middot; {{ footer.www }}{% endif %}</div>
+					</div>
+				</td>
+				<td class="HeaderMeta">
+					<div class="InvoiceTitle">{{ 'Invoice'|trans }}</div>
+					<div class="InvoiceNumber">#{{ invoice.serie_nr }}</div>
+					<span class="StatusBadge Status-{{ status_class }}">{{ status_label|trans }}</span>
+				</td>
+			</tr>
+		</table>
 
-		<h3 class='CompanyInfo'>{{ 'Company'|trans }}</h3>
-		<div class='CompanyInfo'>
-			<p>
-				{% for key, value in seller %}
-					{% if key == 'Name' %}<b>{% endif %}
-					{% if key == 'Phone' %} {{ 'Phone'|trans }} :{% endif %}
-					{% if key == 'VAT Number' %} {{ 'VAT Number'|trans }} :{% endif %}
-							{{ value }}<br>
-					{% if key == 'Name' %}</b>{% endif %}
-				{% endfor %}
-			</p>
-		</div>
+		<table class="MetaStrip">
+			<tr>
+				<td class="MetaCell MetaCell-wide">
+					<div class="MetaLabel">{{ 'Billed To'|trans }}</div>
+					<div class="MetaValueStrong">{{ buyer_name }}</div>
+					{% if buyer_address %}<div class="MetaValueSub">{{ buyer_address }}</div>{% endif %}
+				</td>
+				<td class="MetaCell">
+					<div class="MetaLabel">{{ 'Issue Date'|trans }}</div>
+					<div class="MetaValueMono">{{ invoice.created_at|format_date }}</div>
+				</td>
+				<td class="MetaCell">
+					<div class="MetaLabel">{{ 'Due Date'|trans }}</div>
+					<div class="MetaValueMono">{{ invoice.due_at ? invoice.due_at|format_date : '—' }}</div>
+				</td>
+				<td class="MetaCell MetaCell-last">
+					<div class="MetaLabel">{{ 'Amount Due'|trans }}</div>
+					<div class="MetaValueMono MetaValueTotal">{{ invoice.total|format_currency(currency_code) }}</div>
+				</td>
+			</tr>
+		</table>
 
-		<h3 class='ClientInfo'>{{ 'Client'|trans }}</h3>
-		<div class='ClientInfo'>
-			<p>
-			{% for key, value in buyer %}
-				{% if key == 'Company' %}<b>{% endif %}
-				{% if key == 'Phone' %} {{ 'Phone'|trans }} :{% endif %}
-				{% if key == 'VAT Number' %} {{ 'VAT Number'|trans }} :{% endif %}
-						{{ value }}<br>
-				{% if key == 'Company' %}</b>{% endif %}
-			{% endfor %}
-			</p>
-		</div>
-
-		<div class='InvoiceText' style='top: {{ text_1_top }}px;'>
-			{% if invoice.text_1 %}
-				{{ (invoice.text_1 ?? '')|markdown_to_html }}
-			{% endif %}
-		</div>
-
-		<div class='Breakdown' style='top: {{ top }}px;'>
-			<table style='width:100%'>
+		<table class="LineItems">
+			<thead>
 				<tr>
-					<th style='text-align: center; width:25px;'>#</th>
-					<th style='text-align: left'>{{ 'Product'|trans }}</th>
-					<th style='text-align: right'>{{ 'Quantity & Price'|trans }}</th>
-					<th style='text-align: right'>{{ 'Total'|trans }}</th>
+					<th class="ColDescription">{{ 'Description'|trans }}</th>
+					<th class="ColQty">{{ 'Qty'|trans }}</th>
+					<th class="ColPrice">{{ 'Price'|trans }}</th>
+					<th class="ColTotal">{{ 'Total'|trans }}</th>
 				</tr>
-				{% set nr = 0 %}
+			</thead>
+			<tbody>
 				{% for item in invoice.lines %}
-					{% set nr = nr + 1 %}
 					<tr>
-						<td style='text-align: center; width:25px;'>{{ nr }}</td>
-						<td style='text-align: left'>{{ item.title }}</td>
-						<td style='text-align: right'>{{ item.quantity }}x {{ item.price|format_currency(currency_code) }}</td>
-						<td style='text-align: right'>{{ item.total|format_currency(currency_code) }}</td>
+						<td class="ColDescription">{{ item.title }}</td>
+						<td class="ColQty">{{ item.quantity }}</td>
+						<td class="ColPrice">{{ item.price|format_currency(currency_code) }}</td>
+						<td class="ColTotal">{{ item.total|format_currency(currency_code) }}</td>
 					</tr>
 				{% endfor %}
-				{% if invoice.tax > 0 %}
-					<tr>
-						<th style='text-align: right' colspan='3'>{{ invoice.taxname }}
-							{{ invoice.taxrate }}% Tax:</th>
-						<th style='text-align: right'>{{ invoice.tax|format_currency(currency_code) }}</th>
-					</tr>
-				{% endif %}
-				{% if invoice.discount|default and invoice.discount > 0 %}
-					<tr>
-						<th style='text-align: right' colspan='3'>{{ 'Discount'|trans }}:</th>
-						<th style='text-align: right'>{{ invoice.discount|format_currency(currency_code) }}</th>
-					</tr>
-				{% endif %}
-				<tr class='TotalRow'>
-					<th style='text-align: right'  colspan='3'>{{ 'Total'|trans }}:</th>
-					<th style='text-align: right' class='TotalAmount'>{{ invoice.total|format_currency(currency_code) }}</th>
-				</tr>
-			</table>
-		</div>
+			</tbody>
+		</table>
 
-        {% if invoice.text_2 %}
-            <div class='InvoiceText' style='top: {{ text_2_top }}px;'>
-                {{ (invoice.text_2 ?? '')|markdown_to_html }}
-            </div>
-        {% endif %}
+		<table class="Totals">
+			<tr>
+				<td class="TotalsSpacer"></td>
+				<td class="TotalsBox">
+					<table class="TotalsInner">
+						<tr class="SubtotalRow">
+							<td class="TotalsLabel">{{ 'Subtotal'|trans }}</td>
+							<td class="TotalsValue">{{ invoice.subtotal|format_currency(currency_code) }}</td>
+						</tr>
+						{% if invoice.tax > 0 %}
+							<tr class="SubtotalRow">
+								<td class="TotalsLabel">{{ invoice.taxname }} {{ invoice.taxrate }}%</td>
+								<td class="TotalsValue">{{ invoice.tax|format_currency(currency_code) }}</td>
+							</tr>
+						{% endif %}
+						{% if invoice.discount|default(0) > 0 %}
+							<tr class="SubtotalRow">
+								<td class="TotalsLabel">{{ 'Discount'|trans }}</td>
+								<td class="TotalsValue">-{{ invoice.discount|format_currency(currency_code) }}</td>
+							</tr>
+						{% endif %}
+						<tr class="GrandTotalRow">
+							<td class="TotalsLabel">{{ 'Total due'|trans }}</td>
+							<td class="TotalsValue TotalsValueBig">{{ invoice.total|format_currency(currency_code) }}</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+		</table>
+
+		{% if invoice.status == 'unpaid' %}
+			<div class="PayNote">
+				{{ 'Pay online at'|trans }} <b>{{ footer.www }}/invoice/{{ invoice.serie_nr }}</b>
+			</div>
+		{% endif %}
+
+		{% if invoice.text_1 %}
+			<div class="InvoiceText">{{ (invoice.text_1 ?? '')|markdown_to_html }}</div>
+		{% endif %}
+		{% if invoice.text_2 %}
+			<div class="InvoiceText">{{ (invoice.text_2 ?? '')|markdown_to_html }}</div>
+		{% endif %}
 
 		<div class='InvoiceFooter'>
 			{% if footer.display_bank_info|default(false) == 1 %}
-				<b>{{ 'Payment Details'|trans }}:</b><br >
-				<b>{{ 'Account Owner'|trans }}:</b> {{ footer.company_name|default('') }} | <b>{{ 'Bank'|trans }}:</b> {{ footer.bank_name|default('') }} | <b>{{ 'BIC / SWIFT Code'|trans }}:</b> {{ footer.bic|default('') }} | <b>{{ 'Account Number'|trans }}:</b> {{ footer.account_number|default('') }}<br><br>
+				<div class="FooterBank"><b>{{ 'Payment Details'|trans }}:</b> {{ 'Account Owner'|trans }}: {{ footer.company_name|default('') }} &middot; {{ 'Bank'|trans }}: {{ footer.bank_name|default('') }} &middot; {{ 'BIC / SWIFT Code'|trans }}: {{ footer.bic|default('') }} &middot; {{ 'Account Number'|trans }}: {{ footer.account_number|default('') }}</div>
 			{% endif %}
-
-			<b>{{ footer.company_name }}</b>
-			{% if address %} {{ address }} <br> {% endif %}
-			<b>{{ 'Email'|trans }}:</b> {{ footer.email }} | <b>
-			{% if footer.phone|default('') %} {{ 'Phone'|trans }}:</b> {{ footer.phone }}<br> {% endif %}
-			{% if footer.company_vat|default('') %} <b>{{ 'VAT ID'|trans }}:</b> {{ footer.company_vat }} | {% endif %}
-			{% if footer.company_number|default('') %} <b>{{ 'Company Registration #:'|trans }}</b> {{ footer.company_number }} | {% endif %}
-			<b>{{ 'Website'|trans }}: </b>{{ footer.www }}
-            <br>
-            <span class="muted-text">{{ footer.signature }}</span>
+			<table class="FooterRow"><tr>
+				<td class="FooterLeft">{{ footer.company_name }}{{ footer.signature ? ' — ' ~ footer.signature : '' }}</td>
+				<td class="FooterRight">{{ invoice.serie_nr }}</td>
+			</tr></table>
 		</div>
 	</body>
 </html>

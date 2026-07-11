@@ -173,7 +173,7 @@
     border: var(--bw-hair) solid var(--border);
     border-radius: var(--r-lg);
     padding: 24px;
-    box-shadow: var(--shadow-sm), var(--inset-top);
+    box-shadow: var(--inset-top);
     transition: box-shadow var(--dur) var(--ease-out), border-color var(--dur);
 
     &--hover:hover { border-color: var(--border-strong); box-shadow: var(--shadow-md), var(--inset-top); }
@@ -219,7 +219,7 @@
 .tn-stat {
     background: var(--surface); border: var(--bw-hair) solid var(--border);
     border-radius: var(--r-lg); padding: 20px 24px; display: flex; flex-direction: column; gap: 6px;
-    box-shadow: var(--shadow-sm), var(--inset-top);
+    box-shadow: var(--inset-top);
 
     &__label {
         font-family: var(--font-mono); font-size: var(--fs-micro); font-weight: 600;

@@ -141,6 +141,28 @@
                 </div>
             {% endif %}
 
+            <div class="tn-card tn-card--compact mb-3">
+                <div class="tn-card__header">
+                    <span class="tn-card__title">{{ 'Billed to'|trans }}</span>
+                </div>
+                <div class="tn-kv-row">
+                    <span class="tn-kv-row__key">{{ 'Client'|trans }}</span>
+                    <span class="tn-kv-row__value">{{ buyer.first_name }} {{ buyer.last_name }}</span>
+                </div>
+                {% if buyer.city|trim or buyer.country|trim %}
+                    <div class="tn-kv-row">
+                        <span class="tn-kv-row__key">{{ 'Location'|trans }}</span>
+                        <span class="tn-kv-row__value">{{ [buyer.city, buyer.country]|filter(v => v|trim is not empty)|join(', ') }}</span>
+                    </div>
+                {% endif %}
+                {% if buyer.phone|trim %}
+                    <div class="tn-kv-row">
+                        <span class="tn-kv-row__key">{{ 'Phone'|trans }}</span>
+                        <span class="tn-kv-row__value font-monospace">{{ buyer.phone }}</span>
+                    </div>
+                {% endif %}
+            </div>
+
             {% if seller.account_number|trim or seller.bank_name|default('')|trim or seller.bic|default('')|trim %}
                 <div class="tn-card tn-card--compact">
                     <div class="tn-card__header">

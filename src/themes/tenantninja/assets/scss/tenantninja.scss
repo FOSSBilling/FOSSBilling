@@ -998,7 +998,7 @@ table > thead > tr > th {
 }
 
 @media (max-width: 767.98px) {
-    #wrapper {
+    body.has-bottom-nav #wrapper {
         padding-bottom: 64px;
     }
 }
