@@ -2720,6 +2720,106 @@ table > thead > tr > th {
     }
 }
 
+// Long-form markdown content (about us, TOS, privacy policy, KB articles).
+// Token-based rather than the vendored github-markdown-css bundle so it
+// tracks light/dark like every other component instead of a fixed-light
+// stylesheet.
+.tn-prose {
+    color: var(--text);
+    font-size: var(--fs-sm);
+    line-height: var(--lh-relaxed);
+    max-width: 72ch;
+
+    h1, h2, h3, h4 {
+        font-family: var(--font-display);
+        font-weight: var(--fw-bold);
+        color: var(--text);
+        letter-spacing: var(--ls-tight);
+        margin: var(--space-8) 0 var(--space-3);
+        &:first-child { margin-top: 0; }
+    }
+    h1 { font-size: var(--fs-h2); }
+    h2 { font-size: var(--fs-h3); }
+    h3 { font-size: var(--fs-h4); }
+
+    p { margin: 0 0 var(--space-4); }
+    ul, ol { margin: 0 0 var(--space-4); padding-left: 1.4em; }
+    li { margin-bottom: var(--space-2); }
+    a { color: var(--text); text-decoration: underline; text-underline-offset: 2px;
+        &:hover { color: var(--accent); } }
+    strong { font-weight: var(--fw-bold); }
+    blockquote {
+        margin: 0 0 var(--space-4);
+        padding: var(--space-1) var(--space-4);
+        border-left: var(--bw-bold) solid var(--border-strong);
+        color: var(--text-muted);
+    }
+    code {
+        font-family: var(--font-mono);
+        font-size: 0.9em;
+        background: var(--surface-2);
+        padding: 2px 5px;
+        border-radius: var(--r-xs);
+    }
+    hr { border: none; border-top: var(--bw-hair) solid var(--border); margin: var(--space-6) 0; }
+    table { width: 100%; border-collapse: collapse; margin: 0 0 var(--space-4); }
+    th, td { text-align: left; padding: var(--space-2) var(--space-3); border-bottom: var(--bw-hair) solid var(--border); }
+}
+
+// Emails list/detail (mod_email_index)
+.tn-mail {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 0;
+    margin: calc(-1 * var(--space-6)) calc(-1 * var(--space-6)) 0;
+
+    &__list {
+        border-right: var(--bw-hair) solid var(--border);
+        max-height: 560px;
+        overflow-y: auto;
+    }
+    &__item {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        padding: 12px 16px;
+        border-bottom: var(--bw-hair) solid var(--border-faint);
+        text-decoration: none;
+        cursor: pointer;
+        transition: background var(--dur) var(--ease-out);
+        &:hover { background: var(--surface-2); }
+        &.active { background: var(--accent-soft); }
+    }
+    &__item-subject { font-size: var(--fs-xs); font-weight: var(--fw-semibold); color: var(--text); }
+    &__item-date { font-size: 11px; color: var(--text-faint); }
+
+    &__body { padding: var(--space-6); min-width: 0; }
+    &__head {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: var(--space-3);
+        padding-bottom: var(--space-4);
+        margin-bottom: var(--space-4);
+        border-bottom: var(--bw-hair) solid var(--border);
+    }
+    &__subject { font-family: var(--font-display); font-size: var(--fs-h4); font-weight: var(--fw-bold); margin: 0 0 6px; }
+    &__meta { display: flex; flex-direction: column; gap: 3px; font-size: var(--fs-xs); color: var(--text); }
+    &__actions { display: flex; gap: 6px; }
+    &__frame { width: 100%; border: var(--bw-hair) solid var(--border); border-radius: var(--r-md); }
+}
+@media (max-width: 700px) {
+    .tn-mail { grid-template-columns: 1fr; }
+    .tn-mail__list { border-right: none; border-bottom: var(--bw-hair) solid var(--border); max-height: 240px; }
+}
+
+.tn-auth--solo {
+    grid-template-columns: 1fr;
+    align-items: center;
+    justify-items: center;
+}
+
 @media (max-width: 900px) {
     .tn-auth {
         grid-template-columns: 1fr;

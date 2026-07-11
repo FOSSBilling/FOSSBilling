@@ -8,41 +8,34 @@
     <li class="breadcrumb-item active" aria-current="page">{{ 'News'|trans }}</li>{% endblock %}
 
 {% block content %}
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card mb-4">
-                <div class="card-header py-3 py-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h1 class="mb-1">{{ 'News & Announcements'|trans }}</h1>
-                            <span class="small text-muted">{{ 'Track our latest information.'|trans }}</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body pb-0">
-                    {% set posts = guest.news_get_list({ "page": request.page, "per_page": 5 }) %}
-                    {% for i, post in posts.list %}
-                        <div class="card mb-3">
-                            <div class="card-body">
-                                <h3 class="link-body-emphasis mb-1">{{ post.title }}</h3>
-                                <span class="text-muted">{{ post.updated_at|format_datetime }}</span>
-                                <p>
-                                    {% if post.excerpt %}
-                                        {{ (post.excerpt ?? '')|truncate(200)|markdown_to_html }}
-                                    {% else %}
-                                        {{ (post.content ?? '')|truncate(200)|markdown_to_html }}
-                                    {% endif %}
-                                </p>
-                                <a class="link-offset-2 link-underline" href='{{ "news/#{post.slug}"|url }}'>{{ 'Continue reading'|trans }}
-                                    <svg class="icon"><use href="#chevron-right" /></svg>
-                                </a>
-                            </div>
-                        </div>
-                    {% else %}
-                        {{ 'No news or announcements'|trans }}
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
+    <div class="mb-4">
+        <h1 class="mb-1">{{ 'News & announcements'|trans }}</h1>
+        <span class="text-muted">{{ 'Product updates and maintenance windows.'|trans }}</span>
     </div>
+
+    {% set posts = guest.news_get_list({ "page": request.page, "per_page": 5 }) %}
+    <div class="d-flex flex-column gap-3">
+        {% for i, post in posts.list %}
+            <a class="tn-card tn-card--hover tn-card--compact tn-card-link" href='{{ "news/#{post.slug}"|url }}' style="text-decoration:none;">
+                <span class="tn-card__title" style="display:block; margin-bottom:2px;">{{ post.title }}</span>
+                <span class="text-muted fs-8" style="font-family: var(--font-mono);">{{ post.updated_at|format_datetime }}</span>
+                <p class="mt-2 mb-2" style="color: var(--text-muted); font-size: var(--fs-sm);">
+                    {% if post.excerpt %}
+                        {{ (post.excerpt ?? '')|truncate(200)|markdown_to_html|striptags }}
+                    {% else %}
+                        {{ (post.content ?? '')|truncate(200)|markdown_to_html|striptags }}
+                    {% endif %}
+                </p>
+                <span class="tn-card-link__cta">{{ 'Continue reading'|trans }}<svg class="icon"><use href="#chevron-right" /></svg></span>
+            </a>
+        {% else %}
+            <div class="tn-card tn-card--compact text-muted">{{ 'No news or announcements'|trans }}</div>
+        {% endfor %}
+    </div>
+
+    {% if posts.pages >= 2 %}
+        <div class="mt-4">
+            {{ include('partial_pagination.html.twig', { 'list': posts, 'url': 'news' }) }}
+        </div>
+    {% endif %}
 {% endblock %}

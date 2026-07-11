@@ -1,7 +1,7 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
 {% set active_menu = 'invoices' %}
 
-{% block meta_title %}{{ 'Processing Payment...'|trans }}{% endblock %}
+{% block meta_title %}{{ 'Processing payment'|trans }}{% endblock %}
 
     {% block breadcrumb %}
         <li class="breadcrumb-item"><a href="{{ 'invoice'|url }}">{{ 'Invoices'|trans }}</a></li>
@@ -12,32 +12,30 @@
 
 <div class="row justify-content-center">
     <div class="col-lg-8">
-        <div class="card mb-4">
-            <div class="card-body text-center py-5">
-                <h1 class="mb-1">{{ 'Processing Payment...'|trans }}</h1>
-                <p class="text-muted">{{ 'Thank you for your patience.'|trans }}</p>
-                {% if payment.type == 'html' %}
-                    <div class="text-start mt-4">
-                        {{ payment.result|raw }}
-                    </div>
-                {% endif %}
-                {% if payment.type == 'form' %}
-                    <p class="fw-semibold mt-4">{{ 'Redirecting to Payment Gateway...'|trans }}</p>
-                    <form method="post" action="{{ payment.service_url }}" name="payment_form">
-                            {% for key, value in payment.result %}
-                                <input type="hidden" name="{{ key }}" value="{{ value }}" />
-                            {% endfor %}
-                        <input class="btn btn-primary" type="submit" value="{{ 'Please click here to continue if this page does not redirect automatically in 5 seconds'|trans }}" id="payment_button"/>
-                    </form>
+        <div class="tn-card text-center py-5">
+            <h1 class="mb-1">{{ 'Processing payment'|trans }}</h1>
+            <p class="text-muted">{{ 'Thank you for your patience.'|trans }}</p>
+            {% if payment.type == 'html' %}
+                <div class="text-start mt-4">
+                    {{ payment.result|raw }}
+                </div>
+            {% endif %}
+            {% if payment.type == 'form' %}
+                <p class="fw-semibold mt-4">{{ 'Redirecting to payment gateway'|trans }}</p>
+                <form method="post" action="{{ payment.service_url }}" name="payment_form">
+                        {% for key, value in payment.result %}
+                            <input type="hidden" name="{{ key }}" value="{{ value }}" />
+                        {% endfor %}
+                    <input class="tn-btn tn-btn--primary tn-btn--lg" type="submit" value="{{ 'Continue, this page isn\'t redirecting automatically'|trans }}" id="payment_button"/>
+                </form>
 
-                    <script>
-                        document.addEventListener('DOMContentLoaded', function() {
-                            document.getElementById('payment_button').style.display = 'none';
-                            document.forms["payment_form"].submit();
-                        });
-                    </script>
-                {% endif %}
-            </div>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        document.getElementById('payment_button').style.display = 'none';
+                        document.forms["payment_form"].submit();
+                    });
+                </script>
+            {% endif %}
         </div>
     </div>
 </div>

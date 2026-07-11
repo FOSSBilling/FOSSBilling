@@ -2,7 +2,7 @@
 
 {% set company = guest.system_company %}
 
-{% block meta_title %}{{ 'About Us'|trans }}{% endblock %}
+{% block meta_title %}{{ 'About us'|trans }}{% endblock %}
 {% block meta_description %}{{ (company.note ?? company.signature ?? company.name)|markdown_to_html|striptags|trim|truncate(160) }}{% endblock %}
 
 {% block body_class %}about-us{% endblock %}
@@ -11,23 +11,13 @@
 {% endblock %}
 
 {% block content %}
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card mb-4">
-                <div class="card-header py-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h1 class="mb-1">{{ 'About Us'|trans }}</h1>
-                            <span class="small text-muted">
-                                {{ company.signature }}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <p>{{ (company.note ?? '')|markdown_to_html }}</p>
-                </div>
+    <div class="tn-card">
+        <div class="tn-card__header">
+            <div>
+                <span class="tn-card__title">{{ 'About us'|trans }}</span>
+                {% if company.signature %}<div class="tn-card__subtitle">{{ company.signature }}</div>{% endif %}
             </div>
         </div>
+        <div class="tn-prose">{{ (company.note ?? '')|markdown_to_html }}</div>
     </div>
 {% endblock %}

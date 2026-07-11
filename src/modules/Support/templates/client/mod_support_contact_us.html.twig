@@ -3,12 +3,12 @@
 
 {% import "macro_functions.html.twig" as mf %}
 
-{% block meta_title %}{{ 'Contact Us'|trans }}{% endblock %}
+{% block meta_title %}{{ 'Contact us'|trans }}{% endblock %}
 {% block meta_description %}{{ 'Send a support request or question to our team using the contact form.'|trans }}{% endblock %}
 
 {% block body_class %}support-contact-us{% endblock %}
 {% block breadcrumb %}
-    <li class="breadcrumb-item active" aria-current="page">{{ 'Contact Us'|trans }}</li>
+    <li class="breadcrumb-item active" aria-current="page">{{ 'Contact us'|trans }}</li>
 {% endblock %}
 
 {% block head %}
@@ -17,78 +17,63 @@
 
 {% block content %}
     {% set company = guest.system_company %}
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card mb-4">
-                <div class="card-header py-3 py-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h1 class="mb-1">{{ 'Contact Us'|trans }}</h1>
-                            <span class="small text-muted">{{ company.signature }}</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <form method="post" action="{{ 'support/ticket_create'|api_url(role: 'guest') }}" id="public-ticket-create" {{ fb_api_form({ callback: 'onTicketCreate' }) }}>
-                        <div class="mb-3">
-                            <label class="form-label" for="name">{{ 'Name'|trans }}</label>
-                            <input class="form-control" type="text" name="name" value="{{ request.name }}" required="required" id="name">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label" for="email">{{ 'Email'|trans }}</label>
-                            <input class="form-control" type="email" name="email" value="{{ request.email }}" required="required" id="email">
-                        </div>
-                        <div class="mb-3">
-                            <label for="support-helpdesk-id" class="form-label">{{ 'Helpdesk'|trans }}</label>
-                            {{ mf.selectbox('support_helpdesk_id', guest.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label" for="subject">{{ 'Subject'|trans }}</label>
-                            <input class="form-control" type="text" name="subject" value="{{ request.subject }}" required="required" id="subject">
-                        </div>
-                        {% if guest.support_kb_suggestions_enabled({ 'area': 'contact' }) %}
-                            {{ include('mod_support_kb_suggestions.html.twig', { 'input_id': 'subject' }) }}
-                        {% endif %}
-                        <div class="mb-3">
-                            <label class="form-label" for="message">{{ 'Message'|trans }}</label>
-                            <textarea class="editor-textarea form-control" name="content" cols="5" rows="5" required="required" id="message">{{ request.content }}</textarea>
-                        </div>
-
-                        {{ mf.recaptcha }}
-
-                        <div class="mb-3">
-                            <button class="btn btn-primary btn-large pull-right" type="submit" value="{{ 'Send'|trans }}" data-loading-text="Loading...">{{ 'Send'|trans }}</button>
-                        </div>
-                        <input type="hidden" name="anti-spam" value="1" id="anti-spam" required="required"/>
-                    </form>
-                </div>
-                <div class="card-footer small">
-                    <dl>
-                        <dd>
-                            {{ company.name }}
-                        </dd>
-                        <dd>
-                            {{ company.address_1|default('') }}
-                        </dd>
-                        <dd>
-                            {{ company.address_2|default('') }}
-                        </dd>
-                        <dd>
-                            {{ company.address_3|default('') }}
-                        </dd>
-                        <dd>
-                            {{ company.tel|default('') }}
-                        </dd>
-                        <dd>
-                            {{ company.www|default('') }}
-                        </dd>
-                        <dd>
-                            {{ company.email|default('') }}
-                        </dd>
-                    </dl>
-                </div>
+    <div class="tn-card">
+        <div class="tn-card__header">
+            <div>
+                <span class="tn-card__title">{{ 'Contact us'|trans }}</span>
+                {% if company.signature %}<div class="tn-card__subtitle">{{ company.signature }}</div>{% endif %}
             </div>
         </div>
+        <form method="post" action="{{ 'support/ticket_create'|api_url(role: 'guest') }}" id="public-ticket-create" {{ fb_api_form({ callback: 'onTicketCreate' }) }} class="d-flex flex-column gap-3">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="tn-field">
+                        <label class="tn-field__label" for="name">{{ 'Name'|trans }}</label>
+                        <input class="tn-input" type="text" name="name" value="{{ request.name }}" required="required" id="name">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="tn-field">
+                        <label class="tn-field__label" for="email">{{ 'Email'|trans }}</label>
+                        <input class="tn-input" type="email" name="email" value="{{ request.email }}" required="required" id="email">
+                    </div>
+                </div>
+            </div>
+            <div class="tn-field">
+                <label for="support-helpdesk-id" class="tn-field__label">{{ 'Helpdesk'|trans }}</label>
+                {{ mf.selectbox('support_helpdesk_id', guest.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
+            </div>
+            <div class="tn-field">
+                <label class="tn-field__label" for="subject">{{ 'Subject'|trans }}</label>
+                <input class="tn-input" type="text" name="subject" value="{{ request.subject }}" required="required" id="subject">
+            </div>
+            {% if guest.support_kb_suggestions_enabled({ 'area': 'contact' }) %}
+                {{ include('mod_support_kb_suggestions.html.twig', { 'input_id': 'subject' }) }}
+            {% endif %}
+            <div class="tn-field">
+                <label class="tn-field__label" for="message">{{ 'Message'|trans }}</label>
+                <textarea class="editor-textarea tn-input" style="height:auto; padding-top:10px;" name="content" cols="5" rows="5" required="required" id="message">{{ request.content }}</textarea>
+            </div>
+
+            {{ mf.recaptcha }}
+
+            <div>
+                <button class="tn-btn tn-btn--primary tn-btn--lg" type="submit" value="{{ 'Send'|trans }}" data-loading-text="Loading...">{{ 'Send'|trans }}</button>
+            </div>
+            <input type="hidden" name="anti-spam" value="1" id="anti-spam" required="required"/>
+        </form>
+
+        {% if company.address_1 or company.tel or company.email %}
+            <div class="mt-4 pt-4 d-flex flex-column gap-1" style="border-top: var(--bw-hair) solid var(--border); font-size: var(--fs-xs); color: var(--text-muted);">
+                <span>{{ company.name }}</span>
+                {% if company.address_1 %}<span>{{ company.address_1 }}</span>{% endif %}
+                {% if company.address_2 %}<span>{{ company.address_2 }}</span>{% endif %}
+                {% if company.address_3 %}<span>{{ company.address_3 }}</span>{% endif %}
+                {% if company.tel %}<span>{{ company.tel }}</span>{% endif %}
+                {% if company.www %}<span>{{ company.www }}</span>{% endif %}
+                {% if company.email %}<span>{{ company.email }}</span>{% endif %}
+            </div>
+        {% endif %}
     </div>
 {% endblock %}
 

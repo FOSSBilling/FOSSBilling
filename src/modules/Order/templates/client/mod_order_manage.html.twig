@@ -188,20 +188,20 @@
                                 <input type="hidden" name="rel_id" value="{{ order.id }}">
                                 <input type="hidden" name="rel_task" value="cancel">
                                 <div class="mb-3">
-                                    <label for="support-helpdesk-id" class="form-label">{{ 'Help Desk'|trans }}</label>
+                                    <label for="support-helpdesk-id" class="tn-field__label">{{ 'Help Desk'|trans }}</label>
                                     {{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
                                 </div>
                                 <div class="mb-3">
-                                    <label for="subject" class="form-label">{{ 'Subject'|trans }}</label>
-                                    <input class="form-control" type="text" name="subject" id="subject" value="{{ request.subject|e }}" required/>
+                                    <label for="subject" class="tn-field__label">{{ 'Subject'|trans }}</label>
+                                    <input class="tn-input" type="text" name="subject" id="subject" value="{{ request.subject|e }}" required/>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="content" class="form-label">{{ 'Reason'|trans }}</label>
-                                    <textarea class="form-control" id="content" name="content" rows="5" required>{{ request.content|e }}</textarea>
+                                    <label for="content" class="tn-field__label">{{ 'Reason'|trans }}</label>
+                                    <textarea class="tn-input" style="height:auto; padding-top:10px;" id="content" name="content" rows="5" required>{{ request.content|e }}</textarea>
                                 </div>
                             </div>
                             <div class="modal-footer">
-                                <button type="submit" class="btn btn-danger">{{ 'Request'|trans }}</button>
+                                <button type="submit" class="tn-btn tn-btn--danger">{{ 'Request'|trans }}</button>
                             </div>
                         </form>
                     </div>
@@ -220,20 +220,20 @@
                                 <input type="hidden" name="rel_type" value="order">
                                 <input type="hidden" name="rel_id" value="{{ order.id }}">
                                 <div class="mb-3">
-                                    <label for="support-helpdesk-id" class="form-label">{{ 'Help Desk'|trans }}</label>
+                                    <label for="support-helpdesk-id" class="tn-field__label">{{ 'Help Desk'|trans }}</label>
                                     {{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
                                 </div>
                                 <div class="mb-3">
-                                    <label for="subject" class="form-label">{{ 'Subject'|trans }}</label>
-                                    <input class="form-control" type="text" name="subject" value="{{ request.subject|e }}" required/>
+                                    <label for="subject" class="tn-field__label">{{ 'Subject'|trans }}</label>
+                                    <input class="tn-input" type="text" name="subject" value="{{ request.subject|e }}" required/>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="content" class="form-label">{{ 'Message'|trans }}</label>
-                                    <textarea class="editor-textarea form-control" id="content" name="content" rows="5" required>{{ request.content|e }}</textarea>
+                                    <label for="content" class="tn-field__label">{{ 'Message'|trans }}</label>
+                                    <textarea class="editor-textarea tn-input" style="height:auto; padding-top:10px;" id="content" name="content" rows="5" required>{{ request.content|e }}</textarea>
                                 </div>
                             </div>
                             <div class="modal-footer">
-                                <button type="submit" class="btn btn-primary">{{ 'Open Ticket'|trans }}</button>
+                                <button type="submit" class="tn-btn tn-btn--primary">{{ 'Open Ticket'|trans }}</button>
                             </div>
                         </form>
                     </div>
@@ -253,24 +253,24 @@
                                 <input type="hidden" name="rel_id" value="{{ order.id }}">
                                 <input type="hidden" name="rel_task" value="upgrade">
                                 <div class="mb-3">
-                                    <label for="support-helpdesk-id" class="form-label">{{ 'Help Desk'|trans }}</label>
+                                    <label for="support-helpdesk-id" class="tn-field__label">{{ 'Help Desk'|trans }}</label>
                                     {{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
                                 </div>
                                 <div class="mb-3">
-                                    <label for="subject" class="form-label">{{ 'Subject'|trans }}</label>
-                                    <input class="form-control" type="text" name="subject" id="subject" value="{{ request.subject|e }}" required />
+                                    <label for="subject" class="tn-field__label">{{ 'Subject'|trans }}</label>
+                                    <input class="tn-input" type="text" name="subject" id="subject" value="{{ request.subject|e }}" required />
                                 </div>
                                 <div class="mb-3">
-                                    <label for="rel_new_value" class="form-label">{{ 'Upgrade To'|trans }}</label>
+                                    <label for="rel_new_value" class="tn-field__label">{{ 'Upgrade To'|trans }}</label>
                                     {{ mf.selectbox('rel_new_value', upgradables, '', 1) }}
                                 </div>
                                 <div class="mb-3">
-                                    <label for="content" class="form-label">{{ 'Notes'|trans }}</label>
-                                    <textarea id="content" name="content" rows="5" required class="form-control" placeholder="Your comment">{{ 'I would like to upgrade'|trans }} {{ order.title }}</textarea>
+                                    <label for="content" class="tn-field__label">{{ 'Notes'|trans }}</label>
+                                    <textarea id="content" name="content" rows="5" required class="tn-input" style="height:auto; padding-top:10px;" placeholder="Your comment">{{ 'I would like to upgrade'|trans }} {{ order.title }}</textarea>
                                 </div>
                             </div>
                             <div class="modal-footer">
-                                <button type="submit" class="btn btn-primary" id="open-ticket-submit">{{ 'Request'|trans }}</button>
+                                <button type="submit" class="tn-btn tn-btn--primary" id="open-ticket-submit">{{ 'Request'|trans }}</button>
                             </div>
                         </form>
                     </div>

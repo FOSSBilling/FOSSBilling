@@ -26,23 +26,19 @@
 {% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-12">
-        <div class="card ms-0 ms-md-3 w-100">
-            <div class="card-header">
-                <h3 class="link-body-emphasis mb-1">{{ post.title }}</h3>
-                <span class="text-muted">{{ post.updated_at|format_datetime }} {{ 'by'|trans }} {{ post.author.name }}</span>
-            </div>
-            <div class="card-body">
-                <div class="pt-3 px-2">
-                    {% if post.image %}<img src="{{ post.image }}" alt="{{ post.title }}">{% endif %}
-                    {{ (post.content ?? '')|markdown_to_html }}
-                </div>
-            </div>
-            <div class="card-footer">
-                <a href="{{ 'news'|url }}" class="btn btn-primary">{{ 'Back to the List'|trans }}</a>
+    <div class="tn-card">
+        <div class="tn-card__header">
+            <div>
+                <span class="tn-card__title">{{ post.title }}</span>
+                <div class="tn-card__subtitle">{{ post.updated_at|format_datetime }} {{ 'by'|trans }} {{ post.author.name }}</div>
             </div>
         </div>
+        {% if post.image %}<img src="{{ post.image }}" alt="{{ post.title }}" class="w-100 mb-4" style="border-radius: var(--r-md);">{% endif %}
+        <div class="tn-prose">{{ (post.content ?? '')|markdown_to_html }}</div>
+        <div class="mt-4 pt-4" style="border-top: var(--bw-hair) solid var(--border);">
+            <a href="{{ 'news'|url }}" class="tn-btn tn-btn--secondary">
+                <svg class="icon"><use href="#chevron-left" /></svg>{{ 'Back to news'|trans }}
+            </a>
+        </div>
     </div>
-</div>
 {% endblock %}

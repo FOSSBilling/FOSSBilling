@@ -111,28 +111,26 @@
                 <h6 class="modal-title">{{ 'Open New Ticket'|trans }}</h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
             </div>
-            <form action="" method="post" id="ticket-submit" class="form" style="background: none">
-                <div class="modal-body">
-                    <div class="form-group">
-                    </div>
-                    <div class="mb-3">
-                        <label for="support-helpdesk-id" class="form-label">{{ 'Helpdesk'|trans }}</label>
+            <form action="" method="post" id="ticket-submit" style="background: none">
+                <div class="modal-body d-flex flex-column gap-3">
+                    <div class="tn-field">
+                        <label for="support-helpdesk-id" class="tn-field__label">{{ 'Helpdesk'|trans }}</label>
                         {{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
                     </div>
-                    <div class="mb-3">
-                        <label for="subject" class="form-label">{{ 'Subject'|trans }}</label>
-                        <input type="text" name="subject" class="form-control" id="subject" required aria-describedby="subject" value="{{ request.subject|e }}">
+                    <div class="tn-field">
+                        <label for="subject" class="tn-field__label">{{ 'Subject'|trans }}</label>
+                        <input type="text" name="subject" class="tn-input" id="subject" required aria-describedby="subject" value="{{ request.subject|e }}">
                     </div>
                     {% if guest.support_kb_suggestions_enabled({ 'area': 'ticket' }) %}
                         {{ include('mod_support_kb_suggestions.html.twig', { 'input_id': 'subject' }) }}
                     {% endif %}
-                    <div class="mb-3">
-                        <label for="message" class="form-label">{{ 'Message'|trans }}</label>
-                        <textarea name="content" class="editor-textarea form-control" id="message" aria-describedby="message" rows="5" required>{{ request.content|e }}</textarea>
+                    <div class="tn-field">
+                        <label for="message" class="tn-field__label">{{ 'Message'|trans }}</label>
+                        <textarea name="content" class="editor-textarea tn-input" style="height:auto; padding-top:10px;" id="message" aria-describedby="message" rows="5" required>{{ request.content|e }}</textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">{{ 'Submit'|trans }}</button>
+                    <button type="submit" class="tn-btn tn-btn--primary">{{ 'Submit'|trans }}</button>
                 </div>
             </form>
         </div>

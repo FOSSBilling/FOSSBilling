@@ -1,31 +1,29 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
 {% set active_menu = 'invoices' %}
 
-{% block meta_title %}{{ 'Thank You'|trans }}{% endblock %}
-{% block breadcrumb %}<li class="breadcrumb-item active" aria-current="page">{{ 'Thank You'|trans }}</li>{% endblock %}
+{% block meta_title %}{{ 'Thank you'|trans }}{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item active" aria-current="page">{{ 'Thank you'|trans }}</li>{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-lg-8">
-        <div class="card">
-            <div class="card-body text-center py-5">
-                <h1 class="mb-1">{{ 'Thank You'|trans }}</h1>
-                <p class="text-muted mb-4">{{ 'Your payment has been submitted and will be processed shortly. It may take some time for your invoice to be marked as paid.'|trans }}</p>
+        <div class="tn-card text-center py-5">
+            <h1 class="mb-1">{{ 'Thank you'|trans }}</h1>
+            <p class="text-muted mb-4">{{ 'Your payment has been submitted and will be processed shortly. It may take a few minutes for your invoice to be marked as paid.'|trans }}</p>
 
-                <div class="alert alert-success text-start" role="alert">
-                    {{ 'Payment for invoice received'|trans }}
-                </div>
-                <p class="small text-muted">{{ 'You will be automatically redirected back to the invoice after 1 minute.'|trans }}</p>
-                <div class="progress">
-                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%"></div>
-                </div>
-
-                <script>
-                    setTimeout(function() {
-                        window.location = '{{ "invoice/#{invoice.hash}"|url }}';
-                    }, 1 * 60 * 1000);
-                </script>
+            <div class="alert alert-success text-start" role="alert">
+                {{ 'Payment for invoice received'|trans }}
             </div>
+            <p class="small text-muted">{{ 'You\'ll be redirected back to the invoice in about a minute.'|trans }}</p>
+            <div class="tn-progress__track tn-progress__track--lg">
+                <div class="tn-progress__fill" style="width: 100%"></div>
+            </div>
+
+            <script>
+                setTimeout(function() {
+                    window.location = '{{ "invoice/#{invoice.hash}"|url }}';
+                }, 1 * 60 * 1000);
+            </script>
         </div>
     </div>
 </div>

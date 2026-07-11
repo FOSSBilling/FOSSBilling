@@ -1,10 +1,10 @@
 {% if order.status == 'active' %}
-<div class="card mb-4">
-    <div class="card-header">
-        <h2>{{ 'Download'|trans }} {{ service.filename }}</h2>
+<div class="tn-card tn-card--compact mb-4">
+    <div class="tn-card__header">
+        <span class="tn-card__title">{{ service.filename }}</span>
     </div>
-    <div class="card-body">
-        <a class="btn btn-primary btn-large" href='{{ "servicedownloadable/get-file/#{order.id}"|url }}'>{{ 'Download'|trans }}</a>
-    </div>
+    <a class="tn-btn tn-btn--primary" href='{{ "servicedownloadable/get-file/#{order.id}"|url }}'>
+        <svg class="icon"><use href="#download" /></svg>{{ 'Download'|trans }}
+    </a>
 </div>
 {% endif %}
