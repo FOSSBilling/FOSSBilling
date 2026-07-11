@@ -473,19 +473,24 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             ? ($this->config['test_webhook_secret'] ?? '')
             : ($this->config['webhook_secret'] ?? '');
 
-        if (!empty($webhookSecret) && !empty($sigHeader)) {
-            try {
-                $event = Stripe\Webhook::constructEvent($rawBody, $sigHeader, $webhookSecret);
-            } catch (UnexpectedValueException) {
-                throw new FOSSBilling\Exception('Invalid Stripe webhook payload');
-            } catch (Stripe\Exception\SignatureVerificationException) {
-                throw new FOSSBilling\Exception('Invalid Stripe webhook signature');
-            }
-        } else {
-            $event = json_decode($rawBody, false);
-            if (!$event || !isset($event->type)) {
-                throw new FOSSBilling\Exception('Unable to parse Stripe webhook event');
-            }
+        // Webhook events credit funds and mark invoices paid based on their
+        // contents, so a verified signature is mandatory. Without a signing
+        // secret configured there is no way to distinguish a genuine Stripe
+        // event from a forged one, so refuse to process the event at all
+        // rather than trusting an unsigned payload.
+        if (empty($webhookSecret)) {
+            throw new FOSSBilling\Exception('Stripe webhook signing secret is not configured');
+        }
+        if (empty($sigHeader)) {
+            throw new FOSSBilling\Exception('Missing Stripe-Signature header');
+        }
+
+        try {
+            $event = Stripe\Webhook::constructEvent($rawBody, $sigHeader, $webhookSecret);
+        } catch (UnexpectedValueException) {
+            throw new FOSSBilling\Exception('Invalid Stripe webhook payload');
+        } catch (Stripe\Exception\SignatureVerificationException) {
+            throw new FOSSBilling\Exception('Invalid Stripe webhook signature');
         }
 
         $tx->txn_id = $event->id;
