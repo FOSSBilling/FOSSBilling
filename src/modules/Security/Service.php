@@ -179,9 +179,20 @@ class Service
         ];
     }
 
-    public function getRateLimitList(?string $ip = null): array
+    public function getRateLimitList(?string $ip = null, ?string $search = null): array
     {
-        return $this->di['rate_limiter']->listIpCounters($ip);
+        $counters = $this->di['rate_limiter']->listIpCounters($ip);
+
+        if ($search === null || $search === '') {
+            return $counters;
+        }
+
+        $search = strtolower($search);
+
+        return array_values(array_filter(
+            $counters,
+            static fn (array $counter): bool => str_contains(strtolower((string) $counter['ip']), $search) || str_contains(strtolower((string) $counter['policy']), $search),
+        ));
     }
 
     public function resetRateLimitIp(string $ip, ?string $policy = null): array

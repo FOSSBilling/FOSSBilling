@@ -108,7 +108,7 @@ class RateLimiter implements InjectionAwareInterface
         );
 
         if ($tokens > 0 && $result->isLimited() && $this->isIpAddress($subject)) {
-            $this->trackIpSubject($policyName, $subject, $result);
+            $this->trackIpSubject($policyName, $subject);
         }
 
         return $result;
@@ -274,34 +274,32 @@ class RateLimiter implements InjectionAwareInterface
         }
 
         $limit = $this->getFactory($policyName, $policy)->create($this->hashSubject($subject))->consume(0);
-        $remaining = max(0, $limit->getRemainingTokens());
-        $total = $limit->getLimit();
-        $retryAfter = $limit->getRetryAfter();
-        $retryAfterSeconds = max(0, $retryAfter->getTimestamp() - time());
-        $limited = $remaining < 1;
+        $limited = $limit->getRemainingTokens() < 1;
+        $result = new RateLimitResult(
+            $policyName,
+            $limited,
+            $limit->getLimit(),
+            $limit->getRemainingTokens(),
+            $limit->getRetryAfter(),
+            $limited ? RateLimitResult::REASON_LIMITED : RateLimitResult::REASON_ALLOWED,
+        );
 
         return [
-            'limit' => $total,
-            'remaining' => $remaining,
-            'limited' => $limited,
-            'retry_after' => $retryAfter->format(\DateTimeInterface::ATOM),
-            'retry_after_seconds' => $retryAfterSeconds,
-            'active' => $remaining < $total,
+            'limit' => $result->getLimit(),
+            'remaining' => $result->getRemaining(),
+            'limited' => $result->isLimited(),
+            'retry_after' => $result->getRetryAfter()?->format(\DateTimeInterface::ATOM),
+            'retry_after_seconds' => $result->getRetryAfterSeconds(),
         ];
     }
 
-    private function trackIpSubject(string $policyName, string $ip, RateLimitResult $result): void
+    private function trackIpSubject(string $policyName, string $ip): void
     {
         $index = $this->getIpIndex();
         $key = $this->getIpIndexKey($policyName, $ip);
         $index[$key] = [
             'policy' => $policyName,
             'ip' => $ip,
-            'limit' => $result->getLimit(),
-            'remaining' => $result->getRemaining(),
-            'limited' => $result->isLimited(),
-            'retry_after' => $result->getRetryAfter()?->format(\DateTimeInterface::ATOM),
-            'retry_after_seconds' => $result->getRetryAfterSeconds(),
             'last_seen' => (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM),
         ];
 

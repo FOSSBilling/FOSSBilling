@@ -66,7 +66,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('security', 'view');
 
-        return $this->getService()->getRateLimitList($data['ip'] ?? null);
+        return $this->getService()->getRateLimitList($data['ip'] ?? null, $data['search'] ?? null);
     }
 
     #[RequiredParams(['ip' => 'You must specify an IP address to reset.'])]

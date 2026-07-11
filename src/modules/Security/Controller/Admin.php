@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Security\Controller;
 
+use FOSSBilling\PaginationOptions;
+
 class Admin implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
@@ -104,25 +106,15 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
             $ip = null;
         }
 
-        $counters = $invalidIp ? [] : $this->di['mod_service']('Security')->getRateLimitList(is_string($ip) && $ip !== '' ? $ip : null);
         $search = $request->query->get('search');
-        if (is_string($search) && $search !== '') {
-            $search = strtolower($search);
-            $counters = array_values(array_filter($counters, static fn (array $counter): bool => str_contains(strtolower((string) $counter['ip']), $search) || str_contains(strtolower((string) $counter['policy']), $search)));
-        }
+        $counters = $invalidIp ? [] : $this->di['mod_service']('Security')->getRateLimitList(
+            is_string($ip) && $ip !== '' ? $ip : null,
+            is_string($search) && $search !== '' ? $search : null,
+        );
 
         $page = filter_var($request->query->get('page', 1), FILTER_VALIDATE_INT, ['options' => ['default' => 1, 'min_range' => 1]]);
         $perPage = filter_var($request->query->get('per_page', 25), FILTER_VALIDATE_INT, ['options' => ['default' => 25, 'min_range' => 1, 'max_range' => 100]]);
-        $total = count($counters);
-        $pages = $total > 0 ? (int) ceil($total / $perPage) : 0;
-        $page = min($page, max(1, $pages));
-        $counters = [
-            'pages' => $pages,
-            'page' => $page,
-            'per_page' => $perPage,
-            'total' => $total,
-            'list' => array_slice($counters, ($page - 1) * $perPage, $perPage),
-        ];
+        $counters = $this->di['pager']->paginateArray($counters, new PaginationOptions($page, $perPage));
 
         return $app->render('mod_security_rate_limits', [
             'rate_limit_status' => $this->di['mod_service']('Security')->getRateLimitStatus(),
