@@ -57,14 +57,14 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     public function rate_limit_status(array $data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('security', 'view');
+        $this->checkPermissions('security', 'view');
 
         return $this->getService()->getRateLimitStatus();
     }
 
     public function rate_limit_get_list(array $data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('security', 'view');
+        $this->checkPermissions('security', 'view');
 
         return $this->getService()->getRateLimitList($data['ip'] ?? null, $data['search'] ?? null);
     }
@@ -72,14 +72,14 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['ip' => 'You must specify an IP address to reset.'])]
     public function rate_limit_reset_ip(array $data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('security', 'manage_rate_limits');
+        $this->checkPermissions('security', 'manage_rate_limits');
 
         return $this->getService()->resetRateLimitIp($data['ip'], $data['policy'] ?? null);
     }
 
     public function rate_limit_reset_all(array $data): array
     {
-        $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException('security', 'manage_rate_limits');
+        $this->checkPermissions('security', 'manage_rate_limits');
 
         return $this->getService()->resetAllRateLimits();
     }

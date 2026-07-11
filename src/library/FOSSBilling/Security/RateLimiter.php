@@ -15,12 +15,14 @@ use FOSSBilling\Config;
 use FOSSBilling\InjectionAwareInterface;
 use Psr\Cache\CacheItemPoolInterface;
 use Pimple\Container;
+use Symfony\Component\Filesystem\Path;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\RateLimiter\Storage\CacheStorage;
 
 class RateLimiter implements InjectionAwareInterface
 {
     private const string IP_INDEX_CACHE_KEY = 'rate_limiter_ip_index';
+    private const string IP_INDEX_LOCK_FILE = 'rate_limiter_ip_index.lock';
 
     protected ?Container $di = null;
 
@@ -147,51 +149,53 @@ class RateLimiter implements InjectionAwareInterface
             throw new \InvalidArgumentException('The provided input was not a valid IP address.');
         }
 
-        $index = $this->getIpIndex();
-        $result = [];
-        $changed = false;
+        return $this->withIpIndexLock(function () use ($ip): array {
+            $index = $this->getIpIndex();
+            $result = [];
+            $changed = false;
 
-        foreach ($index as $key => $entry) {
-            if (!is_array($entry) || !isset($entry['policy'], $entry['ip'])) {
-                unset($index[$key]);
-                $changed = true;
-                continue;
+            foreach ($index as $key => $entry) {
+                if (!is_array($entry) || !isset($entry['policy'], $entry['ip'])) {
+                    unset($index[$key]);
+                    $changed = true;
+                    continue;
+                }
+
+                if ($ip !== null && $entry['ip'] !== $ip) {
+                    continue;
+                }
+
+                try {
+                    $state = $this->getRateLimitState((string) $entry['policy'], (string) $entry['ip']);
+                } catch (\Throwable) {
+                    unset($index[$key]);
+                    $changed = true;
+                    continue;
+                }
+
+                if (!$state['limited']) {
+                    unset($index[$key]);
+                    $changed = true;
+                    continue;
+                }
+
+                $result[] = array_merge($entry, [
+                    'limit' => $state['limit'],
+                    'remaining' => $state['remaining'],
+                    'limited' => $state['limited'],
+                    'retry_after' => $state['retry_after'],
+                    'retry_after_seconds' => $state['retry_after_seconds'],
+                ]);
             }
 
-            if ($ip !== null && $entry['ip'] !== $ip) {
-                continue;
+            if ($changed) {
+                $this->saveIpIndex($index);
             }
 
-            try {
-                $state = $this->getRateLimitState((string) $entry['policy'], (string) $entry['ip']);
-            } catch (\Throwable) {
-                unset($index[$key]);
-                $changed = true;
-                continue;
-            }
+            usort($result, static fn (array $a, array $b): int => [$a['ip'], $a['policy']] <=> [$b['ip'], $b['policy']]);
 
-            if (!$state['limited']) {
-                unset($index[$key]);
-                $changed = true;
-                continue;
-            }
-
-            $result[] = array_merge($entry, [
-                'limit' => $state['limit'],
-                'remaining' => $state['remaining'],
-                'limited' => $state['limited'],
-                'retry_after' => $state['retry_after'],
-                'retry_after_seconds' => $state['retry_after_seconds'],
-            ]);
-        }
-
-        if ($changed) {
-            $this->saveIpIndex($index);
-        }
-
-        usort($result, static fn (array $a, array $b): int => [$a['ip'], $a['policy']] <=> [$b['ip'], $b['policy']]);
-
-        return $result;
+            return $result;
+        });
     }
 
     public function resetIp(string $ip, ?string $policyName = null): int
@@ -205,24 +209,26 @@ class RateLimiter implements InjectionAwareInterface
             $this->resetPolicySubject((string) $policy, $ip);
         }
 
-        $index = $this->getIpIndex();
-        $removed = 0;
-        foreach ($index as $key => $entry) {
-            if (!is_array($entry) || ($entry['ip'] ?? null) !== $ip) {
-                continue;
+        return $this->withIpIndexLock(function () use ($ip, $policyName): int {
+            $index = $this->getIpIndex();
+            $removed = 0;
+            foreach ($index as $key => $entry) {
+                if (!is_array($entry) || ($entry['ip'] ?? null) !== $ip) {
+                    continue;
+                }
+
+                if ($policyName !== null && ($entry['policy'] ?? null) !== $policyName) {
+                    continue;
+                }
+
+                unset($index[$key]);
+                ++$removed;
             }
 
-            if ($policyName !== null && ($entry['policy'] ?? null) !== $policyName) {
-                continue;
-            }
+            $this->saveIpIndex($index);
 
-            unset($index[$key]);
-            ++$removed;
-        }
-
-        $this->saveIpIndex($index);
-
-        return $removed;
+            return $removed;
+        });
     }
 
     public function resetAll(): bool
@@ -295,15 +301,50 @@ class RateLimiter implements InjectionAwareInterface
 
     private function trackIpSubject(string $policyName, string $ip): void
     {
-        $index = $this->getIpIndex();
-        $key = $this->getIpIndexKey($policyName, $ip);
-        $index[$key] = [
-            'policy' => $policyName,
-            'ip' => $ip,
-            'last_seen' => (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM),
-        ];
+        $this->withIpIndexLock(function () use ($policyName, $ip): void {
+            $index = $this->getIpIndex();
+            $key = $this->getIpIndexKey($policyName, $ip);
+            $index[$key] = [
+                'policy' => $policyName,
+                'ip' => $ip,
+                'last_seen' => (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM),
+            ];
 
-        $this->saveIpIndex($index);
+            $this->saveIpIndex($index);
+        });
+    }
+
+    /**
+     * Runs the given callback while holding an exclusive lock on the IP index,
+     * so concurrent requests cannot clobber each other's read-modify-write of the shared index.
+     */
+    private function withIpIndexLock(\Closure $callback): mixed
+    {
+        $lockPath = $this->getIpIndexLockPath();
+        if (!is_dir(\dirname($lockPath))) {
+            return $callback();
+        }
+
+        $handle = fopen($lockPath, 'c');
+        if ($handle === false) {
+            return $callback();
+        }
+
+        try {
+            flock($handle, LOCK_EX);
+
+            return $callback();
+        } finally {
+            flock($handle, LOCK_UN);
+            fclose($handle);
+        }
+    }
+
+    private function getIpIndexLockPath(): string
+    {
+        $baseDir = \defined('PATH_CACHE') ? \PATH_CACHE : sys_get_temp_dir();
+
+        return Path::join($baseDir, self::IP_INDEX_LOCK_FILE);
     }
 
     private function getIpIndexKey(string $policyName, string $ip): string
