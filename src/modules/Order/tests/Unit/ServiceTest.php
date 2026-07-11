@@ -2514,3 +2514,74 @@ test('updateOrder rejects a negative price', function (): void {
     expect(fn () => $service->updateOrder($order, ['price' => -1]))
         ->toThrow(FOSSBilling\InformationException::class, 'Price cannot be negative');
 });
+
+test('createOrder succeeds when invoice generation fails', function (): void {
+    $client = new Model_Client();
+    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client->currency = 'USD';
+
+    $product = orderServiceCreateProductEntity(1, 'custom');
+    $currency = Mockery::mock(Box\Mod\Currency\Entity\Currency::class)->shouldIgnoreMissing();
+
+    $currencyRepository = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $currencyRepository->shouldReceive('findOneByCode')->once()->andReturn($currency);
+
+    $currencyService = Mockery::mock(Box\Mod\Currency\Service::class);
+    $currencyService->shouldReceive('getCurrencyRepository')->once()->andReturn($currencyRepository);
+
+    $cartService = Mockery::mock(Box\Mod\Cart\Service::class);
+    $cartService->shouldReceive('isStockAvailable')->once()->andReturn(true);
+
+    $productService = Mockery::mock(Box\Mod\Servicecustom\Service::class);
+    $pricingService = Mockery::mock(Box\Mod\Product\Service::class);
+    $pricingService->shouldReceive('getProductOrderLineConfig')->never();
+
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+
+    $invoiceService = Mockery::mock(Box\Mod\Invoice\Service::class);
+    $invoiceService->shouldReceive('generateForOrder')
+        ->once()
+        ->with($order)
+        ->andThrow(new FOSSBilling\InformationException('Invoice could not be generated'));
+    $invoiceService->shouldNotReceive('approveInvoice');
+
+    $db = Mockery::mock(Box_Database::class);
+    $db->shouldReceive('transaction')->once()->andReturnUsing(fn (callable $callback) => $callback());
+    $db->shouldReceive('dispense')->once()->with('ClientOrder')->andReturn($order);
+    $db->shouldReceive('store')->once()->with($order)->andReturn(1);
+    $db->shouldReceive('getExistingModelById')
+        ->once()
+        ->with('ClientOrder', 1, 'Order not found')
+        ->andReturn($order);
+
+    $period = Mockery::mock(Box_Period::class);
+    $period->shouldReceive('getCode')->once()->andReturn('1Y');
+
+    $events = Mockery::mock(Box_EventManager::class);
+    $events->shouldReceive('fire')->once();
+
+    $di = container();
+    $di['mod_service'] = $di->protect(function ($serviceName) use ($cartService, $currencyService, $invoiceService, $pricingService, $productService) {
+        return match ($serviceName) {
+            'currency' => $currencyService,
+            'cart' => $cartService,
+            'Product' => $pricingService,
+            'invoice' => $invoiceService,
+            'servicecustom' => $productService,
+        };
+    });
+    $di['events_manager'] = $events;
+    $di['db'] = $db;
+    $di['period'] = $di->protect(fn (): Mockery\MockInterface => $period);
+    $di['logger'] = new Box_Log();
+
+    $service = new Service();
+    $service->setDi($di);
+
+    expect($service->createOrder($client, $product, [
+        'period' => '1Y',
+        'price' => 10,
+        'invoice_option' => 'issue-invoice',
+    ]))->toBe(1);
+});
