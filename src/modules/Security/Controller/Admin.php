@@ -96,7 +96,8 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $this->di['is_admin_logged'];
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('security', 'view');
 
-        $ip = $_GET['ip'] ?? null;
+        $request = $app->getRequest();
+        $ip = $request->query->get('ip');
         $invalidIp = false;
         if (is_string($ip) && $ip !== '' && !filter_var($ip, FILTER_VALIDATE_IP)) {
             $invalidIp = true;
@@ -104,14 +105,14 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         }
 
         $counters = $invalidIp ? [] : $this->di['mod_service']('Security')->getRateLimitList(is_string($ip) && $ip !== '' ? $ip : null);
-        $search = $_GET['search'] ?? null;
+        $search = $request->query->get('search');
         if (is_string($search) && $search !== '') {
             $search = strtolower($search);
             $counters = array_values(array_filter($counters, static fn (array $counter): bool => str_contains(strtolower((string) $counter['ip']), $search) || str_contains(strtolower((string) $counter['policy']), $search)));
         }
 
-        $page = filter_var($_GET['page'] ?? 1, FILTER_VALIDATE_INT, ['options' => ['default' => 1, 'min_range' => 1]]);
-        $perPage = filter_var($_GET['per_page'] ?? 25, FILTER_VALIDATE_INT, ['options' => ['default' => 25, 'min_range' => 1, 'max_range' => 100]]);
+        $page = filter_var($request->query->get('page', 1), FILTER_VALIDATE_INT, ['options' => ['default' => 1, 'min_range' => 1]]);
+        $perPage = filter_var($request->query->get('per_page', 25), FILTER_VALIDATE_INT, ['options' => ['default' => 25, 'min_range' => 1, 'max_range' => 100]]);
         $total = count($counters);
         $pages = $total > 0 ? (int) ceil($total / $perPage) : 0;
         $page = min($page, max(1, $pages));

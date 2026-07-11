@@ -19,7 +19,7 @@
         <div class="card-actions">
             <a class="btn btn-danger" href="{{ 'security/rate_limit_reset_all'|api_url }}" {{ fb_api_link({ modal: {type: 'danger', title: 'Reset all rate limits?'|trans, content: 'This will clear every current rate limiter counter, including account, email, token, and hash-based counters that are not listed here.'|trans, button: 'Reset All'|trans}, reload: true, message: 'Rate limiter counters reset'|trans }) }}>
                 <svg class="icon">
-                    <use xlink:href="#trash" />
+                    <use href="#trash" />
                 </svg>
                 {{ 'Reset All'|trans }}
             </a>
@@ -30,7 +30,7 @@
             <div class="alert alert-warning" role="alert">
                 <div class="alert-icon">
                     <svg class="icon alert-icon icon-2" aria-hidden="true">
-                        <use xlink:href="{{ 'build/symbol/icons-sprite.svg'|asset_url }}#alert-triangle" />
+                        <use href="{{ 'build/symbol/icons-sprite.svg'|asset_url }}#alert-triangle" />
                     </svg>
                 </div>
                 <strong>{{ 'Warning'|trans }}</strong>
@@ -49,7 +49,7 @@
                         <input class="form-control" id="rate-limit-reset-ip" type="text" name="ip" value="{{ request.ip }}" placeholder="{{ 'Enter an IPv4 or IPv6 address'|trans }}" required>
                         <button class="btn btn-warning" type="submit">
                             <svg class="icon">
-                                <use xlink:href="#refresh" />
+                                <use href="#refresh" />
                             </svg>
                             {{ 'Reset IP'|trans }}
                         </button>
@@ -80,7 +80,7 @@
                 <a class="btn btn-outline-secondary" href="{{ 'security/rate-limits'|url }}">{{ 'Reset'|trans }}</a>
                 <button class="btn btn-primary" type="submit">
                     <svg class="icon">
-                        <use xlink:href="#filter" />
+                        <use href="#filter" />
                     </svg>
                     {{ 'Apply Filters'|trans }}
                 </button>
@@ -114,7 +114,7 @@
                         <td class="text-end">
                             <a class="btn btn-icon" href="{{ 'security/rate_limit_reset_ip'|api_url(query: { 'ip': counter.ip, 'policy': counter.policy }) }}" {{ fb_api_link({ modal: {type: 'confirm', title: 'Reset rate limit?'|trans, content: ('Reset %policy% for %ip%?'|trans({'%policy%': counter.policy, '%ip%': counter.ip}))}, reload: true, message: 'Rate limiter counters reset'|trans }) }} title="{{ 'Reset'|trans }}">
                                 <svg class="icon">
-                                    <use xlink:href="#refresh" />
+                                    <use href="#refresh" />
                                 </svg>
                             </a>
                         </td>
