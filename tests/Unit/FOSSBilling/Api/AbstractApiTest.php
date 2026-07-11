@@ -21,6 +21,10 @@ class ConcreteApi extends AbstractApi
     }
 }
 
+test('does not resolve the test container implicitly', function (): void {
+    expect((new ConcreteApi())->getDi())->toBeNull();
+});
+
 test('checkPermissions forwards identity to Staff service', function (): void {
     $identity = new Model_Admin();
 

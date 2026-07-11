@@ -13,7 +13,7 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 
 test('gets dependency injection container', function (): void {
-    $api = new Box\Mod\Stats\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Stats\Api\Admin());
     $di = container();
     $api->setDi($di);
     $getDi = $api->getDi();
@@ -21,7 +21,7 @@ test('gets dependency injection container', function (): void {
 });
 
 test('gets summary', function (): void {
-    $api = new Box\Mod\Stats\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Stats\Api\Admin());
     $serviceMock = Mockery::mock(Box\Mod\Stats\Service::class);
     /** @var Mockery\Expectation $expectation */
     $expectation = $serviceMock->shouldReceive('getSummary');
@@ -35,7 +35,7 @@ test('gets summary', function (): void {
 });
 
 test('gets summary income', function (): void {
-    $api = new Box\Mod\Stats\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Stats\Api\Admin());
     $serviceMock = Mockery::mock(Box\Mod\Stats\Service::class);
     /** @var Mockery\Expectation $expectation */
     $expectation = $serviceMock->shouldReceive('getSummaryIncome');
@@ -49,7 +49,7 @@ test('gets summary income', function (): void {
 });
 
 test('gets order statuses', function (): void {
-    $api = new Box\Mod\Stats\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Stats\Api\Admin());
     $serviceMock = Mockery::mock(Box\Mod\Stats\Service::class);
     /** @var Mockery\Expectation $expectation */
     $expectation = $serviceMock->shouldReceive('getOrdersStatuses');
@@ -64,7 +64,7 @@ test('gets order statuses', function (): void {
 });
 
 test('gets product summary', function (): void {
-    $api = new Box\Mod\Stats\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Stats\Api\Admin());
     $serviceMock = Mockery::mock(Box\Mod\Stats\Service::class);
     /** @var Mockery\Expectation $expectation */
     $expectation = $serviceMock->shouldReceive('getProductSummary');
@@ -79,7 +79,7 @@ test('gets product summary', function (): void {
 });
 
 test('gets product sales', function (): void {
-    $api = new Box\Mod\Stats\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Stats\Api\Admin());
     $serviceMock = Mockery::mock(Box\Mod\Stats\Service::class);
     /** @var Mockery\Expectation $expectation */
     $expectation = $serviceMock->shouldReceive('getProductSales');
@@ -94,7 +94,7 @@ test('gets product sales', function (): void {
 });
 
 test('gets income vs refunds', function (): void {
-    $api = new Box\Mod\Stats\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Stats\Api\Admin());
     $serviceMock = Mockery::mock(Box\Mod\Stats\Service::class);
     /** @var Mockery\Expectation $expectation */
     $expectation = $serviceMock->shouldReceive('incomeAndRefundStats');
@@ -109,7 +109,7 @@ test('gets income vs refunds', function (): void {
 });
 
 test('gets refunds', function (): void {
-    $api = new Box\Mod\Stats\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Stats\Api\Admin());
     $serviceMock = Mockery::mock(Box\Mod\Stats\Service::class);
     /** @var Mockery\Expectation $expectation */
     $expectation = $serviceMock->shouldReceive('getRefunds');
@@ -124,7 +124,7 @@ test('gets refunds', function (): void {
 });
 
 test('gets income', function (): void {
-    $api = new Box\Mod\Stats\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Stats\Api\Admin());
     $serviceMock = Mockery::mock(Box\Mod\Stats\Service::class);
     /** @var Mockery\Expectation $expectation */
     $expectation = $serviceMock->shouldReceive('getIncome');
@@ -139,7 +139,7 @@ test('gets income', function (): void {
 });
 
 test('gets orders', function (): void {
-    $api = new Box\Mod\Stats\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Stats\Api\Admin());
     $serviceMock = Mockery::mock(Box\Mod\Stats\Service::class);
     /** @var Mockery\Expectation $expectation */
     $expectation = $serviceMock->shouldReceive('getTableStats');
@@ -154,7 +154,7 @@ test('gets orders', function (): void {
 });
 
 test('gets clients', function (): void {
-    $api = new Box\Mod\Stats\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Stats\Api\Admin());
     $serviceMock = Mockery::mock(Box\Mod\Stats\Service::class);
     /** @var Mockery\Expectation $expectation */
     $expectation = $serviceMock->shouldReceive('getTableStats');
@@ -169,7 +169,7 @@ test('gets clients', function (): void {
 });
 
 test('gets client countries', function (): void {
-    $api = new Box\Mod\Stats\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Stats\Api\Admin());
     $serviceMock = Mockery::mock(Box\Mod\Stats\Service::class);
     /** @var Mockery\Expectation $expectation */
     $expectation = $serviceMock->shouldReceive('getClientCountries');
@@ -184,7 +184,7 @@ test('gets client countries', function (): void {
 });
 
 test('gets sales countries', function (): void {
-    $api = new Box\Mod\Stats\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Stats\Api\Admin());
     $serviceMock = Mockery::mock(Box\Mod\Stats\Service::class);
     /** @var Mockery\Expectation $expectation */
     $expectation = $serviceMock->shouldReceive('getSalesByCountry');
@@ -199,7 +199,7 @@ test('gets sales countries', function (): void {
 });
 
 test('gets invoices', function (): void {
-    $api = new Box\Mod\Stats\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Stats\Api\Admin());
     $serviceMock = Mockery::mock(Box\Mod\Stats\Service::class);
     /** @var Mockery\Expectation $expectation */
     $expectation = $serviceMock->shouldReceive('getTableStats');
@@ -214,7 +214,7 @@ test('gets invoices', function (): void {
 });
 
 test('gets tickets', function (): void {
-    $api = new Box\Mod\Stats\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Stats\Api\Admin());
     $serviceMock = Mockery::mock(Box\Mod\Stats\Service::class);
     /** @var Mockery\Expectation $expectation */
     $expectation = $serviceMock->shouldReceive('getTableStats');

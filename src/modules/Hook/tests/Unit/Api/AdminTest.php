@@ -13,7 +13,7 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 
 test('getDi returns dependency injection container', function (): void {
-    $api = new Box\Mod\Hook\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Hook\Api\Admin());
     $di = container();
     $api->setDi($di);
     $getDi = $api->getDi();
@@ -21,7 +21,7 @@ test('getDi returns dependency injection container', function (): void {
 });
 
 test('getList returns array', function (): void {
-    $api = new Box\Mod\Hook\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Hook\Api\Admin());
     $serviceMock = Mockery::mock(Box\Mod\Hook\Service::class);
     /** @var Mockery\Expectation $expectation1 */
     $expectation1 = $serviceMock->shouldReceive('getSearchQuery');
@@ -45,7 +45,7 @@ test('getList returns array', function (): void {
 });
 
 test('call fires event', function (): void {
-    $api = new Box\Mod\Hook\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Hook\Api\Admin());
     $data['event'] = 'testEvent';
 
     $eventManager = Mockery::mock('\Box_EventManager');
@@ -64,7 +64,7 @@ test('call fires event', function (): void {
 });
 
 test('call returns false when event param is missing', function (): void {
-    $api = new Box\Mod\Hook\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Hook\Api\Admin());
     $data['event'] = null;
 
     $result = $api->call($data);
@@ -73,7 +73,7 @@ test('call returns false when event param is missing', function (): void {
 });
 
 test('batchConnect returns result', function (): void {
-    $api = new Box\Mod\Hook\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Hook\Api\Admin());
     $serviceMock = Mockery::mock(Box\Mod\Hook\Service::class);
     /** @var Mockery\Expectation $expectation */
     $expectation = $serviceMock->shouldReceive('batchConnect');

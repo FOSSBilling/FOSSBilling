@@ -18,12 +18,12 @@ use FOSSBilling\Pagination;
 use function Tests\Helpers\container;
 
 test('updates domain', function (): void {
-    $adminApi = new Admin();
-    $api = new Admin();
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
     $model = new Model_ServiceDomain();
     $model->loadBean(new Tests\Helpers\DummyBean());
 
-    $adminApiMock = Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $adminApiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods());
     $adminApiMock->shouldReceive('_getService')
         ->atLeast()->once()
         ->andReturn($model);
@@ -42,12 +42,12 @@ test('updates domain', function (): void {
 });
 
 test('updates nameservers', function (): void {
-    $adminApi = new Admin();
-    $api = new Admin();
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
     $model = new Model_ServiceDomain();
     $model->loadBean(new Tests\Helpers\DummyBean());
 
-    $adminApiMock = Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $adminApiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods());
     $adminApiMock->shouldReceive('_getService')
         ->atLeast()->once()
         ->andReturn($model);
@@ -66,12 +66,12 @@ test('updates nameservers', function (): void {
 });
 
 test('updates contacts', function (): void {
-    $adminApi = new Admin();
-    $api = new Admin();
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
     $model = new Model_ServiceDomain();
     $model->loadBean(new Tests\Helpers\DummyBean());
 
-    $adminApiMock = Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $adminApiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods());
     $adminApiMock->shouldReceive('_getService')
         ->atLeast()->once()
         ->andReturn($model);
@@ -90,12 +90,12 @@ test('updates contacts', function (): void {
 });
 
 test('enables privacy protection', function (): void {
-    $adminApi = new Admin();
-    $api = new Admin();
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
     $model = new Model_ServiceDomain();
     $model->loadBean(new Tests\Helpers\DummyBean());
 
-    $adminApiMock = Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $adminApiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods());
     $adminApiMock->shouldReceive('_getService')
         ->atLeast()->once()
         ->andReturn($model);
@@ -114,12 +114,12 @@ test('enables privacy protection', function (): void {
 });
 
 test('disables privacy protection', function (): void {
-    $adminApi = new Admin();
-    $api = new Admin();
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
     $model = new Model_ServiceDomain();
     $model->loadBean(new Tests\Helpers\DummyBean());
 
-    $adminApiMock = Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $adminApiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods());
     $adminApiMock->shouldReceive('_getService')
         ->atLeast()->once()
         ->andReturn($model);
@@ -138,12 +138,12 @@ test('disables privacy protection', function (): void {
 });
 
 test('gets transfer code', function (): void {
-    $adminApi = new Admin();
-    $api = new Admin();
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
     $model = new Model_ServiceDomain();
     $model->loadBean(new Tests\Helpers\DummyBean());
 
-    $adminApiMock = Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $adminApiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods());
     $adminApiMock->shouldReceive('_getService')
         ->atLeast()->once()
         ->andReturn($model);
@@ -162,12 +162,12 @@ test('gets transfer code', function (): void {
 });
 
 test('locks domain', function (): void {
-    $adminApi = new Admin();
-    $api = new Admin();
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
     $model = new Model_ServiceDomain();
     $model->loadBean(new Tests\Helpers\DummyBean());
 
-    $adminApiMock = Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $adminApiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods());
     $adminApiMock->shouldReceive('_getService')
         ->atLeast()->once()
         ->andReturn($model);
@@ -186,12 +186,12 @@ test('locks domain', function (): void {
 });
 
 test('unlocks domain', function (): void {
-    $adminApi = new Admin();
-    $api = new Admin();
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
     $model = new Model_ServiceDomain();
     $model->loadBean(new Tests\Helpers\DummyBean());
 
-    $adminApiMock = Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $adminApiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods());
     $adminApiMock->shouldReceive('_getService')
         ->atLeast()->once()
         ->andReturn($model);
@@ -210,8 +210,8 @@ test('unlocks domain', function (): void {
 });
 
 test('gets tld list', function (): void {
-    $adminApi = new Admin();
-    $api = new Admin();
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
     $paginatorMock = Mockery::mock(Pagination::class);
     $paginatorMock->shouldReceive('getPaginatedResultSet')
         ->atLeast()->once()
@@ -235,8 +235,8 @@ test('gets tld list', function (): void {
 });
 
 test('gets tld', function (): void {
-    $adminApi = new Admin();
-    $api = new Admin();
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldFindOneByTld')
         ->atLeast()->once()
@@ -258,8 +258,8 @@ test('gets tld', function (): void {
 });
 
 test('throws exception when getting tld not found', function (): void {
-    $adminApi = new Admin();
-    $api = new Admin();
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldFindOneByTld')
         ->atLeast()->once()
@@ -280,8 +280,8 @@ test('throws exception when getting tld not found', function (): void {
 });
 
 test('deletes tld', function (): void {
-    $adminApi = new Admin();
-    $api = new Admin();
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
     $tldMock = new Model_Tld();
     $tldMock->loadBean(new Tests\Helpers\DummyBean());
     $tldMock->tld = '.com';
@@ -315,8 +315,8 @@ test('deletes tld', function (): void {
 });
 
 test('throws exception when deleting tld not found', function (): void {
-    $adminApi = new Admin();
-    $api = new Admin();
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldFindOneByTld')
         ->atLeast()->once()
@@ -337,8 +337,8 @@ test('throws exception when deleting tld not found', function (): void {
 });
 
 test('creates tld', function (): void {
-    $adminApi = new Admin();
-    $api = new Admin();
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldAlreadyRegistered')
         ->atLeast()->once()
@@ -364,8 +364,8 @@ test('creates tld', function (): void {
 });
 
 test('throws exception when creating already registered tld', function (): void {
-    $adminApi = new Admin();
-    $api = new Admin();
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldAlreadyRegistered')
         ->atLeast()->once()
@@ -384,8 +384,8 @@ test('throws exception when creating already registered tld', function (): void 
 });
 
 test('updates tld', function (): void {
-    $adminApi = new Admin();
-    $api = new Admin();
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldFindOneByTld')
         ->atLeast()->once()
@@ -407,8 +407,8 @@ test('updates tld', function (): void {
 });
 
 test('throws exception when updating tld not found', function (): void {
-    $adminApi = new Admin();
-    $api = new Admin();
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldFindOneByTld')
         ->atLeast()->once()
@@ -429,8 +429,8 @@ test('throws exception when updating tld not found', function (): void {
 });
 
 test('gets registrar list', function (): void {
-    $adminApi = new Admin();
-    $api = new Admin();
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
     $paginatorMock = Mockery::mock(Pagination::class);
     $paginatorMock->shouldReceive('getPaginatedResultSet')
         ->atLeast()->once()
@@ -460,8 +460,8 @@ test('gets registrar list', function (): void {
 });
 
 test('gets registrar pairs', function (): void {
-    $adminApi = new Admin();
-    $api = new Admin();
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('registrarGetPairs')
         ->atLeast()->once()
@@ -475,8 +475,8 @@ test('gets registrar pairs', function (): void {
 });
 
 test('gets available registrars', function (): void {
-    $adminApi = new Admin();
-    $api = new Admin();
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('registrarGetAvailable')
         ->atLeast()->once()
@@ -490,8 +490,8 @@ test('gets available registrars', function (): void {
 });
 
 test('installs registrar', function (): void {
-    $adminApi = new Admin();
-    $api = new Admin();
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
     $registrars = [
         'ResellerClub', 'Custom',
     ];
@@ -517,8 +517,8 @@ test('installs registrar', function (): void {
 });
 
 test('throws exception when installing unavailable registrar', function (): void {
-    $adminApi = new Admin();
-    $api = new Admin();
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
     $registrars = [
         'Custom',
     ];
@@ -543,8 +543,8 @@ test('throws exception when installing unavailable registrar', function (): void
 });
 
 test('throws exception when deleting registrar without id', function (): void {
-    $adminApi = new Admin();
-    $api = new Admin();
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
     $dispatcher = new FOSSBilling\Api\Dispatcher();
 
     expect(fn () => $dispatcher->validateRequiredParams($adminApi, 'registrar_delete', []))
@@ -552,8 +552,8 @@ test('throws exception when deleting registrar without id', function (): void {
 });
 
 test('copies registrar', function (): void {
-    $adminApi = new Admin();
-    $api = new Admin();
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
     $registrar = new Model_TldRegistrar();
     $registrar->loadBean(new Tests\Helpers\DummyBean());
 
@@ -583,8 +583,8 @@ test('copies registrar', function (): void {
 });
 
 test('throws exception when copying registrar without id', function (): void {
-    $adminApi = new Admin();
-    $api = new Admin();
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
     $dispatcher = new FOSSBilling\Api\Dispatcher();
 
     expect(fn () => $dispatcher->validateRequiredParams($adminApi, 'registrar_copy', []))
@@ -592,8 +592,8 @@ test('throws exception when copying registrar without id', function (): void {
 });
 
 test('gets registrar', function (): void {
-    $adminApi = new Admin();
-    $api = new Admin();
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
     $registrar = new Model_TldRegistrar();
     $registrar->loadBean(new Tests\Helpers\DummyBean());
 
@@ -623,8 +623,8 @@ test('gets registrar', function (): void {
 });
 
 test('throws exception when getting registrar without id', function (): void {
-    $adminApi = new Admin();
-    $api = new Admin();
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
     $registrar = new Model_TldRegistrar();
     $registrar->loadBean(new Tests\Helpers\DummyBean());
 
@@ -652,8 +652,8 @@ test('throws exception when getting registrar without id', function (): void {
 });
 
 test('batch syncs expiration dates', function (): void {
-    $adminApi = new Admin();
-    $api = new Admin();
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('batchSyncExpirationDates')
         ->atLeast()->once()
@@ -667,8 +667,8 @@ test('batch syncs expiration dates', function (): void {
 });
 
 test('updates registrar', function (): void {
-    $adminApi = new Admin();
-    $api = new Admin();
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
     $registrar = new Model_TldRegistrar();
     $registrar->loadBean(new Tests\Helpers\DummyBean());
 
@@ -698,8 +698,8 @@ test('updates registrar', function (): void {
 });
 
 test('throws exception when updating registrar without id', function (): void {
-    $adminApi = new Admin();
-    $api = new Admin();
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
     $registrar = new Model_TldRegistrar();
     $registrar->loadBean(new Tests\Helpers\DummyBean());
 
@@ -727,8 +727,8 @@ test('throws exception when updating registrar without id', function (): void {
 });
 
 test('gets service', function (): void {
-    $adminApi = new Admin();
-    $api = new Admin();
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('updateDomain')
         ->atLeast()->once()
@@ -766,8 +766,8 @@ test('gets service', function (): void {
 });
 
 test('throws exception when getting service without order_id', function (): void {
-    $adminApi = new Admin();
-    $api = new Admin();
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('updateDomain')
         ->never();
@@ -801,8 +801,8 @@ test('throws exception when getting service without order_id', function (): void
 });
 
 test('throws exception when getting service for not activated order', function (): void {
-    $adminApi = new Admin();
-    $api = new Admin();
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('updateDomain')
         ->never();

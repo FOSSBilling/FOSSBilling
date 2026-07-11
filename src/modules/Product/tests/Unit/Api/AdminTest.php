@@ -19,14 +19,14 @@ use Box\Mod\Product\Service;
 use function Tests\Helpers\container;
 
 test('gets dependency injection container', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $di = container();
     $api->setDi($di);
     expect($api->getDi())->toBe($di);
 });
 
 test('gets product list', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getPaginatedProducts')->once()->with([], null)->andReturn(['list' => []]);
 
@@ -36,7 +36,7 @@ test('gets product list', function (): void {
 });
 
 test('gets product pairs', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getPairs')->atLeast()->once()->andReturn([]);
 
@@ -45,7 +45,7 @@ test('gets product pairs', function (): void {
 });
 
 test('gets a product', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = ['id' => 1];
     $model = new Product();
 
@@ -59,7 +59,7 @@ test('gets a product', function (): void {
 });
 
 test('gets product types', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getTypes')->atLeast()->once()->andReturn([]);
 
@@ -68,7 +68,7 @@ test('gets product types', function (): void {
 });
 
 test('throws exception when preparing domain product already created', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = ['title' => 'testTitle', 'type' => 'domain'];
 
     $serviceMock = Mockery::mock(Service::class);
@@ -82,7 +82,7 @@ test('throws exception when preparing domain product already created', function 
 });
 
 test('throws exception when preparing unrecognized product type', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = ['title' => 'testTitle', 'type' => 'customForTestException'];
 
     $serviceMock = Mockery::mock(Service::class);
@@ -96,7 +96,7 @@ test('throws exception when preparing unrecognized product type', function (): v
 });
 
 test('prepares a product', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = ['title' => 'testTitle', 'type' => 'license'];
     $newProductId = 1;
 
@@ -111,7 +111,7 @@ test('prepares a product', function (): void {
 });
 
 test('updates a product', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = ['id' => 1];
     $model = new Product();
 
@@ -126,7 +126,7 @@ test('updates a product', function (): void {
 });
 
 test('throws exception when updating priority without priority param', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $api->setDi(container());
 
     expect(fn () => $api->update_priority([]))
@@ -134,7 +134,7 @@ test('throws exception when updating priority without priority param', function 
 });
 
 test('updates priority', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('updatePriority')->atLeast()->once()->andReturn(true);
 
@@ -143,7 +143,7 @@ test('updates priority', function (): void {
 });
 
 test('updates product config', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = ['id' => 1];
     $model = new Product();
 
@@ -158,7 +158,7 @@ test('updates product config', function (): void {
 });
 
 test('gets addon pairs', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getAddons')->atLeast()->once()->andReturn([]);
 
@@ -167,7 +167,7 @@ test('gets addon pairs', function (): void {
 });
 
 test('creates an addon', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = ['title' => 'Title4test'];
     $newAddonId = 1;
 
@@ -181,7 +181,7 @@ test('creates an addon', function (): void {
 });
 
 test('gets an addon', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = ['id' => 1];
 
     $model = new Product();
@@ -201,7 +201,7 @@ test('gets an addon', function (): void {
 test('updates an addon', function (): void {
     $data = ['id' => 1];
 
-    $apiMock = Mockery::mock(Admin::class . '[update]');
+    $apiMock = apiEndpoint(Mockery::mock(Admin::class . '[update]'));
     $apiMock->shouldReceive('update')->atLeast()->once()->andReturn([]);
 
     $model = new Product();
@@ -221,14 +221,14 @@ test('updates an addon', function (): void {
 });
 
 test('deletes an addon', function (): void {
-    $apiMock = Mockery::mock(Admin::class . '[delete]');
+    $apiMock = apiEndpoint(Mockery::mock(Admin::class . '[delete]'));
     $apiMock->shouldReceive('delete')->atLeast()->once()->andReturn(true);
 
     expect($apiMock->addon_delete([]))->toBeTrue();
 });
 
 test('deletes a product', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = ['id' => 1];
     $model = new Product();
 
@@ -243,7 +243,7 @@ test('deletes a product', function (): void {
 });
 
 test('gets category pairs', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getProductCategoryPairs')->atLeast()->once()->andReturn([]);
 
@@ -252,7 +252,7 @@ test('gets category pairs', function (): void {
 });
 
 test('updates a category', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = ['id' => 1];
     $model = new ProductCategory();
 
@@ -267,7 +267,7 @@ test('updates a category', function (): void {
 });
 
 test('gets a category', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = ['id' => 1];
     $model = new ProductCategory();
 
@@ -282,7 +282,7 @@ test('gets a category', function (): void {
 });
 
 test('creates a category', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = ['title' => 'test Title'];
     $newCategoryId = 1;
 
@@ -296,7 +296,7 @@ test('creates a category', function (): void {
 });
 
 test('deletes a category', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = ['id' => 1];
     $model = new ProductCategory();
 
@@ -311,7 +311,7 @@ test('deletes a category', function (): void {
 });
 
 test('gets promo list', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $qbMock = Mockery::mock(Doctrine\ORM\QueryBuilder::class);
     $promo = ['id' => 1];
 
@@ -331,7 +331,7 @@ test('gets promo list', function (): void {
 });
 
 test('creates a promo', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = [
         'code' => 'test',
         'type' => 'addon',
@@ -351,7 +351,7 @@ test('creates a promo', function (): void {
 });
 
 test('gets a promo without explicit id delegates to service', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $promo = new Promo();
 
     $serviceMock = Mockery::mock(Service::class);
@@ -365,7 +365,7 @@ test('gets a promo without explicit id delegates to service', function (): void 
 });
 
 test('gets a promo', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = ['id' => 1];
     $promo = new Promo();
 
@@ -380,7 +380,7 @@ test('gets a promo', function (): void {
 });
 
 test('gets promo redemption list', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $qbMock = Mockery::mock(Doctrine\ORM\QueryBuilder::class);
 
     $repoMock = Mockery::mock(Box\Mod\Product\Repository\PromoRedemptionRepository::class);
@@ -403,7 +403,7 @@ test('gets promo redemption list', function (): void {
 });
 
 test('updates a promo', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = ['id' => 1];
     $model = new Promo();
 
@@ -417,7 +417,7 @@ test('updates a promo', function (): void {
 });
 
 test('deletes a promo', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = ['id' => 1];
     $model = new Promo();
 

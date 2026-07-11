@@ -13,7 +13,7 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 
 test('dependency injection', function (): void {
-    $api = new Box\Mod\System\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\System\Api\Admin());
     $di = container();
     $api->setDi($di);
     $getDi = $api->getDi();
@@ -21,7 +21,7 @@ test('dependency injection', function (): void {
 });
 
 test('get params', function (): void {
-    $api = new Box\Mod\System\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\System\Api\Admin());
     $data = [];
 
     $serviceMock = Mockery::mock(Box\Mod\System\Service::class);
@@ -37,7 +37,7 @@ test('get params', function (): void {
 });
 
 test('update params', function (): void {
-    $api = new Box\Mod\System\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\System\Api\Admin());
     $data = [];
 
     $serviceMock = Mockery::mock(Box\Mod\System\Service::class);
@@ -54,7 +54,7 @@ test('update params', function (): void {
 });
 
 test('messages', function (): void {
-    $api = new Box\Mod\System\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\System\Api\Admin());
     $data = [];
 
     $di = container();
@@ -74,7 +74,7 @@ test('messages', function (): void {
 });
 
 test('template exists', function (): void {
-    $api = new Box\Mod\System\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\System\Api\Admin());
     $data = [
         'file' => 'testing.txt',
     ];
@@ -93,7 +93,7 @@ test('template exists', function (): void {
 });
 
 test('env', function (): void {
-    $api = new Box\Mod\System\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\System\Api\Admin());
     $data = [];
 
     $serviceMock = Mockery::mock(Box\Mod\System\Service::class);
@@ -112,7 +112,7 @@ test('env', function (): void {
 });
 
 test('is allowed', function (): void {
-    $api = new Box\Mod\System\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\System\Api\Admin());
     $data = [
         'mod' => 'extension',
     ];
@@ -142,7 +142,7 @@ test('is allowed', function (): void {
 });
 
 test('update finalization status allows super administrator while pending', function (): void {
-    $api = new Box\Mod\System\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\System\Api\Admin());
 
     $admin = new Model_Admin();
     $admin->loadBean(new Tests\Helpers\DummyBean());
@@ -166,7 +166,7 @@ test('update finalization status allows super administrator while pending', func
 });
 
 test('update finalization status falls back to legacy admin while pending', function (): void {
-    $api = new Box\Mod\System\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\System\Api\Admin());
 
     $admin = new Model_Admin();
     $admin->loadBean(new Tests\Helpers\DummyBean());
@@ -194,7 +194,7 @@ test('update finalization status falls back to legacy admin while pending', func
 });
 
 test('update finalization status rejects legacy non-admin while pending', function (): void {
-    $api = new Box\Mod\System\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\System\Api\Admin());
 
     $admin = new Model_Admin();
     $admin->loadBean(new Tests\Helpers\DummyBean());
@@ -222,7 +222,7 @@ test('update finalization status rejects legacy non-admin while pending', functi
 });
 
 test('update finalization status does not mask unrelated errors from isSuperAdministrator while pending', function (): void {
-    $api = new Box\Mod\System\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\System\Api\Admin());
 
     $admin = new Model_Admin();
     $admin->loadBean(new Tests\Helpers\DummyBean());

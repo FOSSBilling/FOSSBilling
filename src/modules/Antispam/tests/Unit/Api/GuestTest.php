@@ -107,7 +107,7 @@ dataset('recaptcha config', fn (): array => [
 ]);
 
 test('dependency injection', function (): void {
-    $api = new Box\Mod\Antispam\Api\Guest();
+    $api = apiEndpoint(new Box\Mod\Antispam\Api\Guest());
     $di = container();
     $api->setDi($di);
     $getDi = $api->getDi();
@@ -115,7 +115,7 @@ test('dependency injection', function (): void {
 });
 
 test('recaptcha', function (array $config, array $expected): void {
-    $api = new Box\Mod\Antispam\Api\Guest();
+    $api = apiEndpoint(new Box\Mod\Antispam\Api\Guest());
     $di = container();
     $di['mod_config'] = $di->protect(fn (): array => $config);
 

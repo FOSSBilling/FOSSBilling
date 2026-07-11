@@ -13,8 +13,8 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 
 test('get di', function (): void {
-    $api = new Box\Mod\Staff\Api\Guest();
-    $api = new Box\Mod\Staff\Api\Guest();
+    $api = apiEndpoint(new Box\Mod\Staff\Api\Guest());
+    $api = apiEndpoint(new Box\Mod\Staff\Api\Guest());
     $di = container();
     $api->setDi($di);
     $getDi = $api->getDi();
@@ -22,8 +22,8 @@ test('get di', function (): void {
 });
 
 test('login without email', function (): void {
-    $api = new Box\Mod\Staff\Api\Guest();
-    $guestApi = new Box\Mod\Staff\Api\Guest();
+    $api = apiEndpoint(new Box\Mod\Staff\Api\Guest());
+    $guestApi = apiEndpoint(new Box\Mod\Staff\Api\Guest());
 
     $dispatcher = new FOSSBilling\Api\Dispatcher();
 
@@ -32,8 +32,8 @@ test('login without email', function (): void {
 });
 
 test('login without password', function (): void {
-    $api = new Box\Mod\Staff\Api\Guest();
-    $guestApi = new Box\Mod\Staff\Api\Guest();
+    $api = apiEndpoint(new Box\Mod\Staff\Api\Guest());
+    $guestApi = apiEndpoint(new Box\Mod\Staff\Api\Guest());
 
     $di = container();
     $di['validator'] = new FOSSBilling\Validate();
@@ -43,7 +43,7 @@ test('login without password', function (): void {
 });
 
 test('successful login', function (): void {
-    $api = new Box\Mod\Staff\Api\Guest();
+    $api = apiEndpoint(new Box\Mod\Staff\Api\Guest());
     $modMock = Mockery::mock('\\' . FOSSBilling\Module::class);
     $modMock
     ->shouldReceive('getConfig')
@@ -67,7 +67,7 @@ test('successful login', function (): void {
     $di['session'] = $sessionMock;
     $di['validator'] = new FOSSBilling\Validate();
 
-    $guestApi = new Box\Mod\Staff\Api\Guest();
+    $guestApi = apiEndpoint(new Box\Mod\Staff\Api\Guest());
     $guestApi->setMod($modMock);
     $guestApi->setService($serviceMock);
     $guestApi->setDi($di);
@@ -76,7 +76,7 @@ test('successful login', function (): void {
 });
 
 test('login check ip exception', function (): void {
-    $api = new Box\Mod\Staff\Api\Guest();
+    $api = apiEndpoint(new Box\Mod\Staff\Api\Guest());
     $modMock = Mockery::mock('\\' . FOSSBilling\Module::class);
     $configArr = [
         'allowed_ips' => '1.1.1.1' . PHP_EOL . '2.2.2.2',
@@ -94,7 +94,7 @@ test('login check ip exception', function (): void {
     $di['tools'] = $toolsMock;
     $di['validator'] = new FOSSBilling\Validate();
 
-    $guestApi = new Box\Mod\Staff\Api\Guest();
+    $guestApi = apiEndpoint(new Box\Mod\Staff\Api\Guest());
     $guestApi->setMod($modMock);
     $guestApi->setDi($di);
     $ip = '192.168.0.1';

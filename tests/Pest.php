@@ -70,6 +70,22 @@ require_once __DIR__ . '/Datasets/PeriodCodes.php';
 require_once __DIR__ . '/Datasets/ValidationData.php';
 require_once __DIR__ . '/Datasets/GeographicData.php';
 
+/**
+ * Construct an API endpoint with the default test container.
+ *
+ * @template T of FOSSBilling\Api\AbstractApi
+ *
+ * @param T $api
+ *
+ * @return T
+ */
+function apiEndpoint(FOSSBilling\Api\AbstractApi $api): FOSSBilling\Api\AbstractApi
+{
+    $api->setDi(Tests\Helpers\container());
+
+    return $api;
+}
+
 // Define TestLogger class after autoloader is registered
 // This must be done here because it extends Box_Log which is loaded via the autoloader
 // Using eval() to defer class definition until runtime when Box_Log is available
