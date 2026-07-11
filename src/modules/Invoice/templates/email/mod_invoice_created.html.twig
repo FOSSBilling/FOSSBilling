@@ -53,6 +53,26 @@
             {% endfor %}
         {% endif %}
     </ul>
+    {% if invoice.lines|default([])|length > 0 %}
+    <table cellpadding="6" cellspacing="0" border="1" style="border-collapse: collapse; width: 100%; margin-top: 10px;">
+        <thead>
+            <tr>
+                <th align="left">Item</th>
+                <th align="left">Term</th>
+                <th align="right">Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for line in invoice.lines %}
+            <tr>
+                <td>{{ line.title|default('') }}{% if line.quantity > 1 %} (x{{ line.quantity }}){% endif %}</td>
+                <td>{{ line.period|default('')|period_title }}</td>
+                <td align="right">{{ line.total|default(0)|format_currency(invoice.currency|default(default_currency)) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
 
     <p>You may view and pay the invoice <a href='{{ "invoice/#{invoice.hash|default('')}"|url(area: 'client') }}' target="_blank">here.</a></p>
     <p>You can also <a href="{{ "invoice/pdf/#{invoice.hash|default('')}"|url(area: 'client') }}" target="_blank">download the invoice as a PDF</a>, <a href="{{ 'login'|url(query: { 'email': c.email|default('') }, area: 'client') }}" target="_blank">login</a>, or <a href="{{ 'client/profile'|url(area: 'client') }}" target="_blank">edit your profile.</a></p>
