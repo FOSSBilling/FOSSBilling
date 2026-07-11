@@ -76,9 +76,6 @@ class Client extends \FOSSBilling\Api\AbstractApi
         if (!$model instanceof \Model_ClientOrder) {
             throw new \FOSSBilling\InformationException('Order not found');
         }
-        if ($model->price <= 0) {
-            throw new \FOSSBilling\InformationException('Order :id is free. No need to generate invoice.', [':id' => $model->id]);
-        }
         $service = $this->getService();
         $invoice = $service->generateForOrder($model);
         $service->approveInvoice($invoice, ['id' => $invoice->id, 'use_credits' => true]);

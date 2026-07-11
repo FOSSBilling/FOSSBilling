@@ -904,6 +904,13 @@ class Service implements InjectionAwareInterface
                 $this->di['logger']->setChannel('billing')->info("Setting invoice {$invoice->id} as paid with credits for the amount of {$required}.");
             }
 
+            if ($required <= $epsilon) {
+                // Nothing was actually charged against the client's balance, so don't record a $0 credit transaction.
+                $this->markAsPaid($invoice, false, true);
+
+                return true;
+            }
+
             $balanceTransaction = $this->di['db']->dispense('ClientBalance');
             $balanceTransaction->client_id = $client->id;
             $balanceTransaction->type = 'invoice';
@@ -1307,8 +1314,8 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        if (($price * ($line['quantity'] ?? 1)) <= 0) {
-            throw new InformationException('Invoices are not generated for 0 amount orders.');
+        if (($price * ($line['quantity'] ?? 1)) < 0) {
+            throw new InformationException('Invoices are not generated for negative amount orders.');
         }
 
         $client = $this->di['db']->getExistingModelById('Client', $order->client_id, 'Client not found');
