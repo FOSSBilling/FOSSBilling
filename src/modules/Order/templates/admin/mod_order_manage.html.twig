@@ -320,7 +320,7 @@
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label" for="order_price">{{ 'Price'|trans }}</label>
-                                    <input class="form-control" id="order_price" type="text" name="price" value="{{ order.price }}" required>
+                                    <input class="form-control" id="order_price" type="number" min="0" step="any" name="price" value="{{ order.price }}" required>
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label">{{ 'Invoice Option'|trans }}</label>
