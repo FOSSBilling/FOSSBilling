@@ -123,6 +123,27 @@ class Pagination implements InjectionAwareInterface
     }
 
     /**
+     * Paginate an in-memory array.
+     *
+     * @return array{
+     *     pages: int,      // Total number of pages
+     *     page: int,       // Current page number
+     *     per_page: int,   // Items per page
+     *     total: int,      // Total number of items
+     *     list: array      // List of paginated items as arrays
+     * }
+     */
+    public function paginateArray(array $items, PaginationOptions $pagination): array
+    {
+        $total = count($items);
+        $pages = $total > 0 ? (int) ceil($total / $pagination->perPage) : 0;
+        $page = min($pagination->page, max(1, $pages));
+        $list = array_slice($items, ($page - 1) * $pagination->perPage, $pagination->perPage);
+
+        return $this->buildPaginatedResponse($page, $pagination->perPage, $total, $list);
+    }
+
+    /**
      * Paginate results from a Doctrine QueryBuilder and apply a custom mapper to each entity.
      *
      * Use this when the entity's `toApiArray()` requires context (identity, deep flag,
