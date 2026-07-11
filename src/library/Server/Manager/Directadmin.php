@@ -694,7 +694,7 @@ class Server_Manager_Directadmin extends Server_Manager
         $this->getLog()->debug('Raw Response: ' . $data);
 
         // Replace certain HTML entities in the data with their corresponding characters
-        $data = str_replace('&#39', '"', $data);
+        $data = str_replace('&#39', "'", $data);
         $data = preg_replace('|(\&\#\d+)|', '$1;', $data);
         $data = html_entity_decode((string) $data);
 
