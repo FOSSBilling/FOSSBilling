@@ -36,13 +36,20 @@ test('consume allows until limit is reached', function (): void {
     $limiter = createRateLimiter(requestIp: '1.1.1.1');
     $subject = 'subject-' . uniqid('', true);
 
-    $first = $limiter->consume('api_guest', $subject, 100);
-    $second = $limiter->consume('api_guest', $subject);
+    $limit = $limiter->getStatus('api_guest', $subject)->getLimit();
+    $lastAllowed = null;
 
-    expect($first->isLimited())->toBeFalse();
-    expect($first->getReason())->toBe(RateLimitResult::REASON_ALLOWED);
-    expect($second->isLimited())->toBeTrue();
-    expect($second->getReason())->toBe(RateLimitResult::REASON_LIMITED);
+    for ($i = 0; $i < $limit; $i++) {
+        $lastAllowed = $limiter->consume('api_guest', $subject);
+    }
+
+    $limited = $limiter->consume('api_guest', $subject);
+
+    expect($lastAllowed)->not->toBeNull();
+    expect($lastAllowed->isLimited())->toBeFalse();
+    expect($lastAllowed->getReason())->toBe(RateLimitResult::REASON_ALLOWED);
+    expect($limited->isLimited())->toBeTrue();
+    expect($limited->getReason())->toBe(RateLimitResult::REASON_LIMITED);
 });
 
 test('password reset policy reports limited result', function (): void {
