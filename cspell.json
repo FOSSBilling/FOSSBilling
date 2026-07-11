@@ -528,7 +528,8 @@
         "seti",
         "unassigns",
         "docstrings",
-        "tablesort"
+        "tablesort",
+        "Brien"
     ],
     "ignorePaths": [
         "node_modules/**",
