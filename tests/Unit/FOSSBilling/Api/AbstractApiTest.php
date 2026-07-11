@@ -11,7 +11,6 @@
 declare(strict_types=1);
 
 use FOSSBilling\Api\AbstractApi;
-use Throwable;
 
 // Minimal concrete subclass to expose the protected method.
 class ConcreteApi extends AbstractApi
