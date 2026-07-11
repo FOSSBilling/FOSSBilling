@@ -163,7 +163,8 @@ test('executes task for custom type', function (): void {
 test('adds new item', function (): void {
     $service = new ServiceInvoiceItem();
     $data = [
-        'title' => 'Guacamole',
+        'title' => 'Discount',
+        'price' => -10,
     ];
     $invoiceItemModel = new Model_InvoiceItem();
     $invoiceItemModel->loadBean(new Tests\Helpers\DummyBean());
@@ -188,6 +189,7 @@ test('adds new item', function (): void {
     $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
     $result = $service->addNew($invoiceModel, $data);
     expect($result)->toBeInt()->toBe($newId);
+    expect($invoiceItemModel->price)->toBe(-10.0);
 });
 
 test('gets total', function (): void {

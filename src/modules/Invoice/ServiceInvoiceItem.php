@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Invoice;
 
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Validation\PriceValidator;
 
 class ServiceInvoiceItem implements InjectionAwareInterface
 {
@@ -145,10 +146,10 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $pi->status = $status;
         $pi->title = $data['title'];
         $pi->period = $period;
-        $pi->quantity = $data['quantity'] ?? 1;
+        $pi->quantity = PriceValidator::validateQuantity($data['quantity'] ?? 1);
         $pi->unit = $data['unit'] ?? null;
         $pi->charged = $data['charged'] ?? 0;
-        $pi->price = (float) ($data['price'] ?? 0);
+        $pi->price = PriceValidator::validateSignedAmount($data['price'] ?? 0);
         $pi->taxed = $data['taxed'] ?? false;
         $pi->created_at = date('Y-m-d H:i:s');
         $pi->updated_at = date('Y-m-d H:i:s');
@@ -188,12 +189,14 @@ class ServiceInvoiceItem implements InjectionAwareInterface
     public function update(\Model_InvoiceItem $item, array $data): void
     {
         $item->title = $data['title'] ?? $item->title;
-        $item->price = $data['price'] ?? $item->price;
+        if (isset($data['price'])) {
+            $item->price = PriceValidator::validateSignedAmount($data['price']);
+        }
 
-        $item_quantity = $data['quantity'] ?? 1;
+        $item_quantity = PriceValidator::validateQuantity($data['quantity'] ?? 1);
 
         if ($item_quantity != $item->quantity) {
-            $item->quantity = $item_quantity > 0 ? $item_quantity : 1;
+            $item->quantity = $item_quantity;
         }
 
         if (isset($data['taxed']) && !empty($data['taxed'])) {
