@@ -2100,7 +2100,17 @@ class UpdatePatcher implements InjectionAwareInterface
         }
 
         if ($this->tableHasColumn('admin', 'role')) {
-            $this->executeSql("UPDATE `admin` SET `system_name` = 'cron' WHERE `role` = 'cron' AND (`system_name` IS NULL OR `system_name` = '') ORDER BY `id` ASC LIMIT 1;");
+            $this->executeSql("
+                UPDATE `admin`
+                SET `system_name` = 'cron'
+                WHERE `role` = 'cron'
+                  AND (`system_name` IS NULL OR `system_name` = '')
+                  AND NOT EXISTS (
+                      SELECT 1 FROM (SELECT `id` FROM `admin` WHERE `system_name` = 'cron' LIMIT 1) AS existing_cron
+                  )
+                ORDER BY `id` ASC
+                LIMIT 1;
+            ");
             $this->executeSql('ALTER TABLE `admin` DROP COLUMN `role`;');
         }
 
