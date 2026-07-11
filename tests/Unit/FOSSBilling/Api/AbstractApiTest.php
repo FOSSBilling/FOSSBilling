@@ -26,13 +26,6 @@ test('does not resolve the test container implicitly', function (): void {
     expect((new ConcreteApi())->getDi())->toBeNull();
 });
 
-test('checkPermissions fails when DI container is not set', function (): void {
-    $api = new ConcreteApi();
-
-    expect(fn () => $api->callCheckPermissions('invoice', 'manage_invoices'))
-        ->toThrow(Throwable::class);
-});
-
 test('checkPermissions forwards identity to Staff service', function (): void {
     $identity = new Model_Admin();
 

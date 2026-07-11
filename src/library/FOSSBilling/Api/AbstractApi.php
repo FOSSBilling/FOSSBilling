@@ -38,13 +38,6 @@ class AbstractApi implements InjectionAwareInterface
 
     protected ?Container $di = null;
 
-    public function __construct()
-    {
-        if (function_exists('Tests\Helpers\container')) {
-            $this->di = \Tests\Helpers\container();
-        }
-    }
-
     public function setDi(Container $di): void
     {
         $this->di = $di;
@@ -52,10 +45,6 @@ class AbstractApi implements InjectionAwareInterface
 
     public function getDi(): ?Container
     {
-        if ($this->di === null && function_exists('Tests\Helpers\container')) {
-            $this->di = \Tests\Helpers\container();
-        }
-
         return $this->di;
     }
 

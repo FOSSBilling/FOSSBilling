@@ -18,7 +18,7 @@ use function Tests\Helpers\container;
 use function Tests\Helpers\moduleService;
 
 test('gets dependency injection container', function (): void {
-    $api = new Guest();
+    $api = apiEndpoint(new Guest());
     $di = container();
     $api->setDi($di);
     $getDi = $api->getDi();
@@ -26,7 +26,7 @@ test('gets dependency injection container', function (): void {
 });
 
 test('gets an invoice', function (): void {
-    $api = new Guest();
+    $api = apiEndpoint(new Guest());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('checkInvoiceAuth')
         ->atLeast()->once();
@@ -54,7 +54,7 @@ test('gets an invoice', function (): void {
 });
 
 test('throws exception when invoice is not found', function (): void {
-    $api = new Guest();
+    $api = apiEndpoint(new Guest());
     $dbMock = Mockery::mock('\Box_Database');
     $model = new Model_Invoice();
     $model->loadBean(new Tests\Helpers\DummyBean());
@@ -74,7 +74,7 @@ test('throws exception when invoice is not found', function (): void {
 });
 
 test('gets active gateways', function (): void {
-    $api = new Guest();
+    $api = apiEndpoint(new Guest());
     $gatewayServiceMock = Mockery::mock(ServicePayGateway::class);
     $gatewayServiceMock->shouldReceive('getActive')
         ->atLeast()->once()
@@ -90,7 +90,7 @@ test('gets active gateways', function (): void {
 });
 
 test('processes payment', function (): void {
-    $api = new Guest();
+    $api = apiEndpoint(new Guest());
     $data = [
         'hash' => str_repeat('a', 32),
         'gateway_id' => 1,
@@ -107,7 +107,7 @@ test('processes payment', function (): void {
 });
 
 test('throws exception when payment hash is missing', function (): void {
-    $api = new Guest();
+    $api = apiEndpoint(new Guest());
     $data = [
         'gateway_id' => '',
     ];
@@ -117,7 +117,7 @@ test('throws exception when payment hash is missing', function (): void {
 });
 
 test('throws exception when payment gateway id is missing', function (): void {
-    $api = new Guest();
+    $api = apiEndpoint(new Guest());
     $data = [
         'hash' => str_repeat('a', 32),
     ];
@@ -127,7 +127,7 @@ test('throws exception when payment gateway id is missing', function (): void {
 });
 
 test('generates PDF', function (): void {
-    $api = new Guest();
+    $api = apiEndpoint(new Guest());
     $data = [
         'hash' => str_repeat('a', 32),
     ];

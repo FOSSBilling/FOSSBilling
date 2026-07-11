@@ -1,0 +1,144 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% block meta_title %}{{ 'Rate Limits'|trans }}{% endblock %}
+
+{% set active_menu = 'security' %}
+{% set has_filter_panel = true %}
+{% set filter_panel_id = 'page-search-filters' %}
+{% set filter_panel_open = request.ip or rate_limit_invalid_ip %}
+{% set status = rate_limit_status %}
+{% set counters = rate_limit_counters %}
+{% set can_manage_rate_limits = has_permission('security', 'manage_rate_limits') %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <div>
+            <h3 class="card-title">{{ 'Rate Limits'|trans }}</h3>
+            <p class="card-subtitle">{{ 'Review IP addresses that are currently rate-limited and reset counters when legitimate users are blocked.'|trans }}</p>
+        </div>
+        {% if can_manage_rate_limits %}
+            <div class="card-actions">
+                <a class="btn btn-danger" href="{{ 'security/rate_limit_reset_all'|api_url }}" {{ fb_api_link({ modal: {type: 'danger', title: 'Reset all rate limits?'|trans, content: 'This will clear every current rate limiter counter, including account, email, token, and hash-based counters that are not listed here.'|trans, button: 'Reset All'|trans}, reload: true, message: 'Rate limiter counters reset'|trans }) }}>
+                    <svg class="icon">
+                        <use href="#trash" />
+                    </svg>
+                    {{ 'Reset All'|trans }}
+                </a>
+            </div>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        {% if status.enabled is defined and not status.enabled %}
+            <div class="alert alert-warning" role="alert">
+                <div class="alert-icon">
+                    <svg class="icon alert-icon icon-2" aria-hidden="true">
+                        <use href="#alert-triangle" />
+                    </svg>
+                </div>
+                <strong>{{ 'Warning'|trans }}</strong>
+                {{ 'Rate limiting is currently disabled in configuration.'|trans }}
+            </div>
+        {% endif %}
+        {% if can_manage_rate_limits %}
+            <div class="row g-3 align-items-end">
+                <div class="col-xl">
+                    <h4 class="card-title mb-2">{{ 'Rate Limit Actions'|trans }}</h4>
+                    <p class="text-secondary mb-0">{{ 'Reset counters for a known IP, even if the IP is not listed below.'|trans }}</p>
+                </div>
+                <div class="col-xl-auto">
+                    <form method="post" action="{{ 'security/rate_limit_reset_ip'|api_url }}" {{ fb_api_form({ message: 'Rate limiter counters reset'|trans, reload: true }) }}>
+                        <label class="form-label text-muted small mb-1" for="rate-limit-reset-ip">{{ 'Reset counters for IP address'|trans }}</label>
+                        <div class="input-group">
+                            <input class="form-control" id="rate-limit-reset-ip" type="text" name="ip" value="{{ request.ip }}" placeholder="{{ 'Enter an IPv4 or IPv6 address'|trans }}" required>
+                            <button class="btn btn-warning" type="submit">
+                                <svg class="icon">
+                                    <use href="#refresh" />
+                                </svg>
+                                {{ 'Reset IP'|trans }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    {{ include('partial_search.html.twig', {
+        search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : '',
+        search_hidden_fields: { 'ip': request.ip }
+    }) }}
+    <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
+        <form method="get" class="border border-top-0 rounded-top-0 rounded-bottom-3 bg-body-tertiary p-3">
+            {% if request.search %}
+                <input type="hidden" name="search" value="{{ request.search }}">
+            {% endif %}
+            {% if rate_limit_invalid_ip %}
+                <div class="alert alert-danger" role="alert">{{ 'Enter a valid IPv4 or IPv6 address to filter rate-limited IP counters.'|trans }}</div>
+            {% endif %}
+            <div class="row g-3">
+                <div class="col-md-12">
+                    <label class="form-label text-muted small mb-1" for="rate-limit-ip-filter">{{ 'IP Address'|trans }}</label>
+                    <input class="form-control" id="rate-limit-ip-filter" type="text" name="ip" value="{{ request.ip }}" placeholder="{{ 'Filter by IP address'|trans }}">
+                </div>
+            </div>
+            <div class="d-flex justify-content-end gap-2 mt-3">
+                <a class="btn btn-outline-secondary" href="{{ 'security/rate-limits'|url }}">{{ 'Reset'|trans }}</a>
+                <button class="btn btn-primary" type="submit">
+                    <svg class="icon">
+                        <use href="#filter" />
+                    </svg>
+                    {{ 'Apply Filters'|trans }}
+                </button>
+            </div>
+        </form>
+    </section>
+    <div class="table-responsive">
+        <table class="table card-table table-vcenter table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">{{ 'IP Address'|trans }}</th>
+                    <th scope="col">{{ 'Policy'|trans }}</th>
+                    <th scope="col">{{ 'Retry After'|trans }}</th>
+                    <th scope="col">{{ 'Last Limited At'|trans }}</th>
+                    {% if can_manage_rate_limits %}
+                        <th scope="col" class="w-1"></th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for counter in counters.list %}
+                    <tr>
+                        <td class="text-nowrap">{{ counter.ip }}</td>
+                        <td><code>{{ counter.policy }}</code></td>
+                        <td>
+                            {% if counter.retry_after %}
+                                {{ counter.retry_after|format_datetime }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>{{ counter.last_seen|format_datetime }}</td>
+                        {% if can_manage_rate_limits %}
+                            <td class="text-end">
+                                <a class="btn btn-icon" href="{{ 'security/rate_limit_reset_ip'|api_url(query: { 'ip': counter.ip, 'policy': counter.policy }) }}" {{ fb_api_link({ modal: {type: 'confirm', title: 'Reset rate limit?'|trans, content: ('Reset %policy% for %ip%?'|trans({'%policy%': counter.policy, '%ip%': counter.ip}))}, reload: true, message: 'Rate limiter counters reset'|trans }) }} title="{{ 'Reset'|trans }}">
+                                    <svg class="icon">
+                                        <use href="#refresh" />
+                                    </svg>
+                                </a>
+                            </td>
+                        {% endif %}
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td class="text-center text-secondary py-4" colspan="{{ can_manage_rate_limits ? 5 : 4 }}">{{ 'No rate-limited IP counters were found.'|trans }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer d-flex align-items-center justify-content-between gap-3">
+        <div class="text-secondary">{{ 'Only currently rate-limited IP counters are shown here. Reset all clears every limiter counter.'|trans }}</div>
+        {{ include('partial_pagination.html.twig', { 'list': counters, 'url': 'security/rate-limits' }) }}
+    </div>
+</div>
+{% endblock %}

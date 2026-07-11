@@ -16,7 +16,7 @@ use function Tests\Helpers\container;
 use function Tests\Helpers\moduleService;
 
 test('gets dependency injection container', function (): void {
-    $api = new Box\Mod\Servicedownloadable\Api\Client();
+    $api = apiEndpoint(new Box\Mod\Servicedownloadable\Api\Client());
     $di = container();
     $api->setDi($di);
     $getDi = $api->getDi();
@@ -24,7 +24,7 @@ test('gets dependency injection container', function (): void {
 });
 
 test('throws exception when sending file with missing order id', function (): void {
-    $api = new Box\Mod\Servicedownloadable\Api\Client();
+    $api = apiEndpoint(new Box\Mod\Servicedownloadable\Api\Client());
     $data = [];
 
     expect(fn (): bool => $api->send_file($data))
@@ -32,7 +32,7 @@ test('throws exception when sending file with missing order id', function (): vo
 });
 
 test('throws exception when sending file with order not found', function (): void {
-    $api = new Box\Mod\Servicedownloadable\Api\Client();
+    $api = apiEndpoint(new Box\Mod\Servicedownloadable\Api\Client());
     $data = [
         'order_id' => 1,
     ];
@@ -54,7 +54,7 @@ test('throws exception when sending file with order not found', function (): voi
 });
 
 test('throws exception when sending file with order not activated', function (): void {
-    $api = new Box\Mod\Servicedownloadable\Api\Client();
+    $api = apiEndpoint(new Box\Mod\Servicedownloadable\Api\Client());
     $data = [
         'order_id' => 1,
     ];
@@ -83,7 +83,7 @@ test('throws exception when sending file with order not activated', function ():
 });
 
 test('sends file', function (): void {
-    $api = new Box\Mod\Servicedownloadable\Api\Client();
+    $api = apiEndpoint(new Box\Mod\Servicedownloadable\Api\Client());
     $data = [
         'order_id' => 1,
     ];

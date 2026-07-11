@@ -15,7 +15,7 @@ use Box\Mod\Servicelicense\Api\Guest;
 use function Tests\Helpers\container;
 
 test('getDi returns dependency injection container', function (): void {
-    $api = new Guest();
+    $api = apiEndpoint(new Guest());
     $di = container();
     $api->setDi($di);
     $getDi = $api->getDi();
@@ -23,7 +23,7 @@ test('getDi returns dependency injection container', function (): void {
 });
 
 test('check returns license details array', function (): void {
-    $api = new Guest();
+    $api = apiEndpoint(new Guest());
     $data = [
         'license' => 'license1234',
         'host' => 'fossbilling.org',

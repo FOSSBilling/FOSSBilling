@@ -14,7 +14,7 @@ test('get returns mapped redirect', function (): void {
     $service->shouldReceive('get')->with(3)->once()->andReturn($redirect);
     $service->shouldReceive('toApiArray')->with($redirect)->once()->andReturn(['id' => 3, 'path' => 'old-page', 'target' => 'new-page']);
 
-    $api = new Box\Mod\Redirect\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Redirect\Api\Admin());
     $api->setService($service);
 
     expect($api->get(['id' => 3]))->toBe(['id' => 3, 'path' => 'old-page', 'target' => 'new-page']);
@@ -34,7 +34,7 @@ test('create delegates to service', function (): void {
         default => throw new RuntimeException("Unexpected mod service: $name"),
     });
 
-    $api = new Box\Mod\Redirect\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Redirect\Api\Admin());
     $api->setDi($di);
     $api->setService($service);
 
@@ -61,7 +61,7 @@ test('delete delegates to service entity', function (): void {
         default => throw new RuntimeException("Unexpected mod service: $name"),
     });
 
-    $api = new Box\Mod\Redirect\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Redirect\Api\Admin());
     $api->setDi($di);
     $api->setService($service);
 

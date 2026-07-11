@@ -14,7 +14,7 @@ use Box\Mod\Servicecustom\Api\Client;
 use Box\Mod\Servicecustom\Service;
 
 test('calls custom service method', function (): void {
-    $api = new Client();
+    $api = apiEndpoint(new Client());
     $identity = (object) ['id' => 1];
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getServiceCustomByOrderId')
@@ -37,7 +37,7 @@ test('calls custom service method', function (): void {
 });
 
 test('throws exception when calling custom method without order_id', function (): void {
-    $api = new Client();
+    $api = apiEndpoint(new Client());
     $identity = (object) ['id' => 1];
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getServiceCustomByOrderId')
@@ -53,7 +53,7 @@ test('throws exception when calling custom method without order_id', function ()
 });
 
 test('throws exception when calling custom method without method', function (): void {
-    $api = new Client();
+    $api = apiEndpoint(new Client());
     $identity = (object) ['id' => 1];
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getServiceCustomByOrderId')

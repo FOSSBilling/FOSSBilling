@@ -16,7 +16,7 @@ use function Tests\Helpers\container;
 use function Tests\Helpers\moduleService;
 
 test('testGetDi', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $di = container();
     $api->setDi($di);
     $getDi = $api->getDi();
@@ -24,13 +24,13 @@ test('testGetDi', function (): void {
 });
 
 test('testChangePlan', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = [
         'plan_id' => 1,
     ];
 
     $getServiceReturnValue = [new Model_ClientOrder(), new Model_ServiceHosting()];
-    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
 
     $apiMock
     ->shouldReceive('_getService')
@@ -61,7 +61,7 @@ test('testChangePlan', function (): void {
 });
 
 test('testChangePlanMissingPlanId', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = [];
 
     $di = container();
@@ -73,9 +73,9 @@ test('testChangePlanMissingPlanId', function (): void {
 });
 
 test('testChangeUsername', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $getServiceReturnValue = [new Model_ClientOrder(), new Model_ServiceHosting()];
-    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
 
     $apiMock
     ->shouldReceive('_getService')
@@ -96,9 +96,9 @@ test('testChangeUsername', function (): void {
 });
 
 test('testChangeIp', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $getServiceReturnValue = [new Model_ClientOrder(), new Model_ServiceHosting()];
-    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
 
     $apiMock
     ->shouldReceive('_getService')
@@ -119,9 +119,9 @@ test('testChangeIp', function (): void {
 });
 
 test('testChangeDomain', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $getServiceReturnValue = [new Model_ClientOrder(), new Model_ServiceHosting()];
-    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
 
     $apiMock
     ->shouldReceive('_getService')
@@ -142,9 +142,9 @@ test('testChangeDomain', function (): void {
 });
 
 test('testChangePassword', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $getServiceReturnValue = [new Model_ClientOrder(), new Model_ServiceHosting()];
-    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
 
     $apiMock
     ->shouldReceive('_getService')
@@ -165,9 +165,9 @@ test('testChangePassword', function (): void {
 });
 
 test('testSync', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $getServiceReturnValue = [new Model_ClientOrder(), new Model_ServiceHosting()];
-    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
 
     $apiMock
     ->shouldReceive('_getService')
@@ -188,9 +188,9 @@ test('testSync', function (): void {
 });
 
 test('testUpdate', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $getServiceReturnValue = [new Model_ClientOrder(), new Model_ServiceHosting()];
-    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
 
     $apiMock
     ->shouldReceive('_getService')
@@ -211,7 +211,7 @@ test('testUpdate', function (): void {
 });
 
 test('testManagerGetPairs', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
     $serviceMock
     ->shouldReceive('getServerManagers')
@@ -225,7 +225,7 @@ test('testManagerGetPairs', function (): void {
 });
 
 test('testServerGetPairs', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
     $serviceMock
     ->shouldReceive('getServerPairs')
@@ -239,7 +239,7 @@ test('testServerGetPairs', function (): void {
 });
 
 test('testAccountGetList', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
     $serviceMock
     ->shouldReceive('getAccountsSearchQuery')
@@ -266,7 +266,7 @@ test('testAccountGetList', function (): void {
 });
 
 test('testServerGetList', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
     $serviceMock
     ->shouldReceive('getServersSearchQuery')
@@ -292,7 +292,7 @@ test('testServerGetList', function (): void {
 });
 
 test('testServerCreate', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = [
         'name' => 'test',
         'ip' => '1.1.1.1',
@@ -318,7 +318,7 @@ test('testServerCreate', function (): void {
 });
 
 test('testServerGet', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data['id'] = 1;
 
     $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
@@ -343,7 +343,7 @@ test('testServerGet', function (): void {
 });
 
 test('testServerDelete', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     // Test case 1: Server can be deleted
     $data['id'] = 1;
 
@@ -398,7 +398,7 @@ test('testServerDelete', function (): void {
 });
 
 test('testServerUpdate', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data['id'] = 1;
 
     $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
@@ -428,7 +428,7 @@ test('testServerUpdate', function (): void {
 });
 
 test('testServerUpdateSurfacesServerManagerErrorsAsInformationException', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data['id'] = 1;
 
     $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
@@ -456,7 +456,7 @@ test('testServerUpdateSurfacesServerManagerErrorsAsInformationException', functi
 });
 
 test('testServerTestConnection', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data['id'] = 1;
 
     $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
@@ -482,7 +482,7 @@ test('testServerTestConnection', function (): void {
 });
 
 test('testHpGetPairs', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
     $serviceMock
     ->shouldReceive('getHpPairs')
@@ -495,7 +495,7 @@ test('testHpGetPairs', function (): void {
 });
 
 test('testHpGetList', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
     $serviceMock
     ->shouldReceive('getHpSearchQuery')
@@ -519,7 +519,7 @@ test('testHpGetList', function (): void {
 });
 
 test('testHpDelete', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = [
         'id' => 1,
     ];
@@ -561,7 +561,7 @@ test('testHpDelete', function (): void {
 });
 
 test('testHpGet', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = [
         'id' => 1,
     ];
@@ -590,7 +590,7 @@ test('testHpGet', function (): void {
 });
 
 test('testHpUpdate', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = [
         'id' => 1,
     ];
@@ -620,7 +620,7 @@ test('testHpUpdate', function (): void {
 });
 
 test('testHpCreate', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = [
         'name' => 'test',
     ];
@@ -644,7 +644,7 @@ test('testHpCreate', function (): void {
 });
 
 test('testGetService', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = [
         'order_id' => 1,
     ];
@@ -676,7 +676,7 @@ test('testGetService', function (): void {
 });
 
 test('testGetServiceOrderNotActivated', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = [
         'order_id' => 1,
     ];

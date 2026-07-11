@@ -19,7 +19,7 @@ test('gets an order', function (): void {
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
 
-    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
 
@@ -35,7 +35,7 @@ test('gets an order', function (): void {
 });
 
 test('gets list of orders', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
 
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getSearchQuery')->atLeast()->once()->andReturn(['query', []]);
@@ -60,7 +60,7 @@ test('gets list of orders', function (): void {
 });
 
 test('creates an order', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
 
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('createOrder')->atLeast()->once()->andReturn(1);
@@ -93,7 +93,7 @@ test('creates an order', function (): void {
 });
 
 test('rejects order create with mark invoice paid when invoice permission is missing', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
 
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('createOrder')->never();
@@ -127,7 +127,7 @@ test('rejects order create with mark invoice paid when invoice permission is mis
 });
 
 test('uses invoice service to validate mark paid request when permission granted', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
 
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('createOrder')
@@ -196,7 +196,7 @@ test('uses invoice service to validate mark paid request when permission granted
 });
 
 test('rejects invalid invoice payment payload before order creation', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
 
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('createOrder')->never();
@@ -238,7 +238,7 @@ test('updates an order', function (): void {
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
 
-    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
 
@@ -257,7 +257,7 @@ test('activates an order', function (): void {
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
 
-    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
 
@@ -276,7 +276,7 @@ test('renews an order', function (): void {
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
 
-    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
 
@@ -296,7 +296,7 @@ test('renewing a pending setup order delegates to activate', function (): void {
     $order->loadBean(new Tests\Helpers\DummyBean());
     $order->status = Model_ClientOrder::STATUS_PENDING_SETUP;
 
-    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
     $apiMock->shouldReceive('activate')->atLeast()->once()->andReturn(true);
@@ -311,7 +311,7 @@ test('suspends an order', function (): void {
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
 
-    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
 
@@ -333,7 +333,7 @@ test('unsuspends a suspended order', function (): void {
     $order->loadBean(new Tests\Helpers\DummyBean());
     $order->status = Model_ClientOrder::STATUS_SUSPENDED;
 
-    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
 
@@ -353,7 +353,7 @@ test('throws exception when unsuspending non-suspended order', function (): void
     $order->loadBean(new Tests\Helpers\DummyBean());
     $order->status = Model_ClientOrder::STATUS_ACTIVE;
 
-    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
 
@@ -371,7 +371,7 @@ test('cancels an order', function (): void {
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
 
-    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
 
@@ -393,7 +393,7 @@ test('uncancels a canceled order', function (): void {
     $order->loadBean(new Tests\Helpers\DummyBean());
     $order->status = Model_ClientOrder::STATUS_CANCELED;
 
-    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
 
@@ -413,7 +413,7 @@ test('throws exception when uncanceling non-canceled order', function (): void {
     $order->loadBean(new Tests\Helpers\DummyBean());
     $order->status = Model_ClientOrder::STATUS_ACTIVE;
 
-    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
 
@@ -431,7 +431,7 @@ test('deletes an order', function (): void {
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
 
-    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
 
@@ -450,7 +450,7 @@ test('deletes an order with addons', function (): void {
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
 
-    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
 
@@ -467,7 +467,7 @@ test('deletes an order with addons', function (): void {
 });
 
 test('batch suspends expired orders', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
 
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('batchSuspendExpired')->atLeast()->once()->andReturn(true);
@@ -481,7 +481,7 @@ test('batch suspends expired orders', function (): void {
 });
 
 test('batch cancels suspended orders', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
 
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('batchCancelSuspended')->atLeast()->once()->andReturn(true);
@@ -498,7 +498,7 @@ test('updates order config', function (): void {
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
 
-    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
 
@@ -517,7 +517,7 @@ test('throws exception when config is not set', function (): void {
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
 
-    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
 
@@ -535,7 +535,7 @@ test('gets order service', function (): void {
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
 
-    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
 
@@ -558,7 +558,7 @@ test('gets order status history', function (): void {
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
 
-    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
 
@@ -583,7 +583,7 @@ test('adds order status history', function (): void {
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
 
-    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
 
@@ -601,7 +601,7 @@ test('adds order status history', function (): void {
 });
 
 test('deletes order status history', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
 
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('orderStatusRm')->atLeast()->once()->andReturn(true);
@@ -617,7 +617,7 @@ test('deletes order status history', function (): void {
 });
 
 test('gets statuses', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
 
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('counter')->atLeast()->once()->andReturn([]);
@@ -630,14 +630,14 @@ test('gets statuses', function (): void {
 });
 
 test('gets invoice options', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $result = $api->get_invoice_options([]);
 
     expect($result)->toBeArray();
 });
 
 test('gets status pairs', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $result = $api->get_status_pairs([]);
 
     expect($result)->toBeArray();
@@ -647,7 +647,7 @@ test('gets addons for an order', function (): void {
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
 
-    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
 
@@ -665,7 +665,7 @@ test('gets addons for an order', function (): void {
 });
 
 test('gets an order via getOrder', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
 
     $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
     $validatorMock->shouldIgnoreMissing();
@@ -690,9 +690,9 @@ test('gets an order via getOrder', function (): void {
 });
 
 test('batch deletes orders', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
 
-    $apiMock = Mockery::mock(Admin::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('delete')->atLeast()->once()->andReturn(true);
 

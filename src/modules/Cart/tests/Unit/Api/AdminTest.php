@@ -13,8 +13,8 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 
 test('getList returns array', function (): void {
-    $adminApi = new Box\Mod\Cart\Api\Admin();
-    $api = new Box\Mod\Cart\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Cart\Api\Admin());
+    $api = apiEndpoint(new Box\Mod\Cart\Api\Admin());
     $simpleResultArr = [
         'list' => [
             ['id' => 1],
@@ -58,8 +58,8 @@ test('getList returns array', function (): void {
 });
 
 test('get returns array', function (): void {
-    $adminApi = new Box\Mod\Cart\Api\Admin();
-    $api = new Box\Mod\Cart\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Cart\Api\Admin());
+    $api = apiEndpoint(new Box\Mod\Cart\Api\Admin());
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock
     ->shouldReceive('getExistingModelById')
@@ -85,8 +85,8 @@ test('get returns array', function (): void {
 });
 
 test('batchExpire returns true', function (): void {
-    $adminApi = new Box\Mod\Cart\Api\Admin();
-    $api = new Box\Mod\Cart\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Cart\Api\Admin());
+    $api = apiEndpoint(new Box\Mod\Cart\Api\Admin());
 
     $logStub = $this->createStub('\Box_Log');
 

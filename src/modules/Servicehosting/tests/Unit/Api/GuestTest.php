@@ -15,7 +15,7 @@ use Box\Mod\Servicehosting\Api\Guest;
 use function Tests\Helpers\container;
 
 test('free tlds', function (): void {
-    $api = new Guest();
+    $api = apiEndpoint(new Guest());
     $di = container();
 
     $model = new Box\Mod\Product\Entity\Product();
@@ -42,7 +42,7 @@ test('free tlds', function (): void {
 });
 
 test('free tlds product type is not hosting', function (): void {
-    $api = new Guest();
+    $api = apiEndpoint(new Guest());
     $di = container();
 
     $model = new Box\Mod\Product\Entity\Product();

@@ -32,7 +32,7 @@ function getAllowedRateLimiter(): object
 }
 
 test('get returns array', function (): void {
-    $guestApi = new Guest();
+    $guestApi = apiEndpoint(new Guest());
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')->atLeast()->once()->andReturn(new Model_Cart());
     $serviceMock->shouldReceive('toApiArray')->atLeast()->once()->andReturn([]);
@@ -45,7 +45,7 @@ test('get returns array', function (): void {
 });
 
 test('reset returns true', function (): void {
-    $guestApi = new Guest();
+    $guestApi = apiEndpoint(new Guest());
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')->atLeast()->once()->andReturn(new Model_Cart());
     $serviceMock->shouldReceive('resetCart')->atLeast()->once()->andReturn(true);
@@ -58,7 +58,7 @@ test('reset returns true', function (): void {
 });
 
 test('setCurrency returns true', function (): void {
-    $guestApi = new Guest();
+    $guestApi = apiEndpoint(new Guest());
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')->atLeast()->once()->andReturn(new Model_Cart());
     $serviceMock->shouldReceive('changeCartCurrency')->atLeast()->once()->andReturn(true);
@@ -89,7 +89,7 @@ test('setCurrency returns true', function (): void {
 });
 
 test('setCurrency throws exception when currency is not found', function (): void {
-    $guestApi = new Guest();
+    $guestApi = apiEndpoint(new Guest());
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldNotReceive('getSessionCart');
     $serviceMock->shouldNotReceive('changeCartCurrency');
@@ -117,7 +117,7 @@ test('setCurrency throws exception when currency is not found', function (): voi
 });
 
 test('getCurrency returns array when currency found', function (): void {
-    $guestApi = new Guest();
+    $guestApi = apiEndpoint(new Guest());
     $cart = new Model_Cart();
     $cart->loadBean(new Tests\Helpers\DummyBean());
     $cart->currency_id = 1;
@@ -147,7 +147,7 @@ test('getCurrency returns array when currency found', function (): void {
 });
 
 test('getCurrency returns default currency array when currency not found', function (): void {
-    $guestApi = new Guest();
+    $guestApi = apiEndpoint(new Guest());
     $cart = new Model_Cart();
     $cart->loadBean(new Tests\Helpers\DummyBean());
     $cart->currency_id = 1;
@@ -177,7 +177,7 @@ test('getCurrency returns default currency array when currency not found', funct
 });
 
 test('applyPromo returns true', function (): void {
-    $guestApi = new Guest();
+    $guestApi = apiEndpoint(new Guest());
     $cart = new Model_Cart();
     $cart->loadBean(new Tests\Helpers\DummyBean());
     $cart->currency_id = 1;
@@ -205,7 +205,7 @@ test('applyPromo returns true', function (): void {
 });
 
 test('applyPromo throws exception when promo not found', function (): void {
-    $guestApi = new Guest();
+    $guestApi = apiEndpoint(new Guest());
     $cart = new Model_Cart();
     $cart->loadBean(new Tests\Helpers\DummyBean());
     $cart->currency_id = 1;
@@ -232,7 +232,7 @@ test('applyPromo throws exception when promo not found', function (): void {
 });
 
 test('applyPromo throws exception when promo cannot be applied', function (): void {
-    $guestApi = new Guest();
+    $guestApi = apiEndpoint(new Guest());
     $cart = new Model_Cart();
     $cart->loadBean(new Tests\Helpers\DummyBean());
     $cart->currency_id = 1;
@@ -260,7 +260,7 @@ test('applyPromo throws exception when promo cannot be applied', function (): vo
 });
 
 test('applyPromo throws exception when promo cannot be applied for user', function (): void {
-    $guestApi = new Guest();
+    $guestApi = apiEndpoint(new Guest());
     $cart = new Model_Cart();
     $cart->loadBean(new Tests\Helpers\DummyBean());
     $cart->currency_id = 1;
@@ -287,7 +287,7 @@ test('applyPromo throws exception when promo cannot be applied for user', functi
 });
 
 test('removePromo returns true', function (): void {
-    $guestApi = new Guest();
+    $guestApi = apiEndpoint(new Guest());
     $cart = new Model_Cart();
     $cart->loadBean(new Tests\Helpers\DummyBean());
     $cart->currency_id = 1;
@@ -304,7 +304,7 @@ test('removePromo returns true', function (): void {
 });
 
 test('removeItem returns true', function (): void {
-    $guestApi = new Guest();
+    $guestApi = apiEndpoint(new Guest());
     $cart = new Model_Cart();
     $cart->loadBean(new Tests\Helpers\DummyBean());
     $cart->currency_id = 1;
@@ -328,7 +328,7 @@ test('removeItem returns true', function (): void {
 });
 
 test('addItem returns true when multiple is true', function (): void {
-    $guestApi = new Guest();
+    $guestApi = apiEndpoint(new Guest());
     $cart = new Model_Cart();
     $cart->loadBean(new Tests\Helpers\DummyBean());
     $cart->currency_id = 1;
@@ -360,7 +360,7 @@ test('addItem returns true when multiple is true', function (): void {
 });
 
 test('addItem returns true when multiple is false', function (): void {
-    $guestApi = new Guest();
+    $guestApi = apiEndpoint(new Guest());
     $cart = new Model_Cart();
     $cart->loadBean(new Tests\Helpers\DummyBean());
     $cart->currency_id = 1;
@@ -371,7 +371,7 @@ test('addItem returns true when multiple is false', function (): void {
     $serviceMock->shouldReceive('getSessionCart')->atLeast()->once()->andReturn($cart);
     $serviceMock->shouldReceive('addItem')->atLeast()->once()->andReturn(true);
 
-    $apiMock = Mockery::mock(Guest::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Guest::class)->makePartial());
     $apiMock->shouldReceive('reset')->atLeast()->once()->andReturn(true);
 
     $productServiceMock = Mockery::mock(ProductService::class);

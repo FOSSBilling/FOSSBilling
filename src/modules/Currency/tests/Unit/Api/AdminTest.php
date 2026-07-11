@@ -169,7 +169,7 @@ $availableCurrencies = [
 ];
 
 test('get list', function (): void {
-    $adminApi = new Box\Mod\Currency\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Currency\Api\Admin());
 
     $willReturn = [
         'list' => ['id' => 1],
@@ -208,7 +208,7 @@ test('get list', function (): void {
 });
 
 test('get pairs', function (): void {
-    $adminApi = new Box\Mod\Currency\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Currency\Api\Admin());
 
     $result = $adminApi->get_pairs();
     expect($result)->toBeArray();
@@ -217,7 +217,7 @@ test('get pairs', function (): void {
 });
 
 test('get', function (): void {
-    $adminApi = new Box\Mod\Currency\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Currency\Api\Admin());
 
     $model = Mockery::mock('\\' . Box\Mod\Currency\Entity\Currency::class);
     $model
@@ -256,7 +256,7 @@ test('get', function (): void {
 });
 
 test('get default', function (): void {
-    $adminApi = new Box\Mod\Currency\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Currency\Api\Admin());
 
     $returnArr = [
         'code' => 'EUR',
@@ -321,7 +321,7 @@ dataset('createException', [
 ]);
 
 test('create exception', function ($data, $findOneByCodeCalled, $findOneByCodeReturn, $getAvailableCurrenciesCalled): void {
-    $adminApi = new Box\Mod\Currency\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Currency\Api\Admin());
 
     $repositoryMock = Mockery::mock('\\' . Box\Mod\Currency\Repository\CurrencyRepository::class);
 
@@ -350,7 +350,7 @@ test('create exception', function ($data, $findOneByCodeCalled, $findOneByCodeRe
 })->with('createException');
 
 test('create', function (): void {
-    $adminApi = new Box\Mod\Currency\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Currency\Api\Admin());
 
     $data = [
         'code' => 'EUR',
@@ -385,7 +385,7 @@ test('create', function (): void {
 });
 
 test('update', function (): void {
-    $adminApi = new Box\Mod\Currency\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Currency\Api\Admin());
 
     $data = [
         'code' => 'EUR',
@@ -412,7 +412,7 @@ test('update', function (): void {
 });
 
 test('delete exception', function (): void {
-    $adminApi = new Box\Mod\Currency\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Currency\Api\Admin());
 
     $service = Mockery::mock(Box\Mod\Currency\Service::class);
     $service->shouldReceive('removeCurrency')->never();
@@ -429,7 +429,7 @@ test('delete exception', function (): void {
 });
 
 test('delete', function (): void {
-    $adminApi = new Box\Mod\Currency\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Currency\Api\Admin());
 
     $data = [
         'code' => 'EUR',
@@ -464,7 +464,7 @@ dataset('setDefaultException', [
 ]);
 
 test('set default exception', function ($data, $findOneByCodeCalled, $findOneByCodeReturn): void {
-    $adminApi = new Box\Mod\Currency\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Currency\Api\Admin());
 
     $repositoryMock = Mockery::mock('\\' . Box\Mod\Currency\Repository\CurrencyRepository::class);
     $repositoryMock
@@ -487,7 +487,7 @@ test('set default exception', function ($data, $findOneByCodeCalled, $findOneByC
 })->with('setDefaultException');
 
 test('set default', function (): void {
-    $adminApi = new Box\Mod\Currency\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Currency\Api\Admin());
 
     $model = $this->createStub('\\' . Box\Mod\Currency\Entity\Currency::class);
 
