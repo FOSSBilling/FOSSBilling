@@ -218,7 +218,7 @@ class Service implements InjectionAwareInterface
 
             $email = [];
             $email['to_client'] = $orderArr['client']['id'];
-            $email['code'] = sprintf('mod_service%s_renewed', $orderArr['service_type']);
+            $email['code'] = sprintf('mod_service%s_uncanceled', $orderArr['service_type']);
             $email['order'] = $orderArr;
             $email['service'] = $s;
 
