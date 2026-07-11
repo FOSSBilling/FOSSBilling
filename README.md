@@ -64,17 +64,19 @@ If you prefer to start a conversation first, drop by the [forum](https://forum.f
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=FOSSBilling/FOSSBilling&type=Date)](https://star-history.com/#FOSSBilling/FOSSBilling&Date)
+<a href="https://www.star-history.com/?repos=FOSSBilling%2FFOSSBilling&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=FOSSBilling/FOSSBilling&type=date&theme=dark&legend=top-left&sealed_token=ioJopLgtNzi8yMGmGszWYUH4Wt8JZOgRfi9GscyJOzAhSUWXjpK_hCml7VrZAOnJkL7sWGtd47X7WWR-a0hnJrYr6v-S6IjBNrQJW36PZPQXZSXcfiTnasf0F_U2DDomBkP_p3hUcPegkId4CIwL5vk4dM1S_K-bjklbRDDqnSJpnZg7Pus4QG8uez3K" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=FOSSBilling/FOSSBilling&type=date&legend=top-left&sealed_token=ioJopLgtNzi8yMGmGszWYUH4Wt8JZOgRfi9GscyJOzAhSUWXjpK_hCml7VrZAOnJkL7sWGtd47X7WWR-a0hnJrYr6v-S6IjBNrQJW36PZPQXZSXcfiTnasf0F_U2DDomBkP_p3hUcPegkId4CIwL5vk4dM1S_K-bjklbRDDqnSJpnZg7Pus4QG8uez3K" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=FOSSBilling/FOSSBilling&type=date&legend=top-left&sealed_token=ioJopLgtNzi8yMGmGszWYUH4Wt8JZOgRfi9GscyJOzAhSUWXjpK_hCml7VrZAOnJkL7sWGtd47X7WWR-a0hnJrYr6v-S6IjBNrQJW36PZPQXZSXcfiTnasf0F_U2DDomBkP_p3hUcPegkId4CIwL5vk4dM1S_K-bjklbRDDqnSJpnZg7Pus4QG8uez3K" />
+ </picture>
+</a>
 
 Not a developer? Starring the repository helps others discover the project.
 
 ## License
 
 FOSSBilling is released under the Apache 2.0 license. See [LICENSE](https://github.com/FOSSBilling/FOSSBilling/blob/main/LICENSE) for details.
-
-This project includes third-party work:
-
-- Open Source Iconography by [Pictogrammers](https://pictogrammers.com/) under the [Pictogrammers Free License](https://pictogrammers.com/docs/general/license/).
 
 ## Links
 
