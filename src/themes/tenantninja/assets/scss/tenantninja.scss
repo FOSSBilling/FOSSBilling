@@ -2685,6 +2685,12 @@ table > thead > tr > th {
         &--taken { color: #ff9d9d; }
     }
 }
+@media (max-width: 480px) {
+    .tn-domainsearch__row { flex-wrap: wrap; border-radius: var(--r-lg); }
+    .tn-domainsearch__input { flex: 1 1 100%; order: 1; }
+    .tn-domainsearch__tld { order: 2; }
+    .tn-domainsearch__btn { order: 3; flex: 1; }
+}
 
 // Quick-path card (also used elsewhere via .tn-card-link)
 .tn-card-link {
@@ -3037,4 +3043,5 @@ table > thead > tr > th {
     }
     .tn-auth__visual { display: none; }
     .tn-auth__panel { padding: var(--space-8) var(--space-5); }
+    .tn-auth__row { grid-template-columns: 1fr; }
 }

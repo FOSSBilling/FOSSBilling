@@ -597,15 +597,15 @@
                             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                             body: params.toString()
                         })
-                        .then(function (r) { return r.json(); })
-                        .then(function (json) {
-                            var data = json.result || json;
-                            if (data && data.status === 'available') {
+                        .then(function (r) { return r.json().then(function (json) { return { ok: r.ok, json: json }; }); })
+                        .then(function (res) {
+                            if (res.ok && res.json.result === true) {
                                 result.className = 'tn-domainsearch__result tn-domainsearch__result--available';
                                 result.innerHTML = value + tld.value + ' {{ 'is available.'|trans }} <a href="{{ 'order'|url(query: {'product': domain_product_id}) }}">{{ 'Register it'|trans }} &rarr;</a>';
                             } else {
+                                var msg = (res.json.error && res.json.error.message) || (value + tld.value + ' {{ 'is already taken.'|trans }}');
                                 result.className = 'tn-domainsearch__result tn-domainsearch__result--taken';
-                                result.textContent = value + tld.value + ' {{ 'is already taken.'|trans }}';
+                                result.textContent = msg;
                             }
                         })
                         .catch(function () {
