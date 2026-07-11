@@ -15,6 +15,7 @@ use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Product\Entity\Product;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Validation\PriceValidator;
 use Symfony\Component\HttpFoundation\Response;
 
 class Service implements InjectionAwareInterface
@@ -646,6 +647,9 @@ class Service implements InjectionAwareInterface
 
     public function createOrder(\Model_Client $client, Product $product, array $data)
     {
+        $quantity = PriceValidator::validateQuantity($data['quantity'] ?? 1);
+        $price = isset($data['price']) ? PriceValidator::validateAmount($data['price']) : null;
+
         $currencyService = $this->di['mod_service']('currency');
         /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
         $currencyRepository = $currencyService->getCurrencyRepository();
@@ -664,7 +668,6 @@ class Service implements InjectionAwareInterface
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderCreate', 'params' => $data, 'subject' => $this->getProductType($product)]);
 
         $period = (isset($data['period']) && !empty($data['period'])) ? $data['period'] : null;
-        $qty = $data['quantity'] ?? 1;
         $config = (isset($data['config']) && is_array($data['config'])) ? $data['config'] : [];
         $group_id = $data['group_id'] ?? null;
         $activate = (bool) ($data['activate'] ?? false);
@@ -673,7 +676,7 @@ class Service implements InjectionAwareInterface
 
         $cartService = $this->di['mod_service']('cart');
         // check stock
-        if (!$cartService->isStockAvailable($product, $qty)) {
+        if (!$cartService->isStockAvailable($product, $quantity)) {
             throw new InformationException('Product :id is out of stock.', [':id' => $this->getProductId($product)], 831);
         }
 
@@ -724,8 +727,9 @@ class Service implements InjectionAwareInterface
             $invoiceOption,
             $parent_order,
             $period,
+            $price,
             $product,
-            $qty,
+            $quantity,
             &$invoice
         ) {
             $order = $this->di['db']->dispense('ClientOrder');
@@ -750,14 +754,14 @@ class Service implements InjectionAwareInterface
             $line = null;
             if (!isset($data['price']) || $this->getProductType($product) === \Box\Mod\Product\Service::DOMAIN) {
                 $productService = $this->di['mod_service']('Product');
-                $line = $productService->getProductOrderLineConfig($product, array_merge($config, ['quantity' => $qty]));
+                $line = $productService->getProductOrderLineConfig($product, array_merge($config, ['quantity' => $quantity]));
                 $order->quantity = $line['quantity'];
             } else {
-                $order->quantity = $qty;
+                $order->quantity = $quantity;
             }
 
-            if (isset($data['price'])) {
-                $order->price = $data['price'];
+            if ($price !== null) {
+                $order->price = $price;
             } else {
                 $rate = $currencyRepository->getRateByCode($currency->getCode());
                 if ($rate === null) {
@@ -1092,7 +1096,9 @@ class Service implements InjectionAwareInterface
 
         $order->invoice_option = $data['invoice_option'] ?? $order->invoice_option;
         $order->title = $data['title'] ?? $order->title;
-        $order->price = $data['price'] ?? $order->price;
+        if (isset($data['price'])) {
+            $order->price = PriceValidator::validateAmount($data['price']);
+        }
         if (isset($data['status']) && $data['status'] !== $order->status) {
             if (!in_array($data['status'], \Model_ClientOrder::getValidStatuses(), true)) {
                 throw new InformationException('Invalid order status: :status', [':status:' => $data['status']]);

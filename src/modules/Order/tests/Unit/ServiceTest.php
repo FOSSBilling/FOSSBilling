@@ -2480,3 +2480,34 @@ test('updateOrderConfig succeeds with valid form data', function (): void {
 
     expect($result)->toBeTrue();
 });
+
+test('createOrder rejects invalid price and quantity', function (array $data, string $message): void {
+    $service = new Service();
+    $client = new Model_Client();
+    $product = orderServiceCreateProductEntity(1, 'custom');
+
+    expect(fn () => $service->createOrder($client, $product, $data))
+        ->toThrow(FOSSBilling\InformationException::class, $message);
+})->with([
+    'negative price' => [['price' => -1], 'Price cannot be negative'],
+    'invalid price' => [['price' => 'invalid'], 'Price must be a valid number'],
+    'invalid quantity' => [['quantity' => 'invalid'], 'Quantity must be a valid number'],
+]);
+
+test('updateOrder rejects a negative price', function (): void {
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+
+    $events = Mockery::mock(Box_EventManager::class);
+    $events->shouldReceive('fire')->once();
+
+    $di = container();
+    $di['events_manager'] = $events;
+
+    $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $service->shouldReceive('updatePeriod')->once();
+    $service->setDi($di);
+
+    expect(fn () => $service->updateOrder($order, ['price' => -1]))
+        ->toThrow(FOSSBilling\InformationException::class, 'Price cannot be negative');
+});
