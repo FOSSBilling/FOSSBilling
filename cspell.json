@@ -529,7 +529,8 @@
         "unassigns",
         "docstrings",
         "tablesort",
-        "Brien"
+        "Brien",
+        "whsec"
     ],
     "ignorePaths": [
         "node_modules/**",
