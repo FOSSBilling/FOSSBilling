@@ -527,7 +527,8 @@
         "inpay",
         "seti",
         "unassigns",
-        "docstrings"
+        "docstrings",
+        "tablesort"
     ],
     "ignorePaths": [
         "node_modules/**",
