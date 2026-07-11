@@ -464,7 +464,7 @@
                             <h2 class="tn-signin__title">{{ 'Sign in'|trans }}</h2>
                             <p class="tn-signin__sub">{{ 'Manage services, invoices and support tickets.'|trans }}</p>
                         </div>
-                        <form method="post" action="{{ 'client/login'|api_url(role: 'guest') }}" class="auth tn-signin__form" {{ fb_api_form({redirect: '/'|url}) }}>
+                        <form method="post" action="{{ 'client/login'|api_url(role: 'guest') }}" class="auth tn-signin__form" {{ fb_api_form({redirect: '/'|url(query: {'welcome': 1})}) }}>
                             <div class="tn-field">
                                 <label class="tn-field__label" for="tn-home-email">{{ 'Email'|trans }}</label>
                                 <input class="tn-input" id="tn-home-email" type="email" name="email" placeholder="you@company.com" value="{{ request.email }}" required="required">
