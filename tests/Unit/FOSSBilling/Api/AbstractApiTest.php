@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use FOSSBilling\Api\AbstractApi;
+use Throwable;
 
 // Minimal concrete subclass to expose the protected method.
 class ConcreteApi extends AbstractApi
@@ -20,6 +21,17 @@ class ConcreteApi extends AbstractApi
         $this->checkPermissions($module, $key, $constraint);
     }
 }
+
+test('does not resolve the test container implicitly', function (): void {
+    expect((new ConcreteApi())->getDi())->toBeNull();
+});
+
+test('checkPermissions fails when DI container is not set', function (): void {
+    $api = new ConcreteApi();
+
+    expect(fn () => $api->callCheckPermissions('invoice', 'manage_invoices'))
+        ->toThrow(Throwable::class);
+});
 
 test('checkPermissions forwards identity to Staff service', function (): void {
     $identity = new Model_Admin();
