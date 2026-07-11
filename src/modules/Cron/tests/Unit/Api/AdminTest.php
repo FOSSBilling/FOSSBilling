@@ -16,7 +16,7 @@ use function Tests\Helpers\container;
 
 test('getDi returns dependency injection container', function (): void {
     $di = container();
-    $api_admin = new Admin();
+    $api_admin = apiEndpoint(new Admin());
     $api_admin->setDi($di);
     $getDi = $api_admin->getDi();
     expect($getDi)->toEqual($di);
@@ -26,7 +26,7 @@ test('info returns cron information array', function (): void {
     $serviceMock = Mockery::mock(Box\Mod\Cron\Service::class);
     $serviceMock->shouldReceive('getCronInfo')->atLeast()->once()->andReturn([]);
 
-    $api_admin = new Admin();
+    $api_admin = apiEndpoint(new Admin());
     $api_admin->setService($serviceMock);
 
     $result = $api_admin->info([]);

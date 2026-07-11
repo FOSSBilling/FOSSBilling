@@ -17,12 +17,12 @@ use Box\Mod\Servicedomain\Service;
 use function Tests\Helpers\container;
 
 test('updates nameservers', function (): void {
-    $clientApi = new Client();
-    $api = new Client();
+    $clientApi = apiEndpoint(new Client());
+    $api = apiEndpoint(new Client());
     $model = new Model_ServiceDomain();
     $model->loadBean(new Tests\Helpers\DummyBean());
 
-    $clientApiMock = Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $clientApiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods());
     $clientApiMock->shouldReceive('_getService')
         ->atLeast()->once()
         ->andReturn($model);
@@ -49,12 +49,12 @@ test('updates nameservers', function (): void {
 });
 
 test('updates contacts', function (): void {
-    $clientApi = new Client();
-    $api = new Client();
+    $clientApi = apiEndpoint(new Client());
+    $api = apiEndpoint(new Client());
     $model = new Model_ServiceDomain();
     $model->loadBean(new Tests\Helpers\DummyBean());
 
-    $clientApiMock = Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $clientApiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods());
     $clientApiMock->shouldReceive('_getService')
         ->atLeast()->once()
         ->andReturn($model);
@@ -73,12 +73,12 @@ test('updates contacts', function (): void {
 });
 
 test('enables privacy protection', function (): void {
-    $clientApi = new Client();
-    $api = new Client();
+    $clientApi = apiEndpoint(new Client());
+    $api = apiEndpoint(new Client());
     $model = new Model_ServiceDomain();
     $model->loadBean(new Tests\Helpers\DummyBean());
 
-    $clientApiMock = Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $clientApiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods());
     $clientApiMock->shouldReceive('_getService')
         ->atLeast()->once()
         ->andReturn($model);
@@ -97,12 +97,12 @@ test('enables privacy protection', function (): void {
 });
 
 test('disables privacy protection', function (): void {
-    $clientApi = new Client();
-    $api = new Client();
+    $clientApi = apiEndpoint(new Client());
+    $api = apiEndpoint(new Client());
     $model = new Model_ServiceDomain();
     $model->loadBean(new Tests\Helpers\DummyBean());
 
-    $clientApiMock = Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $clientApiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods());
     $clientApiMock->shouldReceive('_getService')
         ->atLeast()->once()
         ->andReturn($model);
@@ -121,12 +121,12 @@ test('disables privacy protection', function (): void {
 });
 
 test('gets transfer code', function (): void {
-    $clientApi = new Client();
-    $api = new Client();
+    $clientApi = apiEndpoint(new Client());
+    $api = apiEndpoint(new Client());
     $model = new Model_ServiceDomain();
     $model->loadBean(new Tests\Helpers\DummyBean());
 
-    $clientApiMock = Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $clientApiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods());
     $clientApiMock->shouldReceive('_getService')
         ->atLeast()->once()
         ->andReturn($model);
@@ -145,12 +145,12 @@ test('gets transfer code', function (): void {
 });
 
 test('locks domain', function (): void {
-    $clientApi = new Client();
-    $api = new Client();
+    $clientApi = apiEndpoint(new Client());
+    $api = apiEndpoint(new Client());
     $model = new Model_ServiceDomain();
     $model->loadBean(new Tests\Helpers\DummyBean());
 
-    $clientApiMock = Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $clientApiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods());
     $clientApiMock->shouldReceive('_getService')
         ->atLeast()->once()
         ->andReturn($model);
@@ -169,12 +169,12 @@ test('locks domain', function (): void {
 });
 
 test('unlocks domain', function (): void {
-    $clientApi = new Client();
-    $api = new Client();
+    $clientApi = apiEndpoint(new Client());
+    $api = apiEndpoint(new Client());
     $model = new Model_ServiceDomain();
     $model->loadBean(new Tests\Helpers\DummyBean());
 
-    $clientApiMock = Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $clientApiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods());
     $clientApiMock->shouldReceive('_getService')
         ->atLeast()->once()
         ->andReturn($model);
@@ -193,8 +193,8 @@ test('unlocks domain', function (): void {
 });
 
 test('gets service', function (): void {
-    $clientApi = new Client();
-    $api = new Client();
+    $clientApi = apiEndpoint(new Client());
+    $api = apiEndpoint(new Client());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('lock')
         ->atLeast()->once()
@@ -228,8 +228,8 @@ test('gets service', function (): void {
 });
 
 test('throws exception when getting service without order_id', function (): void {
-    $clientApi = new Client();
-    $api = new Client();
+    $clientApi = apiEndpoint(new Client());
+    $api = apiEndpoint(new Client());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('lock')
         ->never();
@@ -255,8 +255,8 @@ test('throws exception when getting service without order_id', function (): void
 });
 
 test('throws exception when getting service order not found', function (): void {
-    $clientApi = new Client();
-    $api = new Client();
+    $clientApi = apiEndpoint(new Client());
+    $api = apiEndpoint(new Client());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('lock')
         ->never();
@@ -285,8 +285,8 @@ test('throws exception when getting service order not found', function (): void 
 });
 
 test('throws exception when getting service order not activated', function (): void {
-    $clientApi = new Client();
-    $api = new Client();
+    $clientApi = apiEndpoint(new Client());
+    $api = apiEndpoint(new Client());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('lock')
         ->never();

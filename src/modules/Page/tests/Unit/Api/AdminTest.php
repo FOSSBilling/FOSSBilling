@@ -15,7 +15,7 @@ use Box\Mod\Page\Api\Admin;
 use function Tests\Helpers\container;
 
 test('getDi returns dependency injection container', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $di = container();
     $api->setDi($di);
     $getDi = $api->getDi();
@@ -23,7 +23,7 @@ test('getDi returns dependency injection container', function (): void {
 });
 
 test('getPairs returns page pairs array', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Box\Mod\Page\Service::class);
     /** @var Mockery\Expectation $expectation */
     $expectation = $serviceMock->shouldReceive('getPairs');

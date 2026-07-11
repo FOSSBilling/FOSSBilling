@@ -31,7 +31,7 @@ function staffAdminSetEntityId(object $entity, int $id): void
 }
 
 test('get di', function (): void {
-    $api = new Box\Mod\Staff\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Staff\Api\Admin());
     $di = container();
     $api->setDi($di);
     $getDi = $api->getDi();
@@ -39,7 +39,7 @@ test('get di', function (): void {
 });
 
 test('get list', function (): void {
-    $api = new Box\Mod\Staff\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Staff\Api\Admin());
     $data = [];
 
     $serviceMock = Mockery::mock(Box\Mod\Staff\Service::class);
@@ -81,7 +81,7 @@ test('get list', function (): void {
 });
 
 test('get', function (): void {
-    $api = new Box\Mod\Staff\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Staff\Api\Admin());
     $data['id'] = 1;
 
     $serviceMock = Mockery::mock(Box\Mod\Staff\Service::class);
@@ -107,7 +107,7 @@ test('get', function (): void {
 });
 
 test('update', function (): void {
-    $api = new Box\Mod\Staff\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Staff\Api\Admin());
     $data['id'] = 1;
 
     $serviceMock = Mockery::mock(Box\Mod\Staff\Service::class);
@@ -134,7 +134,7 @@ test('update', function (): void {
 });
 
 test('delete', function (): void {
-    $api = new Box\Mod\Staff\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Staff\Api\Admin());
     $data['id'] = 1;
 
     $serviceMock = Mockery::mock(Box\Mod\Staff\Service::class);
@@ -161,7 +161,7 @@ test('delete', function (): void {
 });
 
 test('change password', function (): void {
-    $api = new Box\Mod\Staff\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Staff\Api\Admin());
     $data = [
         'id' => '1',
         'password' => 'test!23A',
@@ -201,7 +201,7 @@ test('change password', function (): void {
 });
 
 test('change password password do not match', function (): void {
-    $api = new Box\Mod\Staff\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Staff\Api\Admin());
     $data = [
         'id' => '1',
         'password' => 'test!23A',
@@ -215,7 +215,7 @@ test('change password password do not match', function (): void {
 });
 
 test('change password weak password', function (): void {
-    $api = new Box\Mod\Staff\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Staff\Api\Admin());
     $data = [
         'id' => '1',
         'password' => 'weak',
@@ -240,7 +240,7 @@ test('change password weak password', function (): void {
 });
 
 test('create', function (): void {
-    $api = new Box\Mod\Staff\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Staff\Api\Admin());
     $data = [
         'password' => 'test!23A',
         'email' => 'okay@example.com',
@@ -278,7 +278,7 @@ test('create', function (): void {
 });
 
 test('group get pairs', function (): void {
-    $api = new Box\Mod\Staff\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Staff\Api\Admin());
     $serviceMock = Mockery::mock(Box\Mod\Staff\Service::class);
     $groupRepository = Mockery::mock(AdminGroupRepository::class);
     $groupRepository
@@ -296,7 +296,7 @@ test('group get pairs', function (): void {
 });
 
 test('is super administrator returns true when admin is super administrator', function (): void {
-    $api = new Box\Mod\Staff\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Staff\Api\Admin());
     $admin = staffAdminIdentity();
     $admin->id = 1;
 
@@ -317,7 +317,7 @@ test('is super administrator returns true when admin is super administrator', fu
 });
 
 test('is super administrator returns false when admin is not super administrator', function (): void {
-    $api = new Box\Mod\Staff\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Staff\Api\Admin());
     $admin = staffAdminIdentity();
     $admin->id = 1;
 
@@ -359,7 +359,7 @@ test('group repository sorts list as tree', function (): void {
 });
 
 test('group get list', function (): void {
-    $api = new Box\Mod\Staff\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Staff\Api\Admin());
     $root = (new AdminGroup())->setName('Root');
     $child = (new AdminGroup())->setName('Child')->setParent($root);
     $sibling = (new AdminGroup())->setName('Sibling')->setParent($root);
@@ -388,7 +388,7 @@ test('group get list', function (): void {
 });
 
 test('group create', function (): void {
-    $api = new Box\Mod\Staff\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Staff\Api\Admin());
     $data['name'] = 'Prime Group';
     $newGroupId = 1;
 
@@ -409,7 +409,7 @@ test('group create', function (): void {
 });
 
 test('group create ignores permissions parameter', function (): void {
-    $api = new Box\Mod\Staff\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Staff\Api\Admin());
     $serviceMock = Mockery::mock(Box\Mod\Staff\Service::class);
     $serviceMock
     ->shouldReceive('createGroup')
@@ -424,7 +424,7 @@ test('group create ignores permissions parameter', function (): void {
 });
 
 test('group get', function (): void {
-    $api = new Box\Mod\Staff\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Staff\Api\Admin());
     $data['id'] = '1';
     $group = (new AdminGroup())->setName('Support');
 
@@ -452,7 +452,7 @@ test('group get', function (): void {
 });
 
 test('group delete', function (): void {
-    $api = new Box\Mod\Staff\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Staff\Api\Admin());
     $data['id'] = '1';
     $group = new AdminGroup();
 
@@ -485,7 +485,7 @@ test('group delete', function (): void {
 });
 
 test('group update', function (): void {
-    $api = new Box\Mod\Staff\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Staff\Api\Admin());
     $data['id'] = '1';
     $group = new AdminGroup();
 
@@ -518,7 +518,7 @@ test('group update', function (): void {
 });
 
 test('group member add', function (): void {
-    $api = new Box\Mod\Staff\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Staff\Api\Admin());
     $data = ['admin_id' => '2', 'group_id' => '3'];
     $admin = staffAdminIdentity();
     $admin->id = 2;
@@ -543,7 +543,7 @@ test('group member add', function (): void {
 });
 
 test('group member remove', function (): void {
-    $api = new Box\Mod\Staff\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Staff\Api\Admin());
     $data = ['admin_id' => '2', 'group_id' => '3'];
     $admin = staffAdminIdentity();
     $admin->id = 2;
@@ -568,7 +568,7 @@ test('group member remove', function (): void {
 });
 
 test('group member get list', function (): void {
-    $api = new Box\Mod\Staff\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Staff\Api\Admin());
     $admin = staffAdminIdentity();
     $admin->id = 2;
     $group = new AdminGroup();
@@ -597,7 +597,7 @@ test('group member get list', function (): void {
 });
 
 test('admin group get list', function (): void {
-    $api = new Box\Mod\Staff\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Staff\Api\Admin());
     $admin = staffAdminIdentity();
     $admin->id = 2;
     $group = (new AdminGroup())->setName('Support');
@@ -622,7 +622,7 @@ test('admin group get list', function (): void {
 });
 
 test('login history get list', function (): void {
-    $api = new Box\Mod\Staff\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Staff\Api\Admin());
     $data = [];
 
     $serviceMock = Mockery::mock(Box\Mod\Staff\Service::class);
@@ -664,7 +664,7 @@ test('login history get list', function (): void {
 });
 
 test('login history get', function (): void {
-    $api = new Box\Mod\Staff\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Staff\Api\Admin());
     $data['id'] = '1';
 
     $serviceMock = Mockery::mock(Box\Mod\Staff\Service::class);

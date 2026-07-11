@@ -68,23 +68,13 @@ class Pagination implements InjectionAwareInterface
     {
         $serializer = new Serializer([new ObjectNormalizer()]);
 
-        $offset = ($pagination->page - 1) * $pagination->perPage;
-        $qb->setFirstResult($offset)
-           ->setMaxResults($pagination->perPage);
-        $paginator = new DoctrinePaginator($qb, true);
-
-        $total = count($paginator);
-
-        $list = [];
-        foreach ($paginator as $entity) {
+        return $this->paginateMappedQuery($qb, $pagination, static function (object $entity) use ($serializer, $apiArrayArgs): array {
             if ($entity instanceof ApiArrayInterface) {
-                $list[] = $entity->toApiArray(...$apiArrayArgs);
-            } else {
-                $list[] = $serializer->normalize($entity);
+                return $entity->toApiArray(...$apiArrayArgs);
             }
-        }
 
-        return $this->buildPaginatedResponse($pagination->page, $pagination->perPage, $total, $list);
+            return $serializer->normalize($entity);
+        });
     }
 
     /**
@@ -164,8 +154,7 @@ class Pagination implements InjectionAwareInterface
      */
     public function paginateMappedQuery(QueryBuilder $qb, PaginationOptions $pagination, callable $mapper): array
     {
-        $offset = ($pagination->page - 1) * $pagination->perPage;
-        $qb->setFirstResult($offset)
+        $qb->setFirstResult(($pagination->page - 1) * $pagination->perPage)
             ->setMaxResults($pagination->perPage);
         $paginator = new DoctrinePaginator($qb, true);
         $total = count($paginator);

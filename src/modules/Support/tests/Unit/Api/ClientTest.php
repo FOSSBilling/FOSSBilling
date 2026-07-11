@@ -16,7 +16,7 @@ use Box\Mod\Support\Repository\HelpdeskRepository;
 use function Tests\Helpers\container;
 
 test('ticket get list', function (): void {
-    $clientApi = new Box\Mod\Support\Api\Client();
+    $clientApi = apiEndpoint(new Box\Mod\Support\Api\Client());
     $simpleResultArr = [
         'list' => [
             ['id' => 1],
@@ -56,7 +56,7 @@ test('ticket get list', function (): void {
 });
 
 test('ticket get', function (): void {
-    $clientApi = new Box\Mod\Support\Api\Client();
+    $clientApi = apiEndpoint(new Box\Mod\Support\Api\Client());
     $ticket = new Box\Mod\Support\Entity\SupportTicket();
     \Tests\Helpers\setEntityId($ticket, 1);
 
@@ -85,7 +85,7 @@ test('ticket get', function (): void {
 });
 
 test('helpdesk get pairs', function (): void {
-    $clientApi = new Box\Mod\Support\Api\Client();
+    $clientApi = apiEndpoint(new Box\Mod\Support\Api\Client());
     $repoMock = Mockery::mock(HelpdeskRepository::class);
     $repoMock->shouldReceive('getPairs')->atLeast()->once()
         ->andReturn([0 => 'General']);
@@ -102,7 +102,7 @@ test('helpdesk get pairs', function (): void {
 });
 
 test('ticket create', function (): void {
-    $clientApi = new Box\Mod\Support\Api\Client();
+    $clientApi = apiEndpoint(new Box\Mod\Support\Api\Client());
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
     $repoMock = Mockery::mock(HelpdeskRepository::class);
     $repoMock->shouldReceive('find')
@@ -134,7 +134,7 @@ test('ticket create', function (): void {
 });
 
 test('ticket reply', function (): void {
-    $clientApi = new Box\Mod\Support\Api\Client();
+    $clientApi = apiEndpoint(new Box\Mod\Support\Api\Client());
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
     $serviceMock->shouldReceive('canBeReopened')->atLeast()->once()
         ->andReturn(true);
@@ -170,7 +170,7 @@ test('ticket reply', function (): void {
 });
 
 test('ticket reply can not be reopened exception', function (): void {
-    $clientApi = new Box\Mod\Support\Api\Client();
+    $clientApi = apiEndpoint(new Box\Mod\Support\Api\Client());
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
     $serviceMock->shouldReceive('canBeReopened')->atLeast()->once()
         ->andReturn(false);
@@ -203,7 +203,7 @@ test('ticket reply can not be reopened exception', function (): void {
 });
 
 test('ticket close', function (): void {
-    $clientApi = new Box\Mod\Support\Api\Client();
+    $clientApi = apiEndpoint(new Box\Mod\Support\Api\Client());
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
     $serviceMock->shouldReceive('findOneByClient')->atLeast()->once()
         ->andReturn(new Box\Mod\Support\Entity\SupportTicket());

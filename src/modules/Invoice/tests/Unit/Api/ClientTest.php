@@ -19,7 +19,7 @@ use function Tests\Helpers\container;
 use function Tests\Helpers\moduleService;
 
 test('gets dependency injection container', function (): void {
-    $api = new Client();
+    $api = apiEndpoint(new Client());
     $di = container();
     $api->setDi($di);
     $getDi = $api->getDi();
@@ -27,7 +27,7 @@ test('gets dependency injection container', function (): void {
 });
 
 test('gets an invoice', function (): void {
-    $api = new Client();
+    $api = apiEndpoint(new Client());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('toApiArray')
         ->atLeast()->once()
@@ -55,7 +55,7 @@ test('gets an invoice', function (): void {
 });
 
 test('throws exception when invoice is not found', function (): void {
-    $api = new Client();
+    $api = apiEndpoint(new Client());
     $dbMock = Mockery::mock('\Box_Database');
     $model = new Model_Invoice();
     $model->loadBean(new Tests\Helpers\DummyBean());
@@ -77,7 +77,7 @@ test('throws exception when invoice is not found', function (): void {
 });
 
 test('creates renewal invoice', function (): void {
-    $api = new Client();
+    $api = apiEndpoint(new Client());
     $generatedHash = 'generatedHashString';
 
     $serviceMock = Mockery::mock(Service::class);
@@ -113,7 +113,7 @@ test('creates renewal invoice', function (): void {
 });
 
 test('throws exception when creating renewal invoice for free order', function (): void {
-    $api = new Client();
+    $api = apiEndpoint(new Client());
     $dbMock = Mockery::mock('\Box_Database');
     $clientOrder = new Model_ClientOrder();
     $clientOrder->loadBean(new Tests\Helpers\DummyBean());
@@ -140,7 +140,7 @@ test('throws exception when creating renewal invoice for free order', function (
 });
 
 test('throws exception when creating renewal invoice for order not found', function (): void {
-    $api = new Client();
+    $api = apiEndpoint(new Client());
     $dbMock = Mockery::mock('\Box_Database');
     $clientOrder = new Model_ClientOrder();
     $clientOrder->loadBean(new Tests\Helpers\DummyBean());
@@ -165,7 +165,7 @@ test('throws exception when creating renewal invoice for order not found', funct
 });
 
 test('creates funds invoice', function (): void {
-    $api = new Client();
+    $api = apiEndpoint(new Client());
     $generatedHash = 'generatedHashString';
 
     $serviceMock = Mockery::mock(Service::class);
@@ -192,7 +192,7 @@ test('creates funds invoice', function (): void {
 });
 
 test('gets transaction list', function (): void {
-    $api = new Client();
+    $api = apiEndpoint(new Client());
     $transactionService = Mockery::mock(ServiceTransaction::class);
     $transactionService->shouldReceive('getSearchQuery')
         ->atLeast()->once()
@@ -217,7 +217,7 @@ test('gets transaction list', function (): void {
 });
 
 test('gets tax rate for client', function (): void {
-    $api = new Client();
+    $api = apiEndpoint(new Client());
     $client = new Model_Client();
     $client->loadBean(new Tests\Helpers\DummyBean());
 

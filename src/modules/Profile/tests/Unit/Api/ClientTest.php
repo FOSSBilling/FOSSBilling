@@ -15,7 +15,7 @@ use Box\Mod\Profile\Service;
 use function Tests\Helpers\container;
 
 test('gets client profile', function (): void {
-    $api = new Client();
+    $api = apiEndpoint(new Client());
     $clientService = Mockery::mock(Box\Mod\Client\Service::class);
     $clientService->shouldReceive('toApiArray')
         ->atLeast()->once()
@@ -31,7 +31,7 @@ test('gets client profile', function (): void {
 });
 
 test('updates client profile', function (): void {
-    $api = new Client();
+    $api = apiEndpoint(new Client());
     $service = Mockery::mock(Service::class);
     $service->shouldReceive('updateClient')
         ->atLeast()->once()
@@ -45,7 +45,7 @@ test('updates client profile', function (): void {
 });
 
 test('gets api key', function (): void {
-    $api = new Client();
+    $api = apiEndpoint(new Client());
     $client = new Model_Client();
     $client->loadBean(new Tests\Helpers\DummyBean());
     $client->api_token = '16047a3e69f5245756d73b419348f0c7';
@@ -56,7 +56,7 @@ test('gets api key', function (): void {
 });
 
 test('resets api key', function (): void {
-    $api = new Client();
+    $api = apiEndpoint(new Client());
     $apiKey = '16047a3e69f5245756d73b419348f0c7';
     $service = Mockery::mock(Service::class);
     $service->shouldReceive('resetApiKey')
@@ -71,7 +71,7 @@ test('resets api key', function (): void {
 });
 
 test('changes client password', function (): void {
-    $api = new Client();
+    $api = apiEndpoint(new Client());
     $service = Mockery::mock(Service::class);
     $service->shouldReceive('changeClientPassword')
         ->atLeast()->once()
@@ -109,7 +109,7 @@ test('changes client password', function (): void {
 });
 
 test('throws exception when passwords do not match', function (): void {
-    $api = new Client();
+    $api = apiEndpoint(new Client());
     $service = Mockery::mock(Service::class);
     $service->shouldReceive('changeClientPassword')
         ->never()
@@ -132,7 +132,7 @@ test('throws exception when passwords do not match', function (): void {
 });
 
 test('logs out client', function (): void {
-    $api = new Client();
+    $api = apiEndpoint(new Client());
     $service = Mockery::mock(Service::class);
     $service->shouldReceive('logoutClient')
         ->atLeast()->once()

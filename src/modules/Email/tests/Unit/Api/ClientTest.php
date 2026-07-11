@@ -13,7 +13,7 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 
 test('get list', function (): void {
-    $clientApi = new Box\Mod\Email\Api\Client();
+    $clientApi = apiEndpoint(new Box\Mod\Email\Api\Client());
 
     $willReturn = [
         'list' => [
@@ -52,7 +52,7 @@ test('get list', function (): void {
 });
 
 test('get', function (): void {
-    $clientApi = new Box\Mod\Email\Api\Client();
+    $clientApi = apiEndpoint(new Box\Mod\Email\Api\Client());
 
     $model = new Box\Mod\Email\Entity\ActivityClientEmail();
     \Tests\Helpers\setEntityId($model, 1);
@@ -80,7 +80,7 @@ test('get', function (): void {
 });
 
 test('get not found exception', function (): void {
-    $clientApi = new Box\Mod\Email\Api\Client();
+    $clientApi = apiEndpoint(new Box\Mod\Email\Api\Client());
 
     $repo = Mockery::mock(Box\Mod\Email\Repository\ActivityClientEmailRepository::class);
     $repo->shouldReceive('findOneForClientByIdOrFail')
@@ -105,7 +105,7 @@ test('get not found exception', function (): void {
 });
 
 test('resend', function (): void {
-    $clientApi = new Box\Mod\Email\Api\Client();
+    $clientApi = apiEndpoint(new Box\Mod\Email\Api\Client());
 
     $model = new Box\Mod\Email\Entity\ActivityClientEmail();
     \Tests\Helpers\setEntityId($model, 1);
@@ -136,7 +136,7 @@ test('resend', function (): void {
 });
 
 test('resend not found exception', function (): void {
-    $clientApi = new Box\Mod\Email\Api\Client();
+    $clientApi = apiEndpoint(new Box\Mod\Email\Api\Client());
 
     $repo = Mockery::mock(Box\Mod\Email\Repository\ActivityClientEmailRepository::class);
     $repo->shouldReceive('findOneForClientByIdOrFail')
@@ -162,7 +162,7 @@ test('resend not found exception', function (): void {
 });
 
 test('delete', function (): void {
-    $clientApi = new Box\Mod\Email\Api\Client();
+    $clientApi = apiEndpoint(new Box\Mod\Email\Api\Client());
 
     $di = container();
 
@@ -191,7 +191,7 @@ test('delete', function (): void {
 });
 
 test('delete not found exception', function (): void {
-    $clientApi = new Box\Mod\Email\Api\Client();
+    $clientApi = apiEndpoint(new Box\Mod\Email\Api\Client());
 
     $repo = Mockery::mock(Box\Mod\Email\Repository\ActivityClientEmailRepository::class);
     $repo->shouldReceive('findOneForClientByIdOrFail')

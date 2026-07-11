@@ -14,7 +14,7 @@ use function Tests\Helpers\container;
 use function Tests\Helpers\moduleService;
 
 test('getDi returns dependency injection container', function (): void {
-    $guestClient = new Box\Mod\Client\Api\Guest();
+    $guestClient = apiEndpoint(new Box\Mod\Client\Api\Guest());
     $di = container();
     $guestClient->setDi($di);
     $getDi = $guestClient->getDi();
@@ -22,7 +22,7 @@ test('getDi returns dependency injection container', function (): void {
 });
 
 test('create returns int', function (): void {
-    $guestClient = new Box\Mod\Client\Api\Guest();
+    $guestClient = apiEndpoint(new Box\Mod\Client\Api\Guest());
     $configArr = [
         'disable_signup' => false,
         'auto_login_after_signup' => false,
@@ -74,7 +74,7 @@ test('create returns int', function (): void {
 });
 
 test('create throws exception when client exists', function (): void {
-    $guestClient = new Box\Mod\Client\Api\Guest();
+    $guestClient = apiEndpoint(new Box\Mod\Client\Api\Guest());
     $configArr = [
         'disable_signup' => false,
     ];
@@ -115,7 +115,7 @@ test('create throws exception when client exists', function (): void {
 })->throws(FOSSBilling\Exception::class, 'This email address is already registered.');
 
 test('create throws exception when signup is disabled', function (): void {
-    $guestClient = new Box\Mod\Client\Api\Guest();
+    $guestClient = apiEndpoint(new Box\Mod\Client\Api\Guest());
     $configArr = [
         'disable_signup' => true,
     ];
@@ -134,7 +134,7 @@ test('create throws exception when signup is disabled', function (): void {
 })->throws(FOSSBilling\Exception::class, 'New registrations are temporarily disabled');
 
 test('create throws exception when passwords do not match', function (): void {
-    $guestClient = new Box\Mod\Client\Api\Guest();
+    $guestClient = apiEndpoint(new Box\Mod\Client\Api\Guest());
     $configArr = [
         'disable_signup' => false,
     ];
@@ -153,7 +153,7 @@ test('create throws exception when passwords do not match', function (): void {
 })->throws(FOSSBilling\Exception::class, 'Passwords do not match.');
 
 test('login returns array', function (): void {
-    $guestClient = new Box\Mod\Client\Api\Guest();
+    $guestClient = apiEndpoint(new Box\Mod\Client\Api\Guest());
     $data = [
         'email' => 'test@example.com',
         'password' => 'sezam',
@@ -205,7 +205,7 @@ test('login returns array', function (): void {
 });
 
 test('resetPassword returns true with new flow', function (): void {
-    $guestClient = new Box\Mod\Client\Api\Guest();
+    $guestClient = apiEndpoint(new Box\Mod\Client\Api\Guest());
     $data['email'] = 'John@exmaple.com';
 
     $eventMock = Mockery::mock('\Box_EventManager');
@@ -241,7 +241,7 @@ test('resetPassword returns true with new flow', function (): void {
 });
 
 test('resetPassword returns true when email not found', function (): void {
-    $guestClient = new Box\Mod\Client\Api\Guest();
+    $guestClient = apiEndpoint(new Box\Mod\Client\Api\Guest());
     $data['email'] = 'joghn@example.eu';
 
     $eventMock = Mockery::mock('\Box_EventManager');
@@ -267,7 +267,7 @@ test('resetPassword returns true when email not found', function (): void {
 });
 
 test('updatePassword returns true', function (): void {
-    $guestClient = new Box\Mod\Client\Api\Guest();
+    $guestClient = apiEndpoint(new Box\Mod\Client\Api\Guest());
     $data = [
         'hash' => 'hashedString',
         'password' => 'NewPassword1',
@@ -317,7 +317,7 @@ test('updatePassword returns true', function (): void {
 });
 
 test('updatePassword throws exception when reset not found', function (): void {
-    $guestClient = new Box\Mod\Client\Api\Guest();
+    $guestClient = apiEndpoint(new Box\Mod\Client\Api\Guest());
     $data = [
         'hash' => 'hashedString',
         'password' => 'NewPassword1',
@@ -341,7 +341,7 @@ test('updatePassword throws exception when reset not found', function (): void {
 })->throws(FOSSBilling\Exception::class, 'The link has expired or you have already reset your password.');
 
 test('required returns array', function (): void {
-    $guestClient = new Box\Mod\Client\Api\Guest();
+    $guestClient = apiEndpoint(new Box\Mod\Client\Api\Guest());
     $configArr = [];
 
     $di = container();
@@ -354,7 +354,7 @@ test('required returns array', function (): void {
 });
 
 test('custom_fields returns fields sorted alphabetically by title', function (): void {
-    $guestClient = new Box\Mod\Client\Api\Guest();
+    $guestClient = apiEndpoint(new Box\Mod\Client\Api\Guest());
     $configArr = [
         'custom_fields' => [
             'custom_2' => ['active' => true, 'title' => 'VAT Number'],

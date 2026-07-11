@@ -14,7 +14,7 @@ use function Tests\Helpers\container;
 use function Tests\Helpers\moduleService;
 
 test('getDi returns dependency injection container', function (): void {
-    $api = new Box\Mod\Client\Api\Client();
+    $api = apiEndpoint(new Box\Mod\Client\Api\Client());
     $di = container();
     $api->setDi($di);
     $getDi = $api->getDi();
@@ -22,7 +22,7 @@ test('getDi returns dependency injection container', function (): void {
 });
 
 test('balanceGetList returns array', function (): void {
-    $api = new Box\Mod\Client\Api\Client();
+    $api = apiEndpoint(new Box\Mod\Client\Api\Client());
     $data = [];
 
     $model = new Model_Client();
@@ -73,7 +73,7 @@ test('balanceGetList returns array', function (): void {
 });
 
 test('balanceGetTotal returns float', function (): void {
-    $api = new Box\Mod\Client\Api\Client();
+    $api = apiEndpoint(new Box\Mod\Client\Api\Client());
     $balanceAmount = 0.00;
     $model = new Model_Client();
     $model->loadBean(new Tests\Helpers\DummyBean());
@@ -97,7 +97,7 @@ test('balanceGetTotal returns float', function (): void {
 });
 
 test('isTaxable returns boolean', function (): void {
-    $api = new Box\Mod\Client\Api\Client();
+    $api = apiEndpoint(new Box\Mod\Client\Api\Client());
     $clientIsTaxable = true;
 
     $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);

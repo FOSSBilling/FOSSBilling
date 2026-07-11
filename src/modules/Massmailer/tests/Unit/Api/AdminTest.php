@@ -41,7 +41,7 @@ test('update stores normalized filter', function (): void {
     $di['logger'] = new Box_Log();
     $service->setDi($di);
 
-    $api = new Box\Mod\Massmailer\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Massmailer\Api\Admin());
     $api->setDi($di);
     $api->setService($service);
 
@@ -68,7 +68,7 @@ test('update rejects invalid filter', function (): void {
     $di['logger'] = new Box_Log();
     $service->setDi($di);
 
-    $api = new Box\Mod\Massmailer\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Massmailer\Api\Admin());
     $api->setDi($di);
     $api->setService($service);
 

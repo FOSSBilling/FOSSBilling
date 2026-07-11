@@ -16,7 +16,7 @@ use function Tests\Helpers\container;
 use function Tests\Helpers\moduleService;
 
 test('email get list', function (): void {
-    $adminApi = new Box\Mod\Email\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Email\Api\Admin());
 
     $willReturn = [
         'list' => [
@@ -51,7 +51,7 @@ test('email get list', function (): void {
 });
 
 test('email get', function (): void {
-    $adminApi = new Box\Mod\Email\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Email\Api\Admin());
 
     $data = [
         'id' => 1,
@@ -100,7 +100,7 @@ test('email get', function (): void {
 });
 
 test('send', function (): void {
-    $adminApi = new Box\Mod\Email\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Email\Api\Admin());
 
     $data = [
         'to' => 'to@example.com',
@@ -128,7 +128,7 @@ test('send', function (): void {
 });
 
 test('resend', function (): void {
-    $adminApi = new Box\Mod\Email\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Email\Api\Admin());
 
     $data = [
         'id' => 1,
@@ -161,7 +161,7 @@ test('resend', function (): void {
 });
 
 test('resend exception email not found', function (): void {
-    $adminApi = new Box\Mod\Email\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Email\Api\Admin());
 
     $data = [
         'id' => 1,
@@ -184,7 +184,7 @@ test('resend exception email not found', function (): void {
 });
 
 test('delete exception email not found', function (): void {
-    $adminApi = new Box\Mod\Email\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Email\Api\Admin());
 
     $data = [
         'id' => 1,
@@ -207,7 +207,7 @@ test('delete exception email not found', function (): void {
 });
 
 test('email delete', function (): void {
-    $adminApi = new Box\Mod\Email\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Email\Api\Admin());
 
     $data = [
         'id' => 1,
@@ -244,7 +244,7 @@ test('email delete', function (): void {
 });
 
 test('template get list', function (): void {
-    $adminApi = new Box\Mod\Email\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Email\Api\Admin());
 
     $willReturn = [
         'list' => [
@@ -271,7 +271,7 @@ test('template get list', function (): void {
 });
 
 test('template get', function (): void {
-    $adminApi = new Box\Mod\Email\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Email\Api\Admin());
 
     $data = [
         'id' => 1,
@@ -294,7 +294,7 @@ test('template get', function (): void {
 });
 
 test('template delete', function (): void {
-    $adminApi = new Box\Mod\Email\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Email\Api\Admin());
 
     $data = [
         'id' => 1,
@@ -325,7 +325,7 @@ test('template delete', function (): void {
 });
 
 test('template delete template not found', function (): void {
-    $adminApi = new Box\Mod\Email\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Email\Api\Admin());
 
     $data = [
         'id' => 1,
@@ -344,7 +344,7 @@ test('template delete template not found', function (): void {
 });
 
 test('template create', function (): void {
-    $adminApi = new Box\Mod\Email\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Email\Api\Admin());
 
     $modelId = 1;
 
@@ -371,7 +371,7 @@ test('template create', function (): void {
 });
 
 test('template send to not set exception', function (): void {
-    $adminApi = new Box\Mod\Email\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Email\Api\Admin());
 
     $di = container();
     $adminApi->setDi($di);
@@ -380,7 +380,7 @@ test('template send to not set exception', function (): void {
 });
 
 test('template update', function (): void {
-    $adminApi = new Box\Mod\Email\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Email\Api\Admin());
 
     $id = 1;
     $data = [
@@ -410,7 +410,7 @@ test('template update', function (): void {
 });
 
 test('template group get list returns assigned groups', function (): void {
-    $adminApi = new Box\Mod\Email\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Email\Api\Admin());
 
     $id = 1;
     $emailTemplateModel = new EmailTemplate('mod_staff_client_order', $id);
@@ -442,7 +442,7 @@ test('template group get list returns assigned groups', function (): void {
 });
 
 test('template group get list returns empty array when no groups are assigned', function (): void {
-    $adminApi = new Box\Mod\Email\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Email\Api\Admin());
 
     $id = 1;
     $emailTemplateModel = new EmailTemplate('mod_staff_client_order', $id);
@@ -461,7 +461,7 @@ test('template group get list returns empty array when no groups are assigned', 
 });
 
 test('template group add assigns a group to a template', function (): void {
-    $adminApi = new Box\Mod\Email\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Email\Api\Admin());
 
     $id = 1;
     $emailTemplateModel = new EmailTemplate('mod_staff_client_order', $id);
@@ -479,7 +479,7 @@ test('template group add assigns a group to a template', function (): void {
 });
 
 test('template group remove unassigns a group from a template', function (): void {
-    $adminApi = new Box\Mod\Email\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Email\Api\Admin());
 
     $id = 1;
     $emailTemplateModel = new EmailTemplate('mod_staff_client_order', $id);
@@ -497,7 +497,7 @@ test('template group remove unassigns a group from a template', function (): voi
 });
 
 test('template reset', function (): void {
-    $adminApi = new Box\Mod\Email\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Email\Api\Admin());
 
     $id = 1;
     $data = [
@@ -519,7 +519,7 @@ test('template reset', function (): void {
 });
 
 test('batch template generate', function (): void {
-    $adminApi = new Box\Mod\Email\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Email\Api\Admin());
     $emailService = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
     $emailService
     ->shouldReceive('templateBatchGenerate')
@@ -533,7 +533,7 @@ test('batch template generate', function (): void {
 });
 
 test('batch template disable', function (): void {
-    $adminApi = new Box\Mod\Email\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Email\Api\Admin());
     $emailService = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
     $emailService
     ->shouldReceive('templateBatchDisable')
@@ -547,7 +547,7 @@ test('batch template disable', function (): void {
 });
 
 test('batch template enable', function (): void {
-    $adminApi = new Box\Mod\Email\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Email\Api\Admin());
     $emailService = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
     $emailService
     ->shouldReceive('templateBatchEnable')
@@ -561,7 +561,7 @@ test('batch template enable', function (): void {
 });
 
 test('send test', function (): void {
-    $adminApi = new Box\Mod\Email\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Email\Api\Admin());
     $emailService = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
     $emailService
     ->shouldReceive('sendTemplate')
@@ -575,7 +575,7 @@ test('send test', function (): void {
 });
 
 test('batch sendmail', function (): void {
-    $adminApi = new Box\Mod\Email\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Email\Api\Admin());
     $emailService = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
     $emailService->shouldReceive('batchSend')->atLeast()->once();
 
@@ -597,7 +597,7 @@ test('batch sendmail', function (): void {
 });
 
 test('template send', function (): void {
-    $adminApi = new Box\Mod\Email\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Email\Api\Admin());
     $emailService = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
     $emailService
     ->shouldReceive('sendTemplate')
@@ -660,7 +660,7 @@ test('batch delete', function (): void {
 });
 
 test('batch template delete skips built-in templates with defaults', function (): void {
-    $adminApi = new Box\Mod\Email\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Email\Api\Admin());
 
     $builtinTemplate = new EmailTemplate('mod_email_test', 1);
     $builtinTemplate->setIsCustom(false);

@@ -16,8 +16,8 @@ use Box\Mod\Servicedomain\Service;
 use function Tests\Helpers\container;
 
 test('gets tlds', function (): void {
-    $guestApi = new Guest();
-    $api = new Guest();
+    $guestApi = apiEndpoint(new Guest());
+    $api = apiEndpoint(new Guest());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldToApiArray')
         ->atLeast()->once()
@@ -41,8 +41,8 @@ test('gets tlds', function (): void {
 });
 
 test('gets pricing', function (): void {
-    $guestApi = new Guest();
-    $api = new Guest();
+    $guestApi = apiEndpoint(new Guest());
+    $api = apiEndpoint(new Guest());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldFindOneByTld')
         ->atLeast()->once()
@@ -64,8 +64,8 @@ test('gets pricing', function (): void {
 });
 
 test('throws exception when getting pricing for tld not found', function (): void {
-    $guestApi = new Guest();
-    $api = new Guest();
+    $guestApi = apiEndpoint(new Guest());
+    $api = apiEndpoint(new Guest());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldFindOneByTld')
         ->atLeast()->once()
@@ -89,8 +89,8 @@ test('throws exception when getting pricing for tld not found', function (): voi
 });
 
 test('checks domain availability', function (): void {
-    $guestApi = new Guest();
-    $api = new Guest();
+    $guestApi = apiEndpoint(new Guest());
+    $api = apiEndpoint(new Guest());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldFindOneByTld')
         ->atLeast()->once()
@@ -120,8 +120,8 @@ test('checks domain availability', function (): void {
 });
 
 test('throws exception when checking sld not valid', function (): void {
-    $guestApi = new Guest();
-    $api = new Guest();
+    $guestApi = apiEndpoint(new Guest());
+    $api = apiEndpoint(new Guest());
     $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
     $validatorMock->shouldReceive('isSldValid')
         ->atLeast()->once()
@@ -141,8 +141,8 @@ test('throws exception when checking sld not valid', function (): void {
 });
 
 test('throws exception when checking tld not found', function (): void {
-    $guestApi = new Guest();
-    $api = new Guest();
+    $guestApi = apiEndpoint(new Guest());
+    $api = apiEndpoint(new Guest());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldFindOneByTld')
         ->atLeast()->once()
@@ -171,8 +171,8 @@ test('throws exception when checking tld not found', function (): void {
 });
 
 test('throws exception when checking domain not available', function (): void {
-    $guestApi = new Guest();
-    $api = new Guest();
+    $guestApi = apiEndpoint(new Guest());
+    $api = apiEndpoint(new Guest());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldFindOneByTld')
         ->atLeast()->once()
@@ -202,8 +202,8 @@ test('throws exception when checking domain not available', function (): void {
 });
 
 test('checks if domain can be transferred', function (): void {
-    $guestApi = new Guest();
-    $api = new Guest();
+    $guestApi = apiEndpoint(new Guest());
+    $api = apiEndpoint(new Guest());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldFindOneByTld')
         ->atLeast()->once()
@@ -230,8 +230,8 @@ test('checks if domain can be transferred', function (): void {
 });
 
 test('throws exception when checking transfer for tld not found', function (): void {
-    $guestApi = new Guest();
-    $api = new Guest();
+    $guestApi = apiEndpoint(new Guest());
+    $api = apiEndpoint(new Guest());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldFindOneByTld')
         ->atLeast()->once()
@@ -256,8 +256,8 @@ test('throws exception when checking transfer for tld not found', function (): v
 });
 
 test('throws exception when checking domain cannot be transferred', function (): void {
-    $guestApi = new Guest();
-    $api = new Guest();
+    $guestApi = apiEndpoint(new Guest());
+    $api = apiEndpoint(new Guest());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldFindOneByTld')
         ->atLeast()->once()

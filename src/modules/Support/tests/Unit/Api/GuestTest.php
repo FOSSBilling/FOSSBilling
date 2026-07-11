@@ -44,7 +44,7 @@ function guestSupportServiceMock(): Mockery\MockInterface
 }
 
 test('ticket create', function (): void {
-    $guestApi = new Box\Mod\Support\Api\Guest();
+    $guestApi = apiEndpoint(new Box\Mod\Support\Api\Guest());
     $serviceMock = guestSupportServiceMock();
     $serviceMock->shouldReceive('ticketCreateForGuest')->atLeast()->once()
         ->andReturn(bin2hex(random_bytes(random_int(100, 127))));
@@ -67,7 +67,7 @@ test('ticket create', function (): void {
 });
 
 test('ticket create message too short exception', function (): void {
-    $guestApi = new Box\Mod\Support\Api\Guest();
+    $guestApi = apiEndpoint(new Box\Mod\Support\Api\Guest());
     $serviceMock = guestSupportServiceMock();
     $serviceMock->shouldReceive('ticketCreateForGuest')
         ->andReturn(sha1(uniqid()));
@@ -88,7 +88,7 @@ test('ticket create message too short exception', function (): void {
 });
 
 test('ticket get', function (): void {
-    $guestApi = new Box\Mod\Support\Api\Guest();
+    $guestApi = apiEndpoint(new Box\Mod\Support\Api\Guest());
     $serviceMock = guestSupportServiceMock();
     $serviceMock->shouldReceive('findOneByHash')->atLeast()->once()
         ->andReturn(new Box\Mod\Support\Entity\SupportTicket());
@@ -109,7 +109,7 @@ test('ticket get', function (): void {
 });
 
 test('ticket close', function (): void {
-    $guestApi = new Box\Mod\Support\Api\Guest();
+    $guestApi = apiEndpoint(new Box\Mod\Support\Api\Guest());
     $serviceMock = guestSupportServiceMock();
     $serviceMock->shouldReceive('findOneByHash')->atLeast()->once()
         ->andReturn(new Box\Mod\Support\Entity\SupportTicket());
@@ -131,7 +131,7 @@ test('ticket close', function (): void {
 });
 
 test('ticket reply', function (): void {
-    $guestApi = new Box\Mod\Support\Api\Guest();
+    $guestApi = apiEndpoint(new Box\Mod\Support\Api\Guest());
     $serviceMock = guestSupportServiceMock();
     $serviceMock->shouldReceive('findOneByHash')->atLeast()->once()
         ->andReturn(new Box\Mod\Support\Entity\SupportTicket());
@@ -157,7 +157,7 @@ test('ticket reply', function (): void {
 */
 
 test('kb article get list', function (): void {
-    $guestApi = new Box\Mod\Support\Api\Guest();
+    $guestApi = apiEndpoint(new Box\Mod\Support\Api\Guest());
 
     $willReturn = [
         'pages' => 5,
@@ -196,7 +196,7 @@ test('kb article get list', function (): void {
 });
 
 test('kb article views enabled', function (): void {
-    $guestApi = new Box\Mod\Support\Api\Guest();
+    $guestApi = apiEndpoint(new Box\Mod\Support\Api\Guest());
     $service = guestSupportServiceMock();
     $service->shouldReceive('kbArticleViewsEnabled')->once()->andReturn(false);
     $guestApi->setService($service);
@@ -205,7 +205,7 @@ test('kb article views enabled', function (): void {
 });
 
 test('kb article get hides views when disabled', function (): void {
-    $guestApi = new Box\Mod\Support\Api\Guest();
+    $guestApi = apiEndpoint(new Box\Mod\Support\Api\Guest());
 
     $di = container();
     $guestApi->setDi($di);
@@ -232,7 +232,7 @@ test('kb article get hides views when disabled', function (): void {
 });
 
 test('kb article get with id', function (): void {
-    $guestApi = new Box\Mod\Support\Api\Guest();
+    $guestApi = apiEndpoint(new Box\Mod\Support\Api\Guest());
 
     $di = container();
 
@@ -262,7 +262,7 @@ test('kb article get with id', function (): void {
 });
 
 test('kb article get with slug', function (): void {
-    $guestApi = new Box\Mod\Support\Api\Guest();
+    $guestApi = apiEndpoint(new Box\Mod\Support\Api\Guest());
 
     $di = container();
 
@@ -292,7 +292,7 @@ test('kb article get with slug', function (): void {
 });
 
 test('kb article get id and slug not set exception', function (): void {
-    $guestApi = new Box\Mod\Support\Api\Guest();
+    $guestApi = apiEndpoint(new Box\Mod\Support\Api\Guest());
 
     $guestApi->setService(guestSupportServiceMock());
 
@@ -300,7 +300,7 @@ test('kb article get id and slug not set exception', function (): void {
 });
 
 test('kb article get list disabled exception', function (): void {
-    $guestApi = new Box\Mod\Support\Api\Guest();
+    $guestApi = apiEndpoint(new Box\Mod\Support\Api\Guest());
 
     $service = guestSupportServiceMock();
     $service->shouldReceive('kbEnabled')->andReturn(false);
@@ -310,7 +310,7 @@ test('kb article get list disabled exception', function (): void {
 });
 
 test('kb article get not found by id', function (): void {
-    $guestApi = new Box\Mod\Support\Api\Guest();
+    $guestApi = apiEndpoint(new Box\Mod\Support\Api\Guest());
 
     $repo = Mockery::mock(KbArticleRepository::class);
     $repo->shouldReceive('findOneActiveById')
@@ -335,7 +335,7 @@ test('kb article get not found by id', function (): void {
 });
 
 test('kb article get not found by slug', function (): void {
-    $guestApi = new Box\Mod\Support\Api\Guest();
+    $guestApi = apiEndpoint(new Box\Mod\Support\Api\Guest());
 
     $repo = Mockery::mock(KbArticleRepository::class);
     $repo->shouldReceive('findOneActiveBySlug')
@@ -361,7 +361,7 @@ test('kb article get not found by slug', function (): void {
 });
 
 test('kb category get list', function (): void {
-    $guestApi = new Box\Mod\Support\Api\Guest();
+    $guestApi = apiEndpoint(new Box\Mod\Support\Api\Guest());
 
     $willReturn = [
         'pages' => 5,
@@ -400,7 +400,7 @@ test('kb category get list', function (): void {
 });
 
 test('kb category get with id', function (): void {
-    $guestApi = new Box\Mod\Support\Api\Guest();
+    $guestApi = apiEndpoint(new Box\Mod\Support\Api\Guest());
 
     $repo = Mockery::mock(KbArticleCategoryRepository::class);
     $repo->shouldReceive('find')
@@ -426,7 +426,7 @@ test('kb category get with id', function (): void {
 });
 
 test('kb category get with slug', function (): void {
-    $guestApi = new Box\Mod\Support\Api\Guest();
+    $guestApi = apiEndpoint(new Box\Mod\Support\Api\Guest());
 
     $repo = Mockery::mock(KbArticleCategoryRepository::class);
     $repo->shouldReceive('findOneBySlug')
@@ -452,7 +452,7 @@ test('kb category get with slug', function (): void {
 });
 
 test('kb category get id and slug not set exception', function (): void {
-    $guestApi = new Box\Mod\Support\Api\Guest();
+    $guestApi = apiEndpoint(new Box\Mod\Support\Api\Guest());
 
     $guestApi->setService(guestSupportServiceMock());
 
@@ -460,7 +460,7 @@ test('kb category get id and slug not set exception', function (): void {
 });
 
 test('kb category get not found by id', function (): void {
-    $guestApi = new Box\Mod\Support\Api\Guest();
+    $guestApi = apiEndpoint(new Box\Mod\Support\Api\Guest());
 
     $repo = Mockery::mock(KbArticleCategoryRepository::class);
     $repo->shouldReceive('find')
@@ -486,7 +486,7 @@ test('kb category get not found by id', function (): void {
 });
 
 test('kb category get not found by slug', function (): void {
-    $guestApi = new Box\Mod\Support\Api\Guest();
+    $guestApi = apiEndpoint(new Box\Mod\Support\Api\Guest());
 
     $repo = Mockery::mock(KbArticleCategoryRepository::class);
     $repo->shouldReceive('findOneBySlug')
