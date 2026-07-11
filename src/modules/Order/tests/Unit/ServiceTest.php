@@ -543,7 +543,10 @@ test('onAfterAdminOrderUncancel fires template', function (): void {
     $dbMock->shouldReceive('getExistingModelById')->atLeast()->once()->andReturn($order);
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
-    $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()->andReturn(true);
+    $emailServiceMock->shouldReceive('sendTemplate')
+        ->once()
+        ->with(Mockery::on(fn (array $email): bool => $email['code'] === 'mod_servicedomain_renewed'))
+        ->andReturn(true);
 
     $orderArr = [
         'id' => 1,
