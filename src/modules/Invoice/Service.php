@@ -904,6 +904,13 @@ class Service implements InjectionAwareInterface
                 $this->di['logger']->setChannel('billing')->info("Setting invoice {$invoice->id} as paid with credits for the amount of {$required}.");
             }
 
+            if ($required <= $epsilon) {
+                // Nothing was actually charged against the client's balance, so don't record a $0 credit transaction.
+                $this->markAsPaid($invoice, false, true);
+
+                return true;
+            }
+
             $balanceTransaction = $this->di['db']->dispense('ClientBalance');
             $balanceTransaction->client_id = $client->id;
             $balanceTransaction->type = 'invoice';
