@@ -2404,6 +2404,136 @@ table > thead > tr > th {
             color-mix(in oklch, var(--blade-500) 8%, transparent), transparent 70%);
     }
 
+    // Photo hero variant: real background photography with a Ken-Burns
+    // zoom standing in for a timelapse video (swap the <img> for a
+    // <video> once we have a licensed clip - same wrapper/keyframes
+    // apply directly). Self-contained dark treatment regardless of the
+    // site's light/dark mode, same reasoning a photo hero always uses -
+    // text needs to sit on the image, not on a token that might be
+    // light.
+    &--photo {
+        margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-6)) 0;
+        padding: var(--space-16) var(--space-6) var(--space-12);
+        border-radius: var(--r-xl);
+        overflow: hidden;
+        color: var(--white);
+
+        .tn-home__grid { position: relative; z-index: 3; }
+        .tn-eyebrow { color: var(--blade-300); }
+        .tn-home__title { color: var(--white); text-shadow: 0 4px 30px rgba(0,0,0,.45); }
+        .tn-home__lede { color: rgba(255,255,255,.78); text-shadow: 0 2px 16px rgba(0,0,0,.35); }
+        .tn-home__news { border-top-color: rgba(255,255,255,.14); }
+        .tn-home__news-date { color: rgba(255,255,255,.55); }
+        .tn-home__news-title { color: var(--white); }
+        .tn-home__news-row .icon { color: rgba(255,255,255,.55); }
+
+        .tn-card-link {
+            background: linear-gradient(160deg, rgba(255,255,255,.12), rgba(255,255,255,.04));
+            border-color: rgba(255,255,255,.16);
+            backdrop-filter: blur(18px) saturate(160%);
+            -webkit-backdrop-filter: blur(18px) saturate(160%);
+            &:hover { border-color: rgba(255,255,255,.3); }
+            &__icon { background: rgba(255,255,255,.14); .icon { color: var(--white); } }
+            &__title { color: var(--white); }
+            &__sub { color: rgba(255,255,255,.7); }
+            &__cta { color: var(--white); }
+        }
+
+        .tn-signin {
+            background: linear-gradient(160deg, rgba(255,255,255,.14), rgba(255,255,255,.05));
+            border-color: rgba(255,255,255,.18);
+            backdrop-filter: blur(24px) saturate(170%);
+            -webkit-backdrop-filter: blur(24px) saturate(170%);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 30px 60px -24px rgba(0,0,0,.6);
+
+            &__title { color: var(--white); }
+            &__sub { color: rgba(255,255,255,.7); }
+            &__forgot { color: rgba(255,255,255,.85); }
+            &__signup { color: rgba(255,255,255,.7); a { color: var(--white); } }
+            &__divider {
+                color: rgba(255,255,255,.5);
+                &::before, &::after { background: rgba(255,255,255,.16); }
+            }
+        }
+        .tn-signin .tn-field__label { color: rgba(255,255,255,.6); }
+        .tn-signin .tn-input {
+            background: rgba(0,0,0,.22);
+            border-color: rgba(255,255,255,.2);
+            color: var(--white);
+            &::placeholder { color: rgba(255,255,255,.4); }
+        }
+    }
+
+    &__bg {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        overflow: hidden;
+        border-radius: inherit;
+
+        img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            animation: tn-home-zoom 34s ease-in-out infinite alternate;
+            filter: saturate(1.05) contrast(1.08) brightness(.6);
+        }
+    }
+    @keyframes tn-home-zoom {
+        from { transform: scale(1) translateY(0); }
+        to { transform: scale(1.24) translateY(-2%); }
+    }
+    &__bg-grade {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+        background:
+            radial-gradient(120% 90% at 50% 100%, rgba(4,8,4,.9) 0%, rgba(4,8,4,.35) 45%, transparent 75%),
+            linear-gradient(180deg, rgba(6,10,6,.55) 0%, rgba(6,10,6,.12) 30%, rgba(6,10,6,.6) 100%),
+            linear-gradient(120deg, color-mix(in oklch, var(--blade-600) 40%, transparent), transparent 55%);
+    }
+    &__bg-grain {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        pointer-events: none;
+        opacity: .05;
+        mix-blend-mode: overlay;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    &__typer {
+        display: flex;
+        align-items: center;
+        font-family: var(--font-mono);
+        font-size: var(--fs-lg);
+        color: var(--blade-400);
+        min-height: 1.6em;
+        animation: tn-home-hover 3.6s ease-in-out infinite;
+    }
+    @keyframes tn-home-hover {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-5px); }
+    }
+    &__typer-caret {
+        display: inline-block;
+        width: 2px;
+        height: 1.05em;
+        background: var(--blade-400);
+        margin-left: 2px;
+        animation: tn-home-caret .85s steps(1) infinite;
+    }
+    @keyframes tn-home-caret { 50% { opacity: 0; } }
+
+    @media (prefers-reduced-motion: reduce) {
+        &__bg img { animation: none; transform: scale(1.08); }
+        &__typer { animation: none; }
+        &__typer-caret { animation: none; }
+    }
+
     &__grid {
         position: relative;
         z-index: 1;
@@ -2475,6 +2605,73 @@ table > thead > tr > th {
         min-width: 0;
     }
     &__news-row .icon { color: var(--text-faint); width: 14px; height: 14px; }
+}
+
+// Domain quick-search on the guest home hero. Frosted glass over the
+// photo background, green-tinted to match the accent.
+.tn-domainsearch {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    max-width: 520px;
+
+    &__row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-2);
+        border-radius: var(--r-pill);
+        background: linear-gradient(160deg, color-mix(in oklch, var(--blade-500) 16%, transparent), rgba(255,255,255,.06));
+        border: var(--bw-hair) solid rgba(255,255,255,.22);
+        backdrop-filter: blur(22px) saturate(160%);
+        -webkit-backdrop-filter: blur(22px) saturate(160%);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.25), 0 20px 50px -18px rgba(0,0,0,.6);
+    }
+    &__input {
+        flex: 1;
+        min-width: 0;
+        background: transparent;
+        border: none;
+        outline: none;
+        color: var(--white);
+        font-size: var(--fs-sm);
+        padding: 10px 6px 10px 14px;
+        &::placeholder { color: rgba(255,255,255,.5); }
+    }
+    &__tld {
+        flex: 0 0 auto;
+        background: rgba(0,0,0,.25);
+        border: var(--bw-hair) solid rgba(255,255,255,.2);
+        color: var(--white);
+        border-radius: var(--r-pill);
+        padding: 8px 10px;
+        font-size: var(--fs-xs);
+        outline: none;
+    }
+    &__btn {
+        flex: 0 0 auto;
+        background: var(--accent);
+        color: var(--on-accent);
+        font-weight: var(--fw-bold);
+        font-size: var(--fs-sm);
+        border: none;
+        border-radius: var(--r-pill);
+        padding: 11px 20px;
+        cursor: pointer;
+        box-shadow: 0 8px 22px -8px var(--blade-glow);
+        transition: transform var(--dur-fast) var(--ease-out), background var(--dur);
+        &:hover { background: var(--accent-hover); transform: translateY(-1px); }
+        &:active { transform: translateY(0) scale(.98); }
+    }
+    &__result {
+        font-size: var(--fs-xs);
+        padding: 0 var(--space-3);
+        min-height: 1.2em;
+        color: rgba(255,255,255,.7);
+        a { color: var(--blade-400); font-weight: var(--fw-bold); text-decoration: none; &:hover { text-decoration: underline; } }
+        &--available { color: var(--blade-400); }
+        &--taken { color: #ff9d9d; }
+    }
 }
 
 // Quick-path card (also used elsewhere via .tn-card-link)

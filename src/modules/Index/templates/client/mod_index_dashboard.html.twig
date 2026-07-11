@@ -405,8 +405,38 @@
         {% set kb_on = guest.support_kb_enabled() %}
         {% set latest_news = news_on ? guest.news_get_list({ 'per_page': 2 }).list : [] %}
 
-        <div class="tn-home">
-            <div class="tn-home__wash" aria-hidden="true"></div>
+        {# Domain quick-search: reuses the same guest TLD list and
+           servicedomain/check API as the standalone domain-checker embed,
+           and hands off to the real order flow via the domain product id
+           (same pattern mod_orderbutton_choose_product.html.twig uses to
+           find its "domain" category). UAE-first ordering since .ae/.com
+           are the primary market here, not .co.za. #}
+        {% set all_tlds = guest.servicedomain_tlds %}
+        {% set priority_tlds = [] %}
+        {% set other_tlds = [] %}
+        {% for t in all_tlds %}
+            {% if t.tld in ['.ae', '.com'] %}
+                {% set priority_tlds = priority_tlds|merge([t]) %}
+            {% else %}
+                {% set other_tlds = other_tlds|merge([t]) %}
+            {% endif %}
+        {% endfor %}
+        {% set ordered_tlds = (priority_tlds|sort((a, b) => a.tld == '.ae' ? -1 : 1))|merge(other_tlds) %}
+        {% set domain_categories = guest.product_category_get_list.list %}
+        {% set domain_category = null %}
+        {% for cat in domain_categories %}
+            {% for p in cat.products %}
+                {% if p.type == 'domain' and domain_category is null %}{% set domain_category = cat %}{% endif %}
+            {% endfor %}
+        {% endfor %}
+        {% set domain_product_id = domain_category and domain_category.products|first ? domain_category.products|first.id : null %}
+
+        <div class="tn-home tn-home--photo">
+            <div class="tn-home__bg" aria-hidden="true">
+                <img src="https://images.unsplash.com/photo-1512632578888-169bbbc64f33?q=80&amp;w=1920&amp;auto=format&amp;fit=crop" alt="" loading="eager">
+                <div class="tn-home__bg-grade"></div>
+                <div class="tn-home__bg-grain"></div>
+            </div>
 
             <div class="tn-home__grid">
                 {# left — welcome + quick paths #}
@@ -414,10 +444,28 @@
                     <div class="tn-home__hero">
                         <span class="tn-eyebrow">{{ 'Client portal'|trans }}</span>
                         <h1 class="tn-home__title">{{ 'Run your domains and hosting from one login.'|trans }}</h1>
+                        <div class="tn-home__typer" aria-hidden="true">
+                            <span id="tn-home-typer"></span><span class="tn-home__typer-caret"></span>
+                        </div>
                         <p class="tn-home__lede">
                             {{ 'Track every domain, invoice and hosting plan in one place, with renewal reminders before anything lapses.'|trans }}
                         </p>
                     </div>
+
+                    {% if domain_product_id %}
+                        <div class="tn-domainsearch" id="tn-domainsearch">
+                            <div class="tn-domainsearch__row">
+                                <input type="text" id="tn-domainsearch-sld" class="tn-domainsearch__input" placeholder="{{ 'yourbusiness'|trans }}" autocomplete="off">
+                                <select id="tn-domainsearch-tld" class="tn-domainsearch__tld">
+                                    {% for t in ordered_tlds %}
+                                        <option value="{{ t.tld }}">{{ t.tld }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="button" id="tn-domainsearch-submit" class="tn-domainsearch__btn">{{ 'Search'|trans }}</button>
+                            </div>
+                            <div id="tn-domainsearch-result" class="tn-domainsearch__result"></div>
+                        </div>
+                    {% endif %}
 
                     <div class="tn-home__cards">
                         <a class="tn-card-link" href="{{ 'order'|url }}">
@@ -491,13 +539,87 @@
                         {% if settings.show_signup_link %}
                             <p class="tn-signin__signup">
                                 {{ 'New here?'|trans }}
-                                <a href="{{ 'signup'|url }}">{{ 'Create an account'|trans }}</a> — {{ 'it takes a minute.'|trans }}
+                                <a href="{{ 'signup'|url }}">{{ 'Create an account'|trans }}</a>, {{ 'it takes a minute.'|trans }}
                             </p>
                         {% endif %}
                     </div>
                 </div>
             </div>
         </div>
+
+        {% if domain_product_id %}
+            {% autoescape "js" %}
+            <script>
+                (function () {
+                    var words = ['dubaiventures.ae', 'gulftrading.com', 'yourstartup.ae', 'emiratesbrand.com', 'nextbigidea.ae'];
+                    var el = document.getElementById('tn-home-typer');
+                    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                    if (el) {
+                        if (reduce) {
+                            el.textContent = words[0];
+                        } else {
+                            var wi = 0, ci = 0, deleting = false;
+                            (function tick() {
+                                var word = words[wi];
+                                if (!deleting) {
+                                    ci++;
+                                    el.textContent = word.slice(0, ci);
+                                    if (ci === word.length) { deleting = true; setTimeout(tick, 1600); return; }
+                                    setTimeout(tick, 70);
+                                } else {
+                                    ci--;
+                                    el.textContent = word.slice(0, ci);
+                                    if (ci === 0) { deleting = false; wi = (wi + 1) % words.length; setTimeout(tick, 300); return; }
+                                    setTimeout(tick, 35);
+                                }
+                            })();
+                        }
+                    }
+
+                    var sld = document.getElementById('tn-domainsearch-sld');
+                    var tld = document.getElementById('tn-domainsearch-tld');
+                    var btn = document.getElementById('tn-domainsearch-submit');
+                    var result = document.getElementById('tn-domainsearch-result');
+                    if (!sld || !btn) return;
+
+                    function runCheck() {
+                        var value = sld.value.trim();
+                        if (!value) return;
+                        result.className = 'tn-domainsearch__result tn-domainsearch__result--loading';
+                        result.textContent = '{{ 'Checking...'|trans }}';
+
+                        var params = new URLSearchParams();
+                        params.append('sld', value);
+                        params.append('tld', tld.value);
+
+                        fetch('{{ 'servicedomain/check'|api_url(role: 'guest') }}', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: params.toString()
+                        })
+                        .then(function (r) { return r.json(); })
+                        .then(function (json) {
+                            var data = json.result || json;
+                            if (data && data.status === 'available') {
+                                result.className = 'tn-domainsearch__result tn-domainsearch__result--available';
+                                result.innerHTML = value + tld.value + ' {{ 'is available.'|trans }} <a href="{{ 'order'|url(query: {'product': domain_product_id}) }}">{{ 'Register it'|trans }} &rarr;</a>';
+                            } else {
+                                result.className = 'tn-domainsearch__result tn-domainsearch__result--taken';
+                                result.textContent = value + tld.value + ' {{ 'is already taken.'|trans }}';
+                            }
+                        })
+                        .catch(function () {
+                            result.className = 'tn-domainsearch__result tn-domainsearch__result--taken';
+                            result.textContent = '{{ 'Could not check that domain right now.'|trans }}';
+                        });
+                    }
+
+                    btn.addEventListener('click', runCheck);
+                    sld.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); runCheck(); } });
+                })();
+            </script>
+            {% endautoescape %}
+        {% endif %}
 
         {{ render_widgets('client.index.dashboard.guest.after') }}
     {% endif %}
