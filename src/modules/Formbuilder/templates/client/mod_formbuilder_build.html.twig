@@ -54,7 +54,6 @@
                                 <option value="{{v}}" {% if v == field.default_value %}selected="selected"{% endif %}>{{ k }}</option>
                             {% endfor %}
                         </select>
-                        <span class="tn-select-caret"><svg class="icon"><use href="#chevron-down" /></svg></span>
                     </div>
 
                 {% elseif field.type == "checkbox" %}

@@ -82,7 +82,6 @@
                                 <option value="nonbinary">{{ 'Non-binary'|trans }}</option>
                                 <option value="other">{{ 'Other'|trans }}</option>
                             </select>
-                            <span class="tn-select-caret"><svg class="icon"><use href="#chevron-down" /></svg></span>
                         </div>
                     </div>
                 {% endif %}
@@ -121,7 +120,6 @@
                                     <option value="{{ val }}" label="{{ label|e }}" {% if request.country|default(guest.system_default_country) == val %}selected{% endif %}>{{ label|e }}</option>
                                 {% endfor %}
                             </select>
-                            <span class="tn-select-caret"><svg class="icon"><use href="#chevron-down" /></svg></span>
                         </div>
                     </div>
                 {% endif %}
@@ -163,7 +161,6 @@
                                 </optgroup>
                             {% endfor %}
                         </select>
-                        <span class="tn-select-caret"><svg class="icon"><use href="#chevron-down" /></svg></span>
                     </div>
                     <span class="tn-field__hint">{{ 'Pre-selected from your browser. Used to display dates and times in your local time.'|trans }}</span>
                 </div>
