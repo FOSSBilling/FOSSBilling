@@ -1152,6 +1152,12 @@ table > thead > tr > th {
         min-width: 0;
     }
 
+    + .tn-kv-row--total {
+        // the row above already drew a hairline; skip the total's own
+        // top border so the two hairlines don't stack into a double line
+        border-top: none;
+    }
+
     &--total {
         border-top: var(--bw-hair) solid var(--border);
         border-bottom: none;
