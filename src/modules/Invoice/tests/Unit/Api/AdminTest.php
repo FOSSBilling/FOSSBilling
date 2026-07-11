@@ -328,11 +328,16 @@ test('creates renewal invoice', function (): void {
     expect($result)->toBeInt()->toBe($newInvoiceId);
 });
 
-test('throws exception when creating renewal invoice for free order', function (): void {
+test('creates renewal invoice for free order', function (): void {
     $api = apiEndpoint(new Admin());
     $data = [
         'id' => 1,
     ];
+    $newInvoiceId = 3;
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('renewInvoice')
+        ->atLeast()->once()
+        ->andReturn($newInvoiceId);
 
     $dbMock = Mockery::mock('\Box_Database');
     $model = new Model_ClientOrder();
@@ -347,9 +352,10 @@ test('throws exception when creating renewal invoice for free order', function (
     $di['db'] = $dbMock;
 
     $api->setDi($di);
+    $api->setService($serviceMock);
 
-    expect(fn () => $api->renewal_invoice($data))
-        ->toThrow(FOSSBilling\Exception::class, sprintf('Order %d is free. No need to generate invoice.', $model->id));
+    $result = $api->renewal_invoice($data);
+    expect($result)->toBeInt()->toBe($newInvoiceId);
 });
 
 test('processes batch pay with credits', function (): void {

@@ -1307,8 +1307,8 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        if (($price * ($line['quantity'] ?? 1)) <= 0) {
-            throw new InformationException('Invoices are not generated for 0 amount orders.');
+        if (($price * ($line['quantity'] ?? 1)) < 0) {
+            throw new InformationException('Invoices are not generated for negative amount orders.');
         }
 
         $client = $this->di['db']->getExistingModelById('Client', $order->client_id, 'Client not found');

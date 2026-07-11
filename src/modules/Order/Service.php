@@ -800,7 +800,7 @@ class Service implements InjectionAwareInterface
                 }
             }
 
-            if ($invoiceOption == 'issue-invoice' && $order->price > 0) {
+            if ($invoiceOption == 'issue-invoice') {
                 $invoiceService = $this->di['mod_service']('invoice');
                 $invoice = $invoiceService->generateForOrder($order);
             }
