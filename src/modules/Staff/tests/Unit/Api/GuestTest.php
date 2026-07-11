@@ -14,7 +14,6 @@ use function Tests\Helpers\container;
 
 test('get di', function (): void {
     $api = apiEndpoint(new Box\Mod\Staff\Api\Guest());
-    $api = apiEndpoint(new Box\Mod\Staff\Api\Guest());
     $di = container();
     $api->setDi($di);
     $getDi = $api->getDi();
