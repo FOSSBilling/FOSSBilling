@@ -68,23 +68,13 @@ class Pagination implements InjectionAwareInterface
     {
         $serializer = new Serializer([new ObjectNormalizer()]);
 
-        $offset = ($pagination->page - 1) * $pagination->perPage;
-        $qb->setFirstResult($offset)
-           ->setMaxResults($pagination->perPage);
-        $paginator = new DoctrinePaginator($qb, true);
-
-        $total = count($paginator);
-
-        $list = [];
-        foreach ($paginator as $entity) {
+        return $this->paginateMappedQuery($qb, $pagination, static function (object $entity) use ($serializer, $apiArrayArgs): array {
             if ($entity instanceof ApiArrayInterface) {
-                $list[] = $entity->toApiArray(...$apiArrayArgs);
-            } else {
-                $list[] = $serializer->normalize($entity);
+                return $entity->toApiArray(...$apiArrayArgs);
             }
-        }
 
-        return $this->buildPaginatedResponse($pagination->page, $pagination->perPage, $total, $list);
+            return $serializer->normalize($entity);
+        });
     }
 
     /**
@@ -123,6 +113,27 @@ class Pagination implements InjectionAwareInterface
     }
 
     /**
+     * Paginate an in-memory array.
+     *
+     * @return array{
+     *     pages: int,      // Total number of pages
+     *     page: int,       // Current page number
+     *     per_page: int,   // Items per page
+     *     total: int,      // Total number of items
+     *     list: array      // List of paginated items as arrays
+     * }
+     */
+    public function paginateArray(array $items, PaginationOptions $pagination): array
+    {
+        $total = count($items);
+        $pages = $total > 0 ? (int) ceil($total / $pagination->perPage) : 0;
+        $page = min($pagination->page, max(1, $pages));
+        $list = array_slice($items, ($page - 1) * $pagination->perPage, $pagination->perPage);
+
+        return $this->buildPaginatedResponse($page, $pagination->perPage, $total, $list);
+    }
+
+    /**
      * Paginate results from a Doctrine QueryBuilder and apply a custom mapper to each entity.
      *
      * Use this when the entity's `toApiArray()` requires context (identity, deep flag,
@@ -143,8 +154,7 @@ class Pagination implements InjectionAwareInterface
      */
     public function paginateMappedQuery(QueryBuilder $qb, PaginationOptions $pagination, callable $mapper): array
     {
-        $offset = ($pagination->page - 1) * $pagination->perPage;
-        $qb->setFirstResult($offset)
+        $qb->setFirstResult(($pagination->page - 1) * $pagination->perPage)
             ->setMaxResults($pagination->perPage);
         $paginator = new DoctrinePaginator($qb, true);
         $total = count($paginator);

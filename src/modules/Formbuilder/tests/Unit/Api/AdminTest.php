@@ -16,7 +16,7 @@ use Box\Mod\Formbuilder\Service;
 use function Tests\Helpers\container;
 
 test('gets dependency injection container', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $di = container();
     $api->setDi($di);
     $getDi = $api->getDi();
@@ -24,7 +24,7 @@ test('gets dependency injection container', function (): void {
 });
 
 test('creates a form', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = ['name' => 'testForm'];
     $createdFormId = 1;
 
@@ -44,7 +44,7 @@ test('creates a form', function (): void {
 });
 
 test('throws exception when form type is not in predefined list', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = [
         'name' => 'testName',
         'type' => 'custom',
@@ -58,7 +58,7 @@ test('throws exception when form type is not in predefined list', function (): v
 });
 
 test('adds a field to a form', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = [
         'type' => 'text',
         'options' => ['sameValue'],
@@ -88,7 +88,7 @@ test('adds a field to a form', function (): void {
 });
 
 test('throws exception when adding field with missing type', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = [];
 
     expect(fn () => $api->add_field($data))
@@ -96,7 +96,7 @@ test('throws exception when adding field with missing type', function (): void {
 });
 
 test('throws exception when field options are not unique', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $service = Mockery::mock(Service::class);
     $data = [
         'type' => 'text',
@@ -115,7 +115,7 @@ test('throws exception when field options are not unique', function (): void {
 });
 
 test('throws exception when adding field without form id', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $service = Mockery::mock(Service::class);
     $data = [
         'type' => 'text',
@@ -132,7 +132,7 @@ test('throws exception when adding field without form id', function (): void {
 });
 
 test('gets a form', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data['id'] = 1;
 
     $serviceMock = Mockery::mock(Service::class);
@@ -156,7 +156,7 @@ test('gets a form', function (): void {
 });
 
 test('gets form fields', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data['form_id'] = 1;
 
     $serviceMock = Mockery::mock(Service::class);
@@ -180,7 +180,7 @@ test('gets form fields', function (): void {
 });
 
 test('gets a field', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data['id'] = 3;
 
     $serviceMock = Mockery::mock(Service::class);
@@ -205,7 +205,7 @@ test('gets a field', function (): void {
 });
 
 test('gets all forms', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Service::class);
     /** @var Mockery\Expectation $expectation */
     $expectation = $serviceMock->shouldReceive('getForms');
@@ -220,7 +220,7 @@ test('gets all forms', function (): void {
 });
 
 test('deletes a form', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data['id'] = 1;
 
     $serviceMock = Mockery::mock(Service::class);
@@ -245,7 +245,7 @@ test('deletes a form', function (): void {
 });
 
 test('deletes a field', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data['id'] = 1;
 
     $serviceMock = Mockery::mock(Service::class);
@@ -270,7 +270,7 @@ test('deletes a field', function (): void {
 });
 
 test('updates a field', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $updatedFieldId = 1;
     $data = [
         'id' => $updatedFieldId,
@@ -303,7 +303,7 @@ test('updates a field', function (): void {
 });
 
 test('gets form pairs', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = [];
     $serviceMock = Mockery::mock(Service::class);
     /** @var Mockery\Expectation $expectation */
@@ -319,7 +319,7 @@ test('gets form pairs', function (): void {
 });
 
 test('copies a form', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $newFormId = 2;
     $data = [
         'form_id' => 1,
@@ -339,7 +339,7 @@ test('copies a form', function (): void {
 });
 
 test('throws exception when copying form without id', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = [];
 
     $api->setDi(container());
@@ -348,7 +348,7 @@ test('throws exception when copying form without id', function (): void {
 });
 
 test('throws exception when copying form without name', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = ['form_id' => 1];
 
     $api->setDi(container());
@@ -357,7 +357,7 @@ test('throws exception when copying form without name', function (): void {
 });
 
 test('updates form settings', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = [
         'form_id' => 1,
         'form_name' => 'testForm',
@@ -377,7 +377,7 @@ test('updates form settings', function (): void {
 });
 
 test('throws exception when updating form settings with missing fields', function ($missingField, $exceptionMessage): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = [
         'form_id' => 1,
         'form_name' => 'testForm',

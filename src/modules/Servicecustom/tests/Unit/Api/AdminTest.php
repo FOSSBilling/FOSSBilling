@@ -14,7 +14,7 @@ use Box\Mod\Servicecustom\Api\Admin;
 use Box\Mod\Servicecustom\Service;
 
 test('updates configuration', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('updateConfig')
         ->atLeast()->once();
@@ -31,7 +31,7 @@ test('updates configuration', function (): void {
 });
 
 test('throws exception when updating without order_id', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('updateConfig')
         ->never();
@@ -49,7 +49,7 @@ test('throws exception when updating without order_id', function (): void {
 });
 
 test('returns true when updating without config', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('updateConfig')
         ->never();
@@ -65,7 +65,7 @@ test('returns true when updating without config', function (): void {
 });
 
 test('returns true when config is not an array', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('updateConfig')
         ->never();
@@ -82,7 +82,7 @@ test('returns true when config is not an array', function (): void {
 });
 
 test('calls magic method', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getServiceCustomByOrderId')
         ->atLeast()->once()
@@ -102,7 +102,7 @@ test('calls magic method', function (): void {
 });
 
 test('throws exception when calling magic method without arguments', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getServiceCustomByOrderId')
         ->never();
@@ -118,7 +118,7 @@ test('throws exception when calling magic method without arguments', function ()
 });
 
 test('throws exception when calling magic method without order_id', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getServiceCustomByOrderId')
         ->never();

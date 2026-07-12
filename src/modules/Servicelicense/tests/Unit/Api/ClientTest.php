@@ -13,7 +13,7 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 
 test('getDi returns dependency injection container', function (): void {
-    $api = new Box\Mod\Servicelicense\Api\Client();
+    $api = apiEndpoint(new Box\Mod\Servicelicense\Api\Client());
     $di = container();
     $api->setDi($di);
     $getDi = $api->getDi();
@@ -21,12 +21,12 @@ test('getDi returns dependency injection container', function (): void {
 });
 
 test('reset returns true', function (): void {
-    $api = new Box\Mod\Servicelicense\Api\Client();
+    $api = apiEndpoint(new Box\Mod\Servicelicense\Api\Client());
     $data = [
         'order_id' => 1,
     ];
 
-    $apiMock = Mockery::mock(Box\Mod\Servicelicense\Api\Client::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Box\Mod\Servicelicense\Api\Client::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getService')
         ->atLeast()
@@ -47,7 +47,7 @@ test('reset returns true', function (): void {
 });
 
 test('getService returns service license model', function (): void {
-    $api = new Box\Mod\Servicelicense\Api\Client();
+    $api = apiEndpoint(new Box\Mod\Servicelicense\Api\Client());
     $data['order_id'] = 1;
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
@@ -81,7 +81,7 @@ test('getService returns service license model', function (): void {
 });
 
 test('getService throws exception when order not activated', function (): void {
-    $api = new Box\Mod\Servicelicense\Api\Client();
+    $api = apiEndpoint(new Box\Mod\Servicelicense\Api\Client());
     $data['order_id'] = 1;
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);

@@ -297,10 +297,26 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
             $value = urlencode(stripslashes($value));
             $req .= "&$key=$value";
         }
-        $url = $this->serviceUrl();
-        $ret = $this->download($url, $req);
 
-        return $ret == 'VERIFIED';
+        if ($this->download($this->serviceUrl(), $req) !== 'VERIFIED') {
+            return false;
+        }
+
+        // VERIFIED only proves PayPal originated the notification; verify the
+        // payee so a payment to a different account cannot be replayed here.
+        $configured = strtolower(trim((string) $this->config['email']));
+        $payees = [
+            strtolower(trim((string) ($post['receiver_email'] ?? ''))),
+            strtolower(trim((string) ($post['business'] ?? ''))),
+        ];
+
+        foreach ($payees as $payee) {
+            if ($payee !== '' && hash_equals($configured, $payee)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

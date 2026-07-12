@@ -8,11 +8,14 @@ use Tests\Helpers\DummyBean;
 
 use function Tests\Helpers\container;
 
+const TEST_WEBHOOK_SECRET = 'whsec_test_dummy';
+
 beforeEach(function (): void {
     $this->adapter = new Payment_Adapter_Stripe([
         'test_mode' => true,
         'test_api_key' => 'sk_test_dummy',
         'test_pub_key' => 'pk_test_dummy',
+        'test_webhook_secret' => TEST_WEBHOOK_SECRET,
     ]);
 });
 
@@ -21,6 +24,14 @@ function setPrivateProperty(object $obj, string $property, mixed $value): void
     $reflection = new ReflectionClass($obj);
     $prop = $reflection->getProperty($property);
     $prop->setValue($obj, $value);
+}
+
+function signStripeWebhookPayload(string $payload, string $secret = TEST_WEBHOOK_SECRET): string
+{
+    $timestamp = time();
+    $signature = hash_hmac('sha256', "{$timestamp}.{$payload}", $secret);
+
+    return "t={$timestamp},v1={$signature}";
 }
 
 function invokePrivateMethod(object $obj, string $method, array $args = []): mixed
@@ -852,6 +863,77 @@ describe('handleSetupIntentSucceededWebhook', function (): void {
     });
 });
 
+describe('processWebhookEvent signature verification', function (): void {
+    test('rejects webhook events missing the Stripe-Signature header', function (): void {
+        $tx = buildTransaction();
+        $tx->id = 502;
+
+        $rawBody = json_encode(['type' => 'payment_intent.succeeded', 'id' => 'evt_unsigned']);
+
+        $data = [
+            'http_raw_post_data' => $rawBody,
+            'server' => [],
+            'get' => [],
+            'post' => [],
+        ];
+
+        invokePrivateMethod($this->adapter, 'processWebhookEvent', [
+            Mockery::mock(),
+            $tx,
+            $data,
+            1,
+        ]);
+    })->throws(FOSSBilling\Exception::class, 'Missing Stripe-Signature header');
+
+    test('rejects webhook events with an invalid signature', function (): void {
+        $tx = buildTransaction();
+        $tx->id = 503;
+
+        $rawBody = json_encode(['type' => 'payment_intent.succeeded', 'id' => 'evt_bad_sig']);
+
+        $data = [
+            'http_raw_post_data' => $rawBody,
+            'server' => ['HTTP_STRIPE_SIGNATURE' => signStripeWebhookPayload($rawBody, 'whsec_wrong_secret')],
+            'get' => [],
+            'post' => [],
+        ];
+
+        invokePrivateMethod($this->adapter, 'processWebhookEvent', [
+            Mockery::mock(),
+            $tx,
+            $data,
+            1,
+        ]);
+    })->throws(FOSSBilling\Exception::class, 'Invalid Stripe webhook signature');
+
+    test('rejects webhook events when no webhook secret is configured', function (): void {
+        $adapter = new Payment_Adapter_Stripe([
+            'test_mode' => true,
+            'test_api_key' => 'sk_test_dummy',
+            'test_pub_key' => 'pk_test_dummy',
+        ]);
+
+        $tx = buildTransaction();
+        $tx->id = 504;
+
+        $rawBody = json_encode(['type' => 'payment_intent.succeeded', 'id' => 'evt_no_secret']);
+
+        $data = [
+            'http_raw_post_data' => $rawBody,
+            'server' => ['HTTP_STRIPE_SIGNATURE' => signStripeWebhookPayload($rawBody)],
+            'get' => [],
+            'post' => [],
+        ];
+
+        invokePrivateMethod($adapter, 'processWebhookEvent', [
+            Mockery::mock(),
+            $tx,
+            $data,
+            1,
+        ]);
+    })->throws(FOSSBilling\Exception::class, 'Stripe webhook signing secret is not configured');
+});
+
 describe('processWebhookEvent noise filtering', function (): void {
     test('deletes transaction for unhandled event types', function (): void {
         $tx = buildTransaction();
@@ -881,7 +963,7 @@ describe('processWebhookEvent noise filtering', function (): void {
 
         $data = [
             'http_raw_post_data' => $rawBody,
-            'server' => [],
+            'server' => ['HTTP_STRIPE_SIGNATURE' => signStripeWebhookPayload($rawBody)],
             'get' => [],
             'post' => [],
         ];
@@ -925,7 +1007,7 @@ describe('processWebhookEvent noise filtering', function (): void {
 
         $data = [
             'http_raw_post_data' => $rawBody,
-            'server' => [],
+            'server' => ['HTTP_STRIPE_SIGNATURE' => signStripeWebhookPayload($rawBody)],
             'get' => [],
             'post' => [],
         ];

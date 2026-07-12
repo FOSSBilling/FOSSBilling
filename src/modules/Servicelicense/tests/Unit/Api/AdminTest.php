@@ -13,7 +13,7 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 
 test('gets dependency injection container', function (): void {
-    $api = new Box\Mod\Servicelicense\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Servicelicense\Api\Admin());
     $di = container();
     $api->setDi($di);
     $getDi = $api->getDi();
@@ -21,7 +21,7 @@ test('gets dependency injection container', function (): void {
 });
 
 test('gets plugin pairs', function (): void {
-    $api = new Box\Mod\Servicelicense\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Servicelicense\Api\Admin());
     $licensePluginArray[]['filename'] = 'plugin1';
     $licensePluginArray[]['filename'] = 'plugin2';
     $licensePluginArray[]['filename'] = 'plugin3';
@@ -46,12 +46,12 @@ test('gets plugin pairs', function (): void {
 });
 
 test('updates license', function (): void {
-    $api = new Box\Mod\Servicelicense\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Servicelicense\Api\Admin());
     $data = [
         'order_id' => 1,
     ];
 
-    $apiMock = Mockery::mock(Box\Mod\Servicelicense\Api\Admin::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Box\Mod\Servicelicense\Api\Admin::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getService')
         ->atLeast()
@@ -72,12 +72,12 @@ test('updates license', function (): void {
 });
 
 test('resets license', function (): void {
-    $api = new Box\Mod\Servicelicense\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Servicelicense\Api\Admin());
     $data = [
         'order_id' => 1,
     ];
 
-    $apiMock = Mockery::mock(Box\Mod\Servicelicense\Api\Admin::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Box\Mod\Servicelicense\Api\Admin::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getService')
         ->atLeast()
@@ -98,7 +98,7 @@ test('resets license', function (): void {
 });
 
 test('gets service', function (): void {
-    $api = new Box\Mod\Servicelicense\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Servicelicense\Api\Admin());
     $data['order_id'] = 1;
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
@@ -124,7 +124,7 @@ test('gets service', function (): void {
 });
 
 test('throws exception when order not activated', function (): void {
-    $api = new Box\Mod\Servicelicense\Api\Admin();
+    $api = apiEndpoint(new Box\Mod\Servicelicense\Api\Admin());
     $data['order_id'] = 1;
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);

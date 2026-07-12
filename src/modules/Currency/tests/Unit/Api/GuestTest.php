@@ -13,7 +13,7 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 
 test('get pairs', function (): void {
-    $guestApi = new Box\Mod\Currency\Api\Guest();
+    $guestApi = apiEndpoint(new Box\Mod\Currency\Api\Guest());
 
     $willReturn = [
         'EUR' => 'Euro',
@@ -57,7 +57,7 @@ dataset('getProvider', [
 ]);
 
 test('get', function ($data, $modelFlag, $expectsGetByCode, $expectsGetDefault): void {
-    $guestApi = new Box\Mod\Currency\Api\Guest();
+    $guestApi = apiEndpoint(new Box\Mod\Currency\Api\Guest());
 
     $willReturn = [
         'code' => 'EUR',
@@ -109,7 +109,7 @@ test('get', function ($data, $modelFlag, $expectsGetByCode, $expectsGetDefault):
 })->with('getProvider');
 
 test('get exception', function (): void {
-    $guestApi = new Box\Mod\Currency\Api\Guest();
+    $guestApi = apiEndpoint(new Box\Mod\Currency\Api\Guest());
 
     $repositoryMock = Mockery::mock('\\' . Box\Mod\Currency\Repository\CurrencyRepository::class);
     $repositoryMock->shouldReceive('findOneByCode')->never();

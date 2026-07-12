@@ -15,7 +15,7 @@ use Box\Mod\Servicehosting\Api\Client;
 use function Tests\Helpers\container;
 
 test('testGetDi', function (): void {
-    $api = new Client();
+    $api = apiEndpoint(new Client());
     $di = container();
     $api->setDi($di);
     $getDi = $api->getDi();
@@ -23,9 +23,9 @@ test('testGetDi', function (): void {
 });
 
 test('testChangeUsername', function (): void {
-    $api = new Client();
+    $api = apiEndpoint(new Client());
     $getServiceReturnValue = [new Model_ClientOrder(), new Model_ServiceHosting()];
-    $apiMock = Mockery::mock(Client::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial());
 
     $apiMock
     ->shouldReceive('_getService')
@@ -46,9 +46,9 @@ test('testChangeUsername', function (): void {
 });
 
 test('testChangeDomain', function (): void {
-    $api = new Client();
+    $api = apiEndpoint(new Client());
     $getServiceReturnValue = [new Model_ClientOrder(), new Model_ServiceHosting()];
-    $apiMock = Mockery::mock(Client::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial());
 
     $apiMock
     ->shouldReceive('_getService')
@@ -69,9 +69,9 @@ test('testChangeDomain', function (): void {
 });
 
 test('testChangePassword', function (): void {
-    $api = new Client();
+    $api = apiEndpoint(new Client());
     $getServiceReturnValue = [new Model_ClientOrder(), new Model_ServiceHosting()];
-    $apiMock = Mockery::mock(Client::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial());
 
     $apiMock
     ->shouldReceive('_getService')
@@ -92,7 +92,7 @@ test('testChangePassword', function (): void {
 });
 
 test('testHpGetPairs', function (): void {
-    $api = new Client();
+    $api = apiEndpoint(new Client());
     $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
     $serviceMock
     ->shouldReceive('getHpPairs')
@@ -105,7 +105,7 @@ test('testHpGetPairs', function (): void {
 });
 
 test('testGetService', function (): void {
-    $api = new Client();
+    $api = apiEndpoint(new Client());
     $data = [
         'order_id' => 1,
     ];
@@ -143,7 +143,7 @@ test('testGetService', function (): void {
 });
 
 test('testGetServiceOrderNotActivated', function (): void {
-    $api = new Client();
+    $api = apiEndpoint(new Client());
     $data = [
         'order_id' => 1,
     ];
@@ -179,7 +179,7 @@ test('testGetServiceOrderNotActivated', function (): void {
 });
 
 test('testGetServiceOrderNotFound', function (): void {
-    $api = new Client();
+    $api = apiEndpoint(new Client());
     $data = [
         'order_id' => 1,
     ];
@@ -207,7 +207,7 @@ test('testGetServiceOrderNotFound', function (): void {
 });
 
 test('testGetServiceMissingOrderId', function (): void {
-    $api = new Client();
+    $api = apiEndpoint(new Client());
     $data = [];
 
     $this->expectException(FOSSBilling\Exception::class);

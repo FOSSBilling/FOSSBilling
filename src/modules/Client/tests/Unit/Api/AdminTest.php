@@ -14,7 +14,7 @@ use function Tests\Helpers\container;
 use function Tests\Helpers\moduleService;
 
 test('getDi returns dependency injection container', function (): void {
-    $adminClient = new Box\Mod\Client\Api\Admin();
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $di = container();
     $adminClient->setDi($di);
     $getDi = $adminClient->getDi();
@@ -22,7 +22,7 @@ test('getDi returns dependency injection container', function (): void {
 });
 
 test('getList returns array', function (): void {
-    $adminClient = new Box\Mod\Client\Api\Admin();
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $simpleResultArr = [
         'list' => [
             ['id' => 1],
@@ -67,7 +67,7 @@ test('getList returns array', function (): void {
 });
 
 test('getPairs returns array', function (): void {
-    $adminClient = new Box\Mod\Client\Api\Admin();
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
     $serviceMock->shouldReceive('getPairs')->atLeast()->once()->andReturn([]);
 
@@ -82,7 +82,7 @@ test('getPairs returns array', function (): void {
 });
 
 test('get returns array', function (): void {
-    $adminClient = new Box\Mod\Client\Api\Admin();
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $model = new Model_Client();
     $model->loadBean(new Tests\Helpers\DummyBean());
 
@@ -100,7 +100,7 @@ test('get returns array', function (): void {
 });
 
 test('login returns array', function (): void {
-    $adminClient = new Box\Mod\Client\Api\Admin();
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $model = new Model_Client();
     $model->loadBean(new Tests\Helpers\DummyBean());
     $dbMock = Mockery::mock('\Box_Database');
@@ -135,7 +135,7 @@ test('login returns array', function (): void {
 });
 
 test('create returns int', function (): void {
-    $adminClient = new Box\Mod\Client\Api\Admin();
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $data = [
         'email' => 'email@example.com',
         'first_name' => 'John', 'password' => 'StrongPass123',
@@ -167,7 +167,7 @@ test('create returns int', function (): void {
 });
 
 test('create throws exception when email is already registered', function (): void {
-    $adminClient = new Box\Mod\Client\Api\Admin();
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $data = [
         'email' => 'email@example.com',
         'first_name' => 'John', 'password' => 'StrongPass123',
@@ -189,7 +189,7 @@ test('create throws exception when email is already registered', function (): vo
 })->throws(FOSSBilling\Exception::class, 'This email address is already registered.');
 
 test('delete returns true', function (): void {
-    $adminClient = new Box\Mod\Client\Api\Admin();
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $data = ['id' => 1];
 
     $model = new Model_Client();
@@ -219,7 +219,7 @@ test('delete returns true', function (): void {
 });
 
 test('update returns true', function (): void {
-    $adminClient = new Box\Mod\Client\Api\Admin();
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $data = [
         'id' => 1,
         'first_name' => 'John', 'password' => 'StrongPass123',
@@ -291,7 +291,7 @@ test('update returns true', function (): void {
 });
 
 test('update throws exception when email is already registered', function (): void {
-    $adminClient = new Box\Mod\Client\Api\Admin();
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $data = [
         'id' => 1,
         'first_name' => 'John', 'password' => 'StrongPass123',
@@ -363,7 +363,7 @@ test('update throws exception when email is already registered', function (): vo
 })->throws(FOSSBilling\Exception::class, 'This email address is already registered.');
 
 test('update throws exception when id is not passed', function (): void {
-    $adminClient = new Box\Mod\Client\Api\Admin();
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $data = [];
 
     $di = container();
@@ -379,7 +379,7 @@ test('update throws exception when id is not passed', function (): void {
 })->throws(FOSSBilling\Exception::class, 'Client ID was not passed');
 
 test('changePassword returns true', function (): void {
-    $adminClient = new Box\Mod\Client\Api\Admin();
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $data = [
         'id' => 1,
         'password' => 'strongPass',
@@ -421,7 +421,7 @@ test('changePassword returns true', function (): void {
 });
 
 test('changePassword throws exception when passwords do not match', function (): void {
-    $adminClient = new Box\Mod\Client\Api\Admin();
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $data = [
         'id' => 1,
         'password' => 'strongPass',
@@ -439,7 +439,7 @@ test('changePassword throws exception when passwords do not match', function ():
 })->throws(FOSSBilling\Exception::class, 'Passwords do not match');
 
 test('balanceGetList returns array', function (): void {
-    $adminClient = new Box\Mod\Client\Api\Admin();
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $simpleResultArr = [
         'list' => [
             [
@@ -481,7 +481,7 @@ test('balanceGetList returns array', function (): void {
 });
 
 test('balanceDelete returns true', function (): void {
-    $adminClient = new Box\Mod\Client\Api\Admin();
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $data = [
         'id' => 1,
     ];
@@ -508,7 +508,7 @@ test('balanceDelete returns true', function (): void {
 });
 
 test('balanceAddFunds returns true', function (): void {
-    $adminClient = new Box\Mod\Client\Api\Admin();
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $data = [
         'id' => 1,
         'amount' => '1.00',
@@ -539,7 +539,7 @@ test('balanceAddFunds returns true', function (): void {
 });
 
 test('batchExpirePasswordReminders returns true', function (): void {
-    $adminClient = new Box\Mod\Client\Api\Admin();
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $expiredArr = [
         new Model_ClientPasswordReset(),
     ];
@@ -562,7 +562,7 @@ test('batchExpirePasswordReminders returns true', function (): void {
 });
 
 test('loginHistoryGetList returns array', function (): void {
-    $adminClient = new Box\Mod\Client\Api\Admin();
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $data = [];
     $pagerResultSet = [
         'list' => [],
@@ -592,7 +592,7 @@ test('loginHistoryGetList returns array', function (): void {
 });
 
 test('getStatuses returns array', function (): void {
-    $adminClient = new Box\Mod\Client\Api\Admin();
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
     $serviceMock->shouldReceive('counter')->atLeast()->once()->andReturn([]);
 
@@ -606,7 +606,7 @@ test('getStatuses returns array', function (): void {
 });
 
 test('groupGetPairs returns array', function (): void {
-    $adminClient = new Box\Mod\Client\Api\Admin();
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
     $serviceMock->shouldReceive('getGroupPairs')->atLeast()->once()->andReturn([]);
 
@@ -620,7 +620,7 @@ test('groupGetPairs returns array', function (): void {
 });
 
 test('groupCreate returns int', function (): void {
-    $adminClient = new Box\Mod\Client\Api\Admin();
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $data['title'] = 'test Group';
 
     $newGroupId = 1;
@@ -637,7 +637,7 @@ test('groupCreate returns int', function (): void {
 });
 
 test('groupUpdate returns true', function (): void {
-    $adminClient = new Box\Mod\Client\Api\Admin();
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $data['id'] = '2';
     $data['title'] = 'test Group updated';
 
@@ -665,7 +665,7 @@ test('groupUpdate returns true', function (): void {
 });
 
 test('groupDelete returns true', function (): void {
-    $adminClient = new Box\Mod\Client\Api\Admin();
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $data['id'] = '2';
 
     $model = new Model_ClientGroup();
@@ -698,7 +698,7 @@ test('groupDelete returns true', function (): void {
 });
 
 test('groupGet returns array', function (): void {
-    $adminClient = new Box\Mod\Client\Api\Admin();
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $data['id'] = '2';
 
     $model = new Model_ClientGroup();
@@ -724,7 +724,7 @@ test('groupGet returns array', function (): void {
 });
 
 test('batchDelete returns true', function (): void {
-    $adminClient = new Box\Mod\Client\Api\Admin();
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $activityMock = Mockery::mock(Box\Mod\Client\Api\Admin::class)->makePartial();
     $activityMock->shouldReceive('delete')->atLeast()->once()->andReturn(true);
 

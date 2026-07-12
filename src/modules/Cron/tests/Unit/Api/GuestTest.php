@@ -16,7 +16,7 @@ use function Tests\Helpers\container;
 
 test('getDi returns dependency injection container', function (): void {
     $di = container();
-    $api = new Guest();
+    $api = apiEndpoint(new Guest());
     $api->setDi($di);
     $getDi = $api->getDi();
     expect($getDi)->toEqual($di);

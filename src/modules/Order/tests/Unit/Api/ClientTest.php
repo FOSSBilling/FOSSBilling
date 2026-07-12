@@ -16,7 +16,7 @@ use Box\Mod\Order\Service;
 use function Tests\Helpers\container;
 
 test('gets list of orders', function (): void {
-    $api = new Client();
+    $api = apiEndpoint(new Client());
 
     $orderArr = ['id' => 1];
 
@@ -44,7 +44,7 @@ test('gets list of orders', function (): void {
 });
 
 test('gets list of expiring orders', function (): void {
-    $api = new Client();
+    $api = apiEndpoint(new Client());
 
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getSoonExpiringActiveOrdersQuery')->atLeast()->once()->andReturn(['query', []]);
@@ -73,7 +73,7 @@ test('gets a single order', function (): void {
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
 
-    $apiMock = Mockery::mock(Client::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
 
@@ -92,7 +92,7 @@ test('gets addons', function (): void {
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
 
-    $apiMock = Mockery::mock(Client::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
 
@@ -114,7 +114,7 @@ test('gets order service', function (): void {
     $order->loadBean(new Tests\Helpers\DummyBean());
     $order->status = Model_ClientOrder::STATUS_ACTIVE;
 
-    $apiMock = Mockery::mock(Client::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
 
@@ -138,7 +138,7 @@ test('gets upgradables', function (): void {
     $order->loadBean(new Tests\Helpers\DummyBean());
     $order->product_id = 5;
 
-    $apiMock = Mockery::mock(Client::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
 
@@ -166,7 +166,7 @@ test('deletes a pending setup order', function (): void {
     $order->loadBean(new Tests\Helpers\DummyBean());
     $order->status = Model_ClientOrder::STATUS_PENDING_SETUP;
 
-    $apiMock = Mockery::mock(Client::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
 
@@ -185,7 +185,7 @@ test('throws exception when deleting non-pending order', function (): void {
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
 
-    $apiMock = Mockery::mock(Client::class)->makePartial();
+    $apiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
 
@@ -200,7 +200,7 @@ test('throws exception when deleting non-pending order', function (): void {
 });
 
 test('gets order via getOrder', function (): void {
-    $api = new Client();
+    $api = apiEndpoint(new Client());
 
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
@@ -222,7 +222,7 @@ test('gets order via getOrder', function (): void {
 });
 
 test('throws exception when order not found', function (): void {
-    $api = new Client();
+    $api = apiEndpoint(new Client());
 
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('findForClientById')->atLeast()->once()->andReturn(null);

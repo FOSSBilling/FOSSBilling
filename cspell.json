@@ -527,7 +527,10 @@
         "inpay",
         "seti",
         "unassigns",
-        "docstrings"
+        "docstrings",
+        "tablesort",
+        "Brien",
+        "whsec"
     ],
     "ignorePaths": [
         "node_modules/**",

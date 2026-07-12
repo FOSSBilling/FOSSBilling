@@ -202,10 +202,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     /**
      * Return list of staff members groups.
-     *
-     * @return array
      */
-    public function group_get_list($data)
+    public function group_get_list($data): array
     {
         $this->checkPermissions('staff', 'manage_groups');
 

@@ -13,8 +13,8 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 
 test('checkout processes cart and returns result array', function (): void {
-    $clientApi = new Box\Mod\Cart\Api\Client();
-    $api = new Box\Mod\Cart\Api\Client();
+    $clientApi = apiEndpoint(new Box\Mod\Cart\Api\Client());
+    $api = apiEndpoint(new Box\Mod\Cart\Api\Client());
     $cart = new Model_Cart();
     $cart->loadBean(new Tests\Helpers\DummyBean());
 

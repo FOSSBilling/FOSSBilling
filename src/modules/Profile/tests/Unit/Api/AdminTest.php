@@ -28,7 +28,7 @@ test('gets admin profile', function (): void {
     $model->updated_at = '2014-01-01';
     $model->timezone = null;
 
-    $adminApi = new Admin();
+    $adminApi = apiEndpoint(new Admin());
     $adminApi->setIdentity($model);
     $adminApi->setService($service);
     $result = $adminApi->get();
@@ -55,7 +55,7 @@ test('logs out admin', function (): void {
     $di['session'] = $sessionMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
-    $adminApi = new Admin();
+    $adminApi = apiEndpoint(new Admin());
     $adminApi->setDi($di);
     $result = $adminApi->logout();
     expect($result)->toBeTrue();
@@ -69,7 +69,7 @@ test('updates admin profile', function (): void {
         ->once()
         ->andReturn(true);
 
-    $adminApi = new Admin();
+    $adminApi = apiEndpoint(new Admin());
     $adminApi->setIdentity($model);
     $adminApi->setService($serviceMock);
     $result = $adminApi->update(['name' => 'Root']);
@@ -84,7 +84,7 @@ test('generates api key', function (): void {
         ->once()
         ->andReturn(true);
 
-    $adminApi = new Admin();
+    $adminApi = apiEndpoint(new Admin());
     $adminApi->setIdentity($model);
     $adminApi->setService($serviceMock);
     $result = $adminApi->generate_api_key([]);
@@ -95,7 +95,7 @@ test('throws exception when changing password without required params', function
     $di = container();
     $di['validator'] = new FOSSBilling\Validate();
 
-    $adminApi = new Admin();
+    $adminApi = apiEndpoint(new Admin());
     $adminApi->setDi($di);
 
     expect(fn () => $adminApi->change_password([]))
@@ -118,7 +118,7 @@ test('changes password', function (): void {
     $serviceMock->shouldReceive('invalidateSessions')
         ->once();
 
-    $adminApi = new Admin();
+    $adminApi = apiEndpoint(new Admin());
     $adminApi->setDi($di);
     $adminApi->setIdentity($model);
     $adminApi->setService($serviceMock);

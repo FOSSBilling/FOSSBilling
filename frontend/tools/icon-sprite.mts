@@ -124,10 +124,12 @@ export async function generateIconSprite(options) {
     spriter.add(filePath, fileName, content);
   }
 
-  const result = await new Promise((res, rej) => {
+  type SpriteCompileResult = { symbol: { sprite: { contents: string } } };
+
+  const result = await new Promise<SpriteCompileResult>((res, rej) => {
     spriter.compile((error, result) => {
       if (error) rej(error);
-      else res(result);
+      else res(result as SpriteCompileResult);
     });
   });
 

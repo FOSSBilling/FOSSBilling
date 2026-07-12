@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Security\Controller;
 
+use FOSSBilling\PaginationOptions;
+
 class Admin implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
@@ -49,6 +51,13 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                     'uri' => $this->di['url']->adminLink('security/iplookup'),
                     'class' => '',
                 ],
+                [
+                    'location' => 'security',
+                    'label' => __trans('Rate Limits'),
+                    'index' => 300,
+                    'uri' => $this->di['url']->adminLink('security/rate-limits'),
+                    'class' => '',
+                ],
             ],
         ];
     }
@@ -58,6 +67,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $app->get('/security', 'get_index', [], static::class);
         $app->get('/security/', 'get_index', [], static::class);
         $app->get('/security/iplookup', 'ip_lookup', [], static::class);
+        $app->get('/security/rate-limits', 'rate_limits', [], static::class);
     }
 
     public function get_index(\Box_App $app): string
@@ -81,5 +91,35 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         }
 
         return $app->render('mod_security_iplookup', ['record' => $record]);
+    }
+
+    public function rate_limits(\Box_App $app): string
+    {
+        $this->di['is_admin_logged'];
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('security', 'view');
+
+        $request = $app->getRequest();
+        $ip = $request->query->get('ip');
+        $invalidIp = false;
+        if (is_string($ip) && $ip !== '' && !filter_var($ip, FILTER_VALIDATE_IP)) {
+            $invalidIp = true;
+            $ip = null;
+        }
+
+        $search = $request->query->get('search');
+        $counters = $invalidIp ? [] : $this->di['mod_service']('Security')->getRateLimitList(
+            is_string($ip) && $ip !== '' ? $ip : null,
+            is_string($search) && $search !== '' ? $search : null,
+        );
+
+        $page = filter_var($request->query->get('page', 1), FILTER_VALIDATE_INT, ['options' => ['default' => 1, 'min_range' => 1]]);
+        $perPage = filter_var($request->query->get('per_page', 25), FILTER_VALIDATE_INT, ['options' => ['default' => 25, 'min_range' => 1, 'max_range' => 100]]);
+        $counters = $this->di['pager']->paginateArray($counters, new PaginationOptions($page, $perPage));
+
+        return $app->render('mod_security_rate_limits', [
+            'rate_limit_status' => $this->di['mod_service']('Security')->getRateLimitStatus(),
+            'rate_limit_counters' => $counters,
+            'rate_limit_invalid_ip' => $invalidIp,
+        ]);
     }
 }

@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
+use Box\Mod\Extension\Entity\Extension;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -658,8 +659,8 @@ class UpdatePatcher implements InjectionAwareInterface
             }
 
             // If the Kb extension exists, uninstall it.
-            $kb_ext = $ext_service->findExtension('mod', 'kb');
-            if ($kb_ext instanceof \Model_Extension) {
+            $kb_ext = $ext_service->getExtensionRepository()->findOneByTypeAndName('mod', 'kb');
+            if ($kb_ext instanceof Extension) {
                 $ext_service->deactivate($kb_ext);
                 $ext_service->uninstall('mod', 'kb');
             }
@@ -681,8 +682,8 @@ class UpdatePatcher implements InjectionAwareInterface
         try {
             $ext_service = $this->di['mod_service']('extension');
             // If the queue extension exists, uninstall it.
-            $queue_ext = $ext_service->findExtension('mod', 'queue');
-            if ($queue_ext instanceof \Model_Extension) {
+            $queue_ext = $ext_service->getExtensionRepository()->findOneByTypeAndName('mod', 'queue');
+            if ($queue_ext instanceof Extension) {
                 $ext_service->deactivate($queue_ext);
                 $ext_service->uninstall('mod', 'queue');
             }
@@ -1114,8 +1115,8 @@ class UpdatePatcher implements InjectionAwareInterface
 
             $this->executeSql("DELETE FROM extension_meta WHERE extension = 'mod_spamchecker' AND meta_key = 'config'");
 
-            $spamcheckerExt = $extService->findExtension('mod', 'spamchecker');
-            if ($spamcheckerExt instanceof \Model_Extension) {
+            $spamcheckerExt = $extService->getExtensionRepository()->findOneByTypeAndName('mod', 'spamchecker');
+            if ($spamcheckerExt instanceof Extension) {
                 $extService->deactivate($spamcheckerExt);
                 $extService->uninstall('mod', 'spamchecker');
             }
@@ -2101,7 +2102,17 @@ class UpdatePatcher implements InjectionAwareInterface
         }
 
         if ($this->tableHasColumn('admin', 'role')) {
-            $this->executeSql("UPDATE `admin` SET `system_name` = 'cron' WHERE `role` = 'cron' AND (`system_name` IS NULL OR `system_name` = '') ORDER BY `id` ASC LIMIT 1;");
+            $this->executeSql("
+                UPDATE `admin`
+                SET `system_name` = 'cron'
+                WHERE `role` = 'cron'
+                  AND (`system_name` IS NULL OR `system_name` = '')
+                  AND NOT EXISTS (
+                      SELECT 1 FROM (SELECT `id` FROM `admin` WHERE `system_name` = 'cron' LIMIT 1) AS existing_cron
+                  )
+                ORDER BY `id` ASC
+                LIMIT 1;
+            ");
             $this->executeSql('ALTER TABLE `admin` DROP COLUMN `role`;');
         }
 

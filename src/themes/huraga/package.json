@@ -1,8 +1,11 @@
 {
   "name": "huraga",
   "scripts": {
-    "dev": "node ./esbuild.mjs",
-    "build": "node ./esbuild.mjs"
+    "dev": "node ./esbuild.mts",
+    "build": "node ./esbuild.mts"
+  },
+  "engines": {
+    "node": ">=24"
   },
   "dependencies": {
     "bootstrap": "^5.3.3",

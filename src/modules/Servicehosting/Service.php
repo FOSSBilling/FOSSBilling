@@ -759,6 +759,14 @@ class Service implements InjectionAwareInterface
 
     public function getServerManagerConfig($manager)
     {
+        // Only ever load files belonging to a known server manager. $manager
+        // ultimately comes from admin-supplied input (server_create/server_update),
+        // so without this whitelist check a path-traversal value could reach
+        // require_once below.
+        if (!in_array($manager, $this->_getServerManagers(), true)) {
+            return [];
+        }
+
         $filename = Path::join(PATH_LIBRARY, 'Server', 'Manager', "{$manager}.php");
         if (!$this->filesystem->exists($filename)) {
             return [];
@@ -792,6 +800,12 @@ class Service implements InjectionAwareInterface
     public function getServerManagerSecretFields(string $manager): array
     {
         $secrets = ['password', 'accesshash'];
+
+        // Same whitelist requirement as getServerManagerConfig() — $manager is
+        // admin-supplied and must not be usable to require_once an arbitrary file.
+        if (!in_array($manager, $this->_getServerManagers(), true)) {
+            return array_values(array_unique($secrets));
+        }
 
         $filename = Path::join(PATH_LIBRARY, 'Server', 'Manager', "{$manager}.php");
         if (!$this->filesystem->exists($filename)) {
@@ -871,6 +885,10 @@ class Service implements InjectionAwareInterface
 
     public function createServer($name, $ip, $manager, $data)
     {
+        if (!in_array($manager, $this->_getServerManagers(), true)) {
+            throw new Exception('Server manager :manager is not a valid server manager', [':manager' => $manager]);
+        }
+
         $model = $this->di['db']->dispense('ServiceHostingServer');
         $model->name = $name;
         $model->ip = $ip;
@@ -935,7 +953,12 @@ class Service implements InjectionAwareInterface
         $model->ns2 = $data['ns2'] ?? $model->ns2;
         $model->ns3 = $data['ns3'] ?? $model->ns3;
         $model->ns4 = $data['ns4'] ?? $model->ns4;
-        $model->manager = $data['manager'] ?? $model->manager;
+        if (isset($data['manager'])) {
+            if (!in_array($data['manager'], $this->_getServerManagers(), true)) {
+                throw new Exception('Server manager :manager is not a valid server manager', [':manager' => $data['manager']]);
+            }
+            $model->manager = $data['manager'];
+        }
         $port = Tools::normalizePort($data['port'] ?? null);
         $model->port = $port ?? $model->port;
         $model->config = isset($data['config']) ? json_encode($data['config']) : $model->config;

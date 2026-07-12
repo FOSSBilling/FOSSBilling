@@ -1194,6 +1194,38 @@ test('gets total with tax', function (): void {
     expect($result)->toBe($expected);
 });
 
+test('pays a zero-total invoice without recording a balance transaction', function (): void {
+    $invoice = new Model_Invoice();
+    $invoice->loadBean(new Tests\Helpers\DummyBean());
+    $invoice->id = 10;
+    $invoice->client_id = 20;
+    $invoice->approved = 1;
+    $invoice->status = Model_Invoice::STATUS_UNPAID;
+
+    $client = new Model_Client();
+    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client->id = 20;
+
+    $balanceService = Mockery::mock(Box\Mod\Client\ServiceBalance::class);
+    $balanceService->shouldReceive('getClientBalance')->once()->with($client)->andReturn(0.0);
+
+    $db = Mockery::mock(Box_Database::class);
+    $db->shouldReceive('load')->once()->with('Client', 20)->andReturn($client);
+    $db->shouldNotReceive('dispense');
+    $db->shouldNotReceive('store');
+
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(0.0);
+    $service->shouldReceive('markAsPaid')->once()->with($invoice, false, true)->andReturn(true);
+
+    $di = container();
+    $di['db'] = $db;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $balanceService);
+    $service->setDi($di);
+
+    expect($service->tryPayWithCredits($invoice))->toBeTrue();
+});
+
 test('gets total', function (): void {
     $service = new Service();
     $invoiceModel = new Model_Invoice();
@@ -1747,14 +1779,55 @@ test('generates renewal invoice for active domain order with stale zero price an
     expect((float) $orderModel->price)->toBe(25.0);
 });
 
-test('throws exception when generating invoice for zero amount order', function (): void {
+test('generates invoice for zero amount order', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('setInvoiceDefaults')
+        ->once();
+
+    $orderModel = new Model_ClientOrder();
+    $orderModel->loadBean(new Tests\Helpers\DummyBean());
+    $orderModel->price = 0;
+    $orderModel->quantity = 1;
+    $orderModel->currency = 'USD';
+
+    $clientModel = new Model_Client();
+    $clientModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getExistingModelById')
+        ->atLeast()->once()
+        ->andReturn($clientModel);
+    $dbMock->shouldReceive('dispense')
+        ->atLeast()->once()
+        ->andReturn($invoiceModel);
+    $dbMock->shouldReceive('store')
+        ->atLeast()->once();
+
+    $invoiceItemServiceMock = Mockery::mock(ServiceInvoiceItem::class);
+    $invoiceItemServiceMock->shouldReceive('generateFromOrder')
+        ->atLeast()->once();
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $invoiceItemServiceMock);
+
+    $serviceMock->setDi($di);
+    $result = $serviceMock->generateForOrder($orderModel);
+    expect($result)->toBeInstanceOf(Model_Invoice::class);
+});
+
+test('throws exception when generating invoice for negative amount order', function (): void {
     $service = new Service();
     $clientOrder = new Model_ClientOrder();
     $clientOrder->loadBean(new Tests\Helpers\DummyBean());
-    $clientOrder->price = 0;
+    $clientOrder->price = -1;
+    $clientOrder->quantity = 1;
 
     expect(fn () => $service->generateForOrder($clientOrder))
-        ->toThrow(FOSSBilling\Exception::class, 'Invoices are not generated for 0 amount orders');
+        ->toThrow(FOSSBilling\Exception::class, 'Invoices are not generated for negative amount orders.');
 });
 
 test('returns true when no expiring orders found', function (): void {

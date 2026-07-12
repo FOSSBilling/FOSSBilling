@@ -6,7 +6,7 @@ import {
   ensureDir,
   sharedLoaders,
   writeAssetManifest,
-} from './tools/esbuild-helpers.mjs';
+} from './tools/esbuild-helpers.mts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = resolve(__dirname, '..');
@@ -20,21 +20,21 @@ async function build() {
   await ensureDir(resolve(outputDir, 'editor'));
 
   await buildJsFile({
-    entryPoint: resolve(__dirname, 'core/fossbilling.js'),
+    entryPoint: resolve(__dirname, 'core/fossbilling.ts'),
     outfile: resolve(outputDir, 'js/fossbilling.js'),
     isProduction,
     drop: [],
   });
 
   await buildJsFile({
-    entryPoint: resolve(__dirname, 'core/api.js'),
+    entryPoint: resolve(__dirname, 'core/api.ts'),
     outfile: resolve(outputDir, 'js/api.js'),
     isProduction,
     drop: [],
   });
 
   await buildJsFile({
-    entryPoint: resolve(__dirname, 'editor/ckeditor.js'),
+    entryPoint: resolve(__dirname, 'editor/ckeditor.ts'),
     outfile: resolve(outputDir, 'editor/ckeditor.js'),
     isProduction,
     drop: [],

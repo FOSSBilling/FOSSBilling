@@ -149,7 +149,7 @@ function errorHandler(int $number, string $message, string $file, int $line): bo
 /*
  * Exception handler.
  */
-function exceptionHandler(Exception|Error $e)
+function exceptionHandler(Exception|Error $e): void
 {
     $exceptionResponseFactory = new ExceptionResponseFactory();
 

@@ -15,7 +15,7 @@ use Box\Mod\Theme\Api\Admin;
 use function Tests\Helpers\container;
 
 test('testGetDi', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $di = container();
     $api->setDi($di);
     $getDi = $api->getDi();
@@ -23,7 +23,7 @@ test('testGetDi', function (): void {
 });
 
 test('testGetList', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $systemServiceMock = Mockery::mock(Box\Mod\Theme\Service::class);
     $systemServiceMock->shouldReceive('getThemes')
         ->atLeast()
@@ -37,7 +37,7 @@ test('testGetList', function (): void {
 });
 
 test('testGet', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = [
         'code' => 'themeCode',
     ];
@@ -57,7 +57,7 @@ test('testGet', function (): void {
 });
 
 test('testSelectNotAdminTheme', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = [
         'code' => 'pjw',
     ];
@@ -93,7 +93,7 @@ test('testSelectNotAdminTheme', function (): void {
 });
 
 test('testSelectAdminTheme', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = [
         'code' => 'pjw',
     ];
@@ -129,7 +129,7 @@ test('testSelectAdminTheme', function (): void {
 });
 
 test('testPresetDelete', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = [
         'code' => 'themeCode',
         'preset' => 'themePreset',
@@ -156,7 +156,7 @@ test('testPresetDelete', function (): void {
 });
 
 test('testPresetSelect', function (): void {
-    $api = new Admin();
+    $api = apiEndpoint(new Admin());
     $data = [
         'code' => 'themeCode',
         'preset' => 'themePreset',

@@ -22,11 +22,8 @@ class ServicePayGateway implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
-    private ?Filesystem $filesystem = null;
-
-    public function __construct(?Filesystem $filesystem = null)
+    public function __construct(private ?Filesystem $filesystem = null)
     {
-        $this->filesystem = $filesystem;
     }
 
     public function setDi(\Pimple\Container $di): void

@@ -81,6 +81,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
     {
         $this->di['is_admin_logged'];
         $extensionService = $this->di['mod_service']('Extension');
+
         try {
             $extensionService->hasManagePermission($mod);
         } catch (InformationException $e) {

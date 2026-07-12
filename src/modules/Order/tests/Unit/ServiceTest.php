@@ -1669,7 +1669,14 @@ test('activateOrder throws for non-pending order', function (): void {
     $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
     $clientOrderModel->status = Model_ClientOrder::STATUS_CANCELED;
 
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('load')->atLeast()->once()->with('ClientOrder', Mockery::any())->andReturn($clientOrderModel);
+
+    $di = container();
+    $di['db'] = $dbMock;
+
     $svc = new Service();
+    $svc->setDi($di);
 
     expect(fn (): bool => $svc->activateOrder($clientOrderModel))
         ->toThrow(FOSSBilling\Exception::class, 'Only pending setup or failed orders can be activated');
@@ -1681,10 +1688,14 @@ test('activateOrder activates pending order', function (): void {
     $clientOrderModel->status = Model_ClientOrder::STATUS_PENDING_SETUP;
     $clientOrderModel->group_master = 1;
 
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('load')->atLeast()->once()->with('ClientOrder', Mockery::any())->andReturn($clientOrderModel);
+
     $eventMock = Mockery::mock(Box_EventManager::class);
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $di = container();
+    $di['db'] = $dbMock;
     $di['events_manager'] = $eventMock;
     $di['logger'] = new Box_Log();
 
@@ -1696,6 +1707,63 @@ test('activateOrder activates pending order', function (): void {
     $serviceMock->setDi($di);
 
     $result = $serviceMock->activateOrder($clientOrderModel);
+
+    expect($result)->toBeTrue();
+});
+
+test('activateOrder is a no-op when order was already activated by a stale reference', function (): void {
+    $staleOrderModel = new Model_ClientOrder();
+    $staleOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $staleOrderModel->status = Model_ClientOrder::STATUS_PENDING_SETUP;
+
+    $activeOrderModel = new Model_ClientOrder();
+    $activeOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $activeOrderModel->status = Model_ClientOrder::STATUS_ACTIVE;
+    $activeOrderModel->group_master = 1;
+
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('load')->atLeast()->once()->with('ClientOrder', Mockery::any())->andReturn($activeOrderModel);
+
+    $di = container();
+    $di['db'] = $dbMock;
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('createFromOrder')->never();
+    $serviceMock->shouldReceive('activateOrderAddons')->never();
+
+    $serviceMock->setDi($di);
+
+    $result = $serviceMock->activateOrder($staleOrderModel);
+
+    expect($result)->toBeTrue();
+});
+
+test('activateOrder force re-activates an already active order', function (): void {
+    $activeOrderModel = new Model_ClientOrder();
+    $activeOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $activeOrderModel->status = Model_ClientOrder::STATUS_ACTIVE;
+    $activeOrderModel->group_master = 1;
+
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('load')->atLeast()->once()->with('ClientOrder', Mockery::any())->andReturn($activeOrderModel);
+
+    $eventMock = Mockery::mock(Box_EventManager::class);
+    $eventMock->shouldReceive('fire')->atLeast()->once();
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['events_manager'] = $eventMock;
+    $di['logger'] = new Box_Log();
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('createFromOrder')->atLeast()->once()->andReturn([]);
+    $serviceMock->shouldReceive('activateOrderAddons')->atLeast()->once();
+
+    $serviceMock->setDi($di);
+
+    $result = $serviceMock->activateOrder($activeOrderModel, ['force' => true]);
 
     expect($result)->toBeTrue();
 });
@@ -2411,4 +2479,222 @@ test('updateOrderConfig succeeds with valid form data', function (): void {
     $result = $svc->updateOrderConfig($order, ['hostname' => 'myhost.example.com', 'plan' => 'pro', 'addons' => ['backup', 'ssl']]);
 
     expect($result)->toBeTrue();
+});
+
+test('createOrder rejects invalid price and quantity', function (array $data, string $message): void {
+    $service = new Service();
+    $client = new Model_Client();
+    $product = orderServiceCreateProductEntity(1, 'custom');
+
+    expect(fn () => $service->createOrder($client, $product, $data))
+        ->toThrow(FOSSBilling\InformationException::class, $message);
+})->with([
+    'negative price' => [['price' => -1], 'Price cannot be negative'],
+    'invalid price' => [['price' => 'invalid'], 'Price must be a valid number'],
+    'invalid quantity' => [['quantity' => 'invalid'], 'Quantity must be a valid number'],
+]);
+
+test('updateOrder rejects a negative price', function (): void {
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+
+    $events = Mockery::mock(Box_EventManager::class);
+    $events->shouldReceive('fire')->once();
+
+    $di = container();
+    $di['events_manager'] = $events;
+
+    $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $service->shouldReceive('updatePeriod')->once();
+    $service->setDi($di);
+
+    expect(fn () => $service->updateOrder($order, ['price' => -1]))
+        ->toThrow(FOSSBilling\InformationException::class, 'Price cannot be negative');
+});
+
+test('createOrder generates an invoice for a zero-price order with issue-invoice', function (): void {
+    $modelClient = new Model_Client();
+    $modelClient->loadBean(new Tests\Helpers\DummyBean());
+    $modelClient->currency = 'USD';
+
+    $modelProduct = orderServiceCreateProductEntity(1, 'custom');
+
+    $currencyModel = Mockery::mock(Box\Mod\Currency\Entity\Currency::class)->shouldIgnoreMissing();
+
+    $currencyRepositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $currencyRepositoryMock->shouldReceive('findOneByCode')->atLeast()->once()->andReturn($currencyModel);
+
+    $currencyServiceMock = Mockery::mock(Box\Mod\Currency\Service::class);
+    $currencyServiceMock->shouldReceive('getCurrencyRepository')->atLeast()->once()->andReturn($currencyRepositoryMock);
+
+    $cartServiceMock = Mockery::mock(Box\Mod\Cart\Service::class);
+    $cartServiceMock->shouldReceive('isStockAvailable')
+        ->atLeast()->once()
+        ->with($modelProduct, Mockery::any())
+        ->andReturn(true);
+
+    $eventMock = Mockery::mock(Box_EventManager::class);
+    $eventMock->shouldReceive('fire')->atLeast()->once();
+
+    $productServiceMock = Mockery::mock(Box\Mod\Servicecustom\Service::class);
+    $pricingServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
+    $pricingServiceMock->shouldReceive('getProductOrderLineConfig')->never();
+
+    $clientOrderModel = new Model_ClientOrder();
+    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceModel->id = 10;
+
+    $invoiceServiceMock = Mockery::mock(Box\Mod\Invoice\Service::class);
+    $invoiceServiceMock->shouldReceive('generateForOrder')
+        ->once()
+        ->with($clientOrderModel)
+        ->andReturn($invoiceModel);
+    $invoiceServiceMock->shouldReceive('approveInvoice')
+        ->once()
+        ->with($invoiceModel, ['id' => $invoiceModel->id, 'use_credits' => true])
+        ->andReturn(true);
+
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('transaction')
+        ->once()
+        ->andReturnUsing(fn (callable $callback) => $callback());
+    $dbMock->shouldReceive('dispense')->atLeast()->once()->with('ClientOrder')->andReturn($clientOrderModel);
+
+    $newId = 1;
+    $dbMock->shouldReceive('store')->atLeast()->once()->with($clientOrderModel)->andReturn($newId);
+    $dbMock->shouldReceive('getExistingModelById')
+        ->atLeast()->once()
+        ->with('ClientOrder', $newId, 'Order not found')
+        ->andReturn($clientOrderModel);
+
+    $periodMock = Mockery::mock(Box_Period::class);
+    $periodMock->shouldReceive('getCode')->atLeast()->once()->andReturn('1Y');
+
+    $di = container();
+    $di['mod_service'] = $di->protect(function ($serviceName) use ($cartServiceMock, $currencyServiceMock, $invoiceServiceMock, $productServiceMock, $pricingServiceMock) {
+        if ($serviceName == 'currency') {
+            return $currencyServiceMock;
+        }
+        if ($serviceName == 'cart') {
+            return $cartServiceMock;
+        }
+        if ($serviceName == 'Product') {
+            return $pricingServiceMock;
+        }
+        if ($serviceName == 'invoice') {
+            return $invoiceServiceMock;
+        }
+        if ($serviceName == 'servicecustom') {
+            return $productServiceMock;
+        }
+    });
+    $di['events_manager'] = $eventMock;
+    $di['db'] = $dbMock;
+    $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
+    $di['logger'] = new Box_Log();
+
+    $svc = new Service();
+    $svc->setDi($di);
+
+    $result = $svc->createOrder($modelClient, $modelProduct, [
+        'period' => '1Y',
+        'price' => 0,
+        'invoice_option' => 'issue-invoice',
+    ]);
+
+    expect($result)->toBe($newId);
+});
+
+test('createOrder does not roll back when invoice generation fails for a negative resolved price', function (): void {
+    $modelClient = new Model_Client();
+    $modelClient->loadBean(new Tests\Helpers\DummyBean());
+    $modelClient->currency = 'USD';
+
+    $modelProduct = orderServiceCreateProductEntity(1, 'custom');
+
+    $currencyModel = Mockery::mock(Box\Mod\Currency\Entity\Currency::class)->shouldIgnoreMissing();
+
+    $currencyRepositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $currencyRepositoryMock->shouldReceive('findOneByCode')->atLeast()->once()->andReturn($currencyModel);
+    $currencyRepositoryMock->shouldReceive('getRateByCode')->atLeast()->once()->andReturn(1.0);
+
+    $currencyServiceMock = Mockery::mock(Box\Mod\Currency\Service::class);
+    $currencyServiceMock->shouldReceive('getCurrencyRepository')->atLeast()->once()->andReturn($currencyRepositoryMock);
+
+    $cartServiceMock = Mockery::mock(Box\Mod\Cart\Service::class);
+    $cartServiceMock->shouldReceive('isStockAvailable')
+        ->atLeast()->once()
+        ->with($modelProduct, Mockery::any())
+        ->andReturn(true);
+
+    $eventMock = Mockery::mock(Box_EventManager::class);
+    $eventMock->shouldReceive('fire')->atLeast()->once();
+
+    $productServiceMock = Mockery::mock(Box\Mod\Servicecustom\Service::class);
+    $pricingServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
+    $pricingServiceMock->shouldReceive('getProductOrderLineConfig')
+        ->atLeast()->once()
+        ->andReturn(['price' => -5.0, 'quantity' => 1]);
+
+    $clientOrderModel = new Model_ClientOrder();
+    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $invoiceServiceMock = Mockery::mock(Box\Mod\Invoice\Service::class);
+    $invoiceServiceMock->shouldReceive('generateForOrder')
+        ->once()
+        ->with($clientOrderModel)
+        ->andThrow(new FOSSBilling\InformationException('Invoices are not generated for negative amount orders.'));
+    $invoiceServiceMock->shouldReceive('approveInvoice')->never();
+
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('transaction')
+        ->once()
+        ->andReturnUsing(fn (callable $callback) => $callback());
+    $dbMock->shouldReceive('dispense')->atLeast()->once()->with('ClientOrder')->andReturn($clientOrderModel);
+
+    $newId = 1;
+    $dbMock->shouldReceive('store')->atLeast()->once()->with($clientOrderModel)->andReturn($newId);
+    $dbMock->shouldReceive('getExistingModelById')
+        ->atLeast()->once()
+        ->with('ClientOrder', $newId, 'Order not found')
+        ->andReturn($clientOrderModel);
+
+    $periodMock = Mockery::mock(Box_Period::class);
+    $periodMock->shouldReceive('getCode')->atLeast()->once()->andReturn('1Y');
+
+    $di = container();
+    $di['mod_service'] = $di->protect(function ($serviceName) use ($cartServiceMock, $currencyServiceMock, $invoiceServiceMock, $productServiceMock, $pricingServiceMock) {
+        if ($serviceName == 'currency') {
+            return $currencyServiceMock;
+        }
+        if ($serviceName == 'cart') {
+            return $cartServiceMock;
+        }
+        if ($serviceName == 'Product') {
+            return $pricingServiceMock;
+        }
+        if ($serviceName == 'invoice') {
+            return $invoiceServiceMock;
+        }
+        if ($serviceName == 'servicecustom') {
+            return $productServiceMock;
+        }
+    });
+    $di['events_manager'] = $eventMock;
+    $di['db'] = $dbMock;
+    $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
+    $di['logger'] = new Box_Log();
+
+    $svc = new Service();
+    $svc->setDi($di);
+
+    $result = $svc->createOrder($modelClient, $modelProduct, [
+        'period' => '1Y',
+        'invoice_option' => 'issue-invoice',
+    ]);
+
+    expect($result)->toBe($newId);
 });

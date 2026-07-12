@@ -1,6 +1,7 @@
-import './js/ui/modals';
+// @ts-nocheck -- Runtime DOM/widget integration; converted to TS without changing behavior.
+import './js/ui/modals.ts';
 import * as tabler from '@tabler/core/js/tabler.js';
-import './js/fossbilling';
+import './js/fossbilling.ts';
 
 globalThis.bootstrap = tabler.bootstrap;
 
@@ -103,14 +104,14 @@ function loadAdminFeature(loader, name) {
 document.addEventListener('DOMContentLoaded', () => {
   if (document.querySelector('.datepicker')) {
     loadAdminFeature(async () => {
-      const { default: initDatepickers } = await import('./js/datepicker');
+      const { default: initDatepickers } = await import('./js/datepicker.ts');
       initDatepickers();
     }, 'datepickers');
   }
 
   if (document.querySelector('.js-locale-selector, .autocomplete-selector, .canned_response_select')) {
     loadAdminFeature(async () => {
-      const { default: initTomSelectControls } = await import('./js/tomselect');
+      const { default: initTomSelectControls } = await import('./js/tomselect.ts');
       initTomSelectControls();
     }, 'Tom Select controls');
   }
@@ -123,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (document.querySelector('#theme-settings')) {
     loadAdminFeature(async () => {
-      const { default: initThemeSettings } = await import('./js/ui/theme_settings');
+      const { default: initThemeSettings } = await import('./js/ui/theme_settings.ts');
       initThemeSettings();
     }, 'theme settings');
   }

@@ -35,13 +35,12 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $data['client_id'] = $identity->id;
 
         $repo = $this->getService()->getSupportTicketRepository();
-        $pager = $this->getDi()['pager']->paginateMappedQuery(
+
+        return $this->getDi()['pager']->paginateMappedQuery(
             $repo->getSearchQueryBuilder($data),
             PaginationOptions::fromArray($data),
             fn (SupportTicket $ticket): array => $this->getService()->toApiArray($ticket, true, $this->getIdentity()),
         );
-
-        return $pager;
     }
 
     /**
@@ -106,11 +105,6 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $data['content'] = \FOSSBilling\Tools::sanitizeMarkdownContent($data['content']);
 
         $client = $this->getIdentity();
-
-        $bindings = [
-            ':id' => $data['id'],
-            ':client_id' => $client->id,
-        ];
         $ticket = $this->getService()->getSupportTicketRepository()->findOneByClient((int) $client->id, (int) $data['id']);
 
         if (!$ticket instanceof SupportTicket) {

@@ -390,16 +390,7 @@ class Service implements InjectionAwareInterface
             $invoiceModel = $di['db']->load('Invoice', $params['id'] ?? 0);
             $invoice = $service->toApiArray($invoiceModel, true);
             if (($invoice['total'] ?? 0) > 0) {
-                $email = [];
-                $email['to_client'] = $invoiceModel->client_id;
-                $email['code'] = 'mod_invoice_paid';
-                $email['invoice'] = $invoice;
-                $attachment = $service->getInvoicePdfAttachment($invoiceModel);
-                if ($attachment !== null) {
-                    $email['attachment'] = $attachment;
-                }
-                $emailService = $di['mod_service']('email');
-                $emailService->sendTemplate($email);
+                $service->sendInvoiceEmail($invoiceModel, $invoice, 'mod_invoice_paid');
             }
         } catch (\Exception $exc) {
             $di['logger']->setChannel('email')->error('Failed to send email for invoice payment', ['exception' => $exc->getMessage()]);
@@ -417,16 +408,7 @@ class Service implements InjectionAwareInterface
         try {
             $invoiceModel = $di['db']->load('Invoice', $params['id']);
             $invoice = $service->toApiArray($invoiceModel, true);
-            $email = [];
-            $email['to_client'] = $invoiceModel->client_id;
-            $email['code'] = 'mod_invoice_created';
-            $email['invoice'] = $invoice;
-            $attachment = $service->getInvoicePdfAttachment($invoiceModel);
-            if ($attachment !== null) {
-                $email['attachment'] = $attachment;
-            }
-            $emailService = $di['mod_service']('email');
-            $emailService->sendTemplate($email);
+            $service->sendInvoiceEmail($invoiceModel, $invoice, 'mod_invoice_created');
         } catch (\Exception $exc) {
             $di['logger']->setChannel('email')->error('Failed to send email for invoice creation', ['exception' => $exc->getMessage()]);
         }
@@ -447,18 +429,9 @@ class Service implements InjectionAwareInterface
                 && ($params['status'] ?? null) !== \Model_Invoice::STATUS_PAID
                 && isset($params['client']['id'])
             ) {
-                $email = [];
-                $email['to_client'] = $params['client']['id'];
-                $email['code'] = 'mod_invoice_created';
-                $email['invoice'] = $params;
                 if ($invoiceModel instanceof \Model_Invoice) {
-                    $attachment = $service->getInvoicePdfAttachment($invoiceModel);
-                    if ($attachment !== null) {
-                        $email['attachment'] = $attachment;
-                    }
+                    $service->sendInvoiceEmail($invoiceModel, $params, 'mod_invoice_created', (int) $params['client']['id']);
                 }
-                $emailService = $di['mod_service']('email');
-                $emailService->sendTemplate($email);
             }
 
             // Sending the created-email extends the hash lifetime so the
@@ -471,6 +444,22 @@ class Service implements InjectionAwareInterface
         }
 
         return true;
+    }
+
+    private function sendInvoiceEmail(\Model_Invoice $invoice, array $invoiceData, string $templateCode, ?int $clientId = null): void
+    {
+        $email = [
+            'to_client' => $clientId ?? $invoice->client_id,
+            'code' => $templateCode,
+            'invoice' => $invoiceData,
+        ];
+
+        $attachment = $this->getInvoicePdfAttachment($invoice);
+        if ($attachment !== null) {
+            $email['attachment'] = $attachment;
+        }
+
+        $this->di['mod_service']('email')->sendTemplate($email);
     }
 
     public static function onAfterAdminInvoiceReminderSent(\Box_Event $event): void
@@ -915,6 +904,13 @@ class Service implements InjectionAwareInterface
                 $this->di['logger']->setChannel('billing')->info("Setting invoice {$invoice->id} as paid with credits for the amount of {$required}.");
             }
 
+            if ($required <= $epsilon) {
+                // Nothing was actually charged against the client's balance, so don't record a $0 credit transaction.
+                $this->markAsPaid($invoice, false, true);
+
+                return true;
+            }
+
             $balanceTransaction = $this->di['db']->dispense('ClientBalance');
             $balanceTransaction->client_id = $client->id;
             $balanceTransaction->type = 'invoice';
@@ -1328,8 +1324,8 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        if (($price * ($line['quantity'] ?? 1)) <= 0) {
-            throw new InformationException('Invoices are not generated for 0 amount orders.');
+        if (($price * ($line['quantity'] ?? 1)) < 0) {
+            throw new InformationException('Invoices are not generated for negative amount orders.');
         }
 
         $client = $this->di['db']->getExistingModelById('Client', $order->client_id, 'Client not found');

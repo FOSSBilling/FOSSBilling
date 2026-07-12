@@ -17,7 +17,7 @@ use Box\Mod\Product\Service;
 use function Tests\Helpers\container;
 
 test('gets dependency injection container', function (): void {
-    $api = new Guest();
+    $api = apiEndpoint(new Guest());
     $di = container();
     $api->setDi($di);
     $getDi = $api->getDi();
@@ -25,7 +25,7 @@ test('gets dependency injection container', function (): void {
 });
 
 test('gets product with id', function (): void {
-    $api = new Guest();
+    $api = apiEndpoint(new Guest());
     $data = ['id' => 1];
 
     $model = new Product();
@@ -42,7 +42,7 @@ test('gets product with id', function (): void {
 });
 
 test('gets product with slug', function (): void {
-    $api = new Guest();
+    $api = apiEndpoint(new Guest());
     $data = ['slug' => 'product/1'];
 
     $model = new Product();
@@ -59,7 +59,7 @@ test('gets product with slug', function (): void {
 });
 
 test('throws exception when product not found', function (): void {
-    $api = new Guest();
+    $api = apiEndpoint(new Guest());
     $data = ['slug' => 'product/1'];
 
     $serviceMock = Mockery::mock(Service::class);
@@ -74,7 +74,7 @@ test('throws exception when product not found', function (): void {
 });
 
 test('gets paginated product list', function (): void {
-    $api = new Guest();
+    $api = apiEndpoint(new Guest());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getPaginatedProducts')
         ->once()
@@ -87,7 +87,7 @@ test('gets paginated product list', function (): void {
 });
 
 test('gets category list', function (): void {
-    $api = new Guest();
+    $api = apiEndpoint(new Guest());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getPaginatedProductCategories')
         ->once()
@@ -100,7 +100,7 @@ test('gets category list', function (): void {
 });
 
 test('gets category pairs', function (): void {
-    $api = new Guest();
+    $api = apiEndpoint(new Guest());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getProductCategoryPairs')->atLeast()->once()->andReturn([]);
 

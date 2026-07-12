@@ -1,3 +1,4 @@
+// @ts-nocheck -- Runtime DOM/widget integration; converted to TS without changing behavior.
 /**
  * JavaScript for the FOSSBilling modals. No jQuery required.
  *

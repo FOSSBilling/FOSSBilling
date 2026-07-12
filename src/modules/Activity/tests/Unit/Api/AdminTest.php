@@ -24,7 +24,7 @@ test('log get list with staff user', function (): void {
     $api->setDi($di);
     $di['api_admin'] = $api;
 
-    $activity = new Box\Mod\Activity\Api\Admin();
+    $activity = apiEndpoint(new Box\Mod\Activity\Api\Admin());
     $activity->setDi($di);
     $activity->setService($serviceStub);
 
@@ -70,7 +70,7 @@ test('log get list with client user', function (): void {
     $api->setDi($di);
     $di['api_admin'] = $api;
 
-    $activity = new Box\Mod\Activity\Api\Admin();
+    $activity = apiEndpoint(new Box\Mod\Activity\Api\Admin());
     $activity->setDi($di);
     $activity->setService($serviceStub);
 
@@ -108,7 +108,7 @@ test('log get list with client user', function (): void {
 test('log with empty m parameter returns false', function (): void {
     $di = container();
 
-    $activity = new Box\Mod\Activity\Api\Admin();
+    $activity = apiEndpoint(new Box\Mod\Activity\Api\Admin());
     $activity->setDi($di);
     $result = $activity->log([]);
 
@@ -124,7 +124,7 @@ test('log email with subject', function (): void {
 
     $di = container();
 
-    $adminApi = new Box\Mod\Activity\Api\Admin();
+    $adminApi = apiEndpoint(new Box\Mod\Activity\Api\Admin());
     $adminApi->setService($service);
     $adminApi->setDi($di);
     $result = $adminApi->log_email(['subject' => 'Proper subject']);
@@ -133,7 +133,7 @@ test('log email with subject', function (): void {
 });
 
 test('log email without subject returns false', function (): void {
-    $activity = new Box\Mod\Activity\Api\Admin();
+    $activity = apiEndpoint(new Box\Mod\Activity\Api\Admin());
     $result = $activity->log_email([]);
 
     expect($result)->toBeFalse();
