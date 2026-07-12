@@ -2856,19 +2856,24 @@ table > thead > tr > th {
 // else. Both panes work unmodified in light and dark since every color
 // here comes from tokens.
 // -----------------------------------------------------------------------
+// Auth pages (login/signup) - same full-bleed photo + frosted-glass
+// language as the guest home hero (.tn-home--photo/.tn-signin), so signing
+// in doesn't feel like a different product from the page that led here.
+// The panel floats over the photo instead of occupying its own solid
+// column - matching the home hero's layout exactly, just single-purpose.
 .tn-auth {
+    position: relative;
     min-height: calc(100dvh - 64px);
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 440px);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: var(--space-8) var(--space-10);
+    overflow: hidden;
 
     &__visual {
-        position: relative;
+        position: absolute;
+        inset: 0;
         overflow: hidden;
-        background: var(--carbon-900);
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-end;
-        padding: var(--space-12);
 
         img {
             position: absolute;
@@ -2876,31 +2881,41 @@ table > thead > tr > th {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            filter: grayscale(1) contrast(1.08) brightness(.85);
+            animation: tn-home-zoom 34s ease-in-out infinite alternate;
+            filter: saturate(1.05) contrast(1.08) brightness(.6);
         }
 
-        // Brand duotone: accent-tinted highlights over a carbon shadow map,
-        // so the photo reads as "this company" rather than generic stock.
+        // Same grade + grain treatment as the home hero, so the photo
+        // reads as "this company" rather than generic stock, and the
+        // brightness/contrast pairing is consistent across pages.
         &::before {
             content: '';
             position: absolute;
             inset: 0;
             background:
-                linear-gradient(160deg, color-mix(in oklch, var(--blade-600) 55%, transparent), transparent 60%),
-                linear-gradient(0deg, var(--carbon-950) 5%, transparent 55%);
-            mix-blend-mode: multiply;
+                radial-gradient(120% 90% at 50% 100%, rgba(4,8,4,.9) 0%, rgba(4,8,4,.35) 45%, transparent 75%),
+                linear-gradient(180deg, rgba(6,10,6,.55) 0%, rgba(6,10,6,.12) 30%, rgba(6,10,6,.6) 100%),
+                linear-gradient(120deg, color-mix(in oklch, var(--blade-600) 40%, transparent), transparent 55%);
         }
         &::after {
             content: '';
             position: absolute;
             inset: 0;
-            background: linear-gradient(0deg, rgba(9,8,7,.92) 0%, rgba(9,8,7,.35) 45%, rgba(9,8,7,.1) 70%);
+            opacity: .05;
+            mix-blend-mode: overlay;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
         }
     }
 
+    @media (prefers-reduced-motion: reduce) {
+        &__visual img { animation: none; transform: scale(1.08); }
+    }
+
     &__visual-content {
-        position: relative;
+        position: absolute;
         z-index: 1;
+        left: var(--space-10);
+        bottom: var(--space-10);
         max-width: 420px;
         display: flex;
         flex-direction: column;
@@ -2913,26 +2928,36 @@ table > thead > tr > th {
         line-height: var(--lh-snug);
         letter-spacing: var(--ls-tight);
         color: var(--white);
+        text-shadow: 0 4px 30px rgba(0,0,0,.45);
         margin: 0;
     }
     &__visual-sub {
         font-size: var(--fs-sm);
-        color: var(--smoke-200);
+        color: rgba(255,255,255,.78);
+        text-shadow: 0 2px 16px rgba(0,0,0,.35);
         line-height: var(--lh-relaxed);
         margin: 0;
     }
 
+    // Floating glass panel - same recipe as .tn-signin on the home hero.
     &__panel {
+        position: relative;
+        z-index: 2;
         display: flex;
         flex-direction: column;
         justify-content: center;
-        padding: var(--space-10) var(--space-10);
-        background: var(--bg);
+        width: 100%;
+        max-width: 400px;
+        padding: var(--space-8);
+        border-radius: var(--r-xl);
+        background: linear-gradient(160deg, rgba(255,255,255,.14), rgba(255,255,255,.05));
+        border: var(--bw-hair) solid rgba(255,255,255,.18);
+        backdrop-filter: blur(24px) saturate(170%);
+        -webkit-backdrop-filter: blur(24px) saturate(170%);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 30px 60px -24px rgba(0,0,0,.6);
     }
     &__panel-inner {
         width: 100%;
-        max-width: 360px;
-        margin: 0 auto;
         display: flex;
         flex-direction: column;
         gap: var(--space-6);
@@ -2946,12 +2971,12 @@ table > thead > tr > th {
         font-family: var(--font-display);
         font-size: var(--fs-h2);
         font-weight: var(--fw-bold);
-        color: var(--text);
+        color: var(--white);
         margin: 0;
     }
     &__sub {
         font-size: var(--fs-sm);
-        color: var(--text-muted);
+        color: rgba(255,255,255,.7);
         margin: 0;
     }
 
@@ -2961,24 +2986,32 @@ table > thead > tr > th {
     &__link {
         font-size: var(--fs-xs);
         font-weight: var(--fw-bold);
-        color: var(--text);
+        color: rgba(255,255,255,.85);
         text-decoration: none;
         &:hover { text-decoration: underline; }
     }
     &__foot {
         font-size: var(--fs-xs);
-        color: var(--text-muted);
+        color: rgba(255,255,255,.7);
         text-align: center;
         margin: 0;
-        a { color: var(--text); font-weight: var(--fw-bold); text-decoration: none;
+        a { color: var(--white); font-weight: var(--fw-bold); text-decoration: none;
             &:hover { text-decoration: underline; } }
     }
     &__actions { display: flex; flex-direction: column; gap: var(--space-2); }
     &__consent {
         font-size: var(--fs-xs);
-        color: var(--text-faint);
+        color: rgba(255,255,255,.6);
         line-height: var(--lh-normal);
-        a { color: var(--text-muted); text-decoration: underline; }
+        a { color: rgba(255,255,255,.8); text-decoration: underline; }
+    }
+
+    &__panel .tn-field__label { color: rgba(255,255,255,.6); }
+    &__panel .tn-input {
+        background: rgba(0,0,0,.22);
+        border-color: rgba(255,255,255,.2);
+        color: var(--white);
+        &::placeholder { color: rgba(255,255,255,.4); }
     }
 }
 
@@ -3076,18 +3109,54 @@ table > thead > tr > th {
     .tn-mail__list { border-right: none; border-bottom: var(--bw-hair) solid var(--border); max-height: 240px; }
 }
 
+// No photo (password reset / set-new-password) - panel centers over the
+// plain page background instead of floating over an image, so it reverts
+// to normal (non-white) text colors and the standard --surface glass
+// instead of the photo-hero white-on-dark treatment.
 .tn-auth--solo {
-    grid-template-columns: 1fr;
-    align-items: center;
-    justify-items: center;
+    justify-content: center;
+
+    .tn-auth__panel {
+        background: var(--surface);
+        border-color: var(--border);
+        box-shadow: var(--glass-shadow);
+    }
+    .tn-auth__title { color: var(--text); }
+    .tn-auth__sub { color: var(--text-muted); }
+    .tn-auth__link { color: var(--text); }
+    .tn-auth__foot { color: var(--text-muted);
+        a { color: var(--text); }
+    }
+    .tn-auth__consent { color: var(--text-faint);
+        a { color: var(--text-muted); }
+    }
+    .tn-field__label { color: var(--text-muted); }
+    .tn-input {
+        background: var(--surface-inset);
+        border-color: var(--border);
+        color: var(--text);
+        &::placeholder { color: var(--text-faint); }
+    }
 }
 
 @media (max-width: 900px) {
     .tn-auth {
-        grid-template-columns: 1fr;
+        justify-content: center;
+        padding: var(--space-5);
         min-height: 0;
     }
     .tn-auth__visual { display: none; }
-    .tn-auth__panel { padding: var(--space-8) var(--space-5); }
+    .tn-auth__panel {
+        max-width: 440px;
+        padding: var(--space-6);
+        background: var(--surface);
+        border-color: var(--border);
+        box-shadow: var(--glass-shadow);
+    }
+    .tn-auth__title,
+    .tn-auth__foot a,
+    .tn-auth__link { color: var(--text); }
+    .tn-auth__sub,
+    .tn-auth__foot { color: var(--text-muted); }
     .tn-auth__row { grid-template-columns: 1fr; }
 }
