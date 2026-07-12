@@ -915,6 +915,12 @@ table > thead > tr > th {
 // Topbar shell (replaces the old sidebar + navbar split)
 // -----------------------------------------------------------------------
 .tn-topbar {
+    // backdrop-filter forces a new stacking context (same as opacity/transform),
+    // and the page's .card/.tn-card glass panels create their own further down
+    // the DOM - without an explicit z-index here, those later stacking contexts
+    // paint over the topbar's dropdown menu instead of under it.
+    position: relative;
+    z-index: 1030;
     border-bottom: var(--bw-hair) solid var(--border);
     background-color: var(--surface);
     backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
