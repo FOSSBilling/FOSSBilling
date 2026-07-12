@@ -51,14 +51,27 @@
     // huraga uses for Bootstrap's own color modes, just repointed at these tokens.
     --bg: var(--paper-50);
     --bg-deep: var(--paper-100);
-    --surface: var(--white);
-    --surface-2: var(--paper-100);
-    --surface-3: var(--paper-200);
-    --surface-inset: var(--paper-100);
+    // Surfaces are translucent so backdrop-filter (see --glass-* below) can
+    // reveal the ambient mesh sitting behind the app shell (.tn-mesh-bg) -
+    // this is what makes the frosted-glass look actually read as glass
+    // instead of a flat tinted panel.
+    --surface: rgba(253, 252, 248, 0.72);
+    --surface-2: rgba(241, 238, 222, 0.68);
+    --surface-3: rgba(232, 230, 220, 0.72);
+    --surface-inset: rgba(241, 238, 222, 0.55);
 
     --border: rgba(12, 15, 14, 0.10);
     --border-strong: rgba(12, 15, 14, 0.18);
     --border-faint: rgba(12, 15, 14, 0.06);
+    --glass-hairline: rgba(255, 255, 255, 0.5);
+
+    // Glass system: shared blur/saturation + the highlight/shadow pairing
+    // every frosted surface uses (inset top-edge highlight + soft drop
+    // shadow so panels look like they're floating above the mesh, not
+    // stuck to it).
+    --glass-blur: 20px;
+    --glass-sat: 160%;
+    --glass-shadow: inset 0 1px 0 var(--glass-hairline), 0 8px 32px -12px rgba(20, 30, 20, 0.18);
 
     --text: var(--carbon-900);
     --text-muted: var(--carbon-400);
@@ -161,14 +174,16 @@
 [data-bs-theme="dark"] {
     --bg: var(--carbon-900);
     --bg-deep: var(--carbon-950);
-    --surface: var(--carbon-800);
-    --surface-2: var(--carbon-700);
-    --surface-3: var(--carbon-600);
-    --surface-inset: var(--carbon-850);
+    --surface: rgba(26, 24, 22, 0.62);
+    --surface-2: rgba(34, 32, 26, 0.58);
+    --surface-3: rgba(46, 43, 36, 0.62);
+    --surface-inset: rgba(20, 18, 16, 0.55);
 
     --border: rgba(255, 255, 255, 0.08);
     --border-strong: rgba(255, 255, 255, 0.16);
     --border-faint: rgba(255, 255, 255, 0.05);
+    --glass-hairline: rgba(255, 255, 255, 0.08);
+    --glass-shadow: inset 0 1px 0 var(--glass-hairline), 0 8px 32px -12px rgba(0, 0, 0, 0.5);
 
     --text: #F4F2EC;
     --text-muted: var(--smoke-300);

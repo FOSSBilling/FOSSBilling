@@ -110,6 +110,38 @@ body {
     line-height: var(--lh-normal);
     background-color: var(--bg);
     color: var(--text);
+    position: relative;
+}
+
+// -----------------------------------------------------------------------
+// Ambient mesh — sits behind every page (fixed, so it doesn't scroll away
+// on long invoice/ticket lists) and gives the frosted-glass surfaces
+// something with actual color and shape to blur. Inner client-portal pages
+// have no hero photo, so this is what stands in for one: three soft,
+// slow-drifting color fields in the accent hue plus its two off-accent
+// status hues (teal success, blue info), kept low-opacity so it reads as
+// atmosphere, not decoration competing with content.
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+        radial-gradient(38% 32% at 12% 8%, color-mix(in oklch, var(--blade-500) 20%, transparent), transparent 70%),
+        radial-gradient(32% 30% at 92% 18%, color-mix(in oklch, var(--info-500) 14%, transparent), transparent 70%),
+        radial-gradient(36% 34% at 78% 96%, color-mix(in oklch, var(--success-500) 12%, transparent), transparent 70%),
+        var(--bg);
+    animation: tn-mesh-drift 42s ease-in-out infinite alternate;
+}
+
+@keyframes tn-mesh-drift {
+    0% { background-position: 0 0, 0 0, 0 0, 0 0; }
+    100% { background-position: 2% 3%, -3% 2%, -2% -3%, 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body::before { animation: none; }
 }
 
 h1, h2, h3, h4, h5, h6,
@@ -279,9 +311,11 @@ table > thead > tr > th {
 // -----------------------------------------------------------------------
 .card {
     background-color: var(--surface);
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
     border: var(--bw-hair) solid var(--border);
     border-radius: var(--r-lg);
-    box-shadow: var(--inset-top);
+    box-shadow: var(--glass-shadow);
     transition: border-color var(--dur) var(--ease-out);
 
     &:hover {
@@ -367,9 +401,17 @@ table > thead > tr > th {
 // -----------------------------------------------------------------------
 .modal-content {
     background-color: var(--surface);
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
     border: var(--bw-hair) solid var(--border);
     border-radius: var(--r-lg);
-    box-shadow: var(--shadow-pop);
+    box-shadow: var(--glass-shadow), var(--shadow-pop);
+}
+
+.dropdown-menu {
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+    box-shadow: var(--glass-shadow);
 }
 
 // -----------------------------------------------------------------------
@@ -874,7 +916,9 @@ table > thead > tr > th {
 // -----------------------------------------------------------------------
 .tn-topbar {
     border-bottom: var(--bw-hair) solid var(--border);
-    background-color: var(--bg);
+    background-color: var(--surface);
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
 }
 
 // Minimal header for auth pages (login/signup/password-reset) — just the
@@ -966,7 +1010,9 @@ table > thead > tr > th {
     bottom: 0;
     z-index: 1030;
     display: flex;
-    background-color: var(--bg);
+    background-color: var(--surface);
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
     border-top: var(--bw-hair) solid var(--border);
     padding: var(--space-1) var(--space-2) max(var(--space-1), env(safe-area-inset-bottom));
 }
