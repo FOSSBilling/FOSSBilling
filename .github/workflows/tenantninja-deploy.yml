@@ -47,7 +47,7 @@ jobs:
             ghcr.io/tenantninja/fossbilling:latest
             ghcr.io/tenantninja/fossbilling:${{ github.sha }}
           build-args: |
-            FOSSBILLING_VERSION=0.8.3
+            FOSSBILLING_VERSION=0.8.4
             INSTALL_TRANSLATIONS=false
           cache-from: type=gha
           cache-to: type=gha,mode=max
