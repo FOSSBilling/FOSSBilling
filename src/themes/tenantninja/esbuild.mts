@@ -7,8 +7,8 @@ import {
   prepareThemeBuildDirs,
   sharedLoaders,
   writeAssetManifest,
-} from '../../../frontend/tools/esbuild-helpers.mjs';
-import { buildIconSprite } from '../../../frontend/tools/icon-sprite.mjs';
+} from '../../../frontend/tools/esbuild-helpers.mts';
+import { buildIconSprite } from '../../../frontend/tools/icon-sprite.mts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === 'production';

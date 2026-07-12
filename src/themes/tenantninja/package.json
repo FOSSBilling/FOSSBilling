@@ -1,8 +1,8 @@
 {
   "name": "tenantninja",
   "scripts": {
-    "dev": "node ./esbuild.mjs",
-    "build": "node ./esbuild.mjs"
+    "dev": "node ./esbuild.mts",
+    "build": "node ./esbuild.mts"
   },
   "dependencies": {
     "bootstrap": "^5.3.3",
