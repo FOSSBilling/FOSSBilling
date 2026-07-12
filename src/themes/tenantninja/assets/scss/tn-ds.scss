@@ -170,13 +170,15 @@
 // ---- Card ---------------------------------------------------------------------------
 .tn-card {
     background: var(--surface);
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
     border: var(--bw-hair) solid var(--border);
     border-radius: var(--r-lg);
     padding: 24px;
-    box-shadow: var(--inset-top);
+    box-shadow: var(--glass-shadow);
     transition: box-shadow var(--dur) var(--ease-out), border-color var(--dur);
 
-    &--hover:hover { border-color: var(--border-strong); box-shadow: var(--shadow-md), var(--inset-top); }
+    &--hover:hover { border-color: var(--border-strong); box-shadow: var(--shadow-md), var(--glass-shadow); }
     &--raised { background: var(--surface-2); }
     &--inset { background: var(--surface-inset); }
     &--accent { border-color: rgba(199,242,60,0.3); }
@@ -218,8 +220,10 @@
 // ---- StatTile -------------------------------------------------------------------------------
 .tn-stat {
     background: var(--surface); border: var(--bw-hair) solid var(--border);
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
     border-radius: var(--r-lg); padding: 20px 24px; display: flex; flex-direction: column; gap: 6px;
-    box-shadow: var(--inset-top);
+    box-shadow: var(--glass-shadow);
 
     &__label {
         font-family: var(--font-mono); font-size: var(--fs-micro); font-weight: 600;
