@@ -128,16 +128,17 @@ body::before {
     z-index: -1;
     pointer-events: none;
     background:
-        radial-gradient(38% 32% at 12% 8%, color-mix(in oklch, var(--blade-500) 20%, transparent), transparent 70%),
-        radial-gradient(32% 30% at 92% 18%, color-mix(in oklch, var(--info-500) 14%, transparent), transparent 70%),
-        radial-gradient(36% 34% at 78% 96%, color-mix(in oklch, var(--success-500) 12%, transparent), transparent 70%),
+        radial-gradient(55% 48% at 10% 6%, color-mix(in oklch, var(--blade-500) 46%, transparent), transparent 72%),
+        radial-gradient(48% 44% at 95% 14%, color-mix(in oklch, var(--info-500) 36%, transparent), transparent 72%),
+        radial-gradient(52% 50% at 80% 98%, color-mix(in oklch, var(--success-500) 32%, transparent), transparent 72%),
+        radial-gradient(45% 40% at 15% 92%, color-mix(in oklch, var(--blade-600) 26%, transparent), transparent 72%),
         var(--bg);
     animation: tn-mesh-drift 42s ease-in-out infinite alternate;
 }
 
 @keyframes tn-mesh-drift {
-    0% { background-position: 0 0, 0 0, 0 0, 0 0; }
-    100% { background-position: 2% 3%, -3% 2%, -2% -3%, 0 0; }
+    0% { background-position: 0 0, 0 0, 0 0, 0 0, 0 0; }
+    100% { background-position: 3% 4%, -4% 3%, -3% -4%, 4% -3%, 0 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -817,12 +818,6 @@ table > thead > tr > th {
         &::after {
             margin-left: 0.25rem;
         }
-    }
-
-    .dropdown-menu {
-        background-color: var(--surface);
-        border: 1px solid var(--border);
-        box-shadow: var(--shadow-md);
     }
 
     .dropdown-item {
