@@ -1936,6 +1936,10 @@ test('processes a newly eligible invoice after the daily due event batch', funct
     $dbMock->shouldReceive('getAll')
         ->twice()
         ->andReturn([['id' => 2, 'days_left' => 7]], []);
+    $dbMock->shouldReceive('exec')
+        ->once()
+        ->with(Mockery::type('string'), [':id' => 2])
+        ->andReturn(1);
 
     $eventManagerMock = Mockery::mock('\\Box_EventManager');
     $eventManagerMock->shouldReceive('fire')
@@ -1954,6 +1958,48 @@ test('processes a newly eligible invoice after the daily due event batch', funct
     $service->setDi($di);
 
     expect($service->doBatchRemindersSend())->toBeTrue();
+});
+
+test('skips a pending reminder invoice already claimed by another cron run', function (): void {
+    $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $service->shouldReceive('doBatchInvokeDueEvent')
+        ->once()
+        ->with(['once_per_day' => true])
+        ->andReturnFalse();
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_reminder_before_due_days', '')
+        ->andReturn('7');
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_reminder_after_due_days', '5')
+        ->andReturn('5');
+
+    $dbMock = Mockery::mock('\\Box_Database');
+    $dbMock->shouldReceive('getAll')
+        ->twice()
+        ->andReturn([['id' => 2, 'days_left' => 7]], []);
+    $dbMock->shouldReceive('exec')
+        ->once()
+        ->with(Mockery::type('string'), [':id' => 2])
+        ->andReturn(0);
+
+    $eventManagerMock = Mockery::mock('\\Box_EventManager');
+    $eventManagerMock->shouldReceive('fire')
+        ->once()
+        ->with(['event' => 'onBeforeAdminInvoiceSendReminders']);
+    $eventManagerMock->shouldNotReceive('fire')
+        ->with(['event' => 'onEventBeforeInvoiceIsDue', 'params' => Mockery::any()]);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['events_manager'] = $eventManagerMock;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemService);
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $service->setDi($di);
+
+    expect($service->doBatchRemindersSend())->toBeFalse();
 });
 
 test('guards both reminder cron paths across repeated runs', function (): void {

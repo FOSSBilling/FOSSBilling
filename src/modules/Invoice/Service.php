@@ -539,6 +539,10 @@ class Service implements InjectionAwareInterface
             }
 
             $invoiceModel = $di['db']->load('Invoice', $params['id']);
+            if (!$invoiceModel instanceof \Model_Invoice) {
+                return;
+            }
+
             $invoice = $service->toApiArray($invoiceModel, true);
             $email = [];
             $email['to_client'] = $invoice['client']['id'];
@@ -1455,6 +1459,14 @@ class Service implements InjectionAwareInterface
                 continue;
             }
 
+            $claimed = $this->di['db']->exec(
+                "UPDATE invoice SET reminded_at = NOW(), updated_at = NOW() WHERE id = :id AND status = 'unpaid' AND approved = 1 AND due_at > NOW() AND (reminded_at IS NULL OR DATE(reminded_at) < CURDATE())",
+                [':id' => $params['id']]
+            );
+            if (!$claimed) {
+                continue;
+            }
+
             $params['reminder_intervals'] = $beforeDueReminderIntervals;
             $this->di['events_manager']->fire(['event' => 'onEventBeforeInvoiceIsDue', 'params' => $params]);
             $invoked = true;
@@ -1463,6 +1475,14 @@ class Service implements InjectionAwareInterface
         $afterDueList = $this->di['db']->getAll("SELECT id, ABS(DATEDIFF(due_at, NOW())) as days_passed FROM invoice WHERE status = 'unpaid' AND approved = 1 AND ((due_at < NOW()) OR (ABS(DATEDIFF(due_at, NOW())) = 0)) AND (reminded_at IS NULL OR DATE(reminded_at) < CURDATE())");
         foreach ($afterDueList as $params) {
             if (!$this->isInvoiceReminderIntervalEnabled('invoice_reminder_after_due_days', (int) $params['days_passed'], '5', $afterDueReminderIntervals)) {
+                continue;
+            }
+
+            $claimed = $this->di['db']->exec(
+                "UPDATE invoice SET reminded_at = NOW(), updated_at = NOW() WHERE id = :id AND status = 'unpaid' AND approved = 1 AND ((due_at < NOW()) OR (ABS(DATEDIFF(due_at, NOW())) = 0)) AND (reminded_at IS NULL OR DATE(reminded_at) < CURDATE())",
+                [':id' => $params['id']]
+            );
+            if (!$claimed) {
                 continue;
             }
 
