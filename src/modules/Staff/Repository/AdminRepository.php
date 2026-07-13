@@ -13,6 +13,7 @@ namespace Box\Mod\Staff\Repository;
 
 use Box\Mod\Staff\Entity\Admin;
 use Doctrine\ORM\EntityRepository;
+use Doctrine\ORM\QueryBuilder;
 
 class AdminRepository extends EntityRepository
 {
@@ -49,5 +50,45 @@ class AdminRepository extends EntityRepository
         $admin = $this->findOneBy(['apiToken' => $apiToken]);
 
         return $admin instanceof Admin ? $admin : null;
+    }
+
+    public function findCronAdmin(): ?Admin
+    {
+        $admin = $this->findOneBy(['systemName' => Admin::SYSTEM_CRON]);
+
+        return $admin instanceof Admin ? $admin : null;
+    }
+
+    public function getSearchQueryBuilder(array $data = []): QueryBuilder
+    {
+        $qb = $this->createQueryBuilder('a');
+
+        $id = $data['id'] ?? null;
+        $search = $data['search'] ?? null;
+        $status = $data['status'] ?? null;
+        $noCron = !isset($data['no_cron']) || $data['no_cron'];
+
+        if ($id !== null && $id !== '') {
+            $qb->andWhere('a.id = :id')
+                ->setParameter('id', (int) $id);
+        }
+
+        if ($search) {
+            $qb->andWhere('(a.name LIKE :name OR a.email LIKE :email)')
+                ->setParameter('name', "%{$search}%")
+                ->setParameter('email', "%{$search}%");
+        }
+
+        if ($status) {
+            $qb->andWhere('a.status = :status')
+                ->setParameter('status', $status);
+        }
+
+        if ($noCron) {
+            $qb->andWhere('(a.systemName IS NULL OR a.systemName != :cronName)')
+                ->setParameter('cronName', Admin::SYSTEM_CRON);
+        }
+
+        return $qb->orderBy('a.id', 'ASC');
     }
 }

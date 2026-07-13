@@ -160,6 +160,7 @@ function container(): Container
     $di['mod_config'] = $di->protect(fn (string $name): array => []);
     $di['cookie_queue'] = fn (): \FOSSBilling\Http\CookieQueue => new \FOSSBilling\Http\CookieQueue();
     $di['em'] = static function (): object {
+        $adminRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminRepository::class)->shouldIgnoreMissing();
         $adminGroupRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminGroupRepository::class)->shouldIgnoreMissing();
         $adminGroupMemberRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminGroupMemberRepository::class)->shouldIgnoreMissing();
 
@@ -193,6 +194,7 @@ function container(): Container
 
         $em = \Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
         $em->shouldReceive('getRepository')->byDefault()->andReturnUsing(static fn (string $class): object => match ($class) {
+            \Box\Mod\Staff\Entity\Admin::class => $adminRepository,
             \Box\Mod\Staff\Entity\AdminGroup::class => $adminGroupRepository,
             \Box\Mod\Staff\Entity\AdminGroupMember::class => $adminGroupMemberRepository,
             \Box\Mod\Email\Entity\EmailTemplate::class => $emailTemplateRepository,

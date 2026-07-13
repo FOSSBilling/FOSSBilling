@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Staff\Repository;
 
+use Box\Mod\Staff\Entity\Admin;
 use Box\Mod\Staff\Entity\AdminGroup;
 use Box\Mod\Staff\Entity\AdminGroupMember;
 use Doctrine\DBAL\ArrayParameterType;
@@ -112,7 +113,7 @@ class AdminGroupMemberRepository extends EntityRepository
              ORDER BY a.id ASC',
             [
                 'group_id' => $groupId,
-                'system_name' => \Model_Admin::SYSTEM_CRON,
+                'system_name' => Admin::SYSTEM_CRON,
             ],
         ));
     }
@@ -138,8 +139,8 @@ class AdminGroupMemberRepository extends EntityRepository
              ORDER BY a.id ASC',
             [
                 'group_ids' => $groupIds,
-                'status' => \Model_Admin::STATUS_ACTIVE,
-                'system_name' => \Model_Admin::SYSTEM_CRON,
+                'status' => Admin::STATUS_ACTIVE,
+                'system_name' => Admin::SYSTEM_CRON,
             ],
             [
                 'group_ids' => ArrayParameterType::INTEGER,
@@ -174,9 +175,9 @@ class AdminGroupMemberRepository extends EntityRepository
              AND g.system_name = :system_name
              AND (a.system_name IS NULL OR a.system_name != :cron_system_name)',
             [
-                'status' => \Model_Admin::STATUS_ACTIVE,
+                'status' => Admin::STATUS_ACTIVE,
                 'system_name' => $systemName,
-                'cron_system_name' => \Model_Admin::SYSTEM_CRON,
+                'cron_system_name' => Admin::SYSTEM_CRON,
             ],
         );
     }

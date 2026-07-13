@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Staff\Controller;
 
+use Box\Mod\Staff\Entity\Admin;
+use Box\Mod\Staff\Entity\AdminPasswordReset;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Security\RandomizedTimeFloor;
 use Symfony\Component\HttpFoundation\Response;
@@ -130,15 +132,18 @@ class Admin implements InjectionAwareInterface
         $startedAt = microtime(true);
 
         try {
-            $reset = $this->di['db']->findOne('AdminPasswordReset', 'hash = ?', [$hash]);
-            if ($reset instanceof \Model_AdminPasswordReset) {
-                $expiresAt = strtotime($reset->created_at) + 900;
+            $em = $this->di['em'];
+            $reset = $em->getRepository(AdminPasswordReset::class)->findOneByHash($hash);
+            if ($reset instanceof AdminPasswordReset) {
+                $expiresAt = strtotime((string) $reset->getCreatedAt()?->format('Y-m-d H:i:s')) + 900;
 
                 if ($expiresAt >= time()) {
-                    $admin = $this->di['db']->getExistingModelById('Admin', $reset->admin_id, 'User not found');
-                    $data['hash'] = $reset->hash;
-                    $data['email'] = $admin->email;
-                    $isValidReset = true;
+                    $admin = $reset->getAdminId() !== null ? $em->getRepository(Admin::class)->find($reset->getAdminId()) : null;
+                    if ($admin instanceof Admin) {
+                        $data['hash'] = $reset->getHash();
+                        $data['email'] = $admin->getEmail();
+                        $isValidReset = true;
+                    }
                 }
             }
         } finally {

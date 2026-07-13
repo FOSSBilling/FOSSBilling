@@ -42,36 +42,25 @@ test('get list', function (): void {
     $api = apiEndpoint(new Box\Mod\Staff\Api\Admin());
     $data = [];
 
+    $queryBuilder = Mockery::mock(Doctrine\ORM\QueryBuilder::class);
+
     $serviceMock = Mockery::mock(Box\Mod\Staff\Service::class);
     $serviceMock
-    ->shouldReceive('getSearchQuery')
+    ->shouldReceive('getSearchQueryBuilder')
     ->atLeast()->once()
-    ->andReturn(['sqlString', []]);
-    $serviceMock
-    ->shouldReceive('toModel_AdminApiArray')
-    ->atLeast()->once()
-    ->andReturn([]);
+    ->andReturn($queryBuilder);
 
     $resultSet = [
-        'list' => ['id' => 1],
+        'list' => [],
     ];
     $pagerMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
     $pagerMock
-    ->shouldReceive('getPaginatedResultSet')
+    ->shouldReceive('paginateMappedQuery')
     ->atLeast()->once()
     ->andReturn($resultSet);
 
-    $adminModel = new Model_Admin();
-    $adminModel->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn($adminModel);
-
     $di = container();
     $di['pager'] = $pagerMock;
-    $di['db'] = $dbMock;
 
     $api->setDi($di);
     $api->setService($serviceMock);
@@ -84,20 +73,23 @@ test('get', function (): void {
     $api = apiEndpoint(new Box\Mod\Staff\Api\Admin());
     $data['id'] = 1;
 
+    $admin = new Box\Mod\Staff\Entity\Admin();
+    staffAdminSetEntityId($admin, 1);
+
+    $adminRepository = Mockery::mock(Box\Mod\Staff\Repository\AdminRepository::class);
+    $adminRepository->shouldReceive('find')->once()->with(1)->andReturn($admin);
+
     $serviceMock = Mockery::mock(Box\Mod\Staff\Service::class);
     $serviceMock
-    ->shouldReceive('toModel_AdminApiArray')
+    ->shouldReceive('getAdminRepository')
+    ->atLeast()->once()
+    ->andReturn($adminRepository);
+    $serviceMock
+    ->shouldReceive('toAdminApiArray')
     ->atLeast()->once()
     ->andReturn([]);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(staffAdminIdentity());
-
     $di = container();
-    $di['db'] = $dbMock;
 
     $api->setService($serviceMock);
     $api->setDi($di);
@@ -569,27 +561,27 @@ test('group member remove', function (): void {
 
 test('group member get list', function (): void {
     $api = apiEndpoint(new Box\Mod\Staff\Api\Admin());
-    $admin = staffAdminIdentity();
-    $admin->id = 2;
+    $admin = new Box\Mod\Staff\Entity\Admin();
+    staffAdminSetEntityId($admin, 2);
+    $admin->setName('staff');
     $group = new AdminGroup();
     staffAdminSetEntityId($group, 3);
     $member = ['id' => 2, 'email' => 'staff@example.test'];
 
+    $adminRepository = Mockery::mock(Box\Mod\Staff\Repository\AdminRepository::class);
+    $adminRepository->shouldReceive('find')->once()->with(2)->andReturn($admin);
     $groupRepository = Mockery::mock(AdminGroupRepository::class);
     $groupRepository->shouldReceive('findById')->once()->with(3)->andReturn($group);
     $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
     $groupMemberRepository->shouldReceive('getMemberIdsInGroup')->once()->with(3)->andReturn([2]);
 
     $serviceMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $serviceMock->shouldReceive('getAdminRepository')->once()->andReturn($adminRepository);
     $serviceMock->shouldReceive('getAdminGroupRepository')->once()->andReturn($groupRepository);
     $serviceMock->shouldReceive('getAdminGroupMemberRepository')->once()->andReturn($groupMemberRepository);
-    $serviceMock->shouldReceive('toModel_AdminApiArray')->once()->with($admin)->andReturn($member);
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')->once()->with('Admin', 2, 'Staff member not found')->andReturn($admin);
+    $serviceMock->shouldReceive('toAdminApiArray')->once()->with($admin)->andReturn($member);
 
     $di = container();
-    $di['db'] = $dbMock;
     $api->setDi($di);
     $api->setService($serviceMock);
 

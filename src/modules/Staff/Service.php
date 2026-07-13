@@ -11,10 +11,12 @@ declare(strict_types=1);
 
 namespace Box\Mod\Staff;
 
+use Box\Mod\Staff\Entity\Admin;
 use Box\Mod\Staff\Entity\AdminGroup;
 use Box\Mod\Staff\Entity\AdminGroupMember;
 use Box\Mod\Staff\Repository\AdminGroupMemberRepository;
 use Box\Mod\Staff\Repository\AdminGroupRepository;
+use Box\Mod\Staff\Repository\AdminRepository;
 use Box\Mod\Support\Entity\Helpdesk;
 use FOSSBilling\i18n;
 use FOSSBilling\InjectionAwareInterface;
@@ -25,6 +27,7 @@ class Service implements InjectionAwareInterface
 {
     private array $permissionCache = [];
 
+    private AdminRepository $adminRepository;
     private AdminGroupRepository $adminGroupRepository;
     private AdminGroupMemberRepository $adminGroupMemberRepository;
 
@@ -33,6 +36,7 @@ class Service implements InjectionAwareInterface
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        $this->adminRepository = $di['em']->getRepository(Admin::class);
         $this->adminGroupRepository = $di['em']->getRepository(AdminGroup::class);
         $this->adminGroupMemberRepository = $di['em']->getRepository(AdminGroupMember::class);
     }
@@ -40,6 +44,11 @@ class Service implements InjectionAwareInterface
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
+    }
+
+    public function getAdminRepository(): AdminRepository
+    {
+        return $this->adminRepository;
     }
 
     public function getAdminGroupRepository(): AdminGroupRepository
@@ -357,9 +366,14 @@ class Service implements InjectionAwareInterface
 
     public function getList($data)
     {
-        [$query, $params] = $this->getSearchQuery($data);
+        $qb = $this->getSearchQueryBuilder($data);
 
-        return $this->di['pager']->getPaginatedResultSet($query, $params, PaginationOptions::fromArray($data));
+        return $this->di['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
+    }
+
+    public function getSearchQueryBuilder($data)
+    {
+        return $this->adminRepository->getSearchQueryBuilder($data);
     }
 
     public function getSearchQuery($data): array
@@ -393,7 +407,7 @@ class Service implements InjectionAwareInterface
 
         if ($no_cron) {
             $where[] = '(system_name IS NULL OR system_name != :system_name)';
-            $bindings[':system_name'] = \Model_Admin::SYSTEM_CRON;
+            $bindings[':system_name'] = Admin::SYSTEM_CRON;
         }
 
         if (!empty($where)) {
@@ -409,7 +423,7 @@ class Service implements InjectionAwareInterface
      */
     public function getCronAdmin()
     {
-        $cron = $this->di['db']->findOne('Admin', 'system_name = :system_name', [':system_name' => \Model_Admin::SYSTEM_CRON]);
+        $cron = $this->di['db']->findOne('Admin', 'system_name = :system_name', [':system_name' => Admin::SYSTEM_CRON]);
         if ($cron instanceof \Model_Admin) {
             return $cron;
         }
@@ -420,7 +434,7 @@ class Service implements InjectionAwareInterface
         $cronPass = $this->di['tools']->generatePassword(256, 4);
 
         $cron = $this->di['db']->dispense('Admin');
-        $cron->system_name = \Model_Admin::SYSTEM_CRON;
+        $cron->system_name = Admin::SYSTEM_CRON;
         $cron->email = $cronEmail;
         $cron->pass = $this->di['password']->hashIt($cronPass);
         $cron->name = 'System Cron Job';
@@ -433,26 +447,38 @@ class Service implements InjectionAwareInterface
         return $cron;
     }
 
-    public function toModel_AdminApiArray(\Model_Admin $model, $deep = false): array
+    public function toAdminApiArray(Admin $admin): array
     {
-        $data = [
-            'id' => $model->id,
-            'email' => $model->email,
-            'name' => $model->name,
-            'system_name' => $model->system_name,
-            'status' => $model->status,
-            'signature' => $model->signature,
-            'timezone' => $model->timezone,
-            'created_at' => $model->created_at,
-            'updated_at' => $model->updated_at,
-        ];
+        $data = $admin->toApiArray();
 
         $data['groups'] = array_map(
             static fn (AdminGroup $group): array => $group->toApiArray(),
-            $this->adminGroupMemberRepository->findGroupsForAdmin((int) $model->id),
+            $this->adminGroupMemberRepository->findGroupsForAdmin((int) $admin->getId()),
         );
 
         return $data;
+    }
+
+    public function toModel_AdminApiArray(\Model_Admin $model, $deep = false): array
+    {
+        $admin = $this->adminRepository->find((int) $model->id);
+
+        if (!$admin instanceof Admin) {
+            return [
+                'id' => $model->id,
+                'email' => $model->email,
+                'name' => $model->name,
+                'system_name' => $model->system_name,
+                'status' => $model->status,
+                'signature' => $model->signature,
+                'timezone' => $model->timezone,
+                'created_at' => $model->created_at,
+                'updated_at' => $model->updated_at,
+                'groups' => [],
+            ];
+        }
+
+        return $this->toAdminApiArray($admin);
     }
 
     public function update(\Model_Admin $model, $data): bool
@@ -464,37 +490,42 @@ class Service implements InjectionAwareInterface
         $previousStatus = $model->status;
         $newStatus = $data['status'] ?? $model->status;
 
-        if ((int) $this->di['loggedin_admin']->id === (int) $model->id && $previousStatus === \Model_Admin::STATUS_ACTIVE && $newStatus !== \Model_Admin::STATUS_ACTIVE) {
+        if ((int) $this->di['loggedin_admin']->id === (int) $model->id && $previousStatus === Admin::STATUS_ACTIVE && $newStatus !== Admin::STATUS_ACTIVE) {
             throw new \FOSSBilling\InformationException('You cannot deactivate your own staff account');
         }
 
         $this->assertCanManageAdmin($model);
 
-        if ($previousStatus === \Model_Admin::STATUS_ACTIVE && $newStatus !== \Model_Admin::STATUS_ACTIVE) {
+        if ($previousStatus === Admin::STATUS_ACTIVE && $newStatus !== Admin::STATUS_ACTIVE) {
             $this->assertCanRemoveActiveSuperAdministrator($model);
         }
 
-        $model->email = $data['email'] ?? $model->email;
-        $model->name = $data['name'] ?? $model->name;
-        $model->status = $newStatus;
-        if ($model->status === \Model_Admin::STATUS_INACTIVE) {
-            $model->api_token = null;
+        $admin = $this->adminRepository->find((int) $model->id);
+        if (!$admin instanceof Admin) {
+            throw new \FOSSBilling\InformationException('Staff member not found');
         }
-        $model->signature = $data['signature'] ?? $model->signature;
+
+        $admin->setEmail($data['email'] ?? $admin->getEmail());
+        $admin->setName($data['name'] ?? $admin->getName());
+        $admin->setStatus($newStatus);
+        if ($admin->getStatus() === Admin::STATUS_INACTIVE) {
+            $admin->setApiToken(null);
+        }
+        $admin->setSignature($data['signature'] ?? $admin->getSignature());
         if (array_key_exists('timezone', $data)) {
-            $model->timezone = i18n::validateTimezone($data['timezone']);
+            $admin->setTimezone(i18n::validateTimezone($data['timezone']));
         }
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $this->di['em']->persist($admin);
+        $this->di['em']->flush();
 
-        if ($model->status !== \Model_Admin::STATUS_ACTIVE && $previousStatus === \Model_Admin::STATUS_ACTIVE) {
+        if ($admin->getStatus() !== Admin::STATUS_ACTIVE && $previousStatus === Admin::STATUS_ACTIVE) {
             $profileService = $this->di['mod_service']('profile');
-            $profileService->invalidateSessions('admin', (int) $model->id);
+            $profileService->invalidateSessions('admin', (int) $admin->getId());
         }
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffUpdate', 'params' => ['id' => $model->id]]);
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffUpdate', 'params' => ['id' => $admin->getId()]]);
 
-        $this->di['logger']->info('Updated staff member #%s "%s" details; status is "%s"', $model->id, $model->name, $model->status);
+        $this->di['logger']->info('Updated staff member #%s "%s" details; status is "%s"', $admin->getId(), $admin->getName(), $admin->getStatus());
 
         return true;
     }
@@ -512,10 +543,15 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffDelete', 'params' => ['id' => $model->id]]);
 
-        $id = $model->id;
+        $id = (int) $model->id;
         $name = $model->name;
-        $this->adminGroupMemberRepository->deleteMembershipsForAdmin((int) $id);
-        $this->di['db']->trash($model);
+        $this->adminGroupMemberRepository->deleteMembershipsForAdmin($id);
+
+        $admin = $this->adminRepository->find($id);
+        if ($admin instanceof Admin) {
+            $this->di['em']->remove($admin);
+            $this->di['em']->flush();
+        }
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffDelete', 'params' => ['id' => $id]]);
 
@@ -531,9 +567,14 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffPasswordChange', 'params' => ['id' => $model->id]]);
 
-        $model->pass = $this->di['password']->hashIt($password);
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $admin = $this->adminRepository->find((int) $model->id);
+        if (!$admin instanceof Admin) {
+            throw new \FOSSBilling\InformationException('Staff member not found');
+        }
+
+        $admin->setPass($this->di['password']->hashIt($password));
+        $this->di['em']->persist($admin);
+        $this->di['em']->flush();
 
         $profileService = $this->di['mod_service']('profile');
         $profileService->invalidateSessions('admin', (int) $model->id);
@@ -564,30 +605,31 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffCreate', 'params' => $data]);
 
-        $model = $this->di['db']->dispense('Admin');
-        $model->email = $data['email'];
-        $model->pass = $this->di['password']->hashIt($data['password']);
-        $model->name = $data['name'];
-        $model->status = $model->getStatus($data['status']);
-        $model->signature = $signature;
-        $model->timezone = i18n::validateTimezone($data['timezone'] ?? null);
-        $model->created_at = date('Y-m-d H:i:s');
-        $model->updated_at = date('Y-m-d H:i:s');
-
         try {
-            $newId = $this->di['db']->store($model);
-        } catch (\RedBeanPHP\RedException) {
+            $admin = (new Admin())
+                ->setEmail($data['email'])
+                ->setPass($this->di['password']->hashIt($data['password']))
+                ->setName($data['name'])
+                ->setStatus($data['status'] ?? Admin::STATUS_ACTIVE)
+                ->setSignature($signature)
+                ->setTimezone(i18n::validateTimezone($data['timezone'] ?? null));
+
+            $this->di['em']->persist($admin);
+            $this->di['em']->flush();
+
+            $newId = (int) $admin->getId();
+        } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException) {
             throw new \FOSSBilling\InformationException('Staff member with email :email is already registered.', [':email' => $data['email']], 788954);
         }
 
-        $this->di['em']->persist(new AdminGroupMember((int) $newId, $group));
+        $this->di['em']->persist(new AdminGroupMember($newId, $group));
         $this->di['em']->flush();
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffCreate', 'params' => ['id' => $newId]]);
 
-        $this->di['logger']->info('Created staff member #%s "%s" in group #%s "%s"', $newId, $model->name, $groupId, $group->getName());
+        $this->di['logger']->info('Created staff member #%s "%s" in group #%s "%s"', $newId, $admin->getName(), $groupId, $group->getName());
 
-        return (int) $newId;
+        return $newId;
     }
 
     public function createGroup(string $name, ?AdminGroup $parent = null): int
@@ -803,7 +845,7 @@ class Service implements InjectionAwareInterface
 
     private function assertCanRemoveActiveSuperAdministrator(\Model_Admin $admin): void
     {
-        if ($admin->status !== \Model_Admin::STATUS_ACTIVE) {
+        if ($admin->status !== Admin::STATUS_ACTIVE) {
             return;
         }
 
@@ -881,11 +923,11 @@ class Service implements InjectionAwareInterface
             'created_at' => $model->created_at,
         ];
         if ($model->admin_id) {
-            $adminModel = $this->di['db']->load('Admin', $model->admin_id);
-            if ($adminModel instanceof \Model_Admin && $adminModel->id) {
-                $result['staff']['id'] = $adminModel->id;
-                $result['staff']['name'] = $adminModel->name;
-                $result['staff']['email'] = $adminModel->email;
+            $admin = $this->adminRepository->find((int) $model->admin_id);
+            if ($admin instanceof Admin) {
+                $result['staff']['id'] = $admin->getId();
+                $result['staff']['name'] = $admin->getName();
+                $result['staff']['email'] = $admin->getEmail();
             }
         }
 
@@ -894,7 +936,7 @@ class Service implements InjectionAwareInterface
 
     public function authorizeAdmin($email, $plainTextPassword)
     {
-        $model = $this->di['db']->findOne('Admin', 'email = ? AND status = ?', [$email, \Model_Admin::STATUS_ACTIVE]);
+        $model = $this->di['db']->findOne('Admin', 'email = ? AND status = ?', [$email, Admin::STATUS_ACTIVE]);
         if ($model instanceof \Model_Admin && $model->isCron()) {
             $model = null;
         }
