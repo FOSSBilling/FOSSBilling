@@ -164,6 +164,63 @@ function container(): Container
         $adminGroupRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminGroupRepository::class)->shouldIgnoreMissing();
         $adminGroupMemberRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminGroupMemberRepository::class)->shouldIgnoreMissing();
 
+        $clientRepository = \Mockery::mock(\Box\Mod\Client\Repository\ClientRepository::class)->shouldIgnoreMissing();
+        $clientRepository->shouldReceive('find')->byDefault()->andReturnUsing(static function (int $id): ?object {
+            $client = new \Box\Mod\Client\Entity\Client();
+            $prop = new \ReflectionProperty($client, 'id');
+            $prop->setValue($client, $id);
+
+            return $client;
+        });
+        $clientRepository->shouldReceive('findOneByEmail')->byDefault()->andReturnUsing(static function (string $email): ?object {
+            $client = new \Box\Mod\Client\Entity\Client();
+            $prop = new \ReflectionProperty($client, 'id');
+            $prop->setValue($client, 1);
+
+            return $client;
+        });
+        $clientRepository->shouldReceive('findOneByEmailAndActive')->byDefault()->andReturnUsing(static function (string $email): ?object {
+            $client = new \Box\Mod\Client\Entity\Client();
+            $prop = new \ReflectionProperty($client, 'id');
+            $prop->setValue($client, 1);
+            $statusProp = new \ReflectionProperty($client, 'status');
+            $statusProp->setValue($client, 'active');
+
+            return $client;
+        });
+        $clientRepository->shouldReceive('getIdNamePairs')->byDefault()->andReturn([]);
+        $clientRepository->shouldReceive('getStatusCounts')->byDefault()->andReturn(['active' => 1, 'suspended' => 0, 'canceled' => 0]);
+        $clientGroupRepository = \Mockery::mock(\Box\Mod\Client\Repository\ClientGroupRepository::class)->shouldIgnoreMissing();
+        $clientGroupRepository->shouldReceive('getIdTitlePairs')->byDefault()->andReturn([]);
+        $clientGroupRepository->shouldReceive('find')->byDefault()->andReturnUsing(static function (int $id): ?object {
+            $group = new \Box\Mod\Client\Entity\ClientGroup();
+            $prop = new \ReflectionProperty($group, 'id');
+            $prop->setValue($group, $id);
+
+            return $group;
+        });
+        $clientBalanceRepository = \Mockery::mock(\Box\Mod\Client\Repository\ClientBalanceRepository::class)->shouldIgnoreMissing();
+        $clientBalanceRepository->shouldReceive('getClientBalanceSum')->byDefault()->andReturn(0.0);
+        $clientBalanceRepository->shouldReceive('find')->byDefault()->andReturnUsing(static function (int $id): ?object {
+            $balance = new \Box\Mod\Client\Entity\ClientBalance();
+            $prop = new \ReflectionProperty($balance, 'id');
+            $prop->setValue($balance, $id);
+
+            return $balance;
+        });
+        $clientPasswordResetRepository = \Mockery::mock(\Box\Mod\Client\Repository\ClientPasswordResetRepository::class)->shouldIgnoreMissing();
+        $clientPasswordResetRepository->shouldReceive('findOneByHash')->byDefault()->andReturn(null);
+        $clientPasswordResetRepository->shouldReceive('findOneBy')->byDefault()->andReturn(null);
+        $clientPasswordResetRepository->shouldReceive('findBy')->byDefault()->andReturn([]);
+        $clientPasswordResetRepository->shouldReceive('createQueryBuilder')->byDefault()->andReturnUsing(static function (): object {
+            $qb = \Mockery::mock(\Doctrine\ORM\QueryBuilder::class)->shouldIgnoreMissing();
+            $query = \Mockery::mock(\Doctrine\ORM\Query::class)->shouldIgnoreMissing();
+            $query->shouldReceive('getResult')->byDefault()->andReturn([]);
+            $qb->shouldReceive('getQuery')->byDefault()->andReturn($query);
+
+            return $qb;
+        });
+
         $extensionMetaRepository = \Mockery::mock(\Box\Mod\Extension\Repository\ExtensionMetaRepository::class)->shouldIgnoreMissing();
         $extensionMetaRepository->shouldReceive('findOneByExtensionAndScope')->byDefault()->andReturn(null);
         $extensionMetaRepository->shouldReceive('findByExtensionAndScope')->byDefault()->andReturn([]);
@@ -197,6 +254,10 @@ function container(): Container
             \Box\Mod\Staff\Entity\Admin::class => $adminRepository,
             \Box\Mod\Staff\Entity\AdminGroup::class => $adminGroupRepository,
             \Box\Mod\Staff\Entity\AdminGroupMember::class => $adminGroupMemberRepository,
+            \Box\Mod\Client\Entity\Client::class => $clientRepository,
+            \Box\Mod\Client\Entity\ClientGroup::class => $clientGroupRepository,
+            \Box\Mod\Client\Entity\ClientBalance::class => $clientBalanceRepository,
+            \Box\Mod\Client\Entity\ClientPasswordReset::class => $clientPasswordResetRepository,
             \Box\Mod\Email\Entity\EmailTemplate::class => $emailTemplateRepository,
             \Box\Mod\Email\Entity\EmailTemplateGroup::class => $emailTemplateGroupRepository,
             \Box\Mod\Email\Entity\ActivityClientEmail::class => $activityClientEmailRepository,

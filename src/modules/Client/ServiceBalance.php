@@ -1,25 +1,26 @@
 <?php
 
 declare(strict_types=1);
-/**
- * Copyright 2022-2025 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0.
- *
- * @copyright FOSSBilling (https://www.fossbilling.org)
- * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
- */
 
 namespace Box\Mod\Client;
 
+use Box\Mod\Client\Entity\Client;
+use Box\Mod\Client\Entity\ClientBalance;
+use Box\Mod\Client\Repository\ClientBalanceRepository;
+use Box\Mod\Client\Repository\ClientRepository;
 use FOSSBilling\InjectionAwareInterface;
 
 class ServiceBalance implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
+    private ClientBalanceRepository $clientBalanceRepository;
+    private ClientRepository $clientRepository;
 
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        $this->clientBalanceRepository = $di['em']->getRepository(ClientBalance::class);
+        $this->clientRepository = $di['em']->getRepository(Client::class);
     }
 
     public function getDi(): ?\Pimple\Container
@@ -34,38 +35,51 @@ class ServiceBalance implements InjectionAwareInterface
 
     public function clientTotal(\Model_Client $c)
     {
-        $sql = '
-        SELECT SUM(amount) as client_total
-        FROM client_balance
-        WHERE client_id = ?
-        GROUP BY client_id
-        ';
-
-        return $this->di['db']->getCell($sql, [$c->id]);
+        return $this->clientBalanceRepository->getClientBalanceSum((int) $c->id);
     }
 
     public function rmByClient(\Model_Client $client): void
     {
-        $clientBalances = $this->di['db']->find('ClientBalance', 'client_id = ?', [$client->id]);
-        foreach ($clientBalances as $balanceModel) {
-            $this->di['db']->trash($balanceModel);
+        $balances = $this->clientBalanceRepository->findBy(['clientId' => (int) $client->id]);
+        foreach ($balances as $balance) {
+            $this->di['em']->remove($balance);
+        }
+        if (!empty($balances)) {
+            $this->di['em']->flush();
         }
     }
 
     public function rm(\Model_ClientBalance $model): void
     {
-        $this->di['db']->trash($model);
+        $balance = $this->clientBalanceRepository->find((int) $model->id);
+        if ($balance instanceof ClientBalance) {
+            $this->di['em']->remove($balance);
+            $this->di['em']->flush();
+        }
     }
 
     public function toApiArray(\Model_ClientBalance $model): array
     {
-        $client = $this->di['db']->getExistingModelById('Client', $model->client_id, 'Client not found');
+        $balance = $this->clientBalanceRepository->find((int) $model->id);
+        $client = $balance instanceof ClientBalance && $balance->getClientId() !== null
+            ? $this->clientRepository->find($balance->getClientId())
+            : null;
+
+        if ($balance instanceof ClientBalance) {
+            return [
+                'id' => $balance->getId(),
+                'description' => $balance->getDescription(),
+                'amount' => $balance->getAmount(),
+                'currency' => $client instanceof Client ? $client->getCurrency() : null,
+                'created_at' => $balance->getCreatedAt()?->format('Y-m-d H:i:s'),
+            ];
+        }
 
         return [
             'id' => $model->id,
             'description' => $model->description,
             'amount' => $model->amount,
-            'currency' => $client->currency,
+            'currency' => '',
             'created_at' => $model->created_at,
         ];
     }
@@ -114,9 +128,8 @@ class ServiceBalance implements InjectionAwareInterface
 
     /**
      * @param float|string $amount
-     * @param string       $description
      *
-     * @return \Model_ClientBalance
+     * @return ClientBalance
      *
      * @throws \FOSSBilling\InformationException
      */
@@ -130,15 +143,15 @@ class ServiceBalance implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Funds description is invalid');
         }
 
-        $credit = $this->di['db']->dispense('ClientBalance');
-        $credit->client_id = $client->id;
-        $credit->type = $data['type'] ?? 'default';
-        $credit->rel_id = $data['rel_id'] ?? null;
-        $credit->description = $description;
-        $credit->amount = -$amount;
-        $credit->created_at = date('Y-m-d H:i:s');
-        $credit->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($credit);
+        $credit = new ClientBalance();
+        $credit->setClientId((int) $client->id);
+        $credit->setType($data['type'] ?? 'default');
+        $credit->setRelId(isset($data['rel_id']) ? (string) $data['rel_id'] : null);
+        $credit->setDescription($description);
+        $credit->setAmount((string) (-(float) $amount));
+
+        $this->di['em']->persist($credit);
+        $this->di['em']->flush();
 
         return $credit;
     }

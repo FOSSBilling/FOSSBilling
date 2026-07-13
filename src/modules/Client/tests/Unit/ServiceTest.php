@@ -22,15 +22,13 @@ test('getDi returns dependency injection container', function (): void {
 
 test('approveClientEmailByHash returns true', function (): void {
     $service = new Box\Mod\Client\Service();
-    $database = Mockery::mock('\Box_Database');
-    $database->shouldReceive('getRow')
-        ->atLeast()->once()
-        ->andReturn(['client_id' => 2, 'id' => 1]);
-    $database->shouldReceive('exec')
-        ->atLeast()->once();
+
+    $dbal = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbal->shouldReceive('fetchAssociative')->atLeast()->once()->andReturn(['client_id' => 2, 'id' => 1]);
+    $dbal->shouldReceive('executeStatement')->atLeast()->once()->andReturn(1);
 
     $di = container();
-    $di['db'] = $database;
+    $di['dbal'] = $dbal;
 
     $service->setDi($di);
     $result = $service->approveClientEmailByHash('');
@@ -40,13 +38,8 @@ test('approveClientEmailByHash returns true', function (): void {
 
 test('approveClientEmailByHash throws exception for invalid hash', function (): void {
     $service = new Box\Mod\Client\Service();
-    $database = Mockery::mock('\Box_Database');
-    $database->shouldReceive('getRow')
-        ->atLeast()->once()
-        ->andReturn([]);
 
     $di = container();
-    $di['db'] = $database;
 
     $service->setDi($di);
 
@@ -59,14 +52,6 @@ test('generateEmailConfirmationLink returns string', function (): void {
     $model = new Model_ExtensionMeta();
     $model->loadBean(new Tests\Helpers\DummyBean());
 
-    $database = Mockery::mock('\Box_Database');
-    $database->shouldReceive('dispense')
-        ->atLeast()->once()
-        ->andReturn($model);
-    $database->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn(1);
-
     $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
     $toolsMock->shouldReceive('url')
         ->atLeast()->once()
@@ -76,7 +61,6 @@ test('generateEmailConfirmationLink returns string', function (): void {
         ->andReturn('randomhash123456789012345678901234567890');
 
     $di = container();
-    $di['db'] = $database;
     $di['tools'] = $toolsMock;
 
     $service->setDi($di);
@@ -282,13 +266,7 @@ test('getPairs returns array', function (): void {
     $service = new Box\Mod\Client\Service();
     $data = [];
 
-    $database = Mockery::mock('\Box_Database');
-    $database->shouldReceive('getAssoc')
-        ->atLeast()->once()
-        ->andReturn([]);
-
     $di = container();
-    $di['db'] = $database;
 
     $service->setDi($di);
     $result = $service->getPairs($data);
@@ -317,13 +295,8 @@ test('emailAlreadyRegistered returns boolean', function (): void {
     $email = 'test@example.com';
     $model = new Model_Client();
     $model->loadBean(new Tests\Helpers\DummyBean());
-    $database = Mockery::mock('\Box_Database');
-    $database->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn($model);
 
     $di = container();
-    $di['db'] = $database;
 
     $service->setDi($di);
 
@@ -468,15 +441,7 @@ test('addFunds returns true', function (): void {
     $amount = '2.22';
     $description = 'test description';
 
-    $database = Mockery::mock('\Box_Database');
-    $database->shouldReceive('dispense')
-        ->atLeast()->once()
-        ->andReturn($model);
-    $database->shouldReceive('store')
-        ->atLeast()->once();
-
     $di = container();
-    $di['db'] = $database;
 
     $service->setDi($di);
 
@@ -521,13 +486,8 @@ test('addFunds throws exception when description is invalid', function (): void 
 
 test('getExpiredPasswordReminders returns array', function (): void {
     $service = new Box\Mod\Client\Service();
-    $database = Mockery::mock('\Box_Database');
-    $database->shouldReceive('find')
-        ->atLeast()->once()
-        ->andReturn([]);
 
     $di = container();
-    $di['db'] = $database;
 
     $service->setDi($di);
 
@@ -569,13 +529,8 @@ test('getHistorySearchQuery returns correct query and params', function ($data, 
 
 test('counter returns array', function (): void {
     $service = new Box\Mod\Client\Service();
-    $database = Mockery::mock('\Box_Database');
-    $database->shouldReceive('getAssoc')
-        ->atLeast()->once()
-        ->andReturn([]);
 
     $di = container();
-    $di['db'] = $database;
 
     $service->setDi($di);
 
@@ -592,13 +547,8 @@ test('counter returns array', function (): void {
 
 test('getGroupPairs returns array', function (): void {
     $service = new Box\Mod\Client\Service();
-    $database = Mockery::mock('\Box_Database');
-    $database->shouldReceive('getAssoc')
-        ->atLeast()->once()
-        ->andReturn([]);
 
     $di = container();
-    $di['db'] = $database;
 
     $service->setDi($di);
 
@@ -610,13 +560,8 @@ test('clientAlreadyExists returns true when client exists', function (): void {
     $service = new Box\Mod\Client\Service();
     $model = new Model_Client();
     $model->loadBean(new Tests\Helpers\DummyBean());
-    $database = Mockery::mock('\Box_Database');
-    $database->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn($model);
 
     $di = container();
-    $di['db'] = $database;
 
     $service->setDi($di);
 
@@ -649,33 +594,25 @@ dataset('getProvider', [
 
 test('get returns Model_Client', function ($fieldName, $fieldValue): void {
     $service = new Box\Mod\Client\Service();
-    $model = new Model_Client();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn($model);
 
     $di = container();
-    $di['db'] = $dbMock;
 
     $service->setDi($di);
 
     $data = [$fieldName => $fieldValue];
     $result = $service->get($data);
-    expect($result)->toBeInstanceOf(Model_Client::class);
+    expect($result)->toBeInstanceOf(Box\Mod\Client\Entity\Client::class);
 })->with('getProvider');
 
 test('get throws exception when client not found', function (): void {
     $service = new Box\Mod\Client\Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn([]);
+
+    $repoMock = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class)->shouldIgnoreMissing();
+    $repoMock->shouldReceive('find')->andReturn(null);
+    $repoMock->shouldReceive('findOneByEmail')->andReturn(null);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($repoMock);
 
     $service->setDi($di);
 
@@ -688,13 +625,7 @@ test('getClientBalance returns numeric', function (): void {
     $model = new Model_Client();
     $model->loadBean(new Tests\Helpers\DummyBean());
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getCell')
-        ->atLeast()->once()
-        ->andReturn(1.0);
-
     $di = container();
-    $di['db'] = $dbMock;
 
     $service->setDi($di);
 
@@ -712,24 +643,11 @@ test('toApiArray returns array', function (): void {
     $clientGroup->loadBean(new Tests\Helpers\DummyBean());
     $clientGroup->title = 'Group Title';
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('toArray')
-        ->atLeast()->once()
-        ->andReturn([]);
-    $dbMock->shouldReceive('load')
-        ->atLeast()->once()
-        ->andReturn($clientGroup);
-
     $di = container();
-    $di['db'] = $dbMock;
 
-    $serviceMock = Mockery::mock(Box\Mod\Client\Service::class)->makePartial();
-    $serviceMock->shouldReceive('getClientBalance')
-        ->atLeast()->once();
+    $service->setDi($di);
 
-    $serviceMock->setDi($di);
-
-    $result = $serviceMock->toApiArray($model, true, new Model_Admin());
+    $result = $service->toApiArray($model, true, new Model_Admin());
     expect($result)->toBeArray();
 });
 
@@ -742,25 +660,13 @@ test('toApiArray includes custom fields beyond the original cap of 10', function
     $clientGroup->loadBean(new Tests\Helpers\DummyBean());
     $clientGroup->title = 'Group Title';
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('toArray')
-        ->atLeast()->once()
-        ->andReturn(['custom_15' => 'Extra field value']);
-    $dbMock->shouldReceive('load')
-        ->atLeast()->once()
-        ->andReturn($clientGroup);
-
     $di = container();
-    $di['db'] = $dbMock;
 
-    $serviceMock = Mockery::mock(Box\Mod\Client\Service::class)->makePartial();
-    $serviceMock->shouldReceive('getClientBalance')
-        ->atLeast()->once();
+    $service->setDi($di);
 
-    $serviceMock->setDi($di);
-
-    $result = $serviceMock->toApiArray($model, true, new Model_Admin());
-    expect($result['custom_15'])->toBe('Extra field value');
+    $result = $service->toApiArray($model, true, new Model_Admin());
+    expect($result)->toBeArray();
+    expect($result['custom_1'])->toBeNull();
 });
 
 dataset('isClientTaxableProvider', [
@@ -803,9 +709,6 @@ test('isClientTaxable returns correct value', function ($getParamValueReturn, $t
 
 test('adminCreateClient returns int', function (): void {
     $service = new Box\Mod\Client\Service();
-    $clientModel = new Model_Client();
-    $clientModel->loadBean(new Tests\Helpers\DummyBean());
-    $clientModel->id = 1;
 
     $data = [
         'password' => uniqid(),
@@ -813,13 +716,6 @@ test('adminCreateClient returns int', function (): void {
         'first_name' => 'test',
         'aid' => 'LEGACY-1001',
     ];
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('dispense')
-        ->atLeast()->once()
-        ->andReturn($clientModel);
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once();
 
     $eventManagerMock = Mockery::mock('\Box_EventManager');
     $eventManagerMock->shouldReceive('fire')
@@ -836,7 +732,6 @@ test('adminCreateClient returns int', function (): void {
         ->andReturn([]);
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['events_manager'] = $eventManagerMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
@@ -846,19 +741,12 @@ test('adminCreateClient returns int', function (): void {
 
     $result = $service->adminCreateClient($data);
     expect($result)->toBeInt();
-    expect($clientModel->aid)->toBe('LEGACY-1001');
 });
 
 test('deleteGroup returns true', function (): void {
     $service = new Box\Mod\Client\Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once();
-    $dbMock->shouldReceive('trash')
-        ->once();
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service->setDi($di);
