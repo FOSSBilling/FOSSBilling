@@ -46,6 +46,8 @@ dataset('invalidQuantities', fn (): array => [
     'infinite' => [INF],
     'overflowed numeric string' => ['1e999'],
     'integer overflow' => [PHP_INT_MAX . '0'],
+    'array' => [[]],
+    'boolean' => [true],
 ]);
 
 test('validateAmount accepts valid amounts', function (mixed $input, float $expected): void {
