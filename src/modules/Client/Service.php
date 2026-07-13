@@ -466,6 +466,10 @@ class Service implements InjectionAwareInterface
             'timezone' => $model->timezone,
         ];
 
+        if ($isAdmin || ($identity instanceof \Model_Client && (int) $identity->id === (int) $model->id)) {
+            $details['billing_email'] = $model->billing_email;
+        }
+
         if ($deep) {
             $details['balance'] = $this->getClientBalance($model);
         }
@@ -594,6 +598,8 @@ class Service implements InjectionAwareInterface
 
         $client->auth_type = $data['auth_type'] ?? null;
         $client->email = strtolower(trim((string) ($data['email'] ?? null)));
+        $billingEmail = trim((string) ($data['billing_email'] ?? ''));
+        $client->billing_email = $billingEmail !== '' ? strtolower($billingEmail) : null;
         $client->first_name = ucwords((string) ($data['first_name'] ?? null));
         $client->pass = $this->di['password']->hashIt($password);
 

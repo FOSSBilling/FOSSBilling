@@ -160,6 +160,9 @@ class Service implements InjectionAwareInterface
         }
 
         $client->first_name = $data['first_name'] ?? $client->first_name;
+        if (array_key_exists('billing_email', $data)) {
+            $client->billing_email = $data['billing_email'];
+        }
         $client->last_name = $data['last_name'] ?? $client->last_name;
         $client->gender = ClientValidator::validateGender($data['gender'] ?? $client->gender);
         $client->birthday = ClientValidator::validateBirthday($data['birthday'] ?? $client->birthday);
