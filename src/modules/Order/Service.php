@@ -1269,10 +1269,10 @@ class Service implements InjectionAwareInterface
             throw new InformationException('No active gateway subscription that supports cancellation at period end is linked to this order.');
         }
 
-        $this->updateOrderMeta($order, [self::META_CANCEL_AT_PERIOD_END => '1']);
         if ($subscriptionService->scheduleCancellationForOrder($order) === 0) {
             throw new InformationException('No active gateway subscription is linked to this order.');
         }
+        $this->updateOrderMeta($order, [self::META_CANCEL_AT_PERIOD_END => '1']);
 
         $order->reason = $reason;
         $order->updated_at = date('Y-m-d H:i:s');

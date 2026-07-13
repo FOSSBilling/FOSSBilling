@@ -2141,6 +2141,26 @@ test('scheduleCancellationFromOrder keeps the service active', function (): void
         ->and($order->reason)->toBe('Customer request');
 });
 
+test('scheduleCancellationFromOrder does not mark the order when no subscription was scheduled', function (): void {
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order->status = Model_ClientOrder::STATUS_ACTIVE;
+
+    $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscriptionService->shouldReceive('canCancelAtPeriodEndForOrder')->once()->with($order)->andReturn(true);
+    $subscriptionService->shouldReceive('scheduleCancellationForOrder')->once()->with($order)->andReturn(0);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn () => $subscriptionService);
+
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldNotReceive('updateOrderMeta');
+    $service->setDi($di);
+
+    expect(fn () => $service->scheduleCancellationFromOrder($order))
+        ->toThrow(FOSSBilling\InformationException::class, 'No active gateway subscription is linked to this order.');
+});
+
 test('cancelFromOrder does not cancel subscriptions when service cancellation fails', function (): void {
     $clientOrderModel = new Model_ClientOrder();
     $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());

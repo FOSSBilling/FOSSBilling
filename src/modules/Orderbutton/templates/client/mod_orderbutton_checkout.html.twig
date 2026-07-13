@@ -170,11 +170,12 @@
                                     <div class="control-group">
                                         <p class="small text-muted mb-2">{{ 'Choose a payment method to continue with your order.'|trans }}</p>
                                         <div class="d-flex flex-wrap gap-3">
+                                        {% set gateway_selected = false %}
                                         {% for gtw in guest.invoice_gateways %}
                                             {% if cart.currency.code in gtw.accepted_currencies and (gtw.allow_single or (cart.subscribable|default(false) and gtw.allow_recurrent)) %}
                                                 {% set gateway_input_id = 'order-gateway-' ~ gtw.id %}
                                                 <div class="invoice-gateway rounded-2 p-2">
-                                                    <input type="radio" class="btn-check border-0" name="gateway_id" id="{{ gateway_input_id }}" value="{{ gtw.id }}" autocomplete="off" {{ loop.first ? 'checked' : '' }}/>
+                                                    <input type="radio" class="btn-check border-0" name="gateway_id" id="{{ gateway_input_id }}" value="{{ gtw.id }}" autocomplete="off" {{ not gateway_selected ? 'checked' : '' }}/>
                                                     {% if gtw.logo.logo %}
                                                         <label class="btn" for="{{ gateway_input_id }}"
                                                             style="background: transparent url('{{ gtw.logo.logo }}') no-repeat center center; background-size: contain; height:{{ gtw.logo.height }}; width:{{ gtw.logo.width }};"
@@ -184,6 +185,7 @@
                                                         <label class="btn text-nowrap" for="{{ gateway_input_id }}">{{ gtw.title }}</label>
                                                     {% endif %}
                                                 </div>
+                                                {% set gateway_selected = true %}
                                             {% endif %}
                                         {% endfor %}
                                         </div>

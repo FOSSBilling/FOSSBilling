@@ -138,10 +138,26 @@ test('orderbutton checkout renders for guests under strict_variables', function 
             'invoice_gateways' => [
                 [
                     'id' => 1,
+                    'title' => 'Unsupported Gateway',
+                    'accepted_currencies' => ['EUR'],
+                    'allow_single' => true,
+                    'allow_recurrent' => false,
+                    'logo' => ['logo' => null, 'height' => 0, 'width' => 0],
+                ],
+                [
+                    'id' => 2,
                     'title' => 'Subscription Gateway',
                     'accepted_currencies' => ['USD'],
                     'allow_single' => false,
                     'allow_recurrent' => true,
+                    'logo' => ['logo' => null, 'height' => 0, 'width' => 0],
+                ],
+                [
+                    'id' => 3,
+                    'title' => 'Secondary Gateway',
+                    'accepted_currencies' => ['USD'],
+                    'allow_single' => true,
+                    'allow_recurrent' => false,
                     'logo' => ['logo' => null, 'height' => 0, 'width' => 0],
                 ],
             ],
@@ -149,7 +165,9 @@ test('orderbutton checkout renders for guests under strict_variables', function 
     ]);
 
     expect($html)->toContain('You must first login / create an account before you can checkout.')
-        ->and($html)->toContain('Subscription Gateway');
+        ->and($html)->toContain('Subscription Gateway')
+        ->and($html)->toContain('id="order-gateway-2" value="2" autocomplete="off" checked')
+        ->and($html)->not->toContain('id="order-gateway-3" value="3" autocomplete="off" checked');
 });
 
 /*
