@@ -54,12 +54,19 @@ class Run extends Command implements \FOSSBilling\InjectionAwareInterface
         ]);
 
         try {
-            $service->runCrons($interval);
+            $success = $service->runCrons($interval);
         } catch (\Exception $e) {
             $output->writeln("<error>An error occurred: {$e->getMessage()}</error>");
 
             return Command::FAILURE;
         }
+
+        if (!$success) {
+            $output->writeln('<error>Cron jobs finished with failures. Check the logs for details.</error>');
+
+            return Command::FAILURE;
+        }
+
         $output->writeln('<info>Successfully ran the cron jobs.</info>');
 
         return Command::SUCCESS;

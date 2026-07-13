@@ -505,6 +505,18 @@ class Service implements InjectionAwareInterface
                 return;
             }
 
+            // Atomically claim the invoice before sending anything: this is what stops the same
+            // reminder being sent twice when this event is dispatched more than once for the
+            // same invoice (overlapping cron runs, the once-daily batch and the pending-reminder
+            // fallback both firing it, etc).
+            $claimed = $di['db']->exec(
+                "UPDATE invoice SET reminded_at = NOW(), updated_at = NOW() WHERE id = :id AND status = 'unpaid' AND approved = 1 AND due_at > NOW() AND (reminded_at IS NULL OR DATE(reminded_at) < CURDATE())",
+                [':id' => $params['id'] ?? 0]
+            );
+            if (!$claimed) {
+                return;
+            }
+
             $invoiceModel = $di['db']->load('Invoice', $params['id'] ?? 0);
             if ($invoiceModel instanceof \Model_Invoice) {
                 $service->sendInvoiceReminder($invoiceModel);
@@ -537,6 +549,18 @@ class Service implements InjectionAwareInterface
 
         try {
             if (!$service->isInvoiceReminderIntervalEnabled('invoice_reminder_after_due_days', (int) ($params['days_passed'] ?? 0), '5', $params['reminder_intervals'] ?? null)) {
+                return;
+            }
+
+            // Atomically claim the invoice before sending anything: this is what stops the same
+            // reminder being sent twice when this event is dispatched more than once for the
+            // same invoice (overlapping cron runs, the once-daily batch and the pending-reminder
+            // fallback both firing it, etc).
+            $claimed = $di['db']->exec(
+                "UPDATE invoice SET reminded_at = NOW(), updated_at = NOW() WHERE id = :id AND status = 'unpaid' AND approved = 1 AND ((due_at < NOW()) OR (ABS(DATEDIFF(due_at, NOW())) = 0)) AND (reminded_at IS NULL OR DATE(reminded_at) < CURDATE())",
+                [':id' => $params['id'] ?? 0]
+            );
+            if (!$claimed) {
                 return;
             }
 
@@ -1439,81 +1463,38 @@ class Service implements InjectionAwareInterface
 
     protected function doBatchInvokePendingReminderEvents(): bool
     {
-        return $this->fireDueReminderEvents();
+        $this->fireDueReminderEvents();
+
+        return true;
     }
 
     /**
-     * Claims and fires due-reminder events for eligible invoices.
-     *
-     * Both the once-daily primary batch and the pending-reminder fallback call this, so an
-     * invoice can only be claimed by whichever cron run reaches it first, and neither path can
-     * re-send a reminder the other already recorded via reminded_at (even across a calendar day
-     * boundary).
+     * Fires the before/after due-date events for every unpaid, approved invoice in range, same
+     * as before this class started reminder-throttling. Listeners (built-in or third-party
+     * extensions) decide for themselves whether a given invoice is actionable; this method does
+     * not filter by reminder interval so it does not narrow what extensions can observe. The
+     * built-in reminder handlers (onEventBeforeInvoiceIsDue, onEventAfterInvoiceIsDue) are the
+     * ones responsible for matching the configured interval and atomically claiming the invoice
+     * via reminded_at before actually sending anything, which is what keeps overlapping cron
+     * runs and repeated dispatch of this same event from sending duplicate reminders.
      */
-    private function fireDueReminderEvents(): bool
+    private function fireDueReminderEvents(): void
     {
         $ss = $this->di['mod_service']('System');
         $beforeDueReminderIntervals = $this->parseInvoiceReminderIntervals($ss->getParamValue('invoice_reminder_before_due_days', ''));
         $afterDueReminderIntervals = $this->parseInvoiceReminderIntervals($ss->getParamValue('invoice_reminder_after_due_days', '5'));
 
-        $invokedBefore = $this->claimAndFireReminderEvents(
-            'DATEDIFF(due_at, NOW())',
-            'days_left',
-            'due_at > NOW()',
-            $beforeDueReminderIntervals,
-            'onEventBeforeInvoiceIsDue'
-        );
-
-        $invokedAfter = $this->claimAndFireReminderEvents(
-            'ABS(DATEDIFF(due_at, NOW()))',
-            'days_passed',
-            '(due_at < NOW()) OR (ABS(DATEDIFF(due_at, NOW())) = 0)',
-            $afterDueReminderIntervals,
-            'onEventAfterInvoiceIsDue'
-        );
-
-        return $invokedBefore || $invokedAfter;
-    }
-
-    /**
-     * Selects invoices whose due-date offset matches one of the configured reminder intervals
-     * and have not already been reminded today, atomically claims each one by updating
-     * reminded_at, and fires the reminder event only for invoices it successfully claimed. The
-     * atomic claim (rather than checking reminded_at then firing separately) is what prevents
-     * overlapping cron runs from sending the same reminder twice.
-     *
-     * @param string $dayExpression  SQL expression producing the invoice's day offset from due_at
-     * @param string $dayAlias       result column alias for $dayExpression, also used as the event param key
-     * @param string $rangeCondition SQL condition scoping the query to before-due or after-due invoices
-     * @param int[]  $intervals      configured reminder day offsets; empty means nothing is due
-     */
-    private function claimAndFireReminderEvents(string $dayExpression, string $dayAlias, string $rangeCondition, array $intervals, string $event): bool
-    {
-        if ($intervals === []) {
-            return false;
+        $beforeDueList = $this->di['db']->getAll("SELECT id, DATEDIFF(due_at, NOW()) as days_left FROM invoice WHERE status = 'unpaid' AND approved = 1 AND due_at > NOW()");
+        foreach ($beforeDueList as $params) {
+            $params['reminder_intervals'] = $beforeDueReminderIntervals;
+            $this->di['events_manager']->fire(['event' => 'onEventBeforeInvoiceIsDue', 'params' => $params]);
         }
 
-        // $intervals only ever contains ints (see parseInvoiceReminderIntervals), so it is safe to inline here.
-        $days = implode(', ', $intervals);
-        $eligibility = "status = 'unpaid' AND approved = 1 AND ({$rangeCondition}) AND {$dayExpression} IN ({$days}) AND (reminded_at IS NULL OR DATE(reminded_at) < CURDATE())";
-
-        $invoked = false;
-        $candidates = $this->di['db']->getAll("SELECT id, {$dayExpression} as {$dayAlias} FROM invoice WHERE {$eligibility}");
-        foreach ($candidates as $params) {
-            $claimed = $this->di['db']->exec(
-                "UPDATE invoice SET reminded_at = NOW(), updated_at = NOW() WHERE id = :id AND {$eligibility}",
-                [':id' => $params['id']]
-            );
-            if (!$claimed) {
-                continue;
-            }
-
-            $params['reminder_intervals'] = $intervals;
-            $this->di['events_manager']->fire(['event' => $event, 'params' => $params]);
-            $invoked = true;
+        $afterDueList = $this->di['db']->getAll("SELECT id, ABS(DATEDIFF(due_at, NOW())) as days_passed FROM invoice WHERE status = 'unpaid' AND approved = 1 AND ((due_at < NOW()) OR (ABS(DATEDIFF(due_at, NOW())) = 0))");
+        foreach ($afterDueList as $params) {
+            $params['reminder_intervals'] = $afterDueReminderIntervals;
+            $this->di['events_manager']->fire(['event' => 'onEventAfterInvoiceIsDue', 'params' => $params]);
         }
-
-        return $invoked;
     }
 
     public function sendInvoiceReminder(\Model_Invoice $invoice): bool

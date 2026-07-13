@@ -17,6 +17,8 @@ $di = include Path::join(PATH_ROOT, 'di.php');
 
 $di['translate']();
 
+$success = false;
+
 try {
     $interval = $argv[1] ?? null;
     $service = $di['mod_service']('cron');
@@ -26,11 +28,19 @@ try {
         echo "\e[34mLast executed: {$service->getLastExecutionTime()}.\e[0m";
     }
 
-    $service->runCrons($interval);
+    $success = $service->runCrons($interval);
 } catch (Exception $exception) {
     throw new Exception($exception->getMessage(), $exception->getCode(), $exception);
 } finally {
     if (Environment::isCLI()) {
-        echo "\e[32mSuccessfully ran the cron jobs.\e[0m";
+        echo $success
+            ? "\e[32mSuccessfully ran the cron jobs.\e[0m"
+            : "\e[31mCron jobs finished with failures. Check the logs for details.\e[0m";
     }
+}
+
+// Surface partial failures (e.g. an isolated cron task that threw) via a non-zero exit code so
+// system cron monitors relying on the process exit status can detect them.
+if (Environment::isCLI() && !$success) {
+    exit(1);
 }
