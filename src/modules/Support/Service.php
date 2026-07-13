@@ -31,6 +31,7 @@ use Box\Mod\Support\Repository\SupportTicketNoteRepository;
 use Box\Mod\Support\Repository\SupportTicketRepository;
 use FOSSBilling\InformationException;
 use FOSSBilling\Tools;
+use FOSSBilling\Twig\Markdown\FOSSBillingMarkdown;
 
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
@@ -938,10 +939,16 @@ class Service implements \FOSSBilling\InjectionAwareInterface
      */
     public function getMessageHistory(SupportTicketMessage $message): array
     {
-        return array_map(
-            fn (SupportTicketMessageHistory $history): array => $history->toApiArray(),
-            $this->getSupportTicketMessageHistoryRepository()->findByMessageId((int) $message->getId()),
-        );
+        $markdown = new FOSSBillingMarkdown($this->di);
+
+        $result = [];
+        foreach ($this->getSupportTicketMessageHistoryRepository()->findByMessageId((int) $message->getId()) as $history) {
+            $data = $history->toApiArray();
+            $data['content_html'] = $markdown->convert((string) $data['content']);
+            $result[] = $data;
+        }
+
+        return $result;
     }
 
     /**

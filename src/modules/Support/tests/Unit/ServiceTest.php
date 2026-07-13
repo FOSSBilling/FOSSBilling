@@ -1929,7 +1929,7 @@ test('gets message history', function (): void {
     setEntityId($history, 1);
     $history->setMessage($message);
     $history->setAdminId(7);
-    $history->setContent('Original content');
+    $history->setContent('**Original** content');
 
     $historyRepo = Mockery::mock(SupportTicketMessageHistoryRepository::class);
     $historyRepo->shouldReceive('findByMessageId')->atLeast()->once()
@@ -1942,7 +1942,7 @@ test('gets message history', function (): void {
     $service->setDi($di);
 
     $result = $service->getMessageHistory($message);
-    expect($result)->toBe([$history->toApiArray()]);
+    expect($result)->toBe([[...$history->toApiArray(), 'content_html' => "<p><strong>Original</strong> content</p>\n"]]);
 });
 
 dataset('ticketReplyProvider', function () {
