@@ -922,17 +922,17 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function tryPayWithCredits(\Model_Invoice $invoice)
+    public function tryPayWithCredits(\Model_Invoice $invoice): bool
     {
         if (!$invoice->approved) {
-            return;
+            return false;
         }
         if ($invoice->status == \Model_Invoice::STATUS_PAID) {
             if (DEBUG) {
                 $this->di['logger']->setChannel('billing')->info("Skipping credit payment for already paid invoice {$invoice->id}.");
             }
 
-            return;
+            return false;
         }
 
         $client = $this->di['db']->load('Client', $invoice->client_id);
@@ -976,6 +976,8 @@ class Service implements InjectionAwareInterface
         if (DEBUG) {
             $this->di['logger']->setChannel('billing')->info("Invoice {$invoice->id} could not be paid with credits. Money in balance {$balance} Required: {$required}.");
         }
+
+        return false;
     }
 
     public function getTotalWithTax(\Model_Invoice $invoice): float
