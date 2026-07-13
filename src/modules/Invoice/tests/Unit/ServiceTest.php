@@ -583,7 +583,6 @@ test('handles after admin cron run event', function (): void {
 });
 
 test('handles event after invoice is due', function (): void {
-    $service = new Service();
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $arr = [
         'total' => 1,
@@ -646,7 +645,6 @@ test('handles event after invoice is due', function (): void {
 });
 
 test('releases the claim when sending the overdue invoice email fails', function (): void {
-    $service = new Service();
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $arr = [
         'total' => 1,
