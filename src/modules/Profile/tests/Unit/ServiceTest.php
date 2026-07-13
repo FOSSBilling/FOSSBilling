@@ -158,6 +158,7 @@ test('updates client', function (): void {
 
     $data = [
         'email' => 'email@example.com',
+        'billing_email' => 'billing@example.com',
         'first_name' => 'string',
         'last_name' => 'string',
         'gender' => 'other',
@@ -202,6 +203,7 @@ test('updates client', function (): void {
     $service->setDi($di);
     $result = $service->updateClient($model, $data);
     expect($result)->toBeTrue();
+    expect($model->billing_email)->toBe('billing@example.com');
 });
 
 test('throws exception when email change is not allowed', function (): void {

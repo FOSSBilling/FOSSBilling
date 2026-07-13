@@ -707,6 +707,7 @@ test('toApiArray returns array', function (): void {
     $model = new Model_Client();
     $model->loadBean(new Tests\Helpers\DummyBean());
     $model->custom_1 = 'custom field';
+    $model->billing_email = 'billing@example.com';
 
     $clientGroup = new Model_ClientGroup();
     $clientGroup->loadBean(new Tests\Helpers\DummyBean());
@@ -731,6 +732,10 @@ test('toApiArray returns array', function (): void {
 
     $result = $serviceMock->toApiArray($model, true, new Model_Admin());
     expect($result)->toBeArray();
+    expect($result['billing_email'])->toBe('billing@example.com');
+
+    $publicResult = $serviceMock->toApiArray($model);
+    expect($publicResult)->not->toHaveKey('billing_email');
 });
 
 test('toApiArray includes custom fields beyond the original cap of 10', function (): void {
