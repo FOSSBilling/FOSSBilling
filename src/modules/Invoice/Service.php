@@ -551,6 +551,9 @@ class Service implements InjectionAwareInterface
             }
 
             $emailService = $di['mod_service']('email');
+            $invoiceModel->reminded_at = date('Y-m-d H:i:s');
+            $invoiceModel->updated_at = date('Y-m-d H:i:s');
+            $di['db']->store($invoiceModel);
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
             $di['logger']->setChannel('email')->error('Failed to send overdue invoice email', ['exception' => $exc->getMessage()]);
@@ -1393,6 +1396,10 @@ class Service implements InjectionAwareInterface
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceSendReminders']);
         $result = $this->doBatchInvokeDueEvent(['once_per_day' => true]);
+        if (!$result) {
+            // Pick up invoices that became reminder-eligible after today's due-event batch ran.
+            $result = $this->doBatchInvokePendingReminderEvents();
+        }
         if ($result) {
             $this->di['logger']->info('Executed action to send invoice payment reminders.');
         }
@@ -1432,6 +1439,38 @@ class Service implements InjectionAwareInterface
         $this->di['logger']->info('Executed action to invoke invoice due event');
 
         return true;
+    }
+
+    protected function doBatchInvokePendingReminderEvents(): bool
+    {
+        $systemService = $this->di['mod_service']('System');
+        $beforeDueReminderIntervals = $this->parseInvoiceReminderIntervals($systemService->getParamValue('invoice_reminder_before_due_days', ''));
+        $afterDueReminderIntervals = $this->parseInvoiceReminderIntervals($systemService->getParamValue('invoice_reminder_after_due_days', '5'));
+        $invoked = false;
+
+        $beforeDueList = $this->di['db']->getAll("SELECT id, DATEDIFF(due_at, NOW()) as days_left FROM invoice WHERE status = 'unpaid' AND approved = 1 AND due_at > NOW() AND (reminded_at IS NULL OR DATE(reminded_at) < CURDATE())");
+        foreach ($beforeDueList as $params) {
+            if (!in_array((int) $params['days_left'], $beforeDueReminderIntervals, true)) {
+                continue;
+            }
+
+            $params['reminder_intervals'] = $beforeDueReminderIntervals;
+            $this->di['events_manager']->fire(['event' => 'onEventBeforeInvoiceIsDue', 'params' => $params]);
+            $invoked = true;
+        }
+
+        $afterDueList = $this->di['db']->getAll("SELECT id, ABS(DATEDIFF(due_at, NOW())) as days_passed FROM invoice WHERE status = 'unpaid' AND approved = 1 AND ((due_at < NOW()) OR (ABS(DATEDIFF(due_at, NOW())) = 0)) AND (reminded_at IS NULL OR DATE(reminded_at) < CURDATE())");
+        foreach ($afterDueList as $params) {
+            if (!in_array((int) $params['days_passed'], $afterDueReminderIntervals, true)) {
+                continue;
+            }
+
+            $params['reminder_intervals'] = $afterDueReminderIntervals;
+            $this->di['events_manager']->fire(['event' => 'onEventAfterInvoiceIsDue', 'params' => $params]);
+            $invoked = true;
+        }
+
+        return $invoked;
     }
 
     public function sendInvoiceReminder(\Model_Invoice $invoice): bool
