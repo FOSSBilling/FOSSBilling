@@ -1871,13 +1871,43 @@ test('sends reminders in batch at most once per day', function (): void {
     $eventManagerMock->shouldReceive('fire')
         ->atLeast()->once();
 
+    $logger = new Tests\Helpers\TestLogger();
+
     $di = container();
     $di['events_manager'] = $eventManagerMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['logger'] = $logger;
 
     $service->setDi($di);
     $result = $service->doBatchRemindersSend();
     expect($result)->toBeBool()->toBeTrue();
+    expect($logger->calls)->toContain([
+        'method' => 'info',
+        'params' => ['Executed action to send invoice payment reminders.'],
+    ]);
+});
+
+test('does not log reminder batch as executed when it is throttled', function (): void {
+    $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $service->shouldReceive('doBatchInvokeDueEvent')
+        ->once()
+        ->with(['once_per_day' => true])
+        ->andReturnFalse();
+
+    $eventManagerMock = Mockery::mock('\\Box_EventManager');
+    $eventManagerMock->shouldReceive('fire')
+        ->once()
+        ->with(['event' => 'onBeforeAdminInvoiceSendReminders']);
+
+    $logger = new Tests\Helpers\TestLogger();
+
+    $di = container();
+    $di['events_manager'] = $eventManagerMock;
+    $di['logger'] = $logger;
+
+    $service->setDi($di);
+
+    expect($service->doBatchRemindersSend())->toBeFalse()
+        ->and($logger->calls)->toBeEmpty();
 });
 
 test('guards both reminder cron paths across repeated runs', function (): void {

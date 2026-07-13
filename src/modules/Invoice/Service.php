@@ -1393,7 +1393,9 @@ class Service implements InjectionAwareInterface
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceSendReminders']);
         $result = $this->doBatchInvokeDueEvent(['once_per_day' => true]);
-        $this->di['logger']->info('Executed action to send invoice payment reminders.');
+        if ($result) {
+            $this->di['logger']->info('Executed action to send invoice payment reminders.');
+        }
 
         return $result;
     }

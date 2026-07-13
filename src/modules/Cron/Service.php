@@ -78,15 +78,24 @@ class Service
 
             $this->_exec($api, 'invoice_batch_pay_with_credits');
             $this->_exec($api, 'invoice_batch_activate_paid');
-            $this->_exec($api, 'invoice_batch_generate');
-            $this->_exec($api, 'invoice_batch_send_reminders');
-            $this->_exec($api, 'invoice_batch_invoke_due_event');
-            $this->_exec($api, 'order_batch_suspend_expired');
-            $this->_exec($api, 'order_batch_cancel_suspended');
-            $this->_exec($api, 'support_batch_ticket_auto_close');
-            $this->_exec($api, 'client_batch_expire_password_reminders');
-            $this->_exec($api, 'cart_batch_expire');
-            $this->_exec($api, 'email_batch_sendmail');
+            $isolatedTasks = [
+                'invoice_batch_generate',
+                'invoice_batch_send_reminders',
+                'invoice_batch_invoke_due_event',
+                'order_batch_suspend_expired',
+                'order_batch_cancel_suspended',
+                'support_batch_ticket_auto_close',
+                'client_batch_expire_password_reminders',
+                'cart_batch_expire',
+                'email_batch_sendmail',
+            ];
+            foreach ($isolatedTasks as $method) {
+                try {
+                    $this->_exec($api, $method);
+                } catch (\Throwable $exception) {
+                    $this->di['logger']->error("Failed to run cron task {$method}: {$exception->getMessage()}");
+                }
+            }
 
             // Update the last time cron was executed
             $this->di['mod_service']('system')->setParamValue('last_cron_exec', date('Y-m-d H:i:s'), true);
