@@ -134,6 +134,16 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         return $this->_generateForm($invoiceModel);
     }
 
+    public function cancelSubscription(string $subscriptionId): void
+    {
+        $subscription = $this->stripe->subscriptions->retrieve($subscriptionId, []);
+        if ($subscription->status === Stripe\Subscription::STATUS_CANCELED) {
+            return;
+        }
+
+        $this->stripe->subscriptions->cancel($subscriptionId, []);
+    }
+
     public function getAmountInCents(Model_Invoice $invoice): int
     {
         return $this->getAmountInMinorUnits($invoice);
@@ -581,7 +591,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             default => 'canceled',
         };
 
-        $api_admin->invoice_subscription_update(['id' => $s['id'], 'status' => $status]);
+        $api_admin->invoice_subscription_update(['id' => $s['id'], 'status' => $status, 'skip_gateway' => true]);
 
         return false;
     }
@@ -592,7 +602,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
         try {
             $s = $api_admin->invoice_subscription_get(['sid' => $stripeSubscription->id]);
-            $api_admin->invoice_subscription_update(['id' => $s['id'], 'status' => 'canceled']);
+            $api_admin->invoice_subscription_update(['id' => $s['id'], 'status' => 'canceled', 'skip_gateway' => true]);
         } catch (Exception $e) {
             if (DEBUG) {
                 error_log('Stripe subscription deleted webhook: ' . $e->getMessage());
@@ -723,7 +733,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
         try {
             $s = $api_admin->invoice_subscription_get(['sid' => $subscriptionId]);
-            $api_admin->invoice_subscription_update(['id' => $s['id'], 'status' => 'canceled']);
+            $api_admin->invoice_subscription_update(['id' => $s['id'], 'status' => 'canceled', 'skip_gateway' => true]);
         } catch (Exception $e) {
             if (DEBUG) {
                 error_log('Stripe invoice payment failed webhook: ' . $e->getMessage());

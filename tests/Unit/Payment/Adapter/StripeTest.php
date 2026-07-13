@@ -19,6 +19,38 @@ beforeEach(function (): void {
     ]);
 });
 
+test('cancels a Stripe subscription', function (): void {
+    $subscriptionsMock = Mockery::mock();
+    $subscriptionsMock->shouldReceive('retrieve')
+        ->once()
+        ->with('sub_123', [])
+        ->andReturn((object) ['status' => 'active']);
+    $subscriptionsMock->shouldReceive('cancel')
+        ->once()
+        ->with('sub_123', []);
+
+    $stripeMock = Mockery::mock(StripeClient::class);
+    $stripeMock->subscriptions = $subscriptionsMock;
+    setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+    $this->adapter->cancelSubscription('sub_123');
+});
+
+test('does not cancel an already canceled Stripe subscription again', function (): void {
+    $subscriptionsMock = Mockery::mock();
+    $subscriptionsMock->shouldReceive('retrieve')
+        ->once()
+        ->with('sub_123', [])
+        ->andReturn((object) ['status' => Stripe\Subscription::STATUS_CANCELED]);
+    $subscriptionsMock->shouldReceive('cancel')->never();
+
+    $stripeMock = Mockery::mock(StripeClient::class);
+    $stripeMock->subscriptions = $subscriptionsMock;
+    setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+    $this->adapter->cancelSubscription('sub_123');
+});
+
 function setPrivateProperty(object $obj, string $property, mixed $value): void
 {
     $reflection = new ReflectionClass($obj);

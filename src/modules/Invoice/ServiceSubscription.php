@@ -53,6 +53,13 @@ class ServiceSubscription implements InjectionAwareInterface
 
     public function update(\Model_Subscription $model, array $data): bool
     {
+        $cancelAtGateway = ($data['status'] ?? null) === 'canceled'
+            && ($data['skip_gateway'] ?? false) !== true;
+
+        if ($cancelAtGateway) {
+            $this->cancelAtGateway($model);
+        }
+
         $model->status = $data['status'] ?? $model->status;
         $model->sid = $data['sid'] ?? $model->sid;
         $model->period = $data['period'] ?? $model->period;
@@ -199,6 +206,46 @@ class ServiceSubscription implements InjectionAwareInterface
         $model->status = 'canceled';
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
+    }
+
+    public function cancel(\Model_Subscription $model): void
+    {
+        $this->cancelAtGateway($model);
+        $this->unsubscribe($model);
+    }
+
+    private function cancelAtGateway(\Model_Subscription $model): void
+    {
+        $gateway = $this->di['db']->getExistingModelById('PayGateway', $model->pay_gateway_id, 'Payment gateway not found');
+        $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
+        $adapter = $payGatewayService->getPaymentAdapter($gateway);
+
+        if (method_exists($adapter, 'cancelSubscription')) {
+            $adapter->cancelSubscription((string) $model->sid);
+        }
+    }
+
+    public function cancelForOrder(\Model_ClientOrder $order): void
+    {
+        $subscriptions = $this->di['db']->find(
+            'Subscription',
+            'rel_type = :rel_type AND rel_id IN (
+                SELECT invoice_id
+                FROM invoice_item
+                WHERE type = :item_type AND rel_id = :order_id
+            )',
+            [
+                ':rel_type' => 'invoice',
+                ':item_type' => \Model_InvoiceItem::TYPE_ORDER,
+                ':order_id' => $order->id,
+            ]
+        );
+
+        foreach ($subscriptions as $subscription) {
+            if ($subscription instanceof \Model_Subscription) {
+                $this->cancel($subscription);
+            }
+        }
     }
 
     private function getSubscriptionPeriodByInvoiceId(int $invoiceId): ?string

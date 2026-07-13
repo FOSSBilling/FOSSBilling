@@ -84,6 +84,99 @@ test('updates a subscription', function (): void {
     expect($result)->toBeTrue();
 });
 
+test('cancels a subscription at the gateway when canceled status is saved', function (): void {
+    $service = new ServiceSubscription();
+    $subscriptionModel = new Model_Subscription();
+    $subscriptionModel->loadBean(new Tests\Helpers\DummyBean());
+    $subscriptionModel->status = 'canceled';
+    $subscriptionModel->sid = 'sub_123';
+    $subscriptionModel->pay_gateway_id = 2;
+
+    $gatewayModel = new Model_PayGateway();
+    $gatewayModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $adapter = new class {
+        public ?string $canceledSubscriptionId = null;
+
+        public function cancelSubscription(string $subscriptionId): void
+        {
+            $this->canceledSubscriptionId = $subscriptionId;
+        }
+    };
+
+    $payGatewayService = Mockery::mock(ServicePayGateway::class);
+    $payGatewayService->shouldReceive('getPaymentAdapter')
+        ->once()
+        ->with($gatewayModel)
+        ->andReturn($adapter);
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getExistingModelById')
+        ->once()
+        ->with('PayGateway', 2, 'Payment gateway not found')
+        ->andReturn($gatewayModel);
+    $dbMock->shouldReceive('store')->once()->andReturn(1);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(fn () => $payGatewayService);
+    $service->setDi($di);
+
+    expect($service->update($subscriptionModel, ['status' => 'canceled']))->toBeTrue()
+        ->and($subscriptionModel->status)->toBe('canceled')
+        ->and($adapter->canceledSubscriptionId)->toBe('sub_123');
+});
+
+test('does not call the gateway for a remote subscription status update', function (): void {
+    $service = new ServiceSubscription();
+    $subscriptionModel = new Model_Subscription();
+    $subscriptionModel->loadBean(new Tests\Helpers\DummyBean());
+    $subscriptionModel->status = 'active';
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('store')->once()->andReturn(1);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(function (): void {
+        throw new RuntimeException('The gateway should not be loaded');
+    });
+    $service->setDi($di);
+
+    expect($service->update($subscriptionModel, ['status' => 'canceled', 'skip_gateway' => true]))->toBeTrue()
+        ->and($subscriptionModel->status)->toBe('canceled');
+});
+
+test('cancels subscriptions linked to an order', function (): void {
+    $subscriptionModel = new Model_Subscription();
+    $subscriptionModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $orderModel = new Model_ClientOrder();
+    $orderModel->loadBean(new Tests\Helpers\DummyBean());
+    $orderModel->id = 10;
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('find')
+        ->once()
+        ->withArgs(function (string $type, string $query, array $bindings): bool {
+            return $type === 'Subscription'
+                && str_contains($query, 'FROM invoice_item')
+                && $bindings[':order_id'] === 10
+                && $bindings[':item_type'] === Model_InvoiceItem::TYPE_ORDER;
+        })
+        ->andReturn([$subscriptionModel]);
+
+    $service = Mockery::mock(ServiceSubscription::class)->makePartial();
+    $service->shouldReceive('cancel')->once()->with($subscriptionModel);
+    $di = container();
+    $di['db'] = $dbMock;
+    $service->setDi($di);
+
+    $service->cancelForOrder($orderModel);
+});
+
 test('converts to api array', function (): void {
     $service = new ServiceSubscription();
     $subscriptionModel = new Model_Subscription();

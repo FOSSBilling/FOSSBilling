@@ -2049,6 +2049,46 @@ test('suspendFromOrder suspends active order', function (): void {
     expect($result)->toBeTrue();
 });
 
+test('cancelFromOrder cancels linked subscriptions', function (): void {
+    $clientOrderModel = new Model_ClientOrder();
+    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel->id = 10;
+    $clientOrderModel->status = Model_ClientOrder::STATUS_ACTIVE;
+
+    $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscriptionService->shouldReceive('cancelForOrder')
+        ->once()
+        ->with($clientOrderModel);
+
+    $productService = Mockery::mock(Box\Mod\Product\Service::class);
+    $productService->shouldReceive('releaseReservedPromoRedemptionsForOrder')
+        ->once()
+        ->with($clientOrderModel, 'order_canceled');
+
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('store')->once()->with($clientOrderModel);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['logger'] = new Box_Log();
+    $di['mod_service'] = $di->protect(function (string $module, string $service = '') use ($productService, $subscriptionService) {
+        if ($module === 'Invoice' && $service === 'Subscription') {
+            return $subscriptionService;
+        }
+
+        return $productService;
+    });
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('_callOnService')->once();
+    $serviceMock->shouldReceive('saveStatusChange')->once();
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->cancelFromOrder($clientOrderModel, skipEvent: true))->toBeTrue()
+        ->and($clientOrderModel->status)->toBe(Model_ClientOrder::STATUS_CANCELED);
+});
+
 test('rmByClient removes all client orders', function (): void {
     $clientModel = new Model_Client();
     $clientModel->loadBean(new Tests\Helpers\DummyBean());
