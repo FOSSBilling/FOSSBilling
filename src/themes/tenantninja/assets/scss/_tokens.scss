@@ -1,74 +1,80 @@
-// TenantNinja design tokens v3 - ported directly from the Claude Design
-// project (claude.ai/design/p/af98047b-f2c7-4187-a66a-896f46f8b365),
-// "Portal Redesign" — Tenant Ninja Design System, 2026-07-13.
-//
-// v3 notes: glass/backdrop-filter system removed entirely. Source DS uses
-// flat opaque surfaces + hairline borders, no blur anywhere ("Backgrounds:
-// flat carbon — no textures, no gradients except one hero radial glow").
-// Surface step model: bg -> surface (card) -> surface-2 (raised) ->
-// surface-3 (inset/track) -> surface-inset (deepest). Values match
-// tokens/colors.css + tokens/effects.css from the DS project exactly.
+// TenantNinja design tokens v4 - neutrals + accent ported from the Supabase
+// shadcn theme (21st.dev/@serafim/themes/supabase), 2026-07-13. Swapped out
+// v3's green-tinted "carbon/paper" neutral ramp (which read as too much lime
+// once combined with the full-saturation accent) for plain, hue-neutral
+// grays. Accent is now a single restrained green used only on primary
+// actions/focus rings/active state - not on labels, eyebrows, or body text.
+// Typography/spacing/radii/motion are unchanged from v3 (Tenant Ninja DS).
 
 :root {
-    --carbon-950: #070908;
-    --carbon-900: #0C0F0E;
-    --carbon-850: #111514;
-    --carbon-800: #161B19;
-    --carbon-700: #1E2422;
-    --carbon-600: #2A312E;
-    --carbon-500: #3A423F;
-    --carbon-400: #565F5B;
-    --smoke-400: #6E7873;
-    --smoke-300: #909A94;
-    --smoke-200: #B6BFB9;
-    --smoke-100: #D4DBD5;
-    --paper-200: #E7EAE3;
-    --paper-100: #F1F3EC;
-    --paper-50: #F8FAF3;
+    // Plain neutral ramp (no green cast) - light mode values, straight from
+    // the Supabase theme's own swatches (Background/Card/Border/Muted).
+    --gray-950: #0A0A0A;
+    --gray-900: #121212;
+    --gray-850: #171717;
+    --gray-800: #1F1F1F;
+    --gray-700: #242424;
+    --gray-600: #313131;
+    --gray-500: #4A4A4A;
+    --gray-400: #6B6B6B;
+    --gray-300: #8F8F8F;
+    --gray-200: #B5B5B5;
+    --gray-100: #DFDFDF;
+    --gray-50: #EDEDED;
+    --off-white: #FCFCFC;
     --white: #FFFFFF;
 
-    --blade-700: #7FA814;
-    --blade-600: #A1CE1F;
-    --blade-500: #C7F23C;
-    --blade-400: #D6F968;
-    --blade-300: #E6FCA0;
-    --blade-glow: rgba(199, 242, 60, 0.28);
+    // Accent: Supabase green. Light-mode primary is a soft mint (#72e3ad);
+    // dark-mode primary is a deep, desaturated green (#006239) - the bright
+    // #4ade80 "ring" green is reserved for focus rings/chart accents only,
+    // never a fill. This is the "used sparingly" behaviour that was missing
+    // from v3's lime, which appeared on buttons, eyebrows and body text alike.
+    --blade-600: #1FAE6B;
+    --blade-500: #72E3AD;
+    --blade-400: #8EEAC0;
+    --blade-300: #B3F2D6;
+    --blade-dark: #006239;
+    --blade-ring: #4ADE80;
+    --blade-glow: rgba(114, 227, 173, 0.28);
 
     --success-500: #3FCF8E;
     --success-bg: rgba(63, 207, 142, 0.12);
     --warning-500: #F6B53C;
     --warning-bg: rgba(246, 181, 60, 0.12);
-    --danger-500: #FF5468;
-    --danger-bg: rgba(255, 84, 104, 0.12);
-    --info-500: #46C7E8;
-    --info-bg: rgba(70, 199, 232, 0.12);
+    --danger-500: #CA3214;
+    --danger-bg: rgba(202, 50, 20, 0.12);
+    --info-500: #3B82F6;
+    --info-bg: rgba(59, 130, 246, 0.12);
 
     // Light-mode surface/text values live here in :root because the app's
-    // default `data-bs-theme` attribute is "light" (see settings.theme|default('light')
-    // in layout_default/layout_public). Dark (carbon) values apply via the
-    // [data-bs-theme="dark"] override block below - mirrors DS [data-theme="light"].
-    --bg: var(--paper-50);
-    --bg-deep: var(--paper-100);
-    --surface: var(--white);
-    --surface-2: var(--paper-100);
-    --surface-3: var(--paper-200);
-    --surface-inset: var(--paper-100);
+    // default `data-bs-theme` attribute is "light". Dark values apply via
+    // the [data-bs-theme="dark"] override block below.
+    --bg: var(--off-white);
+    --bg-deep: var(--gray-50);
+    --surface: var(--off-white);
+    --surface-2: var(--gray-50);
+    --surface-3: var(--gray-100);
+    // input/popover field bg (#f6f6f6) is a touch lighter than the muted
+    // swatch (#ededed) in the source theme - keep form fields on their own.
+    --surface-inset: #F6F6F6;
 
-    --border: rgba(12, 15, 14, 0.10);
-    --border-strong: rgba(12, 15, 14, 0.18);
-    --border-faint: rgba(12, 15, 14, 0.06);
+    --border: var(--gray-100);
+    --border-strong: #C7C7C7;
+    --border-faint: #EAEAEA;
 
-    --text: var(--carbon-900);
-    --text-muted: var(--carbon-400);
-    --text-faint: var(--smoke-400);
-    --text-inverse: var(--paper-50);
+    // text/muted/faint pulled directly from the theme's own
+    // foreground / popover-foreground / sidebar-foreground values.
+    --text: #171717;
+    --text-muted: #525252;
+    --text-faint: #707070;
+    --text-inverse: var(--off-white);
 
     --accent: var(--blade-500);
     --accent-hover: var(--blade-400);
     --accent-press: var(--blade-600);
-    --on-accent: #0C0F0E;
-    --accent-soft: rgba(127, 168, 20, 0.14);
-    --accent-ring: rgba(127, 168, 20, 0.28);
+    --on-accent: #1E2723;
+    --accent-soft: rgba(31, 174, 107, 0.12);
+    --accent-ring: rgba(31, 174, 107, 0.28);
 
     --focus-ring: var(--blade-500);
 
@@ -146,8 +152,7 @@
     --glow-blade: 0 0 0 1px var(--blade-600), 0 6px 24px var(--blade-glow);
     --glow-blade-soft: 0 4px 20px var(--blade-glow);
 
-    // Subtle top-edge shimmer on raised surfaces - replaces the old
-    // glass-hairline/glass-shadow pairing (no blur, no translucency).
+    // Subtle top-edge shimmer on raised surfaces - no blur, no translucency.
     --inset-top: inset 0 1px 0 rgba(255, 255, 255, 0.6);
 
     --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
@@ -159,24 +164,36 @@
 }
 
 [data-bs-theme="dark"] {
-    --bg: var(--carbon-900);
-    --bg-deep: var(--carbon-950);
-    --surface: var(--carbon-800);
-    --surface-2: var(--carbon-700);
-    --surface-3: var(--carbon-600);
-    --surface-inset: var(--carbon-850);
+    --bg: var(--gray-900);
+    --bg-deep: var(--gray-950);
+    --surface: var(--gray-850);
+    --surface-2: var(--gray-700);
+    --surface-3: var(--gray-600);
+    --surface-inset: var(--gray-800);
 
-    --border: rgba(255, 255, 255, 0.08);
-    --border-strong: rgba(255, 255, 255, 0.16);
-    --border-faint: rgba(255, 255, 255, 0.05);
+    --border: var(--gray-800);
+    --border-strong: #3A3A3A;
+    --border-faint: #1C1C1C;
     --inset-top: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 
-    --text: #F3F6EF;
-    --text-muted: var(--smoke-300);
-    --text-faint: var(--smoke-400);
-    --text-inverse: var(--carbon-900);
+    // input/popover field bg is #242424 in the source theme - distinct from
+    // the #1F1F1F "muted" step, so surface-inset (used by Input.jsx-style
+    // form fields) points at the exact input color, not the muted swatch.
+    --surface-inset: #242424;
 
-    --on-accent: #0C0F0E;
-    --accent-soft: rgba(199, 242, 60, 0.14);
-    --accent-ring: rgba(199, 242, 60, 0.28);
+    --text: #E2E8F0;
+    --text-muted: #A2A2A2;
+    --text-faint: #898989;
+    --text-inverse: var(--gray-900);
+
+    // Dark-mode primary is the deep desaturated green from the Supabase
+    // theme, not the light-mode mint - the bright ring green stays reserved
+    // for focus rings, never a button fill.
+    --accent: var(--blade-dark);
+    --accent-hover: #00753F;
+    --accent-press: #004E2E;
+    --on-accent: #DDE8E3;
+    --accent-soft: rgba(74, 222, 128, 0.12);
+    --accent-ring: rgba(74, 222, 128, 0.32);
+    --focus-ring: var(--blade-ring);
 }
