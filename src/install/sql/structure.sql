@@ -618,7 +618,8 @@ CREATE TABLE `invoice` (
   `hash_expires_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `hash` (`hash`),
-  KEY `client_id_idx` (`client_id`)
+  KEY `client_id_idx` (`client_id`),
+  KEY `invoice_status_approved_due_at_idx` (`status`, `approved`, `due_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

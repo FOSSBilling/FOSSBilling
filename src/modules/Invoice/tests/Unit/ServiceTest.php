@@ -583,7 +583,6 @@ test('handles after admin cron run event', function (): void {
 });
 
 test('handles event after invoice is due', function (): void {
-    $service = new Service();
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $arr = [
         'total' => 1,
@@ -616,6 +615,10 @@ test('handles event after invoice is due', function (): void {
     $invoiceModel = new Model_Invoice();
     $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
     $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('exec')
+        ->once()
+        ->with(Mockery::type('string'), [':id' => 1])
+        ->andReturn(1);
     $dbMock->shouldReceive('load')
         ->atLeast()->once()
         ->andReturn($invoiceModel);
@@ -641,6 +644,77 @@ test('handles event after invoice is due', function (): void {
     $serviceMock->onEventAfterInvoiceIsDue($eventMock);
 });
 
+test('releases the claim when sending the overdue invoice email fails', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $arr = [
+        'total' => 1,
+        'client' => [
+            'id' => 1,
+        ],
+    ];
+    $serviceMock->shouldReceive('toApiArray')
+        ->atLeast()->once()
+        ->andReturn($arr);
+    $serviceMock->shouldReceive('getInvoicePdfAttachment')
+        ->atLeast()->once()
+        ->andReturn(null);
+
+    $eventMock = Mockery::mock('\Box_Event');
+    $params = ['days_passed' => 5, 'id' => 1];
+    $eventMock->shouldReceive('getParameters')
+        ->atLeast()->once()
+        ->andReturn($params);
+
+    $emailService = Mockery::mock(EmailService::class);
+    $emailService->shouldReceive('sendTemplate')
+        ->atLeast()->once()
+        ->andThrow(new Exception('SMTP timeout'));
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_reminder_after_due_days', '5')
+        ->andReturn('1, 5, 7');
+
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('exec')
+        ->once()
+        ->with(Mockery::type('string'), [':id' => 1])
+        ->andReturn(1);
+    $dbMock->shouldReceive('exec')
+        ->once()
+        ->with('UPDATE invoice SET reminded_at = NULL WHERE id = :id', [':id' => 1]);
+    $dbMock->shouldReceive('load')
+        ->atLeast()->once()
+        ->andReturn($invoiceModel);
+
+    $logger = new Tests\Helpers\TestLogger();
+
+    $di = container();
+    $di['mod_service'] = $di->protect(function ($serviceName) use ($emailService, $serviceMock, $systemService) {
+        if ($serviceName == 'invoice') {
+            return $serviceMock;
+        }
+        if ($serviceName == 'email') {
+            return $emailService;
+        }
+        if ($serviceName == 'system') {
+            return $systemService;
+        }
+    });
+    $di['db'] = $dbMock;
+    $di['logger'] = $logger;
+
+    $serviceMock->setDi($di);
+    $eventMock->shouldReceive('getDi')
+        ->atLeast()->once()
+        ->andReturn($di);
+    $serviceMock->onEventAfterInvoiceIsDue($eventMock);
+
+    expect($logger->calls)->not->toBeEmpty();
+});
+
 test('handles event before invoice is due', function (): void {
     $service = new Service();
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
@@ -661,10 +735,114 @@ test('handles event before invoice is due', function (): void {
     $invoiceModel = new Model_Invoice();
     $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
     $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('exec')
+        ->once()
+        ->with(Mockery::type('string'), [':id' => 1])
+        ->andReturn(1);
     $dbMock->shouldReceive('load')
         ->once()
         ->with('Invoice', 1)
         ->andReturn($invoiceModel);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(function ($serviceName) use ($serviceMock, $systemService) {
+        if ($serviceName == 'invoice') {
+            return $serviceMock;
+        }
+        if ($serviceName == 'system') {
+            return $systemService;
+        }
+    });
+    $di['db'] = $dbMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $serviceMock->setDi($di);
+    $eventMock->shouldReceive('getDi')
+        ->atLeast()->once()
+        ->andReturn($di);
+
+    $service->onEventBeforeInvoiceIsDue($eventMock);
+});
+
+test('releases the claim when sending the before-due invoice reminder fails', function (): void {
+    $service = new Service();
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('sendInvoiceReminder')
+        ->once()
+        ->andThrow(new Exception('DB write failed'));
+
+    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock->shouldReceive('getParameters')
+        ->atLeast()->once()
+        ->andReturn(['days_left' => 7, 'id' => 1]);
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_reminder_before_due_days', '')
+        ->andReturn('14, 7, 1');
+
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('exec')
+        ->once()
+        ->with(Mockery::type('string'), [':id' => 1])
+        ->andReturn(1);
+    $dbMock->shouldReceive('exec')
+        ->once()
+        ->with('UPDATE invoice SET reminded_at = NULL WHERE id = :id', [':id' => 1]);
+    $dbMock->shouldReceive('load')
+        ->once()
+        ->with('Invoice', 1)
+        ->andReturn($invoiceModel);
+
+    $logger = new Tests\Helpers\TestLogger();
+
+    $di = container();
+    $di['mod_service'] = $di->protect(function ($serviceName) use ($serviceMock, $systemService) {
+        if ($serviceName == 'invoice') {
+            return $serviceMock;
+        }
+        if ($serviceName == 'system') {
+            return $systemService;
+        }
+    });
+    $di['db'] = $dbMock;
+    $di['logger'] = $logger;
+
+    $serviceMock->setDi($di);
+    $eventMock->shouldReceive('getDi')
+        ->atLeast()->once()
+        ->andReturn($di);
+
+    $service->onEventBeforeInvoiceIsDue($eventMock);
+
+    expect($logger->calls)->not->toBeEmpty();
+});
+
+test('skips before due invoice reminder when the invoice was already claimed', function (): void {
+    $service = new Service();
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('sendInvoiceReminder')
+        ->never();
+
+    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock->shouldReceive('getParameters')
+        ->atLeast()->once()
+        ->andReturn(['days_left' => 7, 'id' => 1]);
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_reminder_before_due_days', '')
+        ->andReturn('14, 7, 1');
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('exec')
+        ->once()
+        ->with(Mockery::type('string'), [':id' => 1])
+        ->andReturn(0);
+    $dbMock->shouldReceive('load')
+        ->never();
 
     $di = container();
     $di['mod_service'] = $di->protect(function ($serviceName) use ($serviceMock, $systemService) {
@@ -1860,24 +2038,145 @@ test('handles exception during batch paid invoice activation', function (): void
     expect($result)->toBeBool()->toBeTrue();
 });
 
-test('sends reminders in batch', function (): void {
+test('sends reminders in batch at most once per day', function (): void {
     $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $service->shouldReceive('doBatchInvokeDueEvent')
         ->once()
-        ->with(['once_per_day' => false])
+        ->with(['once_per_day' => true])
         ->andReturnTrue();
 
     $eventManagerMock = Mockery::mock('\Box_EventManager');
     $eventManagerMock->shouldReceive('fire')
         ->atLeast()->once();
 
+    $logger = new Tests\Helpers\TestLogger();
+
     $di = container();
     $di['events_manager'] = $eventManagerMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['logger'] = $logger;
 
     $service->setDi($di);
     $result = $service->doBatchRemindersSend();
     expect($result)->toBeBool()->toBeTrue();
+    expect($logger->calls)->toContain([
+        'method' => 'info',
+        'params' => ['Executed action to send invoice payment reminders.'],
+    ]);
+});
+
+test('does not log reminder batch as executed when it is throttled', function (): void {
+    $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $service->shouldReceive('doBatchInvokeDueEvent')
+        ->once()
+        ->with(['once_per_day' => true])
+        ->andReturnFalse();
+    $service->shouldReceive('doBatchInvokePendingReminderEvents')
+        ->once()
+        ->andReturnFalse();
+
+    $eventManagerMock = Mockery::mock('\\Box_EventManager');
+    $eventManagerMock->shouldReceive('fire')
+        ->once()
+        ->with(['event' => 'onBeforeAdminInvoiceSendReminders']);
+
+    $logger = new Tests\Helpers\TestLogger();
+
+    $di = container();
+    $di['events_manager'] = $eventManagerMock;
+    $di['logger'] = $logger;
+
+    $service->setDi($di);
+
+    expect($service->doBatchRemindersSend())->toBeFalse()
+        ->and($logger->calls)->toBeEmpty();
+});
+
+test('fires due events via the pending reminder fallback when the primary batch is throttled', function (): void {
+    $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $service->shouldReceive('doBatchInvokeDueEvent')
+        ->once()
+        ->with(['once_per_day' => true])
+        ->andReturnFalse();
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_reminder_before_due_days', '')
+        ->andReturn('7');
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_reminder_after_due_days', '5')
+        ->andReturn('5');
+
+    $dbMock = Mockery::mock('\\Box_Database');
+    $dbMock->shouldReceive('getAll')
+        ->twice()
+        ->andReturn([['id' => 2, 'days_left' => 7]], []);
+
+    $eventManagerMock = Mockery::mock('\\Box_EventManager');
+    $eventManagerMock->shouldReceive('fire')
+        ->once()
+        ->with(['event' => 'onBeforeAdminInvoiceSendReminders']);
+    $eventManagerMock->shouldReceive('fire')
+        ->once()
+        ->with(['event' => 'onEventBeforeInvoiceIsDue', 'params' => ['id' => 2, 'days_left' => 7, 'reminder_intervals' => [7]]]);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['events_manager'] = $eventManagerMock;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemService);
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $service->setDi($di);
+
+    expect($service->doBatchRemindersSend())->toBeTrue();
+});
+
+test('guards the primary reminder batch throttle while the fallback still dispatches', function (): void {
+    $lastInvocation = date('Y-m-d H:i:s');
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')
+        ->times(3)
+        ->with('invoice_overdue_invoked')
+        ->andReturn(null, $lastInvocation, $lastInvocation);
+    $systemService->shouldReceive('getParamValue')
+        ->twice()
+        ->with('invoice_reminder_before_due_days', '')
+        ->andReturn('7');
+    $systemService->shouldReceive('getParamValue')
+        ->twice()
+        ->with('invoice_reminder_after_due_days', '5')
+        ->andReturn('5');
+    $systemService->shouldReceive('setParamValue')
+        ->once()
+        ->with('invoice_overdue_invoked', Mockery::type('string'));
+
+    $dbMock = Mockery::mock('\\Box_Database');
+    $dbMock->shouldReceive('getAll')
+        ->times(4)
+        ->andReturn([['id' => 1, 'days_left' => 7]], [], [], []);
+
+    $eventManagerMock = Mockery::mock('\\Box_EventManager');
+    $eventManagerMock->shouldReceive('fire')
+        ->twice()
+        ->with(['event' => 'onBeforeAdminInvoiceSendReminders']);
+    $eventManagerMock->shouldReceive('fire')
+        ->once()
+        ->with(['event' => 'onEventBeforeInvoiceIsDue', 'params' => ['id' => 1, 'days_left' => 7, 'reminder_intervals' => [7]]]);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['events_manager'] = $eventManagerMock;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemService);
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $service = new Service();
+    $service->setDi($di);
+
+    // Primary batch runs, then is throttled on the direct call, then the fallback still
+    // dispatches due events (broadly, for any listener) even though the primary is throttled.
+    expect($service->doBatchRemindersSend())->toBeTrue()
+        ->and($service->doBatchInvokeDueEvent([]))->toBeFalse()
+        ->and($service->doBatchRemindersSend())->toBeTrue();
 });
 
 test('invokes due event in batch', function (): void {
@@ -1898,7 +2197,7 @@ test('invokes due event in batch', function (): void {
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getAll')
         ->atLeast()->once()
-        ->andReturn([[]]);
+        ->andReturn([['id' => 1]]);
 
     $eventManagerMock = Mockery::mock('\Box_EventManager');
     $eventManagerMock->shouldReceive('fire')
