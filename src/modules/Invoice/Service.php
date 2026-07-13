@@ -579,7 +579,7 @@ class Service implements InjectionAwareInterface
 
             $invoice = $service->toApiArray($invoiceModel, true);
             if (!isset($invoice['client']) || !is_array($invoice['client']) || !isset($invoice['client']['id'])) {
-                return;
+                throw new \FOSSBilling\Exception('Invoice client data is unavailable.');
             }
 
             $email = [];
