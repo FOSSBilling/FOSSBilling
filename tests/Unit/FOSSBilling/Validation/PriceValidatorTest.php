@@ -21,6 +21,7 @@ dataset('validAmounts', fn (): array => [
 
 dataset('invalidAmounts', fn (): array => [
     'negative int' => [-1],
+    'negative float' => [-0.01],
     'non-numeric string' => ['abc'],
     'empty string' => [''],
     'null' => [null],
