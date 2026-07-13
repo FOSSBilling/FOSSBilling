@@ -1,13 +1,23 @@
 {# Primary horizontal nav — desktop topbar item list and mobile bottom-tab item
    list share this single source of truth so active-state logic never drifts
    between the two. `variant` is 'top' (topbar link) or 'bottom' (tab). #}
-{% set nav_items = [
-    { key: 'dashboard', enabled: settings.side_menu_dashboard, url: '/'|url, icon: 'layout-dashboard', label: 'Dashboard'|trans },
-    { key: 'services', enabled: settings.side_menu_services, url: 'order/service'|url, icon: 'server', label: 'Services'|trans },
-    { key: 'invoices', enabled: settings.side_menu_invoices, url: 'invoice'|url, icon: 'receipt', label: 'Invoices'|trans },
-    { key: 'support', enabled: settings.side_menu_support, url: support_url, icon: 'life-buoy', label: 'Support'|trans },
-    { key: 'order', enabled: settings.side_menu_order, url: 'order'|url, icon: 'shopping-bag', label: 'Store'|trans },
-] %}
+{% if client %}
+    {% set nav_items = [
+        { key: 'dashboard', enabled: settings.side_menu_dashboard, url: '/'|url, icon: 'layout-dashboard', label: 'Dashboard'|trans },
+        { key: 'services', enabled: settings.side_menu_services, url: 'order/service'|url, icon: 'server', label: 'Services'|trans },
+        { key: 'invoices', enabled: settings.side_menu_invoices, url: 'invoice'|url, icon: 'receipt', label: 'Invoices'|trans },
+        { key: 'support', enabled: settings.side_menu_support, url: support_url, icon: 'life-buoy', label: 'Support'|trans },
+        { key: 'order', enabled: settings.side_menu_order, url: 'order'|url, icon: 'shopping-bag', label: 'Store'|trans },
+    ] %}
+{% else %}
+    {# Guest topbar: store + informational links only — no account-scoped items. #}
+    {% set nav_items = [
+        { key: 'order', enabled: settings.side_menu_order, url: 'order'|url, icon: 'shopping-bag', label: 'Store'|trans },
+        { key: 'kb', enabled: guest.support_kb_enabled() and settings.side_menu_kb, url: 'support/kb'|url, icon: 'book-open', label: 'Knowledge Base'|trans },
+        { key: 'news', enabled: guest.extension_is_on({'mod': 'news'}) and settings.side_menu_news, url: 'news'|url, icon: 'megaphone', label: 'Announcements'|trans },
+        { key: 'support', enabled: settings.side_menu_support, url: support_url, icon: 'life-buoy', label: 'Support'|trans },
+    ] %}
+{% endif %}
 
 {% if variant == 'bottom' %}
     {% for item in nav_items %}
