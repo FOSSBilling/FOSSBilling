@@ -1860,11 +1860,11 @@ test('handles exception during batch paid invoice activation', function (): void
     expect($result)->toBeBool()->toBeTrue();
 });
 
-test('sends reminders in batch', function (): void {
+test('sends reminders in batch at most once per day', function (): void {
     $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $service->shouldReceive('doBatchInvokeDueEvent')
         ->once()
-        ->with(['once_per_day' => false])
+        ->with(['once_per_day' => true])
         ->andReturnTrue();
 
     $eventManagerMock = Mockery::mock('\Box_EventManager');
