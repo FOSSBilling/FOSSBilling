@@ -89,11 +89,13 @@ class Service
                 'cart_batch_expire',
                 'email_batch_sendmail',
             ];
+            $failedTasks = [];
             foreach ($isolatedTasks as $method) {
                 try {
                     $this->_exec($api, $method);
                 } catch (\Throwable $exception) {
-                    $this->di['logger']->setChannel('cron')->error("Failed to run cron task {$method}: {$exception->getMessage()}");
+                    $failedTasks[] = $method;
+                    $this->di['logger']->setChannel('cron')->error("Failed to run cron task {$method}: {$exception}");
                 }
             }
 
@@ -105,6 +107,13 @@ class Service
             $this->di['logger']->setChannel('cron')->info("Cleared {$count} outdated sessions from the database.");
 
             $this->di['events_manager']->fire(['event' => 'onAfterAdminCronRun']);
+
+            if ($failedTasks !== []) {
+                $this->di['logger']->setChannel('cron')->warning('Finished executing cron jobs, but the following tasks failed: ' . implode(', ', $failedTasks) . '.');
+
+                return false;
+            }
+
             $this->di['logger']->setChannel('cron')->info('Finished executing cron jobs.');
 
             return true;

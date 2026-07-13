@@ -2026,6 +2026,10 @@ test('guards both reminder cron paths across repeated runs', function (): void {
     $dbMock->shouldReceive('getAll')
         ->times(4)
         ->andReturn([['id' => 1, 'days_left' => 7]], [], [], []);
+    $dbMock->shouldReceive('exec')
+        ->once()
+        ->with(Mockery::type('string'), [':id' => 1])
+        ->andReturn(1);
 
     $eventManagerMock = Mockery::mock('\\Box_EventManager');
     $eventManagerMock->shouldReceive('fire')
@@ -2067,7 +2071,10 @@ test('invokes due event in batch', function (): void {
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getAll')
         ->atLeast()->once()
-        ->andReturn([[]]);
+        ->andReturn([['id' => 1]]);
+    $dbMock->shouldReceive('exec')
+        ->atLeast()->once()
+        ->andReturn(1);
 
     $eventManagerMock = Mockery::mock('\Box_EventManager');
     $eventManagerMock->shouldReceive('fire')

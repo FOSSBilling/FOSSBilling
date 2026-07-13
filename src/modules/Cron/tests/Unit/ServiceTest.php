@@ -122,11 +122,12 @@ test('runCrons isolates failures in core batch tasks', function (string $failedT
     $service->setDi($di);
 
     ob_start();
-    $service->runCrons();
+    $result = $service->runCrons();
     ob_end_clean();
 
     $positions = array_flip($api->methods);
-    expect($positions['invoice_batch_generate'])
+    expect($result)->toBeFalse()
+        ->and($positions['invoice_batch_generate'])
         ->toBeLessThan($positions['invoice_batch_send_reminders'])
         ->and($positions['invoice_batch_send_reminders'])
         ->toBeLessThan($positions['invoice_batch_invoke_due_event'])

@@ -283,9 +283,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
-     * Triggers the once-daily invoice due event batch (see batch_invoke_due_event()) and,
-     * if that batch already ran today, falls back to a reminded_at-based check so invoices
-     * that only became reminder-eligible after today's run are still caught.
+     * Attempts the invoice due event batch (see batch_invoke_due_event()), limited to once
+     * per rolling 24-hour period. If that batch ran within the previous 24 hours, it falls
+     * back to a reminded_at-based check for invoices that became reminder-eligible afterward.
+     * Both paths claim each invoice atomically before firing its reminder event, so the same
+     * invoice is never reminded twice even across overlapping cron runs.
      *
      * @return bool
      */
