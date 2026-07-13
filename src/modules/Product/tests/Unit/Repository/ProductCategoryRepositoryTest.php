@@ -13,23 +13,23 @@ declare(strict_types=1);
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Product\Entity\ProductCategory;
 use Box\Mod\Product\Repository\ProductCategoryRepository;
-use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Mapping\ClassMetadata;
-use Doctrine\ORM\Query\Expr;
-use Doctrine\ORM\QueryBuilder;
+use Doctrine\DBAL\DriverManager;
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\ORMSetup;
 
 function productCategoryRepositoryCreateRepository(): ProductCategoryRepository
 {
-    $entityManager = Mockery::mock(EntityManagerInterface::class);
-    $classMetadata = Mockery::mock(ClassMetadata::class);
-    $classMetadata->name = ProductCategory::class;
-    $classMetadata->shouldReceive('getName')->andReturn(ProductCategory::class);
+    $config = ORMSetup::createAttributeMetadataConfig(
+        paths: [dirname(__DIR__, 3) . '/Entity'],
+        isDevMode: true,
+    );
+    $config->setProxyDir(sys_get_temp_dir());
+    $config->setProxyNamespace('FOSSBillingTestProxies');
 
-    $entityManager->shouldReceive('createQueryBuilder')
-        ->andReturnUsing(static fn (): QueryBuilder => new QueryBuilder($entityManager));
-    $entityManager->shouldReceive('getExpressionBuilder')->andReturn(new Expr());
+    $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $entityManager = new EntityManager($connection, $config);
 
-    return new ProductCategoryRepository($entityManager, $classMetadata);
+    return new ProductCategoryRepository($entityManager, $entityManager->getClassMetadata(ProductCategory::class));
 }
 
 test('enabled visible category query avoids a joined product paginator root', function (): void {
@@ -42,4 +42,8 @@ test('enabled visible category query avoids a joined product paginator root', fu
         ->toContain(sprintf('(SELECT MAX(priorityProduct.priority) FROM %s priorityProduct', Product::class))
         ->not->toContain('GROUP BY');
     expect($queryBuilder->getParameters()->toArray())->toHaveCount(3);
+
+    expect($queryBuilder->getQuery()->getSQL())
+        ->toBeString()
+        ->not->toBeEmpty();
 });
