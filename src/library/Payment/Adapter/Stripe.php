@@ -589,7 +589,13 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             default => 'canceled',
         };
 
-        $this->updateSubscriptionStatusFromGateway($api_admin, $stripeSubscription->id, $status);
+        try {
+            $this->updateSubscriptionStatusFromGateway($api_admin, $stripeSubscription->id, $status);
+        } catch (Exception $e) {
+            if (DEBUG) {
+                error_log('Stripe subscription updated webhook: ' . $e->getMessage());
+            }
+        }
 
         return false;
     }

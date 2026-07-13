@@ -184,21 +184,35 @@ test('cancels subscriptions linked to an order', function (): void {
     $orderModel->loadBean(new Tests\Helpers\DummyBean());
     $orderModel->id = 10;
 
+    $resultMock = Mockery::mock();
+    $resultMock->shouldReceive('fetchAllAssociative')->once()->andReturn([['id' => 7]]);
+
+    $queryMock = Mockery::mock();
+    $queryMock->shouldReceive('select')->once()->with('DISTINCT s.id')->andReturnSelf();
+    $queryMock->shouldReceive('from')->once()->with('subscription', 's')->andReturnSelf();
+    $queryMock->shouldReceive('innerJoin')->once()->with('s', 'invoice_item', 'ii', 'ii.invoice_id = s.rel_id')->andReturnSelf();
+    $queryMock->shouldReceive('where')->once()->with('s.rel_type = :rel_type')->andReturnSelf();
+    $queryMock->shouldReceive('andWhere')->once()->with('ii.type = :item_type')->andReturnSelf();
+    $queryMock->shouldReceive('andWhere')->once()->with('ii.rel_id = :order_id')->andReturnSelf();
+    $queryMock->shouldReceive('setParameter')->once()->with('rel_type', 'invoice')->andReturnSelf();
+    $queryMock->shouldReceive('setParameter')->once()->with('item_type', Model_InvoiceItem::TYPE_ORDER)->andReturnSelf();
+    $queryMock->shouldReceive('setParameter')->once()->with('order_id', 10)->andReturnSelf();
+    $queryMock->shouldReceive('executeQuery')->once()->andReturn($resultMock);
+
+    $dbalMock = Mockery::mock();
+    $dbalMock->shouldReceive('createQueryBuilder')->once()->andReturn($queryMock);
+
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('find')
+    $dbMock->shouldReceive('getExistingModelById')
         ->once()
-        ->withArgs(function (string $type, string $query, array $bindings): bool {
-            return $type === 'Subscription'
-                && str_contains($query, 'FROM invoice_item')
-                && $bindings[':order_id'] === 10
-                && $bindings[':item_type'] === Model_InvoiceItem::TYPE_ORDER;
-        })
-        ->andReturn([$subscriptionModel]);
+        ->with('Subscription', 7, 'Subscription not found')
+        ->andReturn($subscriptionModel);
 
     $service = Mockery::mock(ServiceSubscription::class)->makePartial();
     $service->shouldReceive('cancel')->once()->with($subscriptionModel);
     $di = container();
     $di['db'] = $dbMock;
+    $di['dbal'] = $dbalMock;
     $service->setDi($di);
 
     $service->cancelForOrder($orderModel);

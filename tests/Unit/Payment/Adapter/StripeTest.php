@@ -316,6 +316,29 @@ test('syncs subscription webhook status through the internal service path', func
     ]))->toBeFalse();
 });
 
+test('skips subscription update webhooks without a local subscription', function (): void {
+    $event = (object) [
+        'data' => (object) [
+            'object' => (object) [
+                'id' => 'sub_missing',
+                'status' => 'active',
+            ],
+        ],
+    ];
+
+    $apiAdmin = Mockery::mock();
+    $apiAdmin->shouldReceive('invoice_subscription_get')
+        ->once()
+        ->with(['sid' => 'sub_missing'])
+        ->andThrow(new Exception('Subscription not found'));
+
+    expect(invokePrivateMethod($this->adapter, 'handleSubscriptionUpdated', [
+        $apiAdmin,
+        buildTransaction(),
+        $event,
+    ]))->toBeFalse();
+});
+
 describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
     test('links transaction to invoice before claim attempt', function (): void {
         $tx = buildTransaction();

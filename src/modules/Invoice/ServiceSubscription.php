@@ -241,24 +241,23 @@ class ServiceSubscription implements InjectionAwareInterface
 
     public function cancelForOrder(\Model_ClientOrder $order): void
     {
-        $subscriptions = $this->di['db']->find(
-            'Subscription',
-            'rel_type = :rel_type AND rel_id IN (
-                SELECT invoice_id
-                FROM invoice_item
-                WHERE type = :item_type AND rel_id = :order_id
-            )',
-            [
-                ':rel_type' => 'invoice',
-                ':item_type' => \Model_InvoiceItem::TYPE_ORDER,
-                ':order_id' => $order->id,
-            ]
-        );
+        $query = $this->di['dbal']->createQueryBuilder();
+        $subscriptions = $query
+            ->select('DISTINCT s.id')
+            ->from('subscription', 's')
+            ->innerJoin('s', 'invoice_item', 'ii', 'ii.invoice_id = s.rel_id')
+            ->where('s.rel_type = :rel_type')
+            ->andWhere('ii.type = :item_type')
+            ->andWhere('ii.rel_id = :order_id')
+            ->setParameter('rel_type', 'invoice')
+            ->setParameter('item_type', \Model_InvoiceItem::TYPE_ORDER)
+            ->setParameter('order_id', $order->id)
+            ->executeQuery()
+            ->fetchAllAssociative();
 
-        foreach ($subscriptions as $subscription) {
-            if ($subscription instanceof \Model_Subscription) {
-                $this->cancel($subscription);
-            }
+        foreach ($subscriptions as $subscriptionData) {
+            $subscription = $this->di['db']->getExistingModelById('Subscription', (int) $subscriptionData['id'], 'Subscription not found');
+            $this->cancel($subscription);
         }
     }
 
