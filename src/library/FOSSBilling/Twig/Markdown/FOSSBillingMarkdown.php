@@ -22,7 +22,13 @@ class FOSSBillingMarkdown implements MarkdownInterface
 {
     private readonly MarkdownConverter $converter;
 
-    public function __construct(\Pimple\Container $di)
+    /**
+     * @param bool|null $isAdmin Which theme's Markdown attribute defaults to use. Pass explicitly
+     *                           when converting outside of an admin page render (e.g. from an API
+     *                           endpoint), where the ADMIN_AREA constant doesn't reflect the caller's
+     *                           area. Leave null to fall back to that runtime check.
+     */
+    public function __construct(\Pimple\Container $di, ?bool $isAdmin = null)
     {
         $config = [
             'html_input' => 'escape',
@@ -30,7 +36,7 @@ class FOSSBillingMarkdown implements MarkdownInterface
             'max_nesting_level' => 50,
         ];
 
-        $defaultAttributes = $di['mod_service']('theme')->getDefaultMarkdownAttributes() ?? [];
+        $defaultAttributes = $di['mod_service']('theme')->getDefaultMarkdownAttributes($isAdmin) ?? [];
         if (!empty($defaultAttributes)) {
             $config['default_attributes'] = $defaultAttributes;
         }

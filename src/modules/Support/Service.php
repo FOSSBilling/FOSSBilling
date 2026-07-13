@@ -939,7 +939,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
      */
     public function getMessageHistory(SupportTicketMessage $message): array
     {
-        $markdown = new FOSSBillingMarkdown($this->di);
+        // Always render with the admin theme's Markdown defaults: this is admin-only functionality,
+        // and ADMIN_AREA isn't set to true for api/admin/... requests the way it is for admin page loads.
+        $markdown = new FOSSBillingMarkdown($this->di, isAdmin: true);
 
         $result = [];
         foreach ($this->getSupportTicketMessageHistoryRepository()->findByMessageId((int) $message->getId()) as $history) {
