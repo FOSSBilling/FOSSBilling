@@ -484,10 +484,9 @@
                         meta.className = 'text-muted small mb-1';
                         meta.textContent = revision.created_at;
 
-                        var content = document.createElement('pre');
-                        content.className = 'mb-0';
-                        content.style.whiteSpace = 'pre-wrap';
-                        content.textContent = revision.content;
+                        var content = document.createElement('article');
+                        content.className = 'markdown-body bg-transparent text-reset mb-0';
+                        content.innerHTML = revision.content_html;
 
                         entry.appendChild(meta);
                         entry.appendChild(content);

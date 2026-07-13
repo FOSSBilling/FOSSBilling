@@ -461,11 +461,12 @@ class Service implements InjectionAwareInterface
         return $this->getCurrentClientAreaTheme()->getName();
     }
 
-    public function getDefaultMarkdownAttributes(): array
+    public function getDefaultMarkdownAttributes(?bool $isAdmin = null): array
     {
-        // Runtime check for admin area - uses index.php defined constant
-        $isAdmin = ADMIN_AREA;
-        // @phpstan-ignore if.alwaysTrue
+        // Runtime check for admin area - uses index.php defined constant.
+        // API requests (e.g. api/admin/...) don't set ADMIN_AREA the way admin panel
+        // page loads do, so callers outside of an admin page render must pass $isAdmin explicitly.
+        $isAdmin ??= ADMIN_AREA;
         if ($isAdmin) {
             $config = $this->getThemeConfig(false);
         } else {
