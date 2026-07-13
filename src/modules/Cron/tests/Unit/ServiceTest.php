@@ -18,11 +18,17 @@ class CronServiceApiDouble
 {
     public ?string $method = null;
     public mixed $params = null;
+    public array $methods = [];
+    public ?string $throwOn = null;
 
     public function __call(string $method, array $arguments): void
     {
         $this->method = $method;
         $this->params = $arguments[0] ?? null;
+        $this->methods[] = $method;
+        if ($method === $this->throwOn) {
+            throw new RuntimeException("Failed to run {$method}");
+        }
     }
 }
 
@@ -86,6 +92,57 @@ test('exec passes empty array when cron task has no params', function (): void {
     expect($api->method)->toBe('invoice_batch_pay_with_credits');
     expect($api->params)->toBe([]);
 });
+
+test('runCrons isolates failures in core batch tasks', function (string $failedTask): void {
+    $updateFinalization = Mockery::mock();
+    $updateFinalization->shouldReceive('isRequired')->once()->andReturnFalse();
+
+    $eventsManager = Mockery::mock('\\Box_EventManager');
+    $eventsManager->shouldReceive('fire')->twice();
+
+    $systemService = Mockery::mock(Box\Mod\System\Service::class);
+    $systemService->shouldReceive('setParamValue')
+        ->once()
+        ->with('last_cron_exec', Mockery::type('string'), true);
+
+    $db = Mockery::mock('\\Box_Database');
+    $db->shouldReceive('exec')->once()->andReturn(0);
+
+    $api = new CronServiceApiDouble();
+    $api->throwOn = $failedTask;
+    $di = container();
+    $di['api_system'] = $api;
+    $di['db'] = $db;
+    $di['events_manager'] = $eventsManager;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemService);
+    $di['update_finalization'] = $updateFinalization;
+
+    $service = new Service();
+    $service->setDi($di);
+
+    ob_start();
+    $result = $service->runCrons();
+    ob_end_clean();
+
+    $positions = array_flip($api->methods);
+    expect($result)->toBeFalse()
+        ->and($positions['invoice_batch_generate'])
+        ->toBeLessThan($positions['invoice_batch_send_reminders'])
+        ->and($positions['invoice_batch_send_reminders'])
+        ->toBeLessThan($positions['invoice_batch_invoke_due_event'])
+        ->and($api->methods)->toContain('email_batch_sendmail');
+})->with([
+    'invoice generation' => 'invoice_batch_generate',
+    'invoice reminders' => 'invoice_batch_send_reminders',
+    'invoice due events' => 'invoice_batch_invoke_due_event',
+    'order suspension' => 'order_batch_suspend_expired',
+    'order cancellation' => 'order_batch_cancel_suspended',
+    'support ticket auto-close' => 'support_batch_ticket_auto_close',
+    'password reminder expiry' => 'client_batch_expire_password_reminders',
+    'cart expiry' => 'cart_batch_expire',
+    'email queue' => 'email_batch_sendmail',
+]);
 
 test('runCrons restores the previous cron context when update finalization interrupts execution', function (): void {
     $updateFinalization = Mockery::mock()->shouldIgnoreMissing();

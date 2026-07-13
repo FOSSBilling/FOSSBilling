@@ -505,12 +505,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $queue->setAttachmentMime((string) ($attachment['mime'] ?? 'application/octet-stream'));
         }
 
-        try {
-            $em->persist($queue);
-            $em->flush();
-        } catch (\Exception $e) {
-            error_log($e->getMessage());
-        }
+        $em->persist($queue);
+        $em->flush();
 
         return $queue;
     }
