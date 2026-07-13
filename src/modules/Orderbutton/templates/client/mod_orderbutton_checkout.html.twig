@@ -171,7 +171,7 @@
                                         <p class="small text-muted mb-2">{{ 'Choose a payment method to continue with your order.'|trans }}</p>
                                         <div class="d-flex flex-wrap gap-3">
                                         {% for gtw in guest.invoice_gateways %}
-                                            {% if cart.currency.code in gtw.accepted_currencies and gtw.allow_single %}
+                                            {% if cart.currency.code in gtw.accepted_currencies and (gtw.allow_single or (cart.subscribable|default(false) and gtw.allow_recurrent)) %}
                                                 {% set gateway_input_id = 'order-gateway-' ~ gtw.id %}
                                                 <div class="invoice-gateway rounded-2 p-2">
                                                     <input type="radio" class="btn-check border-0" name="gateway_id" id="{{ gateway_input_id }}" value="{{ gtw.id }}" autocomplete="off" {{ loop.first ? 'checked' : '' }}/>

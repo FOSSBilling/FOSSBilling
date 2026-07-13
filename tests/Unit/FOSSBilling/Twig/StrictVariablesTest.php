@@ -126,6 +126,7 @@ test('orderbutton checkout renders for guests under strict_variables', function 
                 'discount' => 0,
                 'subtotal' => 10,
                 'total' => 10,
+                'subscribable' => true,
                 'currency' => [
                     'code' => 'USD',
                 ],
@@ -134,11 +135,21 @@ test('orderbutton checkout renders for guests under strict_variables', function 
                 'code' => 'USD',
                 'conversion_rate' => 1,
             ],
-            'invoice_gateways' => [],
+            'invoice_gateways' => [
+                [
+                    'id' => 1,
+                    'title' => 'Subscription Gateway',
+                    'accepted_currencies' => ['USD'],
+                    'allow_single' => false,
+                    'allow_recurrent' => true,
+                    'logo' => ['logo' => null, 'height' => 0, 'width' => 0],
+                ],
+            ],
         ],
     ]);
 
-    expect($html)->toContain('You must first login / create an account before you can checkout.');
+    expect($html)->toContain('You must first login / create an account before you can checkout.')
+        ->and($html)->toContain('Subscription Gateway');
 });
 
 /*

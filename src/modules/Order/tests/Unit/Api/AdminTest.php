@@ -376,16 +376,40 @@ test('cancels an order', function (): void {
     $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
 
     $serviceMock = Mockery::mock(Service::class);
-    $serviceMock->shouldReceive('cancelFromOrder')->atLeast()->once()->andReturn(true);
+    $serviceMock->shouldReceive('scheduleCancellationFromOrder')
+        ->once()
+        ->with($order, 'Customer request')
+        ->andReturn(true);
 
     $di = container();
     $apiMock->setDi($di);
     $apiMock->setService($serviceMock);
 
-    $data = [];
+    $data = ['reason' => 'Customer request', 'cancel_at_period_end' => '1'];
     $result = $apiMock->cancel($data);
 
     expect($result)->toBeTrue();
+});
+
+test('checks whether an order supports cancellation at period end', function (): void {
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+
+    $api = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
+    $api->shouldAllowMockingProtectedMethods();
+    $api->shouldReceive('_getOrder')->once()->andReturn($order);
+
+    $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscriptionService->shouldReceive('canCancelAtPeriodEndForOrder')->once()->with($order)->andReturn(true);
+
+    $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffService->shouldReceive('checkPermissionsAndThrowException')->once()->andReturn(true);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (string $module) => strtolower($module) === 'staff' ? $staffService : $subscriptionService);
+    $api->setDi($di);
+
+    expect($api->can_cancel_at_period_end(['id' => 1]))->toBeTrue();
 });
 
 test('uncancels a canceled order', function (): void {

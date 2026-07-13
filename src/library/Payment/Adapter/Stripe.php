@@ -144,6 +144,16 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $this->stripe->subscriptions->cancel($subscriptionId, []);
     }
 
+    public function cancelSubscriptionAtPeriodEnd(string $subscriptionId): void
+    {
+        $subscription = $this->stripe->subscriptions->retrieve($subscriptionId, []);
+        if ($subscription->status === Stripe\Subscription::STATUS_CANCELED || ($subscription->cancel_at_period_end ?? false)) {
+            return;
+        }
+
+        $this->stripe->subscriptions->update($subscriptionId, ['cancel_at_period_end' => true]);
+    }
+
     public function getAmountInCents(Model_Invoice $invoice): int
     {
         return $this->getAmountInMinorUnits($invoice);
@@ -667,12 +677,14 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     {
         $stripeSubscription = $event->data->object;
 
-        $status = match ($stripeSubscription->status) {
-            'active' => 'active',
-            'trialing' => 'active',
-            'past_due' => 'active',
-            default => 'canceled',
-        };
+        $status = ($stripeSubscription->cancel_at_period_end ?? false)
+            ? Box\Mod\Invoice\ServiceSubscription::STATUS_PENDING_CANCELLATION
+            : match ($stripeSubscription->status) {
+                'active' => 'active',
+                'trialing' => 'active',
+                'past_due' => 'active',
+                default => 'canceled',
+            };
 
         try {
             $this->updateSubscriptionStatusFromGateway($api_admin, $stripeSubscription->id, $status);
@@ -688,14 +700,13 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     private function handleSubscriptionDeleted($api_admin, Model_Transaction $tx, object $event): bool
     {
         $stripeSubscription = $event->data->object;
-
-        try {
-            $this->updateSubscriptionStatusFromGateway($api_admin, $stripeSubscription->id, 'canceled');
-        } catch (Exception $e) {
-            if (DEBUG) {
-                error_log('Stripe subscription deleted webhook: ' . $e->getMessage());
-            }
+        $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
+        $subscriptionId = $subscriptionService->findIdBySid($stripeSubscription->id);
+        if ($subscriptionId === null) {
+            return false;
         }
+
+        $subscriptionService->finalizeCancellationFromGateway($subscriptionId);
 
         return false;
     }

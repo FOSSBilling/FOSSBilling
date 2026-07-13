@@ -20,6 +20,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 class Service implements InjectionAwareInterface
 {
+    public const META_CANCEL_AT_PERIOD_END = 'cancel_at_period_end';
+
     protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
@@ -1249,19 +1251,66 @@ class Service implements InjectionAwareInterface
 
     public function cancelFromOrder(\Model_ClientOrder $order, $reason = null, $skipEvent = false): bool
     {
-        if (!$skipEvent) {
-            $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderCancel', 'params' => ['id' => $order->id]]);
-        }
-
-        if (in_array($order->status, [\Model_ClientOrder::STATUS_CANCELED, \Model_ClientOrder::STATUS_PENDING_SETUP, \Model_ClientOrder::STATUS_FAILED_SETUP])) {
-            throw new \FOSSBilling\Exception('Cannot cancel ' . $order->status . ' order');
-        }
-
-        $this->_callOnService($order, \Model_ClientOrder::ACTION_CANCEL);
+        $this->assertOrderCanBeCanceled($order);
+        $this->beginCancellation($order, $skipEvent);
 
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
         $subscriptionService->cancelForOrder($order);
 
+        return $this->completeCancellation($order, $reason, $skipEvent);
+    }
+
+    public function scheduleCancellationFromOrder(\Model_ClientOrder $order, $reason = null): bool
+    {
+        $this->assertOrderCanBeCanceled($order);
+
+        $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
+        if (!$subscriptionService->canCancelAtPeriodEndForOrder($order)) {
+            throw new InformationException('No active gateway subscription that supports cancellation at period end is linked to this order.');
+        }
+
+        $this->updateOrderMeta($order, [self::META_CANCEL_AT_PERIOD_END => '1']);
+        if ($subscriptionService->scheduleCancellationForOrder($order) === 0) {
+            throw new InformationException('No active gateway subscription is linked to this order.');
+        }
+
+        $order->reason = $reason;
+        $order->updated_at = date('Y-m-d H:i:s');
+        $this->di['db']->store($order);
+        $this->saveStatusChange($order, 'Cancellation scheduled at the end of the current billing period');
+        $this->di['logger']->info('Scheduled cancellation for order #%s at the end of the current billing period', $order->id);
+
+        return true;
+    }
+
+    public function finalizeCancellationFromGateway(\Model_ClientOrder $order, $reason = null): bool
+    {
+        $this->assertOrderCanBeCanceled($order);
+        $this->beginCancellation($order, false);
+
+        return $this->completeCancellation($order, $reason, false);
+    }
+
+    private function assertOrderCanBeCanceled(\Model_ClientOrder $order): void
+    {
+        if (!in_array($order->status, [\Model_ClientOrder::STATUS_CANCELED, \Model_ClientOrder::STATUS_PENDING_SETUP, \Model_ClientOrder::STATUS_FAILED_SETUP], true)) {
+            return;
+        }
+
+        throw new \FOSSBilling\Exception('Cannot cancel ' . $order->status . ' order');
+    }
+
+    private function beginCancellation(\Model_ClientOrder $order, bool $skipEvent): void
+    {
+        if (!$skipEvent) {
+            $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderCancel', 'params' => ['id' => $order->id]]);
+        }
+
+        $this->_callOnService($order, \Model_ClientOrder::ACTION_CANCEL);
+    }
+
+    private function completeCancellation(\Model_ClientOrder $order, $reason, bool $skipEvent): bool
+    {
         $order->status = \Model_ClientOrder::STATUS_CANCELED;
         $order->reason = $reason;
         $order->canceled_at = date('Y-m-d H:i:s');
@@ -1269,6 +1318,10 @@ class Service implements InjectionAwareInterface
         $order->suspended_at = null;
         $order->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($order);
+        $this->di['db']->exec(
+            'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND name = :name',
+            [':order_id' => $order->id, ':name' => self::META_CANCEL_AT_PERIOD_END],
+        );
         $productService = $this->di['mod_service']('Product');
         $productService->releaseReservedPromoRedemptionsForOrder($order, 'order_canceled');
 
