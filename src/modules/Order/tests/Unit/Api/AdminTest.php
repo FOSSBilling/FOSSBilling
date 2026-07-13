@@ -391,6 +391,25 @@ test('cancels an order', function (): void {
     expect($result)->toBeTrue();
 });
 
+test('cancels an order immediately when cancellation timing is omitted', function (): void {
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+
+    $api = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
+    $api->shouldAllowMockingProtectedMethods();
+    $api->shouldReceive('_getOrder')->once()->andReturn($order);
+
+    $service = Mockery::mock(Service::class);
+    $service->shouldReceive('cancelFromOrder')
+        ->once()
+        ->with($order, 'Customer request', false)
+        ->andReturn(true);
+
+    $api->setService($service);
+
+    expect($api->cancel(['reason' => 'Customer request']))->toBeTrue();
+});
+
 test('checks whether an order supports cancellation at period end', function (): void {
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
