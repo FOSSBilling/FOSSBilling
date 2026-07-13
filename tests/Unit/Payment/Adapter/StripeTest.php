@@ -1228,11 +1228,6 @@ describe('Stripe webhook gateway ownership', function (): void {
     });
 
     test('resolves gateway ownership from the invoice for legacy Stripe objects', function (): void {
-        $invoice = new Model_Invoice();
-        $invoice->loadBean(new DummyBean());
-        $invoice->id = 10;
-        $invoice->gateway_id = 3;
-
         $event = (object) [
             'type' => 'payment_intent.succeeded',
             'data' => (object) ['object' => (object) [
@@ -1240,14 +1235,36 @@ describe('Stripe webhook gateway ownership', function (): void {
             ]],
         ];
 
-        $dbMock = Mockery::mock('\\Box_Database');
-        $dbMock->shouldReceive('findOne')
+        $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $dbalMock->shouldReceive('fetchOne')
             ->twice()
-            ->with('Invoice', 'id = :id', [':id' => 10])
-            ->andReturn($invoice);
+            ->with('SELECT gateway_id FROM invoice WHERE id = :id', ['id' => 10])
+            ->andReturn('3');
 
         $di = container();
-        $di['db'] = $dbMock;
+        $di['dbal'] = $dbalMock;
+        $this->adapter->setDi($di);
+
+        expect(invokePrivateMethod($this->adapter, 'eventBelongsToGateway', [$event, 3]))->toBeTrue()
+            ->and(invokePrivateMethod($this->adapter, 'eventBelongsToGateway', [$event, 10]))->toBeFalse();
+    });
+
+    test('resolves gateway ownership from a legacy local subscription', function (): void {
+        $event = (object) [
+            'type' => 'customer.subscription.updated',
+            'data' => (object) ['object' => (object) [
+                'id' => 'sub_legacy',
+            ]],
+        ];
+
+        $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $dbalMock->shouldReceive('fetchOne')
+            ->twice()
+            ->with('SELECT pay_gateway_id FROM subscription WHERE sid = :sid', ['sid' => 'sub_legacy'])
+            ->andReturn('3');
+
+        $di = container();
+        $di['dbal'] = $dbalMock;
         $this->adapter->setDi($di);
 
         expect(invokePrivateMethod($this->adapter, 'eventBelongsToGateway', [$event, 3]))->toBeTrue()
