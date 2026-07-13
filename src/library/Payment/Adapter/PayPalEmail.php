@@ -247,7 +247,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
             case 'subscr_eot':
             case 'subscr_cancel':
                 $s = $api_admin->invoice_subscription_get(['sid' => $ipn['subscr_id']]);
-                $api_admin->invoice_subscription_update(['id' => $s['id'], 'status' => 'canceled', 'skip_gateway' => true]);
+                $api_admin->invoice_subscription_update(['id' => $s['id'], 'status' => 'canceled']);
 
                 break;
 

@@ -2055,10 +2055,14 @@ test('cancelFromOrder cancels linked subscriptions', function (): void {
     $clientOrderModel->id = 10;
     $clientOrderModel->status = Model_ClientOrder::STATUS_ACTIVE;
 
+    $calls = [];
     $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
     $subscriptionService->shouldReceive('cancelForOrder')
         ->once()
-        ->with($clientOrderModel);
+        ->with($clientOrderModel)
+        ->andReturnUsing(function () use (&$calls): void {
+            $calls[] = 'subscriptions';
+        });
 
     $productService = Mockery::mock(Box\Mod\Product\Service::class);
     $productService->shouldReceive('releaseReservedPromoRedemptionsForOrder')
@@ -2081,12 +2085,72 @@ test('cancelFromOrder cancels linked subscriptions', function (): void {
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('_callOnService')->once();
+    $serviceMock->shouldReceive('_callOnService')
+        ->once()
+        ->andReturnUsing(function () use (&$calls): void {
+            $calls[] = 'service';
+        });
     $serviceMock->shouldReceive('saveStatusChange')->once();
     $serviceMock->setDi($di);
 
     expect($serviceMock->cancelFromOrder($clientOrderModel, skipEvent: true))->toBeTrue()
-        ->and($clientOrderModel->status)->toBe(Model_ClientOrder::STATUS_CANCELED);
+        ->and($clientOrderModel->status)->toBe(Model_ClientOrder::STATUS_CANCELED)
+        ->and($calls)->toBe(['service', 'subscriptions']);
+});
+
+test('cancelFromOrder does not cancel subscriptions when service cancellation fails', function (): void {
+    $clientOrderModel = new Model_ClientOrder();
+    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel->status = Model_ClientOrder::STATUS_ACTIVE;
+
+    $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscriptionService->shouldNotReceive('cancelForOrder');
+
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldNotReceive('store');
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(fn () => $subscriptionService);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('_callOnService')
+        ->once()
+        ->andThrow(new RuntimeException('Service cancellation failed'));
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->cancelFromOrder($clientOrderModel, skipEvent: true))
+        ->toThrow(RuntimeException::class, 'Service cancellation failed')
+        ->and($clientOrderModel->status)->toBe(Model_ClientOrder::STATUS_ACTIVE);
+});
+
+test('cancelFromOrder remains retryable when subscription cancellation fails', function (): void {
+    $clientOrderModel = new Model_ClientOrder();
+    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel->status = Model_ClientOrder::STATUS_ACTIVE;
+
+    $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscriptionService->shouldReceive('cancelForOrder')
+        ->once()
+        ->with($clientOrderModel)
+        ->andThrow(new RuntimeException('Subscription cancellation failed'));
+
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldNotReceive('store');
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(fn () => $subscriptionService);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('_callOnService')->once();
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->cancelFromOrder($clientOrderModel, skipEvent: true))
+        ->toThrow(RuntimeException::class, 'Subscription cancellation failed')
+        ->and($clientOrderModel->status)->toBe(Model_ClientOrder::STATUS_ACTIVE);
 });
 
 test('rmByClient removes all client orders', function (): void {

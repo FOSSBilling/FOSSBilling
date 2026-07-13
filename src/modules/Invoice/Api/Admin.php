@@ -787,7 +787,6 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $period - subscription period code
      * @optional string $amount - subscription amount
      * @optional string $currency - subscription currency
-     * @optional bool $skip_gateway - internal flag for status updates originating from gateway callbacks
      *
      * @return bool
      *

@@ -1257,10 +1257,10 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Cannot cancel ' . $order->status . ' order');
         }
 
+        $this->_callOnService($order, \Model_ClientOrder::ACTION_CANCEL);
+
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
         $subscriptionService->cancelForOrder($order);
-
-        $this->_callOnService($order, \Model_ClientOrder::ACTION_CANCEL);
 
         $order->status = \Model_ClientOrder::STATUS_CANCELED;
         $order->reason = $reason;

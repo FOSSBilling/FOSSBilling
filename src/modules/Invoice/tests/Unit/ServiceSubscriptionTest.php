@@ -123,7 +123,7 @@ test('cancels a subscription at the gateway when canceled status is saved', func
     $di['mod_service'] = $di->protect(fn () => $payGatewayService);
     $service->setDi($di);
 
-    expect($service->update($subscriptionModel, ['status' => 'canceled', 'sid' => 'sub_new']))->toBeTrue()
+    expect($service->update($subscriptionModel, ['status' => 'canceled', 'sid' => 'sub_new', 'skip_gateway' => true]))->toBeTrue()
         ->and($subscriptionModel->status)->toBe('canceled')
         ->and($adapter->canceledSubscriptionId)->toBe('sub_new');
 });
@@ -150,13 +150,18 @@ test('does not call the gateway when canceling a subscription without a sid', fu
         ->and($subscriptionModel->status)->toBe('canceled');
 });
 
-test('does not call the gateway for a remote subscription status update', function (): void {
+test('updates subscription status from a gateway without calling the adapter', function (): void {
     $service = new ServiceSubscription();
     $subscriptionModel = new Model_Subscription();
     $subscriptionModel->loadBean(new Tests\Helpers\DummyBean());
     $subscriptionModel->status = 'active';
 
+    $subscriptionId = 1;
     $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getExistingModelById')
+        ->once()
+        ->with('Subscription', $subscriptionId, 'Subscription not found')
+        ->andReturn($subscriptionModel);
     $dbMock->shouldReceive('store')->once()->andReturn(1);
 
     $di = container();
@@ -167,7 +172,7 @@ test('does not call the gateway for a remote subscription status update', functi
     });
     $service->setDi($di);
 
-    expect($service->update($subscriptionModel, ['status' => 'canceled', 'skip_gateway' => true]))->toBeTrue()
+    expect($service->updateStatusFromGateway($subscriptionId, 'canceled'))->toBeTrue()
         ->and($subscriptionModel->status)->toBe('canceled');
 });
 
