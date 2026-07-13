@@ -18,11 +18,13 @@ class CronServiceApiDouble
 {
     public ?string $method = null;
     public mixed $params = null;
+    public array $methods = [];
 
     public function __call(string $method, array $arguments): void
     {
         $this->method = $method;
         $this->params = $arguments[0] ?? null;
+        $this->methods[] = $method;
     }
 }
 
@@ -85,6 +87,44 @@ test('exec passes empty array when cron task has no params', function (): void {
 
     expect($api->method)->toBe('invoice_batch_pay_with_credits');
     expect($api->params)->toBe([]);
+});
+
+test('runCrons generates invoices before processing reminder intervals', function (): void {
+    $updateFinalization = Mockery::mock();
+    $updateFinalization->shouldReceive('isRequired')->once()->andReturnFalse();
+
+    $eventsManager = Mockery::mock('\\Box_EventManager');
+    $eventsManager->shouldReceive('fire')->twice();
+
+    $systemService = Mockery::mock(Box\Mod\System\Service::class);
+    $systemService->shouldReceive('setParamValue')
+        ->once()
+        ->with('last_cron_exec', Mockery::type('string'), true);
+
+    $db = Mockery::mock('\\Box_Database');
+    $db->shouldReceive('exec')->once()->andReturn(0);
+
+    $api = new CronServiceApiDouble();
+    $di = container();
+    $di['api_system'] = $api;
+    $di['db'] = $db;
+    $di['events_manager'] = $eventsManager;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemService);
+    $di['update_finalization'] = $updateFinalization;
+
+    $service = new Service();
+    $service->setDi($di);
+
+    ob_start();
+    $service->runCrons();
+    ob_end_clean();
+
+    $positions = array_flip($api->methods);
+    expect($positions['invoice_batch_generate'])
+        ->toBeLessThan($positions['invoice_batch_send_reminders'])
+        ->and($positions['invoice_batch_send_reminders'])
+        ->toBeLessThan($positions['invoice_batch_invoke_due_event']);
 });
 
 test('runCrons restores the previous cron context when update finalization interrupts execution', function (): void {

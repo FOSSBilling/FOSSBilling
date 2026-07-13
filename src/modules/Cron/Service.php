@@ -78,8 +78,8 @@ class Service
 
             $this->_exec($api, 'invoice_batch_pay_with_credits');
             $this->_exec($api, 'invoice_batch_activate_paid');
-            $this->_exec($api, 'invoice_batch_send_reminders');
             $this->_exec($api, 'invoice_batch_generate');
+            $this->_exec($api, 'invoice_batch_send_reminders');
             $this->_exec($api, 'invoice_batch_invoke_due_event');
             $this->_exec($api, 'order_batch_suspend_expired');
             $this->_exec($api, 'order_batch_cancel_suspended');

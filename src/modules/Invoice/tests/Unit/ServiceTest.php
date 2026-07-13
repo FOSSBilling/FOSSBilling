@@ -1880,6 +1880,53 @@ test('sends reminders in batch at most once per day', function (): void {
     expect($result)->toBeBool()->toBeTrue();
 });
 
+test('guards both reminder cron paths across repeated runs', function (): void {
+    $lastInvocation = date('Y-m-d H:i:s');
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')
+        ->times(3)
+        ->with('invoice_overdue_invoked')
+        ->andReturn(null, $lastInvocation, $lastInvocation);
+    $systemService->shouldReceive('getParamValue')
+        ->once()
+        ->with('invoice_reminder_before_due_days', '')
+        ->andReturn('7');
+    $systemService->shouldReceive('getParamValue')
+        ->once()
+        ->with('invoice_reminder_after_due_days', '5')
+        ->andReturn('5');
+    $systemService->shouldReceive('setParamValue')
+        ->once()
+        ->with('invoice_overdue_invoked', Mockery::type('string'));
+
+    $dbMock = Mockery::mock('\\Box_Database');
+    $dbMock->shouldReceive('getAll')
+        ->twice()
+        ->andReturn([['id' => 1, 'days_left' => 7]], []);
+
+    $eventManagerMock = Mockery::mock('\\Box_EventManager');
+    $eventManagerMock->shouldReceive('fire')
+        ->twice()
+        ->with(['event' => 'onBeforeAdminInvoiceSendReminders']);
+    $eventManagerMock->shouldReceive('fire')
+        ->once()
+        ->with(['event' => 'onEventBeforeInvoiceIsDue', 'params' => ['id' => 1, 'days_left' => 7, 'reminder_intervals' => [7]]]);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['events_manager'] = $eventManagerMock;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemService);
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $service = new Service();
+    $service->setDi($di);
+
+    expect($service->doBatchRemindersSend())->toBeTrue()
+        ->and($service->doBatchInvokeDueEvent([]))->toBeFalse()
+        ->and($service->doBatchRemindersSend())->toBeFalse();
+});
+
 test('invokes due event in batch', function (): void {
     $service = new Service();
     $systemService = Mockery::mock(SystemService::class);
