@@ -147,7 +147,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional int $gateway_id - selected payment method - gateway id
      * @optional array $new_item - [title] [price]
      * @optional string $text_1 - Custom invoice text 1
-     * @optional string $text_2 - Custom invoice text 1
+     * @optional string $text_2 - Custom invoice text 2
      * @optional string $seller_company - Seller company name
      * @optional string $seller_company_vat - Seller company VAT number
      * @optional string $seller_company_number - Seller company number
