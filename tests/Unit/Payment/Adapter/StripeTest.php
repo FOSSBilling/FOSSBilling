@@ -16,6 +16,7 @@ beforeEach(function (): void {
         'test_api_key' => 'sk_test_dummy',
         'test_pub_key' => 'pk_test_dummy',
         'test_webhook_secret' => TEST_WEBHOOK_SECRET,
+        'gateway_id' => 1,
     ]);
 });
 
@@ -1070,7 +1071,10 @@ describe('processWebhookEvent noise filtering', function (): void {
         $rawBody = json_encode([
             'type' => 'customer.subscription.deleted',
             'id' => 'evt_life_1',
-            'data' => ['object' => ['id' => 'sub_nonexistent']],
+            'data' => ['object' => [
+                'id' => 'sub_nonexistent',
+                'metadata' => ['gateway_id' => '1'],
+            ]],
         ]);
 
         $trashCalled = false;
@@ -1107,6 +1111,147 @@ describe('processWebhookEvent noise filtering', function (): void {
         // Subscription lifecycle events don't represent payments — their
         // transactions should be deleted to keep the list clean.
         expect($trashCalled)->toBeTrue();
+    });
+});
+
+describe('Stripe webhook gateway ownership', function (): void {
+    test('tags one-time payments and uses the selected gateway callback', function (): void {
+        $adapter = new Payment_Adapter_Stripe([
+            'test_mode' => true,
+            'test_api_key' => 'sk_test_dummy',
+            'test_pub_key' => 'pk_test_dummy',
+            'test_webhook_secret' => TEST_WEBHOOK_SECRET,
+            'gateway_id' => 3,
+            'notify_url' => 'https://billing.example/ipn.php?gateway_id=3&invoice_id=15',
+        ]);
+
+        $paymentIntentsMock = Mockery::mock();
+        $paymentIntentsMock->shouldReceive('create')
+            ->once()
+            ->withArgs(fn (array $params): bool => $params['metadata']['gateway_id'] === '3'
+                && $params['metadata']['invoice_id'] === '15')
+            ->andReturn(Stripe\PaymentIntent::constructFrom([
+                'id' => 'pi_gateway_3',
+                'client_secret' => 'pi_gateway_3_secret',
+            ]));
+
+        $stripeMock = Mockery::mock(StripeClient::class);
+        $stripeMock->paymentIntents = $paymentIntentsMock;
+        setPrivateProperty($adapter, 'stripe', $stripeMock);
+
+        $invoice = new Model_Invoice();
+        $invoice->loadBean(new DummyBean());
+        $invoice->id = 15;
+        $invoice->client_id = 7;
+        $invoice->currency = 'USD';
+        $invoice->buyer_email = 'client@example.com';
+        $invoice->buyer_first_name = 'Test';
+        $invoice->buyer_last_name = 'Client';
+        $invoice->hash = 'invoice-hash';
+        $invoice->nr = 15;
+        $invoice->serie = 'INV';
+
+        $dbMock = Mockery::mock('\\Box_Database');
+        $dbMock->shouldReceive('getAll')->once()->andReturn([['title' => 'Hosting']]);
+
+        $invoiceService = Mockery::mock();
+        $invoiceService->shouldReceive('getTotalWithTax')->once()->andReturn(15.00);
+
+        $di = container();
+        $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn () => $invoiceService);
+        $adapter->setDi($di);
+
+        $form = invokePrivateMethod($adapter, '_generateForm', [$invoice]);
+
+        expect($form)->toContain('https://billing.example/ipn.php?gateway_id=3&invoice_id=15');
+    });
+
+    test('ignores an event created by another FOSSBilling Stripe gateway', function (): void {
+        $tx = buildTransaction();
+        $tx->id = 550;
+
+        $rawBody = json_encode([
+            'type' => 'payment_intent.succeeded',
+            'id' => 'evt_wrong_gateway',
+            'data' => ['object' => [
+                'id' => 'pi_gateway_3',
+                'status' => 'succeeded',
+                'amount' => 1500,
+                'currency' => 'usd',
+                'metadata' => [
+                    'invoice_id' => '10',
+                    'client_id' => '3',
+                    'gateway_id' => '3',
+                ],
+            ]],
+        ]);
+
+        $dbMock = Mockery::mock('\\Box_Database');
+        $dbMock->shouldReceive('trash')->once()->with($tx);
+        $dbMock->shouldNotReceive('findOne');
+        $dbMock->shouldNotReceive('store');
+
+        $di = container();
+        $di['db'] = $dbMock;
+        $this->adapter->setDi($di);
+
+        $data = [
+            'http_raw_post_data' => $rawBody,
+            'server' => ['HTTP_STRIPE_SIGNATURE' => signStripeWebhookPayload($rawBody)],
+            'get' => [],
+            'post' => [],
+        ];
+
+        invokePrivateMethod($this->adapter, 'processWebhookEvent', [
+            Mockery::mock(),
+            $tx,
+            $data,
+            10,
+        ]);
+    });
+
+    test('reads copied subscription metadata from recurring invoices', function (): void {
+        $event = (object) [
+            'type' => 'invoice.paid',
+            'data' => (object) ['object' => (object) [
+                'parent' => (object) [
+                    'subscription_details' => (object) [
+                        'metadata' => (object) ['gateway_id' => '3'],
+                    ],
+                ],
+            ]],
+        ];
+
+        expect(invokePrivateMethod($this->adapter, 'eventBelongsToGateway', [$event, 3]))->toBeTrue()
+            ->and(invokePrivateMethod($this->adapter, 'eventBelongsToGateway', [$event, 10]))->toBeFalse();
+    });
+
+    test('resolves gateway ownership from the invoice for legacy Stripe objects', function (): void {
+        $invoice = new Model_Invoice();
+        $invoice->loadBean(new DummyBean());
+        $invoice->id = 10;
+        $invoice->gateway_id = 3;
+
+        $event = (object) [
+            'type' => 'payment_intent.succeeded',
+            'data' => (object) ['object' => (object) [
+                'metadata' => (object) ['invoice_id' => '10'],
+            ]],
+        ];
+
+        $dbMock = Mockery::mock('\\Box_Database');
+        $dbMock->shouldReceive('findOne')
+            ->twice()
+            ->with('Invoice', 'id = :id', [':id' => 10])
+            ->andReturn($invoice);
+
+        $di = container();
+        $di['db'] = $dbMock;
+        $this->adapter->setDi($di);
+
+        expect(invokePrivateMethod($this->adapter, 'eventBelongsToGateway', [$event, 3]))->toBeTrue()
+            ->and(invokePrivateMethod($this->adapter, 'eventBelongsToGateway', [$event, 10]))->toBeFalse();
     });
 });
 
