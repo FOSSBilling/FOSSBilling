@@ -95,7 +95,14 @@ class Service
                     $this->_exec($api, $method);
                 } catch (\Throwable $exception) {
                     $failedTasks[] = $method;
-                    $this->di['logger']->setChannel('cron')->error("Failed to run cron task {$method}: {$exception}");
+                    $this->di['logger']->setChannel('cron')->error(sprintf(
+                        'Failed to run cron task %s: %s: %s in %s:%d',
+                        $method,
+                        $exception::class,
+                        $exception->getMessage(),
+                        $exception->getFile(),
+                        $exception->getLine()
+                    ));
                 }
             }
 

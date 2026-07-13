@@ -623,9 +623,6 @@ test('handles event after invoice is due', function (): void {
     $dbMock->shouldReceive('load')
         ->atLeast()->once()
         ->andReturn($invoiceModel);
-    $dbMock->shouldReceive('store')
-        ->once()
-        ->with($invoiceModel);
 
     $di = container();
     $di['mod_service'] = $di->protect(function ($serviceName) use ($emailService, $serviceMock, $systemService) {
@@ -646,7 +643,78 @@ test('handles event after invoice is due', function (): void {
         ->atLeast()->once()
         ->andReturn($di);
     $serviceMock->onEventAfterInvoiceIsDue($eventMock);
-    expect($invoiceModel->reminded_at)->not->toBeEmpty();
+});
+
+test('releases the claim when sending the overdue invoice email fails', function (): void {
+    $service = new Service();
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $arr = [
+        'total' => 1,
+        'client' => [
+            'id' => 1,
+        ],
+    ];
+    $serviceMock->shouldReceive('toApiArray')
+        ->atLeast()->once()
+        ->andReturn($arr);
+    $serviceMock->shouldReceive('getInvoicePdfAttachment')
+        ->atLeast()->once()
+        ->andReturn(null);
+
+    $eventMock = Mockery::mock('\Box_Event');
+    $params = ['days_passed' => 5, 'id' => 1];
+    $eventMock->shouldReceive('getParameters')
+        ->atLeast()->once()
+        ->andReturn($params);
+
+    $emailService = Mockery::mock(EmailService::class);
+    $emailService->shouldReceive('sendTemplate')
+        ->atLeast()->once()
+        ->andThrow(new Exception('SMTP timeout'));
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_reminder_after_due_days', '5')
+        ->andReturn('1, 5, 7');
+
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('exec')
+        ->once()
+        ->with(Mockery::type('string'), [':id' => 1])
+        ->andReturn(1);
+    $dbMock->shouldReceive('exec')
+        ->once()
+        ->with('UPDATE invoice SET reminded_at = NULL WHERE id = :id', [':id' => 1]);
+    $dbMock->shouldReceive('load')
+        ->atLeast()->once()
+        ->andReturn($invoiceModel);
+
+    $logger = new Tests\Helpers\TestLogger();
+
+    $di = container();
+    $di['mod_service'] = $di->protect(function ($serviceName) use ($emailService, $serviceMock, $systemService) {
+        if ($serviceName == 'invoice') {
+            return $serviceMock;
+        }
+        if ($serviceName == 'email') {
+            return $emailService;
+        }
+        if ($serviceName == 'system') {
+            return $systemService;
+        }
+    });
+    $di['db'] = $dbMock;
+    $di['logger'] = $logger;
+
+    $serviceMock->setDi($di);
+    $eventMock->shouldReceive('getDi')
+        ->atLeast()->once()
+        ->andReturn($di);
+    $serviceMock->onEventAfterInvoiceIsDue($eventMock);
+
+    expect($logger->calls)->not->toBeEmpty();
 });
 
 test('handles event before invoice is due', function (): void {
@@ -696,6 +764,62 @@ test('handles event before invoice is due', function (): void {
         ->andReturn($di);
 
     $service->onEventBeforeInvoiceIsDue($eventMock);
+});
+
+test('releases the claim when sending the before-due invoice reminder fails', function (): void {
+    $service = new Service();
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('sendInvoiceReminder')
+        ->once()
+        ->andThrow(new Exception('DB write failed'));
+
+    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock->shouldReceive('getParameters')
+        ->atLeast()->once()
+        ->andReturn(['days_left' => 7, 'id' => 1]);
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_reminder_before_due_days', '')
+        ->andReturn('14, 7, 1');
+
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('exec')
+        ->once()
+        ->with(Mockery::type('string'), [':id' => 1])
+        ->andReturn(1);
+    $dbMock->shouldReceive('exec')
+        ->once()
+        ->with('UPDATE invoice SET reminded_at = NULL WHERE id = :id', [':id' => 1]);
+    $dbMock->shouldReceive('load')
+        ->once()
+        ->with('Invoice', 1)
+        ->andReturn($invoiceModel);
+
+    $logger = new Tests\Helpers\TestLogger();
+
+    $di = container();
+    $di['mod_service'] = $di->protect(function ($serviceName) use ($serviceMock, $systemService) {
+        if ($serviceName == 'invoice') {
+            return $serviceMock;
+        }
+        if ($serviceName == 'system') {
+            return $systemService;
+        }
+    });
+    $di['db'] = $dbMock;
+    $di['logger'] = $logger;
+
+    $serviceMock->setDi($di);
+    $eventMock->shouldReceive('getDi')
+        ->atLeast()->once()
+        ->andReturn($di);
+
+    $service->onEventBeforeInvoiceIsDue($eventMock);
+
+    expect($logger->calls)->not->toBeEmpty();
 });
 
 test('skips before due invoice reminder when the invoice was already claimed', function (): void {

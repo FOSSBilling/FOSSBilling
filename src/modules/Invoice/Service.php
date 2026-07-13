@@ -499,6 +499,7 @@ class Service implements InjectionAwareInterface
         $params = $event->getParameters();
         $di = $event->getDi();
         $service = $di['mod_service']('invoice');
+        $claimed = false;
 
         try {
             if (!$service->isInvoiceReminderIntervalEnabled('invoice_reminder_before_due_days', (int) ($params['days_left'] ?? 0), '', $params['reminder_intervals'] ?? null)) {
@@ -509,7 +510,7 @@ class Service implements InjectionAwareInterface
             // reminder being sent twice when this event is dispatched more than once for the
             // same invoice (overlapping cron runs, the once-daily batch and the pending-reminder
             // fallback both firing it, etc).
-            $claimed = $di['db']->exec(
+            $claimed = (bool) $di['db']->exec(
                 "UPDATE invoice SET reminded_at = NOW(), updated_at = NOW() WHERE id = :id AND status = 'unpaid' AND approved = 1 AND due_at > NOW() AND (reminded_at IS NULL OR DATE(reminded_at) < CURDATE())",
                 [':id' => $params['id'] ?? 0]
             );
@@ -522,9 +523,14 @@ class Service implements InjectionAwareInterface
                 $service->sendInvoiceReminder($invoiceModel);
             }
         } catch (\Exception $exc) {
-            // The invoice may already be claimed/marked as reminded by the batch that fired this
-            // event even though the send below failed, so it will not be retried automatically.
-            $di['logger']->setChannel('email')->error('Failed to send invoice reminder email; invoice may need a manual resend', ['id' => $params['id'] ?? null, 'exception' => $exc->getMessage()]);
+            if ($claimed) {
+                // sendInvoiceReminder()'s downstream send handler (onAfterAdminInvoiceReminderSent)
+                // catches its own failures internally, so any exception reaching here means the
+                // email was never queued. Release the claim so a later cron run retries it instead
+                // of the reminder being silently lost for the day.
+                $di['db']->exec('UPDATE invoice SET reminded_at = NULL WHERE id = :id', [':id' => $params['id'] ?? 0]);
+            }
+            $di['logger']->setChannel('email')->error('Failed to send invoice reminder email', ['id' => $params['id'] ?? null, 'exception' => $exc->getMessage()]);
         }
     }
 
@@ -546,6 +552,7 @@ class Service implements InjectionAwareInterface
         $params = $event->getParameters();
         $di = $event->getDi();
         $service = $di['mod_service']('invoice');
+        $claimed = false;
 
         try {
             if (!$service->isInvoiceReminderIntervalEnabled('invoice_reminder_after_due_days', (int) ($params['days_passed'] ?? 0), '5', $params['reminder_intervals'] ?? null)) {
@@ -555,8 +562,9 @@ class Service implements InjectionAwareInterface
             // Atomically claim the invoice before sending anything: this is what stops the same
             // reminder being sent twice when this event is dispatched more than once for the
             // same invoice (overlapping cron runs, the once-daily batch and the pending-reminder
-            // fallback both firing it, etc).
-            $claimed = $di['db']->exec(
+            // fallback both firing it, etc). The claim UPDATE already persists reminded_at and
+            // updated_at, so there's no need to store the loaded model again once sent below.
+            $claimed = (bool) $di['db']->exec(
                 "UPDATE invoice SET reminded_at = NOW(), updated_at = NOW() WHERE id = :id AND status = 'unpaid' AND approved = 1 AND ((due_at < NOW()) OR (ABS(DATEDIFF(due_at, NOW())) = 0)) AND (reminded_at IS NULL OR DATE(reminded_at) < CURDATE())",
                 [':id' => $params['id'] ?? 0]
             );
@@ -582,14 +590,14 @@ class Service implements InjectionAwareInterface
 
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
-
-            $invoiceModel->reminded_at = date('Y-m-d H:i:s');
-            $invoiceModel->updated_at = date('Y-m-d H:i:s');
-            $di['db']->store($invoiceModel);
         } catch (\Exception $exc) {
-            // The invoice may already be claimed/marked as reminded by the batch that fired this
-            // event even though the send above failed, so it will not be retried automatically.
-            $di['logger']->setChannel('email')->error('Failed to send overdue invoice email; invoice may need a manual resend', ['id' => $params['id'] ?? null, 'exception' => $exc->getMessage()]);
+            if ($claimed) {
+                // Nothing past sendTemplate() can throw, so reaching here with a claim already
+                // made means the email was never confirmed queued. Release the claim so a later
+                // cron run retries this invoice instead of losing the reminder.
+                $di['db']->exec('UPDATE invoice SET reminded_at = NULL WHERE id = :id', [':id' => $params['id'] ?? 0]);
+            }
+            $di['logger']->setChannel('email')->error('Failed to send overdue invoice email', ['id' => $params['id'] ?? null, 'exception' => $exc->getMessage()]);
         }
     }
 

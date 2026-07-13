@@ -35,7 +35,7 @@ try {
     if (Environment::isCLI()) {
         echo $success
             ? "\e[32mSuccessfully ran the cron jobs.\e[0m"
-            : "\e[31mCron jobs finished with failures. Check the logs for details.\e[0m";
+            : "\e[31mCron jobs finished with failures. Check the logs for details.\e[0m" . PHP_EOL;
     }
 }
 
