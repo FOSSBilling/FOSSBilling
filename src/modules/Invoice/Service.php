@@ -578,6 +578,10 @@ class Service implements InjectionAwareInterface
             }
 
             $invoice = $service->toApiArray($invoiceModel, true);
+            if (!isset($invoice['client']) || !is_array($invoice['client']) || !isset($invoice['client']['id'])) {
+                return;
+            }
+
             $email = [];
             $email['to_client'] = $invoice['client']['id'];
             $email['code'] = 'mod_invoice_due_after';
