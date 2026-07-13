@@ -283,9 +283,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
-     * Legacy hook point for buyer payment reminders.
-     *
-     * Automatic reminder intervals are processed by batch_invoke_due_event().
+     * Triggers the once-daily invoice due event batch (see batch_invoke_due_event()) and,
+     * if that batch already ran today, falls back to a reminded_at-based check so invoices
+     * that only became reminder-eligible after today's run are still caught.
      *
      * @return bool
      */

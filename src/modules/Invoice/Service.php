@@ -551,10 +551,11 @@ class Service implements InjectionAwareInterface
             }
 
             $emailService = $di['mod_service']('email');
+            $emailService->sendTemplate($email);
+
             $invoiceModel->reminded_at = date('Y-m-d H:i:s');
             $invoiceModel->updated_at = date('Y-m-d H:i:s');
             $di['db']->store($invoiceModel);
-            $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
             $di['logger']->setChannel('email')->error('Failed to send overdue invoice email', ['exception' => $exc->getMessage()]);
         }
@@ -1450,7 +1451,7 @@ class Service implements InjectionAwareInterface
 
         $beforeDueList = $this->di['db']->getAll("SELECT id, DATEDIFF(due_at, NOW()) as days_left FROM invoice WHERE status = 'unpaid' AND approved = 1 AND due_at > NOW() AND (reminded_at IS NULL OR DATE(reminded_at) < CURDATE())");
         foreach ($beforeDueList as $params) {
-            if (!in_array((int) $params['days_left'], $beforeDueReminderIntervals, true)) {
+            if (!$this->isInvoiceReminderIntervalEnabled('invoice_reminder_before_due_days', (int) $params['days_left'], '', $beforeDueReminderIntervals)) {
                 continue;
             }
 
@@ -1461,7 +1462,7 @@ class Service implements InjectionAwareInterface
 
         $afterDueList = $this->di['db']->getAll("SELECT id, ABS(DATEDIFF(due_at, NOW())) as days_passed FROM invoice WHERE status = 'unpaid' AND approved = 1 AND ((due_at < NOW()) OR (ABS(DATEDIFF(due_at, NOW())) = 0)) AND (reminded_at IS NULL OR DATE(reminded_at) < CURDATE())");
         foreach ($afterDueList as $params) {
-            if (!in_array((int) $params['days_passed'], $afterDueReminderIntervals, true)) {
+            if (!$this->isInvoiceReminderIntervalEnabled('invoice_reminder_after_due_days', (int) $params['days_passed'], '5', $afterDueReminderIntervals)) {
                 continue;
             }
 

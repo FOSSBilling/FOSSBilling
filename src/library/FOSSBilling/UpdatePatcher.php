@@ -497,6 +497,7 @@ class UpdatePatcher implements InjectionAwareInterface
             85 => 'patch85',
             86 => 'patch86',
             87 => 'patch87',
+            88 => 'patch88',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2336,6 +2337,16 @@ class UpdatePatcher implements InjectionAwareInterface
 
         if (!$this->tableHasColumn('activity_client_email', 'attachment_mime')) {
             $this->executeSql('ALTER TABLE `activity_client_email` ADD COLUMN `attachment_mime` varchar(100) DEFAULT NULL');
+        }
+    }
+
+    private function patch88(): void
+    {
+        // Invoice reminder batches now query unpaid/approved invoices by due date on every cron
+        // run (instead of once a day), so index the columns those queries filter on.
+        // @see https://github.com/FOSSBilling/FOSSBilling/issues/3963
+        if (!$this->tableHasIndex('invoice', 'invoice_status_approved_due_at_idx')) {
+            $this->executeSql('ALTER TABLE `invoice` ADD INDEX `invoice_status_approved_due_at_idx` (`status`, `approved`, `due_at`)');
         }
     }
 

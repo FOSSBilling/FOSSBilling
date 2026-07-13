@@ -93,7 +93,7 @@ class Service
                 try {
                     $this->_exec($api, $method);
                 } catch (\Throwable $exception) {
-                    $this->di['logger']->error("Failed to run cron task {$method}: {$exception->getMessage()}");
+                    $this->di['logger']->setChannel('cron')->error("Failed to run cron task {$method}: {$exception->getMessage()}");
                 }
             }
 
