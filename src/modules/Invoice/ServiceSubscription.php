@@ -57,7 +57,7 @@ class ServiceSubscription implements InjectionAwareInterface
             && ($data['skip_gateway'] ?? false) !== true;
 
         if ($cancelAtGateway) {
-            $this->cancelAtGateway($model);
+            $this->cancelAtGateway($model, (string) ($data['sid'] ?? $model->sid));
         }
 
         $model->status = $data['status'] ?? $model->status;
@@ -214,14 +214,19 @@ class ServiceSubscription implements InjectionAwareInterface
         $this->unsubscribe($model);
     }
 
-    private function cancelAtGateway(\Model_Subscription $model): void
+    private function cancelAtGateway(\Model_Subscription $model, ?string $subscriptionId = null): void
     {
+        $subscriptionId = trim($subscriptionId ?? (string) $model->sid);
+        if ($subscriptionId === '') {
+            return;
+        }
+
         $gateway = $this->di['db']->getExistingModelById('PayGateway', $model->pay_gateway_id, 'Payment gateway not found');
         $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
         $adapter = $payGatewayService->getPaymentAdapter($gateway);
 
         if (method_exists($adapter, 'cancelSubscription')) {
-            $adapter->cancelSubscription((string) $model->sid);
+            $adapter->cancelSubscription($subscriptionId);
         }
     }
 
