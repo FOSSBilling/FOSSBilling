@@ -53,6 +53,22 @@ class ServiceSubscription implements InjectionAwareInterface
 
     public function update(\Model_Subscription $model, array $data): bool
     {
+        if (($data['status'] ?? null) === 'canceled') {
+            $this->cancelAtGateway($model, (string) ($data['sid'] ?? $model->sid));
+        }
+
+        return $this->persistUpdate($model, $data);
+    }
+
+    public function updateStatusFromGateway(int $id, string $status): bool
+    {
+        $model = $this->di['db']->getExistingModelById('Subscription', $id, 'Subscription not found');
+
+        return $this->persistUpdate($model, ['status' => $status]);
+    }
+
+    private function persistUpdate(\Model_Subscription $model, array $data): bool
+    {
         $model->status = $data['status'] ?? $model->status;
         $model->sid = $data['sid'] ?? $model->sid;
         $model->period = $data['period'] ?? $model->period;
@@ -199,6 +215,50 @@ class ServiceSubscription implements InjectionAwareInterface
         $model->status = 'canceled';
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($model);
+    }
+
+    public function cancel(\Model_Subscription $model): void
+    {
+        $this->cancelAtGateway($model);
+        $this->unsubscribe($model);
+    }
+
+    private function cancelAtGateway(\Model_Subscription $model, ?string $subscriptionId = null): void
+    {
+        $subscriptionId = trim($subscriptionId ?? (string) $model->sid);
+        if ($subscriptionId === '') {
+            return;
+        }
+
+        $gateway = $this->di['db']->getExistingModelById('PayGateway', $model->pay_gateway_id, 'Payment gateway not found');
+        $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
+        $adapter = $payGatewayService->getPaymentAdapter($gateway);
+
+        if (method_exists($adapter, 'cancelSubscription')) {
+            $adapter->cancelSubscription($subscriptionId);
+        }
+    }
+
+    public function cancelForOrder(\Model_ClientOrder $order): void
+    {
+        $query = $this->di['dbal']->createQueryBuilder();
+        $subscriptions = $query
+            ->select('DISTINCT s.id')
+            ->from('subscription', 's')
+            ->innerJoin('s', 'invoice_item', 'ii', 'ii.invoice_id = s.rel_id')
+            ->where('s.rel_type = :rel_type')
+            ->andWhere('ii.type = :item_type')
+            ->andWhere('ii.rel_id = :order_id')
+            ->setParameter('rel_type', 'invoice')
+            ->setParameter('item_type', \Model_InvoiceItem::TYPE_ORDER)
+            ->setParameter('order_id', $order->id)
+            ->executeQuery()
+            ->fetchAllAssociative();
+
+        foreach ($subscriptions as $subscriptionData) {
+            $subscription = $this->di['db']->getExistingModelById('Subscription', (int) $subscriptionData['id'], 'Subscription not found');
+            $this->cancel($subscription);
+        }
     }
 
     private function getSubscriptionPeriodByInvoiceId(int $invoiceId): ?string

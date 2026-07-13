@@ -19,6 +19,38 @@ beforeEach(function (): void {
     ]);
 });
 
+test('cancels a Stripe subscription', function (): void {
+    $subscriptionsMock = Mockery::mock();
+    $subscriptionsMock->shouldReceive('retrieve')
+        ->once()
+        ->with('sub_123', [])
+        ->andReturn((object) ['status' => 'active']);
+    $subscriptionsMock->shouldReceive('cancel')
+        ->once()
+        ->with('sub_123', []);
+
+    $stripeMock = Mockery::mock(StripeClient::class);
+    $stripeMock->subscriptions = $subscriptionsMock;
+    setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+    $this->adapter->cancelSubscription('sub_123');
+});
+
+test('does not cancel an already canceled Stripe subscription again', function (): void {
+    $subscriptionsMock = Mockery::mock();
+    $subscriptionsMock->shouldReceive('retrieve')
+        ->once()
+        ->with('sub_123', [])
+        ->andReturn((object) ['status' => Stripe\Subscription::STATUS_CANCELED]);
+    $subscriptionsMock->shouldReceive('cancel')->never();
+
+    $stripeMock = Mockery::mock(StripeClient::class);
+    $stripeMock->subscriptions = $subscriptionsMock;
+    setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+    $this->adapter->cancelSubscription('sub_123');
+});
+
 function setPrivateProperty(object $obj, string $property, mixed $value): void
 {
     $reflection = new ReflectionClass($obj);
@@ -252,6 +284,59 @@ describe('handleSubscriptionCreated', function (): void {
         // Asserting no exception and no API call is sufficient
         expect(true)->toBeTrue();
     });
+});
+
+test('syncs subscription webhook status through the internal service path', function (): void {
+    $stripeSubscription = (object) [
+        'id' => 'sub_123',
+        'status' => 'canceled',
+    ];
+    $event = (object) ['data' => (object) ['object' => $stripeSubscription]];
+
+    $apiAdmin = Mockery::mock();
+    $apiAdmin->shouldReceive('invoice_subscription_get')
+        ->once()
+        ->with(['sid' => 'sub_123'])
+        ->andReturn(['id' => 42]);
+    $apiAdmin->shouldNotReceive('invoice_subscription_update');
+
+    $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscriptionService->shouldReceive('updateStatusFromGateway')
+        ->once()
+        ->with(42, 'canceled');
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn () => $subscriptionService);
+    $this->adapter->setDi($di);
+
+    expect(invokePrivateMethod($this->adapter, 'handleSubscriptionUpdated', [
+        $apiAdmin,
+        buildTransaction(),
+        $event,
+    ]))->toBeFalse();
+});
+
+test('skips subscription update webhooks without a local subscription', function (): void {
+    $event = (object) [
+        'data' => (object) [
+            'object' => (object) [
+                'id' => 'sub_missing',
+                'status' => 'active',
+            ],
+        ],
+    ];
+
+    $apiAdmin = Mockery::mock();
+    $apiAdmin->shouldReceive('invoice_subscription_get')
+        ->once()
+        ->with(['sid' => 'sub_missing'])
+        ->andThrow(new Exception('Subscription not found'));
+
+    expect(invokePrivateMethod($this->adapter, 'handleSubscriptionUpdated', [
+        $apiAdmin,
+        buildTransaction(),
+        $event,
+    ]))->toBeFalse();
 });
 
 describe('handleInvoicePaymentSucceeded invoice linking', function (): void {

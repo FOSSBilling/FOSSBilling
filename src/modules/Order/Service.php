@@ -1259,6 +1259,9 @@ class Service implements InjectionAwareInterface
 
         $this->_callOnService($order, \Model_ClientOrder::ACTION_CANCEL);
 
+        $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
+        $subscriptionService->cancelForOrder($order);
+
         $order->status = \Model_ClientOrder::STATUS_CANCELED;
         $order->reason = $reason;
         $order->canceled_at = date('Y-m-d H:i:s');

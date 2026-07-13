@@ -134,6 +134,16 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         return $this->_generateForm($invoiceModel);
     }
 
+    public function cancelSubscription(string $subscriptionId): void
+    {
+        $subscription = $this->stripe->subscriptions->retrieve($subscriptionId, []);
+        if ($subscription->status === Stripe\Subscription::STATUS_CANCELED) {
+            return;
+        }
+
+        $this->stripe->subscriptions->cancel($subscriptionId, []);
+    }
+
     public function getAmountInCents(Model_Invoice $invoice): int
     {
         return $this->getAmountInMinorUnits($invoice);
@@ -572,8 +582,6 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     {
         $stripeSubscription = $event->data->object;
 
-        $s = $api_admin->invoice_subscription_get(['sid' => $stripeSubscription->id]);
-
         $status = match ($stripeSubscription->status) {
             'active' => 'active',
             'trialing' => 'active',
@@ -581,7 +589,13 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             default => 'canceled',
         };
 
-        $api_admin->invoice_subscription_update(['id' => $s['id'], 'status' => $status]);
+        try {
+            $this->updateSubscriptionStatusFromGateway($api_admin, $stripeSubscription->id, $status);
+        } catch (Exception $e) {
+            if (DEBUG) {
+                error_log('Stripe subscription updated webhook: ' . $e->getMessage());
+            }
+        }
 
         return false;
     }
@@ -591,8 +605,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $stripeSubscription = $event->data->object;
 
         try {
-            $s = $api_admin->invoice_subscription_get(['sid' => $stripeSubscription->id]);
-            $api_admin->invoice_subscription_update(['id' => $s['id'], 'status' => 'canceled']);
+            $this->updateSubscriptionStatusFromGateway($api_admin, $stripeSubscription->id, 'canceled');
         } catch (Exception $e) {
             if (DEBUG) {
                 error_log('Stripe subscription deleted webhook: ' . $e->getMessage());
@@ -722,8 +735,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         }
 
         try {
-            $s = $api_admin->invoice_subscription_get(['sid' => $subscriptionId]);
-            $api_admin->invoice_subscription_update(['id' => $s['id'], 'status' => 'canceled']);
+            $this->updateSubscriptionStatusFromGateway($api_admin, $subscriptionId, 'canceled');
         } catch (Exception $e) {
             if (DEBUG) {
                 error_log('Stripe invoice payment failed webhook: ' . $e->getMessage());
@@ -731,6 +743,13 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         }
 
         return false;
+    }
+
+    private function updateSubscriptionStatusFromGateway($api_admin, string $subscriptionId, string $status): void
+    {
+        $subscription = $api_admin->invoice_subscription_get(['sid' => $subscriptionId]);
+        $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
+        $subscriptionService->updateStatusFromGateway((int) $subscription['id'], $status);
     }
 
     /**
