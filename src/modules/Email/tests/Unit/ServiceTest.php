@@ -428,6 +428,7 @@ dataset('sendTemplateExistsStaffProvider', fn (): array => [
         ],
         'never',
         'atLeastOnce',
+        'staff@fossbilling.org',
     ],
     [
         [
@@ -440,10 +441,11 @@ dataset('sendTemplateExistsStaffProvider', fn (): array => [
         ],
         'atLeastOnce',
         'never',
+        'example@example.com',
     ],
 ]);
 
-test('sendTemplate handles to_staff and to_client options', function (array $data, string $clientGetExpects, string $staffResolveExpects): void {
+test('sendTemplate handles to_staff and to_client options', function (array $data, string $clientGetExpects, string $staffResolveExpects, string $expectedRecipient): void {
     $service = new Box\Mod\Email\Service();
 
     $di = container();
@@ -456,7 +458,18 @@ test('sendTemplate handles to_staff and to_client options', function (array $dat
     $templateGroupRepo = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateGroupRepository::class);
     $templateGroupRepo->shouldReceive('getGroupIdsForTemplate')->andReturn([3]);
 
+    /** @var Box\Mod\Email\Entity\QueuedEmail|null $persistedQueue */
+    $persistedQueue = null;
     $em = emailBuildEm(null, $templateRepo, null, true, $templateGroupRepo);
+    $em->shouldReceive('persist')
+        ->atLeast()->once()
+        ->with(Mockery::on(function ($entity) use (&$persistedQueue): bool {
+            if ($entity instanceof Box\Mod\Email\Entity\QueuedEmail) {
+                $persistedQueue = $entity;
+            }
+
+            return true;
+        }));
 
     $system = Mockery::mock(Box\Mod\System\Service::class);
     $system->shouldReceive('getParamValue')
@@ -551,6 +564,8 @@ test('sendTemplate handles to_staff and to_client options', function (array $dat
     $result = $service->sendTemplate($data);
 
     expect($result)->toBeTrue();
+    expect($persistedQueue)->not->toBeNull();
+    expect($persistedQueue->getRecipient())->toBe($expectedRecipient);
 })->with('sendTemplateExistsStaffProvider');
 
 test('sendTemplate does not send to staff when template has no assigned groups', function (): void {

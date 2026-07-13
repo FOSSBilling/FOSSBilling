@@ -26,6 +26,11 @@
                             <input id="new-client-email" type="email" name="email" class="form-control" placeholder="client@fossbilling.org" required>
                         </div>
                         <div class="col-12">
+                            <label class="form-label" for="new-client-billing-email">{{ 'Billing Email Address'|trans }}</label>
+                            <input id="new-client-billing-email" type="email" name="billing_email" class="form-control" placeholder="billing@fossbilling.org">
+                            <div class="form-text">{{ 'Invoice notifications are sent here. Leave blank to use the account email.'|trans }}</div>
+                        </div>
+                        <div class="col-12">
                             <label class="form-label" for="new-client-aid">{{ 'Custom Client ID'|trans }}</label>
                             <input id="new-client-aid" type="text" name="aid" class="form-control" placeholder="{{ 'Existing customer ID from another system'|trans }}">
                         </div>

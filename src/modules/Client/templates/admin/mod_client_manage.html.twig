@@ -268,6 +268,11 @@
                                     <label class="form-label">{{ 'Email'|trans }}</label>
                                     <input class="form-control" type="email" name="email" value="{{ client.email }}" required>
                                 </div>
+                                <div class="col-xl-6">
+                                    <label class="form-label">{{ 'Billing Email'|trans }}</label>
+                                    <input class="form-control" type="email" name="billing_email" value="{{ client.billing_email }}" placeholder="{{ client.email }}">
+                                    <small class="form-hint">{{ 'Invoice notifications are sent here. Leave blank to use the account email.'|trans }}</small>
+                                </div>
                                 <div class="col-xl-3">
                                     <label class="form-label">{{ 'First Name'|trans }}</label>
                                     <input class="form-control" type="text" name="first_name" value="{{ client.first_name }}" required>
