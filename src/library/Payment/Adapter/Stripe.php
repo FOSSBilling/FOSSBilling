@@ -280,6 +280,26 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $tx->currency = $charge->currency;
         $tx->type = Payment_Transaction::TXTYPE_PAYMENT;
 
+        // Stripe may deliver the webhook before redirecting the customer.
+        // Keep that transaction instead of recording the PaymentIntent twice.
+        $existing = $this->di['db']->findOne(
+            'Transaction',
+            'txn_id = :txn_id AND gateway_id = :gateway_id AND id != :id AND status IN (:s1, :s2, :s3)',
+            [
+                ':txn_id' => $charge->id,
+                ':gateway_id' => $tx->gateway_id,
+                ':id' => $tx->id,
+                ':s1' => Model_Transaction::STATUS_RECEIVED,
+                ':s2' => Model_Transaction::STATUS_PROCESSING,
+                ':s3' => Model_Transaction::STATUS_PROCESSED,
+            ]
+        );
+        if ($existing instanceof Model_Transaction) {
+            $this->di['db']->trash($tx);
+
+            return;
+        }
+
         if ($charge->status === 'succeeded') {
             if ($tx->status === Model_Transaction::STATUS_PROCESSED && empty($tx->error)) {
                 $tx->updated_at = date('Y-m-d H:i:s');
@@ -1346,7 +1366,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 'invoice_id' => (string) $invoice->id,
                 'gateway_id' => (string) $this->config['gateway_id'],
             ],
-        ]);
+        ], ['idempotency_key' => sprintf('one_time_invoice_%d_gateway_%d', $invoice->id, $this->config['gateway_id'])]);
 
         $pubKey = ($this->config['test_mode']) ? $this->config['test_pub_key'] : $this->config['pub_key'];
 

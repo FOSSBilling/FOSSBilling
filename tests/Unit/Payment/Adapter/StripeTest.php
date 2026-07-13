@@ -981,6 +981,54 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
     });
 });
 
+describe('processPaymentIntent', function (): void {
+    test('deletes the redirect transaction when the webhook already recorded the PaymentIntent', function (): void {
+        $tx = buildTransaction();
+        $tx->id = 401;
+        $tx->gateway_id = 4;
+
+        $existingTx = buildTransaction();
+
+        $paymentIntent = Stripe\PaymentIntent::constructFrom([
+            'id' => 'pi_webhook_first',
+            'status' => 'succeeded',
+            'amount' => 2500,
+            'currency' => 'usd',
+        ]);
+
+        $paymentIntentsMock = Mockery::mock();
+        $paymentIntentsMock->shouldReceive('retrieve')
+            ->once()
+            ->with('pi_webhook_first', [])
+            ->andReturn($paymentIntent);
+
+        $stripeMock = Mockery::mock(StripeClient::class);
+        $stripeMock->paymentIntents = $paymentIntentsMock;
+        setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+        $dbMock = Mockery::mock('\Box_Database');
+        $dbMock->shouldReceive('findOne')
+            ->once()
+            ->with('Transaction', 'txn_id = :txn_id AND gateway_id = :gateway_id AND id != :id AND status IN (:s1, :s2, :s3)', Mockery::on(fn (array $params): bool => $params[':txn_id'] === 'pi_webhook_first'
+                && $params[':gateway_id'] === 4
+                && $params[':id'] === 401))
+            ->andReturn($existingTx);
+        $dbMock->shouldReceive('trash')->once()->with($tx);
+
+        $di = container();
+        $di['db'] = $dbMock;
+        $this->adapter->setDi($di);
+
+        invokePrivateMethod($this->adapter, 'processPaymentIntent', [
+            $tx,
+            null,
+            ['get' => ['payment_intent' => 'pi_webhook_first']],
+        ]);
+
+        expect($tx->txn_id)->toBe('pi_webhook_first');
+    });
+});
+
 describe('handleSetupIntentSucceededWebhook', function (): void {
     test('skips processing when setup already handled via redirect flow', function (): void {
         $tx = buildTransaction();
@@ -1277,8 +1325,9 @@ describe('Stripe webhook gateway ownership', function (): void {
         $paymentIntentsMock = Mockery::mock();
         $paymentIntentsMock->shouldReceive('create')
             ->once()
-            ->withArgs(fn (array $params): bool => $params['metadata']['gateway_id'] === '3'
-                && $params['metadata']['invoice_id'] === '15')
+            ->withArgs(fn (array $params, array $options): bool => $params['metadata']['gateway_id'] === '3'
+                && $params['metadata']['invoice_id'] === '15'
+                && $options['idempotency_key'] === 'one_time_invoice_15_gateway_3')
             ->andReturn(Stripe\PaymentIntent::constructFrom([
                 'id' => 'pi_gateway_3',
                 'client_secret' => 'pi_gateway_3_secret',
