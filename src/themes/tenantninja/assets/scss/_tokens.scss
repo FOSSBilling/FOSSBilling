@@ -1,77 +1,62 @@
-// TenantNinja design tokens v2 - source of truth, synced from the Claude Design
-// project (claude.ai/design/p/1ce8abd7-090b-4b82-84c9-50c189829746), 2026-07-03.
-// These are plain CSS custom properties (not Sass variables) so they can be
-// referenced directly in component overrides and remain toggleable via
-// [data-bs-theme="dark"] / default (light) exactly like Bootstrap's own tokens.
+// TenantNinja design tokens v3 - ported directly from the Claude Design
+// project (claude.ai/design/p/af98047b-f2c7-4187-a66a-896f46f8b365),
+// "Portal Redesign" — Tenant Ninja Design System, 2026-07-13.
 //
-// v2 notes: colors now expressed in OKLCH. The blade accent ramp is locked to a
-// single hue (127) - only lightness/chroma vary. Success (teal, hue 177) and
-// info (blue, hue 225) are deliberately distinct hues from the accent so a
-// status badge never reads as "the same green" as an accent button. The
-// --volt token from v1 was unused and has been removed.
+// v3 notes: glass/backdrop-filter system removed entirely. Source DS uses
+// flat opaque surfaces + hairline borders, no blur anywhere ("Backgrounds:
+// flat carbon — no textures, no gradients except one hero radial glow").
+// Surface step model: bg -> surface (card) -> surface-2 (raised) ->
+// surface-3 (inset/track) -> surface-inset (deepest). Values match
+// tokens/colors.css + tokens/effects.css from the DS project exactly.
 
 :root {
-    --carbon-950: #090807;
-    --carbon-900: #0F0E0C;
-    --carbon-850: #141210;
-    --carbon-800: #1A1816;
-    --carbon-700: #22201A;
-    --carbon-600: #2E2B24;
-    --carbon-500: #3F3D36;
-    --carbon-400: #57554E;
-    --smoke-400: #706E68;
-    --smoke-300: #929089;
-    --smoke-200: #B6B5AD;
-    --smoke-100: #D3D1C9;
-    --paper-200: #E8E6DC;
-    --paper-100: #F1EEDE;
-    --paper-50: #F9F7EF;
-    --white: #FDFCF8;
+    --carbon-950: #070908;
+    --carbon-900: #0C0F0E;
+    --carbon-850: #111514;
+    --carbon-800: #161B19;
+    --carbon-700: #1E2422;
+    --carbon-600: #2A312E;
+    --carbon-500: #3A423F;
+    --carbon-400: #565F5B;
+    --smoke-400: #6E7873;
+    --smoke-300: #909A94;
+    --smoke-200: #B6BFB9;
+    --smoke-100: #D4DBD5;
+    --paper-200: #E7EAE3;
+    --paper-100: #F1F3EC;
+    --paper-50: #F8FAF3;
+    --white: #FFFFFF;
 
-    --blade-700: oklch(42% 0.18 127);
-    --blade-600: oklch(60% 0.22 127);
-    --blade-500: oklch(88% 0.23 127);
-    --blade-400: oklch(93% 0.15 127);
-    --blade-300: oklch(96% 0.08 127);
-    --blade-glow: color-mix(in oklch, var(--blade-500) 25%, transparent);
+    --blade-700: #7FA814;
+    --blade-600: #A1CE1F;
+    --blade-500: #C7F23C;
+    --blade-400: #D6F968;
+    --blade-300: #E6FCA0;
+    --blade-glow: rgba(199, 242, 60, 0.28);
 
-    --success-500: oklch(72% 0.14 177);
-    --success-bg: oklch(72% 0.14 177 / 0.12);
+    --success-500: #3FCF8E;
+    --success-bg: rgba(63, 207, 142, 0.12);
     --warning-500: #F6B53C;
     --warning-bg: rgba(246, 181, 60, 0.12);
     --danger-500: #FF5468;
     --danger-bg: rgba(255, 84, 104, 0.12);
-    --info-500: oklch(68% 0.16 225);
-    --info-bg: oklch(68% 0.16 225 / 0.12);
+    --info-500: #46C7E8;
+    --info-bg: rgba(70, 199, 232, 0.12);
 
     // Light-mode surface/text values live here in :root because the app's
     // default `data-bs-theme` attribute is "light" (see settings.theme|default('light')
-    // in layout_default/layout_public). The dark-mode (carbon) values are applied
-    // via the [data-bs-theme="dark"] override block below - same mechanism
-    // huraga uses for Bootstrap's own color modes, just repointed at these tokens.
+    // in layout_default/layout_public). Dark (carbon) values apply via the
+    // [data-bs-theme="dark"] override block below - mirrors DS [data-theme="light"].
     --bg: var(--paper-50);
     --bg-deep: var(--paper-100);
-    // Surfaces are translucent so backdrop-filter (see --glass-* below) can
-    // reveal the ambient mesh sitting behind the app shell (.tn-mesh-bg) -
-    // this is what makes the frosted-glass look actually read as glass
-    // instead of a flat tinted panel.
-    --surface: rgba(253, 252, 248, 0.46);
-    --surface-2: rgba(241, 238, 222, 0.42);
-    --surface-3: rgba(232, 230, 220, 0.5);
-    --surface-inset: rgba(241, 238, 222, 0.38);
+    --surface: var(--white);
+    --surface-2: var(--paper-100);
+    --surface-3: var(--paper-200);
+    --surface-inset: var(--paper-100);
 
     --border: rgba(12, 15, 14, 0.10);
     --border-strong: rgba(12, 15, 14, 0.18);
     --border-faint: rgba(12, 15, 14, 0.06);
-    --glass-hairline: rgba(255, 255, 255, 0.5);
-
-    // Glass system: shared blur/saturation + the highlight/shadow pairing
-    // every frosted surface uses (inset top-edge highlight + soft drop
-    // shadow so panels look like they're floating above the mesh, not
-    // stuck to it).
-    --glass-blur: 28px;
-    --glass-sat: 180%;
-    --glass-shadow: inset 0 1px 0 var(--glass-hairline), 0 8px 32px -12px rgba(20, 30, 20, 0.18);
 
     --text: var(--carbon-900);
     --text-muted: var(--carbon-400);
@@ -81,9 +66,9 @@
     --accent: var(--blade-500);
     --accent-hover: var(--blade-400);
     --accent-press: var(--blade-600);
-    --on-accent: #0F0E0C;
-    --accent-soft: color-mix(in oklch, var(--accent) 13%, transparent);
-    --accent-ring: color-mix(in oklch, var(--accent) 28%, transparent);
+    --on-accent: #0C0F0E;
+    --accent-soft: rgba(127, 168, 20, 0.14);
+    --accent-ring: rgba(127, 168, 20, 0.28);
 
     --focus-ring: var(--blade-500);
 
@@ -161,7 +146,9 @@
     --glow-blade: 0 0 0 1px var(--blade-600), 0 6px 24px var(--blade-glow);
     --glow-blade-soft: 0 4px 20px var(--blade-glow);
 
-    --inset-top: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    // Subtle top-edge shimmer on raised surfaces - replaces the old
+    // glass-hairline/glass-shadow pairing (no blur, no translucency).
+    --inset-top: inset 0 1px 0 rgba(255, 255, 255, 0.6);
 
     --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
     --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
@@ -174,23 +161,22 @@
 [data-bs-theme="dark"] {
     --bg: var(--carbon-900);
     --bg-deep: var(--carbon-950);
-    --surface: rgba(26, 24, 22, 0.44);
-    --surface-2: rgba(34, 32, 26, 0.4);
-    --surface-3: rgba(46, 43, 36, 0.46);
-    --surface-inset: rgba(20, 18, 16, 0.4);
+    --surface: var(--carbon-800);
+    --surface-2: var(--carbon-700);
+    --surface-3: var(--carbon-600);
+    --surface-inset: var(--carbon-850);
 
     --border: rgba(255, 255, 255, 0.08);
     --border-strong: rgba(255, 255, 255, 0.16);
     --border-faint: rgba(255, 255, 255, 0.05);
-    --glass-hairline: rgba(255, 255, 255, 0.08);
-    --glass-shadow: inset 0 1px 0 var(--glass-hairline), 0 8px 32px -12px rgba(0, 0, 0, 0.5);
+    --inset-top: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 
-    --text: #F4F2EC;
+    --text: #F3F6EF;
     --text-muted: var(--smoke-300);
     --text-faint: var(--smoke-400);
     --text-inverse: var(--carbon-900);
 
-    --on-accent: #0F0E0C;
-    --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
-    --accent-ring: color-mix(in oklch, var(--accent) 28%, transparent);
+    --on-accent: #0C0F0E;
+    --accent-soft: rgba(199, 242, 60, 0.14);
+    --accent-ring: rgba(199, 242, 60, 0.28);
 }

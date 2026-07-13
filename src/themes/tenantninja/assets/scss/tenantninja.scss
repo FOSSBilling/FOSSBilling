@@ -113,38 +113,6 @@ body {
     position: relative;
 }
 
-// -----------------------------------------------------------------------
-// Ambient mesh — sits behind every page (fixed, so it doesn't scroll away
-// on long invoice/ticket lists) and gives the frosted-glass surfaces
-// something with actual color and shape to blur. Inner client-portal pages
-// have no hero photo, so this is what stands in for one: three soft,
-// slow-drifting color fields in the accent hue plus its two off-accent
-// status hues (teal success, blue info), kept low-opacity so it reads as
-// atmosphere, not decoration competing with content.
-body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    background:
-        radial-gradient(55% 48% at 10% 6%, color-mix(in oklch, var(--blade-500) 46%, transparent), transparent 72%),
-        radial-gradient(48% 44% at 95% 14%, color-mix(in oklch, var(--info-500) 36%, transparent), transparent 72%),
-        radial-gradient(52% 50% at 80% 98%, color-mix(in oklch, var(--success-500) 32%, transparent), transparent 72%),
-        radial-gradient(45% 40% at 15% 92%, color-mix(in oklch, var(--blade-600) 26%, transparent), transparent 72%),
-        var(--bg);
-    animation: tn-mesh-drift 42s ease-in-out infinite alternate;
-}
-
-@keyframes tn-mesh-drift {
-    0% { background-position: 0 0, 0 0, 0 0, 0 0, 0 0; }
-    100% { background-position: 3% 4%, -4% 3%, -3% -4%, 4% -3%, 0 0; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    body::before { animation: none; }
-}
-
 h1, h2, h3, h4, h5, h6,
 .display-1, .display-2, .display-3, .display-4, .display-5, .display-6 {
     font-family: var(--font-display);
@@ -312,11 +280,9 @@ table > thead > tr > th {
 // -----------------------------------------------------------------------
 .card {
     background-color: var(--surface);
-    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
-    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
     border: var(--bw-hair) solid var(--border);
     border-radius: var(--r-lg);
-    box-shadow: var(--glass-shadow);
+    box-shadow: var(--shadow-sm), var(--inset-top);
     transition: border-color var(--dur) var(--ease-out);
 
     &:hover {
@@ -402,17 +368,13 @@ table > thead > tr > th {
 // -----------------------------------------------------------------------
 .modal-content {
     background-color: var(--surface);
-    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
-    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
     border: var(--bw-hair) solid var(--border);
     border-radius: var(--r-lg);
-    box-shadow: var(--glass-shadow), var(--shadow-pop);
+    box-shadow: var(--shadow-sm), var(--inset-top), var(--shadow-pop);
 }
 
 .dropdown-menu {
-    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
-    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
-    box-shadow: var(--glass-shadow);
+    box-shadow: var(--shadow-sm), var(--inset-top);
 }
 
 // -----------------------------------------------------------------------
@@ -910,16 +872,24 @@ table > thead > tr > th {
 // Topbar shell (replaces the old sidebar + navbar split)
 // -----------------------------------------------------------------------
 .tn-topbar {
-    // backdrop-filter forces a new stacking context (same as opacity/transform),
-    // and the page's .card/.tn-card glass panels create their own further down
-    // the DOM - without an explicit z-index here, those later stacking contexts
-    // paint over the topbar's dropdown menu instead of under it.
+    // Flush, full-width bar - same solid page background as the body, not a
+    // surface/card color, so it never reads as a floating panel. z-index just
+    // keeps it above page content so its dropdown menus paint over cards
+    // further down the DOM.
     position: relative;
     z-index: 1030;
+    height: 60px;
     border-bottom: var(--bw-hair) solid var(--border);
-    background-color: var(--surface);
-    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
-    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+    background-color: var(--bg);
+}
+
+// Inner content is constrained/centered; the bar itself stays edge-to-edge.
+.tn-topbar__inner {
+    width: 100%;
+    max-width: 1200px;
+    height: 100%;
+    margin: 0 auto;
+    padding: 0 28px;
 }
 
 // Minimal header for auth pages (login/signup/password-reset) — just the
@@ -1012,8 +982,6 @@ table > thead > tr > th {
     z-index: 1030;
     display: flex;
     background-color: var(--surface);
-    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
-    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
     border-top: var(--bw-hair) solid var(--border);
     padding: var(--space-1) var(--space-2) max(var(--space-1), env(safe-area-inset-bottom));
 }
@@ -2451,119 +2419,6 @@ table > thead > tr > th {
             color-mix(in oklch, var(--blade-500) 8%, transparent), transparent 70%);
     }
 
-    // Photo hero variant: real background photography with a Ken-Burns
-    // zoom standing in for a timelapse video (swap the <img> for a
-    // <video> once we have a licensed clip - same wrapper/keyframes
-    // apply directly). Self-contained dark treatment regardless of the
-    // site's light/dark mode, same reasoning a photo hero always uses -
-    // text needs to sit on the image, not on a token that might be
-    // light.
-    // Full-bleed: breaks out of the centered .tn-content-container to span
-    // the full viewport width, and stands at nearly full viewport height
-    // (nav bar height is subtracted) so it reads as an actual hero, not a
-    // rounded card floating inside page padding.
-    &--photo {
-        width: 100vw;
-        margin-left: calc(50% - 50vw);
-        margin-right: calc(50% - 50vw);
-        margin-top: calc(-1 * var(--space-8));
-        min-height: calc(100dvh - 72px);
-        display: flex;
-        align-items: center;
-        padding: var(--space-16) var(--space-6);
-        border-radius: 0;
-        overflow: hidden;
-        color: var(--white);
-
-        .tn-home__grid { width: 100%; max-width: var(--container-wide); margin: 0 auto; }
-
-        .tn-home__grid { position: relative; z-index: 3; }
-        .tn-eyebrow { color: var(--blade-300); }
-        .tn-home__title { color: var(--white); text-shadow: 0 4px 30px rgba(0,0,0,.45); }
-        .tn-home__lede { color: rgba(255,255,255,.78); text-shadow: 0 2px 16px rgba(0,0,0,.35); }
-        .tn-home__news { border-top-color: rgba(255,255,255,.14); }
-        .tn-home__news-date { color: rgba(255,255,255,.55); }
-        .tn-home__news-title { color: var(--white); }
-        .tn-home__news-row .icon { color: rgba(255,255,255,.55); }
-
-        .tn-card-link {
-            background: linear-gradient(160deg, rgba(255,255,255,.12), rgba(255,255,255,.04));
-            border-color: rgba(255,255,255,.16);
-            backdrop-filter: blur(18px) saturate(160%);
-            -webkit-backdrop-filter: blur(18px) saturate(160%);
-            &:hover { border-color: rgba(255,255,255,.3); }
-            &__icon { background: rgba(255,255,255,.14); .icon { color: var(--white); } }
-            &__title { color: var(--white); }
-            &__sub { color: rgba(255,255,255,.7); }
-            &__cta { color: var(--white); }
-        }
-
-        .tn-signin {
-            background: linear-gradient(160deg, rgba(255,255,255,.14), rgba(255,255,255,.05));
-            border-color: rgba(255,255,255,.18);
-            backdrop-filter: blur(24px) saturate(170%);
-            -webkit-backdrop-filter: blur(24px) saturate(170%);
-            box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 30px 60px -24px rgba(0,0,0,.6);
-
-            &__title { color: var(--white); }
-            &__sub { color: rgba(255,255,255,.7); }
-            &__forgot { color: rgba(255,255,255,.85); }
-            &__signup { color: rgba(255,255,255,.7); a { color: var(--white); } }
-            &__divider {
-                color: rgba(255,255,255,.5);
-                &::before, &::after { background: rgba(255,255,255,.16); }
-            }
-        }
-        .tn-signin .tn-field__label { color: rgba(255,255,255,.6); }
-        .tn-signin .tn-input {
-            background: rgba(0,0,0,.22);
-            border-color: rgba(255,255,255,.2);
-            color: var(--white);
-            &::placeholder { color: rgba(255,255,255,.4); }
-        }
-    }
-
-    &__bg {
-        position: absolute;
-        inset: 0;
-        z-index: 0;
-        overflow: hidden;
-        border-radius: inherit;
-
-        img {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            animation: tn-home-zoom 34s ease-in-out infinite alternate;
-            filter: saturate(1.05) contrast(1.08) brightness(.6);
-        }
-    }
-    @keyframes tn-home-zoom {
-        from { transform: scale(1) translateY(0); }
-        to { transform: scale(1.24) translateY(-2%); }
-    }
-    &__bg-grade {
-        position: absolute;
-        inset: 0;
-        z-index: 1;
-        pointer-events: none;
-        background:
-            radial-gradient(120% 90% at 50% 100%, rgba(4,8,4,.9) 0%, rgba(4,8,4,.35) 45%, transparent 75%),
-            linear-gradient(180deg, rgba(6,10,6,.55) 0%, rgba(6,10,6,.12) 30%, rgba(6,10,6,.6) 100%),
-            linear-gradient(120deg, color-mix(in oklch, var(--blade-600) 40%, transparent), transparent 55%);
-    }
-    &__bg-grain {
-        position: absolute;
-        inset: 0;
-        z-index: 2;
-        pointer-events: none;
-        opacity: .05;
-        mix-blend-mode: overlay;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-    }
-
     &__typer {
         display: flex;
         align-items: center;
@@ -2588,7 +2443,6 @@ table > thead > tr > th {
     @keyframes tn-home-caret { 50% { opacity: 0; } }
 
     @media (prefers-reduced-motion: reduce) {
-        &__bg img { animation: none; transform: scale(1.08); }
         &__typer { animation: none; }
         &__typer-caret { animation: none; }
     }
@@ -2666,8 +2520,8 @@ table > thead > tr > th {
     &__news-row .icon { color: var(--text-faint); width: 14px; height: 14px; }
 }
 
-// Domain quick-search on the guest home hero. Frosted glass over the
-// photo background, green-tinted to match the accent.
+// Domain quick-search on the guest home intro. Solid surface, green-tinted
+// border to match the accent - no glass, sits on the plain page background.
 .tn-domainsearch {
     display: flex;
     flex-direction: column;
@@ -2680,11 +2534,9 @@ table > thead > tr > th {
         gap: var(--space-2);
         padding: var(--space-2);
         border-radius: var(--r-pill);
-        background: linear-gradient(160deg, color-mix(in oklch, var(--blade-500) 16%, transparent), rgba(255,255,255,.06));
-        border: var(--bw-hair) solid rgba(255,255,255,.22);
-        backdrop-filter: blur(22px) saturate(160%);
-        -webkit-backdrop-filter: blur(22px) saturate(160%);
-        box-shadow: inset 0 1px 0 rgba(255,255,255,.25), 0 20px 50px -18px rgba(0,0,0,.6);
+        background: var(--surface-2);
+        border: var(--bw-hair) solid var(--border);
+        box-shadow: var(--shadow-sm), var(--inset-top);
     }
     &__input {
         flex: 1;
@@ -2692,16 +2544,16 @@ table > thead > tr > th {
         background: transparent;
         border: none;
         outline: none;
-        color: var(--white);
+        color: var(--text);
         font-size: var(--fs-sm);
         padding: 10px 6px 10px 14px;
-        &::placeholder { color: rgba(255,255,255,.5); }
+        &::placeholder { color: var(--text-faint); }
     }
     &__tld {
         flex: 0 0 auto;
-        background: rgba(0,0,0,.25);
-        border: var(--bw-hair) solid rgba(255,255,255,.2);
-        color: var(--white);
+        background: var(--surface-inset);
+        border: var(--bw-hair) solid var(--border);
+        color: var(--text);
         border-radius: var(--r-pill);
         padding: 8px 10px;
         font-size: var(--fs-xs);
@@ -2726,10 +2578,10 @@ table > thead > tr > th {
         font-size: var(--fs-xs);
         padding: 0 var(--space-3);
         min-height: 1.2em;
-        color: rgba(255,255,255,.7);
-        a { color: var(--blade-400); font-weight: var(--fw-bold); text-decoration: none; &:hover { text-decoration: underline; } }
-        &--available { color: var(--blade-400); }
-        &--taken { color: #ff9d9d; }
+        color: var(--text-muted);
+        a { color: var(--blade-500); font-weight: var(--fw-bold); text-decoration: none; &:hover { text-decoration: underline; } }
+        &--available { color: var(--blade-500); }
+        &--taken { color: var(--danger-500); }
     }
 }
 @media (max-width: 480px) {
@@ -2844,7 +2696,6 @@ table > thead > tr > th {
     .tn-home__grid { grid-template-columns: 1fr; gap: var(--space-8); }
     .tn-home__aside { order: -1; }
     .tn-home__cards { grid-template-columns: 1fr; }
-    .tn-home--photo { min-height: 0; padding: var(--space-10) var(--space-4); }
 }
 
 // -----------------------------------------------------------------------
@@ -2857,105 +2708,62 @@ table > thead > tr > th {
 // else. Both panes work unmodified in light and dark since every color
 // here comes from tokens.
 // -----------------------------------------------------------------------
-// Auth pages (login/signup) - same full-bleed photo + frosted-glass
-// language as the guest home hero (.tn-home--photo/.tn-signin), so signing
-// in doesn't feel like a different product from the page that led here.
-// The panel floats over the photo instead of occupying its own solid
-// column - matching the home hero's layout exactly, just single-purpose.
+// Auth pages (login/signup) - plain text intro next to a plain bordered
+// card, no photo, no glass. Intro copy sits to the left, the sign-in card
+// (DS Card recipe) sits to the right on wide viewports and stacks below it
+// on narrow ones.
 .tn-auth {
     position: relative;
-    min-height: calc(100dvh - 64px);
+    min-height: calc(100dvh - 60px);
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: center;
+    gap: var(--space-10);
     padding: var(--space-8) var(--space-10);
-    overflow: hidden;
 
-    &__visual {
-        position: absolute;
-        inset: 0;
-        overflow: hidden;
-
-        img {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            animation: tn-home-zoom 34s ease-in-out infinite alternate;
-            filter: saturate(1.05) contrast(1.08) brightness(.6);
-        }
-
-        // Same grade + grain treatment as the home hero, so the photo
-        // reads as "this company" rather than generic stock, and the
-        // brightness/contrast pairing is consistent across pages.
-        &::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background:
-                radial-gradient(120% 90% at 50% 100%, rgba(4,8,4,.9) 0%, rgba(4,8,4,.35) 45%, transparent 75%),
-                linear-gradient(180deg, rgba(6,10,6,.55) 0%, rgba(6,10,6,.12) 30%, rgba(6,10,6,.6) 100%),
-                linear-gradient(120deg, color-mix(in oklch, var(--blade-600) 40%, transparent), transparent 55%);
-        }
-        &::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            opacity: .05;
-            mix-blend-mode: overlay;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-        }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-        &__visual img { animation: none; transform: scale(1.08); }
-    }
-
-    &__visual-content {
-        position: absolute;
-        z-index: 1;
-        left: var(--space-10);
-        bottom: var(--space-10);
-        max-width: 420px;
+    &__intro {
         display: flex;
         flex-direction: column;
         gap: var(--space-3);
+        max-width: 420px;
     }
-    &__visual-quote {
-        font-family: var(--font-display);
-        font-size: var(--fs-h2);
-        font-weight: var(--fw-bold);
-        line-height: var(--lh-snug);
-        letter-spacing: var(--ls-tight);
-        color: var(--white);
-        text-shadow: 0 4px 30px rgba(0,0,0,.45);
+    &__eyebrow {
+        font-family: var(--font-mono);
+        font-size: var(--fs-micro);
+        font-weight: var(--fw-semibold);
+        letter-spacing: var(--ls-wide);
+        color: var(--text-faint);
         margin: 0;
     }
-    &__visual-sub {
+    &__headline {
+        font-family: var(--font-display);
+        font-size: var(--fs-h1);
+        font-weight: var(--fw-bold);
+        letter-spacing: var(--ls-tight);
+        line-height: var(--lh-snug);
+        color: var(--text);
+        margin: 0;
+    }
+    &__subhead {
         font-size: var(--fs-sm);
-        color: rgba(255,255,255,.78);
-        text-shadow: 0 2px 16px rgba(0,0,0,.35);
+        color: var(--text-muted);
         line-height: var(--lh-relaxed);
         margin: 0;
     }
 
-    // Floating glass panel - same recipe as .tn-signin on the home hero.
+    // Plain bordered card - the DS Card recipe, not glass.
     &__panel {
         position: relative;
-        z-index: 2;
         display: flex;
         flex-direction: column;
         justify-content: center;
         width: 100%;
         max-width: 400px;
-        padding: var(--space-8);
-        border-radius: var(--r-xl);
-        background: linear-gradient(160deg, rgba(255,255,255,.14), rgba(255,255,255,.05));
-        border: var(--bw-hair) solid rgba(255,255,255,.18);
-        backdrop-filter: blur(24px) saturate(170%);
-        -webkit-backdrop-filter: blur(24px) saturate(170%);
-        box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 30px 60px -24px rgba(0,0,0,.6);
+        padding: 26px 24px 24px;
+        border-radius: var(--r-lg);
+        background: var(--surface);
+        border: var(--bw-hair) solid var(--border);
+        box-shadow: var(--shadow-sm), var(--inset-top);
     }
     &__panel-inner {
         width: 100%;
@@ -2972,12 +2780,12 @@ table > thead > tr > th {
         font-family: var(--font-display);
         font-size: var(--fs-h2);
         font-weight: var(--fw-bold);
-        color: var(--white);
+        color: var(--text);
         margin: 0;
     }
     &__sub {
         font-size: var(--fs-sm);
-        color: rgba(255,255,255,.7);
+        color: var(--text-muted);
         margin: 0;
     }
 
@@ -2987,32 +2795,32 @@ table > thead > tr > th {
     &__link {
         font-size: var(--fs-xs);
         font-weight: var(--fw-bold);
-        color: rgba(255,255,255,.85);
+        color: var(--text);
         text-decoration: none;
         &:hover { text-decoration: underline; }
     }
     &__foot {
         font-size: var(--fs-xs);
-        color: rgba(255,255,255,.7);
+        color: var(--text-muted);
         text-align: center;
         margin: 0;
-        a { color: var(--white); font-weight: var(--fw-bold); text-decoration: none;
+        a { color: var(--text); font-weight: var(--fw-bold); text-decoration: none;
             &:hover { text-decoration: underline; } }
     }
     &__actions { display: flex; flex-direction: column; gap: var(--space-2); }
     &__consent {
         font-size: var(--fs-xs);
-        color: rgba(255,255,255,.6);
+        color: var(--text-faint);
         line-height: var(--lh-normal);
-        a { color: rgba(255,255,255,.8); text-decoration: underline; }
+        a { color: var(--text-muted); text-decoration: underline; }
     }
 
-    &__panel .tn-field__label { color: rgba(255,255,255,.6); }
+    &__panel .tn-field__label { color: var(--text-muted); }
     &__panel .tn-input {
-        background: rgba(0,0,0,.22);
-        border-color: rgba(255,255,255,.2);
-        color: var(--white);
-        &::placeholder { color: rgba(255,255,255,.4); }
+        background: var(--surface-inset);
+        border-color: var(--border);
+        color: var(--text);
+        &::placeholder { color: var(--text-faint); }
     }
 }
 
@@ -3110,54 +2918,26 @@ table > thead > tr > th {
     .tn-mail__list { border-right: none; border-bottom: var(--bw-hair) solid var(--border); max-height: 240px; }
 }
 
-// No photo (password reset / set-new-password) - panel centers over the
-// plain page background instead of floating over an image, so it reverts
-// to normal (non-white) text colors and the standard --surface glass
-// instead of the photo-hero white-on-dark treatment.
+// No-intro variant (password reset / set-new-password) - panel centers
+// alone on the page with no intro copy beside it. The panel itself already
+// uses the plain --surface card recipe, so there's nothing left to override
+// here besides centering.
 .tn-auth--solo {
     justify-content: center;
-
-    .tn-auth__panel {
-        background: var(--surface);
-        border-color: var(--border);
-        box-shadow: var(--glass-shadow);
-    }
-    .tn-auth__title { color: var(--text); }
-    .tn-auth__sub { color: var(--text-muted); }
-    .tn-auth__link { color: var(--text); }
-    .tn-auth__foot { color: var(--text-muted);
-        a { color: var(--text); }
-    }
-    .tn-auth__consent { color: var(--text-faint);
-        a { color: var(--text-muted); }
-    }
-    .tn-field__label { color: var(--text-muted); }
-    .tn-input {
-        background: var(--surface-inset);
-        border-color: var(--border);
-        color: var(--text);
-        &::placeholder { color: var(--text-faint); }
-    }
 }
 
 @media (max-width: 900px) {
     .tn-auth {
+        flex-direction: column;
         justify-content: center;
         padding: var(--space-5);
         min-height: 0;
+        gap: var(--space-6);
     }
-    .tn-auth__visual { display: none; }
+    .tn-auth__intro { max-width: 100%; text-align: center; }
     .tn-auth__panel {
         max-width: 440px;
         padding: var(--space-6);
-        background: var(--surface);
-        border-color: var(--border);
-        box-shadow: var(--glass-shadow);
     }
-    .tn-auth__title,
-    .tn-auth__foot a,
-    .tn-auth__link { color: var(--text); }
-    .tn-auth__sub,
-    .tn-auth__foot { color: var(--text-muted); }
     .tn-auth__row { grid-template-columns: 1fr; }
 }

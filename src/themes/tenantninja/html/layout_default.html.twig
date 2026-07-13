@@ -82,24 +82,23 @@
 {% set guest_support_url = guest.support_guest_tickets_enabled() ? 'support/contact-us'|url : 'login'|url %}
 {% set support_url = client ? 'support'|url : guest_support_url %}
 
-<div class="container">
-    <header>
-        {{ render_widgets('client.theme.header.start') }}
-        <nav class="navbar navbar-expand-lg py-3 tn-topbar">
-            <div class="container-fluid d-flex align-items-center gap-3">
-                {{ include('partial_company_logo.html.twig', {
-                    logo_url: settings.show_company_logo ? company.logo_url : null,
-                    dark_logo_url: settings.show_company_logo ? company.logo_url_dark : null,
-                    link_class: 'navbar-brand me-0',
-                    image_class: 'd-none d-sm-block',
-                    show_mobile_name: true
-                }) }}
+<header>
+    {{ render_widgets('client.theme.header.start') }}
+    <nav class="navbar navbar-expand-lg tn-topbar">
+        <div class="tn-topbar__inner d-flex align-items-center gap-3">
+            {{ include('partial_company_logo.html.twig', {
+                logo_url: settings.show_company_logo ? company.logo_url : null,
+                dark_logo_url: settings.show_company_logo ? company.logo_url_dark : null,
+                link_class: 'navbar-brand me-0',
+                image_class: 'd-none d-sm-block',
+                show_mobile_name: true
+            }) }}
 
-                <ul class="navbar-nav flex-row gap-1 d-none d-lg-flex flex-grow-1">
-                    {{ include('partial_topnav.html.twig', { variant: 'top' }) }}
-                </ul>
+            <ul class="navbar-nav flex-row gap-1 d-none d-lg-flex flex-grow-1">
+                {{ include('partial_topnav.html.twig', { variant: 'top' }) }}
+            </ul>
 
-                <div class="d-flex align-items-center gap-2 ms-auto">
+            <div class="d-flex align-items-center gap-2 ms-auto">
                     {% set languages = guest.extension_languages(true) %}
                     {% if languages|length > 1 %}
                         <select name="lang" class="form-select form-select-sm js-locale-selector d-none d-lg-block">
@@ -160,11 +159,12 @@
                         <a class="btn btn-primary btn-sm d-none d-sm-inline-flex" href="{{ 'signup'|url }}">{{ 'Register'|trans }}</a>
                     {% endif %}
                 </div>
-            </div>
-        </nav>
-        {{ render_widgets('client.theme.header.end') }}
-    </header>
-    <div class="container tn-content-container">
+        </div>
+    </nav>
+    {{ render_widgets('client.theme.header.end') }}
+</header>
+<div class="container">
+    <div class="tn-content-container">
         <div class="row">
             <div class="col-12">
                 <div id="wrapper">

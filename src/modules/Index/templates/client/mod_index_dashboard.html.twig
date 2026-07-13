@@ -431,13 +431,7 @@
         {% endfor %}
         {% set domain_product_id = domain_category and domain_category.products|first ? domain_category.products|first.id : null %}
 
-        <div class="tn-home tn-home--photo">
-            <div class="tn-home__bg" aria-hidden="true">
-                <img src="https://images.unsplash.com/photo-1512632578888-169bbbc64f33?q=80&amp;w=1920&amp;auto=format&amp;fit=crop" alt="" loading="eager">
-                <div class="tn-home__bg-grade"></div>
-                <div class="tn-home__bg-grain"></div>
-            </div>
-
+        <div class="tn-home">
             <div class="tn-home__grid">
                 {# left — welcome + quick paths #}
                 <div class="tn-home__intro">
