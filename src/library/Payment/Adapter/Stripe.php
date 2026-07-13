@@ -619,9 +619,12 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             return null;
         }
 
-        $invoice = $this->di['db']->findOne('Invoice', 'id = :id', [':id' => (int) $invoiceId]);
+        $gatewayId = $this->di['dbal']->fetchOne(
+            'SELECT gateway_id FROM invoice WHERE id = :id',
+            ['id' => (int) $invoiceId]
+        );
 
-        return $invoice instanceof Model_Invoice && !empty($invoice->gateway_id) ? (int) $invoice->gateway_id : null;
+        return is_numeric($gatewayId) && (int) $gatewayId > 0 ? (int) $gatewayId : null;
     }
 
     private function getLocalSubscriptionGatewayId(mixed $subscriptionId): ?int
@@ -630,11 +633,12 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             return null;
         }
 
-        $subscription = $this->di['db']->findOne('Subscription', 'sid = :sid', [':sid' => $subscriptionId]);
+        $gatewayId = $this->di['dbal']->fetchOne(
+            'SELECT pay_gateway_id FROM subscription WHERE sid = :sid',
+            ['sid' => $subscriptionId]
+        );
 
-        return $subscription instanceof Model_Subscription && !empty($subscription->pay_gateway_id)
-            ? (int) $subscription->pay_gateway_id
-            : null;
+        return is_numeric($gatewayId) && (int) $gatewayId > 0 ? (int) $gatewayId : null;
     }
 
     private function handleSubscriptionCreated($api_admin, Model_Transaction $tx, object $event, int $gateway_id): bool
