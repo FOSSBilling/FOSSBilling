@@ -39,17 +39,40 @@ class ProductCategoryRepository extends EntityRepository
 
     public function getEnabledVisibleSearchQueryBuilder(): QueryBuilder
     {
-        return $this->createQueryBuilder('c')
-            ->innerJoin(Product::class, 'p', 'WITH', 'p.productCategoryId = c.id')
-            ->andWhere('p.status = :status')
-            ->andWhere('p.hidden = :hidden')
-            ->andWhere('p.isAddon = :isAddon')
+        // Arbitrary joins are treated as additional roots by Doctrine's paginator, which adds
+        // their identifiers to the SELECT and breaks this aggregate under ONLY_FULL_GROUP_BY.
+        $productFilter = $this->applyEnabledVisibleProductFilters(
+            $this->getEntityManager()->createQueryBuilder()
+                ->select('1')
+                ->from(Product::class, 'p'),
+            'p',
+        );
+
+        $maximumPriority = $this->applyEnabledVisibleProductFilters(
+            $this->getEntityManager()->createQueryBuilder()
+                ->select('MAX(priorityProduct.priority)')
+                ->from(Product::class, 'priorityProduct'),
+            'priorityProduct',
+        );
+
+        $queryBuilder = $this->createQueryBuilder('c');
+
+        return $queryBuilder
+            ->andWhere($queryBuilder->expr()->exists($productFilter->getDQL()))
             ->setParameter('status', 'enabled')
             ->setParameter('hidden', false)
             ->setParameter('isAddon', false)
-            ->addSelect('MAX(p.priority) AS HIDDEN maxPriority')
-            ->groupBy('c.id')
+            ->addSelect(sprintf('(%s) AS HIDDEN maxPriority', $maximumPriority->getDQL()))
             ->orderBy('maxPriority', 'ASC');
+    }
+
+    private function applyEnabledVisibleProductFilters(QueryBuilder $queryBuilder, string $alias): QueryBuilder
+    {
+        return $queryBuilder
+            ->andWhere(sprintf('%s.productCategoryId = c.id', $alias))
+            ->andWhere(sprintf('%s.status = :status', $alias))
+            ->andWhere(sprintf('%s.hidden = :hidden', $alias))
+            ->andWhere(sprintf('%s.isAddon = :isAddon', $alias));
     }
 
     public function findById(int $id): ?ProductCategory
