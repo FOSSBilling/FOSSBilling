@@ -39,16 +39,32 @@ class ProductCategoryRepository extends EntityRepository
 
     public function getEnabledVisibleSearchQueryBuilder(): QueryBuilder
     {
-        return $this->createQueryBuilder('c')
-            ->innerJoin(Product::class, 'p', 'WITH', 'p.productCategoryId = c.id')
+        // Arbitrary joins are treated as additional roots by Doctrine's paginator, which adds
+        // their identifiers to the SELECT and breaks this aggregate under ONLY_FULL_GROUP_BY.
+        $productFilter = $this->getEntityManager()->createQueryBuilder()
+            ->select('1')
+            ->from(Product::class, 'p')
+            ->andWhere('p.productCategoryId = c.id')
             ->andWhere('p.status = :status')
             ->andWhere('p.hidden = :hidden')
-            ->andWhere('p.isAddon = :isAddon')
+            ->andWhere('p.isAddon = :isAddon');
+
+        $maximumPriority = $this->getEntityManager()->createQueryBuilder()
+            ->select('MAX(priorityProduct.priority)')
+            ->from(Product::class, 'priorityProduct')
+            ->andWhere('priorityProduct.productCategoryId = c.id')
+            ->andWhere('priorityProduct.status = :status')
+            ->andWhere('priorityProduct.hidden = :hidden')
+            ->andWhere('priorityProduct.isAddon = :isAddon');
+
+        $queryBuilder = $this->createQueryBuilder('c');
+
+        return $queryBuilder
+            ->andWhere($queryBuilder->expr()->exists($productFilter->getDQL()))
             ->setParameter('status', 'enabled')
             ->setParameter('hidden', false)
             ->setParameter('isAddon', false)
-            ->addSelect('MAX(p.priority) AS HIDDEN maxPriority')
-            ->groupBy('c.id')
+            ->addSelect(sprintf('(%s) AS HIDDEN maxPriority', $maximumPriority->getDQL()))
             ->orderBy('maxPriority', 'ASC');
     }
 
