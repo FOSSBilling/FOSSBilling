@@ -41,7 +41,18 @@ test('enabled visible category query avoids a joined product paginator root', fu
         ->toContain(sprintf('EXISTS(SELECT 1 FROM %s p', Product::class))
         ->toContain(sprintf('(SELECT MAX(priorityProduct.priority) FROM %s priorityProduct', Product::class))
         ->not->toContain('GROUP BY');
-    expect($queryBuilder->getParameters()->toArray())->toHaveCount(3);
+
+    $parameters = $queryBuilder->getParameters()->toArray();
+    $parameterMap = [];
+    foreach ($parameters as $parameter) {
+        $parameterMap[(string) $parameter->getName()] = $parameter->getValue();
+    }
+
+    expect($parameters)->toHaveCount(3);
+    expect($parameterMap)->toHaveKeys(['status', 'hidden', 'isAddon']);
+    expect($parameterMap['status'])->toBe('enabled');
+    expect($parameterMap['hidden'])->toBeFalse();
+    expect($parameterMap['isAddon'])->toBeFalse();
 
     expect($queryBuilder->getQuery()->getSQL())
         ->toBeString()
