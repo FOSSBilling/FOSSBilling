@@ -208,6 +208,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * Cancel order.
      *
      * @optional bool $skip_event - Skip calling event hooks
+     * @optional bool $cancel_at_period_end - Keep the order active until its gateway subscription ends
      *
      * @return bool
      */
@@ -217,10 +218,28 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $order = $this->_getOrder($data);
         $skip_event = Tools::normalizeBoolean($data['skip_event'] ?? false);
+        $cancelAtPeriodEnd = Tools::normalizeBoolean($data['cancel_at_period_end'] ?? false);
 
         $reason = $data['reason'] ?? null;
 
+        if ($cancelAtPeriodEnd) {
+            return $this->getService()->scheduleCancellationFromOrder($order, $reason);
+        }
+
         return $this->getService()->cancelFromOrder($order, $reason, $skip_event);
+    }
+
+    /**
+     * Check whether an order's active gateway subscription supports cancellation at period end.
+     */
+    public function can_cancel_at_period_end($data): bool
+    {
+        $this->checkPermissions('order', 'view');
+
+        $order = $this->_getOrder($data);
+        $subscriptionService = $this->getDi()['mod_service']('Invoice', 'Subscription');
+
+        return $subscriptionService->canCancelAtPeriodEndForOrder($order);
     }
 
     /**

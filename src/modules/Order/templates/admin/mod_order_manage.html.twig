@@ -26,6 +26,9 @@
 {% if order.group_master == 1 %}
     {% set addons = admin.order_addons({ 'id': order.id }) %}
 {% endif %}
+{% if order.status == 'active' or order.status == 'failed_renew' %}
+    {% set can_cancel_at_period_end = admin.order_can_cancel_at_period_end({ 'id': order.id }) %}
+{% endif %}
 
 {% block content %}
 {% embed 'partial_admin_detail_tabs.html.twig' with {
@@ -197,13 +200,12 @@
                         <span>{{ 'Suspend'|trans }}</span>
                     </button>
                     {% endif %}
-                    <a class="btn btn-primary"
-                        {{ fb_api_link({href: 'order/cancel'|api_url(query: {'id': order.id}), modal: {type: 'prompt', title: 'Cancellation Reason'|trans, label: 'Reason for Cancellation'|trans, key: 'reason'}, reload: true}) }}>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#cancelModal">
                         <svg class="icon" width="24" height="24">
                             <use href="#x" />
                         </svg>
                         <span>{{ 'Cancel'|trans }}</span>
-                    </a>
+                    </button>
                     {% endif %}
 
                     {% if order.status == 'suspended' %}
@@ -273,6 +275,50 @@
             </div>
         </div>
         {% if order.status == 'active' or order.status == 'failed_renew' %}
+            <div class="modal modal-blur fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <form method="post" action="{{ 'order/cancel'|api_url }}" {{ fb_api_form({ reload: true }) }}>
+                            <div class="modal-status bg-danger"></div>
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="cancelModalLabel">{{ 'Cancel Order'|trans }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                            </div>
+                            <div class="modal-body">
+                                <input type="hidden" name="id" value="{{ order.id }}">
+                                <label class="form-label" for="cancellationReason">{{ 'Reason for Cancellation'|trans }}</label>
+                                <input class="form-control mb-3" id="cancellationReason" type="text" name="reason">
+
+                                {% if can_cancel_at_period_end %}
+                                <label class="form-label">{{ 'Cancellation Timing'|trans }}</label>
+                                <label class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="cancel_at_period_end" value="0" checked>
+                                    <span class="form-check-label">
+                                        <strong>{{ 'Cancel immediately'|trans }}</strong>
+                                        <span class="d-block text-muted">{{ 'Cancel the order, service, and linked subscription now.'|trans }}</span>
+                                    </span>
+                                </label>
+                                <label class="form-check">
+                                    <input class="form-check-input" type="radio" name="cancel_at_period_end" value="1">
+                                    <span class="form-check-label">
+                                        <strong>{{ 'Cancel at the end of the current billing period'|trans }}</strong>
+                                        <span class="d-block text-muted">{{ 'Keep the order and service active until the payment gateway ends the subscription.'|trans }}</span>
+                                    </span>
+                                </label>
+                                {% else %}
+                                <input type="hidden" name="cancel_at_period_end" value="0">
+                                <p class="text-muted mb-0">{{ 'This order does not have an active gateway subscription that supports cancellation at the end of the billing period.'|trans }}</p>
+                                {% endif %}
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Close'|trans }}</button>
+                                <button type="submit" class="btn btn-danger">{{ 'Confirm Cancellation'|trans }}</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
             {% set params = admin.extension_config_get({ 'ext': 'mod_order' }) %}
             {% if params.suspend_reason_list|default('')|trim is not empty %}
                 <div class="modal modal-blur fade" id="suspendModal" tabindex="-1" aria-labelledby="suspendModalLabel" aria-hidden="true">

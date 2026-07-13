@@ -430,7 +430,41 @@ class Service implements InjectionAwareInterface
             'total' => $total - $items_discount,
             'items' => $items,
             'currency' => $currency->toApiArray(),
+            'subscribable' => $this->getSubscriptionPeriodFromItems($items) !== null,
         ];
+    }
+
+    private function getSubscriptionPeriodFromItems(array $items): ?string
+    {
+        $subscriptionPeriod = null;
+
+        foreach ($items as $item) {
+            $netSetupPrice = (float) ($item['setup_price'] ?? 0) - (float) ($item['discount_setup'] ?? 0);
+            if ($netSetupPrice > 0) {
+                return null;
+            }
+
+            if ((float) ($item['total'] ?? 0) <= 0) {
+                continue;
+            }
+
+            $period = $item['period'] ?? null;
+            if (empty($period)) {
+                return null;
+            }
+
+            if ($subscriptionPeriod === null) {
+                $subscriptionPeriod = $period;
+
+                continue;
+            }
+
+            if ($subscriptionPeriod !== $period) {
+                return null;
+            }
+        }
+
+        return $subscriptionPeriod;
     }
 
     public function isClientAbleToUsePromo(\Model_Client $client, Promo $promo)
