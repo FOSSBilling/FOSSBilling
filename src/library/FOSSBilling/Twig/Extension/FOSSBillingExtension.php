@@ -316,7 +316,7 @@ class FOSSBillingExtension
     }
 
     #[AsTwigFilter('script_tag', isSafe: ['html'])]
-    public function scriptTag(?string $path): string
+    public function scriptTag(?string $path, ?string $type = null): string
     {
         if ($path === null) {
             return '';
@@ -330,8 +330,9 @@ class FOSSBillingExtension
 
         $escapedPath = htmlspecialchars($path, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         $escapedCacheBuster = htmlspecialchars($this->getCacheBuster($path), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $typeAttr = $type !== null ? sprintf(' type="%s"', htmlspecialchars($type, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')) : '';
 
-        return sprintf('<script src="%s?%s"></script>', $escapedPath, $escapedCacheBuster);
+        return sprintf('<script src="%s?%s"%s></script>', $escapedPath, $escapedCacheBuster, $typeAttr);
     }
 
     #[AsTwigFilter('stylesheet_tag', isSafe: ['html'])]

@@ -36,13 +36,13 @@
     {{ include('partials/theme_init.html.twig') }}
 
     <link rel="stylesheet" href="{{ 'build/css/vendor.css' | asset_url }}">
-    <link rel="stylesheet" href="{{ 'build/css/tenantninja.css' | asset_url }}">
+    {{ 'build/css/tenantninja.css' | asset_url | stylesheet_tag }}
 
     <link rel="shortcut icon" href="{{ guest.system_company.favicon_url }}">
 
     {{ 'js/fossbilling.js' | public_asset_url | script_tag }}
     {{ 'js/api.js' | public_asset_url | script_tag }}
-    <script type="module" src="{{ 'build/js/tenantninja.js' | asset_url }}"></script>
+    {{ 'build/js/tenantninja.js' | asset_url | script_tag('module') }}
     {% block head %}{% endblock %}
     {% block js %}{% endblock %}
 </head>
