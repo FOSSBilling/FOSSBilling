@@ -12,6 +12,12 @@ declare(strict_types=1);
 namespace Box\Mod\Order;
 
 use Box\Mod\Currency\Entity\Currency;
+use Box\Mod\Order\Entity\Order;
+use Box\Mod\Order\Entity\OrderMeta;
+use Box\Mod\Order\Entity\OrderStatus;
+use Box\Mod\Order\Repository\OrderMetaRepository;
+use Box\Mod\Order\Repository\OrderRepository;
+use Box\Mod\Order\Repository\OrderStatusRepository;
 use Box\Mod\Product\Entity\Product;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
@@ -30,6 +36,37 @@ class Service implements InjectionAwareInterface
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
+    }
+
+    private ?OrderRepository $orderRepository = null;
+    private ?OrderMetaRepository $orderMetaRepository = null;
+    private ?OrderStatusRepository $orderStatusRepository = null;
+
+    public function getOrderRepository(): OrderRepository
+    {
+        if ($this->orderRepository === null) {
+            $this->orderRepository = $this->di['em']->getRepository(Order::class);
+        }
+
+        return $this->orderRepository;
+    }
+
+    public function getOrderMetaRepository(): OrderMetaRepository
+    {
+        if ($this->orderMetaRepository === null) {
+            $this->orderMetaRepository = $this->di['em']->getRepository(OrderMeta::class);
+        }
+
+        return $this->orderMetaRepository;
+    }
+
+    public function getOrderStatusRepository(): OrderStatusRepository
+    {
+        if ($this->orderStatusRepository === null) {
+            $this->orderStatusRepository = $this->di['em']->getRepository(OrderStatus::class);
+        }
+
+        return $this->orderStatusRepository;
     }
 
     public function getModulePermissions(): array
@@ -84,12 +121,15 @@ class Service implements InjectionAwareInterface
         $service = $di['mod_service']('order');
 
         try {
-            $order = $di['db']->getExistingModelById('ClientOrder', $order_id, 'Order not found');
+            $order = $di['em']->getRepository(Order::class)->find($order_id);
+            if (!$order instanceof Order) {
+                throw new \FOSSBilling\Exception('Order not found');
+            }
             $s = $service->getOrderServiceData($order);
             $orderArr = $service->toApiArray($order, true);
 
             $email = $params;
-            $email['to_client'] = $order->client_id;
+            $email['to_client'] = $order->getClientId();
             $email['code'] = sprintf('mod_service%s_activated', $orderArr['service_type']);
             $email['service'] = $s;
             $email['order'] = $orderArr;
@@ -109,7 +149,10 @@ class Service implements InjectionAwareInterface
         $orderService = $di['mod_service']('order');
 
         try {
-            $order = $di['db']->getExistingModelById('ClientOrder', $order_id, 'Order not found');
+            $order = $di['em']->getRepository(Order::class)->find($order_id);
+            if (!$order instanceof Order) {
+                throw new \FOSSBilling\Exception('Order not found');
+            }
             $identity = $di['loggedin_admin'];
             $service = $orderService->getOrderServiceData($order, $identity);
             $orderArr = $orderService->toApiArray($order, true, $identity);
@@ -135,7 +178,10 @@ class Service implements InjectionAwareInterface
         $service = $di['mod_service']('order');
 
         try {
-            $order = $di['db']->getExistingModelById('ClientOrder', $order_id, 'Order not found');
+            $order = $di['em']->getRepository(Order::class)->find($order_id);
+            if (!$order instanceof Order) {
+                throw new \FOSSBilling\Exception('Order not found');
+            }
             $identity = $di['loggedin_admin'];
             $s = $service->getOrderServiceData($order, $identity);
             $orderArr = $service->toApiArray($order, true, $identity);
@@ -161,7 +207,10 @@ class Service implements InjectionAwareInterface
         $service = $di['mod_service']('order');
 
         try {
-            $order = $di['db']->getExistingModelById('ClientOrder', $order_id, 'Order not found');
+            $order = $di['em']->getRepository(Order::class)->find($order_id);
+            if (!$order instanceof Order) {
+                throw new \FOSSBilling\Exception('Order not found');
+            }
             $identity = $di['loggedin_admin'];
             $s = $service->getOrderServiceData($order, $identity);
             $orderArr = $service->toApiArray($order, true, $identity);
@@ -187,7 +236,10 @@ class Service implements InjectionAwareInterface
         $service = $di['mod_service']('order');
 
         try {
-            $order = $di['db']->getExistingModelById('ClientOrder', $order_id, 'Order not found');
+            $order = $di['em']->getRepository(Order::class)->find($order_id);
+            if (!$order instanceof Order) {
+                throw new \FOSSBilling\Exception('Order not found');
+            }
             $identity = $di['loggedin_admin'];
             $orderArr = $service->toApiArray($order, true, $identity);
 
@@ -211,7 +263,10 @@ class Service implements InjectionAwareInterface
         $service = $di['mod_service']('order');
 
         try {
-            $order = $di['db']->getExistingModelById('ClientOrder', $order_id, 'Order not found');
+            $order = $di['em']->getRepository(Order::class)->find($order_id);
+            if (!$order instanceof Order) {
+                throw new \FOSSBilling\Exception('Order not found');
+            }
             $identity = $di['loggedin_admin'];
             $s = $service->getOrderServiceData($order, $identity);
             $orderArr = $service->toApiArray($order, true, $identity);
@@ -229,9 +284,12 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function getOrderService(\Model_ClientOrder $order)
+    public function getOrderService(Order|\Model_ClientOrder $order)
     {
-        if ($order->service_id !== null) {
+        $serviceId = $order instanceof Order ? $order->getServiceId() : $order->service_id;
+        $serviceType = $order instanceof Order ? $order->getServiceType() : $order->service_type;
+
+        if ($serviceId !== null) {
             $builtInServiceTypes = [
                 \Box\Mod\Product\Service::CUSTOM,
                 \Box\Mod\Product\Service::LICENSE,
@@ -239,25 +297,26 @@ class Service implements InjectionAwareInterface
                 \Box\Mod\Product\Service::HOSTING,
                 \Box\Mod\Product\Service::DOMAIN,
             ];
-            if (in_array($order->service_type, $builtInServiceTypes, true)) {
+            if (in_array($serviceType, $builtInServiceTypes, true)) {
                 $repo_class = $this->_getServiceClassName($order);
 
-                return $this->di['db']->load($repo_class, $order->service_id);
+                return $this->di['db']->load($repo_class, $serviceId);
             }
 
             return $this->di['db']->findOne(
-                'service_' . $order->service_type,
+                'service_' . $serviceType,
                 'id = :id',
-                [':id' => $order->service_id]
+                [':id' => $serviceId]
             );
         }
 
         return null;
     }
 
-    protected function _getServiceClassName(\Model_ClientOrder $order): string
+    protected function _getServiceClassName(Order|\Model_ClientOrder $order): string
     {
-        $s = $this->di['tools']->to_camel_case($order->service_type, true);
+        $serviceType = $order instanceof Order ? $order->getServiceType() : $order->service_type;
+        $s = $this->di['tools']->to_camel_case($serviceType, true);
 
         return 'Service' . ucfirst((string) $s);
     }
@@ -266,32 +325,33 @@ class Service implements InjectionAwareInterface
     {
         $type = $this->di['tools']->from_camel_case(str_replace('Model_Service', '', $service::class));
 
-        $bindings = [
-            'service_type' => $type,
-            ':service_id' => $service->id,
-        ];
-
-        return $this->di['db']->findOne('ClientOrder', 'service_type  = :service_type AND service_id = :service_id', $bindings);
+        return $this->getOrderRepository()->findOneBy([
+            'serviceType' => $type,
+            'serviceId' => $service->id,
+        ]);
     }
 
-    public function getConfig(\Model_ClientOrder $model)
+    public function getConfig(Order|\Model_ClientOrder $model)
     {
-        return json_decode($model->config ?? '', true) ?? [];
+        return json_decode(($model instanceof Order ? $model->getConfig() : $model->config) ?? '', true) ?? [];
     }
 
     public function productHasOrders(Product $product): bool
     {
-        $order = $this->di['db']->findOne('ClientOrder', 'product_id = :product_id', [':product_id' => $product->getId()]);
+        $order = $this->getOrderRepository()->findOneByProductId($product->getId());
 
-        return $order instanceof \Model_ClientOrder;
+        return $order instanceof Order;
     }
 
-    public function getLogger(\Model_ClientOrder $order)
+    public function getLogger(Order|\Model_ClientOrder $order)
     {
+        $orderId = $order instanceof Order ? $order->getId() : $order->id;
+        $orderStatus = $order instanceof Order ? $order->getStatus() : $order->status;
+
         $log = $this->di['logger'];
         $log->addWriter(new \Box_LogDb('Model_ClientOrderStatus'));
-        $log->setEventItem('client_order_id', $order->id);
-        $log->setEventItem('status', $order->status);
+        $log->setEventItem('client_order_id', $orderId);
+        $log->setEventItem('status', $orderStatus);
 
         return $log;
     }
@@ -299,15 +359,17 @@ class Service implements InjectionAwareInterface
     /**
      * @param string $notes
      */
-    public function saveStatusChange(\Model_ClientOrder $order, $notes = null): void
+    public function saveStatusChange(Order|\Model_ClientOrder $order, $notes = null): void
     {
-        $os = $this->di['db']->dispense('ClientOrderStatus');
-        $os->client_order_id = $order->id;
-        $os->status = $order->status;
-        $os->notes = $notes;
-        $os->created_at = date('Y-m-d H:i:s');
-        $os->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($os);
+        $orderId = $order instanceof Order ? $order->getId() : $order->id;
+        $orderStatus = $order instanceof Order ? $order->getStatus() : $order->status;
+
+        $os = new OrderStatus();
+        $os->setClientOrderId($orderId);
+        $os->setStatus($orderStatus);
+        $os->setNotes($notes);
+        $this->di['em']->persist($os);
+        $this->di['em']->flush();
     }
 
     public function getSoonExpiringActiveOrders()
@@ -369,28 +431,75 @@ class Service implements InjectionAwareInterface
         return [$query, $bindings];
     }
 
-    public function toApiArray(\Model_ClientOrder $model, $deep = true, $identity = null)
+    public function toApiArray(Order|\Model_ClientOrder $model, $deep = true, $identity = null)
     {
         $clientService = $this->di['mod_service']('client');
         $supportService = $this->di['mod_service']('support');
 
-        $data = $this->di['db']->toArray($model);
-        $data['config'] = json_decode($model->config ?? '', true) ?? [];
+        if ($model instanceof Order) {
+            $data = [
+                'id' => $model->getId(),
+                'client_id' => $model->getClientId(),
+                'product_id' => $model->getProductId(),
+                'form_id' => $model->getFormId(),
+                'promo_id' => $model->getPromoId(),
+                'promo_recurring' => $model->isPromoRecurring(),
+                'promo_used' => $model->getPromoUsed(),
+                'group_id' => $model->getGroupId(),
+                'group_master' => $model->isGroupMaster(),
+                'invoice_option' => $model->getInvoiceOption(),
+                'title' => $model->getTitle(),
+                'currency' => $model->getCurrency(),
+                'unpaid_invoice_id' => $model->getUnpaidInvoiceId(),
+                'service_id' => $model->getServiceId(),
+                'service_type' => $model->getServiceType(),
+                'period' => $model->getPeriod(),
+                'quantity' => $model->getQuantity(),
+                'unit' => $model->getUnit(),
+                'price' => $model->getPrice(),
+                'discount' => $model->getDiscount(),
+                'status' => $model->getStatus(),
+                'reason' => $model->getReason(),
+                'notes' => $model->getNotes(),
+                'config' => $model->getConfig(),
+                'referred_by' => $model->getReferredBy(),
+                'expires_at' => $model->getExpiresAt()?->format('Y-m-d H:i:s'),
+                'activated_at' => $model->getActivatedAt()?->format('Y-m-d H:i:s'),
+                'suspended_at' => $model->getSuspendedAt()?->format('Y-m-d H:i:s'),
+                'unsuspended_at' => $model->getUnsuspendedAt()?->format('Y-m-d H:i:s'),
+                'canceled_at' => $model->getCanceledAt()?->format('Y-m-d H:i:s'),
+                'created_at' => $model->getCreatedAt()?->format('Y-m-d H:i:s'),
+                'updated_at' => $model->getUpdatedAt()?->format('Y-m-d H:i:s'),
+            ];
+            $modelId = $model->getId();
+            $modelConfig = $model->getConfig();
+            $modelTitle = $model->getTitle();
+            $modelClientId = $model->getClientId();
+        } else {
+            $data = $this->di['db']->toArray($model);
+            $modelId = $model->id;
+            $modelConfig = $model->config;
+            $modelTitle = $model->title;
+            $modelClientId = $model->client_id;
+        }
+
+        $data['config'] = json_decode($modelConfig ?? '', true) ?? [];
         $data['total'] = $this->getTotal($model);
         $data['discount'] ??= 0;
-        $data['title'] = $model->title;
-        $data['meta'] = $this->di['db']->getAssoc('SELECT name, value FROM client_order_meta WHERE client_order_id = :id', [':id' => $model->id]);
-        $data['active_tickets'] = $supportService->getSupportTicketRepository()->countActiveTicketsForOrder((int) $model->id);
-        $client = $this->di['db']->getExistingModelById('Client', $model->client_id, 'Client not found');
+        $data['title'] = $modelTitle;
+        $data['meta'] = $this->di['db']->getAssoc('SELECT name, value FROM client_order_meta WHERE client_order_id = :id', [':id' => $modelId]);
+        $data['active_tickets'] = $supportService->getSupportTicketRepository()->countActiveTicketsForOrder((int) $modelId);
+        $client = $this->di['db']->getExistingModelById('Client', $modelClientId, 'Client not found');
         $data['client'] = $clientService->toApiArray($client, false);
 
         if ($identity instanceof \Model_Admin) {
             $data['config'] = $this->getConfig($model);
             $productService = $this->di['mod_service']('product');
-            $data['plugin'] = $productService->getProductPluginById((int) $model->product_id);
+            $productId = $model instanceof Order ? $model->getProductId() : $model->product_id;
+            $data['plugin'] = $productService->getProductPluginById((int) $productId);
         }
 
-        $client = $this->di['db']->getExistingModelById('Client', $model->client_id, 'Client not found');
+        $client = $this->di['db']->getExistingModelById('Client', $modelClientId, 'Client not found');
         $data['client'] = $clientService->toApiArray($client, false);
 
         return $data;
@@ -688,7 +797,7 @@ class Service implements InjectionAwareInterface
 
         if (!empty($group_id)) {
             $parent_order = $this->getMasterOrderForClient($client, $group_id);
-            if (!$parent_order instanceof \Model_ClientOrder) {
+            if (!$parent_order instanceof Order && !$parent_order instanceof \Model_ClientOrder) {
                 throw new \FOSSBilling\Exception('Parent order :group_id was not found', [':group_id' => $group_id]);
             }
         }
@@ -732,72 +841,76 @@ class Service implements InjectionAwareInterface
             $quantity,
             &$invoice
         ) {
-            $order = $this->di['db']->dispense('ClientOrder');
-            $order->client_id = $client->id;
-            $order->product_id = $this->getProductId($product);
-            $order->form_id = $this->getProductFormId($product);
-            $order->group_id = ($parent_order) ? $parent_order->group_id : uniqid();
-            $order->group_master = ($parent_order) ? 0 : 1;
-            $order->title = $generatedOrderTitle ?? $data['title'] ?? $this->getProductTitle($product);
-            $order->currency = $currency->getCode();
-            $order->service_type = $this->getProductType($product);
-            $order->unit = $this->getProductUnit($product);
-            $order->status = \Model_ClientOrder::STATUS_PENDING_SETUP;
-            $order->config = json_encode($config);
-            $order->invoice_option = $invoiceOption;
+            $order = new Order();
+            $order->setClientId($client->id);
+            $order->setProductId($this->getProductId($product));
+            $order->setFormId($this->getProductFormId($product));
+            $parentGroupId = ($parent_order) ? ($parent_order instanceof Order ? $parent_order->getGroupId() : $parent_order->group_id) : null;
+            $order->setGroupId($parentGroupId ?? uniqid());
+            $order->setGroupMaster(!$parent_order);
+            $order->setTitle($generatedOrderTitle ?? $data['title'] ?? $this->getProductTitle($product));
+            $order->setCurrency($currency->getCode());
+            $order->setServiceType($this->getProductType($product));
+            $order->setUnit($this->getProductUnit($product));
+            $order->setStatus(\Model_ClientOrder::STATUS_PENDING_SETUP);
+            $order->setConfig(json_encode($config));
+            $order->setInvoiceOption($invoiceOption);
 
             if ($period) {
                 $bp = $this->di['period']($data['period']);
-                $order->period = $bp->getCode();
+                $order->setPeriod($bp->getCode());
             }
 
             $line = null;
             if (!isset($data['price']) || $this->getProductType($product) === \Box\Mod\Product\Service::DOMAIN) {
                 $productService = $this->di['mod_service']('Product');
                 $line = $productService->getProductOrderLineConfig($product, array_merge($config, ['quantity' => $quantity]));
-                $order->quantity = $line['quantity'];
+                $order->setQuantity($line['quantity']);
             } else {
-                $order->quantity = $quantity;
+                $order->setQuantity($quantity);
             }
 
             if ($price !== null) {
-                $order->price = $price;
+                $order->setPrice($price);
             } else {
                 $rate = $currencyRepository->getRateByCode($currency->getCode());
                 if ($rate === null) {
                     throw new \FOSSBilling\Exception("Currency rate for '{$currency->getCode()}' is not configured");
                 }
-                $order->price = $line['price'] * $rate;
+                $order->setPrice($line['price'] * $rate);
             }
 
-            $order->notes = $data['notes'] ?? $order->notes;
+            $order->setNotes($data['notes'] ?? $order->getNotes());
             if (isset($data['created_at'])) {
-                $order->created_at = date('Y-m-d H:i:s', strtotime((string) $data['created_at']));
+                $order->setCreatedAt(new \DateTime(date('Y-m-d H:i:s', strtotime((string) $data['created_at']))));
             } else {
-                $order->created_at = date('Y-m-d H:i:s');
+                $order->setCreatedAt(new \DateTime());
             }
 
             if (isset($data['updated_at'])) {
-                $order->updated_at = date('Y-m-d H:i:s', strtotime((string) $data['updated_at']));
+                $order->setUpdatedAt(new \DateTime(date('Y-m-d H:i:s', strtotime((string) $data['updated_at']))));
             } else {
-                $order->updated_at = date('Y-m-d H:i:s');
+                $order->setUpdatedAt(new \DateTime());
             }
 
-            $id = $this->di['db']->store($order);
+            $this->di['em']->persist($order);
+            $this->di['em']->flush();
+            $orderId = $order->getId();
 
             if (isset($data['meta']) && is_array($data['meta'])) {
                 foreach ($data['meta'] as $k => $v) {
-                    $mm = $this->di['db']->findOne('client_order_meta', 'client_order_id = :id AND name = :n', [':id' => $order->id, ':n' => $k]);
-                    if (!$mm) {
-                        $mm = $this->di['db']->dispense('ClientOrderMeta');
-                        $mm->client_order_id = $id;
-                        $mm->name = $k;
-                        $mm->created_at = date('Y-m-d H:i:s');
+                    $mm = $this->getOrderMetaRepository()->findOneByOrderIdAndName($orderId, $k);
+                    if (!$mm instanceof OrderMeta) {
+                        $mm = new OrderMeta();
+                        $mm->setClientOrderId($orderId);
+                        $mm->setName($k);
+                        $mm->setCreatedAt(new \DateTime());
                     }
-                    $mm->value = $v;
-                    $mm->updated_at = date('Y-m-d H:i:s');
-                    $this->di['db']->store($mm);
+                    $mm->setValue($v);
+                    $mm->setUpdatedAt(new \DateTime());
+                    $this->di['em']->persist($mm);
                 }
+                $this->di['em']->flush();
             }
 
             if ($invoiceOption == 'issue-invoice') {
@@ -806,13 +919,11 @@ class Service implements InjectionAwareInterface
                 try {
                     $invoice = $invoiceService->generateForOrder($order);
                 } catch (InformationException $e) {
-                    // Order price resolved to a negative amount (e.g. via a misconfigured
-                    // pricing rule); don't let a failed invoice attempt roll back order creation.
                     $this->di['logger']->warning($e->getMessage());
                 }
             }
 
-            return $id;
+            return $orderId;
         });
 
         if ($invoice instanceof \Model_Invoice) {
@@ -835,9 +946,12 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $order = $this->di['db']->getExistingModelById('ClientOrder', $id, 'Order not found');
+        $order = $this->getOrderRepository()->find($id);
+        if (!$order instanceof Order) {
+            throw new \FOSSBilling\Exception('Order not found');
+        }
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderCreate', 'params' => ['id' => $order->id], 'subject' => $this->getProductType($product)]);
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderCreate', 'params' => ['id' => $order->getId()], 'subject' => $this->getProductType($product)]);
 
         $this->di['logger']->info('Created order #%s', $id);
 
@@ -855,12 +969,11 @@ class Service implements InjectionAwareInterface
 
     public function getMasterOrderForClient(\Model_Client $client, $group_id)
     {
-        $bindings = [
-            ':group_id' => $group_id,
-            ':client_id' => $client->id,
-        ];
-
-        return $this->di['db']->findOne('ClientOrder', 'group_id = :group_id AND group_master = 1 AND client_id = :client_id', $bindings);
+        return $this->getOrderRepository()->findOneBy([
+            'groupId' => $group_id,
+            'groupMaster' => true,
+            'clientId' => $client->id,
+        ]);
     }
 
     /**
@@ -868,18 +981,21 @@ class Service implements InjectionAwareInterface
      *
      * @see https://github.com/boxbilling/boxbilling/issues/54
      */
-    public function activateOrderAddons(\Model_ClientOrder $order): bool
+    public function activateOrderAddons(Order|\Model_ClientOrder $order): bool
     {
-        if (!$order->group_master) {
+        $isGroupMaster = $order instanceof Order ? $order->isGroupMaster() : $order->group_master;
+        if (!$isGroupMaster) {
             return false;
         }
 
         $list = $this->getOrderAddonsList($order);
         foreach ($list as $addon) {
+            $addonId = $addon instanceof Order ? $addon->getId() : $addon->id;
+
             try {
-                $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderActivate', 'params' => ['id' => $addon->id]]);
+                $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderActivate', 'params' => ['id' => $addonId]]);
                 $this->createFromOrder($addon);
-                $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderActivate', 'params' => ['id' => $addon->id]]);
+                $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderActivate', 'params' => ['id' => $addonId]]);
             } catch (\Exception $e) {
                 $this->di['logger']->info($e->getMessage());
             }
@@ -888,18 +1004,17 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function activateOrder(\Model_ClientOrder $order, $data = []): bool
+    public function activateOrder(Order|\Model_ClientOrder $order, $data = []): bool
     {
-        // re-fetch in case the caller's order object is stale (e.g. already activated by another code path)
-        $orderId = $order->id;
-        $order = $this->di['db']->load('ClientOrder', $orderId);
-        if (!$order instanceof \Model_ClientOrder) {
+        $orderId = $order instanceof Order ? $order->getId() : $order->id;
+        $order = $this->getOrderRepository()->find($orderId);
+        if (!$order instanceof Order) {
             throw new \FOSSBilling\Exception('Order :id not found', [':id' => $orderId]);
         }
         $force = !empty($data['force']);
 
-        // Already active and not a forced re-activation: nothing to do.
-        if ($order->status === \Model_ClientOrder::STATUS_ACTIVE && !$force) {
+        $orderStatus = $order instanceof Order ? $order->getStatus() : $order->status;
+        if ($orderStatus === \Model_ClientOrder::STATUS_ACTIVE && !$force) {
             return true;
         }
 
@@ -907,11 +1022,11 @@ class Service implements InjectionAwareInterface
             \Model_ClientOrder::STATUS_PENDING_SETUP,
             \Model_ClientOrder::STATUS_FAILED_SETUP,
         ];
-        if (!in_array($order->status, $statues) && !$force) {
+        if (!in_array($orderStatus, $statues) && !$force) {
             throw new \FOSSBilling\Exception('Only pending setup or failed orders can be activated');
         }
 
-        $event_params = ['id' => $order->id];
+        $event_params = ['id' => $orderId];
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderActivate', 'params' => $event_params]);
         $result = $this->createFromOrder($order);
         if (is_array($result)) {
@@ -921,60 +1036,92 @@ class Service implements InjectionAwareInterface
 
         $this->activateOrderAddons($order);
 
-        $this->di['logger']->info('Activated order #%s', $order->id);
+        $this->di['logger']->info('Activated order #%s', $orderId);
 
         return true;
     }
 
-    public function createFromOrder(\Model_ClientOrder $order)
+    public function createFromOrder(Order|\Model_ClientOrder $order)
     {
+        $orderId = $order instanceof Order ? $order->getId() : $order->id;
+        $serviceType = $order instanceof Order ? $order->getServiceType() : $order->service_type;
+
         $service = $this->getOrderService($order);
         if (!is_object($service)) {
-            $mod = $this->di['mod']('service' . $order->service_type);
+            $mod = $this->di['mod']('service' . $serviceType);
             $s = $mod->getService();
             if (method_exists($s, 'create') || method_exists($s, 'action_create')) {
                 $service = $this->_callOnService($order, \Model_ClientOrder::ACTION_CREATE);
                 if (!is_object($service)) {
-                    throw new \FOSSBilling\Exception('Error creating ' . $order->service_type . ' service for order ' . $order->id);
+                    throw new \FOSSBilling\Exception('Error creating ' . $serviceType . ' service for order ' . $orderId);
                 }
 
-                $order->service_id = $service->id;
-                $order->updated_at = date('Y-m-d H:i:s');
-                $this->di['db']->store($order);
+                if ($order instanceof Order) {
+                    $order->setServiceId($service->id);
+                    $order->setUpdatedAt(new \DateTime());
+                    $this->di['em']->persist($order);
+                    $this->di['em']->flush();
+                } else {
+                    $order->service_id = $service->id;
+                    $order->updated_at = date('Y-m-d H:i:s');
+                    $this->di['db']->store($order);
+                }
             }
         }
 
         try {
             $result = $this->_callOnService($order, \Model_ClientOrder::ACTION_ACTIVATE);
         } catch (\Exception $e) {
-            $order->status = \Model_ClientOrder::STATUS_FAILED_SETUP;
-            $this->di['db']->store($order);
+            if ($order instanceof Order) {
+                $order->setStatus(Order::STATUS_FAILED_SETUP);
+                $this->di['em']->persist($order);
+                $this->di['em']->flush();
+            } else {
+                $order->status = \Model_ClientOrder::STATUS_FAILED_SETUP;
+                $this->di['db']->store($order);
+            }
 
             $this->saveStatusChange($order, $e->getMessage());
 
             throw $e;
         }
 
-        // set automatic order expiration
-        if (!empty($order->period)) {
-            $from_time = ($order->expires_at === null) ? time() : strtotime($order->expires_at);
+        $period = $order instanceof Order ? $order->getPeriod() : $order->period;
+        $expiresAt = $order instanceof Order ? $order->getExpiresAt() : $order->expires_at;
+        if (!empty($period)) {
+            $from_time = ($expiresAt === null) ? time() : ($order instanceof Order ? ($expiresAt?->getTimestamp() ?? time()) : strtotime($expiresAt));
 
-            $period = $this->di['period']($order->period);
-            $order->expires_at = date('Y-m-d H:i:s', $period->getExpirationTime($from_time));
+            $periodObj = $this->di['period']($period);
+            $newExpires = date('Y-m-d H:i:s', $periodObj->getExpirationTime($from_time));
+            if ($order instanceof Order) {
+                $order->setExpiresAt(new \DateTime($newExpires));
+            } else {
+                $order->expires_at = $newExpires;
+            }
         }
 
-        $order->status = \Model_ClientOrder::STATUS_ACTIVE;
-        $order->activated_at = date('Y-m-d H:i:s');
-        $order->suspended_at = null;
-        $order->canceled_at = null;
-        $order->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($order);
-
-        if ($order->product_id) {
-            $productService = $this->di['mod_service']('product');
-            $productService->reduceStock((int) $order->product_id, $order->quantity);
+        if ($order instanceof Order) {
+            $order->setStatus(Order::STATUS_ACTIVE);
+            $order->setActivatedAt(new \DateTime());
+            $order->setSuspendedAt(null);
+            $order->setCanceledAt(null);
+            $order->setUpdatedAt(new \DateTime());
+            $this->di['em']->persist($order);
+            $this->di['em']->flush();
         } else {
-            $this->di['logger']->info("Order without product ID detected Order #{$order->id}.");
+            $order->status = \Model_ClientOrder::STATUS_ACTIVE;
+            $order->activated_at = date('Y-m-d H:i:s');
+            $order->suspended_at = null;
+            $order->canceled_at = null;
+            $order->updated_at = date('Y-m-d H:i:s');
+            $this->di['db']->store($order);
+        }
+
+        if ($order instanceof Order ? $order->getProductId() : $order->product_id) {
+            $productService = $this->di['mod_service']('product');
+            $productService->reduceStock($order instanceof Order ? (int) $order->getProductId() : (int) $order->product_id, $order instanceof Order ? $order->getQuantity() : $order->quantity);
+        } else {
+            $this->di['logger']->info("Order without product ID detected Order #{$orderId}.");
         }
 
         $this->saveStatusChange($order, 'Order activated');
@@ -982,14 +1129,24 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    public function getOrderAddonsList(\Model_ClientOrder $order)
+    public function getOrderAddonsList(Order|\Model_ClientOrder $order)
     {
-        return $this->di['db']->find('ClientOrder', 'group_id = :group_id AND client_id = :client_id and (group_master = 0 OR group_master IS NULL)', [':group_id' => $order->group_id, ':client_id' => $order->client_id]);
+        $groupId = $order instanceof Order ? $order->getGroupId() : $order->group_id;
+        $clientId = $order instanceof Order ? $order->getClientId() : $order->client_id;
+
+        return $this->getOrderRepository()->findBy([
+            'groupId' => $groupId,
+            'clientId' => $clientId,
+        ]);
     }
 
-    protected function _callOnService(\Model_ClientOrder $order, $action)
+    protected function _callOnService(Order|\Model_ClientOrder $order, $action)
     {
-        $repo = $this->di['mod_service']('service' . $order->service_type);
+        $serviceType = $order instanceof Order ? $order->getServiceType() : $order->service_type;
+        $serviceId = $order instanceof Order ? $order->getServiceId() : $order->service_id;
+        $orderId = $order instanceof Order ? $order->getId() : $order->id;
+
+        $repo = $this->di['mod_service']('service' . $serviceType);
         $builtInServiceTypes = [
             \Box\Mod\Product\Service::CUSTOM,
             \Box\Mod\Product\Service::LICENSE,
@@ -998,10 +1155,10 @@ class Service implements InjectionAwareInterface
             \Box\Mod\Product\Service::DOMAIN,
         ];
 
-        if (in_array($order->service_type, $builtInServiceTypes, true)) {
+        if (in_array($serviceType, $builtInServiceTypes, true)) {
             $m = 'action_' . $action;
             if (!method_exists($repo, $m) || !is_callable([$repo, $m])) {
-                throw new \FOSSBilling\Exception('Service ' . $order->service_type . ' do not support ' . $m);
+                throw new \FOSSBilling\Exception('Service ' . $serviceType . ' do not support ' . $m);
             }
 
             return $repo->$m($order);
@@ -1010,18 +1167,18 @@ class Service implements InjectionAwareInterface
         $o = $this->di['db']->findOne(
             'client_order',
             'id = :id',
-            [':id' => $order->id]
+            [':id' => $orderId]
         );
         $service = null;
-        $sdbname = 'service_' . $order->service_type;
-        if ($order->service_id) {
-            $service = $this->di['db']->load($sdbname, $order->service_id);
+        $sdbname = 'service_' . $serviceType;
+        if ($serviceId) {
+            $service = $this->di['db']->load($sdbname, $serviceId);
         }
         if (method_exists($repo, $action) && is_callable([$repo, $action])) {
             return $repo->$action($o, $service);
         }
 
-        $this->di['logger']->info("Service {$order->service_type} does not support action {$action}.");
+        $this->di['logger']->info("Service {$serviceType} does not support action {$action}.");
 
         return null;
     }
@@ -1033,17 +1190,25 @@ class Service implements InjectionAwareInterface
         return $productService->reduceStock($product, $qty);
     }
 
-    public function updatePeriod(\Model_ClientOrder $order, $period): int
+    public function updatePeriod(Order|\Model_ClientOrder $order, $period): int
     {
         if (!empty($period)) {
-            $period = $this->di['period']($period);
-            $order->period = $period->getCode();
+            $periodObj = $this->di['period']($period);
+            if ($order instanceof Order) {
+                $order->setPeriod($periodObj->getCode());
+            } else {
+                $order->period = $periodObj->getCode();
+            }
 
             return 1;
         }
 
         if (!is_null($period)) {
-            $order->period = null;
+            if ($order instanceof Order) {
+                $order->setPeriod(null);
+            } else {
+                $order->period = null;
+            }
 
             return 2;
         }
@@ -1051,91 +1216,147 @@ class Service implements InjectionAwareInterface
         return 0;
     }
 
-    public function updateOrderMeta(\Model_ClientOrder $order, $meta): int
+    public function updateOrderMeta(Order|\Model_ClientOrder $order, $meta): int
     {
         if (!is_array($meta)) {
             return 0;
         }
 
+        $orderId = $order instanceof Order ? $order->getId() : $order->id;
+
         if (empty($meta)) {
-            $this->di['db']->exec('DELETE FROM client_order_meta WHERE client_order_id = :id;', [':id' => $order->id]);
+            $this->getOrderMetaRepository()->deleteByOrderId($orderId);
 
             return 1;
         }
         foreach ($meta as $k => $v) {
-            $mm = $this->di['db']->findOne('ClientOrderMeta', 'client_order_id = :id AND name = :n', [':id' => $order->id, ':n' => $k]);
-            if (!$mm) {
-                $mm = $this->di['db']->dispense('ClientOrderMeta');
-                $mm->client_order_id = $order->id;
-                $mm->name = $k;
-                $mm->created_at = date('Y-m-d H:i:s');
+            $mm = $this->getOrderMetaRepository()->findOneByOrderIdAndName($orderId, $k);
+            if (!$mm instanceof OrderMeta) {
+                $mm = new OrderMeta();
+                $mm->setClientOrderId($orderId);
+                $mm->setName($k);
+                $mm->setCreatedAt(new \DateTime());
             }
-            $mm->value = $v;
-            $mm->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($mm);
+            $mm->setValue($v);
+            $mm->setUpdatedAt(new \DateTime());
+            $this->di['em']->persist($mm);
         }
+        $this->di['em']->flush();
 
         return 2;
     }
 
-    public function updateOrder(\Model_ClientOrder $order, array $data): bool
+    public function updateOrder(Order|\Model_ClientOrder $order, array $data): bool
     {
+        $orderId = $order instanceof Order ? $order->getId() : $order->id;
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderUpdate', 'params' => $data]);
         $this->updatePeriod($order, $data['period'] ?? null);
 
         $created_at = $data['created_at'] ?? '';
         if (!empty($created_at)) {
-            $order->created_at = date('Y-m-d H:i:s', strtotime((string) $created_at));
+            $createdAtDate = date('Y-m-d H:i:s', strtotime((string) $created_at));
+            if ($order instanceof Order) {
+                $order->setCreatedAt(new \DateTime($createdAtDate));
+            } else {
+                $order->created_at = $createdAtDate;
+            }
         }
 
         $activated_at = $data['activated_at'] ?? null;
         if (!empty($activated_at)) {
-            $order->activated_at = date('Y-m-d H:i:s', strtotime((string) $activated_at));
+            $activatedAtDate = date('Y-m-d H:i:s', strtotime((string) $activated_at));
+            if ($order instanceof Order) {
+                $order->setActivatedAt(new \DateTime($activatedAtDate));
+            } else {
+                $order->activated_at = $activatedAtDate;
+            }
         }
 
         $expires_at = $data['expires_at'] ?? null;
         if (!empty($expires_at)) {
-            $order->expires_at = date('Y-m-d H:i:s', strtotime((string) $expires_at));
+            $expiresAtDate = date('Y-m-d H:i:s', strtotime((string) $expires_at));
+            if ($order instanceof Order) {
+                $order->setExpiresAt(new \DateTime($expiresAtDate));
+            } else {
+                $order->expires_at = $expiresAtDate;
+            }
         }
         if (empty($expires_at) && !is_null($expires_at)) {
-            $order->expires_at = null;
+            if ($order instanceof Order) {
+                $order->setExpiresAt(null);
+            } else {
+                $order->expires_at = null;
+            }
         }
 
-        $order->invoice_option = $data['invoice_option'] ?? $order->invoice_option;
-        $order->title = $data['title'] ?? $order->title;
-        if (isset($data['price'])) {
-            $order->price = PriceValidator::validateAmount($data['price']);
+        $invoiceOption = $data['invoice_option'] ?? ($order instanceof Order ? $order->getInvoiceOption() : $order->invoice_option);
+        if ($order instanceof Order) {
+            $order->setInvoiceOption($invoiceOption);
+            $order->setTitle($data['title'] ?? $order->getTitle());
+        } else {
+            $order->invoice_option = $invoiceOption;
+            $order->title = $data['title'] ?? $order->title;
         }
-        if (isset($data['status']) && $data['status'] !== $order->status) {
+
+        if (isset($data['price'])) {
+            $price = PriceValidator::validateAmount($data['price']);
+            if ($order instanceof Order) {
+                $order->setPrice($price);
+            } else {
+                $order->price = $price;
+            }
+        }
+
+        $currentStatus = $order instanceof Order ? $order->getStatus() : $order->status;
+        if (isset($data['status']) && $data['status'] !== $currentStatus) {
             if (!in_array($data['status'], \Model_ClientOrder::getValidStatuses(), true)) {
                 throw new InformationException('Invalid order status: :status', [':status:' => $data['status']]);
             }
-            $order->status = $data['status'];
+            if ($order instanceof Order) {
+                $order->setStatus($data['status']);
+            } else {
+                $order->status = $data['status'];
+            }
         }
-        $order->notes = $data['notes'] ?? $order->notes;
-        $order->reason = $data['reason'] ?? $order->reason;
+
+        $notes = $data['notes'] ?? ($order instanceof Order ? $order->getNotes() : $order->notes);
+        $reason = $data['reason'] ?? ($order instanceof Order ? $order->getReason() : $order->reason);
+        if ($order instanceof Order) {
+            $order->setNotes($notes);
+            $order->setReason($reason);
+        } else {
+            $order->notes = $notes;
+            $order->reason = $reason;
+        }
 
         $this->updateOrderMeta($order, $data['meta'] ?? null);
 
-        $order->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($order);
+        if ($order instanceof Order) {
+            $order->setUpdatedAt(new \DateTime());
+            $this->di['em']->persist($order);
+            $this->di['em']->flush();
+        } else {
+            $order->updated_at = date('Y-m-d H:i:s');
+            $this->di['db']->store($order);
+        }
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderUpdate', 'params' => ['id' => $order->id]]);
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderUpdate', 'params' => ['id' => $orderId]]);
 
-        $this->di['logger']->info('Update order #%s', $order->id);
+        $this->di['logger']->info('Update order #%s', $orderId);
 
         return true;
     }
 
-    public function renewOrder(\Model_ClientOrder $order): bool
+    public function renewOrder(Order|\Model_ClientOrder $order): bool
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderRenew', 'params' => ['id' => $order->id]]);
+        $orderId = $order instanceof Order ? $order->getId() : $order->id;
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderRenew', 'params' => ['id' => $orderId]]);
 
         $this->renewFromOrder($order);
 
-        // activate all addons on initial activation
-        // @see https://github.com/boxbilling/boxbilling/issues/54
-        if ($order->group_master && $order->status == \Model_ClientOrder::STATUS_PENDING_SETUP) {
+        $isGroupMaster = $order instanceof Order ? $order->isGroupMaster() : $order->group_master;
+        $orderStatus = $order instanceof Order ? $order->getStatus() : $order->status;
+        if ($isGroupMaster && $orderStatus == \Model_ClientOrder::STATUS_PENDING_SETUP) {
             $list = $this->getOrderAddonsList($order);
             foreach ($list as $addon) {
                 try {
@@ -1146,115 +1367,166 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderRenew', 'params' => ['id' => $order->id]]);
-        $this->di['logger']->info('Renewed order #%s', $order->id);
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderRenew', 'params' => ['id' => $orderId]]);
+        $this->di['logger']->info('Renewed order #%s', $orderId);
 
         return true;
     }
 
-    public function renewFromOrder(\Model_ClientOrder $order): void
+    public function renewFromOrder(Order|\Model_ClientOrder $order): void
     {
-        // renew order, update order history if failure on renewal
+        $orderId = $order instanceof Order ? $order->getId() : $order->id;
+
         try {
             $result = $this->_callOnService($order, \Model_ClientOrder::ACTION_RENEW);
         } catch (\Exception $e) {
-            $order->status = \Model_ClientOrder::STATUS_FAILED_RENEW;
-            $this->di['db']->store($order);
+            if ($order instanceof Order) {
+                $order->setStatus(Order::STATUS_FAILED_RENEW);
+                $this->di['em']->persist($order);
+                $this->di['em']->flush();
+            } else {
+                $order->status = \Model_ClientOrder::STATUS_FAILED_RENEW;
+                $this->di['db']->store($order);
+            }
 
             $this->saveStatusChange($order, $e->getMessage());
 
             throw $e;
         }
 
-        if (!empty($order->period)) {
-            $from_time = ($order->expires_at === null) ? time() : strtotime($order->expires_at); // from expiration date
+        $period = $order instanceof Order ? $order->getPeriod() : $order->period;
+        $expiresAt = $order instanceof Order ? $order->getExpiresAt() : $order->expires_at;
+        if (!empty($period)) {
+            $from_time = ($expiresAt === null) ? time() : ($order instanceof Order ? ($expiresAt?->getTimestamp() ?? time()) : strtotime($expiresAt));
 
             $config = $this->di['mod_config']('order');
             $logic = $config['order_renewal_logic'] ?? '';
 
             if ($logic == 'from_today') {
-                $from_time = time(); // renew order from the date renewal occurred
+                $from_time = time();
             } elseif ($logic == 'from_greater') {
-                if (strtotime($order->expires_at) > time()) {
-                    $from_time = strtotime($order->expires_at);
+                $expiresTimestamp = $order instanceof Order ? ($expiresAt?->getTimestamp() ?? 0) : strtotime($expiresAt);
+                if ($expiresTimestamp > time()) {
+                    $from_time = $expiresTimestamp;
                 } else {
                     $from_time = time();
                 }
             }
-            $period = $this->di['period']($order->period);
-            $order->expires_at = date('Y-m-d H:i:s', $period->getExpirationTime($from_time));
+            $periodObj = $this->di['period']($period);
+            $newExpires = date('Y-m-d H:i:s', $periodObj->getExpirationTime($from_time));
+            if ($order instanceof Order) {
+                $order->setExpiresAt(new \DateTime($newExpires));
+            } else {
+                $order->expires_at = $newExpires;
+            }
         }
 
-        $order->status = \Model_ClientOrder::STATUS_ACTIVE;
-        $order->suspended_at = null;
-        $order->unsuspended_at = null;
-        $order->canceled_at = null;
-        $order->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($order);
+        if ($order instanceof Order) {
+            $order->setStatus(Order::STATUS_ACTIVE);
+            $order->setSuspendedAt(null);
+            $order->setUnsuspendedAt(null);
+            $order->setCanceledAt(null);
+            $order->setUpdatedAt(new \DateTime());
+            $this->di['em']->persist($order);
+            $this->di['em']->flush();
+        } else {
+            $order->status = \Model_ClientOrder::STATUS_ACTIVE;
+            $order->suspended_at = null;
+            $order->unsuspended_at = null;
+            $order->canceled_at = null;
+            $order->updated_at = date('Y-m-d H:i:s');
+            $this->di['db']->store($order);
+        }
 
         $this->saveStatusChange($order, 'Order renewed');
     }
 
-    public function suspendFromOrder(\Model_ClientOrder $order, $reason = null, $skipEvent = false): bool
+    public function suspendFromOrder(Order|\Model_ClientOrder $order, $reason = null, $skipEvent = false): bool
     {
+        $orderId = $order instanceof Order ? $order->getId() : $order->id;
+        $orderStatus = $order instanceof Order ? $order->getStatus() : $order->status;
+
         if (!$skipEvent) {
-            $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderSuspend', 'params' => ['id' => $order->id]]);
+            $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderSuspend', 'params' => ['id' => $orderId]]);
         }
 
-        if ($order->status != \Model_ClientOrder::STATUS_ACTIVE) {
+        if ($orderStatus != \Model_ClientOrder::STATUS_ACTIVE) {
             throw new InformationException('Only active orders can be suspended');
         }
 
         $this->_callOnService($order, \Model_ClientOrder::ACTION_SUSPEND);
 
-        $order->status = \Model_ClientOrder::STATUS_SUSPENDED;
-        $order->reason = $reason;
-        $order->suspended_at = date('Y-m-d H:i:s');
-        $order->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($order);
+        if ($order instanceof Order) {
+            $order->setStatus(Order::STATUS_SUSPENDED);
+            $order->setReason($reason);
+            $order->setSuspendedAt(new \DateTime());
+            $order->setUpdatedAt(new \DateTime());
+            $this->di['em']->persist($order);
+            $this->di['em']->flush();
+        } else {
+            $order->status = \Model_ClientOrder::STATUS_SUSPENDED;
+            $order->reason = $reason;
+            $order->suspended_at = date('Y-m-d H:i:s');
+            $order->updated_at = date('Y-m-d H:i:s');
+            $this->di['db']->store($order);
+        }
 
         $note = ($reason === null) ? 'Order suspended' : 'Order suspended for ' . $reason;
         $this->saveStatusChange($order, $note);
 
         if (!$skipEvent) {
-            $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderSuspend', 'params' => ['id' => $order->id]]);
+            $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderSuspend', 'params' => ['id' => $orderId]]);
         }
 
-        $this->di['logger']->info('Suspended order #%s', $order->id);
+        $this->di['logger']->info('Suspended order #%s', $orderId);
 
         return true;
     }
 
-    public function unsuspendFromOrder(\Model_ClientOrder $order): bool
+    public function unsuspendFromOrder(Order|\Model_ClientOrder $order): bool
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderUnsuspend', 'params' => ['id' => $order->id]]);
+        $orderId = $order instanceof Order ? $order->getId() : $order->id;
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderUnsuspend', 'params' => ['id' => $orderId]]);
 
         $this->_callOnService($order, \Model_ClientOrder::ACTION_UNSUSPEND);
 
-        $order->status = \Model_ClientOrder::STATUS_ACTIVE;
-        $order->reason = null;
-        $order->suspended_at = null;
-        $order->unsuspended_at = date('Y-m-d H:i:s');
-        $order->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($order);
+        if ($order instanceof Order) {
+            $order->setStatus(Order::STATUS_ACTIVE);
+            $order->setReason(null);
+            $order->setSuspendedAt(null);
+            $order->setUnsuspendedAt(new \DateTime());
+            $order->setUpdatedAt(new \DateTime());
+            $this->di['em']->persist($order);
+            $this->di['em']->flush();
+        } else {
+            $order->status = \Model_ClientOrder::STATUS_ACTIVE;
+            $order->reason = null;
+            $order->suspended_at = null;
+            $order->unsuspended_at = date('Y-m-d H:i:s');
+            $order->updated_at = date('Y-m-d H:i:s');
+            $this->di['db']->store($order);
+        }
 
         $this->saveStatusChange($order, 'Order unsuspended');
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderUnsuspend', 'params' => ['id' => $order->id]]);
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderUnsuspend', 'params' => ['id' => $orderId]]);
 
-        $this->di['logger']->info('Unsuspended order #%s', $order->id);
+        $this->di['logger']->info('Unsuspended order #%s', $orderId);
 
         return true;
     }
 
-    public function cancelFromOrder(\Model_ClientOrder $order, $reason = null, $skipEvent = false): bool
+    public function cancelFromOrder(Order|\Model_ClientOrder $order, $reason = null, $skipEvent = false): bool
     {
+        $orderId = $order instanceof Order ? $order->getId() : $order->id;
+        $orderStatus = $order instanceof Order ? $order->getStatus() : $order->status;
+
         if (!$skipEvent) {
-            $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderCancel', 'params' => ['id' => $order->id]]);
+            $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderCancel', 'params' => ['id' => $orderId]]);
         }
 
-        if (in_array($order->status, [\Model_ClientOrder::STATUS_CANCELED, \Model_ClientOrder::STATUS_PENDING_SETUP, \Model_ClientOrder::STATUS_FAILED_SETUP])) {
-            throw new \FOSSBilling\Exception('Cannot cancel ' . $order->status . ' order');
+        if (in_array($orderStatus, [\Model_ClientOrder::STATUS_CANCELED, \Model_ClientOrder::STATUS_PENDING_SETUP, \Model_ClientOrder::STATUS_FAILED_SETUP])) {
+            throw new \FOSSBilling\Exception('Cannot cancel ' . $orderStatus . ' order');
         }
 
         $this->_callOnService($order, \Model_ClientOrder::ACTION_CANCEL);
@@ -1262,13 +1534,24 @@ class Service implements InjectionAwareInterface
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
         $subscriptionService->cancelForOrder($order);
 
-        $order->status = \Model_ClientOrder::STATUS_CANCELED;
-        $order->reason = $reason;
-        $order->canceled_at = date('Y-m-d H:i:s');
-        $order->expires_at = null;
-        $order->suspended_at = null;
-        $order->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($order);
+        if ($order instanceof Order) {
+            $order->setStatus(Order::STATUS_CANCELED);
+            $order->setReason($reason);
+            $order->setCanceledAt(new \DateTime());
+            $order->setExpiresAt(null);
+            $order->setSuspendedAt(null);
+            $order->setUpdatedAt(new \DateTime());
+            $this->di['em']->persist($order);
+            $this->di['em']->flush();
+        } else {
+            $order->status = \Model_ClientOrder::STATUS_CANCELED;
+            $order->reason = $reason;
+            $order->canceled_at = date('Y-m-d H:i:s');
+            $order->expires_at = null;
+            $order->suspended_at = null;
+            $order->updated_at = date('Y-m-d H:i:s');
+            $this->di['db']->store($order);
+        }
         $productService = $this->di['mod_service']('Product');
         $productService->releaseReservedPromoRedemptionsForOrder($order, 'order_canceled');
 
@@ -1276,49 +1559,64 @@ class Service implements InjectionAwareInterface
         $this->saveStatusChange($order, $note);
 
         if (!$skipEvent) {
-            $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderCancel', 'params' => ['id' => $order->id]]);
+            $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderCancel', 'params' => ['id' => $orderId]]);
         }
 
-        $this->di['logger']->info('Canceled order #%s', $order->id);
+        $this->di['logger']->info('Canceled order #%s', $orderId);
 
         return true;
     }
 
-    public function uncancelFromOrder(\Model_ClientOrder $order): bool
+    public function uncancelFromOrder(Order|\Model_ClientOrder $order): bool
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderUncancel', 'params' => ['id' => $order->id]]);
+        $orderId = $order instanceof Order ? $order->getId() : $order->id;
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderUncancel', 'params' => ['id' => $orderId]]);
 
         $this->_callOnService($order, \Model_ClientOrder::ACTION_UNCANCEL);
 
-        $expires_at = null;
-        if ($order->period) {
-            $period = $this->di['period']($order->period);
-            $expires_at = $period->getExpirationTime(time());
-            $expires_at = date('Y-m-d H:i:s', $expires_at);
+        $expiresAt = null;
+        $period = $order instanceof Order ? $order->getPeriod() : $order->period;
+        if ($period) {
+            $periodObj = $this->di['period']($period);
+            $expiresAt = $periodObj->getExpirationTime(time());
+            $expiresAt = date('Y-m-d H:i:s', $expiresAt);
         }
 
-        $order->status = \Model_ClientOrder::STATUS_ACTIVE;
-        $order->reason = null;
-        $order->activated_at = date('Y-m-d H:i:s');
-        $order->expires_at = $expires_at;
-        $order->suspended_at = null;
-        $order->canceled_at = null;
-        $order->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($order);
+        if ($order instanceof Order) {
+            $order->setStatus(Order::STATUS_ACTIVE);
+            $order->setReason(null);
+            $order->setActivatedAt(new \DateTime());
+            $order->setExpiresAt($expiresAt ? new \DateTime($expiresAt) : null);
+            $order->setSuspendedAt(null);
+            $order->setCanceledAt(null);
+            $order->setUpdatedAt(new \DateTime());
+            $this->di['em']->persist($order);
+            $this->di['em']->flush();
+        } else {
+            $order->status = \Model_ClientOrder::STATUS_ACTIVE;
+            $order->reason = null;
+            $order->activated_at = date('Y-m-d H:i:s');
+            $order->expires_at = $expiresAt;
+            $order->suspended_at = null;
+            $order->canceled_at = null;
+            $order->updated_at = date('Y-m-d H:i:s');
+            $this->di['db']->store($order);
+        }
 
         $this->saveStatusChange($order, 'Activated canceled order');
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderUncancel', 'params' => ['id' => $order->id]]);
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderUncancel', 'params' => ['id' => $orderId]]);
 
-        $this->di['logger']->info('Uncanceled order #%s', $order->id);
+        $this->di['logger']->info('Uncanceled order #%s', $orderId);
 
         return true;
     }
 
-    public function rmInvoiceItemByOrder(\Model_ClientOrder $order): void
+    public function rmInvoiceItemByOrder(Order|\Model_ClientOrder $order): void
     {
+        $orderId = $order instanceof Order ? $order->getId() : $order->id;
         $bindings = [
-            ':rel_id' => $order->id,
+            ':rel_id' => $orderId,
             ':status' => \Model_InvoiceItem::STATUS_PENDING_PAYMENT,
         ];
 
@@ -1330,29 +1628,49 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function rmClientOrderStatusByOrder(\Model_ClientOrder $order): void
+    public function rmClientOrderStatusByOrder(Order|\Model_ClientOrder $order): void
     {
-        $this->di['db']->exec('Delete FROM client_order_status WHERE client_order_id = :client_order_id', [':client_order_id' => $order->id]);
+        $orderId = $order instanceof Order ? $order->getId() : $order->id;
+        $this->getOrderStatusRepository()->rmByOrderId($orderId);
     }
 
-    public function rmOrder(\Model_ClientOrder $model): void
+    public function rmOrder(Order|\Model_ClientOrder $model): void
     {
-        if ($model->group_master) {
+        $isGroupMaster = $model instanceof Order ? $model->isGroupMaster() : $model->group_master;
+
+        if ($isGroupMaster) {
+            $orderId = $model instanceof Order ? $model->getId() : $model->id;
             $list = $this->getOrderAddonsList($model);
             foreach ($list as $addon) {
-                $addon->group_master = 1;
-                $addon->group_id = 0;
-                $this->di['db']->store($addon);
+                if ($addon instanceof Order) {
+                    $addon->setGroupMaster(true);
+                    $addon->setGroupId('0');
+                    $this->di['em']->persist($addon);
+                } else {
+                    $addon->group_master = 1;
+                    $addon->group_id = 0;
+                    $this->di['db']->store($addon);
+                }
+            }
+            if ($addon instanceof Order) {
+                $this->di['em']->flush();
             }
         }
-        $this->di['db']->trash($model);
+        if ($model instanceof Order) {
+            $this->di['em']->remove($model);
+            $this->di['em']->flush();
+        } else {
+            $this->di['db']->trash($model);
+        }
     }
 
-    public function deleteFromOrder(\Model_ClientOrder $order, bool $forceDelete = false): bool
+    public function deleteFromOrder(Order|\Model_ClientOrder $order, bool $forceDelete = false): bool
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderDelete', 'params' => ['id' => $order->id]]);
+        $orderId = $order instanceof Order ? $order->getId() : $order->id;
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderDelete', 'params' => ['id' => $orderId]]);
 
-        if ($order->status == \Model_ClientOrder::STATUS_PENDING_SETUP) {
+        $orderStatus = $order instanceof Order ? $order->getStatus() : $order->status;
+        if ($orderStatus == \Model_ClientOrder::STATUS_PENDING_SETUP) {
             $this->rmInvoiceItemByOrder($order);
         }
 
@@ -1365,25 +1683,20 @@ class Service implements InjectionAwareInterface
             $this->di['logger']->info("{$e->getMessage()} in {$e->getFile()} : {$e->getFile()}");
         }
 
-        $id = $order->id;
         $productService = $this->di['mod_service']('Product');
         $productService->releaseReservedPromoRedemptionsForOrder($order, 'order_deleted');
         $this->rmClientOrderStatusByOrder($order);
         $this->rmOrder($order);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderDelete', 'params' => ['id' => $id]]);
-        $this->di['logger']->info('Deleted order #%s', $id);
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderDelete', 'params' => ['id' => $orderId]]);
+        $this->di['logger']->info('Deleted order #%s', $orderId);
 
         return true;
     }
 
     public function getExpiredOrders()
     {
-        $bindings = [
-            ':status' => \Model_ClientOrder::STATUS_ACTIVE,
-        ];
-
-        return $this->di['db']->find('ClientOrder', 'status = :status AND expires_at IS NOT NULL AND DATEDIFF(NOW(), expires_at) >= 1 ORDER BY id', $bindings);
+        return $this->getOrderRepository()->getExpired();
     }
 
     public function batchSuspendExpired(): bool
@@ -1441,7 +1754,10 @@ class Service implements InjectionAwareInterface
 
         foreach ($orders as $orderArr) {
             try {
-                $order = $this->di['db']->getExistingModelById('ClientOrder', $orderArr['id'], 'Order not found');
+                $order = $this->getOrderRepository()->find((int) $orderArr['id']);
+                if (!$order instanceof Order) {
+                    throw new \FOSSBilling\Exception('Order not found');
+                }
                 $this->cancelFromOrder($order, $reason);
             } catch (\Exception $e) {
                 $this->di['logger']->info($e->getMessage());
@@ -1455,21 +1771,31 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function updateOrderConfig(\Model_ClientOrder $order, array $config): bool
+    public function updateOrderConfig(Order|\Model_ClientOrder $order, array $config): bool
     {
-        if ($order->form_id) {
+        $formId = $order instanceof Order ? $order->getFormId() : $order->form_id;
+        $orderId = $order instanceof Order ? $order->getId() : $order->id;
+
+        if ($formId) {
             $formbuilderService = $this->di['mod_service']('formbuilder');
-            $form = $formbuilderService->getForm((int) $order->form_id);
+            $form = $formbuilderService->getForm((int) $formId);
             $this->validateConfigAgainstForm($config, $form);
         }
 
-        $oldConfig = $order->config;
+        $oldConfig = $order instanceof Order ? $order->getConfig() : $order->config;
 
-        $order->config = json_encode($config);
-        $order->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($order);
+        if ($order instanceof Order) {
+            $order->setConfig(json_encode($config));
+            $order->setUpdatedAt(new \DateTime());
+            $this->di['em']->persist($order);
+            $this->di['em']->flush();
+        } else {
+            $order->config = json_encode($config);
+            $order->updated_at = date('Y-m-d H:i:s');
+            $this->di['db']->store($order);
+        }
 
-        $this->di['logger']->info(sprintf("Order #%s config changes:\n%s\n%s", $order->id, $oldConfig, $order->config));
+        $this->di['logger']->info(sprintf("Order #%s config changes:\n%s\n%s", $orderId, $oldConfig, $order instanceof Order ? $order->getConfig() : $order->config));
 
         return true;
     }
@@ -1535,30 +1861,35 @@ class Service implements InjectionAwareInterface
         return [$query, $bindings];
     }
 
-    public function orderStatusAdd(\Model_ClientOrder $order, $status, $notes = null): bool
+    public function orderStatusAdd(Order|\Model_ClientOrder $order, $status, $notes = null): bool
     {
         if (!in_array($status, \Model_ClientOrder::getValidStatuses(), true)) {
             throw new InformationException('Invalid order status: :status', [':status:' => $status]);
         }
 
-        $bean = $this->di['db']->dispense('ClientOrderStatus');
-        $bean->client_order_id = $order->id;
-        $bean->status = $status;
-        $bean->notes = $notes;
-        $bean->created_at = date('Y-m-d H:i:s');
-        $bean->updated_at = date('Y-m-d H:i:s');
-        $id = $this->di['db']->store($bean);
+        $orderId = $order instanceof Order ? $order->getId() : $order->id;
 
-        $this->di['logger']->info('Added order status history message to order #%s', $id);
+        $bean = new OrderStatus();
+        $bean->setClientOrderId($orderId);
+        $bean->setStatus($status);
+        $bean->setNotes($notes);
+        $this->di['em']->persist($bean);
+        $this->di['em']->flush();
+
+        $this->di['logger']->info('Added order status history message to order #%s', $bean->getId());
 
         return true;
     }
 
     public function orderStatusRm($id): bool
     {
-        $orderStatus = $this->di['db']->getExistingModelById('ClientOrderStatus', $id, 'Order history line not found');
+        $orderStatus = $this->getOrderStatusRepository()->find($id);
+        if (!$orderStatus instanceof OrderStatus) {
+            throw new \FOSSBilling\Exception('Order history line not found');
+        }
 
-        $this->di['db']->trash($orderStatus);
+        $this->di['em']->remove($orderStatus);
+        $this->di['em']->flush();
 
         $this->di['logger']->info('Order history line removed');
 
@@ -1567,38 +1898,27 @@ class Service implements InjectionAwareInterface
 
     public function findForClientById(\Model_Client $client, $id)
     {
-        $bindings = [
-            ':id' => $id,
-            ':client_id' => $client->id,
-        ];
-
-        return $this->di['db']->findOne('ClientOrder', 'id = :id AND client_id = :client_id', $bindings);
+        return $this->getOrderRepository()->findForClientById($client->id, (int) $id);
     }
 
-    public function findByClientIdAndOrderId(int $clientId, int $orderId): ?\Model_ClientOrder
+    public function findByClientIdAndOrderId(int $clientId, int $orderId): ?Order
     {
-        $bindings = [
-            ':id' => $orderId,
-            ':client_id' => $clientId,
-        ];
-
-        $order = $this->di['db']->findOne('ClientOrder', 'id = :id AND client_id = :client_id', $bindings);
-
-        return $order instanceof \Model_ClientOrder ? $order : null;
+        return $this->getOrderRepository()->findForClientById($clientId, $orderId);
     }
 
-    public function getOrderServiceData(\Model_ClientOrder $order, $identity = null)
+    public function getOrderServiceData(Order|\Model_ClientOrder $order, $identity = null)
     {
-        $orderId = $order->id;
+        $orderId = $order instanceof Order ? $order->getId() : $order->id;
+        $serviceType = $order instanceof Order ? $order->getServiceType() : $order->service_type;
         $service = $this->getOrderService($order);
         if (!is_object($service)) {
             $this->di['logger']->info("Order #{$orderId} has no active service.");
 
             return null;
         }
-        $srepo = $this->di['mod_service']('service' . $order->service_type);
+        $srepo = $this->di['mod_service']('service' . $serviceType);
         if (!method_exists($srepo, 'toApiArray')) {
-            $this->di['logger']->info("Service #{$order->service_type} method toApiArray is missing.");
+            $this->di['logger']->info("Service #{$serviceType} method toApiArray is missing.");
 
             return null;
         }
@@ -1606,8 +1926,12 @@ class Service implements InjectionAwareInterface
         return $srepo->toApiArray($service, true, $identity);
     }
 
-    public function getTotal(\Model_ClientOrder $model): float
+    public function getTotal(Order|\Model_ClientOrder $model): float
     {
+        if ($model instanceof Order) {
+            return $this->calculateTotal($model->getPrice() ?? 0, $model->getQuantity() ?? 1);
+        }
+
         return $this->calculateTotal($model->price ?? 0, $model->quantity ?? 1);
     }
 
@@ -1616,31 +1940,45 @@ class Service implements InjectionAwareInterface
         return (float) $price * (int) $quantity;
     }
 
-    public function setUnpaidInvoice(\Model_ClientOrder $order, \Model_Invoice $proforma): void
+    public function setUnpaidInvoice(Order|\Model_ClientOrder $order, \Model_Invoice $proforma): void
     {
-        $order->unpaid_invoice_id = $proforma->id;
-        $order->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($order);
+        $orderId = $order instanceof Order ? $order->getId() : $order->id;
+        if ($order instanceof Order) {
+            $order->setUnpaidInvoiceId($proforma->id);
+            $order->setUpdatedAt(new \DateTime());
+            $this->di['em']->persist($order);
+            $this->di['em']->flush();
+        } else {
+            $order->unpaid_invoice_id = $proforma->id;
+            $order->updated_at = date('Y-m-d H:i:s');
+            $this->di['db']->store($order);
+        }
     }
 
-    public function unsetUnpaidInvoice(\Model_ClientOrder $order): void
+    public function unsetUnpaidInvoice(Order|\Model_ClientOrder $order): void
     {
-        $order->unpaid_invoice_id = null;
-        $order->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($order);
+        $orderId = $order instanceof Order ? $order->getId() : $order->id;
+        if ($order instanceof Order) {
+            $order->setUnpaidInvoiceId(null);
+            $order->setUpdatedAt(new \DateTime());
+            $this->di['em']->persist($order);
+            $this->di['em']->flush();
+        } else {
+            $order->unpaid_invoice_id = null;
+            $order->updated_at = date('Y-m-d H:i:s');
+            $this->di['db']->store($order);
+        }
     }
 
-    public function getRelatedOrderIdByType(\Model_ClientOrder $order, $type)
+    public function getRelatedOrderIdByType(Order|\Model_ClientOrder $order, $type)
     {
-        $bindings = [
-            ':group_id' => $order->group_id,
-            ':service_type' => $type,
-        ];
+        $groupId = $order instanceof Order ? $order->getGroupId() : $order->group_id;
+        $serviceType = $order instanceof Order ? $order->getServiceType() : $order->service_type;
 
-        $o = $this->di['db']->findOne('ClientOrder', 'group_id = :group_id AND service_type = :service_type', $bindings);
+        $o = $this->getOrderRepository()->findOneBy(['groupId' => $groupId, 'serviceType' => $type]);
 
-        if ($o instanceof \Model_ClientOrder) {
-            return $o->id;
+        if ($o instanceof Order) {
+            return $o->getId();
         }
 
         return null;
@@ -1649,11 +1987,9 @@ class Service implements InjectionAwareInterface
     public function rmByClient(\Model_Client $client): void
     {
         $productService = $this->di['mod_service']('Product');
-        $orders = $this->di['db']->find('ClientOrder', 'client_id = ?', [$client->id]);
+        $orders = $this->getOrderRepository()->findByClientId($client->id);
         foreach ($orders as $order) {
-            if ($order instanceof \Model_ClientOrder) {
-                $productService->releaseReservedPromoRedemptionsForOrder($order, 'client_deleted');
-            }
+            $productService->releaseReservedPromoRedemptionsForOrder($order, 'client_deleted');
         }
 
         $query = $this->di['dbal']->createQueryBuilder();

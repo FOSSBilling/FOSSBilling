@@ -667,22 +667,9 @@ test('gets addons for an order', function (): void {
 test('gets an order via getOrder', function (): void {
     $api = apiEndpoint(new Admin());
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
-    $validatorMock->shouldIgnoreMissing();
-
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('toApiArray')->atLeast()->once()->andReturn([]);
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('getExistingModelById')->atLeast()->once()->andReturn($order);
-
-    $di = container();
-    $di['validator'] = $validatorMock;
-    $di['db'] = $dbMock;
-    $api->setDi($di);
     $api->setService($serviceMock);
 
     $data = ['id' => 1];

@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Order\Api;
 
+use Box\Mod\Order\Entity\Order;
 use FOSSBilling\PaginationOptions;
 
 class Client extends \FOSSBilling\Api\AbstractApi
@@ -80,8 +81,9 @@ class Client extends \FOSSBilling\Api\AbstractApi
     public function service($data)
     {
         $order = $this->_getOrder($data);
+        $status = $order instanceof Order ? $order->getStatus() : $order->status;
 
-        if ($order->status !== \Model_ClientOrder::STATUS_ACTIVE) {
+        if ($status !== \Model_ClientOrder::STATUS_ACTIVE) {
             throw new \FOSSBilling\InformationException('Order is not active');
         }
 
@@ -97,8 +99,9 @@ class Client extends \FOSSBilling\Api\AbstractApi
     {
         $model = $this->_getOrder($data);
         $productService = $this->di['mod_service']('product');
+        $productId = $model instanceof Order ? $model->getProductId() : $model->product_id;
 
-        return $productService->getUpgradablePairsByProductId((int) $model->product_id);
+        return $productService->getUpgradablePairsByProductId((int) $productId);
     }
 
     /**
@@ -107,7 +110,8 @@ class Client extends \FOSSBilling\Api\AbstractApi
     public function delete($data)
     {
         $model = $this->_getOrder($data);
-        if (!in_array($model->status, [\Model_ClientOrder::STATUS_PENDING_SETUP, \Model_ClientOrder::STATUS_FAILED_SETUP])) {
+        $status = $model instanceof Order ? $model->getStatus() : $model->status;
+        if (!in_array($status, [\Model_ClientOrder::STATUS_PENDING_SETUP, \Model_ClientOrder::STATUS_FAILED_SETUP])) {
             throw new \FOSSBilling\InformationException('Only pending and failed setup orders can be deleted.');
         }
 
@@ -122,7 +126,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $this->getDi()['validator']->checkRequiredParamsForArray($required, $data);
 
         $order = $this->getService()->findForClientById($this->getIdentity(), $data['id']);
-        if (!$order instanceof \Model_ClientOrder) {
+        if (!$order instanceof Order && !$order instanceof \Model_ClientOrder) {
             throw new \FOSSBilling\InformationException('Order not found');
         }
 

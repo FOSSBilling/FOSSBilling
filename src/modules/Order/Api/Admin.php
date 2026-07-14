@@ -15,6 +15,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Order\Api;
 
+use Box\Mod\Order\Entity\Order;
+use Box\Mod\Order\Repository\OrderRepository;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
@@ -22,6 +24,17 @@ use Symfony\Component\HttpFoundation\Response;
 
 class Admin extends \FOSSBilling\Api\AbstractApi
 {
+    private ?OrderRepository $orderRepository = null;
+
+    protected function getOrderRepository(): OrderRepository
+    {
+        if ($this->orderRepository === null) {
+            $this->orderRepository = $this->getDi()['em']->getRepository(Order::class);
+        }
+
+        return $this->orderRepository;
+    }
+
     /**
      * Get order details.
      *
@@ -437,7 +450,12 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         ];
         $this->getDi()['validator']->checkRequiredParamsForArray($required, $data);
 
-        return $this->getDi()['db']->getExistingModelById('ClientOrder', $data['id'], 'Order Not Found');
+        $order = $this->getOrderRepository()->find((int) $data['id']);
+        if (!$order instanceof Order) {
+            throw new \FOSSBilling\InformationException('Order Not Found');
+        }
+
+        return $order;
     }
 
     /**

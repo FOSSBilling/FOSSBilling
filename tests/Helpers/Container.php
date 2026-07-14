@@ -271,6 +271,33 @@ function container(): Container
 
         $taxRepository = \Mockery::mock(\Box\Mod\Invoice\Repository\TaxRepository::class)->shouldIgnoreMissing();
 
+        $orderRepository = \Mockery::mock(\Box\Mod\Order\Repository\OrderRepository::class)->shouldIgnoreMissing();
+        $orderRepository->shouldReceive('find')->byDefault()->andReturnUsing(static function (?int $id): ?object {
+            if ($id === null) {
+                return null;
+            }
+            $order = new \Box\Mod\Order\Entity\Order();
+            $prop = new \ReflectionProperty($order, 'id');
+            $prop->setValue($order, $id);
+
+            return $order;
+        });
+        $orderRepository->shouldReceive('findByClientId')->byDefault()->andReturn([]);
+        $orderRepository->shouldReceive('findForClientById')->byDefault()->andReturn(null);
+        $orderRepository->shouldReceive('findOneByProductId')->byDefault()->andReturn(null);
+        $orderRepository->shouldReceive('getSoonExpiringActiveOrders')->byDefault()->andReturn([]);
+        $orderRepository->shouldReceive('getExpired')->byDefault()->andReturn([]);
+        $orderRepository->shouldReceive('findAddons')->byDefault()->andReturn([]);
+
+        $orderMetaRepository = \Mockery::mock(\Box\Mod\Order\Repository\OrderMetaRepository::class)->shouldIgnoreMissing();
+        $orderMetaRepository->shouldReceive('getPairsForOrder')->byDefault()->andReturn([]);
+        $orderMetaRepository->shouldReceive('findOneByOrderIdAndName')->byDefault()->andReturn(null);
+        $orderMetaRepository->shouldReceive('deleteByOrderId')->byDefault()->andReturn(0);
+
+        $orderStatusRepository = \Mockery::mock(\Box\Mod\Order\Repository\OrderStatusRepository::class)->shouldIgnoreMissing();
+        $orderStatusRepository->shouldReceive('findByOrderId')->byDefault()->andReturn([]);
+        $orderStatusRepository->shouldReceive('rmByOrderId')->byDefault()->andReturn(0);
+
         $extensionMetaRepository = \Mockery::mock(\Box\Mod\Extension\Repository\ExtensionMetaRepository::class)->shouldIgnoreMissing();
         $extensionMetaRepository->shouldReceive('findOneByExtensionAndScope')->byDefault()->andReturn(null);
         $extensionMetaRepository->shouldReceive('findByExtensionAndScope')->byDefault()->andReturn([]);
@@ -327,6 +354,9 @@ function container(): Container
             \Box\Mod\Invoice\Entity\Subscription::class => $subscriptionRepository,
             \Box\Mod\Invoice\Entity\PayGateway::class => $payGatewayRepository,
             \Box\Mod\Invoice\Entity\Tax::class => $taxRepository,
+            \Box\Mod\Order\Entity\Order::class => $orderRepository,
+            \Box\Mod\Order\Entity\OrderMeta::class => $orderMetaRepository,
+            \Box\Mod\Order\Entity\OrderStatus::class => $orderStatusRepository,
             \Box\Mod\Extension\Entity\Extension::class => \Mockery::mock(\Box\Mod\Extension\Repository\ExtensionRepository::class)->shouldIgnoreMissing(),
             default => $extensionMetaRepository,
         });
