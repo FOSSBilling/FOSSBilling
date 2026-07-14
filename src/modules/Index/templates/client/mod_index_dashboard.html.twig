@@ -584,30 +584,27 @@
                         result.className = 'tn-domainsearch__result tn-domainsearch__result--loading';
                         result.textContent = '{{ 'Checking...'|trans }}';
 
-                        var params = new URLSearchParams();
-                        params.append('sld', value);
-                        params.append('tld', tld.value);
-
-                        fetch('{{ 'servicedomain/check'|api_url(role: 'guest') }}', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                            body: params.toString()
-                        })
-                        .then(function (r) { return r.json().then(function (json) { return { ok: r.ok, json: json }; }); })
-                        .then(function (res) {
-                            if (res.ok && res.json.result === true) {
-                                result.className = 'tn-domainsearch__result tn-domainsearch__result--available';
-                                result.innerHTML = value + tld.value + ' {{ 'is available.'|trans }} <a href="{{ 'order'|url(query: {'product': domain_product_id}) }}">{{ 'Register it'|trans }} &rarr;</a>';
-                            } else {
-                                var msg = (res.json.error && res.json.error.message) || (value + tld.value + ' {{ 'is already taken.'|trans }}');
+                        // Uses the FOSSBilling.api wrapper (not a raw fetch against
+                        // |api_url) so the request always resolves against
+                        // window.location.origin - a raw absolute |api_url can come
+                        // back as http:// and get blocked as mixed content on an
+                        // https:// page.
+                        FOSSBilling.api.guest.post('servicedomain/check', { sld: value, tld: tld.value },
+                            function (available) {
+                                if (available === true) {
+                                    result.className = 'tn-domainsearch__result tn-domainsearch__result--available';
+                                    result.innerHTML = value + tld.value + ' {{ 'is available.'|trans }} <a href="{{ 'order'|url(query: {'product': domain_product_id}) }}">{{ 'Register it'|trans }} &rarr;</a>';
+                                } else {
+                                    result.className = 'tn-domainsearch__result tn-domainsearch__result--taken';
+                                    result.textContent = value + tld.value + ' {{ 'is already taken.'|trans }}';
+                                }
+                            },
+                            function (error) {
                                 result.className = 'tn-domainsearch__result tn-domainsearch__result--taken';
-                                result.textContent = msg;
-                            }
-                        })
-                        .catch(function () {
-                            result.className = 'tn-domainsearch__result tn-domainsearch__result--taken';
-                            result.textContent = '{{ 'Could not check that domain right now.'|trans }}';
-                        });
+                                result.textContent = error.message || '{{ 'Could not check that domain right now.'|trans }}';
+                            },
+                            false
+                        );
                     }
 
                     btn.addEventListener('click', runCheck);

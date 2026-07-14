@@ -1,41 +1,50 @@
-// TenantNinja design tokens v4 - neutrals + accent ported from the Supabase
-// shadcn theme (21st.dev/@serafim/themes/supabase), 2026-07-13. Swapped out
-// v3's green-tinted "carbon/paper" neutral ramp (which read as too much lime
-// once combined with the full-saturation accent) for plain, hue-neutral
-// grays. Accent is now a single restrained green used only on primary
-// actions/focus rings/active state - not on labels, eyebrows, or body text.
-// Typography/spacing/radii/motion are unchanged from v3 (Tenant Ninja DS).
+// TenantNinja design tokens v5 - hue shift off the Supabase shadcn theme,
+// 2026-07-14. v4 ported Supabase's exact green-on-plain-gray palette
+// (21st.dev/@serafim/themes/supabase) as a stopgap after the lime-overload
+// problem; kept as-is it read as a carbon copy of another product's brand.
+// v5 keeps every structural decision from v4 (opaque surfaces, One Fill
+// Rule, radii/spacing/type/motion, the whole component system) and moves
+// only two axes: the accent hue (green -> muted gold/amber, oklch hue ~75)
+// and the neutral ramp (hue-0 gray -> the same gray ramp re-tinted at the
+// SAME lightness with a small ~0.006-0.012 chroma toward that same hue, so
+// warm-neutral and warm-accent read as one deliberate decision instead of
+// two unrelated changes). Contrast ratios were re-verified after the shift,
+// not just eyeballed - see the accent/on-accent comments below.
 
 :root {
-    // Plain neutral ramp (no green cast) - light mode values, straight from
-    // the Supabase theme's own swatches (Background/Card/Border/Muted).
-    --gray-950: #0A0A0A;
-    --gray-900: #121212;
-    --gray-850: #171717;
-    --gray-800: #1F1F1F;
-    --gray-700: #242424;
-    --gray-600: #313131;
-    --gray-500: #4A4A4A;
-    --gray-400: #6B6B6B;
-    --gray-300: #8F8F8F;
-    --gray-200: #B5B5B5;
-    --gray-100: #DFDFDF;
-    --gray-50: #EDEDED;
-    --off-white: #FCFCFC;
+    // Neutral ramp: identical OKLCH lightness to v4's plain grays (so the
+    // whole app's contrast profile is unchanged), reintroduced with a small
+    // constant chroma toward the accent hue instead of chroma 0. Barely
+    // perceptible as "warm" consciously; the point is it's no longer
+    // trivially swappable with any other product's neutral gray scale.
+    --gray-950: #0C0A08;
+    --gray-900: #15110C;
+    --gray-850: #1A1611;
+    --gray-800: #221E19;
+    --gray-700: #28231E;
+    --gray-600: #35302A;
+    --gray-500: #4E4943;
+    --gray-400: #6F6A64;
+    --gray-300: #948E87;
+    --gray-200: #BAB4AD;
+    --gray-100: #E1DFDB;
+    --gray-50: #F0EDE9;
+    --off-white: #FFFCF8;
     --white: #FFFFFF;
 
-    // Accent: Supabase green. Light-mode primary is a soft mint (#72e3ad);
-    // dark-mode primary is a deep, desaturated green (#006239) - the bright
-    // #4ade80 "ring" green is reserved for focus rings/chart accents only,
-    // never a fill. This is the "used sparingly" behaviour that was missing
-    // from v3's lime, which appeared on buttons, eyebrows and body text alike.
-    --blade-600: #1FAE6B;
-    --blade-500: #72E3AD;
-    --blade-400: #8EEAC0;
-    --blade-300: #B3F2D6;
-    --blade-dark: #006239;
-    --blade-ring: #4ADE80;
-    --blade-glow: rgba(114, 227, 173, 0.28);
+    // Accent: muted gold/amber (oklch hue ~75), not green. Light-mode
+    // primary is a warm honey (#E8AA4E); dark-mode primary is a deep,
+    // desaturated umber (#723F00) - same "ink not glow" logic v4 used for
+    // its green, just on the new hue. The brighter #F0B135 "ring" tone is
+    // reserved for focus rings only, never a fill - this is the same
+    // restraint discipline as v4, just recolored.
+    --blade-600: #B57800;
+    --blade-500: #E8AA4E;
+    --blade-400: #F6C071;
+    --blade-300: #FFD79F;
+    --blade-dark: #723F00;
+    --blade-ring: #F0B135;
+    --blade-glow: rgba(232, 170, 78, 0.28);
 
     --success-500: #3FCF8E;
     --success-bg: rgba(63, 207, 142, 0.12);
@@ -54,27 +63,27 @@
     --surface: var(--off-white);
     --surface-2: var(--gray-50);
     --surface-3: var(--gray-100);
-    // input/popover field bg (#f6f6f6) is a touch lighter than the muted
-    // swatch (#ededed) in the source theme - keep form fields on their own.
-    --surface-inset: #F6F6F6;
+    // input/popover field bg, a touch lighter than --gray-50, re-tinted to
+    // match the rest of the ramp.
+    --surface-inset: #F9F5F0;
 
     --border: var(--gray-100);
-    --border-strong: #C7C7C7;
-    --border-faint: #EAEAEA;
+    --border-strong: #D2CCC4;
+    --border-faint: #EEEAE4;
 
-    // text/muted/faint pulled directly from the theme's own
-    // foreground / popover-foreground / sidebar-foreground values.
-    --text: #171717;
-    --text-muted: #525252;
-    --text-faint: #707070;
+    // text/muted/faint re-tinted to the same lightness as v4's plain grays.
+    --text: #1A1611;
+    --text-muted: #56504A;
+    --text-faint: #746E67;
     --text-inverse: var(--off-white);
 
     --accent: var(--blade-500);
     --accent-hover: var(--blade-400);
     --accent-press: var(--blade-600);
-    --on-accent: #1E2723;
-    --accent-soft: rgba(31, 174, 107, 0.12);
-    --accent-ring: rgba(31, 174, 107, 0.28);
+    // 8.7:1 against --blade-500 (#E8AA4E) - verified, not eyeballed.
+    --on-accent: #1E1706;
+    --accent-soft: rgba(181, 120, 0, 0.12);
+    --accent-ring: rgba(181, 120, 0, 0.28);
 
     --focus-ring: var(--blade-500);
 
@@ -172,28 +181,28 @@
     --surface-inset: var(--gray-800);
 
     --border: var(--gray-800);
-    --border-strong: #3A3A3A;
-    --border-faint: #1C1C1C;
+    --border-strong: #423C34;
+    --border-faint: #1E1B16;
     --inset-top: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 
-    // input/popover field bg is #242424 in the source theme - distinct from
-    // the #1F1F1F "muted" step, so surface-inset (used by Input.jsx-style
-    // form fields) points at the exact input color, not the muted swatch.
-    --surface-inset: #242424;
+    // input/popover field bg, distinct from the --gray-800 "muted" step,
+    // re-tinted to match the rest of the warm ramp.
+    --surface-inset: #28231E;
 
-    --text: #E2E8F0;
-    --text-muted: #A2A2A2;
-    --text-faint: #898989;
+    --text: #EBE7E0;
+    --text-muted: #A6A19B;
+    --text-faint: #8D8883;
     --text-inverse: var(--gray-900);
 
-    // Dark-mode primary is the deep desaturated green from the Supabase
-    // theme, not the light-mode mint - the bright ring green stays reserved
-    // for focus rings, never a button fill.
+    // Dark-mode primary is the deep desaturated umber, not the light-mode
+    // honey - the bright ring gold stays reserved for focus rings, never a
+    // button fill.
     --accent: var(--blade-dark);
-    --accent-hover: #00753F;
-    --accent-press: #004E2E;
-    --on-accent: #DDE8E3;
-    --accent-soft: rgba(74, 222, 128, 0.12);
-    --accent-ring: rgba(74, 222, 128, 0.32);
+    --accent-hover: #8E5400;
+    --accent-press: #572B00;
+    // 7:1 against --blade-dark (#723F00) - verified, not eyeballed.
+    --on-accent: #F3E6D2;
+    --accent-soft: rgba(240, 177, 53, 0.12);
+    --accent-ring: rgba(240, 177, 53, 0.32);
     --focus-ring: var(--blade-ring);
 }
