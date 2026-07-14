@@ -15,6 +15,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice\Api;
 
+use Box\Mod\Invoice\Entity\Invoice;
+use Box\Mod\Invoice\Repository\InvoiceRepository;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
@@ -139,5 +141,10 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $service = $this->getDi()['mod_service']('Invoice', 'Tax');
 
         return $service->getTaxRateForClient($this->identity);
+    }
+
+    private function getInvoiceRepository(): InvoiceRepository
+    {
+        return $this->di['em']->getRepository(Invoice::class);
     }
 }

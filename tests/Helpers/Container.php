@@ -221,6 +221,56 @@ function container(): Container
             return $qb;
         });
 
+        $invoiceRepository = \Mockery::mock(\Box\Mod\Invoice\Repository\InvoiceRepository::class)->shouldIgnoreMissing();
+        $invoiceRepository->shouldReceive('find')->byDefault()->andReturnUsing(static function (?int $id): ?object {
+            if ($id === null) {
+                return null;
+            }
+            $invoice = new \Box\Mod\Invoice\Entity\Invoice();
+            $prop = new \ReflectionProperty($invoice, 'id');
+            $prop->setValue($invoice, $id);
+
+            return $invoice;
+        });
+        $invoiceRepository->shouldReceive('getSearchQueryBuilder')->byDefault()->andReturnUsing(static function (): object {
+            $qb = \Mockery::mock(\Doctrine\ORM\QueryBuilder::class)->shouldIgnoreMissing();
+            $query = \Mockery::mock(\Doctrine\ORM\Query::class)->shouldIgnoreMissing();
+            $query->shouldReceive('getSingleScalarResult')->byDefault()->andReturn(0);
+            $query->shouldReceive('getResult')->byDefault()->andReturn([]);
+            $query->shouldReceive('getArrayResult')->byDefault()->andReturn([]);
+            $qb->shouldReceive('getQuery')->byDefault()->andReturn($query);
+            $qb->shouldReceive('expr->in')->byDefault()->andReturn('');
+            $qb->shouldReceive('expr->neq')->byDefault()->andReturn('');
+
+            return $qb;
+        });
+        $invoiceRepository->shouldReceive('getStatusCounts')->byDefault()->andReturn(['active' => 0, 'paid' => 1, 'unpaid' => 0, 'refunded' => 0, 'canceled' => 0]);
+        $invoiceRepository->shouldReceive('findByHash')->byDefault()->andReturn(null);
+        $invoiceRepository->shouldReceive('findUnpaid')->byDefault()->andReturn([]);
+        $invoiceRepository->shouldReceive('findPaid')->byDefault()->andReturn([]);
+        $invoiceRepository->shouldReceive('getNextInvoiceNumber')->byDefault()->andReturn(null);
+        $invoiceRepository->shouldReceive('findByClientId')->byDefault()->andReturn([]);
+        $invoiceRepository->shouldReceive('findPaidByClientId')->byDefault()->andReturn([]);
+        $invoiceRepository->shouldReceive('findApprovedUnpaid')->byDefault()->andReturn([]);
+
+        $invoiceItemRepository = \Mockery::mock(\Box\Mod\Invoice\Repository\InvoiceItemRepository::class)->shouldIgnoreMissing();
+        $invoiceItemRepository->shouldReceive('findByInvoiceId')->byDefault()->andReturn([]);
+        $invoiceItemRepository->shouldReceive('findPendingRenewal')->byDefault()->andReturn([]);
+
+        $transactionRepository = \Mockery::mock(\Box\Mod\Invoice\Repository\TransactionRepository::class)->shouldIgnoreMissing();
+        $transactionRepository->shouldReceive('findByInvoiceId')->byDefault()->andReturn([]);
+        $transactionRepository->shouldReceive('findByTxnId')->byDefault()->andReturn(null);
+        $transactionRepository->shouldReceive('findBySId')->byDefault()->andReturn(null);
+
+        $subscriptionRepository = \Mockery::mock(\Box\Mod\Invoice\Repository\SubscriptionRepository::class)->shouldIgnoreMissing();
+        $subscriptionRepository->shouldReceive('findBySId')->byDefault()->andReturn(null);
+        $subscriptionRepository->shouldReceive('findByClientId')->byDefault()->andReturn([]);
+
+        $payGatewayRepository = \Mockery::mock(\Box\Mod\Invoice\Repository\PayGatewayRepository::class)->shouldIgnoreMissing();
+        $payGatewayRepository->shouldReceive('findEnabled')->byDefault()->andReturn([]);
+
+        $taxRepository = \Mockery::mock(\Box\Mod\Invoice\Repository\TaxRepository::class)->shouldIgnoreMissing();
+
         $extensionMetaRepository = \Mockery::mock(\Box\Mod\Extension\Repository\ExtensionMetaRepository::class)->shouldIgnoreMissing();
         $extensionMetaRepository->shouldReceive('findOneByExtensionAndScope')->byDefault()->andReturn(null);
         $extensionMetaRepository->shouldReceive('findByExtensionAndScope')->byDefault()->andReturn([]);
@@ -271,6 +321,12 @@ function container(): Container
             \Box\Mod\Support\Entity\SupportTicketMessage::class => $supportTicketMessageRepository,
             \Box\Mod\Support\Entity\SupportTicketNote::class => $supportTicketNoteRepository,
             \Box\Mod\Support\Entity\SupportTicketMessageHistory::class => $supportTicketMessageHistoryRepository,
+            \Box\Mod\Invoice\Entity\Invoice::class => $invoiceRepository,
+            \Box\Mod\Invoice\Entity\InvoiceItem::class => $invoiceItemRepository,
+            \Box\Mod\Invoice\Entity\Transaction::class => $transactionRepository,
+            \Box\Mod\Invoice\Entity\Subscription::class => $subscriptionRepository,
+            \Box\Mod\Invoice\Entity\PayGateway::class => $payGatewayRepository,
+            \Box\Mod\Invoice\Entity\Tax::class => $taxRepository,
             \Box\Mod\Extension\Entity\Extension::class => \Mockery::mock(\Box\Mod\Extension\Repository\ExtensionRepository::class)->shouldIgnoreMissing(),
             default => $extensionMetaRepository,
         });
@@ -383,4 +439,35 @@ function injectMockFilesystem(object $service, \Mockery\MockInterface $filesyste
 
     $prop = $refl->getProperty('filesystem');
     $prop->setValue($service, $filesystemMock);
+}
+
+/**
+ * Create an EM mock that assigns auto-increment IDs to entities on flush.
+ * Inherits repository mocks from the container's default EM.
+ */
+function entityManagerWithIds(Container $di): object
+{
+    $factory = $di->raw('em');
+    $defaultEm = $factory();
+    $persisted = [];
+    $nextId = 1;
+    $emMock = \Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->andReturnUsing(static fn (string $class) => $defaultEm->getRepository($class));
+    $emMock->shouldReceive('persist')->andReturnUsing(static function (object $entity) use (&$persisted): void {
+        $persisted[] = $entity;
+    });
+    $emMock->shouldReceive('flush')->andReturnUsing(static function () use (&$persisted, &$nextId): void {
+        foreach ($persisted as $entity) {
+            $refl = new \ReflectionClass($entity);
+            if ($refl->hasProperty('id')) {
+                $prop = $refl->getProperty('id');
+                $prop->setValue($entity, $nextId++);
+            }
+        }
+        $persisted = [];
+    });
+    $emMock->shouldReceive('remove')->andReturnNull();
+    $emMock->shouldIgnoreMissing();
+
+    return $emMock;
 }

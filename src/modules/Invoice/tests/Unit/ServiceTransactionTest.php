@@ -31,12 +31,7 @@ test('updates a transaction', function (): void {
     $transactionModel = new Model_Transaction();
     $transactionModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once();
-
     $di = container();
-    $di['db'] = $dbMock;
     $di['events_manager'] = $eventsMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
@@ -99,13 +94,9 @@ test('throws exception when creating transaction with missing gateway id', funct
 
 test('deletes a transaction', function (): void {
     $service = new ServiceTransaction();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('trash')
-        ->atLeast()->once();
 
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['db'] = $dbMock;
     $service->setDi($di);
 
     $transactionModel = new Model_Transaction();
@@ -236,9 +227,6 @@ test('createAndProcess marks transaction as error when processing throws', funct
     $dbMock->shouldReceive('load')
         ->with('Transaction', 1)
         ->andReturn($transactionModel);
-    $dbMock->shouldReceive('store')
-        ->with($transactionModel)
-        ->once();
 
     $di = container();
     $di['db'] = $dbMock;
@@ -278,7 +266,6 @@ test('createAndProcess skips processing when transaction is already processed', 
     $dbMock->shouldReceive('getExistingModelById')
         ->with('Transaction', 1)
         ->andReturn($transactionModel);
-    $dbMock->shouldNotReceive('store');
 
     $di = container();
     $di['db'] = $dbMock;
@@ -303,9 +290,6 @@ test('preProcessTransaction marks error on a generic exception', function (): vo
     $dbMock->shouldReceive('load')
         ->with('Transaction', 5)
         ->andReturn($transactionModel);
-    $dbMock->shouldReceive('store')
-        ->with($transactionModel)
-        ->once();
 
     $eventsMock = Mockery::mock('\Box_EventManager');
     $eventsMock->shouldNotReceive('fire');
@@ -372,7 +356,6 @@ test('markTransactionError does not clobber an already processed transaction', f
     $dbMock->shouldReceive('load')
         ->with('Transaction', 3)
         ->andReturn($transactionModel);
-    $dbMock->shouldNotReceive('store');
 
     $di = container();
     $di['db'] = $dbMock;

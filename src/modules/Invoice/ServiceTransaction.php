@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice;
 
+use Box\Mod\Invoice\Entity\Transaction;
+use Box\Mod\Invoice\Repository\TransactionRepository;
 use FOSSBilling\Environment;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Tools;
@@ -21,6 +23,7 @@ class ServiceTransaction implements InjectionAwareInterface
 
     protected ?\Pimple\Container $di = null;
     private ?bool $transactionIpnHashColumnExists = null;
+    private ?TransactionRepository $transactionRepository = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -62,7 +65,8 @@ class ServiceTransaction implements InjectionAwareInterface
         $model->error_code = $data['error_code'] ?? $model->error_code;
         $model->validate_ipn = $data['validate_ipn'] ?? $model->validate_ipn;
         $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $this->di['em']->persist($model);
+        $this->di['em']->flush();
         $this->di['events_manager']->fire(['event' => 'onAfterAdminTransactionUpdate', 'params' => ['id' => $model->id]]);
 
         $this->di['logger']->info('Updated transaction #%s', $model->id);
@@ -176,22 +180,22 @@ class ServiceTransaction implements InjectionAwareInterface
             }
         }
 
-        $transaction = $this->di['db']->dispense('Transaction');
-        $transaction->gateway_id = $data['gateway_id'] ?? null;
-        $transaction->invoice_id = $data['invoice_id'] ?? null;
-        $transaction->txn_id = $data['txn_id'] ?? null;
+        $transaction = new Transaction();
+        $transaction->setGatewayId(isset($data['gateway_id']) ? (int) $data['gateway_id'] : null);
+        $transaction->setInvoiceId(isset($data['invoice_id']) ? (int) $data['invoice_id'] : null);
+        $transaction->setTxnId($data['txn_id'] ?? null);
         if ($supportsIpnHash) {
-            $transaction->ipn_hash = $ipn_hash ?? null;
+            $transaction->setIpnHash($ipn_hash ?? null);
         }
-        $transaction->status = 'received';
-        $transaction->ip = $this->di['request']->getClientIp();
-        $transaction->ipn = json_encode($ipn);
-        $transaction->note = $data['note'] ?? null;
-        $transaction->created_at = date('Y-m-d H:i:s');
-        $transaction->updated_at = date('Y-m-d H:i:s');
-        $newId = $this->di['db']->store($transaction);
+        $transaction->setStatus('received');
+        $transaction->setIp($this->di['request']->getClientIp());
+        $transaction->setIpn(json_encode($ipn));
+        $transaction->setNote($data['note'] ?? null);
+        $this->di['em']->persist($transaction);
+        $this->di['em']->flush();
+        $newId = $transaction->getId();
 
-        $this->di['logger']->info('Received transaction %s from payment gateway %s', $newId, $transaction->gateway_id);
+        $this->di['logger']->info('Received transaction %s from payment gateway %s', $newId, $transaction->getGatewayId());
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminTransactionCreate', 'params' => ['id' => $newId]]);
 
@@ -226,7 +230,8 @@ class ServiceTransaction implements InjectionAwareInterface
     public function delete(\Model_Transaction $model): bool
     {
         $id = $model->id;
-        $this->di['db']->trash($model);
+        $this->di['em']->remove($model);
+        $this->di['em']->flush();
         $this->di['logger']->info('Removed transaction #%s', $id);
 
         return true;
@@ -509,7 +514,8 @@ class ServiceTransaction implements InjectionAwareInterface
         $tx->error = $e->getMessage();
         $tx->error_code = $e->getCode();
         $tx->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($tx);
+        $this->di['em']->persist($tx);
+        $this->di['em']->flush();
 
         $this->di['logger']->error('Failed to process transaction #%s: %s', $id, $e->getMessage());
     }
@@ -525,19 +531,20 @@ class ServiceTransaction implements InjectionAwareInterface
      */
     public function processTransaction($id)
     {
-        /** @var \Model_Transaction|null $tx */
-        $tx = $this->di['db']->load('Transaction', $id);
+        /** @var Transaction|null $tx */
+        $tx = $this->getTransactionRepository()->find($id);
         if (!$tx) {
             throw new \FOSSBilling\Exception('Transaction :id not found.', ['id' => $id], 404);
         }
 
-        if (empty($tx->gateway_id)) {
+        $gatewayId = $tx->getGatewayId();
+        if (empty($gatewayId)) {
             throw new \FOSSBilling\Exception('Could not determine transaction origin. Transaction payment gateway is unknown.', null, 701);
         }
 
-        $gtw = $this->di['db']->load('PayGateway', $tx->gateway_id);
+        $gtw = $this->di['db']->load('PayGateway', $gatewayId);
         if (!$gtw instanceof \Model_PayGateway) {
-            throw new \FOSSBilling\Exception('Cannot handle transaction received from unknown payment gateway: :id', [':id' => $tx->gateway_id], 704);
+            throw new \FOSSBilling\Exception('Cannot handle transaction received from unknown payment gateway: :id', [':id' => $gatewayId], 704);
         }
 
         $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
@@ -546,9 +553,9 @@ class ServiceTransaction implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Payment adapter :adapter does not support action :action', [':adapter' => $gtw->name, ':action' => 'processTransaction'], 705);
         }
 
-        $ipn = json_decode($tx->ipn ?? '', true);
+        $ipn = json_decode($tx->getIpn() ?? '', true);
 
-        return $adapter->processTransaction($this->di['api_system'], (int) $id, $ipn, (int) $tx->gateway_id);
+        return $adapter->processTransaction($this->di['api_system'], (int) $id, $ipn, $gatewayId);
     }
 
     public function process(\Model_Transaction $tx): \Model_Transaction
@@ -574,7 +581,8 @@ class ServiceTransaction implements InjectionAwareInterface
             $transaction->error = $e->getMessage();
             $transaction->error_code = $e->getCode();
             $transaction->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($transaction);
+            $this->di['em']->persist($transaction);
+            $this->di['em']->flush();
 
             if (defined('DEBUG')) {
                 error_log($e->getMessage());
@@ -593,7 +601,8 @@ class ServiceTransaction implements InjectionAwareInterface
             $tx->error = null;
             $tx->error_code = null;
             $tx->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($tx);
+            $this->di['em']->persist($tx);
+            $this->di['em']->flush();
 
             return true;
         }
@@ -601,7 +610,8 @@ class ServiceTransaction implements InjectionAwareInterface
         if ($this->hasProcessedTransaction($tx)) {
             $tx->note .= 'Transaction was marked as processed. Transaction with same ID is already processed';
             $tx->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($tx);
+            $this->di['em']->persist($tx);
+            $this->di['em']->flush();
 
             $this->_markAsProcessed($tx);
 
@@ -676,7 +686,8 @@ class ServiceTransaction implements InjectionAwareInterface
         $tx->error_code = null;
         $tx->status = \Model_Transaction::STATUS_PROCESSED;
         $tx->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($tx);
+        $this->di['em']->persist($tx);
+        $this->di['em']->flush();
     }
 
     private function _parseIpnAndApprove(\Model_Transaction &$tx): \Model_Transaction
@@ -761,7 +772,8 @@ class ServiceTransaction implements InjectionAwareInterface
 
         $tx->status = \Model_Transaction::STATUS_APPROVED;
         $tx->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($tx);
+        $this->di['em']->persist($tx);
+        $this->di['em']->flush();
 
         return $tx;
     }
@@ -909,5 +921,14 @@ class ServiceTransaction implements InjectionAwareInterface
         $credit->created_at = date('Y-m-d H:i:s');
         $credit->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($credit);
+    }
+
+    private function getTransactionRepository(): TransactionRepository
+    {
+        if ($this->transactionRepository === null) {
+            $this->transactionRepository = $this->di['em']->getRepository(Transaction::class);
+        }
+
+        return $this->transactionRepository;
     }
 }

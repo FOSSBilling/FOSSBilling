@@ -224,12 +224,7 @@ test('deletes a tax', function (): void {
     $taxModel = new Model_Tax();
     $taxModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('trash')
-        ->atLeast()->once();
-
     $di = container();
-    $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
@@ -240,19 +235,8 @@ test('deletes a tax', function (): void {
 test('creates a tax', function (): void {
     $service = new ServiceTax();
 
-    $taxModel = new Model_Tax();
-    $taxModel->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('dispense')
-        ->atLeast()->once()
-        ->andReturn($taxModel);
-    $newId = 2;
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn($newId);
-
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = Tests\Helpers\entityManagerWithIds($di);
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
@@ -261,20 +245,15 @@ test('creates a tax', function (): void {
         'taxrate' => '0.18',
     ];
     $result = $service->create($data);
-    expect($result)->toBeInt()->toBe($newId);
+    expect($result)->toBeInt()->toBe(1);
 });
 
 test('updates a tax', function (): void {
     $service = new ServiceTax();
     $taxModel = new Model_Tax();
     $taxModel->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn(2);
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 

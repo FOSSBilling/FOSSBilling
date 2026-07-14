@@ -11,11 +11,15 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice;
 
+use Box\Mod\Invoice\Entity\Subscription;
+use Box\Mod\Invoice\Repository\SubscriptionRepository;
+use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 
 class ServiceSubscription implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
+    private ?SubscriptionRepository $subscriptionRepository = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -29,20 +33,19 @@ class ServiceSubscription implements InjectionAwareInterface
 
     public function create(\Model_Client $client, \Model_PayGateway $pg, array $data)
     {
-        $model = $this->di['db']->dispense('Subscription');
-        $model->client_id = $data['client_id'];
-        $model->pay_gateway_id = $data['gateway_id'];
-
-        $model->sid = $data['sid'] ?? null;
-        $model->status = $data['status'] ?? null;
-        $model->period = $data['period'] ?? null;
-        $model->amount = $data['amount'] ?? null;
-        $model->currency = $data['currency'] ?? null;
-        $model->rel_id = $data['rel_id'] ?? null;
-        $model->rel_type = $data['rel_type'] ?? null;
-        $model->created_at = date('Y-m-d H:i:s');
-        $model->updated_at = date('Y-m-d H:i:s');
-        $newId = $this->di['db']->store($model);
+        $model = new Subscription();
+        $model->setClientId(isset($data['client_id']) ? (int) $data['client_id'] : null);
+        $model->setPayGatewayId(isset($data['gateway_id']) ? (int) $data['gateway_id'] : null);
+        $model->setSid($data['sid'] ?? null);
+        $model->setStatus($data['status'] ?? null);
+        $model->setPeriod($data['period'] ?? null);
+        $model->setAmount(isset($data['amount']) ? (float) $data['amount'] : null);
+        $model->setCurrency($data['currency'] ?? null);
+        $model->setRelId(isset($data['rel_id']) ? (int) $data['rel_id'] : null);
+        $model->setRelType($data['rel_type'] ?? null);
+        $this->di['em']->persist($model);
+        $this->di['em']->flush();
+        $newId = $model->getId();
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminSubscriptionCreate', 'params' => ['id' => $newId]]);
 
@@ -62,7 +65,8 @@ class ServiceSubscription implements InjectionAwareInterface
 
     public function updateStatusFromGateway(int $id, string $status): bool
     {
-        $model = $this->di['db']->getExistingModelById('Subscription', $id, 'Subscription not found');
+        $model = $this->getSubscriptionRepository()->find($id)
+            ?? throw new InformationException('Subscription not found');
 
         return $this->persistUpdate($model, ['status' => $status]);
     }
@@ -75,9 +79,10 @@ class ServiceSubscription implements InjectionAwareInterface
         $model->amount = $data['amount'] ?? $model->amount;
         $model->currency = $data['currency'] ?? $model->currency;
         $model->updated_at = date('Y-m-d H:i:s');
-        $newId = $this->di['db']->store($model);
+        $this->di['em']->persist($model);
+        $this->di['em']->flush();
 
-        $this->di['logger']->info('Updated subscription %s', $newId);
+        $this->di['logger']->info('Updated subscription %s', $model->id);
 
         return true;
     }
@@ -116,7 +121,8 @@ class ServiceSubscription implements InjectionAwareInterface
     public function delete(\Model_Subscription $model): bool
     {
         $id = $model->id;
-        $this->di['db']->trash($model);
+        $this->di['em']->remove($model);
+        $this->di['em']->flush();
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminSubscriptionDelete', 'params' => ['id' => $id]]);
 
@@ -214,7 +220,8 @@ class ServiceSubscription implements InjectionAwareInterface
     {
         $model->status = 'canceled';
         $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $this->di['em']->persist($model);
+        $this->di['em']->flush();
     }
 
     public function cancel(\Model_Subscription $model): void
@@ -298,5 +305,14 @@ class ServiceSubscription implements InjectionAwareInterface
         }
 
         return $subscriptionPeriod;
+    }
+
+    private function getSubscriptionRepository(): SubscriptionRepository
+    {
+        if ($this->subscriptionRepository === null) {
+            $this->subscriptionRepository = $this->di['em']->getRepository(Subscription::class);
+        }
+
+        return $this->subscriptionRepository;
     }
 }

@@ -15,7 +15,9 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice\Api;
 
+use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\InvoiceOperation;
+use Box\Mod\Invoice\Repository\InvoiceRepository;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Guest extends \FOSSBilling\Api\AbstractApi
@@ -111,5 +113,10 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $this->getDi()['rate_limiter']->consumeOrThrow('invoice_pdf_hash', (string) $data['hash']);
 
         return $this->getService()->generatePDF($data['hash'], $this->getIdentity());
+    }
+
+    private function getInvoiceRepository(): InvoiceRepository
+    {
+        return $this->di['em']->getRepository(Invoice::class);
     }
 }

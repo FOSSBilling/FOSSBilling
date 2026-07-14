@@ -15,6 +15,14 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice\Api;
 
+use Box\Mod\Invoice\Entity\Invoice;
+use Box\Mod\Invoice\Entity\InvoiceItem;
+use Box\Mod\Invoice\Entity\Subscription;
+use Box\Mod\Invoice\Entity\Tax;
+use Box\Mod\Invoice\Entity\Transaction;
+use Box\Mod\Invoice\Repository\InvoiceItemRepository;
+use Box\Mod\Invoice\Repository\InvoiceRepository;
+use Box\Mod\Invoice\Repository\TransactionRepository;
 use FOSSBilling\InformationException;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
@@ -1038,5 +1046,20 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $data['headers'] ??= [];
 
         return $this->getService()->exportCSV($data['headers']);
+    }
+
+    private function getInvoiceRepository(): InvoiceRepository
+    {
+        return $this->di['em']->getRepository(Invoice::class);
+    }
+
+    private function getInvoiceItemRepository(): InvoiceItemRepository
+    {
+        return $this->di['em']->getRepository(InvoiceItem::class);
+    }
+
+    private function getTransactionRepository(): TransactionRepository
+    {
+        return $this->di['em']->getRepository(Transaction::class);
     }
 }

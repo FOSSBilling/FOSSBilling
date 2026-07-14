@@ -12,6 +12,18 @@ declare(strict_types=1);
 namespace Box\Mod\Invoice;
 
 use Box\Mod\Currency\Entity\Currency;
+use Box\Mod\Invoice\Entity\Invoice;
+use Box\Mod\Invoice\Entity\InvoiceItem;
+use Box\Mod\Invoice\Entity\PayGateway;
+use Box\Mod\Invoice\Entity\Subscription;
+use Box\Mod\Invoice\Entity\Tax;
+use Box\Mod\Invoice\Entity\Transaction;
+use Box\Mod\Invoice\Repository\InvoiceItemRepository;
+use Box\Mod\Invoice\Repository\InvoiceRepository;
+use Box\Mod\Invoice\Repository\PayGatewayRepository;
+use Box\Mod\Invoice\Repository\SubscriptionRepository;
+use Box\Mod\Invoice\Repository\TaxRepository;
+use Box\Mod\Invoice\Repository\TransactionRepository;
 use Dompdf\Dompdf;
 use FOSSBilling\Environment;
 use FOSSBilling\Http\ResponseFactory;
@@ -28,6 +40,12 @@ class Service implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
     private Filesystem $filesystem;
+    private ?InvoiceRepository $invoiceRepository = null;
+    private ?InvoiceItemRepository $invoiceItemRepository = null;
+    private ?TransactionRepository $transactionRepository = null;
+    private ?SubscriptionRepository $subscriptionRepository = null;
+    private ?PayGatewayRepository $payGatewayRepository = null;
+    private ?TaxRepository $taxRepository = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -187,42 +205,55 @@ class Service implements InjectionAwareInterface
         return [$sql, $params];
     }
 
-    public function toApiArray(\Model_Invoice $invoice, $deep = true, $identity = null): array
+    public function toApiArray(\Model_Invoice|Invoice $invoice, $deep = true, $identity = null): array
     {
         $this->ensureValidHash($invoice);
-        $row = $this->di['db']->toArray($invoice);
 
-        $items = $this->di['db']->find('InvoiceItem', 'invoice_id = :iid', ['iid' => $row['id']]);
+        if ($invoice instanceof Invoice) {
+            $row = $this->buildRowFromEntity($invoice);
+            $invoiceId = $invoice->getId();
+            $items = $this->getInvoiceItemRepository()->findByInvoiceId($invoiceId);
+        } else {
+            $row = $this->di['db']->toArray($invoice);
+            $invoiceId = $row['id'];
+            $items = $this->di['db']->find('InvoiceItem', 'invoice_id = :iid', ['iid' => $row['id']]);
+        }
+
         $lines = [];
         $total = 0;
         $taxable_subtotal = 0;
 
         foreach ($items as $item) {
-            $order_id = ($item->type == \Model_InvoiceItem::TYPE_ORDER) ? $item->rel_id : null;
+            $itemType = $item instanceof InvoiceItem ? $item->getType() : $item->type;
+            $itemRelId = $item instanceof InvoiceItem ? $item->getRelId() : $item->rel_id;
+            $order_id = ($itemType == \Model_InvoiceItem::TYPE_ORDER) ? $itemRelId : null;
 
-            $line_total = ($item->price ?? 0) * ($item->quantity ?? 1);
+            $itemPrice = $item instanceof InvoiceItem ? ($item->getPrice() ?? 0) : ($item->price ?? 0);
+            $itemQuantity = $item instanceof InvoiceItem ? ($item->getQuantity() ?? 1) : ($item->quantity ?? 1);
+            $line_total = $itemPrice * $itemQuantity;
             $total += $line_total;
 
-            if ($item->taxed) {
+            $itemTaxed = $item instanceof InvoiceItem ? $item->isTaxed() : $item->taxed;
+            if ($itemTaxed) {
                 $taxable_subtotal += $line_total;
             }
 
             $line = [
-                'id' => $item->id,
-                'title' => $item->title,
-                'period' => $item->period,
-                'quantity' => $item->quantity ?? 1,
-                'unit' => $item->unit,
-                'price' => $item->price ?? 0,
-                'tax' => 0, // Tax will be calculated on the total taxable subtotal
-                'taxed' => $item->taxed,
-                'charged' => $item->charged,
+                'id' => $item instanceof InvoiceItem ? $item->getId() : $item->id,
+                'title' => $item instanceof InvoiceItem ? $item->getTitle() : $item->title,
+                'period' => $item instanceof InvoiceItem ? $item->getPeriod() : $item->period,
+                'quantity' => $itemQuantity,
+                'unit' => $item instanceof InvoiceItem ? $item->getUnit() : $item->unit,
+                'price' => $itemPrice,
+                'tax' => 0,
+                'taxed' => $itemTaxed,
+                'charged' => $item instanceof InvoiceItem ? $item->isCharged() : $item->charged,
                 'total' => $line_total,
                 'order_id' => $order_id,
-                'type' => $item->type,
-                'rel_id' => $item->rel_id,
-                'task' => $item->task,
-                'status' => $item->status,
+                'type' => $itemType,
+                'rel_id' => $itemRelId,
+                'task' => $item instanceof InvoiceItem ? $item->getTask() : $item->task,
+                'status' => $item instanceof InvoiceItem ? $item->getStatus() : $item->status,
             ];
             $lines[] = $line;
         }
@@ -241,7 +272,7 @@ class Service implements InjectionAwareInterface
         $result['id'] = $row['id'];
         $result['serie'] = $row['serie'];
         $result['nr'] = $row['nr'];
-        $result['client_id'] = $invoice->client_id;
+        $result['client_id'] = $row['client_id'];
 
         $nr = is_numeric($row['nr']) ? intval($row['nr']) : $result['id'];
         $result['serie_nr'] = $result['serie'] . sprintf('%0' . $invoice_number_padding . 's', $nr);
@@ -387,7 +418,10 @@ class Service implements InjectionAwareInterface
         $service = $di['mod_service']('invoice');
 
         try {
-            $invoiceModel = $di['db']->load('Invoice', $params['id'] ?? 0);
+            $invoiceModel = $di['em']->getRepository(Invoice::class)->find($params['id'] ?? 0);
+            if (!$invoiceModel instanceof Invoice) {
+                return true;
+            }
             $invoice = $service->toApiArray($invoiceModel, true);
             if (($invoice['total'] ?? 0) > 0) {
                 $service->sendInvoiceEmail($invoiceModel, $invoice, 'mod_invoice_paid');
@@ -406,7 +440,10 @@ class Service implements InjectionAwareInterface
         $service = $di['mod_service']('invoice');
 
         try {
-            $invoiceModel = $di['db']->load('Invoice', $params['id']);
+            $invoiceModel = $di['em']->getRepository(Invoice::class)->find($params['id']);
+            if (!$invoiceModel instanceof Invoice) {
+                return true;
+            }
             $invoice = $service->toApiArray($invoiceModel, true);
             $service->sendInvoiceEmail($invoiceModel, $invoice, 'mod_invoice_created');
         } catch (\Exception $exc) {
@@ -423,22 +460,22 @@ class Service implements InjectionAwareInterface
         $service = $di['mod_service']('invoice');
 
         try {
-            $invoiceModel = $di['db']->load('Invoice', $params['id'] ?? 0);
+            $invoiceModel = $di['em']->getRepository(Invoice::class)->find($params['id'] ?? 0);
+
+            if (!$invoiceModel instanceof Invoice) {
+                return true;
+            }
 
             if (($params['total'] ?? 0) > 0
-                && ($params['status'] ?? null) !== \Model_Invoice::STATUS_PAID
+                && ($params['status'] ?? null) !== Invoice::STATUS_PAID
                 && isset($params['client']['id'])
             ) {
-                if ($invoiceModel instanceof \Model_Invoice) {
-                    $service->sendInvoiceEmail($invoiceModel, $params, 'mod_invoice_created', (int) $params['client']['id']);
-                }
+                $service->sendInvoiceEmail($invoiceModel, $params, 'mod_invoice_created', (int) $params['client']['id']);
             }
 
             // Sending the created-email extends the hash lifetime so the
             // recipient has a fresh window to act on the link.
-            if ($invoiceModel instanceof \Model_Invoice) {
-                $service->extendInvoiceHashLifetime($invoiceModel);
-            }
+            $service->extendInvoiceHashLifetime($invoiceModel);
         } catch (\Exception $exc) {
             $di['logger']->setChannel('email')->error('Failed to send email for invoice approval', ['exception' => $exc->getMessage()]);
         }
@@ -446,10 +483,10 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    private function sendInvoiceEmail(\Model_Invoice $invoice, array $invoiceData, string $templateCode, ?int $clientId = null): void
+    private function sendInvoiceEmail(Invoice|\Model_Invoice $invoice, array $invoiceData, string $templateCode, ?int $clientId = null): void
     {
         $email = [
-            'to_client' => $clientId ?? $invoice->client_id,
+            'to_client' => $clientId ?? ($invoice instanceof Invoice ? $invoice->getClientId() : $invoice->client_id),
             'code' => $templateCode,
             'invoice' => $invoiceData,
         ];
@@ -469,14 +506,14 @@ class Service implements InjectionAwareInterface
         $service = $di['mod_service']('invoice');
 
         try {
-            $invoiceModel = $di['db']->load('Invoice', $params['id'] ?? 0);
-            if (!$invoiceModel instanceof \Model_Invoice) {
+            $invoiceModel = $di['em']->getRepository(Invoice::class)->find($params['id'] ?? 0);
+            if (!$invoiceModel instanceof Invoice) {
                 return;
             }
 
             $invoice = $service->toApiArray($invoiceModel, true);
             $email = [];
-            $email['to_client'] = $invoiceModel->client_id;
+            $email['to_client'] = $invoiceModel->getClientId();
             $email['code'] = 'mod_invoice_payment_reminder';
             $email['invoice'] = $invoice;
             $attachment = $service->getInvoicePdfAttachment($invoiceModel);
@@ -518,8 +555,8 @@ class Service implements InjectionAwareInterface
                 return;
             }
 
-            $invoiceModel = $di['db']->load('Invoice', $params['id'] ?? 0);
-            if ($invoiceModel instanceof \Model_Invoice) {
+            $invoiceModel = $di['em']->getRepository(Invoice::class)->find($params['id'] ?? 0);
+            if ($invoiceModel instanceof Invoice) {
                 $service->sendInvoiceReminder($invoiceModel);
             }
         } catch (\Exception $exc) {
@@ -572,8 +609,8 @@ class Service implements InjectionAwareInterface
                 return;
             }
 
-            $invoiceModel = $di['db']->load('Invoice', $params['id']);
-            if (!$invoiceModel instanceof \Model_Invoice) {
+            $invoiceModel = $di['em']->getRepository(Invoice::class)->find($params['id']);
+            if (!$invoiceModel instanceof Invoice) {
                 return;
             }
 
@@ -605,13 +642,15 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function markAsPaid(\Model_Invoice $invoice, $charge = true, $execute = false): bool
+    public function markAsPaid(Invoice|\Model_Invoice $invoice, $charge = true, $execute = false): bool
     {
-        if ($invoice->status == \Model_Invoice::STATUS_PAID) {
+        $invoiceStatus = $invoice instanceof Invoice ? $invoice->getStatus() : $invoice->status;
+        if ($invoiceStatus == \Model_Invoice::STATUS_PAID) {
             return true;
         }
 
-        $invoiceItems = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', [$invoice->id]);
+        $invoiceId = $invoice instanceof Invoice ? $invoice->getId() : $invoice->id;
+        $invoiceItems = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', [$invoiceId]);
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
         foreach ($invoiceItems as $item) {
             $invoiceItemService->markAsPaid($item, $charge);
@@ -623,25 +662,44 @@ class Service implements InjectionAwareInterface
         /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
         $currencyRepository = $currencyService->getCurrencyRepository();
 
-        $invoice->serie = $systemService->getParamValue('invoice_series_paid');
-        $invoice->approved = true;
+        $serie = $systemService->getParamValue('invoice_series_paid');
+        $invoiceCurrency = $invoice instanceof Invoice ? $invoice->getCurrency() : $invoice->currency;
 
-        $currencyRate = $currencyRepository->getRateByCode((string) $invoice->currency);
-        if ($currencyRate === null) {
-            throw new \FOSSBilling\Exception("Currency rate for code '{$invoice->currency}' is not configured.");
+        if ($invoice instanceof Invoice) {
+            $invoice->setSerie($serie);
+            $invoice->setApproved(true);
+
+            $currencyRate = $currencyRepository->getRateByCode((string) $invoice->getCurrency());
+            if ($currencyRate === null) {
+                throw new \FOSSBilling\Exception("Currency rate for code '{$invoice->getCurrency()}' is not configured.");
+            }
+            $invoice->setCurrencyRate($currencyRate);
+
+            $invoice->setStatus(\Model_Invoice::STATUS_PAID);
+            $invoice->setPaidAt(new \DateTime());
+            $this->di['em']->persist($invoice);
+            $this->di['em']->flush();
+        } else {
+            $invoice->serie = $serie;
+            $invoice->approved = true;
+
+            $currencyRate = $currencyRepository->getRateByCode((string) $invoice->currency);
+            if ($currencyRate === null) {
+                throw new \FOSSBilling\Exception("Currency rate for code '{$invoice->currency}' is not configured.");
+            }
+            $invoice->currency_rate = $currencyRate;
+
+            $invoice->status = \Model_Invoice::STATUS_PAID;
+            $invoice->paid_at = date('Y-m-d H:i:s');
+            $invoice->updated_at = date('Y-m-d H:i:s');
+            $this->di['db']->store($invoice);
         }
-        $invoice->currency_rate = $currencyRate;
-
-        $invoice->status = \Model_Invoice::STATUS_PAID;
-        $invoice->paid_at = date('Y-m-d H:i:s');
-        $invoice->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($invoice);
 
         $this->countIncome($invoice);
         $productService = $this->di['mod_service']('Product');
         $productService->commitReservedPromoRedemptionsForInvoice($invoice);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoicePaymentReceived', 'params' => ['id' => $invoice->id]]);
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoicePaymentReceived', 'params' => ['id' => $invoiceId]]);
 
         if ($execute) {
             foreach ($invoiceItems as $item) {
@@ -653,54 +711,64 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $this->di['logger']->info("Marked invoice {$invoice->id} as paid.");
+        $this->di['logger']->info("Marked invoice {$invoiceId} as paid.");
 
         return true;
     }
 
-    public function markAsPaidByAdmin(\Model_Invoice $invoice, array $data = []): bool
+    public function markAsPaidByAdmin(Invoice|\Model_Invoice $invoice, array $data = []): bool
     {
-        if ($invoice->status === \Model_Invoice::STATUS_PAID) {
+        $invoiceStatus = $invoice instanceof Invoice ? $invoice->getStatus() : $invoice->status;
+        if ($invoiceStatus === \Model_Invoice::STATUS_PAID) {
             return true;
         }
 
         $execute = Tools::normalizeBoolean($data['execute'] ?? false);
         $payGateway = $this->validateAdminMarkAsPaidRequest($data, $invoice);
-        $transactionId = isset($data['transactionId']) ? trim((string) $data['transactionId']) : null;
 
-        if ((int) $payGateway->id !== (int) $invoice->gateway_id) {
-            $invoice->gateway_id = (int) $payGateway->id;
-            $invoice->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($invoice);
+        $invoiceId = $invoice instanceof Invoice ? $invoice->getId() : $invoice->id;
+        $gatewayId = $invoice instanceof Invoice ? $invoice->getGatewayId() : $invoice->gateway_id;
+
+        if ((int) $payGateway->id !== (int) $gatewayId) {
+            if ($invoice instanceof Invoice) {
+                $invoice->setGatewayId((int) $payGateway->id);
+                $this->di['em']->persist($invoice);
+                $this->di['em']->flush();
+            } else {
+                $invoice->gateway_id = (int) $payGateway->id;
+                $invoice->updated_at = date('Y-m-d H:i:s');
+                $this->di['db']->store($invoice);
+            }
         }
 
         if (($payGateway->gateway ?? null) === 'Custom' && (int) ($payGateway->enabled ?? 0) === 1) {
             $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
             $invoiceTotal = $this->getTotalWithTax($invoice);
+            $invoiceCurrency = $invoice instanceof Invoice ? $invoice->getCurrency() : $invoice->currency;
             $newtx = $transactionService->create([
-                'invoice_id' => $invoice->id,
-                'gateway_id' => $invoice->gateway_id,
-                'currency' => $invoice->currency,
+                'invoice_id' => $invoiceId,
+                'gateway_id' => $gatewayId,
+                'currency' => $invoiceCurrency,
                 'status' => 'received',
                 'source' => 'admin',
                 'post' => [
-                    'invoice_id' => $invoice->id,
-                    'txn_id' => $transactionId,
+                    'invoice_id' => $invoiceId,
+                    'txn_id' => $transactionId ?? null,
                 ],
-                'txn_id' => $transactionId,
+                'txn_id' => $transactionId ?? null,
             ]);
             $transaction = $this->di['db']->getExistingModelById('Transaction', $newtx, 'Transaction not found');
-            if ((int) $transaction->invoice_id !== (int) $invoice->id) {
+            if ((int) $transaction->invoice_id !== (int) $invoiceId) {
                 throw new InformationException('Transaction ID is already associated with another invoice.');
             }
 
             $result = $this->markAsPaid($invoice, false, $execute);
             if ($result) {
                 $transaction->amount = $invoiceTotal;
-                $transaction->currency = $invoice->currency;
+                $transaction->currency = $invoiceCurrency;
                 $transaction->status = \Model_Transaction::STATUS_PROCESSED;
                 $gatewayTitle = $payGateway->title ?: $payGateway->gateway;
-                $transaction->note = sprintf('%s transaction No: %s', $gatewayTitle, $transactionId);
+                $transaction->note = sprintf('%s transaction No: %s', $gatewayTitle, $transactionId ?? '');
                 $transaction->updated_at = date('Y-m-d H:i:s');
                 $this->di['db']->store($transaction);
             }
@@ -711,9 +779,13 @@ class Service implements InjectionAwareInterface
         return $this->markAsPaid($invoice, false, $execute);
     }
 
-    public function validateAdminMarkAsPaidRequest(array $data, ?\Model_Invoice $invoice = null): \Model_PayGateway
+    public function validateAdminMarkAsPaidRequest(array $data, Invoice|\Model_Invoice|null $invoice = null): \Model_PayGateway
     {
-        $gatewayId = isset($data['gateway_id']) && !empty($data['gateway_id']) ? (int) $data['gateway_id'] : (int) ($invoice->gateway_id ?? 0);
+        $gatewayId = isset($data['gateway_id']) && !empty($data['gateway_id']) ? (int) $data['gateway_id'] : null;
+        if ($gatewayId === null && $invoice !== null) {
+            $gatewayId = $invoice instanceof Invoice ? $invoice->getGatewayId() : ($invoice->gateway_id ?? 0);
+            $gatewayId = (int) $gatewayId;
+        }
         if ($gatewayId <= 0) {
             throw new InformationException('Payment gateway is required when marking an invoice as paid.');
         }
@@ -767,18 +839,32 @@ class Service implements InjectionAwareInterface
         return $next_nr;
     }
 
-    public function countIncome(\Model_Invoice $invoice): void
+    public function countIncome(Invoice|\Model_Invoice $invoice): void
     {
         $table = $this->di['mod_service']('currency');
 
-        $invoice->base_income = $table->toBaseCurrency($invoice->currency, $this->getTotal($invoice));
-        if ($invoice->refund !== null) {
-            $invoice->base_refund = $table->toBaseCurrency($invoice->currency, $invoice->refund);
-        } else {
-            $invoice->base_refund = null;
-        }
+        $total = $this->getTotal($invoice);
+        $currency = $invoice instanceof Invoice ? $invoice->getCurrency() : $invoice->currency;
+        $refund = $invoice instanceof Invoice ? $invoice->getRefund() : $invoice->refund;
 
-        $this->di['db']->store($invoice);
+        if ($invoice instanceof Invoice) {
+            $invoice->setBaseIncome($table->toBaseCurrency($currency, $total));
+            if ($refund !== null) {
+                $invoice->setBaseRefund($table->toBaseCurrency($currency, $refund));
+            } else {
+                $invoice->setBaseRefund(null);
+            }
+            $this->di['em']->persist($invoice);
+            $this->di['em']->flush();
+        } else {
+            $invoice->base_income = $table->toBaseCurrency($invoice->currency, $this->getTotal($invoice));
+            if ($invoice->refund !== null) {
+                $invoice->base_refund = $table->toBaseCurrency($invoice->currency, $invoice->refund);
+            } else {
+                $invoice->base_refund = null;
+            }
+            $this->di['db']->store($invoice);
+        }
     }
 
     public function prepareInvoice(\Model_Client $client, array $data)
@@ -801,18 +887,21 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $model = $this->di['db']->dispense('Invoice');
-        $model->client_id = $client->id;
-        $model->status = \Model_Invoice::STATUS_UNPAID;
-        $model->currency = $client->currency;
-        $model->approved = 0;
+        $model = new Invoice();
+        $model->setClientId($client->id);
+        $model->setStatus(\Model_Invoice::STATUS_UNPAID);
+        $model->setCurrency($client->currency);
+        $model->setApproved(false);
 
-        $model->gateway_id = $data['gateway_id'] ?? $model->gateway_id;
-        $model->text_1 = $data['text_1'] ?? $model->text_1;
-        $model->text_2 = $data['text_2'] ?? $model->text_2;
-        $model->created_at = date('Y-m-d H:i:s');
-        $model->updated_at = date('Y-m-d H:i:s');
-        $invoiceId = $this->di['db']->store($model);
+        $model->setGatewayId($data['gateway_id'] ?? $model->getGatewayId());
+        $model->setText1($data['text_1'] ?? $model->getText1());
+        $model->setText2($data['text_2'] ?? $model->getText2());
+        $model->setCreatedAt(new \DateTime());
+        $model->setUpdatedAt(new \DateTime());
+        $this->di['em']->persist($model);
+        $this->di['em']->flush();
+
+        $invoiceId = $model->getId();
 
         $this->setInvoiceDefaults($model);
 
@@ -837,65 +926,117 @@ class Service implements InjectionAwareInterface
         return $model;
     }
 
-    public function setInvoiceDefaults(\Model_Invoice $model): void
+    public function setInvoiceDefaults(Invoice|\Model_Invoice $model): void
     {
         $clientService = $this->di['mod_service']('Client');
         $systemService = $this->di['mod_service']('system');
-        $client = $this->di['db']->load('Client', $model->client_id);
+        $clientId = $model instanceof Invoice ? $model->getClientId() : $model->client_id;
+        $client = $this->di['db']->load('Client', $clientId);
         $seller = $systemService->getCompany();
 
         $buyer = $clientService->toApiArray($client);
 
-        $model->seller_company = $seller['name'];
-        $model->seller_company_vat = $seller['vat_number'];
-        $model->seller_company_number = $seller['number'];
-        $model->seller_address = trim("{$seller['address_1']} {$seller['address_2']} {$seller['address_3']}");
-        $model->seller_phone = $seller['tel'];
-        $model->seller_email = $seller['email'];
+        if ($model instanceof Invoice) {
+            $model->setSellerCompany($seller['name']);
+            $model->setSellerCompanyVat($seller['vat_number']);
+            $model->setSellerCompanyNumber($seller['number']);
+            $model->setSellerAddress(trim("{$seller['address_1']} {$seller['address_2']} {$seller['address_3']}"));
+            $model->setSellerPhone($seller['tel']);
+            $model->setSellerEmail($seller['email']);
 
-        $model->buyer_first_name = $buyer['first_name'];
-        $model->buyer_last_name = $buyer['last_name'];
-        $model->buyer_company = $buyer['company'];
-        $model->buyer_company_vat = $buyer['company_vat'];
-        $model->buyer_company_number = $buyer['company_number'];
-        $model->buyer_address = "{$buyer['address_1']} {$buyer['address_2']}";
-        $model->buyer_city = $buyer['city'];
-        $model->buyer_state = $buyer['state'];
-        $model->buyer_country = $buyer['country'];
-        $model->buyer_phone = "{$buyer['phone_cc']} {$buyer['phone']}";
-        $model->buyer_email = $buyer['email'];
-        $model->buyer_zip = $buyer['postcode'];
+            $model->setBuyerFirstName($buyer['first_name']);
+            $model->setBuyerLastName($buyer['last_name']);
+            $model->setBuyerCompany($buyer['company']);
+            $model->setBuyerCompanyVat($buyer['company_vat']);
+            $model->setBuyerCompanyNumber($buyer['company_number']);
+            $model->setBuyerAddress("{$buyer['address_1']} {$buyer['address_2']}");
+            $model->setBuyerCity($buyer['city']);
+            $model->setBuyerState($buyer['state']);
+            $model->setBuyerCountry($buyer['country']);
+            $model->setBuyerPhone("{$buyer['phone_cc']} {$buyer['phone']}");
+            $model->setBuyerEmail($buyer['email']);
+            $model->setBuyerZip($buyer['postcode']);
 
-        $invoice_due_days = $systemService->getParamValue('invoice_due_days');
-        if (!is_numeric($invoice_due_days)) {
-            $invoice_due_days = 1;
+            $invoice_due_days = $systemService->getParamValue('invoice_due_days');
+            if (!is_numeric($invoice_due_days)) {
+                $invoice_due_days = 1;
+            }
+            $due_time = strtotime("+{$invoice_due_days} day");
+            $model->setDueAt(new \DateTime(date('Y-m-d H:i:s', $due_time)));
+
+            $model->setSerie($systemService->getParamValue('invoice_series'));
+            $model->setNr($this->getNextInvoiceNumber());
+            $model->setHash(bin2hex(random_bytes(random_int(15, 30))));
+            $model->setHashExpiresAt($this->computeHashExpiration() !== null ? new \DateTime($this->computeHashExpiration()) : null);
+
+            $taxtitle = '';
+            $taxService = $this->di['mod_service']('Invoice', 'Tax');
+            $tax = $taxService->getTaxRateForClient($client, $taxtitle);
+            $model->setTaxname($taxtitle);
+            $model->setTaxrate($tax);
+
+            $model->setNotes($this->di['mod_service']('system')->getParamValue('invoice_default_note'));
+
+            $this->di['em']->persist($model);
+            $this->di['em']->flush();
+        } else {
+            $model->seller_company = $seller['name'];
+            $model->seller_company_vat = $seller['vat_number'];
+            $model->seller_company_number = $seller['number'];
+            $model->seller_address = trim("{$seller['address_1']} {$seller['address_2']} {$seller['address_3']}");
+            $model->seller_phone = $seller['tel'];
+            $model->seller_email = $seller['email'];
+
+            $model->buyer_first_name = $buyer['first_name'];
+            $model->buyer_last_name = $buyer['last_name'];
+            $model->buyer_company = $buyer['company'];
+            $model->buyer_company_vat = $buyer['company_vat'];
+            $model->buyer_company_number = $buyer['company_number'];
+            $model->buyer_address = "{$buyer['address_1']} {$buyer['address_2']}";
+            $model->buyer_city = $buyer['city'];
+            $model->buyer_state = $buyer['state'];
+            $model->buyer_country = $buyer['country'];
+            $model->buyer_phone = "{$buyer['phone_cc']} {$buyer['phone']}";
+            $model->buyer_email = $buyer['email'];
+            $model->buyer_zip = $buyer['postcode'];
+
+            $invoice_due_days = $systemService->getParamValue('invoice_due_days');
+            if (!is_numeric($invoice_due_days)) {
+                $invoice_due_days = 1;
+            }
+            $due_time = strtotime("+{$invoice_due_days} day");
+            $model->due_at = date('Y-m-d H:i:s', $due_time);
+
+            $model->serie = $systemService->getParamValue('invoice_series');
+            $model->nr = $this->getNextInvoiceNumber();
+            $model->hash = bin2hex(random_bytes(random_int(15, 30)));
+            $model->hash_expires_at = $this->computeHashExpiration();
+
+            $taxtitle = '';
+            $taxService = $this->di['mod_service']('Invoice', 'Tax');
+            $tax = $taxService->getTaxRateForClient($client, $taxtitle);
+            $model->taxname = $taxtitle;
+            $model->taxrate = $tax;
+
+            $model->notes = $this->di['mod_service']('system')->getParamValue('invoice_default_note');
+
+            $this->di['db']->store($model);
         }
-        $due_time = strtotime("+{$invoice_due_days} day");
-        $model->due_at = date('Y-m-d H:i:s', $due_time);
-
-        $model->serie = $systemService->getParamValue('invoice_series');
-        $model->nr = $this->getNextInvoiceNumber();
-        $model->hash = bin2hex(random_bytes(random_int(15, 30)));
-        $model->hash_expires_at = $this->computeHashExpiration();
-
-        $taxtitle = '';
-        $taxService = $this->di['mod_service']('Invoice', 'Tax');
-        $tax = $taxService->getTaxRateForClient($client, $taxtitle);
-        $model->taxname = $taxtitle;
-        $model->taxrate = $tax;
-
-        $model->notes = $this->di['mod_service']('system')->getParamValue('invoice_default_note');
-
-        $this->di['db']->store($model);
     }
 
-    public function approveInvoice(\Model_Invoice $invoice, array $data): bool
+    public function approveInvoice(Invoice|\Model_Invoice $invoice, array $data): bool
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceApprove', 'params' => $this->toApiArray($invoice)]);
 
-        $invoice->approved = 1;
-        $invoice->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($invoice);
+        if ($invoice instanceof Invoice) {
+            $invoice->setApproved(true);
+            $this->di['em']->persist($invoice);
+            $this->di['em']->flush();
+        } else {
+            $invoice->approved = 1;
+            $invoice->updated_at = date('Y-m-d H:i:s');
+            $this->di['db']->store($invoice);
+        }
 
         if (isset($data['use_credits']) && $data['use_credits']) {
             $this->tryPayWithCredits($invoice);
@@ -903,7 +1044,8 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceApprove', 'params' => $this->toApiArray($invoice)]);
 
-        $this->di['logger']->info("Approved invoice {$invoice->id}.");
+        $invoiceId = $invoice instanceof Invoice ? $invoice->getId() : $invoice->id;
+        $this->di['logger']->info("Approved invoice {$invoiceId}.");
 
         return true;
     }
@@ -926,20 +1068,24 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function tryPayWithCredits(\Model_Invoice $invoice): bool
+    public function tryPayWithCredits(Invoice|\Model_Invoice $invoice): bool
     {
-        if (!$invoice->approved) {
+        $invoiceApproved = $invoice instanceof Invoice ? $invoice->isApproved() : $invoice->approved;
+        if (!$invoiceApproved) {
             return false;
         }
-        if ($invoice->status == \Model_Invoice::STATUS_PAID) {
+        $invoiceStatus = $invoice instanceof Invoice ? $invoice->getStatus() : $invoice->status;
+        if ($invoiceStatus == \Model_Invoice::STATUS_PAID) {
             if (DEBUG) {
-                $this->di['logger']->setChannel('billing')->info("Skipping credit payment for already paid invoice {$invoice->id}.");
+                $invoiceId = $invoice instanceof Invoice ? $invoice->getId() : $invoice->id;
+                $this->di['logger']->setChannel('billing')->info("Skipping credit payment for already paid invoice {$invoiceId}.");
             }
 
             return false;
         }
 
-        $client = $this->di['db']->load('Client', $invoice->client_id);
+        $clientId = $invoice instanceof Invoice ? $invoice->getClientId() : $invoice->client_id;
+        $client = $this->di['db']->load('Client', $clientId);
         $cbrepo = $this->di['mod_service']('Client', 'Balance');
         $balance = $cbrepo->getClientBalance($client);
         $required = $this->getTotalWithTax($invoice);
@@ -949,7 +1095,8 @@ class Service implements InjectionAwareInterface
         if ($difference >= -$epsilon) {
             // @phpstan-ignore if.alwaysFalse
             if (DEBUG) {
-                $this->di['logger']->setChannel('billing')->info("Setting invoice {$invoice->id} as paid with credits for the amount of {$required}.");
+                $invoiceId = $invoice instanceof Invoice ? $invoice->getId() : $invoice->id;
+                $this->di['logger']->setChannel('billing')->info("Setting invoice {$invoiceId} as paid with credits for the amount of {$required}.");
             }
 
             if ($required <= $epsilon) {
@@ -959,12 +1106,14 @@ class Service implements InjectionAwareInterface
                 return true;
             }
 
+            $invoiceId = $invoice instanceof Invoice ? $invoice->getId() : $invoice->id;
             $balanceTransaction = $this->di['db']->dispense('ClientBalance');
             $balanceTransaction->client_id = $client->id;
             $balanceTransaction->type = 'invoice';
-            $balanceTransaction->rel_id = $invoice->id;
+            $balanceTransaction->rel_id = $invoiceId;
 
-            $invoice_identifier = $invoice->nr ?: $invoice->id;
+            $invoiceNr = $invoice instanceof Invoice ? $invoice->getNr() : $invoice->nr;
+            $invoice_identifier = $invoiceNr ?: $invoiceId;
             $balanceTransaction->description = "Payment for invoice #{$invoice_identifier} using account credit.";
 
             $balanceTransaction->amount = -$required;
@@ -978,24 +1127,27 @@ class Service implements InjectionAwareInterface
         }
         // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
         if (DEBUG) {
-            $this->di['logger']->setChannel('billing')->info("Invoice {$invoice->id} could not be paid with credits. Money in balance {$balance} Required: {$required}.");
+            $invoiceId = $invoice instanceof Invoice ? $invoice->getId() : $invoice->id;
+            $this->di['logger']->setChannel('billing')->info("Invoice {$invoiceId} could not be paid with credits. Money in balance {$balance} Required: {$required}.");
         }
 
         return false;
     }
 
-    public function getTotalWithTax(\Model_Invoice $invoice): float
+    public function getTotalWithTax(Invoice|\Model_Invoice $invoice): float
     {
         return $this->getTotal($invoice) + $this->getTax($invoice);
     }
 
-    public function getTax(\Model_Invoice $invoice): float
+    public function getTax(Invoice|\Model_Invoice $invoice): float
     {
-        if ($invoice->taxrate <= 0) {
+        $taxrate = $invoice instanceof Invoice ? $invoice->getTaxrate() : $invoice->taxrate;
+        if ($taxrate <= 0) {
             return 0.0;
         }
 
-        $items = $this->di['db']->find('InvoiceItem', 'invoice_id = :iid', [':iid' => $invoice->id]);
+        $invoiceId = $invoice instanceof Invoice ? $invoice->getId() : $invoice->id;
+        $items = $this->getInvoiceItemRepository()->findByInvoiceId($invoiceId);
 
         if (empty($items)) {
             return 0.0;
@@ -1003,8 +1155,11 @@ class Service implements InjectionAwareInterface
 
         $taxable_subtotal = 0.0;
         foreach ($items as $item) {
-            if ($item->taxed) {
-                $taxable_subtotal += ($item->price * $item->quantity);
+            $itemTaxed = $item instanceof InvoiceItem ? $item->isTaxed() : $item->taxed;
+            if ($itemTaxed) {
+                $itemPrice = $item instanceof InvoiceItem ? ($item->getPrice() ?? 0) : ($item->price ?? 0);
+                $itemQuantity = $item instanceof InvoiceItem ? ($item->getQuantity() ?? 1) : ($item->quantity ?? 1);
+                $taxable_subtotal += ($itemPrice * $itemQuantity);
             }
         }
 
@@ -1012,13 +1167,14 @@ class Service implements InjectionAwareInterface
             return 0.0;
         }
 
-        return round($taxable_subtotal * $invoice->taxrate / 100, 2);
+        return round($taxable_subtotal * $taxrate / 100, 2);
     }
 
-    public function getTotal(\Model_Invoice $invoice): float
+    public function getTotal(Invoice|\Model_Invoice $invoice): float
     {
         $total = 0;
-        $invoiceItems = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', [$invoice->id]) ?? [];
+        $invoiceId = $invoice instanceof Invoice ? $invoice->getId() : $invoice->id;
+        $invoiceItems = $this->getInvoiceItemRepository()->findByInvoiceId($invoiceId) ?? [];
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
         foreach ($invoiceItems as $item) {
             $total += $invoiceItemService->getTotal($item);
@@ -1027,13 +1183,33 @@ class Service implements InjectionAwareInterface
         return (float) $total;
     }
 
-    public function refundInvoice(\Model_Invoice $invoice, $note = null): ?int
+    public function refundInvoice(Invoice|\Model_Invoice $invoice, $note = null): ?int
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceRefund', 'params' => $this->toApiArray($invoice)]);
 
         $systemService = $this->di['mod_service']('system');
         $logic = $systemService->getParamValue('invoice_refund_logic', 'manual');
         $result = null;
+
+        $invoiceId = $invoice instanceof Invoice ? $invoice->getId() : $invoice->id;
+        $invoiceClientId = $invoice instanceof Invoice ? $invoice->getClientId() : $invoice->client_id;
+        $invoiceCurrency = $invoice instanceof Invoice ? $invoice->getCurrency() : $invoice->currency;
+        $invoiceTaxname = $invoice instanceof Invoice ? $invoice->getTaxname() : $invoice->taxname;
+        $invoiceTaxrate = $invoice instanceof Invoice ? $invoice->getTaxrate() : $invoice->taxrate;
+        $invoiceSellerCompany = $invoice instanceof Invoice ? $invoice->getSellerCompany() : $invoice->seller_company;
+        $invoiceSellerAddress = $invoice instanceof Invoice ? $invoice->getSellerAddress() : $invoice->seller_address;
+        $invoiceSellerPhone = $invoice instanceof Invoice ? $invoice->getSellerPhone() : $invoice->seller_phone;
+        $invoiceSellerEmail = $invoice instanceof Invoice ? $invoice->getSellerEmail() : $invoice->seller_email;
+        $invoiceBuyerFirstName = $invoice instanceof Invoice ? $invoice->getBuyerFirstName() : $invoice->buyer_first_name;
+        $invoiceBuyerLastName = $invoice instanceof Invoice ? $invoice->getBuyerLastName() : $invoice->buyer_last_name;
+        $invoiceBuyerCompany = $invoice instanceof Invoice ? $invoice->getBuyerCompany() : $invoice->buyer_company;
+        $invoiceBuyerAddress = $invoice instanceof Invoice ? $invoice->getBuyerAddress() : $invoice->buyer_address;
+        $invoiceBuyerCity = $invoice instanceof Invoice ? $invoice->getBuyerCity() : $invoice->buyer_city;
+        $invoiceBuyerState = $invoice instanceof Invoice ? $invoice->getBuyerState() : $invoice->buyer_state;
+        $invoiceBuyerCountry = $invoice instanceof Invoice ? $invoice->getBuyerCountry() : $invoice->buyer_country;
+        $invoiceBuyerPhone = $invoice instanceof Invoice ? $invoice->getBuyerPhone() : $invoice->buyer_phone;
+        $invoiceBuyerEmail = $invoice instanceof Invoice ? $invoice->getBuyerEmail() : $invoice->buyer_email;
+        $invoiceBuyerZip = $invoice instanceof Invoice ? $invoice->getBuyerZip() : $invoice->buyer_zip;
 
         switch ($logic) {
             case 'credit_note':
@@ -1043,52 +1219,53 @@ class Service implements InjectionAwareInterface
                     throw new InformationException('Cannot refund invoice with negative amount');
                 }
 
-                $new = $this->di['db']->dispense('Invoice');
-                $new->client_id = $invoice->client_id;
-                $new->hash = bin2hex(random_bytes(random_int(15, 30)));
-                $new->hash_expires_at = $this->computeHashExpiration();
-                $new->status = \Model_Invoice::STATUS_REFUNDED;
-                $new->currency = $invoice->currency;
-                $new->approved = true;
-                $new->taxname = $invoice->taxname;
-                $new->taxrate = $invoice->taxrate;
+                $new = new Invoice();
+                $new->setClientId($invoiceClientId);
+                $new->setHash(bin2hex(random_bytes(random_int(15, 30))));
+                $new->setHashExpiresAt($this->computeHashExpiration() !== null ? new \DateTime($this->computeHashExpiration()) : null);
+                $new->setStatus(\Model_Invoice::STATUS_REFUNDED);
+                $new->setCurrency($invoiceCurrency);
+                $new->setApproved(true);
+                $new->setTaxname($invoiceTaxname);
+                $new->setTaxrate($invoiceTaxrate);
 
-                $new->seller_company = $invoice->seller_company;
-                $new->seller_address = $invoice->seller_address;
-                $new->seller_phone = $invoice->seller_phone;
-                $new->seller_email = $invoice->seller_email;
+                $new->setSellerCompany($invoiceSellerCompany);
+                $new->setSellerAddress($invoiceSellerAddress);
+                $new->setSellerPhone($invoiceSellerPhone);
+                $new->setSellerEmail($invoiceSellerEmail);
 
-                $new->buyer_first_name = $invoice->buyer_first_name;
-                $new->buyer_last_name = $invoice->buyer_last_name;
-                $new->buyer_company = $invoice->buyer_company;
-                $new->buyer_address = $invoice->buyer_address;
-                $new->buyer_city = $invoice->buyer_city;
-                $new->buyer_state = $invoice->buyer_state;
-                $new->buyer_country = $invoice->buyer_country;
-                $new->buyer_phone = $invoice->buyer_phone;
-                $new->buyer_email = $invoice->buyer_email;
-                $new->buyer_zip = $invoice->buyer_zip;
+                $new->setBuyerFirstName($invoiceBuyerFirstName);
+                $new->setBuyerLastName($invoiceBuyerLastName);
+                $new->setBuyerCompany($invoiceBuyerCompany);
+                $new->setBuyerAddress($invoiceBuyerAddress);
+                $new->setBuyerCity($invoiceBuyerCity);
+                $new->setBuyerState($invoiceBuyerState);
+                $new->setBuyerCountry($invoiceBuyerCountry);
+                $new->setBuyerPhone($invoiceBuyerPhone);
+                $new->setBuyerEmail($invoiceBuyerEmail);
+                $new->setBuyerZip($invoiceBuyerZip);
 
-                $new->paid_at = date('Y-m-d H:i:s');
-                $new->created_at = date('Y-m-d H:i:s');
-                $new->updated_at = date('Y-m-d H:i:s');
-                $this->di['db']->store($new);
+                $new->setPaidAt(new \DateTime());
+                $new->setCreatedAt(new \DateTime());
+                $new->setUpdatedAt(new \DateTime());
+                $this->di['em']->persist($new);
+                $this->di['em']->flush();
 
-                $invoiceItems = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', [$invoice->id]);
+                $invoiceItems = $this->getInvoiceItemRepository()->findByInvoiceId($invoiceId);
                 foreach ($invoiceItems as $item) {
                     $pi = $this->di['db']->dispense('InvoiceItem');
-                    $pi->invoice_id = $new->id;
-                    $pi->type = $item->type;
-                    $pi->rel_id = $item->rel_id;
-                    $pi->task = $item->task;
+                    $pi->invoice_id = $new->getId();
+                    $pi->type = $item instanceof InvoiceItem ? $item->getType() : $item->type;
+                    $pi->rel_id = $item instanceof InvoiceItem ? $item->getRelId() : $item->rel_id;
+                    $pi->task = $item instanceof InvoiceItem ? $item->getTask() : $item->task;
                     $pi->status = \Model_InvoiceItem::STATUS_EXECUTED; // Mark refund invoice as executed
-                    $pi->title = $item->title;
-                    $pi->period = $item->period;
-                    $pi->quantity = $item->quantity;
-                    $pi->unit = $item->unit;
+                    $pi->title = $item instanceof InvoiceItem ? $item->getTitle() : $item->title;
+                    $pi->period = $item instanceof InvoiceItem ? $item->getPeriod() : $item->period;
+                    $pi->quantity = $item instanceof InvoiceItem ? $item->getQuantity() : $item->quantity;
+                    $pi->unit = $item instanceof InvoiceItem ? $item->getUnit() : $item->unit;
                     $pi->charged = 1;
-                    $pi->price = -$item->price;
-                    $pi->taxed = $item->taxed;
+                    $pi->price = $item instanceof InvoiceItem ? -($item->getPrice() ?? 0) : -$item->price;
+                    $pi->taxed = $item instanceof InvoiceItem ? $item->isTaxed() : $item->taxed;
                     $pi->created_at = date('Y-m-d H:i:s');
                     $pi->updated_at = date('Y-m-d H:i:s');
                     $this->di['db']->store($pi);
@@ -1096,27 +1273,30 @@ class Service implements InjectionAwareInterface
 
                 $this->countIncome($new);
 
-                $this->addNote($invoice, "Refund invoice #{$new->id} generated.");
-                $this->addNote($new, "Refund for #{$invoice->id} invoice.");
+                $newId = $new->getId();
+                $this->addNote($invoice, "Refund invoice #{$newId} generated.");
+                $this->addNote($new, "Refund for #{$invoiceId} invoice.");
                 if (!empty($note)) {
                     $this->addNote($new, $note);
                 }
 
                 if ($logic == 'negative_invoice') {
-                    $new->serie = $systemService->getParamValue('invoice_series_paid');
-                    $this->di['db']->store($new);
+                    $new->setSerie($systemService->getParamValue('invoice_series_paid'));
+                    $this->di['em']->persist($new);
+                    $this->di['em']->flush();
                 }
 
                 if ($logic == 'credit_note') {
                     $next_nr = $systemService->getParamValue('invoice_cn_starting_number', 1);
-                    $new->serie = $systemService->getParamValue('invoice_cn_series', 'CN-');
-                    $new->nr = $next_nr;
-                    $this->di['db']->store($new);
+                    $new->setSerie($systemService->getParamValue('invoice_cn_series', 'CN-'));
+                    $new->setNr($next_nr);
+                    $this->di['em']->persist($new);
+                    $this->di['em']->flush();
 
                     // update next credit note starting number
                     $systemService->setParamValue('invoice_cn_starting_number', ++$next_nr, true);
                 }
-                $result = (int) $new->id;
+                $result = (int) $new->getId();
 
                 break;
 
@@ -1131,19 +1311,21 @@ class Service implements InjectionAwareInterface
                 break;
         }
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceRefund', 'params' => ['id' => $invoice->id]]);
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceRefund', 'params' => ['id' => $invoiceId]]);
 
-        $this->di['logger']->info("Refunded invoice #{$invoice->id}.");
+        $this->di['logger']->info("Refunded invoice #{$invoiceId}.");
 
         return $result;
     }
 
-    public function updateInvoice(\Model_Invoice $model, array $data): bool
+    public function updateInvoice(Invoice|\Model_Invoice $model, array $data): bool
     {
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
-        $previousStatus = $model->status;
+        $previousStatus = $model instanceof Invoice ? $model->getStatus() : $model->status;
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceUpdate', 'params' => $data]);
+
+        $isEntity = $model instanceof Invoice;
 
         if (!empty($data['gateway_id'])) {
             $gateway = $this->di['db']->load('PayGateway', $data['gateway_id']);
@@ -1153,56 +1335,151 @@ class Service implements InjectionAwareInterface
             if (!$gateway->enabled) {
                 throw new InformationException('Payment gateway is not enabled');
             }
-            $model->gateway_id = intval($data['gateway_id']);
+            if ($isEntity) {
+                $model->setGatewayId(intval($data['gateway_id']));
+            } else {
+                $model->gateway_id = intval($data['gateway_id']);
+            }
         } elseif (array_key_exists('gateway_id', $data) && $data['gateway_id'] === null) {
-            $model->gateway_id = null;
+            if ($isEntity) {
+                $model->setGatewayId(null);
+            } else {
+                $model->gateway_id = null;
+            }
         }
-        $model->text_1 = $data['text_1'] ?? (empty($model->text_1) ? null : $model->text_1);
-        $model->text_2 = $data['text_2'] ?? (empty($model->text_2) ? null : $model->text_2);
-        $model->seller_company = $data['seller_company'] ?? (empty($model->seller_company) ? null : $model->seller_company);
-        $model->seller_company_vat = $data['seller_company_vat'] ?? (empty($model->seller_company_vat) ? null : $model->seller_company_vat);
-        $model->seller_company_number = $data['seller_company_number'] ?? (empty($model->seller_company_number) ? null : $model->seller_company_number);
-        $model->seller_address = $data['seller_address'] ?? (empty($model->seller_address) ? null : $model->seller_address);
-        $model->seller_phone = $data['seller_phone'] ?? (empty($model->seller_phone) ? null : $model->seller_phone);
-        $model->seller_email = $data['seller_email'] ?? (empty($model->seller_email) ? null : $model->seller_email);
-        $model->buyer_first_name = $data['buyer_first_name'] ?? (empty($model->buyer_first_name) ? null : $model->buyer_first_name);
-        $model->buyer_last_name = $data['buyer_last_name'] ?? (empty($model->buyer_last_name) ? null : $model->buyer_last_name);
-        $model->buyer_company = $data['buyer_company'] ?? (empty($model->buyer_company) ? null : $model->buyer_company);
-        $model->buyer_company_vat = $data['buyer_company_vat'] ?? (empty($model->buyer_company_vat) ? null : $model->buyer_company_vat);
-        $model->buyer_company_number = $data['buyer_company_number'] ?? (empty($model->buyer_company_number) ? null : $model->buyer_company_number);
-        $model->buyer_address = $data['buyer_address'] ?? (empty($model->buyer_address) ? null : $model->buyer_address);
-        $model->buyer_city = $data['buyer_city'] ?? (empty($model->buyer_city) ? null : $model->buyer_city);
-        $model->buyer_state = $data['buyer_state'] ?? (empty($model->buyer_state) ? null : $model->buyer_state);
-        $model->buyer_country = $data['buyer_country'] ?? (empty($model->buyer_country) ? null : $model->buyer_country);
-        $model->buyer_zip = $data['buyer_zip'] ?? (empty($model->buyer_zip) ? null : $model->buyer_zip);
-        $model->buyer_phone = $data['buyer_phone'] ?? (empty($model->buyer_phone) ? null : $model->buyer_phone);
-        $model->buyer_email = $data['buyer_email'] ?? (empty($model->buyer_email) ? null : $model->buyer_email);
 
-        $paid_at = $data['paid_at'] ?? $model->paid_at;
+        $text1 = $data['text_1'] ?? ($isEntity ? (empty($model->getText1()) ? null : $model->getText1()) : (empty($model->text_1) ? null : $model->text_1));
+        $text2 = $data['text_2'] ?? ($isEntity ? (empty($model->getText2()) ? null : $model->getText2()) : (empty($model->text_2) ? null : $model->text_2));
+        $sellerCompany = $data['seller_company'] ?? ($isEntity ? (empty($model->getSellerCompany()) ? null : $model->getSellerCompany()) : (empty($model->seller_company) ? null : $model->seller_company));
+        $sellerCompanyVat = $data['seller_company_vat'] ?? ($isEntity ? (empty($model->getSellerCompanyVat()) ? null : $model->getSellerCompanyVat()) : (empty($model->seller_company_vat) ? null : $model->seller_company_vat));
+        $sellerCompanyNumber = $data['seller_company_number'] ?? ($isEntity ? (empty($model->getSellerCompanyNumber()) ? null : $model->getSellerCompanyNumber()) : (empty($model->seller_company_number) ? null : $model->seller_company_number));
+        $sellerAddress = $data['seller_address'] ?? ($isEntity ? (empty($model->getSellerAddress()) ? null : $model->getSellerAddress()) : (empty($model->seller_address) ? null : $model->seller_address));
+        $sellerPhone = $data['seller_phone'] ?? ($isEntity ? (empty($model->getSellerPhone()) ? null : $model->getSellerPhone()) : (empty($model->seller_phone) ? null : $model->seller_phone));
+        $sellerEmail = $data['seller_email'] ?? ($isEntity ? (empty($model->getSellerEmail()) ? null : $model->getSellerEmail()) : (empty($model->seller_email) ? null : $model->seller_email));
+
+        $buyerFirstName = $data['buyer_first_name'] ?? ($isEntity ? (empty($model->getBuyerFirstName()) ? null : $model->getBuyerFirstName()) : (empty($model->buyer_first_name) ? null : $model->buyer_first_name));
+        $buyerLastName = $data['buyer_last_name'] ?? ($isEntity ? (empty($model->getBuyerLastName()) ? null : $model->getBuyerLastName()) : (empty($model->buyer_last_name) ? null : $model->buyer_last_name));
+        $buyerCompany = $data['buyer_company'] ?? ($isEntity ? (empty($model->getBuyerCompany()) ? null : $model->getBuyerCompany()) : (empty($model->buyer_company) ? null : $model->buyer_company));
+        $buyerCompanyVat = $data['buyer_company_vat'] ?? ($isEntity ? (empty($model->getBuyerCompanyVat()) ? null : $model->getBuyerCompanyVat()) : (empty($model->buyer_company_vat) ? null : $model->buyer_company_vat));
+        $buyerCompanyNumber = $data['buyer_company_number'] ?? ($isEntity ? (empty($model->getBuyerCompanyNumber()) ? null : $model->getBuyerCompanyNumber()) : (empty($model->buyer_company_number) ? null : $model->buyer_company_number));
+        $buyerAddress = $data['buyer_address'] ?? ($isEntity ? (empty($model->getBuyerAddress()) ? null : $model->getBuyerAddress()) : (empty($model->buyer_address) ? null : $model->buyer_address));
+        $buyerCity = $data['buyer_city'] ?? ($isEntity ? (empty($model->getBuyerCity()) ? null : $model->getBuyerCity()) : (empty($model->buyer_city) ? null : $model->buyer_city));
+        $buyerState = $data['buyer_state'] ?? ($isEntity ? (empty($model->getBuyerState()) ? null : $model->getBuyerState()) : (empty($model->buyer_state) ? null : $model->buyer_state));
+        $buyerCountry = $data['buyer_country'] ?? ($isEntity ? (empty($model->getBuyerCountry()) ? null : $model->getBuyerCountry()) : (empty($model->buyer_country) ? null : $model->buyer_country));
+        $buyerZip = $data['buyer_zip'] ?? ($isEntity ? (empty($model->getBuyerZip()) ? null : $model->getBuyerZip()) : (empty($model->buyer_zip) ? null : $model->buyer_zip));
+        $buyerPhone = $data['buyer_phone'] ?? ($isEntity ? (empty($model->getBuyerPhone()) ? null : $model->getBuyerPhone()) : (empty($model->buyer_phone) ? null : $model->buyer_phone));
+        $buyerEmail = $data['buyer_email'] ?? ($isEntity ? (empty($model->getBuyerEmail()) ? null : $model->getBuyerEmail()) : (empty($model->buyer_email) ? null : $model->buyer_email));
+
+        if ($isEntity) {
+            $model->setText1($text1);
+            $model->setText2($text2);
+            $model->setSellerCompany($sellerCompany);
+            $model->setSellerCompanyVat($sellerCompanyVat);
+            $model->setSellerCompanyNumber($sellerCompanyNumber);
+            $model->setSellerAddress($sellerAddress);
+            $model->setSellerPhone($sellerPhone);
+            $model->setSellerEmail($sellerEmail);
+            $model->setBuyerFirstName($buyerFirstName);
+            $model->setBuyerLastName($buyerLastName);
+            $model->setBuyerCompany($buyerCompany);
+            $model->setBuyerCompanyVat($buyerCompanyVat);
+            $model->setBuyerCompanyNumber($buyerCompanyNumber);
+            $model->setBuyerAddress($buyerAddress);
+            $model->setBuyerCity($buyerCity);
+            $model->setBuyerState($buyerState);
+            $model->setBuyerCountry($buyerCountry);
+            $model->setBuyerZip($buyerZip);
+            $model->setBuyerPhone($buyerPhone);
+            $model->setBuyerEmail($buyerEmail);
+        } else {
+            $model->text_1 = $data['text_1'] ?? (empty($model->text_1) ? null : $model->text_1);
+            $model->text_2 = $data['text_2'] ?? (empty($model->text_2) ? null : $model->text_2);
+            $model->seller_company = $data['seller_company'] ?? (empty($model->seller_company) ? null : $model->seller_company);
+            $model->seller_company_vat = $data['seller_company_vat'] ?? (empty($model->seller_company_vat) ? null : $model->seller_company_vat);
+            $model->seller_company_number = $data['seller_company_number'] ?? (empty($model->seller_company_number) ? null : $model->seller_company_number);
+            $model->seller_address = $data['seller_address'] ?? (empty($model->seller_address) ? null : $model->seller_address);
+            $model->seller_phone = $data['seller_phone'] ?? (empty($model->seller_phone) ? null : $model->seller_phone);
+            $model->seller_email = $data['seller_email'] ?? (empty($model->seller_email) ? null : $model->seller_email);
+            $model->buyer_first_name = $data['buyer_first_name'] ?? (empty($model->buyer_first_name) ? null : $model->buyer_first_name);
+            $model->buyer_last_name = $data['buyer_last_name'] ?? (empty($model->buyer_last_name) ? null : $model->buyer_last_name);
+            $model->buyer_company = $data['buyer_company'] ?? (empty($model->buyer_company) ? null : $model->buyer_company);
+            $model->buyer_company_vat = $data['buyer_company_vat'] ?? (empty($model->buyer_company_vat) ? null : $model->buyer_company_vat);
+            $model->buyer_company_number = $data['buyer_company_number'] ?? (empty($model->buyer_company_number) ? null : $model->buyer_company_number);
+            $model->buyer_address = $data['buyer_address'] ?? (empty($model->buyer_address) ? null : $model->buyer_address);
+            $model->buyer_city = $data['buyer_city'] ?? (empty($model->buyer_city) ? null : $model->buyer_city);
+            $model->buyer_state = $data['buyer_state'] ?? (empty($model->buyer_state) ? null : $model->buyer_state);
+            $model->buyer_country = $data['buyer_country'] ?? (empty($model->buyer_country) ? null : $model->buyer_country);
+            $model->buyer_zip = $data['buyer_zip'] ?? (empty($model->buyer_zip) ? null : $model->buyer_zip);
+            $model->buyer_phone = $data['buyer_phone'] ?? (empty($model->buyer_phone) ? null : $model->buyer_phone);
+            $model->buyer_email = $data['buyer_email'] ?? (empty($model->buyer_email) ? null : $model->buyer_email);
+        }
+
+        $paid_at = $data['paid_at'] ?? ($isEntity ? ($model->getPaidAt()?->format('Y-m-d H:i:s')) : $model->paid_at);
         if (empty($paid_at)) {
-            $model->paid_at = null;
+            if ($isEntity) {
+                $model->setPaidAt(null);
+            } else {
+                $model->paid_at = null;
+            }
         } else {
-            $model->paid_at = date('Y-m-d H:i:s', strtotime((string) $paid_at));
+            $date = new \DateTime(date('Y-m-d H:i:s', strtotime((string) $paid_at)));
+            if ($isEntity) {
+                $model->setPaidAt($date);
+            } else {
+                $model->paid_at = $date->format('Y-m-d H:i:s');
+            }
         }
 
-        $due_at = $data['due_at'] ?? $model->due_at;
+        $due_at = $data['due_at'] ?? ($isEntity ? ($model->getDueAt()?->format('Y-m-d H:i:s')) : $model->due_at);
         if (empty($due_at)) {
-            $model->due_at = null;
+            if ($isEntity) {
+                $model->setDueAt(null);
+            } else {
+                $model->due_at = null;
+            }
         } else {
-            $model->due_at = date('Y-m-d H:i:s', strtotime((string) $due_at));
+            $date = new \DateTime(date('Y-m-d H:i:s', strtotime((string) $due_at)));
+            if ($isEntity) {
+                $model->setDueAt($date);
+            } else {
+                $model->due_at = $date->format('Y-m-d H:i:s');
+            }
         }
 
-        $model->serie = $data['serie'] ?? (empty($model->serie) ? null : $model->serie);
-        $model->nr = $data['nr'] ?? (empty($model->nr) ? null : $model->nr);
-        $model->status = $data['status'] ?? (empty($model->status) ? null : $model->status);
-        $model->taxrate = $data['taxrate'] ?? (empty($model->taxrate) ? null : $model->taxrate);
-        $model->taxname = $data['taxname'] ?? (empty($model->taxname) ? null : $model->taxname);
-        $model->approved = (int) ($data['approved'] ?? (empty($model->approved) ? null : $model->approved));
-        $model->notes = $data['notes'] ?? (empty($model->notes) ? null : $model->notes);
+        $serie = $data['serie'] ?? ($isEntity ? (empty($model->getSerie()) ? null : $model->getSerie()) : (empty($model->serie) ? null : $model->serie));
+        $nr = $data['nr'] ?? ($isEntity ? (empty($model->getNr()) ? null : $model->getNr()) : (empty($model->nr) ? null : $model->nr));
+        $status = $data['status'] ?? ($isEntity ? (empty($model->getStatus()) ? null : $model->getStatus()) : (empty($model->status) ? null : $model->status));
+        $taxrate = $data['taxrate'] ?? ($isEntity ? (empty($model->getTaxrate()) ? null : $model->getTaxrate()) : (empty($model->taxrate) ? null : $model->taxrate));
+        $taxname = $data['taxname'] ?? ($isEntity ? (empty($model->getTaxname()) ? null : $model->getTaxname()) : (empty($model->taxname) ? null : $model->taxname));
+        $approved = (int) ($data['approved'] ?? ($isEntity ? ($model->isApproved() === false && $model->isApproved() !== null ? null : (int) $model->isApproved()) : (empty($model->approved) ? null : $model->approved)));
+        $notes = $data['notes'] ?? ($isEntity ? (empty($model->getNotes()) ? null : $model->getNotes()) : (empty($model->notes) ? null : $model->notes));
+
+        if ($isEntity) {
+            $model->setSerie($serie);
+            $model->setNr($nr);
+            $model->setStatus($status);
+            $model->setTaxrate($taxrate);
+            $model->setTaxname($taxname);
+            $model->setApproved((bool) $approved);
+            $model->setNotes($notes);
+        } else {
+            $model->serie = $data['serie'] ?? (empty($model->serie) ? null : $model->serie);
+            $model->nr = $data['nr'] ?? (empty($model->nr) ? null : $model->nr);
+            $model->status = $data['status'] ?? (empty($model->status) ? null : $model->status);
+            $model->taxrate = $data['taxrate'] ?? (empty($model->taxrate) ? null : $model->taxrate);
+            $model->taxname = $data['taxname'] ?? (empty($model->taxname) ? null : $model->taxname);
+            $model->approved = (int) ($data['approved'] ?? (empty($model->approved) ? null : $model->approved));
+            $model->notes = $data['notes'] ?? (empty($model->notes) ? null : $model->notes);
+        }
 
         $created_at = $data['created_at'] ?? '';
         if (!empty($created_at)) {
-            $model->created_at = date('Y-m-d H:i:s', strtotime((string) $created_at));
+            $date = new \DateTime(date('Y-m-d H:i:s', strtotime((string) $created_at)));
+            if ($isEntity) {
+                $model->setCreatedAt($date);
+            } else {
+                $model->created_at = $date->format('Y-m-d H:i:s');
+            }
         }
 
         $ni = $data['new_item'] ?? [];
@@ -1218,48 +1495,62 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $model->updated_at = date('Y-m-d H:i:s');
+        if ($isEntity) {
+            $this->di['em']->persist($model);
+            $this->di['em']->flush();
+        } else {
+            $model->updated_at = date('Y-m-d H:i:s');
+            $this->di['db']->store($model);
+        }
 
-        $this->di['db']->store($model);
-
-        if ($previousStatus === \Model_Invoice::STATUS_UNPAID && $model->status === \Model_Invoice::STATUS_CANCELED) {
+        if ($previousStatus === \Model_Invoice::STATUS_UNPAID && $status === \Model_Invoice::STATUS_CANCELED) {
             $productService = $this->di['mod_service']('Product');
             $productService->releaseReservedPromoRedemptionsForInvoice($model, 'invoice_canceled');
         }
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceUpdate', 'params' => $this->toApiArray($model)]);
 
-        $this->di['logger']->info("Updated invoice {$model->id}.");
+        $invoiceId = $isEntity ? $model->getId() : $model->id;
+        $this->di['logger']->info("Updated invoice {$invoiceId}.");
 
         return true;
     }
 
-    public function rmInvoice(\Model_Invoice $model): bool
+    public function rmInvoice(Invoice|\Model_Invoice $model): bool
     {
         $productService = $this->di['mod_service']('Product');
         $productService->releaseReservedPromoRedemptionsForInvoice($model, 'invoice_deleted');
+
+        $invoiceId = $model instanceof Invoice ? $model->getId() : $model->id;
 
         // remove related invoice from orders
         $sql = '
             UPDATE client_order
             SET unpaid_invoice_id = NULL
             WHERE unpaid_invoice_id = :id';
-        $this->di['db']->exec($sql, ['id' => $model->id]);
+        $this->di['db']->exec($sql, ['id' => $invoiceId]);
 
-        $invoiceItems = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', [$model->id]);
+        $invoiceItems = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', [$invoiceId]);
         foreach ($invoiceItems as $item) {
             $this->di['db']->trash($item);
         }
-        $this->di['db']->trash($model);
+
+        if ($model instanceof Invoice) {
+            $this->di['em']->remove($model);
+            $this->di['em']->flush();
+        } else {
+            $this->di['db']->trash($model);
+        }
 
         return true;
     }
 
-    public function deleteInvoiceByAdmin(\Model_Invoice $model): bool
+    public function deleteInvoiceByAdmin(Invoice|\Model_Invoice $model): bool
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceDelete', 'params' => ['id' => $model->id]]);
+        $invoiceId = $model instanceof Invoice ? $model->getId() : $model->id;
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceDelete', 'params' => ['id' => $invoiceId]]);
 
-        $id = $model->id;
+        $id = $invoiceId;
         $this->rmInvoice($model);
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceDelete', 'params' => ['id' => $id]]);
@@ -1275,13 +1566,14 @@ class Service implements InjectionAwareInterface
 
         $due_days = isset($data['due_days']) ? (int) $data['due_days'] : null;
         $invoice = $this->generateForOrder($model, $due_days);
-        $this->approveInvoice($invoice, ['id' => $invoice->id, 'use_credits' => true]);
+        $invoiceId = $invoice instanceof Invoice ? $invoice->getId() : $invoice->id;
+        $this->approveInvoice($invoice, ['id' => $invoiceId, 'use_credits' => true]);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminGenerateRenewalInvoice', 'params' => ['order_id' => $model->id, 'id' => $invoice->id]]);
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminGenerateRenewalInvoice', 'params' => ['order_id' => $model->id, 'id' => $invoiceId]]);
 
-        $this->di['logger']->info("Generated renewal invoice #{$invoice->id}.");
+        $this->di['logger']->info("Generated renewal invoice #{$invoiceId}.");
 
-        return $invoice->id;
+        return $invoiceId;
     }
 
     public function doBatchPayWithCredits(array $data): bool
@@ -1303,7 +1595,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function payInvoiceWithCredits(\Model_Invoice $model): bool
+    public function payInvoiceWithCredits(Invoice|\Model_Invoice $model): bool
     {
         $this->tryPayWithCredits($model);
         $this->di['logger']->info('Cover invoice with client credits.');
@@ -1314,13 +1606,17 @@ class Service implements InjectionAwareInterface
     /**
      * @param int $due_days
      *
-     * @return \Model_Invoice
+     * @return \Model_Invoice|Invoice
      */
     public function generateForOrder(\Model_ClientOrder $order, $due_days = null)
     {
         // check if we do have invoice prepared already
         if ($order->unpaid_invoice_id !== null) {
-            $p = $this->di['db']->load('Invoice', $order->unpaid_invoice_id);
+            $p = $this->getInvoiceRepository()->find($order->unpaid_invoice_id);
+            if ($p instanceof Invoice && $p->getStatus() === \Model_Invoice::STATUS_UNPAID) {
+                return $p;
+            }
+
             if ($p instanceof \Model_Invoice && $p->status === \Model_Invoice::STATUS_UNPAID) {
                 return $p;
             }
@@ -1371,14 +1667,15 @@ class Service implements InjectionAwareInterface
         $client = $this->di['db']->getExistingModelById('Client', $order->client_id, 'Client not found');
 
         // generate proforma after validating the resolved renewal amount
-        $proforma = $this->di['db']->dispense('Invoice');
-        $proforma->client_id = $client->id;
-        $proforma->status = \Model_Invoice::STATUS_UNPAID;
-        $proforma->currency = $order->currency;
-        $proforma->approved = false;
-        $proforma->created_at = date('Y-m-d H:i:s');
-        $proforma->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($proforma);
+        $proforma = new Invoice();
+        $proforma->setClientId($client->id);
+        $proforma->setStatus(\Model_Invoice::STATUS_UNPAID);
+        $proforma->setCurrency($order->currency);
+        $proforma->setApproved(false);
+        $proforma->setCreatedAt(new \DateTime());
+        $proforma->setUpdatedAt(new \DateTime());
+        $this->di['em']->persist($proforma);
+        $this->di['em']->flush();
 
         $this->setInvoiceDefaults($proforma);
 
@@ -1387,11 +1684,13 @@ class Service implements InjectionAwareInterface
 
         // invoice due date
         if ($due_days > 0) {
-            $proforma->due_at = date('Y-m-d H:i:s', strtotime('+' . $due_days . ' days'));
-            $this->di['db']->store($proforma);
+            $proforma->setDueAt(new \DateTime(date('Y-m-d H:i:s', strtotime('+' . $due_days . ' days'))));
+            $this->di['em']->persist($proforma);
+            $this->di['em']->flush();
         } elseif ($order->expires_at) {
-            $proforma->due_at = $order->expires_at;
-            $this->di['db']->store($proforma);
+            $proforma->setDueAt(new \DateTime($order->expires_at));
+            $this->di['em']->persist($proforma);
+            $this->di['em']->flush();
         }
 
         return $proforma;
@@ -1410,7 +1709,8 @@ class Service implements InjectionAwareInterface
             try {
                 $model = $this->di['db']->getExistingModelById('ClientOrder', $order['id'] ?? null);
                 $invoice = $this->generateForOrder($model);
-                $this->approveInvoice($invoice, ['id' => $invoice->id, 'use_credits' => true]);
+                $invoiceId = $invoice instanceof Invoice ? $invoice->getId() : $invoice->id;
+                $this->approveInvoice($invoice, ['id' => $invoiceId, 'use_credits' => true]);
             } catch (\Exception $e) {
                 $this->di['logger']->warning($e->getMessage());
             }
@@ -1511,20 +1811,28 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function sendInvoiceReminder(\Model_Invoice $invoice): bool
+    public function sendInvoiceReminder(Invoice|\Model_Invoice $invoice): bool
     {
+        $invoiceStatus = $invoice instanceof Invoice ? $invoice->getStatus() : $invoice->status;
         // do not send accidental reminder for paid invoices
-        if ($invoice->status == \Model_Invoice::STATUS_PAID) {
+        if ($invoiceStatus == \Model_Invoice::STATUS_PAID) {
             return true;
         }
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceSendReminder', 'params' => ['id' => $invoice->id]]);
+        $invoiceId = $invoice instanceof Invoice ? $invoice->getId() : $invoice->id;
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceSendReminder', 'params' => ['id' => $invoiceId]]);
 
-        $invoice->reminded_at = date('Y-m-d H:i:s');
-        $invoice->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($invoice);
+        if ($invoice instanceof Invoice) {
+            $invoice->setRemindedAt(new \DateTime());
+            $this->di['em']->persist($invoice);
+            $this->di['em']->flush();
+        } else {
+            $invoice->reminded_at = date('Y-m-d H:i:s');
+            $invoice->updated_at = date('Y-m-d H:i:s');
+            $this->di['db']->store($invoice);
+        }
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceReminderSent', 'params' => ['id' => $invoice->id]]);
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceReminderSent', 'params' => ['id' => $invoiceId]]);
 
         $this->di['logger']->info('Invoice payment reminder sent');
 
@@ -1570,14 +1878,15 @@ class Service implements InjectionAwareInterface
             throw new InformationException('Amount cannot exceed :max_amount', [':max_amount' => $max_amount], 982);
         }
 
-        $proforma = $this->di['db']->dispense('Invoice');
-        $proforma->client_id = $client->id;
-        $proforma->status = \Model_Invoice::STATUS_UNPAID;
-        $proforma->currency = $client->currency;
-        $proforma->approved = $this->_isAutoApproved();
-        $proforma->created_at = date('Y-m-d H:i:s');
-        $proforma->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($proforma);
+        $proforma = new Invoice();
+        $proforma->setClientId($client->id);
+        $proforma->setStatus(\Model_Invoice::STATUS_UNPAID);
+        $proforma->setCurrency($client->currency);
+        $proforma->setApproved($this->_isAutoApproved());
+        $proforma->setCreatedAt(new \DateTime());
+        $proforma->setUpdatedAt(new \DateTime());
+        $this->di['em']->persist($proforma);
+        $this->di['em']->flush();
 
         $this->setInvoiceDefaults($proforma);
 
@@ -1592,8 +1901,8 @@ class Service implements InjectionAwareInterface
         $allowSubscribe = $data['allow_subscription'] ?? true;
         $subscribe = false;
 
-        $invoice = $this->di['db']->findOne('Invoice', 'hash = ?', [$data['hash']]);
-        if (!$invoice instanceof \Model_Invoice) {
+        $invoice = $this->getInvoiceRepository()->findByHash($data['hash']);
+        if (!$invoice instanceof Invoice) {
             throw new InformationException('Invoice not found', null, 812);
         }
 
@@ -1610,7 +1919,7 @@ class Service implements InjectionAwareInterface
 
         $subscribeService = $this->di['mod_service']('Invoice', 'Subscription');
         $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
-        if ($subscribeService->isSubscribable($invoice->id) && $payGatewayService->canPerformRecurrentPayment($gtw) && $allowSubscribe) {
+        if ($subscribeService->isSubscribable($invoice->getId()) && $payGatewayService->canPerformRecurrentPayment($gtw) && $allowSubscribe) {
             $subscribe = true;
         }
 
@@ -1631,7 +1940,7 @@ class Service implements InjectionAwareInterface
 
         // @since v2.9.15
         if (method_exists($adapter, 'getHtml')) {
-            $html = $adapter->getHtml($this->di['api_system'], (int) $invoice->id, $subscribe);
+            $html = $adapter->getHtml($this->di['api_system'], $invoice->getId(), $subscribe);
 
             return [
                 'iframe' => isset($pgc['can_load_in_iframe']) && (bool) $pgc['can_load_in_iframe'],
@@ -1645,7 +1954,7 @@ class Service implements InjectionAwareInterface
         $i = clone $invoice;
         $mpi = $this->getPaymentInvoice($i, $subscribe);
         $r = ($subscribe) ? $adapter->recurrentPayment($mpi) : $adapter->singlePayment($mpi);
-        $this->di['logger']->info('Went to pay for invoice #%s via %s', $invoice->id, $gtw->gateway);
+        $this->di['logger']->info('Went to pay for invoice #%s via %s', $invoice->getId(), $gtw->gateway);
 
         // @bug https://github.com/boxbilling/boxbilling/issues/108
         if ($adapter->getType() != 'html') {
@@ -1662,9 +1971,9 @@ class Service implements InjectionAwareInterface
 
     public function generatePDF($hash, $identity): Response
     {
-        $invoiceModel = $this->di['db']->findOne('Invoice', 'hash = :hash', [':hash' => $hash]);
+        $invoiceModel = $this->getInvoiceRepository()->findByHash($hash);
 
-        if (!$invoiceModel instanceof \Model_Invoice) {
+        if (!$invoiceModel instanceof Invoice) {
             throw new InformationException('Invoice not found');
         }
 
@@ -1683,7 +1992,7 @@ class Service implements InjectionAwareInterface
      *
      * @return array{content: string, name: string, mime: string}|null
      */
-    public function getInvoicePdfAttachment(\Model_Invoice $invoiceModel): ?array
+    public function getInvoicePdfAttachment(Invoice|\Model_Invoice $invoiceModel): ?array
     {
         $systemService = $this->di['mod_service']('system');
         if (!$systemService->getParamValue('invoice_email_attach_pdf')) {
@@ -1706,16 +2015,19 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    protected function renderInvoicePdfContent(\Model_Invoice $invoiceModel, array $invoice): string
+    protected function renderInvoicePdfContent(Invoice|\Model_Invoice $invoiceModel, array $invoice): string
     {
         $systemService = $this->di['mod_service']('system');
         $c = $systemService->getCompany();
         $document_format = $systemService->getParamValue('invoice_document_format', 'Letter');
 
-        if (isset($invoiceModel->currency)) {
+        if ($invoiceModel instanceof Invoice) {
+            $currencyCode = $invoiceModel->getCurrency();
+        } elseif (isset($invoiceModel->currency)) {
             $currencyCode = $invoiceModel->currency;
         } else {
-            $client = $this->di['db']->getExistingModelById('Client', $invoiceModel->client_id, 'Client not found');
+            $clientId = $invoiceModel instanceof Invoice ? $invoiceModel->getClientId() : $invoiceModel->client_id;
+            $client = $this->di['db']->getExistingModelById('Client', $clientId, 'Client not found');
             $currencyCode = $client->currency;
         }
 
@@ -1760,12 +2072,19 @@ class Service implements InjectionAwareInterface
         return $pdf->output();
     }
 
-    public function addNote(\Model_Invoice $model, $note): bool
+    public function addNote(Invoice|\Model_Invoice $model, $note): bool
     {
-        $n = $model->notes;
-        $model->notes = $n . date('Y-m-d H:i:s') . ': ' . $note . '       ' . PHP_EOL;
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        if ($model instanceof Invoice) {
+            $n = $model->getNotes();
+            $model->setNotes($n . date('Y-m-d H:i:s') . ': ' . $note . '       ' . PHP_EOL);
+            $this->di['em']->persist($model);
+            $this->di['em']->flush();
+        } else {
+            $n = $model->notes;
+            $model->notes = $n . date('Y-m-d H:i:s') . ': ' . $note . '       ' . PHP_EOL;
+            $model->updated_at = date('Y-m-d H:i:s');
+            $this->di['db']->store($model);
+        }
 
         return true;
     }
@@ -1804,7 +2123,7 @@ class Service implements InjectionAwareInterface
 
     public function findAllPaid()
     {
-        return $this->di['db']->find('Invoice', 'status = ? order by id desc', [\Model_Invoice::STATUS_PAID]);
+        return $this->getInvoiceRepository()->findPaid();
     }
 
     public function getUnpaidInvoicesLateFor($days_after_issue = 2)
@@ -1867,7 +2186,7 @@ class Service implements InjectionAwareInterface
     /**
      * @param bool $subscribe
      */
-    public function getPaymentInvoice(\Model_Invoice $invoice, $subscribe = false): \Payment_Invoice
+    public function getPaymentInvoice(Invoice|\Model_Invoice $invoice, $subscribe = false): \Payment_Invoice
     {
         $proforma = $this->toApiArray($invoice);
         $client = $this->getBuyer($invoice);
@@ -1917,8 +2236,9 @@ class Service implements InjectionAwareInterface
             $title = __trans('Payment for invoice :serie:id', $params);
         }
 
+        $invoiceId = $invoice instanceof Invoice ? $invoice->getId() : $invoice->id;
         $mpi = new \Payment_Invoice();
-        $mpi->setId($invoice->id);
+        $mpi->setId($invoiceId);
         $mpi->setNumber($proforma['nr']);
         $mpi->setBuyer($buyer);
         $mpi->setCurrency($proforma['currency']);
@@ -1927,56 +2247,75 @@ class Service implements InjectionAwareInterface
 
         $subscribeService = $this->di['mod_service']('Invoice', 'Subscription');
         // can subscribe only if proforma has one item with defined period
-        if ($subscribe && $subscribeService->isSubscribable($invoice->id)) {
-            $subitem = $invoice->InvoiceItem->getFirst();
-            $period = $this->di['period']($subitem->period);
+        if ($subscribe && $subscribeService->isSubscribable($invoiceId)) {
+            if ($invoice instanceof Invoice) {
+                $items = $this->getInvoiceItemRepository()->findByInvoiceId($invoiceId);
+                $subitem = $items[0] ?? null;
+                if ($subitem instanceof InvoiceItem) {
+                    $period = $this->di['period']($subitem->getPeriod());
 
-            $bs = new \Payment_Invoice_Subscription();
-            $bs->setId($proforma['id']);
-            $bs->setAmount($mpi->getTotalWithTax());
-            $bs->setCycle($period->getQty());
-            $bs->setUnit($period->getUnit());
+                    $bs = new \Payment_Invoice_Subscription();
+                    $bs->setId($proforma['id']);
+                    $bs->setAmount($mpi->getTotalWithTax());
+                    $bs->setCycle($period->getQty());
+                    $bs->setUnit($period->getUnit());
 
-            $mpi->setSubscription($bs);
-            $mpi->setTitle('Subscription for ' . $subitem->title);
+                    $mpi->setSubscription($bs);
+                    $mpi->setTitle('Subscription for ' . $subitem->getTitle());
+                }
+            } else {
+                $subitem = $invoice->InvoiceItem->getFirst();
+                $period = $this->di['period']($subitem->period);
+
+                $bs = new \Payment_Invoice_Subscription();
+                $bs->setId($proforma['id']);
+                $bs->setAmount($mpi->getTotalWithTax());
+                $bs->setCycle($period->getQty());
+                $bs->setUnit($period->getUnit());
+
+                $mpi->setSubscription($bs);
+                $mpi->setTitle('Subscription for ' . $subitem->title);
+            }
         }
 
         return $mpi;
     }
 
-    public function getBuyer(\Model_Invoice $invoice): array
+    public function getBuyer(Invoice|\Model_Invoice $invoice): array
     {
         return [
-            'first_name' => $invoice->buyer_first_name,
-            'last_name' => $invoice->buyer_last_name,
-            'company' => $invoice->buyer_company,
-            'address' => $invoice->buyer_address,
-            'city' => $invoice->buyer_city,
-            'state' => $invoice->buyer_state,
-            'country' => $invoice->buyer_country,
-            'phone' => $invoice->buyer_phone,
+            'first_name' => $invoice instanceof Invoice ? $invoice->getBuyerFirstName() : $invoice->buyer_first_name,
+            'last_name' => $invoice instanceof Invoice ? $invoice->getBuyerLastName() : $invoice->buyer_last_name,
+            'company' => $invoice instanceof Invoice ? $invoice->getBuyerCompany() : $invoice->buyer_company,
+            'address' => $invoice instanceof Invoice ? $invoice->getBuyerAddress() : $invoice->buyer_address,
+            'city' => $invoice instanceof Invoice ? $invoice->getBuyerCity() : $invoice->buyer_city,
+            'state' => $invoice instanceof Invoice ? $invoice->getBuyerState() : $invoice->buyer_state,
+            'country' => $invoice instanceof Invoice ? $invoice->getBuyerCountry() : $invoice->buyer_country,
+            'phone' => $invoice instanceof Invoice ? $invoice->getBuyerPhone() : $invoice->buyer_phone,
             'phone_cc' => '',
-            'email' => $invoice->buyer_email,
-            'zip' => $invoice->buyer_zip,
+            'email' => $invoice instanceof Invoice ? $invoice->getBuyerEmail() : $invoice->buyer_email,
+            'zip' => $invoice instanceof Invoice ? $invoice->getBuyerZip() : $invoice->buyer_zip,
         ];
     }
 
     public function rmByClient(\Model_Client $client): void
     {
-        $invoices = $this->di['db']->find('Invoice', 'client_id = ?', [$client->id]);
+        $invoices = $this->getInvoiceRepository()->findByClientId($client->id);
         foreach ($invoices as $invoice) {
-            if ($invoice instanceof \Model_Invoice) {
+            if ($invoice instanceof Invoice) {
                 $this->rmInvoice($invoice);
             }
         }
     }
 
-    public function isInvoiceTypeDeposit(\Model_Invoice $invoice): bool
+    public function isInvoiceTypeDeposit(Invoice|\Model_Invoice $invoice): bool
     {
-        $invoiceItems = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', [$invoice->id]);
+        $invoiceId = $invoice instanceof Invoice ? $invoice->getId() : $invoice->id;
+        $invoiceItems = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', [$invoiceId]);
 
         foreach ($invoiceItems as $item) {
-            if ($item->type == \Model_InvoiceItem::TYPE_DEPOSIT) {
+            $itemType = $item instanceof InvoiceItem ? $item->getType() : $item->type;
+            if ($itemType == \Model_InvoiceItem::TYPE_DEPOSIT) {
                 return true;
             }
         }
@@ -1993,13 +2332,13 @@ class Service implements InjectionAwareInterface
         return $this->di['csv_response_factory']->create('invoice', 'invoices.csv', $headers);
     }
 
-    public function checkInvoiceAuth(\Model_Invoice $invoice, InvoiceOperation $operation = InvoiceOperation::READ): void
+    public function checkInvoiceAuth(Invoice|\Model_Invoice $invoice, InvoiceOperation $operation = InvoiceOperation::READ): void
     {
         if ($this->di['auth']->isAdminLoggedIn() || Environment::isCLI()) {
             return;
         }
 
-        $invoiceClientId = $invoice->client_id;
+        $invoiceClientId = $invoice instanceof Invoice ? $invoice->getClientId() : $invoice->client_id;
         $systemService = $this->di['mod_service']('system');
         $hash_access = $systemService->getParamValue('invoice_accessible_from_hash', '0');
         $hashAccessAllowed = $hash_access === '1' && in_array($operation, [InvoiceOperation::READ, InvoiceOperation::PAYMENT], true);
@@ -2039,37 +2378,60 @@ class Service implements InjectionAwareInterface
      * hash is empty or in a legacy format by generating a fresh modern
      * hash. Called when an admin re-sends an invoice or payment reminder.
      */
-    public function extendInvoiceHashLifetime(\Model_Invoice $invoice): void
+    public function extendInvoiceHashLifetime(Invoice|\Model_Invoice $invoice): void
     {
-        $hash = $invoice->hash ?? null;
+        $hash = $invoice instanceof Invoice ? $invoice->getHash() : $invoice->hash;
         $isModern = is_string($hash) && preg_match('/^[a-f0-9]{30,60}$/', $hash) === 1;
-        if (!$isModern) {
-            $invoice->hash = bin2hex(random_bytes(random_int(15, 30)));
+        $expiration = $this->computeHashExpiration();
+
+        if ($invoice instanceof Invoice) {
+            if (!$isModern) {
+                $invoice->setHash(bin2hex(random_bytes(random_int(15, 30))));
+            }
+            $invoice->setHashExpiresAt($expiration !== null ? new \DateTime($expiration) : null);
+            $this->di['em']->persist($invoice);
+            $this->di['em']->flush();
+        } else {
+            if (!$isModern) {
+                $invoice->hash = bin2hex(random_bytes(random_int(15, 30)));
+            }
+            $invoice->hash_expires_at = $expiration;
+            $this->di['db']->store($invoice);
         }
-        $invoice->hash_expires_at = $this->computeHashExpiration();
-        $this->di['db']->store($invoice);
     }
 
     /**
      * Regenerates the hash if it is missing or in a legacy format. No-op
      * for valid hashes, making it safe to call from read paths.
      */
-    public function ensureValidHash(\Model_Invoice $invoice): void
+    public function ensureValidHash(Invoice|\Model_Invoice $invoice): void
     {
-        $hash = $invoice->hash ?? null;
+        $hash = $invoice instanceof Invoice ? $invoice->getHash() : $invoice->hash;
         $isModern = is_string($hash) && preg_match('/^[a-f0-9]{30,60}$/', $hash) === 1;
         if ($isModern) {
             return;
         }
 
-        $invoice->hash = bin2hex(random_bytes(random_int(15, 30)));
-        $invoice->hash_expires_at = $this->computeHashExpiration();
-        $this->di['db']->store($invoice);
+        $expiration = $this->computeHashExpiration();
+
+        if ($invoice instanceof Invoice) {
+            $invoice->setHash(bin2hex(random_bytes(random_int(15, 30))));
+            $invoice->setHashExpiresAt($expiration !== null ? new \DateTime($expiration) : null);
+            $this->di['em']->persist($invoice);
+            $this->di['em']->flush();
+        } else {
+            $invoice->hash = bin2hex(random_bytes(random_int(15, 30)));
+            $invoice->hash_expires_at = $expiration;
+            $this->di['db']->store($invoice);
+        }
     }
 
-    private function isHashExpired(\Model_Invoice $invoice): bool
+    private function isHashExpired(Invoice|\Model_Invoice $invoice): bool
     {
-        $expires = $invoice->hash_expires_at ?? null;
+        $expires = $invoice instanceof Invoice ? $invoice->getHashExpiresAt() : ($invoice->hash_expires_at ?? null);
+        if ($expires instanceof \DateTime) {
+            return $expires->getTimestamp() < time();
+        }
         if (empty($expires)) {
             return false;
         }
@@ -2276,14 +2638,13 @@ class Service implements InjectionAwareInterface
      */
     public function getOrderIdFromInvoice(int $invoiceId): ?int
     {
-        $item = $this->di['db']->findOne(
-            'InvoiceItem',
-            'invoice_id = :invoice_id AND type = :type',
-            ['invoice_id' => $invoiceId, 'type' => \Model_InvoiceItem::TYPE_ORDER]
-        );
+        $item = $this->getInvoiceItemRepository()->findOneBy([
+            'invoiceId' => $invoiceId,
+            'type' => \Model_InvoiceItem::TYPE_ORDER,
+        ]);
 
-        if ($item instanceof \Model_InvoiceItem) {
-            return (int) $item->rel_id;
+        if ($item instanceof InvoiceItem) {
+            return (int) $item->getRelId();
         }
 
         return null;
@@ -2299,22 +2660,23 @@ class Service implements InjectionAwareInterface
      *
      * @return \Model_Invoice|null The generated invoice or null if unable to generate
      */
-    public function generateRenewalInvoiceForSubscriptionPayment(string $subscriptionSid, int $clientId): ?\Model_Invoice
+    public function generateRenewalInvoiceForSubscriptionPayment(string $subscriptionSid, int $clientId): Invoice|\Model_Invoice|null
     {
-        $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
+        /** @var SubscriptionRepository $subscriptionRepo */
+        $subscriptionRepo = $this->getSubscriptionRepository();
         $orderService = $this->di['mod_service']('Order');
 
         try {
-            $subscription = $this->di['db']->findOne('Subscription', 'sid = :sid', ['sid' => $subscriptionSid]);
-            if (!$subscription instanceof \Model_Subscription) {
+            $subscription = $subscriptionRepo->findBySId($subscriptionSid);
+            if (!$subscription instanceof Subscription) {
                 return null;
             }
 
-            if ($subscription->rel_type !== 'invoice') {
+            if ($subscription->getRelType() !== 'invoice') {
                 return null;
             }
 
-            $originalOrderId = $this->getOrderIdFromInvoice((int) $subscription->rel_id);
+            $originalOrderId = $this->getOrderIdFromInvoice((int) $subscription->getRelId());
             if ($originalOrderId === null) {
                 return null;
             }
@@ -2334,9 +2696,10 @@ class Service implements InjectionAwareInterface
             }
 
             $invoice = $this->generateForOrder($originalOrder);
+            $invoiceId = $invoice instanceof Invoice ? $invoice->getId() : $invoice->id;
             $this->approveInvoice($invoice, ['use_credits' => false]);
 
-            $this->di['logger']->info("Generated renewal invoice #{$invoice->id} for subscription payment (SID: {$subscriptionSid}).");
+            $this->di['logger']->info("Generated renewal invoice #{$invoiceId} for subscription payment (SID: {$subscriptionSid}).");
 
             return $invoice;
         } catch (\Exception $e) {
@@ -2347,4 +2710,108 @@ class Service implements InjectionAwareInterface
     }
 
     // End of PDF related functions
+
+    private function getInvoiceRepository(): InvoiceRepository
+    {
+        if ($this->invoiceRepository === null) {
+            $this->invoiceRepository = $this->di['em']->getRepository(Invoice::class);
+        }
+
+        return $this->invoiceRepository;
+    }
+
+    private function getInvoiceItemRepository(): InvoiceItemRepository
+    {
+        if ($this->invoiceItemRepository === null) {
+            $this->invoiceItemRepository = $this->di['em']->getRepository(InvoiceItem::class);
+        }
+
+        return $this->invoiceItemRepository;
+    }
+
+    private function getTransactionRepository(): TransactionRepository
+    {
+        if ($this->transactionRepository === null) {
+            $this->transactionRepository = $this->di['em']->getRepository(Transaction::class);
+        }
+
+        return $this->transactionRepository;
+    }
+
+    private function getSubscriptionRepository(): SubscriptionRepository
+    {
+        if ($this->subscriptionRepository === null) {
+            $this->subscriptionRepository = $this->di['em']->getRepository(Subscription::class);
+        }
+
+        return $this->subscriptionRepository;
+    }
+
+    private function getPayGatewayRepository(): PayGatewayRepository
+    {
+        if ($this->payGatewayRepository === null) {
+            $this->payGatewayRepository = $this->di['em']->getRepository(PayGateway::class);
+        }
+
+        return $this->payGatewayRepository;
+    }
+
+    private function getTaxRepository(): TaxRepository
+    {
+        if ($this->taxRepository === null) {
+            $this->taxRepository = $this->di['em']->getRepository(Tax::class);
+        }
+
+        return $this->taxRepository;
+    }
+
+    private function buildRowFromEntity(Invoice $invoice): array
+    {
+        return [
+            'id' => $invoice->getId(),
+            'serie' => $invoice->getSerie(),
+            'nr' => $invoice->getNr(),
+            'client_id' => $invoice->getClientId(),
+            'hash' => $invoice->getHash(),
+            'hash_expires_at' => $invoice->getHashExpiresAt()?->format('Y-m-d H:i:s'),
+            'gateway_id' => $invoice->getGatewayId(),
+            'taxname' => $invoice->getTaxname(),
+            'taxrate' => $invoice->getTaxrate(),
+            'currency' => $invoice->getCurrency(),
+            'currency_rate' => $invoice->getCurrencyRate() ?? 1,
+            'status' => $invoice->getStatus(),
+            'notes' => $invoice->getNotes(),
+            'text_1' => $invoice->getText1(),
+            'text_2' => $invoice->getText2(),
+            'due_at' => $invoice->getDueAt()?->format('Y-m-d H:i:s'),
+            'paid_at' => $invoice->getPaidAt()?->format('Y-m-d H:i:s'),
+            'created_at' => $invoice->getCreatedAt()?->format('Y-m-d H:i:s'),
+            'updated_at' => $invoice->getUpdatedAt()?->format('Y-m-d H:i:s'),
+            'buyer_first_name' => $invoice->getBuyerFirstName(),
+            'buyer_last_name' => $invoice->getBuyerLastName(),
+            'buyer_company' => $invoice->getBuyerCompany(),
+            'buyer_company_vat' => $invoice->getBuyerCompanyVat(),
+            'buyer_company_number' => $invoice->getBuyerCompanyNumber(),
+            'buyer_address' => $invoice->getBuyerAddress(),
+            'buyer_city' => $invoice->getBuyerCity(),
+            'buyer_state' => $invoice->getBuyerState(),
+            'buyer_country' => $invoice->getBuyerCountry(),
+            'buyer_phone' => $invoice->getBuyerPhone(),
+            'buyer_phone_cc' => $invoice->getBuyerPhoneCc() ?? '',
+            'buyer_email' => $invoice->getBuyerEmail(),
+            'buyer_zip' => $invoice->getBuyerZip(),
+            'seller_company' => $invoice->getSellerCompany(),
+            'seller_company_vat' => $invoice->getSellerCompanyVat() ?? '',
+            'seller_company_number' => $invoice->getSellerCompanyNumber() ?? '',
+            'seller_address' => $invoice->getSellerAddress(),
+            'seller_phone' => $invoice->getSellerPhone(),
+            'seller_email' => $invoice->getSellerEmail(),
+            'reminded_at' => $invoice->getRemindedAt()?->format('Y-m-d H:i:s'),
+            'approved' => $invoice->isApproved(),
+            'base_income' => $invoice->getBaseIncome() ?? 0,
+            'base_refund' => $invoice->getBaseRefund() ?? 0,
+            'refund' => $invoice->getRefund() ?? 0,
+            'credit' => $invoice->getCredit() ?? 0,
+        ];
+    }
 }

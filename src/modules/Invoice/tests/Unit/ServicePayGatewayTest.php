@@ -102,17 +102,8 @@ test('installs a pay gateway', function (): void {
         ->atLeast()->once()
         ->andReturn([$code]);
 
-    $payGatewayModel = new Model_PayGateway();
-    $payGatewayModel->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('dispense')
-        ->atLeast()->once()
-        ->andReturn($payGatewayModel);
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once();
-
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = Tests\Helpers\entityManagerWithIds($di);
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $serviceMock->setDi($di);
@@ -177,36 +168,23 @@ test('copies a gateway', function (): void {
     $service = new ServicePayGateway();
     $payGatewayModel = new Model_PayGateway();
     $payGatewayModel->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('dispense')
-        ->atLeast()->once()
-        ->andReturn($payGatewayModel);
-
-    $expected = 2;
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn($expected);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = Tests\Helpers\entityManagerWithIds($di);
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service->setDi($di);
 
     $result = $service->copy($payGatewayModel);
-    expect($result)->toBeInt()->toBe($expected);
+    expect($result)->toBeInt()->toBe(1);
 });
 
 test('updates a gateway', function (): void {
     $service = new ServicePayGateway();
     $payGatewayModel = new Model_PayGateway();
     $payGatewayModel->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service->setDi($di);
@@ -229,12 +207,7 @@ test('deletes a gateway', function (): void {
     $payGatewayModel = new Model_PayGateway();
     $payGatewayModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('trash')
-        ->atLeast()->once();
-
     $di = container();
-    $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service->setDi($di);

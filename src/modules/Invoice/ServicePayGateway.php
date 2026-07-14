@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice;
 
+use Box\Mod\Invoice\Entity\PayGateway;
+use Box\Mod\Invoice\Repository\PayGatewayRepository;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
@@ -21,6 +23,7 @@ use Symfony\Component\Finder\Finder;
 class ServicePayGateway implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
+    private ?PayGatewayRepository $payGatewayRepository = null;
 
     public function __construct(private ?Filesystem $filesystem = null)
     {
@@ -152,14 +155,15 @@ class ServicePayGateway implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Payment gateway is not available for installation.');
         }
 
-        $new = $this->di['db']->dispense('PayGateway');
-        $new->name = $code;
-        $new->gateway = $code;
-        $new->enabled = 0;
-        $new->accepted_currencies = null;
-        $new->test_mode = 0;
-        $new->config = null;
-        $this->di['db']->store($new);
+        $new = new PayGateway();
+        $new->setName($code);
+        $new->setGateway($code);
+        $new->setEnabled(false);
+        $new->setAcceptedCurrencies(null);
+        $new->setTestMode(false);
+        $new->setConfig(null);
+        $this->di['em']->persist($new);
+        $this->di['em']->flush();
 
         $this->di['logger']->info('Installed new payment gateway %s', $code);
 
@@ -195,14 +199,16 @@ class ServicePayGateway implements InjectionAwareInterface
 
     public function copy(\Model_PayGateway $model): int
     {
-        $new = $this->di['db']->dispense('PayGateway');
-        $new->name = $model->name . ' (Copy)';
-        $new->gateway = $model->gateway;
-        $new->enabled = 0;
-        $new->accepted_currencies = $model->accepted_currencies;
-        $new->test_mode = $model->test_mode;
-        $new->config = $model->config;
-        $newId = $this->di['db']->store($new);
+        $new = new PayGateway();
+        $new->setName($model->name . ' (Copy)');
+        $new->setGateway($model->gateway);
+        $new->setEnabled(false);
+        $new->setAcceptedCurrencies($model->accepted_currencies);
+        $new->setTestMode((bool) $model->test_mode);
+        $new->setConfig($model->config);
+        $this->di['em']->persist($new);
+        $this->di['em']->flush();
+        $newId = $new->getId();
         $this->di['logger']->info('Copied payment gateway #%s - %s', $newId, $model->gateway);
 
         return $newId;
@@ -235,7 +241,8 @@ class ServicePayGateway implements InjectionAwareInterface
         $model->allow_single = (bool) ($data['allow_single'] ?? $model->allow_single);
         $model->allow_recurrent = (bool) ($data['allow_recurrent'] ?? $model->allow_recurrent);
         $model->test_mode = $newTestMode;
-        $this->di['db']->store($model);
+        $this->di['em']->persist($model);
+        $this->di['em']->flush();
         $this->di['logger']->info('Updated payment gateway %s', $model->gateway);
 
         return true;
@@ -268,7 +275,8 @@ class ServicePayGateway implements InjectionAwareInterface
     public function delete(\Model_PayGateway $model): bool
     {
         $id = $model->id;
-        $this->di['db']->trash($model);
+        $this->di['em']->remove($model);
+        $this->di['em']->flush();
         $this->di['logger']->info('Removed payment gateway %s', $id);
 
         return true;
@@ -504,5 +512,14 @@ class ServicePayGateway implements InjectionAwareInterface
         }
 
         return SYSTEM_URL . 'ipn.php?' . http_build_query($p);
+    }
+
+    private function getPayGatewayRepository(): PayGatewayRepository
+    {
+        if ($this->payGatewayRepository === null) {
+            $this->payGatewayRepository = $this->di['em']->getRepository(PayGateway::class);
+        }
+
+        return $this->payGatewayRepository;
     }
 }

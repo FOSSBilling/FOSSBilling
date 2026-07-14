@@ -11,12 +11,17 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice;
 
+use Box\Mod\Invoice\Entity\Invoice;
+use Box\Mod\Invoice\Entity\InvoiceItem;
+use Box\Mod\Invoice\Repository\InvoiceItemRepository;
+use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Validation\PriceValidator;
 
 class ServiceInvoiceItem implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
+    private ?InvoiceItemRepository $invoiceItemRepository = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -28,8 +33,10 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function markAsPaid(\Model_InvoiceItem $item, $charge = true): void
+    public function markAsPaid(InvoiceItem|\Model_InvoiceItem $item, bool $charge = true): void
     {
+        $itemId = $item instanceof InvoiceItem ? $item->getId() : $item->id;
+
         if ($charge && !$item->charged) {
             $this->creditInvoiceItem($item);
             $item->charged = true;
@@ -38,7 +45,8 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
         $item->status = \Model_InvoiceItem::STATUS_PENDING_SETUP;
         $item->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($item);
+        $this->di['em']->persist($item);
+        $this->di['em']->flush();
 
         $oid = $this->getOrderId($item);
         $orderService = $this->di['mod_service']('Order');
@@ -48,7 +56,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         }
     }
 
-    public function executeTask(\Model_InvoiceItem $item)
+    public function executeTask(InvoiceItem|\Model_InvoiceItem $item)
     {
         if ($item->status == \Model_InvoiceItem::STATUS_EXECUTED) {
             return true;
@@ -121,11 +129,13 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         }
     }
 
-    public function addNew(\Model_Invoice $proforma, array $data): int
+    public function addNew(Invoice|\Model_Invoice $proforma, array $data): int
     {
+        $invoiceId = $proforma instanceof Invoice ? $proforma->getId() : $proforma->id;
+
         $title = $data['title'] ?? '';
         if (empty($title)) {
-            throw new \FOSSBilling\InformationException('Invoice item title is missing');
+            throw new InformationException('Invoice item title is missing');
         }
 
         $period = $this->normalizePeriod($data['period'] ?? null);
@@ -138,24 +148,23 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $task = $data['task'] ?? \Model_InvoiceItem::TASK_VOID;
         $status = $data['status'] ?? \Model_InvoiceItem::STATUS_PENDING_PAYMENT;
 
-        $pi = $this->di['db']->dispense('InvoiceItem');
-        $pi->invoice_id = $proforma->id;
-        $pi->type = $type;
-        $pi->rel_id = $rel_id;
-        $pi->task = $task;
-        $pi->status = $status;
-        $pi->title = $data['title'];
-        $pi->period = $period;
-        $pi->quantity = PriceValidator::validateQuantity($data['quantity'] ?? 1);
-        $pi->unit = $data['unit'] ?? null;
-        $pi->charged = $data['charged'] ?? 0;
-        $pi->price = PriceValidator::validateSignedAmount($data['price'] ?? 0);
-        $pi->taxed = $data['taxed'] ?? false;
-        $pi->created_at = date('Y-m-d H:i:s');
-        $pi->updated_at = date('Y-m-d H:i:s');
-        $itemId = $this->di['db']->store($pi);
+        $pi = new InvoiceItem();
+        $pi->setInvoiceId($invoiceId);
+        $pi->setType($type);
+        $pi->setRelId($rel_id !== null ? (string) $rel_id : null);
+        $pi->setTask($task);
+        $pi->setStatus($status);
+        $pi->setTitle($data['title']);
+        $pi->setPeriod($period);
+        $pi->setQuantity(PriceValidator::validateQuantity($data['quantity'] ?? 1));
+        $pi->setUnit($data['unit'] ?? null);
+        $pi->setCharged((bool) ($data['charged'] ?? 0));
+        $pi->setPrice(PriceValidator::validateSignedAmount($data['price'] ?? 0));
+        $pi->setTaxed((bool) ($data['taxed'] ?? false));
+        $this->di['em']->persist($pi);
+        $this->di['em']->flush();
 
-        return (int) $itemId;
+        return (int) $pi->getId();
     }
 
     private function normalizePeriod(mixed $period): ?string
@@ -167,12 +176,12 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         return (string) $period;
     }
 
-    public function getTotal(\Model_InvoiceItem $item): float
+    public function getTotal(InvoiceItem|\Model_InvoiceItem $item): float
     {
         return floatval($item->price * $item->quantity);
     }
 
-    public function getTax(\Model_InvoiceItem $item)
+    public function getTax(InvoiceItem|\Model_InvoiceItem $item)
     {
         if (!$item->taxed) {
             return 0;
@@ -186,7 +195,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         return round($item->price * $rate / 100, 2);
     }
 
-    public function update(\Model_InvoiceItem $item, array $data): void
+    public function update(InvoiceItem|\Model_InvoiceItem $item, array $data): void
     {
         $item->title = $data['title'] ?? $item->title;
         if (isset($data['price'])) {
@@ -204,43 +213,48 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         }
 
         $item->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($item);
+        $this->di['em']->persist($item);
+        $this->di['em']->flush();
     }
 
-    public function remove(\Model_InvoiceItem $model): bool
+    public function remove(InvoiceItem|\Model_InvoiceItem $model): bool
     {
-        $id = $model->id;
-        $this->di['db']->trash($model);
+        $id = $model instanceof InvoiceItem ? $model->getId() : $model->id;
+        $this->di['em']->remove($model);
+        $this->di['em']->flush();
         $this->di['logger']->info('Removed invoice item "%s"', $id);
 
         return true;
     }
 
-    public function generateForAddFunds(\Model_Invoice $proforma, $amount): void
+    public function generateForAddFunds(Invoice|\Model_Invoice $proforma, float $amount): void
     {
-        $pi = $this->di['db']->dispense('InvoiceItem');
-        $pi->invoice_id = $proforma->id;
-        $pi->type = \Model_InvoiceItem::TYPE_DEPOSIT;
-        $pi->rel_id = null;
-        $pi->task = \Model_InvoiceItem::TASK_VOID;
-        $pi->status = \Model_InvoiceItem::STATUS_PENDING_PAYMENT;
-        $pi->title = __trans('Add funds to account');
-        $pi->period = null;
-        $pi->quantity = 1;
-        $pi->unit = null;
-        $pi->charged = 1;
-        $pi->price = $amount;
-        $pi->taxed = false;
-        $pi->created_at = date('Y-m-d H:i:s');
-        $pi->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($pi);
+        $invoiceId = $proforma instanceof Invoice ? $proforma->getId() : $proforma->id;
+
+        $pi = new InvoiceItem();
+        $pi->setInvoiceId($invoiceId);
+        $pi->setType(\Model_InvoiceItem::TYPE_DEPOSIT);
+        $pi->setRelId(null);
+        $pi->setTask(\Model_InvoiceItem::TASK_VOID);
+        $pi->setStatus(\Model_InvoiceItem::STATUS_PENDING_PAYMENT);
+        $pi->setTitle(__trans('Add funds to account'));
+        $pi->setPeriod(null);
+        $pi->setQuantity(1);
+        $pi->setUnit(null);
+        $pi->setCharged(true);
+        $pi->setPrice($amount);
+        $pi->setTaxed(false);
+        $this->di['em']->persist($pi);
+        $this->di['em']->flush();
     }
 
-    public function creditInvoiceItem(\Model_InvoiceItem $item): void
+    public function creditInvoiceItem(InvoiceItem|\Model_InvoiceItem $item): void
     {
         $total = $this->getTotalWithTax($item);
 
-        $invoice = $this->di['db']->getExistingModelById('Invoice', $item->invoice_id, 'Invoice not found');
+        $invoiceId = $item instanceof InvoiceItem ? $item->getInvoiceId() : $item->invoice_id;
+        $invoice = $this->di['em']->getRepository(Invoice::class)->find($invoiceId)
+            ?? throw new InformationException('Invoice not found');
         $client = $this->di['db']->getExistingModelById('Client', $invoice->client_id, 'Client not found');
 
         $credit = $this->di['db']->dispense('ClientBalance');
@@ -257,12 +271,12 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $invoiceService->addNote($invoice, sprintf('Charged clients balance with %s %s for %s', $total, $invoice->currency, $item->title));
     }
 
-    public function getTotalWithTax(\Model_InvoiceItem $item): float
+    public function getTotalWithTax(InvoiceItem|\Model_InvoiceItem $item): float
     {
         return $this->getTotal($item) + $this->getTax($item) * $item->quantity;
     }
 
-    public function getOrderId(\Model_InvoiceItem $item): int
+    public function getOrderId(InvoiceItem|\Model_InvoiceItem $item): int
     {
         if ($item->type == \Model_InvoiceItem::TYPE_ORDER) {
             return (int) $item->rel_id;
@@ -271,15 +285,18 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         return 0;
     }
 
-    protected function markAsExecuted(\Model_InvoiceItem $item)
+    protected function markAsExecuted(InvoiceItem|\Model_InvoiceItem $item)
     {
         $item->status = \Model_InvoiceItem::STATUS_EXECUTED;
         $item->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($item);
+        $this->di['em']->persist($item);
+        $this->di['em']->flush();
     }
 
-    public function generateFromOrder(\Model_Invoice $proforma, \Model_ClientOrder $order, $task, $price, array $line = []): void
+    public function generateFromOrder(Invoice|\Model_Invoice $proforma, \Model_ClientOrder $order, $task, $price, array $line = []): void
     {
+        $invoiceId = $proforma instanceof Invoice ? $proforma->getId() : $proforma->id;
+
         $corderService = $this->di['mod_service']('Order');
 
         $clientService = $this->di['mod_service']('client');
@@ -292,21 +309,20 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             $period = $this->di['period']($period)->getCode();
         }
 
-        $pi = $this->di['db']->dispense('InvoiceItem');
-        $pi->invoice_id = $proforma->id;
-        $pi->type = \Model_InvoiceItem::TYPE_ORDER;
-        $pi->rel_id = $order->id;
-        $pi->task = $task;
-        $pi->status = \Model_InvoiceItem::STATUS_PENDING_PAYMENT;
-        $pi->title = $order->title;
-        $pi->period = $period;
-        $pi->quantity = $quantity;
-        $pi->unit = $unit;
-        $pi->price = $price;
-        $pi->taxed = $taxed;
-        $pi->created_at = date('Y-m-d H:i:s');
-        $pi->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($pi);
+        $pi = new InvoiceItem();
+        $pi->setInvoiceId($invoiceId);
+        $pi->setType(\Model_InvoiceItem::TYPE_ORDER);
+        $pi->setRelId((string) $order->id);
+        $pi->setTask($task);
+        $pi->setStatus(\Model_InvoiceItem::STATUS_PENDING_PAYMENT);
+        $pi->setTitle($order->title);
+        $pi->setPeriod($period);
+        $pi->setQuantity($quantity);
+        $pi->setUnit($unit);
+        $pi->setPrice($price);
+        $pi->setTaxed($taxed);
+        $this->di['em']->persist($pi);
+        $this->di['em']->flush();
 
         $corderService->setUnpaidInvoice($order, $proforma);
 
@@ -357,5 +373,14 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         ];
 
         return $this->di['db']->getAll($sql, $bindings);
+    }
+
+    private function getInvoiceItemRepository(): InvoiceItemRepository
+    {
+        if ($this->invoiceItemRepository === null) {
+            $this->invoiceItemRepository = $this->di['em']->getRepository(InvoiceItem::class);
+        }
+
+        return $this->invoiceItemRepository;
     }
 }

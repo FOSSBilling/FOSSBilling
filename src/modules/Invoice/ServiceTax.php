@@ -11,11 +11,14 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice;
 
+use Box\Mod\Invoice\Entity\Tax;
+use Box\Mod\Invoice\Repository\TaxRepository;
 use FOSSBilling\InjectionAwareInterface;
 
 class ServiceTax implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
+    private ?TaxRepository $taxRepository = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -81,7 +84,8 @@ class ServiceTax implements InjectionAwareInterface
     public function delete(\Model_Tax $model): bool
     {
         $name = $model->name;
-        $this->di['db']->trash($model);
+        $this->di['em']->remove($model);
+        $this->di['em']->flush();
         $this->di['logger']->info('Deleted tax rule %s', $name);
 
         return true;
@@ -89,16 +93,16 @@ class ServiceTax implements InjectionAwareInterface
 
     public function create(array $data)
     {
-        $model = $this->di['db']->dispense('Tax');
-        $model->name = $data['name'];
-        $model->country = (!isset($data['country']) || empty($data['country'])) ? null : $data['country'];
-        $model->state = (!isset($data['state']) || empty($data['state'])) ? null : $data['state'];
-        $model->taxrate = $data['taxrate'];
-        $model->created_at = date('Y-m-d H:i:s');
-        $model->updated_at = date('Y-m-d H:i:s');
-        $newId = $this->di['db']->store($model);
+        $model = new Tax();
+        $model->setName($data['name']);
+        $model->setCountry((!isset($data['country']) || empty($data['country'])) ? null : $data['country']);
+        $model->setState((!isset($data['state']) || empty($data['state'])) ? null : $data['state']);
+        $model->setTaxrate($data['taxrate']);
+        $this->di['em']->persist($model);
+        $this->di['em']->flush();
+        $newId = $model->getId();
 
-        $this->di['logger']->info('Created new tax rule %s', $model->name);
+        $this->di['logger']->info('Created new tax rule %s', $model->getName());
 
         return $newId;
     }
@@ -110,7 +114,8 @@ class ServiceTax implements InjectionAwareInterface
         $model->state = (!isset($data['state']) || empty($data['state'])) ? null : $data['state'];
         $model->taxrate = $data['taxrate'];
         $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $this->di['em']->persist($model);
+        $this->di['em']->flush();
 
         $this->di['logger']->info('Updated tax rule %s', $model->name);
 
@@ -129,5 +134,14 @@ class ServiceTax implements InjectionAwareInterface
     public function toApiArray(\Model_Tax $model, $deep = false, $identity = null)
     {
         return $this->di['db']->toArray($model);
+    }
+
+    private function getTaxRepository(): TaxRepository
+    {
+        if ($this->taxRepository === null) {
+            $this->taxRepository = $this->di['em']->getRepository(Tax::class);
+        }
+
+        return $this->taxRepository;
     }
 }
