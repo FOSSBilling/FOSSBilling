@@ -6,78 +6,192 @@
 	<meta charset="utf-8">
 	<style type="text/css">
 		body {
-			font-family: Arial, sans-serif;
+			background: #FFFCF8;
+			color: #1A1611;
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 			font-size: 14px;
-			color: #333333;
+			line-height: 1.6;
+			margin: 0;
+			padding: 0;
 		}
 
-		h1 {
+		.container {
+			max-width: 680px;
+			margin: 0 auto;
+			padding: 24px;
+		}
+
+		.header {
+			border-top: 5px solid #E8AA4E;
+			background: #F0EDE9;
+			border-radius: 12px 12px 0 0;
+			padding: 18px 20px;
+			border-left: 1px solid #D2CCC4;
+			border-right: 1px solid #D2CCC4;
+			border-bottom: 1px solid #E1DFDB;
+		}
+
+		.header-kicker {
+			font-size: 12px;
+			font-weight: 700;
+			letter-spacing: 0.08em;
+			text-transform: uppercase;
+			color: #B57800;
+			margin: 0 0 6px;
+		}
+
+		.header-title {
 			font-size: 24px;
-			font-weight: bold;
-			margin: 0 0 20px;
+			line-height: 1.2;
+			font-weight: 700;
+			letter-spacing: -0.02em;
+			margin: 0;
+			color: #1A1611;
+		}
+
+		.content {
+			background: #FFFFFF;
+			border: 1px solid #E1DFDB;
+			border-top: 0;
+			border-radius: 0 0 12px 12px;
+			padding: 20px;
 		}
 
 		p {
-			margin: 0 0 10px;
+			margin: 0 0 12px;
 		}
 
 		strong {
-			font-weight: bold;
+			font-weight: 700;
+			color: #723F00;
+		}
+
+		.summary {
+			margin: 18px 0 16px;
+			padding: 14px 16px;
+			background: #F6EFE3;
+			border: 1px solid #E1DFDB;
+			border-radius: 10px;
+		}
+
+		.summary-row {
+			font-size: 13px;
+		}
+
+		.summary-label {
+			color: #56504A;
+			font-weight: 600;
+		}
+
+		.summary-value {
+			color: #1A1611;
+			font-family: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Segoe UI Mono', Consolas, monospace;
+			font-weight: 600;
+		}
+
+		.summary-value-accent {
+			color: #723F00;
+		}
+
+		table.items {
+			width: 100%;
+			border-collapse: collapse;
+			margin-top: 8px;
+			border: 1px solid #E1DFDB;
+		}
+
+		table.items th {
+			background: #F6EFE3;
+			color: #723F00;
+			font-size: 11px;
+			font-weight: 700;
+			letter-spacing: 0.06em;
+			text-transform: uppercase;
+			padding: 12px 14px;
+			border-bottom: 1px solid #E1DFDB;
+		}
+
+		table.items td {
+			padding: 13px 14px;
+			border-bottom: 1px solid #E1DFDB;
+			color: #1A1611;
+			vertical-align: top;
+		}
+
+		table.items td.item {
+			font-weight: 600;
+		}
+
+		table.items td.term {
+			color: #56504A;
+		}
+
+		table.items td.price {
+			text-align: right;
+			font-family: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Segoe UI Mono', Consolas, monospace;
+			font-weight: 700;
+			white-space: nowrap;
 		}
 
 		.signature {
 			font-style: italic;
-			color: #999999;
+			color: #746E67;
 			margin-top: 20px;
-			border-top: 1px solid #cccccc;
+			border-top: 1px solid #D2CCC4;
 			padding-top: 10px;
 		}
 	</style>
 </head>
 <body>
-	<h1>Invoice Past-Due</h1>
-	<p>Hello {{ c.first_name|default('') }} {{ c.last_name|default('') }},</p>
-	<p>This is a payment reminder that your invoice <strong>{{ invoice.serie_nr|default('') }}</strong> is past-due by {{ days_passed|default('') }} days.</p>
-    <ul>
-        <li><strong>Amount Due:</strong> {{ invoice.total|default(0)|format_currency(invoice.currency|default(default_currency)) }}</li>
-        <li><strong>Due Date:</strong>  {{ invoice.due_at|default('')|format_date }}</li>
-        {% if invoice.orders|default([])|length > 0 %}
-            {% for order in invoice.orders|default([]) %}
-                <li><strong>Order ID:</strong> #{{ order.id }}</li>
-                {% if order.product_name %}
-                    <li><strong>Product:</strong> {{ order.product_name }}</li>
-                {% endif %}
-                {% if order.expires_at %}
-                    <li><strong>Renewal Date:</strong> {{ order.expires_at|format_date }}</li>
-                {% endif %}
-            {% endfor %}
-        {% endif %}
-    </ul>
-    {% if invoice.lines|default([])|length > 0 %}
-    <table cellpadding="6" cellspacing="0" border="1" style="border-collapse: collapse; width: 100%; margin-top: 10px;">
-        <thead>
-            <tr>
-                <th align="left">Item</th>
-                <th align="left">Term</th>
-                <th align="right">Price</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for line in invoice.lines %}
-            <tr>
-                <td>{{ line.title|default('') }}{% if line.quantity > 1 %} (x{{ line.quantity }}){% endif %}</td>
-                <td>{{ line.period|default('')|period_title }}</td>
-                <td align="right">{{ line.total|default(0)|format_currency(invoice.currency|default(default_currency)) }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% endif %}
+	<div class="container">
+		<div class="header">
+			<div class="header-kicker">TenantNinja Billing</div>
+			<h1 class="header-title">Invoice Past-Due</h1>
+		</div>
+		<div class="content">
+			<p>Hello {{ c.first_name|default('') }} {{ c.last_name|default('') }},</p>
+			<p>This is a payment reminder that your invoice <strong>{{ invoice.serie_nr|default('') }}</strong> is past-due by {{ days_passed|default('') }} days.</p>
+			<div class="summary">
+				<div class="summary-row"><span class="summary-label">Amount Due:</span> <span class="summary-value summary-value-accent">{{ invoice.total|default(0)|format_currency(invoice.currency|default(default_currency)) }}</span></div>
+				<div class="summary-row"><span class="summary-label">Due Date:</span> <span class="summary-value">{{ invoice.due_at|default('')|format_date }}</span></div>
+			</div>
+			{% set invoice_items = invoice.lines|default([]) %}
+			{% set invoice_orders = invoice.orders|default([]) %}
+			<table class="items" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;margin-top:8px;border:1px solid #E1DFDB;">
+				<thead>
+					<tr>
+						<th align="left" style="background:#F6EFE3;color:#723F00;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:12px 14px;border-bottom:1px solid #E1DFDB;">Item</th>
+						<th align="left" style="background:#F6EFE3;color:#723F00;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:12px 14px;border-bottom:1px solid #E1DFDB;">Term</th>
+						<th align="right" style="background:#F6EFE3;color:#723F00;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:12px 14px;border-bottom:1px solid #E1DFDB;">Price</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% if invoice_items|length > 0 %}
+						{% for line in invoice_items %}
+							<tr>
+								<td class="item" style="padding:13px 14px;border-bottom:1px solid #E1DFDB;color:#1A1611;font-weight:600;">{{ line.title|default('') }}{% if line.quantity > 1 %} (x{{ line.quantity }}){% endif %}</td>
+								<td class="term" style="padding:13px 14px;border-bottom:1px solid #E1DFDB;color:#56504A;">{{ line.period|default('')|period_title }}</td>
+								<td class="price" align="right" style="padding:13px 14px;border-bottom:1px solid #E1DFDB;color:#1A1611;text-align:right;font-family:ui-monospace,'SF Mono','Cascadia Mono','Segoe UI Mono',Consolas,monospace;font-weight:700;white-space:nowrap;">{{ line.total|default(0)|format_currency(invoice.currency|default(default_currency)) }}</td>
+							</tr>
+						{% endfor %}
+					{% elseif invoice_orders|length > 0 %}
+						{% for order in invoice_orders %}
+							<tr>
+								<td class="item" style="padding:13px 14px;border-bottom:1px solid #E1DFDB;color:#1A1611;font-weight:600;">{% if order.id %}#{{ order.id }} - {% endif %}{{ order.product_name|default('') }}</td>
+								<td class="term" style="padding:13px 14px;border-bottom:1px solid #E1DFDB;color:#56504A;">{% if order.expires_at %}{{ order.expires_at|format_date }}{% endif %}</td>
+								<td class="price" align="right" style="padding:13px 14px;border-bottom:1px solid #E1DFDB;color:#1A1611;text-align:right;font-family:ui-monospace,'SF Mono','Cascadia Mono','Segoe UI Mono',Consolas,monospace;font-weight:700;white-space:nowrap;">{{ invoice.total|default(0)|format_currency(invoice.currency|default(default_currency)) }}</td>
+							</tr>
+						{% endfor %}
+					{% endif %}
+				</tbody>
+			</table>
 
-    <p>You may view and pay the invoice <a href='{{ "invoice/#{invoice.hash|default('')}"|url(area: 'client') }}' target="_blank">here.</a></p>
-    <p>You can also <a href="{{ "invoice/pdf/#{invoice.hash|default('')}"|url(area: 'client') }}" target="_blank">download the invoice as a PDF</a>, <a href="{{ 'login'|url(query: { 'email': c.email|default('') }, area: 'client') }}" target="_blank">login</a>, or <a href="{{ 'client/profile'|url(area: 'client') }}" target="_blank">edit your profile.</a></p>
+			<p style="margin-top:16px;">You may view and pay the invoice <a href='{{ "invoice/#{invoice.hash|default('')}"|url(area: 'client') }}' target="_blank">here.</a></p>
+			<p>You can also <a href="{{ "invoice/pdf/#{invoice.hash|default('')}"|url(area: 'client') }}" target="_blank">download the invoice as a PDF</a>, <a href="{{ 'login'|url(query: { 'email': c.email|default('') }, area: 'client') }}" target="_blank">login</a>, or <a href="{{ 'client/profile'|url(area: 'client') }}" target="_blank">edit your profile.</a></p>
 
-	<div class="signature">{{ guest.system_email.signature }}</div>
+			<div class="signature">{{ guest.system_email.signature }}</div>
+		</div>
+	</div>
 </body>
 </html>
 {% endblock %}

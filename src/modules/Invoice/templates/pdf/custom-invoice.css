@@ -79,7 +79,7 @@ img.CompanyLogo {
 }
 
 .BrandWordmark span {
-    color: #7FA814;
+    color: #B57800;
 }
 
 .SellerContact {
@@ -122,18 +122,18 @@ td.HeaderMeta {
 }
 
 .Status-Paid {
-    background-color: #DCF5E9;
-    color: #1F7A4D;
+    background-color: rgba(63, 207, 142, 0.14);
+    color: #1E7A54;
 }
 
 .Status-Unpaid {
-    background-color: #FCEECB;
-    color: #8A5A0C;
+    background-color: rgba(181, 120, 0, 0.12);
+    color: #B57800;
 }
 
 .Status-Refunded {
-    background-color: #DBF1F8;
-    color: #206A80;
+    background-color: rgba(59, 130, 246, 0.12);
+    color: #2058A8;
 }
 
 /* ---- meta strip ---- */
@@ -282,10 +282,11 @@ table.TotalsInner {
 .PayNote {
     margin-top: 24px;
     padding: 12px 16px;
-    background-color: rgba(127, 168, 20, 0.14);
+    background-color: rgba(181, 120, 0, 0.12);
+    border: 1px solid #B57800;
     border-radius: 8px;
     font-size: 11px;
-    color: #0C0F0E;
+    color: #723F00;
 }
 
 /* ---- text blocks (seller-authored) ---- */
