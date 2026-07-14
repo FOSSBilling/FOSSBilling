@@ -2447,11 +2447,18 @@ table > thead > tr > th {
         &__typer-caret { animation: none; }
     }
 
+    // Sign in leads the DOM (and the read order) on every breakpoint - it's
+    // the one thing a returning, task-focused visitor is here for. The
+    // storefront/marketing content that follows is real estate, not a
+    // competing home page, so it sits second both visually and in the DOM;
+    // no CSS `order` is used to fake a different visual sequence for sighted
+    // users, since that's what caused DOM/reading order to diverge from
+    // visual order in the first place.
     &__grid {
         position: relative;
         z-index: 1;
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 360px;
+        grid-template-columns: 360px minmax(0, 1fr);
         gap: var(--space-12);
         align-items: start;
         padding-top: var(--space-2);
@@ -2559,19 +2566,20 @@ table > thead > tr > th {
         font-size: var(--fs-xs);
         outline: none;
     }
+    // Outline, not solid: "Sign in" is the one accent-filled action on this
+    // page (DESIGN.md's One Fill Rule) - search is a secondary path.
     &__btn {
         flex: 0 0 auto;
-        background: var(--accent);
-        color: var(--on-accent);
+        background: transparent;
+        color: var(--accent-press);
         font-weight: var(--fw-bold);
         font-size: var(--fs-sm);
-        border: none;
+        border: var(--bw) solid var(--accent);
         border-radius: var(--r-pill);
-        padding: 11px 20px;
+        padding: 10px 19px;
         cursor: pointer;
-        box-shadow: 0 8px 22px -8px var(--blade-glow);
-        transition: transform var(--dur-fast) var(--ease-out), background var(--dur);
-        &:hover { background: var(--accent-hover); transform: translateY(-1px); }
+        transition: transform var(--dur-fast) var(--ease-out), background var(--dur), color var(--dur);
+        &:hover { background: var(--accent); color: var(--on-accent); transform: translateY(-1px); }
         &:active { transform: translateY(0) scale(.98); }
     }
     &__result {
@@ -2694,7 +2702,6 @@ table > thead > tr > th {
 
 @media (max-width: 900px) {
     .tn-home__grid { grid-template-columns: 1fr; gap: var(--space-8); }
-    .tn-home__aside { order: -1; }
     .tn-home__cards { grid-template-columns: 1fr; }
 }
 

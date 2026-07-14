@@ -35,11 +35,11 @@
             <form method="post" action="{{ 'client/login'|api_url(role: 'guest') }}" class="auth tn-auth__form" {{ fb_api_form({redirect: redirect_uri|default('/')|url}) }}>
                 <div class="tn-field">
                     <label class="tn-field__label" for="email">{{ 'Email'|trans }}</label>
-                    <input class="tn-input" id="email" type="email" placeholder="you@company.com" name="email" value="{{ request.email }}" required="required" autofocus>
+                    <input class="tn-input" id="email" type="email" placeholder="you@company.com" name="email" value="{{ request.email }}" required="required" autofocus autocomplete="email">
                 </div>
                 <div class="tn-field">
                     <label class="tn-field__label" for="password">{{ 'Password'|trans }}</label>
-                    <input class="tn-input" id="password" type="password" placeholder="••••••••••" name="password" required="required">
+                    <input class="tn-input" id="password" type="password" placeholder="••••••••••" name="password" required="required" autocomplete="current-password">
                 </div>
                 {% if settings.show_password_reset_link %}
                     <div class="tn-auth__meta">

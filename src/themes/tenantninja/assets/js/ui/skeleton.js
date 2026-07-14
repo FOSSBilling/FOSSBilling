@@ -112,6 +112,12 @@ export default function initSkeleton() {
     if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     if (link.target && link.target !== '_self') return;
     if (link.hasAttribute('data-fb-api') || link.getAttribute('href').startsWith('#')) return;
+    // Theme toggler links (?theme=light|dark) target the current pathname and
+    // are prevented in theme.js's own bubble-phase handler - but that runs
+    // *after* this capture-phase listener, so without this guard the skeleton
+    // swap already fired and is never replaced by a real navigation, leaving
+    // the page stuck on a fake skeleton forever.
+    if (link.classList.contains('js-theme-toggler')) return;
 
     let url;
     try { url = new URL(link.href, location.href); } catch { return; }

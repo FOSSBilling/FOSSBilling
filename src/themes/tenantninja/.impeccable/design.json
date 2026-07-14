@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-14T08:00:00Z",
+  "title": "Design System: TenantNinja",
+  "extensions": {
+    "colorMeta": {
+      "accent": { "role": "primary", "displayName": "Blade Mint", "canonical": "#72E3AD", "tonalRamp": ["#006239", "#00753F", "#1FAE6B", "#3FCF8E", "#72E3AD", "#8EEAC0", "#B3F2D6", "#E4F9EE"] },
+      "bg": { "role": "neutral", "displayName": "Paper", "canonical": "#FCFCFC", "tonalRamp": ["#0A0A0A", "#171717", "#313131", "#6B6B6B", "#8F8F8F", "#B5B5B5", "#DFDFDF", "#FCFCFC"] },
+      "text": { "role": "neutral", "displayName": "Ink", "canonical": "#171717", "tonalRamp": ["#0A0A0A", "#171717", "#242424", "#4A4A4A", "#6B6B6B", "#8F8F8F", "#B5B5B5", "#DFDFDF"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Logged-out homepage headline only." },
+      "h1": { "displayName": "Page Title", "purpose": "Top of each dashboard page (Invoices, Services, Support)." },
+      "body": { "displayName": "Body", "purpose": "Default paragraph and UI copy." },
+      "label": { "displayName": "Label", "purpose": "Field labels and rare section eyebrows." },
+      "mono": { "displayName": "Numeric/Mono", "purpose": "Prices, invoice numbers, dates in tabular columns." }
+    },
+    "shadows": [
+      { "name": "shadow-sm", "value": "0 1px 2px rgba(0,0,0,0.4)", "purpose": "Default resting elevation for cards, dropdowns, modal content." },
+      { "name": "shadow-md", "value": "0 4px 16px rgba(0,0,0,0.45)", "purpose": "Hover/interactive lift, used sparingly." },
+      { "name": "shadow-pop", "value": "0 12px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06)", "purpose": "Modals only." },
+      { "name": "glow-blade", "value": "0 0 0 1px var(--blade-600), 0 6px 24px var(--blade-glow)", "purpose": "Primary button hover — the accent's one moment of glow." }
+    ],
+    "motion": [
+      { "name": "ease-out", "value": "cubic-bezier(0.22, 1, 0.36, 1)", "purpose": "Default easing for hover/state transitions." },
+      { "name": "dur", "value": "200ms", "purpose": "Default transition duration." }
+    ],
+    "breakpoints": []
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single accent-filled action on a screen.",
+      "html": "<button class=\"ds-btn-primary\">Pay invoice</button>",
+      "css": ".ds-btn-primary { background: #72E3AD; color: #1E2723; border: 1px solid #72E3AD; border-radius: 6px; height: 40px; padding: 0 20px; font-family: 'Hanken Grotesk', sans-serif; font-weight: 500; font-size: 16px; transition: background 0.2s cubic-bezier(0.22,1,0.36,1), box-shadow 0.2s; } .ds-btn-primary:hover, .ds-btn-primary:focus { background: #8EEAC0; box-shadow: 0 0 0 1px #1FAE6B, 0 6px 24px rgba(114,227,173,0.28); } .ds-btn-primary:active, .ds-btn-primary:focus-visible { background: #1FAE6B; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Default opaque surface for grouped content.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-header\">Invoice #2481</div><div class=\"ds-card-body\">Due 2026-08-01 &middot; AED 420.00</div></div>",
+      "css": ".ds-card { background: #FCFCFC; border: 1px solid #DFDFDF; border-radius: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.6); transition: border-color 0.2s; } .ds-card:hover { border-color: #C7C7C7; } .ds-card-header { padding: 16px 24px; font-weight: 600; border-bottom: 1px solid #DFDFDF; } .ds-card-body { padding: 24px; font-family: 'Hanken Grotesk', sans-serif; color: #525252; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Standard form field, inset background so it reads as editable.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"you@example.com\" />",
+      "css": ".ds-input { background: #F6F6F6; border: 1px solid #DFDFDF; border-radius: 4px; height: 40px; padding: 0 12px; color: #171717; font-family: 'Hanken Grotesk', sans-serif; font-size: 16px; transition: border-color 0.2s, box-shadow 0.2s; } .ds-input:focus { outline: none; border-color: #72E3AD; box-shadow: 0 0 0 3px rgba(31,174,107,0.28); }"
+    },
+    {
+      "name": "Status Pill",
+      "kind": "chip",
+      "description": "Semantic status indicator — success/warning/danger, low-opacity fill.",
+      "html": "<span class=\"ds-pill ds-pill--success\">Paid</span>",
+      "css": ".ds-pill { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px; font-size: 13px; font-weight: 500; font-family: 'Hanken Grotesk', sans-serif; } .ds-pill--success { background: rgba(63,207,142,0.12); color: #3FCF8E; }"
+    },
+    {
+      "name": "Topbar Nav Item",
+      "kind": "nav",
+      "description": "Desktop topbar link; active state uses accent text, never a solid fill.",
+      "html": "<a class=\"ds-nav-item ds-nav-item--active\" href=\"#\">Invoices</a>",
+      "css": ".ds-nav-item { display: inline-flex; align-items: center; height: 36px; padding: 0 12px; border-radius: 6px; font-family: 'Hanken Grotesk', sans-serif; font-weight: 500; font-size: 14px; color: #525252; text-decoration: none; transition: color 0.2s, background 0.2s; } .ds-nav-item:hover { color: #171717; background: #EDEDED; } .ds-nav-item--active { color: #1FAE6B; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Quiet Ledger",
+    "overview": "TenantNinja's portal is a place people visit to settle something — pay an invoice, renew a domain, check on a service — and leave. It should feel the way a well-run bank branch feels: calm, competent, unmissably clear about numbers and status, and completely uninterested in impressing anyone. The system was rebuilt this cycle specifically to walk back two earlier mistakes: a frosted-glass/mesh-background treatment that made content hard to read, and a lime accent (#C7F23C) so saturated it bled into labels, eyebrows, and body copy until the whole interface read as \"extra.\" What replaced both is a flat, opaque surface system with a single restrained green reserved for the moments that matter — a primary button, a focus ring, an active nav item — and nothing else. The palette itself is lifted from Supabase's shadcn theme: plain, hue-neutral grays (no green tint bleeding into \"gray\") paired with a soft mint (#72E3AD) in light mode and a deep, desaturated green (#006239) in dark mode.",
+    "keyCharacteristics": [
+      "Fully opaque surfaces — no backdrop-filter, no translucency, no ambient background art",
+      "One accent, used sparingly, never as a fill on text or backgrounds",
+      "Full-bleed topbar chrome; content lives inside a container, chrome doesn't",
+      "Same tokens and shell across logged-in dashboard and logged-out storefront/login",
+      "Numbers get tabular treatment and monospace where they line up in tables"
+    ],
+    "rules": [
+      { "name": "The One Fill Rule", "body": "The accent green fills exactly one thing per screen at a time: the primary call-to-action. Everywhere else it's a border, a ring, or an icon stroke at most — never a background wash on a card, label, or paragraph.", "section": "colors" },
+      { "name": "The Numbers-Are-Mono Rule", "body": "Any value a customer is scanning to compare — price, invoice total, date in a table — renders in JetBrains Mono with tabular figures. Everything else stays in Hanken Grotesk.", "section": "typography" },
+      { "name": "The No-Blur Rule", "body": "Nothing in this system uses backdrop-filter. If a surface needs separation from what's behind it, that's a border and a shadow, not translucency.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep the accent (#72E3AD light / #006239 dark) to one fill per screen — the primary action.",
+      "Do use flat, opaque surfaces with a hairline border (var(--border)) and shadow-sm for elevation.",
+      "Do run the topbar full-bleed with background: var(--bg), containing inner content in .tn-topbar__inner rather than the page .container.",
+      "Do share one design-token system (_tokens.scss) across the logged-in dashboard and the logged-out storefront/login.",
+      "Do set tabular-nums and JetBrains Mono on any column of prices, dates, or invoice numbers."
+    ],
+    "donts": [
+      "Don't use backdrop-filter / glass or translucent surfaces anywhere — this system rejected that treatment as illegible.",
+      "Don't apply the accent green to labels, eyebrows, body text, or as a card/section background wash — it's reserved for primary actions, focus rings, and active state only.",
+      "Don't nest the header inside .container padding — it reads as a boxed, squared-off bar instead of full-width chrome.",
+      "Don't use large stock-photo hero imagery (e.g. Unsplash) on the homepage or login page — use a compact, plain-text intro instead.",
+      "Don't show account-scoped nav items (Dashboard, Services, Invoices) to a logged-out guest, or vice versa hide store/support links from them."
+    ]
+  }
+}
