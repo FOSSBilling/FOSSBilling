@@ -213,7 +213,7 @@
                                 <div class="tn-kv-row"><span class="tn-kv-row__key">{{ 'VAT'|trans }} ({{ tax_rate }}%)</span><span class="tn-kv-row__value font-mono">{{ (tax_amount * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</span></div>
                             {% endif %}
                             <div class="tn-kv-row tn-kv-row--total"><span class="tn-kv-row__key">{{ 'Total'|trans }}</span><span class="tn-kv-row__value font-mono">{{ ((cart.total + tax_amount) * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</span></div>
-                            <a href="#checkout" class="tn-btn tn-btn--primary tn-btn--block mt-3" onclick="document.querySelector('[data-bs-target=%23checkout]')?.click();return false;">{{ 'Checkout'|trans }}</a>
+                            <a href="#checkout" class="tn-btn tn-btn--primary tn-btn--block mt-3" onclick="document.querySelector('[data-bs-target=&quot;#checkout&quot;]')?.click();return false;">{{ 'Checkout'|trans }}</a>
                             {% if client %}
                                 <div class="text-muted small mt-2">{{ 'Account balance'|trans }}: {{ client.client_balance_get_total|format_currency(cart_currency.code) }}</div>
                             {% endif %}
@@ -227,7 +227,7 @@
                 <div class="tn-cart-stickybar d-lg-none">
                     <span class="font-mono">{{ cart.items|length }} {{ 'items'|trans }}</span>
                     <span class="font-mono">{{ (cart.total * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</span>
-                    <a href="#checkout" class="tn-btn tn-btn--primary tn-btn--sm" onclick="document.querySelector('[data-bs-target=%23checkout]')?.click();return false;">{{ 'Checkout'|trans }}</a>
+                    <a href="#checkout" class="tn-btn tn-btn--primary tn-btn--sm" onclick="document.querySelector('[data-bs-target=&quot;#checkout&quot;]')?.click();return false;">{{ 'Checkout'|trans }}</a>
                 </div>
                 {% endif %}
             </div>

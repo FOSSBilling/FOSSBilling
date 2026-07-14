@@ -1990,10 +1990,10 @@ table > thead > tr > th {
 
     &:hover { border-color: var(--border-strong); color: var(--text); }
     &[data-active="true"] {
-        background: var(--text);
-        color: var(--bg);
-        border-color: var(--text);
-        .icon { color: var(--bg); }
+        background: var(--accent-soft);
+        color: var(--accent);
+        border-color: rgba(199, 242, 60, 0.3);
+        .icon { color: var(--accent); }
     }
 }
 
@@ -2142,10 +2142,9 @@ table > thead > tr > th {
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
-    margin: var(--space-4) 0;
-    padding: var(--space-3) var(--space-4);
-    background: var(--accent-soft);
-    border-radius: var(--r-md);
+    margin: var(--space-4) 0 0;
+    padding: var(--space-4) 0 0;
+    border-top: var(--bw-hair) solid var(--border);
 
     &__title {
         display: flex;
@@ -2173,6 +2172,15 @@ table > thead > tr > th {
         border: none;
         padding: 0;
         font-size: var(--fs-xs);
+        transition: color var(--dur) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+
+        &:hover {
+            color: var(--accent-hover);
+        }
+
+        &:active {
+            transform: translateY(1px);
+        }
     }
 }
 

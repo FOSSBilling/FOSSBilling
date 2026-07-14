@@ -3,53 +3,50 @@
 
 <div class="row">
     <div class="col-md-12">
-        <div class="card border-0" id="orderbutton" style="margin-bottom: 0">
-            <div class="card-body p-1">
-                <ol class="order-steps" id="order-steps">
-                    <li class="order-steps__item" data-step-target="products">{{ 'Product'|trans }}</li>
-                    <li class="order-steps__item" data-step-target="order">{{ 'Configure'|trans }}</li>
-                    {% if not client %}
-                        <li class="order-steps__item" data-step-target="register">{{ 'Account'|trans }}</li>
-                    {% endif %}
-                    <li class="order-steps__item" data-step-target="checkout">{{ 'Cart'|trans }}</li>
-                    <li class="order-steps__item" data-step-target="payment-html">{{ 'Payment'|trans }}</li>
-                </ol>
-                <div id="orderManager" class="accordion">
+        <div id="orderbutton">
+            <ol class="order-steps" id="order-steps">
+                <li class="order-steps__item" data-step-target="products">{{ 'Product'|trans }}</li>
+                <li class="order-steps__item" data-step-target="order">{{ 'Configure'|trans }}</li>
+                {% if not client %}
+                    <li class="order-steps__item" data-step-target="register">{{ 'Account'|trans }}</li>
+                {% endif %}
+                <li class="order-steps__item" data-step-target="checkout">{{ 'Cart'|trans }}</li>
+                <li class="order-steps__item" data-step-target="payment-html">{{ 'Payment'|trans }}</li>
+            </ol>
+            <div id="orderManager" class="accordion">
 
-                    {{ include('mod_orderbutton_choose_product.html.twig') }}
+                {{ include('mod_orderbutton_choose_product.html.twig') }}
 
-                    {{ include('mod_orderbutton_product_configuration.html.twig') }}
+                {{ include('mod_orderbutton_product_configuration.html.twig') }}
 
-                    {% if not client %}
-                        {{ include('mod_orderbutton_client.html.twig') }}
-                    {% endif %}
-
-                    {{ include('mod_orderbutton_checkout.html.twig') }}
-
-                    <div class="accordion-item">
-                        <h3 class="accordion-header">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                                    data-bs-target="#payment-html" aria-expanded="false" aria-controls="payment-html">
-                                <svg class="icon me-2"><use href="#credit-card" /></svg>
-                                {{ 'Payment'|trans }}
-                            </button>
-                        </h3>
-                        <div id="payment-html" class="accordion-collapse collapse" data-bs-parent="#orderManager">
-                            <div class="accordion-body">
-                                <div class="accordion-inner" id="payment-html-inner"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-                {% if guest.extension_is_on({"mod":'branding'}) %}
-                    <div class="d-flex justify-content-center small text-muted pt-3 pb-2">
-                        <span>{{ 'Powered by'|trans }}</span>&nbsp;<a href="https://fossbilling.org"
-                                                                      title="Billing Software" target="_blank">FOSSBilling</a>
-                    </div>
+                {% if not client %}
+                    {{ include('mod_orderbutton_client.html.twig') }}
                 {% endif %}
 
+                {{ include('mod_orderbutton_checkout.html.twig') }}
+
+                <div class="accordion-item">
+                    <h3 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#payment-html" aria-expanded="false" aria-controls="payment-html">
+                            <svg class="icon me-2"><use href="#credit-card" /></svg>
+                            {{ 'Payment'|trans }}
+                        </button>
+                    </h3>
+                    <div id="payment-html" class="accordion-collapse collapse" data-bs-parent="#orderManager">
+                        <div class="accordion-body">
+                            <div class="accordion-inner" id="payment-html-inner"></div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
+            {% if guest.extension_is_on({"mod":'branding'}) %}
+                <div class="d-flex justify-content-center small text-muted pt-3 pb-2">
+                    <span>{{ 'Powered by'|trans }}</span>&nbsp;<a href="https://fossbilling.org"
+                                                                  title="Billing Software" target="_blank">FOSSBilling</a>
+                </div>
+            {% endif %}
         </div>
     </div>
 </div>
