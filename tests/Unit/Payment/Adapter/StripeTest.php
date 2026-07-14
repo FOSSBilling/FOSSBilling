@@ -1327,7 +1327,10 @@ describe('Stripe webhook gateway ownership', function (): void {
             ->once()
             ->withArgs(fn (array $params, array $options): bool => $params['metadata']['gateway_id'] === '3'
                 && $params['metadata']['invoice_id'] === '15'
-                && $options['idempotency_key'] === 'one_time_invoice_15_gateway_3')
+                && $options['idempotency_key'] === sprintf(
+                    'one_time_invoice_15_gateway_3_%s',
+                    hash('sha256', json_encode($params, JSON_THROW_ON_ERROR))
+                ))
             ->andReturn(Stripe\PaymentIntent::constructFrom([
                 'id' => 'pi_gateway_3',
                 'client_secret' => 'pi_gateway_3_secret',

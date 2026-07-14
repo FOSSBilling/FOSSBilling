@@ -1355,7 +1355,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
     protected function _generateForm(Model_Invoice $invoice): string
     {
-        $intent = $this->stripe->paymentIntents->create([
+        $intentParams = [
             'amount' => $this->getAmountInMinorUnits($invoice),
             'currency' => $invoice->currency,
             'description' => $this->getInvoiceTitle($invoice),
@@ -1366,7 +1366,14 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 'invoice_id' => (string) $invoice->id,
                 'gateway_id' => (string) $this->config['gateway_id'],
             ],
-        ], ['idempotency_key' => sprintf('one_time_invoice_%d_gateway_%d', $invoice->id, $this->config['gateway_id'])]);
+        ];
+        $idempotencyKey = sprintf(
+            'one_time_invoice_%d_gateway_%d_%s',
+            $invoice->id,
+            $this->config['gateway_id'],
+            hash('sha256', json_encode($intentParams, JSON_THROW_ON_ERROR))
+        );
+        $intent = $this->stripe->paymentIntents->create($intentParams, ['idempotency_key' => $idempotencyKey]);
 
         $pubKey = ($this->config['test_mode']) ? $this->config['test_pub_key'] : $this->config['pub_key'];
 
