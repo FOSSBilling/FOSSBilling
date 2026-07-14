@@ -271,8 +271,18 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
     private function processPaymentIntent(Model_Transaction $tx, ?Model_Invoice $invoice, array $data): void
     {
-        $invoiceService = $this->di['mod_service']('Invoice');
         $charge = $this->stripe->paymentIntents->retrieve($data['get']['payment_intent'], []);
+
+        $this->withPaymentIntentLock(
+            $charge->id,
+            (int) $tx->gateway_id,
+            fn () => $this->processPaymentIntentUnderLock($tx, $invoice, $charge)
+        );
+    }
+
+    private function processPaymentIntentUnderLock(Model_Transaction $tx, ?Model_Invoice $invoice, object $charge): void
+    {
+        $invoiceService = $this->di['mod_service']('Invoice');
 
         $tx->txn_status = $charge->status;
         $tx->txn_id = $charge->id;
@@ -879,6 +889,15 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     {
         $paymentIntent = $event->data->object;
 
+        return $this->withPaymentIntentLock(
+            $paymentIntent->id,
+            $gateway_id,
+            fn (): bool => $this->handlePaymentIntentSucceededWebhookUnderLock($tx, $paymentIntent, $gateway_id)
+        );
+    }
+
+    private function handlePaymentIntentSucceededWebhookUnderLock(Model_Transaction $tx, object $paymentIntent, int $gateway_id): bool
+    {
         // Set transaction metadata from the PaymentIntent
         $tx->txn_id = $paymentIntent->id;
         $tx->txn_status = $paymentIntent->status;
@@ -892,8 +911,14 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         // redirect flow is mid-processing when the webhook arrives.
         $existing = $this->di['db']->findOne(
             'Transaction',
-            'txn_id = :txn_id AND status IN (:s1, :s2)',
-            [':txn_id' => $paymentIntent->id, ':s1' => Model_Transaction::STATUS_PROCESSING, ':s2' => Model_Transaction::STATUS_PROCESSED]
+            'txn_id = :txn_id AND gateway_id = :gateway_id AND id != :id AND status IN (:s1, :s2)',
+            [
+                ':txn_id' => $paymentIntent->id,
+                ':gateway_id' => $gateway_id,
+                ':id' => $tx->id,
+                ':s1' => Model_Transaction::STATUS_PROCESSING,
+                ':s2' => Model_Transaction::STATUS_PROCESSED,
+            ]
         );
         if ($existing instanceof Model_Transaction) {
             $tx->invoice_id = $existing->invoice_id;
@@ -916,8 +941,11 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
         if ($invoiceId) {
             $tx->invoice_id = (int) $invoiceId;
-            $this->di['db']->store($tx);
         }
+
+        // Persist the PaymentIntent ID while the lock is held so a redirect
+        // waiting on the same key observes this transaction after release.
+        $this->di['db']->store($tx);
 
         if ($paymentIntent->status !== 'succeeded') {
             return false;
@@ -929,6 +957,25 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $this->applyOneTimePayment($tx, $invoice, $paymentIntent);
 
         return true;
+    }
+
+    private function withPaymentIntentLock(string $paymentIntentId, int $gatewayId, callable $callback): mixed
+    {
+        $lockName = 'fb:stripe:' . substr(hash('sha256', $gatewayId . ':' . $paymentIntentId), 0, 54);
+        $acquired = (int) $this->di['db']->getCell(
+            'SELECT GET_LOCK(:lock_name, 10)',
+            [':lock_name' => $lockName]
+        );
+
+        if ($acquired !== 1) {
+            throw new FOSSBilling\Exception('Timed out waiting to process this Stripe payment');
+        }
+
+        try {
+            return $callback();
+        } finally {
+            $this->di['db']->getCell('SELECT RELEASE_LOCK(:lock_name)', [':lock_name' => $lockName]);
+        }
     }
 
     private function handlePaymentIntentFailedWebhook($api_admin, Model_Transaction $tx, object $event): bool

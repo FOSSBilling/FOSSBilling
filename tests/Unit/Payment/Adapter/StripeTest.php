@@ -91,6 +91,19 @@ function setPrivateProperty(object $obj, string $property, mixed $value): void
     $prop->setValue($obj, $value);
 }
 
+function expectPaymentIntentLock(Mockery\MockInterface $dbMock, string $paymentIntentId, int $gatewayId): void
+{
+    $lockName = 'fb:stripe:' . substr(hash('sha256', $gatewayId . ':' . $paymentIntentId), 0, 54);
+    $dbMock->shouldReceive('getCell')
+        ->once()
+        ->with('SELECT GET_LOCK(:lock_name, 10)', [':lock_name' => $lockName])
+        ->andReturn(1);
+    $dbMock->shouldReceive('getCell')
+        ->once()
+        ->with('SELECT RELEASE_LOCK(:lock_name)', [':lock_name' => $lockName])
+        ->andReturn(1);
+}
+
 function signStripeWebhookPayload(string $payload, string $secret = TEST_WEBHOOK_SECRET): string
 {
     $timestamp = time();
@@ -889,8 +902,15 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
         $existingTx->invoice_id = 10;
 
         $dbMock = Mockery::mock('\Box_Database');
+        expectPaymentIntentLock($dbMock, 'pi_existing', 1);
         $dbMock->shouldReceive('findOne')
-            ->with('Transaction', 'txn_id = :txn_id AND status IN (:s1, :s2)', Mockery::any())
+            ->with(
+                'Transaction',
+                'txn_id = :txn_id AND gateway_id = :gateway_id AND id != :id AND status IN (:s1, :s2)',
+                Mockery::on(fn (array $params): bool => $params[':txn_id'] === 'pi_existing'
+                    && $params[':gateway_id'] === 1
+                    && $params[':id'] === 200)
+            )
             ->andReturn($existingTx);
         $dbMock->shouldReceive('store')->andReturn($tx->id);
 
@@ -931,6 +951,7 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
         $invoiceModel->client_id = 7;
 
         $dbMock = Mockery::mock('\Box_Database');
+        expectPaymentIntentLock($dbMock, 'pi_new', 1);
         $dbMock->shouldReceive('findOne')
             ->andReturn(null);
         $dbMock->shouldReceive('store')->andReturn($tx->id);
@@ -1007,6 +1028,7 @@ describe('processPaymentIntent', function (): void {
         setPrivateProperty($this->adapter, 'stripe', $stripeMock);
 
         $dbMock = Mockery::mock('\Box_Database');
+        expectPaymentIntentLock($dbMock, 'pi_webhook_first', 4);
         $dbMock->shouldReceive('findOne')
             ->once()
             ->with('Transaction', 'txn_id = :txn_id AND gateway_id = :gateway_id AND id != :id AND status IN (:s1, :s2, :s3)', Mockery::on(fn (array $params): bool => $params[':txn_id'] === 'pi_webhook_first'
@@ -1027,6 +1049,21 @@ describe('processPaymentIntent', function (): void {
 
         expect($tx->txn_id)->toBe('pi_webhook_first');
     });
+});
+
+test('releases the PaymentIntent lock when processing fails', function (): void {
+    $dbMock = Mockery::mock('\\Box_Database');
+    expectPaymentIntentLock($dbMock, 'pi_failure', 2);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $this->adapter->setDi($di);
+
+    expect(fn () => invokePrivateMethod($this->adapter, 'withPaymentIntentLock', [
+        'pi_failure',
+        2,
+        fn () => throw new RuntimeException('Processing failed'),
+    ]))->toThrow(RuntimeException::class, 'Processing failed');
 });
 
 describe('handleSetupIntentSucceededWebhook', function (): void {
