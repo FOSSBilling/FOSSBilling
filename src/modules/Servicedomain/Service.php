@@ -529,12 +529,41 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 $this->reconcilePendingRegistrarOrder($model, $order, $orderService);
 
                 return true;
+            } catch (\Registrar_Exception_DomainNotFound $e) {
+                $this->markTransferredAway($model, $order);
+
+                return true;
             } catch (\Exception $e) {
                 $this->di['logger']->warning('Attempt %s of %s to sync domain #%s status with registrar failed: %s', $attempt, $maxAttempts, $model->id, $e->getMessage());
             }
         }
 
         return false;
+    }
+
+    /**
+     * registrar_status is a free-form string column, and existing OpenProvider values
+     * already use short codes like REQ, ACP, FAI, CAN, DEL, and ACT. Adding the
+     * TRANSFERRED_AWAY flag does not require a schema migration, and this method is
+     * intentionally flag-only: no order status changes, invoice changes, or
+     * cancellation side effects.
+     */
+    protected function markTransferredAway(\Model_ServiceDomain $model, \Model_ClientOrder $order): void
+    {
+        if ($model->registrar_status === 'TRANSFERRED_AWAY') {
+            return;
+        }
+
+        $model->registrar_status = 'TRANSFERRED_AWAY';
+        $model->updated_at = date('Y-m-d H:i:s');
+        $this->di['db']->store($model);
+
+        $this->di['logger']->error(
+            'Domain #%s (%s) for order #%s is no longer present at the registrar; likely transferred away. Order left untouched pending admin review.',
+            $model->id,
+            $model->sld . $model->tld,
+            $order->id
+        );
     }
 
     /**

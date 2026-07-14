@@ -539,7 +539,9 @@ class Registrar_Adapter_OpenProvider extends Registrar_AdapterAbstract
             if (!empty($response['data']['results']) && count($response['data']['results']) > 0) {
                 return $response['data']['results'][0]['id']; // Return the OpenProvider domain ID
             }
-            throw new Registrar_Exception('Domain not found in OpenProvider: ' . $domain->getName());
+            throw new Registrar_Exception_DomainNotFound('Domain not found in OpenProvider: ' . $domain->getName());
+        } catch (Registrar_Exception_DomainNotFound $e) {
+            throw $e;
         } catch (Exception $e) {
             throw new Registrar_Exception('Failed to fetch domain ID: ' . $e->getMessage());
         }

@@ -45,9 +45,14 @@
                         <td class="text-end">{{ 'Registrar Status'|trans }}:</td>
                         <td id="registrar-status-value">
                             {% if service.registrar_status %}
-                                <span class="badge {{ service.registrar_status == 'ACT' ? 'text-bg-success' : 'text-bg-warning' }}">{{ service.registrar_status }}</span>
-                                {% if service.registrar_status != 'ACT' %}
-                                    <span class="text-muted small">{{ '(may not match the order status below yet - the registrar hasn\'t finished processing this domain)'|trans }}</span>
+                                {% if service.registrar_status == 'TRANSFERRED_AWAY' %}
+                                    <span class="badge text-bg-danger">{{ 'Transferred Away'|trans }}</span>
+                                    <span class="text-muted small">{{ 'This domain is no longer present at the registrar - it likely transferred away. No billing changes have been made automatically; review this order.'|trans }}</span>
+                                {% else %}
+                                    <span class="badge {{ service.registrar_status == 'ACT' ? 'text-bg-success' : 'text-bg-warning' }}">{{ service.registrar_status }}</span>
+                                    {% if service.registrar_status != 'ACT' %}
+                                        <span class="text-muted small">{{ '(may not match the order status below yet - the registrar hasn\'t finished processing this domain)'|trans }}</span>
+                                    {% endif %}
                                 {% endif %}
                             {% else %}
                                 <span class="text-muted">{{ 'Unknown - sync to check'|trans }}</span>
