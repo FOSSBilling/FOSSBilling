@@ -14,7 +14,7 @@
                     {% if service.expires_at %}{{ 'expires'|trans }} {{ service.expires_at|format_date(pattern="MMM dd, yyyy") }}{% endif %}
                     {% if service.contact.first_name or service.contact.last_name %} &middot; {{ 'registrant'|trans }} {{ service.contact.first_name }} {{ service.contact.last_name }}{% endif %}
                 </span>
-                {% if service.registrar_status and service.registrar_status != 'ACT' %}
+                {% if service.registrar_status and service.registrar_status != 'ACT' and service.registrar_status != 'TRANSFERRED_AWAY' %}
                     <div class="small mt-1" style="color: var(--warning-600, #b45309);">
                         {{ 'Your registrar is still finishing this domain\'s registration/transfer - this can take several days. We\'ll update this once it\'s fully complete.'|trans }}
                     </div>
