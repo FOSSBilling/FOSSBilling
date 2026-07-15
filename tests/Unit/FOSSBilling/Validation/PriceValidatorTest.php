@@ -40,13 +40,13 @@ dataset('flooredQuantities', fn (): array => [
     'float zero' => [0.0, 1],
     'negative int' => [-5, 1],
     'negative float' => [-1.5, 1],
+    'positive float' => [1.5, 1],
 ]);
 
 dataset('invalidQuantities', fn (): array => [
     'non-numeric string' => ['abc'],
     'empty string' => [''],
     'null' => [null],
-    'non-integer float' => [1.5],
     'infinite' => [INF],
     'overflowed numeric string' => ['1e999'],
     'integer overflow' => [PHP_INT_MAX . '0'],
