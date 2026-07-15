@@ -40,6 +40,7 @@ dataset('flooredQuantities', fn (): array => [
     'float zero' => [0.0, 1],
     'negative int' => [-5, 1],
     'negative float' => [-1.5, 1],
+    'positive float' => [1.5, 1],
 ]);
 
 dataset('invalidQuantities', fn (): array => [
@@ -77,6 +78,14 @@ test('validateAmount rejects non-numeric with field name', function (): void {
 
 test('validateSignedAmount accepts negative adjustments', function (): void {
     expect(PriceValidator::validateSignedAmount('-10.50'))->toBe(-10.50);
+});
+
+test('validateSignedAmount accepts positive amounts', function (): void {
+    expect(PriceValidator::validateSignedAmount('10.50'))->toBe(10.50);
+});
+
+test('validateSignedAmount accepts zero', function (): void {
+    expect(PriceValidator::validateSignedAmount(0))->toBe(0.0);
 });
 
 test('validateSignedAmount rejects non-numeric values', function (): void {
