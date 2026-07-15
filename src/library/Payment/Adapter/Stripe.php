@@ -1223,7 +1223,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             'amount' => $this->getAmountInMinorUnits($invoice),
             'currency' => $invoice->currency,
             'description' => $this->getInvoiceTitle($invoice),
-            'automatic_payment_methods' => ['enabled' => true],
+            'payment_method_types' => ['card'],
             'receipt_email' => $invoice->buyer_email,
             'metadata' => [
                 'client_id' => (string) $invoice->client_id,
