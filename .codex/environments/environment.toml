@@ -7,7 +7,7 @@ script = '''
 cd "$CODEX_WORKTREE_PATH"
 composer install
 npm install
-npm build'''
+npm run build'''
 
 [[actions]]
 name = "Build"
