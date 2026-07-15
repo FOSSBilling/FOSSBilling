@@ -1404,7 +1404,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     {
         $intentParams = [
             'amount' => $this->getAmountInMinorUnits($invoice),
-            'currency' => $invoice->currency,
+            'currency' => strtolower($invoice->currency),
             'description' => $this->getInvoiceTitle($invoice),
             'automatic_payment_methods' => ['enabled' => true],
             'receipt_email' => $invoice->buyer_email,
