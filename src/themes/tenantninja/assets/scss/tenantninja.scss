@@ -2549,8 +2549,8 @@ table > thead > tr > th {
         gap: var(--space-2);
         padding: var(--space-2);
         border-radius: var(--r-pill);
-        background: var(--surface-2);
-        border: var(--bw-hair) solid var(--border);
+        background: var(--surface);
+        border: var(--bw-hair) solid var(--border-strong);
         box-shadow: var(--shadow-sm), var(--inset-top);
     }
     &__input {
@@ -2785,6 +2785,18 @@ table > thead > tr > th {
         display: flex;
         flex-direction: column;
         gap: var(--space-6);
+    }
+    &__logo {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        font-family: var(--font-display);
+        font-size: var(--fs-sm);
+        font-weight: var(--fw-bold);
+        color: var(--text);
+        text-decoration: none;
+        .tn-logo-mark { color: var(--accent-press); }
+        &:hover { color: var(--text); text-decoration: none; }
     }
     &__head {
         display: flex;

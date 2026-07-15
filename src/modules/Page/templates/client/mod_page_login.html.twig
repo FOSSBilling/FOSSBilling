@@ -8,8 +8,8 @@
 <div class="tn-auth">
     <div class="tn-auth__intro">
         <p class="tn-auth__eyebrow">{{ 'CLIENT PORTAL'|trans }}</p>
-        <h1 class="tn-auth__headline">{{ 'Your cloud services, mastered.'|trans }}</h1>
-        <p class="tn-auth__subhead">{{ 'Sign in to manage domains, hosting and M365 - invoices, renewals and support in one place.'|trans }}</p>
+        <h1 class="tn-auth__headline">{{ 'Give your business the domain it deserves.'|trans }}</h1>
+        <p class="tn-auth__subhead">{{ 'Domains, hosting and Microsoft 365 for UAE businesses - sign in to manage yours.'|trans }}</p>
     </div>
 
     <div class="tn-auth__panel">
@@ -22,6 +22,7 @@
                     link_url: settings.login_page_logo_url|default('/'),
                     link_target: '_blank',
                     link_rel: 'noopener noreferrer',
+                    link_class: 'tn-auth__logo',
                     image_height: '32px'
                 }) }}
             {% endif %}
