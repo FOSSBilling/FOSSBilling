@@ -93,6 +93,11 @@ test('validateSignedAmount rejects non-numeric values', function (): void {
         ->toThrow(InformationException::class, 'Price must be a valid number.');
 });
 
+test('validateSignedAmount uses custom field name in error', function (): void {
+    expect(fn (): float => PriceValidator::validateSignedAmount('not-a-price', 'Adjustment'))
+        ->toThrow(InformationException::class, 'Adjustment must be a valid number.');
+});
+
 test('validateQuantity accepts valid quantities', function (mixed $input, int $expected): void {
     $result = PriceValidator::validateQuantity($input);
 
