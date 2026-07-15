@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\moduleService;
 
 test('get di', function (): void {
     $api = apiEndpoint(new Box\Mod\Staff\Api\Guest());
@@ -105,4 +106,54 @@ test('login check ip exception', function (): void {
     ];
     expect(fn () => $guestApi->login($data))
         ->toThrow(FOSSBilling\Exception::class, 'You are not allowed to login to admin area from this IP address.');
+});
+
+test('updatePassword invalidates existing sessions', function (): void {
+    $guestApi = apiEndpoint(new Box\Mod\Staff\Api\Guest());
+
+    $modMock = Mockery::mock('\\' . FOSSBilling\Module::class);
+    $modMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([]);
+
+    $modelPasswordReset = new Model_AdminPasswordReset();
+    $modelPasswordReset->loadBean(new Tests\Helpers\DummyBean());
+    $modelPasswordReset->created_at = date('Y-m-d H:i:s', time() - 300);
+
+    $admin = new Model_Admin();
+    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin->id = 1;
+    $admin->status = Model_Admin::STATUS_ACTIVE;
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('findOne')->atLeast()->once()->andReturn($modelPasswordReset);
+    $dbMock->shouldReceive('getExistingModelById')->atLeast()->once()->andReturn($admin);
+    $dbMock->shouldReceive('store')->atLeast()->once();
+    $dbMock->shouldReceive('trash')->atLeast()->once();
+
+    $eventMock = Mockery::mock('\Box_EventManager');
+    $eventMock->shouldReceive('fire')->times(2);
+
+    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
+    $passwordMock->shouldReceive('hashIt')->atLeast()->once();
+
+    $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
+    $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once();
+
+    $profileServiceMock = Mockery::mock(Box\Mod\Profile\Service::class);
+    $profileServiceMock->shouldReceive('invalidateSessions')->atLeast()->once();
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['events_manager'] = $eventMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['password'] = $passwordMock;
+    $di['mod_service'] = $di->protect(moduleService(['email' => $emailServiceMock, 'profile' => $profileServiceMock]));
+
+    $guestApi->setMod($modMock);
+    $guestApi->setDi($di);
+
+    $guestApi->update_password([
+        'code' => 'hashedString',
+        'password' => 'NewPassword1',
+        'password_confirm' => 'NewPassword1',
+    ]);
 });
