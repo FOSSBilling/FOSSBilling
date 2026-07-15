@@ -236,6 +236,83 @@ test('orderbutton addons renders a product without addons key', function (): voi
     expect($html)->toBeString();
 });
 
+test('invoice payment page pre-checks the only gateway and skips the modal for a one-time invoice', function (): void {
+    $html = (new StrictTemplateRenderer())->renderTemplate(
+        PATH_MODS . '/Invoice/templates/client/mod_invoice_invoice.html.twig',
+        [
+            'app_area' => 'client',
+            'request' => edgeCaseRequest(),
+            'settings' => [
+                'prompt_subscription' => 1,
+            ],
+            'guest' => edgeCaseGuest([
+                'invoice_gateways' => [
+                    [
+                        'id' => 'stripe',
+                        'title' => 'Stripe',
+                        'allow_recurrent' => false,
+                        'allow_single' => true,
+                        'accepted_currencies' => ['USD'],
+                        'logo' => [
+                            'logo' => '/assets/stripe.svg',
+                            'height' => '40px',
+                            'width' => '120px',
+                        ],
+                    ],
+                ],
+            ]),
+            'default_currency' => 'USD',
+            'invoice' => [
+                'hash' => str_repeat('a', 32),
+                'serie' => 'INV',
+                'nr' => 1,
+                'status' => 'unpaid',
+                'created_at' => '2026-01-01 00:00:00',
+                'due_at' => '2026-01-15 00:00:00',
+                'currency' => 'USD',
+                'subscribable' => false,
+                'total' => 10.0,
+                'subtotal' => 10.0,
+                'tax' => 0.0,
+                'discount' => 0.0,
+                'taxname' => 'VAT',
+                'taxrate' => 0,
+                'lines' => [
+                    [
+                        'order_id' => null,
+                        'title' => 'Test invoice item',
+                        'quantity' => 1,
+                        'unit' => 'pc',
+                        'period' => null,
+                        'total' => 10.0,
+                    ],
+                ],
+                'seller' => [
+                    'account_number' => '',
+                    'bank_name' => '',
+                    'bic' => '',
+                ],
+                'buyer' => [
+                    'first_name' => 'Ada',
+                    'last_name' => 'Lovelace',
+                    'company' => '',
+                    'company_vat' => '',
+                    'city' => '',
+                    'country' => '',
+                    'phone' => '',
+                ],
+            ],
+        ],
+    );
+
+    expect($html)
+        ->not->toContain('DOMContentLoaded')
+        ->toContain("onclick=\"paymentPrompt('stripe', false, true, `Stripe`)\"")
+        ->toContain('if(visibleButtonCount === 1)')
+        ->toContain('window.location.href = singleBtn.href;')
+        ->toContain('checked="checked"');
+});
+
 test('activity index renders a staff-only event (no client key)', function (): void {
     $html = (new StrictTemplateRenderer())->renderTemplate(
         PATH_MODS . '/Activity/templates/admin/mod_activity_index.html.twig',

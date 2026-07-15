@@ -17,6 +17,13 @@
 {% block content %}
 {% set seller = invoice.seller %}
 {% set buyer = invoice.buyer %}
+{% set eligible_gateways = [] %}
+
+{% for gtw in guest.invoice_gateways %}
+    {% if invoice.currency in gtw.accepted_currencies and (gtw.allow_single or (invoice.subscribable and gtw.allow_recurrent)) %}
+        {% set eligible_gateways = eligible_gateways|merge([gtw]) %}
+    {% endif %}
+{% endfor %}
 
     <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
         <div>
@@ -124,16 +131,14 @@
                         {{ fb_api_form({ redirect: ("invoice/#{invoice.hash}")|url(query: { 'auto_redirect': 1 }) }) }}>
                         <input type="hidden" name="hash" value="{{ invoice.hash }}"/>
                         <div class="d-flex flex-wrap gap-2 mt-3">
-                            {% for gtw in guest.invoice_gateways %}
-                                {% if invoice.currency in gtw.accepted_currencies and (gtw.allow_single or (invoice.subscribable and gtw.allow_recurrent)) %}
-                                    <div class="invoice-gateway rounded-2 p-2">
-                                        <input type="radio" class="btn-check border-0" name="gateway_id" gateway_id="{{ gtw.id }}" id="{{ gtw.id }}" autocomplete="off">
-                                        <label class="btn" for="{{ gtw.id }}"
-                                            style="background: transparent url('{{gtw.logo.logo}}') no-repeat center center; background-size: contain; height:{{gtw.logo.height}}; width:{{gtw.logo.width}};"
-                                            onclick="paymentPrompt('{{ gtw.id }}', {{ gtw.allow_recurrent ? 'true' : 'false' }}, {{ gtw.allow_single ? 'true' : 'false' }}, `{{ gtw.title }}`)"
-                                            data-bs-toggle="tooltip" data-bs-title="{{ gtw.title }}"></label>
-                                    </div>
-                                {% endif %}
+                            {% for gtw in eligible_gateways %}
+                                <div class="invoice-gateway rounded-2 p-2">
+                                    <input type="radio" class="btn-check border-0" name="gateway_id" gateway_id="{{ gtw.id }}" id="{{ gtw.id }}" autocomplete="off" {% if eligible_gateways|length == 1 and loop.first %}checked="checked"{% endif %}>
+                                    <label class="btn" for="{{ gtw.id }}"
+                                        style="background: transparent url('{{gtw.logo.logo}}') no-repeat center center; background-size: contain; height:{{gtw.logo.height}}; width:{{gtw.logo.width}};"
+                                        onclick="paymentPrompt('{{ gtw.id }}', {{ gtw.allow_recurrent ? 'true' : 'false' }}, {{ gtw.allow_single ? 'true' : 'false' }}, `{{ gtw.title }}`)"
+                                        data-bs-toggle="tooltip" data-bs-title="{{ gtw.title }}"></label>
+                                </div>
                             {% endfor %}
                         </div>
                         <input type="hidden" name="gateway_id" id="gateway_id">
@@ -247,15 +252,27 @@
         singleBtn.hidden = true;
         subscriptionBtn.hidden = true;
         genericBtn.hidden = true;
+        subscriptionBtn.href = paymentLink;
+        genericBtn.href = paymentLink;
+        const singlePaymentLink = new URL(paymentLink);
+        singlePaymentLink.searchParams.append('allow_subscription', 0);
+        singleBtn.href = singlePaymentLink;
 
         {% if settings.prompt_subscription|default('0') %}
+            let showSingleButton = false;
+            let showSubscriptionButton = false;
+            let showGenericButton = false;
+
             if(supportsSubscription && supportsOneTime && invoiceSubscribable){
                 document.getElementById('bodyText').textContent = `{{ 'The invoice you are paying and your chosen payment gateway both support subscription payments. What type of payment would you like to continue with?'|trans }}`;
                 subscriptionBtn.hidden = false;
                 singleBtn.hidden = false;
+                showSubscriptionButton = true;
+                showSingleButton = true;
             } else if (supportsSubscription && invoiceSubscribable) {
                 document.getElementById('bodyText').textContent = `{{ 'The invoice you are paying and your chosen payment gateway both support subscription payments. What type of payment would you like to continue with?'|trans }}`;
                 subscriptionBtn.hidden = false;
+                showSubscriptionButton = true;
             } else if (supportsOneTime) {
                 if(invoiceSubscribable && canAnyGatewayDoSubs){
                     document.getElementById('bodyText').textContent = `{{ 'If you are happy with the selected payment gateway, please use the button below to continue with it. Optionally, you may choose a different payment gateway if you wish to pay using a subscription.'|trans }}`;
@@ -263,20 +280,34 @@
                     document.getElementById('bodyText').textContent = `{{ 'If you are happy with the selected payment gateway, please use the button below to continue with it.'|trans }}`;
                 }
                 singleBtn.hidden = false;
+                showSingleButton = true;
             } else {
                 document.getElementById('bodyText').textContent = `{{ 'This payment gateway does not support any of the payment methods available for this invoice. Please choose a different payment gateway.'|trans }}`;
+            }
+
+            const visibleButtonCount = [showSingleButton, showSubscriptionButton, showGenericButton].filter(Boolean).length;
+            if(visibleButtonCount === 1){
+                if(showSingleButton){
+                    window.location.href = singleBtn.href;
+                    return;
+                }
+
+                if(showSubscriptionButton){
+                    window.location.href = subscriptionBtn.href;
+                    return;
+                }
+
+                window.location.href = genericBtn.href;
+                return;
             }
         {% else %}
             document.getElementById('bodyText').textContent = `{{ 'If you are happy with the selected payment gateway, please use the button below to continue with it.'|trans }}`;
             genericBtn.hidden = false;
+            window.location.href = genericBtn.href;
+            return;
         {% endif %}
 
         document.getElementById('paymentPromptLabel').textContent = `{{ 'Pay with'|trans }}`.concat(` `, title);
-        subscriptionBtn.href = paymentLink;
-        genericBtn.href = paymentLink;
-        const singlePaymentLink = new URL(paymentLink);
-        singlePaymentLink.searchParams.append('allow_subscription', 0);
-        singleBtn.href = singlePaymentLink;
 
         modal = new bootstrap.Modal('#paymentPrompt');
         modal.show();
