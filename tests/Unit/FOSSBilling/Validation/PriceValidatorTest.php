@@ -41,6 +41,7 @@ dataset('flooredQuantities', fn (): array => [
     'negative int' => [-5, 1],
     'negative float' => [-1.5, 1],
     'positive float' => [1.5, 1],
+    'positive float above one' => [2.7, 2],
 ]);
 
 dataset('invalidQuantities', fn (): array => [
