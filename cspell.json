@@ -56,7 +56,8 @@
         "myhost",
         "inversed",
         "Autoresponder",
-        "initialises"
+        "initialises",
+        "WORKTREE"
     ],
 
     "ignoreWords": [
