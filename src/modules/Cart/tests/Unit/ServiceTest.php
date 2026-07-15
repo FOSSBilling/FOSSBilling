@@ -1334,6 +1334,7 @@ test('toApiArray returns expected structure', function (): void {
         'total' => 1,
         'setup_price' => 0,
         'discount' => 0,
+        'period' => '1M',
     ];
     $serviceMock->shouldReceive('cartProductToApiArray')->atLeast()->once()->andReturn($cartProductApiArray);
 
@@ -1363,9 +1364,40 @@ test('toApiArray returns expected structure', function (): void {
         'items' => [$cartProductApiArray],
         'currency' => [],
         'subtotal' => 1,
+        'subscribable' => true,
     ];
     expect($result)->toBeArray();
     expect($result)->toEqual($expected);
+});
+
+test('cart is not subscribable when items use different billing periods', function (): void {
+    $cartModel = new Model_Cart();
+    $cartModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $cartProducts = [new Model_CartProduct(), new Model_CartProduct()];
+    foreach ($cartProducts as $cartProduct) {
+        $cartProduct->loadBean(new Tests\Helpers\DummyBean());
+    }
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getCartProducts')->once()->andReturn($cartProducts);
+    $serviceMock->shouldReceive('cartProductToApiArray')->andReturn(
+        ['total' => 10, 'setup_price' => 0, 'discount' => 0, 'period' => '1M'],
+        ['total' => 10, 'setup_price' => 0, 'discount' => 0, 'period' => '1Y'],
+    );
+
+    $currency = Mockery::mock(Currency::class);
+    $currency->shouldReceive('toApiArray')->once()->andReturn([]);
+    $currencyRepository = Mockery::mock(CurrencyRepository::class);
+    $currencyRepository->shouldReceive('find')->once()->andReturn($currency);
+    $currencyService = Mockery::mock(CurrencyService::class);
+    $currencyService->shouldReceive('getCurrencyRepository')->once()->andReturn($currencyRepository);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn () => $currencyService);
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->toApiArray($cartModel)['subscribable'])->toBeFalse();
 });
 
 test('getProductDiscount returns discount array', function (): void {

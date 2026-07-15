@@ -187,7 +187,7 @@ class Service implements InjectionAwareInterface
         return [$sql, $params];
     }
 
-    public function toApiArray(\Model_Invoice $invoice, $deep = true, $identity = null): array
+    public function toApiArray(\Model_Invoice $invoice, $deep = true, $identity = null, bool $includeClientBillingEmail = false): array
     {
         $this->ensureValidHash($invoice);
         $row = $this->di['db']->toArray($invoice);
@@ -307,6 +307,9 @@ class Service implements InjectionAwareInterface
         $clientService = $this->di['mod_service']('client');
         if ($client instanceof \Model_Client) {
             $result['client'] = $clientService->toApiArray($client);
+            if ($includeClientBillingEmail) {
+                $result['client']['billing_email'] = $client->billing_email;
+            }
         } else {
             $result['client'] = null;
         }
@@ -388,7 +391,7 @@ class Service implements InjectionAwareInterface
 
         try {
             $invoiceModel = $di['db']->load('Invoice', $params['id'] ?? 0);
-            $invoice = $service->toApiArray($invoiceModel, true);
+            $invoice = $service->toApiArray($invoiceModel, true, null, true);
             if (($invoice['total'] ?? 0) > 0) {
                 $service->sendInvoiceEmail($invoiceModel, $invoice, 'mod_invoice_paid');
             }
@@ -407,7 +410,7 @@ class Service implements InjectionAwareInterface
 
         try {
             $invoiceModel = $di['db']->load('Invoice', $params['id']);
-            $invoice = $service->toApiArray($invoiceModel, true);
+            $invoice = $service->toApiArray($invoiceModel, true, null, true);
             $service->sendInvoiceEmail($invoiceModel, $invoice, 'mod_invoice_created');
         } catch (\Exception $exc) {
             $di['logger']->setChannel('email')->error('Failed to send email for invoice creation', ['exception' => $exc->getMessage()]);
@@ -453,6 +456,7 @@ class Service implements InjectionAwareInterface
             'code' => $templateCode,
             'invoice' => $invoiceData,
         ];
+        $email = $this->withBillingRecipient($email, $invoiceData);
 
         $attachment = $this->getInvoicePdfAttachment($invoice);
         if ($attachment !== null) {
@@ -474,11 +478,12 @@ class Service implements InjectionAwareInterface
                 return;
             }
 
-            $invoice = $service->toApiArray($invoiceModel, true);
+            $invoice = $service->toApiArray($invoiceModel, true, null, true);
             $email = [];
             $email['to_client'] = $invoiceModel->client_id;
             $email['code'] = 'mod_invoice_payment_reminder';
             $email['invoice'] = $invoice;
+            $email = $service->withBillingRecipient($email, $invoice);
             $attachment = $service->getInvoicePdfAttachment($invoiceModel);
             if ($attachment !== null) {
                 $email['attachment'] = $attachment;
@@ -577,7 +582,7 @@ class Service implements InjectionAwareInterface
                 return;
             }
 
-            $invoice = $service->toApiArray($invoiceModel, true);
+            $invoice = $service->toApiArray($invoiceModel, true, null, true);
             if (!isset($invoice['client']) || !is_array($invoice['client']) || !isset($invoice['client']['id'])) {
                 throw new \FOSSBilling\Exception('Invoice client data is unavailable.');
             }
@@ -587,6 +592,7 @@ class Service implements InjectionAwareInterface
             $email['code'] = 'mod_invoice_due_after';
             $email['days_passed'] = $params['days_passed'];
             $email['invoice'] = $invoice;
+            $email = $service->withBillingRecipient($email, $invoice);
             $attachment = $service->getInvoicePdfAttachment($invoiceModel);
             if ($attachment !== null) {
                 $email['attachment'] = $attachment;
@@ -603,6 +609,20 @@ class Service implements InjectionAwareInterface
             }
             $di['logger']->setChannel('email')->error('Failed to send overdue invoice email', ['id' => $params['id'] ?? null, 'exception' => $exc->getMessage()]);
         }
+    }
+
+    /**
+     * Route invoice notifications to the client's optional billing address while retaining
+     * to_client so templates, timezone handling, and client email history keep working.
+     */
+    public function withBillingRecipient(array $email, array $invoice): array
+    {
+        $billingEmail = trim((string) ($invoice['client']['billing_email'] ?? ''));
+        if ($billingEmail !== '') {
+            $email['to'] = $billingEmail;
+        }
+
+        return $email;
     }
 
     public function markAsPaid(\Model_Invoice $invoice, $charge = true, $execute = false): bool
@@ -901,7 +921,7 @@ class Service implements InjectionAwareInterface
             $this->tryPayWithCredits($invoice);
         }
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceApprove', 'params' => $this->toApiArray($invoice)]);
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceApprove', 'params' => $this->toApiArray($invoice, true, null, true)]);
 
         $this->di['logger']->info("Approved invoice {$invoice->id}.");
 

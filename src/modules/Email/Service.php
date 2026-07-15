@@ -237,7 +237,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $to_name = $oneStaff['name'];
             $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, $oneStaff['id'], null, $send_now, $throw_exceptions, $attachment);
         } elseif (isset($customer)) {
-            $to = $customer['email'];
+            // Supplying both keeps the email associated with the client while allowing a
+            // purpose-specific recipient, such as the client's billing address.
+            $to = $data['to'] ?? $customer['email'];
             $to_name = $customer['first_name'] . ' ' . $customer['last_name'];
             $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, $customer['id'], null, $send_now, $throw_exceptions, $attachment);
         } else {

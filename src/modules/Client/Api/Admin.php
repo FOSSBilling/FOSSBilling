@@ -107,6 +107,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * Creates new client.
      *
      * @optional string $password - client password
+     * @optional string $billing_email - optional address for invoice notifications
      * @optional string $auth_type - client authorization type. Default null
      * @optional string $last_name - client last name
      * @optional string $aid - Custom client ID. If you import clients from other systems you can use this field to store the existing customer ID.
@@ -160,6 +161,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $validator = $this->getDi()['validator'];
         $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
+        if (array_key_exists('billing_email', $data)) {
+            $data['billing_email'] = empty($data['billing_email'])
+                ? null
+                : $this->getDi()['tools']->validateAndSanitizeEmail($data['billing_email']);
+        }
         $data['send_welcome_email'] = Tools::normalizeBoolean($data['send_welcome_email'] ?? true, true);
 
         $service = $this->getService();
@@ -213,6 +219,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * Update client profile.
      *
      * @optional string $email - client email
+     * @optional string $billing_email - optional address for invoice notifications
      * @optional string $first_name - client first_name
      * @optional string $last_name - client last_name
      * @optional string $status - client status
@@ -272,6 +279,12 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             }
         }
 
+        if (array_key_exists('billing_email', $data)) {
+            $data['billing_email'] = empty($data['billing_email'])
+                ? null
+                : $this->getDi()['tools']->validateAndSanitizeEmail($data['billing_email']);
+        }
+
         if (!empty($data['birthday'])) {
             $this->getDi()['validator']->isBirthdayValid($data['birthday']);
         }
@@ -327,6 +340,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         foreach ($allowedFields as $field) {
             $client->{$field} = $data[$field] ?? $client->{$field};
+        }
+        if (array_key_exists('billing_email', $data)) {
+            $client->billing_email = $data['billing_email'];
         }
 
         if ($client->status !== \Model_Client::ACTIVE) {

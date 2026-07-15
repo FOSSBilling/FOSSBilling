@@ -498,6 +498,7 @@ class UpdatePatcher implements InjectionAwareInterface
             86 => 'patch86',
             87 => 'patch87',
             88 => 'patch88',
+            89 => 'patch89',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2347,6 +2348,15 @@ class UpdatePatcher implements InjectionAwareInterface
         // @see https://github.com/FOSSBilling/FOSSBilling/issues/3963
         if (!$this->tableHasIndex('invoice', 'invoice_status_approved_due_at_idx')) {
             $this->executeSql('ALTER TABLE `invoice` ADD INDEX `invoice_status_approved_due_at_idx` (`status`, `approved`, `due_at`)');
+        }
+    }
+
+    private function patch89(): void
+    {
+        // Allows invoice notifications to be sent to an address separate from the client's login email.
+        // @see https://github.com/FOSSBilling/FOSSBilling/issues/3833
+        if (!$this->tableHasColumn('client', 'billing_email')) {
+            $this->executeSql('ALTER TABLE `client` ADD COLUMN `billing_email` varchar(255) DEFAULT NULL AFTER `email`');
         }
     }
 
