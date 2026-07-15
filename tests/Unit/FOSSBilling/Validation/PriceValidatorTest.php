@@ -79,6 +79,14 @@ test('validateSignedAmount accepts negative adjustments', function (): void {
     expect(PriceValidator::validateSignedAmount('-10.50'))->toBe(-10.50);
 });
 
+test('validateSignedAmount accepts positive amounts', function (): void {
+    expect(PriceValidator::validateSignedAmount('10.50'))->toBe(10.50);
+});
+
+test('validateSignedAmount accepts zero', function (): void {
+    expect(PriceValidator::validateSignedAmount(0))->toBe(0.0);
+});
+
 test('validateSignedAmount rejects non-numeric values', function (): void {
     expect(fn (): float => PriceValidator::validateSignedAmount('not-a-price'))
         ->toThrow(InformationException::class, 'Price must be a valid number.');
