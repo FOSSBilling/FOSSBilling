@@ -91,16 +91,16 @@ function setPrivateProperty(object $obj, string $property, mixed $value): void
     $prop->setValue($obj, $value);
 }
 
-function expectPaymentIntentLock(Mockery\MockInterface $dbMock, string $paymentIntentId, int $gatewayId): void
+function expectPaymentIntentLock(Mockery\MockInterface $dbalMock, string $paymentIntentId, int $gatewayId): void
 {
     $lockName = 'fb:stripe:' . substr(hash('sha256', $gatewayId . ':' . $paymentIntentId), 0, 54);
-    $dbMock->shouldReceive('getCell')
+    $dbalMock->shouldReceive('fetchOne')
         ->once()
-        ->with('SELECT GET_LOCK(:lock_name, 10)', [':lock_name' => $lockName])
+        ->with('SELECT GET_LOCK(:lock_name, 10)', ['lock_name' => $lockName])
         ->andReturn(1);
-    $dbMock->shouldReceive('getCell')
+    $dbalMock->shouldReceive('fetchOne')
         ->once()
-        ->with('SELECT RELEASE_LOCK(:lock_name)', [':lock_name' => $lockName])
+        ->with('SELECT RELEASE_LOCK(:lock_name)', ['lock_name' => $lockName])
         ->andReturn(1);
 }
 
@@ -902,7 +902,8 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
         $existingTx->invoice_id = 10;
 
         $dbMock = Mockery::mock('\Box_Database');
-        expectPaymentIntentLock($dbMock, 'pi_existing', 1);
+        $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+        expectPaymentIntentLock($dbalMock, 'pi_existing', 1);
         $dbMock->shouldReceive('findOne')
             ->with(
                 'Transaction',
@@ -916,6 +917,7 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
 
         $di = container();
         $di['db'] = $dbMock;
+        $di['dbal'] = $dbalMock;
         $this->adapter->setDi($di);
 
         invokePrivateMethod($this->adapter, 'handlePaymentIntentSucceededWebhook', [
@@ -951,7 +953,8 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
         $invoiceModel->client_id = 7;
 
         $dbMock = Mockery::mock('\Box_Database');
-        expectPaymentIntentLock($dbMock, 'pi_new', 1);
+        $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+        expectPaymentIntentLock($dbalMock, 'pi_new', 1);
         $dbMock->shouldReceive('findOne')
             ->andReturn(null);
         $dbMock->shouldReceive('store')->andReturn($tx->id);
@@ -982,6 +985,7 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
 
         $di = container();
         $di['db'] = $dbMock;
+        $di['dbal'] = $dbalMock;
         $di['mod_service'] = $di->protect(fn ($module, $service = null) => match (true) {
             $service === 'Transaction' => $transactionService,
             $module === 'client' => $clientService,
@@ -1028,7 +1032,8 @@ describe('processPaymentIntent', function (): void {
         setPrivateProperty($this->adapter, 'stripe', $stripeMock);
 
         $dbMock = Mockery::mock('\Box_Database');
-        expectPaymentIntentLock($dbMock, 'pi_webhook_first', 4);
+        $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+        expectPaymentIntentLock($dbalMock, 'pi_webhook_first', 4);
         $dbMock->shouldReceive('findOne')
             ->once()
             ->with('Transaction', 'txn_id = :txn_id AND gateway_id = :gateway_id AND id != :id AND status IN (:s1, :s2, :s3)', Mockery::on(fn (array $params): bool => $params[':txn_id'] === 'pi_webhook_first'
@@ -1039,6 +1044,7 @@ describe('processPaymentIntent', function (): void {
 
         $di = container();
         $di['db'] = $dbMock;
+        $di['dbal'] = $dbalMock;
         $this->adapter->setDi($di);
 
         invokePrivateMethod($this->adapter, 'processPaymentIntent', [
@@ -1052,11 +1058,11 @@ describe('processPaymentIntent', function (): void {
 });
 
 test('releases the PaymentIntent lock when processing fails', function (): void {
-    $dbMock = Mockery::mock('\\Box_Database');
-    expectPaymentIntentLock($dbMock, 'pi_failure', 2);
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    expectPaymentIntentLock($dbalMock, 'pi_failure', 2);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['dbal'] = $dbalMock;
     $this->adapter->setDi($di);
 
     expect(fn () => invokePrivateMethod($this->adapter, 'withPaymentIntentLock', [
@@ -1064,6 +1070,31 @@ test('releases the PaymentIntent lock when processing fails', function (): void 
         2,
         fn () => throw new RuntimeException('Processing failed'),
     ]))->toThrow(RuntimeException::class, 'Processing failed');
+});
+
+test('logs PaymentIntent lock timeouts with lock context', function (): void {
+    $lockName = 'fb:stripe:' . substr(hash('sha256', '2:pi_timeout'), 0, 54);
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('fetchOne')
+        ->once()
+        ->with('SELECT GET_LOCK(:lock_name, 10)', ['lock_name' => $lockName])
+        ->andReturn(0);
+
+    $logger = new Tests\Helpers\TestLogger();
+    $di = container();
+    $di['dbal'] = $dbalMock;
+    $di['logger'] = $logger;
+    $this->adapter->setDi($di);
+
+    expect(fn () => invokePrivateMethod($this->adapter, 'withPaymentIntentLock', [
+        'pi_timeout',
+        2,
+        fn () => null,
+    ]))->toThrow(FOSSBilling\Exception::class, 'Timed out waiting to process this Stripe payment')
+        ->and($logger->calls)->toHaveCount(1)
+        ->and($logger->calls[0]['method'])->toBe('warning')
+        ->and($logger->calls[0]['params'][0])->toContain('Timed out after')
+        ->and($logger->calls[0]['params'][2])->toBe($lockName);
 });
 
 describe('handleSetupIntentSucceededWebhook', function (): void {
@@ -1364,6 +1395,7 @@ describe('Stripe webhook gateway ownership', function (): void {
             ->once()
             ->withArgs(fn (array $params, array $options): bool => $params['metadata']['gateway_id'] === '3'
                 && $params['metadata']['invoice_id'] === '15'
+                && $params['currency'] === 'usd'
                 && $options['idempotency_key'] === sprintf(
                     'one_time_invoice_15_gateway_3_%s',
                     hash('sha256', json_encode($params, JSON_THROW_ON_ERROR))
