@@ -962,19 +962,27 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     private function withPaymentIntentLock(string $paymentIntentId, int $gatewayId, callable $callback): mixed
     {
         $lockName = 'fb:stripe:' . substr(hash('sha256', $gatewayId . ':' . $paymentIntentId), 0, 54);
-        $acquired = (int) $this->di['db']->getCell(
+        $waitStartedAt = hrtime(true);
+        $acquired = (int) $this->di['dbal']->fetchOne(
             'SELECT GET_LOCK(:lock_name, 10)',
-            [':lock_name' => $lockName]
+            ['lock_name' => $lockName]
         );
 
         if ($acquired !== 1) {
+            $waitDurationMs = (hrtime(true) - $waitStartedAt) / 1_000_000;
+            $this->di['logger']->warning(
+                'Timed out after %.1f ms waiting for Stripe PaymentIntent lock %s',
+                $waitDurationMs,
+                $lockName
+            );
+
             throw new FOSSBilling\Exception('Timed out waiting to process this Stripe payment');
         }
 
         try {
             return $callback();
         } finally {
-            $this->di['db']->getCell('SELECT RELEASE_LOCK(:lock_name)', [':lock_name' => $lockName]);
+            $this->di['dbal']->fetchOne('SELECT RELEASE_LOCK(:lock_name)', ['lock_name' => $lockName]);
         }
     }
 
