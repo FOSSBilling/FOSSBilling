@@ -102,6 +102,9 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             $admin->pass = $this->getDi()['password']->hashIt($data['password']);
             $this->getDi()['db']->store($admin);
 
+            $profileService = $this->getDi()['mod_service']('profile');
+            $profileService->invalidateSessions('admin', (int) $admin->id);
+
             $this->getDi()['logger']->setChannel('security')->info('Staff password reset completed for admin #%s from IP %s', $admin->id, $this->getIp());
 
             $this->getDi()['events_manager']->fire(['event' => 'onAfterPasswordResetStaff', 'params' => ['id' => $admin->id]]);

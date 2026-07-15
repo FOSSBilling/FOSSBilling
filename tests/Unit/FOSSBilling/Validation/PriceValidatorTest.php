@@ -41,6 +41,7 @@ dataset('flooredQuantities', fn (): array => [
     'negative int' => [-5, 1],
     'negative float' => [-1.5, 1],
     'positive float' => [1.5, 1],
+    'positive float above one' => [2.7, 2],
 ]);
 
 dataset('invalidQuantities', fn (): array => [
@@ -91,6 +92,11 @@ test('validateSignedAmount accepts zero', function (): void {
 test('validateSignedAmount rejects non-numeric values', function (): void {
     expect(fn (): float => PriceValidator::validateSignedAmount('not-a-price'))
         ->toThrow(InformationException::class, 'Price must be a valid number.');
+});
+
+test('validateSignedAmount uses custom field name in error', function (): void {
+    expect(fn (): float => PriceValidator::validateSignedAmount('not-a-price', 'Adjustment'))
+        ->toThrow(InformationException::class, 'Adjustment must be a valid number.');
 });
 
 test('validateQuantity accepts valid quantities', function (mixed $input, int $expected): void {
