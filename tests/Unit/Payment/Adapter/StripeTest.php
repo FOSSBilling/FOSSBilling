@@ -426,7 +426,7 @@ test('propagates local cancellation failures so Stripe retries the webhook', fun
     $di['mod_service'] = $di->protect(fn () => $subscriptionService);
     $this->adapter->setDi($di);
 
-    expect(fn () => invokePrivateMethod($this->adapter, 'handleSubscriptionDeleted', [
+    expect(fn (): mixed => invokePrivateMethod($this->adapter, 'handleSubscriptionDeleted', [
         $apiAdmin,
         buildTransaction(),
         $event,
@@ -449,7 +449,7 @@ test('propagates subscription lookup failures so Stripe retries the webhook', fu
     $di['mod_service'] = $di->protect(fn () => $subscriptionService);
     $this->adapter->setDi($di);
 
-    expect(fn () => invokePrivateMethod($this->adapter, 'handleSubscriptionDeleted', [
+    expect(fn (): mixed => invokePrivateMethod($this->adapter, 'handleSubscriptionDeleted', [
         $apiAdmin,
         buildTransaction(),
         $event,
