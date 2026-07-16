@@ -1065,7 +1065,7 @@ test('releases the PaymentIntent lock when processing fails', function (): void 
     $di['dbal'] = $dbalMock;
     $this->adapter->setDi($di);
 
-    expect(fn () => invokePrivateMethod($this->adapter, 'withPaymentIntentLock', [
+    expect(fn (): mixed => invokePrivateMethod($this->adapter, 'withPaymentIntentLock', [
         'pi_failure',
         2,
         fn () => throw new RuntimeException('Processing failed'),
@@ -1086,10 +1086,10 @@ test('logs PaymentIntent lock timeouts with lock context', function (): void {
     $di['logger'] = $logger;
     $this->adapter->setDi($di);
 
-    expect(fn () => invokePrivateMethod($this->adapter, 'withPaymentIntentLock', [
+    expect(fn (): mixed => invokePrivateMethod($this->adapter, 'withPaymentIntentLock', [
         'pi_timeout',
         2,
-        fn () => null,
+        fn (): null => null,
     ]))->toThrow(FOSSBilling\Exception::class, 'Timed out waiting to process this Stripe payment')
         ->and($logger->calls)->toHaveCount(1)
         ->and($logger->calls[0]['method'])->toBe('warning')
