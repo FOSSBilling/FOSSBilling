@@ -34,8 +34,8 @@ test('legacy email patch restores untouched 0.7.2 defaults without replacing cus
     $updateStatement = Mockery::mock(PDOStatement::class);
     $updateStatement->expects('execute')->with(Mockery::on(function (array $params): bool {
         expect($params['id'])->toBe(1)
-            ->and($params['content'])->not->toContain('|link')
-            ->and($params['content'])->not->toContain('| money');
+            ->and($params['content'])->not->toMatch('/\|\s*link\b/')
+            ->and($params['content'])->not->toMatch('/\|\s*money\b/');
 
         return true;
     }))->andReturnTrue();
