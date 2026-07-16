@@ -2376,12 +2376,11 @@ class UpdatePatcher implements InjectionAwareInterface
         // 0.7.2 upgrade, patch 52 consequently classified untouched built-ins as user
         // overrides and retained Twig filters that no longer exist in 0.8.
         // @see https://github.com/FOSSBilling/FOSSBilling/issues/3985
-        $v072Hashes = [
+        $brokenV072TemplateHashes = [
             'mod_client_confirm' => ['7473f9235472556c07fbb28ca81cd32d5ba059251520938a113322cf9d63e9cf', 'be777c99543dc373d7466cfce4b497b1542a02718927d4e88797abd651a99044'],
             'mod_client_password_reset_information' => ['f4e810c0a880b72dac35d7d7c1317fabdbc253c94b2c40387e72300fc502e75b', '2f5719037fbc92cfc8f6688b0c704ffbe0005ee3fa172a5b77b3f9ae16fe3ab6'],
             'mod_client_password_reset_request' => ['7afb81438ba5fe02b0cb1de5e2a0adafa1d54163fa6db3c594b052ae41d7a702', 'c2c974c9e7dd6418e1505ce3b3c6107427752e7332893b38be9af0ad5af98ead'],
             'mod_client_signup' => ['6f2cbf4dce2868d78962dd5f558782dc39932b94eff5d94a74b4c0b25bd5bc11', '5bee627ec67d303672375552c78b87e6126c25cffb935f44aa18db1493ffda8f'],
-            'mod_email_test' => ['4027353f3eb85a550b896902875f774342102ca7acfd2b12f13facc4caca8a54', '5de62ee3fd867487a7dd19c37f720bfc3ab5b46c689f48c7558e3235c1399630'],
             'mod_invoice_created' => ['60efe042a16f3841b2194dc2324847d7d0ba9dcf91c4dee4ced6c9fb8fc7ff85', '3b9677641c2eb3e8b34abae05596593a66d7014cd5ad40220c1a1ea8614e5b43'],
             'mod_invoice_due_after' => ['25f93a3b7c96de7817ed0a39e7e881bc3cfe502e882a31bd821ee7ddfc90fce6', 'cce15f29e75f5c10221ba67aca1e65408b48562a23d4a1ae921d79ec28f81f4f'],
             'mod_invoice_paid' => ['f652477160cbed14cd4721f1d07f6b1013dfa5f07a14f6917fca929a906b82cf', '74c4e432018002c14b698eb332974691bd61fa30da4b29ac12484669abaabbe6'],
@@ -2411,8 +2410,6 @@ class UpdatePatcher implements InjectionAwareInterface
             'mod_servicelicense_renewed' => ['e84378b8698fec220a03bc1bd84943fa103593804d46bde1fe527b73b7dd027c', '42cfb6531c20ba5994619772c6ddad336941e311ade3ffc8a1b42d137376f737'],
             'mod_servicelicense_suspended' => ['514cb59946a731b9bb9f1180324463eae52fecb8b3ed1a5322ff6d666835f425', 'e340eec846ca44d5606a7e2dcbbe898df95cde58ff9214e1f5b223bc33c0afe3'],
             'mod_servicelicense_unsuspended' => ['9c959a766a9dbc4eeda29040a93fb48d095b0e7f2403b0a0d7f36162aaa749e0', '96c1b1cc94262379db834bc2ce71fbceee00142947f1c85a13d9e032fe3a1695'],
-            'mod_staff_client_order' => ['070ec5ab4051913d7e4d62904da33f5fddbc35cf6a7a2d71df281d43baa4254b', '566c39e8afc2b9665f200478ffd15c52636974e2bb860e00f3d63d95230beb7c'],
-            'mod_staff_client_signup' => ['13018c8f888668bbf731367ca3388a34f7170ff213bf1fa07771c375c4aae775', '75ae9c9f3beae21b07158c08b2fc19e453abd95cdcb014d227d2ec0107a66c94'],
             'mod_staff_password_reset_approve' => ['f4e810c0a880b72dac35d7d7c1317fabdbc253c94b2c40387e72300fc502e75b', '08432b7e7b989b15fb35c0c0bbec965656895fcc600ae1bacc768682f2cbc3a9'],
             'mod_staff_password_reset_request' => ['7afb81438ba5fe02b0cb1de5e2a0adafa1d54163fa6db3c594b052ae41d7a702', '8e8d075aa1cb278f1a19c3b8424fd69e4d04afd539dd3f036de1e8cf26f01d6a'],
             'mod_staff_ticket_close' => ['5b80a40322052bccb1e00854c02fe4ad46be9dfbbdbf0b17a641af99175b72c5', 'a3be974b06446135d1af41f21f35ccc92480cb0034e35f932b3eb97ebad2b402'],
@@ -2425,7 +2422,7 @@ class UpdatePatcher implements InjectionAwareInterface
             'mod_support_ticket_staff_reply' => ['2fb0c49c240c05925211f0bd0e90b3de4ceab4287c1c89be6155f0a3d71d7811', '31b276116db735b2bd758f7091acd24cdb082d9a623630232142a44ad238d4bd'],
         ];
 
-        $this->restoreLegacyDefaultEmailTemplates($v072Hashes);
+        $this->restoreLegacyDefaultEmailTemplates($brokenV072TemplateHashes);
     }
 
     private function generateDownloadableStoredFilename(): string
