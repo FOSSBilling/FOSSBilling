@@ -230,7 +230,7 @@
                                     {% if var is iterable %}
                                         {% for subkey,subvalue in var %}
                                             {% if subvalue is iterable %}
-                                                {% for subsubkey,subsubvalue in var %}
+                                                {% for subsubkey,subsubvalue in subvalue %}
                                                     {% if subsubvalue is not iterable %}
                                                         <tr>
                                                             <td>{{ '{{' }} {{ k }}.{{ subkey }}.{{ subsubkey }}{{ '}}' }}</td>
