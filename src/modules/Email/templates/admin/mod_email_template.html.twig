@@ -334,7 +334,7 @@ You can even use IF statements in email templates: {% if 1 == 2 %}This will neve
 
 {% block js %}
 {% if can_manage_templates %}
-{{ include('partial_email_preview.html.twig') }}
+{{ include('partial_email_preview.html.twig', { allow_popup_escape: true }) }}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Preview button for the main email template
