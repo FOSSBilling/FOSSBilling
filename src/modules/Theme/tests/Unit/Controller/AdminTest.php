@@ -158,3 +158,24 @@ test('save theme settings reads body from request and strips preset control keys
     $response = $controller->save_theme_settings($boxAppMock, 'huraga');
     expect($response)->toBeInstanceOf(Symfony\Component\HttpFoundation\RedirectResponse::class);
 });
+
+test('huraga footer link checkboxes submit canonical enabled values', function (): void {
+    $settingsTemplate = file_get_contents(PATH_THEMES . '/huraga/config/settings.html.twig');
+
+    expect($settingsTemplate)->not->toBeFalse();
+
+    for ($index = 1; $index <= 5; ++$index) {
+        expect($settingsTemplate)->toContain(sprintf(
+            'type="checkbox" name="footer_link_%d_enabled" value="1"',
+            $index,
+        ));
+    }
+});
+
+test('theme settings restore checkbox values saved with the browser default', function (): void {
+    $presetTemplate = file_get_contents(PATH_MODS . '/Theme/templates/admin/mod_theme_preset.html.twig');
+
+    expect($presetTemplate)
+        ->not->toBeFalse()
+        ->toContain("value === 'on'");
+});
