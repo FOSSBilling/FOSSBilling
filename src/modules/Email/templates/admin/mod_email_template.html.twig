@@ -106,7 +106,7 @@
                                                    {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, button: 'Reset'|trans}, reload: true}) }}>
                                                     {{ 'Reset'|trans }}
                                                 </a>
-                                            {% elseif template.is_custom or not template.has_default %}
+                                            {% elseif not template.has_default %}
                                                 <a class="btn btn-danger"
                                                    href="{{ 'email/template_delete'|api_url(query: {'id' : template.id })}}"
                                                    {{ fb_api_link({modal: {type: 'danger', title: 'Are you sure?'|trans, button: 'Delete'|trans}, reload: true}) }}>
