@@ -1,0 +1,16 @@
+{% macro render_vars(vars, prefix = '') %}
+    {% for key, value in vars %}
+        {% set path = prefix is empty ? key : prefix ~ '.' ~ key %}
+        {% if value is sequence and value|length > 0 %}
+            {# Every item in a list has the same shape; one example avoids duplicate rows. #}
+            {{ _self.render_vars(value|slice(0, 1), path) }}
+        {% elseif value is iterable and value|length > 0 %}
+            {{ _self.render_vars(value, path) }}
+        {% else %}
+            <tr>
+                <td>{{ '{{' }} {{ path }} {{ '}}' }}</td>
+                <td>{{ value is iterable ? 'Array [ ]' : value }}</td>
+            </tr>
+        {% endif %}
+    {% endfor %}
+{% endmacro render_vars %}

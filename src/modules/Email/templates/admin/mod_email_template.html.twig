@@ -5,23 +5,6 @@
 {% set can_manage_settings = has_permission('email', 'manage_settings') %}
 {% set can_manage_templates = has_permission('email', 'manage_templates') %}
 
-{% macro render_vars(vars, prefix = '') %}
-    {% for key, value in vars %}
-        {% set path = prefix is empty ? key : prefix ~ '.' ~ key %}
-        {% if value is sequence and value|length > 0 %}
-            {# Every item in a list has the same shape; one example avoids duplicate rows. #}
-            {{ _self.render_vars(value|slice(0, 1), path) }}
-        {% elseif value is iterable and value|length > 0 %}
-            {{ _self.render_vars(value, path) }}
-        {% else %}
-            <tr>
-                <td>{{ '{{' }} {{ path }} {{ '}}' }}</td>
-                <td>{{ value is iterable ? 'Array [ ]' : value }}</td>
-            </tr>
-        {% endif %}
-    {% endfor %}
-{% endmacro render_vars %}
-
 {% block breadcrumbs %}
     <ol class="breadcrumb">
         <li class="breadcrumb-item">
@@ -234,6 +217,7 @@
                         card_class: 'm-3'
                     } %}
                         {% block section_content %}
+                        {% import 'partial_email_template_macros.html.twig' as email_template %}
                         <div class="table-responsive">
                             <table class="table card-table table-vcenter table-striped text-nowrap">
                                 <thead>
@@ -244,7 +228,7 @@
                                 </thead>
                                 <tbody>
                                 {% if template.vars|length > 0 %}
-                                    {{ _self.render_vars(template.vars) }}
+                                    {{ email_template.render_vars(template.vars) }}
                                 {% else %}
                                     <tr>
                                         <td class="text-muted" colspan="2">{{ 'This template has no known parameters, you may need to take an action to trigger its sending before they become known.'|trans }}</td>

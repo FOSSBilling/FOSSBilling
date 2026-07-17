@@ -161,6 +161,41 @@ test('email template example renders without calling email globals in admin cont
         ->not->toContain('{% endapply %}');
 });
 
+test('email template variable macro renders nested variables inside an embed', function (): void {
+    $macro = file_get_contents(PATH_MODS . '/Email/templates/admin/partial_email_template_macros.html.twig');
+    expect($macro)->not->toBeFalse();
+
+    $twig = new Environment(new ArrayLoader([
+        'page' => <<<'TWIG'
+            {% embed 'section' %}
+                {% block content %}
+                    {% import 'macros' as email_template %}
+                    {{ email_template.render_vars(vars) }}
+                {% endblock %}
+            {% endembed %}
+            TWIG,
+        'section' => '{% block content %}{% endblock %}',
+        'macros' => $macro,
+    ]), [
+        'strict_variables' => true,
+        'cache' => false,
+    ]);
+
+    $html = $twig->render('page', [
+        'vars' => [
+            'ticket' => [
+                'client' => [
+                    'email' => 'client@example.com',
+                ],
+            ],
+        ],
+    ]);
+
+    expect($html)
+        ->toContain('{{ ticket.client.email }}')
+        ->toContain('client@example.com');
+});
+
 test('orderbutton product configuration renders a hosting product', function (): void {
     $html = (new StrictTemplateRenderer())->renderTemplate(
         PATH_MODS . '/Orderbutton/templates/client/mod_orderbutton_product_configuration.html.twig',
