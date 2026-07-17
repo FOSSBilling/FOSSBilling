@@ -6,11 +6,32 @@ use FOSSBilling\UpdatePatcher;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
-test('legacy email template repair follows patch 89', function (): void {
+test('client balance gateway repair follows the legacy email template repair', function (): void {
     $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 89);
 
     expect($patches)->toHaveKey(90)
-        ->and($patches[90][1])->toBe('patch90');
+        ->and($patches[90][1])->toBe('patch90')
+        ->and($patches)->toHaveKey(91)
+        ->and($patches[91][1])->toBe('patch91');
+});
+
+test('client balance gateway patch restores one-time payments', function (): void {
+    $statement = Mockery::mock(PDOStatement::class);
+    $statement->expects('execute')
+        ->with(['gateway' => 'ClientBalance'])
+        ->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')
+        ->with('UPDATE pay_gateway SET allow_single = 1 WHERE gateway = :gateway AND allow_single = 0')
+        ->andReturn($statement);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch91'))->invoke($patcher);
 });
 
 test('legacy email patch restores untouched 0.7.2 defaults without replacing customizations', function (): void {
