@@ -500,6 +500,7 @@ class UpdatePatcher implements InjectionAwareInterface
             88 => 'patch88',
             89 => 'patch89',
             90 => 'patch90',
+            91 => 'patch91',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2423,6 +2424,17 @@ class UpdatePatcher implements InjectionAwareInterface
         ];
 
         $this->restoreLegacyDefaultEmailTemplates($brokenV072TemplateHashes);
+    }
+
+    private function patch91(): void
+    {
+        // ClientBalance did not declare its one-time payment capability, so the gateway
+        // settings form hid the option and persisted allow_single = 0 whenever it was saved.
+        // @see https://github.com/FOSSBilling/FOSSBilling/issues/3989
+        $this->executeSql(
+            'UPDATE pay_gateway SET allow_single = 1 WHERE gateway = :gateway AND allow_single = 0',
+            ['gateway' => 'ClientBalance']
+        );
     }
 
     private function generateDownloadableStoredFilename(): string

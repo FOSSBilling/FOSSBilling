@@ -29,6 +29,8 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
     public static function getConfig(): array
     {
         return [
+            'supports_one_time_payments' => true,
+            'supports_subscriptions' => false,
             'logo' => [
                 'logo' => 'clientbalance.png',
                 'height' => '50px',
