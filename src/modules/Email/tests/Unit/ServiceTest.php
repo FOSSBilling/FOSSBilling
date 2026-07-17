@@ -1029,7 +1029,7 @@ test('templateCreate creates new template', function (): void {
     expect($result->getActionCode())->toBe($data['action_code']);
 });
 
-test('templateBatchRegenerate resets overridden built-in templates', function (): void {
+test('templateBatchRegenerate resets existing built-in templates skipped by active module sync', function (): void {
     $template = emailTemplate('mod_invoice_created', 1, [
         'subject' => 'Legacy subject',
         'content' => '{{ invoice.total|money(invoice.currency) }}',
@@ -1041,23 +1041,19 @@ test('templateBatchRegenerate resets overridden built-in templates', function ()
         'is_custom' => true,
     ]);
 
-    $templateRepository = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateRepository::class)->shouldIgnoreMissing();
-    $templateRepository->shouldReceive('findOneByActionCode')
-        ->andReturnUsing(static fn (string $code): EmailTemplate => match ($code) {
-            'mod_invoice_created' => $template,
-            'mod_invoice_paid' => $customTemplate,
-            default => emailTemplate($code, null, ['is_custom' => true]),
-        });
+    $templateRepository = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateRepository::class);
+    $templateRepository->shouldReceive('findOneByActionCode')->never();
+    $templateRepository->shouldReceive('findAll')->once()->andReturn([$template, $customTemplate]);
 
     $em = emailBuildEm(templateRepo: $templateRepository);
     $em->shouldReceive('flush')->once();
 
     $extensionService = Mockery::mock(Box\Mod\Extension\Service::class);
-    $extensionService->shouldReceive('isExtensionActive')
-        ->andReturnUsing(static fn (string $type, string $module): bool => $type === 'mod' && $module === 'invoice');
+    $extensionService->shouldReceive('isExtensionActive')->andReturnFalse();
 
     $di = container();
     $di['em'] = $em;
+    $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(moduleService(['extension' => $extensionService]));
 
     $service = new Box\Mod\Email\Service();
@@ -1069,6 +1065,9 @@ test('templateBatchRegenerate resets overridden built-in templates', function ()
         ->and($template->getContent())->not->toContain('|money')
         ->and($template->hasError())->toBeFalse()
         ->and($customTemplate->getContent())->toBe('Custom template content');
+
+    $logMessages = array_map(static fn (array $call): string => $call['params'][0], $di['logger']->calls);
+    expect($logMessages)->toContain('Regenerated 1 file-backed email templates.');
 });
 
 test('templateBatchDisable disables all templates', function (): void {
