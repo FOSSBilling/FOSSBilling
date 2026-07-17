@@ -329,7 +329,7 @@
                                 </div>
                             </div>
                             <div class="d-flex justify-content-end gap-2 mt-3">
-                                <a class="btn btn-outline-secondary" href="{{ request_path|url({ tab: 'queue' }) }}">{{ 'Reset'|trans }}</a>
+                                <a class="btn btn-outline-secondary" href="{{ request_path|url(query: { tab: 'queue' }) }}">{{ 'Reset'|trans }}</a>
                                 <button class="btn btn-primary" type="submit">
                                     <svg class="icon">
                                         <use href="#filter" />
