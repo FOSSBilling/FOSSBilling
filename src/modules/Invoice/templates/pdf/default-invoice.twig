@@ -29,7 +29,7 @@
 {% set address = address_lines|join(', ') %}
 
 <!DOCTYPE html>
-<html>
+<html lang="{{ locale|replace({'_': '-'}) }}">
 	<head>
 		<meta http-equiv='Content-Type' content='text/html; charset=utf-8'/>
 		<title>{{ invoice.serie_nr }}</title>

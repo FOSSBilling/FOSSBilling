@@ -5,6 +5,64 @@
  * The backend used for PDF generation is Dompdf, which has fairly limited CSS support, roughly CSS 2.1
  */
 
+/* Noto Thai and Lao have no italic faces; use their upright glyphs for emphasized text. */
+
+@font-face {
+    font-family: "Noto Sans Thai";
+    font-style: normal;
+    font-weight: normal;
+    src: url("fonts/NotoSansThai-Regular.ttf") format("truetype");
+}
+
+@font-face {
+    font-family: "Noto Sans Thai";
+    font-style: italic;
+    font-weight: normal;
+    src: url("fonts/NotoSansThai-Regular.ttf") format("truetype");
+}
+
+@font-face {
+    font-family: "Noto Sans Thai";
+    font-style: normal;
+    font-weight: bold;
+    src: url("fonts/NotoSansThai-Bold.ttf") format("truetype");
+}
+
+@font-face {
+    font-family: "Noto Sans Thai";
+    font-style: italic;
+    font-weight: bold;
+    src: url("fonts/NotoSansThai-Bold.ttf") format("truetype");
+}
+
+@font-face {
+    font-family: "Noto Sans Lao";
+    font-style: normal;
+    font-weight: normal;
+    src: url("fonts/NotoSansLao-Regular.ttf") format("truetype");
+}
+
+@font-face {
+    font-family: "Noto Sans Lao";
+    font-style: italic;
+    font-weight: normal;
+    src: url("fonts/NotoSansLao-Regular.ttf") format("truetype");
+}
+
+@font-face {
+    font-family: "Noto Sans Lao";
+    font-style: normal;
+    font-weight: bold;
+    src: url("fonts/NotoSansLao-Bold.ttf") format("truetype");
+}
+
+@font-face {
+    font-family: "Noto Sans Lao";
+    font-style: italic;
+    font-weight: bold;
+    src: url("fonts/NotoSansLao-Bold.ttf") format("truetype");
+}
+
 hr.TopSectionDivider {
     border-top: 8px solid #bbb;
     position: relative;
@@ -84,10 +142,19 @@ tr:nth-of-type(odd) {
 
 /**
  * The font family used heavily influences the character support for the PDF generator.
- * DejaVu Sans offers very good support and is the recommended font to use.
+ * Dompdf selects the first font containing each glyph. Keep DejaVu Sans first
+ * for mixed-language content, then prefer the locale-specific font when known.
  */
 body {
-    font-family: DejaVu Sans;
+    font-family: DejaVu Sans, "Noto Sans Thai", "Noto Sans Lao";
+}
+
+html[lang^="th"] body {
+    font-family: "Noto Sans Thai", DejaVu Sans, "Noto Sans Lao";
+}
+
+html[lang^="lo"] body {
+    font-family: "Noto Sans Lao", DejaVu Sans, "Noto Sans Thai";
 }
 
 /**
