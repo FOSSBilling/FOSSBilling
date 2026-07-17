@@ -1006,8 +1006,51 @@ test('templateCreate creates new template', function (): void {
     expect($result->getActionCode())->toBe($data['action_code']);
 });
 
-test('templateBatchDisable disables all templates', function (): void {
+test('templateBatchRegenerate resets overridden built-in templates', function (): void {
+    $template = emailTemplate('mod_invoice_created', 1, [
+        'subject' => 'Legacy subject',
+        'content' => '{{ invoice.total|money(invoice.currency) }}',
+        'is_overridden' => true,
+        'last_error' => 'Unknown "money" filter',
+    ]);
+    $customTemplate = emailTemplate('mod_invoice_paid', 2, [
+        'content' => 'Custom template content',
+        'is_custom' => true,
+    ]);
+
+    $templateRepository = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateRepository::class)->shouldIgnoreMissing();
+    $templateRepository->shouldReceive('findOneByActionCode')
+        ->andReturnUsing(static fn (string $code): EmailTemplate => match ($code) {
+            'mod_invoice_created' => $template,
+            'mod_invoice_paid' => $customTemplate,
+            default => emailTemplate($code, null, ['is_custom' => true]),
+        });
+
+    $em = emailBuildEm(templateRepo: $templateRepository);
+    $em->shouldReceive('flush')->once();
+
+    $extensionService = Mockery::mock(Box\Mod\Extension\Service::class);
+    $extensionService->shouldReceive('isExtensionActive')
+        ->andReturnUsing(static fn (string $type, string $module): bool => $type === 'mod' && $module === 'invoice');
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(moduleService(['extension' => $extensionService]));
+
     $service = new Box\Mod\Email\Service();
+    $service->setDi($di);
+
+    expect($service->templateBatchRegenerate())->toBeTrue()
+        ->and($template->isOverridden())->toBeFalse()
+        ->and($template->getSubject())->not->toBe('Legacy subject')
+        ->and($template->getContent())->not->toContain('|money')
+        ->and($template->hasError())->toBeFalse()
+        ->and($customTemplate->getContent())->toBe('Custom template content');
+});
+
+test('templateBatchDisable disables all templates', function (): void {
+    $service = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
+    $service->shouldReceive('templateBatchGenerate')->once()->withNoArgs()->andReturnTrue();
 
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -1019,7 +1062,8 @@ test('templateBatchDisable disables all templates', function (): void {
 });
 
 test('templateBatchEnable enables all templates', function (): void {
-    $service = new Box\Mod\Email\Service();
+    $service = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
+    $service->shouldReceive('templateBatchGenerate')->once()->withNoArgs()->andReturnTrue();
 
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -1223,6 +1267,46 @@ test('validateAllTemplates reports invalid templates', function (): void {
     expect($result['invalid'])->toBe(1);
     expect($result['errors'])->toHaveCount(1);
     expect($result['errors'][0]['action_code'])->toBe('mod_email_broken');
+    expect($di['logger']->calls)->toContainEqual([
+        'method' => 'warning',
+        'params' => ['Email template validation failed for "mod_email_broken": Email template syntax error: Unknown "filter" filter', []],
+    ]);
+});
+
+test('validateAllTemplates reports stored variable errors instead of aborting', function (): void {
+    $service = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
+    $template = emailTemplate('mod_email_broken_vars', 1, [
+        'subject' => 'Hello',
+        'content' => 'World',
+    ]);
+
+    $repository = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateRepository::class)->shouldIgnoreMissing();
+    $repository->shouldReceive('findAll')->once()->andReturn([$template]);
+    $service->shouldReceive('getVars')->once()->with($template)->andThrow(new RuntimeException('Unable to decrypt template variables'));
+
+    $systemService = Mockery::mock();
+    $systemService->shouldNotReceive('renderEmailTplString');
+
+    $em = emailBuildEm();
+    $em->shouldReceive('flush')->once();
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(moduleService(['system' => $systemService]));
+    $service->setDi($di);
+
+    $reflection = new ReflectionProperty($service, 'templateRepository');
+    $reflection->setValue($service, $repository);
+
+    expect($service->validateAllTemplates())->toMatchArray([
+        'valid' => 0,
+        'invalid' => 1,
+        'errors' => [[
+            'id' => 1,
+            'action_code' => 'mod_email_broken_vars',
+            'error' => 'Unable to decrypt template variables',
+        ]],
+    ]);
 });
 
 test('validateAllTemplates clears previous errors on valid templates', function (): void {

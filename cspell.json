@@ -57,7 +57,8 @@
         "inversed",
         "Autoresponder",
         "initialises",
-        "WORKTREE"
+        "WORKTREE",
+        "previewable"
     ],
 
     "ignoreWords": [

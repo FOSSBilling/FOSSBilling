@@ -518,11 +518,11 @@ test('template reset', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('batch template generate', function (): void {
+test('batch template generate regenerates built-in templates', function (): void {
     $adminApi = apiEndpoint(new Box\Mod\Email\Api\Admin());
     $emailService = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
     $emailService
-    ->shouldReceive('templateBatchGenerate')
+    ->shouldReceive('templateBatchRegenerate')
     ->atLeast()->once()
     ->andReturn(true);
 
