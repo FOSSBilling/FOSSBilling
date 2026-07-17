@@ -267,6 +267,7 @@ class Service implements InjectionAwareInterface
             $supportTicketService = $di['mod_service']('support');
             $ticketModel = $supportTicketService->getTicketById((int) $params['id']);
             $ticket = $supportTicketService->toApiArray($ticketModel, true);
+            $ticket['priority'] = $ticketModel->getPriority();
 
             $helpdeskId = $ticketModel->getSupportHelpdeskId();
             $helpdeskModel = $helpdeskId !== null ? $di['em']->getRepository(Helpdesk::class)->find($helpdeskId) : null;
@@ -300,6 +301,7 @@ class Service implements InjectionAwareInterface
             $supportTicketService = $di['mod_service']('support');
             $ticketModel = $supportTicketService->getTicketById((int) $params['id']);
             $ticket = $supportTicketService->toApiArray($ticketModel, true);
+            $ticket['priority'] = $ticketModel->getPriority();
 
             $email = [];
             $email['to_staff'] = true;
@@ -322,6 +324,7 @@ class Service implements InjectionAwareInterface
             $supportTicketService = $di['mod_service']('support');
             $ticketModel = $supportTicketService->getTicketById((int) $params['id']);
             $ticket = $supportTicketService->toApiArray($ticketModel, true);
+            $ticket['priority'] = $ticketModel->getPriority();
             $email = [];
             $email['to_staff'] = true;
             $email['code'] = 'mod_staff_ticket_close';
