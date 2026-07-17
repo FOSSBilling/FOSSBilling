@@ -32,7 +32,7 @@
   "devDependencies": {
     "@types/node": "24.13.3",
     "autoprefixer": "10.5.2",
-    "ckeditor5": "48.3.0",
+    "ckeditor5": "48.3.1",
     "esbuild": "0.28.1",
     "github-markdown-css": "5.9.0",
     "postcss": "8.5.19",
