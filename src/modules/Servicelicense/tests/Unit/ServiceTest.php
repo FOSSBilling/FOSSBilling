@@ -12,8 +12,10 @@ declare(strict_types=1);
 
 use Box\Mod\Order\Service as OrderService;
 use Box\Mod\Product\Entity\Product;
+use Box\Mod\Servicelicense\Entity\ServiceLicense;
 use Box\Mod\Servicelicense\Server;
 use Box\Mod\Servicelicense\Service;
+use Doctrine\ORM\EntityManagerInterface;
 
 use function Tests\Helpers\container;
 
@@ -23,6 +25,25 @@ function serviceLicenseCreateProductEntity(string $config): Product
     $product->setConfig($config);
 
     return $product;
+}
+
+function serviceLicenseCreateEmMock(): EntityManagerInterface&Mockery\MockInterface
+{
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->byDefault();
+    $emMock->shouldReceive('flush')->byDefault();
+    $emMock->shouldReceive('remove')->byDefault();
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
+
+    return $emMock;
+}
+
+function serviceLicenseCreateDi(): Pimple\Container
+{
+    $di = container();
+    $di['em'] = serviceLicenseCreateEmMock();
+
+    return $di;
 }
 
 test('attach order config empty product config', function (): void {
@@ -57,23 +78,22 @@ test('action create', function (): void {
     $clientOrderModel = new Model_ClientOrder();
     $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $serviceLicenseModel = new Model_ServiceLicense();
-    $serviceLicenseModel->loadBean(new Tests\Helpers\DummyBean());
-
-    $dbMock = Mockery::mock(Box_Database::class)->shouldIgnoreMissing();
-    $dbMock->shouldReceive('dispense')->atLeast()->once()->andReturn($serviceLicenseModel);
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
 
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([]);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $service->setDi($di);
 
     $result = $service->action_create($clientOrderModel);
-    expect($result)->toBeInstanceOf(Model_ServiceLicense::class);
+    expect($result)->toBeInstanceOf(ServiceLicense::class);
 });
 
 test('action activate', function (): void {
@@ -89,11 +109,17 @@ test('action activate', function (): void {
     $orderServiceMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([]);
     $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($serviceLicenseModel);
 
-    $dbMock = Mockery::mock(Box_Database::class)->shouldIgnoreMissing();
-    $dbMock->shouldReceive('store')->atLeast()->once();
+    $licenseRepoMock = Mockery::mock(Box\Mod\Servicelicense\Repository\ServiceLicenseRepository::class);
+    $licenseRepoMock->shouldReceive('findOneByLicenseKey')->andReturn(null);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
+    $emMock->shouldReceive('getRepository')->with(ServiceLicense::class)->andReturn($licenseRepoMock);
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $service->setDi($di);
@@ -115,14 +141,21 @@ test('action activate license collision', function (): void {
     $orderServiceMock->shouldReceive('getConfig')->atLeast()->once()->andReturn(['iterations' => 3]);
     $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($serviceLicenseModel);
 
-    $dbMock = Mockery::mock(Box_Database::class)->shouldIgnoreMissing();
-    $dbMock->shouldReceive('findOne')
+    $licenseRepoMock = Mockery::mock(Box\Mod\Servicelicense\Repository\ServiceLicenseRepository::class);
+    $collisionEntity = new ServiceLicense();
+    $collisionEntity->setId(99);
+    $licenseRepoMock->shouldReceive('findOneByLicenseKey')
         ->times(3)
-        ->andReturn($serviceLicenseModel, $serviceLicenseModel, null);
-    $dbMock->shouldReceive('store')->atLeast()->once();
+        ->andReturn($collisionEntity, $collisionEntity, null);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
+    $emMock->shouldReceive('getRepository')->with(ServiceLicense::class)->andReturn($licenseRepoMock);
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $service->setDi($di);
@@ -144,12 +177,19 @@ test('action activate license collision max iterations exception', function (): 
     $orderServiceMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([]);
     $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($serviceLicenseModel);
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldNotReceive('store');
-    $dbMock->shouldReceive('findOne')->atLeast()->once()->andReturn($serviceLicenseModel);
+    $licenseRepoMock = Mockery::mock(Box\Mod\Servicelicense\Repository\ServiceLicenseRepository::class);
+    $collisionMaxEntity = new ServiceLicense();
+    $collisionMaxEntity->setId(99);
+    $licenseRepoMock->shouldReceive('findOneByLicenseKey')->atLeast()->once()->andReturn($collisionMaxEntity);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldNotReceive('persist');
+    $emMock->shouldNotReceive('flush');
+    $emMock->shouldReceive('getRepository')->with(ServiceLicense::class)->andReturn($licenseRepoMock);
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $service->setDi($di);
@@ -171,7 +211,11 @@ test('action activate plugin not found', function (): void {
     $orderServiceMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([]);
     $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($serviceLicenseModel);
 
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
+
     $di = container();
+    $di['em'] = $emMock;
     $di['logger'] = new Box_Log();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
@@ -190,7 +234,11 @@ test('action activate order activation exception', function (): void {
     $orderServiceMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([]);
     $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn(null);
 
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
+
     $di = container();
+    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $service->setDi($di);
@@ -210,11 +258,13 @@ test('action delete', function (): void {
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($serviceLicenseModel);
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('trash')->atLeast()->once();
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('remove')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $service->setDi($di);
@@ -229,11 +279,13 @@ test('reset', function (): void {
     $eventMock = Mockery::mock(Box_EventManager::class);
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('store')->atLeast()->once();
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Box_Log();
     $di['events_manager'] = $eventMock;
 
@@ -254,7 +306,11 @@ test('is license active', function (): void {
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getServiceOrder')->atLeast()->once()->andReturn($clientOrderModel);
 
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
+
     $di = container();
+    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $service->setDi($di);
@@ -270,7 +326,11 @@ test('is license not active', function (): void {
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getServiceOrder')->atLeast()->once()->andReturn(null);
 
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
+
     $di = container();
+    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $service->setDi($di);
@@ -285,11 +345,13 @@ test('is valid ip', function (): void {
     $serviceLicenseModel->ips = '{}';
     $value = '1.1.1.1';
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('store')->atLeast()->once();
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
 
     $service->setDi($di);
 
@@ -304,11 +366,13 @@ test('is valid ip test2', function (): void {
     $serviceLicenseModel->ips = '["2.2.2.2"]';
     $value = '1.1.1.1';
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('store')->atLeast()->once();
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
 
     $service->setDi($di);
 
@@ -335,11 +399,13 @@ test('is valid version', function (): void {
     $serviceLicenseModel->versions = '{}';
     $value = '1.0';
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('store')->atLeast()->once();
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
 
     $service->setDi($di);
 
@@ -354,11 +420,13 @@ test('is valid version test2', function (): void {
     $serviceLicenseModel->versions = '["2.0"]';
     $value = '1.0';
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('store')->atLeast()->once();
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
 
     $service->setDi($di);
 
@@ -385,11 +453,13 @@ test('is valid path', function (): void {
     $serviceLicenseModel->paths = '{}';
     $value = '/var';
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('store')->atLeast()->once();
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
 
     $service->setDi($di);
 
@@ -404,11 +474,13 @@ test('is valid path test2', function (): void {
     $serviceLicenseModel->paths = '["/"]';
     $value = '/var';
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('store')->atLeast()->once();
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
 
     $service->setDi($di);
 
@@ -435,11 +507,13 @@ test('is valid host', function (): void {
     $serviceLicenseModel->hosts = '{}';
     $value = 'site.com';
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('store')->atLeast()->once();
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
 
     $service->setDi($di);
 
@@ -454,11 +528,13 @@ test('is valid host test2', function (): void {
     $serviceLicenseModel->hosts = '["fossbilling.org"]';
     $value = 'site.com';
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('store')->atLeast()->once();
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
 
     $service->setDi($di);
 
@@ -503,7 +579,11 @@ test('get owner name', function (): void {
     $dbMock = Mockery::mock(Box_Database::class);
     $dbMock->shouldReceive('load')->atLeast()->once()->andReturn($clientModel);
 
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
+
     $di = container();
+    $di['em'] = $emMock;
     $di['db'] = $dbMock;
 
     $service->setDi($di);
@@ -526,7 +606,11 @@ test('get expiration date', function (): void {
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getServiceOrder')->atLeast()->once()->andReturn($clientOrderModel);
 
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
+
     $di = container();
+    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $service->setDi($di);
@@ -575,11 +659,13 @@ test('update', function (): void {
     $serviceLicenseModel = new Model_ServiceLicense();
     $serviceLicenseModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('store')->atLeast()->once();
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
 
     $service->setDi($di);
     $result = $service->update($serviceLicenseModel, $data);

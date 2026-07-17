@@ -12,6 +12,8 @@ declare(strict_types=1);
 namespace Box\Mod\Servicelicense;
 
 use Box\Mod\Product\Entity\Product;
+use Box\Mod\Servicelicense\Entity\ServiceLicense;
+use Box\Mod\Servicelicense\Repository\ServiceLicenseRepository;
 use FOSSBilling\InjectionAwareInterface;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
@@ -39,6 +41,11 @@ class Service implements InjectionAwareInterface
                 'description' => __trans('Allows the staff member to update and reset license validation rules.'),
             ],
         ];
+    }
+
+    public function getServiceLicenseRepository(): ServiceLicenseRepository
+    {
+        return $this->di['em']->getRepository(ServiceLicense::class);
     }
 
     /**
@@ -76,7 +83,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @return \Model_ServiceLicense
+     * @return \Model_ServiceLicense|ServiceLicense
      */
     public function action_create(\Model_ClientOrder $order)
     {
@@ -84,22 +91,21 @@ class Service implements InjectionAwareInterface
         $c = $orderService->getConfig($order);
         $this->validateOrderData($c);
 
-        $model = $this->di['db']->dispense('ServiceLicense');
-        $model->client_id = $order->client_id;
-        $model->validate_ip = (bool) ($c['validate_ip'] ?? false);
-        $model->validate_host = (bool) ($c['validate_host'] ?? false);
-        $model->validate_path = (bool) ($c['validate_path'] ?? false);
-        $model->validate_version = (bool) ($c['validate_version'] ?? false);
-        $model->plugin = $c['plugin'] ?? 'Simple';
+        $model = new ServiceLicense();
+        $model->setClientId($order->client_id);
+        $model->setValidateIp((bool) ($c['validate_ip'] ?? false));
+        $model->setValidateHost((bool) ($c['validate_host'] ?? false));
+        $model->setValidatePath((bool) ($c['validate_path'] ?? false));
+        $model->setValidateVersion((bool) ($c['validate_version'] ?? false));
+        $model->setPlugin($c['plugin'] ?? 'Simple');
 
-        $model->ips = null;
-        $model->versions = null;
-        $model->hosts = null;
-        $model->paths = null;
+        $model->setIps(null);
+        $model->setVersions(null);
+        $model->setHosts(null);
+        $model->setPaths(null);
 
-        $model->created_at = date('Y-m-d H:i:s');
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $this->di['em']->persist($model);
+        $this->di['em']->flush();
 
         return $model;
     }
@@ -110,14 +116,14 @@ class Service implements InjectionAwareInterface
         $c = $orderService->getConfig($order);
         $iterations = $c['iterations'] ?? 10;
         $model = $orderService->getOrderService($order);
-        if (!$model instanceof \Model_ServiceLicense) {
+        if (!$model instanceof \Model_ServiceLicense && !$model instanceof ServiceLicense) {
             throw new \FOSSBilling\Exception('Could not activate order. Service was not created');
         }
 
         $plugin = $this->_getPlugin($model);
 
         if (!is_object($plugin)) {
-            throw new \FOSSBilling\Exception('License plugin :plugin was not found.', [':plugin' => $model->plugin]);
+            throw new \FOSSBilling\Exception('License plugin :plugin was not found.', [':plugin' => $this->_getModelProperty($model, 'plugin')]);
         }
 
         if (!method_exists($plugin, 'generate')) {
@@ -134,11 +140,12 @@ class Service implements InjectionAwareInterface
             if ($i++ >= $iterations) {
                 throw new \FOSSBilling\Exception('Maximum number of iterations reached while generating license key');
             }
-        } while ($this->di['db']->findOne('ServiceLicense', 'license_key = :license_key', [':license_key' => $licenseKey]) !== null);
+        } while ($this->getServiceLicenseRepository()->findOneByLicenseKey($licenseKey) !== null);
 
-        $model->license_key = $licenseKey;
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $this->_setModelProperty($model, 'license_key', $licenseKey);
+        $this->_setModelProperty($model, 'updated_at', date('Y-m-d H:i:s'));
+        $this->di['em']->persist($model);
+        $this->di['em']->flush();
 
         return true;
     }
@@ -187,42 +194,44 @@ class Service implements InjectionAwareInterface
     {
         $orderService = $this->di['mod_service']('order');
         $service = $orderService->getOrderService($order);
-        if ($service instanceof \Model_ServiceLicense) {
-            $this->di['db']->trash($service);
+        if ($service instanceof \Model_ServiceLicense || $service instanceof ServiceLicense) {
+            $this->di['em']->remove($service);
+            $this->di['em']->flush();
         }
     }
 
-    public function reset(\Model_ServiceLicense $model): bool
+    public function reset(\Model_ServiceLicense|ServiceLicense $model): bool
     {
         $data = [
-            'id' => $model->id,
-            'ips' => $model->ips,
-            'hosts' => $model->hosts,
-            'paths' => $model->paths,
-            'versions' => $model->versions,
-            'client_id' => $model->client_id,
+            'id' => $this->_getModelProperty($model, 'id'),
+            'ips' => $this->_getModelProperty($model, 'ips'),
+            'hosts' => $this->_getModelProperty($model, 'hosts'),
+            'paths' => $this->_getModelProperty($model, 'paths'),
+            'versions' => $this->_getModelProperty($model, 'versions'),
+            'client_id' => $this->_getModelProperty($model, 'client_id'),
         ];
         $this->di['events_manager']->fire(['event' => 'onBeforeServicelicenseReset', 'params' => $data]);
 
-        $model->ips = json_encode([]);
-        $model->hosts = json_encode([]);
-        $model->paths = json_encode([]);
-        $model->versions = json_encode([]);
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
-        $this->di['logger']->info('Reset license %s information', $model->id);
+        $this->_setModelProperty($model, 'ips', json_encode([]));
+        $this->_setModelProperty($model, 'hosts', json_encode([]));
+        $this->_setModelProperty($model, 'paths', json_encode([]));
+        $this->_setModelProperty($model, 'versions', json_encode([]));
+        $this->_setModelProperty($model, 'updated_at', date('Y-m-d H:i:s'));
+        $this->di['em']->persist($model);
+        $this->di['em']->flush();
+        $this->di['logger']->info('Reset license %s information', $this->_getModelProperty($model, 'id'));
 
         $data = [
-            'id' => $model->id,
-            'client_id' => $model->client_id,
-            'updated_at' => $model->updated_at,
+            'id' => $this->_getModelProperty($model, 'id'),
+            'client_id' => $this->_getModelProperty($model, 'client_id'),
+            'updated_at' => $model instanceof ServiceLicense ? $model->getUpdatedAt() : $model->updated_at,
         ];
         $this->di['events_manager']->fire(['event' => 'onAfterServicelicenseReset', 'params' => $data]);
 
         return true;
     }
 
-    public function isLicenseActive(\Model_ServiceLicense $model)
+    public function isLicenseActive(\Model_ServiceLicense|ServiceLicense $model)
     {
         $orderService = $this->di['mod_service']('order');
         $o = $orderService->getServiceOrder($model);
@@ -233,16 +242,17 @@ class Service implements InjectionAwareInterface
         return false;
     }
 
-    public function isValidIp(\Model_ServiceLicense $model, $value)
+    public function isValidIp(\Model_ServiceLicense|ServiceLicense $model, $value)
     {
-        $defined = $model->getAllowedIps();
+        $defined = $model instanceof ServiceLicense ? $model->getAllowedIps() : $model->getAllowedIps();
         if (empty($defined)) {
             $this->_addValue($model, 'ips', $value);
 
             return true;
         }
 
-        if (!$model->validate_ip) {
+        $validateIp = $model instanceof ServiceLicense ? $model->getValidateIp() : $model->validate_ip;
+        if (!$validateIp) {
             $this->_addValue($model, 'ips', $value);
 
             return true;
@@ -251,16 +261,17 @@ class Service implements InjectionAwareInterface
         return in_array($value, $defined);
     }
 
-    public function isValidVersion(\Model_ServiceLicense $model, $value)
+    public function isValidVersion(\Model_ServiceLicense|ServiceLicense $model, $value)
     {
-        $defined = $model->getAllowedVersions();
+        $defined = $model instanceof ServiceLicense ? $model->getAllowedVersions() : $model->getAllowedVersions();
         if (empty($defined)) {
             $this->_addValue($model, 'versions', $value);
 
             return true;
         }
 
-        if (!$model->validate_version) {
+        $validateVersion = $model instanceof ServiceLicense ? $model->getValidateVersion() : $model->validate_version;
+        if (!$validateVersion) {
             $this->_addValue($model, 'versions', $value);
 
             return true;
@@ -269,16 +280,17 @@ class Service implements InjectionAwareInterface
         return in_array($value, $defined);
     }
 
-    public function isValidPath(\Model_ServiceLicense $model, $value)
+    public function isValidPath(\Model_ServiceLicense|ServiceLicense $model, $value)
     {
-        $defined = $model->getAllowedPaths();
+        $defined = $model instanceof ServiceLicense ? $model->getAllowedPaths() : $model->getAllowedPaths();
         if (empty($defined)) {
             $this->_addValue($model, 'paths', $value);
 
             return true;
         }
 
-        if (!$model->validate_path) {
+        $validatePath = $model instanceof ServiceLicense ? $model->getValidatePath() : $model->validate_path;
+        if (!$validatePath) {
             $this->_addValue($model, 'paths', $value);
 
             return true;
@@ -287,16 +299,17 @@ class Service implements InjectionAwareInterface
         return in_array($value, $defined);
     }
 
-    public function isValidHost(\Model_ServiceLicense $model, $value)
+    public function isValidHost(\Model_ServiceLicense|ServiceLicense $model, $value)
     {
-        $defined = $model->getAllowedHosts();
+        $defined = $model instanceof ServiceLicense ? $model->getAllowedHosts() : $model->getAllowedHosts();
         if (empty($defined)) {
             $this->_addValue($model, 'hosts', $value);
 
             return true;
         }
 
-        if (!$model->validate_host) {
+        $validateHost = $model instanceof ServiceLicense ? $model->getValidateHost() : $model->validate_host;
+        if (!$validateHost) {
             $this->_addValue($model, 'hosts', $value);
 
             return true;
@@ -305,7 +318,7 @@ class Service implements InjectionAwareInterface
         return in_array($value, $defined);
     }
 
-    public function getAdditionalParams(\Model_ServiceLicense $model, $data = []): array
+    public function getAdditionalParams(\Model_ServiceLicense|ServiceLicense $model, $data = []): array
     {
         $plugin = $this->_getPlugin($model);
         if (is_object($plugin) && method_exists($plugin, 'validate')) {
@@ -318,14 +331,15 @@ class Service implements InjectionAwareInterface
         return [];
     }
 
-    public function getOwnerName(\Model_ServiceLicense $model)
+    public function getOwnerName(\Model_ServiceLicense|ServiceLicense $model)
     {
-        $client = $this->di['db']->load('Client', $model->client_id);
+        $clientId = $model instanceof ServiceLicense ? $model->getClientId() : $model->client_id;
+        $client = $this->di['db']->load('Client', $clientId);
 
         return $client->getFullName();
     }
 
-    public function getExpirationDate(\Model_ServiceLicense $model)
+    public function getExpirationDate(\Model_ServiceLicense|ServiceLicense $model)
     {
         $orderService = $this->di['mod_service']('order');
         $o = $orderService->getServiceOrder($model);
@@ -336,22 +350,22 @@ class Service implements InjectionAwareInterface
         return date('Y-m-d H:i:s');
     }
 
-    public function toApiArray(\Model_ServiceLicense $model, $deep = false, $identity = null): array
+    public function toApiArray(\Model_ServiceLicense|ServiceLicense $model, $deep = false, $identity = null): array
     {
         $result = [
-            'license_key' => $model->license_key,
-            'validate_ip' => (bool) $model->validate_ip,
-            'validate_host' => (bool) $model->validate_host,
-            'validate_version' => (bool) $model->validate_version,
-            'validate_path' => (bool) $model->validate_path,
-            'ips' => $model->getAllowedIps(),
-            'hosts' => $model->getAllowedHosts(),
-            'paths' => $model->getAllowedPaths(),
-            'versions' => $model->getAllowedVersions(),
-            'pinged_at' => $model->pinged_at,
+            'license_key' => $model instanceof ServiceLicense ? $model->getLicenseKey() : $model->license_key,
+            'validate_ip' => (bool) ($model instanceof ServiceLicense ? $model->getValidateIp() : $model->validate_ip),
+            'validate_host' => (bool) ($model instanceof ServiceLicense ? $model->getValidateHost() : $model->validate_host),
+            'validate_version' => (bool) ($model instanceof ServiceLicense ? $model->getValidateVersion() : $model->validate_version),
+            'validate_path' => (bool) ($model instanceof ServiceLicense ? $model->getValidatePath() : $model->validate_path),
+            'ips' => $model instanceof ServiceLicense ? $model->getAllowedIps() : $model->getAllowedIps(),
+            'hosts' => $model instanceof ServiceLicense ? $model->getAllowedHosts() : $model->getAllowedHosts(),
+            'paths' => $model instanceof ServiceLicense ? $model->getAllowedPaths() : $model->getAllowedPaths(),
+            'versions' => $model instanceof ServiceLicense ? $model->getAllowedVersions() : $model->getAllowedVersions(),
+            'pinged_at' => $model instanceof ServiceLicense ? $model->getPingedAt() : $model->pinged_at,
         ];
         if ($identity instanceof \Model_Admin) {
-            $result['plugin'] = $model->plugin;
+            $result['plugin'] = $model instanceof ServiceLicense ? $model->getPlugin() : $model->plugin;
         }
 
         return $result;
@@ -360,57 +374,102 @@ class Service implements InjectionAwareInterface
     /**
      * @param string $key
      */
-    private function _addValue(\Model_ServiceLicense $model, $key, $value): void
+    private function _addValue(\Model_ServiceLicense|ServiceLicense $model, $key, $value): void
     {
         $m = 'getAllowed' . ucfirst($key);
         $allowed = $model->{$m}();
         $allowed[] = $value;
 
-        $model->{$key} = json_encode(array_unique($allowed));
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $encoded = json_encode(array_unique($allowed));
+        if ($model instanceof ServiceLicense) {
+            match ($key) {
+                'ips' => $model->setIps($encoded),
+                'hosts' => $model->setHosts($encoded),
+                'paths' => $model->setPaths($encoded),
+                'versions' => $model->setVersions($encoded),
+                default => throw new \InvalidArgumentException("Unknown key: {$key}"),
+            };
+            $model->setUpdatedAt(new \DateTime());
+        } else {
+            $model->{$key} = $encoded;
+            $model->updated_at = date('Y-m-d H:i:s');
+        }
+        $this->di['em']->persist($model);
+        $this->di['em']->flush();
     }
 
-    private function _getPlugin(\Model_ServiceLicense $model): ?object
+    private function _getPlugin(\Model_ServiceLicense|ServiceLicense $model): ?object
     {
+        $pluginName = $model instanceof ServiceLicense ? $model->getPlugin() : $model->plugin;
         $plugins = $this->getLicensePlugins();
         foreach ($plugins as $plugin) {
-            if ($model->plugin == $plugin['filename']) {
+            if ($pluginName == $plugin['filename']) {
                 require_once $plugin['path'];
-                $class_name = 'Box\\Mod\\Servicelicense\\Plugin\\' . $model->plugin;
+                $class_name = 'Box\\Mod\\Servicelicense\\Plugin\\' . $pluginName;
 
                 return new $class_name();
             }
         }
         if (isset($this->di['logger'])) {
-            $this->di['logger']->info('License #%s plugin %s is invalid.', $model->id, $model->plugin);
+            $modelId = $model instanceof ServiceLicense ? $model->getId() : $model->id;
+            $this->di['logger']->info('License #%s plugin %s is invalid.', $modelId, $pluginName);
         }
 
         return null;
     }
 
-    public function update(\Model_ServiceLicense $s, array $data): bool
+    public function update(\Model_ServiceLicense|ServiceLicense $s, array $data): bool
     {
-        $s->plugin = $data['plugin'] ?? $s->plugin;
-        $s->validate_ip = (bool) ($data['validate_ip'] ?? $s->validate_ip);
-        $s->validate_host = (bool) ($data['validate_host'] ?? $s->validate_host);
-        $s->validate_path = (bool) ($data['validate_path'] ?? $s->validate_path);
-        $s->validate_version = (bool) ($data['validate_version'] ?? $s->validate_version);
-        if (isset($data['license_key']) && !empty($data['license_key'])) {
-            $s->license_key = $data['license_key'];
-        }
-
-        foreach (['ips', 'hosts', 'paths', 'versions'] as $key) {
-            if (isset($data[$key])) {
-                $array = explode(PHP_EOL, $data[$key]);
-                $array = array_map(trim(...), $array);
-                $array = array_diff($array, ['']);
-                $s->{$key} = json_encode($array);
+        if ($s instanceof ServiceLicense) {
+            $s->setPlugin($data['plugin'] ?? $s->getPlugin());
+            $s->setValidateIp((bool) ($data['validate_ip'] ?? $s->getValidateIp()));
+            $s->setValidateHost((bool) ($data['validate_host'] ?? $s->getValidateHost()));
+            $s->setValidatePath((bool) ($data['validate_path'] ?? $s->getValidatePath()));
+            $s->setValidateVersion((bool) ($data['validate_version'] ?? $s->getValidateVersion()));
+            if (isset($data['license_key']) && !empty($data['license_key'])) {
+                $s->setLicenseKey($data['license_key']);
             }
+
+            foreach (['ips', 'hosts', 'paths', 'versions'] as $key) {
+                if (isset($data[$key])) {
+                    $array = explode(PHP_EOL, $data[$key]);
+                    $array = array_map(trim(...), $array);
+                    $array = array_diff($array, ['']);
+                    $encoded = json_encode($array);
+                    match ($key) {
+                        'ips' => $s->setIps($encoded),
+                        'hosts' => $s->setHosts($encoded),
+                        'paths' => $s->setPaths($encoded),
+                        'versions' => $s->setVersions($encoded),
+                    };
+                }
+            }
+
+            $s->setUpdatedAt(new \DateTime());
+        } else {
+            $s->plugin = $data['plugin'] ?? $s->plugin;
+            $s->validate_ip = (bool) ($data['validate_ip'] ?? $s->validate_ip);
+            $s->validate_host = (bool) ($data['validate_host'] ?? $s->validate_host);
+            $s->validate_path = (bool) ($data['validate_path'] ?? $s->validate_path);
+            $s->validate_version = (bool) ($data['validate_version'] ?? $s->validate_version);
+            if (isset($data['license_key']) && !empty($data['license_key'])) {
+                $s->license_key = $data['license_key'];
+            }
+
+            foreach (['ips', 'hosts', 'paths', 'versions'] as $key) {
+                if (isset($data[$key])) {
+                    $array = explode(PHP_EOL, $data[$key]);
+                    $array = array_map(trim(...), $array);
+                    $array = array_diff($array, ['']);
+                    $s->{$key} = json_encode($array);
+                }
+            }
+
+            $s->updated_at = date('Y-m-d H:i:s');
         }
 
-        $s->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($s);
+        $this->di['em']->persist($s);
+        $this->di['em']->flush();
 
         return true;
     }
@@ -422,7 +481,6 @@ class Service implements InjectionAwareInterface
     {
         $result = [];
         $log = $this->di['logger']->setChannel('license');
-        // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
         if (DEBUG) {
             $log->debug(print_r($data, true));
         }
@@ -455,5 +513,63 @@ class Service implements InjectionAwareInterface
         $server = $this->di['license_server'];
 
         return $server->process($data);
+    }
+
+    private function _getModelProperty(\Model_ServiceLicense|ServiceLicense $model, string $property): mixed
+    {
+        if ($model instanceof ServiceLicense) {
+            return match ($property) {
+                'id' => $model->getId(),
+                'client_id' => $model->getClientId(),
+                'license_key' => $model->getLicenseKey(),
+                'validate_ip' => $model->getValidateIp(),
+                'validate_host' => $model->getValidateHost(),
+                'validate_path' => $model->getValidatePath(),
+                'validate_version' => $model->getValidateVersion(),
+                'ips' => $model->getIps(),
+                'hosts' => $model->getHosts(),
+                'paths' => $model->getPaths(),
+                'versions' => $model->getVersions(),
+                'config' => $model->getConfig(),
+                'plugin' => $model->getPlugin(),
+                'checked_at' => $model->getCheckedAt(),
+                'pinged_at' => $model->getPingedAt(),
+                'created_at' => $model->getCreatedAt(),
+                'updated_at' => $model->getUpdatedAt(),
+                default => null,
+            };
+        }
+
+        return $model->{$property} ?? null;
+    }
+
+    private function _setModelProperty(\Model_ServiceLicense|ServiceLicense $model, string $property, mixed $value): void
+    {
+        if ($model instanceof ServiceLicense) {
+            match ($property) {
+                'id' => $model->setId($value),
+                'client_id' => $model->setClientId($value),
+                'license_key' => $model->setLicenseKey($value),
+                'validate_ip' => $model->setValidateIp($value),
+                'validate_host' => $model->setValidateHost($value),
+                'validate_path' => $model->setValidatePath($value),
+                'validate_version' => $model->setValidateVersion($value),
+                'ips' => $model->setIps($value),
+                'hosts' => $model->setHosts($value),
+                'paths' => $model->setPaths($value),
+                'versions' => $model->setVersions($value),
+                'config' => $model->setConfig($value),
+                'plugin' => $model->setPlugin($value),
+                'checked_at' => $model->setCheckedAt(is_string($value) ? new \DateTime($value) : $value),
+                'pinged_at' => $model->setPingedAt(is_string($value) ? new \DateTime($value) : $value),
+                'created_at' => $model->setCreatedAt(is_string($value) ? new \DateTime($value) : $value),
+                'updated_at' => $model->setUpdatedAt(is_string($value) ? new \DateTime($value) : $value),
+                default => null,
+            };
+
+            return;
+        }
+
+        $model->{$property} = $value;
     }
 }

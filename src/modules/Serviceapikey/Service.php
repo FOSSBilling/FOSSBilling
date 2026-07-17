@@ -12,8 +12,9 @@ declare(strict_types=1);
 namespace Box\Mod\Serviceapikey;
 
 use Box\Mod\Product\Entity\Product;
+use Box\Mod\Serviceapikey\Entity\ServiceApiKey;
+use Box\Mod\Serviceapikey\Repository\ServiceApiKeyRepository;
 use FOSSBilling\InjectionAwareInterface;
-use RedBeanPHP\OODBBean;
 
 class Service implements InjectionAwareInterface
 {
@@ -40,6 +41,11 @@ class Service implements InjectionAwareInterface
         ];
     }
 
+    public function getServiceApiKeyRepository(): ServiceApiKeyRepository
+    {
+        return $this->di['em']->getRepository(ServiceApiKey::class);
+    }
+
     public function attachOrderConfig(Product $product, array $data): array
     {
         $config = json_decode($product->getConfig() ?? '', true) ?? [];
@@ -48,69 +54,80 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @param OODBBean $order with client_id and config properties
-     *
-     * @return OODBBean
+     * @return ServiceApiKey
      */
-    public function create(OODBBean $order)
+    public function create(\Model_ClientOrder $order)
     {
-        /** @var OODBBean $model */
-        $model = $this->di['db']->dispense('service_apikey');
-        $model->client_id = $order->client_id;
-        $model->config = $order->config;
+        $model = new ServiceApiKey();
+        $model->setClientId($order->client_id);
+        $model->setConfig($order->config);
 
-        $model->created_at = date('Y-m-d H:i:s');
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $this->di['em']->persist($model);
+        $this->di['em']->flush();
 
         return $model;
     }
 
-    public function activate(OODBBean $order, OODBBean $model): bool
+    public function activate(\Model_ClientOrder|\RedBeanPHP\OODBBean $order, \RedBeanPHP\OODBBean|ServiceApiKey $model): bool
     {
         $config = json_decode($order->config ?? '', true);
-        $model->api_key = $this->generateKey($config);
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $this->_setModelProperty($model, 'api_key', $this->generateKey($config));
+        $this->_setModelProperty($model, 'updated_at', date('Y-m-d H:i:s'));
+
+        $this->di['em']->persist($model);
+        $this->di['em']->flush();
 
         return true;
     }
 
-    public function suspend(OODBBean $order, OODBBean $model): bool
+    public function suspend(\Model_ClientOrder|\RedBeanPHP\OODBBean $order, \RedBeanPHP\OODBBean|ServiceApiKey $model): bool
     {
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $this->_setModelProperty($model, 'updated_at', date('Y-m-d H:i:s'));
+        $this->di['em']->persist($model);
+        $this->di['em']->flush();
 
         return true;
     }
 
-    public function unsuspend(OODBBean $order, OODBBean $model): bool
+    public function unsuspend(\Model_ClientOrder|\RedBeanPHP\OODBBean $order, \RedBeanPHP\OODBBean|ServiceApiKey $model): bool
     {
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $this->_setModelProperty($model, 'updated_at', date('Y-m-d H:i:s'));
+        $this->di['em']->persist($model);
+        $this->di['em']->flush();
 
         return true;
     }
 
-    public function cancel(OODBBean $order, OODBBean $model): bool
+    public function cancel(\Model_ClientOrder|\RedBeanPHP\OODBBean $order, \RedBeanPHP\OODBBean|ServiceApiKey $model): bool
     {
         return $this->suspend($order, $model);
     }
 
-    public function uncancel(OODBBean $order, OODBBean $model): bool
+    public function uncancel(\Model_ClientOrder|\RedBeanPHP\OODBBean $order, \RedBeanPHP\OODBBean|ServiceApiKey $model): bool
     {
         return $this->unsuspend($order, $model);
     }
 
-    public function delete(?OODBBean $order, ?OODBBean $model): void
+    public function delete(?\Model_ClientOrder $order, \RedBeanPHP\OODBBean|ServiceApiKey|null $model): void
     {
         if (is_object($model)) {
-            $this->di['db']->trash($model);
+            $this->di['em']->remove($model);
+            $this->di['em']->flush();
         }
     }
 
-    public function toApiArray(OODBBean $model): array
+    public function toApiArray(\RedBeanPHP\OODBBean|ServiceApiKey $model): array
     {
+        if ($model instanceof ServiceApiKey) {
+            return [
+                'id' => $model->getId(),
+                'created_at' => $model->getCreatedAt(),
+                'updated_at' => $model->getUpdatedAt(),
+                'api_key' => $model->getApiKey(),
+                'config' => json_decode($model->getConfig() ?? '', true),
+            ];
+        }
+
         return [
             'id' => $model->id,
             'created_at' => $model->created_at,
@@ -131,8 +148,7 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('You must provide an API key to check it\'s validity.');
         }
 
-        /** @var OODBBean|null $model */
-        $model = $this->di['db']->findOne('service_apikey', 'api_key = :api_key', [':api_key' => $data['key']]);
+        $model = $this->getServiceApiKeyRepository()->findOneByApiKey($data['key']);
         if (is_null($model)) {
             throw new \FOSSBilling\Exception('API key does not exist');
         }
@@ -154,11 +170,9 @@ class Service implements InjectionAwareInterface
         } elseif (!empty($data['order_id'])) {
             $order = $this->di['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
             $orderService = $this->di['mod_service']('order');
-            /** @var OODBBean|null $model */
             $model = $orderService->getOrderService($order);
         } else {
-            /** @var OODBBean|null $model */
-            $model = $this->di['db']->findOne('service_apikey', 'api_key = :api_key', [':api_key' => $data['key']]);
+            $model = $this->getServiceApiKeyRepository()->findOneByApiKey($data['key']);
         }
 
         if (is_null($model)) {
@@ -170,7 +184,8 @@ class Service implements InjectionAwareInterface
             $client = $this->di['loggedin_client'];
         }
 
-        if (!is_null($client) && $client->id !== $model->client_id) {
+        $modelClientId = $model instanceof ServiceApiKey ? $model->getClientId() : $model->client_id;
+        if (!is_null($client) && $client->id !== $modelClientId) {
             throw new \FOSSBilling\Exception('API key does not exist');
         }
 
@@ -178,11 +193,13 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Order is not active');
         }
 
-        $config = json_decode($model->config ?? '', true);
+        $config = json_decode($model instanceof ServiceApiKey ? ($model->getConfig() ?? '') : ($model->config ?? ''), true);
 
-        $model->api_key = $this->generateKey($config);
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $this->_setModelProperty($model, 'api_key', $this->generateKey($config));
+        $this->_setModelProperty($model, 'updated_at', date('Y-m-d H:i:s'));
+
+        $this->di['em']->persist($model);
+        $this->di['em']->flush();
 
         return true;
     }
@@ -202,23 +219,25 @@ class Service implements InjectionAwareInterface
 
         $order = $this->di['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
         $orderService = $this->di['mod_service']('order');
-        /** @var OODBBean|null $model */
         $model = $orderService->getOrderService($order);
 
         if (is_null($model)) {
             throw new \FOSSBilling\Exception('API key does not exist');
         }
 
-        if (isset($data['api_key']) && $model->api_key !== $data['api_key']) {
+        $currentApiKey = $model instanceof ServiceApiKey ? $model->getApiKey() : $model->api_key;
+        if (isset($data['api_key']) && $currentApiKey !== $data['api_key']) {
             throw new \FOSSBilling\Exception('To change the API key, please use the reset function rather than updating it.');
         }
 
-        $config = !empty($data['config']) ? json_encode($data['config']) : $model->config;
+        $currentConfig = $model instanceof ServiceApiKey ? $model->getConfig() : $model->config;
+        $config = !empty($data['config']) ? json_encode($data['config']) : $currentConfig;
 
-        // ID and client ID should remain constant so we don't try to update those here.
-        $model->config = $config;
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $this->_setModelProperty($model, 'config', $config);
+        $this->_setModelProperty($model, 'updated_at', date('Y-m-d H:i:s'));
+
+        $this->di['em']->persist($model);
+        $this->di['em']->flush();
 
         return true;
     }
@@ -271,12 +290,10 @@ class Service implements InjectionAwareInterface
 
         $i = 0;
         do {
-            // Try 10 times to generate a unique API key. Fail if we are unable to.
             if ($i++ >= 10) {
                 throw new \FOSSBilling\Exception('Maximum number of iterations reached while generating API key');
             }
 
-            // Generate random bytes half the length of the configured length, as the length will doubled when converted to a hex string.
             $randomBytes = random_bytes((int) ceil($length / 2));
             $apiKey = substr(bin2hex($randomBytes), 0, $length);
 
@@ -287,7 +304,6 @@ class Service implements InjectionAwareInterface
 
             switch ($case) {
                 case 'lower':
-                    // Do nothing, the API key generated will be lowercase by default.
                     break;
                 case 'upper':
                     $apiKey = strtoupper($apiKey);
@@ -310,18 +326,38 @@ class Service implements InjectionAwareInterface
                 default:
                     throw new \FOSSBilling\Exception("Unknown uppercase option ':case:'. API generator only accepts 'lower', 'upper', or 'mixed'.", [':case:' => $case]);
             }
-        } while ($this->di['db']->findOne('service_apikey', 'api_key = :api_key', [':api_key' => $apiKey]) !== null);
+        } while ($this->getServiceApiKeyRepository()->findOneByApiKey($apiKey) !== null);
 
         return $apiKey;
     }
 
-    private function isActive(OODBBean $model): bool
+    private function isActive(\RedBeanPHP\OODBBean|ServiceApiKey $model): bool
     {
-        $order = $this->di['db']->findOne('ClientOrder', 'service_id = :id AND service_type = "apikey"', [':id' => $model->id]);
+        $modelId = $model instanceof ServiceApiKey ? $model->getId() : $model->id;
+        $order = $this->di['db']->findOne('ClientOrder', 'service_id = :id AND service_type = "apikey"', [':id' => $modelId]);
         if (is_null($order)) {
             throw new \FOSSBilling\Exception('API key does not exist');
         }
 
         return $order->status === 'active';
+    }
+
+    private function _setModelProperty(\RedBeanPHP\OODBBean|ServiceApiKey $model, string $property, mixed $value): void
+    {
+        if ($model instanceof ServiceApiKey) {
+            match ($property) {
+                'id' => $model->setId($value),
+                'api_key' => $model->setApiKey($value),
+                'client_id' => $model->setClientId($value),
+                'config' => $model->setConfig($value),
+                'created_at' => $model->setCreatedAt(is_string($value) ? new \DateTime($value) : $value),
+                'updated_at' => $model->setUpdatedAt(is_string($value) ? new \DateTime($value) : $value),
+                default => null,
+            };
+
+            return;
+        }
+
+        $model->{$property} = $value;
     }
 }

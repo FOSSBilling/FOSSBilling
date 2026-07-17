@@ -525,6 +525,68 @@ function container(): Container
             return $qb;
         });
 
+        // Servicelicense
+        $serviceLicenseRepository = \Mockery::mock(\Box\Mod\Servicelicense\Repository\ServiceLicenseRepository::class)->shouldIgnoreMissing();
+        $serviceLicenseRepository->shouldReceive('find')->byDefault()->andReturnUsing(static function (?int $id): ?object {
+            if ($id === null) {
+                return null;
+            }
+            $entity = new \Box\Mod\Servicelicense\Entity\ServiceLicense();
+            $prop = new \ReflectionProperty($entity, 'id');
+            $prop->setValue($entity, $id);
+
+            return $entity;
+        });
+        $serviceLicenseRepository->shouldReceive('findBy')->byDefault()->andReturn([]);
+        $serviceLicenseRepository->shouldReceive('findOneBy')->byDefault()->andReturn(null);
+        $serviceLicenseRepository->shouldReceive('findOneByLicenseKey')->byDefault()->andReturn(null);
+
+        // Servicecustom
+        $serviceCustomRepository = \Mockery::mock(\Box\Mod\Servicecustom\Repository\ServiceCustomRepository::class)->shouldIgnoreMissing();
+        $serviceCustomRepository->shouldReceive('find')->byDefault()->andReturnUsing(static function (?int $id): ?object {
+            if ($id === null) {
+                return null;
+            }
+            $entity = new \Box\Mod\Servicecustom\Entity\ServiceCustom();
+            $prop = new \ReflectionProperty($entity, 'id');
+            $prop->setValue($entity, $id);
+
+            return $entity;
+        });
+        $serviceCustomRepository->shouldReceive('findBy')->byDefault()->andReturn([]);
+        $serviceCustomRepository->shouldReceive('findOneBy')->byDefault()->andReturn(null);
+
+        // Serviceapikey
+        $serviceApiKeyRepository = \Mockery::mock(\Box\Mod\Serviceapikey\Repository\ServiceApiKeyRepository::class)->shouldIgnoreMissing();
+        $serviceApiKeyRepository->shouldReceive('find')->byDefault()->andReturnUsing(static function (?int $id): ?object {
+            if ($id === null) {
+                return null;
+            }
+            $entity = new \Box\Mod\Serviceapikey\Entity\ServiceApiKey();
+            $prop = new \ReflectionProperty($entity, 'id');
+            $prop->setValue($entity, $id);
+
+            return $entity;
+        });
+        $serviceApiKeyRepository->shouldReceive('findBy')->byDefault()->andReturn([]);
+        $serviceApiKeyRepository->shouldReceive('findOneBy')->byDefault()->andReturn(null);
+        $serviceApiKeyRepository->shouldReceive('findOneByApiKey')->byDefault()->andReturn(null);
+
+        // Servicedownloadable
+        $serviceDownloadableRepository = \Mockery::mock(\Box\Mod\Servicedownloadable\Repository\ServiceDownloadableRepository::class)->shouldIgnoreMissing();
+        $serviceDownloadableRepository->shouldReceive('find')->byDefault()->andReturnUsing(static function (?int $id): ?object {
+            if ($id === null) {
+                return null;
+            }
+            $entity = new \Box\Mod\Servicedownloadable\Entity\ServiceDownloadable();
+            $prop = new \ReflectionProperty($entity, 'id');
+            $prop->setValue($entity, $id);
+
+            return $entity;
+        });
+        $serviceDownloadableRepository->shouldReceive('findBy')->byDefault()->andReturn([]);
+        $serviceDownloadableRepository->shouldReceive('findOneBy')->byDefault()->andReturn(null);
+
         $em = \Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
         $em->shouldReceive('getRepository')->byDefault()->andReturnUsing(static fn (string $class): object => match ($class) {
             \Box\Mod\Staff\Entity\Admin::class => $adminRepository,
@@ -565,6 +627,10 @@ function container(): Container
             \Box\Mod\Servicedomain\Entity\TldRegistrar::class => $tldRegistrarRepository,
             \Box\Mod\Cart\Entity\Cart::class => $cartRepository,
             \Box\Mod\Cart\Entity\CartProduct::class => $cartProductRepository,
+            \Box\Mod\Servicelicense\Entity\ServiceLicense::class => $serviceLicenseRepository,
+            \Box\Mod\Servicecustom\Entity\ServiceCustom::class => $serviceCustomRepository,
+            \Box\Mod\Serviceapikey\Entity\ServiceApiKey::class => $serviceApiKeyRepository,
+            \Box\Mod\Servicedownloadable\Entity\ServiceDownloadable::class => $serviceDownloadableRepository,
             default => $extensionMetaRepository,
         });
 

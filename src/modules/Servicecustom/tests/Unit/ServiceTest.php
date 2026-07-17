@@ -14,7 +14,9 @@ use Box\Mod\Formbuilder\Service as FormbuilderService;
 use Box\Mod\Order\Service as OrderService;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Product\Service as ProductService;
+use Box\Mod\Servicecustom\Entity\ServiceCustom;
 use Box\Mod\Servicecustom\Service;
+use Doctrine\ORM\EntityManagerInterface;
 
 use function Tests\Helpers\container;
 
@@ -240,17 +242,16 @@ test('action create', function (): void {
     $product->setPlugin('plugin');
     $product->setPluginConfig('plugin_config');
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('store')->atLeast()->once()->andReturn(1);
-    $serviceCustomModel = new Model_ServiceCustom();
-    $serviceCustomModel->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock->shouldReceive('dispense')->atLeast()->once()->andReturn($serviceCustomModel);
-
     $productService = Mockery::mock(ProductService::class);
     $productService->shouldReceive('findProductById')->once()->with(1)->andReturn($product);
 
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
+
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(function (string $service) use ($productService): Mockery\MockInterface {
         if ($service === 'product') {
             return $productService;
@@ -261,7 +262,7 @@ test('action create', function (): void {
     $service->setDi($di);
 
     $result = $service->action_create($order);
-    expect($result)->toBeInstanceOf(Model_ServiceCustom::class);
+    expect($result)->toBeInstanceOf(ServiceCustom::class);
 });
 
 test('action activate', function (): void {
@@ -278,7 +279,11 @@ test('action activate', function (): void {
     $serviceMock = Mockery::mock(OrderService::class);
     $serviceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($serviceCustomModel);
 
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
+
     $di = container();
+    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $serviceMock);
     $service->setDi($di);
 
@@ -296,7 +301,11 @@ test('action activate order service not created exception', function (): void {
     $serviceMock = Mockery::mock(OrderService::class);
     $serviceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn(null);
 
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
+
     $di = container();
+    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $serviceMock);
     $service->setDi($di);
 
@@ -318,11 +327,13 @@ test('action renew', function (): void {
     $serviceMock = Mockery::mock(OrderService::class);
     $serviceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($serviceCustomModel);
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('store')->atLeast()->once()->andReturn(1);
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $serviceMock);
     $service->setDi($di);
 
@@ -341,7 +352,11 @@ test('active service not found exception', function (): void {
     $serviceMock = Mockery::mock(OrderService::class);
     $serviceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn(null);
 
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
+
     $di = container();
+    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $serviceMock);
     $service->setDi($di);
 
@@ -363,11 +378,13 @@ test('action suspend', function (): void {
     $serviceMock = Mockery::mock(OrderService::class);
     $serviceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($serviceCustomModel);
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('store')->atLeast()->once()->andReturn(1);
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $serviceMock);
     $service->setDi($di);
 
@@ -389,11 +406,13 @@ test('action unsuspend', function (): void {
     $serviceMock = Mockery::mock(OrderService::class);
     $serviceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($serviceCustomModel);
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('store')->atLeast()->once()->andReturn(1);
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $serviceMock);
     $service->setDi($di);
 
@@ -415,11 +434,13 @@ test('action cancel', function (): void {
     $serviceMock = Mockery::mock(OrderService::class);
     $serviceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($serviceCustomModel);
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('store')->atLeast()->once()->andReturn(1);
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $serviceMock);
     $service->setDi($di);
 
@@ -441,11 +462,13 @@ test('action uncancel', function (): void {
     $serviceMock = Mockery::mock(OrderService::class);
     $serviceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($serviceCustomModel);
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('store')->atLeast()->once()->andReturn(1);
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $serviceMock);
     $service->setDi($di);
 
@@ -467,11 +490,13 @@ test('action delete', function (): void {
     $serviceMock = Mockery::mock(OrderService::class);
     $serviceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($serviceCustomModel);
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('trash')->atLeast()->once()->andReturn(null);
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('remove')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $serviceMock);
     $service->setDi($di);
 
@@ -486,7 +511,11 @@ test('get config', function (): void {
         0 => 'N',
     ];
 
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
+
     $di = container();
+    $di['em'] = $emMock;
     $service->setDi($di);
 
     $model = new Model_ServiceCustom();
@@ -500,7 +529,11 @@ test('get config', function (): void {
 
 test('to api array', function (): void {
     $service = new Service();
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
+
     $di = container();
+    $di['em'] = $emMock;
     $service->setDi($di);
 
     $model = new Model_ServiceCustom();
@@ -536,7 +569,11 @@ test('get service custom by order id', function (): void {
     $orderService = Mockery::mock(OrderService::class);
     $orderService->shouldReceive('getOrderService')->atLeast()->once()->andReturn(new Model_ServiceCustom());
 
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
+
     $di = container();
+    $di['em'] = $emMock;
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderService);
     $service->setDi($di);
@@ -552,7 +589,11 @@ test('get service custom by order id rejects order owned by another client', fun
     $dbMock->shouldReceive('findOne')->once()->with('ClientOrder', 'id = ? AND client_id = ?', [1, 42])->andReturn(null);
     $dbMock->shouldNotReceive('getExistingModelById');
 
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
+
     $di = container();
+    $di['em'] = $emMock;
     $di['db'] = $dbMock;
     $service->setDi($di);
 
@@ -568,7 +609,11 @@ test('get service custom by order id order service not found exception', functio
     $orderService = Mockery::mock(OrderService::class);
     $orderService->shouldReceive('getOrderService')->atLeast()->once()->andReturn(null);
 
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
+
     $di = container();
+    $di['em'] = $emMock;
     $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderService);
     $service->setDi($di);
@@ -585,11 +630,13 @@ test('update config', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('getServiceCustomByOrderId')->atLeast()->once()->andReturn($model);
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('store')->atLeast()->once()->andReturn(1);
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Box_Log();
     $serviceMock->setDi($di);
 
@@ -606,11 +653,13 @@ test('update config not array exception', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldNotReceive('getServiceCustomByOrderId');
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldNotReceive('store');
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldNotReceive('persist');
+    $emMock->shouldNotReceive('flush');
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Box_Log();
     $serviceMock->setDi($di);
 
