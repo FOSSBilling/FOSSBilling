@@ -16,8 +16,11 @@ class Box_AppClient extends Box_App
 {
     protected function init(): void
     {
-        $m = $this->di['mod']($this->mod);
-        $m->registerClientRoutes($this);
+        // Paths without letters can resolve to custom pages, but cannot identify modules.
+        if (preg_match('/[a-zA-Z]/', $this->mod) === 1) {
+            $m = $this->di['mod']($this->mod);
+            $m->registerClientRoutes($this);
+        }
 
         if ($this->mod == 'api') {
             define('API_MODE', true);
@@ -54,6 +57,11 @@ class Box_AppClient extends Box_App
             $ext = substr((string) $page, strpos((string) $page, '.') + 1);
             $page = substr((string) $page, 0, strpos((string) $page, '.'));
         }
+
+        if ($page === 'login' && $this->di['auth']->isClientLoggedIn()) {
+            return $this->redirect('/');
+        }
+
         $page = str_replace('/', '_', $page);
         $tpl = 'mod_page_' . $page;
 
