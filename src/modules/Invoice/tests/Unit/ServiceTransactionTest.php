@@ -116,7 +116,7 @@ test('converts to api array', function (): void {
         ->atLeast()->once()
         ->andReturn($payGatewayEntity);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')
         ->with(Box\Mod\Invoice\Entity\PayGateway::class)
         ->andReturn($payGatewayRepoMock);
@@ -207,7 +207,7 @@ test('gets search query with various parameters', function (array $data, array $
 test('counts transactions', function (): void {
     $service = new ServiceTransaction();
     $queryResult = [['status' => Model_Transaction::STATUS_RECEIVED, 'counter' => 1]];
-    $dbalMock = Mockery::mock(\Doctrine\DBAL\Connection::class);
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
     $dbalMock->shouldReceive('fetchAllAssociative')
         ->atLeast()->once()
         ->andReturn($queryResult);
@@ -222,13 +222,13 @@ test('counts transactions', function (): void {
 
 test('createAndProcess marks transaction as error when processing throws', function (): void {
     $transactionEntity = new Box\Mod\Invoice\Entity\Transaction();
-    $transactionEntity->setStatus(\Model_Transaction::STATUS_RECEIVED);
+    $transactionEntity->setStatus(Model_Transaction::STATUS_RECEIVED);
 
     $transactionRepoMock = Mockery::mock(Box\Mod\Invoice\Repository\TransactionRepository::class);
     $transactionRepoMock->shouldReceive('find')
         ->andReturn($transactionEntity);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')
         ->with(Box\Mod\Invoice\Entity\Transaction::class)
         ->andReturn($transactionRepoMock);
@@ -257,20 +257,20 @@ test('createAndProcess marks transaction as error when processing throws', funct
 
     expect($thrown)->toBeInstanceOf(RuntimeException::class)
         ->and($thrown->getMessage())->toBe('Processing failed')
-        ->and($transactionEntity->getStatus())->toBe(\Model_Transaction::STATUS_ERROR)
+        ->and($transactionEntity->getStatus())->toBe(Model_Transaction::STATUS_ERROR)
         ->and($transactionEntity->getError())->toBe('Processing failed')
         ->and($transactionEntity->getErrorCode())->toBe(1234);
 });
 
 test('createAndProcess skips processing when transaction is already processed', function (): void {
     $transactionEntity = new Box\Mod\Invoice\Entity\Transaction();
-    $transactionEntity->setStatus(\Model_Transaction::STATUS_PROCESSED);
+    $transactionEntity->setStatus(Model_Transaction::STATUS_PROCESSED);
 
     $transactionRepoMock = Mockery::mock(Box\Mod\Invoice\Repository\TransactionRepository::class);
     $transactionRepoMock->shouldReceive('find')
         ->andReturn($transactionEntity);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')
         ->with(Box\Mod\Invoice\Entity\Transaction::class)
         ->andReturn($transactionRepoMock);
@@ -298,7 +298,7 @@ test('preProcessTransaction marks error on a generic exception', function (): vo
     $transactionRepoMock->shouldReceive('find')
         ->andReturn($transactionEntity);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')
         ->with(Box\Mod\Invoice\Entity\Transaction::class)
         ->andReturn($transactionRepoMock);
@@ -337,7 +337,7 @@ test('claimForProcessing includes error status in claim query', function (): voi
     $service = new ServiceTransaction();
 
     $execArgs = [];
-    $dbalMock = Mockery::mock(\Doctrine\DBAL\Connection::class);
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
     $dbalMock->shouldReceive('executeStatement')
         ->withArgs(function (string $sql, array $bindings) use (&$execArgs): bool {
             $execArgs = ['sql' => $sql, 'bindings' => $bindings];
@@ -367,7 +367,7 @@ test('markTransactionError does not clobber an already processed transaction', f
     $transactionRepoMock->shouldReceive('find')
         ->andReturn($transactionEntity);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')
         ->with(Box\Mod\Invoice\Entity\Transaction::class)
         ->andReturn($transactionRepoMock);

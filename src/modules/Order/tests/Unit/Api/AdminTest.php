@@ -150,8 +150,7 @@ test('uses invoice service to validate mark paid request when permission granted
         ->once()
         ->with('invoice', null, null, Mockery::any());
 
-    $payGateway = new Model_PayGateway();
-    $payGateway->loadBean(new Tests\Helpers\DummyBean());
+    $payGateway = new Box\Mod\Invoice\Entity\PayGateway();
 
     $invoiceServiceMock = Mockery::mock(Box\Mod\Invoice\Service::class);
     $invoiceServiceMock->shouldReceive('validateAdminMarkAsPaidRequest')

@@ -44,7 +44,7 @@ test('gets tax rate for client by country and state', function (): void {
         ->atLeast()->once()
         ->andReturn($taxEntity);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')
         ->with(Box\Mod\Invoice\Entity\Tax::class)
         ->andReturn($taxRepoMock);
@@ -80,7 +80,7 @@ test('gets tax rate for client by country', function (): void {
         ->atLeast()->once()
         ->andReturn($taxEntity);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')
         ->with(Box\Mod\Invoice\Entity\Tax::class)
         ->andReturn($taxRepoMock);
@@ -117,7 +117,7 @@ test('gets tax rate for client', function (): void {
         ->atLeast()->once()
         ->andReturn($taxEntity);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')
         ->with(Box\Mod\Invoice\Entity\Tax::class)
         ->andReturn($taxRepoMock);
@@ -147,7 +147,7 @@ test('returns zero tax rate when tax not found', function (): void {
     $taxRepoMock->shouldReceive('findByCountry')->andReturn(null);
     $taxRepoMock->shouldReceive('findGlobal')->andReturn(null);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')
         ->with(Box\Mod\Invoice\Entity\Tax::class)
         ->andReturn($taxRepoMock);
@@ -217,7 +217,7 @@ test('gets tax', function (): void {
         ->atLeast()->once()
         ->andReturn(21);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')
         ->with(Box\Mod\Invoice\Entity\InvoiceItem::class)
         ->andReturn($invoiceItemRepoMock);

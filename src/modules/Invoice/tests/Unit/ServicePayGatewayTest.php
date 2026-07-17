@@ -63,7 +63,7 @@ test('gets pairs', function (): void {
         ],
     ];
 
-    $dbalMock = Mockery::mock(\Doctrine\DBAL\Connection::class);
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
     $dbalMock->shouldReceive('fetchAllAssociative')
         ->atLeast()->once()
         ->andReturn($queryResult);
@@ -80,7 +80,7 @@ test('gets pairs', function (): void {
 
 test('gets available gateways', function (): void {
     $service = new ServicePayGateway();
-    $dbalMock = Mockery::mock(\Doctrine\DBAL\Connection::class);
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
     $dbalMock->shouldReceive('fetchAllAssociative')
         ->atLeast()->once()
         ->andReturn([]);
@@ -226,7 +226,7 @@ test('gets active gateways', function (): void {
         ->atLeast()->once()
         ->andReturn([$payGatewayEntity]);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')
         ->with(Box\Mod\Invoice\Entity\PayGateway::class)
         ->andReturn($payGatewayRepoMock);

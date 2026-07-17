@@ -142,16 +142,16 @@ class ServiceTransaction implements InjectionAwareInterface
                     $this->di['logger']->warning('IPN with invalid gateway_id rejected: ' . $data['gateway_id']);
                 }
 
-                throw new \FOSSBilling\InformationException('Invalid payment gateway');
+                throw new InformationException('Invalid payment gateway');
             }
         }
         if (!$skip_validation) {
             if (!isset($data['invoice_id'])) {
-                throw new \FOSSBilling\InformationException('Transaction invoice ID is missing');
+                throw new InformationException('Transaction invoice ID is missing');
             }
 
             if (!isset($data['gateway_id'])) {
-                throw new \FOSSBilling\InformationException('Payment gateway ID is missing');
+                throw new InformationException('Payment gateway ID is missing');
             }
             $this->getInvoiceRepository()->find((int) $data['invoice_id'])
                 ?? throw new InformationException('Invoice was not found');

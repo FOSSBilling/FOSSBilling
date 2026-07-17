@@ -115,7 +115,7 @@ test('cancels a subscription at the gateway when canceled status is saved', func
         ->with(2)
         ->andReturn($gatewayModel);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')
         ->with(Box\Mod\Invoice\Entity\PayGateway::class)
         ->andReturn($payGatewayRepoMock);
@@ -175,7 +175,7 @@ test('schedules a subscription cancellation at the gateway', function (): void {
     $payGatewayRepoMock = Mockery::mock(Box\Mod\Invoice\Repository\PayGatewayRepository::class);
     $payGatewayRepoMock->shouldReceive('find')->once()->with(2)->andReturn($gateway);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')
         ->with(Box\Mod\Invoice\Entity\PayGateway::class)
         ->andReturn($payGatewayRepoMock);
@@ -237,7 +237,7 @@ test('cancels subscriptions linked to an order', function (): void {
         ->with(7)
         ->andReturn($subscriptionEntity);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')
         ->with(Box\Mod\Invoice\Entity\Subscription::class)
         ->andReturn($subscriptionRepoMock);
@@ -277,7 +277,7 @@ test('finalizes a scheduled cancellation by canceling its order and service', fu
     $db = Mockery::mock(Box_Database::class);
     $db->shouldReceive('getExistingModelById')->once()->with('ClientOrder', 10, 'Order not found')->andReturn($order);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')
         ->with(Box\Mod\Invoice\Entity\Subscription::class)
         ->andReturn($subscriptionRepoMock);
@@ -329,7 +329,7 @@ test('reports end-of-period cancellation support for active gateway subscription
     $payGatewayRepoMock = Mockery::mock(Box\Mod\Invoice\Repository\PayGatewayRepository::class);
     $payGatewayRepoMock->shouldReceive('find')->once()->with(2)->andReturn($gateway);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')
         ->with(Box\Mod\Invoice\Entity\Subscription::class)
         ->andReturn($subscriptionRepoMock);
@@ -405,7 +405,7 @@ test('converts to api array', function (): void {
         ->atLeast()->once()
         ->andReturn([]);
 
-    $emMock = Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')
         ->with(Box\Mod\Invoice\Entity\PayGateway::class)
         ->andReturn($payGatewayRepoMock);
@@ -498,7 +498,7 @@ test('gets search query with various parameters', function (array $data, string 
 
 test('returns false when invoice is not subscribable', function (): void {
     $service = new ServiceSubscription();
-    $dbalMock = Mockery::mock(\Doctrine\DBAL\Connection::class);
+    $dbalMock = Mockery::mock(Connection::class);
     $dbalMock->shouldReceive('fetchAllAssociative')
         ->atLeast()->once()
         ->andReturn([]);
@@ -514,7 +514,7 @@ test('returns false when invoice is not subscribable', function (): void {
 
 test('checks if invoice is subscribable', function (): void {
     $service = new ServiceSubscription();
-    $dbalMock = Mockery::mock(\Doctrine\DBAL\Connection::class);
+    $dbalMock = Mockery::mock(Connection::class);
 
     $getAllResults = [
         ['period' => '1W', 'price' => 10, 'quantity' => 1],
@@ -536,7 +536,7 @@ test('gets subscription period', function (): void {
     $serviceMock = Mockery::mock(ServiceSubscription::class)->makePartial()->shouldAllowMockingProtectedMethods();
 
     $period = '1W';
-    $dbalMock = Mockery::mock(\Doctrine\DBAL\Connection::class);
+    $dbalMock = Mockery::mock(Connection::class);
     $dbalMock->shouldReceive('fetchAllAssociative')
         ->atLeast()->once()
         ->andReturn([['period' => $period, 'price' => 10, 'quantity' => 1]]);

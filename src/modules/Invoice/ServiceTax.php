@@ -70,12 +70,12 @@ class ServiceTax implements InjectionAwareInterface
 
     public function getTax(\Model_Invoice|Invoice $invoice)
     {
-        $taxrate = $invoice instanceof \Box\Mod\Invoice\Entity\Invoice ? $invoice->getTaxrate() : $invoice->taxrate;
+        $taxrate = $invoice instanceof Entity\Invoice ? $invoice->getTaxrate() : $invoice->taxrate;
         if ($taxrate <= 0) {
             return 0;
         }
 
-        $invoiceId = $invoice instanceof \Box\Mod\Invoice\Entity\Invoice ? $invoice->getId() : $invoice->id;
+        $invoiceId = $invoice instanceof Entity\Invoice ? $invoice->getId() : $invoice->id;
         $tax = 0;
         $invoiceItems = $this->getInvoiceItemRepository()->findByInvoiceId((int) $invoiceId);
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');

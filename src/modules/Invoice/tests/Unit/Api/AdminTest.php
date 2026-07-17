@@ -560,8 +560,8 @@ test('processes a transaction', function (): void {
         ->andReturn(true);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_Transaction();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = Mockery::mock(Box\Mod\Invoice\Entity\Transaction::class)->shouldIgnoreMissing();
+    $model->id = 1;
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
