@@ -947,6 +947,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     private function syncFileBackedTemplates(): bool
     {
         $extensionService = $this->di['mod_service']('extension');
+        $templatesByCode = [];
+        foreach ($this->getTemplateRepository()->findAll() as $template) {
+            $templatesByCode[$template->getActionCode()] = $template;
+        }
 
         $finder = new Finder();
         $finder = $finder->files()->in(PATH_MODS . '/*/templates/email/')->name('*.html.twig');
@@ -960,7 +964,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 continue;
             }
 
-            $template = $this->getTemplateRepository()->findOneByActionCode($code);
+            $template = $templatesByCode[$code] ?? null;
             $default = $this->getDefaultTemplate($code, ['code' => $code]);
             if ($default === null) {
                 continue;
