@@ -69,15 +69,17 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
 
         $ipnUrl = $this->getServiceUrl($invoice_id);
         $invoiceUrl = $this->di['tools']->url('invoice/' . $invoiceModel->hash);
+        $ipnUrlJs = json_encode($ipnUrl, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?: '""';
+        $invoiceUrlJs = json_encode($invoiceUrl, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?: '""';
 
         return "<script>
                 document.addEventListener('DOMContentLoaded', function() {
-                    FOSSBilling.api.makeRequest('POST', '$ipnUrl', {}, function () {
-                        window.location.href = '$invoiceUrl';
+                    FOSSBilling.api.makeRequest('POST', $ipnUrlJs, {}, function () {
+                        window.location.href = $invoiceUrlJs;
                     }, function (error) {
                         console.error('Payment callback failed:', error);
                         if (window.confirm('An error occurred while processing your request. Would you like to return to the invoice page?')) {
-                            window.location.href = '$invoiceUrl';
+                            window.location.href = $invoiceUrlJs;
                         }
                     }, false);
                 });
