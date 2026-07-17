@@ -324,19 +324,30 @@ test('hasPermission returns false for staff without method permission', function
 
 test('onAfterClientReplyTicket sends email notification', function (): void {
     $eventMock = Mockery::mock('\Box_Event');
+    $ticketId = 42;
+    $ticketModel = (new Box\Mod\Support\Entity\SupportTicket())->setPriority(25);
 
     $supportServiceMock = Mockery::mock(Box\Mod\Support\Service::class);
-    $supportServiceMock->shouldReceive('getTicketById')->atLeast()->once()
-        ->andReturn(new Box\Mod\Support\Entity\SupportTicket());
-    $supportServiceMock->shouldReceive('toApiArray')->atLeast()->once()
-        ->andReturn([]);
+    $supportServiceMock->shouldReceive('getTicketById')->once()
+        ->with($ticketId)
+        ->andReturn($ticketModel);
+    $supportServiceMock->shouldReceive('toApiArray')->once()
+        ->with($ticketModel, true)
+        ->andReturn(['subject' => 'Example ticket']);
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
-    $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()
-        ->with(Mockery::on(fn ($email): bool => $email['code'] === 'mod_staff_ticket_reply'));
+    $emailServiceMock->shouldReceive('sendTemplate')->once()
+        ->with([
+            'to_staff' => true,
+            'code' => 'mod_staff_ticket_reply',
+            'ticket' => [
+                'subject' => 'Example ticket',
+                'priority' => 25,
+            ],
+        ]);
 
-    $eventMock->shouldReceive('getparameters')->atLeast()->once()
-        ->andReturn(['id' => random_int(1, 100)]);
+    $eventMock->shouldReceive('getParameters')->once()
+        ->andReturn(['id' => $ticketId]);
 
     $service = new Service();
 
@@ -735,7 +746,7 @@ test('onAfterClientOpenTicket sends mod_staff_ticket_open email', function (): v
     $emailConfig = [
         'to_staff' => true,
         'code' => 'mod_staff_ticket_open',
-        'ticket' => $supportTicketArray,
+        'ticket' => ['priority' => 100],
     ];
     $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()
         ->with($emailConfig)
@@ -797,7 +808,7 @@ test('onAfterClientOpenTicket sends mod_support_helpdesk_ticket_open email', fun
     $emailConfig = [
         'to' => $helpdeskModel->getEmail(),
         'code' => 'mod_support_helpdesk_ticket_open',
-        'ticket' => $supportTicketArray,
+        'ticket' => ['priority' => 100],
     ];
     $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()
         ->with($emailConfig)
