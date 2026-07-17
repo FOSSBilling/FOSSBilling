@@ -57,6 +57,11 @@ class Box_AppClient extends Box_App
             $ext = substr((string) $page, strpos((string) $page, '.') + 1);
             $page = substr((string) $page, 0, strpos((string) $page, '.'));
         }
+
+        if ($page === 'login' && $this->di['auth']->isClientLoggedIn()) {
+            return $this->redirect('/');
+        }
+
         $page = str_replace('/', '_', $page);
         $tpl = 'mod_page_' . $page;
 
