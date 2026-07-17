@@ -606,18 +606,35 @@ test('onAfterClientReplyTicket handles guest email exception', function (): void
     $service->onAfterClientReplyTicket($eventMock);
 });
 
-test('onAfterClientSignUp sends email notification', function (): void {
+test('onAfterClientSignUp sends sanitized client details in the email variables', function (): void {
     $eventMock = Mockery::mock('\Box_Event');
+    $clientId = 42;
+    $client = Mockery::mock(Model_Client::class);
+    $clientDetails = [
+        'id' => $clientId,
+        'email' => 'new-client@example.com',
+        'first_name' => 'New',
+        'last_name' => 'Client',
+    ];
 
     $clientMock = Mockery::mock(Box\Mod\Client\Service::class);
-    $clientMock->shouldReceive('get')->atLeast()->once()
-        ->andReturn([]);
+    $clientMock->shouldReceive('get')->once()
+        ->with(['id' => $clientId])
+        ->andReturn($client);
+    $clientMock->shouldReceive('toApiArray')->once()
+        ->with($client)
+        ->andReturn($clientDetails);
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
-    $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once();
+    $emailServiceMock->shouldReceive('sendTemplate')->once()
+        ->with([
+            'to_staff' => true,
+            'code' => 'mod_staff_client_signup',
+            'c' => $clientDetails,
+        ]);
 
-    $eventMock->shouldReceive('getparameters')->atLeast()->once()
-        ->andReturn(['id' => random_int(1, 100)]);
+    $eventMock->shouldReceive('getParameters')->once()
+        ->andReturn(['id' => $clientId]);
 
     $service = new Service();
 
@@ -639,17 +656,23 @@ test('onAfterClientSignUp sends email notification', function (): void {
 
 test('onAfterClientSignUp handles email exception', function (): void {
     $eventMock = Mockery::mock('\Box_Event');
+    $clientId = 42;
+    $client = Mockery::mock(Model_Client::class);
 
     $clientMock = Mockery::mock(Box\Mod\Client\Service::class);
-    $clientMock->shouldReceive('get')->atLeast()->once()
+    $clientMock->shouldReceive('get')->once()
+        ->with(['id' => $clientId])
+        ->andReturn($client);
+    $clientMock->shouldReceive('toApiArray')->once()
+        ->with($client)
         ->andReturn([]);
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
-    $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()
+    $emailServiceMock->shouldReceive('sendTemplate')->once()
         ->andThrow(new Exception('PHPunit controlled Exception'));
 
-    $eventMock->shouldReceive('getparameters')->atLeast()->once()
-        ->andReturn(['id' => random_int(1, 100)]);
+    $eventMock->shouldReceive('getParameters')->once()
+        ->andReturn(['id' => $clientId]);
 
     $service = new Service();
 
