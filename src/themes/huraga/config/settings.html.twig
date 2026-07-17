@@ -5,8 +5,8 @@
     <div class="mb-3">
         <label class="form-label" for="theme">{{ 'Theme'|trans }}</label>
         <select class="form-select" name="theme" id="theme">
-            <option value="light" selected>{{ 'Bootstrap Light'|trans }}</option>
-            <option value="dark">{{ 'Bootstrap Dark'|trans }}</option>
+            <option value="light"{% if settings.theme is not defined or settings.theme == 'light' or settings.theme is empty %} selected{% endif %}>{{ 'Bootstrap Light'|trans }}</option>
+            <option value="dark"{% if settings.theme is defined and settings.theme == 'dark' %} selected{% endif %}>{{ 'Bootstrap Dark'|trans }}</option>
         </select>
     </div>
 </section>
