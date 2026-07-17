@@ -146,15 +146,15 @@ tr:nth-of-type(odd) {
  * for mixed-language content, then prefer the locale-specific font when known.
  */
 body {
-    font-family: DejaVu Sans, "Noto Sans Thai", "Noto Sans Lao";
+    font-family: "DejaVu Sans", "Noto Sans Thai", "Noto Sans Lao";
 }
 
 html[lang^="th"] body {
-    font-family: "Noto Sans Thai", DejaVu Sans, "Noto Sans Lao";
+    font-family: "Noto Sans Thai", "DejaVu Sans", "Noto Sans Lao";
 }
 
 html[lang^="lo"] body {
-    font-family: "Noto Sans Lao", DejaVu Sans, "Noto Sans Thai";
+    font-family: "Noto Sans Lao", "DejaVu Sans", "Noto Sans Thai";
 }
 
 /**
