@@ -243,6 +243,47 @@ test('updates an invoice', function (): void {
     expect($result)->toBeBool()->toBeTrue();
 });
 
+test('updates an invoice before approving it', function (): void {
+    $api = apiEndpoint(new Admin());
+    $data = [
+        'id' => 1,
+        'approve' => 1,
+        'new_item' => [
+            'title' => 'Hosting',
+            'quantity' => 1,
+            'price' => '10.00',
+        ],
+    ];
+    $model = new Model_Invoice();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('updateInvoice')
+        ->once()
+        ->ordered()
+        ->with($model, $data)
+        ->andReturn(true);
+    $serviceMock->shouldReceive('approveInvoice')
+        ->once()
+        ->ordered()
+        ->with($model, $data)
+        ->andReturn(true);
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getExistingModelById')
+        ->once()
+        ->andReturn($model);
+
+    $di = container();
+    $di['db'] = $dbMock;
+
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    $result = $api->update($data);
+    expect($result)->toBeTrue();
+});
+
 test('deletes an invoice item', function (): void {
     $api = apiEndpoint(new Admin());
     $data = [
