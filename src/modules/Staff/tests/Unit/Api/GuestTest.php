@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\moduleService;
 
 test('get di', function (): void {
     $api = apiEndpoint(new Box\Mod\Staff\Api\Guest());
@@ -105,4 +106,66 @@ test('login check ip exception', function (): void {
     ];
     expect(fn () => $guestApi->login($data))
         ->toThrow(FOSSBilling\Exception::class, 'You are not allowed to login to admin area from this IP address.');
+});
+
+test('updatePassword invalidates existing sessions', function (): void {
+    $guestApi = apiEndpoint(new Box\Mod\Staff\Api\Guest());
+
+    $modMock = Mockery::mock('\\' . FOSSBilling\Module::class);
+    $modMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([]);
+
+    $passwordReset = new Box\Mod\Staff\Entity\AdminPasswordReset();
+    $rp = new ReflectionProperty($passwordReset, 'id');
+    $rp->setValue($passwordReset, 1);
+    $rp = new ReflectionProperty($passwordReset, 'adminId');
+    $rp->setValue($passwordReset, 1);
+    $rp = new ReflectionProperty($passwordReset, 'createdAt');
+    $rp->setValue($passwordReset, new DateTime('-300 seconds'));
+
+    $admin = new Box\Mod\Staff\Entity\Admin();
+    $rp = new ReflectionProperty($admin, 'id');
+    $rp->setValue($admin, 1);
+    $rp = new ReflectionProperty($admin, 'status');
+    $rp->setValue($admin, 'active');
+
+    $passwordResetRepository = Mockery::mock(Box\Mod\Staff\Repository\AdminPasswordResetRepository::class);
+    $passwordResetRepository->shouldReceive('findOneByHash')->atLeast()->once()->andReturn($passwordReset);
+
+    $adminRepository = Mockery::mock(Box\Mod\Staff\Repository\AdminRepository::class);
+    $adminRepository->shouldReceive('find')->atLeast()->once()->with(1)->andReturn($admin);
+
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
+    $em->shouldReceive('getRepository')->andReturnUsing(static fn (string $class): object => match ($class) {
+        Box\Mod\Staff\Entity\Admin::class => $adminRepository,
+        Box\Mod\Staff\Entity\AdminPasswordReset::class => $passwordResetRepository,
+        default => Mockery::mock()->shouldIgnoreMissing(),
+    });
+
+    $eventMock = Mockery::mock('\Box_EventManager');
+    $eventMock->shouldReceive('fire')->times(2);
+
+    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
+    $passwordMock->shouldReceive('hashIt')->atLeast()->once();
+
+    $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
+    $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once();
+
+    $profileServiceMock = Mockery::mock(Box\Mod\Profile\Service::class);
+    $profileServiceMock->shouldReceive('invalidateSessions')->atLeast()->once();
+
+    $di = container();
+    $di['em'] = $em;
+    $di['events_manager'] = $eventMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['password'] = $passwordMock;
+    $di['mod_service'] = $di->protect(moduleService(['email' => $emailServiceMock, 'profile' => $profileServiceMock]));
+
+    $guestApi->setMod($modMock);
+    $guestApi->setDi($di);
+
+    $guestApi->update_password([
+        'code' => 'hashedString',
+        'password' => 'NewPassword1',
+        'password_confirm' => 'NewPassword1',
+    ]);
 });

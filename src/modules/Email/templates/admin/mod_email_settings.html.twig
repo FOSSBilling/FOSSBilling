@@ -54,7 +54,16 @@
                         {{ 'Validate All'|trans }}
                     </a>
                     <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="{{ 'email/batch_template_generate'|api_url }}" {{ fb_api_link({ reload: true }) }}>
+                    <a class="dropdown-item"
+                       href="{{ 'email/batch_template_generate'|api_url }}"
+                       {{ fb_api_link({
+                           modal: {
+                               type: 'confirm',
+                               title: 'Regenerate built-in templates?'|trans,
+                               content: 'This will replace the subject and content of every existing built-in email template. Custom templates will not be affected.'|trans,
+                           },
+                           reload: true,
+                       }) }}>
                         <svg class="icon me-1"><use href="#mail" /></svg>
                         {{ 'Regenerate Built-in Templates'|trans }}
                     </a>
@@ -329,7 +338,7 @@
                                 </div>
                             </div>
                             <div class="d-flex justify-content-end gap-2 mt-3">
-                                <a class="btn btn-outline-secondary" href="{{ request_path|url({ tab: 'queue' }) }}">{{ 'Reset'|trans }}</a>
+                                <a class="btn btn-outline-secondary" href="{{ request_path|url(query: { tab: 'queue' }) }}">{{ 'Reset'|trans }}</a>
                                 <button class="btn btn-primary" type="submit">
                                     <svg class="icon">
                                         <use href="#filter" />

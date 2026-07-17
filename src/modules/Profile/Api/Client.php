@@ -33,6 +33,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
      * Update currently logged in client details.
      *
      * @optional string $email - new client email. Must not exist on system
+     * @optional string $billing_email - optional address for invoice notifications
      * @optional string $last_name - last name
      * @optional string $aid - Alternative id. Usually used by import tools.
      * @optional string $gender - Gender - values: male|female|nonbinary|other
@@ -81,6 +82,12 @@ class Client extends \FOSSBilling\Api\AbstractApi
     {
         if (!is_null($data['email'] ?? null)) {
             $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
+        }
+
+        if (array_key_exists('billing_email', $data)) {
+            $data['billing_email'] = empty($data['billing_email'])
+                ? null
+                : $this->getDi()['tools']->validateAndSanitizeEmail($data['billing_email']);
         }
 
         return $this->getService()->updateClient($this->getIdentity(), $data);

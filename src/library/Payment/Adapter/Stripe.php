@@ -144,6 +144,16 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $this->stripe->subscriptions->cancel($subscriptionId, []);
     }
 
+    public function cancelSubscriptionAtPeriodEnd(string $subscriptionId): void
+    {
+        $subscription = $this->stripe->subscriptions->retrieve($subscriptionId, []);
+        if ($subscription->status === Stripe\Subscription::STATUS_CANCELED || ($subscription->cancel_at_period_end ?? false)) {
+            return;
+        }
+
+        $this->stripe->subscriptions->update($subscriptionId, ['cancel_at_period_end' => true]);
+    }
+
     public function getAmountInCents(Model_Invoice $invoice): int
     {
         return $this->getAmountInMinorUnits($invoice);
@@ -261,14 +271,44 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
     private function processPaymentIntent(Model_Transaction $tx, ?Model_Invoice $invoice, array $data): void
     {
-        $invoiceService = $this->di['mod_service']('Invoice');
         $charge = $this->stripe->paymentIntents->retrieve($data['get']['payment_intent'], []);
+
+        $this->withPaymentIntentLock(
+            $charge->id,
+            (int) $tx->gateway_id,
+            fn () => $this->processPaymentIntentUnderLock($tx, $invoice, $charge)
+        );
+    }
+
+    private function processPaymentIntentUnderLock(Model_Transaction $tx, ?Model_Invoice $invoice, object $charge): void
+    {
+        $invoiceService = $this->di['mod_service']('Invoice');
 
         $tx->txn_status = $charge->status;
         $tx->txn_id = $charge->id;
         $tx->amount = $this->getAmountFromMinorUnits($charge->amount, $charge->currency);
         $tx->currency = $charge->currency;
         $tx->type = Payment_Transaction::TXTYPE_PAYMENT;
+
+        // Stripe may deliver the webhook before redirecting the customer.
+        // Keep that transaction instead of recording the PaymentIntent twice.
+        $existing = $this->di['db']->findOne(
+            'Transaction',
+            'txn_id = :txn_id AND gateway_id = :gateway_id AND id != :id AND status IN (:s1, :s2, :s3)',
+            [
+                ':txn_id' => $charge->id,
+                ':gateway_id' => $tx->gateway_id,
+                ':id' => $tx->id,
+                ':s1' => Model_Transaction::STATUS_RECEIVED,
+                ':s2' => Model_Transaction::STATUS_PROCESSING,
+                ':s3' => Model_Transaction::STATUS_PROCESSED,
+            ]
+        );
+        if ($existing instanceof Model_Transaction) {
+            $this->di['db']->trash($tx);
+
+            return;
+        }
 
         if ($charge->status === 'succeeded') {
             if ($tx->status === Model_Transaction::STATUS_PROCESSED && empty($tx->error)) {
@@ -667,12 +707,14 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     {
         $stripeSubscription = $event->data->object;
 
-        $status = match ($stripeSubscription->status) {
-            'active' => 'active',
-            'trialing' => 'active',
-            'past_due' => 'active',
-            default => 'canceled',
-        };
+        $status = ($stripeSubscription->cancel_at_period_end ?? false)
+            ? Box\Mod\Invoice\ServiceSubscription::STATUS_PENDING_CANCELLATION
+            : match ($stripeSubscription->status) {
+                'active' => 'active',
+                'trialing' => 'active',
+                'past_due' => 'active',
+                default => 'canceled',
+            };
 
         try {
             $this->updateSubscriptionStatusFromGateway($api_admin, $stripeSubscription->id, $status);
@@ -688,14 +730,13 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     private function handleSubscriptionDeleted($api_admin, Model_Transaction $tx, object $event): bool
     {
         $stripeSubscription = $event->data->object;
-
-        try {
-            $this->updateSubscriptionStatusFromGateway($api_admin, $stripeSubscription->id, 'canceled');
-        } catch (Exception $e) {
-            if (DEBUG) {
-                error_log('Stripe subscription deleted webhook: ' . $e->getMessage());
-            }
+        $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
+        $subscriptionId = $subscriptionService->findIdBySid($stripeSubscription->id);
+        if ($subscriptionId === null) {
+            return false;
         }
+
+        $subscriptionService->finalizeCancellationFromGateway($subscriptionId);
 
         return false;
     }
@@ -848,6 +889,15 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     {
         $paymentIntent = $event->data->object;
 
+        return $this->withPaymentIntentLock(
+            $paymentIntent->id,
+            $gateway_id,
+            fn (): bool => $this->handlePaymentIntentSucceededWebhookUnderLock($tx, $paymentIntent, $gateway_id)
+        );
+    }
+
+    private function handlePaymentIntentSucceededWebhookUnderLock(Model_Transaction $tx, object $paymentIntent, int $gateway_id): bool
+    {
         // Set transaction metadata from the PaymentIntent
         $tx->txn_id = $paymentIntent->id;
         $tx->txn_status = $paymentIntent->status;
@@ -861,8 +911,14 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         // redirect flow is mid-processing when the webhook arrives.
         $existing = $this->di['db']->findOne(
             'Transaction',
-            'txn_id = :txn_id AND status IN (:s1, :s2)',
-            [':txn_id' => $paymentIntent->id, ':s1' => Model_Transaction::STATUS_PROCESSING, ':s2' => Model_Transaction::STATUS_PROCESSED]
+            'txn_id = :txn_id AND gateway_id = :gateway_id AND id != :id AND status IN (:s1, :s2)',
+            [
+                ':txn_id' => $paymentIntent->id,
+                ':gateway_id' => $gateway_id,
+                ':id' => $tx->id,
+                ':s1' => Model_Transaction::STATUS_PROCESSING,
+                ':s2' => Model_Transaction::STATUS_PROCESSED,
+            ]
         );
         if ($existing instanceof Model_Transaction) {
             $tx->invoice_id = $existing->invoice_id;
@@ -885,8 +941,11 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
         if ($invoiceId) {
             $tx->invoice_id = (int) $invoiceId;
-            $this->di['db']->store($tx);
         }
+
+        // Persist the PaymentIntent ID while the lock is held so a redirect
+        // waiting on the same key observes this transaction after release.
+        $this->di['db']->store($tx);
 
         if ($paymentIntent->status !== 'succeeded') {
             return false;
@@ -898,6 +957,33 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $this->applyOneTimePayment($tx, $invoice, $paymentIntent);
 
         return true;
+    }
+
+    private function withPaymentIntentLock(string $paymentIntentId, int $gatewayId, callable $callback): mixed
+    {
+        $lockName = 'fb:stripe:' . substr(hash('sha256', $gatewayId . ':' . $paymentIntentId), 0, 54);
+        $waitStartedAt = hrtime(true);
+        $acquired = (int) $this->di['dbal']->fetchOne(
+            'SELECT GET_LOCK(:lock_name, 10)',
+            ['lock_name' => $lockName]
+        );
+
+        if ($acquired !== 1) {
+            $waitDurationMs = (hrtime(true) - $waitStartedAt) / 1_000_000;
+            $this->di['logger']->warning(
+                'Timed out after %.1f ms waiting for Stripe PaymentIntent lock %s',
+                $waitDurationMs,
+                $lockName
+            );
+
+            throw new FOSSBilling\Exception('Timed out waiting to process this Stripe payment');
+        }
+
+        try {
+            return $callback();
+        } finally {
+            $this->di['dbal']->fetchOne('SELECT RELEASE_LOCK(:lock_name)', ['lock_name' => $lockName]);
+        }
     }
 
     private function handlePaymentIntentFailedWebhook($api_admin, Model_Transaction $tx, object $event): bool
@@ -1324,9 +1410,9 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
     protected function _generateForm(Model_Invoice $invoice): string
     {
-        $intent = $this->stripe->paymentIntents->create([
+        $intentParams = [
             'amount' => $this->getAmountInMinorUnits($invoice),
-            'currency' => $invoice->currency,
+            'currency' => strtolower($invoice->currency),
             'description' => $this->getInvoiceTitle($invoice),
             'automatic_payment_methods' => ['enabled' => true],
             'receipt_email' => $invoice->buyer_email,
@@ -1335,7 +1421,14 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 'invoice_id' => (string) $invoice->id,
                 'gateway_id' => (string) $this->config['gateway_id'],
             ],
-        ]);
+        ];
+        $idempotencyKey = sprintf(
+            'one_time_invoice_%d_gateway_%d_%s',
+            $invoice->id,
+            $this->config['gateway_id'],
+            hash('sha256', json_encode($intentParams, JSON_THROW_ON_ERROR))
+        );
+        $intent = $this->stripe->paymentIntents->create($intentParams, ['idempotency_key' => $idempotencyKey]);
 
         $pubKey = ($this->config['test_mode']) ? $this->config['test_pub_key'] : $this->config['pub_key'];
 

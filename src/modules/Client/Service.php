@@ -479,16 +479,24 @@ class Service implements InjectionAwareInterface
                 'timezone' => $model->timezone,
             ];
 
+            if ($identity instanceof \Model_Admin || ($identity instanceof \Model_Client && (int) $identity->id === (int) $model->id)) {
+                $details['billing_email'] = $model->billing_email;
+            }
+
             return $details;
         }
 
-        return $this->toClientApiArray($client, $deep, $identity, $includeSensitive);
+        return $this->toClientApiArray($client, $model, $deep, $identity, $includeSensitive);
     }
 
-    public function toClientApiArray(Client $client, bool $deep = false, $identity = null, bool $includeSensitive = false): array
+    public function toClientApiArray(Client $client, ?\Model_Client $model = null, bool $deep = false, $identity = null, bool $includeSensitive = false): array
     {
         $isAdmin = $identity instanceof \Model_Admin;
         $details = $client->toApiArray();
+
+        if ($isAdmin || ($identity instanceof \Model_Client && (int) $identity->id === (int) $client->getId())) {
+            $details['billing_email'] = $model?->billing_email ?? $client->getBillingEmail();
+        }
 
         if ($deep) {
             $details['balance'] = $this->getClientBalanceFromEntity($client);
@@ -611,6 +619,8 @@ class Service implements InjectionAwareInterface
         $client = new Client();
         $client->setAuthType($data['auth_type'] ?? null);
         $client->setEmail(strtolower(trim((string) ($data['email'] ?? null))));
+        $billingEmail = trim((string) ($data['billing_email'] ?? ''));
+        $client->setBillingEmail($billingEmail !== '' ? strtolower($billingEmail) : null);
         $client->setFirstName(ucwords((string) ($data['first_name'] ?? null)));
         $client->setPass($this->di['password']->hashIt($password));
 

@@ -123,6 +123,9 @@ class Client implements ApiArrayInterface
     #[ORM\Column(name: 'referred_by', type: Types::STRING, length: 255, nullable: true)]
     private ?string $referredBy = null;
 
+    #[ORM\Column(name: 'billing_email', type: Types::STRING, length: 255, nullable: true)]
+    private ?string $billingEmail = null;
+
     #[ORM\Column(name: 'custom_1', type: Types::TEXT, nullable: true)]
     private ?string $custom1 = null;
 
@@ -596,6 +599,18 @@ class Client implements ApiArrayInterface
     public function setReferredBy(?string $referredBy): self
     {
         $this->referredBy = $referredBy;
+
+        return $this;
+    }
+
+    public function getBillingEmail(): ?string
+    {
+        return $this->billingEmail;
+    }
+
+    public function setBillingEmail(?string $billingEmail): self
+    {
+        $this->billingEmail = $billingEmail;
 
         return $this;
     }

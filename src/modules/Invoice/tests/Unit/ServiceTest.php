@@ -564,6 +564,19 @@ test('handles after admin cron run event', function (): void {
     $service->onAfterAdminCronRun($eventMock);
 });
 
+test('uses the client billing email for invoice notifications', function (): void {
+    $service = new Service();
+    $email = ['to_client' => 42, 'code' => 'mod_invoice_created'];
+    $invoice = ['client' => ['billing_email' => ' billing@example.com ']];
+
+    expect($service->withBillingRecipient($email, $invoice))->toBe([
+        'to_client' => 42,
+        'code' => 'mod_invoice_created',
+        'to' => 'billing@example.com',
+    ]);
+    expect($service->withBillingRecipient($email, ['client' => ['billing_email' => null]]))->toBe($email);
+});
+
 test('handles event after invoice is due', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $arr = [

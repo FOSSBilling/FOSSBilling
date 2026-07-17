@@ -56,7 +56,9 @@
         "myhost",
         "inversed",
         "Autoresponder",
-        "initialises"
+        "initialises",
+        "WORKTREE",
+        "previewable"
     ],
 
     "ignoreWords": [
@@ -223,6 +225,9 @@
         "thankyoupage",
         "taxupdate",
         "Dompdf",
+        "Noto",
+        "ภูเก็ต",
+        "ພູເກັດ",
         "ctable",
         "DATEDIFF",
         "cbrepo",
@@ -559,6 +564,7 @@
         "src/modules/Seo/Service.php",
         "src/modules/Orderbutton/templates/client/mod_orderbutton_js.html.twig",
         "src/modules/Massmailer/Api/Admin.php",
+        "src/modules/Invoice/templates/pdf/fonts/OFL.txt",
         "src/modules/System/templates/admin/mod_system_settings.html.twig",
         "src/vendor",
         "src/themes/*/build",

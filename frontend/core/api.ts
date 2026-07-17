@@ -400,6 +400,10 @@ const API = {
           event.preventDefault();
 
           const formData = new FormData(formElement);
+          const submitter = event.submitter;
+          if (submitter?.name) {
+            formData.append(submitter.name, submitter.value);
+          }
 
           if (FOSSBilling.editor) {
             if (!FOSSBilling.editor.validateForm(formElement)) {

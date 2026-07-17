@@ -18,6 +18,8 @@ use FOSSBilling\InjectionAwareInterface;
 
 class ServiceSubscription implements InjectionAwareInterface
 {
+    public const STATUS_PENDING_CANCELLATION = 'pending_cancellation';
+
     protected ?\Pimple\Container $di = null;
     private ?SubscriptionRepository $subscriptionRepository = null;
 
@@ -79,8 +81,7 @@ class ServiceSubscription implements InjectionAwareInterface
         $model->amount = $data['amount'] ?? $model->amount;
         $model->currency = $data['currency'] ?? $model->currency;
         $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['em']->persist($model);
-        $this->di['em']->flush();
+        $this->di['db']->store($model);
 
         $this->di['logger']->info('Updated subscription %s', $model->id);
 
@@ -230,6 +231,22 @@ class ServiceSubscription implements InjectionAwareInterface
         $this->unsubscribe($model);
     }
 
+    public function scheduleCancellation(\Model_Subscription $model): void
+    {
+        $subscriptionId = trim((string) $model->sid);
+        if ($subscriptionId === '') {
+            throw new \FOSSBilling\InformationException('The subscription cannot be canceled at the end of its billing period because it has no gateway ID.');
+        }
+
+        $adapter = $this->getGatewayAdapter($model);
+        if (!method_exists($adapter, 'cancelSubscriptionAtPeriodEnd')) {
+            throw new \FOSSBilling\InformationException('The payment gateway does not support cancellation at the end of the billing period.');
+        }
+
+        $adapter->cancelSubscriptionAtPeriodEnd($subscriptionId);
+        $this->persistUpdate($model, ['status' => self::STATUS_PENDING_CANCELLATION]);
+    }
+
     private function cancelAtGateway(\Model_Subscription $model, ?string $subscriptionId = null): void
     {
         $subscriptionId = trim($subscriptionId ?? (string) $model->sid);
@@ -237,19 +254,118 @@ class ServiceSubscription implements InjectionAwareInterface
             return;
         }
 
-        $gateway = $this->di['db']->getExistingModelById('PayGateway', $model->pay_gateway_id, 'Payment gateway not found');
-        $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
-        $adapter = $payGatewayService->getPaymentAdapter($gateway);
+        $adapter = $this->getGatewayAdapter($model);
 
         if (method_exists($adapter, 'cancelSubscription')) {
             $adapter->cancelSubscription($subscriptionId);
         }
     }
 
-    public function cancelForOrder(\Model_ClientOrder $order): void
+    private function getGatewayAdapter(\Model_Subscription $model): object
+    {
+        $gateway = $this->di['db']->getExistingModelById('PayGateway', $model->pay_gateway_id, 'Payment gateway not found');
+        $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
+
+        return $payGatewayService->getPaymentAdapter($gateway);
+    }
+
+    public function cancelForOrder(\Model_ClientOrder $order): int
+    {
+        $canceledSubscriptions = 0;
+        foreach ($this->getSubscriptionsForOrder($order) as $subscription) {
+            $this->cancel($subscription);
+            ++$canceledSubscriptions;
+        }
+
+        return $canceledSubscriptions;
+    }
+
+    public function scheduleCancellationForOrder(\Model_ClientOrder $order): int
+    {
+        $scheduledSubscriptions = 0;
+        foreach ($this->getSubscriptionsForOrder($order, 'active') as $subscription) {
+            $this->scheduleCancellation($subscription);
+            ++$scheduledSubscriptions;
+        }
+
+        return $scheduledSubscriptions;
+    }
+
+    public function finalizeCancellationFromGateway(int $id): bool
+    {
+        $subscription = $this->di['db']->getExistingModelById('Subscription', $id, 'Subscription not found');
+
+        if ($subscription->status === self::STATUS_PENDING_CANCELLATION && $subscription->rel_type === 'invoice') {
+            $query = $this->di['dbal']->createQueryBuilder();
+            $orderIds = $query
+                ->select('DISTINCT ii.rel_id')
+                ->from('invoice_item', 'ii')
+                ->innerJoin('ii', 'client_order_meta', 'com', 'com.client_order_id = ii.rel_id')
+                ->where('ii.invoice_id = :invoice_id')
+                ->andWhere('ii.type = :item_type')
+                ->andWhere('com.name = :meta_name')
+                ->andWhere('com.value = :meta_value')
+                ->setParameter('invoice_id', $subscription->rel_id)
+                ->setParameter('item_type', \Model_InvoiceItem::TYPE_ORDER)
+                ->setParameter('meta_name', \Box\Mod\Order\Service::META_CANCEL_AT_PERIOD_END)
+                ->setParameter('meta_value', '1')
+                ->executeQuery()
+                ->fetchFirstColumn();
+
+            $orderService = $this->di['mod_service']('Order');
+            foreach ($orderIds as $orderId) {
+                $order = $this->di['db']->getExistingModelById('ClientOrder', (int) $orderId, 'Order not found');
+                if (in_array($order->status, [\Model_ClientOrder::STATUS_CANCELED, \Model_ClientOrder::STATUS_PENDING_SETUP, \Model_ClientOrder::STATUS_FAILED_SETUP], true)) {
+                    continue;
+                }
+
+                $orderService->finalizeCancellationFromGateway($order, 'Subscription ended at the payment gateway');
+            }
+        }
+
+        return $this->persistUpdate($subscription, ['status' => 'canceled']);
+    }
+
+    public function canCancelAtPeriodEndForOrder(\Model_ClientOrder $order): bool
+    {
+        $subscriptions = $this->getSubscriptionsForOrder($order, 'active');
+        if ($subscriptions === []) {
+            return false;
+        }
+
+        foreach ($subscriptions as $subscription) {
+            if (trim((string) $subscription->sid) === '') {
+                return false;
+            }
+
+            try {
+                $adapter = $this->getGatewayAdapter($subscription);
+            } catch (\Exception) {
+                return false;
+            }
+
+            if (!method_exists($adapter, 'cancelSubscriptionAtPeriodEnd')) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public function findIdBySid(string $sid): ?int
+    {
+        $id = $this->di['dbal']->fetchOne('SELECT id FROM subscription WHERE sid = :sid', ['sid' => $sid]);
+
+        return is_numeric($id) ? (int) $id : null;
+    }
+
+    /**
+     * @return list<\Model_Subscription>
+     */
+    private function getSubscriptionsForOrder(\Model_ClientOrder $order, ?string $status = null): array
     {
         $query = $this->di['dbal']->createQueryBuilder();
-        $subscriptions = $query
+        $query
             ->select('DISTINCT s.id')
             ->from('subscription', 's')
             ->innerJoin('s', 'invoice_item', 'ii', 'ii.invoice_id = s.rel_id')
@@ -258,14 +374,18 @@ class ServiceSubscription implements InjectionAwareInterface
             ->andWhere('ii.rel_id = :order_id')
             ->setParameter('rel_type', 'invoice')
             ->setParameter('item_type', \Model_InvoiceItem::TYPE_ORDER)
-            ->setParameter('order_id', $order->id)
-            ->executeQuery()
-            ->fetchAllAssociative();
+            ->setParameter('order_id', $order->id);
 
-        foreach ($subscriptions as $subscriptionData) {
-            $subscription = $this->di['db']->getExistingModelById('Subscription', (int) $subscriptionData['id'], 'Subscription not found');
-            $this->cancel($subscription);
+        if ($status !== null) {
+            $query->andWhere('s.status = :status')->setParameter('status', $status);
         }
+
+        $subscriptionIds = $query->executeQuery()->fetchFirstColumn();
+
+        return array_map(
+            fn (mixed $id): \Model_Subscription => $this->di['db']->getExistingModelById('Subscription', (int) $id, 'Subscription not found'),
+            $subscriptionIds,
+        );
     }
 
     private function getSubscriptionPeriodByInvoiceId(int $invoiceId): ?string

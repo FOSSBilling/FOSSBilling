@@ -174,6 +174,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $buyer_zip - Buyer zip
      * @optional string $buyer_phone - Buyer phone
      * @optional string $buyer_email - Buyer email
+     * @optional bool $approve - approve the invoice after saving the supplied changes
      *
      * @return bool
      */
@@ -182,8 +183,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('invoice', 'manage_invoices');
 
         $model = $this->_getInvoice($data);
+        $result = $this->getService()->updateInvoice($model, $data);
 
-        return $this->getService()->updateInvoice($model, $data);
+        if ($result && !empty($data['approve'])) {
+            return $this->getService()->approveInvoice($model, $data);
+        }
+
+        return $result;
     }
 
     /**

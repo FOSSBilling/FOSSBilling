@@ -17,7 +17,7 @@ use Symfony\Component\HttpFoundation\Request;
  * callback, so the get_custom_page catch-block logic can be exercised
  * without spinning up a Twig environment.
  */
-function appClientWithRender(callable $render): Box_AppClient
+function appClientWithRender(callable $render, bool $clientLoggedIn = false): Box_AppClient
 {
     $app = new class($render) extends Box_AppClient {
         /** @var callable */
@@ -25,6 +25,7 @@ function appClientWithRender(callable $render): Box_AppClient
 
         public function __construct(callable $render)
         {
+            parent::__construct();
             $this->renderCallback = $render;
         }
 
@@ -49,7 +50,18 @@ function appClientWithRender(callable $render): Box_AppClient
         {
         }
     };
+    $extensionService = new class {
+        public function isExtensionActive(): bool
+        {
+            return false;
+        }
+    };
     $di['request'] = Request::create('http://localhost/test');
+    $di['mod_service'] = $di->protect(static fn (): object => $extensionService);
+    $di['auth'] = Mockery::mock(Box_Authorization::class)
+        ->shouldReceive('isClientLoggedIn')->andReturn($clientLoggedIn)->getMock();
+    $di['url'] = Mockery::mock(Box_Url::class)
+        ->shouldReceive('link')->andReturnArg(0)->getMock();
     $app->setDi($di);
     $app->setUrl('/test');
 
@@ -73,6 +85,18 @@ test('get_custom_page returns XML content type for sitemap', function (): void {
     expect($response->getStatusCode())->toBe(200)
         ->and($response->headers->get('Content-Type'))->toContain('application/xml')
         ->and($response->getContent())->toBe('<urlset></urlset>');
+});
+
+test('get_custom_page redirects authenticated clients away from login', function (): void {
+    $app = appClientWithRender(
+        static fn (): never => throw new RuntimeException('The login page should not be rendered.'),
+        clientLoggedIn: true,
+    );
+
+    $response = $app->get_custom_page('login');
+
+    expect($response->getStatusCode())->toBe(302)
+        ->and($response->headers->get('Location'))->toBe('/');
 });
 
 test('get_custom_page returns 500 (not 404) when the template throws a RuntimeError (regression for #3818)', function (): void {
@@ -129,4 +153,20 @@ test('get_custom_page still returns 404 when the top-level template is missing',
     $response = $app->get_custom_page('signup');
 
     expect($response->getStatusCode())->toBe(404);
+});
+
+test('numeric custom page paths return a themed 404', function (): void {
+    $app = appClientWithRender(static function (string $fileName): string {
+        if ($fileName === 'error') {
+            return 'error body';
+        }
+
+        throw new FOSSBilling\InformationException('Page not found', null, 404);
+    });
+    $app->setUrl('/12345');
+
+    $response = $app->run();
+
+    expect($response->getStatusCode())->toBe(404)
+        ->and($response->getContent())->toBe('error body');
 });

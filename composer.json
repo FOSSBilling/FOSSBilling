@@ -66,7 +66,7 @@
         "plesk/api-php-lib": "^2.2.1",
         "prinsfrank/standards": "^3.15",
         "sentry/sentry": "^4.19.1",
-        "stripe/stripe-php": "^20.0.0",
+        "stripe/stripe-php": "^21.0.0",
         "symfony/cache": "^7.4.1",
         "symfony/console": "^7.4.1",
         "symfony/filesystem": "^7.4",

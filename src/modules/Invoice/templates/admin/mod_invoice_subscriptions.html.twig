@@ -87,6 +87,7 @@
                                 <select class="form-select" id="subscription-status" name="status">
                                     <option value="">{{ 'All Statuses'|trans }}</option>
                                     <option value="active"{% if request.status == 'active' %} selected{% endif %}>{{ 'Active'|trans }}</option>
+                                    <option value="pending_cancellation"{% if request.status == 'pending_cancellation' %} selected{% endif %}>{{ 'Pending Cancellation'|trans }}</option>
                                     <option value="canceled"{% if request.status == 'canceled' %} selected{% endif %}>{{ 'Canceled'|trans }}</option>
                                 </select>
                             </div>

@@ -25,8 +25,10 @@ use Box\Mod\Invoice\Repository\SubscriptionRepository;
 use Box\Mod\Invoice\Repository\TaxRepository;
 use Box\Mod\Invoice\Repository\TransactionRepository;
 use Dompdf\Dompdf;
+use Dompdf\Options;
 use FOSSBilling\Environment;
 use FOSSBilling\Http\ResponseFactory;
+use FOSSBilling\i18n;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Tools;
@@ -205,7 +207,7 @@ class Service implements InjectionAwareInterface
         return [$sql, $params];
     }
 
-    public function toApiArray(\Model_Invoice|Invoice $invoice, $deep = true, $identity = null): array
+    public function toApiArray(\Model_Invoice|Invoice $invoice, $deep = true, $identity = null, bool $includeClientBillingEmail = false): array
     {
         $this->ensureValidHash($invoice);
 
@@ -338,6 +340,9 @@ class Service implements InjectionAwareInterface
         $clientService = $this->di['mod_service']('client');
         if ($client instanceof \Model_Client) {
             $result['client'] = $clientService->toApiArray($client);
+            if ($includeClientBillingEmail) {
+                $result['client']['billing_email'] = $client->billing_email;
+            }
         } else {
             $result['client'] = null;
         }
@@ -422,7 +427,7 @@ class Service implements InjectionAwareInterface
             if (!$invoiceModel instanceof Invoice) {
                 return true;
             }
-            $invoice = $service->toApiArray($invoiceModel, true);
+            $invoice = $service->toApiArray($invoiceModel, true, null, true);
             if (($invoice['total'] ?? 0) > 0) {
                 $service->sendInvoiceEmail($invoiceModel, $invoice, 'mod_invoice_paid');
             }
@@ -444,7 +449,7 @@ class Service implements InjectionAwareInterface
             if (!$invoiceModel instanceof Invoice) {
                 return true;
             }
-            $invoice = $service->toApiArray($invoiceModel, true);
+            $invoice = $service->toApiArray($invoiceModel, true, null, true);
             $service->sendInvoiceEmail($invoiceModel, $invoice, 'mod_invoice_created');
         } catch (\Exception $exc) {
             $di['logger']->setChannel('email')->error('Failed to send email for invoice creation', ['exception' => $exc->getMessage()]);
@@ -490,6 +495,7 @@ class Service implements InjectionAwareInterface
             'code' => $templateCode,
             'invoice' => $invoiceData,
         ];
+        $email = $this->withBillingRecipient($email, $invoiceData);
 
         $attachment = $this->getInvoicePdfAttachment($invoice);
         if ($attachment !== null) {
@@ -511,11 +517,12 @@ class Service implements InjectionAwareInterface
                 return;
             }
 
-            $invoice = $service->toApiArray($invoiceModel, true);
+            $invoice = $service->toApiArray($invoiceModel, true, null, true);
             $email = [];
             $email['to_client'] = $invoiceModel->getClientId();
             $email['code'] = 'mod_invoice_payment_reminder';
             $email['invoice'] = $invoice;
+            $email = $service->withBillingRecipient($email, $invoice);
             $attachment = $service->getInvoicePdfAttachment($invoiceModel);
             if ($attachment !== null) {
                 $email['attachment'] = $attachment;
@@ -614,7 +621,7 @@ class Service implements InjectionAwareInterface
                 return;
             }
 
-            $invoice = $service->toApiArray($invoiceModel, true);
+            $invoice = $service->toApiArray($invoiceModel, true, null, true);
             if (!isset($invoice['client']) || !is_array($invoice['client']) || !isset($invoice['client']['id'])) {
                 throw new \FOSSBilling\Exception('Invoice client data is unavailable.');
             }
@@ -624,6 +631,7 @@ class Service implements InjectionAwareInterface
             $email['code'] = 'mod_invoice_due_after';
             $email['days_passed'] = $params['days_passed'];
             $email['invoice'] = $invoice;
+            $email = $service->withBillingRecipient($email, $invoice);
             $attachment = $service->getInvoicePdfAttachment($invoiceModel);
             if ($attachment !== null) {
                 $email['attachment'] = $attachment;
@@ -640,6 +648,20 @@ class Service implements InjectionAwareInterface
             }
             $di['logger']->setChannel('email')->error('Failed to send overdue invoice email', ['id' => $params['id'] ?? null, 'exception' => $exc->getMessage()]);
         }
+    }
+
+    /**
+     * Route invoice notifications to the client's optional billing address while retaining
+     * to_client so templates, timezone handling, and client email history keep working.
+     */
+    public function withBillingRecipient(array $email, array $invoice): array
+    {
+        $billingEmail = trim((string) ($invoice['client']['billing_email'] ?? ''));
+        if ($billingEmail !== '') {
+            $email['to'] = $billingEmail;
+        }
+
+        return $email;
     }
 
     public function markAsPaid(Invoice|\Model_Invoice $invoice, $charge = true, $execute = false): bool
@@ -1042,7 +1064,7 @@ class Service implements InjectionAwareInterface
             $this->tryPayWithCredits($invoice);
         }
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceApprove', 'params' => $this->toApiArray($invoice)]);
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceApprove', 'params' => $this->toApiArray($invoice, true, null, true)]);
 
         $invoiceId = $invoice instanceof Invoice ? $invoice->getId() : $invoice->id;
         $this->di['logger']->info("Approved invoice {$invoiceId}.");
@@ -2035,8 +2057,8 @@ class Service implements InjectionAwareInterface
 
         $pdf = $this->createPdfGenerator();
         $pdf->setPaper($document_format, 'portrait');
+        $pdf->setBasePath(Path::join(__DIR__, 'templates', 'pdf'));
         $options = $pdf->getOptions();
-        $options->setChroot($this->di['request']->server->get('DOCUMENT_ROOT', ''));
 
         $sellerLines = 0;
         $buyerLines = 0;
@@ -2057,6 +2079,7 @@ class Service implements InjectionAwareInterface
             'buyer' => $this->getBuyerData($invoice, $buyerLines),
             'buyer_lines' => $buyerLines,
             'invoice' => $invoice,
+            'locale' => i18n::getActiveLocale($this->di['request'], true, $this->di['cookie_queue']),
         ];
 
         $twigFactory = $this->di['twig_factory'];
@@ -2442,7 +2465,15 @@ class Service implements InjectionAwareInterface
     // Start of PDF related functions
     protected function createPdfGenerator(): Dompdf
     {
-        return new Dompdf();
+        $fontCachePath = Path::join(PATH_CACHE, 'dompdf');
+        $this->filesystem->mkdir($fontCachePath);
+
+        $options = new Options();
+        $options->setFontDir($fontCachePath);
+        $options->setFontCache($fontCachePath);
+        $options->setChroot(PATH_ROOT);
+
+        return new Dompdf($options);
     }
 
     protected function createPdfResponse(string $content, string $fileName): Response

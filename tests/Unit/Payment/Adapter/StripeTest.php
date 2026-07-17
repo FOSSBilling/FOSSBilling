@@ -52,11 +52,56 @@ test('does not cancel an already canceled Stripe subscription again', function (
     $this->adapter->cancelSubscription('sub_123');
 });
 
+test('schedules a Stripe subscription cancellation at period end', function (): void {
+    $subscriptionsMock = Mockery::mock();
+    $subscriptionsMock->shouldReceive('retrieve')
+        ->once()
+        ->with('sub_123', [])
+        ->andReturn((object) ['status' => 'active', 'cancel_at_period_end' => false]);
+    $subscriptionsMock->shouldReceive('update')
+        ->once()
+        ->with('sub_123', ['cancel_at_period_end' => true]);
+
+    $stripeMock = Mockery::mock(StripeClient::class);
+    $stripeMock->subscriptions = $subscriptionsMock;
+    setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+    $this->adapter->cancelSubscriptionAtPeriodEnd('sub_123');
+});
+
+test('does not reschedule a Stripe subscription already ending at period end', function (): void {
+    $subscriptionsMock = Mockery::mock();
+    $subscriptionsMock->shouldReceive('retrieve')
+        ->once()
+        ->with('sub_123', [])
+        ->andReturn((object) ['status' => 'active', 'cancel_at_period_end' => true]);
+    $subscriptionsMock->shouldReceive('update')->never();
+
+    $stripeMock = Mockery::mock(StripeClient::class);
+    $stripeMock->subscriptions = $subscriptionsMock;
+    setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+    $this->adapter->cancelSubscriptionAtPeriodEnd('sub_123');
+});
+
 function setPrivateProperty(object $obj, string $property, mixed $value): void
 {
     $reflection = new ReflectionClass($obj);
     $prop = $reflection->getProperty($property);
     $prop->setValue($obj, $value);
+}
+
+function expectPaymentIntentLock(Mockery\MockInterface $dbalMock, string $paymentIntentId, int $gatewayId): void
+{
+    $lockName = 'fb:stripe:' . substr(hash('sha256', $gatewayId . ':' . $paymentIntentId), 0, 54);
+    $dbalMock->shouldReceive('fetchOne')
+        ->once()
+        ->with('SELECT GET_LOCK(:lock_name, 10)', ['lock_name' => $lockName])
+        ->andReturn(1);
+    $dbalMock->shouldReceive('fetchOne')
+        ->once()
+        ->with('SELECT RELEASE_LOCK(:lock_name)', ['lock_name' => $lockName])
+        ->andReturn(1);
 }
 
 function signStripeWebhookPayload(string $payload, string $secret = TEST_WEBHOOK_SECRET): string
@@ -311,6 +356,120 @@ test('syncs subscription webhook status through the internal service path', func
     $this->adapter->setDi($di);
 
     expect(invokePrivateMethod($this->adapter, 'handleSubscriptionUpdated', [
+        $apiAdmin,
+        buildTransaction(),
+        $event,
+    ]))->toBeFalse();
+});
+
+test('syncs end-of-period cancellation state from Stripe', function (): void {
+    $event = (object) ['data' => (object) ['object' => (object) [
+        'id' => 'sub_123',
+        'status' => 'active',
+        'cancel_at_period_end' => true,
+    ]]];
+
+    $apiAdmin = Mockery::mock();
+    $apiAdmin->shouldReceive('invoice_subscription_get')->once()->andReturn(['id' => 42]);
+
+    $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscriptionService->shouldReceive('updateStatusFromGateway')
+        ->once()
+        ->with(42, Box\Mod\Invoice\ServiceSubscription::STATUS_PENDING_CANCELLATION);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn () => $subscriptionService);
+    $this->adapter->setDi($di);
+
+    expect(invokePrivateMethod($this->adapter, 'handleSubscriptionUpdated', [
+        $apiAdmin,
+        buildTransaction(),
+        $event,
+    ]))->toBeFalse();
+});
+
+test('finalizes local cancellation when Stripe deletes a subscription', function (): void {
+    $event = (object) ['data' => (object) ['object' => (object) ['id' => 'sub_123']]];
+
+    $apiAdmin = Mockery::mock();
+    $apiAdmin->shouldNotReceive('invoice_subscription_get');
+
+    $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscriptionService->shouldReceive('findIdBySid')->once()->with('sub_123')->andReturn(42);
+    $subscriptionService->shouldReceive('finalizeCancellationFromGateway')->once()->with(42);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn () => $subscriptionService);
+    $this->adapter->setDi($di);
+
+    expect(invokePrivateMethod($this->adapter, 'handleSubscriptionDeleted', [
+        $apiAdmin,
+        buildTransaction(),
+        $event,
+    ]))->toBeFalse();
+});
+
+test('propagates local cancellation failures so Stripe retries the webhook', function (): void {
+    $event = (object) ['data' => (object) ['object' => (object) ['id' => 'sub_123']]];
+
+    $apiAdmin = Mockery::mock();
+    $apiAdmin->shouldNotReceive('invoice_subscription_get');
+
+    $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscriptionService->shouldReceive('findIdBySid')->once()->with('sub_123')->andReturn(42);
+    $subscriptionService->shouldReceive('finalizeCancellationFromGateway')
+        ->once()
+        ->with(42)
+        ->andThrow(new RuntimeException('Service cancellation failed'));
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn () => $subscriptionService);
+    $this->adapter->setDi($di);
+
+    expect(fn (): mixed => invokePrivateMethod($this->adapter, 'handleSubscriptionDeleted', [
+        $apiAdmin,
+        buildTransaction(),
+        $event,
+    ]))->toThrow(RuntimeException::class, 'Service cancellation failed');
+});
+
+test('propagates subscription lookup failures so Stripe retries the webhook', function (): void {
+    $event = (object) ['data' => (object) ['object' => (object) ['id' => 'sub_123']]];
+
+    $apiAdmin = Mockery::mock();
+    $apiAdmin->shouldNotReceive('invoice_subscription_get');
+
+    $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscriptionService->shouldReceive('findIdBySid')
+        ->once()
+        ->with('sub_123')
+        ->andThrow(new RuntimeException('Database unavailable'));
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn () => $subscriptionService);
+    $this->adapter->setDi($di);
+
+    expect(fn (): mixed => invokePrivateMethod($this->adapter, 'handleSubscriptionDeleted', [
+        $apiAdmin,
+        buildTransaction(),
+        $event,
+    ]))->toThrow(RuntimeException::class, 'Database unavailable');
+});
+
+test('ignores deleted Stripe subscriptions without a local record', function (): void {
+    $event = (object) ['data' => (object) ['object' => (object) ['id' => 'sub_missing']]];
+
+    $apiAdmin = Mockery::mock();
+    $apiAdmin->shouldNotReceive('invoice_subscription_get');
+
+    $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscriptionService->shouldReceive('findIdBySid')->once()->with('sub_missing')->andReturn(null);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn () => $subscriptionService);
+    $this->adapter->setDi($di);
+
+    expect(invokePrivateMethod($this->adapter, 'handleSubscriptionDeleted', [
         $apiAdmin,
         buildTransaction(),
         $event,
@@ -743,13 +902,22 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
         $existingTx->invoice_id = 10;
 
         $dbMock = Mockery::mock('\Box_Database');
+        $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+        expectPaymentIntentLock($dbalMock, 'pi_existing', 1);
         $dbMock->shouldReceive('findOne')
-            ->with('Transaction', 'txn_id = :txn_id AND status IN (:s1, :s2)', Mockery::any())
+            ->with(
+                'Transaction',
+                'txn_id = :txn_id AND gateway_id = :gateway_id AND id != :id AND status IN (:s1, :s2)',
+                Mockery::on(fn (array $params): bool => $params[':txn_id'] === 'pi_existing'
+                    && $params[':gateway_id'] === 1
+                    && $params[':id'] === 200)
+            )
             ->andReturn($existingTx);
         $dbMock->shouldReceive('store')->andReturn($tx->id);
 
         $di = container();
         $di['db'] = $dbMock;
+        $di['dbal'] = $dbalMock;
         $this->adapter->setDi($di);
 
         invokePrivateMethod($this->adapter, 'handlePaymentIntentSucceededWebhook', [
@@ -785,6 +953,8 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
         $invoiceModel->client_id = 7;
 
         $dbMock = Mockery::mock('\Box_Database');
+        $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+        expectPaymentIntentLock($dbalMock, 'pi_new', 1);
         $dbMock->shouldReceive('findOne')
             ->andReturn(null);
         $dbMock->shouldReceive('store')->andReturn($tx->id);
@@ -815,6 +985,7 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
 
         $di = container();
         $di['db'] = $dbMock;
+        $di['dbal'] = $dbalMock;
         $di['mod_service'] = $di->protect(fn ($module, $service = null) => match (true) {
             $service === 'Transaction' => $transactionService,
             $module === 'client' => $clientService,
@@ -833,6 +1004,97 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
         expect($tx->invoice_id)->toBe(15)
             ->and($tx->status)->toBe(Model_Transaction::STATUS_PROCESSED);
     });
+});
+
+describe('processPaymentIntent', function (): void {
+    test('deletes the redirect transaction when the webhook already recorded the PaymentIntent', function (): void {
+        $tx = buildTransaction();
+        $tx->id = 401;
+        $tx->gateway_id = 4;
+
+        $existingTx = buildTransaction();
+
+        $paymentIntent = Stripe\PaymentIntent::constructFrom([
+            'id' => 'pi_webhook_first',
+            'status' => 'succeeded',
+            'amount' => 2500,
+            'currency' => 'usd',
+        ]);
+
+        $paymentIntentsMock = Mockery::mock();
+        $paymentIntentsMock->shouldReceive('retrieve')
+            ->once()
+            ->with('pi_webhook_first', [])
+            ->andReturn($paymentIntent);
+
+        $stripeMock = Mockery::mock(StripeClient::class);
+        $stripeMock->paymentIntents = $paymentIntentsMock;
+        setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+        $dbMock = Mockery::mock('\Box_Database');
+        $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+        expectPaymentIntentLock($dbalMock, 'pi_webhook_first', 4);
+        $dbMock->shouldReceive('findOne')
+            ->once()
+            ->with('Transaction', 'txn_id = :txn_id AND gateway_id = :gateway_id AND id != :id AND status IN (:s1, :s2, :s3)', Mockery::on(fn (array $params): bool => $params[':txn_id'] === 'pi_webhook_first'
+                && $params[':gateway_id'] === 4
+                && $params[':id'] === 401))
+            ->andReturn($existingTx);
+        $dbMock->shouldReceive('trash')->once()->with($tx);
+
+        $di = container();
+        $di['db'] = $dbMock;
+        $di['dbal'] = $dbalMock;
+        $this->adapter->setDi($di);
+
+        invokePrivateMethod($this->adapter, 'processPaymentIntent', [
+            $tx,
+            null,
+            ['get' => ['payment_intent' => 'pi_webhook_first']],
+        ]);
+
+        expect($tx->txn_id)->toBe('pi_webhook_first');
+    });
+});
+
+test('releases the PaymentIntent lock when processing fails', function (): void {
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    expectPaymentIntentLock($dbalMock, 'pi_failure', 2);
+
+    $di = container();
+    $di['dbal'] = $dbalMock;
+    $this->adapter->setDi($di);
+
+    expect(fn (): mixed => invokePrivateMethod($this->adapter, 'withPaymentIntentLock', [
+        'pi_failure',
+        2,
+        fn () => throw new RuntimeException('Processing failed'),
+    ]))->toThrow(RuntimeException::class, 'Processing failed');
+});
+
+test('logs PaymentIntent lock timeouts with lock context', function (): void {
+    $lockName = 'fb:stripe:' . substr(hash('sha256', '2:pi_timeout'), 0, 54);
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('fetchOne')
+        ->once()
+        ->with('SELECT GET_LOCK(:lock_name, 10)', ['lock_name' => $lockName])
+        ->andReturn(0);
+
+    $logger = new Tests\Helpers\TestLogger();
+    $di = container();
+    $di['dbal'] = $dbalMock;
+    $di['logger'] = $logger;
+    $this->adapter->setDi($di);
+
+    expect(fn (): mixed => invokePrivateMethod($this->adapter, 'withPaymentIntentLock', [
+        'pi_timeout',
+        2,
+        fn (): null => null,
+    ]))->toThrow(FOSSBilling\Exception::class, 'Timed out waiting to process this Stripe payment')
+        ->and($logger->calls)->toHaveCount(1)
+        ->and($logger->calls[0]['method'])->toBe('warning')
+        ->and($logger->calls[0]['params'][0])->toContain('Timed out after')
+        ->and($logger->calls[0]['params'][2])->toBe($lockName);
 });
 
 describe('handleSetupIntentSucceededWebhook', function (): void {
@@ -1087,11 +1349,14 @@ describe('processWebhookEvent noise filtering', function (): void {
         $dbMock->shouldReceive('store')->andReturn($tx->id);
 
         $apiAdmin = Mockery::mock();
-        $apiAdmin->shouldReceive('invoice_subscription_get')
-            ->andThrow(new Exception('Not found'));
+        $apiAdmin->shouldNotReceive('invoice_subscription_get');
+
+        $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+        $subscriptionService->shouldReceive('findIdBySid')->once()->with('sub_nonexistent')->andReturn(null);
 
         $di = container();
         $di['db'] = $dbMock;
+        $di['mod_service'] = $di->protect(fn () => $subscriptionService);
         $this->adapter->setDi($di);
 
         $data = [
@@ -1128,8 +1393,13 @@ describe('Stripe webhook gateway ownership', function (): void {
         $paymentIntentsMock = Mockery::mock();
         $paymentIntentsMock->shouldReceive('create')
             ->once()
-            ->withArgs(fn (array $params): bool => $params['metadata']['gateway_id'] === '3'
-                && $params['metadata']['invoice_id'] === '15')
+            ->withArgs(fn (array $params, array $options): bool => $params['metadata']['gateway_id'] === '3'
+                && $params['metadata']['invoice_id'] === '15'
+                && $params['currency'] === 'usd'
+                && $options['idempotency_key'] === sprintf(
+                    'one_time_invoice_15_gateway_3_%s',
+                    hash('sha256', json_encode($params, JSON_THROW_ON_ERROR))
+                ))
             ->andReturn(Stripe\PaymentIntent::constructFrom([
                 'id' => 'pi_gateway_3',
                 'client_secret' => 'pi_gateway_3_secret',

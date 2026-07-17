@@ -2197,9 +2197,11 @@ test('cancelFromOrder cancels linked subscriptions', function (): void {
     $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
     $subscriptionService->shouldReceive('cancelForOrder')
         ->once()
-        ->with(Mockery::any())
-        ->andReturnUsing(function () use (&$calls): void {
+        ->with($clientOrderModel)
+        ->andReturnUsing(function () use (&$calls): int {
             $calls[] = 'subscriptions';
+
+            return 1;
         });
 
     $productService = Mockery::mock(Box\Mod\Product\Service::class);
@@ -2209,10 +2211,16 @@ test('cancelFromOrder cancels linked subscriptions', function (): void {
 
     $dbMock = Mockery::mock(Box_Database::class);
     $dbMock->shouldReceive('store')->once()->with($clientOrderModel);
+    $dbMock->shouldReceive('exec')
+        ->once()
+        ->with(
+            'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND name = :name',
+            [':order_id' => $clientOrderModel->id, ':name' => Service::META_CANCEL_AT_PERIOD_END],
+        );
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['em'] = $emMock;
+    $di['em'] = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
     $di['logger'] = new Box_Log();
     $di['mod_service'] = $di->protect(function (string $module, string $service = '') use ($productService, $subscriptionService) {
         if ($module === 'Invoice' && $service === 'Subscription') {
@@ -2237,6 +2245,61 @@ test('cancelFromOrder cancels linked subscriptions', function (): void {
         ->and($calls)->toBe(['service', 'subscriptions']);
 });
 
+test('scheduleCancellationFromOrder keeps the service active', function (): void {
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order->id = 10;
+    $order->status = Model_ClientOrder::STATUS_ACTIVE;
+
+    $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscriptionService->shouldReceive('canCancelAtPeriodEndForOrder')->once()->with($order)->andReturn(true);
+    $subscriptionService->shouldReceive('scheduleCancellationForOrder')->once()->with($order)->andReturn(1);
+
+    $db = Mockery::mock(Box_Database::class);
+    $db->shouldReceive('store')->once()->with($order);
+
+    $di = container();
+    $di['db'] = $db;
+    $di['logger'] = new Box_Log();
+    $di['mod_service'] = $di->protect(fn () => $subscriptionService);
+
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldAllowMockingProtectedMethods();
+    $service->shouldNotReceive('_callOnService');
+    $service->shouldReceive('updateOrderMeta')
+        ->once()
+        ->with($order, [Service::META_CANCEL_AT_PERIOD_END => '1'])
+        ->andReturn(2);
+    $service->shouldReceive('saveStatusChange')
+        ->once()
+        ->with($order, 'Cancellation scheduled at the end of the current billing period');
+    $service->setDi($di);
+
+    expect($service->scheduleCancellationFromOrder($order, 'Customer request'))->toBeTrue()
+        ->and($order->status)->toBe(Model_ClientOrder::STATUS_ACTIVE)
+        ->and($order->reason)->toBe('Customer request');
+});
+
+test('scheduleCancellationFromOrder does not mark the order when no subscription was scheduled', function (): void {
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order->status = Model_ClientOrder::STATUS_ACTIVE;
+
+    $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+    $subscriptionService->shouldReceive('canCancelAtPeriodEndForOrder')->once()->with($order)->andReturn(true);
+    $subscriptionService->shouldReceive('scheduleCancellationForOrder')->once()->with($order)->andReturn(0);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn () => $subscriptionService);
+
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldNotReceive('updateOrderMeta');
+    $service->setDi($di);
+
+    expect(fn () => $service->scheduleCancellationFromOrder($order))
+        ->toThrow(FOSSBilling\InformationException::class, 'No active gateway subscription is linked to this order.');
+});
+
 test('cancelFromOrder does not cancel subscriptions when service cancellation fails', function (): void {
     $clientOrderModel = new Model_ClientOrder();
     $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
@@ -2250,7 +2313,7 @@ test('cancelFromOrder does not cancel subscriptions when service cancellation fa
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['em'] = $emMock;
+    $di['em'] = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
     $di['mod_service'] = $di->protect(fn () => $subscriptionService);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -2281,7 +2344,7 @@ test('cancelFromOrder remains retryable when subscription cancellation fails', f
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['em'] = $emMock;
+    $di['em'] = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
     $di['mod_service'] = $di->protect(fn () => $subscriptionService);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();

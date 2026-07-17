@@ -40,6 +40,8 @@ dataset('flooredQuantities', fn (): array => [
     'float zero' => [0.0, 1],
     'negative int' => [-5, 1],
     'negative float' => [-1.5, 1],
+    'positive float' => [1.5, 1],
+    'positive float above one' => [2.7, 2],
 ]);
 
 dataset('invalidQuantities', fn (): array => [
@@ -79,9 +81,22 @@ test('validateSignedAmount accepts negative adjustments', function (): void {
     expect(PriceValidator::validateSignedAmount('-10.50'))->toBe(-10.50);
 });
 
+test('validateSignedAmount accepts positive amounts', function (): void {
+    expect(PriceValidator::validateSignedAmount('10.50'))->toBe(10.50);
+});
+
+test('validateSignedAmount accepts zero', function (): void {
+    expect(PriceValidator::validateSignedAmount(0))->toBe(0.0);
+});
+
 test('validateSignedAmount rejects non-numeric values', function (): void {
     expect(fn (): float => PriceValidator::validateSignedAmount('not-a-price'))
         ->toThrow(InformationException::class, 'Price must be a valid number.');
+});
+
+test('validateSignedAmount uses custom field name in error', function (): void {
+    expect(fn (): float => PriceValidator::validateSignedAmount('not-a-price', 'Adjustment'))
+        ->toThrow(InformationException::class, 'Adjustment must be a valid number.');
 });
 
 test('validateQuantity accepts valid quantities', function (mixed $input, int $expected): void {

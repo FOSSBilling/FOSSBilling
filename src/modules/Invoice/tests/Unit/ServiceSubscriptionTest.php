@@ -13,8 +13,22 @@ declare(strict_types=1);
 use Box\Mod\Client\Service as ClientService;
 use Box\Mod\Invoice\ServicePayGateway;
 use Box\Mod\Invoice\ServiceSubscription;
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\DriverManager;
 
 use function Tests\Helpers\container;
+
+function createSubscriptionDbal(): Connection
+{
+    $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE subscription (id INTEGER PRIMARY KEY, rel_type TEXT, rel_id INTEGER, status TEXT, sid TEXT)');
+    $connection->executeStatement('CREATE TABLE invoice_item (invoice_id INTEGER, type TEXT, rel_id INTEGER)');
+    $connection->executeStatement('CREATE TABLE client_order_meta (client_order_id INTEGER, name TEXT, value TEXT)');
+    $connection->executeStatement("INSERT INTO subscription (id, rel_type, rel_id, status, sid) VALUES (7, 'invoice', 25, 'active', 'sub_123')");
+    $connection->executeStatement("INSERT INTO invoice_item (invoice_id, type, rel_id) VALUES (25, 'order', 10), (25, 'order', 11)");
+
+    return $connection;
+}
 
 test('gets dependency injection container', function (): void {
     $service = new ServiceSubscription();
@@ -100,6 +114,7 @@ test('cancels a subscription at the gateway when canceled status is saved', func
         ->once()
         ->with('PayGateway', 2, 'Payment gateway not found')
         ->andReturn($gatewayModel);
+    $dbMock->shouldReceive('store')->atLeast()->once();
 
     $di = container();
     $di['db'] = $dbMock;
@@ -128,6 +143,44 @@ test('does not call the gateway when canceling a subscription without a sid', fu
 
     expect($service->update($subscriptionModel, ['status' => 'canceled']))->toBeTrue()
         ->and($subscriptionModel->status)->toBe('canceled');
+});
+
+test('schedules a subscription cancellation at the gateway', function (): void {
+    $subscription = new Model_Subscription();
+    $subscription->loadBean(new Tests\Helpers\DummyBean());
+    $subscription->sid = 'sub_123';
+    $subscription->pay_gateway_id = 2;
+
+    $gateway = new Model_PayGateway();
+    $gateway->loadBean(new Tests\Helpers\DummyBean());
+
+    $adapter = new class {
+        public ?string $scheduledSubscriptionId = null;
+
+        public function cancelSubscriptionAtPeriodEnd(string $subscriptionId): void
+        {
+            $this->scheduledSubscriptionId = $subscriptionId;
+        }
+    };
+
+    $payGatewayService = Mockery::mock(ServicePayGateway::class);
+    $payGatewayService->shouldReceive('getPaymentAdapter')->once()->with($gateway)->andReturn($adapter);
+
+    $db = Mockery::mock(Box_Database::class);
+    $db->shouldReceive('getExistingModelById')->once()->with('PayGateway', 2, 'Payment gateway not found')->andReturn($gateway);
+    $db->shouldReceive('store')->once()->with($subscription)->andReturn(1);
+
+    $di = container();
+    $di['db'] = $db;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(fn () => $payGatewayService);
+
+    $service = new ServiceSubscription();
+    $service->setDi($di);
+    $service->scheduleCancellation($subscription);
+
+    expect($adapter->scheduledSubscriptionId)->toBe('sub_123')
+        ->and($subscription->status)->toBe(ServiceSubscription::STATUS_PENDING_CANCELLATION);
 });
 
 test('updates subscription status from a gateway without calling the adapter', function (): void {
@@ -165,24 +218,6 @@ test('cancels subscriptions linked to an order', function (): void {
     $orderModel->loadBean(new Tests\Helpers\DummyBean());
     $orderModel->id = 10;
 
-    $resultMock = Mockery::mock();
-    $resultMock->shouldReceive('fetchAllAssociative')->once()->andReturn([['id' => 7]]);
-
-    $queryMock = Mockery::mock();
-    $queryMock->shouldReceive('select')->once()->with('DISTINCT s.id')->andReturnSelf();
-    $queryMock->shouldReceive('from')->once()->with('subscription', 's')->andReturnSelf();
-    $queryMock->shouldReceive('innerJoin')->once()->with('s', 'invoice_item', 'ii', 'ii.invoice_id = s.rel_id')->andReturnSelf();
-    $queryMock->shouldReceive('where')->once()->with('s.rel_type = :rel_type')->andReturnSelf();
-    $queryMock->shouldReceive('andWhere')->once()->with('ii.type = :item_type')->andReturnSelf();
-    $queryMock->shouldReceive('andWhere')->once()->with('ii.rel_id = :order_id')->andReturnSelf();
-    $queryMock->shouldReceive('setParameter')->once()->with('rel_type', 'invoice')->andReturnSelf();
-    $queryMock->shouldReceive('setParameter')->once()->with('item_type', Model_InvoiceItem::TYPE_ORDER)->andReturnSelf();
-    $queryMock->shouldReceive('setParameter')->once()->with('order_id', 10)->andReturnSelf();
-    $queryMock->shouldReceive('executeQuery')->once()->andReturn($resultMock);
-
-    $dbalMock = Mockery::mock();
-    $dbalMock->shouldReceive('createQueryBuilder')->once()->andReturn($queryMock);
-
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getExistingModelById')
         ->once()
@@ -193,10 +228,109 @@ test('cancels subscriptions linked to an order', function (): void {
     $service->shouldReceive('cancel')->once()->with($subscriptionModel);
     $di = container();
     $di['db'] = $dbMock;
-    $di['dbal'] = $dbalMock;
+    $di['dbal'] = createSubscriptionDbal();
     $service->setDi($di);
 
     $service->cancelForOrder($orderModel);
+});
+
+test('finalizes a scheduled cancellation by canceling its order and service', function (): void {
+    $subscription = new Model_Subscription();
+    $subscription->loadBean(new Tests\Helpers\DummyBean());
+    $subscription->status = ServiceSubscription::STATUS_PENDING_CANCELLATION;
+    $subscription->rel_type = 'invoice';
+    $subscription->rel_id = 25;
+
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order->status = Model_ClientOrder::STATUS_ACTIVE;
+
+    $dbal = createSubscriptionDbal();
+    $dbal->insert('client_order_meta', [
+        'client_order_id' => 10,
+        'name' => Box\Mod\Order\Service::META_CANCEL_AT_PERIOD_END,
+        'value' => '1',
+    ]);
+
+    $db = Mockery::mock(Box_Database::class);
+    $db->shouldReceive('getExistingModelById')->once()->with('Subscription', 7, 'Subscription not found')->andReturn($subscription);
+    $db->shouldReceive('getExistingModelById')->once()->with('ClientOrder', 10, 'Order not found')->andReturn($order);
+    $db->shouldReceive('store')->once()->with($subscription)->andReturn(7);
+
+    $orderService = Mockery::mock(Box\Mod\Order\Service::class);
+    $orderService->shouldReceive('finalizeCancellationFromGateway')
+        ->once()
+        ->with($order, 'Subscription ended at the payment gateway')
+        ->andReturn(true);
+
+    $di = container();
+    $di['db'] = $db;
+    $di['dbal'] = $dbal;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(fn () => $orderService);
+
+    $service = new ServiceSubscription();
+    $service->setDi($di);
+
+    expect($service->finalizeCancellationFromGateway(7))->toBeTrue()
+        ->and($subscription->status)->toBe('canceled');
+});
+
+test('reports end-of-period cancellation support for active gateway subscriptions', function (): void {
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order->id = 10;
+
+    $subscription = new Model_Subscription();
+    $subscription->loadBean(new Tests\Helpers\DummyBean());
+    $subscription->sid = 'sub_123';
+    $subscription->pay_gateway_id = 2;
+
+    $gateway = new Model_PayGateway();
+    $gateway->loadBean(new Tests\Helpers\DummyBean());
+    $adapter = new class {
+        public function cancelSubscriptionAtPeriodEnd(string $subscriptionId): void
+        {
+        }
+    };
+
+    $db = Mockery::mock(Box_Database::class);
+    $db->shouldReceive('getExistingModelById')->once()->with('Subscription', 7, 'Subscription not found')->andReturn($subscription);
+    $db->shouldReceive('getExistingModelById')->once()->with('PayGateway', 2, 'Payment gateway not found')->andReturn($gateway);
+
+    $gatewayService = Mockery::mock(ServicePayGateway::class);
+    $gatewayService->shouldReceive('getPaymentAdapter')->once()->with($gateway)->andReturn($adapter);
+
+    $di = container();
+    $di['db'] = $db;
+    $di['dbal'] = createSubscriptionDbal();
+    $di['mod_service'] = $di->protect(fn () => $gatewayService);
+
+    $service = new ServiceSubscription();
+    $service->setDi($di);
+
+    expect($service->canCancelAtPeriodEndForOrder($order))->toBeTrue();
+});
+
+test('finds a subscription ID by gateway SID without throwing for missing records', function (): void {
+    $dbal = Mockery::mock();
+    $dbal->shouldReceive('fetchOne')
+        ->once()
+        ->with('SELECT id FROM subscription WHERE sid = :sid', ['sid' => 'sub_123'])
+        ->andReturn('7');
+    $dbal->shouldReceive('fetchOne')
+        ->once()
+        ->with('SELECT id FROM subscription WHERE sid = :sid', ['sid' => 'sub_missing'])
+        ->andReturn(false);
+
+    $di = container();
+    $di['dbal'] = $dbal;
+
+    $service = new ServiceSubscription();
+    $service->setDi($di);
+
+    expect($service->findIdBySid('sub_123'))->toBe(7)
+        ->and($service->findIdBySid('sub_missing'))->toBeNull();
 });
 
 test('converts to api array', function (): void {

@@ -335,15 +335,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
-     * Generate email templates according to enabled extensions.
-     *
-     * @return bool
+     * Regenerate built-in email templates from their file-backed defaults.
      */
     public function batch_template_generate()
     {
         $this->checkPermissions('email', 'manage_templates');
 
-        return $this->getService()->templateBatchGenerate();
+        return $this->getService()->templateBatchRegenerate();
     }
 
     /**

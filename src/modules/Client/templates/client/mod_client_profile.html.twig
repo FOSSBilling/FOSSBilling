@@ -68,6 +68,13 @@
                                 </div>
                             </div>
                             <div class="row">
+                                <div class="mb-3 col-md-10">
+                                    <label class="form-label" for="billing_email">{{ 'Billing Email Address'|trans }}</label>
+                                    <input type="email" class="form-control" id="billing_email" name="billing_email" value="{{ profile.billing_email }}" placeholder="{{ profile.email }}">
+                                    <small class="form-hint text-muted">{{ 'Invoice notifications are sent here. Leave blank to use your account email.'|trans }}</small>
+                                </div>
+                            </div>
+                            <div class="row">
                                 <div class="mb-3 col-md-5">
                                     <label class="form-label" for="birthday">{{ 'Birthdate'|trans }}</label>
                                     <input type="date" class="form-control" id="birthday" name="birthday"

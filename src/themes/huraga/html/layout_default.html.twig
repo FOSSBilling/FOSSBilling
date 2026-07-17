@@ -50,10 +50,11 @@
 {{ render_widgets('client.theme.body.start') }}
 
 {% block body %}
-{% if not client and settings.require_login %}
+{% if not client and settings.require_login and exception is not defined %}
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const publicPaths = [
+                '/invoice/',
                 '/news',
                 '/tos',
                 '/privacy-policy'

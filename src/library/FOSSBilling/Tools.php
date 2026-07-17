@@ -436,7 +436,7 @@ class Tools
 
         if (!$allowHtml) {
             // Strip all HTML tags for plain text
-            return trim(htmlspecialchars(strip_tags($content), ENT_QUOTES | ENT_HTML5, 'UTF-8', false));
+            return htmlspecialchars(self::sanitizePlainText($content), ENT_QUOTES | ENT_HTML5, 'UTF-8', false);
         }
 
         // Use Symfony's HTML Sanitizer
@@ -450,6 +450,17 @@ class Tools
         $sanitizer = new \Symfony\Component\HtmlSanitizer\HtmlSanitizer($config);
 
         return trim($sanitizer->sanitize($content));
+    }
+
+    /**
+     * Sanitize plain text for storage without HTML-encoding it.
+     *
+     * Output contexts must still escape the returned value. Encoding during input would store HTML
+     * entities as data and cause them to be displayed literally when the output is escaped again.
+     */
+    public static function sanitizePlainText(string $content = ''): string
+    {
+        return trim(strip_tags(str_replace("\0", '', $content)));
     }
 
     /**

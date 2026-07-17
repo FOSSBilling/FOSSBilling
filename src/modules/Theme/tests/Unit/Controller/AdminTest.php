@@ -10,7 +10,48 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Theme\Model\Theme;
+use FOSSBilling\Sanitizer\BrowserHtmlSanitizer;
+use FOSSBilling\Twig\SandboxedStringRenderer;
+use Twig\Environment;
+use Twig\Loader\ArrayLoader;
+use Twig\TwigFilter;
+
 use function Tests\Helpers\container;
+
+/**
+ * @param array<string, mixed> $settings
+ *
+ * @return list<DOMElement>
+ */
+function renderHuragaFooterLinkCheckboxes(array $settings): array
+{
+    $twig = new Environment(new ArrayLoader(), ['strict_variables' => true]);
+    $twig->addFilter(new TwigFilter('trans', static fn (mixed $value): string => (string) $value));
+
+    $theme = new Theme('huraga');
+    $html = SandboxedStringRenderer::render(
+        $twig,
+        $theme->getSettingsPageHtml(),
+        ['settings' => $settings],
+        'Theme settings template',
+    );
+    $html = BrowserHtmlSanitizer::sanitizeThemeSettingsHtml($html);
+
+    $document = new DOMDocument();
+    $previousLibxmlErrorsSetting = libxml_use_internal_errors(true);
+    $document->loadHTML('<?xml encoding="utf-8" ?><html><body>' . $html . '</body></html>');
+    libxml_clear_errors();
+    libxml_use_internal_errors($previousLibxmlErrorsSetting);
+
+    $checkboxes = (new DOMXPath($document))->query('//input[@type="checkbox" and starts-with(@name, "footer_link_")]');
+    assert($checkboxes instanceof DOMNodeList);
+
+    return array_values(array_filter(
+        iterator_to_array($checkboxes),
+        static fn (DOMNode $node): bool => $node instanceof DOMElement,
+    ));
+}
 
 test('getDi returns dependency injection container', function (): void {
     $controller = new Box\Mod\Theme\Controller\Admin();
@@ -44,7 +85,7 @@ test('getTheme renders theme preset', function (): void {
         ->andReturn('Rendering ...');
 
     // Create theme mock first
-    $themeMock = Mockery::mock(Box\Mod\Theme\Model\Theme::class);
+    $themeMock = Mockery::mock(Theme::class);
     $themeMock->shouldReceive('getName')
         ->atLeast()
         ->once()
@@ -108,7 +149,7 @@ test('save theme settings reads body from request and strips preset control keys
     $controller = new Box\Mod\Theme\Controller\Admin();
     $di = container();
 
-    $themeMock = Mockery::mock(Box\Mod\Theme\Model\Theme::class);
+    $themeMock = Mockery::mock(Theme::class);
     $themeMock->shouldReceive('getName')->andReturn('huraga');
     $themeMock->shouldReceive('isAssetsPathWritable')->andReturn(true);
 
@@ -157,4 +198,29 @@ test('save theme settings reads body from request and strips preset control keys
 
     $response = $controller->save_theme_settings($boxAppMock, 'huraga');
     expect($response)->toBeInstanceOf(Symfony\Component\HttpFoundation\RedirectResponse::class);
+});
+
+test('huraga footer link checkboxes submit canonical enabled values', function (): void {
+    $checkboxes = renderHuragaFooterLinkCheckboxes([]);
+
+    expect($checkboxes)->toHaveCount(5);
+    foreach ($checkboxes as $index => $checkbox) {
+        expect($checkbox->getAttribute('name'))->toBe(sprintf('footer_link_%d_enabled', $index + 1))
+            ->and($checkbox->getAttribute('value'))->toBe('1')
+            ->and($checkbox->hasAttribute('checked'))->toBeFalse();
+    }
+});
+
+test('theme settings restore checkbox values saved with the browser default', function (): void {
+    $settings = [];
+    for ($index = 1; $index <= 5; ++$index) {
+        $settings['footer_link_' . $index . '_enabled'] = 'on';
+    }
+
+    $checkboxes = renderHuragaFooterLinkCheckboxes($settings);
+
+    expect($checkboxes)->toHaveCount(5);
+    foreach ($checkboxes as $checkbox) {
+        expect($checkbox->hasAttribute('checked'))->toBeTrue();
+    }
 });

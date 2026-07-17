@@ -272,6 +272,9 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             $em->remove($reset);
             $em->flush();
 
+            $profileService = $this->getDi()['mod_service']('profile');
+            $profileService->invalidateSessions('client', (int) $client->getId());
+
             $this->getDi()['logger']->setChannel('security')->info('Client password reset completed for client #%s from IP %s', $client->getId(), $this->getIp());
 
             // send email

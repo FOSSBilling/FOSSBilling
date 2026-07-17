@@ -113,7 +113,7 @@
                     <a href='{{ "staff/manage/#{event.staff.id}"|url }}'>
                         {{ event.staff.name }}
                     </a>
-                    <a href="{{ request_path|url(request_query|merge({ 'admin_id': event.staff.id, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all login events for this staff member'|trans }}">
+                    <a href="{{ request_path|url(query: request_query|merge({ 'admin_id': event.staff.id, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all login events for this staff member'|trans }}">
                         <svg class="icon icon-sm text-muted">
                             <use href="#filter" />
                         </svg>
@@ -123,7 +123,7 @@
                     <div class="d-inline-flex align-items-center gap-1 flex-nowrap">
                         {{ mf.ip_lookup_link(event.ip) }}
                         {% if event.ip %}
-                        <a href="{{ request_path|url(request_query|merge({ 'ip': event.ip, 'page': null })) }}" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all login events from this IP address'|trans }}">
+                        <a href="{{ request_path|url(query: request_query|merge({ 'ip': event.ip, 'page': null })) }}" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all login events from this IP address'|trans }}">
                             <svg class="icon icon-sm text-muted">
                                 <use href="#filter" />
                             </svg>

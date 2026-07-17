@@ -312,12 +312,15 @@ test('updatePassword returns true', function (): void {
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
     $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once();
 
+    $profileServiceMock = Mockery::mock(Box\Mod\Profile\Service::class);
+    $profileServiceMock->shouldReceive('invalidateSessions')->atLeast()->once();
+
     $di = container();
     $di['em'] = $em;
     $di['events_manager'] = $eventMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['password'] = $passwordMock;
-    $di['mod_service'] = $di->protect(moduleService(['email' => $emailServiceMock]));
+    $di['mod_service'] = $di->protect(moduleService(['email' => $emailServiceMock, 'profile' => $profileServiceMock]));
 
     $guestClient->setDi($di);
 

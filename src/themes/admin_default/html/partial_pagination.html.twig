@@ -41,7 +41,7 @@
             {% set recordSelectorOptions = recordSelectorOptions|merge([{
                 value: pageSize,
                 active: pageSize == currentPerPage,
-                href: url|url(filteredRequest|merge({ (pageParam): 1, (perPageParam): pageSize })) ~ hash
+                href: url|url(query: filteredRequest|merge({ (pageParam): 1, (perPageParam): pageSize })) ~ hash
             }]) %}
         {% endfor %}
     {% endif %}
@@ -59,7 +59,7 @@
                 <ul class="pagination m-0">
                     {% if paginator.currentpage != 1 %}
                     <li class="page-item">
-                        <a class="page-link" href="{{ url|url(filteredRequest|merge({ (pageParam): currentPage - 1, (perPageParam): currentPerPage })) ~ hash }}">
+                        <a class="page-link" href="{{ url|url(query: filteredRequest|merge({ (pageParam): currentPage - 1, (perPageParam): currentPerPage })) ~ hash }}">
                             <svg class="icon">
                                 <use href="#chevron-left" />
                             </svg>
@@ -68,7 +68,7 @@
                     {% endif %}
                     {% if (paginator.range.0 != 1) %}
                         <li class="page-item">
-                            <a class="page-link" href="{{ url|url(filteredRequest|merge({ (pageParam): 1, (perPageParam): currentPerPage })) ~ hash }}">1</a>
+                            <a class="page-link" href="{{ url|url(query: filteredRequest|merge({ (pageParam): 1, (perPageParam): currentPerPage })) ~ hash }}">1</a>
                         </li>
                     {% endif %}
                     {% for i in paginator.start..paginator.end %}
@@ -82,7 +82,7 @@
                             </li>
                         {% else %}
                             <li class="page-item">
-                                <a class="page-link" href="{{ url|url(filteredRequest|merge({ (pageParam): i, (perPageParam): currentPerPage })) ~ hash }}"> {{ i }}</a>
+                                <a class="page-link" href="{{ url|url(query: filteredRequest|merge({ (pageParam): i, (perPageParam): currentPerPage })) ~ hash }}"> {{ i }}</a>
                             </li>
                         {% endif %}
                     {% endfor %}
@@ -90,13 +90,13 @@
                     {% if paginator.range|length > 0 and paginator.range|last < paginator.numpages and paginator.end == paginator.range|last %}
                         ...
                         <li class="page-item">
-                            <a class="page-link" href="{{ url|url(filteredRequest|merge({ (pageParam): paginator.numpages, (perPageParam): currentPerPage })) ~ hash }}"> {{ paginator.numpages }}</a>
+                            <a class="page-link" href="{{ url|url(query: filteredRequest|merge({ (pageParam): paginator.numpages, (perPageParam): currentPerPage })) ~ hash }}"> {{ paginator.numpages }}</a>
                         </li>
                     {% endif %}
 
                     {% if paginator.currentpage != paginator.numpages %}
                     <li class="page-item">
-                        <a class="page-link" href="{{ url|url(filteredRequest|merge({ (pageParam): currentPage + 1, (perPageParam): currentPerPage })) ~ hash }}">
+                        <a class="page-link" href="{{ url|url(query: filteredRequest|merge({ (pageParam): currentPage + 1, (perPageParam): currentPerPage })) ~ hash }}">
                             <svg class="icon">
                                 <use href="#chevron-right" />
                             </svg>
