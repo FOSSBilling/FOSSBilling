@@ -63,6 +63,8 @@
                                content: 'This will replace the subject and content of every existing built-in email template. Custom templates will not be affected.'|trans,
                            },
                            reload: true,
+                           timeoutMs: 120000,
+                           timeoutMessage: 'Email template regeneration timed out after two minutes.'|trans,
                        }) }}>
                         <svg class="icon me-1"><use href="#mail" /></svg>
                         {{ 'Regenerate Built-in Templates'|trans }}

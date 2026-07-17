@@ -1067,7 +1067,9 @@ test('templateBatchRegenerate resets existing built-in templates skipped by acti
         ->and($customTemplate->getContent())->toBe('Custom template content');
 
     $logMessages = array_map(static fn (array $call): string => $call['params'][0], $di['logger']->calls);
-    expect($logMessages)->toContain('Regenerated 1 file-backed email templates.');
+    expect($logMessages)
+        ->not->toContain('Synced file-backed email templates for installed modules.')
+        ->toContain('Regenerated 1 and created 0 file-backed email templates.');
 });
 
 test('templateBatchDisable disables all templates', function (): void {
