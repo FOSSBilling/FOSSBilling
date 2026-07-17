@@ -109,15 +109,21 @@ test('cancels a subscription at the gateway when canceled status is saved', func
         ->with($gatewayModel)
         ->andReturn($adapter);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')
+    $payGatewayRepoMock = Mockery::mock(Box\Mod\Invoice\Repository\PayGatewayRepository::class);
+    $payGatewayRepoMock->shouldReceive('find')
         ->once()
-        ->with('PayGateway', 2, 'Payment gateway not found')
+        ->with(2)
         ->andReturn($gatewayModel);
-    $dbMock->shouldReceive('store')->atLeast()->once();
+
+    $emMock = Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')
+        ->with(Box\Mod\Invoice\Entity\PayGateway::class)
+        ->andReturn($payGatewayRepoMock);
+    $emMock->shouldReceive('persist')->andReturnNull();
+    $emMock->shouldReceive('flush')->andReturnNull();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(fn () => $payGatewayService);
     $service->setDi($di);
@@ -166,12 +172,18 @@ test('schedules a subscription cancellation at the gateway', function (): void {
     $payGatewayService = Mockery::mock(ServicePayGateway::class);
     $payGatewayService->shouldReceive('getPaymentAdapter')->once()->with($gateway)->andReturn($adapter);
 
-    $db = Mockery::mock(Box_Database::class);
-    $db->shouldReceive('getExistingModelById')->once()->with('PayGateway', 2, 'Payment gateway not found')->andReturn($gateway);
-    $db->shouldReceive('store')->once()->with($subscription)->andReturn(1);
+    $payGatewayRepoMock = Mockery::mock(Box\Mod\Invoice\Repository\PayGatewayRepository::class);
+    $payGatewayRepoMock->shouldReceive('find')->once()->with(2)->andReturn($gateway);
+
+    $emMock = Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')
+        ->with(Box\Mod\Invoice\Entity\PayGateway::class)
+        ->andReturn($payGatewayRepoMock);
+    $emMock->shouldReceive('persist')->andReturnNull();
+    $emMock->shouldReceive('flush')->andReturnNull();
 
     $di = container();
-    $di['db'] = $db;
+    $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(fn () => $payGatewayService);
 
@@ -211,23 +223,29 @@ test('updates subscription status from a gateway without calling the adapter', f
 });
 
 test('cancels subscriptions linked to an order', function (): void {
-    $subscriptionModel = new Model_Subscription();
-    $subscriptionModel->loadBean(new Tests\Helpers\DummyBean());
+    $subscriptionEntity = new Box\Mod\Invoice\Entity\Subscription();
+    $idProp = new ReflectionProperty(Box\Mod\Invoice\Entity\Subscription::class, 'id');
+    $idProp->setValue($subscriptionEntity, 7);
 
     $orderModel = new Model_ClientOrder();
     $orderModel->loadBean(new Tests\Helpers\DummyBean());
     $orderModel->id = 10;
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')
+    $subscriptionRepoMock = Mockery::mock(Box\Mod\Invoice\Repository\SubscriptionRepository::class);
+    $subscriptionRepoMock->shouldReceive('find')
         ->once()
-        ->with('Subscription', 7, 'Subscription not found')
-        ->andReturn($subscriptionModel);
+        ->with(7)
+        ->andReturn($subscriptionEntity);
+
+    $emMock = Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')
+        ->with(Box\Mod\Invoice\Entity\Subscription::class)
+        ->andReturn($subscriptionRepoMock);
 
     $service = Mockery::mock(ServiceSubscription::class)->makePartial();
-    $service->shouldReceive('cancel')->once()->with($subscriptionModel);
+    $service->shouldReceive('cancel')->once()->with($subscriptionEntity);
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['dbal'] = createSubscriptionDbal();
     $service->setDi($di);
 
@@ -235,11 +253,12 @@ test('cancels subscriptions linked to an order', function (): void {
 });
 
 test('finalizes a scheduled cancellation by canceling its order and service', function (): void {
-    $subscription = new Model_Subscription();
-    $subscription->loadBean(new Tests\Helpers\DummyBean());
-    $subscription->status = ServiceSubscription::STATUS_PENDING_CANCELLATION;
-    $subscription->rel_type = 'invoice';
-    $subscription->rel_id = 25;
+    $subscriptionEntity = new Box\Mod\Invoice\Entity\Subscription();
+    $subscriptionEntity->setStatus(ServiceSubscription::STATUS_PENDING_CANCELLATION);
+    $subscriptionEntity->setRelType('invoice');
+    $subscriptionEntity->setRelId(25);
+    $idProp = new ReflectionProperty(Box\Mod\Invoice\Entity\Subscription::class, 'id');
+    $idProp->setValue($subscriptionEntity, 7);
 
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
@@ -252,10 +271,18 @@ test('finalizes a scheduled cancellation by canceling its order and service', fu
         'value' => '1',
     ]);
 
+    $subscriptionRepoMock = Mockery::mock(Box\Mod\Invoice\Repository\SubscriptionRepository::class);
+    $subscriptionRepoMock->shouldReceive('find')->once()->with(7)->andReturn($subscriptionEntity);
+
     $db = Mockery::mock(Box_Database::class);
-    $db->shouldReceive('getExistingModelById')->once()->with('Subscription', 7, 'Subscription not found')->andReturn($subscription);
     $db->shouldReceive('getExistingModelById')->once()->with('ClientOrder', 10, 'Order not found')->andReturn($order);
-    $db->shouldReceive('store')->once()->with($subscription)->andReturn(7);
+
+    $emMock = Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')
+        ->with(Box\Mod\Invoice\Entity\Subscription::class)
+        ->andReturn($subscriptionRepoMock);
+    $emMock->shouldReceive('persist')->andReturnNull();
+    $emMock->shouldReceive('flush')->andReturnNull();
 
     $orderService = Mockery::mock(Box\Mod\Order\Service::class);
     $orderService->shouldReceive('finalizeCancellationFromGateway')
@@ -265,6 +292,7 @@ test('finalizes a scheduled cancellation by canceling its order and service', fu
 
     $di = container();
     $di['db'] = $db;
+    $di['em'] = $emMock;
     $di['dbal'] = $dbal;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(fn () => $orderService);
@@ -273,7 +301,7 @@ test('finalizes a scheduled cancellation by canceling its order and service', fu
     $service->setDi($di);
 
     expect($service->finalizeCancellationFromGateway(7))->toBeTrue()
-        ->and($subscription->status)->toBe('canceled');
+        ->and($subscriptionEntity->getStatus())->toBe('canceled');
 });
 
 test('reports end-of-period cancellation support for active gateway subscriptions', function (): void {
@@ -281,10 +309,11 @@ test('reports end-of-period cancellation support for active gateway subscription
     $order->loadBean(new Tests\Helpers\DummyBean());
     $order->id = 10;
 
-    $subscription = new Model_Subscription();
-    $subscription->loadBean(new Tests\Helpers\DummyBean());
-    $subscription->sid = 'sub_123';
-    $subscription->pay_gateway_id = 2;
+    $subscriptionEntity = new Box\Mod\Invoice\Entity\Subscription();
+    $subscriptionEntity->setSid('sub_123');
+    $subscriptionEntity->setPayGatewayId(2);
+    $idProp = new ReflectionProperty(Box\Mod\Invoice\Entity\Subscription::class, 'id');
+    $idProp->setValue($subscriptionEntity, 7);
 
     $gateway = new Model_PayGateway();
     $gateway->loadBean(new Tests\Helpers\DummyBean());
@@ -294,15 +323,25 @@ test('reports end-of-period cancellation support for active gateway subscription
         }
     };
 
-    $db = Mockery::mock(Box_Database::class);
-    $db->shouldReceive('getExistingModelById')->once()->with('Subscription', 7, 'Subscription not found')->andReturn($subscription);
-    $db->shouldReceive('getExistingModelById')->once()->with('PayGateway', 2, 'Payment gateway not found')->andReturn($gateway);
+    $subscriptionRepoMock = Mockery::mock(Box\Mod\Invoice\Repository\SubscriptionRepository::class);
+    $subscriptionRepoMock->shouldReceive('find')->once()->with(7)->andReturn($subscriptionEntity);
+
+    $payGatewayRepoMock = Mockery::mock(Box\Mod\Invoice\Repository\PayGatewayRepository::class);
+    $payGatewayRepoMock->shouldReceive('find')->once()->with(2)->andReturn($gateway);
+
+    $emMock = Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')
+        ->with(Box\Mod\Invoice\Entity\Subscription::class)
+        ->andReturn($subscriptionRepoMock);
+    $emMock->shouldReceive('getRepository')
+        ->with(Box\Mod\Invoice\Entity\PayGateway::class)
+        ->andReturn($payGatewayRepoMock);
 
     $gatewayService = Mockery::mock(ServicePayGateway::class);
     $gatewayService->shouldReceive('getPaymentAdapter')->once()->with($gateway)->andReturn($adapter);
 
     $di = container();
-    $di['db'] = $db;
+    $di['em'] = $emMock;
     $di['dbal'] = createSubscriptionDbal();
     $di['mod_service'] = $di->protect(fn () => $gatewayService);
 
@@ -341,16 +380,20 @@ test('converts to api array', function (): void {
     $clientModel = new Model_Client();
     $clientModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $gatewayModel = new Model_PayGateway();
-    $gatewayModel->loadBean(new Tests\Helpers\DummyBean());
+    $gatewayEntity = new Box\Mod\Invoice\Entity\PayGateway();
+    $gatewayEntity->setName('Test Gateway');
 
     $dbMock = Mockery::mock('\Box_Database');
-    $callCount = 0;
     $dbMock->shouldReceive('load')
         ->atLeast()->once()
-        ->andReturnUsing(function () use ($clientModel, $gatewayModel, &$callCount) {
-            return ++$callCount === 1 ? $clientModel : $gatewayModel;
+        ->andReturnUsing(function () use ($clientModel) {
+            return $clientModel;
         });
+
+    $payGatewayRepoMock = Mockery::mock(Box\Mod\Invoice\Repository\PayGatewayRepository::class);
+    $payGatewayRepoMock->shouldReceive('find')
+        ->atLeast()->once()
+        ->andReturn($gatewayEntity);
 
     $clientServiceMock = Mockery::mock(ClientService::class);
     $clientServiceMock->shouldReceive('toApiArray')
@@ -362,6 +405,11 @@ test('converts to api array', function (): void {
         ->atLeast()->once()
         ->andReturn([]);
 
+    $emMock = Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')
+        ->with(Box\Mod\Invoice\Entity\PayGateway::class)
+        ->andReturn($payGatewayRepoMock);
+
     $di = container();
     $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($clientServiceMock, $payGatewayService) {
         if ($serviceName == 'Client') {
@@ -372,6 +420,7 @@ test('converts to api array', function (): void {
         }
     });
     $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $service->setDi($di);
 
     $result = $service->toApiArray($subscriptionModel);
@@ -449,13 +498,13 @@ test('gets search query with various parameters', function (array $data, string 
 
 test('returns false when invoice is not subscribable', function (): void {
     $service = new ServiceSubscription();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')
+    $dbalMock = Mockery::mock(\Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('fetchAllAssociative')
         ->atLeast()->once()
         ->andReturn([]);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['dbal'] = $dbalMock;
     $service->setDi($di);
 
     $invoice_id = 2;
@@ -465,17 +514,17 @@ test('returns false when invoice is not subscribable', function (): void {
 
 test('checks if invoice is subscribable', function (): void {
     $service = new ServiceSubscription();
-    $dbMock = Mockery::mock('\Box_Database');
+    $dbalMock = Mockery::mock(\Doctrine\DBAL\Connection::class);
 
     $getAllResults = [
         ['period' => '1W', 'price' => 10, 'quantity' => 1],
     ];
-    $dbMock->shouldReceive('getAll')
+    $dbalMock->shouldReceive('fetchAllAssociative')
         ->atLeast()->once()
         ->andReturn($getAllResults);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['dbal'] = $dbalMock;
     $service->setDi($di);
 
     $invoice_id = 2;
@@ -487,13 +536,13 @@ test('gets subscription period', function (): void {
     $serviceMock = Mockery::mock(ServiceSubscription::class)->makePartial()->shouldAllowMockingProtectedMethods();
 
     $period = '1W';
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')
+    $dbalMock = Mockery::mock(\Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('fetchAllAssociative')
         ->atLeast()->once()
         ->andReturn([['period' => $period, 'price' => 10, 'quantity' => 1]]);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['dbal'] = $dbalMock;
     $serviceMock->setDi($di);
 
     $invoiceModel = new Model_Invoice();

@@ -11,7 +11,9 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice;
 
+use Box\Mod\Invoice\Entity\InvoiceItem;
 use Box\Mod\Invoice\Entity\Tax;
+use Box\Mod\Invoice\Repository\InvoiceItemRepository;
 use Box\Mod\Invoice\Repository\TaxRepository;
 use FOSSBilling\InjectionAwareInterface;
 
@@ -19,6 +21,7 @@ class ServiceTax implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
     private ?TaxRepository $taxRepository = null;
+    private ?InvoiceItemRepository $invoiceItemRepository = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -37,45 +40,47 @@ class ServiceTax implements InjectionAwareInterface
             return 0;
         }
 
-        $tax = $this->di['db']->findOne('Tax', 'state = ? and country = ?', [$model->state, $model->country]);
+        $tax = $this->getTaxRepository()->findByCountryAndState($model->state, $model->country);
         // find rate which matches clients country and state
 
-        if ($tax instanceof \Model_Tax) {
-            $title = $tax->name;
+        if ($tax instanceof Tax) {
+            $title = $tax->getName();
 
-            return $tax->taxrate;
+            return (float) $tax->getTaxrate();
         }
 
         // find rate which matches clients country
-        $tax = $this->di['db']->findOne('Tax', 'country = ?', [$model->country]);
-        if ($tax instanceof \Model_Tax) {
-            $title = $tax->name;
+        $tax = $this->getTaxRepository()->findByCountry($model->country);
+        if ($tax instanceof Tax) {
+            $title = $tax->getName();
 
-            return $tax->taxrate;
+            return (float) $tax->getTaxrate();
         }
 
         // find global rate
-        $tax = $this->di['db']->findOne('Tax', '(state is NULL or state = "") and (country is null or country = "")');
-        if ($tax instanceof \Model_Tax) {
-            $title = $tax->name;
+        $tax = $this->getTaxRepository()->findGlobal();
+        if ($tax instanceof Tax) {
+            $title = $tax->getName();
 
-            return $tax->taxrate;
+            return (float) $tax->getTaxrate();
         }
 
         return 0;
     }
 
-    public function getTax(\Model_Invoice $invoice)
+    public function getTax(\Model_Invoice|Invoice $invoice)
     {
-        if ($invoice->taxrate <= 0) {
+        $taxrate = $invoice instanceof \Box\Mod\Invoice\Entity\Invoice ? $invoice->getTaxrate() : $invoice->taxrate;
+        if ($taxrate <= 0) {
             return 0;
         }
 
+        $invoiceId = $invoice instanceof \Box\Mod\Invoice\Entity\Invoice ? $invoice->getId() : $invoice->id;
         $tax = 0;
-        $invoiceItems = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', [$invoice->id]);
+        $invoiceItems = $this->getInvoiceItemRepository()->findByInvoiceId((int) $invoiceId);
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
         foreach ($invoiceItems as $item) {
-            $tax += $invoiceItemService->getTax($item) * $item->quantity;
+            $tax += $invoiceItemService->getTax($item) * ($item instanceof InvoiceItem ? $item->getQuantity() : $item->quantity);
         }
 
         return $tax;
@@ -131,9 +136,31 @@ class ServiceTax implements InjectionAwareInterface
         return [$sql, []];
     }
 
-    public function toApiArray(\Model_Tax $model, $deep = false, $identity = null)
+    public function toApiArray(Tax|\Model_Tax $model, $deep = false, $identity = null)
     {
+        if ($model instanceof Tax) {
+            return [
+                'id' => $model->getId(),
+                'level' => $model->getLevel(),
+                'name' => $model->getName(),
+                'country' => $model->getCountry(),
+                'state' => $model->getState(),
+                'taxrate' => $model->getTaxrate(),
+                'created_at' => $model->getCreatedAt(),
+                'updated_at' => $model->getUpdatedAt(),
+            ];
+        }
+
         return $this->di['db']->toArray($model);
+    }
+
+    private function getInvoiceItemRepository(): InvoiceItemRepository
+    {
+        if ($this->invoiceItemRepository === null) {
+            $this->invoiceItemRepository = $this->di['em']->getRepository(InvoiceItem::class);
+        }
+
+        return $this->invoiceItemRepository;
     }
 
     private function getTaxRepository(): TaxRepository

@@ -16,4 +16,12 @@ class PayGatewayRepository extends EntityRepository
     {
         return $this->findBy(['enabled' => true]);
     }
+
+    /**
+     * @return PayGateway[]
+     */
+    public function findEnabledOrderedByIdDesc(): array
+    {
+        return $this->findBy(['enabled' => true], ['id' => 'DESC']);
+    }
 }

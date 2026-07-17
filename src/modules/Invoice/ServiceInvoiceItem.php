@@ -183,16 +183,20 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
     public function getTax(InvoiceItem|\Model_InvoiceItem $item)
     {
-        if (!$item->taxed) {
+        $taxed = $item instanceof InvoiceItem ? $item->isTaxed() : $item->taxed;
+        if (!$taxed) {
             return 0;
         }
 
-        $rate = $this->di['db']->getCell('SELECT taxrate FROM invoice WHERE id = :id', ['id' => $item->invoice_id]);
+        $invoiceId = $item instanceof InvoiceItem ? $item->getInvoiceId() : $item->invoice_id;
+        $rate = $this->di['dbal']->fetchOne('SELECT taxrate FROM invoice WHERE id = :id', ['id' => $invoiceId]);
         if ($rate <= 0) {
             return 0;
         }
 
-        return round($item->price * $rate / 100, 2);
+        $price = $item instanceof InvoiceItem ? $item->getPrice() : $item->price;
+
+        return round($price * $rate / 100, 2);
     }
 
     public function update(InvoiceItem|\Model_InvoiceItem $item, array $data): void
@@ -372,7 +376,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             ':cutoff_time' => date('Y-m-d H:i:s', strtotime('-10 minutes')),
         ];
 
-        return $this->di['db']->getAll($sql, $bindings);
+        return $this->di['dbal']->fetchAllAssociative($sql, $bindings);
     }
 
     private function getInvoiceItemRepository(): InvoiceItemRepository

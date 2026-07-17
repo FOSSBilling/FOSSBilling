@@ -63,13 +63,13 @@ test('gets pairs', function (): void {
         ],
     ];
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')
+    $dbalMock = Mockery::mock(\Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('fetchAllAssociative')
         ->atLeast()->once()
         ->andReturn($queryResult);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['dbal'] = $dbalMock;
 
     $service->setDi($di);
 
@@ -80,13 +80,13 @@ test('gets pairs', function (): void {
 
 test('gets available gateways', function (): void {
     $service = new ServicePayGateway();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')
+    $dbalMock = Mockery::mock(\Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('fetchAllAssociative')
         ->atLeast()->once()
         ->andReturn([]);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['dbal'] = $dbalMock;
     $service->setDi($di);
 
     $result = $service->getAvailable();
@@ -218,16 +218,21 @@ test('deletes a gateway', function (): void {
 
 test('gets active gateways', function (): void {
     $service = new ServicePayGateway();
-    $payGatewayModel = new Model_PayGateway();
-    $payGatewayModel->loadBean(new Tests\Helpers\DummyBean());
+    $payGatewayEntity = new Box\Mod\Invoice\Entity\PayGateway();
+    $payGatewayEntity->setName('Test Gateway');
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('find')
+    $payGatewayRepoMock = Mockery::mock(Box\Mod\Invoice\Repository\PayGatewayRepository::class);
+    $payGatewayRepoMock->shouldReceive('findEnabledOrderedByIdDesc')
         ->atLeast()->once()
-        ->andReturn([$payGatewayModel]);
+        ->andReturn([$payGatewayEntity]);
+
+    $emMock = Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')
+        ->with(Box\Mod\Invoice\Entity\PayGateway::class)
+        ->andReturn($payGatewayRepoMock);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
 
     $service->setDi($di);
 

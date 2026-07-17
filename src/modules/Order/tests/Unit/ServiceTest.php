@@ -34,11 +34,13 @@ test('counter returns status counts', function (): void {
     $service = new Service();
 
     $counter = [Model_ClientOrder::STATUS_ACTIVE => 1];
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('getAssoc')->atLeast()->once()->andReturn($counter);
+    $connectionMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connectionMock->shouldReceive('fetchAllKeyValue')->atLeast()->once()->andReturn($counter);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getConnection')->atLeast()->once()->andReturn($connectionMock);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $service->setDi($di);
 
     $result = $service->counter();
@@ -743,15 +745,17 @@ test('getSoonExpiringActiveOrders executes query', function (): void {
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('getAll')->atLeast()->once()->andReturn([[], []]);
+    $connectionMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connectionMock->shouldReceive('fetchAllAssociative')->atLeast()->once()->andReturn([[], []]);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getConnection')->atLeast()->once()->andReturn($connectionMock);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('getSoonExpiringActiveOrdersQuery')->atLeast()->once()->andReturn(['query', []]);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $serviceMock->setDi($di);
 
     $serviceMock->getSoonExpiringActiveOrders();
@@ -914,6 +918,7 @@ test('getLogger returns logger with event items', function (): void {
 test('toApiArray returns expected keys', function (): void {
     $model = new Model_ClientOrder();
     $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->id = 1;
     $model->config = '{}';
     $model->price = 10;
     $model->quantity = 1;
@@ -929,7 +934,6 @@ test('toApiArray returns expected keys', function (): void {
 
     $dbMock = Mockery::mock(Box_Database::class);
     $dbMock->shouldReceive('toArray')->atLeast()->once()->andReturn([]);
-    $dbMock->shouldReceive('getAssoc')->atLeast()->once()->andReturn([]);
 
     $modelClient = new Model_Client();
     $modelClient->loadBean(new Tests\Helpers\DummyBean());
@@ -939,6 +943,12 @@ test('toApiArray returns expected keys', function (): void {
         ->atLeast()->once()
         ->with('Client', $model->client_id, $exceptionError)
         ->andReturn($modelClient);
+
+    $orderMetaRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderMetaRepository::class);
+    $orderMetaRepoMock->shouldReceive('getPairsForOrder')->atLeast()->once()->andReturn([]);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Box\Mod\Order\Entity\OrderMeta::class)->atLeast()->once()->andReturn($orderMetaRepoMock);
+    $emMock->shouldIgnoreMissing();
 
     $productService = Mockery::mock(Box\Mod\Product\Service::class);
     $productService->shouldReceive('getProductPluginById')->once()->with((int) $model->product_id)->andReturn(null);
@@ -956,6 +966,7 @@ test('toApiArray returns expected keys', function (): void {
         }
     });
     $di['db'] = $dbMock;
+    $di['em'] = $emMock;
 
     $svc = new Service();
     $svc->setDi($di);
@@ -1287,11 +1298,6 @@ test('createOrder creates order', function (): void {
     $clientOrderModel = new Model_ClientOrder();
     $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('transaction')
-        ->once()
-        ->andReturnUsing(fn (callable $callback) => $callback());
-
     $persistedEntities = [];
     $nextOrderId = 1;
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
@@ -1310,6 +1316,7 @@ test('createOrder creates order', function (): void {
         }
         $persistedEntities = [];
     });
+    $emMock->shouldReceive('wrapInTransaction')->once()->andReturnUsing(fn (callable $callback) => $callback());
     $emMock->shouldReceive('remove')->andReturnNull();
     $orderRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderRepository::class)->shouldIgnoreMissing();
     $orderRepoMock->shouldReceive('find')->andReturnUsing(function (?int $id) use (&$nextOrderId): ?object {
@@ -1348,7 +1355,6 @@ test('createOrder creates order', function (): void {
         }
     });
     $di['events_manager'] = $eventMock;
-    $di['db'] = $dbMock;
     $di['em'] = $emMock;
     $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
     $di['logger'] = new Box_Log();
@@ -1393,11 +1399,6 @@ test('createOrder sets form id from product', function (): void {
     $clientOrderModel = new Model_ClientOrder();
     $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('transaction')
-        ->once()
-        ->andReturnUsing(fn (callable $callback) => $callback());
-
     $persistedEntities = [];
     $nextOrderId = 1;
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
@@ -1416,6 +1417,7 @@ test('createOrder sets form id from product', function (): void {
         }
         $persistedEntities = [];
     });
+    $emMock->shouldReceive('wrapInTransaction')->once()->andReturnUsing(fn (callable $callback) => $callback());
     $emMock->shouldReceive('remove')->andReturnNull();
     $orderRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderRepository::class)->shouldIgnoreMissing();
     $orderRepoMock->shouldReceive('find')->andReturnUsing(function (?int $id) use (&$nextOrderId): ?object {
@@ -1454,7 +1456,6 @@ test('createOrder sets form id from product', function (): void {
         }
     });
     $di['events_manager'] = $eventMock;
-    $di['db'] = $dbMock;
     $di['em'] = $emMock;
     $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
     $di['logger'] = new Box_Log();
@@ -1525,11 +1526,6 @@ test('createOrder returns success when invoice follow up fails', function (): vo
         )
         ->andReturn(true);
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('transaction')
-        ->once()
-        ->andReturnUsing(fn (callable $callback) => $callback());
-
     $persistedEntities = [];
     $nextOrderId = 1;
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
@@ -1548,6 +1544,7 @@ test('createOrder returns success when invoice follow up fails', function (): vo
         }
         $persistedEntities = [];
     });
+    $emMock->shouldReceive('wrapInTransaction')->once()->andReturnUsing(fn (callable $callback) => $callback());
     $emMock->shouldReceive('remove')->andReturnNull();
     $orderRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderRepository::class)->shouldIgnoreMissing();
     $orderRepoMock->shouldReceive('find')->andReturnUsing(function (?int $id) use (&$nextOrderId): ?object {
@@ -1589,7 +1586,6 @@ test('createOrder returns success when invoice follow up fails', function (): vo
         }
     });
     $di['events_manager'] = $eventMock;
-    $di['db'] = $dbMock;
     $di['em'] = $emMock;
     $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
     $di['logger'] = new Box_Log();
@@ -1653,11 +1649,6 @@ test('createOrder uses product pricing service for domain orders', function (): 
     $clientOrderModel = new Model_ClientOrder();
     $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('transaction')
-        ->once()
-        ->andReturnUsing(fn (callable $callback) => $callback());
-
     $persistedEntities = [];
     $nextOrderId = 1;
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
@@ -1676,6 +1667,7 @@ test('createOrder uses product pricing service for domain orders', function (): 
         }
         $persistedEntities = [];
     });
+    $emMock->shouldReceive('wrapInTransaction')->once()->andReturnUsing(fn (callable $callback) => $callback());
     $emMock->shouldReceive('remove')->andReturnNull();
     $orderRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderRepository::class)->shouldIgnoreMissing();
     $orderRepoMock->shouldReceive('find')->andReturnUsing(function (?int $id) use (&$nextOrderId): ?object {
@@ -1711,7 +1703,6 @@ test('createOrder uses product pricing service for domain orders', function (): 
         }
     });
     $di['events_manager'] = $eventMock;
-    $di['db'] = $dbMock;
     $di['em'] = $emMock;
     $di['logger'] = new Box_Log();
 
@@ -2011,7 +2002,7 @@ test('updateOrder updates fields', function (): void {
     $di = container();
     $di['events_manager'] = $eventMock;
     $di['db'] = $dbMock;
-    $di['em'] = $emMock;
+    $di['em'] = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
     $di['logger'] = new Box_Log();
 
     $data = [
@@ -2211,16 +2202,21 @@ test('cancelFromOrder cancels linked subscriptions', function (): void {
 
     $dbMock = Mockery::mock(Box_Database::class);
     $dbMock->shouldReceive('store')->once()->with($clientOrderModel);
-    $dbMock->shouldReceive('exec')
+
+    $connectionMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connectionMock->shouldReceive('executeStatement')
         ->once()
         ->with(
             'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND name = :name',
-            [':order_id' => $clientOrderModel->id, ':name' => Service::META_CANCEL_AT_PERIOD_END],
+            ['order_id' => $clientOrderModel->id, 'name' => Service::META_CANCEL_AT_PERIOD_END],
         );
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getConnection')->once()->andReturn($connectionMock);
+    $emMock->shouldIgnoreMissing();
 
     $di = container();
     $di['db'] = $dbMock;
-    $di['em'] = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
+    $di['em'] = $emMock;
     $di['logger'] = new Box_Log();
     $di['mod_service'] = $di->protect(function (string $module, string $service = '') use ($productService, $subscriptionService) {
         if ($module === 'Invoice' && $service === 'Subscription') {
@@ -2773,7 +2769,7 @@ test('updateOrderConfig succeeds with valid form data', function (): void {
         }
     });
     $di['db'] = $dbMock;
-    $di['em'] = $emMock;
+    $di['em'] = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
     $di['logger'] = new Box_Log();
 
     $svc = new Service();
@@ -2864,11 +2860,6 @@ test('createOrder generates an invoice for a zero-price order with issue-invoice
         ->with($invoiceModel, ['id' => $invoiceModel->id, 'use_credits' => true])
         ->andReturn(true);
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('transaction')
-        ->once()
-        ->andReturnUsing(fn (callable $callback) => $callback());
-
     $persistedEntities = [];
     $nextOrderId = 1;
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
@@ -2887,6 +2878,7 @@ test('createOrder generates an invoice for a zero-price order with issue-invoice
         }
         $persistedEntities = [];
     });
+    $emMock->shouldReceive('wrapInTransaction')->once()->andReturnUsing(fn (callable $callback) => $callback());
     $emMock->shouldReceive('remove')->andReturnNull();
     $orderRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderRepository::class)->shouldIgnoreMissing();
     $orderRepoMock->shouldReceive('find')->andReturnUsing(function (?int $id) use (&$nextOrderId): ?object {
@@ -2928,7 +2920,6 @@ test('createOrder generates an invoice for a zero-price order with issue-invoice
         }
     });
     $di['events_manager'] = $eventMock;
-    $di['db'] = $dbMock;
     $di['em'] = $emMock;
     $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
     $di['logger'] = new Box_Log();
@@ -2986,11 +2977,6 @@ test('createOrder does not roll back when invoice generation fails for a negativ
         ->andThrow(new FOSSBilling\InformationException('Invoices are not generated for negative amount orders.'));
     $invoiceServiceMock->shouldReceive('approveInvoice')->never();
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('transaction')
-        ->once()
-        ->andReturnUsing(fn (callable $callback) => $callback());
-
     $persistedEntities = [];
     $nextOrderId = 1;
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
@@ -3009,6 +2995,7 @@ test('createOrder does not roll back when invoice generation fails for a negativ
         }
         $persistedEntities = [];
     });
+    $emMock->shouldReceive('wrapInTransaction')->once()->andReturnUsing(fn (callable $callback) => $callback());
     $emMock->shouldReceive('remove')->andReturnNull();
     $orderRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderRepository::class)->shouldIgnoreMissing();
     $orderRepoMock->shouldReceive('find')->andReturnUsing(function (?int $id) use (&$nextOrderId): ?object {
@@ -3050,7 +3037,6 @@ test('createOrder does not roll back when invoice generation fails for a negativ
         }
     });
     $di['events_manager'] = $eventMock;
-    $di['db'] = $dbMock;
     $di['em'] = $emMock;
     $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
     $di['logger'] = new Box_Log();

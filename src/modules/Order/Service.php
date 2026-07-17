@@ -102,7 +102,7 @@ class Service implements InjectionAwareInterface
         GROUP BY status
         ';
 
-        $data = $this->di['db']->getAssoc($sql);
+        $data = $this->di['em']->getConnection()->fetchAllKeyValue($sql);
 
         return [
             'total' => array_sum($data),
@@ -378,7 +378,7 @@ class Service implements InjectionAwareInterface
     {
         [$query, $bindings] = $this->getSoonExpiringActiveOrdersQuery();
 
-        return $this->di['db']->getAll($query, $bindings);
+        return $this->di['em']->getConnection()->fetchAllAssociative($query, $bindings);
     }
 
     public function getSoonExpiringActiveOrdersQuery($data = []): array
@@ -489,7 +489,7 @@ class Service implements InjectionAwareInterface
         $data['total'] = $this->getTotal($model);
         $data['discount'] ??= 0;
         $data['title'] = $modelTitle;
-        $data['meta'] = $this->di['db']->getAssoc('SELECT name, value FROM client_order_meta WHERE client_order_id = :id', [':id' => $modelId]);
+        $data['meta'] = $this->getOrderMetaRepository()->getPairsForOrder($modelId);
         $data['active_tickets'] = $supportService->getSupportTicketRepository()->countActiveTicketsForOrder((int) $modelId);
         $client = $this->di['db']->getExistingModelById('Client', $modelClientId, 'Client not found');
         $data['client'] = $clientService->toApiArray($client, false);
@@ -523,7 +523,7 @@ class Service implements InjectionAwareInterface
         }
 
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
-        $orders = $this->di['db']->getAll("SELECT * FROM client_order WHERE id IN ($placeholders)", $ids);
+        $orders = $this->di['em']->getConnection()->fetchAllAssociative("SELECT * FROM client_order WHERE id IN ($placeholders)", $ids);
         if (empty($orders)) {
             return [];
         }
@@ -546,7 +546,7 @@ class Service implements InjectionAwareInterface
         $meta = [];
         if (!empty($orderIds)) {
             $placeholders = implode(',', array_fill(0, count($orderIds), '?'));
-            $metaRows = $this->di['db']->getAll(
+            $metaRows = $this->di['em']->getConnection()->fetchAllAssociative(
                 "SELECT client_order_id, name, value FROM client_order_meta WHERE client_order_id IN ($placeholders)",
                 $orderIds
             );
@@ -828,7 +828,7 @@ class Service implements InjectionAwareInterface
         $invoice = null;
         $markInvoicePaid = \FOSSBilling\Tools::normalizeBoolean($data['mark_invoice_paid'] ?? false);
 
-        $id = $this->di['db']->transaction(function () use (
+        $id = $this->di['em']->wrapInTransaction(function () use (
             $client,
             $config,
             $currency,
@@ -1166,11 +1166,7 @@ class Service implements InjectionAwareInterface
             return $repo->$m($order);
         }
 
-        $o = $this->di['db']->findOne(
-            'client_order',
-            'id = :id',
-            [':id' => $orderId]
-        );
+        $o = $this->getOrderRepository()->find($orderId);
         $service = null;
         $sdbname = 'service_' . $serviceType;
         if ($serviceId) {
@@ -1627,9 +1623,9 @@ class Service implements InjectionAwareInterface
             $order->updated_at = date('Y-m-d H:i:s');
             $this->di['db']->store($order);
         }
-        $this->di['db']->exec(
+        $this->di['em']->getConnection()->executeStatement(
             'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND name = :name',
-            [':order_id' => $orderId, ':name' => self::META_CANCEL_AT_PERIOD_END],
+            ['order_id' => $orderId, 'name' => self::META_CANCEL_AT_PERIOD_END],
         );
     }
 
@@ -1816,7 +1812,7 @@ class Service implements InjectionAwareInterface
             ORDER BY id DESC
         ";
 
-        $orders = $this->di['db']->getAll($sql, [':days' => $days]);
+        $orders = $this->di['em']->getConnection()->fetchAllAssociative($sql, [':days' => $days]);
 
         foreach ($orders as $orderArr) {
             try {

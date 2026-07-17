@@ -202,13 +202,13 @@ test('gets tax', function (): void {
     $invoiceItemModel->taxed = true;
     $invoiceItemModel->price = $price;
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getCell')
+    $dbalMock = Mockery::mock(\Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('fetchOne')
         ->atLeast()->once()
         ->andReturn($rate);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['dbal'] = $dbalMock;
     $service->setDi($di);
 
     $result = $service->getTax($invoiceItemModel);
@@ -363,12 +363,12 @@ test('gets all not execute paid items', function (): void {
     $service = new ServiceInvoiceItem();
     $di = container();
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')
+    $dbalMock = Mockery::mock(\Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('fetchAllAssociative')
         ->atLeast()->once()
         ->andReturn([]);
 
-    $di['db'] = $dbMock;
+    $di['dbal'] = $dbalMock;
     $service->setDi($di);
 
     $result = $service->getAllNotExecutePaidItems();

@@ -261,15 +261,61 @@ function container(): Container
         $transactionRepository->shouldReceive('findByInvoiceId')->byDefault()->andReturn([]);
         $transactionRepository->shouldReceive('findByTxnId')->byDefault()->andReturn(null);
         $transactionRepository->shouldReceive('findBySId')->byDefault()->andReturn(null);
+        $transactionRepository->shouldReceive('find')->byDefault()->andReturnUsing(static function (?int $id): ?object {
+            if ($id === null) {
+                return null;
+            }
+            $transaction = new \Box\Mod\Invoice\Entity\Transaction();
+            $prop = new \ReflectionProperty($transaction, 'id');
+            $prop->setValue($transaction, $id);
+
+            return $transaction;
+        });
+        $transactionRepository->shouldReceive('findOneBy')->byDefault()->andReturn(null);
 
         $subscriptionRepository = \Mockery::mock(\Box\Mod\Invoice\Repository\SubscriptionRepository::class)->shouldIgnoreMissing();
         $subscriptionRepository->shouldReceive('findBySId')->byDefault()->andReturn(null);
         $subscriptionRepository->shouldReceive('findByClientId')->byDefault()->andReturn([]);
+        $subscriptionRepository->shouldReceive('find')->byDefault()->andReturnUsing(static function (?int $id): ?object {
+            if ($id === null) {
+                return null;
+            }
+            $subscription = new \Box\Mod\Invoice\Entity\Subscription();
+            $prop = new \ReflectionProperty($subscription, 'id');
+            $prop->setValue($subscription, $id);
+
+            return $subscription;
+        });
 
         $payGatewayRepository = \Mockery::mock(\Box\Mod\Invoice\Repository\PayGatewayRepository::class)->shouldIgnoreMissing();
         $payGatewayRepository->shouldReceive('findEnabled')->byDefault()->andReturn([]);
+        $payGatewayRepository->shouldReceive('findEnabledOrderedByIdDesc')->byDefault()->andReturn([]);
+        $payGatewayRepository->shouldReceive('find')->byDefault()->andReturnUsing(static function (?int $id): ?object {
+            if ($id === null) {
+                return null;
+            }
+            $payGateway = new \Box\Mod\Invoice\Entity\PayGateway();
+            $prop = new \ReflectionProperty($payGateway, 'id');
+            $prop->setValue($payGateway, $id);
+
+            return $payGateway;
+        });
 
         $taxRepository = \Mockery::mock(\Box\Mod\Invoice\Repository\TaxRepository::class)->shouldIgnoreMissing();
+        $taxRepository->shouldReceive('find')->byDefault()->andReturnUsing(static function (?int $id): ?object {
+            if ($id === null) {
+                return null;
+            }
+            $tax = new \Box\Mod\Invoice\Entity\Tax();
+            $prop = new \ReflectionProperty($tax, 'id');
+            $prop->setValue($tax, $id);
+
+            return $tax;
+        });
+        $taxRepository->shouldReceive('findOneBy')->byDefault()->andReturn(null);
+        $taxRepository->shouldReceive('findByCountryAndState')->byDefault()->andReturn(null);
+        $taxRepository->shouldReceive('findByCountry')->byDefault()->andReturn(null);
+        $taxRepository->shouldReceive('findGlobal')->byDefault()->andReturn(null);
 
         $orderRepository = \Mockery::mock(\Box\Mod\Order\Repository\OrderRepository::class)->shouldIgnoreMissing();
         $orderRepository->shouldReceive('find')->byDefault()->andReturnUsing(static function (?int $id): ?object {
