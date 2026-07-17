@@ -13,8 +13,10 @@ namespace Box\Mod\Invoice;
 
 use Box\Mod\Currency\Entity\Currency;
 use Dompdf\Dompdf;
+use Dompdf\Options;
 use FOSSBilling\Environment;
 use FOSSBilling\Http\ResponseFactory;
+use FOSSBilling\i18n;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Tools;
@@ -1743,8 +1745,8 @@ class Service implements InjectionAwareInterface
 
         $pdf = $this->createPdfGenerator();
         $pdf->setPaper($document_format, 'portrait');
+        $pdf->setBasePath(Path::join(__DIR__, 'templates', 'pdf'));
         $options = $pdf->getOptions();
-        $options->setChroot($this->di['request']->server->get('DOCUMENT_ROOT', ''));
 
         $sellerLines = 0;
         $buyerLines = 0;
@@ -1765,6 +1767,7 @@ class Service implements InjectionAwareInterface
             'buyer' => $this->getBuyerData($invoice, $buyerLines),
             'buyer_lines' => $buyerLines,
             'invoice' => $invoice,
+            'locale' => i18n::getActiveLocale($this->di['request'], true, $this->di['cookie_queue']),
         ];
 
         $twigFactory = $this->di['twig_factory'];
@@ -2100,7 +2103,15 @@ class Service implements InjectionAwareInterface
     // Start of PDF related functions
     protected function createPdfGenerator(): Dompdf
     {
-        return new Dompdf();
+        $fontCachePath = Path::join(PATH_CACHE, 'dompdf');
+        $this->filesystem->mkdir($fontCachePath);
+
+        $options = new Options();
+        $options->setFontDir($fontCachePath);
+        $options->setFontCache($fontCachePath);
+        $options->setChroot(PATH_ROOT);
+
+        return new Dompdf($options);
     }
 
     protected function createPdfResponse(string $content, string $fileName): Response
