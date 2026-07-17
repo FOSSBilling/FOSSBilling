@@ -18,7 +18,7 @@
         <ul class="pagination justify-content-center mb-0">
             <li class="page-item{% if currentPage == 1 %} disabled{% endif %}">
                 <a class="page-link"
-                   href="{{ url|url(filteredRequest|merge({ (pageParam): 1 })) ~ hash }}"
+                   href="{{ url|url(query: filteredRequest|merge({ (pageParam): 1 })) ~ hash }}"
                    aria-label="{{ 'First'|trans }}">
                     <svg class="icon"><use href="#chevrons-left" /></svg>
                 </a>
@@ -26,7 +26,7 @@
 
             <li class="page-item{% if currentPage == 1 %} disabled{% endif %}">
                 <a class="page-link"
-                   href="{{ url|url(filteredRequest|merge({ (pageParam): currentPage - 1 })) ~ hash }}"
+                   href="{{ url|url(query: filteredRequest|merge({ (pageParam): currentPage - 1 })) ~ hash }}"
                    aria-label="{{ 'Previous'|trans }}" rel="prev">
                     <svg class="icon"><use href="#chevron-left" /></svg>
                 </a>
@@ -38,14 +38,14 @@
                         <span class="page-link" aria-current="page">{{ i }}</span>
                     {% else %}
                         <a class="page-link"
-                           href="{{ url|url(filteredRequest|merge({ (pageParam): i })) ~ hash }}">{{ i }}</a>
+                           href="{{ url|url(query: filteredRequest|merge({ (pageParam): i })) ~ hash }}">{{ i }}</a>
                     {% endif %}
                 </li>
             {% endfor %}
 
             <li class="page-item{% if currentPage == list.pages %} disabled{% endif %}">
                 <a class="page-link"
-                   href="{{ url|url(filteredRequest|merge({ (pageParam): currentPage + 1 })) ~ hash }}"
+                   href="{{ url|url(query: filteredRequest|merge({ (pageParam): currentPage + 1 })) ~ hash }}"
                    aria-label="{{ 'Next'|trans }}" rel="next">
                     <svg class="icon"><use href="#chevron-right" /></svg>
                 </a>
@@ -53,7 +53,7 @@
 
             <li class="page-item{% if currentPage == list.pages %} disabled{% endif %}">
                 <a class="page-link"
-                   href="{{ url|url(filteredRequest|merge({ (pageParam): list.pages })) ~ hash }}"
+                   href="{{ url|url(query: filteredRequest|merge({ (pageParam): list.pages })) ~ hash }}"
                    aria-label="{{ 'Last'|trans }}">
                     <svg class="icon"><use href="#chevrons-right" /></svg>
                 </a>
