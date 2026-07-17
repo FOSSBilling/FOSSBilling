@@ -11,19 +11,10 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicedomain\Api;
 
-/**
- * Domain service management.
- */
+use Box\Mod\Servicedomain\Entity\ServiceDomain;
+
 class Client extends \FOSSBilling\Api\AbstractApi
 {
-    /**
-     * Change domain nameservers. Method sends action to registrar.
-     *
-     * @optional string $ns3 - 3 Nameserver hostname, ie: ns3.mydomain.com
-     * @optional string $ns4 - 4 Nameserver hostname, ie: ns4.mydomain.com
-     *
-     * @return true
-     */
     public function update_nameservers($data): bool
     {
         $s = $this->_getService($data);
@@ -37,11 +28,6 @@ class Client extends \FOSSBilling\Api\AbstractApi
         return true;
     }
 
-    /**
-     * Change domain WHOIS contact details. Method sends action to registrar.
-     *
-     * @return true
-     */
     public function update_contacts($data)
     {
         $s = $this->_getService($data);
@@ -49,11 +35,6 @@ class Client extends \FOSSBilling\Api\AbstractApi
         return $this->getService()->updateContacts($s, $data);
     }
 
-    /**
-     * Enable domain privacy protection.
-     *
-     * @return true
-     */
     public function enable_privacy_protection($data)
     {
         $s = $this->_getService($data);
@@ -61,11 +42,6 @@ class Client extends \FOSSBilling\Api\AbstractApi
         return $this->getService()->enablePrivacyProtection($s);
     }
 
-    /**
-     * Disable domain privacy protection.
-     *
-     * @return true
-     */
     public function disable_privacy_protection($data)
     {
         $s = $this->_getService($data);
@@ -73,11 +49,6 @@ class Client extends \FOSSBilling\Api\AbstractApi
         return $this->getService()->disablePrivacyProtection($s);
     }
 
-    /**
-     * Retrieve domain transfer code.
-     *
-     * @return string - transfer code
-     */
     public function get_transfer_code($data)
     {
         $s = $this->_getService($data);
@@ -85,11 +56,6 @@ class Client extends \FOSSBilling\Api\AbstractApi
         return $this->getService()->getTransferCode($s);
     }
 
-    /**
-     * Lock domain.
-     *
-     * @return bool
-     */
     public function lock($data)
     {
         $s = $this->_getService($data);
@@ -97,11 +63,6 @@ class Client extends \FOSSBilling\Api\AbstractApi
         return $this->getService()->lock($s);
     }
 
-    /**
-     * Unlock domain.
-     *
-     * @return bool
-     */
     public function unlock($data)
     {
         $s = $this->_getService($data);
@@ -122,7 +83,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
         }
 
         $s = $orderService->getOrderService($order);
-        if (!$s instanceof \Model_ServiceDomain || $order->status !== \Model_ClientOrder::STATUS_ACTIVE) {
+        if ((!$s instanceof ServiceDomain && !$s instanceof \Model_ServiceDomain) || $order->status !== \Model_ClientOrder::STATUS_ACTIVE) {
             throw new \FOSSBilling\Exception('Order is not activated');
         }
 

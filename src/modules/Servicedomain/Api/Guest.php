@@ -11,40 +11,27 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicedomain\Api;
 
+use Box\Mod\Servicedomain\Entity\Tld;
 use FOSSBilling\Validation\Api\RequiredParams;
 
-/**
- * Domain service management.
- */
 class Guest extends \FOSSBilling\Api\AbstractApi
 {
-    /**
-     * Get configured TLDs which can be ordered. Shows only enabled TLDs.
-     *
-     * @optional bool $allow_register - shows only these TLDs which can be registered
-     * @optional bool $allow_transfer - shows only these TLDs which can be transferred
-     *
-     * @return array - list of TLDs
-     */
     public function tlds($data = []): array
     {
         $allow_register = $data['allow_register'] ?? null;
         $allow_transfer = $data['allow_transfer'] ?? null;
 
-        $where = [];
-        $where[] = 'active = 1';
+        $criteria = ['active' => true];
 
         if ($allow_register !== null) {
-            $where[] = 'allow_register = 1';
+            $criteria['allowRegister'] = true;
         }
 
         if ($allow_transfer !== null) {
-            $where[] = 'allow_transfer = 1';
+            $criteria['allowTransfer'] = true;
         }
 
-        $query = implode(' AND ', $where);
-
-        $tlds = $this->getDi()['db']->find('Tld', $query, []);
+        $tlds = $this->getService()->getTldRepository()->findBy($criteria, ['id' => 'ASC']);
         $result = [];
         foreach ($tlds as $model) {
             $result[] = $this->getService()->tldToApiArray($model);
@@ -53,28 +40,17 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         return $result;
     }
 
-    /**
-     * Get TLD pricing information.
-     *
-     * @return array
-     */
     #[RequiredParams(['tld' => 'TLD is missing'])]
     public function pricing($data)
     {
         $model = $this->getService()->tldFindOneByTld($data['tld']);
-        if (!$model instanceof \Model_Tld) {
+        if (!$model instanceof Tld) {
             throw new \FOSSBilling\InformationException('TLD not found');
         }
 
         return $this->getService()->tldToApiArray($model);
     }
 
-    /**
-     * Check if domain is available for registration. Domain registrar must be
-     * configured in order to get correct results.
-     *
-     * @return true
-     */
     #[RequiredParams([
         'tld' => 'TLD is missing',
         'sld' => 'SLD is missing',
@@ -90,7 +66,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         }
 
         $tld = $this->getService()->tldFindOneByTld($data['tld']);
-        if (!$tld instanceof \Model_Tld) {
+        if (!$tld instanceof Tld) {
             throw new \FOSSBilling\InformationException('Domain availability could not be determined. TLD is not active.');
         }
 
@@ -101,12 +77,6 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         return true;
     }
 
-    /**
-     * Check if domain can be transferred. Domain registrar must be
-     * configured in order to get correct results.
-     *
-     * @return true
-     */
     #[RequiredParams([
         'tld' => 'TLD is missing',
         'sld' => 'SLD is missing',
@@ -116,7 +86,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $this->getDi()['rate_limiter']->consumeOrThrow('domain_lookup_ip', (string) $this->getIp());
 
         $tld = $this->getService()->tldFindOneByTld($data['tld']);
-        if (!$tld instanceof \Model_Tld) {
+        if (!$tld instanceof Tld) {
             throw new \FOSSBilling\InformationException('TLD is not active.');
         }
         if (!$this->getService()->canBeTransferred($tld, $data['sld'])) {

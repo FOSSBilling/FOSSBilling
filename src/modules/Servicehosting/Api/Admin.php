@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicehosting\Api;
 
+use Box\Mod\Servicehosting\Entity\ServiceHosting;
+use Box\Mod\Servicehosting\Entity\ServiceHostingServer;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
@@ -33,9 +35,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         }
 
         [$order, $s] = $this->_getService($data);
-        $plan = $this->getDi()['db']->getExistingModelById('ServiceHostingHp', $data['plan_id'], 'Hosting plan not found');
-
         $service = $this->getService();
+        $plan = $service->getServiceHostingHpRepository()->find($data['plan_id'])
+            ?? throw new \FOSSBilling\InformationException('Hosting plan not found');
 
         return (bool) $service->changeAccountPlan($order, $s, $plan);
     }
@@ -158,10 +160,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $result = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         foreach ($result['list'] as $key => $server) {
-            $bean = $this->getDi()['db']->dispense('ServiceHostingServer')->unbox();
-            $bean->import($server);
-            $model = $bean->box();
-
+            $model = $this->_serverFromRow($server);
             $result['list'][$key] = $this->getService()->toHostingServerApiArray($model, false, $this->getIdentity());
         }
 
@@ -183,11 +182,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $orderService = $this->getDi()['mod_service']('order');
 
         foreach ($result['list'] as $key => $account) {
-            $bean = $this->getDi()['db']->dispense('ServiceHosting')->unbox();
-            $bean->import($account);
-            $model = $bean->box();
+            $model = $this->_hostingFromRow($account);
 
-            $order = $this->getDi()['db']->findOne('ClientOrder', 'service_type = "hosting" AND service_id = :service_id', [':service_id' => $model->id]);
+            $order = $this->getDi()['db']->findOne('ClientOrder', 'service_type = "hosting" AND service_id = :service_id', [':service_id' => $model->getId()]);
 
             $result['list'][$key] = $this->getService()->toHostingAccountApiArray($model, true, $this->getIdentity());
 
@@ -256,8 +253,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('servicehosting', 'view_servers');
 
-        $model = $this->getDi()['db']->getExistingModelById('ServiceHostingServer', $data['id'], 'Server not found');
         $service = $this->getService();
+        $model = $service->getServiceHostingServerRepository()->find($data['id'])
+            ?? throw new \FOSSBilling\InformationException('Server not found');
 
         return $service->toHostingServerApiArray($model, true, $this->getIdentity());
     }
@@ -272,16 +270,18 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('servicehosting', 'manage_servers');
 
-        $model = $this->getDi()['db']->getExistingModelById('ServiceHostingServer', $data['id'], 'Server not found');
+        $service = $this->getService();
+        $model = $service->getServiceHostingServerRepository()->find($data['id'])
+            ?? throw new \FOSSBilling\InformationException('Server not found');
 
-        $hosting_services = $this->getDi()['db']->find('ServiceHosting', 'service_hosting_server_id = :server_id', [':server_id' => $data['id']]);
-        $count = is_array($hosting_services) ? count($hosting_services) : 0; // Handle the case where $hosting_services might be null
+        $hosting_services = $service->getServiceHostingRepository()->findBy(['serviceHostingServerId' => $data['id']]);
+        $count = count($hosting_services);
 
         if ($count > 0) {
             throw new \FOSSBilling\InformationException('Hosting server is used by :count: service hostings', [':count:' => $count], 704);
         }
 
-        return (bool) $this->getService()->deleteServer($model);
+        return (bool) $service->deleteServer($model);
     }
 
     /**
@@ -309,10 +309,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('servicehosting', 'manage_servers');
 
-        $model = $this->getDi()['db']->getExistingModelById('ServiceHostingServer', $data['id'], 'Server not found');
         $service = $this->getService();
+        $model = $service->getServiceHostingServerRepository()->find($data['id'])
+            ?? throw new \FOSSBilling\InformationException('Server not found');
 
-        $existingConfig = json_decode($model->config ?? '', true) ?? [];
+        $existingConfig = json_decode($model->getConfig() ?? '', true) ?? [];
 
         $data['config'] = $existingConfig;
         $data['config']['userprefix'] = $data['userprefix'] ?? ($existingConfig['userprefix'] ?? null);
@@ -327,7 +328,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         return $updated;
     }
 
-    private function validateServerConfig(\Model_ServiceHostingServer $model): void
+    private function validateServerConfig(ServiceHostingServer|\Model_ServiceHostingServer $model): void
     {
         try {
             $this->getService()->getServerManager($model);
@@ -346,9 +347,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('servicehosting', 'manage_servers');
 
-        $model = $this->getDi()['db']->getExistingModelById('ServiceHostingServer', $data['id'], 'Server not found');
+        $service = $this->getService();
+        $model = $service->getServiceHostingServerRepository()->find($data['id'])
+            ?? throw new \FOSSBilling\InformationException('Server not found');
 
-        return (bool) $this->getService()->testConnection($model);
+        return (bool) $service->testConnection($model);
     }
 
     /**
@@ -373,10 +376,12 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('servicehosting', 'manage_plans');
         [$sql, $params] = $this->getService()->getHpSearchQuery($data);
         $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $service = $this->getService();
 
         foreach ($pager['list'] as $key => $item) {
-            $model = $this->getDi()['db']->getExistingModelById('ServiceHostingHp', $item['id'], 'Post not found');
-            $pager['list'][$key] = $this->getService()->toHostingHpApiArray($model, false, $this->getIdentity());
+            $model = $service->getServiceHostingHpRepository()->find($item['id'])
+                ?? throw new \FOSSBilling\InformationException('Post not found');
+            $pager['list'][$key] = $service->toHostingHpApiArray($model, false, $this->getIdentity());
         }
 
         return $pager;
@@ -392,17 +397,17 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('servicehosting', 'manage_plans');
 
-        $model = $this->getDi()['db']->getExistingModelById('ServiceHostingHp', $data['id'], 'Hosting plan not found');
+        $service = $this->getService();
+        $model = $service->getServiceHostingHpRepository()->find($data['id'])
+            ?? throw new \FOSSBilling\InformationException('Hosting plan not found');
 
-        $hosting_services = $this->getDi()['db']->find('ServiceHosting', 'service_hosting_hp_id = :hp_id', [':hp_id' => $data['id']]);
-
-        // Ensure $hosting_services is an array before counting its elements
-        $count = is_array($hosting_services) ? count($hosting_services) : 0; // Handle the case where $hosting_services might be null
+        $hosting_services = $service->getServiceHostingRepository()->findBy(['serviceHostingHpId' => $data['id']]);
+        $count = count($hosting_services);
         if ($count > 0) {
             throw new \FOSSBilling\InformationException('Hosting plan is used by :count: service hostings', [':count:' => $count], 704);
         }
 
-        return (bool) $this->getService()->deleteHp($model);
+        return (bool) $service->deleteHp($model);
     }
 
     /**
@@ -417,9 +422,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('servicehosting', 'manage_plans');
 
-        $model = $this->getDi()['db']->getExistingModelById('ServiceHostingHp', $data['id'], 'Hosting plan not found');
+        $service = $this->getService();
+        $model = $service->getServiceHostingHpRepository()->find($data['id'])
+            ?? throw new \FOSSBilling\InformationException('Hosting plan not found');
 
-        return $this->getService()->toHostingHpApiArray($model, true, $this->getIdentity());
+        return $service->toHostingHpApiArray($model, true, $this->getIdentity());
     }
 
     /**
@@ -434,9 +441,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('servicehosting', 'manage_plans');
 
-        $model = $this->getDi()['db']->getExistingModelById('ServiceHostingHp', $data['id'], 'Hosting plan not found');
-
         $service = $this->getService();
+        $model = $service->getServiceHostingHpRepository()->find($data['id'])
+            ?? throw new \FOSSBilling\InformationException('Hosting plan not found');
 
         return (bool) $service->updateHp($model, $data);
     }
@@ -468,10 +475,68 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $order = $this->getDi()['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
         $orderService = $this->getDi()['mod_service']('order');
         $s = $orderService->getOrderService($order);
-        if (!$s instanceof \Model_ServiceHosting) {
+        if (!$s instanceof \Model_ServiceHosting && !$s instanceof ServiceHosting) {
             throw new \FOSSBilling\Exception('Order is not activated');
         }
 
         return [$order, $s];
+    }
+
+    private function _serverFromRow(array $row): ServiceHostingServer
+    {
+        $model = new ServiceHostingServer();
+        $model->setId($row['id'] ?? null);
+        $model->setName($row['name'] ?? null);
+        $model->setIp($row['ip'] ?? null);
+        $model->setHostname($row['hostname'] ?? null);
+        $model->setAssignedIps($row['assigned_ips'] ?? null);
+        $model->setStatusUrl($row['status_url'] ?? null);
+        $model->setActive(isset($row['active']) ? (bool) $row['active'] : null);
+        $model->setMaxAccounts(isset($row['max_accounts']) ? (int) $row['max_accounts'] : null);
+        $model->setNs1($row['ns1'] ?? null);
+        $model->setNs2($row['ns2'] ?? null);
+        $model->setNs3($row['ns3'] ?? null);
+        $model->setNs4($row['ns4'] ?? null);
+        $model->setManager($row['manager'] ?? null);
+        $model->setUsername($row['username'] ?? null);
+        $model->setPassword($row['password'] ?? null);
+        $model->setAccesshash($row['accesshash'] ?? null);
+        $model->setPasswordLength(isset($row['password_length']) ? (int) $row['password_length'] : null);
+        $model->setPort($row['port'] ?? null);
+        $model->setConfig($row['config'] ?? null);
+        $model->setSecure(isset($row['secure']) ? (bool) $row['secure'] : null);
+
+        if (isset($row['created_at']) && !empty($row['created_at'])) {
+            $model->setCreatedAt(new \DateTime($row['created_at']));
+        }
+        if (isset($row['updated_at']) && !empty($row['updated_at'])) {
+            $model->setUpdatedAt(new \DateTime($row['updated_at']));
+        }
+
+        return $model;
+    }
+
+    private function _hostingFromRow(array $row): ServiceHosting
+    {
+        $model = new ServiceHosting();
+        $model->setId($row['id'] ?? null);
+        $model->setClientId(isset($row['client_id']) ? (int) $row['client_id'] : null);
+        $model->setServiceHostingServerId(isset($row['service_hosting_server_id']) ? (int) $row['service_hosting_server_id'] : null);
+        $model->setServiceHostingHpId(isset($row['service_hosting_hp_id']) ? (int) $row['service_hosting_hp_id'] : null);
+        $model->setSld($row['sld'] ?? null);
+        $model->setTld($row['tld'] ?? null);
+        $model->setIp($row['ip'] ?? null);
+        $model->setUsername($row['username'] ?? null);
+        $model->setPass($row['pass'] ?? null);
+        $model->setReseller(isset($row['reseller']) ? (bool) $row['reseller'] : null);
+
+        if (isset($row['created_at']) && !empty($row['created_at'])) {
+            $model->setCreatedAt(new \DateTime($row['created_at']));
+        }
+        if (isset($row['updated_at']) && !empty($row['updated_at'])) {
+            $model->setUpdatedAt(new \DateTime($row['updated_at']));
+        }
+
+        return $model;
     }
 }

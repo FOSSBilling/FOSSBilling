@@ -372,6 +372,159 @@ function container(): Container
         $supportTicketNoteRepository = \Mockery::mock(\Box\Mod\Support\Repository\SupportTicketNoteRepository::class)->shouldIgnoreMissing();
         $supportTicketMessageHistoryRepository = \Mockery::mock(\Box\Mod\Support\Repository\SupportTicketMessageHistoryRepository::class)->shouldIgnoreMissing();
 
+        // Servicehosting
+        $serviceHostingRepository = \Mockery::mock(\Box\Mod\Servicehosting\Repository\ServiceHostingRepository::class)->shouldIgnoreMissing();
+        $serviceHostingRepository->shouldReceive('find')->byDefault()->andReturnUsing(static function (?int $id): ?object {
+            if ($id === null) {
+                return null;
+            }
+            $entity = new \Box\Mod\Servicehosting\Entity\ServiceHosting();
+            $prop = new \ReflectionProperty($entity, 'id');
+            $prop->setValue($entity, $id);
+
+            return $entity;
+        });
+        $serviceHostingRepository->shouldReceive('findBy')->byDefault()->andReturn([]);
+        $serviceHostingRepository->shouldReceive('findOneBy')->byDefault()->andReturn(null);
+        $serviceHostingRepository->shouldReceive('findOneByServerId')->byDefault()->andReturn(null);
+        $serviceHostingRepository->shouldReceive('findOneByHpId')->byDefault()->andReturn(null);
+        $serviceHostingRepository->shouldReceive('findOneBy')->byDefault()->andReturn(null);
+
+        $serviceHostingHpRepository = \Mockery::mock(\Box\Mod\Servicehosting\Repository\ServiceHostingHpRepository::class)->shouldIgnoreMissing();
+        $serviceHostingHpRepository->shouldReceive('find')->byDefault()->andReturnUsing(static function (?int $id): ?object {
+            if ($id === null) {
+                return null;
+            }
+            $entity = new \Box\Mod\Servicehosting\Entity\ServiceHostingHp();
+            $prop = new \ReflectionProperty($entity, 'id');
+            $prop->setValue($entity, $id);
+
+            return $entity;
+        });
+        $serviceHostingHpRepository->shouldReceive('findBy')->byDefault()->andReturn([]);
+        $serviceHostingHpRepository->shouldReceive('findOneBy')->byDefault()->andReturn(null);
+
+        $serviceHostingServerRepository = \Mockery::mock(\Box\Mod\Servicehosting\Repository\ServiceHostingServerRepository::class)->shouldIgnoreMissing();
+        $serviceHostingServerRepository->shouldReceive('find')->byDefault()->andReturnUsing(static function (?int $id): ?object {
+            if ($id === null) {
+                return null;
+            }
+            $entity = new \Box\Mod\Servicehosting\Entity\ServiceHostingServer();
+            $prop = new \ReflectionProperty($entity, 'id');
+            $prop->setValue($entity, $id);
+
+            return $entity;
+        });
+        $serviceHostingServerRepository->shouldReceive('findBy')->byDefault()->andReturn([]);
+        $serviceHostingServerRepository->shouldReceive('findOneBy')->byDefault()->andReturn(null);
+
+        // Cart
+        $cartRepository = \Mockery::mock(\Box\Mod\Cart\Repository\CartRepository::class)->shouldIgnoreMissing();
+        $cartRepository->shouldReceive('find')->byDefault()->andReturnUsing(static function (?int $id): ?object {
+            if ($id === null) {
+                return null;
+            }
+            $cart = new \Box\Mod\Cart\Entity\Cart();
+            $prop = new \ReflectionProperty($cart, 'id');
+            $prop->setValue($cart, $id);
+
+            return $cart;
+        });
+        $cartRepository->shouldReceive('findBySessionId')->byDefault()->andReturn(null);
+        $cartRepository->shouldReceive('findOneBy')->byDefault()->andReturn(null);
+        $cartRepository->shouldReceive('getSearchQueryBuilder')->byDefault()->andReturnUsing(static function (): object {
+            $qb = \Mockery::mock(\Doctrine\ORM\QueryBuilder::class)->shouldIgnoreMissing();
+            $query = \Mockery::mock(\Doctrine\ORM\Query::class)->shouldIgnoreMissing();
+            $query->shouldReceive('getResult')->byDefault()->andReturn([]);
+            $qb->shouldReceive('getQuery')->byDefault()->andReturn($query);
+
+            return $qb;
+        });
+
+        $cartProductRepository = \Mockery::mock(\Box\Mod\Cart\Repository\CartProductRepository::class)->shouldIgnoreMissing();
+        $cartProductRepository->shouldReceive('find')->byDefault()->andReturnUsing(static function (?int $id): ?object {
+            if ($id === null) {
+                return null;
+            }
+            $cartProduct = new \Box\Mod\Cart\Entity\CartProduct();
+            $prop = new \ReflectionProperty($cartProduct, 'id');
+            $prop->setValue($cartProduct, $id);
+
+            return $cartProduct;
+        });
+        $cartProductRepository->shouldReceive('findByCartId')->byDefault()->andReturn([]);
+        $cartProductRepository->shouldReceive('findOneByCartAndId')->byDefault()->andReturn(null);
+        $cartProductRepository->shouldReceive('findOneBy')->byDefault()->andReturn(null);
+
+        // Servicedomain
+        $domainRepository = \Mockery::mock(\Box\Mod\Servicedomain\Repository\DomainRepository::class)->shouldIgnoreMissing();
+        $domainRepository->shouldReceive('find')->byDefault()->andReturnUsing(static function (?int $id): ?object {
+            if ($id === null) {
+                return null;
+            }
+            $entity = new \Box\Mod\Servicedomain\Entity\ServiceDomain();
+            $prop = new \ReflectionProperty($entity, 'id');
+            $prop->setValue($entity, $id);
+
+            return $entity;
+        });
+        $domainRepository->shouldReceive('findBy')->byDefault()->andReturn([]);
+        $domainRepository->shouldReceive('findOneBy')->byDefault()->andReturn(null);
+        $domainRepository->shouldReceive('findByTldRegistrarId')->byDefault()->andReturn([]);
+        $domainRepository->shouldReceive('findByTld')->byDefault()->andReturn([]);
+
+        $tldRepository = \Mockery::mock(\Box\Mod\Servicedomain\Repository\TldRepository::class)->shouldIgnoreMissing();
+        $tldRepository->shouldReceive('find')->byDefault()->andReturnUsing(static function (?int $id): ?object {
+            if ($id === null) {
+                return null;
+            }
+            $entity = new \Box\Mod\Servicedomain\Entity\Tld();
+            $prop = new \ReflectionProperty($entity, 'id');
+            $prop->setValue($entity, $id);
+
+            return $entity;
+        });
+        $tldRepository->shouldReceive('findBy')->byDefault()->andReturn([]);
+        $tldRepository->shouldReceive('findOneBy')->byDefault()->andReturn(null);
+        $tldRepository->shouldReceive('findOneByTld')->byDefault()->andReturn(null);
+        $tldRepository->shouldReceive('findOneActiveById')->byDefault()->andReturn(null);
+        $tldRepository->shouldReceive('findAllActive')->byDefault()->andReturn([]);
+        $tldRepository->shouldReceive('getIdTldPairs')->byDefault()->andReturn([]);
+        $tldRepository->shouldReceive('createQueryBuilder')->byDefault()->andReturnUsing(static function (): object {
+            $qb = \Mockery::mock(\Doctrine\ORM\QueryBuilder::class)->shouldIgnoreMissing();
+            $query = \Mockery::mock(\Doctrine\ORM\Query::class)->shouldIgnoreMissing();
+            $query->shouldReceive('getResult')->byDefault()->andReturn([]);
+            $query->shouldReceive('getArrayResult')->byDefault()->andReturn([]);
+            $qb->shouldReceive('getQuery')->byDefault()->andReturn($query);
+
+            return $qb;
+        });
+
+        $tldRegistrarRepository = \Mockery::mock(\Box\Mod\Servicedomain\Repository\TldRegistrarRepository::class)->shouldIgnoreMissing();
+        $tldRegistrarRepository->shouldReceive('find')->byDefault()->andReturnUsing(static function (?int $id): ?object {
+            if ($id === null) {
+                return null;
+            }
+            $entity = new \Box\Mod\Servicedomain\Entity\TldRegistrar();
+            $prop = new \ReflectionProperty($entity, 'id');
+            $prop->setValue($entity, $id);
+
+            return $entity;
+        });
+        $tldRegistrarRepository->shouldReceive('findBy')->byDefault()->andReturn([]);
+        $tldRegistrarRepository->shouldReceive('findOneBy')->byDefault()->andReturn(null);
+        $tldRegistrarRepository->shouldReceive('getIdNamePairs')->byDefault()->andReturn([]);
+        $tldRegistrarRepository->shouldReceive('findActiveRegistrar')->byDefault()->andReturn(null);
+        $tldRegistrarRepository->shouldReceive('createQueryBuilder')->byDefault()->andReturnUsing(static function (): object {
+            $qb = \Mockery::mock(\Doctrine\ORM\QueryBuilder::class)->shouldIgnoreMissing();
+            $query = \Mockery::mock(\Doctrine\ORM\Query::class)->shouldIgnoreMissing();
+            $query->shouldReceive('getResult')->byDefault()->andReturn([]);
+            $query->shouldReceive('getArrayResult')->byDefault()->andReturn([]);
+            $qb->shouldReceive('getQuery')->byDefault()->andReturn($query);
+
+            return $qb;
+        });
+
         $em = \Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
         $em->shouldReceive('getRepository')->byDefault()->andReturnUsing(static fn (string $class): object => match ($class) {
             \Box\Mod\Staff\Entity\Admin::class => $adminRepository,
@@ -404,6 +557,14 @@ function container(): Container
             \Box\Mod\Order\Entity\OrderMeta::class => $orderMetaRepository,
             \Box\Mod\Order\Entity\OrderStatus::class => $orderStatusRepository,
             \Box\Mod\Extension\Entity\Extension::class => \Mockery::mock(\Box\Mod\Extension\Repository\ExtensionRepository::class)->shouldIgnoreMissing(),
+            \Box\Mod\Servicehosting\Entity\ServiceHosting::class => $serviceHostingRepository,
+            \Box\Mod\Servicehosting\Entity\ServiceHostingHp::class => $serviceHostingHpRepository,
+            \Box\Mod\Servicehosting\Entity\ServiceHostingServer::class => $serviceHostingServerRepository,
+            \Box\Mod\Servicedomain\Entity\ServiceDomain::class => $domainRepository,
+            \Box\Mod\Servicedomain\Entity\Tld::class => $tldRepository,
+            \Box\Mod\Servicedomain\Entity\TldRegistrar::class => $tldRegistrarRepository,
+            \Box\Mod\Cart\Entity\Cart::class => $cartRepository,
+            \Box\Mod\Cart\Entity\CartProduct::class => $cartProductRepository,
             default => $extensionMetaRepository,
         });
 

@@ -10,6 +10,9 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Servicehosting\Entity\ServiceHosting;
+use Box\Mod\Servicehosting\Entity\ServiceHostingHp;
+use Box\Mod\Servicehosting\Entity\ServiceHostingServer;
 use Box\Mod\Servicehosting\Service;
 
 use function Tests\Helpers\container;
@@ -52,33 +55,37 @@ test('action create', function (): void {
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
     $orderServiceMock->shouldReceive('getConfig')->atLeast()->once()->andReturn($confArr);
 
-    $hostingServerModel = new Model_ServiceHostingServer();
-    $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
-    $hostingServerModel->id = $confArr['server_id'];
-    $hostingPlansModel = new Model_ServiceHostingHp();
-    $hostingPlansModel->loadBean(new Tests\Helpers\DummyBean());
-    $hostingPlansModel->id = $confArr['hosting_plan_id'];
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')->atLeast()->once()->andReturn($hostingServerModel, $hostingPlansModel);
+    $hostingServerModel = new ServiceHostingServer();
+    $hostingServerModel->setId($confArr['server_id']);
+    $hostingPlansModel = new ServiceHostingHp();
+    $hostingPlansModel->setId($confArr['hosting_plan_id']);
 
-    $servhostingModel = new Model_ServiceHosting();
-    $servhostingModel->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock->shouldReceive('dispense')->atLeast()->once()->andReturn($servhostingModel);
+    $serverRepoMock = Mockery::mock(Box\Mod\Servicehosting\Repository\ServiceHostingServerRepository::class);
+    $serverRepoMock->shouldReceive('find')->with($confArr['server_id'])->andReturn($hostingServerModel);
 
-    $newserviceHostingId = 4;
-    $dbMock->shouldReceive('store')->atLeast()->once()->andReturn($newserviceHostingId);
+    $hpRepoMock = Mockery::mock(Box\Mod\Servicehosting\Repository\ServiceHostingHpRepository::class);
+    $hpRepoMock->shouldReceive('find')->with($confArr['hosting_plan_id'])->andReturn($hostingPlansModel);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->andReturnUsing(static fn (string $class) => match ($class) {
+        ServiceHostingServer::class => $serverRepoMock,
+        ServiceHostingHp::class => $hpRepoMock,
+        default => Mockery::mock()->shouldIgnoreMissing(),
+    });
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $service->setDi($di);
-    $service->action_create($orderModel);
+    $result = $service->action_create($orderModel);
 
-    expect($servhostingModel->service_hosting_server_id)->toBe($confArr['server_id']);
-    expect($servhostingModel->service_hosting_hp_id)->toBe($confArr['hosting_plan_id']);
-    expect($servhostingModel->sld)->toBe($confArr['sld']);
-    expect($servhostingModel->tld)->toBe($confArr['tld']);
+    expect($result->getServiceHostingServerId())->toBe($confArr['server_id']);
+    expect($result->getServiceHostingHpId())->toBe($confArr['hosting_plan_id']);
+    expect($result->getSld())->toBe($confArr['sld']);
+    expect($result->getTld())->toBe($confArr['tld']);
 });
 
 test('action renew', function (): void {
@@ -86,17 +93,18 @@ test('action renew', function (): void {
     $orderModel = new Model_ClientOrder();
     $orderModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $hostingServiceModel = new Model_ServiceHosting();
-    $hostingServiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $hostingServiceModel = new ServiceHosting();
+    $hostingServiceModel->setId(1);
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
     $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($hostingServiceModel);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')->atLeast()->once();
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $service->setDi($di);
@@ -126,17 +134,18 @@ test('action suspend', function (): void {
     $orderModel = new Model_ClientOrder();
     $orderModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $model = new Model_ServiceHosting();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = new ServiceHosting();
+    $model->setId(1);
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
     $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($model);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')->atLeast()->once();
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -172,17 +181,18 @@ test('action unsuspend', function (): void {
     $orderModel = new Model_ClientOrder();
     $orderModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $model = new Model_ServiceHosting();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = new ServiceHosting();
+    $model->setId(1);
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
     $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($model);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')->atLeast()->once();
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -218,17 +228,18 @@ test('action cancel', function (): void {
     $orderModel = new Model_ClientOrder();
     $orderModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $model = new Model_ServiceHosting();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = new ServiceHosting();
+    $model->setId(1);
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
     $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($model);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')->atLeast()->once();
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -265,17 +276,18 @@ test('action delete', function (): void {
     $orderModel->loadBean(new Tests\Helpers\DummyBean());
     $orderModel->status = 'active';
 
-    $model = new Model_ServiceHosting();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = new ServiceHosting();
+    $model->setId(1);
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
     $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($model);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('trash')->atLeast()->once();
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('remove')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -290,17 +302,18 @@ test('change account plan', function (): void {
     $orderModel = new Model_ClientOrder();
     $orderModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $model = new Model_ServiceHosting();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = new ServiceHosting();
+    $model->setId(1);
 
-    $modelHp = new Model_ServiceHostingHp();
-    $modelHp->loadBean(new Tests\Helpers\DummyBean());
+    $modelHp = new ServiceHostingHp();
+    $modelHp->setId(2);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')->atLeast()->once();
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Box_Log();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -324,8 +337,8 @@ test('change account username', function (): void {
     $orderModel = new Model_ClientOrder();
     $orderModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $model = new Model_ServiceHosting();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = new ServiceHosting();
+    $model->setId(1);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
 
@@ -335,11 +348,12 @@ test('change account username', function (): void {
     $AMresultArray = [$serverManagerMock, new Server_Account()];
     $serviceMock->shouldReceive('_getAM')->atLeast()->once()->andReturn($AMresultArray);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')->atLeast()->once();
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Box_Log();
 
     $serviceMock->setDi($di);
@@ -353,8 +367,8 @@ test('change account username missing username', function (): void {
     $orderModel = new Model_ClientOrder();
     $orderModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $model = new Model_ServiceHosting();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = new ServiceHosting();
+    $model->setId(1);
     $data = [];
 
     expect(fn (): bool => $service->changeAccountUsername($orderModel, $model, $data))
@@ -370,8 +384,8 @@ test('change account ip', function (): void {
     $orderModel = new Model_ClientOrder();
     $orderModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $model = new Model_ServiceHosting();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = new ServiceHosting();
+    $model->setId(1);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
 
@@ -381,11 +395,12 @@ test('change account ip', function (): void {
     $AMresultArray = [$serverManagerMock, new Server_Account()];
     $serviceMock->shouldReceive('_getAM')->atLeast()->once()->andReturn($AMresultArray);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')->atLeast()->once();
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Box_Log();
 
     $serviceMock->setDi($di);
@@ -400,8 +415,8 @@ test('change account ip missing ip', function (): void {
     $orderModel = new Model_ClientOrder();
     $orderModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $model = new Model_ServiceHosting();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = new ServiceHosting();
+    $model->setId(1);
 
     expect(fn (): bool => $service->changeAccountIp($orderModel, $model, $data))
         ->toThrow(FOSSBilling\Exception::class, 'Account IP address is missing or is invalid');
@@ -417,8 +432,8 @@ test('change account domain', function (): void {
     $orderModel = new Model_ClientOrder();
     $orderModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $model = new Model_ServiceHosting();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = new ServiceHosting();
+    $model->setId(1);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
 
@@ -428,11 +443,12 @@ test('change account domain', function (): void {
     $AMresultArray = [$serverManagerMock, new Server_Account()];
     $serviceMock->shouldReceive('_getAM')->atLeast()->once()->andReturn($AMresultArray);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')->atLeast()->once();
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Box_Log();
 
     $serviceMock->setDi($di);
@@ -447,8 +463,8 @@ test('change account domain missing params', function (): void {
     $orderModel = new Model_ClientOrder();
     $orderModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $model = new Model_ServiceHosting();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = new ServiceHosting();
+    $model->setId(1);
 
     expect(fn (): bool => $service->changeAccountDomain($orderModel, $model, $data))
         ->toThrow(FOSSBilling\Exception::class, 'Domain SLD or TLD is missing');
@@ -464,8 +480,8 @@ test('change account password', function (): void {
     $orderModel = new Model_ClientOrder();
     $orderModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $model = new Model_ServiceHosting();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = new ServiceHosting();
+    $model->setId(1);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
 
@@ -475,11 +491,12 @@ test('change account password', function (): void {
     $AMresultArray = [$serverManagerMock, new Server_Account()];
     $serviceMock->shouldReceive('_getAM')->atLeast()->once()->andReturn($AMresultArray);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')->atLeast()->once();
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Box_Log();
 
     $serviceMock->setDi($di);
@@ -494,8 +511,8 @@ test('change account password missing params', function (): void {
     $orderModel = new Model_ClientOrder();
     $orderModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $model = new Model_ServiceHosting();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = new ServiceHosting();
+    $model->setId(1);
 
     expect(fn (): bool => $service->changeAccountPassword($orderModel, $model, $data))
         ->toThrow(FOSSBilling\Exception::class, 'Account password is missing or is invalid');
@@ -511,8 +528,8 @@ test('sync', function (): void {
     $orderModel = new Model_ClientOrder();
     $orderModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $model = new Model_ServiceHosting();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = new ServiceHosting();
+    $model->setId(1);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
 
@@ -530,11 +547,12 @@ test('sync', function (): void {
     $AMresultArray = [$serverManagerMock, $accountObj];
     $serviceMock->shouldReceive('_getAM')->atLeast()->once()->andReturn($AMresultArray);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')->atLeast()->once();
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Box_Log();
 
     $serviceMock->setDi($di);
@@ -545,17 +563,29 @@ test('sync', function (): void {
 
 test('to api array', function (): void {
     $service = new Service();
-    $model = new Model_ServiceHosting();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = new ServiceHosting();
+    $model->setId(1);
+    $model->setServiceHostingServerId(10);
+    $model->setServiceHostingHpId(20);
 
-    $hostingServer = new Model_ServiceHostingServer();
-    $hostingServer->loadBean(new Tests\Helpers\DummyBean());
-    $hostingServer->manager = 'Custom';
-    $hostingHp = new Model_ServiceHostingHp();
-    $hostingHp->loadBean(new Tests\Helpers\DummyBean());
+    $hostingServer = new ServiceHostingServer();
+    $hostingServer->setId(10);
+    $hostingServer->setManager('Custom');
+    $hostingHp = new ServiceHostingHp();
+    $hostingHp->setId(20);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('load')->atLeast()->once()->andReturn($hostingServer, $hostingHp);
+    $serverRepoMock = Mockery::mock(Box\Mod\Servicehosting\Repository\ServiceHostingServerRepository::class);
+    $serverRepoMock->shouldReceive('find')->with(10)->andReturn($hostingServer);
+
+    $hpRepoMock = Mockery::mock(Box\Mod\Servicehosting\Repository\ServiceHostingHpRepository::class);
+    $hpRepoMock->shouldReceive('find')->with(20)->andReturn($hostingHp);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->andReturnUsing(static fn (string $class) => match ($class) {
+        ServiceHostingServer::class => $serverRepoMock,
+        ServiceHostingHp::class => $hpRepoMock,
+        default => Mockery::mock()->shouldIgnoreMissing(),
+    });
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
     $orderServiceMock->shouldReceive('getServiceOrder')->atLeast()->once();
@@ -563,7 +593,7 @@ test('to api array', function (): void {
     $serverManagerCustomMock = Mockery::mock('\Server_Manager_Custom')->shouldIgnoreMissing();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
     $di['server_manager'] = $di->protect(fn ($manager, $config) => $serverManagerCustomMock);
 
@@ -579,14 +609,15 @@ test('update', function (): void {
         'username' => 'testUser',
         'ip' => '1.1.1.1',
     ];
-    $model = new Model_ServiceHosting();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = new ServiceHosting();
+    $model->setId(1);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')->atLeast()->once();
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Box_Log();
     $service->setDi($di);
 
@@ -630,11 +661,14 @@ test('get server pairs', function (): void {
         ],
     ];
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')->atLeast()->once()->andReturn($queryResult);
+    $connectionMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connectionMock->shouldReceive('fetchAllAssociative')->atLeast()->once()->andReturn($queryResult);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getConnection')->andReturn($connectionMock);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $service->setDi($di);
 
     $result = $service->getServerPairs();
@@ -652,17 +686,11 @@ test('get server search query', function (): void {
 
 test('create server', function (): void {
     $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
 
-    $hostingServerModel = new Model_ServiceHostingServer();
-    $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock->shouldReceive('dispense')->atLeast()->once()->andReturn($hostingServerModel);
-
-    $newId = 1;
-    $dbMock->shouldReceive('store')->atLeast()->once()->andReturn($newId);
+    $emMock = Tests\Helpers\entityManagerWithIds(container());
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Box_Log();
 
     $service->setDi($di);
@@ -673,19 +701,20 @@ test('create server', function (): void {
     $data = [];
     $result = $service->createServer($name, $ip, $manager, $data);
     expect($result)->toBeInt();
-    expect($result)->toBe($newId);
+    expect($result)->toBe(1);
 });
 
 test('delete server', function (): void {
     $service = new Service();
-    $hostingServerModel = new Model_ServiceHostingServer();
-    $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
+    $hostingServerModel = new ServiceHostingServer();
+    $hostingServerModel->setId(1);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('trash')->atLeast()->once();
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('remove')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Box_Log();
     $service->setDi($di);
 
@@ -713,14 +742,15 @@ test('update server', function (): void {
         'secure' => 0,
     ];
 
-    $hostingServerModel = new Model_ServiceHostingServer();
-    $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
+    $hostingServerModel = new ServiceHostingServer();
+    $hostingServerModel->setId(1);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')->atLeast()->once();
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Box_Log();
 
     $service->setDi($di);
@@ -731,9 +761,9 @@ test('update server', function (): void {
 
 test('get server manager', function (): void {
     $service = new Service();
-    $hostingServerModel = new Model_ServiceHostingServer();
-    $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
-    $hostingServerModel->manager = 'Custom';
+    $hostingServerModel = new ServiceHostingServer();
+    $hostingServerModel->setId(1);
+    $hostingServerModel->setManager('Custom');
 
     $serverManagerCustom = Mockery::mock('\Server_Manager_Custom')->shouldIgnoreMissing();
 
@@ -747,8 +777,8 @@ test('get server manager', function (): void {
 
 test('get server manager manager not defined', function (): void {
     $service = new Service();
-    $hostingServerModel = new Model_ServiceHostingServer();
-    $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
+    $hostingServerModel = new ServiceHostingServer();
+    $hostingServerModel->setId(1);
 
     expect(fn () => $service->getServerManager($hostingServerModel))
         ->toThrow(FOSSBilling\Exception::class);
@@ -756,16 +786,16 @@ test('get server manager manager not defined', function (): void {
 
 test('get server manager server manager invalid', function (): void {
     $service = new Service();
-    $hostingServerModel = new Model_ServiceHostingServer();
-    $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
-    $hostingServerModel->manager = 'Custom';
+    $hostingServerModel = new ServiceHostingServer();
+    $hostingServerModel->setId(1);
+    $hostingServerModel->setManager('Custom');
 
     $di = container();
     $di['server_manager'] = $di->protect(fn ($manager, $config): null => null);
     $service->setDi($di);
 
     expect(fn () => $service->getServerManager($hostingServerModel))
-        ->toThrow(FOSSBilling\Exception::class, "Server manager {$hostingServerModel->manager} is invalid.");
+        ->toThrow(FOSSBilling\Exception::class, "Server manager {$hostingServerModel->getManager()} is invalid.");
 });
 
 test('test connection', function (): void {
@@ -775,7 +805,7 @@ test('test connection', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('getServerManager')->atLeast()->once()->andReturn($serverManagerMock);
 
-    $hostingServerModel = new Model_ServiceHostingServer();
+    $hostingServerModel = new ServiceHostingServer();
     $result = $serviceMock->testConnection($hostingServerModel);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
@@ -798,11 +828,14 @@ test('get hp pairs', function (): void {
         ],
     ];
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')->atLeast()->once()->andReturn($queryResult);
+    $connectionMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connectionMock->shouldReceive('fetchAllAssociative')->atLeast()->once()->andReturn($queryResult);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getConnection')->andReturn($connectionMock);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $service->setDi($di);
 
     $result = $service->getHpPairs();
@@ -820,15 +853,19 @@ test('get hp search query', function (): void {
 
 test('delete hp', function (): void {
     $service = new Service();
-    $model = new Model_ServiceHostingHp();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = new ServiceHostingHp();
+    $model->setId(1);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('trash')->atLeast()->once();
-    $dbMock->shouldReceive('findOne')->atLeast()->once()->andReturn(null);
+    $hostingRepoMock = Mockery::mock(Box\Mod\Servicehosting\Repository\ServiceHostingRepository::class);
+    $hostingRepoMock->shouldReceive('findOneByHpId')->atLeast()->once()->andReturn(null);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(ServiceHosting::class)->andReturn($hostingRepoMock);
+    $emMock->shouldReceive('remove')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Box_Log();
     $service->setDi($di);
 
@@ -838,8 +875,8 @@ test('delete hp', function (): void {
 
 test('to hosting hp api array', function (): void {
     $service = new Service();
-    $model = new Model_ServiceHostingHp();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = new ServiceHostingHp();
+    $model->setId(1);
 
     $result = $service->toHostingHpApiArray($model);
     expect($result)->toBeArray();
@@ -859,14 +896,15 @@ test('update hp', function (): void {
         'max_park' => '1',
     ];
 
-    $model = new Model_ServiceHostingHp();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = new ServiceHostingHp();
+    $model->setId(1);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')->atLeast()->once();
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Box_Log();
 
     $service->setDi($di);
@@ -877,30 +915,25 @@ test('update hp', function (): void {
 
 test('create hp', function (): void {
     $service = new Service();
-    $model = new Model_ServiceHostingHp();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $newId = 1;
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('dispense')->atLeast()->once()->andReturn($model);
-    $dbMock->shouldReceive('store')->atLeast()->once()->andReturn($newId);
+    $emMock = Tests\Helpers\entityManagerWithIds(container());
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Box_Log();
 
     $service->setDi($di);
 
     $result = $service->createHp('Free Plan', []);
     expect($result)->toBeInt();
-    expect($result)->toBe($newId);
+    expect($result)->toBe(1);
 });
 
 test('get server package', function (): void {
     $service = new Service();
-    $model = new Model_ServiceHostingHp();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $model->config = '{}';
+    $model = new ServiceHostingHp();
+    $model->setId(1);
+    $model->setConfig('{}');
 
     $di = container();
 
@@ -910,9 +943,9 @@ test('get server package', function (): void {
 });
 
 test('get server manager with log', function (): void {
-    $hostingServerModel = new Model_ServiceHostingServer();
-    $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
-    $hostingServerModel->manager = 'Custom';
+    $hostingServerModel = new ServiceHostingServer();
+    $hostingServerModel->setId(1);
+    $hostingServerModel->setManager('Custom');
 
     $clientOrderModel = new Model_ClientOrder();
     $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
@@ -933,9 +966,9 @@ test('get server manager with log', function (): void {
 });
 
 test('get manager urls', function (): void {
-    $hostingServerModel = new Model_ServiceHostingServer();
-    $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
-    $hostingServerModel->manager = 'Custom';
+    $hostingServerModel = new ServiceHostingServer();
+    $hostingServerModel->setId(1);
+    $hostingServerModel->setManager('Custom');
 
     $serverManagerMock = Mockery::mock('\Server_Manager_Custom');
     $serverManagerMock->shouldReceive('getLoginUrl')->atLeast()->once()->andReturn('/login');
@@ -951,9 +984,9 @@ test('get manager urls', function (): void {
 });
 
 test('get manager urls exception', function (): void {
-    $hostingServerModel = new Model_ServiceHostingServer();
-    $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
-    $hostingServerModel->manager = 'Custom';
+    $hostingServerModel = new ServiceHostingServer();
+    $hostingServerModel->setId(1);
+    $hostingServerModel->setManager('Custom');
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('getServerManager')->atLeast()->once()->andThrow(new Exception('Controlled unit test exception'));
@@ -1029,15 +1062,14 @@ test('to hosting server api array masks secrets for an admin', function (): void
     $identity = new Model_Admin();
     $identity->loadBean(new Tests\Helpers\DummyBean());
 
-    $hostingServerModel = new Model_ServiceHostingServer();
-    $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
-    $hostingServerModel->id = 1;
-    $hostingServerModel->name = 'Test';
-    $hostingServerModel->hostname = 'host.example.com';
-    $hostingServerModel->ip = '127.0.0.1';
-    $hostingServerModel->manager = 'Whm';
-    $hostingServerModel->username = 'real-admin';
-    $hostingServerModel->accesshash = 'super-secret-hash';
+    $hostingServerModel = new ServiceHostingServer();
+    $hostingServerModel->setId(1);
+    $hostingServerModel->setName('Test');
+    $hostingServerModel->setHostname('host.example.com');
+    $hostingServerModel->setIp('127.0.0.1');
+    $hostingServerModel->setManager('Whm');
+    $hostingServerModel->setUsername('real-admin');
+    $hostingServerModel->setAccesshash('super-secret-hash');
 
     $di = container();
     $service->setDi($di);
@@ -1060,13 +1092,12 @@ test('to hosting server api array does not leak secrets to non-admin callers', f
     $identity = new Model_Client();
     $identity->loadBean(new Tests\Helpers\DummyBean());
 
-    $hostingServerModel = new Model_ServiceHostingServer();
-    $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
-    $hostingServerModel->id = 1;
-    $hostingServerModel->name = 'Test';
-    $hostingServerModel->ip = '127.0.0.1';
-    $hostingServerModel->manager = 'Whm';
-    $hostingServerModel->accesshash = 'super-secret-hash';
+    $hostingServerModel = new ServiceHostingServer();
+    $hostingServerModel->setId(1);
+    $hostingServerModel->setName('Test');
+    $hostingServerModel->setIp('127.0.0.1');
+    $hostingServerModel->setManager('Whm');
+    $hostingServerModel->setAccesshash('super-secret-hash');
 
     $di = container();
     $service->setDi($di);
@@ -1090,29 +1121,29 @@ test('updateServer keeps the existing secret when the incoming value is blank', 
         'password' => '   ',
     ];
 
-    $hostingServerModel = new Model_ServiceHostingServer();
-    $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
-    $hostingServerModel->id = 1;
-    $hostingServerModel->name = 'Test';
-    $hostingServerModel->ip = '127.0.0.1';
-    $hostingServerModel->manager = 'Whm';
-    $hostingServerModel->username = 'real-admin';
-    $hostingServerModel->accesshash = 'super-secret-hash';
+    $hostingServerModel = new ServiceHostingServer();
+    $hostingServerModel->setId(1);
+    $hostingServerModel->setName('Test');
+    $hostingServerModel->setIp('127.0.0.1');
+    $hostingServerModel->setManager('Whm');
+    $hostingServerModel->setUsername('real-admin');
+    $hostingServerModel->setAccesshash('super-secret-hash');
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')->atLeast()->once();
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Box_Log();
     $di['loggedin_admin'] = (object) ['id' => 7];
     $service->setDi($di);
 
     $result = $service->updateServer($hostingServerModel, $data);
     expect($result)->toBeTrue();
-    expect($hostingServerModel->username)->toBe('real-admin');
-    expect($hostingServerModel->accesshash)->toBe('super-secret-hash');
-    expect($hostingServerModel->password)->toBeNull();
+    expect($hostingServerModel->getUsername())->toBe('real-admin');
+    expect($hostingServerModel->getAccesshash())->toBe('super-secret-hash');
+    expect($hostingServerModel->getPassword())->toBeNull();
 });
 
 test('updateServer replaces the stored secret when a new value is submitted', function (): void {
@@ -1125,26 +1156,26 @@ test('updateServer replaces the stored secret when a new value is submitted', fu
         'accesshash' => 'new-hash',
     ];
 
-    $hostingServerModel = new Model_ServiceHostingServer();
-    $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
-    $hostingServerModel->id = 1;
-    $hostingServerModel->name = 'Test';
-    $hostingServerModel->ip = '127.0.0.1';
-    $hostingServerModel->manager = 'Whm';
-    $hostingServerModel->username = 'real-admin';
-    $hostingServerModel->accesshash = 'old-hash';
+    $hostingServerModel = new ServiceHostingServer();
+    $hostingServerModel->setId(1);
+    $hostingServerModel->setName('Test');
+    $hostingServerModel->setIp('127.0.0.1');
+    $hostingServerModel->setManager('Whm');
+    $hostingServerModel->setUsername('real-admin');
+    $hostingServerModel->setAccesshash('old-hash');
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')->atLeast()->once();
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Box_Log();
     $di['loggedin_admin'] = (object) ['id' => 7];
     $service->setDi($di);
 
     $result = $service->updateServer($hostingServerModel, $data);
     expect($result)->toBeTrue();
-    expect($hostingServerModel->username)->toBe('new-admin');
-    expect($hostingServerModel->accesshash)->toBe('new-hash');
+    expect($hostingServerModel->getUsername())->toBe('new-admin');
+    expect($hostingServerModel->getAccesshash())->toBe('new-hash');
 });

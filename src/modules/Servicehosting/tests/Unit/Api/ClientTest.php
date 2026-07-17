@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use Box\Mod\Servicehosting\Api\Client;
+use Box\Mod\Servicehosting\Entity\ServiceHosting;
 
 use function Tests\Helpers\container;
 
@@ -24,7 +25,7 @@ test('testGetDi', function (): void {
 
 test('testChangeUsername', function (): void {
     $api = apiEndpoint(new Client());
-    $getServiceReturnValue = [new Model_ClientOrder(), new Model_ServiceHosting()];
+    $getServiceReturnValue = [new Model_ClientOrder(), new ServiceHosting()];
     $apiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial());
 
     $apiMock
@@ -47,7 +48,7 @@ test('testChangeUsername', function (): void {
 
 test('testChangeDomain', function (): void {
     $api = apiEndpoint(new Client());
-    $getServiceReturnValue = [new Model_ClientOrder(), new Model_ServiceHosting()];
+    $getServiceReturnValue = [new Model_ClientOrder(), new ServiceHosting()];
     $apiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial());
 
     $apiMock
@@ -70,7 +71,7 @@ test('testChangeDomain', function (): void {
 
 test('testChangePassword', function (): void {
     $api = apiEndpoint(new Client());
-    $getServiceReturnValue = [new Model_ClientOrder(), new Model_ServiceHosting()];
+    $getServiceReturnValue = [new Model_ClientOrder(), new ServiceHosting()];
     $apiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial());
 
     $apiMock
@@ -119,7 +120,7 @@ test('testGetService', function (): void {
     ->atLeast()->once()
     ->andReturn($clientOrderModel);
 
-    $model = new Model_ServiceHosting();
+    $model = new ServiceHosting();
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
     $orderServiceMock
     ->shouldReceive('getOrderService')
@@ -139,7 +140,7 @@ test('testGetService', function (): void {
     $result = $api->_getService($data);
     expect($result)->toBeArray();
     expect($result[0])->toBeInstanceOf('\Model_ClientOrder');
-    expect($result[1])->toBeInstanceOf('\Model_ServiceHosting');
+    expect($result[1])->toBeInstanceOf(ServiceHosting::class);
 });
 
 test('testGetServiceOrderNotActivated', function (): void {

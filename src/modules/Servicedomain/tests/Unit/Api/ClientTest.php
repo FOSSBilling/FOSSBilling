@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 use Box\Mod\Order\Service as OrderService;
 use Box\Mod\Servicedomain\Api\Client;
+use Box\Mod\Servicedomain\Entity\ServiceDomain;
 use Box\Mod\Servicedomain\Service;
 
 use function Tests\Helpers\container;
@@ -19,8 +20,7 @@ use function Tests\Helpers\container;
 test('updates nameservers', function (): void {
     $clientApi = apiEndpoint(new Client());
     $api = apiEndpoint(new Client());
-    $model = new Model_ServiceDomain();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = new ServiceDomain();
 
     $clientApiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods());
     $clientApiMock->shouldReceive('_getService')
@@ -51,8 +51,7 @@ test('updates nameservers', function (): void {
 test('updates contacts', function (): void {
     $clientApi = apiEndpoint(new Client());
     $api = apiEndpoint(new Client());
-    $model = new Model_ServiceDomain();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = new ServiceDomain();
 
     $clientApiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods());
     $clientApiMock->shouldReceive('_getService')
@@ -75,8 +74,7 @@ test('updates contacts', function (): void {
 test('enables privacy protection', function (): void {
     $clientApi = apiEndpoint(new Client());
     $api = apiEndpoint(new Client());
-    $model = new Model_ServiceDomain();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = new ServiceDomain();
 
     $clientApiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods());
     $clientApiMock->shouldReceive('_getService')
@@ -99,8 +97,7 @@ test('enables privacy protection', function (): void {
 test('disables privacy protection', function (): void {
     $clientApi = apiEndpoint(new Client());
     $api = apiEndpoint(new Client());
-    $model = new Model_ServiceDomain();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = new ServiceDomain();
 
     $clientApiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods());
     $clientApiMock->shouldReceive('_getService')
@@ -123,8 +120,7 @@ test('disables privacy protection', function (): void {
 test('gets transfer code', function (): void {
     $clientApi = apiEndpoint(new Client());
     $api = apiEndpoint(new Client());
-    $model = new Model_ServiceDomain();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = new ServiceDomain();
 
     $clientApiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods());
     $clientApiMock->shouldReceive('_getService')
@@ -147,8 +143,7 @@ test('gets transfer code', function (): void {
 test('locks domain', function (): void {
     $clientApi = apiEndpoint(new Client());
     $api = apiEndpoint(new Client());
-    $model = new Model_ServiceDomain();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = new ServiceDomain();
 
     $clientApiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods());
     $clientApiMock->shouldReceive('_getService')
@@ -171,8 +166,7 @@ test('locks domain', function (): void {
 test('unlocks domain', function (): void {
     $clientApi = apiEndpoint(new Client());
     $api = apiEndpoint(new Client());
-    $model = new Model_ServiceDomain();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = new ServiceDomain();
 
     $clientApiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods());
     $clientApiMock->shouldReceive('_getService')
@@ -209,9 +203,11 @@ test('gets service', function (): void {
     $orderServiceMock->shouldReceive('findForClientById')
         ->atLeast()->once()
         ->andReturn($order);
+    $serviceDomain = new Model_ServiceDomain();
+    $serviceDomain->loadBean(new Tests\Helpers\DummyBean());
     $orderServiceMock->shouldReceive('getOrderService')
         ->atLeast()->once()
-        ->andReturn(new Model_ServiceDomain());
+        ->andReturn($serviceDomain);
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);

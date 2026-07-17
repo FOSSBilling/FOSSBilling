@@ -2066,17 +2066,28 @@ class Service implements InjectionAwareInterface
         }
 
         $tld = $tldService->findOneByTld($tld);
-        if (!$tld instanceof \Model_Tld) {
+        if (!$tld instanceof \Model_Tld && !$tld instanceof \Box\Mod\Servicedomain\Entity\Tld) {
             throw new \FOSSBilling\Exception('Unknown TLD. Could not determine registration price');
         }
 
         return $tld;
     }
 
-    private function getDomainRegistrationTotal(\Model_Tld $tld, int $years): float
+    /**
+     * @param \Model_Tld|\Box\Mod\Servicedomain\Entity\Tld $tld
+     */
+    private function getDomainRegistrationTotal($tld, int $years): float
     {
         if ($years <= 0) {
             return 0.0;
+        }
+
+        if ($tld instanceof \Box\Mod\Servicedomain\Entity\Tld) {
+            if ($years <= 1) {
+                return (float) $tld->getPriceRegistration();
+            }
+
+            return (float) $tld->getPriceRegistration() + (($years - 1) * (float) $tld->getPriceRenew());
         }
 
         if ($years <= 1) {

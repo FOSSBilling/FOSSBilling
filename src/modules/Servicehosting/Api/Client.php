@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicehosting\Api;
 
+use Box\Mod\Servicehosting\Entity\ServiceHosting;
+
 /**
  * Hosting service management.
  */
@@ -89,7 +91,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
 
         $orderService = $this->getDi()['mod_service']('order');
         $s = $orderService->getOrderService($order);
-        if (!$s instanceof \Model_ServiceHosting || $order->status !== \Model_ClientOrder::STATUS_ACTIVE) {
+        if ((!$s instanceof \Model_ServiceHosting && !$s instanceof ServiceHosting) || $order->status !== \Model_ClientOrder::STATUS_ACTIVE) {
             throw new \FOSSBilling\InformationException('Order is not activated');
         }
 

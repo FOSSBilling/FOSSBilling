@@ -25,8 +25,16 @@ class ServiceTld implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function findOneByTld($tld)
+    /**
+     * @return Entity\Tld|null
+     */
+    public function findOneByTld(string $tld)
     {
-        return $this->di['db']->findOne('Tld', 'tld = ?', [$tld]);
+        return $this->getTldRepository()->findOneByTld($tld);
+    }
+
+    private function getTldRepository(): Repository\TldRepository
+    {
+        return $this->di['em']->getRepository(Entity\Tld::class);
     }
 }
