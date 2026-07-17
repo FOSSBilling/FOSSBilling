@@ -235,12 +235,12 @@ class ServiceSubscription implements InjectionAwareInterface
     {
         $subscriptionId = trim((string) $model->sid);
         if ($subscriptionId === '') {
-            throw new \FOSSBilling\InformationException('The subscription cannot be canceled at the end of its billing period because it has no gateway ID.');
+            throw new InformationException('The subscription cannot be canceled at the end of its billing period because it has no gateway ID.');
         }
 
         $adapter = $this->getGatewayAdapter($model);
         if (!method_exists($adapter, 'cancelSubscriptionAtPeriodEnd')) {
-            throw new \FOSSBilling\InformationException('The payment gateway does not support cancellation at the end of the billing period.');
+            throw new InformationException('The payment gateway does not support cancellation at the end of the billing period.');
         }
 
         $adapter->cancelSubscriptionAtPeriodEnd($subscriptionId);
