@@ -276,17 +276,16 @@
                         </tfoot>
                     </table>
                     <div class="card-footer d-flex justify-content-end gap-2">
+                        <input type="hidden" name="id" value="{{ invoice.id }}">
+                        <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary">
                         {% if not invoice.approved %}
-                        <a class="btn btn-success" href="{{ 'invoice/approve'|api_url(query: { 'id': invoice.id }) }}"
-                            {{ fb_api_link({redirect: 'invoice'|url}) }}>
+                        <button class="btn btn-success" type="submit" name="approve" value="1">
                             <svg class="icon">
                                 <use href="#check" />
                             </svg>
                             {{ 'Approve'|trans }}
-                        </a>
+                        </button>
                         {% endif %}
-                        <input type="hidden" name="id" value="{{ invoice.id }}">
-                        <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary">
                     </div>
                 </form>
                 {% else %}
