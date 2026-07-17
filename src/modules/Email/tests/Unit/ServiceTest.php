@@ -10,6 +10,7 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Email\Entity\EmailTemplate;
 
 use function Tests\Helpers\container;
@@ -212,6 +213,28 @@ test('getVars decrypts and returns variables', function (): void {
     $result = $service->getVars($t);
     expect($result)->toBeArray();
     expect($result)->toBe($expected);
+});
+
+test('getVars supplies the default currency for invoice template previews', function (): void {
+    $service = new Box\Mod\Email\Service();
+
+    $currencyRepository = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $currencyRepository->shouldReceive('findDefault')->once()->andReturn(new Currency('USD'));
+    $currencyService = Mockery::mock(Box\Mod\Currency\Service::class);
+    $currencyService->shouldReceive('getCurrencyRepository')->once()->andReturn($currencyRepository);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(moduleService(['currency' => $currencyService]));
+    $service->setDi($di);
+
+    $template = emailTemplate('mod_invoice_paid');
+
+    expect($service->getVars($template))->toBe([
+        'invoice' => [
+            'total' => 0,
+            'currency' => 'USD',
+        ],
+    ]);
 });
 
 test('sendTemplate returns false when template does not exist', function (): void {
