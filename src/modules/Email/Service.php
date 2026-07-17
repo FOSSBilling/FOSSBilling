@@ -448,7 +448,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->createTemplateRecordFromData($code, $data);
     }
 
-    private function syncBuiltinTemplate(EmailTemplate $template, array $default, bool $resetOverride = false): void
+    private function syncBuiltinTemplate(EmailTemplate $template, array $default): void
     {
         $updated = false;
 
@@ -462,7 +462,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $updated = true;
         }
 
-        if ($resetOverride || !$template->isOverridden()) {
+        if (!$template->isOverridden()) {
             if ($template->getSubject() !== $default['subject']) {
                 $template->setSubject($default['subject']);
                 $updated = true;
@@ -473,19 +473,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             }
         }
 
-        if ($resetOverride && $template->isOverridden()) {
-            $template->setIsOverridden(false);
-            $updated = true;
-        }
-
-        if ($resetOverride && $template->hasError()) {
-            $template->clearError();
-            $updated = true;
-        }
-
         if ($updated) {
             $this->di['em']->flush();
         }
+    }
+
+    private function resetBuiltinTemplate(EmailTemplate $template, array $default): void
+    {
+        $template->setSubject($default['subject'])
+            ->setContent($default['content'])
+            ->setIsOverridden(false)
+            ->clearError();
     }
 
     private function getEffectiveTemplateParts(EmailTemplate $template): array
@@ -860,9 +858,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             throw new \FOSSBilling\Exception('Custom email template :code cannot be reset to a default', [':code' => $code]);
         }
 
-        $template->setSubject($default['subject'])
-            ->setContent($default['content'])
-            ->setIsOverridden(false);
+        $this->resetBuiltinTemplate($template, $default);
         $this->di['em']->flush();
         $this->di['logger']->info('Reset email template: %s', $template->getActionCode());
 
@@ -899,15 +895,33 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function templateBatchGenerate(): bool
     {
-        return $this->syncFileBackedTemplates(false);
+        return $this->syncFileBackedTemplates();
     }
 
     public function templateBatchRegenerate(): bool
     {
-        return $this->syncFileBackedTemplates(true);
+        $this->templateBatchGenerate();
+        $regenerated = 0;
+
+        foreach ($this->getTemplateRepository()->findAll() as $template) {
+            if ($this->isCustomTemplate($template)) {
+                continue;
+            }
+
+            $default = $this->getDefaultTemplate($template->getActionCode());
+            if ($default !== null) {
+                $this->resetBuiltinTemplate($template, $default);
+                ++$regenerated;
+            }
+        }
+
+        $this->di['em']->flush();
+        $this->di['logger']->info(sprintf('Regenerated %d file-backed email templates.', $regenerated));
+
+        return true;
     }
 
-    private function syncFileBackedTemplates(bool $resetOverrides): bool
+    private function syncFileBackedTemplates(): bool
     {
         $extensionService = $this->di['mod_service']('extension');
 
@@ -936,14 +950,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             }
 
             if (!$this->isCustomTemplate($template)) {
-                $this->syncBuiltinTemplate($template, $default, $resetOverrides);
+                $this->syncBuiltinTemplate($template, $default);
             }
         }
 
-        $message = $resetOverrides
-            ? 'Regenerated file-backed email templates for installed modules.'
-            : 'Synced file-backed email templates for installed modules.';
-        $this->di['logger']->info($message);
+        $this->di['logger']->info('Synced file-backed email templates for installed modules.');
 
         return true;
     }
