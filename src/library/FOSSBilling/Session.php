@@ -110,13 +110,15 @@ class Session implements InjectionAwareInterface
         switch ($type) {
             case 'admin':
                 $this->delete('admin');
+                $this->regenerateId(0);
 
-                break;
+                return true;
             case 'client':
                 $this->delete('client');
                 $this->delete('client_id');
+                $this->regenerateId(0);
 
-                break;
+                return true;
         }
 
         return session_destroy();
