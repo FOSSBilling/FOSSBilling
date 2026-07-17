@@ -106,11 +106,11 @@ test('adds a new field', function (): void {
     expect($result)->toBeInt()->toBe($newFieldId);
 });
 
-test('updates a field', function (string $fieldType): void {
+test('updates a field', function (string $fieldType, int|string $fieldId): void {
     $service = new Service();
     $updateFieldId = 2;
     $data = [
-        'id' => $updateFieldId,
+        'id' => $fieldId,
         'form_id' => 1,
         'type' => $fieldType,
         'default_value' => 'defaultTestValue',
@@ -149,8 +149,9 @@ test('updates a field', function (string $fieldType): void {
     $result = $service->updateField($data);
     expect($result)->toBeInt()->toBe($updateFieldId);
 })->with([
-    ['select'],
-    ['textarea'],
+    ['select', 2],
+    ['radio', '2'],
+    ['textarea', 2],
 ]);
 
 test('throws exception when updating field with existing name', function (): void {

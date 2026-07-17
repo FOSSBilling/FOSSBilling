@@ -25,6 +25,7 @@ function appClientWithRender(callable $render): Box_AppClient
 
         public function __construct(callable $render)
         {
+            parent::__construct();
             $this->renderCallback = $render;
         }
 
@@ -49,7 +50,14 @@ function appClientWithRender(callable $render): Box_AppClient
         {
         }
     };
+    $extensionService = new class {
+        public function isExtensionActive(): bool
+        {
+            return false;
+        }
+    };
     $di['request'] = Request::create('http://localhost/test');
+    $di['mod_service'] = $di->protect(static fn (): object => $extensionService);
     $app->setDi($di);
     $app->setUrl('/test');
 
@@ -129,4 +137,20 @@ test('get_custom_page still returns 404 when the top-level template is missing',
     $response = $app->get_custom_page('signup');
 
     expect($response->getStatusCode())->toBe(404);
+});
+
+test('numeric custom page paths return a themed 404', function (): void {
+    $app = appClientWithRender(static function (string $fileName): string {
+        if ($fileName === 'error') {
+            return 'error body';
+        }
+
+        throw new FOSSBilling\InformationException('Page not found', null, 404);
+    });
+    $app->setUrl('/12345');
+
+    $response = $app->run();
+
+    expect($response->getStatusCode())->toBe(404)
+        ->and($response->getContent())->toBe('error body');
 });

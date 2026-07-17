@@ -187,7 +187,7 @@ class Service implements InjectionAwareInterface
 
     public function updateField(array $field): int
     {
-        $fieldId = $field['id'];
+        $fieldId = (int) $field['id'];
         $label = $field['label'] ?? 'New field';
         $name = $this->slugify($field['name']);
 

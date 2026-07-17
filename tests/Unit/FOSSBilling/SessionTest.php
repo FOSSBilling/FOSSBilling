@@ -21,6 +21,10 @@ function invokePrivate(object $instance, string $method, array $args = []): mixe
     return $methodReflection->invokeArgs($instance, $args);
 }
 
+afterEach(function (): void {
+    $_SESSION = [];
+});
+
 test('obsolete session is detected', function (): void {
     $session = createSession();
 
@@ -56,4 +60,32 @@ test('obsolete session expiry honors grace window', function (): void {
 
     expect($active)->toBeFalse();
     expect($expired)->toBeTrue();
+});
+
+test('destroying a client login preserves the admin login', function (): void {
+    $_SESSION = [
+        'admin' => ['id' => 1],
+        'client' => ['id' => 2],
+        'client_id' => 2,
+    ];
+
+    $result = createSession()->destroy('client');
+
+    expect($result)->toBeTrue()
+        ->and($_SESSION)->toHaveKey('admin')
+        ->not->toHaveKeys(['client', 'client_id']);
+});
+
+test('destroying an admin login preserves the client login', function (): void {
+    $_SESSION = [
+        'admin' => ['id' => 1],
+        'client' => ['id' => 2],
+        'client_id' => 2,
+    ];
+
+    $result = createSession()->destroy('admin');
+
+    expect($result)->toBeTrue()
+        ->and($_SESSION)->not->toHaveKey('admin')
+        ->and($_SESSION)->toHaveKeys(['client', 'client_id']);
 });

@@ -16,8 +16,11 @@ class Box_AppClient extends Box_App
 {
     protected function init(): void
     {
-        $m = $this->di['mod']($this->mod);
-        $m->registerClientRoutes($this);
+        // Paths without letters can resolve to custom pages, but cannot identify modules.
+        if (preg_match('/[a-zA-Z]/', $this->mod) === 1) {
+            $m = $this->di['mod']($this->mod);
+            $m->registerClientRoutes($this);
+        }
 
         if ($this->mod == 'api') {
             define('API_MODE', true);
