@@ -44,7 +44,7 @@ test('default PDF fonts cover Thai and Lao text', function (): void {
             $font = $mapping[0]['font'] ?? null;
 
             expect($font)->toBeString();
-            expect(Path::getFilename($font))->toStartWith($expectedFont);
+            expect(basename($font))->toStartWith($expectedFont);
         }
     } finally {
         $filesystem->remove($fontCachePath);
