@@ -345,7 +345,8 @@ class Service implements InjectionAwareInterface
             $email = [];
             $email['to_staff'] = true;
             $email['code'] = 'mod_staff_client_signup';
-            $email['c'] = $clientService->get(['id' => $params['id']]);
+            $client = $clientService->get(['id' => $params['id']]);
+            $email['c'] = $clientService->toApiArray($client);
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
