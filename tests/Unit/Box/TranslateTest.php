@@ -39,3 +39,21 @@ test('translate', function (): void {
 
     expect($result)->toEqual($text);
 });
+
+test('setup configures the default locale used by Twig Intl filters', function (): void {
+    $defaultLocale = Locale::getDefault();
+    Locale::setDefault('en_US_POSIX');
+
+    try {
+        $translateObj = new Box_Translate();
+        $translateObj->setLocale('en_US');
+        $translateObj->setup();
+
+        $intlExtension = new Twig\Extra\Intl\IntlExtension();
+
+        expect(Locale::getDefault())->toBe('en_US')
+            ->and($intlExtension->formatCurrency(5, 'USD'))->toBe('$5.00');
+    } finally {
+        Locale::setDefault($defaultLocale);
+    }
+});
