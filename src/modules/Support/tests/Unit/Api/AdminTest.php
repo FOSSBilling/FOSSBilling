@@ -1054,13 +1054,12 @@ test('kb article get not found exception', function (): void {
     expect(fn (): array => $adminApi->kb_article_get($data))->toThrow(FOSSBilling\Exception::class);
 });
 
-test('kb article create', function (): void {
-    $api = apiEndpoint(new Box\Mod\Support\Api\Admin());
+test('kb article create preserves quotes in the title', function (): void {
     $adminApi = apiEndpoint(new Box\Mod\Support\Api\Admin());
 
     $data = [
         'kb_article_category_id' => 1,
-        'title' => 'Title',
+        'title' => "What's new",
     ];
 
     $id = 1;
@@ -1070,7 +1069,8 @@ test('kb article create', function (): void {
     $kbService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
     $kbService
     ->shouldReceive('kbCreateArticle')
-    ->atLeast()->once()
+    ->once()
+    ->with(1, "What's new", KbArticle::DRAFT, null)
     ->andReturn($id);
     $adminApi->setService($kbService);
 
@@ -1081,14 +1081,13 @@ test('kb article create', function (): void {
     expect($result)->toEqual($id);
 });
 
-test('kb article update', function (): void {
-    $api = apiEndpoint(new Box\Mod\Support\Api\Admin());
+test('kb article update preserves quotes in the title', function (): void {
     $adminApi = apiEndpoint(new Box\Mod\Support\Api\Admin());
 
     $data = [
         'id' => 1,
         'kb_article_category_id' => 1,
-        'title' => 'Title',
+        'title' => "What's new",
         'slug' => 'article-slug',
         'status' => 'active',
         'content' => 'Content',
@@ -1098,7 +1097,8 @@ test('kb article update', function (): void {
     $kbService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
     $kbService
     ->shouldReceive('kbUpdateArticle')
-    ->atLeast()->once()
+    ->once()
+    ->with(1, 1, "What's new", 'article-slug', 'active', 'Content', 1)
     ->andReturn(true);
     $di = container();
 

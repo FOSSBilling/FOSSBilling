@@ -659,7 +659,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $articleCategoryId = (int) $data['kb_article_category_id'];
         $status = $data['status'] ?? KbArticle::DRAFT;
 
-        $title = \FOSSBilling\Tools::sanitizeContent($data['title'], false);
+        $title = \FOSSBilling\Tools::sanitizePlainText($data['title']);
         $content = isset($data['content']) ? \FOSSBilling\Tools::sanitizeMarkdownContent($data['content']) : null;
 
         return $this->getService()->kbCreateArticle($articleCategoryId, $title, $status, $content);
@@ -681,7 +681,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('support', 'manage_kb');
 
         $articleCategoryId = isset($data['kb_article_category_id']) ? (int) $data['kb_article_category_id'] : null;
-        $title = isset($data['title']) ? \FOSSBilling\Tools::sanitizeContent($data['title'], false) : null;
+        $title = isset($data['title']) ? \FOSSBilling\Tools::sanitizePlainText($data['title']) : null;
         $slug = $data['slug'] ?? null;
         $status = $data['status'] ?? null;
         $content = isset($data['content']) ? \FOSSBilling\Tools::sanitizeMarkdownContent($data['content']) : null;

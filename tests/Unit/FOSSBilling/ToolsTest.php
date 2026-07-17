@@ -114,6 +114,13 @@ test('sanitize content preserves text content', function (): void {
     expect($result)->not->toContain('>');
 });
 
+test('sanitize plain text preserves characters without storing HTML entities', function (): void {
+    $input = " What's <strong>new</strong> & useful\0 ";
+    $result = FOSSBilling\Tools::sanitizePlainText($input);
+
+    expect($result)->toBe("What's new & useful");
+});
+
 test('sanitize markdown content preserves angle brackets as literal text', function (): void {
     $input = 'Hello <World> this text must not disappear';
     $result = FOSSBilling\Tools::sanitizeMarkdownContent($input);
