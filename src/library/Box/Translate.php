@@ -88,6 +88,8 @@ class Box_Translate
             throw new Exception('Unable to set up FOSSBilling translation functionality, locale was undefined.');
         }
 
+        Locale::setDefault($locale);
+
         $codeset = 'UTF-8';
         // set locale
         if (!defined('LC_MESSAGES')) {

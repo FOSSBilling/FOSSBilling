@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Email;
 
+use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Email\Entity\ActivityClientEmail;
 use Box\Mod\Email\Entity\EmailTemplate;
 use Box\Mod\Email\Entity\EmailTemplateGroup;
@@ -126,13 +127,28 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function getVars(EmailTemplate $template): array
     {
-        if ($template->getVars() === null || $template->getVars() === '') {
-            return [];
+        $vars = [];
+        if ($template->getVars() !== null && $template->getVars() !== '') {
+            $json = $this->di['crypt']->decrypt($template->getVars(), Config::getProperty('info.salt'));
+            $decoded = is_string($json) ? json_decode($json, true) : null;
+            $vars = is_array($decoded) ? $decoded : [];
         }
 
-        $json = $this->di['crypt']->decrypt($template->getVars(), Config::getProperty('info.salt'));
+        // Invoice templates must remain previewable before an invoice email has
+        // populated the stored example variables.
+        if (str_starts_with($template->getActionCode(), 'mod_invoice_')) {
+            $invoice = is_array($vars['invoice'] ?? null) ? $vars['invoice'] : [];
+            $invoice['total'] ??= 0;
+            if (empty($invoice['currency'])) {
+                $currency = $this->di['mod_service']('currency')->getCurrencyRepository()->findDefault();
+                if ($currency instanceof Currency) {
+                    $invoice['currency'] = $currency->getCode();
+                }
+            }
+            $vars['invoice'] = $invoice;
+        }
 
-        return is_string($json) ? json_decode($json, true) : [];
+        return $vars;
     }
 
     public function sendTemplate($data)

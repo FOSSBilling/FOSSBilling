@@ -203,14 +203,14 @@
                 <td>
                     {% if event.client_id %}
                         <a href='{{ "client/manage/#{event.client_id}"|url }}'>{{ event.client.name|default('') }}</a>
-                        <a href="{{ request_path|url(request_query|merge({ 'client_id': event.client_id, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this client'|trans }}">
+                        <a href="{{ request_path|url(query: request_query|merge({ 'client_id': event.client_id, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this client'|trans }}">
                             <svg class="icon icon-sm text-muted">
                                 <use href="#filter" />
                             </svg>
                         </a>
                     {% elseif event.staff_id %}
                         <a href='{{ "staff/manage/#{event.staff_id}"|url }}'>{{ event.staff.name|default('') }}</a>
-                        <a href="{{ request_path|url(request_query|merge({ 'admin_id': event.staff_id, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this admin'|trans }}">
+                        <a href="{{ request_path|url(query: request_query|merge({ 'admin_id': event.staff_id, 'page': null })) }}" class="ms-1" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this admin'|trans }}">
                             <svg class="icon icon-sm text-muted">
                                 <use href="#filter" />
                             </svg>
@@ -245,7 +245,7 @@
                     <div class="d-inline-flex align-items-center gap-1 flex-nowrap">
                         {{ mf.ip_lookup_link(event.ip) }}
                         {% if event.ip %}
-                        <a href="{{ request_path|url(request_query|merge({ 'ip': event.ip, 'page': null })) }}" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this IP address'|trans }}">
+                        <a href="{{ request_path|url(query: request_query|merge({ 'ip': event.ip, 'page': null })) }}" data-bs-toggle="tooltip" data-bs-title="{{ 'Show all activity from this IP address'|trans }}">
                             <svg class="icon icon-sm text-muted">
                                 <use href="#filter" />
                             </svg>
