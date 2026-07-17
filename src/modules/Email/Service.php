@@ -439,7 +439,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         if ($template instanceof EmailTemplate) {
             $default = $this->getDefaultTemplate($code, $data);
             if ($default !== null && !$this->isCustomTemplate($template)) {
-                $this->syncBuiltinTemplateMetadata($template, $default);
+                $this->syncBuiltinTemplate($template, $default);
             }
 
             return $template;
@@ -448,7 +448,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->createTemplateRecordFromData($code, $data);
     }
 
-    private function syncBuiltinTemplateMetadata(EmailTemplate $template, array $default): void
+    private function syncBuiltinTemplate(EmailTemplate $template, array $default, bool $resetOverride = false): void
     {
         $updated = false;
 
@@ -462,8 +462,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $updated = true;
         }
 
-        $isOverridden = $template->isOverridden();
-        if (!$isOverridden) {
+        if ($resetOverride || !$template->isOverridden()) {
             if ($template->getSubject() !== $default['subject']) {
                 $template->setSubject($default['subject']);
                 $updated = true;
@@ -472,6 +471,16 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 $template->setContent($default['content']);
                 $updated = true;
             }
+        }
+
+        if ($resetOverride && $template->isOverridden()) {
+            $template->setIsOverridden(false);
+            $updated = true;
+        }
+
+        if ($resetOverride && $template->hasError()) {
+            $template->clearError();
+            $updated = true;
         }
 
         if ($updated) {
@@ -890,6 +899,16 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function templateBatchGenerate(): bool
     {
+        return $this->syncFileBackedTemplates(false);
+    }
+
+    public function templateBatchRegenerate(): bool
+    {
+        return $this->syncFileBackedTemplates(true);
+    }
+
+    private function syncFileBackedTemplates(bool $resetOverrides): bool
+    {
         $extensionService = $this->di['mod_service']('extension');
 
         $finder = new Finder();
@@ -917,11 +936,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             }
 
             if (!$this->isCustomTemplate($template)) {
-                $this->syncBuiltinTemplateMetadata($template, $default);
+                $this->syncBuiltinTemplate($template, $default, $resetOverrides);
             }
         }
 
-        $this->di['logger']->info('Synced file-backed email templates for installed modules.');
+        $message = $resetOverrides
+            ? 'Regenerated file-backed email templates for installed modules.'
+            : 'Synced file-backed email templates for installed modules.';
+        $this->di['logger']->info($message);
 
         return true;
     }
@@ -954,7 +976,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         if (!$this->isCustomTemplate($template)) {
             $default = $this->getDefaultTemplate($template->getActionCode());
             if ($default !== null) {
-                $this->syncBuiltinTemplateMetadata($template, $default);
+                $this->syncBuiltinTemplate($template, $default);
             }
         }
 
@@ -996,11 +1018,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $systemService = $this->di['mod_service']('System');
 
         foreach ($templates as $template) {
-            [$subjectTemplate, $contentTemplate] = $this->getEffectiveTemplateParts($template);
-            $vars = $this->getVars($template);
             $error = null;
 
             try {
+                [$subjectTemplate, $contentTemplate] = $this->getEffectiveTemplateParts($template);
+                $vars = $this->getVars($template);
                 $systemService->renderEmailTplString($contentTemplate, $vars);
                 $systemService->renderEmailTplString($subjectTemplate, $vars);
             } catch (\Throwable $e) {
@@ -1010,6 +1032,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             if ($error !== null) {
                 $template->setLastError($error);
                 $template->setErrorCheckedAt(new \DateTimeImmutable());
+                $this->di['logger']->warning(sprintf('Email template validation failed for "%s": %s', $template->getActionCode(), $error));
                 ++$results['invalid'];
                 $results['errors'][] = [
                     'id' => $template->getId(),
