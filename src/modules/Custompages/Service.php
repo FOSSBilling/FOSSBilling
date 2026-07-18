@@ -51,7 +51,7 @@ class Service
                 `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
                 PRIMARY KEY (`id`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8';
-        $this->di['db']->exec($sql);
+        $this->di['em']->getConnection()->executeStatement($sql);
 
         return true;
     }

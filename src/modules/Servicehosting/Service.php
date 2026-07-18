@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicehosting;
 
+use Box\Mod\Client\Entity\Client;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Servicehosting\Entity\ServiceHosting;
 use Box\Mod\Servicehosting\Entity\ServiceHostingHp;
@@ -540,7 +541,7 @@ class Service implements InjectionAwareInterface
             ?? throw new Exception('Server not found');
 
         $clientId = $this->_getModelProperty($model, $model instanceof ServiceHosting ? 'clientId' : 'client_id');
-        $client = $this->di['db']->getExistingModelById('Client', $clientId, 'Client not found');
+        $client = $this->di['em']->getRepository(Client::class)->find($clientId) ?? throw new Exception('Client not found');
 
         $hp_config = $this->_getModelProperty($hp, 'config');
 
@@ -1433,8 +1434,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (empty($result)) {
-            $query = 'active = 1 and allow_register = 1';
-            $tlds = $this->di['db']->find('Tld', $query, []);
+            $tlds = $this->di['em']->getRepository(\Box\Mod\Servicedomain\Entity\Tld::class)->findBy(['active' => true, 'allowRegister' => true]);
             $serviceDomainService = $this->di['mod_service']('Servicedomain');
             foreach ($tlds as $model) {
                 $result[] = $serviceDomainService->tldToApiArray($model, $identity);

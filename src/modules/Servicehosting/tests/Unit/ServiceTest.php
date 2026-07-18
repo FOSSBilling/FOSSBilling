@@ -1006,12 +1006,19 @@ test('get free tlds free tlds are not set', function (): void {
     $serviceDomainServiceMock->shouldReceive('tldToApiArray')->atLeast()->once()->andReturn($tldArray);
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $serviceDomainServiceMock);
 
-    $tldModel = new Model_Tld();
-    $tldModel->loadBean(new Tests\Helpers\DummyBean());
+    $tldModel = new Box\Mod\Servicedomain\Entity\Tld();
+    $tldModel->setTld('.com');
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('find')->atLeast()->once()->andReturn([$tldModel]);
-    $di['db'] = $dbMock;
+    $tldRepo = Mockery::mock(Box\Mod\Servicedomain\Repository\TldRepository::class);
+    $tldRepo->shouldReceive('findBy')->with(['active' => true, 'allowRegister' => true])->andReturn([$tldModel]);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Box\Mod\Servicedomain\Entity\Tld::class)->andReturn($tldRepo);
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $serviceDomainServiceMock);
 
     $service->setDi($di);
     $product = new Box\Mod\Product\Entity\Product();

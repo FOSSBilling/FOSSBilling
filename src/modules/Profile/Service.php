@@ -331,7 +331,7 @@ class Service implements InjectionAwareInterface
     {
         $query = 'SELECT * FROM session WHERE content IS NOT NULL AND content <> ""';
 
-        return $this->di['db']->getAll($query);
+        return $this->di['em']->getConnection()->fetchAllAssociative($query);
     }
 
     private function deleteSessionIfMatching(array $session, string $type, int $id): void

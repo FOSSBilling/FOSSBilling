@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Serviceapikey;
 
+use Box\Mod\Order\Entity\Order;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Serviceapikey\Entity\ServiceApiKey;
 use Box\Mod\Serviceapikey\Repository\ServiceApiKeyRepository;
@@ -168,7 +169,7 @@ class Service implements InjectionAwareInterface
         if (empty($data['key']) && empty($data['order_id'])) {
             throw new \FOSSBilling\Exception('You must provide either the API key or API key order ID in order to reset it.');
         } elseif (!empty($data['order_id'])) {
-            $order = $this->di['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
+            $order = $this->di['em']->getRepository(Order::class)->find($data['order_id']) ?? throw new \FOSSBilling\Exception('Order not found');
             $orderService = $this->di['mod_service']('order');
             $model = $orderService->getOrderService($order);
         } else {
@@ -217,7 +218,7 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('You must provide the API key order ID in order to update it.');
         }
 
-        $order = $this->di['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
+        $order = $this->di['em']->getRepository(Order::class)->find($data['order_id']) ?? throw new \FOSSBilling\Exception('Order not found');
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
 
@@ -257,7 +258,7 @@ class Service implements InjectionAwareInterface
             `updated_at` datetime,
             PRIMARY KEY (`id`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;';
-        $this->di['db']->exec($sql);
+        $this->di['em']->getConnection()->executeStatement($sql);
 
         return true;
     }
@@ -267,7 +268,7 @@ class Service implements InjectionAwareInterface
      */
     public function uninstall(): bool
     {
-        $this->di['db']->exec('DROP TABLE IF EXISTS `service_apikey`');
+        $this->di['em']->getConnection()->executeStatement('DROP TABLE IF EXISTS `service_apikey`');
 
         return true;
     }
@@ -334,12 +335,12 @@ class Service implements InjectionAwareInterface
     private function isActive(\RedBeanPHP\OODBBean|ServiceApiKey $model): bool
     {
         $modelId = $model instanceof ServiceApiKey ? $model->getId() : $model->id;
-        $order = $this->di['db']->findOne('ClientOrder', 'service_id = :id AND service_type = "apikey"', [':id' => $modelId]);
+        $order = $this->di['em']->getRepository(Order::class)->findOneBy(['serviceId' => $modelId, 'serviceType' => 'apikey']);
         if (is_null($order)) {
             throw new \FOSSBilling\Exception('API key does not exist');
         }
 
-        return $order->status === 'active';
+        return $order->getStatus() === 'active';
     }
 
     private function _setModelProperty(\RedBeanPHP\OODBBean|ServiceApiKey $model, string $property, mixed $value): void

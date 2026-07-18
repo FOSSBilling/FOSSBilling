@@ -387,14 +387,14 @@ test('regenerateThemeCssAndJsFiles handles empty files', function (): void {
 test('getCurrentAdminAreaTheme returns theme configuration', function (): void {
     Service::clearThemeCache();
     $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getCell')
+    $connectionMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connectionMock->shouldReceive('fetchOne')
         ->atLeast()
         ->once()
         ->andReturn('');
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($connectionMock);
 
     $service->setDi($di);
 
@@ -424,14 +424,14 @@ test('getCurrentClientAreaTheme returns Theme model', function (): void {
 test('getCurrentClientAreaThemeCode returns theme code', function (): void {
     Service::clearThemeCache();
     $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getCell')
+    $connectionMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connectionMock->shouldReceive('fetchOne')
         ->atLeast()
         ->once()
         ->andReturn('huraga');
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($connectionMock);
     $service->setDi($di);
 
     $result = $service->getCurrentClientAreaThemeCode();

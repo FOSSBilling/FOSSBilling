@@ -208,7 +208,7 @@ class Service implements InjectionAwareInterface
 
         if (isset($params['id'])) {
             $di = $event->getDi();
-            $ext = $di['db']->load('extension', $params['id']);
+            $ext = $di['em']->getRepository(\Box\Mod\Extension\Entity\Extension::class)->find($params['id']);
 
             if (is_object($ext) && isset($ext->type) && $ext->type === 'mod') {
                 $di['mod_service']('Widgets')->invalidateCache();

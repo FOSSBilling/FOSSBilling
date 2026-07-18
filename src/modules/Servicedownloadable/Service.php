@@ -309,7 +309,7 @@ class Service implements InjectionAwareInterface
 
     private function isStoredFilenameReferenced(string $storedFilename): bool
     {
-        $count = (int) $this->di['db']->getCell(
+        $count = (int) $this->di['em']->getConnection()->fetchOne(
             'SELECT COUNT(*) FROM service_downloadable WHERE stored_filename = :stored_filename',
             [':stored_filename' => $storedFilename]
         );
@@ -317,7 +317,7 @@ class Service implements InjectionAwareInterface
             return true;
         }
 
-        $count = (int) $this->di['db']->getCell(
+        $count = (int) $this->di['em']->getConnection()->fetchOne(
             'SELECT COUNT(*) FROM product WHERE config LIKE :pattern',
             [':pattern' => '%' . $storedFilename . '%']
         );
@@ -325,7 +325,7 @@ class Service implements InjectionAwareInterface
             return true;
         }
 
-        $count = (int) $this->di['db']->getCell(
+        $count = (int) $this->di['em']->getConnection()->fetchOne(
             'SELECT COUNT(*) FROM client_order WHERE config LIKE :pattern',
             [':pattern' => '%' . $storedFilename . '%']
         );

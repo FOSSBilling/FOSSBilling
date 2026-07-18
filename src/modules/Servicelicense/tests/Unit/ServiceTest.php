@@ -10,6 +10,7 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Client\Entity\Client;
 use Box\Mod\Order\Service as OrderService;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Servicelicense\Entity\ServiceLicense;
@@ -566,25 +567,24 @@ test('get additional params', function (): void {
 
 test('get owner name', function (): void {
     $service = new Service();
-    $clientModel = new Model_Client();
-    $clientModel->loadBean(new Tests\Helpers\DummyBean());
-    $clientModel->first_name = 'John';
-    $clientModel->last_name = 'Smith';
+    $client = new Client();
+    $client->setFirstName('John');
+    $client->setLastName('Smith');
 
     $serviceLicenseModel = new Model_ServiceLicense();
     $serviceLicenseModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $expected = $clientModel->first_name . ' ' . $clientModel->last_name;
+    $expected = $client->getFirstName() . ' ' . $client->getLastName();
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('load')->atLeast()->once()->andReturn($clientModel);
+    $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepo->shouldReceive('find')->atLeast()->once()->andReturn($client);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Client::class)->andReturn($clientRepo);
     $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
 
     $di = container();
     $di['em'] = $emMock;
-    $di['db'] = $dbMock;
 
     $service->setDi($di);
 

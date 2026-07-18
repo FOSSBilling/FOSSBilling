@@ -10,6 +10,7 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Client\Entity\Client;
 use Box\Mod\Order\Service as OrderService;
 use Box\Mod\Servicedomain\Entity\ServiceDomain;
 use Box\Mod\Servicedomain\Entity\Tld;
@@ -237,27 +238,29 @@ test('creates action', function (): void {
         ->andReturn($tldModel);
     $serviceMock->shouldReceive('validateOrderData');
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->first_name = 'first_name';
-    $client->last_name = 'last_name';
-    $client->email = 'email';
-    $client->company = 'company';
-    $client->address_1 = 'address_1';
-    $client->address_2 = 'address_2';
-    $client->country = 'country';
-    $client->city = 'city';
-    $client->state = 'state';
-    $client->postcode = 'postcode';
-    $client->phone_cc = 'phone_cc';
-    $client->phone = 'phone';
+    $client = new Client();
+    $client->setFirstName('first_name');
+    $client->setLastName('last_name');
+    $client->setEmail('email');
+    $client->setCompany('company');
+    $client->setAddress1('address_1');
+    $client->setAddress2('address_2');
+    $client->setCountry('country');
+    $client->setCity('city');
+    $client->setState('state');
+    $client->setPostcode('postcode');
+    $client->setPhoneCc('phone_cc');
+    $client->setPhone('phone');
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn($client);
+    $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepo->shouldReceive('find')->atLeast()->once()->andReturn($client);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Client::class)->andReturn($clientRepo);
+    $emMock->shouldIgnoreMissing();
 
     $di = container();
+    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(function ($name) use ($orderServiceMock, $systemServiceMock) {
         if ($name == 'order') {
             return $orderServiceMock;
@@ -265,7 +268,6 @@ test('creates action', function (): void {
 
         return $systemServiceMock;
     });
-    $di['db'] = $dbMock;
 
     $serviceMock->setDi($di);
 
@@ -1353,13 +1355,17 @@ test('gets available registrars', function (): void {
         'Resellerclub' => 'Reseller Club',
     ];
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAssoc')
+    $connMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connMock->shouldReceive('fetchAllKeyValue')
         ->atLeast()->once()
         ->andReturn($registrars);
 
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getConnection')->andReturn($connMock);
+    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
+
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $service->setDi($di);
 
     $result = $service->registrarGetAvailable();

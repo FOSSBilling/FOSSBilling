@@ -100,12 +100,12 @@ test('getParams returns system parameters', function (): void {
             'value' => 'work@example.eu',
         ],
     ];
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')->atLeast()->once()
+    $connectionMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connectionMock->shouldReceive('fetchAllAssociative')->atLeast()->once()
         ->andReturn($multParamsResults);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($connectionMock);
 
     $service->setDi($di);
 

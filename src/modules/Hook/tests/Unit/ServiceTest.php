@@ -120,13 +120,11 @@ test('handles on after admin deactivate extension', function (): void {
     $expectation2 = $eventMock->shouldReceive('setReturnValue');
     $expectation2->atLeast()->once();
 
-    $dbMock = Mockery::mock('\Box_Database');
-    /** @var Mockery\Expectation $expectation3 */
-    $expectation3 = $dbMock->shouldReceive('exec');
-    $expectation3->atLeast()->once();
+    $connectionMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connectionMock->shouldReceive('executeStatement')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($connectionMock);
 
     /** @var Mockery\Expectation $expectation4 */
     $expectation4 = $eventMock->shouldReceive('getDi');
@@ -146,13 +144,9 @@ test('batch connects', function (): void {
 
     $data['mods'] = [$mod];
 
-    $dbMock = Mockery::mock('\Box_Database');
-    /** @var Mockery\Expectation $expectation1 */
-    $expectation1 = $dbMock->shouldReceive('getCell');
-    $expectation1->atLeast()->once();
-    $expectation1->andReturn(false);
-    $dbMock->shouldReceive('exec')
-        ->byDefault();
+    $connectionMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connectionMock->shouldReceive('fetchOne')->atLeast()->once()->andReturn(false);
+    $connectionMock->shouldReceive('executeStatement')->byDefault();
 
     $returnArr = [
         [
@@ -161,10 +155,7 @@ test('batch connects', function (): void {
             'meta_value' => 'testValue',
         ],
     ];
-    /** @var Mockery\Expectation $expectation4 */
-    $expectation4 = $dbMock->shouldReceive('getAll');
-    $expectation4->atLeast()->once();
-    $expectation4->andReturn($returnArr);
+    $connectionMock->shouldReceive('fetchAllAssociative')->atLeast()->once()->andReturn($returnArr);
 
     $activityServiceMock = Mockery::mock(Box\Mod\Activity\Service::class);
 
@@ -183,7 +174,7 @@ test('batch connects', function (): void {
     $extensionServiceMock = Mockery::mock(Box\Mod\Extension\Service::class);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($connectionMock);
 
     $extensionEntity = new Extension();
     $propType = new ReflectionProperty($extensionEntity, 'type');

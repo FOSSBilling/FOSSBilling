@@ -93,7 +93,7 @@ class Service implements InjectionAwareInterface
                 AND rel_type = 'mod'
                 AND rel_id = :mod
                 AND meta_key = 'listener'";
-            $di['db']->exec($q, ['mod' => $params['id']]);
+            $di['em']->getConnection()->executeStatement($q, ['mod' => $params['id']]);
         }
 
         $event->setReturnValue(true);
@@ -172,7 +172,7 @@ class Service implements InjectionAwareInterface
             AND meta_key = 'listener'
             AND meta_value = :event
         ";
-        if ($this->di['db']->getCell($q, ['mod' => $mod, 'event' => $event])) {
+        if ($this->di['em']->getConnection()->fetchOne($q, ['mod' => $mod, 'event' => $event])) {
             // already connected
             return true;
         }
@@ -202,7 +202,7 @@ class Service implements InjectionAwareInterface
             AND rel_type = 'mod'
             AND meta_key = 'listener'
         ";
-        $list = $this->di['db']->getAll($sql);
+        $list = $this->di['em']->getConnection()->fetchAllAssociative($sql);
         $extensionService = $this->di['mod_service']('extension');
         foreach ($list as $listener) {
             try {
@@ -212,7 +212,7 @@ class Service implements InjectionAwareInterface
                 // disconnect modules without service class
                 $mod = $this->di['mod']($mod_name);
                 if (!$mod->hasService()) {
-                    $this->di['db']->exec($rm_sql, ['id' => $listener['id']]);
+                    $this->di['em']->getConnection()->executeStatement($rm_sql, ['id' => $listener['id']]);
 
                     continue;
                 }
@@ -221,7 +221,7 @@ class Service implements InjectionAwareInterface
                 $s = $mod->getService();
                 $reflector = new \ReflectionClass($s);
                 if (!$reflector->hasMethod($event) || !$this->canBeConnected($reflector->getMethod($event))) {
-                    $this->di['db']->exec($rm_sql, ['id' => $listener['id']]);
+                    $this->di['em']->getConnection()->executeStatement($rm_sql, ['id' => $listener['id']]);
 
                     continue;
                 }
@@ -229,7 +229,7 @@ class Service implements InjectionAwareInterface
                 // If the listener is for a module that's not installed and is **not** a core module, remove the listener
                 $ext = $this->di['em']->getRepository(Extension::class)->findOneBy(['type' => 'mod', 'name' => $mod_name, 'status' => 'installed']);
                 if (!$ext && !$extensionService->isCoreModule($mod_name)) {
-                    $this->di['db']->exec($rm_sql, ['id' => $listener['id']]);
+                    $this->di['em']->getConnection()->executeStatement($rm_sql, ['id' => $listener['id']]);
 
                     continue;
                 }

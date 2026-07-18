@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicecustom;
 
+use Box\Mod\Order\Entity\Order;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Servicecustom\Entity\ServiceCustom;
 use Box\Mod\Servicecustom\Repository\ServiceCustomRepository;
@@ -267,16 +268,16 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function getServiceCustomByOrderId($orderId, $clientId = null)
     {
         if ($clientId !== null) {
-            $order = $this->di['db']->findOne('ClientOrder', 'id = ? AND client_id = ?', [$orderId, $clientId]);
-            if (!$order instanceof \Model_ClientOrder) {
+            $order = $this->di['em']->getRepository(Order::class)->findOneBy(['id' => $orderId, 'clientId' => $clientId]);
+            if (!$order) {
                 throw new \FOSSBilling\InformationException('Order not found');
             }
 
-            if ($order->status !== \Model_ClientOrder::STATUS_ACTIVE) {
+            if ($order->getStatus() !== Order::STATUS_ACTIVE) {
                 throw new \FOSSBilling\InformationException('Order is not activated');
             }
         } else {
-            $order = $this->di['db']->getExistingModelById('ClientOrder', $orderId, 'Order not found');
+            $order = $this->di['em']->getRepository(Order::class)->find($orderId) ?? throw new \FOSSBilling\InformationException('Order not found');
         }
 
         $orderService = $this->di['mod_service']('order');

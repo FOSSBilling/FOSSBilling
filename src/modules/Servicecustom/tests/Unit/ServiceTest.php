@@ -11,6 +11,8 @@
 declare(strict_types=1);
 
 use Box\Mod\Formbuilder\Service as FormbuilderService;
+use Box\Mod\Order\Entity\Order;
+use Box\Mod\Order\Repository\OrderRepository;
 use Box\Mod\Order\Service as OrderService;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Product\Service as ProductService;
@@ -563,18 +565,20 @@ test('custom call forbidden method exception', function (): void {
 
 test('get service custom by order id', function (): void {
     $service = new Service();
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('getExistingModelById')->atLeast()->once()->andReturn(new Model_ClientOrder());
+    $order = new Order();
+
+    $orderRepo = Mockery::mock(OrderRepository::class);
+    $orderRepo->shouldReceive('find')->with(1)->andReturn($order);
 
     $orderService = Mockery::mock(OrderService::class);
     $orderService->shouldReceive('getOrderService')->atLeast()->once()->andReturn(new Model_ServiceCustom());
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepo);
     $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
 
     $di = container();
     $di['em'] = $emMock;
-    $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderService);
     $service->setDi($di);
 
@@ -585,16 +589,16 @@ test('get service custom by order id', function (): void {
 
 test('get service custom by order id rejects order owned by another client', function (): void {
     $service = new Service();
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('findOne')->once()->with('ClientOrder', 'id = ? AND client_id = ?', [1, 42])->andReturn(null);
-    $dbMock->shouldNotReceive('getExistingModelById');
+
+    $orderRepo = Mockery::mock(OrderRepository::class);
+    $orderRepo->shouldReceive('findOneBy')->once()->with(['id' => 1, 'clientId' => 42])->andReturn(null);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepo);
     $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
 
     $di = container();
     $di['em'] = $emMock;
-    $di['db'] = $dbMock;
     $service->setDi($di);
 
     expect(fn () => $service->getServiceCustomByOrderId(1, 42))
@@ -603,18 +607,20 @@ test('get service custom by order id rejects order owned by another client', fun
 
 test('get service custom by order id order service not found exception', function (): void {
     $service = new Service();
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('getExistingModelById')->atLeast()->once()->andReturn(new Model_ClientOrder());
+    $order = new Order();
+
+    $orderRepo = Mockery::mock(OrderRepository::class);
+    $orderRepo->shouldReceive('find')->with(1)->andReturn($order);
 
     $orderService = Mockery::mock(OrderService::class);
     $orderService->shouldReceive('getOrderService')->atLeast()->once()->andReturn(null);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepo);
     $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
 
     $di = container();
     $di['em'] = $emMock;
-    $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderService);
     $service->setDi($di);
 

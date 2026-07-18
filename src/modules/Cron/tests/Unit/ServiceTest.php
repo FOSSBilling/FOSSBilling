@@ -11,6 +11,8 @@
 declare(strict_types=1);
 
 use Box\Mod\Cron\Service;
+use Doctrine\DBAL\Connection;
+use Doctrine\ORM\EntityManagerInterface;
 
 use function Tests\Helpers\container;
 
@@ -105,14 +107,17 @@ test('runCrons isolates failures in core batch tasks', function (string $failedT
         ->once()
         ->with('last_cron_exec', Mockery::type('string'), true);
 
-    $db = Mockery::mock('\\Box_Database');
-    $db->shouldReceive('exec')->once()->andReturn(0);
+    $connMock = Mockery::mock(Connection::class);
+    $connMock->shouldReceive('executeStatement')->once()->andReturn(0);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getConnection')->andReturn($connMock);
 
     $api = new CronServiceApiDouble();
     $api->throwOn = $failedTask;
     $di = container();
     $di['api_system'] = $api;
-    $di['db'] = $db;
+    $di['em'] = $emMock;
     $di['events_manager'] = $eventsManager;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemService);

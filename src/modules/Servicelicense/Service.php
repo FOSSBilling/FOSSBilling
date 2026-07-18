@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicelicense;
 
+use Box\Mod\Client\Entity\Client;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Servicelicense\Entity\ServiceLicense;
 use Box\Mod\Servicelicense\Repository\ServiceLicenseRepository;
@@ -334,7 +335,7 @@ class Service implements InjectionAwareInterface
     public function getOwnerName(\Model_ServiceLicense|ServiceLicense $model)
     {
         $clientId = $model instanceof ServiceLicense ? $model->getClientId() : $model->client_id;
-        $client = $this->di['db']->load('Client', $clientId);
+        $client = $this->di['em']->getRepository(Client::class)->find($clientId);
 
         return $client->getFullName();
     }
