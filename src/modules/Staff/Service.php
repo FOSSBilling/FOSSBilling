@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Staff;
 
+use Box\Mod\Order\Entity\Order as OrderEntity;
 use Box\Mod\Staff\Entity\Admin;
 use Box\Mod\Staff\Entity\AdminGroup;
 use Box\Mod\Staff\Entity\AdminGroupMember;
@@ -252,7 +253,7 @@ class Service implements InjectionAwareInterface
         $params = $event->getParameters();
 
         try {
-            $orderModel = $di['db']->load('ClientOrder', $params['id']);
+            $orderModel = $di['em']->getRepository(OrderEntity::class)->find($params['id']);
             $orderTicketService = $di['mod_service']('order');
             $order = $orderTicketService->toApiArray($orderModel, true);
 
@@ -420,12 +421,12 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @return \Model_Admin
+     * @return \Model_Admin|Admin
      */
     public function getCronAdmin()
     {
-        $cron = $this->di['db']->findOne('Admin', 'system_name = :system_name', [':system_name' => Admin::SYSTEM_CRON]);
-        if ($cron instanceof \Model_Admin) {
+        $cron = $this->adminRepository->findCronAdmin();
+        if ($cron instanceof Admin) {
             return $cron;
         }
 
@@ -434,16 +435,15 @@ class Service implements InjectionAwareInterface
 
         $cronPass = $this->di['tools']->generatePassword(256, 4);
 
-        $cron = $this->di['db']->dispense('Admin');
-        $cron->system_name = Admin::SYSTEM_CRON;
-        $cron->email = $cronEmail;
-        $cron->pass = $this->di['password']->hashIt($cronPass);
-        $cron->name = 'System Cron Job';
-        $cron->signature = '';
-        $cron->status = 'active';
-        $cron->created_at = date('Y-m-d H:i:s');
-        $cron->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($cron);
+        $cron = new Admin();
+        $cron->setSystemName(Admin::SYSTEM_CRON);
+        $cron->setEmail($cronEmail);
+        $cron->setPass($this->di['password']->hashIt($cronPass));
+        $cron->setName('System Cron Job');
+        $cron->setSignature('');
+        $cron->setStatus('active');
+        $this->di['em']->persist($cron);
+        $this->di['em']->flush();
 
         return $cron;
     }

@@ -11,7 +11,9 @@ declare(strict_types=1);
 
 namespace Box\Mod\Order;
 
+use Box\Mod\Client\Entity\Client as ClientEntity;
 use Box\Mod\Currency\Entity\Currency;
+use Box\Mod\Invoice\Entity\InvoiceItem;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Order\Entity\OrderMeta;
 use Box\Mod\Order\Entity\OrderStatus;
@@ -491,7 +493,8 @@ class Service implements InjectionAwareInterface
         $data['title'] = $modelTitle;
         $data['meta'] = $this->getOrderMetaRepository()->getPairsForOrder($modelId);
         $data['active_tickets'] = $supportService->getSupportTicketRepository()->countActiveTicketsForOrder((int) $modelId);
-        $client = $this->di['db']->getExistingModelById('Client', $modelClientId, 'Client not found');
+        $client = $this->di['em']->getRepository(ClientEntity::class)->find($modelClientId)
+            ?? throw new InformationException('Client not found');
         $data['client'] = $clientService->toApiArray($client, false);
 
         if ($identity instanceof \Model_Admin) {
@@ -500,9 +503,6 @@ class Service implements InjectionAwareInterface
             $productId = $model instanceof Order ? $model->getProductId() : $model->product_id;
             $data['plugin'] = $productService->getProductPluginById((int) $productId);
         }
-
-        $client = $this->di['db']->getExistingModelById('Client', $modelClientId, 'Client not found');
-        $data['client'] = $clientService->toApiArray($client, false);
 
         return $data;
     }
@@ -535,11 +535,10 @@ class Service implements InjectionAwareInterface
 
         $clients = [];
         if (!empty($clientIds)) {
-            $placeholders = implode(',', array_fill(0, count($clientIds), '?'));
-            $clientModels = $this->di['db']->find('Client', "id IN ($placeholders)", $clientIds);
+            $clientModels = $this->di['em']->getRepository(ClientEntity::class)->findBy(['id' => $clientIds]);
             $clientService = $this->di['mod_service']('client');
             foreach ($clientModels as $client) {
-                $clients[$client->id] = $clientService->toApiArray($client, false, $identity);
+                $clients[$client instanceof ClientEntity ? $client->getId() : $client->id] = $clientService->toApiArray($client, false, $identity);
             }
         }
 
@@ -756,7 +755,7 @@ class Service implements InjectionAwareInterface
         return [$query, $bindings];
     }
 
-    public function createOrder(\Model_Client $client, Product $product, array $data)
+    public function createOrder(ClientEntity|\Model_Client $client, Product $product, array $data)
     {
         $quantity = PriceValidator::validateQuantity($data['quantity'] ?? 1);
         $price = isset($data['price']) ? PriceValidator::validateAmount($data['price']) : null;
@@ -767,8 +766,8 @@ class Service implements InjectionAwareInterface
 
         if (isset($data['currency']) && !empty($data['currency'])) {
             $currency = $currencyRepository->findOneByCode($data['currency']);
-        } elseif ($client->currency) {
-            $currency = $currencyRepository->findOneByCode($client->currency);
+        } elseif ($client instanceof ClientEntity ? $client->getCurrency() : $client->currency) {
+            $currency = $currencyRepository->findOneByCode($client instanceof ClientEntity ? $client->getCurrency() : $client->currency);
         } else {
             $currency = $currencyRepository->findDefault();
         }
@@ -844,7 +843,7 @@ class Service implements InjectionAwareInterface
             &$invoice
         ) {
             $order = new Order();
-            $order->setClientId($client->id);
+            $order->setClientId($client instanceof ClientEntity ? $client->getId() : $client->id);
             $order->setProductId($this->getProductId($product));
             $order->setFormId($this->getProductFormId($product));
             $parentGroupId = ($parent_order) ? ($parent_order instanceof Order ? $parent_order->getGroupId() : $parent_order->group_id) : null;
@@ -969,12 +968,12 @@ class Service implements InjectionAwareInterface
         return $id;
     }
 
-    public function getMasterOrderForClient(\Model_Client $client, $group_id)
+    public function getMasterOrderForClient(ClientEntity|\Model_Client $client, $group_id)
     {
         return $this->getOrderRepository()->findOneBy([
             'groupId' => $group_id,
             'groupMaster' => true,
-            'clientId' => $client->id,
+            'clientId' => $client instanceof ClientEntity ? $client->getId() : $client->id,
         ]);
     }
 
@@ -1677,16 +1676,20 @@ class Service implements InjectionAwareInterface
     public function rmInvoiceItemByOrder(Order|\Model_ClientOrder $order): void
     {
         $orderId = $order instanceof Order ? $order->getId() : $order->id;
-        $bindings = [
-            ':rel_id' => $orderId,
-            ':status' => \Model_InvoiceItem::STATUS_PENDING_PAYMENT,
-        ];
 
-        $items = $this->di['db']->find('InvoiceItem', 'rel_id = :rel_id AND status = :status', $bindings);
+        $items = $this->di['em']->getRepository(InvoiceItem::class)->findBy([
+            'relId' => (string) $orderId,
+            'status' => \Model_InvoiceItem::STATUS_PENDING_PAYMENT,
+        ]);
         foreach ($items as $item) {
             if ($item instanceof \Model_InvoiceItem) {
                 $this->di['db']->trash($item);
+            } elseif ($item instanceof InvoiceItem) {
+                $this->di['em']->remove($item);
             }
+        }
+        if (!empty($items)) {
+            $this->di['em']->flush();
         }
     }
 

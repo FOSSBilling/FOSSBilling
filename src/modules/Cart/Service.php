@@ -16,6 +16,8 @@ use Box\Mod\Cart\Entity\CartProduct;
 use Box\Mod\Cart\Repository\CartProductRepository;
 use Box\Mod\Cart\Repository\CartRepository;
 use Box\Mod\Currency\Entity\Currency;
+use Box\Mod\Invoice\Entity\Invoice;
+use Box\Mod\Order\Entity\Order;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Product\Entity\Promo;
 use FOSSBilling\InjectionAwareInterface;
@@ -616,7 +618,7 @@ class Service implements InjectionAwareInterface
                 'params' => [
                     'ip' => $this->di['request']->getClientIp(),
                     'client_id' => $client->id,
-                    'id' => $order->id,
+                    'id' => $order->getId(),
                 ],
             ]
         );
@@ -624,13 +626,19 @@ class Service implements InjectionAwareInterface
         $result = [
             'gateway_id' => $gateway_id,
             'invoice_hash' => null,
-            'order_id' => $order->id,
+            'order_id' => $order->getId(),
             'orders' => $orders,
         ];
 
         // invoice may not be created if total is 0
-        if ($invoice instanceof \Model_Invoice && $invoice->status == \Model_Invoice::STATUS_UNPAID) {
-            $result['invoice_hash'] = $invoice->hash;
+        $isInvoiceUnpaid = $invoice instanceof Invoice
+            ? $invoice->getStatus() === \Model_Invoice::STATUS_UNPAID
+            : ($invoice instanceof \Model_Invoice && $invoice->status == \Model_Invoice::STATUS_UNPAID);
+
+        if ($isInvoiceUnpaid) {
+            $result['invoice_hash'] = $invoice instanceof Invoice
+                ? $invoice->getHash()
+                : $invoice->hash;
         }
 
         return $result;
@@ -665,14 +673,13 @@ class Service implements InjectionAwareInterface
         $reservedOrderIds = [];
         $reservedCount = 0;
 
-        try {
-            return $this->di['db']->transaction(function () use ($ca, $cart, $client, $currency, $currencyCode, $gateway_id, $taxed, $promo, $promoProductService, $promoId, &$reservedOrderIds, &$reservedCount) {
-                // Set default client currency.
-                if (!$client->currency) {
-                    $client->currency = $currencyCode;
-                    $this->di['db']->store($client);
-                }
+        if (!$client->currency) {
+            $client->currency = $currencyCode;
+            $this->di['db']->store($client);
+        }
 
+        try {
+            return $this->di['em']->wrapInTransaction(function () use ($ca, $cart, $client, $currency, $currencyCode, $gateway_id, $taxed, $promo, $promoProductService, $promoId, &$reservedOrderIds, &$reservedCount) {
                 if ($client->currency != $currencyCode) {
                     throw new \FOSSBilling\InformationException('Selected currency :selected does not match your profile currency :code. Please change cart currency to continue.', [':selected' => $currencyCode, ':code' => $client->currency]);
                 }
@@ -717,36 +724,35 @@ class Service implements InjectionAwareInterface
                         $item['domain']['owndomain_tld'] = (isset($item['domain']['owndomain_tld'])) ? (str_contains((string) $item['domain']['owndomain_tld'], '.') ? $item['domain']['owndomain_tld'] : '.' . $item['domain']['owndomain_tld']) : null;
                     }
 
-                    $order = $this->di['db']->dispense('ClientOrder');
-                    $order->client_id = $client->id;
-                    $order->promo_id = $promoId;
-                    $order->product_id = $item['product_id'];
-                    $order->form_id = $item['form_id'];
+                    $order = new Order();
+                    $order->setClientId($client->id);
+                    $order->setPromoId($promoId);
+                    $order->setProductId($item['product_id']);
+                    $order->setFormId($item['form_id']);
 
-                    $order->group_id = $this->cartId($cart);
-                    $order->group_master = ($i == 0);
-                    $order->invoice_option = 'issue-invoice';
-                    $order->title = $item['title'];
-                    $order->currency = $currencyCode;
-                    $order->service_type = $item['type'];
-                    $order->unit = $item['unit'] ?? null;
-                    $order->period = $item['period'] ?? null;
-                    $order->quantity = $item['quantity'] ?? null;
-                    $order->price = $item['price'] * $currency->getConversionRate();
-                    $order->discount = $item['discount_price'] * $currency->getConversionRate();
-                    $order->status = \Model_ClientOrder::STATUS_PENDING_SETUP;
-                    $order->notes = $item['notes'] ?? null;
-                    $order->config = json_encode($item);
-                    $order->created_at = date('Y-m-d H:i:s');
-                    $order->updated_at = date('Y-m-d H:i:s');
-                    $this->di['db']->store($order);
+                    $order->setGroupId((string) $this->cartId($cart));
+                    $order->setGroupMaster($i == 0);
+                    $order->setInvoiceOption('issue-invoice');
+                    $order->setTitle($item['title']);
+                    $order->setCurrency($currencyCode);
+                    $order->setServiceType($item['type']);
+                    $order->setUnit($item['unit'] ?? null);
+                    $order->setPeriod($item['period'] ?? null);
+                    $order->setQuantity($item['quantity'] ?? null);
+                    $order->setPrice($item['price'] * $currency->getConversionRate());
+                    $order->setDiscount($item['discount_price'] * $currency->getConversionRate());
+                    $order->setStatus(\Model_ClientOrder::STATUS_PENDING_SETUP);
+                    $order->setNotes($item['notes'] ?? null);
+                    $order->setConfig(json_encode($item));
+                    $this->di['em']->persist($order);
+                    $this->di['em']->flush();
 
                     $orders[] = $order;
 
                     // Reserve promo capacity at order creation time.
                     if ($promo instanceof Promo && $promoProductService !== null) {
                         $promoProductService->reservePromoForOrder($promo, $order);
-                        $reservedOrderIds[] = (int) $order->id;
+                        $reservedOrderIds[] = $order->getId();
                         ++$reservedCount;
                     }
 
@@ -754,24 +760,24 @@ class Service implements InjectionAwareInterface
                     $orderService->saveStatusChange($order, 'Order Created');
 
                     $invoice_items[] = [
-                        'title' => $order->title,
-                        'price' => $order->price,
-                        'quantity' => $order->quantity,
-                        'unit' => $order->unit,
-                        'period' => $order->period,
+                        'title' => $order->getTitle(),
+                        'price' => $order->getPrice(),
+                        'quantity' => $order->getQuantity(),
+                        'unit' => $order->getUnit(),
+                        'period' => $order->getPeriod(),
                         'taxed' => $taxed,
                         'type' => \Model_InvoiceItem::TYPE_ORDER,
-                        'rel_id' => $order->id,
+                        'rel_id' => $order->getId(),
                         'task' => \Model_InvoiceItem::TASK_ACTIVATE,
                     ];
 
-                    if ($order->discount > 0) {
+                    if ($order->getDiscount() > 0) {
                         $invoice_items[] = [
-                            'title' => __trans('Discount: :product', [':product' => $order->title]),
-                            'price' => $order->discount * -1,
+                            'title' => __trans('Discount: :product', [':product' => $order->getTitle()]),
+                            'price' => $order->getDiscount() * -1,
                             'quantity' => 1,
                             'unit' => 'discount',
-                            'rel_id' => $order->id,
+                            'rel_id' => $order->getId(),
                             'taxed' => $taxed,
                         ];
                     }
@@ -779,7 +785,7 @@ class Service implements InjectionAwareInterface
                     if ($item['setup_price'] > 0) {
                         $setup_price = ($item['setup_price'] * $currency->getConversionRate()) - ($item['discount_setup'] * $currency->getConversionRate());
                         $invoice_items[] = [
-                            'title' => __trans(':product setup', [':product' => $order->title]),
+                            'title' => __trans(':product setup', [':product' => $order->getTitle()]),
                             'price' => $setup_price,
                             'quantity' => 1,
                             'unit' => 'service',
@@ -802,21 +808,32 @@ class Service implements InjectionAwareInterface
                     $balanceAmount = $clientBalanceService->getClientBalance($client);
                     $useCredits = $balanceAmount >= $ca['total'];
 
-                    $invoiceService->approveInvoice($invoiceModel, ['id' => $invoiceModel->id, 'use_credits' => $useCredits]);
+                    $invoiceService->approveInvoice($invoiceModel, ['id' => $invoiceModel->getId(), 'use_credits' => $useCredits]);
 
-                    if ($invoiceModel->status == \Model_Invoice::STATUS_UNPAID) {
+                    $isUnpaid = $invoiceModel instanceof Invoice
+                        ? $invoiceModel->getStatus() === \Model_Invoice::STATUS_UNPAID
+                        : $invoiceModel->status === \Model_Invoice::STATUS_UNPAID;
+
+                    if ($isUnpaid) {
+                        $invoiceId = $invoiceModel instanceof Invoice
+                            ? $invoiceModel->getId()
+                            : $invoiceModel->id;
                         foreach ($orders as $order) {
-                            $order->unpaid_invoice_id = $invoiceModel->id;
-                            $this->di['db']->store($order);
+                            $order->setUnpaidInvoiceId($invoiceId);
+                            $this->di['em']->persist($order);
                         }
+                        $this->di['em']->flush();
                     }
                 }
 
                 if ($promo instanceof Promo && $promoProductService !== null) {
-                    $redemptionStatus = isset($invoiceModel) && $invoiceModel instanceof \Model_Invoice && $invoiceModel->status === \Model_Invoice::STATUS_UNPAID
+                    $redemptionStatus = isset($invoiceModel) && (
+                        ($invoiceModel instanceof Invoice && $invoiceModel->getStatus() === \Model_Invoice::STATUS_UNPAID)
+                        || ($invoiceModel instanceof \Model_Invoice && $invoiceModel->status === \Model_Invoice::STATUS_UNPAID)
+                    )
                         ? \Box\Mod\Product\Entity\PromoRedemption::STATUS_RESERVED
                         : \Box\Mod\Product\Entity\PromoRedemption::STATUS_COMMITTED;
-                    $checkoutInvoice = $invoiceModel instanceof \Model_Invoice ? $invoiceModel : null;
+                    $checkoutInvoice = $invoiceModel instanceof \Model_Invoice || $invoiceModel instanceof Invoice ? $invoiceModel : null;
 
                     $promoProductService->createCheckoutPromoRedemptions($promo, $client, $orders, $checkoutInvoice, $redemptionStatus);
                 }
@@ -825,7 +842,7 @@ class Service implements InjectionAwareInterface
                 $orderService = $this->di['mod_service']('Order');
                 $ids = [];
                 foreach ($orders as $order) {
-                    $ids[] = $order->id;
+                    $ids[] = $order->getId();
                     $oa = $orderService->toApiArray($order, false, $client);
                     $product = $this->getProductService()->findProductById((int) $oa['product_id']);
 
@@ -838,7 +855,11 @@ class Service implements InjectionAwareInterface
                             $orderService->activateOrder($order);
                         }
 
-                        if ($ca['total'] > 0 && $product->getSetup() == \Box\Mod\Product\Service::SETUP_AFTER_PAYMENT && $invoiceModel->status == \Model_Invoice::STATUS_PAID) {
+                        $isPaid = $invoiceModel instanceof Invoice
+                            ? $invoiceModel->getStatus() === \Model_Invoice::STATUS_PAID
+                            : $invoiceModel->status === \Model_Invoice::STATUS_PAID;
+
+                        if ($ca['total'] > 0 && $product->getSetup() == \Box\Mod\Product\Service::SETUP_AFTER_PAYMENT && $isPaid) {
                             $orderService->activateOrder($order);
                         }
                     } catch (\Exception $e) {

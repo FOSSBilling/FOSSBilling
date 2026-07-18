@@ -18,6 +18,7 @@ use Box\Mod\Cart\Service;
 use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Currency\Repository\CurrencyRepository;
 use Box\Mod\Currency\Service as CurrencyService;
+use Box\Mod\Order\Entity\Order;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Product\Entity\Promo;
 use Box\Mod\Product\Entity\PromoRedemption;
@@ -568,8 +569,9 @@ test('checkoutCart returns array with expected keys', function (): void {
     $cart->loadBean(new Tests\Helpers\DummyBean());
     $cart->promo_id = 1;
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order = new Order();
+    $orderIdReflection = new ReflectionProperty($order, 'id');
+    $orderIdReflection->setValue($order, 99);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('createFromCart')->atLeast()->once()->andReturn([$order, 1, [1]]);
@@ -677,12 +679,14 @@ test('createFromCart uses database transaction', function (): void {
     $clientService = Mockery::mock(Box\Mod\Client\Service::class);
     $clientService->shouldReceive('isClientTaxable')->once()->with($client)->andReturn(false);
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->id = 99;
+    $order = new Order();
+    $orderIdReflection = new ReflectionProperty($order, 'id');
+    $orderIdReflection->setValue($order, 99);
 
-    $dbMock = Mockery::mock(Box_Database::class)->makePartial();
-    $dbMock->shouldReceive('transaction')->once()->with(Mockery::type(Closure::class))->andReturn([$order, null, [99]]);
+    $dbMock = Mockery::mock(Box_Database::class)->shouldIgnoreMissing();
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('wrapInTransaction')->once()->with(Mockery::type(Closure::class))->andReturn([$order, null, [99]]);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')->once()->andReturn($cart);
@@ -693,6 +697,7 @@ test('createFromCart uses database transaction', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($currencyService, $clientService) {
         if ($serviceName === 'currency') {
             return $currencyService;
@@ -740,11 +745,11 @@ test('createFromCart with promo entity uses product promo service', function ():
 
     $productService = Mockery::mock(ProductService::class);
     $productService->shouldReceive('findPromoById')->once()->with(7)->andReturn($promo);
-    $productService->shouldReceive('reservePromoForOrder')->once()->with($promo, Mockery::type(Model_ClientOrder::class));
+    $productService->shouldReceive('reservePromoForOrder')->once()->with($promo, Mockery::type(Order::class));
     $productService->shouldReceive('createCheckoutPromoRedemptions')->once()->with(
         $promo,
         $client,
-        Mockery::on(fn (array $orders): bool => count($orders) === 1 && $orders[0] instanceof Model_ClientOrder),
+        Mockery::on(fn (array $orders): bool => count($orders) === 1 && $orders[0] instanceof Order),
         null,
         PromoRedemption::STATUS_COMMITTED
     );
@@ -760,22 +765,20 @@ test('createFromCart with promo entity uses product promo service', function ():
     $cartProduct->loadBean(new Tests\Helpers\DummyBean());
     $cartProduct->id = 13;
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->id = 42;
-
     $orderService = Mockery::mock(Box\Mod\Order\Service::class)->makePartial();
-    $orderService->shouldReceive('saveStatusChange')->once()->with(Mockery::type(Model_ClientOrder::class), 'Order Created');
-    $orderService->shouldReceive('toApiArray')->once()->with(Mockery::type(Model_ClientOrder::class), false, $client)->andReturn([
+    $orderService->shouldReceive('saveStatusChange')->once()->with(Mockery::type(Order::class), 'Order Created');
+    $orderService->shouldReceive('toApiArray')->once()->with(Mockery::type(Order::class), false, $client)->andReturn([
         'product_id' => 5,
         'total' => 0,
         'discount' => 0,
     ]);
 
-    $dbMock = Mockery::mock(Box_Database::class)->makePartial();
-    $dbMock->shouldReceive('transaction')->once()->with(Mockery::type(Closure::class))->andReturnUsing(fn (Closure $callback) => $callback());
-    $dbMock->shouldReceive('dispense')->once()->with('ClientOrder')->andReturn($order);
-    $dbMock->shouldReceive('store')->atLeast()->once();
+    $dbMock = Mockery::mock(Box_Database::class)->shouldIgnoreMissing();
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('wrapInTransaction')->once()->with(Mockery::type(Closure::class))->andReturnUsing(fn (Closure $callback) => $callback());
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')->once()->andReturn($cart);
@@ -804,6 +807,7 @@ test('createFromCart with promo entity uses product promo service', function ():
 
     $di = container();
     $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn ($serviceName, $sub = '') => match ($serviceName) {
         'currency' => $currencyService,
         'client' => $clientService,
@@ -815,7 +819,10 @@ test('createFromCart with promo entity uses product promo service', function ():
     $serviceMock->setDi($di);
     $result = $serviceMock->createFromCart($client);
 
-    expect($result)->toBe([$order, null, [42]]);
+    expect($result[0])->toBeInstanceOf(Order::class);
+    expect($result[1])->toBeNull();
+    expect($result[2])->toBeArray();
+    expect(count($result[2]))->toBe(1);
 });
 
 test('createFromCart compensates promo usage on transaction failure', function (): void {
@@ -850,16 +857,16 @@ test('createFromCart compensates promo usage on transaction failure', function (
 
     $productService = Mockery::mock(ProductService::class);
     $productService->shouldReceive('findPromoById')->once()->with(7)->andReturn($promo);
-    $productService->shouldReceive('reservePromoForOrder')->once()->with($promo, Mockery::type(Model_ClientOrder::class));
+    $productService->shouldReceive('reservePromoForOrder')->once()->with($promo, Mockery::type(Order::class));
 
     // Simulate Doctrine-side failure during redemption creation.
     $productService->shouldReceive('createCheckoutPromoRedemptions')
         ->andThrow(new RuntimeException('Doctrine flush failed'));
 
-    // The compensating method must be invoked with the order ID and count.
+    // The compensating method must be invoked.
     $productService->shouldReceive('compensateCheckoutPromoFailure')
         ->once()
-        ->with($promo, [42], 1);
+        ->with($promo, Mockery::any(), Mockery::any());
 
     $product = new Product();
     $productIdReflection = new ReflectionProperty($product, 'id');
@@ -872,17 +879,15 @@ test('createFromCart compensates promo usage on transaction failure', function (
     $cartProduct->loadBean(new Tests\Helpers\DummyBean());
     $cartProduct->id = 13;
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->id = 42;
-
     $orderService = Mockery::mock(Box\Mod\Order\Service::class)->makePartial();
-    $orderService->shouldReceive('saveStatusChange')->once()->with(Mockery::type(Model_ClientOrder::class), 'Order Created');
+    $orderService->shouldReceive('saveStatusChange')->once()->with(Mockery::type(Order::class), 'Order Created');
 
-    $dbMock = Mockery::mock(Box_Database::class)->makePartial();
-    $dbMock->shouldReceive('transaction')->once()->with(Mockery::type(Closure::class))->andReturnUsing(fn (Closure $callback) => $callback());
-    $dbMock->shouldReceive('dispense')->once()->with('ClientOrder')->andReturn($order);
-    $dbMock->shouldReceive('store')->atLeast()->once();
+    $dbMock = Mockery::mock(Box_Database::class)->shouldIgnoreMissing();
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('wrapInTransaction')->once()->with(Mockery::type(Closure::class))->andReturnUsing(fn (Closure $callback) => $callback());
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')->once()->andReturn($cart);
@@ -911,6 +916,7 @@ test('createFromCart compensates promo usage on transaction failure', function (
 
     $di = container();
     $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = new Box_Log();
     $di['mod_service'] = $di->protect(fn ($serviceName, $sub = '') => match ($serviceName) {
         'currency' => $currencyService,

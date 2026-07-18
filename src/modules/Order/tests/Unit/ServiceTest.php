@@ -935,19 +935,16 @@ test('toApiArray returns expected keys', function (): void {
     $dbMock = Mockery::mock(Box_Database::class);
     $dbMock->shouldReceive('toArray')->atLeast()->once()->andReturn([]);
 
-    $modelClient = new Model_Client();
-    $modelClient->loadBean(new Tests\Helpers\DummyBean());
+    $clientEntity = new Box\Mod\Client\Entity\Client();
 
-    $exceptionError = 'Client not found';
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->with('Client', $model->client_id, $exceptionError)
-        ->andReturn($modelClient);
+    $clientRepoMock = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepoMock->shouldReceive('find')->with(1)->atLeast()->once()->andReturn($clientEntity);
 
     $orderMetaRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderMetaRepository::class);
     $orderMetaRepoMock->shouldReceive('getPairsForOrder')->atLeast()->once()->andReturn([]);
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')->with(Box\Mod\Order\Entity\OrderMeta::class)->atLeast()->once()->andReturn($orderMetaRepoMock);
+    $emMock->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->atLeast()->once()->andReturn($clientRepoMock);
     $emMock->shouldIgnoreMissing();
 
     $productService = Mockery::mock(Box\Mod\Product\Service::class);

@@ -69,14 +69,19 @@ test('creates an order', function (): void {
     $productServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
     $productServiceMock->shouldReceive('findProductById')->once()->with(1)->andReturn($productModel);
 
-    $clientModel = new Model_Client();
-    $clientModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientEntity = new Box\Mod\Client\Entity\Client();
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('getExistingModelById')->once()->andReturn($clientModel);
+    $clientRepoMock = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepoMock->shouldReceive('find')->with(1)->once()->andReturn($clientEntity);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')
+        ->with(Box\Mod\Client\Entity\Client::class)
+        ->once()
+        ->andReturn($clientRepoMock);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn (string $name): Mockery\MockInterface => match (strtolower($name)) {
         'product' => $productServiceMock,
         default => Mockery::mock()->shouldIgnoreMissing(),
@@ -133,7 +138,7 @@ test('uses invoice service to validate mark paid request when permission granted
     $serviceMock->shouldReceive('createOrder')
         ->once()
         ->with(
-            Mockery::type(Model_Client::class),
+            Mockery::type(Box\Mod\Client\Entity\Client::class),
             Mockery::type(Box\Mod\Product\Entity\Product::class),
             Mockery::on(fn (array $data): bool => $data['gateway_id'] === 5
                 && $data['invoice_option'] === 'issue-invoice'
@@ -165,14 +170,19 @@ test('uses invoice service to validate mark paid request when permission granted
     $productServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
     $productServiceMock->shouldReceive('findProductById')->once()->with(1)->andReturn($productModel);
 
-    $clientModel = new Model_Client();
-    $clientModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientEntity = new Box\Mod\Client\Entity\Client();
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('getExistingModelById')->once()->andReturn($clientModel);
+    $clientRepoMock = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepoMock->shouldReceive('find')->with(1)->once()->andReturn($clientEntity);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')
+        ->with(Box\Mod\Client\Entity\Client::class)
+        ->once()
+        ->andReturn($clientRepoMock);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn (string $name): Mockery\MockInterface => match (strtolower($name)) {
         'staff' => $staffServiceMock,
         'invoice' => $invoiceServiceMock,

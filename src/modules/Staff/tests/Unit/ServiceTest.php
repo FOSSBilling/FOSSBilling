@@ -908,42 +908,49 @@ test('getSearchQuery returns correct query and params', function (array $data, s
 })->with('searchFilters');
 
 test('getCronAdmin returns existing cron admin', function (): void {
-    $adminModel = new Model_Admin();
-    $adminModel->loadBean(new Tests\Helpers\DummyBean());
+    $adminEntity = new Admin();
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')->atLeast()->once()
-        ->andReturn($adminModel);
+    $adminRepoMock = Mockery::mock(AdminRepository::class);
+    $adminRepoMock->shouldReceive('findCronAdmin')->atLeast()->once()
+        ->andReturn($adminEntity);
+
+    $adminGroupRepoMock = Mockery::mock(AdminGroupRepository::class)->shouldIgnoreMissing();
+    $adminGroupMemberRepoMock = Mockery::mock(AdminGroupMemberRepository::class)->shouldIgnoreMissing();
+
+    $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $emMock->shouldReceive('getRepository')->with(Admin::class)->andReturn($adminRepoMock);
+    $emMock->shouldReceive('getRepository')->with(AdminGroup::class)->andReturn($adminGroupRepoMock);
+    $emMock->shouldReceive('getRepository')->with(AdminGroupMember::class)->andReturn($adminGroupMemberRepoMock);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
 
     $service = new Service();
     $service->setDi($di);
 
     $result = $service->getCronAdmin();
     expect($result)->not->toBeEmpty();
-    expect($result)->toBeInstanceOf(Model_Admin::class);
+    expect($result)->toBeInstanceOf(Admin::class);
 });
 
 test('getCronAdmin creates and returns new cron admin', function (): void {
-    $adminModel = new Model_Admin();
-    $adminModel->loadBean(new Tests\Helpers\DummyBean());
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')->atLeast()->once()
+    $adminRepoMock = Mockery::mock(AdminRepository::class);
+    $adminRepoMock->shouldReceive('findCronAdmin')->atLeast()->once()
         ->andReturn(null);
 
-    $dbMock->shouldReceive('dispense')->atLeast()->once()
-        ->andReturn($adminModel);
+    $adminGroupRepoMock = Mockery::mock(AdminGroupRepository::class)->shouldIgnoreMissing();
+    $adminGroupMemberRepoMock = Mockery::mock(AdminGroupMemberRepository::class)->shouldIgnoreMissing();
 
-    $dbMock->shouldReceive('store')->atLeast()->once();
+    $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $emMock->shouldReceive('getRepository')->with(Admin::class)->andReturn($adminRepoMock);
+    $emMock->shouldReceive('getRepository')->with(AdminGroup::class)->andReturn($adminGroupRepoMock);
+    $emMock->shouldReceive('getRepository')->with(AdminGroupMember::class)->andReturn($adminGroupMemberRepoMock);
 
     $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['tools'] = new FOSSBilling\Tools();
     $di['password'] = $passwordMock;
 
@@ -952,7 +959,7 @@ test('getCronAdmin creates and returns new cron admin', function (): void {
 
     $result = $service->getCronAdmin();
     expect($result)->not->toBeEmpty();
-    expect($result)->toBeInstanceOf(Model_Admin::class);
+    expect($result)->toBeInstanceOf(Admin::class);
 });
 
 test('toModel_AdminApiArray returns admin array data', function (): void {

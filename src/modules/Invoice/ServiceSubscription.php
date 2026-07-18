@@ -11,10 +11,12 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice;
 
+use Box\Mod\Client\Entity\Client as ClientEntity;
 use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Repository\PayGatewayRepository;
 use Box\Mod\Invoice\Repository\SubscriptionRepository;
+use Box\Mod\Order\Entity\Order as OrderEntity;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 
@@ -115,8 +117,8 @@ class ServiceSubscription implements InjectionAwareInterface
             'updated_at' => $model instanceof Subscription ? $model->getUpdatedAt() : $model->updated_at,
         ];
         $clientId = $model instanceof Subscription ? $model->getClientId() : $model->client_id;
-        $client = $this->di['db']->load('Client', $clientId);
-        if ($client instanceof \Model_Client) {
+        $client = $this->di['em']->getRepository(ClientEntity::class)->find($clientId);
+        if ($client instanceof \Model_Client || $client instanceof ClientEntity) {
             $clientService = $this->di['mod_service']('Client');
             $result['client'] = $clientService->toApiArray($client, false, $identity);
         } else {
@@ -338,8 +340,12 @@ class ServiceSubscription implements InjectionAwareInterface
 
             $orderService = $this->di['mod_service']('Order');
             foreach ($orderIds as $orderId) {
-                $order = $this->di['db']->getExistingModelById('ClientOrder', (int) $orderId, 'Order not found');
-                if (in_array($order->status, [\Model_ClientOrder::STATUS_CANCELED, \Model_ClientOrder::STATUS_PENDING_SETUP, \Model_ClientOrder::STATUS_FAILED_SETUP], true)) {
+                $order = $this->di['em']->getRepository(OrderEntity::class)->find((int) $orderId);
+                if (!$order instanceof \Model_ClientOrder && !$order instanceof OrderEntity) {
+                    throw new InformationException('Order not found');
+                }
+                $orderStatus = $order instanceof OrderEntity ? $order->getStatus() : $order->status;
+                if (in_array($orderStatus, [\Model_ClientOrder::STATUS_CANCELED, \Model_ClientOrder::STATUS_PENDING_SETUP, \Model_ClientOrder::STATUS_FAILED_SETUP], true)) {
                     continue;
                 }
 

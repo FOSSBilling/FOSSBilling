@@ -160,6 +160,8 @@ function container(): Container
     $di['mod_config'] = $di->protect(fn (string $name): array => []);
     $di['cookie_queue'] = fn (): \FOSSBilling\Http\CookieQueue => new \FOSSBilling\Http\CookieQueue();
     $di['em'] = static function (): object {
+        $extensionRepo = \Mockery::mock(\Box\Mod\Extension\Repository\ExtensionRepository::class)->shouldIgnoreMissing();
+
         $adminRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminRepository::class)->shouldIgnoreMissing();
         $adminGroupRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminGroupRepository::class)->shouldIgnoreMissing();
         $adminGroupMemberRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminGroupMemberRepository::class)->shouldIgnoreMissing();
@@ -618,7 +620,7 @@ function container(): Container
             \Box\Mod\Order\Entity\Order::class => $orderRepository,
             \Box\Mod\Order\Entity\OrderMeta::class => $orderMetaRepository,
             \Box\Mod\Order\Entity\OrderStatus::class => $orderStatusRepository,
-            \Box\Mod\Extension\Entity\Extension::class => \Mockery::mock(\Box\Mod\Extension\Repository\ExtensionRepository::class)->shouldIgnoreMissing(),
+            \Box\Mod\Extension\Entity\Extension::class => $extensionRepo,
             \Box\Mod\Servicehosting\Entity\ServiceHosting::class => $serviceHostingRepository,
             \Box\Mod\Servicehosting\Entity\ServiceHostingHp::class => $serviceHostingHpRepository,
             \Box\Mod\Servicehosting\Entity\ServiceHostingServer::class => $serviceHostingServerRepository,

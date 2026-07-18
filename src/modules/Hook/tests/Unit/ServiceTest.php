@@ -10,6 +10,8 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Extension\Entity\Extension;
+
 use function Tests\Helpers\container;
 
 test('gets dependency injection container', function (): void {
@@ -52,16 +54,11 @@ test('handles on after admin activate extension', function (): void {
     $expectation2 = $eventMock->shouldReceive('setReturnValue');
     $expectation2->atLeast()->once();
 
-    $model = new Model_Extension();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $model->id = 1;
-    $model->type = 'mod';
-
-    $dbMock = Mockery::mock('\Box_Database');
-    /** @var Mockery\Expectation $expectation3 */
-    $expectation3 = $dbMock->shouldReceive('load');
-    $expectation3->atLeast()->once();
-    $expectation3->andReturn($model);
+    $extensionEntity = new Extension();
+    $propType = new ReflectionProperty($extensionEntity, 'type');
+    $propType->setValue($extensionEntity, 'mod');
+    $propName = new ReflectionProperty($extensionEntity, 'name');
+    $propName->setValue($extensionEntity, 'mod_test');
 
     $hookService = Mockery::mock(Box\Mod\Hook\Service::class);
     /** @var Mockery\Expectation $expectation4 */
@@ -69,7 +66,11 @@ test('handles on after admin activate extension', function (): void {
     $expectation4->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $extensionRepo = $di['em']->getRepository(Extension::class);
+    $extensionRepo->shouldReceive('find')
+        ->with(1)
+        ->andReturn($extensionEntity);
+
     $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $hookService);
 
     /** @var Mockery\Expectation $expectation5 */
@@ -153,18 +154,6 @@ test('batch connects', function (): void {
     $dbMock->shouldReceive('exec')
         ->byDefault();
 
-    $extensionModel = new Model_ExtensionMeta();
-    $extensionModel->loadBean(new Tests\Helpers\DummyBean());
-
-    /** @var Mockery\Expectation $expectation2 */
-    $expectation2 = $dbMock->shouldReceive('dispense');
-    $expectation2->atLeast()->once();
-    $expectation2->andReturn($extensionModel);
-
-    /** @var Mockery\Expectation $expectation3 */
-    $expectation3 = $dbMock->shouldReceive('store');
-    $expectation3->atLeast()->once();
-
     $returnArr = [
         [
             'id' => 2,
@@ -195,9 +184,17 @@ test('batch connects', function (): void {
 
     $di = container();
     $di['db'] = $dbMock;
-    $dbMock->shouldReceive('findOne')
-        ->byDefault()
-        ->andReturn(new Model_Extension());
+
+    $extensionEntity = new Extension();
+    $propType = new ReflectionProperty($extensionEntity, 'type');
+    $propType->setValue($extensionEntity, 'mod');
+    $propName = new ReflectionProperty($extensionEntity, 'name');
+    $propName->setValue($extensionEntity, 'activity');
+
+    $extensionRepo = $di['em']->getRepository(Extension::class);
+    $extensionRepo->shouldReceive('findOneBy')
+        ->andReturn($extensionEntity);
+
     $di['mod'] = $di->protect(fn () => $boxModMock);
     $di['mod_service'] = $di->protect(function ($name) use ($extensionServiceMock) {
         if ($name == 'extension') {

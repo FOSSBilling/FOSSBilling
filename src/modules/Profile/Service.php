@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Profile;
 
+use Box\Mod\Client\Entity\Client;
+use Box\Mod\Staff\Entity\Admin;
 use FOSSBilling\i18n;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
@@ -40,14 +42,19 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function changeAdminPassword(\Model_Admin $admin, $new_password): bool
+    public function changeAdminPassword(\Model_Admin|Admin $admin, $new_password): bool
     {
         $event_params = ['id' => $admin->id];
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffProfilePasswordChange', 'params' => $event_params]);
 
         $admin->pass = $this->di['password']->hashIt($new_password);
         $admin->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($admin);
+        if ($admin instanceof Admin) {
+            $this->di['em']->persist($admin);
+        } else {
+            $this->di['db']->store($admin);
+        }
+        $this->di['em']->flush();
 
         $event_params = [];
         $event_params['id'] = $admin->id;
@@ -58,7 +65,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function generateNewApiKey(\Model_Admin $admin): bool
+    public function generateNewApiKey(\Model_Admin|Admin $admin): bool
     {
         $event_params = [];
         $event_params['id'] = $admin->id;
@@ -66,7 +73,12 @@ class Service implements InjectionAwareInterface
 
         $admin->api_token = $this->di['tools']->generatePassword(32);
         $admin->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($admin);
+        if ($admin instanceof Admin) {
+            $this->di['em']->persist($admin);
+        } else {
+            $this->di['db']->store($admin);
+        }
+        $this->di['em']->flush();
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffApiKeyChange', 'params' => $event_params]);
 
@@ -75,7 +87,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function updateAdmin(\Model_Admin $admin, array $data): bool
+    public function updateAdmin(\Model_Admin|Admin $admin, array $data): bool
     {
         $event_params = $data;
         $event_params['id'] = $admin->id;
@@ -88,7 +100,12 @@ class Service implements InjectionAwareInterface
             $admin->timezone = i18n::validateTimezone($data['timezone']);
         }
         $admin->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($admin);
+        if ($admin instanceof Admin) {
+            $this->di['em']->persist($admin);
+        } else {
+            $this->di['db']->store($admin);
+        }
+        $this->di['em']->flush();
 
         $event_params = [];
         $event_params['id'] = $admin->id;
@@ -99,7 +116,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function getAdminIdentityArray(\Model_Admin $identity): array
+    public function getAdminIdentityArray(\Model_Admin|Admin $identity): array
     {
         return [
             'id' => $identity->id,
@@ -114,7 +131,7 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public function updateClient(\Model_Client $client, array $data = []): bool
+    public function updateClient(\Model_Client|Client $client, array $data = []): bool
     {
         $event_params = $data;
         $event_params['id'] = $client->id;
@@ -212,7 +229,12 @@ class Service implements InjectionAwareInterface
 
         $client->updated_at = date('Y-m-d H:i:s');
 
-        $this->di['db']->store($client);
+        if ($client instanceof Client) {
+            $this->di['em']->persist($client);
+        } else {
+            $this->di['db']->store($client);
+        }
+        $this->di['em']->flush();
 
         $this->di['events_manager']->fire(['event' => 'onAfterClientProfileUpdate', 'params' => ['id' => $client->id]]);
 
@@ -221,25 +243,35 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function resetApiKey(\Model_Client $client)
+    public function resetApiKey(\Model_Client|Client $client)
     {
         $client->api_token = $this->di['tools']->generatePassword(32);
         $client->updated_at = date('Y-m-d H:i:s');
 
-        $this->di['db']->store($client);
+        if ($client instanceof Client) {
+            $this->di['em']->persist($client);
+        } else {
+            $this->di['db']->store($client);
+        }
+        $this->di['em']->flush();
 
         $this->di['logger']->info('Generated new API key');
 
         return $client->api_token;
     }
 
-    public function changeClientPassword(\Model_Client $client, $new_password): bool
+    public function changeClientPassword(\Model_Client|Client $client, $new_password): bool
     {
         $event_params = ['id' => $client->id];
         $this->di['events_manager']->fire(['event' => 'onBeforeClientProfilePasswordChange', 'params' => $event_params]);
 
         $client->pass = $this->di['password']->hashIt($new_password);
-        $this->di['db']->store($client);
+        if ($client instanceof Client) {
+            $this->di['em']->persist($client);
+        } else {
+            $this->di['db']->store($client);
+        }
+        $this->di['em']->flush();
 
         $this->di['events_manager']->fire(['event' => 'onAfterClientProfilePasswordChange', 'params' => ['id' => $client->id]]);
 
@@ -341,8 +373,6 @@ class Service implements InjectionAwareInterface
 
     private function trashSessionByArray(array $session): void
     {
-        $bean = $this->di['db']->dispense('session');
-        $bean->import($session);
-        $this->di['db']->trash($bean);
+        $this->di['em']->getConnection()->executeStatement('DELETE FROM session WHERE id = :id', ['id' => $session['id']]);
     }
 }

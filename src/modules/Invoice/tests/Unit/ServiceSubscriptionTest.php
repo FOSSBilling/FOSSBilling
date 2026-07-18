@@ -260,9 +260,10 @@ test('finalizes a scheduled cancellation by canceling its order and service', fu
     $idProp = new ReflectionProperty(Box\Mod\Invoice\Entity\Subscription::class, 'id');
     $idProp->setValue($subscriptionEntity, 7);
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->status = Model_ClientOrder::STATUS_ACTIVE;
+    $orderEntity = new Box\Mod\Order\Entity\Order();
+    $orderIdProp = new ReflectionProperty($orderEntity, 'id');
+    $orderIdProp->setValue($orderEntity, 10);
+    $orderEntity->setStatus(Model_ClientOrder::STATUS_ACTIVE);
 
     $dbal = createSubscriptionDbal();
     $dbal->insert('client_order_meta', [
@@ -274,24 +275,26 @@ test('finalizes a scheduled cancellation by canceling its order and service', fu
     $subscriptionRepoMock = Mockery::mock(Box\Mod\Invoice\Repository\SubscriptionRepository::class);
     $subscriptionRepoMock->shouldReceive('find')->once()->with(7)->andReturn($subscriptionEntity);
 
-    $db = Mockery::mock(Box_Database::class);
-    $db->shouldReceive('getExistingModelById')->once()->with('ClientOrder', 10, 'Order not found')->andReturn($order);
+    $orderRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderRepository::class);
+    $orderRepoMock->shouldReceive('find')->once()->with(10)->andReturn($orderEntity);
 
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')
         ->with(Box\Mod\Invoice\Entity\Subscription::class)
         ->andReturn($subscriptionRepoMock);
+    $emMock->shouldReceive('getRepository')
+        ->with(Box\Mod\Order\Entity\Order::class)
+        ->andReturn($orderRepoMock);
     $emMock->shouldReceive('persist')->andReturnNull();
     $emMock->shouldReceive('flush')->andReturnNull();
 
     $orderService = Mockery::mock(Box\Mod\Order\Service::class);
     $orderService->shouldReceive('finalizeCancellationFromGateway')
         ->once()
-        ->with($order, 'Subscription ended at the payment gateway')
+        ->with($orderEntity, 'Subscription ended at the payment gateway')
         ->andReturn(true);
 
     $di = container();
-    $di['db'] = $db;
     $di['em'] = $emMock;
     $di['dbal'] = $dbal;
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -376,23 +379,24 @@ test('converts to api array', function (): void {
     $service = new ServiceSubscription();
     $subscriptionModel = new Model_Subscription();
     $subscriptionModel->loadBean(new Tests\Helpers\DummyBean());
+    $subscriptionModel->client_id = 1;
+    $subscriptionModel->pay_gateway_id = 2;
 
-    $clientModel = new Model_Client();
-    $clientModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientEntity = new Box\Mod\Client\Entity\Client();
+    $clientIdProp = new ReflectionProperty($clientEntity, 'id');
+    $clientIdProp->setValue($clientEntity, 1);
 
     $gatewayEntity = new Box\Mod\Invoice\Entity\PayGateway();
     $gatewayEntity->setName('Test Gateway');
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('load')
-        ->atLeast()->once()
-        ->andReturnUsing(function () use ($clientModel) {
-            return $clientModel;
-        });
+    $clientRepoMock = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepoMock->shouldReceive('find')
+        ->with(1)
+        ->andReturn($clientEntity);
 
     $payGatewayRepoMock = Mockery::mock(Box\Mod\Invoice\Repository\PayGatewayRepository::class);
     $payGatewayRepoMock->shouldReceive('find')
-        ->atLeast()->once()
+        ->with(2)
         ->andReturn($gatewayEntity);
 
     $clientServiceMock = Mockery::mock(ClientService::class);
@@ -407,6 +411,9 @@ test('converts to api array', function (): void {
 
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')
+        ->with(Box\Mod\Client\Entity\Client::class)
+        ->andReturn($clientRepoMock);
+    $emMock->shouldReceive('getRepository')
         ->with(Box\Mod\Invoice\Entity\PayGateway::class)
         ->andReturn($payGatewayRepoMock);
 
@@ -419,7 +426,6 @@ test('converts to api array', function (): void {
             return $payGatewayService;
         }
     });
-    $di['db'] = $dbMock;
     $di['em'] = $emMock;
     $service->setDi($di);
 

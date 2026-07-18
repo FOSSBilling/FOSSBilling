@@ -19,6 +19,8 @@ use Box\Mod\Client\Repository\ClientBalanceRepository;
 use Box\Mod\Client\Repository\ClientGroupRepository;
 use Box\Mod\Client\Repository\ClientPasswordResetRepository;
 use Box\Mod\Client\Repository\ClientRepository;
+use Box\Mod\Invoice\Entity\Invoice;
+use Box\Mod\Order\Entity\Order as OrderEntity;
 use FOSSBilling\i18n;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
@@ -312,13 +314,13 @@ class Service implements InjectionAwareInterface
             return false;
         }
 
-        $invoice = $this->di['db']->findOne('Invoice', 'client_id = :client_id', [':client_id' => $model->id]);
-        if ($invoice instanceof \Model_Invoice) {
+        $invoice = $this->di['em']->getRepository(Invoice::class)->findOneBy(['clientId' => $model->id]);
+        if ($invoice instanceof Invoice || $invoice instanceof \Model_Invoice) {
             throw new InformationException('Currency cannot be changed. Client already has invoices issued.');
         }
 
-        $order = $this->di['db']->findOne('ClientOrder', 'client_id = :client_id', [':client_id' => $model->id]);
-        if ($order instanceof \Model_ClientOrder) {
+        $order = $this->di['em']->getRepository(OrderEntity::class)->findOneBy(['clientId' => $model->id]);
+        if ($order instanceof OrderEntity || $order instanceof \Model_ClientOrder) {
             throw new InformationException('Currency cannot be changed. Client already has orders.');
         }
 
@@ -449,11 +451,19 @@ class Service implements InjectionAwareInterface
         return $this->di['db']->findOne('Client', 'email = ? and pass = ? and status = ?', [$email, $password, Client::ACTIVE]);
     }
 
-    public function toApiArray(\Model_Client $model, $deep = false, $identity = null, bool $includeSensitive = false): array
+    public function toApiArray(Client|\Model_Client $model, $deep = false, $identity = null, bool $includeSensitive = false): array
     {
-        $client = $this->clientRepository->find((int) $model->id);
+        $modelId = $model instanceof Client ? $model->getId() : $model->id;
+        $client = $model instanceof Client ? $model : $this->clientRepository->find((int) $modelId);
 
         if (!$client instanceof Client) {
+            if ($model instanceof Client) {
+                $details = $model->toApiArray();
+                $details['billing_email'] = $model->getBillingEmail();
+
+                return $details;
+            }
+
             $details = [
                 'id' => $model->id,
                 'email' => $model->email,
@@ -486,7 +496,7 @@ class Service implements InjectionAwareInterface
             return $details;
         }
 
-        return $this->toClientApiArray($client, $model, $deep, $identity, $includeSensitive);
+        return $this->toClientApiArray($client, $model instanceof Client ? null : $model, $deep, $identity, $includeSensitive);
     }
 
     public function toClientApiArray(Client $client, ?\Model_Client $model = null, bool $deep = false, $identity = null, bool $includeSensitive = false): array
@@ -535,9 +545,11 @@ class Service implements InjectionAwareInterface
         return $details;
     }
 
-    public function getClientBalance(\Model_Client $c): float
+    public function getClientBalance(Client|\Model_Client $c): float
     {
-        return $this->clientBalanceRepository->getClientBalanceSum((int) $c->id);
+        $clientId = $c instanceof Client ? $c->getId() : $c->id;
+
+        return $this->clientBalanceRepository->getClientBalanceSum((int) $clientId);
     }
 
     private function getClientBalanceFromEntity(Client $client): float
@@ -567,7 +579,7 @@ class Service implements InjectionAwareInterface
         return $client;
     }
 
-    public function isClientTaxable(\Model_Client $model): bool
+    public function isClientTaxable(Client|\Model_Client $model): bool
     {
         $systemService = $this->di['mod_service']('system');
 
@@ -575,7 +587,8 @@ class Service implements InjectionAwareInterface
             return false;
         }
 
-        if ($model->tax_exempt) {
+        $taxExempt = $model instanceof Client ? $model->isTaxExempt() : $model->tax_exempt;
+        if ($taxExempt) {
             return false;
         }
 
@@ -597,7 +610,7 @@ class Service implements InjectionAwareInterface
 
     public function deleteGroup(\Model_ClientGroup $model): bool
     {
-        $client = $this->di['db']->findOne('Client', 'client_group_id = ?', [$model->id]);
+        $client = $this->clientRepository->findOneBy(['clientGroupId' => $model->id]);
         if ($client) {
             throw new \FOSSBilling\Exception('Cannot remove groups with clients');
         }

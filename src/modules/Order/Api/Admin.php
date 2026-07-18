@@ -15,8 +15,10 @@ declare(strict_types=1);
 
 namespace Box\Mod\Order\Api;
 
+use Box\Mod\Client\Entity\Client as ClientEntity;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Order\Repository\OrderRepository;
+use FOSSBilling\InformationException;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
@@ -110,13 +112,14 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             $this->checkPermissions('invoice');
 
             if (($data['invoice_option'] ?? 'no-invoice') !== 'issue-invoice') {
-                throw new \FOSSBilling\InformationException('Marking an invoice as paid requires the order to issue an invoice.');
+                throw new InformationException('Marking an invoice as paid requires the order to issue an invoice.');
             }
 
             $this->getDi()['mod_service']('Invoice')->validateAdminMarkAsPaidRequest($data);
         }
 
-        $client = $this->di['db']->getExistingModelById('Client', $data['client_id'], 'Client not found');
+        $client = $this->di['em']->getRepository(ClientEntity::class)->find($data['client_id'])
+            ?? throw new InformationException('Client not found');
         $product = $this->di['mod_service']('product')->findProductById((int) $data['product_id']);
 
         return $this->getService()->createOrder($client, $product, $data);
@@ -211,7 +214,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $order = $this->_getOrder($data);
         if ($order->status != \Model_ClientOrder::STATUS_SUSPENDED) {
-            throw new \FOSSBilling\InformationException('Only suspended orders can be unsuspended');
+            throw new InformationException('Only suspended orders can be unsuspended');
         }
 
         return $this->getService()->unsuspendFromOrder($order);
@@ -266,7 +269,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $order = $this->_getOrder($data);
         if ($order->status != \Model_ClientOrder::STATUS_CANCELED) {
-            throw new \FOSSBilling\InformationException('Only canceled orders can be uncanceled');
+            throw new InformationException('Only canceled orders can be uncanceled');
         }
 
         return $this->getService()->uncancelFromOrder($order);
@@ -471,7 +474,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $order = $this->getOrderRepository()->find((int) $data['id']);
         if (!$order instanceof Order) {
-            throw new \FOSSBilling\InformationException('Order Not Found');
+            throw new InformationException('Order Not Found');
         }
 
         return $order;

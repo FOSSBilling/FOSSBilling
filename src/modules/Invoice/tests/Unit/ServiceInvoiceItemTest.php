@@ -37,20 +37,24 @@ test('marks item as paid', function (): void {
         ->atLeast()->once()
         ->andReturn(1);
 
-    $clientOrder = new Model_ClientOrder();
-    $clientOrder->loadBean(new Tests\Helpers\DummyBean());
+    $orderEntity = new Box\Mod\Order\Entity\Order();
 
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('unsetUnpaidInvoice')
-        ->with($clientOrder);
+        ->with($orderEntity);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('load')
-        ->atLeast()->once()
-        ->andReturn($clientOrder);
+    $orderRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderRepository::class);
+    $orderRepoMock->shouldReceive('find')
+        ->with(1)
+        ->andReturn($orderEntity);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
+    $emMock->shouldReceive('getRepository')
+        ->with(Box\Mod\Order\Entity\Order::class)
+        ->andReturn($orderRepoMock);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
     $serviceMock->setDi($di);
 
@@ -79,13 +83,18 @@ test('throws exception when executing task for order type with client order not 
         ->atLeast()->once()
         ->andReturn($orderId);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('load')
-        ->atLeast()->once()
+    $orderRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderRepository::class);
+    $orderRepoMock->shouldReceive('find')
+        ->with($orderId)
         ->andReturn(null);
 
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
+    $emMock->shouldReceive('getRepository')
+        ->with(Box\Mod\Order\Entity\Order::class)
+        ->andReturn($orderRepoMock);
+
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->executeTask($invoiceItemModel))
@@ -274,42 +283,33 @@ test('credits invoice item', function (): void {
     $invoiceItemModel->loadBean(new Tests\Helpers\DummyBean());
     $invoiceItemModel->invoice_id = 1;
 
-    $clientModel = new Model_Client();
-    $clientModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientEntity = new Box\Mod\Client\Entity\Client();
+    $clientIdProp = new ReflectionProperty($clientEntity, 'id');
+    $clientIdProp->setValue($clientEntity, 1);
 
-    $clientBalanceModel = new Model_Client();
-    $clientBalanceModel->loadBean(new Tests\Helpers\DummyBean());
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')
-        ->with('Client', 1, 'Client not found')
-        ->andReturn($clientModel);
-    $dbMock->shouldReceive('dispense')
-        ->with('ClientBalance')
-        ->andReturn($clientBalanceModel);
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once();
+    $invoiceEntity = new Box\Mod\Invoice\Entity\Invoice();
+    $invoiceIdProp = new ReflectionProperty($invoiceEntity, 'id');
+    $invoiceIdProp->setValue($invoiceEntity, 1);
+    $clientIdInvProp = new ReflectionProperty($invoiceEntity, 'clientId');
+    $clientIdInvProp->setValue($invoiceEntity, 1);
 
     $invoiceServiceMock = Mockery::mock(InvoiceService::class);
     $invoiceServiceMock->shouldReceive('addNote')
         ->atLeast()->once();
 
-    $di = container();
-    $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $invoiceServiceMock);
-
-    $invoiceEntity = new Model_Invoice();
-    $invoiceEntity->loadBean(new Tests\Helpers\DummyBean());
-    $invoiceEntity->id = 1;
-    $invoiceEntity->client_id = 1;
-    $invoiceEntity->currency = 'USD';
+    $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepo->shouldReceive('find')->with(1)->andReturn($clientEntity);
 
     $invoiceRepo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
     $invoiceRepo->shouldReceive('find')->with(1)->andReturn($invoiceEntity);
 
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
     $emMock->shouldReceive('getRepository')->with(Box\Mod\Invoice\Entity\Invoice::class)->andReturn($invoiceRepo);
+    $emMock->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepo);
+
+    $di = container();
     $di['em'] = $emMock;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $invoiceServiceMock);
 
     $serviceMock->setDi($di);
     $serviceMock->creditInvoiceItem($invoiceItemModel);

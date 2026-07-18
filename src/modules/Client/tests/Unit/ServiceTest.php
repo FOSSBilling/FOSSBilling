@@ -321,15 +321,30 @@ test('canChangeCurrency returns true when no invoices exist', function (): void 
     $currency = 'EUR';
     $model = new Model_Client();
     $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->id = 1;
     $model->currency = 'USD';
 
-    $database = Mockery::mock('\Box_Database');
-    $database->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn(null);
-
     $di = container();
-    $di['db'] = $database;
+    $di['em']->shouldReceive('getRepository')
+        ->with(Box\Mod\Invoice\Entity\Invoice::class)
+        ->andReturnUsing(function () {
+            $repo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
+            $repo->shouldReceive('findOneBy')
+                ->with(['clientId' => 1])
+                ->andReturn(null);
+
+            return $repo;
+        });
+    $di['em']->shouldReceive('getRepository')
+        ->with(Box\Mod\Order\Entity\Order::class)
+        ->andReturnUsing(function () {
+            $repo = Mockery::mock(Box\Mod\Order\Repository\OrderRepository::class);
+            $repo->shouldReceive('findOneBy')
+                ->with(['clientId' => 1])
+                ->andReturn(null);
+
+            return $repo;
+        });
 
     $service->setDi($di);
     $result = $service->canChangeCurrency($model, $currency);
@@ -374,21 +389,22 @@ test('canChangeCurrency throws exception when client has invoices', function ():
     $model->id = 1;
     $model->currency = 'USD';
 
-    $invoiceModel = new Model_Invoice();
-    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceEntity = new Box\Mod\Invoice\Entity\Invoice();
 
-    $database = Mockery::mock('\Box_Database');
-    $database->shouldReceive('findOne')
-        ->once()
-        ->andReturn($invoiceModel);
+    $invoiceRepoMock = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
+    $invoiceRepoMock->shouldReceive('findOneBy')
+        ->with(['clientId' => 1])
+        ->andReturn($invoiceEntity);
 
     $di = container();
-    $di['db'] = $database;
+    $di['em']->shouldReceive('getRepository')
+        ->with(Box\Mod\Invoice\Entity\Invoice::class)
+        ->andReturn($invoiceRepoMock);
 
     $service->setDi($di);
 
     $service->canChangeCurrency($model, $currency);
-})->throws(FOSSBilling\Exception::class, 'Currency cannot be changed. Client already has invoices issued.');
+})->throws(FOSSBilling\InformationException::class, 'Currency cannot be changed. Client already has invoices issued.');
 
 dataset('searchBalanceQueryData', [
     [[], 'FROM client_balance as m', []],
@@ -764,19 +780,25 @@ test('deleteGroup returns true', function (): void {
 
 test('deleteGroup throws exception when group has clients', function (): void {
     $service = new Box\Mod\Client\Service();
-    $clientModel = new Model_Client();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn($clientModel);
+    $clientEntity = new Box\Mod\Client\Entity\Client();
+
+    $clientRepoMock = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepoMock->shouldReceive('findOneBy')
+        ->with(['clientGroupId' => 1])
+        ->andReturn($clientEntity);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getRepository')
+        ->with(Box\Mod\Client\Entity\Client::class)
+        ->andReturn($clientRepoMock);
+    $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service->setDi($di);
 
     $model = new Model_ClientGroup();
     $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->id = 1;
+
     $service->deleteGroup($model);
 })->throws(FOSSBilling\Exception::class, 'Cannot remove groups with clients');
 
