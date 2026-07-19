@@ -17,6 +17,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 function createSubscriptionDbal(): Connection
 {
@@ -58,14 +59,13 @@ test('creates a subscription', function (): void {
         'gateway_id' => 2,
     ];
 
-    $result = $service->create(new Model_Client(), new Model_PayGateway(), $data);
+    $result = $service->create(createEntity(\Box\Mod\Client\Entity\Client::class), createEntity(\Box\Mod\Invoice\Entity\PayGateway::class), $data);
     expect($result)->toBeInt()->toBe($newId);
 });
 
 test('updates a subscription', function (): void {
     $service = new ServiceSubscription();
-    $subscriptionModel = new Model_Subscription();
-    $subscriptionModel->loadBean(new Tests\Helpers\DummyBean());
+    $subscriptionModel = createEntity(\Box\Mod\Invoice\Entity\Subscription::class);
     $data = [
         'status' => '',
         'sid' => '',
@@ -85,14 +85,13 @@ test('updates a subscription', function (): void {
 
 test('cancels a subscription at the gateway when canceled status is saved', function (): void {
     $service = new ServiceSubscription();
-    $subscriptionModel = new Model_Subscription();
-    $subscriptionModel->loadBean(new Tests\Helpers\DummyBean());
-    $subscriptionModel->status = 'canceled';
-    $subscriptionModel->sid = 'sub_old';
-    $subscriptionModel->pay_gateway_id = 2;
+    $subscriptionModel = createEntity(\Box\Mod\Invoice\Entity\Subscription::class, [
+        'status' => 'canceled',
+        'sid' => 'sub_old',
+        'pay_gateway_id' => 2,
+    ]);
 
-    $gatewayModel = new Model_PayGateway();
-    $gatewayModel->loadBean(new Tests\Helpers\DummyBean());
+    $gatewayModel = createEntity(\Box\Mod\Invoice\Entity\PayGateway::class);
 
     $adapter = new class {
         public ?string $canceledSubscriptionId = null;
@@ -135,10 +134,10 @@ test('cancels a subscription at the gateway when canceled status is saved', func
 
 test('does not call the gateway when canceling a subscription without a sid', function (): void {
     $service = new ServiceSubscription();
-    $subscriptionModel = new Model_Subscription();
-    $subscriptionModel->loadBean(new Tests\Helpers\DummyBean());
-    $subscriptionModel->status = 'active';
-    $subscriptionModel->sid = null;
+    $subscriptionModel = createEntity(\Box\Mod\Invoice\Entity\Subscription::class, [
+        'status' => 'active',
+        'sid' => null,
+    ]);
 
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -152,13 +151,12 @@ test('does not call the gateway when canceling a subscription without a sid', fu
 });
 
 test('schedules a subscription cancellation at the gateway', function (): void {
-    $subscription = new Model_Subscription();
-    $subscription->loadBean(new Tests\Helpers\DummyBean());
-    $subscription->sid = 'sub_123';
-    $subscription->pay_gateway_id = 2;
+    $subscription = createEntity(\Box\Mod\Invoice\Entity\Subscription::class, [
+        'sid' => 'sub_123',
+        'pay_gateway_id' => 2,
+    ]);
 
-    $gateway = new Model_PayGateway();
-    $gateway->loadBean(new Tests\Helpers\DummyBean());
+    $gateway = createEntity(\Box\Mod\Invoice\Entity\PayGateway::class);
 
     $adapter = new class {
         public ?string $scheduledSubscriptionId = null;
@@ -197,9 +195,7 @@ test('schedules a subscription cancellation at the gateway', function (): void {
 
 test('updates subscription status from a gateway without calling the adapter', function (): void {
     $service = new ServiceSubscription();
-    $subscriptionModel = new Model_Subscription();
-    $subscriptionModel->loadBean(new Tests\Helpers\DummyBean());
-    $subscriptionModel->status = 'active';
+    $subscriptionModel = createEntity(\Box\Mod\Invoice\Entity\Subscription::class, ['status' => 'active']);
 
     $subscriptionId = 1;
     $subRepo = Mockery::mock(Box\Mod\Invoice\Repository\SubscriptionRepository::class);
@@ -227,9 +223,7 @@ test('cancels subscriptions linked to an order', function (): void {
     $idProp = new ReflectionProperty(Box\Mod\Invoice\Entity\Subscription::class, 'id');
     $idProp->setValue($subscriptionEntity, 7);
 
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
-    $orderModel->id = 10;
+    $orderModel = createEntity(\Box\Mod\Order\Entity\Order::class, ['id' => 10]);
 
     $subscriptionRepoMock = Mockery::mock(Box\Mod\Invoice\Repository\SubscriptionRepository::class);
     $subscriptionRepoMock->shouldReceive('find')
@@ -308,9 +302,7 @@ test('finalizes a scheduled cancellation by canceling its order and service', fu
 });
 
 test('reports end-of-period cancellation support for active gateway subscriptions', function (): void {
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->id = 10;
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class, ['id' => 10]);
 
     $subscriptionEntity = new Box\Mod\Invoice\Entity\Subscription();
     $subscriptionEntity->setSid('sub_123');
@@ -318,8 +310,7 @@ test('reports end-of-period cancellation support for active gateway subscription
     $idProp = new ReflectionProperty(Box\Mod\Invoice\Entity\Subscription::class, 'id');
     $idProp->setValue($subscriptionEntity, 7);
 
-    $gateway = new Model_PayGateway();
-    $gateway->loadBean(new Tests\Helpers\DummyBean());
+    $gateway = createEntity(\Box\Mod\Invoice\Entity\PayGateway::class);
     $adapter = new class {
         public function cancelSubscriptionAtPeriodEnd(string $subscriptionId): void
         {
@@ -377,10 +368,10 @@ test('finds a subscription ID by gateway SID without throwing for missing record
 
 test('converts to api array', function (): void {
     $service = new ServiceSubscription();
-    $subscriptionModel = new Model_Subscription();
-    $subscriptionModel->loadBean(new Tests\Helpers\DummyBean());
-    $subscriptionModel->client_id = 1;
-    $subscriptionModel->pay_gateway_id = 2;
+    $subscriptionModel = createEntity(\Box\Mod\Invoice\Entity\Subscription::class, [
+        'client_id' => 1,
+        'pay_gateway_id' => 2,
+    ]);
 
     $clientEntity = new Box\Mod\Client\Entity\Client();
     $clientIdProp = new ReflectionProperty($clientEntity, 'id');
@@ -440,8 +431,7 @@ test('converts to api array', function (): void {
 
 test('deletes a subscription', function (): void {
     $service = new ServiceSubscription();
-    $subscriptionModel = new Model_Subscription();
-    $subscriptionModel->loadBean(new Tests\Helpers\DummyBean());
+    $subscriptionModel = createEntity(\Box\Mod\Invoice\Entity\Subscription::class);
 
     $eventsMock = Mockery::mock('\Box_EventManager');
     $eventsMock->shouldReceive('fire')
@@ -551,8 +541,7 @@ test('gets subscription period', function (): void {
     $di['dbal'] = $dbalMock;
     $serviceMock->setDi($di);
 
-    $invoiceModel = new Model_Invoice();
-    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceModel = createEntity(\Box\Mod\Invoice\Entity\Invoice::class);
 
     $result = $serviceMock->getSubscriptionPeriod($invoiceModel);
     expect($result)->toBeString()->toBe($period);
@@ -560,8 +549,7 @@ test('gets subscription period', function (): void {
 
 test('unsubscribes', function (): void {
     $service = new ServiceSubscription();
-    $subscriptionModel = new Model_Subscription();
-    $subscriptionModel->loadBean(new Tests\Helpers\DummyBean());
+    $subscriptionModel = createEntity(\Box\Mod\Invoice\Entity\Subscription::class);
 
     $di = container();
     $service->setDi($di);

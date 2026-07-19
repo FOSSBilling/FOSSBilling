@@ -13,6 +13,7 @@ declare(strict_types=1);
 use Box\Mod\Invoice\ServiceTransaction;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 test('gets dependency injection container', function (): void {
     $service = new ServiceTransaction();
@@ -28,8 +29,7 @@ test('updates a transaction', function (): void {
     $eventsMock->shouldReceive('fire')
         ->atLeast()->once();
 
-    $transactionModel = new Model_Transaction();
-    $transactionModel->loadBean(new Tests\Helpers\DummyBean());
+    $transactionModel = createEntity(\Box\Mod\Invoice\Entity\Transaction::class);
 
     $di = container();
     $di['events_manager'] = $eventsMock;
@@ -99,8 +99,7 @@ test('deletes a transaction', function (): void {
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
-    $transactionModel = new Model_Transaction();
-    $transactionModel->loadBean(new Tests\Helpers\DummyBean());
+    $transactionModel = createEntity(\Box\Mod\Invoice\Entity\Transaction::class);
 
     $result = $service->delete($transactionModel);
     expect($result)->toBeTrue();
@@ -145,9 +144,7 @@ test('converts to api array', function (): void {
         'updated_at' => null,
     ];
 
-    $transactionModel = new Model_Transaction();
-    $transactionModel->loadBean(new Tests\Helpers\DummyBean());
-    $transactionModel->gateway_id = 1;
+    $transactionModel = createEntity(\Box\Mod\Invoice\Entity\Transaction::class, ['gateway_id' => 1]);
 
     $result = $service->toApiArray($transactionModel, false);
     expect($result)->toBeArray();

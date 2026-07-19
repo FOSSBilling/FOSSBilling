@@ -13,6 +13,7 @@ declare(strict_types=1);
 use Box\Mod\Invoice\ServicePayGateway;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 test('gets dependency injection container', function (): void {
     $service = new ServicePayGateway();
@@ -127,8 +128,7 @@ test('throws exception when installing unavailable gateway', function (): void {
 
 test('converts to api array', function (): void {
     $service = new ServicePayGateway();
-    $payGatewayModel = new Model_PayGateway();
-    $payGatewayModel->loadBean(new Tests\Helpers\DummyBean());
+    $payGatewayModel = createEntity(\Box\Mod\Invoice\Entity\PayGateway::class);
 
     $serviceMock = Mockery::mock(ServicePayGateway::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('getAdapterConfig')
@@ -159,15 +159,14 @@ test('converts to api array', function (): void {
 
     $serviceMock->setDi($di);
 
-    $result = $serviceMock->toApiArray($payGatewayModel, false, new Model_Admin());
+    $result = $serviceMock->toApiArray($payGatewayModel, false, createEntity(\Box\Mod\Staff\Entity\Admin::class));
     expect($result)->toBeArray();
     expect($result)->toBe($expected);
 });
 
 test('copies a gateway', function (): void {
     $service = new ServicePayGateway();
-    $payGatewayModel = new Model_PayGateway();
-    $payGatewayModel->loadBean(new Tests\Helpers\DummyBean());
+    $payGatewayModel = createEntity(\Box\Mod\Invoice\Entity\PayGateway::class);
 
     $di = container();
     $di['em'] = Tests\Helpers\entityManagerWithIds($di);
@@ -181,8 +180,7 @@ test('copies a gateway', function (): void {
 
 test('updates a gateway', function (): void {
     $service = new ServicePayGateway();
-    $payGatewayModel = new Model_PayGateway();
-    $payGatewayModel->loadBean(new Tests\Helpers\DummyBean());
+    $payGatewayModel = createEntity(\Box\Mod\Invoice\Entity\PayGateway::class);
 
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -204,8 +202,7 @@ test('updates a gateway', function (): void {
 
 test('deletes a gateway', function (): void {
     $service = new ServicePayGateway();
-    $payGatewayModel = new Model_PayGateway();
-    $payGatewayModel->loadBean(new Tests\Helpers\DummyBean());
+    $payGatewayModel = createEntity(\Box\Mod\Invoice\Entity\PayGateway::class);
 
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -243,11 +240,7 @@ test('gets active gateways', function (): void {
 
 test('checks if can perform recurrent payment', function (): void {
     $service = new ServicePayGateway();
-    $payGatewayModel = new Model_PayGateway();
-    $payGatewayModel->loadBean(new Tests\Helpers\DummyBean());
-
-    $expected = true;
-    $payGatewayModel->allow_recurrent = $expected;
+    $payGatewayModel = createEntity(\Box\Mod\Invoice\Entity\PayGateway::class, ['allow_recurrent' => true]);
 
     $result = $service->canPerformRecurrentPayment($payGatewayModel);
     expect($result)->toBeBool()->toBe($expected);
@@ -255,10 +248,8 @@ test('checks if can perform recurrent payment', function (): void {
 
 test('gets payment adapter', function (): void {
     $service = new ServicePayGateway();
-    $payGatewayModel = new Model_PayGateway();
-    $payGatewayModel->loadBean(new Tests\Helpers\DummyBean());
-    $invoiceModel = new Model_Invoice();
-    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $payGatewayModel = createEntity(\Box\Mod\Invoice\Entity\PayGateway::class);
+    $invoiceModel = createEntity(\Box\Mod\Invoice\Entity\Invoice::class);
     $expected = 'Payment_Adapter_Custom';
 
     $serviceMock = Mockery::mock(ServicePayGateway::class)->makePartial()->shouldAllowMockingProtectedMethods();
@@ -289,10 +280,8 @@ test('gets payment adapter', function (): void {
 
 test('throws exception when payment gateway is not found', function (): void {
     $service = new ServicePayGateway();
-    $payGatewayModel = new Model_PayGateway();
-    $payGatewayModel->loadBean(new Tests\Helpers\DummyBean());
-    $invoiceModel = new Model_Invoice();
-    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $payGatewayModel = createEntity(\Box\Mod\Invoice\Entity\PayGateway::class);
+    $invoiceModel = createEntity(\Box\Mod\Invoice\Entity\Invoice::class);
 
     $serviceMock = Mockery::mock(ServicePayGateway::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('getAdapterClassName')
@@ -319,9 +308,7 @@ test('throws exception when payment gateway is not found', function (): void {
 
 test('gets adapter config', function (): void {
     $service = new ServicePayGateway();
-    $payGatewayModel = new Model_PayGateway();
-    $payGatewayModel->loadBean(new Tests\Helpers\DummyBean());
-    $payGatewayModel->gateway = 'Custom';
+    $payGatewayModel = createEntity(\Box\Mod\Invoice\Entity\PayGateway::class, ['gateway' => 'Custom']);
 
     $expected = '\Payment_Adapter_Custom';
     $filesystemMock = Mockery::mock(Symfony\Component\Filesystem\Filesystem::class);
@@ -340,9 +327,7 @@ test('gets adapter config', function (): void {
 
 test('throws exception when adapter class does not exist', function (): void {
     $service = new ServicePayGateway();
-    $payGatewayModel = new Model_PayGateway();
-    $payGatewayModel->loadBean(new Tests\Helpers\DummyBean());
-    $payGatewayModel->gateway = 'Custom';
+    $payGatewayModel = createEntity(\Box\Mod\Invoice\Entity\PayGateway::class, ['gateway' => 'Custom']);
 
     $expected = 'Payment_Adapter_ClassDoesNotExists';
     $filesystemMock = Mockery::mock(Symfony\Component\Filesystem\Filesystem::class);
@@ -361,9 +346,7 @@ test('throws exception when adapter class does not exist', function (): void {
 
 test('throws exception when adapter does not exist', function (): void {
     $service = new ServicePayGateway();
-    $payGatewayModel = new Model_PayGateway();
-    $payGatewayModel->loadBean(new Tests\Helpers\DummyBean());
-    $payGatewayModel->gateway = 'Unknown';
+    $payGatewayModel = createEntity(\Box\Mod\Invoice\Entity\PayGateway::class, ['gateway' => 'Unknown']);
 
     $filesystemMock = Mockery::mock(Symfony\Component\Filesystem\Filesystem::class);
     $filesystemMock->shouldReceive('exists')
@@ -380,9 +363,7 @@ test('throws exception when adapter does not exist', function (): void {
 
 test('gets adapter class name', function (): void {
     $service = new ServicePayGateway();
-    $payGatewayModel = new Model_PayGateway();
-    $payGatewayModel->loadBean(new Tests\Helpers\DummyBean());
-    $payGatewayModel->gateway = 'Custom';
+    $payGatewayModel = createEntity(\Box\Mod\Invoice\Entity\PayGateway::class, ['gateway' => 'Custom']);
 
     $expected = 'Payment_Adapter_Custom';
 
@@ -392,9 +373,7 @@ test('gets adapter class name', function (): void {
 
 test('gets accepted currencies', function (): void {
     $service = new ServicePayGateway();
-    $payGatewayModel = new Model_PayGateway();
-    $payGatewayModel->loadBean(new Tests\Helpers\DummyBean());
-    $payGatewayModel->accepted_currencies = '{}';
+    $payGatewayModel = createEntity(\Box\Mod\Invoice\Entity\PayGateway::class, ['accepted_currencies' => '{}']);
 
     $result = $service->getAcceptedCurrencies($payGatewayModel);
     expect($result)->toBeArray();
@@ -402,8 +381,7 @@ test('gets accepted currencies', function (): void {
 
 test('gets form elements', function (): void {
     $service = new ServicePayGateway();
-    $payGatewayModel = new Model_PayGateway();
-    $payGatewayModel->loadBean(new Tests\Helpers\DummyBean());
+    $payGatewayModel = createEntity(\Box\Mod\Invoice\Entity\PayGateway::class);
 
     $serviceMock = Mockery::mock(ServicePayGateway::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $config = ['form' => []];
@@ -417,7 +395,7 @@ test('gets form elements', function (): void {
 
 test('returns empty array when form config is empty', function (): void {
     $service = new ServicePayGateway();
-    $payGatewayModel = new Model_PayGateway();
+    $payGatewayModel = createEntity(\Box\Mod\Invoice\Entity\PayGateway::class);
     $payGatewayModel->loadBean(new Tests\Helpers\DummyBean());
 
     $serviceMock = Mockery::mock(ServicePayGateway::class)->makePartial()->shouldAllowMockingProtectedMethods();
@@ -432,8 +410,7 @@ test('returns empty array when form config is empty', function (): void {
 
 test('gets description', function (): void {
     $service = new ServicePayGateway();
-    $payGatewayModel = new Model_PayGateway();
-    $payGatewayModel->loadBean(new Tests\Helpers\DummyBean());
+    $payGatewayModel = createEntity(\Box\Mod\Invoice\Entity\PayGateway::class);
 
     $serviceMock = Mockery::mock(ServicePayGateway::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $config = ['description' => ''];
@@ -447,8 +424,7 @@ test('gets description', function (): void {
 
 test('returns null when description is empty', function (): void {
     $service = new ServicePayGateway();
-    $payGatewayModel = new Model_PayGateway();
-    $payGatewayModel->loadBean(new Tests\Helpers\DummyBean());
+    $payGatewayModel = createEntity(\Box\Mod\Invoice\Entity\PayGateway::class);
 
     $serviceMock = Mockery::mock(ServicePayGateway::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $config = [];

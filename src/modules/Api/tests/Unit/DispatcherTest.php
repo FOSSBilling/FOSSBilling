@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use function Tests\Helpers\createEntity;
 use Symfony\Component\HttpFoundation\Request;
 
 function createApiDispatcherDi(bool $extensionActive = true, bool $moduleHasService = true, ?object $staffService = null, ?object $updateFinalization = null): Pimple\Container
@@ -148,9 +149,7 @@ test('api proxy requires the dispatcher service instead of creating one itself',
 });
 
 test('skips admin module permission check for allowed update finalization calls', function (): void {
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->id = 1;
+    $admin = createEntity(\Box\Mod\Staff\Entity\Admin::class, ['id' => 1]);
 
     $staffService = Mockery::mock();
     $staffService->shouldReceive('hasPermission')->never();

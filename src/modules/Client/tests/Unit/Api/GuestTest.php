@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 use function Tests\Helpers\moduleService;
 
 test('getDi returns dependency injection container', function (): void {
@@ -95,8 +96,7 @@ test('create throws exception when client exists', function (): void {
     $serviceMock->shouldReceive('checkExtraRequiredFields')->atLeast()->once();
     $serviceMock->shouldReceive('checkCustomFields')->atLeast()->once();
 
-    $model = new Model_Client();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(\Box\Mod\Client\Entity\Client::class);
 
     $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
     $validatorMock->shouldReceive('isPasswordStrong')->atLeast()->once();
@@ -161,8 +161,7 @@ test('login returns array', function (): void {
         'password' => 'sezam',
     ];
 
-    $model = new Model_Client();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(\Box\Mod\Client\Entity\Client::class);
 
     $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
     $serviceMock
@@ -213,10 +212,7 @@ test('resetPassword returns true with new flow', function (): void {
     $eventMock = Mockery::mock('\Box_EventManager');
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
-    $modelClient = new Model_Client();
-    $modelClient->loadBean(new Tests\Helpers\DummyBean());
-    $modelClient->id = 1;
-    $modelClient->status = Model_Client::ACTIVE;
+    $modelClient = createEntity(\Box\Mod\Client\Entity\Client::class, ['id' => 1, 'status' => Model_Client::ACTIVE]);
 
     $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
     $serviceMock->shouldReceive('createPasswordResetRequestForClient')->atLeast()->once()->andReturn('hashedString');

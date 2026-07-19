@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 use function Tests\Helpers\moduleService;
 
 test('getDi returns dependency injection container', function (): void {
@@ -46,8 +47,7 @@ test('getList returns array', function (): void {
     ->atLeast()->once()
     ->andReturn($simpleResultArr);
 
-    $model = new Model_Client();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(\Box\Mod\Client\Entity\Client::class);
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock
     ->shouldReceive('getExistingModelById')
@@ -83,8 +83,7 @@ test('getPairs returns array', function (): void {
 
 test('get returns array', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
-    $model = new Model_Client();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(\Box\Mod\Client\Entity\Client::class);
 
     $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
     $serviceMock->shouldReceive('get')->atLeast()->once()->andReturn($model);
@@ -101,8 +100,7 @@ test('get returns array', function (): void {
 
 test('login returns array', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
-    $model = new Model_Client();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(\Box\Mod\Client\Entity\Client::class);
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock
         ->shouldReceive('getExistingModelById')->atLeast()->once()->andReturn($model);
@@ -141,8 +139,7 @@ test('create returns int', function (): void {
         'first_name' => 'John', 'password' => 'StrongPass123',
     ];
 
-    $model = new Model_Client();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(\Box\Mod\Client\Entity\Client::class);
 
     $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
     $serviceMock->shouldReceive('emailAlreadyRegistered')->atLeast()->once()->andReturn(false);
@@ -192,8 +189,7 @@ test('delete returns true', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $data = ['id' => 1];
 
-    $model = new Model_Client();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(\Box\Mod\Client\Entity\Client::class);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock
@@ -259,8 +255,7 @@ test('update returns true', function (): void {
         'custom_10' => '',
     ];
 
-    $model = new Model_Client();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(\Box\Mod\Client\Entity\Client::class);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock
@@ -333,8 +328,7 @@ test('update throws exception when email is already registered', function (): vo
         'custom_10' => '',
     ];
 
-    $model = new Model_Client();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(\Box\Mod\Client\Entity\Client::class);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock
@@ -386,8 +380,7 @@ test('changePassword returns true', function (): void {
         'password_confirm' => 'strongPass',
     ];
 
-    $model = new Model_Client();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(\Box\Mod\Client\Entity\Client::class);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock
@@ -467,8 +460,7 @@ test('balanceGetList returns array', function (): void {
     ->atLeast()->once()
     ->andReturn($simpleResultArr);
 
-    $model = new Model_ClientBalance();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(\Box\Mod\Client\Entity\ClientBalance::class);
 
     $di = container();
     $di['mod_service'] = $di->protect(moduleService(['client:balance' => $serviceMock, 'client' => $serviceMock]));
@@ -486,8 +478,7 @@ test('balanceDelete returns true', function (): void {
         'id' => 1,
     ];
 
-    $model = new Model_ClientBalance();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(\Box\Mod\Client\Entity\ClientBalance::class);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock
@@ -515,8 +506,7 @@ test('balanceAddFunds returns true', function (): void {
         'description' => 'testDescription',
     ];
 
-    $model = new Model_Client();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(\Box\Mod\Client\Entity\Client::class);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock
@@ -541,7 +531,7 @@ test('balanceAddFunds returns true', function (): void {
 test('batchExpirePasswordReminders returns true', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $expiredArr = [
-        new Model_ClientPasswordReset(),
+        createEntity(\Box\Mod\Client\Entity\ClientPasswordReset::class),
     ];
 
     $dbMock = Mockery::mock('\Box_Database');
@@ -641,8 +631,7 @@ test('groupUpdate returns true', function (): void {
     $data['id'] = '2';
     $data['title'] = 'test Group updated';
 
-    $model = new Model_ClientGroup();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(\Box\Mod\Client\Entity\ClientGroup::class);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock
@@ -668,8 +657,7 @@ test('groupDelete returns true', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $data['id'] = '2';
 
-    $model = new Model_ClientGroup();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(\Box\Mod\Client\Entity\ClientGroup::class);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock
@@ -701,8 +689,7 @@ test('groupGet returns array', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $data['id'] = '2';
 
-    $model = new Model_ClientGroup();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(\Box\Mod\Client\Entity\ClientGroup::class);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock

@@ -22,7 +22,17 @@ final readonly class Identity
 
     public static function typeFromObject(object $identity): string
     {
-        return str_replace('model_', '', strtolower($identity::class));
+        $class = $identity::class;
+
+        // Legacy RedBeanPHP model classes (e.g. Model_Admin, Model_Client, Model_Guest)
+        if (str_starts_with($class, 'Model_')) {
+            return str_replace('model_', '', strtolower($class));
+        }
+
+        // Doctrine entity classes — extract the short name (e.g. Client, Admin, Guest)
+        $shortName = (new \ReflectionClass($class))->getShortName();
+
+        return strtolower($shortName);
     }
 
     public function getIdentity(): object

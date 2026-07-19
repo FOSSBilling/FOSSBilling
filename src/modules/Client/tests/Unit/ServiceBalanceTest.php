@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 test('getDi returns dependency injection container', function (): void {
     $service = new Box\Mod\Client\ServiceBalance();
@@ -26,8 +27,7 @@ test('deductFunds creates balance record', function (): void {
 
     $service->setDi($di);
 
-    $clientModel = new Model_Client();
-    $clientModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientModel = createEntity(\Box\Mod\Client\Entity\Client::class);
 
     $description = 'Charged for product';
     $amount = 5.55;
@@ -47,8 +47,7 @@ test('deductFunds creates balance record', function (): void {
 
 test('deductFunds throws exception for invalid description', function (): void {
     $service = new Box\Mod\Client\ServiceBalance();
-    $clientModel = new Model_Client();
-    $clientModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientModel = createEntity(\Box\Mod\Client\Entity\Client::class);
 
     $description = '    ';
     $amount = 5.55;
@@ -62,8 +61,7 @@ test('deductFunds throws exception for invalid description', function (): void {
 
 test('deductFunds throws exception for invalid amount', function (): void {
     $service = new Box\Mod\Client\ServiceBalance();
-    $clientModel = new Model_Client();
-    $clientModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientModel = createEntity(\Box\Mod\Client\Entity\Client::class);
 
     $description = 'Charged';
     $amount = '5.5adadzxc';
