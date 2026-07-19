@@ -15,14 +15,17 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice\Api;
 
+use Box\Mod\Client\Entity\Client;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\InvoiceItem;
+use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Tax;
 use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Repository\InvoiceItemRepository;
 use Box\Mod\Invoice\Repository\InvoiceRepository;
 use Box\Mod\Invoice\Repository\TransactionRepository;
+use Box\Mod\Order\Entity\Order;
 use FOSSBilling\InformationException;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
@@ -43,7 +46,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         [$sql, $params] = $service->getSearchQuery($data);
         $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
         foreach ($pager['list'] as $key => $item) {
-            $invoice = $this->getDi()['db']->getExistingModelById('Invoice', $item['id'], 'Invoice not found');
+            $invoice = $this->getDi()['em']->getRepository(Invoice::class)->find($item['id']) ?? throw new \FOSSBilling\InformationException('Invoice not found');
             $pager['list'][$key] = $this->getService()->toApiArray($invoice, true, $this->getIdentity());
         }
 
@@ -101,7 +104,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_invoices');
 
-        $client = $this->getDi()['db']->getExistingModelById('Client', $data['client_id'], 'Client not found');
+        $client = $this->getDi()['em']->getRepository(Client::class)->find($data['client_id']) ?? throw new InformationException('Client not found');
 
         $invoice = $this->getService()->prepareInvoice($client, $data);
 
@@ -202,7 +205,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_invoices');
 
-        $model = $this->getDi()['db']->getExistingModelById('InvoiceItem', $data['id'], 'Invoice item was not found');
+        $model = $this->getDi()['em']->getRepository(InvoiceItem::class)->find($data['id']) ?? throw new InformationException('Invoice item was not found');
         $invoiceItemService = $this->getDi()['mod_service']('Invoice', 'InvoiceItem');
 
         return $invoiceItemService->remove($model);
@@ -238,7 +241,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_invoices');
 
-        $model = $this->getDi()['db']->getExistingModelById('ClientOrder', $data['id'], 'Order not found');
+        $model = $this->getDi()['em']->getRepository(Order::class)->find($data['id']) ?? throw new InformationException('Order not found');
 
         return $this->getService()->renewInvoice($model, $data);
     }
@@ -380,10 +383,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_transactions');
 
-        $model = $this->getDi()['db']->getExistingModelById('Transaction', $data['id'], 'Transaction not found');
+        $model = $this->getDi()['em']->getRepository(Transaction::class)->find($data['id']) ?? throw new InformationException('Transaction not found');
 
         $output = null;
-        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminTransactionProcess', 'params' => ['id' => $model->id]]);
+        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminTransactionProcess', 'params' => ['id' => $model->getId()]]);
 
         $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
 
@@ -411,7 +414,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_transactions');
 
-        $model = $this->getDi()['db']->getExistingModelById('Transaction', $data['id'], 'Transaction not found');
+        $model = $this->getDi()['em']->getRepository(Transaction::class)->find($data['id']) ?? throw new InformationException('Transaction not found');
 
         $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
 
@@ -450,7 +453,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_transactions');
 
-        $model = $this->getDi()['db']->getExistingModelById('Transaction', $data['id'], 'Transaction not found');
+        $model = $this->getDi()['em']->getRepository(Transaction::class)->find($data['id']) ?? throw new InformationException('Transaction not found');
 
         $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
 
@@ -467,7 +470,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_transactions');
 
-        $model = $this->getDi()['db']->getExistingModelById('Transaction', $data['id'], 'Transaction not found');
+        $model = $this->getDi()['em']->getRepository(Transaction::class)->find($data['id']) ?? throw new InformationException('Transaction not found');
 
         $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
 
@@ -491,7 +494,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
-            $transaction = $this->getDi()['db']->getExistingModelById('Transaction', $item['id'], 'Transaction not found');
+            $transaction = $this->getDi()['em']->getRepository(Transaction::class)->find($item['id']) ?? throw new InformationException('Transaction not found');
             $pager['list'][$key] = $transactionService->toApiArray($transaction);
         }
 
@@ -608,7 +611,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
-            $gateway = $this->getDi()['db']->getExistingModelById('PayGateway', $item['id'], 'Gateway not found');
+            $gateway = $this->getDi()['em']->getRepository(PayGateway::class)->find($item['id']) ?? throw new InformationException('Gateway not found');
             $pager['list'][$key] = $gatewayService->toApiArray($gateway, false, $this->getIdentity());
         }
 
@@ -671,7 +674,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_gateways');
 
-        $model = $this->getDi()['db']->getExistingModelById('PayGateway', $data['id'], 'Gateway not found');
+        $model = $this->getDi()['em']->getRepository(PayGateway::class)->find($data['id']) ?? throw new InformationException('Gateway not found');
 
         $gatewayService = $this->getDi()['mod_service']('Invoice', 'PayGateway');
 
@@ -688,7 +691,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_gateways');
 
-        $model = $this->getDi()['db']->getExistingModelById('PayGateway', $data['id'], 'Gateway not found');
+        $model = $this->getDi()['em']->getRepository(PayGateway::class)->find($data['id']) ?? throw new InformationException('Gateway not found');
         $gatewayService = $this->getDi()['mod_service']('Invoice', 'PayGateway');
 
         return $gatewayService->copy($model);
@@ -714,7 +717,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_gateways');
 
-        $model = $this->getDi()['db']->getExistingModelById('PayGateway', $data['id'], 'Gateway not found');
+        $model = $this->getDi()['em']->getRepository(PayGateway::class)->find($data['id']) ?? throw new InformationException('Gateway not found');
         $gatewayService = $this->getDi()['mod_service']('Invoice', 'PayGateway');
 
         return $gatewayService->update($model, $data);
@@ -732,7 +735,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_gateways');
 
-        $model = $this->getDi()['db']->getExistingModelById('PayGateway', $data['id'], 'Gateway not found');
+        $model = $this->getDi()['em']->getRepository(PayGateway::class)->find($data['id']) ?? throw new InformationException('Gateway not found');
         $gatewayService = $this->getDi()['mod_service']('Invoice', 'PayGateway');
 
         return $gatewayService->delete($model);
@@ -754,7 +757,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         if (isset($pager['list']) && is_array($pager['list'])) {
             foreach ($pager['list'] as $key => $item) {
-                $subscription = $this->getDi()['db']->getExistingModelById('Subscription', $item['id'], 'Subscription not found');
+                $subscription = $this->getDi()['em']->getRepository(Subscription::class)->find($item['id']) ?? throw new InformationException('Subscription not found');
                 $pager['list'][$key] = $subscriptionService->toApiArray($subscription);
             }
         }
@@ -785,10 +788,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_subscriptions');
 
-        $client = $this->getDi()['db']->getExistingModelById('Client', $data['client_id'], 'Client not found');
-        $payGateway = $this->getDi()['db']->getExistingModelById('PayGateway', $data['gateway_id'], 'Payment gateway not found');
+        $client = $this->getDi()['em']->getRepository(Client::class)->find($data['client_id']) ?? throw new InformationException('Client not found');
+        $payGateway = $this->getDi()['em']->getRepository(PayGateway::class)->find($data['gateway_id']) ?? throw new InformationException('Payment gateway not found');
 
-        if (strtoupper((string) $client->currency) !== strtoupper((string) $data['currency'])) {
+        if (strtoupper((string) $client->getCurrency()) !== strtoupper((string) $data['currency'])) {
             throw new InformationException('Client currency must match subscription currency. Check if clients currency is defined.');
         }
         $subscriptionService = $this->getDi()['mod_service']('Invoice', 'Subscription');
@@ -814,7 +817,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_subscriptions');
 
-        $model = $this->getDi()['db']->getExistingModelById('Subscription', $data['id'], 'Subscription not found');
+        $model = $this->getDi()['em']->getRepository(Subscription::class)->find($data['id']) ?? throw new InformationException('Subscription not found');
         $subscriptionService = $this->getDi()['mod_service']('Invoice', 'Subscription');
 
         return $subscriptionService->update($model, $data);
@@ -839,12 +842,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             $this->getDi()['validator']->checkRequiredParamsForArray($required, $data);
         }
         $model = null;
+        $subscriptionRepo = $this->getDi()['em']->getRepository(Subscription::class);
         if (isset($data['id'])) {
-            $model = $this->getDi()['db']->load('Subscription', $data['id']);
+            $model = $subscriptionRepo->find($data['id']);
         }
 
         if (!$model && isset($data['sid'])) {
-            $model = $this->getDi()['db']->findOne('Subscription', 'sid = ?', [$data['sid']]);
+            $model = $subscriptionRepo->findOneBy(['sid' => $data['sid']]);
         }
 
         if (!$model instanceof Subscription) {
@@ -868,7 +872,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_subscriptions');
 
-        $model = $this->getDi()['db']->getExistingModelById('Subscription', $data['id'], 'Subscription not found');
+        $model = $this->getDi()['em']->getRepository(Subscription::class)->find($data['id']) ?? throw new InformationException('Subscription not found');
         $subscriptionService = $this->getDi()['mod_service']('Invoice', 'Subscription');
 
         return $subscriptionService->delete($model);
@@ -886,7 +890,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_tax');
 
-        $model = $this->getDi()['db']->getExistingModelById('Tax', $data['id'], 'Tax rule not found');
+        $model = $this->getDi()['em']->getRepository(Tax::class)->find($data['id']) ?? throw new InformationException('Tax rule not found');
         $taxService = $this->getDi()['mod_service']('Invoice', 'Tax');
 
         return $taxService->delete($model);
@@ -920,7 +924,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_tax');
 
-        $tax = $this->getDi()['db']->getExistingModelById('Tax', $data['id'], 'Tax rule not found');
+        $tax = $this->getDi()['em']->getRepository(Tax::class)->find($data['id']) ?? throw new InformationException('Tax rule not found');
 
         $taxService = $this->getDi()['mod_service']('Invoice', 'Tax');
 
@@ -941,7 +945,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_tax');
 
-        $tax = $this->getDi()['db']->getExistingModelById('Tax', $data['id'], 'Tax rule not found');
+        $tax = $this->getDi()['em']->getRepository(Tax::class)->find($data['id']) ?? throw new InformationException('Tax rule not found');
 
         $taxService = $this->getDi()['mod_service']('Invoice', 'Tax');
 
@@ -982,7 +986,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Invoice ID was not passed'])]
     private function _getInvoice($data)
     {
-        return $this->getDi()['db']->getExistingModelById('Invoice', $data['id'], 'Invoice was not found');
+        return $this->getDi()['em']->getRepository(Invoice::class)->find($data['id']) ?? throw new InformationException('Invoice was not found');
     }
 
     /**

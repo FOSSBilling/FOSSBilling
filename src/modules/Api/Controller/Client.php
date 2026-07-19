@@ -270,27 +270,34 @@ class Client implements InjectionAwareInterface
 
         switch ($routeRole) {
             case 'client':
-                $model = $this->di['db']->findOne('Client', 'api_token = ? AND status = ?', [$password, ClientEntity::ACTIVE]);
+                $model = $this->di['em']->getRepository(ClientEntity::class)->findOneBy(['apiToken' => $password, 'status' => ClientEntity::ACTIVE]);
                 if (!$model instanceof ClientEntity) {
                     throw new \FOSSBilling\InformationException('Authentication Failed', null, 204);
                 }
-                $this->di['session']->set('client_id', $model->id);
+                $this->di['session']->set('client_id', $model->getId());
 
                 break;
 
             case 'admin':
-                $model = $this->di['db']->findOne('Admin', 'api_token = ? AND status = ? AND (system_name IS NULL OR system_name != ?)', [$password, Admin::STATUS_ACTIVE, Admin::SYSTEM_CRON]);
+                $admins = $this->di['em']->getRepository(Admin::class)->findBy(['apiToken' => $password, 'status' => Admin::STATUS_ACTIVE]);
+                $model = null;
+                foreach ($admins as $admin) {
+                    if (!$admin->isCron()) {
+                        $model = $admin;
+                        break;
+                    }
+                }
                 if (!$model instanceof Admin) {
                     throw new \FOSSBilling\InformationException('Authentication Failed', null, 205);
                 }
 
                 $cronAdmin = $this->di['mod_service']('staff')->getCronAdmin();
-                if ($cronAdmin instanceof Admin && (int) $model->id === (int) $cronAdmin->id) {
+                if ($cronAdmin instanceof Admin && (int) $model->getId() === (int) $cronAdmin->getId()) {
                     throw new \FOSSBilling\InformationException('Authentication Failed', null, 205);
                 }
 
                 $sessionAdminArray = [
-                    'id' => $model->id,
+                    'id' => $model->getId(),
                     'email' => $model->email,
                     'name' => $model->name,
                 ];

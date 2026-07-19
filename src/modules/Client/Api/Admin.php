@@ -16,6 +16,8 @@ declare(strict_types=1);
 namespace Box\Mod\Client\Api;
 
 use Box\Mod\Client\Entity\Client;
+use Box\Mod\Client\Entity\ClientBalance;
+use Box\Mod\Client\Entity\ClientGroup;
 use FOSSBilling\InformationException;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Tools;
@@ -41,7 +43,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $clientArr) {
-            $client = $this->getDi()['db']->getExistingModelById('Client', $clientArr['id'], 'Client not found');
+            $client = $this->getDi()['em']->getRepository(Client::class)->find($clientArr['id']) ?? throw new InformationException('Client not found');
             $pager['list'][$key] = $this->getService()->toApiArray($client, true, $this->getIdentity());
         }
 
@@ -92,7 +94,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('client', 'impersonate_login');
 
-        $client = $this->getDi()['db']->getExistingModelById('Client', $data['id'], 'Client not found');
+        $client = $this->getDi()['em']->getRepository(Client::class)->find($data['id']) ?? throw new InformationException('Client not found');
 
         $service = $this->getDi()['mod_service']('client');
         $result = $service->toSessionArray($client);
@@ -203,7 +205,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('client', 'delete');
 
-        $model = $this->getDi()['db']->getExistingModelById('Client', $data['id'], 'Client not found');
+        $model = $this->getDi()['em']->getRepository(Client::class)->find($data['id']) ?? throw new InformationException('Client not found');
 
         $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminClientDelete', 'params' => ['id' => $model->id]]);
 
@@ -268,7 +270,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('client', 'edit_profile');
 
-        $client = $this->getDi()['db']->getExistingModelById('Client', $data['id'], 'Client not found');
+        $client = $this->getDi()['em']->getRepository(Client::class)->find($data['id']) ?? throw new InformationException('Client not found');
 
         $service = $this->getDi()['mod_service']('client');
 
@@ -378,7 +380,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $this->getDi()['validator']->isPasswordStrong($data['password']);
 
-        $client = $this->getDi()['db']->getExistingModelById('Client', $data['id'], 'Client not found');
+        $client = $this->getDi()['em']->getRepository(Client::class)->find($data['id']) ?? throw new InformationException('Client not found');
 
         $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminClientPasswordChange', 'params' => ['id' => $client->id]]);
 
@@ -430,7 +432,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('client', 'manage_balance');
 
-        $model = $this->getDi()['db']->getExistingModelById('ClientBalance', $data['id'], 'Balance line not found');
+        $model = $this->getDi()['em']->getRepository(ClientBalance::class)->find($data['id']) ?? throw new InformationException('Balance line not found');
 
         $id = $model->id;
         $client_id = $model->client_id;
@@ -454,7 +456,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('client', 'manage_balance');
 
-        $client = $this->getDi()['db']->getExistingModelById('Client', $data['id'], 'Client not found');
+        $client = $this->getDi()['em']->getRepository(Client::class)->find($data['id']) ?? throw new InformationException('Client not found');
 
         $service = $this->getDi()['mod_service']('client');
         $service->addFunds($client, $data['amount'], $data['description'], $data);
@@ -562,7 +564,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('client', 'manage_groups');
 
-        $model = $this->getDi()['db']->getExistingModelById('ClientGroup', $data['id'], 'Group not found');
+        $model = $this->getDi()['em']->getRepository(ClientGroup::class)->find($data['id']) ?? throw new InformationException('Group not found');
 
         $model->title = $data['title'] ?? $model->title;
         $model->updated_at = date('Y-m-d H:i:s');
@@ -581,7 +583,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('client', 'manage_groups');
 
-        $model = $this->getDi()['db']->getExistingModelById('ClientGroup', $data['id'], 'Group not found');
+        $model = $this->getDi()['em']->getRepository(ClientGroup::class)->find($data['id']) ?? throw new InformationException('Group not found');
 
         $clients = $this->getDi()['db']->find('Client', 'client_group_id = :group_id', [':group_id' => $data['id']]);
 
@@ -602,7 +604,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('client', 'manage_groups');
 
-        $model = $this->getDi()['db']->getExistingModelById('ClientGroup', $data['id'], 'Group not found');
+        $model = $this->getDi()['em']->getRepository(ClientGroup::class)->find($data['id']) ?? throw new InformationException('Group not found');
 
         return $this->getDi()['db']->toArray($model);
     }

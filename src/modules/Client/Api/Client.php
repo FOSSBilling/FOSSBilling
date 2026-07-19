@@ -15,6 +15,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Client\Api;
 
+use Box\Mod\Client\Entity\ClientBalance;
+use FOSSBilling\InformationException;
 use FOSSBilling\PaginationOptions;
 
 class Client extends \FOSSBilling\Api\AbstractApi
@@ -33,7 +35,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $pager = $this->getDi()['pager']->getPaginatedResultSet($q, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
-            $balance = $this->getDi()['db']->getExistingModelById('ClientBalance', $item['id'], 'Balance not found');
+            $balance = $this->getDi()['em']->getRepository(ClientBalance::class)->find($item['id']) ?? throw new InformationException('Balance not found');
             $pager['list'][$key] = $service->toApiArray($balance);
         }
 

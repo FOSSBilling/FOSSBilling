@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicelicense\Api;
 
+use Box\Mod\Order\Entity\Order;
 use Box\Mod\Servicelicense\Entity\ServiceLicense;
 
 /**
@@ -84,7 +85,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $required = ['order_id' => 'Order ID is required'];
         $this->getDi()['validator']->checkRequiredParamsForArray($required, $data);
 
-        $order = $this->getDi()['db']->getExistingModelById('clientOrder', $data['order_id'], 'Order not found');
+        $order = $this->getDi()['em']->getRepository(Order::class)->find($data['order_id']) ?? throw new \FOSSBilling\InformationException('Order not found');
 
         $orderService = $this->getDi()['mod_service']('order');
         $s = $orderService->getOrderService($order);

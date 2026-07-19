@@ -449,7 +449,7 @@ class Service implements InjectionAwareInterface
 
     public function getByLoginDetails($email, $password)
     {
-        return $this->di['db']->findOne('Client', 'email = ? and pass = ? and status = ?', [$email, $password, Client::ACTIVE]);
+        return $this->di['em']->getRepository(Client::class)->findOneBy(['email' => $email, 'pass' => $password, 'status' => Client::ACTIVE]);
     }
 
     public function toApiArray(Client $model, $deep = false, $identity = null, bool $includeSensitive = false): array
@@ -887,7 +887,7 @@ class Service implements InjectionAwareInterface
 
     public function authorizeClient($email, $plainTextPassword)
     {
-        $model = $this->di['db']->findOne('Client', 'email = ? AND status = ?', [$email, Client::ACTIVE]);
+        $model = $this->di['em']->getRepository(Client::class)->findOneBy(['email' => $email, 'status' => Client::ACTIVE]);
 
         return $this->di['auth']->authorizeUser($model, $plainTextPassword);
     }

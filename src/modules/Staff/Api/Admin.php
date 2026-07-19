@@ -15,8 +15,10 @@ declare(strict_types=1);
 
 namespace Box\Mod\Staff\Api;
 
+use Box\Mod\Activity\Entity\ActivityAdminHistory;
 use Box\Mod\Staff\Entity\Admin as AdminEntity;
 use Box\Mod\Staff\Entity\AdminGroup;
+use FOSSBilling\InformationException;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
@@ -185,7 +187,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     private function getAdminById(int $id): AdminEntity
     {
-        $result = $this->getDi()['db']->getExistingModelById('Admin', $id, 'Staff member not found');
+        $result = $this->getDi()['em']->getRepository(AdminEntity::class)->find($id) ?? throw new InformationException('Staff member not found');
 
         return $result;
     }
@@ -370,7 +372,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
-            $activity = $this->getDi()['db']->getExistingModelById('ActivityAdminHistory', $item['id'] ?? 0, sprintf('Staff activity item #%s not found', $item['id'] ?? 'unknown'));
+            $activity = $this->getDi()['em']->getRepository(ActivityAdminHistory::class)->find($item['id'] ?? 0) ?? throw new InformationException(sprintf('Staff activity item #%s not found', $item['id'] ?? 'unknown'));
             if ($activity) {
                 $pager['list'][$key] = $this->getService()->toActivityAdminHistoryApiArray($activity);
             }
@@ -389,7 +391,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('staff', 'manage_settings');
 
-        $model = $this->getDi()['db']->getExistingModelById('ActivityAdminHistory', $data['id'], 'Event not found');
+        $model = $this->getDi()['em']->getRepository(ActivityAdminHistory::class)->find($data['id']) ?? throw new InformationException('Event not found');
 
         return $this->getService()->toActivityAdminHistoryApiArray($model);
     }

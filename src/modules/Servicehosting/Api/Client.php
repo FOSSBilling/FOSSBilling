@@ -85,7 +85,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
             throw new \FOSSBilling\Exception('Order ID is required');
         }
         $identity = $this->getIdentity();
-        $order = $this->getDi()['db']->findOne('ClientOrder', 'id = ? and client_id = ?', [$data['order_id'], $identity->id]);
+        $order = $this->getDi()['em']->getRepository(Order::class)->findOneBy(['id' => $data['order_id'], 'clientId' => $identity->getId()]);
         if (!$order instanceof Order) {
             throw new \FOSSBilling\InformationException('Order not found');
         }

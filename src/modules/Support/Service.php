@@ -659,7 +659,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         if ($identity instanceof Admin) {
             // Requires Model_Client until Client::toApiArray() is migrated to Doctrine.
-            $client = $this->di['db']->load('Client', $clientId);
+            $client = $this->di['em']->getRepository(Client::class)->find($clientId);
 
             return $client instanceof Client
                 ? $this->clientToTicketApiArray($client, $identity)

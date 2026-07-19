@@ -938,7 +938,7 @@ class Service implements InjectionAwareInterface
 
     public function authorizeAdmin($email, $plainTextPassword)
     {
-        $model = $this->di['db']->findOne('Admin', 'email = ? AND status = ?', [$email, Admin::STATUS_ACTIVE]);
+        $model = $this->di['em']->getRepository(Admin::class)->findOneBy(['email' => $email, 'status' => Admin::STATUS_ACTIVE]);
         if ($model instanceof Admin && $model->isCron()) {
             $model = null;
         }

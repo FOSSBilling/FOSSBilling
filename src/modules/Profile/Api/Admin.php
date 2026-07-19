@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Profile\Api;
 
+use Box\Mod\Client\Entity\Client;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Admin extends \FOSSBilling\Api\AbstractApi
@@ -140,7 +141,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('client', 'manage_api_keys');
 
-        $client = $this->getDi()['db']->getExistingModelById('Client', $data['id']);
+        $client = $this->getDi()['em']->getRepository(Client::class)->find($data['id']);
 
         return $this->getService()->resetApiKey($client);
     }

@@ -40,10 +40,10 @@ class Client extends \FOSSBilling\Api\AbstractApi
 
         $bindings = [
             ':id' => $data['order_id'],
-            ':client_id' => $client->id,
+            ':client_id' => $client->getId(),
         ];
 
-        $order = $this->getDi()['db']->findOne('ClientOrder', 'id = :id AND client_id = :client_id', $bindings);
+        $order = $this->getDi()['em']->getRepository(Order::class)->findOneBy(['id' => $data['order_id'], 'clientId' => $client->getId()]);
 
         if (!$order instanceof Order) {
             throw new \FOSSBilling\InformationException('Order not found');

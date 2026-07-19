@@ -378,7 +378,7 @@ class Service implements InjectionAwareInterface
             $orders = $productService->getOrdersForProduct($productModel);
 
             foreach ($orders as $order) {
-                $ordermodel = $this->di['db']->getExistingModelById('ClientOrder', $order['id']);
+                $ordermodel = $this->di['em']->getRepository(\Box\Mod\Order\Entity\Order::class)->find($order['id']);
                 $serviceDownloadable = $orderService->getOrderService($ordermodel);
 
                 $oldconfig = json_decode($order['config'] ?? '', true) ?: [];
