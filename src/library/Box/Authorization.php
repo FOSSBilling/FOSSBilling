@@ -8,6 +8,10 @@ declare(strict_types=1);
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
+
+use Box\Mod\Client\Entity\Client;
+use Box\Mod\Staff\Entity\Admin;
+
 class Box_Authorization
 {
     private $session;
@@ -24,8 +28,8 @@ class Box_Authorization
             return false;
         }
 
-        $client = $this->di['db']->load('Client', $clientId);
-        if (!$client || $client->status !== Model_Client::ACTIVE) {
+        $client = $this->di['em']->getRepository(Client::class)->find($clientId);
+        if (!$client || $client->getStatus() !== Client::ACTIVE) {
             $this->session->delete('client_id');
 
             return false;
@@ -41,8 +45,8 @@ class Box_Authorization
             return false;
         }
 
-        $adminModel = $this->di['db']->load('Admin', $admin['id']);
-        if (!$adminModel || $adminModel->status !== Model_Admin::STATUS_ACTIVE || $adminModel->isCron()) {
+        $adminModel = $this->di['em']->getRepository(Admin::class)->find($admin['id']);
+        if (!$adminModel || $adminModel->getStatus() !== Admin::STATUS_ACTIVE || $adminModel->isCron()) {
             $this->session->delete('admin');
 
             return false;
@@ -63,7 +67,12 @@ class Box_Authorization
             if ($this->di['password']->needsRehash($user->pass)) {
                 $user->pass = $this->di['password']->hashIt($plainTextPassword);
                 $user->updated_at = date('Y-m-d H:i:s');
-                $this->di['db']->store($user);
+                if ($user instanceof RedBeanPHP\SimpleModel) {
+                    $this->di['db']->store($user);
+                } else {
+                    $this->di['em']->persist($user);
+                    $this->di['em']->flush();
+                }
             }
 
             return $user;

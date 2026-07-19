@@ -2478,14 +2478,18 @@ test('paypal email html generation does not require admin api invoice access', f
         'notify_url' => 'https://example.com/ipn.php',
     ]);
 
-    $invoiceModel = new Model_Invoice();
-    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceModel = new Invoice();
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('load')
+    $invoiceRepo = Mockery::mock(Doctrine\ORM\EntityRepository::class);
+    $invoiceRepo->shouldReceive('find')
         ->once()
-        ->with('Invoice', 1)
+        ->with(1)
         ->andReturn($invoiceModel);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')
+        ->with(Invoice::class)
+        ->andReturn($invoiceRepo);
 
     $invoiceService = Mockery::mock(Service::class);
     $invoiceService->shouldReceive('toApiArray')
@@ -2507,7 +2511,7 @@ test('paypal email html generation does not require admin api invoice access', f
     $apiAdmin->shouldNotReceive('invoice_get');
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(function ($serviceName) use ($invoiceService) {
         if ($serviceName === 'Invoice') {
             return $invoiceService;

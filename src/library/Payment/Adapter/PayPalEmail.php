@@ -58,7 +58,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
 
     public function getHtml($api_admin, $invoice_id, $subscription): string
     {
-        $invoiceModel = $this->di['db']->load('Invoice', $invoice_id);
+        $invoiceModel = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Invoice::class)->find($invoice_id);
         $invoiceService = $this->di['mod_service']('Invoice');
         $invoice = $invoiceService->toApiArray($invoiceModel, true);
 
@@ -166,7 +166,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                 $invoiceService = $this->di['mod_service']('Invoice');
                 $invoiceDbModel = null;
                 if (!empty($tx['invoice_id'])) {
-                    $invoiceDbModel = $this->di['db']->load('Invoice', $tx['invoice_id']);
+                    $invoiceDbModel = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Invoice::class)->find($tx['invoice_id']);
                 }
 
                 // For subscription renewals, generate a renewal invoice so
@@ -174,20 +174,20 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                 // initial payment (original invoice still unpaid) — that
                 // payment should go to the original invoice.
                 if ($ipn['txn_type'] === 'subscr_payment' && isset($ipn['subscr_id'])) {
-                    $originalAlreadyPaid = $invoiceDbModel instanceof Model_Invoice
-                        && $invoiceDbModel->status === Model_Invoice::STATUS_PAID;
+                    $originalAlreadyPaid = $invoiceDbModel instanceof Box\Mod\Invoice\Entity\Invoice
+                        && $invoiceDbModel->getStatus() === Box\Mod\Invoice\Entity\Invoice::STATUS_PAID;
 
                     if ($originalAlreadyPaid) {
                         $renewalInvoice = $invoiceService->generateRenewalInvoiceForSubscriptionPayment($ipn['subscr_id'], $client_id);
-                        if ($renewalInvoice instanceof Model_Invoice) {
-                            $api_admin->invoice_transaction_update(['id' => $id, 'invoice_id' => $renewalInvoice->id]);
-                            $tx['invoice_id'] = $renewalInvoice->id;
+                        if ($renewalInvoice instanceof Box\Mod\Invoice\Entity\Invoice) {
+                            $api_admin->invoice_transaction_update(['id' => $id, 'invoice_id' => $renewalInvoice->getId()]);
+                            $tx['invoice_id'] = $renewalInvoice->getId();
                             $invoiceDbModel = $renewalInvoice;
                         }
                     }
                 }
 
-                if ($invoiceDbModel instanceof Model_Invoice) {
+                if ($invoiceDbModel instanceof Box\Mod\Invoice\Entity\Invoice) {
                     $expected = $invoiceService->getTotalWithTax($invoiceDbModel);
                     $invoiceService->validatePaymentAmount((float) $ipn['mc_gross'], $expected);
                 }
@@ -202,12 +202,12 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
 
                 $api_admin->client_balance_add_funds($bd);
 
-                if (!empty($tx['invoice_id']) && $invoiceDbModel instanceof Model_Invoice && !$invoiceService->isInvoiceTypeDeposit($invoiceDbModel)) {
-                    if (!$invoiceDbModel->approved) {
+                if (!empty($tx['invoice_id']) && $invoiceDbModel instanceof Box\Mod\Invoice\Entity\Invoice && !$invoiceService->isInvoiceTypeDeposit($invoiceDbModel)) {
+                    if (!$invoiceDbModel->isApproved()) {
                         $invoiceService->approveInvoice($invoiceDbModel, ['use_credits' => false]);
                     }
                     $api_admin->invoice_pay_with_credits(['id' => $tx['invoice_id']]);
-                } elseif (!empty($tx['invoice_id']) && $invoiceDbModel instanceof Model_Invoice && $invoiceService->isInvoiceTypeDeposit($invoiceDbModel)) {
+                } elseif (!empty($tx['invoice_id']) && $invoiceDbModel instanceof Box\Mod\Invoice\Entity\Invoice && $invoiceService->isInvoiceTypeDeposit($invoiceDbModel)) {
                     $invoiceService->markAsPaid($invoiceDbModel);
                 } elseif (empty($tx['invoice_id'])) {
                     $api_admin->invoice_batch_pay_with_credits(['client_id' => $client_id]);
@@ -216,9 +216,9 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                 break;
 
             case 'subscr_signup':
-                $existingSubscription = $this->di['db']->findOne('Subscription', 'sid = :sid', [':sid' => $ipn['subscr_id']]);
+                $existingSubscription = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Subscription::class)->findOneBy(['sid' => $ipn['subscr_id']]);
 
-                if (!$existingSubscription instanceof Model_Subscription) {
+                if (!$existingSubscription instanceof Box\Mod\Invoice\Entity\Subscription) {
                     $sd = [
                         'client_id' => $client_id,
                         'gateway_id' => $gateway_id,
@@ -392,7 +392,7 @@ document.addEventListener('DOMContentLoaded', function() {
             ':transaction_amount' => $ipn['mc_gross'],
         ];
 
-        $rows = $this->di['db']->getAll($sql, $bindings);
+        $rows = $this->di['em']->getConnection()->fetchAllAssociative($sql, $bindings);
         if (FOSSBilling\Tools::safeCount($rows) > 1) {
             return true;
         }

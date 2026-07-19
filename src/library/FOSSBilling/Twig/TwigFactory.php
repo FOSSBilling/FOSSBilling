@@ -11,7 +11,9 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Twig;
 
+use Box\Mod\Client\Entity\Client;
 use Box\Mod\Currency\Entity\Currency;
+use Box\Mod\Staff\Entity\Admin;
 use DebugBar\Bridge\Twig\NamespacedTwigProfileCollector;
 use DebugBar\StandardDebugBar;
 use FOSSBilling\Config;
@@ -69,13 +71,13 @@ class TwigFactory
         $auth = $this->di['auth'] ?? null;
         if ($auth instanceof \Box_Authorization) {
             if ($auth->isClientLoggedIn()) {
-                $client = $this->di['db']->load('Client', $this->di['session']->get('client_id'));
-                $clientTimezone = $client->timezone ?? null;
+                $client = $this->di['em']->getRepository(Client::class)->find($this->di['session']->get('client_id'));
+                $clientTimezone = $client?->getTimezone();
             } elseif ($auth->isAdminLoggedIn()) {
                 $admin = $this->di['session']->get('admin');
                 if (is_array($admin) && !empty($admin['id'])) {
-                    $adminModel = $this->di['db']->load('Admin', $admin['id']);
-                    $adminTimezone = $adminModel->timezone ?? null;
+                    $adminModel = $this->di['em']->getRepository(Admin::class)->find($admin['id']);
+                    $adminTimezone = $adminModel?->getTimezone();
                 }
             }
         }

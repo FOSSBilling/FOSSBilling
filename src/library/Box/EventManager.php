@@ -67,7 +67,7 @@ class Box_EventManager implements FOSSBilling\InjectionAwareInterface
             AND meta_key = 'listener'
             AND meta_value = :event
         ";
-        $list = $this->di['db']->getAll($sql, ['event' => $event]);
+        $list = $this->di['em']->getConnection()->fetchAllAssociative($sql, ['event' => $event]);
 
         // no need to connect listeners
         if (empty($list)) {

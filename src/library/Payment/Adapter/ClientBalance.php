@@ -39,9 +39,9 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
         ];
     }
 
-    public function enoughInBalanceToCoverInvoice(Model_Invoice $invoice): bool
+    public function enoughInBalanceToCoverInvoice(Box\Mod\Invoice\Entity\Invoice $invoice): bool
     {
-        $clientModel = $this->di['db']->load('Client', $invoice->client_id);
+        $clientModel = $this->di['em']->getRepository(Box\Mod\Client\Entity\Client::class)->find($invoice->getClientId());
         $clientBalanceService = $this->di['mod_service']('Client', 'Balance');
         $sumInBalance = $clientBalanceService->getClientBalance($clientModel);
 
@@ -56,7 +56,7 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
 
     public function getHtml($api_admin, $invoice_id, $subscription): string
     {
-        $invoiceModel = $this->di['db']->load('Invoice', $invoice_id);
+        $invoiceModel = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Invoice::class)->find($invoice_id);
 
         if (!$this->enoughInBalanceToCoverInvoice($invoiceModel)) {
             return __trans('Your account balance is insufficient to cover this invoice.');
@@ -68,7 +68,7 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
         }
 
         $ipnUrl = $this->getServiceUrl($invoice_id);
-        $invoiceUrl = $this->di['tools']->url('invoice/' . $invoiceModel->hash);
+        $invoiceUrl = $this->di['tools']->url('invoice/' . $invoiceModel->getHash());
 
         return "<script>
                 document.addEventListener('DOMContentLoaded', function() {
@@ -90,24 +90,24 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
             throw new Payment_Exception('IPN is invalid');
         }
 
-        $tx = $this->di['db']->load('Transaction', $id);
+        $tx = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Transaction::class)->find($id);
 
-        if ($tx->invoice_id) {
-            $invoice_id = $tx->invoice_id;
+        if ($tx->getInvoiceId()) {
+            $invoice_id = $tx->getInvoiceId();
         } else {
             $invoice_id = $data['get']['invoice_id'] ?? 0;
         }
 
-        $invoiceModel = $this->di['db']->load('Invoice', $invoice_id);
-        if (!$invoiceModel instanceof Model_Invoice) {
+        $invoiceModel = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Invoice::class)->find($invoice_id);
+        if (!$invoiceModel instanceof Box\Mod\Invoice\Entity\Invoice) {
             throw new Payment_Exception('Invoice not found');
         }
 
-        if ((int) $invoiceModel->client_id !== (int) $this->di['loggedin_client']->id) {
+        if ((int) $invoiceModel->getClientId() !== (int) $this->di['loggedin_client']->id) {
             throw new Payment_Exception('You are not authorized to pay this invoice with client balance.');
         }
 
-        if ((int) ($invoiceModel->gateway_id ?? 0) !== (int) $gateway_id) {
+        if ((int) ($invoiceModel->getGatewayId() ?? 0) !== (int) $gateway_id) {
             throw new Payment_Exception('Invoice is not configured to use this payment gateway.');
         }
 
@@ -119,13 +119,14 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
         if ($invoice_id) {
             $invoiceService->payInvoiceWithCredits($invoiceModel);
         }
-        $invoiceService->doBatchPayWithCredits(['client_id' => $invoiceModel->client_id]);
+        $invoiceService->doBatchPayWithCredits(['client_id' => $invoiceModel->getClientId()]);
 
-        $tx->error = '';
-        $tx->error_code = null;
-        $tx->status = 'processed';
-        $tx->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($tx);
+        $tx->setError(null);
+        $tx->setErrorCode(null);
+        $tx->setStatus('processed');
+        $tx->setUpdatedAt(new DateTime());
+        $this->di['em']->persist($tx);
+        $this->di['em']->flush();
 
         return true;
     }
@@ -137,12 +138,12 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
 
     public function getServiceUrl($invoice_id = 0)
     {
-        $gatewayModel = $this->di['db']->findOne('PayGateway', 'gateway = ? and enabled = 1', ['ClientBalance']);
-        if (!$gatewayModel instanceof Model_PayGateway) {
+        $gatewayModel = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\PayGateway::class)->findOneBy(['gateway' => 'ClientBalance', 'enabled' => true]);
+        if (!$gatewayModel instanceof Box\Mod\Invoice\Entity\PayGateway) {
             throw new Payment_Exception('ClientBalance gateway is not enabled', null, 301);
         }
 
-        $invoiceModel = $this->di['db']->load('Invoice', $invoice_id);
+        $invoiceModel = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Invoice::class)->find($invoice_id);
         $invoiceService = $this->di['mod_service']('Invoice');
         if ($invoiceService->isInvoiceTypeDeposit($invoiceModel)) {
             throw new Payment_Exception('You may not pay a deposit invoice with this payment gateway.', null, 302);

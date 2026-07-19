@@ -56,7 +56,7 @@ class Payment_Adapter_Custom
      */
     public function getHtml(FOSSBilling\Api\Proxy $api_admin, int $invoice_id, bool $subscription): string
     {
-        $invoiceModel = $this->di['db']->load('Invoice', $invoice_id);
+        $invoiceModel = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Invoice::class)->find($invoice_id);
         $invoiceService = $this->di['mod_service']('Invoice');
         $invoice = $invoiceService->toApiArray($invoiceModel, true);
 
@@ -87,32 +87,38 @@ class Payment_Adapter_Custom
 
         try {
             // Get the transaction and invoice associated with the transaction
-            $tx = $this->di['db']->getExistingModelById('Transaction', $id);
-            $invoice = $this->di['db']->getExistingModelById('Invoice', $tx->invoice_id);
+            $tx = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Transaction::class)->find($id)
+                ?? throw new FOSSBilling\InformationException('Transaction not found');
+
+            $invoice = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Invoice::class)->find($tx->getInvoiceId())
+                ?? throw new FOSSBilling\InformationException('Invoice not found');
 
             // Load the payment gateway and client associated with the transaction
-            $gateway = $this->di['db']->load('PayGateway', $tx->gateway_id);
+            $gateway = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\PayGateway::class)->find($tx->getGatewayId());
             $clientService = $this->di['mod_service']('Client');
-            $client = $clientService->get(['id' => $invoice->client_id]);
+            $client = $clientService->get(['id' => $invoice->getClientId()]);
 
             // Calculate the total amount of the invoice
             $invoiceService = $this->di['mod_service']('Invoice');
             $invoiceTotal = $invoiceService->getTotalWithTax($invoice);
 
             // Add funds to the client's account and mark the invoice as paid
-            $tx_desc = $gateway->title . ' transaction No: ' . $tx->txn_id;
+            $tx_desc = $gateway->getName() . ' transaction No: ' . $tx->getTxnId();
             $clientService->addFunds($client, $invoiceTotal, $tx_desc, []);
             $invoiceService->markAsPaid($invoice, true, true);
 
             // Update the transaction status and details
-            $tx->status = Model_Transaction::STATUS_PROCESSED;
-            $tx->amount = $invoiceTotal;
-            $tx->note = $gateway->title . ' transaction No: ' . $tx->txn_id;
-            $tx->currency = $invoice->currency;
-            $tx->updated_at = date('Y-m-d H:i:s');
+            $tx->setStatus(Box\Mod\Invoice\Entity\Transaction::STATUS_PROCESSED);
+            $tx->setAmount((string) $invoiceTotal);
+            $tx->setNote($gateway->getName() . ' transaction No: ' . $tx->getTxnId());
+            $tx->setCurrency($invoice->getCurrency());
+            $tx->setUpdatedAt(new DateTime());
 
             // Store the updated transaction and use its return to indicate a success or failure.
-            return $this->di['db']->store($tx);
+            $this->di['em']->persist($tx);
+            $this->di['em']->flush();
+
+            return true;
         } catch (Exception) {
             return false;
         }

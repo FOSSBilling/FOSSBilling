@@ -177,7 +177,7 @@ class Tools
         $count = self::safeCount($ids);
         $slots = $count ? implode(',', array_fill(0, $count, '?')) : ''; // same as RedBean genSlots() method
 
-        $rows = $this->di['db']->getAll('SELECT id, title FROM ' . $table . ' WHERE id in (' . $slots . ')', $ids);
+        $rows = $this->di['em']->getConnection()->fetchAllAssociative('SELECT id, title FROM ' . $table . ' WHERE id in (' . $slots . ')', $ids);
 
         $result = [];
         foreach ($rows as $record) {

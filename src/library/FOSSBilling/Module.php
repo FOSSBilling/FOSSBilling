@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
+use Box\Mod\Extension\Entity\ExtensionMeta;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
@@ -239,12 +240,13 @@ class Module implements InjectionAwareInterface
     {
         $modName = "mod_{$this->module}";
 
-        $bean = $this->di['db']->findOne('extension_meta', 'extension = :ext AND meta_key = :key', [':ext' => $modName, ':key' => 'config']);
-        if (!$bean || empty($bean->meta_value)) {
+        $meta = $this->di['em']->getRepository(ExtensionMeta::class)->findOneBy(['extension' => $modName, 'metaKey' => 'config']);
+        $metaValue = $meta?->getMetaValue();
+        if (!$metaValue) {
             return [];
         }
 
-        $decrypted = $this->di['crypt']->decrypt($bean->meta_value, Config::getProperty('info.salt'));
+        $decrypted = $this->di['crypt']->decrypt($metaValue, Config::getProperty('info.salt'));
         if (!is_string($decrypted) || !json_validate($decrypted)) {
             return [];
         }
