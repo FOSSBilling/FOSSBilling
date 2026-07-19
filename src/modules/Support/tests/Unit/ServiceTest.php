@@ -1298,7 +1298,6 @@ dataset('kbArticleToApiArrayProvider', function () {
                 ],
                 'content' => $model->getContent(),
                 'status' => $model->getStatus(),
-                'kb_article_category_id' => $model->getKbArticleCategoryId(),
             ],
             true,
             createEntity(Admin::class),
