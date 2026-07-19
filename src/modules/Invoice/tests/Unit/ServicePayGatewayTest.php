@@ -142,16 +142,16 @@ test('converts to api array', function (): void {
         'id' => null,
         'code' => null,
         'title' => null,
-        'allow_single' => null,
-        'allow_recurrent' => null,
+        'allow_single' => true,
+        'allow_recurrent' => true,
         'accepted_currencies' => [],
         'supports_one_time_payments' => false,
         'supports_subscriptions' => false,
         'config' => [],
         'form' => [],
         'description' => null,
-        'enabled' => null,
-        'test_mode' => null,
+        'enabled' => true,
+        'test_mode' => false,
         'callback' => SYSTEM_URL . 'ipn.php?',
     ];
 
@@ -243,7 +243,7 @@ test('checks if can perform recurrent payment', function (): void {
     $payGatewayModel = createEntity(\Box\Mod\Invoice\Entity\PayGateway::class, ['allow_recurrent' => true]);
 
     $result = $service->canPerformRecurrentPayment($payGatewayModel);
-    expect($result)->toBeBool()->toBe($expected);
+    expect($result)->toBeBool()->toBeTrue();
 });
 
 test('gets payment adapter', function (): void {
@@ -396,7 +396,6 @@ test('gets form elements', function (): void {
 test('returns empty array when form config is empty', function (): void {
     $service = new ServicePayGateway();
     $payGatewayModel = createEntity(\Box\Mod\Invoice\Entity\PayGateway::class);
-    $payGatewayModel->loadBean(new Tests\Helpers\DummyBean());
 
     $serviceMock = Mockery::mock(ServicePayGateway::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $config = [];

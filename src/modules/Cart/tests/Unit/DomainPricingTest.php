@@ -18,6 +18,7 @@ use Box\Mod\Cart\Service;
 use Box\Mod\Product\Service as ProductService;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 test('cartProductToApiArray uses resolved initial domain term pricing', function (): void {
     $service = new Service();

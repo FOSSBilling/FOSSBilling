@@ -32,6 +32,18 @@ class Order
     final public const string ACTION_UNCANCEL = 'uncancel';
     final public const string ACTION_DELETE = 'delete';
 
+    public static function getValidStatuses(): array
+    {
+        return [
+            self::STATUS_PENDING_SETUP,
+            self::STATUS_FAILED_SETUP,
+            self::STATUS_FAILED_RENEW,
+            self::STATUS_ACTIVE,
+            self::STATUS_CANCELED,
+            self::STATUS_SUSPENDED,
+        ];
+    }
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::BIGINT)]

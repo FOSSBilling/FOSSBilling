@@ -276,14 +276,7 @@ test('converts to api array', function (): void {
     $service = new ServiceTax();
     $taxModel = createEntity(\Box\Mod\Invoice\Entity\Tax::class);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('toArray')
-        ->with($taxModel)
-        ->atLeast()->once()
-        ->andReturn([]);
-
     $di = container();
-    $di['db'] = $dbMock;
     $service->setDi($di);
 
     $result = $service->toApiArray($taxModel);

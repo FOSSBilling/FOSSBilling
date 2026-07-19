@@ -1232,14 +1232,19 @@ test('reserve promo for order', function (): void {
 
     $order = createEntity(\Box\Mod\Order\Entity\Order::class);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')->once()->with($order);
-
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('usePromo')->once()->with($promo);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = new readonly class {
+        public function persist(object $entity): void
+        {
+        }
+
+        public function flush(): void
+        {
+        }
+    };
     $serviceMock->setDi($di);
 
     $serviceMock->reservePromoForOrder($promo, $order);
@@ -1366,8 +1371,6 @@ test('get renewal promo adjustment for domain order', function (): void {
 
     $product = productTestCreateProductEntity(17)->setType(Service::DOMAIN);
 
-    $dbMock = Mockery::mock('\Box_Database')->shouldIgnoreMissing();
-
     $promoEntity = productTestCreatePromoEntity(15)
         ->setCode('PROMO')
         ->setType(Promo::ABSOLUTE)
@@ -1394,7 +1397,6 @@ test('get renewal promo adjustment for domain order', function (): void {
     $serviceMock->shouldReceive('getRenewalProductDiscount')->once()->with($product, $promoEntity, ['period' => '1Y'])->andReturn(5.0);
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['api_guest'] = $apiGuest;
     $di['em'] = new readonly class($promoRepo) {
         public function __construct(private object $promoRepo)

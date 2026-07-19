@@ -558,7 +558,7 @@ test('getOrderService returns core service', function (): void {
 
     $result = $svc->getOrderService($order);
 
-    expect($result)->toBeInstanceOf(Model_ServiceCustom::class);
+    expect($result)->toBeInstanceOf(\Box\Mod\Servicecustom\Entity\ServiceCustom::class);
 });
 
 test('getOrderService returns non-core service', function (): void {
@@ -580,7 +580,7 @@ test('getOrderService returns non-core service', function (): void {
 
     $result = $svc->getOrderService($order);
 
-    expect($result)->toBeInstanceOf(Model_ServiceCustom::class);
+    expect($result)->toBeInstanceOf(\Box\Mod\Servicecustom\Entity\ServiceCustom::class);
 });
 
 test('getOrderService returns null when service id is not set', function (): void {
