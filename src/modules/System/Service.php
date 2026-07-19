@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\System;
 
+use Box\Mod\Staff\Entity\Admin;
 use Doctrine\DBAL\ArrayParameterType;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
@@ -519,7 +520,7 @@ class Service
 
     public function templateExists($file, $identity = null): bool
     {
-        if ($identity instanceof \Model_Admin) {
+        if ($identity instanceof Admin) {
             $client = false;
         } else {
             $client = true;

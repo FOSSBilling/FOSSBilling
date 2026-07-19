@@ -83,7 +83,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $order = $this->_getOrder($data);
         $status = $order instanceof Order ? $order->getStatus() : $order->status;
 
-        if ($status !== \Model_ClientOrder::STATUS_ACTIVE) {
+        if ($status !== Order::STATUS_ACTIVE) {
             throw new \FOSSBilling\InformationException('Order is not active');
         }
 
@@ -111,7 +111,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
     {
         $model = $this->_getOrder($data);
         $status = $model instanceof Order ? $model->getStatus() : $model->status;
-        if (!in_array($status, [\Model_ClientOrder::STATUS_PENDING_SETUP, \Model_ClientOrder::STATUS_FAILED_SETUP])) {
+        if (!in_array($status, [Order::STATUS_PENDING_SETUP, Order::STATUS_FAILED_SETUP])) {
             throw new \FOSSBilling\InformationException('Only pending and failed setup orders can be deleted.');
         }
 
@@ -126,7 +126,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $this->getDi()['validator']->checkRequiredParamsForArray($required, $data);
 
         $order = $this->getService()->findForClientById($this->getIdentity(), $data['id']);
-        if (!$order instanceof Order && !$order instanceof \Model_ClientOrder) {
+        if (!$order instanceof Order && !$order instanceof Order) {
             throw new \FOSSBilling\InformationException('Order not found');
         }
 

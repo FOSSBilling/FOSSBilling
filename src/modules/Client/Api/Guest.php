@@ -131,7 +131,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             $service = $this->getService();
             $client = $service->authorizeClient($data['email'], $data['password']);
 
-            if (!$client instanceof \Model_Client) {
+            if (!$client instanceof Client) {
                 $this->getDi()['events_manager']->fire(['event' => 'onEventClientLoginFailed', 'params' => $event_params]);
 
                 throw new \FOSSBilling\InformationException('Please check your login details.', [], 401);

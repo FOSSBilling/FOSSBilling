@@ -42,7 +42,7 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function changeAdminPassword(\Model_Admin|Admin $admin, $new_password): bool
+    public function changeAdminPassword(Admin $admin, $new_password): bool
     {
         $event_params = ['id' => $admin->id];
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffProfilePasswordChange', 'params' => $event_params]);
@@ -65,7 +65,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function generateNewApiKey(\Model_Admin|Admin $admin): bool
+    public function generateNewApiKey(Admin $admin): bool
     {
         $event_params = [];
         $event_params['id'] = $admin->id;
@@ -87,7 +87,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function updateAdmin(\Model_Admin|Admin $admin, array $data): bool
+    public function updateAdmin(Admin $admin, array $data): bool
     {
         $event_params = $data;
         $event_params['id'] = $admin->id;
@@ -116,7 +116,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function getAdminIdentityArray(\Model_Admin|Admin $identity): array
+    public function getAdminIdentityArray(Admin $identity): array
     {
         return [
             'id' => $identity->id,
@@ -131,7 +131,7 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public function updateClient(\Model_Client|Client $client, array $data = []): bool
+    public function updateClient(Client $client, array $data = []): bool
     {
         $event_params = $data;
         $event_params['id'] = $client->id;
@@ -243,7 +243,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function resetApiKey(\Model_Client|Client $client)
+    public function resetApiKey(Client $client)
     {
         $client->api_token = $this->di['tools']->generatePassword(32);
         $client->updated_at = date('Y-m-d H:i:s');
@@ -260,7 +260,7 @@ class Service implements InjectionAwareInterface
         return $client->api_token;
     }
 
-    public function changeClientPassword(\Model_Client|Client $client, $new_password): bool
+    public function changeClientPassword(Client $client, $new_password): bool
     {
         $event_params = ['id' => $client->id];
         $this->di['events_manager']->fire(['event' => 'onBeforeClientProfilePasswordChange', 'params' => $event_params]);

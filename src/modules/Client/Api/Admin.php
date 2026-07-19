@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Client\Api;
 
+use Box\Mod\Client\Entity\Client;
 use FOSSBilling\InformationException;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Tools;
@@ -174,12 +175,12 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         }
 
         $password = trim((string) ($data['password'] ?? ''));
-        $status = $data['status'] ?? \Model_Client::ACTIVE;
+        $status = $data['status'] ?? Client::ACTIVE;
         if (!$data['send_welcome_email'] && $password === '') {
             throw new InformationException('A password is required when the welcome email is disabled.');
         }
 
-        if ($data['send_welcome_email'] && $status !== \Model_Client::ACTIVE) {
+        if ($data['send_welcome_email'] && $status !== Client::ACTIVE) {
             throw new InformationException('Welcome email can only be sent for active clients.');
         }
 
@@ -345,7 +346,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             $client->billing_email = $data['billing_email'];
         }
 
-        if ($client->status !== \Model_Client::ACTIVE) {
+        if ($client->status !== Client::ACTIVE) {
             $client->api_token = null;
         }
 
@@ -353,7 +354,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $this->getDi()['db']->store($client);
 
-        if ($client->status !== \Model_Client::ACTIVE && $previousStatus === \Model_Client::ACTIVE) {
+        if ($client->status !== Client::ACTIVE && $previousStatus === Client::ACTIVE) {
             $profileService = $this->getDi()['mod_service']('profile');
             $profileService->invalidateSessions('client', (int) $client->id);
         }

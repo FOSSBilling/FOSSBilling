@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicedownloadable\Api;
 
+use Box\Mod\Servicedownloadable\Entity\ServiceDownloadable;
 use FOSSBilling\Validation\Api\RequiredParams;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -60,7 +61,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $orderService = $this->getDi()['mod_service']('order');
         $serviceDownloadable = $orderService->getOrderService($order);
-        if (!$serviceDownloadable instanceof \Model_ServiceDownloadable) {
+        if (!$serviceDownloadable instanceof ServiceDownloadable) {
             throw new \FOSSBilling\Exception('Order is not activated');
         }
 

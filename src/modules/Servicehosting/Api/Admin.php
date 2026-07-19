@@ -328,7 +328,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         return $updated;
     }
 
-    private function validateServerConfig(ServiceHostingServer|\Model_ServiceHostingServer $model): void
+    private function validateServerConfig(ServiceHostingServer $model): void
     {
         try {
             $this->getService()->getServerManager($model);
@@ -475,7 +475,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $order = $this->getDi()['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
         $orderService = $this->getDi()['mod_service']('order');
         $s = $orderService->getOrderService($order);
-        if (!$s instanceof \Model_ServiceHosting && !$s instanceof ServiceHosting) {
+        if (!$s instanceof ServiceHosting) {
             throw new \FOSSBilling\Exception('Order is not activated');
         }
 

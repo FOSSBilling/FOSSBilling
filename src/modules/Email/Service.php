@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Email;
 
+use Box\Mod\Client\Entity\Client;
 use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Email\Entity\ActivityClientEmail;
 use Box\Mod\Email\Entity\EmailTemplate;
@@ -110,7 +111,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         ];
     }
 
-    public function rmByClient(\Model_Client $client): bool
+    public function rmByClient(Client $client): bool
     {
         $this->getActivityClientEmailRepository()->deleteByClientId((int) $client->id);
 

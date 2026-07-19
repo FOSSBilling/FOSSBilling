@@ -11,6 +11,10 @@ declare(strict_types=1);
 
 namespace Box\Mod\Activity;
 
+use Box\Mod\Activity\Entity\ActivityAdminHistory;
+use Box\Mod\Activity\Entity\ActivityClientHistory;
+use Box\Mod\Activity\Entity\ActivitySystem;
+use Box\Mod\Client\Entity\Client;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Types\Types;
 use FOSSBilling\InjectionAwareInterface;
@@ -229,7 +233,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function toApiArray(\Model_ActivityClientHistory $model): array
+    public function toApiArray(ActivityClientHistory $model): array
     {
         $client = $this->getDbal()->executeQuery(
             'SELECT id, first_name, last_name, email FROM client WHERE id = ?',
@@ -253,7 +257,7 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public function rmByClient(\Model_Client $client): void
+    public function rmByClient(Client $client): void
     {
         $this->getDbal()->executeStatement('DELETE FROM activity_system WHERE client_id = ?', [$client->id]);
     }

@@ -134,7 +134,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         }
     }
 
-    public function addNew(Invoice|Invoice $proforma, array $data): int
+    public function addNew(Invoice $proforma, array $data): int
     {
         $invoiceId = $proforma instanceof Invoice ? $proforma->getId() : $proforma->id;
 
@@ -236,7 +236,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         return true;
     }
 
-    public function generateForAddFunds(Invoice|Invoice $proforma, float $amount): void
+    public function generateForAddFunds(Invoice $proforma, float $amount): void
     {
         $invoiceId = $proforma instanceof Invoice ? $proforma->getId() : $proforma->id;
 
@@ -302,7 +302,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $this->di['em']->flush();
     }
 
-    public function generateFromOrder(Invoice|Invoice $proforma, OrderEntity|OrderEntity $order, $task, $price, array $line = []): void
+    public function generateFromOrder(Invoice $proforma, OrderEntity $order, $task, $price, array $line = []): void
     {
         $invoiceId = $proforma instanceof Invoice ? $proforma->getId() : $proforma->id;
 

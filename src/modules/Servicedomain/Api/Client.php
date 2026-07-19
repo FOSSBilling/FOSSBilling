@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicedomain\Api;
 
+use Box\Mod\Order\Entity\Order;
 use Box\Mod\Servicedomain\Entity\ServiceDomain;
 
 class Client extends \FOSSBilling\Api\AbstractApi
@@ -78,12 +79,12 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $orderService = $this->getDi()['mod_service']('order');
 
         $order = $orderService->findForClientById($this->getIdentity(), $data['order_id']);
-        if (!$order instanceof \Model_ClientOrder) {
+        if (!$order instanceof Order) {
             throw new \FOSSBilling\InformationException('Order not found');
         }
 
         $s = $orderService->getOrderService($order);
-        if ((!$s instanceof ServiceDomain && !$s instanceof \Model_ServiceDomain) || $order->status !== \Model_ClientOrder::STATUS_ACTIVE) {
+        if ((!$s instanceof ServiceDomain) || $order->status !== Order::STATUS_ACTIVE) {
             throw new \FOSSBilling\Exception('Order is not activated');
         }
 

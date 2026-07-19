@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Index;
 
+use Box\Mod\Client\Entity\Client;
 use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
@@ -34,11 +35,11 @@ class Service implements InjectionAwareInterface
      * response. It fetches profile information, ticket statistics, invoice statistics,
      * order statistics, and recent items.
      *
-     * @param \Model_Client $client The client model to get dashboard data for
+     * @param Client $client The client model to get dashboard data for
      *
      * @return array Dashboard data containing profile, tickets, invoices, orders, recent_orders, and recent_tickets
      */
-    public function getDashboardData(\Model_Client $client): array
+    public function getDashboardData(Client $client): array
     {
         $data['client_id'] = $client->id;
 
@@ -52,7 +53,7 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    private function getProfile(\Model_Client $client): array
+    private function getProfile(Client $client): array
     {
         $clientService = $this->di['mod_service']('client');
 

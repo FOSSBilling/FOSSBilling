@@ -57,7 +57,7 @@ class Service implements InjectionAwareInterface
     /**
      * @return ServiceApiKey
      */
-    public function create(\Model_ClientOrder $order)
+    public function create(Order $order)
     {
         $model = new ServiceApiKey();
         $model->setClientId($order->client_id);
@@ -69,7 +69,7 @@ class Service implements InjectionAwareInterface
         return $model;
     }
 
-    public function activate(\Model_ClientOrder|\RedBeanPHP\OODBBean $order, \RedBeanPHP\OODBBean|ServiceApiKey $model): bool
+    public function activate(Order|\RedBeanPHP\OODBBean $order, \RedBeanPHP\OODBBean|ServiceApiKey $model): bool
     {
         $config = json_decode($order->config ?? '', true);
         $this->_setModelProperty($model, 'api_key', $this->generateKey($config));
@@ -81,7 +81,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function suspend(\Model_ClientOrder|\RedBeanPHP\OODBBean $order, \RedBeanPHP\OODBBean|ServiceApiKey $model): bool
+    public function suspend(Order|\RedBeanPHP\OODBBean $order, \RedBeanPHP\OODBBean|ServiceApiKey $model): bool
     {
         $this->_setModelProperty($model, 'updated_at', date('Y-m-d H:i:s'));
         $this->di['em']->persist($model);
@@ -90,7 +90,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function unsuspend(\Model_ClientOrder|\RedBeanPHP\OODBBean $order, \RedBeanPHP\OODBBean|ServiceApiKey $model): bool
+    public function unsuspend(Order|\RedBeanPHP\OODBBean $order, \RedBeanPHP\OODBBean|ServiceApiKey $model): bool
     {
         $this->_setModelProperty($model, 'updated_at', date('Y-m-d H:i:s'));
         $this->di['em']->persist($model);
@@ -99,17 +99,17 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function cancel(\Model_ClientOrder|\RedBeanPHP\OODBBean $order, \RedBeanPHP\OODBBean|ServiceApiKey $model): bool
+    public function cancel(Order|\RedBeanPHP\OODBBean $order, \RedBeanPHP\OODBBean|ServiceApiKey $model): bool
     {
         return $this->suspend($order, $model);
     }
 
-    public function uncancel(\Model_ClientOrder|\RedBeanPHP\OODBBean $order, \RedBeanPHP\OODBBean|ServiceApiKey $model): bool
+    public function uncancel(Order|\RedBeanPHP\OODBBean $order, \RedBeanPHP\OODBBean|ServiceApiKey $model): bool
     {
         return $this->unsuspend($order, $model);
     }
 
-    public function delete(?\Model_ClientOrder $order, \RedBeanPHP\OODBBean|ServiceApiKey|null $model): void
+    public function delete(?Order $order, \RedBeanPHP\OODBBean|ServiceApiKey|null $model): void
     {
         if (is_object($model)) {
             $this->di['em']->remove($model);

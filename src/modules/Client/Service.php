@@ -316,7 +316,7 @@ class Service implements InjectionAwareInterface
         }
 
         $invoice = $this->di['em']->getRepository(Invoice::class)->findOneBy(['clientId' => $model->id]);
-        if ($invoice instanceof Invoice || $invoice instanceof Invoice) {
+        if ($invoice instanceof Invoice) {
             throw new InformationException('Currency cannot be changed. Client already has invoices issued.');
         }
 

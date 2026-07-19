@@ -96,9 +96,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * @return \Model_ServiceCustom|ServiceCustom
+     * @return ServiceCustom
      */
-    public function action_create(\Model_ClientOrder $order)
+    public function action_create(Order $order)
     {
         $product = $this->di['mod_service']('product')->findProductById((int) $order->product_id);
         if (!$product instanceof Product) {
@@ -117,7 +117,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $model;
     }
 
-    public function action_activate(\Model_ClientOrder $order): bool
+    public function action_activate(Order $order): bool
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
@@ -130,7 +130,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function action_renew(\Model_ClientOrder $order): bool
+    public function action_renew(Order $order): bool
     {
         $model = $this->_getOrderService($order);
         $this->callOnAdapter($model, 'renew');
@@ -142,7 +142,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function action_suspend(\Model_ClientOrder $order): bool
+    public function action_suspend(Order $order): bool
     {
         $model = $this->_getOrderService($order);
 
@@ -155,7 +155,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function action_unsuspend(\Model_ClientOrder $order): bool
+    public function action_unsuspend(Order $order): bool
     {
         $model = $this->_getOrderService($order);
 
@@ -168,7 +168,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function action_cancel(\Model_ClientOrder $order): bool
+    public function action_cancel(Order $order): bool
     {
         $model = $this->_getOrderService($order);
 
@@ -181,7 +181,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function action_uncancel(\Model_ClientOrder $order): bool
+    public function action_uncancel(Order $order): bool
     {
         $model = $this->_getOrderService($order);
 
@@ -194,7 +194,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function action_delete(\Model_ClientOrder $order): bool
+    public function action_delete(Order $order): bool
     {
         try {
             $model = $this->_getOrderService($order);
@@ -211,14 +211,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function getConfig(\Model_ServiceCustom|ServiceCustom $model): array
+    public function getConfig(ServiceCustom $model): array
     {
         $config = $model instanceof ServiceCustom ? $model->getConfig() : $model->config;
 
         return json_decode($config ?? '', true) ?? [];
     }
 
-    public function toApiArray(\Model_ServiceCustom|ServiceCustom $model): array
+    public function toApiArray(ServiceCustom $model): array
     {
         $data = $this->getConfig($model);
         $data['id'] = $model instanceof ServiceCustom ? $model->getId() : $model->id;
@@ -230,7 +230,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $data;
     }
 
-    public function customCall(\Model_ServiceCustom|ServiceCustom $model, $method, $params = [])
+    public function customCall(ServiceCustom $model, $method, $params = [])
     {
         $forbidden_methods = [
             'delete',
@@ -283,14 +283,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $orderService = $this->di['mod_service']('order');
         $s = $orderService->getOrderService($order);
 
-        if (!$s instanceof \Model_ServiceCustom && !$s instanceof ServiceCustom) {
+        if (!$s instanceof ServiceCustom) {
             throw new \FOSSBilling\Exception('Order is not activated');
         }
 
         return $s;
     }
 
-    private function callOnAdapter(\Model_ServiceCustom|ServiceCustom $model, $method, $params = [])
+    private function callOnAdapter(ServiceCustom $model, $method, $params = [])
     {
         $plugin = $model instanceof ServiceCustom ? $model->getPlugin() : $model->plugin;
         if (empty($plugin)) {
@@ -326,7 +326,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $adapter->$method($data, $order_data, $params);
     }
 
-    private function _getOrderService(\Model_ClientOrder $order)
+    private function _getOrderService(Order $order)
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
@@ -337,7 +337,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $model;
     }
 
-    private function _getModelProperty(\Model_ServiceCustom|ServiceCustom $model, string $property): mixed
+    private function _getModelProperty(ServiceCustom $model, string $property): mixed
     {
         if ($model instanceof ServiceCustom) {
             return match ($property) {
@@ -355,7 +355,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $model->{$property} ?? null;
     }
 
-    private function _setModelProperty(\Model_ServiceCustom|ServiceCustom $model, string $property, mixed $value): void
+    private function _setModelProperty(ServiceCustom $model, string $property, mixed $value): void
     {
         if ($model instanceof ServiceCustom) {
             match ($property) {

@@ -287,7 +287,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             return;
         }
 
-        if ($this->identity instanceof \Model_Admin) {
+        if ($this->identity instanceof \Box\Mod\Staff\Entity\Admin) {
             try {
                 if ($this->getDi()['mod_service']('Staff')->isSuperAdministrator($this->identity->id)) {
                     return;

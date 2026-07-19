@@ -847,7 +847,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             $model = $this->getDi()['db']->findOne('Subscription', 'sid = ?', [$data['sid']]);
         }
 
-        if (!$model instanceof \Model_Subscription) {
+        if (!$model instanceof Subscription) {
             throw new \FOSSBilling\Exception('Subscription not found');
         }
 

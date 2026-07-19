@@ -11,6 +11,9 @@ declare(strict_types=1);
 
 namespace Box\Mod\Support;
 
+use Box\Mod\Client\Entity\Client;
+use Box\Mod\Order\Entity\Order;
+use Box\Mod\Staff\Entity\Admin;
 use Box\Mod\Support\Entity\CannedResponse;
 use Box\Mod\Support\Entity\CannedResponseCategory;
 use Box\Mod\Support\Entity\Helpdesk;
@@ -282,7 +285,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     /**
      * Find ticket for client.
      */
-    public function findOneByClient(\Model_Client $c, int $id): SupportTicket
+    public function findOneByClient(Client $c, int $id): SupportTicket
     {
         return $this->getSupportTicketRepository()->findOneByClientOrFail((int) $c->id, $id);
     }
@@ -314,17 +317,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->getSupportTicketRepository()->countByStatus($status);
     }
 
-    public function checkIfTaskAlreadyExists(\Model_Client $client, int $rel_id, string $rel_type, string $rel_task): bool
+    public function checkIfTaskAlreadyExists(Client $client, int $rel_id, string $rel_type, string $rel_task): bool
     {
         return $this->getSupportTicketRepository()->hasPendingTaskForClient((int) $client->id, $rel_id, $rel_type, $rel_task);
     }
 
-    public function closeTicket(SupportTicket $ticket, \Model_Admin|\Model_Client|\Model_Guest $identity): bool
+    public function closeTicket(SupportTicket $ticket, Admin|Client|\Model_Guest $identity): bool
     {
         $ticket->close();
         $this->di['em']->flush();
 
-        if ($identity instanceof \Model_Admin) {
+        if ($identity instanceof Admin) {
             $this->di['events_manager']->fire(['event' => 'onAfterAdminCloseTicket', 'params' => ['id' => $ticket->getId()]]);
         } else {
             $this->di['events_manager']->fire(['event' => 'onAfterClientCloseTicket', 'params' => ['id' => $ticket->getId()]]);
@@ -370,7 +373,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $clientId = $model->getClientId();
             if ($clientId !== null && $this->fetchClientSummary($clientId) !== null) {
                 $order = $this->di['mod_service']('order')->findByClientIdAndOrderId($clientId, (int) $model->getRelId());
-                if ($order instanceof \Model_ClientOrder) {
+                if ($order instanceof ClientOrder) {
                     $result['order'] = $this->di['mod_service']('order')->toApiArray($order, false);
                 }
             }
@@ -379,7 +382,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $result;
     }
 
-    public function rmByClient(\Model_Client $client): void
+    public function rmByClient(Client $client): void
     {
         $em = $this->di['em'];
         foreach ($this->getSupportTicketRepository()->findByClientId((int) $client->id) as $ticket) {
@@ -411,7 +414,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function toApiArray(SupportTicket $model, bool $deep = true, \Model_Admin|\Model_Client|null $identity = null): array
+    public function toApiArray(SupportTicket $model, bool $deep = true, Admin|Client|null $identity = null): array
     {
         $firstSupportTicketMessage = $this->getSupportTicketMessageRepository()->findFirstByTicketId($model->getId() ?? 0);
         $helpdeskId = $model->getSupportHelpdeskId();
@@ -432,7 +435,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             }
         }
 
-        if ($identity instanceof \Model_Admin) {
+        if ($identity instanceof Admin) {
             $data['rel'] = $this->_getRelDetails($model);
             $data['priority'] = $model->getPriority();
             $data['notes'] = [];
@@ -453,13 +456,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
      * associative arrays rather than hydrated entities and therefore cannot
      * use {@see SupportTicket::toApiArray()}.
      */
-    private function ticketToApiArray(array $data, \Model_Admin|\Model_Client|null $identity = null): array
+    private function ticketToApiArray(array $data, Admin|Client|null $identity = null): array
     {
         if (!empty($data['access_hash'])) {
             $data['hash'] = $data['access_hash'];
         }
 
-        if ($identity instanceof \Model_Admin) {
+        if ($identity instanceof Admin) {
             return $data;
         }
 
@@ -483,7 +486,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
      *
      * @param array                           $ids      Array of ticket IDs to fetch
      * @param bool                            $deep     Whether to include full message history
-     * @param \Model_Admin|\Model_Client|null $identity The requesting identity
+     * @param Admin|Client|null $identity The requesting identity
      *
      * @return array Array of ticket API arrays. Missing IDs are silently skipped.
      */
@@ -494,7 +497,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             return [];
         }
 
-        if ($deep || $identity instanceof \Model_Admin) {
+        if ($deep || $identity instanceof Admin) {
             return $this->getBatchForApiWithModels($ids, $deep, $identity);
         }
 
@@ -638,7 +641,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $ordered;
     }
 
-    private function getClientApiArrayForTicket(SupportTicket $ticket, \Model_Admin|\Model_Client|null $identity = null): array
+    private function getClientApiArrayForTicket(SupportTicket $ticket, Admin|Client|null $identity = null): array
     {
         if ($ticket->isGuestTicket()) {
             return [];
@@ -649,11 +652,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             return [];
         }
 
-        if ($identity instanceof \Model_Admin) {
+        if ($identity instanceof Admin) {
             // Requires Model_Client until Client::toApiArray() is migrated to Doctrine.
             $client = $this->di['db']->load('Client', $clientId);
 
-            return $client instanceof \Model_Client
+            return $client instanceof Client
                 ? $this->clientToTicketApiArray($client, $identity)
                 : [];
         }
@@ -672,7 +675,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         ];
     }
 
-    private function getTicketAuthor(SupportTicket $ticket, \Model_Admin|\Model_Client|null $identity = null): array
+    private function getTicketAuthor(SupportTicket $ticket, Admin|Client|null $identity = null): array
     {
         if ($ticket->isGuestTicket()) {
             $author = [
@@ -680,7 +683,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 'role' => 'guest',
             ];
 
-            if ($identity instanceof \Model_Admin || $identity === null) {
+            if ($identity instanceof Admin || $identity === null) {
                 $author['email'] = $ticket->getAuthorEmail();
             }
 
@@ -705,9 +708,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return [];
     }
 
-    private function clientToTicketApiArray(\Model_Client $client, \Model_Admin|\Model_Client|null $identity = null): array
+    private function clientToTicketApiArray(Client $client, Admin|Client|null $identity = null): array
     {
-        if ($identity instanceof \Model_Admin) {
+        if ($identity instanceof Admin) {
             $clientService = $this->di['mod_service']('client');
 
             return $clientService->toApiArray($client, false, $identity);
@@ -746,7 +749,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
      * for a client row via DBAL.
      *
      * The synthesized `name` field concatenates first and last name to mimic
-     * the legacy {@see \Model_Client::getFullName()} behaviour.
+     * the legacy {@see Client::getFullName()} behaviour.
      *
      * @return array{id: int, first_name: string, last_name: string, email: string, name: string}|null
      *
@@ -798,7 +801,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function noteToApiArray(SupportTicketNote $model, bool $deep = false, \Model_Admin|\Model_Client|null $identity = null): array
+    public function noteToApiArray(SupportTicketNote $model, bool $deep = false, Admin|Client|null $identity = null): array
     {
         $data = [
             'id' => $model->getId(),
@@ -833,7 +836,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->getSupportTicketMessageRepository()->countByTicketId($model->getId() ?? 0);
     }
 
-    public function messageGetAuthorDetails(SupportTicketMessage $model, \Model_Admin|\Model_Client|null $identity = null): array
+    public function messageGetAuthorDetails(SupportTicketMessage $model, Admin|Client|null $identity = null): array
     {
         $adminId = $model->getAdminId();
         $clientId = $model->getClientId();
@@ -868,14 +871,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'role' => $role,
         ];
 
-        if ($identity instanceof \Model_Admin) {
+        if ($identity instanceof Admin) {
             $result['email'] = $author['email'];
         }
 
         return $result;
     }
 
-    public function messageToApiArray(SupportTicketMessage $model, bool $deep = true, \Model_Admin|\Model_Client|null $identity = null): array
+    public function messageToApiArray(SupportTicketMessage $model, bool $deep = true, Admin|Client|null $identity = null): array
     {
         $data = $model->toApiArray($identity);
         $data['author'] = $this->messageGetAuthorDetails($model, $identity);
@@ -909,7 +912,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function ticketMessageUpdate(SupportTicketMessage $model, string $content, \Model_Admin $identity): bool
+    public function ticketMessageUpdate(SupportTicketMessage $model, string $content, Admin $identity): bool
     {
         if ($model->getAdminId() === null) {
             throw new InformationException('Only admin replies can be edited');
@@ -954,16 +957,16 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * @param \Model_Admin $identity
+     * @param Admin $identity
      */
-    public function ticketReply(SupportTicket $ticket, \Model_Admin|\Model_Client|\Model_Guest $identity, string $content): int
+    public function ticketReply(SupportTicket $ticket, Admin|Client|\Model_Guest $identity, string $content): int
     {
         $em = $this->di['em'];
         $msg = new SupportTicketMessage();
         $msg->setSupportTicket($ticket);
-        if ($identity instanceof \Model_Admin) {
+        if ($identity instanceof Admin) {
             $msg->setAdminId((int) $identity->id);
-        } elseif ($identity instanceof \Model_Client) {
+        } elseif ($identity instanceof Client) {
             $msg->setClientId((int) $identity->id);
         }
         $msg->setContent($content);
@@ -971,7 +974,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $em->persist($msg);
         $em->flush();
 
-        if ($identity instanceof \Model_Admin) {
+        if ($identity instanceof Admin) {
             $ticket->setStatus(SupportTicket::STATUS_ONHOLD);
         } else {
             $ticket->setStatus(SupportTicket::STATUS_OPEN);
@@ -979,7 +982,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $ticket->setUpdatedAt(new \DateTime());
         $em->flush();
 
-        if ($identity instanceof \Model_Admin) {
+        if ($identity instanceof Admin) {
             $this->di['events_manager']->fire(['event' => 'onAfterAdminReplyTicket', 'params' => ['id' => $ticket->getId()]]);
         } else {
             $this->di['events_manager']->fire(['event' => 'onAfterClientReplyTicket', 'params' => ['id' => $ticket->getId()]]);
@@ -990,7 +993,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return (int) $msg->getId();
     }
 
-    public function ticketCreateForAdmin(int $clientId, Helpdesk $helpdesk, array $data, \Model_Admin $identity): int
+    public function ticketCreateForAdmin(int $clientId, Helpdesk $helpdesk, array $data, Admin $identity): int
     {
         $status = $data['status'] ?? SupportTicket::STATUS_ONHOLD;
 
@@ -1089,7 +1092,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return !$disableGuestTickets;
     }
 
-    public function canClientSubmitNewTicket(\Model_Client $client, array $config): bool
+    public function canClientSubmitNewTicket(Client $client, array $config): bool
     {
         $hours = $config['wait_hours'];
 
@@ -1112,7 +1115,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function ticketCreateForClient(\Model_Client $client, Helpdesk $helpdesk, array $data): int
+    public function ticketCreateForClient(Client $client, Helpdesk $helpdesk, array $data): int
     {
         SupportTicketValidator::validateTicketCreation($data);
 
@@ -1135,13 +1138,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         if ($rel_id !== null && $rel_type === SupportTicket::REL_TYPE_ORDER) {
             $orderService = $this->di['mod_service']('order');
             $order = $orderService->findForClientById($client, $rel_id);
-            if (!$order instanceof \Model_ClientOrder) {
+            if (!$order instanceof ClientOrder) {
                 throw new \FOSSBilling\Exception('You do not have permission to reference this order.');
             }
         }
 
         if ($rel_task === SupportTicket::REL_TASK_UPGRADE) {
-            if (!$order instanceof \Model_ClientOrder) {
+            if (!$order instanceof ClientOrder) {
                 throw new \FOSSBilling\Exception('You must provide both an order ID and a new product ID in order to request an upgrade.');
             }
 
@@ -1218,7 +1221,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $staffService = $this->di['mod_service']('staff');
             $admin = $staffService->getCronAdmin();
 
-            if (isset($canned['content']) && $admin instanceof \Model_Admin) {
+            if (isset($canned['content']) && $admin instanceof Admin) {
                 $this->ticketReply($ticket, $admin, $canned['content']);
             }
         } catch (\Exception $e) {
@@ -1227,16 +1230,16 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * @param \Model_Client $identity
+     * @param Client $identity
      */
-    public function messageCreateForTicket(SupportTicket $ticket, \Model_Admin|\Model_Client $identity, string $content): int
+    public function messageCreateForTicket(SupportTicket $ticket, Admin|Client $identity, string $content): int
     {
         $em = $this->di['em'];
         $msg = new SupportTicketMessage();
         $msg->setSupportTicket($ticket);
-        if ($identity instanceof \Model_Admin) {
+        if ($identity instanceof Admin) {
             $msg->setAdminId((int) $identity->id);
-        } elseif ($identity instanceof \Model_Client) {
+        } elseif ($identity instanceof Client) {
             $msg->setClientId((int) $identity->id);
         } else {
             throw new \FOSSBilling\Exception('Identity is invalid');
@@ -1407,7 +1410,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function noteCreate(SupportTicket $ticket, \Model_Admin $identity, string $note): int
+    public function noteCreate(SupportTicket $ticket, Admin $identity, string $note): int
     {
         $em = $this->di['em'];
         $model = new SupportTicketNote();

@@ -11,9 +11,11 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicedownloadable;
 
+use Box\Mod\Order\Entity\Order;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Servicedownloadable\Entity\ServiceDownloadable;
 use Box\Mod\Servicedownloadable\Repository\ServiceDownloadableRepository;
+use Box\Mod\Staff\Entity\Admin;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
@@ -179,9 +181,9 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @return \Model_ServiceDownloadable|ServiceDownloadable
+     * @return ServiceDownloadable
      */
-    public function action_create(\Model_ClientOrder $order)
+    public function action_create(Order $order)
     {
         $c = json_decode($order->config ?? '', true);
         if (!is_array($c)) {
@@ -201,7 +203,7 @@ class Service implements InjectionAwareInterface
         return $model;
     }
 
-    public function action_activate(\Model_ClientOrder $order): bool
+    public function action_activate(Order $order): bool
     {
         return true;
     }
@@ -209,7 +211,7 @@ class Service implements InjectionAwareInterface
     /**
      * @todo
      */
-    public function action_renew(\Model_ClientOrder $order): bool
+    public function action_renew(Order $order): bool
     {
         return true;
     }
@@ -217,7 +219,7 @@ class Service implements InjectionAwareInterface
     /**
      * @todo
      */
-    public function action_suspend(\Model_ClientOrder $order): bool
+    public function action_suspend(Order $order): bool
     {
         return true;
     }
@@ -225,7 +227,7 @@ class Service implements InjectionAwareInterface
     /**
      * @todo
      */
-    public function action_unsuspend(\Model_ClientOrder $order): bool
+    public function action_unsuspend(Order $order): bool
     {
         return true;
     }
@@ -233,7 +235,7 @@ class Service implements InjectionAwareInterface
     /**
      * @todo
      */
-    public function action_cancel(\Model_ClientOrder $order): bool
+    public function action_cancel(Order $order): bool
     {
         return true;
     }
@@ -241,7 +243,7 @@ class Service implements InjectionAwareInterface
     /**
      * @todo
      */
-    public function action_uncancel(\Model_ClientOrder $order): bool
+    public function action_uncancel(Order $order): bool
     {
         return true;
     }
@@ -249,23 +251,23 @@ class Service implements InjectionAwareInterface
     /**
      * @todo
      */
-    public function action_delete(\Model_ClientOrder $order): void
+    public function action_delete(Order $order): void
     {
         $orderService = $this->di['mod_service']('order');
         $service = $orderService->getOrderService($order);
-        if ($service instanceof \Model_ServiceDownloadable || $service instanceof ServiceDownloadable) {
+        if ($service instanceof ServiceDownloadable) {
             $this->di['em']->remove($service);
             $this->di['em']->flush();
         }
     }
 
-    public function toApiArray(\Model_ServiceDownloadable|ServiceDownloadable $model, $deep = false, $identity = null): array
+    public function toApiArray(ServiceDownloadable $model, $deep = false, $identity = null): array
     {
         $result = [
             'filename' => $model instanceof ServiceDownloadable ? $model->getFilename() : $model->filename,
         ];
 
-        if ($identity instanceof \Model_Admin) {
+        if ($identity instanceof Admin) {
             $result['path'] = $this->getStoredFilePath(
                 $model instanceof ServiceDownloadable ? $model->getStoredFilename() : $model->stored_filename
             );
@@ -407,7 +409,7 @@ class Service implements InjectionAwareInterface
     /**
      * @throws \FOSSBilling\Exception
      */
-    public function updateProductFile(\Model_ServiceDownloadable|ServiceDownloadable $serviceDownloadable, \Model_ClientOrder $order, ?string $filename = null, ?string $storedFilename = null): bool
+    public function updateProductFile(ServiceDownloadable $serviceDownloadable, Order $order, ?string $filename = null, ?string $storedFilename = null): bool
     {
         $request = $this->di['request'];
         $oldStoredFilename = $serviceDownloadable instanceof ServiceDownloadable ? $serviceDownloadable->getStoredFilename() : $serviceDownloadable->stored_filename;
@@ -494,7 +496,7 @@ class Service implements InjectionAwareInterface
         };
     }
 
-    public function sendFile(\Model_ServiceDownloadable|ServiceDownloadable $serviceDownloadable): Response
+    public function sendFile(ServiceDownloadable $serviceDownloadable): Response
     {
         $fileName = $serviceDownloadable instanceof ServiceDownloadable ? $serviceDownloadable->getFilename() : $serviceDownloadable->filename;
         $storedFilename = $serviceDownloadable instanceof ServiceDownloadable ? $serviceDownloadable->getStoredFilename() : $serviceDownloadable->stored_filename;

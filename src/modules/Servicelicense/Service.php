@@ -14,7 +14,9 @@ namespace Box\Mod\Servicelicense;
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Servicelicense\Entity\ServiceLicense;
+use Box\Mod\Order\Entity\Order;
 use Box\Mod\Servicelicense\Repository\ServiceLicenseRepository;
+use Box\Mod\Staff\Entity\Admin;
 use FOSSBilling\InjectionAwareInterface;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
@@ -84,9 +86,9 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @return \Model_ServiceLicense|ServiceLicense
+     * @return ServiceLicense
      */
-    public function action_create(\Model_ClientOrder $order)
+    public function action_create(Order $order)
     {
         $orderService = $this->di['mod_service']('order');
         $c = $orderService->getConfig($order);
@@ -111,13 +113,13 @@ class Service implements InjectionAwareInterface
         return $model;
     }
 
-    public function action_activate(\Model_ClientOrder $order): bool
+    public function action_activate(Order $order): bool
     {
         $orderService = $this->di['mod_service']('order');
         $c = $orderService->getConfig($order);
         $iterations = $c['iterations'] ?? 10;
         $model = $orderService->getOrderService($order);
-        if (!$model instanceof \Model_ServiceLicense && !$model instanceof ServiceLicense) {
+        if (!$model instanceof ServiceLicense) {
             throw new \FOSSBilling\Exception('Could not activate order. Service was not created');
         }
 
@@ -154,7 +156,7 @@ class Service implements InjectionAwareInterface
     /**
      * @todo
      */
-    public function action_renew(\Model_ClientOrder $order): bool
+    public function action_renew(Order $order): bool
     {
         return true;
     }
@@ -162,7 +164,7 @@ class Service implements InjectionAwareInterface
     /**
      * @todo
      */
-    public function action_suspend(\Model_ClientOrder $order): bool
+    public function action_suspend(Order $order): bool
     {
         return true;
     }
@@ -170,7 +172,7 @@ class Service implements InjectionAwareInterface
     /**
      * @todo
      */
-    public function action_unsuspend(\Model_ClientOrder $order): bool
+    public function action_unsuspend(Order $order): bool
     {
         return true;
     }
@@ -178,7 +180,7 @@ class Service implements InjectionAwareInterface
     /**
      * @todo
      */
-    public function action_cancel(\Model_ClientOrder $order): bool
+    public function action_cancel(Order $order): bool
     {
         return true;
     }
@@ -186,22 +188,22 @@ class Service implements InjectionAwareInterface
     /**
      * @todo
      */
-    public function action_uncancel(\Model_ClientOrder $order): bool
+    public function action_uncancel(Order $order): bool
     {
         return true;
     }
 
-    public function action_delete(\Model_ClientOrder $order): void
+    public function action_delete(Order $order): void
     {
         $orderService = $this->di['mod_service']('order');
         $service = $orderService->getOrderService($order);
-        if ($service instanceof \Model_ServiceLicense || $service instanceof ServiceLicense) {
+        if ($service instanceof ServiceLicense) {
             $this->di['em']->remove($service);
             $this->di['em']->flush();
         }
     }
 
-    public function reset(\Model_ServiceLicense|ServiceLicense $model): bool
+    public function reset(ServiceLicense $model): bool
     {
         $data = [
             'id' => $this->_getModelProperty($model, 'id'),
@@ -232,18 +234,18 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function isLicenseActive(\Model_ServiceLicense|ServiceLicense $model)
+    public function isLicenseActive(ServiceLicense $model)
     {
         $orderService = $this->di['mod_service']('order');
         $o = $orderService->getServiceOrder($model);
-        if ($o instanceof \Model_ClientOrder) {
-            return $o->status == \Model_ClientOrder::STATUS_ACTIVE;
+        if ($o instanceof Order) {
+            return $o->status == Order::STATUS_ACTIVE;
         }
 
         return false;
     }
 
-    public function isValidIp(\Model_ServiceLicense|ServiceLicense $model, $value)
+    public function isValidIp(ServiceLicense $model, $value)
     {
         $defined = $model instanceof ServiceLicense ? $model->getAllowedIps() : $model->getAllowedIps();
         if (empty($defined)) {
@@ -262,7 +264,7 @@ class Service implements InjectionAwareInterface
         return in_array($value, $defined);
     }
 
-    public function isValidVersion(\Model_ServiceLicense|ServiceLicense $model, $value)
+    public function isValidVersion(ServiceLicense $model, $value)
     {
         $defined = $model instanceof ServiceLicense ? $model->getAllowedVersions() : $model->getAllowedVersions();
         if (empty($defined)) {
@@ -281,7 +283,7 @@ class Service implements InjectionAwareInterface
         return in_array($value, $defined);
     }
 
-    public function isValidPath(\Model_ServiceLicense|ServiceLicense $model, $value)
+    public function isValidPath(ServiceLicense $model, $value)
     {
         $defined = $model instanceof ServiceLicense ? $model->getAllowedPaths() : $model->getAllowedPaths();
         if (empty($defined)) {
@@ -300,7 +302,7 @@ class Service implements InjectionAwareInterface
         return in_array($value, $defined);
     }
 
-    public function isValidHost(\Model_ServiceLicense|ServiceLicense $model, $value)
+    public function isValidHost(ServiceLicense $model, $value)
     {
         $defined = $model instanceof ServiceLicense ? $model->getAllowedHosts() : $model->getAllowedHosts();
         if (empty($defined)) {
@@ -319,7 +321,7 @@ class Service implements InjectionAwareInterface
         return in_array($value, $defined);
     }
 
-    public function getAdditionalParams(\Model_ServiceLicense|ServiceLicense $model, $data = []): array
+    public function getAdditionalParams(ServiceLicense $model, $data = []): array
     {
         $plugin = $this->_getPlugin($model);
         if (is_object($plugin) && method_exists($plugin, 'validate')) {
@@ -332,7 +334,7 @@ class Service implements InjectionAwareInterface
         return [];
     }
 
-    public function getOwnerName(\Model_ServiceLicense|ServiceLicense $model)
+    public function getOwnerName(ServiceLicense $model)
     {
         $clientId = $model instanceof ServiceLicense ? $model->getClientId() : $model->client_id;
         $client = $this->di['em']->getRepository(Client::class)->find($clientId);
@@ -340,18 +342,18 @@ class Service implements InjectionAwareInterface
         return $client->getFullName();
     }
 
-    public function getExpirationDate(\Model_ServiceLicense|ServiceLicense $model)
+    public function getExpirationDate(ServiceLicense $model)
     {
         $orderService = $this->di['mod_service']('order');
         $o = $orderService->getServiceOrder($model);
-        if ($o instanceof \Model_ClientOrder) {
+        if ($o instanceof Order) {
             return $o->expires_at;
         }
 
         return date('Y-m-d H:i:s');
     }
 
-    public function toApiArray(\Model_ServiceLicense|ServiceLicense $model, $deep = false, $identity = null): array
+    public function toApiArray(ServiceLicense $model, $deep = false, $identity = null): array
     {
         $result = [
             'license_key' => $model instanceof ServiceLicense ? $model->getLicenseKey() : $model->license_key,
@@ -365,7 +367,7 @@ class Service implements InjectionAwareInterface
             'versions' => $model instanceof ServiceLicense ? $model->getAllowedVersions() : $model->getAllowedVersions(),
             'pinged_at' => $model instanceof ServiceLicense ? $model->getPingedAt() : $model->pinged_at,
         ];
-        if ($identity instanceof \Model_Admin) {
+        if ($identity instanceof Admin) {
             $result['plugin'] = $model instanceof ServiceLicense ? $model->getPlugin() : $model->plugin;
         }
 
@@ -375,7 +377,7 @@ class Service implements InjectionAwareInterface
     /**
      * @param string $key
      */
-    private function _addValue(\Model_ServiceLicense|ServiceLicense $model, $key, $value): void
+    private function _addValue(ServiceLicense $model, $key, $value): void
     {
         $m = 'getAllowed' . ucfirst($key);
         $allowed = $model->{$m}();
@@ -399,7 +401,7 @@ class Service implements InjectionAwareInterface
         $this->di['em']->flush();
     }
 
-    private function _getPlugin(\Model_ServiceLicense|ServiceLicense $model): ?object
+    private function _getPlugin(ServiceLicense $model): ?object
     {
         $pluginName = $model instanceof ServiceLicense ? $model->getPlugin() : $model->plugin;
         $plugins = $this->getLicensePlugins();
@@ -419,7 +421,7 @@ class Service implements InjectionAwareInterface
         return null;
     }
 
-    public function update(\Model_ServiceLicense|ServiceLicense $s, array $data): bool
+    public function update(ServiceLicense $s, array $data): bool
     {
         if ($s instanceof ServiceLicense) {
             $s->setPlugin($data['plugin'] ?? $s->getPlugin());
@@ -516,7 +518,7 @@ class Service implements InjectionAwareInterface
         return $server->process($data);
     }
 
-    private function _getModelProperty(\Model_ServiceLicense|ServiceLicense $model, string $property): mixed
+    private function _getModelProperty(ServiceLicense $model, string $property): mixed
     {
         if ($model instanceof ServiceLicense) {
             return match ($property) {
@@ -544,7 +546,7 @@ class Service implements InjectionAwareInterface
         return $model->{$property} ?? null;
     }
 
-    private function _setModelProperty(\Model_ServiceLicense|ServiceLicense $model, string $property, mixed $value): void
+    private function _setModelProperty(ServiceLicense $model, string $property, mixed $value): void
     {
         if ($model instanceof ServiceLicense) {
             match ($property) {

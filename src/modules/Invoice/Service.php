@@ -2734,7 +2734,7 @@ class Service implements InjectionAwareInterface
             }
 
             $originalOrder = $this->di['em']->getRepository(OrderEntity::class)->find($originalOrderId);
-            if (!$originalOrder instanceof OrderEntity && !$originalOrder instanceof OrderEntity) {
+            if (!$originalOrder instanceof OrderEntity) {
                 return null;
             }
 

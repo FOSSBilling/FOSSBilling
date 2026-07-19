@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicelicense\Api;
 
+use Box\Mod\Servicelicense\Entity\ServiceLicense;
+
 /**
  *Service license management.
  */
@@ -73,7 +75,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
-     * @return \Model_ServiceLicense
+     * @return ServiceLicense
      *
      * @throws \FOSSBilling\Exception
      */
@@ -86,7 +88,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $orderService = $this->getDi()['mod_service']('order');
         $s = $orderService->getOrderService($order);
-        if (!$s instanceof \Model_ServiceLicense) {
+        if (!$s instanceof ServiceLicense) {
             throw new \FOSSBilling\Exception('Order is not activated');
         }
 

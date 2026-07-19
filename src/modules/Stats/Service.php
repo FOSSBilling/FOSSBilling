@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Stats;
 
+use Box\Mod\Invoice\Entity\Invoice;
+use Box\Mod\Invoice\Entity\InvoiceItem;
 use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
@@ -210,8 +212,8 @@ class Service implements InjectionAwareInterface
                 ';
 
         $result = $dbal->executeQuery($query, [
-            'status1' => \Model_Invoice::STATUS_PAID,
-            'status2' => \Model_Invoice::STATUS_REFUNDED,
+            'status1' => Invoice::STATUS_PAID,
+            'status2' => Invoice::STATUS_REFUNDED,
         ]);
 
         $results = $result->fetchAllAssociative();
@@ -242,7 +244,7 @@ class Service implements InjectionAwareInterface
                 GROUP BY `date`";
 
         $result = $dbal->executeQuery($query, [
-            'status' => \Model_Invoice::STATUS_REFUNDED,
+            'status' => Invoice::STATUS_REFUNDED,
             'date_from' => date('Y-m-d', $time_from),
             'date_to' => date('Y-m-d', $time_to),
         ]);
@@ -275,7 +277,7 @@ class Service implements InjectionAwareInterface
                 GROUP BY `date`";
 
         $result = $dbal->executeQuery($query, [
-            'status' => \Model_Invoice::STATUS_PAID,
+            'status' => Invoice::STATUS_PAID,
             'date_from' => date('Y-m-d', $time_from),
             'date_to' => date('Y-m-d', $time_to),
         ]);

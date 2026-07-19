@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Product;
 
+use Box\Mod\Cart\Entity\CartProduct;
+use Box\Mod\Client\Entity\Client;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Product\Entity\Product;
@@ -25,6 +27,8 @@ use Box\Mod\Product\Repository\ProductPaymentRepository;
 use Box\Mod\Product\Repository\ProductRepository;
 use Box\Mod\Product\Repository\PromoRedemptionRepository;
 use Box\Mod\Product\Repository\PromoRepository;
+use Box\Mod\Servicedomain\Entity\Tld;
+use Box\Mod\Staff\Entity\Admin;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\QueryBuilder;
 use FOSSBilling\InjectionAwareInterface;
@@ -185,7 +189,7 @@ class Service implements InjectionAwareInterface
         $config = json_decode($model->getConfig() ?? '', true) ?? [];
         $pricing = $this->getProductPricingArray($model);
         $starting_from = $this->getStartingFromPrice($model);
-        $isAdmin = $identity instanceof \Model_Admin;
+        $isAdmin = $identity instanceof Admin;
         $addons = $this->getAddonsApiArray($model, $isAdmin);
 
         $result = [
@@ -1065,7 +1069,7 @@ class Service implements InjectionAwareInterface
      *   config: array
      * }
      */
-    public function getCartProductViewData(\Model_CartProduct $item): array
+    public function getCartProductViewData(CartProduct $item): array
     {
         $product = $this->findProductById((int) $item->product_id);
         $config = json_decode($item->config ?? '', true) ?? [];
@@ -1208,7 +1212,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function isPromoAvailableForClientGroup(Promo $promo, ?\Model_Client $client = null): bool
+    public function isPromoAvailableForClientGroup(Promo $promo, ?Client $client = null): bool
     {
         $promoData = $this->getPromoSourceArray($promo);
         $clientGroups = $this->decodePromoSelection($promoData['client_groups'] ?? null);
@@ -1236,7 +1240,7 @@ class Service implements InjectionAwareInterface
         return in_array($client->client_group_id, $clientGroups);
     }
 
-    public function canClientUsePromo(\Model_Client $client, Promo $promo): bool
+    public function canClientUsePromo(Client $client, Promo $promo): bool
     {
         if (!$this->promoCanBeApplied($promo)) {
             return false;
@@ -1259,7 +1263,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function reservePromoForOrder(Promo $promo, Order|\Model_ClientOrder $order): void
+    public function reservePromoForOrder(Promo $promo, Order $order): void
     {
         $this->usePromo($promo);
         $promoData = $this->getPromoSourceArray($promo);
@@ -1294,13 +1298,13 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @param list<Order|\Model_ClientOrder> $orders
+     * @param list<Order> $orders
      */
     public function createCheckoutPromoRedemptions(
         Promo $promo,
-        \Model_Client $client,
+        Client $client,
         array $orders,
-        Invoice|\Model_Invoice|null $invoice,
+        Invoice|null $invoice,
         string $status,
     ): void {
         if ($orders === []) {
@@ -1390,7 +1394,7 @@ class Service implements InjectionAwareInterface
      *     currency: string
      * }|null
      */
-    public function getRenewalPromoAdjustment(\Model_ClientOrder $order, float $price, float $quantity): ?array
+    public function getRenewalPromoAdjustment(Order $order, float $price, float $quantity): ?array
     {
         if (!$order->promo_recurring || !$order->promo_id) {
             return null;
@@ -1498,9 +1502,9 @@ class Service implements InjectionAwareInterface
 
     public function createPromoRedemption(
         Promo $promo,
-        \Model_Client $client,
-        ?\Model_ClientOrder $order,
-        ?\Model_Invoice $invoice,
+        Client $client,
+        ?Order $order,
+        ?Invoice $invoice,
         string $phase,
         ?float $discountAmount,
         ?string $currency,
@@ -1514,14 +1518,14 @@ class Service implements InjectionAwareInterface
         return (int) $redemption->getId();
     }
 
-    public function clientHasActivePromoApplication(\Model_Client $client, Promo $promo): bool
+    public function clientHasActivePromoApplication(Client $client, Promo $promo): bool
     {
         $promoId = (int) ($this->getPromoSourceArray($promo)['id'] ?? 0);
 
         return $this->getPromoRedemptionRepository()->clientHasActiveCheckoutApplication($promoId, (int) $client->id);
     }
 
-    public function commitReservedPromoRedemptionsForInvoice(\Model_Invoice $invoice): void
+    public function commitReservedPromoRedemptionsForInvoice(Invoice $invoice): void
     {
         $redemptions = $this->getPromoRedemptionRepository()->findBy([
             'invoiceId' => (int) $invoice->id,
@@ -1548,7 +1552,7 @@ class Service implements InjectionAwareInterface
         $this->di['em']->flush();
     }
 
-    public function releaseReservedPromoRedemptionsForInvoice(\Model_Invoice $invoice, string $reason): void
+    public function releaseReservedPromoRedemptionsForInvoice(Invoice $invoice, string $reason): void
     {
         $redemptions = $this->getPromoRedemptionRepository()->findBy([
             'invoiceId' => (int) $invoice->id,
@@ -1558,7 +1562,7 @@ class Service implements InjectionAwareInterface
         $this->releasePromoRedemptions($redemptions, $reason);
     }
 
-    public function releaseReservedPromoRedemptionsForOrder(\Model_ClientOrder $order, string $reason): void
+    public function releaseReservedPromoRedemptionsForOrder(Order $order, string $reason): void
     {
         $redemptions = $this->getPromoRedemptionRepository()->findBy([
             'clientOrderId' => (int) $order->id,
@@ -1951,7 +1955,7 @@ class Service implements InjectionAwareInterface
         };
     }
 
-    public function isPromoLinkedToTld(Promo $promo, \Model_Tld $tld): bool
+    public function isPromoLinkedToTld(Promo $promo, Tld $tld): bool
     {
         unset($tld);
 
@@ -2009,9 +2013,9 @@ class Service implements InjectionAwareInterface
 
     private function newPromoRedemption(
         Promo $promo,
-        \Model_Client $client,
-        Order|\Model_ClientOrder|null $order,
-        Invoice|\Model_Invoice|null $invoice,
+        Client $client,
+        Order|null $order,
+        Invoice|null $invoice,
         string $phase,
         ?float $discountAmount,
         ?string $currency,
@@ -2074,7 +2078,7 @@ class Service implements InjectionAwareInterface
         return max(1, (int) ($config['register_years'] ?? $config['quantity'] ?? 1));
     }
 
-    private function getDomainTldModel(array $config): \Model_Tld
+    private function getDomainTldModel(array $config): Tld
     {
         $tldService = $this->di['mod_service']('servicedomain', 'Tld');
         $tld = '';
@@ -2092,7 +2096,7 @@ class Service implements InjectionAwareInterface
         }
 
         $tld = $tldService->findOneByTld($tld);
-        if (!$tld instanceof \Model_Tld && !$tld instanceof \Box\Mod\Servicedomain\Entity\Tld) {
+        if (!$tld instanceof Tld) {
             throw new \FOSSBilling\Exception('Unknown TLD. Could not determine registration price');
         }
 
@@ -2100,7 +2104,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @param \Model_Tld|\Box\Mod\Servicedomain\Entity\Tld $tld
+     * @param Tld $tld
      */
     private function getDomainRegistrationTotal($tld, int $years): float
     {
@@ -2108,7 +2112,7 @@ class Service implements InjectionAwareInterface
             return 0.0;
         }
 
-        if ($tld instanceof \Box\Mod\Servicedomain\Entity\Tld) {
+        if ($tld instanceof Tld) {
             if ($years <= 1) {
                 return (float) $tld->getPriceRegistration();
             }

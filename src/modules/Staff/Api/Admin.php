@@ -183,7 +183,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         return $group;
     }
 
-    private function getAdminById(int $id): \Model_Admin
+    private function getAdminById(int $id): AdminEntity
     {
         $result = $this->getDi()['db']->getExistingModelById('Admin', $id, 'Staff member not found');
 

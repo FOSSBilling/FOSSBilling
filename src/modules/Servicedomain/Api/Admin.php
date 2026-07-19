@@ -303,7 +303,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $orderService = $this->getDi()['mod_service']('order');
         $s = $orderService->getOrderService($order);
 
-        if (!$s instanceof ServiceDomain && !$s instanceof \Model_ServiceDomain) {
+        if (!$s instanceof ServiceDomain) {
             throw new \FOSSBilling\Exception('Domain order is not activated');
         }
 

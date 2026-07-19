@@ -11,6 +11,9 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicelicense\Api;
 
+use Box\Mod\Order\Entity\Order;
+use Box\Mod\Servicelicense\Entity\ServiceLicense;
+
 /**
  *License Service management.
  */
@@ -42,17 +45,17 @@ class Client extends \FOSSBilling\Api\AbstractApi
 
         $order = $this->getDi()['db']->findOne('ClientOrder', 'id = :id AND client_id = :client_id', $bindings);
 
-        if (!$order instanceof \Model_ClientOrder) {
+        if (!$order instanceof Order) {
             throw new \FOSSBilling\InformationException('Order not found');
         }
 
-        if ($order->status !== \Model_ClientOrder::STATUS_ACTIVE) {
+        if ($order->status !== Order::STATUS_ACTIVE) {
             throw new \FOSSBilling\InformationException('Order is not activated');
         }
 
         $orderService = $this->getDi()['mod_service']('order');
         $s = $orderService->getOrderService($order);
-        if (!$s instanceof \Model_ServiceLicense) {
+        if (!$s instanceof ServiceLicense) {
             throw new \FOSSBilling\Exception('Order is not activated');
         }
 

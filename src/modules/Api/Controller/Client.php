@@ -15,6 +15,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Api\Controller;
 
+use Box\Mod\Client\Entity\Client as ClientEntity;
+use Box\Mod\Staff\Entity\Admin;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\Http\ApiResponseFactory;
@@ -268,8 +270,8 @@ class Client implements InjectionAwareInterface
 
         switch ($routeRole) {
             case 'client':
-                $model = $this->di['db']->findOne('Client', 'api_token = ? AND status = ?', [$password, \Model_Client::ACTIVE]);
-                if (!$model instanceof \Model_Client) {
+                $model = $this->di['db']->findOne('Client', 'api_token = ? AND status = ?', [$password, ClientEntity::ACTIVE]);
+                if (!$model instanceof ClientEntity) {
                     throw new \FOSSBilling\InformationException('Authentication Failed', null, 204);
                 }
                 $this->di['session']->set('client_id', $model->id);
@@ -277,13 +279,13 @@ class Client implements InjectionAwareInterface
                 break;
 
             case 'admin':
-                $model = $this->di['db']->findOne('Admin', 'api_token = ? AND status = ? AND (system_name IS NULL OR system_name != ?)', [$password, \Model_Admin::STATUS_ACTIVE, \Model_Admin::SYSTEM_CRON]);
-                if (!$model instanceof \Model_Admin) {
+                $model = $this->di['db']->findOne('Admin', 'api_token = ? AND status = ? AND (system_name IS NULL OR system_name != ?)', [$password, Admin::STATUS_ACTIVE, Admin::SYSTEM_CRON]);
+                if (!$model instanceof Admin) {
                     throw new \FOSSBilling\InformationException('Authentication Failed', null, 205);
                 }
 
                 $cronAdmin = $this->di['mod_service']('staff')->getCronAdmin();
-                if ($cronAdmin instanceof \Model_Admin && (int) $model->id === (int) $cronAdmin->id) {
+                if ($cronAdmin instanceof Admin && (int) $model->id === (int) $cronAdmin->id) {
                     throw new \FOSSBilling\InformationException('Authentication Failed', null, 205);
                 }
 
