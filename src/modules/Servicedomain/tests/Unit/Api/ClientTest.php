@@ -16,6 +16,7 @@ use Box\Mod\Servicedomain\Entity\ServiceDomain;
 use Box\Mod\Servicedomain\Service;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 test('updates nameservers', function (): void {
     $clientApi = apiEndpoint(new Client());
@@ -197,14 +198,11 @@ test('gets service', function (): void {
     $clientApi->setService($serviceMock);
 
     $orderServiceMock = Mockery::mock(OrderService::class);
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->status = Model_ClientOrder::STATUS_ACTIVE;
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class, ['status' => Model_ClientOrder::STATUS_ACTIVE]);
     $orderServiceMock->shouldReceive('findForClientById')
         ->atLeast()->once()
         ->andReturn($order);
-    $serviceDomain = new Model_ServiceDomain();
-    $serviceDomain->loadBean(new Tests\Helpers\DummyBean());
+    $serviceDomain = createEntity(\Box\Mod\Servicedomain\Entity\ServiceDomain::class);
     $orderServiceMock->shouldReceive('getOrderService')
         ->atLeast()->once()
         ->andReturn($serviceDomain);
@@ -213,7 +211,7 @@ test('gets service', function (): void {
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
     $clientApi->setDi($di);
 
-    $clientApi->setIdentity(new Model_Client());
+    $clientApi->setIdentity(createEntity(\Box\Mod\Client\Entity\Client::class));
 
     $data = [
         'order_id' => 1,
@@ -242,7 +240,7 @@ test('throws exception when getting service without order_id', function (): void
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
     $clientApi->setDi($di);
 
-    $clientApi->setIdentity(new Model_Client());
+    $clientApi->setIdentity(createEntity(\Box\Mod\Client\Entity\Client::class));
 
     $data = [];
 
@@ -270,7 +268,7 @@ test('throws exception when getting service order not found', function (): void 
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
     $clientApi->setDi($di);
 
-    $clientApi->setIdentity(new Model_Client());
+    $clientApi->setIdentity(createEntity(\Box\Mod\Client\Entity\Client::class));
 
     $data = [
         'order_id' => 1,
@@ -292,7 +290,7 @@ test('throws exception when getting service order not activated', function (): v
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('findForClientById')
         ->atLeast()->once()
-        ->andReturn(new Model_ClientOrder());
+        ->andReturn(createEntity(\Box\Mod\Order\Entity\Order::class));
     $orderServiceMock->shouldReceive('getOrderService')
         ->atLeast()->once()
         ->andReturn(null);
@@ -301,7 +299,7 @@ test('throws exception when getting service order not activated', function (): v
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
     $clientApi->setDi($di);
 
-    $clientApi->setIdentity(new Model_Client());
+    $clientApi->setIdentity(createEntity(\Box\Mod\Client\Entity\Client::class));
 
     $data = [
         'order_id' => 1,

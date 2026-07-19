@@ -13,6 +13,7 @@ declare(strict_types=1);
 use Symfony\Component\HttpFoundation\Response;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 use function Tests\Helpers\moduleService;
 
 test('gets dependency injection container', function (): void {
@@ -37,8 +38,7 @@ test('throws exception when sending file with order not found', function (): voi
         'order_id' => 1,
     ];
 
-    $modelClient = new Model_Client();
-    $modelClient->loadBean(new Tests\Helpers\DummyBean());
+    $modelClient = createEntity(\Box\Mod\Client\Entity\Client::class);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('findOne')->atLeast()->once();
@@ -59,8 +59,7 @@ test('throws exception when sending file with order not activated', function ():
         'order_id' => 1,
     ];
 
-    $modelClient = new Model_Client();
-    $modelClient->loadBean(new Tests\Helpers\DummyBean());
+    $modelClient = createEntity(\Box\Mod\Client\Entity\Client::class);
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
     $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once();
@@ -69,7 +68,7 @@ test('throws exception when sending file with order not activated', function ():
     $dbMock->shouldReceive('findOne')
         ->atLeast()
         ->once()
-        ->andReturn(new Model_ClientOrder());
+        ->andReturn(createEntity(\Box\Mod\Order\Entity\Order::class));
 
     $di = container();
     $di['db'] = $dbMock;
@@ -88,8 +87,7 @@ test('sends file', function (): void {
         'order_id' => 1,
     ];
 
-    $modelClient = new Model_Client();
-    $modelClient->loadBean(new Tests\Helpers\DummyBean());
+    $modelClient = createEntity(\Box\Mod\Client\Entity\Client::class);
 
     $serviceMock = Mockery::mock(Box\Mod\Servicedownloadable\Service::class);
     $response = new Response('download');
@@ -102,11 +100,9 @@ test('sends file', function (): void {
     $orderServiceMock->shouldReceive('getOrderService')
         ->atLeast()
         ->once()
-        ->andReturn(new Model_ServiceDownloadable());
+        ->andReturn(createEntity(\Box\Mod\Servicedownloadable\Entity\ServiceDownloadable::class));
 
-    $mockOrder = new Model_ClientOrder();
-    $mockOrder->loadBean(new Tests\Helpers\DummyBean());
-    $mockOrder->status = 'active';
+    $mockOrder = createEntity(\Box\Mod\Order\Entity\Order::class, ['status' => 'active']);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('findOne')

@@ -19,6 +19,7 @@ use Box\Mod\Servicelicense\Service;
 use Doctrine\ORM\EntityManagerInterface;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 function serviceLicenseCreateProductEntity(string $config): Product
 {
@@ -76,8 +77,7 @@ test('get license plugins', function (): void {
 
 test('action create', function (): void {
     $service = new Service();
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
     $emMock->shouldReceive('persist')->atLeast()->once();
@@ -99,12 +99,9 @@ test('action create', function (): void {
 
 test('action activate', function (): void {
     $service = new Service();
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
 
-    $serviceLicenseModel = new Model_ServiceLicense();
-    $serviceLicenseModel->loadBean(new Tests\Helpers\DummyBean());
-    $serviceLicenseModel->plugin = 'Simple';
+    $serviceLicenseModel = createEntity(\Box\Mod\Servicelicense\Entity\ServiceLicense::class, ['plugin' => 'Simple']);
 
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([]);
@@ -131,12 +128,9 @@ test('action activate', function (): void {
 
 test('action activate license collision', function (): void {
     $service = new Service();
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
 
-    $serviceLicenseModel = new Model_ServiceLicense();
-    $serviceLicenseModel->loadBean(new Tests\Helpers\DummyBean());
-    $serviceLicenseModel->plugin = 'Simple';
+    $serviceLicenseModel = createEntity(\Box\Mod\Servicelicense\Entity\ServiceLicense::class, ['plugin' => 'Simple']);
 
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getConfig')->atLeast()->once()->andReturn(['iterations' => 3]);
@@ -167,12 +161,9 @@ test('action activate license collision', function (): void {
 
 test('action activate license collision max iterations exception', function (): void {
     $service = new Service();
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
 
-    $serviceLicenseModel = new Model_ServiceLicense();
-    $serviceLicenseModel->loadBean(new Tests\Helpers\DummyBean());
-    $serviceLicenseModel->plugin = 'Simple';
+    $serviceLicenseModel = createEntity(\Box\Mod\Servicelicense\Entity\ServiceLicense::class, ['plugin' => 'Simple']);
 
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([]);
@@ -201,12 +192,9 @@ test('action activate license collision max iterations exception', function (): 
 
 test('action activate plugin not found', function (): void {
     $service = new Service();
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
 
-    $serviceLicenseModel = new Model_ServiceLicense();
-    $serviceLicenseModel->loadBean(new Tests\Helpers\DummyBean());
-    $serviceLicenseModel->plugin = 'TestPlugin';
+    $serviceLicenseModel = createEntity(\Box\Mod\Servicelicense\Entity\ServiceLicense::class, ['plugin' => 'TestPlugin']);
 
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([]);
@@ -228,8 +216,7 @@ test('action activate plugin not found', function (): void {
 
 test('action activate order activation exception', function (): void {
     $service = new Service();
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
 
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([]);
@@ -250,11 +237,9 @@ test('action activate order activation exception', function (): void {
 
 test('action delete', function (): void {
     $service = new Service();
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
 
-    $serviceLicenseModel = new Model_ServiceLicense();
-    $serviceLicenseModel->loadBean(new Tests\Helpers\DummyBean());
+    $serviceLicenseModel = createEntity(\Box\Mod\Servicelicense\Entity\ServiceLicense::class);
 
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($serviceLicenseModel);
@@ -274,8 +259,7 @@ test('action delete', function (): void {
 
 test('reset', function (): void {
     $service = new Service();
-    $serviceLicenseModel = new Model_ServiceLicense();
-    $serviceLicenseModel->loadBean(new Tests\Helpers\DummyBean());
+    $serviceLicenseModel = createEntity(\Box\Mod\Servicelicense\Entity\ServiceLicense::class);
 
     $eventMock = Mockery::mock(Box_EventManager::class);
     $eventMock->shouldReceive('fire')->atLeast()->once();
@@ -297,12 +281,9 @@ test('reset', function (): void {
 
 test('is license active', function (): void {
     $service = new Service();
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
-    $clientOrderModel->status = Model_ClientOrder::STATUS_ACTIVE;
+    $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class, ['status' => Model_ClientOrder::STATUS_ACTIVE]);
 
-    $serviceLicenseModel = new Model_ServiceLicense();
-    $serviceLicenseModel->loadBean(new Tests\Helpers\DummyBean());
+    $serviceLicenseModel = createEntity(\Box\Mod\Servicelicense\Entity\ServiceLicense::class);
 
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getServiceOrder')->atLeast()->once()->andReturn($clientOrderModel);
@@ -321,8 +302,7 @@ test('is license active', function (): void {
 
 test('is license not active', function (): void {
     $service = new Service();
-    $serviceLicenseModel = new Model_ServiceLicense();
-    $serviceLicenseModel->loadBean(new Tests\Helpers\DummyBean());
+    $serviceLicenseModel = createEntity(\Box\Mod\Servicelicense\Entity\ServiceLicense::class);
 
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getServiceOrder')->atLeast()->once()->andReturn(null);
@@ -341,9 +321,7 @@ test('is license not active', function (): void {
 
 test('is valid ip', function (): void {
     $service = new Service();
-    $serviceLicenseModel = new Model_ServiceLicense();
-    $serviceLicenseModel->loadBean(new Tests\Helpers\DummyBean());
-    $serviceLicenseModel->ips = '{}';
+    $serviceLicenseModel = createEntity(\Box\Mod\Servicelicense\Entity\ServiceLicense::class, ['ips' => '{}']);
     $value = '1.1.1.1';
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
@@ -362,9 +340,7 @@ test('is valid ip', function (): void {
 
 test('is valid ip test2', function (): void {
     $service = new Service();
-    $serviceLicenseModel = new Model_ServiceLicense();
-    $serviceLicenseModel->loadBean(new Tests\Helpers\DummyBean());
-    $serviceLicenseModel->ips = '["2.2.2.2"]';
+    $serviceLicenseModel = createEntity(\Box\Mod\Servicelicense\Entity\ServiceLicense::class, ['ips' => '["2.2.2.2"]']);
     $value = '1.1.1.1';
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
@@ -383,10 +359,10 @@ test('is valid ip test2', function (): void {
 
 test('is valid ip test3', function (): void {
     $service = new Service();
-    $serviceLicenseModel = new Model_ServiceLicense();
-    $serviceLicenseModel->loadBean(new Tests\Helpers\DummyBean());
-    $serviceLicenseModel->ips = '["2.2.2.2"]';
-    $serviceLicenseModel->validate_ip = '3.3.3.3';
+    $serviceLicenseModel = createEntity(\Box\Mod\Servicelicense\Entity\ServiceLicense::class, [
+        'ips' => '["2.2.2.2"]',
+        'validate_ip' => '3.3.3.3',
+    ]);
     $value = '1.1.1.1';
 
     $result = $service->isValidIp($serviceLicenseModel, $value);
@@ -395,9 +371,7 @@ test('is valid ip test3', function (): void {
 
 test('is valid version', function (): void {
     $service = new Service();
-    $serviceLicenseModel = new Model_ServiceLicense();
-    $serviceLicenseModel->loadBean(new Tests\Helpers\DummyBean());
-    $serviceLicenseModel->versions = '{}';
+    $serviceLicenseModel = createEntity(\Box\Mod\Servicelicense\Entity\ServiceLicense::class, ['versions' => '{}']);
     $value = '1.0';
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
@@ -416,9 +390,7 @@ test('is valid version', function (): void {
 
 test('is valid version test2', function (): void {
     $service = new Service();
-    $serviceLicenseModel = new Model_ServiceLicense();
-    $serviceLicenseModel->loadBean(new Tests\Helpers\DummyBean());
-    $serviceLicenseModel->versions = '["2.0"]';
+    $serviceLicenseModel = createEntity(\Box\Mod\Servicelicense\Entity\ServiceLicense::class, ['versions' => '["2.0"]']);
     $value = '1.0';
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
@@ -437,10 +409,10 @@ test('is valid version test2', function (): void {
 
 test('is valid version test3', function (): void {
     $service = new Service();
-    $serviceLicenseModel = new Model_ServiceLicense();
-    $serviceLicenseModel->loadBean(new Tests\Helpers\DummyBean());
-    $serviceLicenseModel->versions = '["2.0"]';
-    $serviceLicenseModel->validate_version = '3.3.3.3';
+    $serviceLicenseModel = createEntity(\Box\Mod\Servicelicense\Entity\ServiceLicense::class, [
+        'versions' => '["2.0"]',
+        'validate_version' => '3.3.3.3',
+    ]);
     $value = '1.0';
 
     $result = $service->isValidVersion($serviceLicenseModel, $value);
@@ -449,9 +421,7 @@ test('is valid version test3', function (): void {
 
 test('is valid path', function (): void {
     $service = new Service();
-    $serviceLicenseModel = new Model_ServiceLicense();
-    $serviceLicenseModel->loadBean(new Tests\Helpers\DummyBean());
-    $serviceLicenseModel->paths = '{}';
+    $serviceLicenseModel = createEntity(\Box\Mod\Servicelicense\Entity\ServiceLicense::class, ['paths' => '{}']);
     $value = '/var';
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
@@ -470,9 +440,7 @@ test('is valid path', function (): void {
 
 test('is valid path test2', function (): void {
     $service = new Service();
-    $serviceLicenseModel = new Model_ServiceLicense();
-    $serviceLicenseModel->loadBean(new Tests\Helpers\DummyBean());
-    $serviceLicenseModel->paths = '["/"]';
+    $serviceLicenseModel = createEntity(\Box\Mod\Servicelicense\Entity\ServiceLicense::class, ['paths' => '["/"]']);
     $value = '/var';
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
@@ -491,10 +459,10 @@ test('is valid path test2', function (): void {
 
 test('is valid path test3', function (): void {
     $service = new Service();
-    $serviceLicenseModel = new Model_ServiceLicense();
-    $serviceLicenseModel->loadBean(new Tests\Helpers\DummyBean());
-    $serviceLicenseModel->paths = '["/"]';
-    $serviceLicenseModel->validate_path = '/user';
+    $serviceLicenseModel = createEntity(\Box\Mod\Servicelicense\Entity\ServiceLicense::class, [
+        'paths' => '["/"]',
+        'validate_path' => '/user',
+    ]);
     $value = '/var';
 
     $result = $service->isValidPath($serviceLicenseModel, $value);
@@ -503,9 +471,7 @@ test('is valid path test3', function (): void {
 
 test('is valid host', function (): void {
     $service = new Service();
-    $serviceLicenseModel = new Model_ServiceLicense();
-    $serviceLicenseModel->loadBean(new Tests\Helpers\DummyBean());
-    $serviceLicenseModel->hosts = '{}';
+    $serviceLicenseModel = createEntity(\Box\Mod\Servicelicense\Entity\ServiceLicense::class, ['hosts' => '{}']);
     $value = 'site.com';
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
@@ -524,9 +490,7 @@ test('is valid host', function (): void {
 
 test('is valid host test2', function (): void {
     $service = new Service();
-    $serviceLicenseModel = new Model_ServiceLicense();
-    $serviceLicenseModel->loadBean(new Tests\Helpers\DummyBean());
-    $serviceLicenseModel->hosts = '["fossbilling.org"]';
+    $serviceLicenseModel = createEntity(\Box\Mod\Servicelicense\Entity\ServiceLicense::class, ['hosts' => '["fossbilling.org"]']);
     $value = 'site.com';
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
@@ -545,10 +509,10 @@ test('is valid host test2', function (): void {
 
 test('is valid host test3', function (): void {
     $service = new Service();
-    $serviceLicenseModel = new Model_ServiceLicense();
-    $serviceLicenseModel->loadBean(new Tests\Helpers\DummyBean());
-    $serviceLicenseModel->hosts = '["fossbilling.org"]';
-    $serviceLicenseModel->validate_host = 'example.com';
+    $serviceLicenseModel = createEntity(\Box\Mod\Servicelicense\Entity\ServiceLicense::class, [
+        'hosts' => '["fossbilling.org"]',
+        'validate_host' => 'example.com',
+    ]);
     $value = 'site.com';
 
     $result = $service->isValidHost($serviceLicenseModel, $value);
@@ -557,9 +521,7 @@ test('is valid host test3', function (): void {
 
 test('get additional params', function (): void {
     $service = new Service();
-    $serviceLicenseModel = new Model_ServiceLicense();
-    $serviceLicenseModel->loadBean(new Tests\Helpers\DummyBean());
-    $serviceLicenseModel->plugin = 'Simple';
+    $serviceLicenseModel = createEntity(\Box\Mod\Servicelicense\Entity\ServiceLicense::class, ['plugin' => 'Simple']);
 
     $result = $service->getAdditionalParams($serviceLicenseModel);
     expect($result)->toBeArray();
@@ -571,8 +533,7 @@ test('get owner name', function (): void {
     $client->setFirstName('John');
     $client->setLastName('Smith');
 
-    $serviceLicenseModel = new Model_ServiceLicense();
-    $serviceLicenseModel->loadBean(new Tests\Helpers\DummyBean());
+    $serviceLicenseModel = createEntity(\Box\Mod\Servicelicense\Entity\ServiceLicense::class);
 
     $expected = $client->getFirstName() . ' ' . $client->getLastName();
 
@@ -596,12 +557,9 @@ test('get owner name', function (): void {
 test('get expiration date', function (): void {
     $service = new Service();
     $expected = '2004-02-12 15:19:21';
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
-    $clientOrderModel->expires_at = $expected;
+    $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class, ['expires_at' => $expected]);
 
-    $serviceLicenseModel = new Model_ServiceLicense();
-    $serviceLicenseModel->loadBean(new Tests\Helpers\DummyBean());
+    $serviceLicenseModel = createEntity(\Box\Mod\Servicelicense\Entity\ServiceLicense::class);
 
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getServiceOrder')->atLeast()->once()->andReturn($clientOrderModel);
@@ -622,8 +580,7 @@ test('get expiration date', function (): void {
 
 test('to api array', function (): void {
     $service = new Service();
-    $serviceLicenseModel = new Model_ServiceLicense();
-    $serviceLicenseModel->loadBean(new Tests\Helpers\DummyBean());
+    $serviceLicenseModel = createEntity(\Box\Mod\Servicelicense\Entity\ServiceLicense::class);
 
     $expected = [
         'license_key' => '',
@@ -639,7 +596,7 @@ test('to api array', function (): void {
         'plugin' => '',
     ];
 
-    $result = $service->toApiArray($serviceLicenseModel, false, new Model_Admin());
+    $result = $service->toApiArray($serviceLicenseModel, false, createEntity(\Box\Mod\Staff\Entity\Admin::class));
     expect($result)->toBeArray();
     expect(count(array_diff(array_keys($expected), array_keys($result))))->toBe(0);
 });
@@ -656,8 +613,7 @@ test('update', function (): void {
         'pinged_at' => '',
         'plugin' => 'Simple',
     ];
-    $serviceLicenseModel = new Model_ServiceLicense();
-    $serviceLicenseModel->loadBean(new Tests\Helpers\DummyBean());
+    $serviceLicenseModel = createEntity(\Box\Mod\Servicelicense\Entity\ServiceLicense::class);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
     $emMock->shouldReceive('persist')->atLeast()->once();

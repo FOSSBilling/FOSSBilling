@@ -13,6 +13,8 @@ declare(strict_types=1);
 use Box\Mod\Servicecustom\Api\Client;
 use Box\Mod\Servicecustom\Service;
 
+use function Tests\Helpers\createEntity;
+
 test('calls custom service method', function (): void {
     $api = apiEndpoint(new Client());
     $identity = (object) ['id' => 1];
@@ -20,9 +22,9 @@ test('calls custom service method', function (): void {
     $serviceMock->shouldReceive('getServiceCustomByOrderId')
         ->with(1, 1)
         ->atLeast()->once()
-        ->andReturn(new Model_ServiceCustom());
+        ->andReturn(createEntity(\Box\Mod\Servicecustom\Entity\ServiceCustom::class));
     $serviceMock->shouldReceive('customCall')
-        ->with(Mockery::type(Model_ServiceCustom::class), 'delete', Mockery::type('array'))
+        ->with(Mockery::type(\Box\Mod\Servicecustom\Entity\ServiceCustom::class), 'delete', Mockery::type('array'))
         ->atLeast()->once()
         ->andReturn(null);
 

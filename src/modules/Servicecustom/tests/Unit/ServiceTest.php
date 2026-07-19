@@ -329,11 +329,7 @@ test('action renew', function (): void {
 
 test('active service not found exception', function (): void {
     $service = new Service();
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->id = 1;
-    $order->client_id = 1;
-    $order->config = 'config';
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class, ['id' => 1, 'client_id' => 1, 'config' => 'config']);
 
     $serviceMock = Mockery::mock(OrderService::class);
     $serviceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn(null);
@@ -352,14 +348,9 @@ test('active service not found exception', function (): void {
 
 test('action suspend', function (): void {
     $service = new Service();
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->client_id = 1;
-    $order->config = 'config';
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class, ['client_id' => 1, 'config' => 'config']);
 
-    $serviceCustomModel = new Model_ServiceCustom();
-    $serviceCustomModel->loadBean(new Tests\Helpers\DummyBean());
-    $serviceCustomModel->plugin = '';
+    $serviceCustomModel = createEntity(\Box\Mod\Servicecustom\Entity\ServiceCustom::class, ['plugin' => '']);
 
     $serviceMock = Mockery::mock(OrderService::class);
     $serviceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($serviceCustomModel);
@@ -380,14 +371,9 @@ test('action suspend', function (): void {
 
 test('action unsuspend', function (): void {
     $service = new Service();
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->client_id = 1;
-    $order->config = 'config';
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class, ['client_id' => 1, 'config' => 'config']);
 
-    $serviceCustomModel = new Model_ServiceCustom();
-    $serviceCustomModel->loadBean(new Tests\Helpers\DummyBean());
-    $serviceCustomModel->plugin = '';
+    $serviceCustomModel = createEntity(\Box\Mod\Servicecustom\Entity\ServiceCustom::class, ['plugin' => '']);
 
     $serviceMock = Mockery::mock(OrderService::class);
     $serviceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($serviceCustomModel);
@@ -408,14 +394,9 @@ test('action unsuspend', function (): void {
 
 test('action cancel', function (): void {
     $service = new Service();
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->client_id = 1;
-    $order->config = 'config';
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class, ['client_id' => 1, 'config' => 'config']);
 
-    $serviceCustomModel = new Model_ServiceCustom();
-    $serviceCustomModel->loadBean(new Tests\Helpers\DummyBean());
-    $serviceCustomModel->plugin = '';
+    $serviceCustomModel = createEntity(\Box\Mod\Servicecustom\Entity\ServiceCustom::class, ['plugin' => '']);
 
     $serviceMock = Mockery::mock(OrderService::class);
     $serviceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($serviceCustomModel);
@@ -436,14 +417,9 @@ test('action cancel', function (): void {
 
 test('action uncancel', function (): void {
     $service = new Service();
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->client_id = 1;
-    $order->config = 'config';
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class, ['client_id' => 1, 'config' => 'config']);
 
-    $serviceCustomModel = new Model_ServiceCustom();
-    $serviceCustomModel->loadBean(new Tests\Helpers\DummyBean());
-    $serviceCustomModel->plugin = '';
+    $serviceCustomModel = createEntity(\Box\Mod\Servicecustom\Entity\ServiceCustom::class, ['plugin' => '']);
 
     $serviceMock = Mockery::mock(OrderService::class);
     $serviceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($serviceCustomModel);
@@ -464,14 +440,9 @@ test('action uncancel', function (): void {
 
 test('action delete', function (): void {
     $service = new Service();
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->client_id = 1;
-    $order->config = 'config';
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class, ['client_id' => 1, 'config' => 'config']);
 
-    $serviceCustomModel = new Model_ServiceCustom();
-    $serviceCustomModel->loadBean(new Tests\Helpers\DummyBean());
-    $serviceCustomModel->plugin = '';
+    $serviceCustomModel = createEntity(\Box\Mod\Servicecustom\Entity\ServiceCustom::class, ['plugin' => '']);
 
     $serviceMock = Mockery::mock(OrderService::class);
     $serviceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($serviceCustomModel);
@@ -504,9 +475,7 @@ test('get config', function (): void {
     $di['em'] = $emMock;
     $service->setDi($di);
 
-    $model = new Model_ServiceCustom();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $model->config = json_encode($decoded);
+    $model = createEntity(\Box\Mod\Servicecustom\Entity\ServiceCustom::class, ['config' => json_encode($decoded)]);
 
     $result = $service->getConfig($model);
 
@@ -522,14 +491,14 @@ test('to api array', function (): void {
     $di['em'] = $emMock;
     $service->setDi($di);
 
-    $model = new Model_ServiceCustom();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $model->id = 1;
-    $model->client_id = 1;
-    $model->plugin = 'plugin';
-    $model->config = '{"config_param":"config_value"}';
-    $model->updated_at = date('Y-m-d H:i:s');
-    $model->created_at = date('Y-m-d H:i:s');
+    $model = createEntity(\Box\Mod\Servicecustom\Entity\ServiceCustom::class, [
+        'id' => 1,
+        'client_id' => 1,
+        'plugin' => 'plugin',
+        'config' => '{"config_param":"config_value"}',
+        'updated_at' => date('Y-m-d H:i:s'),
+        'created_at' => date('Y-m-d H:i:s'),
+    ]);
 
     $result = $service->toApiArray($model);
 
@@ -543,7 +512,7 @@ test('to api array', function (): void {
 test('custom call forbidden method exception', function (): void {
     $service = new Service();
 
-    expect(fn () => $service->customCall(new Model_ServiceCustom(), 'delete'))
+    expect(fn () => $service->customCall(createEntity(\Box\Mod\Servicecustom\Entity\ServiceCustom::class), 'delete'))
         ->toThrow(Exception::class);
 });
 
@@ -555,7 +524,7 @@ test('get service custom by order id', function (): void {
     $orderRepo->shouldReceive('find')->with(1)->andReturn($order);
 
     $orderService = Mockery::mock(OrderService::class);
-    $orderService->shouldReceive('getOrderService')->atLeast()->once()->andReturn(new Model_ServiceCustom());
+    $orderService->shouldReceive('getOrderService')->atLeast()->once()->andReturn(createEntity(\Box\Mod\Servicecustom\Entity\ServiceCustom::class));
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepo);
@@ -568,7 +537,7 @@ test('get service custom by order id', function (): void {
 
     $result = $service->getServiceCustomByOrderId(1);
 
-    expect($result)->toBeInstanceOf(Model_ServiceCustom::class);
+    expect($result)->toBeInstanceOf(ServiceCustom::class);
 });
 
 test('get service custom by order id rejects order owned by another client', function (): void {
@@ -613,9 +582,7 @@ test('get service custom by order id order service not found exception', functio
 });
 
 test('update config', function (): void {
-    $model = new Model_ServiceCustom();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $model->id = 1;
+    $model = createEntity(\Box\Mod\Servicecustom\Entity\ServiceCustom::class, ['id' => 1]);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('getServiceCustomByOrderId')->atLeast()->once()->andReturn($model);
@@ -636,9 +603,7 @@ test('update config', function (): void {
 });
 
 test('update config not array exception', function (): void {
-    $model = new Model_ServiceCustom();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $model->id = 1;
+    $model = createEntity(\Box\Mod\Servicecustom\Entity\ServiceCustom::class, ['id' => 1]);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldNotReceive('getServiceCustomByOrderId');

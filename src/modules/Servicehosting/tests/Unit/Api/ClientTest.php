@@ -14,6 +14,7 @@ use Box\Mod\Servicehosting\Api\Client;
 use Box\Mod\Servicehosting\Entity\ServiceHosting;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 test('testGetDi', function (): void {
     $api = apiEndpoint(new Client());
@@ -25,7 +26,7 @@ test('testGetDi', function (): void {
 
 test('testChangeUsername', function (): void {
     $api = apiEndpoint(new Client());
-    $getServiceReturnValue = [new Model_ClientOrder(), new ServiceHosting()];
+    $getServiceReturnValue = [createEntity(\Box\Mod\Order\Entity\Order::class), new ServiceHosting()];
     $apiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial());
 
     $apiMock
@@ -48,7 +49,7 @@ test('testChangeUsername', function (): void {
 
 test('testChangeDomain', function (): void {
     $api = apiEndpoint(new Client());
-    $getServiceReturnValue = [new Model_ClientOrder(), new ServiceHosting()];
+    $getServiceReturnValue = [createEntity(\Box\Mod\Order\Entity\Order::class), new ServiceHosting()];
     $apiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial());
 
     $apiMock
@@ -71,7 +72,7 @@ test('testChangeDomain', function (): void {
 
 test('testChangePassword', function (): void {
     $api = apiEndpoint(new Client());
-    $getServiceReturnValue = [new Model_ClientOrder(), new ServiceHosting()];
+    $getServiceReturnValue = [createEntity(\Box\Mod\Order\Entity\Order::class), new ServiceHosting()];
     $apiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial());
 
     $apiMock
@@ -111,9 +112,7 @@ test('testGetService', function (): void {
         'order_id' => 1,
     ];
 
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
-    $clientOrderModel->status = Model_ClientOrder::STATUS_ACTIVE;
+    $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class, ['status' => Model_ClientOrder::STATUS_ACTIVE]);
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock
     ->shouldReceive('findOne')
@@ -133,9 +132,7 @@ test('testGetService', function (): void {
 
     $api->setDi($di);
 
-    $clientModel = new Model_Client();
-    $clientModel->loadBean(new Tests\Helpers\DummyBean());
-    $clientModel->id = 1;
+    $clientModel = createEntity(\Box\Mod\Client\Entity\Client::class, ['id' => 1]);
     $api->setIdentity($clientModel);
     $result = $api->_getService($data);
     expect($result)->toBeArray();
@@ -149,7 +146,7 @@ test('testGetServiceOrderNotActivated', function (): void {
         'order_id' => 1,
     ];
 
-    $clientOrderModel = new Model_ClientOrder();
+    $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock
     ->shouldReceive('findOne')
@@ -169,9 +166,7 @@ test('testGetServiceOrderNotActivated', function (): void {
 
     $api->setDi($di);
 
-    $clientModel = new Model_Client();
-    $clientModel->loadBean(new Tests\Helpers\DummyBean());
-    $clientModel->id = 1;
+    $clientModel = createEntity(\Box\Mod\Client\Entity\Client::class, ['id' => 1]);
     $api->setIdentity($clientModel);
 
     $this->expectException(FOSSBilling\InformationException::class);
@@ -197,9 +192,7 @@ test('testGetServiceOrderNotFound', function (): void {
 
     $api->setDi($di);
 
-    $clientModel = new Model_Client();
-    $clientModel->loadBean(new Tests\Helpers\DummyBean());
-    $clientModel->id = 1;
+    $clientModel = createEntity(\Box\Mod\Client\Entity\Client::class, ['id' => 1]);
     $api->setIdentity($clientModel);
 
     $this->expectException(FOSSBilling\InformationException::class);

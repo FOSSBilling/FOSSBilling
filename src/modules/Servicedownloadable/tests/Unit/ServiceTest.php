@@ -17,6 +17,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 function serviceDownloadableCreateProductEntity(?int $id = null, ?string $config = null): Product
 {
@@ -34,10 +35,10 @@ function serviceDownloadableCreateProductEntity(?int $id = null, ?string $config
 
 test('action delete', function (): void {
     $service = new Service();
-    $clientOrderModel = new Model_ClientOrder();
+    $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
 
     $orderServiceMock = Mockery::mock(OrderService::class);
-    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn(new Model_ServiceDownloadable());
+    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn(createEntity(\Box\Mod\Servicedownloadable\Entity\ServiceDownloadable::class));
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
     $emMock->shouldReceive('remove')->atLeast()->once();

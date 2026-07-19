@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 test('gets dependency injection container', function (): void {
     $api = apiEndpoint(new Box\Mod\Servicelicense\Api\Admin());
@@ -56,7 +57,7 @@ test('updates license', function (): void {
     $apiMock->shouldReceive('_getService')
         ->atLeast()
         ->once()
-        ->andReturn(new Model_ServiceLicense());
+        ->andReturn(createEntity(\Box\Mod\Servicelicense\Entity\ServiceLicense::class));
 
     $serviceMock = Mockery::mock(Box\Mod\Servicelicense\Service::class);
     $serviceMock->shouldReceive('update')
@@ -82,7 +83,7 @@ test('resets license', function (): void {
     $apiMock->shouldReceive('_getService')
         ->atLeast()
         ->once()
-        ->andReturn(new Model_ServiceLicense());
+        ->andReturn(createEntity(\Box\Mod\Servicelicense\Entity\ServiceLicense::class));
 
     $serviceMock = Mockery::mock(Box\Mod\Servicelicense\Service::class);
     $serviceMock->shouldReceive('reset')
@@ -105,13 +106,13 @@ test('gets service', function (): void {
     $orderServiceMock->shouldReceive('getOrderService')
         ->atLeast()
         ->once()
-        ->andReturn(new Model_ServiceLicense());
+        ->andReturn(createEntity(\Box\Mod\Servicelicense\Entity\ServiceLicense::class));
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()
         ->once()
-        ->andReturn(new Model_ClientOrder());
+        ->andReturn(createEntity(\Box\Mod\Order\Entity\Order::class));
 
     $di = container();
     $di['db'] = $dbMock;
@@ -120,7 +121,7 @@ test('gets service', function (): void {
     $api->setDi($di);
 
     $result = $api->_getService($data);
-    expect($result)->toBeInstanceOf(Model_ServiceLicense::class);
+    expect($result)->toBeInstanceOf(\Box\Mod\Servicelicense\Entity\ServiceLicense::class);
 });
 
 test('throws exception when order not activated', function (): void {
@@ -137,7 +138,7 @@ test('throws exception when order not activated', function (): void {
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()
         ->once()
-        ->andReturn(new Model_ClientOrder());
+        ->andReturn(createEntity(\Box\Mod\Order\Entity\Order::class));
 
     $di = container();
     $di['db'] = $dbMock;

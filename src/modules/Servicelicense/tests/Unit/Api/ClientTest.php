@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 test('getDi returns dependency injection container', function (): void {
     $api = apiEndpoint(new Box\Mod\Servicelicense\Api\Client());
@@ -31,7 +32,7 @@ test('reset returns true', function (): void {
     $apiMock->shouldReceive('_getService')
         ->atLeast()
         ->once()
-        ->andReturn(new Model_ServiceLicense());
+        ->andReturn(createEntity(\Box\Mod\Servicelicense\Entity\ServiceLicense::class));
 
     $serviceMock = Mockery::mock(Box\Mod\Servicelicense\Service::class);
     $serviceMock->shouldReceive('reset')
@@ -54,12 +55,10 @@ test('getService returns service license model', function (): void {
     $orderServiceMock->shouldReceive('getOrderService')
         ->atLeast()
         ->once()
-        ->andReturn(new Model_ServiceLicense());
+        ->andReturn(createEntity(\Box\Mod\Servicelicense\Entity\ServiceLicense::class));
 
     $dbMock = Mockery::mock('\Box_Database');
-    $clientOrder = new Model_ClientOrder();
-    $clientOrder->loadBean(new Tests\Helpers\DummyBean());
-    $clientOrder->status = Model_ClientOrder::STATUS_ACTIVE;
+    $clientOrder = createEntity(\Box\Mod\Order\Entity\Order::class, ['status' => Model_ClientOrder::STATUS_ACTIVE]);
 
     $dbMock->shouldReceive('findOne')
         ->atLeast()
@@ -72,8 +71,7 @@ test('getService returns service license model', function (): void {
 
     $api->setDi($di);
 
-    $clientModel = new Model_Client();
-    $clientModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientModel = createEntity(\Box\Mod\Client\Entity\Client::class);
     $api->setIdentity($clientModel);
 
     $result = $api->_getService($data);
@@ -89,8 +87,7 @@ test('getService throws exception when order not activated', function (): void {
         ->never()
         ->andReturn(null);
 
-    $inactiveOrder = new Model_ClientOrder();
-    $inactiveOrder->loadBean(new Tests\Helpers\DummyBean());
+    $inactiveOrder = createEntity(\Box\Mod\Order\Entity\Order::class);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('findOne')
@@ -104,8 +101,7 @@ test('getService throws exception when order not activated', function (): void {
 
     $api->setDi($di);
 
-    $clientModel = new Model_Client();
-    $clientModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientModel = createEntity(\Box\Mod\Client\Entity\Client::class);
     $api->setIdentity($clientModel);
 
     $api->_getService($data);

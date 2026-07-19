@@ -13,6 +13,8 @@ declare(strict_types=1);
 use Box\Mod\Servicecustom\Api\Admin;
 use Box\Mod\Servicecustom\Service;
 
+use function Tests\Helpers\createEntity;
+
 test('updates configuration', function (): void {
     $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Service::class);
@@ -86,7 +88,7 @@ test('calls magic method', function (): void {
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getServiceCustomByOrderId')
         ->atLeast()->once()
-        ->andReturn(new Model_ServiceCustom());
+        ->andReturn(createEntity(\Box\Mod\Servicecustom\Entity\ServiceCustom::class));
     $serviceMock->shouldReceive('customCall')
         ->atLeast()->once()
         ->andReturn(null);

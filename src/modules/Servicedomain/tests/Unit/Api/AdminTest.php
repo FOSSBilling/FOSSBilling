@@ -19,6 +19,7 @@ use Box\Mod\Servicedomain\Service;
 use FOSSBilling\Pagination;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 test('updates domain', function (): void {
     $adminApi = apiEndpoint(new Admin());
@@ -720,11 +721,10 @@ test('gets service', function (): void {
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
-        ->andReturn(new Model_ClientOrder());
+        ->andReturn(createEntity(\Box\Mod\Order\Entity\Order::class));
 
     $orderServiceMock = Mockery::mock(OrderService::class);
-    $serviceDomain = new Model_ServiceDomain();
-    $serviceDomain->loadBean(new Tests\Helpers\DummyBean());
+    $serviceDomain = createEntity(\Box\Mod\Servicedomain\Entity\ServiceDomain::class);
     $orderServiceMock->shouldReceive('getOrderService')
         ->atLeast()->once()
         ->andReturn($serviceDomain);
@@ -795,7 +795,7 @@ test('throws exception when getting service for not activated order', function (
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
-        ->andReturn(new Model_ClientOrder());
+        ->andReturn(createEntity(\Box\Mod\Order\Entity\Order::class));
 
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getOrderService')
