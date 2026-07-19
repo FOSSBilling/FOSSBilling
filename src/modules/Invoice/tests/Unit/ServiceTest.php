@@ -146,6 +146,20 @@ test('gets search query with various parameters', function (array $data, string 
     ],
 ]);
 
+test('adds aggregated totals only to summary searches', function (): void {
+    $service = new Service();
+    $service->setDi(container());
+
+    [$fullQuery] = $service->getSearchQuery([]);
+    [$summaryQuery] = $service->getSearchQuery(['summary' => 1, 'order_id' => 42]);
+
+    expect($fullQuery)->not->toContain('list_subtotal')
+        ->and($summaryQuery)
+        ->toContain('invoice_totals.invoice_id = p.id')
+        ->toContain('list_subtotal')
+        ->toContain('pi.rel_id = :order_id');
+});
+
 test('converts to api array', function (): void {
     $service = new Service();
     $invoiceModel = new Model_Invoice();
@@ -244,6 +258,58 @@ test('converts to api array', function (): void {
     expect($result['currency_rate'])->toBe(1);
     expect($result['paid_at'])->toBeNull();
     expect($result['buyer']['phone_cc'])->toBe('');
+});
+
+test('converts an aggregated invoice row to an api summary', function (): void {
+    $service = new Service();
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')
+        ->once()
+        ->with('invoice_number_padding')
+        ->andReturn('5');
+
+    $di = container();
+    $di['db'] = static function (): never {
+        throw new RuntimeException('Summary conversion must not access the database');
+    };
+    $di['mod_service'] = $di->protect(moduleService(['system' => $systemService]));
+    $service->setDi($di);
+
+    $result = $service->toApiSummaryArray([
+        'id' => 42,
+        'serie' => 'INV-',
+        'nr' => '42',
+        'client_id' => 7,
+        'currency' => 'USD',
+        'taxrate' => '20',
+        'list_subtotal' => '25.00',
+        'list_taxable_subtotal' => '10.00',
+        'status' => 'unpaid',
+        'due_at' => '2026-08-01 00:00:00',
+        'paid_at' => null,
+        'created_at' => '2026-07-19 00:00:00',
+        'updated_at' => '2026-07-19 00:00:00',
+        'buyer_first_name' => 'Ada',
+        'buyer_last_name' => 'Lovelace',
+        'buyer_email' => 'ada@example.com',
+        'approved' => 1,
+    ]);
+
+    expect($result)
+        ->toMatchArray([
+            'id' => 42,
+            'serie_nr' => 'INV-00042',
+            'client' => ['id' => 7],
+            'subtotal' => 25.0,
+            'tax' => 2.0,
+            'total' => 27.0,
+            'buyer' => [
+                'first_name' => 'Ada',
+                'last_name' => 'Lovelace',
+                'email' => 'ada@example.com',
+            ],
+        ]);
 });
 
 test('ensure valid hash is a no-op for modern hashes', function (): void {

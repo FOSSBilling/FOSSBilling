@@ -245,15 +245,22 @@ test('testAccountGetList', function (): void {
     ->shouldReceive('getAccountsSearchQuery')
     ->atLeast()->once()
     ->andReturn(['SQLstring', []]);
+    $serviceMock
+    ->shouldReceive('getAccountsBatchForApi')
+    ->once()
+    ->with([['id' => 1]], null)
+    ->andReturn([['id' => 1, 'order' => null]]);
 
     $pagerMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
     $pagerMock
     ->shouldReceive('getPaginatedResultSet')
     ->atLeast()->once()
-    ->andReturn(['list' => []]);
+    ->andReturn(['list' => [['id' => 1]]]);
 
     $di = container();
     $dbStub = Mockery::mock('Box_Database');
+    $dbStub->shouldNotReceive('dispense');
+    $dbStub->shouldNotReceive('findOne');
     $di['mod_service'] = $di->protect(moduleService());
     $di['pager'] = $pagerMock;
     $di['db'] = $dbStub;
@@ -262,7 +269,7 @@ test('testAccountGetList', function (): void {
     $api->setService($serviceMock);
 
     $result = $api->account_get_list([]);
-    expect($result)->toBeArray();
+    expect($result['list'])->toBe([['id' => 1, 'order' => null]]);
 });
 
 test('testServerGetList', function (): void {

@@ -35,9 +35,10 @@ test('getList returns array', function (): void {
     ->atLeast()->once()
     ->andReturn(['String', []]);
     $serviceMock
-    ->shouldReceive('toApiArray')
-    ->atLeast()->once()
-    ->andReturn([]);
+    ->shouldReceive('searchResultToApiArray')
+    ->once()
+    ->with(['id' => 1])
+    ->andReturn(['id' => 1, 'balance' => 10.0]);
 
     $pagerMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
 
@@ -46,13 +47,8 @@ test('getList returns array', function (): void {
     ->atLeast()->once()
     ->andReturn($simpleResultArr);
 
-    $model = new Model_Client();
-    $model->loadBean(new Tests\Helpers\DummyBean());
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn($model);
+    $dbMock->shouldNotReceive('getExistingModelById');
 
     $di = container();
     $di['pager'] = $pagerMock;
@@ -63,7 +59,7 @@ test('getList returns array', function (): void {
     $data = [];
 
     $result = $adminClient->get_list($data);
-    expect($result)->toBeArray();
+    expect($result['list'])->toBe([['id' => 1, 'balance' => 10.0]]);
 });
 
 test('getPairs returns array', function (): void {

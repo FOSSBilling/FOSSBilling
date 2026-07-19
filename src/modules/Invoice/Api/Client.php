@@ -127,8 +127,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
-            $transaction = $this->getDi()['db']->getExistingModelById('Transaction', $item['id'], 'Transaction not found');
-            $pager['list'][$key] = $transactionService->toApiArray($transaction);
+            $pager['list'][$key] = $transactionService->searchResultToApiArray($item);
         }
 
         return $pager;

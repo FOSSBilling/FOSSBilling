@@ -36,12 +36,12 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('client', 'view');
 
-        [$sql, $params] = $this->getService()->getSearchQuery($data);
+        $service = $this->getService();
+        [$sql, $params] = $service->getSearchQuery($data);
         $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $clientArr) {
-            $client = $this->getDi()['db']->getExistingModelById('Client', $clientArr['id'], 'Client not found');
-            $pager['list'][$key] = $this->getService()->toApiArray($client, true, $this->getIdentity());
+            $pager['list'][$key] = $service->searchResultToApiArray($clientArr);
         }
 
         return $pager;

@@ -268,11 +268,38 @@ class ServiceTransaction implements InjectionAwareInterface
         return $result;
     }
 
+    /**
+     * Convert a transaction search result without loading its model and gateway again.
+     */
+    public function searchResultToApiArray(array $row): array
+    {
+        return [
+            'id' => $row['id'],
+            'invoice_id' => $row['invoice_id'],
+            'txn_id' => $row['txn_id'],
+            'txn_status' => $row['txn_status'],
+            'gateway_id' => $row['gateway_id'],
+            'gateway' => $row['gateway'] ?? null,
+            'amount' => (float) ($row['amount'] ?? 0),
+            'currency' => $row['currency'],
+            'type' => $row['type'],
+            'status' => $row['status'],
+            'ip' => $row['ip'],
+            'validate_ipn' => $row['validate_ipn'],
+            'error' => $row['error'],
+            'error_code' => $row['error_code'],
+            'note' => $row['note'],
+            'created_at' => $row['created_at'],
+            'updated_at' => $row['updated_at'],
+        ];
+    }
+
     public function getSearchQuery(array $data): array
     {
-        $sql = 'SELECT m.*
+        $sql = 'SELECT m.*, pg.name AS gateway
                 FROM transaction as m
                 LEFT JOIN invoice as i on m.invoice_id = i.id
+                LEFT JOIN pay_gateway as pg on m.gateway_id = pg.id
                 WHERE 1 ';
 
         $id = $data['id'] ?? null;

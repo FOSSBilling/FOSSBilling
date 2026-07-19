@@ -157,6 +157,42 @@ test('converts to api array', function (): void {
     expect($result)->toBe($expected);
 });
 
+test('converts a transaction search result without database access', function (): void {
+    $service = new ServiceTransaction();
+    $di = container();
+    $di['db'] = static function (): never {
+        throw new RuntimeException('Search result conversion must not access the database');
+    };
+    $service->setDi($di);
+
+    $result = $service->searchResultToApiArray([
+        'id' => 12,
+        'invoice_id' => 34,
+        'txn_id' => 'txn_123',
+        'txn_status' => 'complete',
+        'gateway_id' => 2,
+        'gateway' => 'Stripe',
+        'amount' => '19.95',
+        'currency' => 'USD',
+        'type' => 'payment',
+        'status' => 'processed',
+        'ip' => '192.0.2.1',
+        'validate_ipn' => 1,
+        'error' => null,
+        'error_code' => null,
+        'note' => 'Test payment',
+        'created_at' => '2026-07-19 10:00:00',
+        'updated_at' => '2026-07-19 10:01:00',
+    ]);
+
+    expect($result)->toMatchArray([
+        'id' => 12,
+        'gateway' => 'Stripe',
+        'amount' => 19.95,
+        'status' => 'processed',
+    ]);
+});
+
 test('gets search query with various parameters', function (array $data, array $expectedParams, string $expectedStringPart): void {
     $service = new ServiceTransaction();
     $di = container();
@@ -170,7 +206,7 @@ test('gets search query with various parameters', function (array $data, array $
     expect($result[1])->toBe($expectedParams);
 })->with([
     [
-        [], [], 'SELECT m.*',
+        [], [], 'LEFT JOIN pay_gateway as pg on m.gateway_id = pg.id',
     ],
     [
         ['search' => 'keyword'], ['note' => '%keyword%', 'search_invoice_id' => '%keyword%', 'search_txn_id' => '%keyword%', 'ipn' => '%keyword%'], 'AND (m.note LIKE :note OR m.invoice_id LIKE :search_invoice_id OR m.txn_id LIKE :search_txn_id OR m.ipn LIKE :ipn)',
