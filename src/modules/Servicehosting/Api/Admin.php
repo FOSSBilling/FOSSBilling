@@ -28,10 +28,6 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('servicehosting', 'manage_accounts');
 
-        if (!isset($data['plan_id'])) {
-            throw new \FOSSBilling\Exception('plan_id is missing');
-        }
-
         [$order, $s] = $this->_getService($data);
         $plan = $this->getDi()['db']->getExistingModelById('ServiceHostingHp', $data['plan_id'], 'Hosting plan not found');
 
@@ -356,7 +352,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
-            $model = $this->getDi()['db']->getExistingModelById('ServiceHostingHp', $item['id'], 'Post not found');
+            $model = $this->getDi()['db']->getExistingModelById('ServiceHostingHp', $item['id'], 'Hosting plan not found');
             $pager['list'][$key] = $this->getService()->toHostingHpApiArray($model, false, $this->getIdentity());
         }
 
