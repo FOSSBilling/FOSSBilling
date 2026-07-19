@@ -25,6 +25,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 function productTestCreateProductEntity(int $id): Product
 {
@@ -261,7 +262,7 @@ test('to api array', function (): void {
 
     $serviceMock->setDi($di);
 
-    $result = $serviceMock->toApiArray($model, true, new Model_Admin());
+    $result = $serviceMock->toApiArray($model, true, createEntity(\Box\Mod\Staff\Entity\Admin::class));
     expect($result)->toBeArray();
 });
 
@@ -1097,9 +1098,7 @@ test('client has active promo application', function (): void {
     $service = new Service();
     $promo = productTestCreatePromoEntity(5);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->id = 9;
+    $client = createEntity(\Box\Mod\Client\Entity\Client::class, ['id' => 9]);
 
     $repoMock = Mockery::mock(PromoRedemptionRepository::class);
     $repoMock->shouldReceive('clientHasActiveCheckoutApplication')->once()->with(5, 9)->andReturn(true);
@@ -1140,8 +1139,7 @@ test('can client use promo returns false when promo cannot be applied', function
 
     $promo = productTestCreatePromoEntity(1);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client = createEntity(\Box\Mod\Client\Entity\Client::class);
 
     expect($serviceMock->canClientUsePromo($client, $promo))->toBeFalse();
 });
@@ -1154,8 +1152,7 @@ test('can client use promo returns true when promo is not once per client', func
     $promo = productTestCreatePromoEntity(1)
         ->setOncePerClient(false);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client = createEntity(\Box\Mod\Client\Entity\Client::class);
 
     expect($serviceMock->canClientUsePromo($client, $promo))->toBeTrue();
 });
@@ -1167,8 +1164,7 @@ test('can client use promo returns false when client already has active promo ap
     $promo = productTestCreatePromoEntity(1)
         ->setOncePerClient(true);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client = createEntity(\Box\Mod\Client\Entity\Client::class);
 
     $serviceMock->shouldReceive('clientHasActivePromoApplication')->once()->with($client, $promo)->andReturn(true);
 
@@ -1232,8 +1228,7 @@ test('reserve promo for order', function (): void {
     $promo = productTestCreatePromoEntity(1)
         ->setRecurring(true);
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('store')->once()->with($order);
@@ -1255,27 +1250,23 @@ test('create checkout promo redemptions persists each order and flushes once', f
     $service = new Service();
     $promo = productTestCreatePromoEntity(4);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->id = 8;
+    $client = createEntity(\Box\Mod\Client\Entity\Client::class, ['id' => 8]);
 
-    $invoice = new Model_Invoice();
-    $invoice->loadBean(new Tests\Helpers\DummyBean());
-    $invoice->id = 16;
+    $invoice = createEntity(\Box\Mod\Invoice\Entity\Invoice::class, ['id' => 16]);
 
-    $firstOrder = new Model_ClientOrder();
-    $firstOrder->loadBean(new Tests\Helpers\DummyBean());
-    $firstOrder->id = 11;
-    $firstOrder->discount = 5.0;
-    $firstOrder->currency = 'USD';
-    $firstOrder->created_at = '2026-01-01 12:00:00';
+    $firstOrder = createEntity(\Box\Mod\Order\Entity\Order::class, [
+        'id' => 11,
+        'discount' => 5.0,
+        'currency' => 'USD',
+        'created_at' => '2026-01-01 12:00:00',
+    ]);
 
-    $secondOrder = new Model_ClientOrder();
-    $secondOrder->loadBean(new Tests\Helpers\DummyBean());
-    $secondOrder->id = 12;
-    $secondOrder->discount = 7.0;
-    $secondOrder->currency = 'USD';
-    $secondOrder->created_at = '2026-01-01 12:05:00';
+    $secondOrder = createEntity(\Box\Mod\Order\Entity\Order::class, [
+        'id' => 12,
+        'discount' => 7.0,
+        'currency' => 'USD',
+        'created_at' => '2026-01-01 12:05:00',
+    ]);
 
     $emMock = new class {
         public array $persisted = [];
@@ -1362,14 +1353,14 @@ test('get promo discount title', function (): void {
 
 test('get renewal promo adjustment for domain order', function (): void {
     $service = new Service();
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->promo_id = 15;
-    $order->promo_recurring = true;
-    $order->product_id = 17;
-    $order->discount = 2.0;
-    $order->currency = 'EUR';
-    $order->config = json_encode(['period' => '1Y']);
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class, [
+        'promo_id' => 15,
+        'promo_recurring' => true,
+        'product_id' => 17,
+        'discount' => 2.0,
+        'currency' => 'EUR',
+        'config' => json_encode(['period' => '1Y']),
+    ]);
 
     $product = productTestCreateProductEntity(17)->setType(Service::DOMAIN);
 
@@ -1469,25 +1460,19 @@ test('is promo available for client group', function (Promo $promo, ?Model_Clien
 
     expect($service->isPromoAvailableForClientGroup($promo))->toBe($expectedResult);
 })->with([
-    'no restrictions' => [fn (): Promo => productTestCreatePromoEntity(1)->setClientGroups(json_encode([])), fn (): Model_Client => $client = new Model_Client(), true],
+    'no restrictions' => [fn (): Promo => productTestCreatePromoEntity(1)->setClientGroups(json_encode([])), fn (): Model_Client => $client = createEntity(\Box\Mod\Client\Entity\Client::class), true],
     'restricted and no client group' => [fn (): Promo => productTestCreatePromoEntity(2)->setClientGroups(json_encode([1, 2])), function () {
-        $client = new Model_Client();
-        $client->loadBean(new Tests\Helpers\DummyBean());
-        $client->client_group_id = null;
+        $client = createEntity(\Box\Mod\Client\Entity\Client::class, ['client_group_id' => null]);
 
         return $client;
     }, false],
     'restricted and wrong client group' => [fn (): Promo => productTestCreatePromoEntity(3)->setClientGroups(json_encode([1, 2])), function () {
-        $client = new Model_Client();
-        $client->loadBean(new Tests\Helpers\DummyBean());
-        $client->client_group_id = 3;
+        $client = createEntity(\Box\Mod\Client\Entity\Client::class, ['client_group_id' => 3]);
 
         return $client;
     }, false],
     'restricted and matching client group' => [fn (): Promo => productTestCreatePromoEntity(4)->setClientGroups(json_encode([1, 2])), function () {
-        $client = new Model_Client();
-        $client->loadBean(new Tests\Helpers\DummyBean());
-        $client->client_group_id = 2;
+        $client = createEntity(\Box\Mod\Client\Entity\Client::class, ['client_group_id' => 2]);
 
         return $client;
     }, true],
@@ -1497,9 +1482,7 @@ test('is promo available for client group', function (Promo $promo, ?Model_Clien
 
 test('release reserved promo redemptions for invoice releases reservations and decrements operational counter', function (): void {
     $service = new Service();
-    $invoice = new Model_Invoice();
-    $invoice->loadBean(new Tests\Helpers\DummyBean());
-    $invoice->id = 11;
+    $invoice = createEntity(\Box\Mod\Invoice\Entity\Invoice::class, ['id' => 11]);
 
     $checkoutRedemption = (new PromoRedemption())
         ->setPromoId(7)

@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 use FOSSBilling\Api\AbstractApi;
 
+use function Tests\Helpers\createEntity;
+
 // Minimal concrete subclass to expose the protected method.
 class ConcreteApi extends AbstractApi
 {
@@ -26,7 +28,7 @@ test('does not resolve the test container implicitly', function (): void {
 });
 
 test('checkPermissions forwards identity to Staff service', function (): void {
-    $identity = new Model_Admin();
+    $identity = createEntity(\Box\Mod\Staff\Entity\Admin::class);
 
     $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
     $staffService->shouldReceive('checkPermissionsAndThrowException')
@@ -47,7 +49,7 @@ test('checkPermissions forwards identity to Staff service', function (): void {
 });
 
 test('checkPermissions forwards constraint to Staff service', function (): void {
-    $identity = new Model_Admin();
+    $identity = createEntity(\Box\Mod\Staff\Entity\Admin::class);
 
     $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
     $staffService->shouldReceive('checkPermissionsAndThrowException')
