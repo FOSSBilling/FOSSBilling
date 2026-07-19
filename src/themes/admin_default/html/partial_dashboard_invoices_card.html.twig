@@ -7,7 +7,7 @@
     {% set invoicePerPage = '5' %}
 {% endif %}
 {% set invoiceDashboardRequest = request|merge({ 'invoice_per_page': null, 'dashboard_section': null })|filter(v => v is not null) %}
-{% set invoicesUnpaid = admin.invoice_get_list({ 'status': 'unpaid', 'page': 1, 'per_page': invoicePerPage }) %}
+{% set invoicesUnpaid = admin.invoice_get_list({ 'status': 'unpaid', 'page': 1, 'per_page': invoicePerPage, 'summary': 1 }) %}
 {% set invoicePageSizeOptions = ['5'] %}
 {% if invoicesUnpaid.total > 5 %}
     {% set invoicePageSizeOptions = invoicePageSizeOptions|merge(['10']) %}

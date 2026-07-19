@@ -30,6 +30,7 @@ class Service implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
     private Filesystem $filesystem;
+    private ?int $invoiceNumberPadding = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -93,7 +94,16 @@ class Service implements InjectionAwareInterface
 
     public function getSearchQuery($data): array
     {
-        $sql = 'SELECT p.*
+        $select = 'p.*';
+        if (!empty($data['summary'])) {
+            $select .= ',
+                (SELECT COALESCE(SUM(COALESCE(invoice_totals.price, 0) * COALESCE(invoice_totals.quantity, 1)), 0)
+                    FROM invoice_item invoice_totals WHERE invoice_totals.invoice_id = p.id) AS list_subtotal,
+                (SELECT COALESCE(SUM(CASE WHEN invoice_taxable.taxed = 1 THEN COALESCE(invoice_taxable.price, 0) * COALESCE(invoice_taxable.quantity, 1) ELSE 0 END), 0)
+                    FROM invoice_item invoice_taxable WHERE invoice_taxable.invoice_id = p.id) AS list_taxable_subtotal';
+        }
+
+        $sql = 'SELECT ' . $select . '
             FROM invoice p
             LEFT JOIN invoice_item pi ON (p.id = pi.invoice_id)
             LEFT JOIN client cl ON (cl.id = p.client_id)
@@ -189,6 +199,56 @@ class Service implements InjectionAwareInterface
         return [$sql, $params];
     }
 
+    /**
+     * Convert an aggregated invoice search result into the fields needed by list views.
+     *
+     * Unlike toApiArray(), this does not load invoice items, orders, products, the client,
+     * company details, or subscription information for every invoice in the result set.
+     */
+    public function toApiSummaryArray(array $row): array
+    {
+        $subtotal = (float) ($row['list_subtotal'] ?? 0);
+        $taxableSubtotal = (float) ($row['list_taxable_subtotal'] ?? 0);
+        $taxRate = (float) ($row['taxrate'] ?? 0);
+        $tax = $taxRate > 0 && $taxableSubtotal !== 0.0 ? round($taxableSubtotal * $taxRate / 100, 2) : 0;
+        $invoiceNumber = is_numeric($row['nr'] ?? null) ? (int) $row['nr'] : (int) $row['id'];
+        $clientId = $row['client_id'] ?? null;
+
+        return [
+            'id' => $row['id'],
+            'serie' => $row['serie'],
+            'nr' => $row['nr'],
+            'serie_nr' => $row['serie'] . sprintf('%0' . $this->getInvoiceNumberPadding() . 's', $invoiceNumber),
+            'client_id' => $clientId,
+            'client' => $clientId === null ? null : ['id' => $clientId],
+            'currency' => $row['currency'],
+            'tax' => $tax,
+            'subtotal' => $subtotal,
+            'total' => $subtotal + $tax,
+            'status' => $row['status'],
+            'due_at' => $row['due_at'],
+            'paid_at' => $row['paid_at'] ?? null,
+            'created_at' => $row['created_at'],
+            'updated_at' => $row['updated_at'],
+            'buyer' => [
+                'first_name' => $row['buyer_first_name'],
+                'last_name' => $row['buyer_last_name'],
+                'email' => $row['buyer_email'],
+            ],
+            'approved' => (bool) ($row['approved'] ?? false),
+        ];
+    }
+
+    private function getInvoiceNumberPadding(): int
+    {
+        if ($this->invoiceNumberPadding === null) {
+            $padding = $this->di['mod_service']('system')->getParamValue('invoice_number_padding');
+            $this->invoiceNumberPadding = $padding !== null && $padding !== '' ? (int) $padding : 5;
+        }
+
+        return $this->invoiceNumberPadding;
+    }
+
     public function toApiArray(\Model_Invoice $invoice, $deep = true, $identity = null, bool $includeClientBillingEmail = false): array
     {
         $this->ensureValidHash($invoice);
@@ -236,9 +296,6 @@ class Service implements InjectionAwareInterface
             $tax = 0;
         }
 
-        $invoice_number_padding = $this->di['mod_service']('system')->getParamValue('invoice_number_padding');
-        $invoice_number_padding = $invoice_number_padding !== null && $invoice_number_padding !== '' ? $invoice_number_padding : 5;
-
         $result = [];
         $result['id'] = $row['id'];
         $result['serie'] = $row['serie'];
@@ -246,7 +303,7 @@ class Service implements InjectionAwareInterface
         $result['client_id'] = $invoice->client_id;
 
         $nr = is_numeric($row['nr']) ? intval($row['nr']) : $result['id'];
-        $result['serie_nr'] = $result['serie'] . sprintf('%0' . $invoice_number_padding . 's', $nr);
+        $result['serie_nr'] = $result['serie'] . sprintf('%0' . $this->getInvoiceNumberPadding() . 's', $nr);
 
         $result['hash'] = $row['hash'];
         $result['hash_expires_at'] = $row['hash_expires_at'] ?? null;

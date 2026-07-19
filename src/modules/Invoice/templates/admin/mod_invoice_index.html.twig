@@ -209,7 +209,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% set invoices = admin.invoice_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
+                        {% set invoices = admin.invoice_get_list({ 'per_page': 25, 'page': request.page }|merge(request)|merge({ 'summary': 1 })) %}
                         {% for invoice in invoices.list %}
                         <tr>
                             <td>

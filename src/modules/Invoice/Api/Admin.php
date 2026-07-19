@@ -25,6 +25,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Returns paginated list of invoices.
      *
+     * @optional bool $summary - return only fields needed by invoice list views, without expanding related records
+     *
      * @return array
      */
     public function get_list($data)
@@ -34,9 +36,17 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $service = $this->getService();
         [$sql, $params] = $service->getSearchQuery($data);
         $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        if (!empty($data['summary'])) {
+            foreach ($pager['list'] as $key => $item) {
+                $pager['list'][$key] = $service->toApiSummaryArray($item);
+            }
+
+            return $pager;
+        }
+
         foreach ($pager['list'] as $key => $item) {
             $invoice = $this->getDi()['db']->getExistingModelById('Invoice', $item['id'], 'Invoice not found');
-            $pager['list'][$key] = $this->getService()->toApiArray($invoice, true, $this->getIdentity());
+            $pager['list'][$key] = $service->toApiArray($invoice, true, $this->getIdentity());
         }
 
         return $pager;
@@ -483,8 +493,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
-            $transaction = $this->getDi()['db']->getExistingModelById('Transaction', $item['id'], 'Transaction not found');
-            $pager['list'][$key] = $transactionService->toApiArray($transaction);
+            $pager['list'][$key] = $transactionService->searchResultToApiArray($item);
         }
 
         return $pager;

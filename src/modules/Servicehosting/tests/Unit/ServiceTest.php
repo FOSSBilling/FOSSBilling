@@ -13,6 +13,85 @@ declare(strict_types=1);
 use Box\Mod\Servicehosting\Service;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\moduleService;
+
+test('batch enriches hosting accounts with orders and clients', function (): void {
+    $service = new Service();
+    $account = [
+        'id' => 10,
+        'sld' => 'example',
+        'tld' => '.com',
+        'client_id' => 7,
+        'service_hosting_server_id' => 2,
+        'service_hosting_hp_id' => 3,
+        'reseller' => 0,
+        'ip' => '192.0.2.10',
+        'username' => 'example',
+        'created_at' => '2026-07-19 10:00:00',
+        'updated_at' => '2026-07-19 10:01:00',
+    ];
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getAll')
+        ->once()
+        ->with(Mockery::pattern('/FROM client_order/'), ['hosting', 10])
+        ->andReturn([['id' => 50, 'service_id' => 10]]);
+    $dbMock->shouldNotReceive('findOne');
+    $dbMock->shouldNotReceive('dispense');
+
+    $orderService = Mockery::mock(Box\Mod\Order\Service::class);
+    $orderService->shouldReceive('getBatchForApi')
+        ->once()
+        ->with([50], Mockery::type(Model_Admin::class))
+        ->andReturn([[
+            'id' => 50,
+            'service_id' => 10,
+            'title' => 'Example hosting',
+            'client' => ['id' => 7, 'email' => 'client@example.com'],
+        ]]);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(moduleService(['order' => $orderService]));
+    $service->setDi($di);
+
+    $admin = new Model_Admin();
+    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $result = $service->getAccountsBatchForApi([$account], $admin);
+
+    expect($result[0])
+        ->toMatchArray([
+            'id' => 10,
+            'server_id' => 2,
+            'plan_id' => 3,
+            'client' => ['id' => 7, 'email' => 'client@example.com'],
+            'order' => ['id' => 50, 'service_id' => 10, 'title' => 'Example hosting'],
+        ])
+        ->and($result[0]['order'])->not->toHaveKey('client');
+});
+
+test('batch returns hosting accounts without orders', function (): void {
+    $service = new Service();
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getAll')->once()->andReturn([]);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $service->setDi($di);
+
+    $result = $service->getAccountsBatchForApi([[
+        'id' => 10,
+        'sld' => 'example',
+        'tld' => '.com',
+        'client_id' => 7,
+        'service_hosting_server_id' => 2,
+        'service_hosting_hp_id' => 3,
+        'reseller' => 0,
+    ]]);
+
+    expect($result[0]['order'])->toBeNull()
+        ->and($result[0])->not->toHaveKey('client');
+});
 
 test('validate order data', function (string $field, string $exceptionMessage, int $excCode): void {
     $service = new Service();

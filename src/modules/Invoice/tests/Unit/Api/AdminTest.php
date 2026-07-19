@@ -52,6 +52,42 @@ test('gets invoice list', function (): void {
     expect($result)->toBeArray();
 });
 
+test('gets invoice summaries without loading invoice models', function (): void {
+    $api = apiEndpoint(new Admin());
+    $summary = ['id' => 1, 'total' => 10.0];
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('getSearchQuery')
+        ->once()
+        ->andReturn(['SqlString', []]);
+    $serviceMock->shouldReceive('toApiSummaryArray')
+        ->once()
+        ->with(['id' => 1])
+        ->andReturn($summary);
+
+    $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
+    $paginatorMock->shouldReceive('getDefaultPerPage')
+        ->byDefault()
+        ->andReturn(25);
+    $paginatorMock->shouldReceive('getPaginatedResultSet')
+        ->once()
+        ->andReturn(['list' => [['id' => 1]]]);
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldNotReceive('getExistingModelById');
+
+    $di = container();
+    $di['pager'] = $paginatorMock;
+    $di['db'] = $dbMock;
+
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    $result = $api->get_list(['summary' => 1]);
+
+    expect($result['list'])->toBe([$summary]);
+});
+
 test('gets an invoice', function (): void {
     $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Service::class);
@@ -688,6 +724,10 @@ test('gets transaction list', function (): void {
     $transactionService->shouldReceive('getSearchQuery')
         ->atLeast()->once()
         ->andReturn(['SqlString', []]);
+    $transactionService->shouldReceive('searchResultToApiArray')
+        ->once()
+        ->with(['id' => 1])
+        ->andReturn(['id' => 1, 'gateway' => 'Stripe']);
 
     $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
     $paginatorMock->shouldReceive('getDefaultPerPage')
@@ -695,15 +735,19 @@ test('gets transaction list', function (): void {
         ->andReturn(25);
     $paginatorMock->shouldReceive('getPaginatedResultSet')
         ->atLeast()->once()
-        ->andReturn(['list' => []]);
+        ->andReturn(['list' => [['id' => 1]]]);
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldNotReceive('getExistingModelById');
 
     $di = container();
     $di['pager'] = $paginatorMock;
+    $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(moduleService(['invoice:transaction' => $transactionService]));
 
     $api->setDi($di);
     $result = $api->transaction_get_list([]);
-    expect($result)->toBeArray();
+    expect($result['list'])->toBe([['id' => 1, 'gateway' => 'Stripe']]);
 });
 
 test('gets transaction statuses', function (): void {

@@ -23,47 +23,46 @@ test('getDi returns dependency injection container', function (): void {
 
 test('getList returns array', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
+    $identity = new Model_Admin();
+    $identity->loadBean(new Tests\Helpers\DummyBean());
+    $adminClient->setIdentity($identity);
+    $queryBuilder = Mockery::mock(Doctrine\ORM\QueryBuilder::class);
     $simpleResultArr = [
         'list' => [
-            ['id' => 1],
+            ['id' => 1, 'group' => null],
         ],
     ];
 
+    $repository = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $repository->shouldReceive('getSearchQueryBuilder')
+        ->once()
+        ->with([])
+        ->andReturn($queryBuilder);
+    $repository->shouldReceive('getListContext')
+        ->once()
+        ->with([1])
+        ->andReturn([1 => ['balance' => 10.0, 'group' => 'VIP']]);
+
     $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
-    $serviceMock
-    ->shouldReceive('getSearchQuery')
-    ->atLeast()->once()
-    ->andReturn(['String', []]);
-    $serviceMock
-    ->shouldReceive('toApiArray')
-    ->atLeast()->once()
-    ->andReturn([]);
+    $serviceMock->shouldReceive('getClientRepository')
+        ->once()
+        ->andReturn($repository);
 
     $pagerMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
-
-    $pagerMock
-    ->shouldReceive('getPaginatedResultSet')
-    ->atLeast()->once()
-    ->andReturn($simpleResultArr);
-
-    $model = new Model_Client();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn($model);
+    $pagerMock->shouldReceive('paginateDoctrineQuery')
+        ->once()
+        ->with($queryBuilder, Mockery::type(FOSSBilling\PaginationOptions::class), Mockery::type(Model_Admin::class))
+        ->andReturn($simpleResultArr);
 
     $di = container();
     $di['pager'] = $pagerMock;
-    $di['db'] = $dbMock;
 
     $adminClient->setService($serviceMock);
     $adminClient->setDi($di);
     $data = [];
 
     $result = $adminClient->get_list($data);
-    expect($result)->toBeArray();
+    expect($result['list'])->toBe([['id' => 1, 'group' => 'VIP', 'balance' => 10.0]]);
 });
 
 test('getPairs returns array', function (): void {

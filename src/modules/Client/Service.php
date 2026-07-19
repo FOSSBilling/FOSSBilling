@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Client;
 
+use Box\Mod\Client\Entity\Client;
+use Box\Mod\Client\Repository\ClientRepository;
 use FOSSBilling\i18n;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
@@ -22,6 +24,7 @@ use Symfony\Component\Intl\Locales;
 class Service implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
+    private ?ClientRepository $clientRepository = null;
 
     public function getModulePermissions(): array
     {
@@ -102,6 +105,19 @@ class Service implements InjectionAwareInterface
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
+    }
+
+    public function getClientRepository(): ClientRepository
+    {
+        if ($this->clientRepository === null) {
+            if ($this->di === null) {
+                throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
+            }
+
+            $this->clientRepository = $this->di['em']->getRepository(Client::class);
+        }
+
+        return $this->clientRepository;
     }
 
     public function approveClientEmailByHash($hash): bool

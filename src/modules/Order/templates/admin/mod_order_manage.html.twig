@@ -559,7 +559,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% set invoices = admin.invoice_get_list({ 'per_page': 50, 'order_id': order.id }) %}
+                                {% set invoices = admin.invoice_get_list({ 'per_page': 50, 'order_id': order.id, 'summary': 1 }) %}
                                 {% for invoice in invoices.list %}
                                 <tr>
                                     <td><a href='{{ "invoice/manage/#{invoice.id}"|url }}'>#{{ invoice.id }}</a></td>
