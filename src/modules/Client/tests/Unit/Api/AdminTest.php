@@ -47,16 +47,8 @@ test('getList returns array', function (): void {
     ->atLeast()->once()
     ->andReturn($simpleResultArr);
 
-    $model = createEntity(\Box\Mod\Client\Entity\Client::class);
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn($model);
-
     $di = container();
     $di['pager'] = $pagerMock;
-    $di['db'] = $dbMock;
 
     $adminClient->setService($serviceMock);
     $adminClient->setDi($di);
@@ -100,10 +92,6 @@ test('get returns array', function (): void {
 
 test('login returns array', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
-    $model = createEntity(\Box\Mod\Client\Entity\Client::class);
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-        ->shouldReceive('getExistingModelById')->atLeast()->once()->andReturn($model);
 
     $sessionArray = [
         'id' => 1,
@@ -118,7 +106,6 @@ test('login returns array', function (): void {
     $sessionMock->shouldReceive('set')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(moduleService(['client' => $serviceMock]));
     $di['session'] = $sessionMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -189,12 +176,6 @@ test('delete returns true', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $data = ['id' => 1];
 
-    $model = createEntity(\Box\Mod\Client\Entity\Client::class);
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-        ->shouldReceive('getExistingModelById')->atLeast()->once()->andReturn($model);
-
     $eventMock = Mockery::mock('\Box_EventManager');
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
@@ -202,7 +183,6 @@ test('delete returns true', function (): void {
     $serviceMock->shouldReceive('remove')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['events_manager'] = $eventMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $validatorStub = $this->createStub(FOSSBilling\Validate::class);
@@ -255,11 +235,7 @@ test('update returns true', function (): void {
         'custom_10' => '',
     ];
 
-    $model = createEntity(\Box\Mod\Client\Entity\Client::class);
-
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-        ->shouldReceive('getExistingModelById')->atLeast()->once()->andReturn($model);
     $dbMock
         ->shouldReceive('store')->atLeast()->once()->andReturn(1);
 
@@ -328,12 +304,6 @@ test('update throws exception when email is already registered', function (): vo
         'custom_10' => '',
     ];
 
-    $model = createEntity(\Box\Mod\Client\Entity\Client::class);
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-        ->shouldReceive('getExistingModelById')->atLeast()->once()->andReturn($model);
-
     $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
     $serviceMock->shouldReceive('emailAlreadyRegistered')->atLeast()->once()->andReturn(true);
 
@@ -341,7 +311,6 @@ test('update throws exception when email is already registered', function (): vo
     $eventMock->shouldReceive('fire');
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(moduleService(['client' => $serviceMock]));
     $di['events_manager'] = $eventMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -380,12 +349,7 @@ test('changePassword returns true', function (): void {
         'password_confirm' => 'strongPass',
     ];
 
-    $model = createEntity(\Box\Mod\Client\Entity\Client::class);
-
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-        ->shouldReceive('getExistingModelById')->atLeast()->once()->andReturn($model);
-
     $dbMock
         ->shouldReceive('store')->atLeast()->once()->andReturn(1);
 
@@ -478,12 +442,7 @@ test('balanceDelete returns true', function (): void {
         'id' => 1,
     ];
 
-    $model = createEntity(\Box\Mod\Client\Entity\ClientBalance::class);
-
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-        ->shouldReceive('getExistingModelById')->atLeast()->once()->andReturn($model);
-
     $dbMock->shouldReceive('trash')->atLeast()->once();
 
     $di = container();
@@ -506,17 +465,10 @@ test('balanceAddFunds returns true', function (): void {
         'description' => 'testDescription',
     ];
 
-    $model = createEntity(\Box\Mod\Client\Entity\Client::class);
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-        ->shouldReceive('getExistingModelById')->atLeast()->once()->andReturn($model);
-
     $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
     $serviceMock->shouldReceive('addFunds')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(moduleService(['client' => $serviceMock]));
 
     $validatorStub = $this->createStub(FOSSBilling\Validate::class);
@@ -631,12 +583,7 @@ test('groupUpdate returns true', function (): void {
     $data['id'] = '2';
     $data['title'] = 'test Group updated';
 
-    $model = createEntity(\Box\Mod\Client\Entity\ClientGroup::class);
-
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-        ->shouldReceive('getExistingModelById')->atLeast()->once()->andReturn($model);
-
     $dbMock
         ->shouldReceive('store')->atLeast()->once()->andReturn(1);
 
@@ -657,11 +604,7 @@ test('groupDelete returns true', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $data['id'] = '2';
 
-    $model = createEntity(\Box\Mod\Client\Entity\ClientGroup::class);
-
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-        ->shouldReceive('getExistingModelById')->atLeast()->once()->andReturn($model);
     $dbMock->shouldReceive('find')->atLeast()->once()->with('Client', 'client_group_id = :group_id', [':group_id' => $data['id']])
         ->andReturn([]);
 
@@ -689,12 +632,7 @@ test('groupGet returns array', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $data['id'] = '2';
 
-    $model = createEntity(\Box\Mod\Client\Entity\ClientGroup::class);
-
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-        ->shouldReceive('getExistingModelById')->atLeast()->once()->andReturn($model);
-
     $dbMock
         ->shouldReceive('toArray')->atLeast()->once()->andReturn([]);
 
