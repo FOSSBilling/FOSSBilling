@@ -152,7 +152,6 @@ test('testGetServiceOrderNotActivated', function (): void {
     ];
 
     $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock
     ->shouldReceive('findOne')
