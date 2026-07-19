@@ -200,9 +200,7 @@ test('converts to api array', function (): void {
     ];
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('toArray')
-        ->atLeast()->once()
-        ->andReturn($modelToArrayResult);
+    $dbMock->shouldNotReceive('toArray');
 
     $subscriptionServiceMock->shouldReceive('getSubscriptionPeriod')
         ->byDefault()
@@ -375,13 +373,7 @@ test('to api array self-heals invoice with missing hash', function (): void {
     ];
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('toArray')
-        ->atLeast()->once()
-        ->andReturnUsing(function () use ($invoiceModel, $modelToArrayResult): array {
-            $modelToArrayResult['hash'] = $invoiceModel->hash;
-
-            return $modelToArrayResult;
-        });
+    $dbMock->shouldNotReceive('toArray');
 
     $periodMock = Mockery::mock('\Box_Period');
     $periodMock->shouldReceive('getUnit');
@@ -1022,7 +1014,7 @@ test('admin mark as paid with custom gateway records transaction and marks invoi
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('markAsPaid')
         ->once()
-        ->with(Mockery::type(Model_Invoice::class), false, true)
+        ->with(Mockery::type(\Box\Mod\Invoice\Entity\Invoice::class), false, true)
         ->andReturn(true);
     $serviceMock->shouldReceive('getTotalWithTax')
         ->once()
@@ -1069,7 +1061,7 @@ test('admin mark as paid with custom gateway records transaction and marks invoi
     $transactionRepo->shouldReceive('find')->with(20)->andReturn($transactionEntity);
 
     $currencyRepositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
-    $currencyRepositoryMock->shouldReceive('getRateByCode')->once()->with('USD')->andReturn(1.0);
+    $currencyRepositoryMock->shouldNotReceive('getRateByCode');
 
     $di = container();
     $di['em']->shouldReceive('getRepository')
@@ -1082,15 +1074,9 @@ test('admin mark as paid with custom gateway records transaction and marks invoi
         ->with(Box\Mod\Currency\Entity\Currency::class)
         ->andReturn($currencyRepositoryMock);
 
-    $currencyServiceMock = Mockery::mock(Box\Mod\Currency\Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
-    $currencyServiceMock->shouldReceive('getCurrencyRepository')
-        ->atLeast()->once()
-        ->andReturn($currencyRepositoryMock);
+    $currencyServiceMock = Mockery::mock(Box\Mod\Currency\Service::class);
 
     $systemServiceMock = Mockery::mock(SystemService::class);
-    $systemServiceMock->shouldReceive('getParamValue')
-        ->atLeast()->once()
-        ->andReturn('90');
 
     $productServiceMock = Mockery::mock(ProductService::class)->shouldIgnoreMissing();
 

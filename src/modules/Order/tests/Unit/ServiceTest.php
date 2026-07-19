@@ -912,7 +912,7 @@ test('toApiArray returns expected keys', function (): void {
     $supportService->shouldReceive('getSupportTicketRepository')->atLeast()->once()->andReturn($supportTicketRepo);
 
     $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('toArray')->atLeast()->once()->andReturn([]);
+    $dbMock->shouldNotReceive('toArray');
 
     $clientEntity = new Box\Mod\Client\Entity\Client();
 
@@ -1944,12 +1944,8 @@ test('updateOrder updates fields', function (): void {
     $eventMock = Mockery::mock(Box_EventManager::class);
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('store')->atLeast()->once()->with($clientOrderModel);
-
     $di = container();
     $di['events_manager'] = $eventMock;
-    $di['db'] = $dbMock;
     $di['em'] = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
     $di['logger'] = new Box_Log();
 
@@ -2019,9 +2015,6 @@ test('renewFromOrder extends expiration', function (): void {
         ->with(strtotime('2026-01-01 00:00:00'))
         ->andReturn($expectedExpiration);
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('store')->atLeast()->once();
-
     $serviceMock->shouldReceive('saveStatusChange')
         ->atLeast()->once()
         ->with($clientOrderModel, 'Order renewed');
@@ -2029,12 +2022,11 @@ test('renewFromOrder extends expiration', function (): void {
     $di = container();
     $di['mod_config'] = $di->protect(fn ($name): array => []);
     $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
-    $di['db'] = $dbMock;
 
     $serviceMock->setDi($di);
     $serviceMock->renewFromOrder($clientOrderModel);
 
-    expect($clientOrderModel->expires_at)->toEqual('2027-01-01 00:00:00');
+    expect($clientOrderModel->expires_at)->toEqual(new \DateTime('2027-01-01 00:00:00'));
     expect($clientOrderModel->status)->toEqual(Model_ClientOrder::STATUS_ACTIVE);
 });
 
@@ -2058,9 +2050,6 @@ test('renewFromOrder extends free first term on first paid renewal', function ()
         ->with(strtotime('2026-01-01 00:00:00'))
         ->andReturn($expectedExpiration);
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('store')->atLeast()->once();
-
     $serviceMock->shouldReceive('saveStatusChange')
         ->once()
         ->with($clientOrderModel, 'Order renewed');
@@ -2068,12 +2057,11 @@ test('renewFromOrder extends free first term on first paid renewal', function ()
     $di = container();
     $di['mod_config'] = $di->protect(fn ($name): array => []);
     $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
-    $di['db'] = $dbMock;
 
     $serviceMock->setDi($di);
     $serviceMock->renewFromOrder($clientOrderModel);
 
-    expect($clientOrderModel->expires_at)->toEqual('2027-01-01 00:00:00');
+    expect($clientOrderModel->expires_at)->toEqual(new \DateTime('2027-01-01 00:00:00'));
     expect($clientOrderModel->status)->toEqual(Model_ClientOrder::STATUS_ACTIVE);
 });
 
@@ -2101,13 +2089,9 @@ test('suspendFromOrder suspends active order', function (): void {
     $eventMock = Mockery::mock(Box_EventManager::class);
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('store')->atLeast()->once()->with($clientOrderModel);
-
     $di = container();
     $di['events_manager'] = $eventMock;
     $di['logger'] = new Box_Log();
-    $di['db'] = $dbMock;
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldAllowMockingProtectedMethods();
@@ -2142,9 +2126,6 @@ test('cancelFromOrder cancels linked subscriptions', function (): void {
         ->once()
         ->with($clientOrderModel, 'order_canceled');
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('store')->once()->with($clientOrderModel);
-
     $connectionMock = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connectionMock->shouldReceive('executeStatement')
         ->once()
@@ -2157,7 +2138,6 @@ test('cancelFromOrder cancels linked subscriptions', function (): void {
     $emMock->shouldIgnoreMissing();
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['em'] = $emMock;
     $di['logger'] = new Box_Log();
     $di['mod_service'] = $di->protect(function (string $module, string $service = '') use ($productService, $subscriptionService) {
@@ -2193,11 +2173,7 @@ test('scheduleCancellationFromOrder keeps the service active', function (): void
     $subscriptionService->shouldReceive('canCancelAtPeriodEndForOrder')->once()->with($order)->andReturn(true);
     $subscriptionService->shouldReceive('scheduleCancellationForOrder')->once()->with($order)->andReturn(1);
 
-    $db = Mockery::mock(Box_Database::class);
-    $db->shouldReceive('store')->once()->with($order);
-
     $di = container();
-    $di['db'] = $db;
     $di['logger'] = new Box_Log();
     $di['mod_service'] = $di->protect(fn () => $subscriptionService);
 
@@ -2684,16 +2660,12 @@ test('updateOrderConfig succeeds with valid form data', function (): void {
     $formbuilderServiceMock = Mockery::mock(Box\Mod\Formbuilder\Service::class);
     $formbuilderServiceMock->shouldReceive('getForm')->once()->andReturn($form);
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('store')->once();
-
     $di = container();
     $di['mod_service'] = $di->protect(function ($serviceName) use ($formbuilderServiceMock) {
         if ($serviceName === 'formbuilder') {
             return $formbuilderServiceMock;
         }
     });
-    $di['db'] = $dbMock;
     $di['em'] = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
     $di['logger'] = new Box_Log();
 

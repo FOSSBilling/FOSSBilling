@@ -1384,7 +1384,7 @@ test('get renewal promo adjustment for domain order', function (): void {
         ->setValue(5.0);
 
     $promoRepo = Mockery::mock(PromoRepository::class);
-    $promoRepo->shouldReceive('find')->once()->with(15)->andReturn($promoEntity);
+    $promoRepo->shouldNotReceive('find');
 
     $currencyRepository = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
     $currencyRepository->shouldReceive('getRateByCode')->once()->with('EUR')->andReturn(2.0);
