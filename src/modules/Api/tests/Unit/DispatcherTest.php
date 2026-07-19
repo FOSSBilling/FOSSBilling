@@ -86,7 +86,7 @@ function createApiDispatcher(Pimple\Container $di): FOSSBilling\Api\Dispatcher
 test('dispatches an API endpoint with an initialized module API object', function (): void {
     $dispatcher = createApiDispatcher(createApiDispatcherDi());
 
-    $result = $dispatcher->dispatch(new Model_Guest(), 'system_period_title', ['code' => '1M']);
+    $result = $dispatcher->dispatch(new \FOSSBilling\Identity\Guest(), 'system_period_title', ['code' => '1M']);
 
     expect($result)->toBe('Period 1M');
 });
@@ -94,35 +94,35 @@ test('dispatches an API endpoint with an initialized module API object', functio
 test('rejects inactive modules before resolving the API class', function (): void {
     $dispatcher = createApiDispatcher(createApiDispatcherDi(extensionActive: false));
 
-    expect(fn (): mixed => $dispatcher->dispatch(new Model_Guest(), 'system_period_title', ['code' => '1M']))
+    expect(fn (): mixed => $dispatcher->dispatch(new \FOSSBilling\Identity\Guest(), 'system_period_title', ['code' => '1M']))
         ->toThrow(FOSSBilling\Exception::class, 'FOSSBilling module system is not installed/activated');
 });
 
 test('reports missing API classes as missing API calls', function (): void {
     $dispatcher = createApiDispatcher(createApiDispatcherDi(moduleHasService: false));
 
-    expect(fn (): mixed => $dispatcher->dispatch(new Model_Guest(), 'missingmodule_get', []))
+    expect(fn (): mixed => $dispatcher->dispatch(new \FOSSBilling\Identity\Guest(), 'missingmodule_get', []))
         ->toThrow(FOSSBilling\Exception::class, 'Guest API call get does not exist in module missingmodule');
 });
 
 test('reports missing API methods unless the API class implements __call', function (): void {
     $dispatcher = createApiDispatcher(createApiDispatcherDi());
 
-    expect(fn (): mixed => $dispatcher->dispatch(new Model_Guest(), 'system_missing_method', []))
+    expect(fn (): mixed => $dispatcher->dispatch(new \FOSSBilling\Identity\Guest(), 'system_missing_method', []))
         ->toThrow(FOSSBilling\Exception::class, 'Guest API call missing_method does not exist in module system');
 });
 
 test('validates required API parameters before dispatching', function (): void {
     $dispatcher = createApiDispatcher(createApiDispatcherDi());
 
-    expect(fn (): mixed => $dispatcher->dispatch(new Model_Guest(), 'system_param', []))
+    expect(fn (): mixed => $dispatcher->dispatch(new \FOSSBilling\Identity\Guest(), 'system_param', []))
         ->toThrow(FOSSBilling\InformationException::class, '"key" parameter was not passed');
 });
 
 test('dispatches positional arguments for in-process API calls', function (): void {
     $dispatcher = createApiDispatcher(createApiDispatcherDi());
 
-    $result = $dispatcher->dispatchWithArguments(new Model_Guest(), 'extension_languages', [true]);
+    $result = $dispatcher->dispatchWithArguments(new \FOSSBilling\Identity\Guest(), 'extension_languages', [true]);
 
     expect($result)
         ->toBeArray()
@@ -133,7 +133,7 @@ test('dispatches positional arguments for in-process API calls', function (): vo
 test('does not pass empty HTTP data into optional scalar API parameters', function (): void {
     $dispatcher = createApiDispatcher(createApiDispatcherDi());
 
-    $result = $dispatcher->dispatch(new Model_Guest(), 'extension_languages');
+    $result = $dispatcher->dispatch(new \FOSSBilling\Identity\Guest(), 'extension_languages');
 
     expect($result)
         ->toBeArray()
@@ -142,7 +142,7 @@ test('does not pass empty HTTP data into optional scalar API parameters', functi
 });
 
 test('api proxy requires the dispatcher service instead of creating one itself', function (): void {
-    $proxy = new FOSSBilling\Api\Proxy(new Model_Guest());
+    $proxy = new FOSSBilling\Api\Proxy(new \FOSSBilling\Identity\Guest());
 
     expect(fn (): mixed => $proxy->call('system_period_title', ['code' => '1M']))
         ->toThrow(LogicException::class, 'API proxy requires the api_dispatcher service');

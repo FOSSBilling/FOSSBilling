@@ -13,6 +13,7 @@ namespace Box\Mod\Support\Api;
 
 use Box\Mod\Support\Entity\KbArticle;
 use Box\Mod\Support\Entity\KbArticleCategory;
+use FOSSBilling\Identity\Guest as GuestIdentity;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
@@ -84,7 +85,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
         $message = \FOSSBilling\Tools::sanitizeMarkdownContent($message);
 
-        return $this->getService()->ticketReply($guestTicket, new \Model_Guest(), $message);
+        return $this->getService()->ticketReply($guestTicket, new GuestIdentity(), $message);
     }
 
     /**

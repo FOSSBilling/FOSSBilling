@@ -19,19 +19,20 @@ use Box\Mod\Support\Entity\CannedResponseCategory;
 use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Entity\KbArticle;
 use Box\Mod\Support\Entity\KbArticleCategory;
+use Box\Mod\Support\Entity\PublicTicket;
+use Box\Mod\Support\Entity\PublicTicketMessage;
 use Box\Mod\Support\Entity\SupportTicket;
 use Box\Mod\Support\Entity\SupportTicketMessage;
-use Box\Mod\Support\Entity\SupportTicketMessageHistory;
-use Box\Mod\Support\Entity\SupportTicketNote;
 use Box\Mod\Support\Repository\CannedResponseCategoryRepository;
 use Box\Mod\Support\Repository\CannedResponseRepository;
 use Box\Mod\Support\Repository\HelpdeskRepository;
 use Box\Mod\Support\Repository\KbArticleCategoryRepository;
 use Box\Mod\Support\Repository\KbArticleRepository;
-use Box\Mod\Support\Repository\SupportTicketMessageHistoryRepository;
+use Box\Mod\Support\Repository\PublicTicketMessageRepository;
+use Box\Mod\Support\Repository\PublicTicketRepository;
 use Box\Mod\Support\Repository\SupportTicketMessageRepository;
-use Box\Mod\Support\Repository\SupportTicketNoteRepository;
 use Box\Mod\Support\Repository\SupportTicketRepository;
+use FOSSBilling\Identity\Guest;
 use FOSSBilling\InformationException;
 use FOSSBilling\Tools;
 use FOSSBilling\Twig\Markdown\FOSSBillingMarkdown;
@@ -322,7 +323,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->getSupportTicketRepository()->hasPendingTaskForClient((int) $client->id, $rel_id, $rel_type, $rel_task);
     }
 
-    public function closeTicket(SupportTicket $ticket, Admin|Client|\Model_Guest $identity): bool
+    public function closeTicket(SupportTicket $ticket, Admin|Client|Guest $identity): bool
     {
         $ticket->close();
         $this->di['em']->flush();
@@ -959,7 +960,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     /**
      * @param Admin $identity
      */
-    public function ticketReply(SupportTicket $ticket, Admin|Client|\Model_Guest $identity, string $content): int
+    public function ticketReply(SupportTicket $ticket, Admin|Client|Guest $identity, string $content): int
     {
         $em = $this->di['em'];
         $msg = new SupportTicketMessage();

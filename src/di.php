@@ -463,7 +463,7 @@ $di['set_return_uri'] = function () use ($di): void {
  */
 $di['api_identity'] = $di->protect(function ($role) use ($di) {
     $identity = match ($role) {
-        'guest' => new Model_Guest(),
+        'guest' => new \FOSSBilling\Identity\Guest(),
         'client' => $di['loggedin_client'],
         'admin' => $di['loggedin_admin'],
         default => throw new Exception('Unrecognized Handler type: ' . $role),

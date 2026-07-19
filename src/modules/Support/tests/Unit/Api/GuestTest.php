@@ -120,7 +120,7 @@ test('ticket close', function (): void {
     $guestApi->setDi($di);
 
     $guestApi->setService($serviceMock);
-    $guestApi->setIdentity(new Model_Guest());
+    $guestApi->setIdentity(new \FOSSBilling\Identity\Guest());
 
     $data = [
         'hash' => sha1(uniqid()),

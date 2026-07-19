@@ -24,7 +24,7 @@ final readonly class Identity
     {
         $class = $identity::class;
 
-        // Legacy RedBeanPHP model classes (e.g. Model_Admin, Model_Client, Model_Guest)
+        // Legacy RedBeanPHP model classes (deprecated, kept for backward compatibility)
         if (str_starts_with($class, 'Model_')) {
             return str_replace('model_', '', strtolower($class));
         }
