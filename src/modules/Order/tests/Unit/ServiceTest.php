@@ -15,6 +15,7 @@ use Box\Mod\Order\Service;
 use Box\Mod\Product\Entity\Product;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 function orderServiceCreateProductEntity(?int $id = null, ?string $type = null): Product
 {
@@ -75,8 +76,7 @@ test('onAfterAdminOrderActivate fires template', function (): void {
     $serviceMock->shouldReceive('getOrderServiceData')->atLeast()->once()->andReturn([]);
     $serviceMock->shouldReceive('toApiArray')->atLeast()->once()->andReturn($orderArr);
 
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin = createEntity(\Box\Mod\Staff\Entity\Admin::class);
 
     $di = container();
     $di['loggedin_admin'] = $admin;
@@ -117,8 +117,7 @@ test('onAfterAdminOrderActivate logs exceptions', function (): void {
     $serviceMock->shouldReceive('getOrderServiceData')->atLeast()->once()->andReturn([]);
     $serviceMock->shouldReceive('toApiArray')->atLeast()->once()->andReturn($orderArr);
 
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin = createEntity(\Box\Mod\Staff\Entity\Admin::class);
 
     $di = container();
     $di['loggedin_admin'] = $admin;
@@ -157,8 +156,7 @@ test('onAfterAdminOrderRenew fires template', function (): void {
     $serviceMock->shouldReceive('getOrderServiceData')->atLeast()->once()->andReturn([]);
     $serviceMock->shouldReceive('toApiArray')->atLeast()->once()->andReturn($orderArr);
 
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin = createEntity(\Box\Mod\Staff\Entity\Admin::class);
 
     $di = container();
     $di['loggedin_admin'] = $admin;
@@ -199,8 +197,7 @@ test('onAfterAdminOrderRenew logs exceptions', function (): void {
     $serviceMock->shouldReceive('getOrderServiceData')->atLeast()->once()->andReturn([]);
     $serviceMock->shouldReceive('toApiArray')->atLeast()->once()->andReturn($orderArr);
 
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin = createEntity(\Box\Mod\Staff\Entity\Admin::class);
 
     $di = container();
     $di['loggedin_admin'] = $admin;
@@ -239,8 +236,7 @@ test('onAfterAdminOrderSuspend fires template', function (): void {
     $serviceMock->shouldReceive('getOrderServiceData')->atLeast()->once()->andReturn([]);
     $serviceMock->shouldReceive('toApiArray')->atLeast()->once()->andReturn($orderArr);
 
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin = createEntity(\Box\Mod\Staff\Entity\Admin::class);
 
     $di = container();
     $di['loggedin_admin'] = $admin;
@@ -281,8 +277,7 @@ test('onAfterAdminOrderSuspend logs exceptions', function (): void {
     $serviceMock->shouldReceive('getOrderServiceData')->atLeast()->once()->andReturn([]);
     $serviceMock->shouldReceive('toApiArray')->atLeast()->once()->andReturn($orderArr);
 
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin = createEntity(\Box\Mod\Staff\Entity\Admin::class);
 
     $di = container();
     $di['loggedin_admin'] = $admin;
@@ -321,8 +316,7 @@ test('onAfterAdminOrderUnsuspend fires template', function (): void {
     $serviceMock->shouldReceive('getOrderServiceData')->atLeast()->once()->andReturn([]);
     $serviceMock->shouldReceive('toApiArray')->atLeast()->once()->andReturn($orderArr);
 
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin = createEntity(\Box\Mod\Staff\Entity\Admin::class);
 
     $di = container();
     $di['loggedin_admin'] = $admin;
@@ -363,8 +357,7 @@ test('onAfterAdminOrderUnsuspend logs exceptions', function (): void {
     $serviceMock->shouldReceive('getOrderServiceData')->atLeast()->once()->andReturn([]);
     $serviceMock->shouldReceive('toApiArray')->atLeast()->once()->andReturn($orderArr);
 
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin = createEntity(\Box\Mod\Staff\Entity\Admin::class);
 
     $di = container();
     $di['loggedin_admin'] = $admin;
@@ -402,8 +395,7 @@ test('onAfterAdminOrderCancel fires template', function (): void {
     $serviceMock->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('toApiArray')->atLeast()->once()->andReturn($orderArr);
 
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin = createEntity(\Box\Mod\Staff\Entity\Admin::class);
 
     $di = container();
     $di['loggedin_admin'] = $admin;
@@ -443,8 +435,7 @@ test('onAfterAdminOrderCancel logs exceptions', function (): void {
     $serviceMock->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('toApiArray')->atLeast()->once()->andReturn($orderArr);
 
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin = createEntity(\Box\Mod\Staff\Entity\Admin::class);
 
     $di = container();
     $di['loggedin_admin'] = $admin;
@@ -483,8 +474,7 @@ test('onAfterAdminOrderUncancel fires template', function (): void {
     $serviceMock->shouldReceive('getOrderServiceData')->atLeast()->once()->andReturn([]);
     $serviceMock->shouldReceive('toApiArray')->atLeast()->once()->andReturn($orderArr);
 
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin = createEntity(\Box\Mod\Staff\Entity\Admin::class);
 
     $di = container();
     $di['loggedin_admin'] = $admin;
@@ -525,8 +515,7 @@ test('onAfterAdminOrderUncancel logs exceptions', function (): void {
     $serviceMock->shouldReceive('getOrderServiceData')->atLeast()->once()->andReturn([]);
     $serviceMock->shouldReceive('toApiArray')->atLeast()->once()->andReturn($orderArr);
 
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin = createEntity(\Box\Mod\Staff\Entity\Admin::class);
 
     $di = container();
     $di['loggedin_admin'] = $admin;
@@ -546,7 +535,7 @@ test('onAfterAdminOrderUncancel logs exceptions', function (): void {
 });
 
 test('getOrderService returns core service', function (): void {
-    $service = new Model_ServiceCustom();
+    $service = createEntity(\Box\Mod\Servicecustom\Entity\ServiceCustom::class);
 
     $dbMock = Mockery::mock(Box_Database::class);
     $dbMock->shouldReceive('findOne')->never();
@@ -562,10 +551,10 @@ test('getOrderService returns core service', function (): void {
     $svc = new Service();
     $svc->setDi($di);
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->service_id = 1;
-    $order->service_type = Box\Mod\Product\Service::CUSTOM;
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class, [
+        'service_id' => 1,
+        'service_type' => Box\Mod\Product\Service::CUSTOM,
+    ]);
 
     $result = $svc->getOrderService($order);
 
@@ -573,7 +562,7 @@ test('getOrderService returns core service', function (): void {
 });
 
 test('getOrderService returns non-core service', function (): void {
-    $service = new Model_ServiceCustom();
+    $service = createEntity(\Box\Mod\Servicecustom\Entity\ServiceCustom::class);
 
     $dbMock = Mockery::mock(Box_Database::class);
     $dbMock->shouldReceive('getExistingModelById')->never();
@@ -585,9 +574,9 @@ test('getOrderService returns non-core service', function (): void {
     $svc = new Service();
     $svc->setDi($di);
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->service_id = 1;
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class, [
+        'service_id' => 1,
+    ]);
 
     $result = $svc->getOrderService($order);
 
@@ -595,7 +584,7 @@ test('getOrderService returns non-core service', function (): void {
 });
 
 test('getOrderService returns null when service id is not set', function (): void {
-    $service = new Model_ServiceCustom();
+    $service = createEntity(\Box\Mod\Servicecustom\Entity\ServiceCustom::class);
 
     $dbMock = Mockery::mock(Box_Database::class);
     $dbMock->shouldReceive('getExistingModelById')->never();
@@ -607,8 +596,7 @@ test('getOrderService returns null when service id is not set', function (): voi
     $svc = new Service();
     $svc->setDi($di);
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class);
 
     $result = $svc->getOrderService($order);
 
@@ -637,9 +625,9 @@ test('getServiceOrder returns order', function (): void {
     $svc = new Service();
     $svc->setDi($di);
 
-    $service = new Model_ServiceCustom();
-    $service->loadBean(new Tests\Helpers\DummyBean());
-    $service->id = 1;
+    $service = createEntity(\Box\Mod\Servicecustom\Entity\ServiceCustom::class, [
+        'id' => 1,
+    ]);
 
     $result = $svc->getServiceOrder($service);
 
@@ -651,8 +639,7 @@ test('getConfig returns config', function (): void {
     $di = container();
     $svc->setDi($di);
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class);
 
     $result = $svc->getConfig($order);
 
@@ -733,8 +720,7 @@ test('saveStatusChange records history', function (): void {
     $svc = new Service();
     $svc->setDi($di);
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class);
 
     $result = $svc->saveStatusChange($order);
 
@@ -742,8 +728,7 @@ test('saveStatusChange records history', function (): void {
 });
 
 test('getSoonExpiringActiveOrders executes query', function (): void {
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class);
 
     $connectionMock = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connectionMock->shouldReceive('fetchAllAssociative')->atLeast()->once()->andReturn([[], []]);
@@ -764,8 +749,7 @@ test('getSoonExpiringActiveOrders executes query', function (): void {
 test('getSoonExpiringActiveOrdersQuery builds expected SQL and bindings', function (): void {
     $randId = 1;
 
-    $orderStatus = new Model_ClientOrderStatus();
-    $orderStatus->loadBean(new Tests\Helpers\DummyBean());
+    $orderStatus = createEntity(\Box\Mod\Order\Entity\OrderStatus::class);
 
     $systemService = Mockery::mock(Box\Mod\System\Service::class);
     $systemService->shouldReceive('getParamValue')->atLeast()->once()->andReturn($randId);
@@ -779,8 +763,7 @@ test('getSoonExpiringActiveOrdersQuery builds expected SQL and bindings', functi
     $svc = new Service();
     $svc->setDi($di);
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class);
 
     $data = ['client_id' => $randId];
     $result = $svc->getSoonExpiringActiveOrdersQuery($data);
@@ -825,9 +808,7 @@ test('getSoonExpiringActiveOrdersQuery builds expected SQL and bindings', functi
 
 test('getRelatedOrderIdByType returns id', function (): void {
     $id = 1;
-    $model = new Model_ClientOrder();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $model->id = $id;
+    $model = createEntity(\Box\Mod\Order\Entity\Order::class, ['id' => $id]);
 
     $orderEntity = new Order();
     $idProp = new ReflectionProperty($orderEntity, 'id');
@@ -854,9 +835,7 @@ test('getRelatedOrderIdByType returns id', function (): void {
 
 test('getRelatedOrderIdByType returns null when not found', function (): void {
     $id = 1;
-    $model = new Model_ClientOrder();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $model->id = $id;
+    $model = createEntity(\Box\Mod\Order\Entity\Order::class, ['id' => $id]);
 
     $orderRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderRepository::class)->shouldIgnoreMissing();
     $orderRepoMock->shouldReceive('findOneBy')->atLeast()->once()->andReturn(null);
@@ -877,10 +856,10 @@ test('getRelatedOrderIdByType returns null when not found', function (): void {
 });
 
 test('getLogger returns logger with event items', function (): void {
-    $model = new Model_ClientOrder();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $model->id = 5;
-    $model->status = 'active';
+    $model = createEntity(\Box\Mod\Order\Entity\Order::class, [
+        'id' => 5,
+        'status' => 'active',
+    ]);
 
     $capturedItems = [];
     $logger = new class($capturedItems) extends Box_Log {
@@ -916,13 +895,13 @@ test('getLogger returns logger with event items', function (): void {
 });
 
 test('toApiArray returns expected keys', function (): void {
-    $model = new Model_ClientOrder();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $model->id = 1;
-    $model->config = '{}';
-    $model->price = 10;
-    $model->quantity = 1;
-    $model->client_id = 1;
+    $model = createEntity(\Box\Mod\Order\Entity\Order::class, [
+        'id' => 1,
+        'config' => '{}',
+        'price' => 10,
+        'quantity' => 1,
+        'client_id' => 1,
+    ]);
 
     $clientService = Mockery::mock(Box\Mod\Client\Service::class);
     $clientService->shouldReceive('toApiArray')->atLeast()->once()->andReturn([]);
@@ -968,7 +947,7 @@ test('toApiArray returns expected keys', function (): void {
     $svc = new Service();
     $svc->setDi($di);
 
-    $result = $svc->toApiArray($model, true, new Model_Admin());
+    $result = $svc->toApiArray($model, true, createEntity(\Box\Mod\Staff\Entity\Admin::class));
 
     expect($result)->toHaveKey('config');
     expect($result)->toHaveKey('total');
@@ -1106,8 +1085,7 @@ test('getSearchQuery keeps client scope when action required filter is used', fu
 });
 
 test('createOrder throws when no order currency is set', function (): void {
-    $modelClient = new Model_Client();
-    $modelClient->loadBean(new Tests\Helpers\DummyBean());
+    $modelClient = createEntity(\Box\Mod\Client\Entity\Client::class);
 
     $modelProduct = orderServiceCreateProductEntity();
 
@@ -1132,9 +1110,7 @@ test('createOrder throws when no order currency is set', function (): void {
 });
 
 test('createOrder throws when out of stock', function (): void {
-    $modelClient = new Model_Client();
-    $modelClient->loadBean(new Tests\Helpers\DummyBean());
-    $modelClient->currency = 'USD';
+    $modelClient = createEntity(\Box\Mod\Client\Entity\Client::class, ['currency' => 'USD']);
 
     $modelProduct = orderServiceCreateProductEntity(1);
 
@@ -1174,9 +1150,7 @@ test('createOrder throws when out of stock', function (): void {
 });
 
 test('createOrder throws when group id missing for addon', function (): void {
-    $modelClient = new Model_Client();
-    $modelClient->loadBean(new Tests\Helpers\DummyBean());
-    $modelClient->currency = 'USD';
+    $modelClient = createEntity(\Box\Mod\Client\Entity\Client::class, ['currency' => 'USD']);
 
     $modelProduct = orderServiceCreateProductEntity(1);
     $modelProduct->setIsAddon(true);
@@ -1217,9 +1191,7 @@ test('createOrder throws when group id missing for addon', function (): void {
 });
 
 test('createOrder throws when parent order not found', function (): void {
-    $modelClient = new Model_Client();
-    $modelClient->loadBean(new Tests\Helpers\DummyBean());
-    $modelClient->currency = 'USD';
+    $modelClient = createEntity(\Box\Mod\Client\Entity\Client::class, ['currency' => 'USD']);
 
     $modelProduct = orderServiceCreateProductEntity(1);
 
@@ -1264,9 +1236,7 @@ test('createOrder throws when parent order not found', function (): void {
 });
 
 test('createOrder creates order', function (): void {
-    $modelClient = new Model_Client();
-    $modelClient->loadBean(new Tests\Helpers\DummyBean());
-    $modelClient->currency = 'USD';
+    $modelClient = createEntity(\Box\Mod\Client\Entity\Client::class, ['currency' => 'USD']);
 
     $modelProduct = orderServiceCreateProductEntity(1, 'custom');
 
@@ -1292,8 +1262,7 @@ test('createOrder creates order', function (): void {
     $pricingServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
     $pricingServiceMock->shouldReceive('getProductOrderLineConfig')->never();
 
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
 
     $persistedEntities = [];
     $nextOrderId = 1;
@@ -1365,9 +1334,7 @@ test('createOrder creates order', function (): void {
 });
 
 test('createOrder sets form id from product', function (): void {
-    $modelClient = new Model_Client();
-    $modelClient->loadBean(new Tests\Helpers\DummyBean());
-    $modelClient->currency = 'USD';
+    $modelClient = createEntity(\Box\Mod\Client\Entity\Client::class, ['currency' => 'USD']);
 
     $modelProduct = orderServiceCreateProductEntity(1, 'custom');
     $modelProduct->setFormId(42);
@@ -1393,8 +1360,7 @@ test('createOrder sets form id from product', function (): void {
     $pricingServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
     $pricingServiceMock->shouldReceive('getProductOrderLineConfig')->never();
 
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
 
     $persistedEntities = [];
     $nextOrderId = 1;
@@ -1466,9 +1432,7 @@ test('createOrder sets form id from product', function (): void {
 });
 
 test('createOrder returns success when invoice follow up fails', function (): void {
-    $modelClient = new Model_Client();
-    $modelClient->loadBean(new Tests\Helpers\DummyBean());
-    $modelClient->currency = 'USD';
+    $modelClient = createEntity(\Box\Mod\Client\Entity\Client::class, ['currency' => 'USD']);
 
     $modelProduct = orderServiceCreateProductEntity(1, 'custom');
 
@@ -1493,12 +1457,9 @@ test('createOrder returns success when invoice follow up fails', function (): vo
     $pricingServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
     $pricingServiceMock->shouldReceive('getProductOrderLineConfig')->never();
 
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
 
-    $invoiceModel = new Model_Invoice();
-    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
-    $invoiceModel->id = 10;
+    $invoiceModel = createEntity(\Box\Mod\Invoice\Entity\Invoice::class, ['id' => 10]);
 
     $invoiceServiceMock = Mockery::mock();
     $invoiceServiceMock->shouldReceive('generateForOrder')
@@ -1602,9 +1563,7 @@ test('createOrder returns success when invoice follow up fails', function (): vo
 });
 
 test('createOrder uses product pricing service for domain orders', function (): void {
-    $modelClient = new Model_Client();
-    $modelClient->loadBean(new Tests\Helpers\DummyBean());
-    $modelClient->currency = 'USD';
+    $modelClient = createEntity(\Box\Mod\Client\Entity\Client::class, ['currency' => 'USD']);
 
     $modelProduct = orderServiceCreateProductEntity(10, Box\Mod\Product\Service::DOMAIN);
     $modelProduct->setUnit('year');
@@ -1643,8 +1602,7 @@ test('createOrder uses product pricing service for domain orders', function (): 
             'setup_price' => 0.0,
         ]);
 
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
 
     $persistedEntities = [];
     $nextOrderId = 1;
@@ -1717,8 +1675,7 @@ test('createOrder uses product pricing service for domain orders', function (): 
 });
 
 test('getMasterOrderForClient returns master order', function (): void {
-    $clientModel = new Model_Client();
-    $clientModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientModel = createEntity(\Box\Mod\Client\Entity\Client::class);
 
     $orderEntity = new Order();
     $idProp = new ReflectionProperty($orderEntity, 'id');
@@ -1743,8 +1700,7 @@ test('getMasterOrderForClient returns master order', function (): void {
 });
 
 test('activateOrder throws for non-pending order', function (): void {
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
     $clientOrderModel->status = Model_ClientOrder::STATUS_CANCELED;
     $clientOrderModel->id = 1;
 
@@ -1772,8 +1728,7 @@ test('activateOrder throws for non-pending order', function (): void {
 });
 
 test('activateOrder activates pending order', function (): void {
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
     $clientOrderModel->status = Model_ClientOrder::STATUS_PENDING_SETUP;
     $clientOrderModel->group_master = 1;
     $clientOrderModel->id = 1;
@@ -1812,10 +1767,10 @@ test('activateOrder activates pending order', function (): void {
 });
 
 test('activateOrder is a no-op when order was already activated by a stale reference', function (): void {
-    $staleOrderModel = new Model_ClientOrder();
-    $staleOrderModel->loadBean(new Tests\Helpers\DummyBean());
-    $staleOrderModel->status = Model_ClientOrder::STATUS_PENDING_SETUP;
-    $staleOrderModel->id = 1;
+    $staleOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class, [
+        'status' => Model_ClientOrder::STATUS_PENDING_SETUP,
+        'id' => 1,
+    ]);
 
     $activeOrderEntity = new Order();
     $idProp = new ReflectionProperty($activeOrderEntity, 'id');
@@ -1846,11 +1801,11 @@ test('activateOrder is a no-op when order was already activated by a stale refer
 });
 
 test('activateOrder force re-activates an already active order', function (): void {
-    $activeOrderModel = new Model_ClientOrder();
-    $activeOrderModel->loadBean(new Tests\Helpers\DummyBean());
-    $activeOrderModel->status = Model_ClientOrder::STATUS_ACTIVE;
-    $activeOrderModel->group_master = 1;
-    $activeOrderModel->id = 1;
+    $activeOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class, [
+        'status' => Model_ClientOrder::STATUS_ACTIVE,
+        'group_master' => 1,
+        'id' => 1,
+    ]);
 
     $orderEntity = new Order();
     $idProp = new ReflectionProperty($orderEntity, 'id');
@@ -1886,15 +1841,13 @@ test('activateOrder force re-activates an already active order', function (): vo
 });
 
 test('activateOrderAddons activates addons', function (): void {
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('createFromOrder')->atLeast()->once()->andReturn([]);
 
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
     $clientOrderModel->status = Model_ClientOrder::STATUS_PENDING_SETUP;
     $clientOrderModel->group_master = 1;
 
@@ -1916,8 +1869,7 @@ test('activateOrderAddons activates addons', function (): void {
 });
 
 test('getOrderAddonsList returns addons', function (): void {
-    $modelClientOrder = new Model_ClientOrder();
-    $modelClientOrder->loadBean(new Tests\Helpers\DummyBean());
+    $modelClientOrder = createEntity(\Box\Mod\Order\Entity\Order::class);
 
     $orderEntity = new Order();
     $idProp = new ReflectionProperty($orderEntity, 'id');
@@ -1987,8 +1939,7 @@ test('stockSale throws when quantity would go negative', function (): void {
 });
 
 test('updateOrder updates fields', function (): void {
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
 
     $eventMock = Mockery::mock(Box_EventManager::class);
     $eventMock->shouldReceive('fire')->atLeast()->once();
@@ -2029,8 +1980,7 @@ test('updateOrder updates fields', function (): void {
 });
 
 test('renewOrder renews order', function (): void {
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
     $clientOrderModel->group_master = 1;
     $clientOrderModel->status = Model_ClientOrder::STATUS_PENDING_SETUP;
 
@@ -2058,8 +2008,7 @@ test('renewFromOrder extends expiration', function (): void {
     $serviceMock->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('_callOnService')->atLeast()->once();
 
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
     $clientOrderModel->period = '1Y';
     $clientOrderModel->expires_at = '2026-01-01 00:00:00';
 
@@ -2090,8 +2039,7 @@ test('renewFromOrder extends expiration', function (): void {
 });
 
 test('renewFromOrder extends free first term on first paid renewal', function (): void {
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
     $clientOrderModel->period = '1Y';
     $clientOrderModel->status = Model_ClientOrder::STATUS_ACTIVE;
     $clientOrderModel->activated_at = '2025-01-01 00:00:00';
@@ -2130,8 +2078,7 @@ test('renewFromOrder extends free first term on first paid renewal', function ()
 });
 
 test('suspendFromOrder throws for non-active order', function (): void {
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
     $clientOrderModel->status = Model_ClientOrder::STATUS_SUSPENDED;
 
     $eventMock = Mockery::mock(Box_EventManager::class);
@@ -2148,8 +2095,7 @@ test('suspendFromOrder throws for non-active order', function (): void {
 });
 
 test('suspendFromOrder suspends active order', function (): void {
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
     $clientOrderModel->status = Model_ClientOrder::STATUS_ACTIVE;
 
     $eventMock = Mockery::mock(Box_EventManager::class);
@@ -2176,8 +2122,7 @@ test('suspendFromOrder suspends active order', function (): void {
 });
 
 test('cancelFromOrder cancels linked subscriptions', function (): void {
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
     $clientOrderModel->id = 10;
     $clientOrderModel->status = Model_ClientOrder::STATUS_ACTIVE;
 
@@ -2239,10 +2184,10 @@ test('cancelFromOrder cancels linked subscriptions', function (): void {
 });
 
 test('scheduleCancellationFromOrder keeps the service active', function (): void {
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->id = 10;
-    $order->status = Model_ClientOrder::STATUS_ACTIVE;
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class, [
+        'id' => 10,
+        'status' => Model_ClientOrder::STATUS_ACTIVE,
+    ]);
 
     $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
     $subscriptionService->shouldReceive('canCancelAtPeriodEndForOrder')->once()->with($order)->andReturn(true);
@@ -2274,9 +2219,9 @@ test('scheduleCancellationFromOrder keeps the service active', function (): void
 });
 
 test('scheduleCancellationFromOrder does not mark the order when no subscription was scheduled', function (): void {
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->status = Model_ClientOrder::STATUS_ACTIVE;
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class, [
+        'status' => Model_ClientOrder::STATUS_ACTIVE,
+    ]);
 
     $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
     $subscriptionService->shouldReceive('canCancelAtPeriodEndForOrder')->once()->with($order)->andReturn(true);
@@ -2294,8 +2239,7 @@ test('scheduleCancellationFromOrder does not mark the order when no subscription
 });
 
 test('cancelFromOrder does not cancel subscriptions when service cancellation fails', function (): void {
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
     $clientOrderModel->status = Model_ClientOrder::STATUS_ACTIVE;
 
     $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
@@ -2322,8 +2266,7 @@ test('cancelFromOrder does not cancel subscriptions when service cancellation fa
 });
 
 test('cancelFromOrder remains retryable when subscription cancellation fails', function (): void {
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
     $clientOrderModel->status = Model_ClientOrder::STATUS_ACTIVE;
 
     $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
@@ -2351,12 +2294,9 @@ test('cancelFromOrder remains retryable when subscription cancellation fails', f
 });
 
 test('rmByClient removes all client orders', function (): void {
-    $clientModel = new Model_Client();
-    $clientModel->loadBean(new Tests\Helpers\DummyBean());
-    $clientModel->id = 100;
+    $clientModel = createEntity(\Box\Mod\Client\Entity\Client::class, ['id' => 100]);
 
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
+    $orderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
 
     $queryBuilderMock = new class {
         private bool $deleteCalled = false;
@@ -2478,8 +2418,7 @@ test('updatePeriod sets period when given', function (): void {
     $svc = new Service();
     $svc->setDi($di);
 
-    $clientOrder = new Model_ClientOrder();
-    $clientOrder->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrder = createEntity(\Box\Mod\Order\Entity\Order::class);
 
     $result = $svc->updatePeriod($clientOrder, $period);
 
@@ -2497,8 +2436,7 @@ test('updatePeriod clears period when empty string', function (): void {
     $svc = new Service();
     $svc->setDi($di);
 
-    $clientOrder = new Model_ClientOrder();
-    $clientOrder->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrder = createEntity(\Box\Mod\Order\Entity\Order::class);
 
     $result = $svc->updatePeriod($clientOrder, $period);
 
@@ -2516,8 +2454,7 @@ test('updatePeriod does nothing when null', function (): void {
     $svc = new Service();
     $svc->setDi($di);
 
-    $clientOrder = new Model_ClientOrder();
-    $clientOrder->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrder = createEntity(\Box\Mod\Order\Entity\Order::class);
 
     $result = $svc->updatePeriod($clientOrder, $period);
 
@@ -2526,8 +2463,7 @@ test('updatePeriod does nothing when null', function (): void {
 
 test('updateOrderMeta returns 0 when meta is not an array', function (): void {
     $meta = null;
-    $clientOrder = new Model_ClientOrder();
-    $clientOrder->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrder = createEntity(\Box\Mod\Order\Entity\Order::class);
 
     $svc = new Service();
 
@@ -2552,8 +2488,7 @@ test('updateOrderMeta clears existing meta when empty', function (): void {
     $svc = new Service();
     $svc->setDi($di);
 
-    $clientOrder = new Model_ClientOrder();
-    $clientOrder->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrder = createEntity(\Box\Mod\Order\Entity\Order::class);
     $clientOrder->id = 1;
 
     $result = $svc->updateOrderMeta($clientOrder, $meta);
@@ -2579,8 +2514,7 @@ test('updateOrderMeta stores new meta entries', function (): void {
     $svc = new Service();
     $svc->setDi($di);
 
-    $clientOrder = new Model_ClientOrder();
-    $clientOrder->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrder = createEntity(\Box\Mod\Order\Entity\Order::class);
     $clientOrder->id = 1;
 
     $result = $svc->updateOrderMeta($clientOrder, $meta);
@@ -2595,8 +2529,7 @@ test('updateOrderConfig succeeds when no form id is set', function (): void {
     $svc = new Service();
     $svc->setDi($di);
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class);
     $order->form_id = null;
 
     $result = $svc->updateOrderConfig($order, ['key' => 'value']);
@@ -2624,8 +2557,7 @@ test('updateOrderConfig throws when required field is missing', function (): voi
     $svc = new Service();
     $svc->setDi($di);
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class);
     $order->form_id = 7;
 
     expect(fn (): bool => $svc->updateOrderConfig($order, []))
@@ -2652,8 +2584,7 @@ test('updateOrderConfig throws for invalid select option', function (): void {
     $svc = new Service();
     $svc->setDi($di);
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class);
     $order->form_id = 8;
 
     expect(fn (): bool => $svc->updateOrderConfig($order, ['plan' => 'enterprise']))
@@ -2680,8 +2611,7 @@ test('updateOrderConfig select rejects array value', function (): void {
     $svc = new Service();
     $svc->setDi($di);
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class);
     $order->form_id = 11;
 
     expect(fn (): bool => $svc->updateOrderConfig($order, ['plan' => ['pro']]))
@@ -2708,8 +2638,7 @@ test('updateOrderConfig throws for invalid radio option', function (): void {
     $svc = new Service();
     $svc->setDi($di);
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class);
     $order->form_id = 9;
 
     expect(fn (): bool => $svc->updateOrderConfig($order, ['os' => 'macos']))
@@ -2736,8 +2665,7 @@ test('updateOrderConfig throws for invalid checkbox option', function (): void {
     $svc = new Service();
     $svc->setDi($di);
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class);
     $order->form_id = 10;
 
     expect(fn (): bool => $svc->updateOrderConfig($order, ['addons' => ['backup', 'ddos-protection']]))
@@ -2772,8 +2700,7 @@ test('updateOrderConfig succeeds with valid form data', function (): void {
     $svc = new Service();
     $svc->setDi($di);
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class);
     $order->form_id = 11;
 
     $result = $svc->updateOrderConfig($order, ['hostname' => 'myhost.example.com', 'plan' => 'pro', 'addons' => ['backup', 'ssl']]);
@@ -2783,7 +2710,7 @@ test('updateOrderConfig succeeds with valid form data', function (): void {
 
 test('createOrder rejects invalid price and quantity', function (array $data, string $message): void {
     $service = new Service();
-    $client = new Model_Client();
+    $client = createEntity(\Box\Mod\Client\Entity\Client::class);
     $product = orderServiceCreateProductEntity(1, 'custom');
 
     expect(fn () => $service->createOrder($client, $product, $data))
@@ -2795,8 +2722,7 @@ test('createOrder rejects invalid price and quantity', function (array $data, st
 ]);
 
 test('updateOrder rejects a negative price', function (): void {
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class);
 
     $events = Mockery::mock(Box_EventManager::class);
     $events->shouldReceive('fire')->once();
@@ -2813,9 +2739,7 @@ test('updateOrder rejects a negative price', function (): void {
 });
 
 test('createOrder generates an invoice for a zero-price order with issue-invoice', function (): void {
-    $modelClient = new Model_Client();
-    $modelClient->loadBean(new Tests\Helpers\DummyBean());
-    $modelClient->currency = 'USD';
+    $modelClient = createEntity(\Box\Mod\Client\Entity\Client::class, ['currency' => 'USD']);
 
     $modelProduct = orderServiceCreateProductEntity(1, 'custom');
 
@@ -2840,12 +2764,9 @@ test('createOrder generates an invoice for a zero-price order with issue-invoice
     $pricingServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
     $pricingServiceMock->shouldReceive('getProductOrderLineConfig')->never();
 
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
 
-    $invoiceModel = new Model_Invoice();
-    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
-    $invoiceModel->id = 10;
+    $invoiceModel = createEntity(\Box\Mod\Invoice\Entity\Invoice::class, ['id' => 10]);
 
     $invoiceServiceMock = Mockery::mock();
     $invoiceServiceMock->shouldReceive('generateForOrder')
@@ -2934,9 +2855,7 @@ test('createOrder generates an invoice for a zero-price order with issue-invoice
 });
 
 test('createOrder does not roll back when invoice generation fails for a negative resolved price', function (): void {
-    $modelClient = new Model_Client();
-    $modelClient->loadBean(new Tests\Helpers\DummyBean());
-    $modelClient->currency = 'USD';
+    $modelClient = createEntity(\Box\Mod\Client\Entity\Client::class, ['currency' => 'USD']);
 
     $modelProduct = orderServiceCreateProductEntity(1, 'custom');
 
@@ -2964,8 +2883,7 @@ test('createOrder does not roll back when invoice generation fails for a negativ
         ->atLeast()->once()
         ->andReturn(['price' => -5.0, 'quantity' => 1]);
 
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
 
     $invoiceServiceMock = Mockery::mock();
     $invoiceServiceMock->shouldReceive('generateForOrder')

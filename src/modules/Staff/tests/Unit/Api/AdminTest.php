@@ -10,16 +10,17 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Staff\Entity\Admin;
 use Box\Mod\Staff\Entity\AdminGroup;
 use Box\Mod\Staff\Repository\AdminGroupMemberRepository;
 use Box\Mod\Staff\Repository\AdminGroupRepository;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
-function staffAdminIdentity(): Model_Admin
+function staffAdminIdentity(): Admin
 {
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin = createEntity(Admin::class);
 
     return $admin;
 }
@@ -636,8 +637,7 @@ test('login history get list', function (): void {
     ->atLeast()->once()
     ->andReturn($resultSet);
 
-    $model = new Model_ActivityAdminHistory();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(\Box\Mod\Activity\Entity\ActivityAdminHistory::class);
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock
     ->shouldReceive('getExistingModelById')
@@ -665,8 +665,7 @@ test('login history get', function (): void {
     ->atLeast()->once()
     ->andReturn([]);
 
-    $model = new Model_ActivityAdminHistory();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(\Box\Mod\Activity\Entity\ActivityAdminHistory::class);
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock
     ->shouldReceive('getExistingModelById')

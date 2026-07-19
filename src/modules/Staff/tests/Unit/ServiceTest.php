@@ -22,6 +22,7 @@ use Box\Mod\Support\Repository\HelpdeskRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 class StaffPdoMock extends PDO
 {
@@ -77,21 +78,16 @@ function staffSetEntityId(object $entity, int $id): void
     $property->setValue($entity, $id);
 }
 
-function staffHierarchyBypassAdmin(): Model_Admin
+function staffHierarchyBypassAdmin(): Admin
 {
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->id = 99;
-    $admin->system_name = Model_Admin::SYSTEM_CRON;
+    $admin = createEntity(Admin::class, ['id' => 99, 'system_name' => Model_Admin::SYSTEM_CRON]);
 
     return $admin;
 }
 
-function staffRegularAdmin(): Model_Admin
+function staffRegularAdmin(): Admin
 {
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->id = 10;
+    $admin = createEntity(Admin::class, ['id' => 10]);
 
     return $admin;
 }
@@ -150,11 +146,7 @@ test('login returns admin details on successful login', function (): void {
     $password = 'pass';
     $ip = '127.0.0.1';
 
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->id = 1;
-    $admin->email = $email;
-    $admin->name = 'Admin';
+    $admin = createEntity(Admin::class, ['id' => 1, 'email' => $email, 'name' => 'Admin']);
 
     $emMock = Mockery::mock('\Box_EventManager');
     $emMock->shouldReceive('fire')->atLeast()->once()
@@ -225,9 +217,7 @@ test('login throws exception when credentials are invalid', function (): void {
 });
 
 test('hasPermission returns true for super administrator group member', function (): void {
-    $member = new Model_Admin();
-    $member->loadBean(new Tests\Helpers\DummyBean());
-    $member->id = 1;
+    $member = createEntity(Admin::class, ['id' => 1]);
 
     $service = staffServiceWithGroupPermissions(isSuperAdministrator: true);
 
@@ -236,9 +226,7 @@ test('hasPermission returns true for super administrator group member', function
 });
 
 test('hasPermission does not allow staff without group permissions', function (): void {
-    $member = new Model_Admin();
-    $member->loadBean(new Tests\Helpers\DummyBean());
-    $member->id = 1;
+    $member = createEntity(Admin::class, ['id' => 1]);
 
     $service = staffServiceWithGroupPermissions();
 
@@ -247,9 +235,7 @@ test('hasPermission does not allow staff without group permissions', function ()
 });
 
 test('hasPermission falls back to cron admin only within cron context', function (): void {
-    $cronAdmin = new Model_Admin();
-    $cronAdmin->loadBean(new Tests\Helpers\DummyBean());
-    $cronAdmin->system_name = Model_Admin::SYSTEM_CRON;
+    $cronAdmin = createEntity(Admin::class, ['system_name' => Model_Admin::SYSTEM_CRON]);
 
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('getCronAdmin')
@@ -289,9 +275,7 @@ test('hasPermission stays fail-closed outside cron context when no admin is logg
 });
 
 test('hasPermission returns false for staff without groups', function (): void {
-    $member = new Model_Admin();
-    $member->loadBean(new Tests\Helpers\DummyBean());
-    $member->id = 1;
+    $member = createEntity(Admin::class, ['id' => 1]);
 
     $service = staffServiceWithGroupPermissions();
 
@@ -300,9 +284,7 @@ test('hasPermission returns false for staff without groups', function (): void {
 });
 
 test('hasPermission returns true for staff with group permission', function (): void {
-    $member = new Model_Admin();
-    $member->loadBean(new Tests\Helpers\DummyBean());
-    $member->id = 1;
+    $member = createEntity(Admin::class, ['id' => 1]);
 
     $group = (new AdminGroup())->setPermissions([
         'example' => [
@@ -318,9 +300,7 @@ test('hasPermission returns true for staff with group permission', function (): 
 });
 
 test('hasPermission returns false for staff without method permission', function (): void {
-    $member = new Model_Admin();
-    $member->loadBean(new Tests\Helpers\DummyBean());
-    $member->id = 1;
+    $member = createEntity(Admin::class, ['id' => 1]);
 
     $group = (new AdminGroup())->setPermissions([
         'example' => [
@@ -771,8 +751,7 @@ test('onAfterClientOpenTicket sends mod_staff_ticket_open email', function (): v
         ->atLeast()->once()
         ->andReturn($repoMock);
     $di['em'] = $emMock;
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin = createEntity(Admin::class);
     $di['loggedin_admin'] = $admin;
 
     $eventMock = Mockery::mock('\Box_Event');
@@ -833,8 +812,7 @@ test('onAfterClientOpenTicket sends mod_support_helpdesk_ticket_open email', fun
         ->atLeast()->once()
         ->andReturn($repoMock);
     $di['em'] = $emMock;
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin = createEntity(Admin::class);
     $di['loggedin_admin'] = $admin;
 
     $eventMock = Mockery::mock('\Box_Event');
@@ -963,8 +941,7 @@ test('getCronAdmin creates and returns new cron admin', function (): void {
 });
 
 test('toModel_AdminApiArray returns admin array data', function (): void {
-    $adminModel = new Model_Admin();
-    $adminModel->loadBean(new Tests\Helpers\DummyBean());
+    $adminModel = createEntity(Admin::class);
 
     $expected =
         [
@@ -998,8 +975,7 @@ test('update updates admin details', function (): void {
         'signature' => '1345',
     ];
 
-    $adminModel = new Model_Admin();
-    $adminModel->loadBean(new Tests\Helpers\DummyBean());
+    $adminModel = createEntity(Admin::class);
 
     $adminEntity = new Admin();
     staffSetEntityId($adminEntity, 1);
@@ -1028,10 +1004,7 @@ test('update updates admin details', function (): void {
 });
 
 test('update rejects deactivating last active super administrator', function (): void {
-    $adminModel = new Model_Admin();
-    $adminModel->loadBean(new Tests\Helpers\DummyBean());
-    $adminModel->id = 3;
-    $adminModel->status = Model_Admin::STATUS_ACTIVE;
+    $adminModel = createEntity(Admin::class, ['id' => 3, 'status' => Model_Admin::STATUS_ACTIVE]);
 
     $groupRepository = Mockery::mock(AdminGroupRepository::class);
     $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
@@ -1055,10 +1028,7 @@ test('update rejects deactivating last active super administrator', function ():
 });
 
 test('update rejects deactivating own staff account', function (): void {
-    $adminModel = new Model_Admin();
-    $adminModel->loadBean(new Tests\Helpers\DummyBean());
-    $adminModel->id = 10;
-    $adminModel->status = Model_Admin::STATUS_ACTIVE;
+    $adminModel = createEntity(Admin::class, ['id' => 10, 'status' => Model_Admin::STATUS_ACTIVE]);
 
     $eventsMock = Mockery::mock('\Box_EventManager');
     $eventsMock->shouldReceive('fire')->atLeast()->once();
@@ -1081,9 +1051,7 @@ test('update rejects deactivating own staff account', function (): void {
 });
 
 test('delete removes admin account', function (): void {
-    $adminModel = new Model_Admin();
-    $adminModel->loadBean(new Tests\Helpers\DummyBean());
-    $adminModel->id = 5;
+    $adminModel = createEntity(Admin::class, ['id' => 5]);
 
     $adminEntity = new Admin();
     staffSetEntityId($adminEntity, 5);
@@ -1115,10 +1083,7 @@ test('delete removes admin account', function (): void {
 });
 
 test('delete rejects removing last active super administrator', function (): void {
-    $adminModel = new Model_Admin();
-    $adminModel->loadBean(new Tests\Helpers\DummyBean());
-    $adminModel->id = 3;
-    $adminModel->status = Model_Admin::STATUS_ACTIVE;
+    $adminModel = createEntity(Admin::class, ['id' => 3, 'status' => Model_Admin::STATUS_ACTIVE]);
 
     $groupRepository = Mockery::mock(AdminGroupRepository::class);
     $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
@@ -1138,9 +1103,7 @@ test('delete rejects removing last active super administrator', function (): voi
 });
 
 test('delete rejects cron account', function (): void {
-    $adminModel = new Model_Admin();
-    $adminModel->loadBean(new Tests\Helpers\DummyBean());
-    $adminModel->system_name = Model_Admin::SYSTEM_CRON;
+    $adminModel = createEntity(Admin::class, ['system_name' => Model_Admin::SYSTEM_CRON]);
 
     $service = new Service();
 
@@ -1150,8 +1113,7 @@ test('delete rejects cron account', function (): void {
 
 test('changePassword updates admin password', function (): void {
     $plainTextPassword = 'password';
-    $adminModel = new Model_Admin();
-    $adminModel->loadBean(new Tests\Helpers\DummyBean());
+    $adminModel = createEntity(Admin::class);
 
     $adminEntity = new Admin();
     staffSetEntityId($adminEntity, 1);
@@ -1618,9 +1580,7 @@ test('updateGroup rejects clearing parent group', function (): void {
 });
 
 test('addAdminToGroup creates membership', function (): void {
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->id = 3;
+    $admin = createEntity(Admin::class, ['id' => 3]);
 
     $group = new AdminGroup();
     staffSetEntityId($group, 2);
@@ -1644,9 +1604,7 @@ test('addAdminToGroup creates membership', function (): void {
 });
 
 test('addAdminToGroup is idempotent for existing membership', function (): void {
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->id = 3;
+    $admin = createEntity(Admin::class, ['id' => 3]);
 
     $group = new AdminGroup();
     staffSetEntityId($group, 2);
@@ -1669,10 +1627,7 @@ test('addAdminToGroup is idempotent for existing membership', function (): void 
 });
 
 test('removeAdminFromGroup removes membership', function (): void {
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->id = 3;
-    $admin->status = Model_Admin::STATUS_ACTIVE;
+    $admin = createEntity(Admin::class, ['id' => 3, 'status' => Model_Admin::STATUS_ACTIVE]);
 
     $group = new AdminGroup();
     staffSetEntityId($group, 2);
@@ -1697,10 +1652,7 @@ test('removeAdminFromGroup removes membership', function (): void {
 });
 
 test('removeAdminFromGroup rejects removing last active super administrator', function (): void {
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->id = 3;
-    $admin->status = Model_Admin::STATUS_ACTIVE;
+    $admin = createEntity(Admin::class, ['id' => 3, 'status' => Model_Admin::STATUS_ACTIVE]);
 
     $group = (new AdminGroup())->setSystemName(AdminGroup::SYSTEM_SUPER_ADMIN);
     staffSetEntityId($group, 1);
@@ -1724,13 +1676,9 @@ test('removeAdminFromGroup rejects removing last active super administrator', fu
 });
 
 test('delete rejects staff outside actor group subtree', function (): void {
-    $actor = new Model_Admin();
-    $actor->loadBean(new Tests\Helpers\DummyBean());
-    $actor->id = 10;
+    $actor = createEntity(Admin::class, ['id' => 10]);
 
-    $target = new Model_Admin();
-    $target->loadBean(new Tests\Helpers\DummyBean());
-    $target->id = 20;
+    $target = createEntity(Admin::class, ['id' => 20]);
 
     $groupRepository = Mockery::mock(AdminGroupRepository::class);
     $groupRepository->shouldReceive('getDescendantIdsForGroups')->with([1])->andReturn([3]);
@@ -1753,13 +1701,9 @@ test('delete rejects staff outside actor group subtree', function (): void {
 });
 
 test('addAdminToGroup rejects target staff without a group', function (): void {
-    $actor = new Model_Admin();
-    $actor->loadBean(new Tests\Helpers\DummyBean());
-    $actor->id = 10;
+    $actor = createEntity(Admin::class, ['id' => 10]);
 
-    $target = new Model_Admin();
-    $target->loadBean(new Tests\Helpers\DummyBean());
-    $target->id = 20;
+    $target = createEntity(Admin::class, ['id' => 20]);
 
     $peerGroup = new AdminGroup();
     staffSetEntityId($peerGroup, 2);
@@ -1784,13 +1728,9 @@ test('addAdminToGroup rejects target staff without a group', function (): void {
 });
 
 test('addAdminToGroup rejects assigning groups outside actor subtree', function (): void {
-    $actor = new Model_Admin();
-    $actor->loadBean(new Tests\Helpers\DummyBean());
-    $actor->id = 10;
+    $actor = createEntity(Admin::class, ['id' => 10]);
 
-    $target = new Model_Admin();
-    $target->loadBean(new Tests\Helpers\DummyBean());
-    $target->id = 20;
+    $target = createEntity(Admin::class, ['id' => 20]);
 
     $peerGroup = new AdminGroup();
     staffSetEntityId($peerGroup, 2);
@@ -1871,9 +1811,7 @@ test('getActivityAdminHistorySearchQuery returns correct query and params', func
 })->with('ActivityAdminHistorySearchFilters');
 
 test('toActivityAdminHistoryApiArray returns history array data', function (): void {
-    $adminHistoryModel = new Model_ActivityAdminHistory();
-    $adminHistoryModel->loadBean(new Tests\Helpers\DummyBean());
-    $adminHistoryModel->admin_id = 2;
+    $adminHistoryModel = createEntity(\Box\Mod\Activity\Entity\ActivityAdminHistory::class, ['admin_id' => 2]);
 
     $expected = [
         'id' => '',
@@ -1973,8 +1911,7 @@ test('authorizeAdmin returns admin model on success', function (): void {
     $email = 'example@fossbilling.vm';
     $password = '123456';
 
-    $model = new Model_Admin();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(Admin::class);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('findOne')->atLeast()->once()
