@@ -149,7 +149,7 @@ test('gets search query with various parameters', function (array $data, string 
 
 test('converts to api array', function (): void {
     $service = new Service();
-    $invoiceModel = createEntity(\Box\Mod\Invoice\Entity\Invoice::class, ['hash' => 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4']);
+    $invoiceModel = createEntity(\Box\Mod\Invoice\Entity\Invoice::class, ['id' => 1, 'hash' => 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4']);
 
     $invoiceItemModel = createEntity(\Box\Mod\Invoice\Entity\InvoiceItem::class);
 
@@ -217,7 +217,7 @@ test('converts to api array', function (): void {
         ->with(Box\Mod\Invoice\Entity\InvoiceItem::class)
         ->andReturnUsing(function () use ($invoiceItemModel) {
             $repo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceItemRepository::class);
-            $repo->shouldReceive('findByInvoiceId')->andReturn([$invoiceItemModel]);
+            $repo->shouldReceive('findByInvoiceId')->withAnyArgs()->andReturn([$invoiceItemModel]);
 
             return $repo;
         });
@@ -249,7 +249,7 @@ test('converts to api array', function (): void {
 
 test('ensure valid hash is a no-op for modern hashes', function (): void {
     $service = new Service();
-    $invoiceModel = createEntity(\Box\Mod\Invoice\Entity\Invoice::class, ['hash' => 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4']);
+    $invoiceModel = createEntity(\Box\Mod\Invoice\Entity\Invoice::class, ['id' => 1, 'hash' => 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4']);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldNotReceive('store');
@@ -319,7 +319,7 @@ test('ensure valid hash regenerates a legacy format hash', function (): void {
 
 test('to api array self-heals invoice with missing hash', function (): void {
     $service = new Service();
-    $invoiceModel = createEntity(\Box\Mod\Invoice\Entity\Invoice::class);
+    $invoiceModel = createEntity(\Box\Mod\Invoice\Entity\Invoice::class, ['id' => 1]);
 
     $invoiceItemModel = createEntity(\Box\Mod\Invoice\Entity\InvoiceItem::class);
 
@@ -392,7 +392,7 @@ test('to api array self-heals invoice with missing hash', function (): void {
         ->with(Box\Mod\Invoice\Entity\InvoiceItem::class)
         ->andReturnUsing(function () use ($invoiceItemModel) {
             $repo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceItemRepository::class);
-            $repo->shouldReceive('findByInvoiceId')->andReturn([$invoiceItemModel]);
+            $repo->shouldReceive('findByInvoiceId')->withAnyArgs()->andReturn([$invoiceItemModel]);
 
             return $repo;
         });
@@ -991,7 +991,7 @@ test('marks invoice as paid', function (): void {
         ->with(Box\Mod\Invoice\Entity\InvoiceItem::class)
         ->andReturnUsing(function () use ($invoiceItemModel) {
             $repo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceItemRepository::class);
-            $repo->shouldReceive('findByInvoiceId')->andReturn([$invoiceItemModel]);
+            $repo->shouldReceive('findByInvoiceId')->withAnyArgs()->andReturn([$invoiceItemModel]);
 
             return $repo;
         });
@@ -1081,9 +1081,35 @@ test('admin mark as paid with custom gateway records transaction and marks invoi
     $di['em']->shouldReceive('getRepository')
         ->with(Box\Mod\Currency\Entity\Currency::class)
         ->andReturn($currencyRepositoryMock);
-    $di['mod_service'] = $di->protect(moduleService([
-        'invoice:transaction' => $transactionServiceMock,
-    ]));
+
+    $currencyServiceMock = Mockery::mock(Box\Mod\Currency\Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $currencyServiceMock->shouldReceive('getCurrencyRepository')
+        ->atLeast()->once()
+        ->andReturn($currencyRepositoryMock);
+
+    $systemServiceMock = Mockery::mock(SystemService::class);
+    $systemServiceMock->shouldReceive('getParamValue')
+        ->atLeast()->once()
+        ->andReturn('90');
+
+    $productServiceMock = Mockery::mock(ProductService::class)->shouldIgnoreMissing();
+
+    $di['mod_service'] = $di->protect(function ($moduleName, $sub = '') use ($transactionServiceMock, $currencyServiceMock, $systemServiceMock, $productServiceMock) {
+        if ($moduleName === 'Invoice' && $sub === 'Transaction') {
+            return $transactionServiceMock;
+        }
+        if ($moduleName === 'Currency' || $moduleName === 'currency') {
+            return $currencyServiceMock;
+        }
+        if ($moduleName === 'system' || $moduleName === 'System') {
+            return $systemServiceMock;
+        }
+        if ($moduleName === 'Product' || $moduleName === 'product') {
+            return $productServiceMock;
+        }
+
+        return null;
+    });
 
     $serviceMock->setDi($di);
 
@@ -1277,7 +1303,7 @@ test('sets invoice defaults', function (): void {
         ->andReturn($seller);
     $systemService->shouldReceive('getParamValue')
         ->atLeast()->once()
-        ->andReturn(1);
+        ->andReturn('1');
     $systemService->shouldReceive('setParamValue')
         ->atLeast()->once();
 

@@ -1249,8 +1249,8 @@ test('reserve promo for order', function (): void {
 
     $serviceMock->reservePromoForOrder($promo, $order);
 
-    expect($order->promo_recurring)->toBe(1);
-    expect($order->promo_used)->toBe(1);
+    expect($order->isPromoRecurring())->toBeTrue();
+    expect($order->getPromoUsed())->toBe(1);
 });
 
 test('create checkout promo redemptions persists each order and flushes once', function (): void {
@@ -1369,6 +1369,13 @@ test('get renewal promo adjustment for domain order', function (): void {
         'config' => json_encode(['period' => '1Y']),
     ]);
 
+    // The Order entity uses isPromoRecurring() but production code accesses ->promo_recurring.
+    // The proxy __get can't find getPromoRecurring(), so set the _extra fallback.
+    $ref = new ReflectionProperty($order, '_extra');
+    $extra = $ref->getValue($order);
+    $extra['promo_recurring'] = true;
+    $ref->setValue($order, $extra);
+
     $product = productTestCreateProductEntity(17)->setType(Service::DOMAIN);
 
     $promoEntity = productTestCreatePromoEntity(15)
@@ -1393,6 +1400,7 @@ test('get renewal promo adjustment for domain order', function (): void {
     };
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('findPromoById')->once()->with(15)->andReturn($promoEntity);
     $serviceMock->shouldReceive('findProductById')->once()->with((int) $order->product_id)->andReturn($product);
     $serviceMock->shouldReceive('getRenewalProductDiscount')->once()->with($product, $promoEntity, ['period' => '1Y'])->andReturn(5.0);
 

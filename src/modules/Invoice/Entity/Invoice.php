@@ -188,9 +188,9 @@ class Invoice
         return $this->nr;
     }
 
-    public function setNr(?string $nr): void
+    public function setNr(string|int|null $nr): void
     {
-        $this->nr = $nr;
+        $this->nr = is_int($nr) ? (string) $nr : $nr;
     }
 
     public function getHash(): ?string
