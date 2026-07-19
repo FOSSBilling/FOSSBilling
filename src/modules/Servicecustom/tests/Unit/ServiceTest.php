@@ -21,6 +21,7 @@ use Box\Mod\Servicecustom\Service;
 use Doctrine\ORM\EntityManagerInterface;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 test('di returns dependency injection container', function (): void {
     $service = new Service();
@@ -234,11 +235,7 @@ test('validate custom form url array input throws information exception', functi
 
 test('action create', function (): void {
     $service = new Service();
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->product_id = 1;
-    $order->client_id = 1;
-    $order->config = 'config';
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class, ['product_id' => 1, 'client_id' => 1, 'config' => 'config']);
 
     $product = new Product();
     $product->setPlugin('plugin');
@@ -269,14 +266,9 @@ test('action create', function (): void {
 
 test('action activate', function (): void {
     $service = new Service();
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->client_id = 1;
-    $order->config = 'config';
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class, ['client_id' => 1, 'config' => 'config']);
 
-    $serviceCustomModel = new Model_ServiceCustom();
-    $serviceCustomModel->loadBean(new Tests\Helpers\DummyBean());
-    $serviceCustomModel->plugin = '';
+    $serviceCustomModel = createEntity(\Box\Mod\Servicecustom\Entity\ServiceCustom::class, ['plugin' => '']);
 
     $serviceMock = Mockery::mock(OrderService::class);
     $serviceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($serviceCustomModel);
@@ -295,10 +287,7 @@ test('action activate', function (): void {
 
 test('action activate order service not created exception', function (): void {
     $service = new Service();
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->client_id = 1;
-    $order->config = 'config';
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class, ['client_id' => 1, 'config' => 'config']);
 
     $serviceMock = Mockery::mock(OrderService::class);
     $serviceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn(null);
@@ -317,14 +306,9 @@ test('action activate order service not created exception', function (): void {
 
 test('action renew', function (): void {
     $service = new Service();
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->client_id = 1;
-    $order->config = 'config';
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class, ['client_id' => 1, 'config' => 'config']);
 
-    $serviceCustomModel = new Model_ServiceCustom();
-    $serviceCustomModel->loadBean(new Tests\Helpers\DummyBean());
-    $serviceCustomModel->plugin = '';
+    $serviceCustomModel = createEntity(\Box\Mod\Servicecustom\Entity\ServiceCustom::class, ['plugin' => '']);
 
     $serviceMock = Mockery::mock(OrderService::class);
     $serviceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($serviceCustomModel);

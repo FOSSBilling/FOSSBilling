@@ -10,10 +10,12 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Client\Entity\Client;
 use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Repository\HelpdeskRepository;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 test('ticket get list', function (): void {
     $clientApi = apiEndpoint(new Box\Mod\Support\Api\Client());
@@ -42,9 +44,7 @@ test('ticket get list', function (): void {
 
     $clientApi->setDi($di);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->id = 1;
+    $client = createEntity(Client::class, ['id' => 1]);
 
     $clientApi->setService($serviceMock);
     $clientApi->setIdentity($client);
@@ -69,9 +69,7 @@ test('ticket get', function (): void {
     $di = container();
     $clientApi->setDi($di);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->id = 1;
+    $client = createEntity(Client::class, ['id' => 1]);
 
     $clientApi->setService($serviceMock);
     $clientApi->setIdentity($client);
@@ -116,9 +114,7 @@ test('ticket create', function (): void {
     $di = container();
     $clientApi->setDi($di);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->id = 1;
+    $client = createEntity(Client::class, ['id' => 1]);
 
     $clientApi->setService($serviceMock);
     $clientApi->setIdentity($client);
@@ -152,9 +148,7 @@ test('ticket reply', function (): void {
     $di = container();
     $clientApi->setDi($di);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->id = 1;
+    $client = createEntity(Client::class, ['id' => 1]);
 
     $clientApi->setService($serviceMock);
     $clientApi->setIdentity($client);
@@ -188,9 +182,7 @@ test('ticket reply can not be reopened exception', function (): void {
     $di = container();
     $clientApi->setDi($di);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->id = 1;
+    $client = createEntity(Client::class, ['id' => 1]);
 
     $clientApi->setService($serviceMock);
     $clientApi->setIdentity($client);
@@ -213,9 +205,7 @@ test('ticket close', function (): void {
     $di = container();
     $clientApi->setDi($di);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->id = 1;
+    $client = createEntity(Client::class, ['id' => 1]);
 
     $clientApi->setService($serviceMock);
     $clientApi->setIdentity($client);
