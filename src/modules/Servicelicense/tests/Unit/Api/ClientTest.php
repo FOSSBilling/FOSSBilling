@@ -75,7 +75,7 @@ test('getService returns service license model', function (): void {
     $api->setIdentity($clientModel);
 
     $result = $api->_getService($data);
-    expect($result)->toBeInstanceOf(Model_ServiceLicense::class);
+    expect($result)->toBeInstanceOf(\Box\Mod\Servicelicense\Entity\ServiceLicense::class);
 });
 
 test('getService throws exception when order not activated', function (): void {

@@ -340,7 +340,7 @@ test('creates renewal invoice', function (): void {
         ->andReturn($newInvoiceId);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = createEntity(\Box\Mod\Client\Entity\ClientOrder::class, ['price' => 10]);
+    $model = createEntity(\Box\Mod\Order\Entity\Order::class, ['price' => 10]);
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -367,7 +367,7 @@ test('creates renewal invoice for free order', function (): void {
         ->andReturn($newInvoiceId);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = createEntity(\Box\Mod\Client\Entity\ClientOrder::class, ['id' => 1, 'price' => 0]);
+    $model = createEntity(\Box\Mod\Order\Entity\Order::class, ['id' => 1, 'price' => 0]);
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);

@@ -18,6 +18,16 @@ class Client implements ApiArrayInterface
     final public const string ACTIVE = 'active';
     final public const string SUSPENDED = 'suspended';
     final public const string CANCELED = 'canceled';
+    final public const string GENDER_MALE = 'male';
+    final public const string GENDER_FEMALE = 'female';
+    final public const string GENDER_NON_BINARY = 'nonbinary';
+    final public const string GENDER_OTHER = 'other';
+    public const array ALLOWED_GENDERS = [
+        self::GENDER_MALE,
+        self::GENDER_FEMALE,
+        self::GENDER_NON_BINARY,
+        self::GENDER_OTHER,
+    ];
 
     #[ORM\Id]
     #[ORM\GeneratedValue]

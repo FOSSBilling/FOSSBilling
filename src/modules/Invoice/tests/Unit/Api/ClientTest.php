@@ -85,7 +85,7 @@ test('creates renewal invoice', function (): void {
     $serviceMock->shouldReceive('approveInvoice');
 
     $dbMock = Mockery::mock('\Box_Database');
-    $clientOrder = createEntity(\Box\Mod\Client\Entity\ClientOrder::class, ['price' => 10]);
+    $clientOrder = createEntity(\Box\Mod\Order\Entity\Order::class, ['price' => 10]);
     $dbMock->shouldReceive('findOne')
         ->atLeast()->once()
         ->andReturn($clientOrder);
@@ -116,7 +116,7 @@ test('creates renewal invoice for free order', function (): void {
     $serviceMock->shouldReceive('approveInvoice');
 
     $dbMock = Mockery::mock('\Box_Database');
-    $clientOrder = createEntity(\Box\Mod\Client\Entity\ClientOrder::class, ['id' => 1, 'price' => 0]);
+    $clientOrder = createEntity(\Box\Mod\Order\Entity\Order::class, ['id' => 1, 'price' => 0]);
 
     $dbMock->shouldReceive('findOne')
         ->atLeast()->once()
@@ -139,7 +139,7 @@ test('creates renewal invoice for free order', function (): void {
 test('throws exception when creating renewal invoice for order not found', function (): void {
     $api = apiEndpoint(new Client());
     $dbMock = Mockery::mock('\Box_Database');
-    $clientOrder = createEntity(\Box\Mod\Client\Entity\ClientOrder::class, ['price' => 10]);
+    $clientOrder = createEntity(\Box\Mod\Order\Entity\Order::class, ['price' => 10]);
 
     $dbMock->shouldReceive('findOne')
         ->atLeast()->once()

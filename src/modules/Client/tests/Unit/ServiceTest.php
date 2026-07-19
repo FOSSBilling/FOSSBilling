@@ -577,7 +577,7 @@ test('getByLoginDetails returns Model_Client', function (): void {
     $service->setDi($di);
 
     $result = $service->getByLoginDetails('email@example.com', 'password');
-    expect($result)->toBeInstanceOf(Model_Client::class);
+    expect($result)->toBeInstanceOf(\Box\Mod\Client\Entity\Client::class);
 });
 
 dataset('getProvider', [
@@ -819,7 +819,7 @@ test('authorizeClient returns Model_Client', function (): void {
     $service->setDi($di);
 
     $result = $service->authorizeClient($email, $password);
-    expect($result)->toBeInstanceOf(Model_Client::class);
+    expect($result)->toBeInstanceOf(\Box\Mod\Client\Entity\Client::class);
 });
 
 test('authorizeClient with confirmed email returns Model_Client', function (): void {
@@ -849,7 +849,7 @@ test('authorizeClient with confirmed email returns Model_Client', function (): v
     $service->setDi($di);
 
     $result = $service->authorizeClient($email, $password);
-    expect($result)->toBeInstanceOf(Model_Client::class);
+    expect($result)->toBeInstanceOf(\Box\Mod\Client\Entity\Client::class);
 });
 
 test('canChangeEmail returns true', function (): void {

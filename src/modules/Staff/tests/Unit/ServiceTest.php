@@ -1927,11 +1927,16 @@ test('authorizeAdmin returns admin model on success', function (): void {
     $di['db'] = $dbMock;
     $di['auth'] = $authMock;
 
+    $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
+    $groupMemberRepository->shouldReceive('adminBelongsToSystemGroup')->andReturn(false);
+    $emMock = staffEntityManager(groupMemberRepository: $groupMemberRepository);
+    $di['em'] = $emMock;
+
     $service = new Service();
     $service->setDi($di);
 
     $result = $service->authorizeAdmin($email, $password);
-    expect($result)->toBeInstanceOf(Model_Admin::class);
+    expect($result)->toBeInstanceOf(\Box\Mod\Staff\Entity\Admin::class);
 });
 
 test('i18n::validateTimezone returns null for null and empty input', function (): void {

@@ -180,7 +180,7 @@ class Invoice
 
     public function setSerie(string|int|null $serie): void
     {
-        $this->serie = $serie;
+        $this->serie = is_int($serie) ? (string) $serie : $serie;
     }
 
     public function getNr(): ?string
@@ -220,7 +220,7 @@ class Invoice
 
     public function setCurrencyRate(string|float|null $currencyRate): void
     {
-        $this->currencyRate = $currencyRate;
+        $this->currencyRate = is_float($currencyRate) ? (string) $currencyRate : $currencyRate;
     }
 
     public function getCredit(): ?float

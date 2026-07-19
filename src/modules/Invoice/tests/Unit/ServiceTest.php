@@ -272,13 +272,7 @@ test('ensure valid hash regenerates a missing hash', function (): void {
         ->with('invoice_hash_lifetime_days', '90')
         ->andReturn('90');
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->once()
-        ->with($invoiceModel);
-
     $di = container();
-    $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(function ($serviceName) use ($systemService) {
         if ($serviceName === 'system') {
             return $systemService;
@@ -306,13 +300,7 @@ test('ensure valid hash regenerates a legacy format hash', function (): void {
         ->with('invoice_hash_lifetime_days', '90')
         ->andReturn('90');
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->once()
-        ->with($invoiceModel);
-
     $di = container();
-    $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(function ($serviceName) use ($systemService) {
         if ($serviceName === 'system') {
             return $systemService;
@@ -394,9 +382,6 @@ test('to api array self-heals invoice with missing hash', function (): void {
 
             return $modelToArrayResult;
         });
-    $dbMock->shouldReceive('store')
-        ->once()
-        ->with($invoiceModel);
 
     $periodMock = Mockery::mock('\Box_Period');
     $periodMock->shouldReceive('getUnit');
@@ -1001,10 +986,6 @@ test('marks invoice as paid', function (): void {
     $eventManagerMock->shouldReceive('fire')
         ->atLeast()->once();
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once();
-
     $di = container();
     $di['em']->shouldReceive('getRepository')
         ->with(Box\Mod\Invoice\Entity\InvoiceItem::class)
@@ -1185,12 +1166,7 @@ test('counts income', function (): void {
         ->atLeast()->once()
         ->andReturn(0.0);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once();
-
     $di = container();
-    $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $currencyService);
 
     $serviceMock->setDi($di);

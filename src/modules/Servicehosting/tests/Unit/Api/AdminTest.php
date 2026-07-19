@@ -636,7 +636,7 @@ test('testGetService', function (): void {
 
     $result = $api->_getService($data);
     expect($result)->toBeArray();
-    expect($result[0])->toBeInstanceOf('\Model_ClientOrder');
+    expect($result[0])->toBeInstanceOf(\Box\Mod\Order\Entity\Order::class);
     expect($result[1])->toBeInstanceOf(ServiceHosting::class);
 });
 

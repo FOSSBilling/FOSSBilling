@@ -36,15 +36,9 @@ test('updates admin', function (): void {
         ->atLeast()->once()
         ->andReturn(true);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn(true);
-
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['events_manager'] = $emMock;
-    $di['db'] = $dbMock;
 
     $model = createEntity(\Box\Mod\Staff\Entity\Admin::class);
 
@@ -66,15 +60,9 @@ test('generates new api key', function (): void {
         ->atLeast()->once()
         ->andReturn(true);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn(true);
-
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['events_manager'] = $emMock;
-    $di['db'] = $dbMock;
     $di['tools'] = new FOSSBilling\Tools();
 
     $model = createEntity(\Box\Mod\Staff\Entity\Admin::class);
@@ -93,11 +81,6 @@ test('changes admin password', function (): void {
         ->atLeast()->once()
         ->andReturn(true);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn(true);
-
     $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')
         ->with($password);
@@ -105,7 +88,6 @@ test('changes admin password', function (): void {
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['events_manager'] = $emMock;
-    $di['db'] = $dbMock;
     $di['password'] = $passwordMock;
 
     $model = createEntity(\Box\Mod\Staff\Entity\Admin::class);
@@ -120,11 +102,6 @@ test('changes admin password', function (): void {
 test('updates client', function (): void {
     $emMock = Mockery::mock('\Box_EventManager');
     $emMock->shouldReceive('fire')
-        ->atLeast()->once()
-        ->andReturn(true);
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
         ->atLeast()->once()
         ->andReturn(true);
 
@@ -145,7 +122,6 @@ test('updates client', function (): void {
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['events_manager'] = $emMock;
-    $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $clientServiceMock);
     $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
     $di['tools'] = $toolsMock;
@@ -289,14 +265,8 @@ test('throws exception when email already registered', function (): void {
 });
 
 test('resets api key', function (): void {
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn(true);
-
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['db'] = $dbMock;
     $di['tools'] = new FOSSBilling\Tools();
 
     $model = createEntity(\Box\Mod\Client\Entity\Client::class);
@@ -314,11 +284,6 @@ test('changes client password', function (): void {
         ->atLeast()->once()
         ->andReturn(true);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn(true);
-
     $password = 'new password';
 
     $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
@@ -328,7 +293,6 @@ test('changes client password', function (): void {
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['events_manager'] = $emMock;
-    $di['db'] = $dbMock;
     $di['password'] = $passwordMock;
 
     $model = createEntity(\Box\Mod\Client\Entity\Client::class);
