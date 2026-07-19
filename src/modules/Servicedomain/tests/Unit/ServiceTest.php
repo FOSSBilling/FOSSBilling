@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use Box\Mod\Client\Entity\Client;
+use Box\Mod\Order\Entity\Order;
 use Box\Mod\Order\Service as OrderService;
 use Box\Mod\Servicedomain\Entity\ServiceDomain;
 use Box\Mod\Servicedomain\Entity\Tld;
@@ -23,7 +24,7 @@ use function Tests\Helpers\createEntity;
 
 class ServicedomainServiceSyncProbe extends Service
 {
-    public function syncWhoisPublic(ServiceDomain|Model_ServiceDomain $model, Model_ClientOrder $order): void
+    public function syncWhoisPublic(ServiceDomain|Model_ServiceDomain $model, Order $order): void
     {
         $this->syncWhois($model, $order);
     }
@@ -900,7 +901,7 @@ test('syncWhois stores null dates when registrar dates are unavailable', functio
         ->and($model->getRegisteredAt())->toBeNull();
 });
 
-test('converts to api array', function (?Model_Admin $identity, string $dbLoadCalled): void {
+test('converts to api array', function (?\Box\Mod\Staff\Entity\Admin $identity, string $dbLoadCalled): void {
     $service = new Service();
     $model = new ServiceDomain();
 

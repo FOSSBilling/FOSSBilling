@@ -50,7 +50,7 @@ class CannedResponseCategory implements ApiArrayInterface, TimestampInterface
         $this->responses = new ArrayCollection();
     }
 
-    public function toApiArray(\Model_Admin|\Model_Client|\Model_Guest|null $identity = null): array
+    public function toApiArray(object|null $identity = null): array
     {
         return [
             'id' => $this->id,

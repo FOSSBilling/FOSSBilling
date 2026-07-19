@@ -178,7 +178,7 @@ class Invoice
         return $this->serie;
     }
 
-    public function setSerie(?string $serie): void
+    public function setSerie(string|int|null $serie): void
     {
         $this->serie = $serie;
     }
@@ -218,7 +218,7 @@ class Invoice
         return $this->currencyRate;
     }
 
-    public function setCurrencyRate(?string $currencyRate): void
+    public function setCurrencyRate(string|float|null $currencyRate): void
     {
         $this->currencyRate = $currencyRate;
     }

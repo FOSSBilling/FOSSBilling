@@ -127,9 +127,9 @@ class Subscription
         return $this->amount;
     }
 
-    public function setAmount(?float $amount): void
+    public function setAmount(float|string|null $amount): void
     {
-        $this->amount = $amount;
+        $this->amount = is_string($amount) ? (float) $amount : $amount;
     }
 
     public function getCurrency(): ?string

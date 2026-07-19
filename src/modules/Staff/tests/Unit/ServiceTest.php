@@ -10,6 +10,7 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Client\Entity\Client;
 use Box\Mod\Staff\Entity\Admin;
 use Box\Mod\Staff\Entity\AdminGroup;
 use Box\Mod\Staff\Entity\AdminGroupMember;
@@ -589,7 +590,7 @@ test('onAfterClientReplyTicket handles guest email exception', function (): void
 test('onAfterClientSignUp sends sanitized client details in the email variables', function (): void {
     $eventMock = Mockery::mock('\Box_Event');
     $clientId = 42;
-    $client = Mockery::mock(Model_Client::class);
+    $client = createEntity(Client::class);
     $clientDetails = [
         'id' => $clientId,
         'email' => 'new-client@example.com',
@@ -637,7 +638,7 @@ test('onAfterClientSignUp sends sanitized client details in the email variables'
 test('onAfterClientSignUp handles email exception', function (): void {
     $eventMock = Mockery::mock('\Box_Event');
     $clientId = 42;
-    $client = Mockery::mock(Model_Client::class);
+    $client = createEntity(Client::class);
 
     $clientMock = Mockery::mock(Box\Mod\Client\Service::class);
     $clientMock->shouldReceive('get')->once()

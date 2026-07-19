@@ -46,7 +46,7 @@ class SupportTicketNote implements ApiArrayInterface, TimestampInterface
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $note = null;
 
-    public function toApiArray(\Model_Admin|\Model_Client|\Model_Guest|null $identity = null): array
+    public function toApiArray(object|null $identity = null): array
     {
         return [
             'id' => $this->id,

@@ -1589,8 +1589,8 @@ test('removes an invoice', function (): void {
     $di['em']->shouldReceive('getRepository')
         ->with(Box\Mod\Invoice\Entity\InvoiceItem::class)
         ->andReturnUsing(function () use ($invoiceItemModel) {
-            $repo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceItemRepository::class)->shouldIgnoreMissing();
-            $repo->shouldReceive('findByInvoiceId')->andReturn([$invoiceItemModel]);
+            $repo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceItemRepository::class);
+            $repo->shouldReceive('findByInvoiceId')->withAnyArgs()->andReturn([$invoiceItemModel]);
 
             return $repo;
         });

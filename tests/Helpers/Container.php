@@ -772,6 +772,7 @@ class %s extends \%s
     {
         $setter = self::_toSetter($name);
         if ($setter !== null && method_exists($this, $setter)) {
+            $value = self::_coerceType($this, $setter, $value);
             $this->$setter($value);
             return;
         }
@@ -804,6 +805,45 @@ class %s extends \%s
     private static function _toGetter(string $snake): ?string
     {
         return 'get' . str_replace('_', '', ucwords($snake, '_'));
+    }
+
+    private static function _coerceType(object $obj, string $method, mixed $value): mixed
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        try {
+            $ref = new \ReflectionMethod($obj, $method);
+        } catch (\ReflectionException) {
+            return $value;
+        }
+
+        $params = $ref->getParameters();
+        if (empty($params)) {
+            return $value;
+        }
+
+        $type = $params[0]->getType();
+        if (!($type instanceof \ReflectionNamedType)) {
+            return $value;
+        }
+
+        $typeName = $type->getName();
+
+        if ($typeName === \DateTime::class && is_string($value)) {
+            return new \DateTime($value);
+        }
+
+        if ($typeName === 'float' && (is_int($value) || (is_string($value) && is_numeric($value)))) {
+            return (float) $value;
+        }
+
+        if ($typeName === 'int' && (is_string($value) && ctype_digit($value))) {
+            return (int) $value;
+        }
+
+        return $value;
     }
 }
 PHP

@@ -10,6 +10,7 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Client\Entity\Client;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Product\Entity\ProductCategory;
 use Box\Mod\Product\Entity\ProductPayment;
@@ -21,6 +22,7 @@ use Box\Mod\Product\Repository\ProductRepository;
 use Box\Mod\Product\Repository\PromoRedemptionRepository;
 use Box\Mod\Product\Repository\PromoRepository;
 use Box\Mod\Product\Service;
+use Box\Mod\Servicedomain\Entity\Tld;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 
@@ -189,7 +191,7 @@ function productTestCreateProductOrderDbalConnection(): Connection
     return $connection;
 }
 
-function productTestCreateDomainTldServiceMock(Model_Tld $tld): Mockery\MockInterface
+function productTestCreateDomainTldServiceMock(Tld $tld): Mockery\MockInterface
 {
     $tldService = Mockery::mock(Box\Mod\Servicedomain\ServiceTld::class);
     $tldService->shouldReceive('findOneByTld')->atLeast()->once()->with('.com')->andReturn($tld);
@@ -490,12 +492,12 @@ test('get product renewal line config uses generic pricing implementation', func
 
 test('get related product discount uses domain pricing implementation', function (): void {
     $service = new Service();
-    $tld = new Model_Tld();
-    $tld->loadBean(new Tests\Helpers\DummyBean());
-    $tld->tld = '.com';
-    $tld->price_registration = 13;
-    $tld->price_renew = 20;
-    $tld->price_transfer = 15;
+    $tld = createEntity(Tld::class, [
+        'tld' => '.com',
+        'price_registration' => 13,
+        'price_renew' => 20,
+        'price_transfer' => 15,
+    ]);
 
     $tldService = productTestCreateDomainTldServiceMock($tld);
 
@@ -577,12 +579,12 @@ test('get product unit uses domain unit', function (): void {
 
 test('get product order line config uses domain pricing implementation', function (): void {
     $service = new Service();
-    $tld = new Model_Tld();
-    $tld->loadBean(new Tests\Helpers\DummyBean());
-    $tld->tld = '.com';
-    $tld->price_registration = 13;
-    $tld->price_renew = 20;
-    $tld->price_transfer = 15;
+    $tld = createEntity(Tld::class, [
+        'tld' => '.com',
+        'price_registration' => 13,
+        'price_renew' => 20,
+        'price_transfer' => 15,
+    ]);
 
     $tldService = productTestCreateDomainTldServiceMock($tld);
 
@@ -611,12 +613,12 @@ test('get product order line config uses domain pricing implementation', functio
 
 test('get product renewal line config uses domain pricing implementation', function (): void {
     $service = new Service();
-    $tld = new Model_Tld();
-    $tld->loadBean(new Tests\Helpers\DummyBean());
-    $tld->tld = '.com';
-    $tld->price_registration = 13;
-    $tld->price_renew = 20;
-    $tld->price_transfer = 15;
+    $tld = createEntity(Tld::class, [
+        'tld' => '.com',
+        'price_registration' => 13,
+        'price_renew' => 20,
+        'price_transfer' => 15,
+    ]);
 
     $tldService = productTestCreateDomainTldServiceMock($tld);
 
@@ -1452,7 +1454,7 @@ test('get renewal product discount uses product renewal line config', function (
     expect($serviceMock->getRenewalProductDiscount($product, $promo, ['period' => '1Y']))->toBe(20.0);
 });
 
-test('is promo available for client group', function (Promo $promo, ?Model_Client $client, bool $expectedResult): void {
+test('is promo available for client group', function (Promo $promo, ?Client $client, bool $expectedResult): void {
     $service = new Service();
     $di = container();
     $di['loggedin_client'] = $client;
@@ -1460,7 +1462,7 @@ test('is promo available for client group', function (Promo $promo, ?Model_Clien
 
     expect($service->isPromoAvailableForClientGroup($promo))->toBe($expectedResult);
 })->with([
-    'no restrictions' => [fn (): Promo => productTestCreatePromoEntity(1)->setClientGroups(json_encode([])), fn (): Model_Client => $client = createEntity(\Box\Mod\Client\Entity\Client::class), true],
+    'no restrictions' => [fn (): Promo => productTestCreatePromoEntity(1)->setClientGroups(json_encode([])), fn (): Client => $client = createEntity(\Box\Mod\Client\Entity\Client::class), true],
     'restricted and no client group' => [fn (): Promo => productTestCreatePromoEntity(2)->setClientGroups(json_encode([1, 2])), function () {
         $client = createEntity(\Box\Mod\Client\Entity\Client::class, ['client_group_id' => null]);
 
@@ -1746,9 +1748,7 @@ test('is promo linked to tld returns true when promo has no product restrictions
     $service = new Service();
     $promo = new Promo();
 
-    $tld = new Model_Tld();
-    $tld->loadBean(new Tests\Helpers\DummyBean());
-    $tld->id = 1;
+    $tld = createEntity(Tld::class, ['id' => 1]);
 
     expect($service->isPromoLinkedToTld($promo, $tld))->toBeTrue();
 });
@@ -1761,9 +1761,7 @@ test('is promo linked to tld uses main domain product linkage', function (): voi
     $domainProduct = productTestCreateProductEntity(10)
         ->setIsAddon(false);
 
-    $tld = new Model_Tld();
-    $tld->loadBean(new Tests\Helpers\DummyBean());
-    $tld->id = 1;
+    $tld = createEntity(Tld::class, ['id' => 1]);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('getMainDomainProduct')->once()->andReturn($domainProduct);
@@ -1779,9 +1777,7 @@ test('is promo linked to tld returns false when domain product is not linked', f
     $domainProduct = productTestCreateProductEntity(10)
         ->setIsAddon(false);
 
-    $tld = new Model_Tld();
-    $tld->loadBean(new Tests\Helpers\DummyBean());
-    $tld->id = 1;
+    $tld = createEntity(Tld::class, ['id' => 1]);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('getMainDomainProduct')->once()->andReturn($domainProduct);

@@ -56,7 +56,7 @@ class SupportTicketMessage implements ApiArrayInterface, TimestampInterface
     #[ORM\Column(type: Types::STRING, length: 45, nullable: true)]
     private ?string $ip = null;
 
-    public function toApiArray(\Model_Admin|\Model_Client|\Model_Guest|null $identity = null): array
+    public function toApiArray(object|null $identity = null): array
     {
         if ($identity instanceof \Model_Admin) {
             return [
