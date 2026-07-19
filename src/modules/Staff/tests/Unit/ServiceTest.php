@@ -422,12 +422,10 @@ test('onAfterClientReplyTicket still sends when its client no longer exists', fu
         ]);
 
     $di = container();
-    $di['mod_service'] = $di->protect(function ($name) use ($supportServiceMock, $clientServiceMock, $emailServiceMock) {
-        return match ($name) {
-            'support' => $supportServiceMock,
-            'client' => $clientServiceMock,
-            'email' => $emailServiceMock,
-        };
+    $di['mod_service'] = $di->protect(fn ($name) => match ($name) {
+        'support' => $supportServiceMock,
+        'client' => $clientServiceMock,
+        'email' => $emailServiceMock,
     });
 
     $eventMock->shouldReceive('getParameters')->once()->andReturn(['id' => $ticketId]);
