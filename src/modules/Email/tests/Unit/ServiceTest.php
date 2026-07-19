@@ -1065,7 +1065,7 @@ test('templateCreate creates new template', function (): void {
     expect($result->getActionCode())->toBe($data['action_code']);
 });
 
-test('templateBatchRegenerate resets existing built-in templates skipped by active module sync', function (): void {
+test('templateBatchRegenerate resets existing built-in templates without module discovery', function (): void {
     $template = emailTemplate('mod_invoice_created', 1, [
         'subject' => 'Legacy subject',
         'content' => '{{ invoice.total|money(invoice.currency) }}',
@@ -1084,13 +1084,9 @@ test('templateBatchRegenerate resets existing built-in templates skipped by acti
     $em = emailBuildEm(templateRepo: $templateRepository);
     $em->shouldReceive('flush')->once();
 
-    $extensionService = Mockery::mock(Box\Mod\Extension\Service::class);
-    $extensionService->shouldReceive('isExtensionActive')->andReturnFalse();
-
     $di = container();
     $di['em'] = $em;
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['mod_service'] = $di->protect(moduleService(['extension' => $extensionService]));
 
     $service = new Box\Mod\Email\Service();
     $service->setDi($di);
@@ -1105,7 +1101,7 @@ test('templateBatchRegenerate resets existing built-in templates skipped by acti
     $logMessages = array_map(static fn (array $call): string => $call['params'][0], $di['logger']->calls);
     expect($logMessages)
         ->not->toContain('Synced file-backed email templates for installed modules.')
-        ->toContain('Regenerated 1 and created 0 file-backed email templates.');
+        ->toContain('Regenerated 1 existing file-backed email templates.');
 });
 
 test('templateBatchDisable disables all templates', function (): void {

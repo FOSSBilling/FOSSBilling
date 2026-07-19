@@ -993,46 +993,24 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function templateBatchRegenerate(): bool
     {
-        $extensionService = $this->di['mod_service']('extension');
-        $templatesByCode = [];
-        foreach ($this->getTemplateRepository()->findAll() as $template) {
-            $templatesByCode[$template->getActionCode()] = $template;
-        }
-
         $regenerated = 0;
-        $created = 0;
 
-        $finder = new Finder();
-        $finder = $finder->files()->in(PATH_MODS . '/*/templates/email/')->name('*.html.twig');
+        foreach ($this->getTemplateRepository()->findAll() as $template) {
+            if ($this->isCustomTemplate($template)) {
+                continue;
+            }
 
-        foreach ($finder as $file) {
-            $code = $file->getBasename('.html.twig');
-            $default = $this->getDefaultTemplate($code, ['code' => $code]);
+            $default = $this->getDefaultTemplate($template->getActionCode());
             if ($default === null) {
                 continue;
             }
 
-            $template = $templatesByCode[$code] ?? null;
-            if ($template instanceof EmailTemplate) {
-                if ($this->isCustomTemplate($template)) {
-                    continue;
-                }
-
-                $this->resetBuiltinTemplate($template, $default);
-                ++$regenerated;
-
-                continue;
-            }
-
-            $module = strtolower(Path::getFilenameWithoutExtension(Path::getDirectory(Path::getDirectory($file->getPath()))));
-            if ($extensionService->isExtensionActive('mod', $module)) {
-                $this->createBuiltinTemplateRecord($code, $default);
-                ++$created;
-            }
+            $this->resetBuiltinTemplate($template, $default);
+            ++$regenerated;
         }
 
         $this->di['em']->flush();
-        $this->di['logger']->info(sprintf('Regenerated %d and created %d file-backed email templates.', $regenerated, $created));
+        $this->di['logger']->info(sprintf('Regenerated %d existing file-backed email templates.', $regenerated));
 
         return true;
     }
