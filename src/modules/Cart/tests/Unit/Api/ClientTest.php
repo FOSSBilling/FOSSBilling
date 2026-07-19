@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 test('checkout processes cart and returns result array', function (): void {
     $clientApi = apiEndpoint(new Box\Mod\Cart\Api\Client());

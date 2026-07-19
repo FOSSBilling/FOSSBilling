@@ -728,6 +728,101 @@ function accessPrivate(object $instance, string $property, mixed $value = null):
 }
 
 /**
+ * Create a Doctrine entity proxy that supports both snake_case and camelCase property access.
+ *
+ * The proxy extends the real entity class and adds __set/__get magic methods
+ * that map snake_case property names (e.g. "promo_id") to the entity's
+ * camelCase setters/getters (e.g. setPromoId / getPromoId).
+ *
+ * @template T of object
+ *
+ * @param class-string<T> $class   The FQCN of the Doctrine entity to instantiate
+ * @param array<string, mixed> $properties  Initial properties (snake_case or camelCase keys)
+ *
+ * @return T
+ */
+function createEntity(string $class, array $properties = []): object
+{
+    static $proxied = [];
+
+    $md5 = md5($class);
+
+    if (!isset($proxied[$md5])) {
+        $ns = 'Tests\Helpers';
+        $short = 'EntityProxy_' . $md5;
+        $fqcn = $ns . '\\' . $short;
+
+        $code = sprintf(
+            <<<'PHP'
+namespace %s;
+
+/** @property array<string,mixed> $_extra */
+class %s extends \%s
+{
+    private array $_extra = [];
+
+    public function __construct(array $properties = [])
+    {
+        foreach ($properties as $key => $value) {
+            $this->$key = $value;
+        }
+    }
+
+    public function __set(string $name, mixed $value): void
+    {
+        $setter = self::_toSetter($name);
+        if ($setter !== null && method_exists($this, $setter)) {
+            $this->$setter($value);
+            return;
+        }
+        $this->_extra[$name] = $value;
+    }
+
+    public function __get(string $name): mixed
+    {
+        $getter = self::_toGetter($name);
+        if ($getter !== null && method_exists($this, $getter)) {
+            return $this->$getter();
+        }
+        return $this->_extra[$name] ?? null;
+    }
+
+    public function __isset(string $name): bool
+    {
+        $getter = self::_toGetter($name);
+        if ($getter !== null && method_exists($this, $getter)) {
+            return $this->$getter() !== null;
+        }
+        return array_key_exists($name, $this->_extra);
+    }
+
+    private static function _toSetter(string $snake): ?string
+    {
+        return 'set' . str_replace('_', '', ucwords($snake, '_'));
+    }
+
+    private static function _toGetter(string $snake): ?string
+    {
+        return 'get' . str_replace('_', '', ucwords($snake, '_'));
+    }
+}
+PHP
+            ,
+            $ns,
+            $short,
+            $class
+        );
+
+        eval($code);
+        $proxied[$md5] = $fqcn;
+    }
+
+    $fqcn = $proxied[$md5];
+
+    return new $fqcn($properties);
+}
+
+/**
  * Inject a mock filesystem into a service that has a private filesystem property.
  */
 function injectMockFilesystem(object $service, \Mockery\MockInterface $filesystemMock): void

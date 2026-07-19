@@ -14,6 +14,7 @@ use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Email\Entity\EmailTemplate;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 use function Tests\Helpers\moduleService;
 
 function emailTemplate(string $actionCode = '', ?int $id = null, array $data = []): EmailTemplate
@@ -121,9 +122,7 @@ test('rmByClient removes emails for client', function (): void {
     $di['em'] = emailBuildEm($repo);
     $service->setDi($di);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->id = 1;
+    $client = createEntity(\Box\Mod\Client\Entity\Client::class, ['id' => 1]);
 
     $result = $service->rmByClient($client);
     expect($result)->toBeTrue();
@@ -526,8 +525,7 @@ test('sendTemplate handles to_staff and to_client options', function (array $dat
 
     $clientServiceMock = Mockery::mock(Box\Mod\Client\Service::class);
 
-    $clientModel = new Model_Client();
-    $clientModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientModel = createEntity(\Box\Mod\Client\Entity\Client::class, ['id' => 1]);
     if ($clientGetExpects === 'atLeastOnce') {
         $clientServiceMock->shouldReceive('get')
             ->atLeast()->once()

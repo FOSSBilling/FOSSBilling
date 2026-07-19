@@ -20,6 +20,7 @@ use Box\Mod\Product\Entity\Promo;
 use Box\Mod\Product\Service as ProductService;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 function getAllowedRateLimiter(): object
 {

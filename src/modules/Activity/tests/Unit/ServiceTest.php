@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 dataset('searchFilters', fn (): array => [
     [[], 'FROM activity_system ', true],
@@ -115,9 +116,7 @@ test('log email stores the given attachment', function (): void {
 
 test('to api array', function (): void {
     $service = new Box\Mod\Activity\Service();
-    $clientHistoryModel = new Model_ActivityClientHistory();
-    $clientHistoryModel->loadBean(new Tests\Helpers\DummyBean());
-    $clientHistoryModel->client_id = 1;
+    $clientHistoryModel = createEntity(\Box\Mod\Activity\Entity\ActivityClientHistory::class, ['client_id' => 1]);
 
     $resultMock = Mockery::mock(Doctrine\DBAL\Result::class);
     $resultMock->shouldReceive('fetchAssociative')
@@ -155,9 +154,7 @@ test('to api array', function (): void {
 
 test('remove by client', function (): void {
     $service = new Box\Mod\Activity\Service();
-    $clientModel = new Model_Client();
-    $clientModel->loadBean(new Tests\Helpers\DummyBean());
-    $clientModel->id = 1;
+    $clientModel = createEntity(\Box\Mod\Client\Entity\Client::class, ['id' => 1]);
 
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
     $dbalMock->shouldReceive('executeStatement')
