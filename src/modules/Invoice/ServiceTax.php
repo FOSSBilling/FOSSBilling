@@ -141,7 +141,7 @@ class ServiceTax implements InjectionAwareInterface
         return [$sql, []];
     }
 
-    public function toApiArray(Tax|Tax $model, $deep = false, $identity = null)
+    public function toApiArray(Tax $model, $deep = false, $identity = null)
     {
         if ($model instanceof Tax) {
             return [

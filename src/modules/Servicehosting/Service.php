@@ -162,7 +162,7 @@ class Service implements InjectionAwareInterface
     /**
      * @throws InformationException
      */
-    public function action_create(Order $order): ServiceHosting|ServiceHosting
+    public function action_create(Order $order): ServiceHosting
     {
         $orderService = $this->di['mod_service']('order');
         $c = $orderService->getConfig($order);
@@ -350,7 +350,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function changeAccountPlan(Order $order, ServiceHosting|ServiceHosting $model, ServiceHostingHp|ServiceHostingHp $hp): bool
+    public function changeAccountPlan(Order $order, ServiceHosting $model, ServiceHostingHp $hp): bool
     {
         $this->_setModelProperty($model, 'service_hosting_hp_id', $hp instanceof ServiceHostingHp ? $hp->getId() : $hp->id);
         if ($this->_performOnService($order)) {
@@ -367,7 +367,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function changeAccountUsername(Order $order, ServiceHosting|ServiceHosting $model, $data): bool
+    public function changeAccountUsername(Order $order, ServiceHosting $model, $data): bool
     {
         if (!isset($data['username']) || empty($data['username'])) {
             throw new InformationException('Account username is missing or is invalid');
@@ -390,7 +390,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function changeAccountIp(Order $order, ServiceHosting|ServiceHosting $model, $data): bool
+    public function changeAccountIp(Order $order, ServiceHosting $model, $data): bool
     {
         if (!isset($data['ip']) || empty($data['ip'])) {
             throw new InformationException('Account IP address is missing or is invalid');
@@ -412,7 +412,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function changeAccountDomain(Order $order, ServiceHosting|ServiceHosting $model, $data): bool
+    public function changeAccountDomain(Order $order, ServiceHosting $model, $data): bool
     {
         if (
             !isset($data['tld']) || empty($data['tld'])
@@ -439,7 +439,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function changeAccountPassword(Order $order, ServiceHosting|ServiceHosting $model, $data): bool
+    public function changeAccountPassword(Order $order, ServiceHosting $model, $data): bool
     {
         if (
             !isset($data['password']) || !isset($data['password_confirm'])
@@ -464,7 +464,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function sync(Order $order, ServiceHosting|ServiceHosting $model): bool
+    public function sync(Order $order, ServiceHosting $model): bool
     {
         [$adapter, $account] = $this->_getAM($model);
         $updated = $adapter->synchronizeAccount($account);
@@ -485,7 +485,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    private function _getDomainOrderId(ServiceHosting|ServiceHosting $model)
+    private function _getDomainOrderId(ServiceHosting $model)
     {
         $orderService = $this->di['mod_service']('order');
         $o = $orderService->getServiceOrder($model);
@@ -587,7 +587,7 @@ class Service implements InjectionAwareInterface
         return [$adapter, $server_account];
     }
 
-    public function toApiArray(ServiceHosting|ServiceHosting $model, $deep = false, $identity = null): array
+    public function toApiArray(ServiceHosting $model, $deep = false, $identity = null): array
     {
         $serverId = $this->_getModelProperty($model, $model instanceof ServiceHosting ? 'serviceHostingServerId' : 'service_hosting_server_id');
         $hpId = $this->_getModelProperty($model, $model instanceof ServiceHosting ? 'serviceHostingHpId' : 'service_hosting_hp_id');
@@ -610,7 +610,7 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public function toHostingServerApiArray(ServiceHostingServer|ServiceHostingServer $model, $deep = false, $identity = null): array
+    public function toHostingServerApiArray(ServiceHostingServer $model, $deep = false, $identity = null): array
     {
         [$cpanel_url, $whm_url] = $this->getManagerUrls($model);
         $result = [
@@ -651,7 +651,7 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    public function toHostingAccountApiArray(ServiceHosting|ServiceHosting $model, $deep = false, $identity = null): array
+    public function toHostingAccountApiArray(ServiceHosting $model, $deep = false, $identity = null): array
     {
         $result = [
             'id' => $this->_getModelProperty($model, 'id'),
@@ -739,7 +739,7 @@ class Service implements InjectionAwareInterface
         return [$sld, $tld];
     }
 
-    public function update(ServiceHosting|ServiceHosting $model, array $data): bool
+    public function update(ServiceHosting $model, array $data): bool
     {
         if (isset($data['username']) && !empty($data['username'])) {
             $this->_setModelProperty($model, 'username', $data['username']);
@@ -948,7 +948,7 @@ class Service implements InjectionAwareInterface
         return $model->getId();
     }
 
-    public function deleteServer(ServiceHostingServer|ServiceHostingServer $model): bool
+    public function deleteServer(ServiceHostingServer $model): bool
     {
         $id = $model instanceof ServiceHostingServer ? $model->getId() : $model->id;
         $this->di['em']->remove($model);
@@ -958,7 +958,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function updateServer(ServiceHostingServer|ServiceHostingServer $model, array $data): bool
+    public function updateServer(ServiceHostingServer $model, array $data): bool
     {
         $isEntity = $model instanceof ServiceHostingServer;
 
@@ -1067,7 +1067,7 @@ class Service implements InjectionAwareInterface
     /**
      * @throws Exception
      */
-    public function getServerManager(ServiceHostingServer|ServiceHostingServer $model)
+    public function getServerManager(ServiceHostingServer $model)
     {
         $manager = $this->_getModelProperty($model, 'manager');
         if (empty($manager)) {
@@ -1099,7 +1099,7 @@ class Service implements InjectionAwareInterface
      * @throws \Server_Exception
      * @throws Exception
      */
-    public function testConnection(ServiceHostingServer|ServiceHostingServer $model)
+    public function testConnection(ServiceHostingServer $model)
     {
         $manager = $this->getServerManager($model);
 
@@ -1131,7 +1131,7 @@ class Service implements InjectionAwareInterface
     /**
      * @throws InformationException
      */
-    public function deleteHp(ServiceHostingHp|ServiceHostingHp $model): bool
+    public function deleteHp(ServiceHostingHp $model): bool
     {
         $id = $model instanceof ServiceHostingHp ? $model->getId() : $model->id;
         $serviceHosting = $this->getServiceHostingRepository()->findOneByHpId($id);
@@ -1145,7 +1145,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function toHostingHpApiArray(ServiceHostingHp|ServiceHostingHp $model, $deep = false, $identity = null): array
+    public function toHostingHpApiArray(ServiceHostingHp $model, $deep = false, $identity = null): array
     {
         $config = $this->_getModelProperty($model, 'config');
         if (is_null($config)) {
@@ -1173,7 +1173,7 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public function updateHp(ServiceHostingHp|ServiceHostingHp $model, array $data): bool
+    public function updateHp(ServiceHostingHp $model, array $data): bool
     {
         $isEntity = $model instanceof ServiceHostingHp;
 
@@ -1264,7 +1264,7 @@ class Service implements InjectionAwareInterface
         return $model->getId();
     }
 
-    public function getServerPackage(ServiceHostingHp|ServiceHostingHp $model): \Server_Package
+    public function getServerPackage(ServiceHostingHp $model): \Server_Package
     {
         $config = json_decode($this->_getModelProperty($model, 'config') ?? '', true);
         if (!is_array($config)) {
@@ -1289,7 +1289,7 @@ class Service implements InjectionAwareInterface
     /**
      * @throws Exception
      */
-    public function getServerManagerWithLog(ServiceHostingServer|ServiceHostingServer $model, Order $order)
+    public function getServerManagerWithLog(ServiceHostingServer $model, Order $order)
     {
         $manager = $this->getServerManager($model);
 
@@ -1306,7 +1306,7 @@ class Service implements InjectionAwareInterface
      *
      * @return string[]|false[]
      */
-    public function getManagerUrls(ServiceHostingServer|ServiceHostingServer $model): array
+    public function getManagerUrls(ServiceHostingServer $model): array
     {
         try {
             $m = $this->getServerManager($model);
@@ -1323,7 +1323,7 @@ class Service implements InjectionAwareInterface
      * Generates either a reseller or standard login link for a given order.
      * If the server manager supports SSO, an SSO link will be returned.
      */
-    public function generateLoginUrl(ServiceHosting|ServiceHosting $model): string
+    public function generateLoginUrl(ServiceHosting $model): string
     {
         [$adapter, $account] = $this->_getAM($model);
         if ($this->_getModelProperty($model, 'reseller')) {

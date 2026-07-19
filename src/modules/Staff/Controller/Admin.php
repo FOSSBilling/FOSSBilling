@@ -11,7 +11,6 @@ declare(strict_types=1);
 
 namespace Box\Mod\Staff\Controller;
 
-use Box\Mod\Staff\Entity\Admin;
 use Box\Mod\Staff\Entity\AdminPasswordReset;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Security\RandomizedTimeFloor;
@@ -138,7 +137,7 @@ class Admin implements InjectionAwareInterface
                 $expiresAt = strtotime((string) $reset->getCreatedAt()?->format('Y-m-d H:i:s')) + 900;
 
                 if ($expiresAt >= time()) {
-                    $admin = $reset->getAdminId() !== null ? $em->getRepository(Admin::class)->find($reset->getAdminId()) : null;
+                    $admin = $reset->getAdminId() !== null ? $em->getRepository(\Box\Mod\Staff\Entity\Admin::class)->find($reset->getAdminId()) : null;
                     if ($admin instanceof Admin) {
                         $data['hash'] = $reset->getHash();
                         $data['email'] = $admin->getEmail();
