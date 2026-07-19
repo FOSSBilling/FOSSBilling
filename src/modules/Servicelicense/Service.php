@@ -222,12 +222,20 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function isLicenseActive(\Model_ServiceLicense $model)
+    public function isLicenseActive(\Model_ServiceLicense $model): bool
     {
         $orderService = $this->di['mod_service']('order');
         $o = $orderService->getServiceOrder($model);
         if ($o instanceof \Model_ClientOrder) {
-            return $o->status == \Model_ClientOrder::STATUS_ACTIVE;
+            if ($o->status != \Model_ClientOrder::STATUS_ACTIVE) {
+                return false;
+            }
+
+            if ($o->expires_at !== null && strtotime((string) $o->expires_at) <= time()) {
+                return false;
+            }
+
+            return true;
         }
 
         return false;

@@ -1436,7 +1436,7 @@ class Service implements InjectionAwareInterface
             ':status' => \Model_ClientOrder::STATUS_ACTIVE,
         ];
 
-        return $this->di['db']->find('ClientOrder', 'status = :status AND expires_at IS NOT NULL AND DATEDIFF(NOW(), expires_at) >= 1 ORDER BY id', $bindings);
+        return $this->di['db']->find('ClientOrder', 'status = :status AND expires_at IS NOT NULL AND expires_at <= NOW() ORDER BY id', $bindings);
     }
 
     public function batchSuspendExpired(): bool
@@ -1626,6 +1626,17 @@ class Service implements InjectionAwareInterface
         ];
 
         return $this->di['db']->findOne('ClientOrder', 'id = :id AND client_id = :client_id', $bindings);
+    }
+
+    public function assertOrderUsable(\Model_ClientOrder $order): void
+    {
+        if ($order->expires_at === null) {
+            return;
+        }
+
+        if (strtotime((string) $order->expires_at) <= time()) {
+            throw new InformationException('Subscription expired');
+        }
     }
 
     public function findByClientIdAndOrderId(int $clientId, int $orderId): ?\Model_ClientOrder

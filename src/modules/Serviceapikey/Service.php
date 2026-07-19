@@ -322,6 +322,14 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('API key does not exist');
         }
 
-        return $order->status === 'active';
+        if ($order->status !== 'active') {
+            return false;
+        }
+
+        if ($order->expires_at !== null && strtotime((string) $order->expires_at) <= time()) {
+            return false;
+        }
+
+        return true;
     }
 }

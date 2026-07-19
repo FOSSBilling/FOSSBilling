@@ -499,7 +499,15 @@ class Service implements InjectionAwareInterface
             \Model_ClientOrder::STATUS_CANCELED,
         ];
 
-        return !in_array($order->status, $badStatus);
+        if (in_array($order->status, $badStatus)) {
+            return false;
+        }
+
+        if ($order->expires_at !== null && strtotime((string) $order->expires_at) <= time()) {
+            return false;
+        }
+
+        return true;
     }
 
     /**

@@ -121,6 +121,8 @@ class Client extends \FOSSBilling\Api\AbstractApi
             throw new \FOSSBilling\InformationException('Order not found');
         }
 
+        $orderService->assertOrderUsable($order);
+
         $s = $orderService->getOrderService($order);
         if (!$s instanceof \Model_ServiceDomain || $order->status !== \Model_ClientOrder::STATUS_ACTIVE) {
             throw new \FOSSBilling\Exception('Order is not activated');

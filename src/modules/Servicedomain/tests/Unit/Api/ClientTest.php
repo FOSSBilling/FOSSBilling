@@ -209,6 +209,8 @@ test('gets service', function (): void {
     $orderServiceMock->shouldReceive('findForClientById')
         ->atLeast()->once()
         ->andReturn($order);
+    $orderServiceMock->shouldReceive('assertOrderUsable')
+        ->atLeast()->once();
     $orderServiceMock->shouldReceive('getOrderService')
         ->atLeast()->once()
         ->andReturn(new Model_ServiceDomain());
@@ -297,6 +299,8 @@ test('throws exception when getting service order not activated', function (): v
     $orderServiceMock->shouldReceive('findForClientById')
         ->atLeast()->once()
         ->andReturn(new Model_ClientOrder());
+    $orderServiceMock->shouldReceive('assertOrderUsable')
+        ->atLeast()->once();
     $orderServiceMock->shouldReceive('getOrderService')
         ->atLeast()->once()
         ->andReturn(null);
@@ -313,4 +317,39 @@ test('throws exception when getting service order not activated', function (): v
 
     expect(fn () => $clientApi->lock($data))
         ->toThrow(FOSSBilling\Exception::class);
+});
+
+test('throws exception when getting service for expired order', function (): void {
+    $clientApi = apiEndpoint(new Client());
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('lock')->never();
+    $clientApi->setService($serviceMock);
+
+    $expiredOrder = new Model_ClientOrder();
+    $expiredOrder->loadBean(new Tests\Helpers\DummyBean());
+    $expiredOrder->status = Model_ClientOrder::STATUS_ACTIVE;
+    $expiredOrder->expires_at = date('Y-m-d H:i:s', time() - 3600);
+
+    $orderServiceMock = Mockery::mock(OrderService::class);
+    $orderServiceMock->shouldReceive('findForClientById')
+        ->atLeast()->once()
+        ->andReturn($expiredOrder);
+    $orderServiceMock->shouldReceive('assertOrderUsable')
+        ->once()
+        ->with($expiredOrder)
+        ->andThrow(new FOSSBilling\InformationException('Subscription expired'));
+    $orderServiceMock->shouldReceive('getOrderService')->never();
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
+    $clientApi->setDi($di);
+
+    $clientApi->setIdentity(new Model_Client());
+
+    $data = [
+        'order_id' => 1,
+    ];
+
+    expect(fn () => $clientApi->lock($data))
+        ->toThrow(FOSSBilling\InformationException::class, 'Subscription expired');
 });

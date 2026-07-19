@@ -552,8 +552,12 @@ test('get service custom by order id rejects order owned by another client', fun
     $dbMock->shouldReceive('findOne')->once()->with('ClientOrder', 'id = ? AND client_id = ?', [1, 42])->andReturn(null);
     $dbMock->shouldNotReceive('getExistingModelById');
 
+    $orderService = Mockery::mock(OrderService::class);
+    $orderService->shouldNotReceive('assertOrderUsable');
+
     $di = container();
     $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderService);
     $service->setDi($di);
 
     expect(fn () => $service->getServiceCustomByOrderId(1, 42))
@@ -575,6 +579,37 @@ test('get service custom by order id order service not found exception', functio
 
     expect(fn () => $service->getServiceCustomByOrderId(1))
         ->toThrow(Exception::class);
+});
+
+test('get service custom by order id rejects expired order for client context', function (): void {
+    $service = new Service();
+
+    $expiredOrder = new Model_ClientOrder();
+    $expiredOrder->loadBean(new Tests\Helpers\DummyBean());
+    $expiredOrder->status = Model_ClientOrder::STATUS_ACTIVE;
+    $expiredOrder->expires_at = date('Y-m-d H:i:s', time() - 3600);
+
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('findOne')
+        ->once()
+        ->with('ClientOrder', 'id = ? AND client_id = ?', [1, 42])
+        ->andReturn($expiredOrder);
+    $dbMock->shouldNotReceive('getExistingModelById');
+
+    $orderService = Mockery::mock(OrderService::class);
+    $orderService->shouldReceive('assertOrderUsable')
+        ->once()
+        ->with($expiredOrder)
+        ->andThrow(new FOSSBilling\InformationException('Subscription expired'));
+    $orderService->shouldNotReceive('getOrderService');
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderService);
+    $service->setDi($di);
+
+    expect(fn () => $service->getServiceCustomByOrderId(1, 42))
+        ->toThrow(FOSSBilling\InformationException::class, 'Subscription expired');
 });
 
 test('update config', function (): void {

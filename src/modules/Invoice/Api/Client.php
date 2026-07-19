@@ -137,6 +137,6 @@ class Client extends \FOSSBilling\Api\AbstractApi
     {
         $service = $this->getDi()['mod_service']('Invoice', 'Tax');
 
-        return $service->getTaxRateForClient($this->identity);
+        return $service->getTaxRateForClient($this->getIdentity());
     }
 }

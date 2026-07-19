@@ -610,7 +610,7 @@
                                 {% for i, sh in statuses.list %}
                                 <tr>
                                     <td class="d-none d-lg-table-cell">{{ sh.created_at|format_datetime }}</td>
-                                    <td class="d-lg-none">{{ sh.created_at|format_datetime(pattern="MM/DD/YY MM:HH") }}</td>
+                                    <td class="d-lg-none">{{ sh.created_at|format_datetime(pattern="MM/dd/yy HH:mm") }}</td>
                                     <td>{{ mf.status_badge(sh.status, 'order') }}</td>
                                     <td class="text-wrap">{{ sh.notes }}</td>
                                     <td>
