@@ -278,6 +278,30 @@ test('is license not active', function (): void {
     expect($result)->toBeFalse();
 });
 
+test('is license inactive when order has expired', function (): void {
+    $service = new Service();
+
+    $expiredOrder = new Model_ClientOrder();
+    $expiredOrder->loadBean(new Tests\Helpers\DummyBean());
+    $expiredOrder->status = Model_ClientOrder::STATUS_ACTIVE;
+    $expiredOrder->expires_at = date('Y-m-d H:i:s', time() - 3600);
+
+    $serviceLicenseModel = new Model_ServiceLicense();
+    $serviceLicenseModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $orderServiceMock = Mockery::mock(OrderService::class);
+    $orderServiceMock->shouldReceive('getServiceOrder')
+        ->atLeast()->once()
+        ->andReturn($expiredOrder);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
+
+    $service->setDi($di);
+    $result = $service->isLicenseActive($serviceLicenseModel);
+    expect($result)->toBeFalse();
+});
+
 test('is valid ip', function (): void {
     $service = new Service();
     $serviceLicenseModel = new Model_ServiceLicense();
@@ -653,4 +677,43 @@ test('check license details', function (): void {
 
     expect($result)->toBeArray();
     expect($setChannelCalled)->toBeGreaterThanOrEqual(1);
+});
+
+test('server process rejects expired license', function (): void {
+    $server = new Server();
+
+    $serviceLicense = new Model_ServiceLicense();
+    $serviceLicense->loadBean(new Tests\Helpers\DummyBean());
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('isLicenseActive')
+        ->once()
+        ->with($serviceLicense)
+        ->andReturn(false);
+
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('findOne')
+        ->once()
+        ->with('ServiceLicense', 'license_key = :license_key', [':license_key' => 'KEY'])
+        ->andReturn($serviceLicense);
+    $dbMock->shouldReceive('store')->once()->with($serviceLicense);
+
+    $requestMock = Mockery::mock(FOSSBilling\Request::class);
+    $requestMock->shouldReceive('getClientIp')->once()->andReturn('127.0.0.1');
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['request'] = $requestMock;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $serviceMock);
+    $server->setDi($di);
+
+    $data = [
+        'license' => 'KEY',
+        'host' => 'example.com',
+        'version' => '1.0',
+        'path' => '/var/www',
+    ];
+
+    expect(fn (): array => $server->process($data))
+        ->toThrow(LogicException::class, 'License is not active');
 });

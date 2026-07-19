@@ -1227,3 +1227,54 @@ test('updateServer replaces the stored secret when a new value is submitted', fu
     expect($hostingServerModel->username)->toBe('new-admin');
     expect($hostingServerModel->accesshash)->toBe('new-hash');
 });
+
+test('_performOnService rejects expired active order', function (): void {
+    $service = new Service();
+
+    $reflection = new ReflectionMethod($service, '_performOnService');
+
+    $expiredOrder = new Model_ClientOrder();
+    $expiredOrder->loadBean(new Tests\Helpers\DummyBean());
+    $expiredOrder->status = Model_ClientOrder::STATUS_ACTIVE;
+    $expiredOrder->expires_at = date('Y-m-d H:i:s', time() - 3600);
+
+    expect($reflection->invoke($service, $expiredOrder))->toBeFalse();
+});
+
+test('_performOnService rejects suspended order', function (): void {
+    $service = new Service();
+
+    $reflection = new ReflectionMethod($service, '_performOnService');
+
+    $suspendedOrder = new Model_ClientOrder();
+    $suspendedOrder->loadBean(new Tests\Helpers\DummyBean());
+    $suspendedOrder->status = Model_ClientOrder::STATUS_SUSPENDED;
+
+    expect($reflection->invoke($service, $suspendedOrder))->toBeFalse();
+});
+
+test('_performOnService accepts active order with future expires_at', function (): void {
+    $service = new Service();
+
+    $reflection = new ReflectionMethod($service, '_performOnService');
+
+    $activeOrder = new Model_ClientOrder();
+    $activeOrder->loadBean(new Tests\Helpers\DummyBean());
+    $activeOrder->status = Model_ClientOrder::STATUS_ACTIVE;
+    $activeOrder->expires_at = date('Y-m-d H:i:s', time() + 86400);
+
+    expect($reflection->invoke($service, $activeOrder))->toBeTrue();
+});
+
+test('_performOnService accepts one-time active order with null expires_at', function (): void {
+    $service = new Service();
+
+    $reflection = new ReflectionMethod($service, '_performOnService');
+
+    $oneTimeOrder = new Model_ClientOrder();
+    $oneTimeOrder->loadBean(new Tests\Helpers\DummyBean());
+    $oneTimeOrder->status = Model_ClientOrder::STATUS_ACTIVE;
+    $oneTimeOrder->expires_at = null;
+
+    expect($reflection->invoke($service, $oneTimeOrder))->toBeTrue();
+});

@@ -260,11 +260,15 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function getServiceCustomByOrderId($orderId, $clientId = null)
     {
+        $orderService = $this->di['mod_service']('order');
+
         if ($clientId !== null) {
             $order = $this->di['db']->findOne('ClientOrder', 'id = ? AND client_id = ?', [$orderId, $clientId]);
             if (!$order instanceof \Model_ClientOrder) {
                 throw new \FOSSBilling\InformationException('Order not found');
             }
+
+            $orderService->assertOrderUsable($order);
 
             if ($order->status !== \Model_ClientOrder::STATUS_ACTIVE) {
                 throw new \FOSSBilling\InformationException('Order is not activated');
@@ -273,7 +277,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $order = $this->di['db']->getExistingModelById('ClientOrder', $orderId, 'Order not found');
         }
 
-        $orderService = $this->di['mod_service']('order');
         $s = $orderService->getOrderService($order);
 
         if (!$s instanceof \Model_ServiceCustom) {

@@ -2865,3 +2865,67 @@ test('createOrder does not roll back when invoice generation fails for a negativ
 
     expect($result)->toBe($newId);
 });
+
+test('assertOrderUsable passes for one-time order with null expires_at', function (): void {
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order->expires_at = null;
+
+    $service = new Service();
+    $service->setDi(container());
+
+    $service->assertOrderUsable($order);
+    expect(true)->toBeTrue();
+});
+
+test('assertOrderUsable passes for order with future expires_at', function (): void {
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order->expires_at = date('Y-m-d H:i:s', time() + 86400);
+
+    $service = new Service();
+    $service->setDi(container());
+
+    $service->assertOrderUsable($order);
+    expect(true)->toBeTrue();
+});
+
+test('assertOrderUsable throws for order with past expires_at', function (): void {
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order->expires_at = date('Y-m-d H:i:s', time() - 86400);
+
+    $service = new Service();
+    $service->setDi(container());
+
+    expect(fn () => $service->assertOrderUsable($order))
+        ->toThrow(FOSSBilling\InformationException::class, 'Subscription expired');
+});
+
+test('assertOrderUsable throws when expires_at equals now', function (): void {
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order->expires_at = date('Y-m-d H:i:s', time());
+
+    $service = new Service();
+    $service->setDi(container());
+
+    expect(fn () => $service->assertOrderUsable($order))
+        ->toThrow(FOSSBilling\InformationException::class, 'Subscription expired');
+});
+
+test('getExpiredOrders uses strict expires_at <= NOW() filter', function (): void {
+    $service = new Service();
+
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('find')
+        ->once()
+        ->with('ClientOrder', 'status = :status AND expires_at IS NOT NULL AND expires_at <= NOW() ORDER BY id', [':status' => Model_ClientOrder::STATUS_ACTIVE])
+        ->andReturn([]);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $service->setDi($di);
+
+    expect($service->getExpiredOrders())->toBe([]);
+});
