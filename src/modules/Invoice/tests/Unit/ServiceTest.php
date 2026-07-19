@@ -657,6 +657,58 @@ test('handles event after invoice is due', function (): void {
     $serviceMock->onEventAfterInvoiceIsDue($eventMock);
 });
 
+test('skips overdue invoice reminder when the invoice was already claimed', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('toApiArray')
+        ->never();
+    $serviceMock->shouldReceive('getInvoicePdfAttachment')
+        ->never();
+
+    $eventMock = Mockery::mock('\\Box_Event');
+    $eventMock->shouldReceive('getParameters')
+        ->atLeast()->once()
+        ->andReturn(['days_passed' => 5, 'id' => 1]);
+
+    $emailService = Mockery::mock(EmailService::class);
+    $emailService->shouldReceive('sendTemplate')
+        ->never();
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_reminder_after_due_days', '5')
+        ->andReturn('1, 5, 7');
+
+    $dbMock = Mockery::mock('\\Box_Database');
+    $dbMock->shouldReceive('exec')
+        ->once()
+        ->with(Mockery::type('string'), [':id' => 1])
+        ->andReturn(0);
+    $dbMock->shouldReceive('load')
+        ->never();
+
+    $di = container();
+    $di['mod_service'] = $di->protect(function ($serviceName) use ($emailService, $serviceMock, $systemService) {
+        if ($serviceName == 'invoice') {
+            return $serviceMock;
+        }
+        if ($serviceName == 'email') {
+            return $emailService;
+        }
+        if ($serviceName == 'system') {
+            return $systemService;
+        }
+    });
+    $di['db'] = $dbMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $serviceMock->setDi($di);
+    $eventMock->shouldReceive('getDi')
+        ->atLeast()->once()
+        ->andReturn($di);
+
+    $serviceMock->onEventAfterInvoiceIsDue($eventMock);
+});
+
 test('releases the claim when sending the overdue invoice email fails', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $arr = [
