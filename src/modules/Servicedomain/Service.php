@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Servicedomain;
 
 use Box\Mod\Client\Entity\Client;
+use Box\Mod\Order\Entity\Order;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Servicedomain\Entity\ServiceDomain;
 use Box\Mod\Servicedomain\Entity\Tld;
@@ -19,6 +20,7 @@ use Box\Mod\Servicedomain\Entity\TldRegistrar;
 use Box\Mod\Servicedomain\Repository\DomainRepository;
 use Box\Mod\Servicedomain\Repository\TldRegistrarRepository;
 use Box\Mod\Servicedomain\Repository\TldRepository as TldRepo;
+use Box\Mod\Staff\Entity\Admin;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
@@ -187,7 +189,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         };
     }
 
-    public function action_create(\Model_ClientOrder $order): ServiceDomain
+    public function action_create(Order $order): ServiceDomain
     {
         $orderService = $this->di['mod_service']('order');
         $c = $orderService->getConfig($order);
@@ -241,13 +243,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * @return ServiceDomain|\Model_ServiceDomain
+     * @return ServiceDomain|ServiceDomain
      */
-    public function action_activate(\Model_ClientOrder $order)
+    public function action_activate(Order $order)
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
-        if (!$model instanceof ServiceDomain && !$model instanceof \Model_ServiceDomain) {
+        if (!$model instanceof ServiceDomain && !$model instanceof ServiceDomain) {
             throw new \FOSSBilling\Exception('Could not activate order. Service was not created');
         }
 
@@ -273,11 +275,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $model;
     }
 
-    public function action_renew(\Model_ClientOrder $order): bool
+    public function action_renew(Order $order): bool
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
-        if (!$model instanceof ServiceDomain && !$model instanceof \Model_ServiceDomain) {
+        if (!$model instanceof ServiceDomain && !$model instanceof ServiceDomain) {
             throw new \FOSSBilling\Exception('Order :id has no active service', [':id' => $order->id]);
         }
 
@@ -289,21 +291,21 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function action_suspend(\Model_ClientOrder $order): bool
+    public function action_suspend(Order $order): bool
     {
         return true;
     }
 
-    public function action_unsuspend(\Model_ClientOrder $order): bool
+    public function action_unsuspend(Order $order): bool
     {
         return true;
     }
 
-    public function action_cancel(\Model_ClientOrder $order): bool
+    public function action_cancel(Order $order): bool
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
-        if (!$model instanceof ServiceDomain && !$model instanceof \Model_ServiceDomain) {
+        if (!$model instanceof ServiceDomain && !$model instanceof ServiceDomain) {
             throw new \FOSSBilling\Exception('Order :id has no active service', [':id' => $order->id]);
         }
 
@@ -313,20 +315,20 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function action_uncancel(\Model_ClientOrder $order): bool
+    public function action_uncancel(Order $order): bool
     {
         $this->action_activate($order);
 
         return true;
     }
 
-    public function action_delete(\Model_ClientOrder $order): void
+    public function action_delete(Order $order): void
     {
         $orderService = $this->di['mod_service']('order');
         $service = $orderService->getOrderService($order);
 
-        if ($service instanceof ServiceDomain || $service instanceof \Model_ServiceDomain) {
-            if ($order->status != \Model_ClientOrder::STATUS_CANCELED) {
+        if ($service instanceof ServiceDomain || $service instanceof ServiceDomain) {
+            if ($order->status != Order::STATUS_CANCELED) {
                 $this->action_cancel($order);
             }
             $this->di['em']->remove($service);
@@ -335,9 +337,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * @param ServiceDomain|\Model_ServiceDomain $model
+     * @param ServiceDomain|ServiceDomain $model
      */
-    protected function syncWhois($model, \Model_ClientOrder $order)
+    protected function syncWhois($model, Order $order)
     {
         [$domain, $adapter] = $this->_getD($model);
 
@@ -378,7 +380,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * @param ServiceDomain|\Model_ServiceDomain $model
+     * @param ServiceDomain|ServiceDomain $model
      */
     public function updateNameservers($model, $data): bool
     {
@@ -417,7 +419,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * @param ServiceDomain|\Model_ServiceDomain $model
+     * @param ServiceDomain|ServiceDomain $model
      */
     public function updateContacts($model, $data): bool
     {
@@ -470,7 +472,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * @param ServiceDomain|\Model_ServiceDomain $model
+     * @param ServiceDomain|ServiceDomain $model
      */
     public function getTransferCode($model)
     {
@@ -480,7 +482,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * @param ServiceDomain|\Model_ServiceDomain $model
+     * @param ServiceDomain|ServiceDomain $model
      */
     public function lock($model): bool
     {
@@ -500,7 +502,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * @param ServiceDomain|\Model_ServiceDomain $model
+     * @param ServiceDomain|ServiceDomain $model
      */
     public function unlock($model): bool
     {
@@ -520,7 +522,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * @param ServiceDomain|\Model_ServiceDomain $model
+     * @param ServiceDomain|ServiceDomain $model
      */
     public function enablePrivacyProtection($model): bool
     {
@@ -540,7 +542,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * @param ServiceDomain|\Model_ServiceDomain $model
+     * @param ServiceDomain|ServiceDomain $model
      */
     public function disablePrivacyProtection($model): bool
     {
@@ -560,7 +562,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * @param Tld|\Model_Tld $model
+     * @param Tld|Tld $model
      */
     public function canBeTransferred($model, $sld)
     {
@@ -585,7 +587,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * @param Tld|\Model_Tld $model
+     * @param Tld|Tld $model
      */
     public function isDomainAvailable($model, $sld)
     {
@@ -621,7 +623,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * @param ServiceDomain|\Model_ServiceDomain $model
+     * @param ServiceDomain|ServiceDomain $model
      */
     public function toApiArray($model, $deep = false, $identity = null): array
     {
@@ -656,7 +658,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             ],
         ];
 
-        if ($identity instanceof \Model_Admin) {
+        if ($identity instanceof Admin) {
             $data['transfer_code'] = $isDomain ? $model->getTransferCode() : $model->transfer_code;
 
             $tldRegistrarId = $isDomain ? $model->getTldRegistrarId() : $model->tld_registrar_id;
@@ -691,7 +693,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * @param ServiceDomain|\Model_ServiceDomain $model
+     * @param ServiceDomain|ServiceDomain $model
      */
     protected function _getD($model): array
     {
@@ -701,7 +703,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $tldRegistrarId = $model instanceof ServiceDomain ? $model->getTldRegistrarId() : $model->tld_registrar_id;
         $tldRegistrar = $this->getTldRegistrarRepository()->find($tldRegistrarId);
 
-        if ($order instanceof \Model_ClientOrder) {
+        if ($order instanceof Order) {
             $adapter = $this->registrarGetRegistrarAdapter($tldRegistrar, $order);
         } else {
             $adapter = $this->registrarGetRegistrarAdapter($tldRegistrar);
@@ -849,7 +851,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * @param Tld|\Model_Tld $model
+     * @param Tld|Tld $model
      */
     public function tldUpdate($model, $data): bool
     {
@@ -945,7 +947,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * @param Tld|\Model_Tld $model
+     * @param Tld|Tld $model
      */
     public function tldRm($model): bool
     {
@@ -963,7 +965,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * @param Tld|\Model_Tld $model
+     * @param Tld|Tld $model
      */
     public function tldToApiArray($model, $identity = null): array
     {
@@ -981,7 +983,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'min_years' => $isTld ? $model->getMinYears() : $model->min_years,
         ];
 
-        if ($identity instanceof \Model_Admin) {
+        if ($identity instanceof Admin) {
             $tldRegistrarId = $isTld ? $model->getTldRegistrarId() : $model->tld_registrar_id;
             $tldRegistrar = $this->getTldRegistrarRepository()->find($tldRegistrarId);
 
@@ -1049,7 +1051,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * @param TldRegistrar|\Model_TldRegistrar $model
+     * @param TldRegistrar|TldRegistrar $model
      */
     public function registrarGetConfiguration($model): array
     {
@@ -1059,7 +1061,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * @param TldRegistrar|\Model_TldRegistrar $model
+     * @param TldRegistrar|TldRegistrar $model
      */
     public function registrarGetRegistrarAdapterConfig($model)
     {
@@ -1069,7 +1071,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * @param TldRegistrar|\Model_TldRegistrar $model
+     * @param TldRegistrar|TldRegistrar $model
      */
     private function registrarGetRegistrarAdapterClassName($model): string
     {
@@ -1092,9 +1094,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * @param TldRegistrar|\Model_TldRegistrar $r
+     * @param TldRegistrar|TldRegistrar $r
      */
-    public function registrarGetRegistrarAdapter($r, ?\Model_ClientOrder $order = null)
+    public function registrarGetRegistrarAdapter($r, ?Order $order = null)
     {
         $config = $this->registrarGetConfiguration($r);
         $class = $this->registrarGetRegistrarAdapterClassName($r);
@@ -1133,7 +1135,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * @param TldRegistrar|\Model_TldRegistrar $model
+     * @param TldRegistrar|TldRegistrar $model
      */
     public function registrarCopy($model): int
     {
@@ -1151,7 +1153,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * @param TldRegistrar|\Model_TldRegistrar $model
+     * @param TldRegistrar|TldRegistrar $model
      */
     public function registrarUpdate($model, $data): bool
     {
@@ -1179,7 +1181,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * @param TldRegistrar|\Model_TldRegistrar $model
+     * @param TldRegistrar|TldRegistrar $model
      */
     public function registrarRm($model): bool
     {
@@ -1209,7 +1211,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * @param TldRegistrar|\Model_TldRegistrar $model
+     * @param TldRegistrar|TldRegistrar $model
      */
     public function registrarToApiArray($model): array
     {
@@ -1226,7 +1228,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * @param ServiceDomain|\Model_ServiceDomain $s
+     * @param ServiceDomain|ServiceDomain $s
      */
     public function updateDomain($s, $data): bool
     {

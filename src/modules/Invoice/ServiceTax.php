@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Invoice;
 
 use Box\Mod\Client\Entity\Client as ClientEntity;
+use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\InvoiceItem;
 use Box\Mod\Invoice\Entity\Tax;
 use Box\Mod\Invoice\Repository\InvoiceItemRepository;
@@ -34,7 +35,7 @@ class ServiceTax implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function getTaxRateForClient(ClientEntity|\Model_Client $model, &$title = null)
+    public function getTaxRateForClient(ClientEntity $model, &$title = null)
     {
         $clientService = $this->di['mod_service']('client');
         if (!$clientService->isClientTaxable($model)) {
@@ -72,7 +73,7 @@ class ServiceTax implements InjectionAwareInterface
         return 0;
     }
 
-    public function getTax(\Model_Invoice|Invoice $invoice)
+    public function getTax(Invoice $invoice)
     {
         $taxrate = $invoice instanceof Entity\Invoice ? $invoice->getTaxrate() : $invoice->taxrate;
         if ($taxrate <= 0) {
@@ -90,7 +91,7 @@ class ServiceTax implements InjectionAwareInterface
         return $tax;
     }
 
-    public function delete(\Model_Tax $model): bool
+    public function delete(Tax $model): bool
     {
         $name = $model->name;
         $this->di['em']->remove($model);
@@ -116,7 +117,7 @@ class ServiceTax implements InjectionAwareInterface
         return $newId;
     }
 
-    public function update(\Model_Tax $model, array $data): bool
+    public function update(Tax $model, array $data): bool
     {
         $model->name = $data['name'];
         $model->country = (!isset($data['country']) || empty($data['country'])) ? null : $data['country'];
@@ -140,7 +141,7 @@ class ServiceTax implements InjectionAwareInterface
         return [$sql, []];
     }
 
-    public function toApiArray(Tax|\Model_Tax $model, $deep = false, $identity = null)
+    public function toApiArray(Tax|Tax $model, $deep = false, $identity = null)
     {
         if ($model instanceof Tax) {
             return [

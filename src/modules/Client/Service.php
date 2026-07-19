@@ -21,6 +21,7 @@ use Box\Mod\Client\Repository\ClientPasswordResetRepository;
 use Box\Mod\Client\Repository\ClientRepository;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Order\Entity\Order as OrderEntity;
+use Box\Mod\Staff\Entity\Admin;
 use FOSSBilling\i18n;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
@@ -285,7 +286,7 @@ class Service implements InjectionAwareInterface
         return $this->clientRepository->getIdNamePairs((int) $limit);
     }
 
-    public function toSessionArray(\Model_Client $model): array
+    public function toSessionArray(Client $model): array
     {
         return [
             'id' => $model->id,
@@ -295,16 +296,16 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public function emailAlreadyRegistered($new_email, ?\Model_Client $model = null)
+    public function emailAlreadyRegistered($new_email, ?Client $model = null)
     {
-        if ($model instanceof \Model_Client && $model->email == $new_email) {
+        if ($model instanceof Client && $model->email == $new_email) {
             return false;
         }
 
         return $this->clientRepository->findOneByEmail($new_email) instanceof Client;
     }
 
-    public function canChangeCurrency(\Model_Client $model, $currency = null): bool
+    public function canChangeCurrency(Client $model, $currency = null): bool
     {
         if (!$model->currency) {
             return true;
@@ -315,19 +316,19 @@ class Service implements InjectionAwareInterface
         }
 
         $invoice = $this->di['em']->getRepository(Invoice::class)->findOneBy(['clientId' => $model->id]);
-        if ($invoice instanceof Invoice || $invoice instanceof \Model_Invoice) {
+        if ($invoice instanceof Invoice || $invoice instanceof Invoice) {
             throw new InformationException('Currency cannot be changed. Client already has invoices issued.');
         }
 
         $order = $this->di['em']->getRepository(OrderEntity::class)->findOneBy(['clientId' => $model->id]);
-        if ($order instanceof OrderEntity || $order instanceof \Model_ClientOrder) {
+        if ($order instanceof OrderEntity) {
             throw new InformationException('Currency cannot be changed. Client already has orders.');
         }
 
         return true;
     }
 
-    public function addFunds(\Model_Client $client, $amount, $description, array $data = []): bool
+    public function addFunds(Client $client, $amount, $description, array $data = []): bool
     {
         if (!$client->currency) {
             throw new InformationException('You must define the client\'s currency before adding funds.');
@@ -451,7 +452,7 @@ class Service implements InjectionAwareInterface
         return $this->di['db']->findOne('Client', 'email = ? and pass = ? and status = ?', [$email, $password, Client::ACTIVE]);
     }
 
-    public function toApiArray(Client|\Model_Client $model, $deep = false, $identity = null, bool $includeSensitive = false): array
+    public function toApiArray(Client $model, $deep = false, $identity = null, bool $includeSensitive = false): array
     {
         $modelId = $model instanceof Client ? $model->getId() : $model->id;
         $client = $model instanceof Client ? $model : $this->clientRepository->find((int) $modelId);
@@ -489,7 +490,7 @@ class Service implements InjectionAwareInterface
                 'timezone' => $model->timezone,
             ];
 
-            if ($identity instanceof \Model_Admin || ($identity instanceof \Model_Client && (int) $identity->id === (int) $model->id)) {
+            if ($identity instanceof Admin || ($identity instanceof Client && (int) $identity->id === (int) $model->id)) {
                 $details['billing_email'] = $model->billing_email;
             }
 
@@ -499,12 +500,12 @@ class Service implements InjectionAwareInterface
         return $this->toClientApiArray($client, $model instanceof Client ? null : $model, $deep, $identity, $includeSensitive);
     }
 
-    public function toClientApiArray(Client $client, ?\Model_Client $model = null, bool $deep = false, $identity = null, bool $includeSensitive = false): array
+    public function toClientApiArray(Client $client, ?Client $model = null, bool $deep = false, $identity = null, bool $includeSensitive = false): array
     {
-        $isAdmin = $identity instanceof \Model_Admin;
+        $isAdmin = $identity instanceof Admin;
         $details = $client->toApiArray();
 
-        if ($isAdmin || ($identity instanceof \Model_Client && (int) $identity->id === (int) $client->getId())) {
+        if ($isAdmin || ($identity instanceof Client && (int) $identity->id === (int) $client->getId())) {
             $details['billing_email'] = $model?->billing_email ?? $client->getBillingEmail();
         }
 
@@ -545,7 +546,7 @@ class Service implements InjectionAwareInterface
         return $details;
     }
 
-    public function getClientBalance(Client|\Model_Client $c): float
+    public function getClientBalance(Client $c): float
     {
         $clientId = $c instanceof Client ? $c->getId() : $c->id;
 
@@ -579,7 +580,7 @@ class Service implements InjectionAwareInterface
         return $client;
     }
 
-    public function isClientTaxable(Client|\Model_Client $model): bool
+    public function isClientTaxable(Client $model): bool
     {
         $systemService = $this->di['mod_service']('system');
 
@@ -608,7 +609,7 @@ class Service implements InjectionAwareInterface
         return (int) $group->getId();
     }
 
-    public function deleteGroup(\Model_ClientGroup $model): bool
+    public function deleteGroup(ClientGroup $model): bool
     {
         $client = $this->clientRepository->findOneBy(['clientGroupId' => $model->id]);
         if ($client) {
@@ -775,10 +776,10 @@ class Service implements InjectionAwareInterface
         return $client;
     }
 
-    public function createPasswordResetRequestForClient(\Model_Client|Client $client): string
+    public function createPasswordResetRequestForClient(Client $client): string
     {
-        $clientId = $client instanceof \Model_Client ? (int) $client->id : (int) $client->getId();
-        $clientIp = $client instanceof \Model_Client ? ($client->ip ?? null) : $client->getIp();
+        $clientId = $client instanceof Client ? (int) $client->id : (int) $client->getId();
+        $clientIp = $client instanceof Client ? ($client->ip ?? null) : $client->getIp();
 
         $existingReset = $this->clientPasswordResetRepository->findOneBy(['clientId' => $clientId]);
         if ($existingReset instanceof ClientPasswordReset) {
@@ -803,9 +804,9 @@ class Service implements InjectionAwareInterface
         return $hash;
     }
 
-    public function sendPasswordResetRequestEmailForClient(\Model_Client|Client $client, string $hash, bool $sendNow = true): void
+    public function sendPasswordResetRequestEmailForClient(Client $client, string $hash, bool $sendNow = true): void
     {
-        $clientId = $client instanceof \Model_Client ? (int) $client->id : (int) $client->getId();
+        $clientId = $client instanceof Client ? (int) $client->id : (int) $client->getId();
 
         $email = [
             'to_client' => $clientId,
@@ -818,10 +819,10 @@ class Service implements InjectionAwareInterface
         $emailService->sendTemplate($email);
     }
 
-    public function sendAdminCreatedWelcomeEmailForClient(\Model_Client|Client $client): void
+    public function sendAdminCreatedWelcomeEmailForClient(Client $client): void
     {
         try {
-            $clientId = $client instanceof \Model_Client ? (int) $client->id : (int) $client->getId();
+            $clientId = $client instanceof Client ? (int) $client->id : (int) $client->getId();
 
             $email = [];
             $email['to_client'] = $clientId;
@@ -843,7 +844,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function remove(\Model_Client $model): void
+    public function remove(Client $model): void
     {
         $service = $this->di['mod_service']('Order');
         $service->rmByClient($model);
@@ -891,9 +892,9 @@ class Service implements InjectionAwareInterface
         return $this->di['auth']->authorizeUser($model, $plainTextPassword);
     }
 
-    public function sendEmailConfirmationForClient(\Model_Client|Client $client): void
+    public function sendEmailConfirmationForClient(Client $client): void
     {
-        $clientId = $client instanceof \Model_Client ? (int) $client->id : (int) $client->getId();
+        $clientId = $client instanceof Client ? (int) $client->id : (int) $client->getId();
 
         try {
             $email = [];
@@ -910,7 +911,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function canChangeEmail(\Model_Client $client, $email): bool
+    public function canChangeEmail(Client $client, $email): bool
     {
         $config = $this->di['mod_config']('client');
 
@@ -955,7 +956,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function resolveDocumentNumber(\Model_Client $client): ?string
+    public function resolveDocumentNumber(Client $client): ?string
     {
         $config = $this->di['mod_config']('client');
         $customFields = $config['custom_fields'] ?? [];

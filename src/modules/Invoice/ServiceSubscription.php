@@ -12,6 +12,8 @@ declare(strict_types=1);
 namespace Box\Mod\Invoice;
 
 use Box\Mod\Client\Entity\Client as ClientEntity;
+use Box\Mod\Invoice\Entity\Invoice;
+use Box\Mod\Invoice\Entity\InvoiceItem;
 use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Repository\PayGatewayRepository;
@@ -38,7 +40,7 @@ class ServiceSubscription implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function create(\Model_Client $client, \Model_PayGateway $pg, array $data)
+    public function create(ClientEntity $client, PayGateway $pg, array $data)
     {
         $model = new Subscription();
         $model->setClientId(isset($data['client_id']) ? (int) $data['client_id'] : null);
@@ -61,7 +63,7 @@ class ServiceSubscription implements InjectionAwareInterface
         return $newId;
     }
 
-    public function update(\Model_Subscription|Subscription $model, array $data): bool
+    public function update(Subscription $model, array $data): bool
     {
         $status = $data['status'] ?? null;
         if ($status === 'canceled') {
@@ -79,7 +81,7 @@ class ServiceSubscription implements InjectionAwareInterface
         return $this->persistUpdate($model, ['status' => $status]);
     }
 
-    private function persistUpdate(\Model_Subscription|Subscription $model, array $data): bool
+    private function persistUpdate(Subscription $model, array $data): bool
     {
         if ($model instanceof Subscription) {
             $model->setStatus($data['status'] ?? $model->getStatus());
@@ -104,7 +106,7 @@ class ServiceSubscription implements InjectionAwareInterface
         return true;
     }
 
-    public function toApiArray(\Model_Subscription|Subscription $model, $deep = false, $identity = null): array
+    public function toApiArray(Subscription $model, $deep = false, $identity = null): array
     {
         $result = [
             'id' => $model instanceof Subscription ? $model->getId() : $model->id,
@@ -118,7 +120,7 @@ class ServiceSubscription implements InjectionAwareInterface
         ];
         $clientId = $model instanceof Subscription ? $model->getClientId() : $model->client_id;
         $client = $this->di['em']->getRepository(ClientEntity::class)->find($clientId);
-        if ($client instanceof \Model_Client || $client instanceof ClientEntity) {
+        if ($client instanceof ClientEntity) {
             $clientService = $this->di['mod_service']('Client');
             $result['client'] = $clientService->toApiArray($client, false, $identity);
         } else {
@@ -137,7 +139,7 @@ class ServiceSubscription implements InjectionAwareInterface
         return $result;
     }
 
-    public function delete(\Model_Subscription $model): bool
+    public function delete(Subscription $model): bool
     {
         $id = $model->id;
         $this->di['em']->remove($model);
@@ -230,12 +232,12 @@ class ServiceSubscription implements InjectionAwareInterface
         return $this->getSubscriptionPeriodByInvoiceId((int) $invoice_id) !== null;
     }
 
-    public function getSubscriptionPeriod(\Model_Invoice $invoice): ?string
+    public function getSubscriptionPeriod(Invoice $invoice): ?string
     {
         return $this->getSubscriptionPeriodByInvoiceId((int) $invoice->id);
     }
 
-    public function unsubscribe(\Model_Subscription|Subscription $model): void
+    public function unsubscribe(Subscription $model): void
     {
         if ($model instanceof Subscription) {
             $model->setStatus('canceled');
@@ -248,13 +250,13 @@ class ServiceSubscription implements InjectionAwareInterface
         $this->di['em']->flush();
     }
 
-    public function cancel(\Model_Subscription|Subscription $model): void
+    public function cancel(Subscription $model): void
     {
         $this->cancelAtGateway($model);
         $this->unsubscribe($model);
     }
 
-    public function scheduleCancellation(\Model_Subscription|Subscription $model): void
+    public function scheduleCancellation(Subscription $model): void
     {
         $subscriptionId = trim((string) ($model instanceof Subscription ? $model->getSid() : $model->sid));
         if ($subscriptionId === '') {
@@ -270,7 +272,7 @@ class ServiceSubscription implements InjectionAwareInterface
         $this->persistUpdate($model, ['status' => self::STATUS_PENDING_CANCELLATION]);
     }
 
-    private function cancelAtGateway(\Model_Subscription|Subscription $model, ?string $subscriptionId = null): void
+    private function cancelAtGateway(Subscription $model, ?string $subscriptionId = null): void
     {
         $subscriptionId = trim($subscriptionId ?? (string) ($model instanceof Subscription ? $model->getSid() : $model->sid));
         if ($subscriptionId === '') {
@@ -284,7 +286,7 @@ class ServiceSubscription implements InjectionAwareInterface
         }
     }
 
-    private function getGatewayAdapter(\Model_Subscription|Subscription $model): object
+    private function getGatewayAdapter(Subscription $model): object
     {
         $payGatewayId = $model instanceof Subscription ? $model->getPayGatewayId() : $model->pay_gateway_id;
         $gateway = $this->getPayGatewayRepository()->find($payGatewayId)
@@ -294,7 +296,7 @@ class ServiceSubscription implements InjectionAwareInterface
         return $payGatewayService->getPaymentAdapter($gateway);
     }
 
-    public function cancelForOrder(\Model_ClientOrder $order): int
+    public function cancelForOrder(OrderEntity $order): int
     {
         $canceledSubscriptions = 0;
         foreach ($this->getSubscriptionsForOrder($order) as $subscription) {
@@ -305,7 +307,7 @@ class ServiceSubscription implements InjectionAwareInterface
         return $canceledSubscriptions;
     }
 
-    public function scheduleCancellationForOrder(\Model_ClientOrder $order): int
+    public function scheduleCancellationForOrder(OrderEntity $order): int
     {
         $scheduledSubscriptions = 0;
         foreach ($this->getSubscriptionsForOrder($order, 'active') as $subscription) {
@@ -332,7 +334,7 @@ class ServiceSubscription implements InjectionAwareInterface
                 ->andWhere('com.name = :meta_name')
                 ->andWhere('com.value = :meta_value')
                 ->setParameter('invoice_id', $subscription->getRelId())
-                ->setParameter('item_type', \Model_InvoiceItem::TYPE_ORDER)
+                ->setParameter('item_type', InvoiceItem::TYPE_ORDER)
                 ->setParameter('meta_name', \Box\Mod\Order\Service::META_CANCEL_AT_PERIOD_END)
                 ->setParameter('meta_value', '1')
                 ->executeQuery()
@@ -341,11 +343,11 @@ class ServiceSubscription implements InjectionAwareInterface
             $orderService = $this->di['mod_service']('Order');
             foreach ($orderIds as $orderId) {
                 $order = $this->di['em']->getRepository(OrderEntity::class)->find((int) $orderId);
-                if (!$order instanceof \Model_ClientOrder && !$order instanceof OrderEntity) {
+                if (!$order instanceof OrderEntity) {
                     throw new InformationException('Order not found');
                 }
                 $orderStatus = $order instanceof OrderEntity ? $order->getStatus() : $order->status;
-                if (in_array($orderStatus, [\Model_ClientOrder::STATUS_CANCELED, \Model_ClientOrder::STATUS_PENDING_SETUP, \Model_ClientOrder::STATUS_FAILED_SETUP], true)) {
+                if (in_array($orderStatus, [OrderEntity::STATUS_CANCELED, OrderEntity::STATUS_PENDING_SETUP, OrderEntity::STATUS_FAILED_SETUP], true)) {
                     continue;
                 }
 
@@ -356,7 +358,7 @@ class ServiceSubscription implements InjectionAwareInterface
         return $this->persistUpdate($subscription, ['status' => 'canceled']);
     }
 
-    public function canCancelAtPeriodEndForOrder(\Model_ClientOrder $order): bool
+    public function canCancelAtPeriodEndForOrder(OrderEntity $order): bool
     {
         $subscriptions = $this->getSubscriptionsForOrder($order, 'active');
         if ($subscriptions === []) {
@@ -390,9 +392,9 @@ class ServiceSubscription implements InjectionAwareInterface
     }
 
     /**
-     * @return list<\Model_Subscription>
+     * @return list<Subscription>
      */
-    private function getSubscriptionsForOrder(\Model_ClientOrder $order, ?string $status = null): array
+    private function getSubscriptionsForOrder(OrderEntity $order, ?string $status = null): array
     {
         $query = $this->di['dbal']->createQueryBuilder();
         $query
@@ -403,7 +405,7 @@ class ServiceSubscription implements InjectionAwareInterface
             ->andWhere('ii.type = :item_type')
             ->andWhere('ii.rel_id = :order_id')
             ->setParameter('rel_type', 'invoice')
-            ->setParameter('item_type', \Model_InvoiceItem::TYPE_ORDER)
+            ->setParameter('item_type', InvoiceItem::TYPE_ORDER)
             ->setParameter('order_id', $order->id);
 
         if ($status !== null) {

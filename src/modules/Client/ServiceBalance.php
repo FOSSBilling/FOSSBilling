@@ -28,19 +28,19 @@ class ServiceBalance implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function getClientBalance(Client|\Model_Client $c): float
+    public function getClientBalance(Client $c): float
     {
         return (float) $this->clientTotal($c);
     }
 
-    public function clientTotal(Client|\Model_Client $c)
+    public function clientTotal(Client $c)
     {
         $clientId = $c instanceof Client ? $c->getId() : $c->id;
 
         return $this->clientBalanceRepository->getClientBalanceSum((int) $clientId);
     }
 
-    public function rmByClient(\Model_Client $client): void
+    public function rmByClient(Client $client): void
     {
         $balances = $this->clientBalanceRepository->findBy(['clientId' => (int) $client->id]);
         foreach ($balances as $balance) {
@@ -51,7 +51,7 @@ class ServiceBalance implements InjectionAwareInterface
         }
     }
 
-    public function rm(\Model_ClientBalance $model): void
+    public function rm(ClientBalance $model): void
     {
         $balance = $this->clientBalanceRepository->find((int) $model->id);
         if ($balance instanceof ClientBalance) {
@@ -60,7 +60,7 @@ class ServiceBalance implements InjectionAwareInterface
         }
     }
 
-    public function toApiArray(\Model_ClientBalance $model): array
+    public function toApiArray(ClientBalance $model): array
     {
         $balance = $this->clientBalanceRepository->find((int) $model->id);
         $client = $balance instanceof ClientBalance && $balance->getClientId() !== null
@@ -135,7 +135,7 @@ class ServiceBalance implements InjectionAwareInterface
      *
      * @throws \FOSSBilling\InformationException
      */
-    public function deductFunds(\Model_Client $client, $amount, $description, ?array $data = null)
+    public function deductFunds(Client $client, $amount, $description, ?array $data = null)
     {
         if (!is_numeric($amount)) {
             throw new \FOSSBilling\InformationException('Funds amount is invalid');

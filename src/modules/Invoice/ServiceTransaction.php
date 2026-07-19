@@ -61,7 +61,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return true;
     }
 
-    public function update(\Model_Transaction $model, array $data): bool
+    public function update(Transaction $model, array $data): bool
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminTransactionUpdate', 'params' => ['id' => $model->id]]);
 
@@ -93,7 +93,7 @@ class ServiceTransaction implements InjectionAwareInterface
 
         $tx = $this->getTransactionRepository()->find($id)
             ?? throw new InformationException('Transaction not found');
-        if ($tx->getStatus() === \Model_Transaction::STATUS_PROCESSED && empty($tx->getError())) {
+        if ($tx->getStatus() === Transaction::STATUS_PROCESSED && empty($tx->getError())) {
             return $id;
         }
 
@@ -119,7 +119,7 @@ class ServiceTransaction implements InjectionAwareInterface
     {
         $tx = $this->getTransactionRepository()->find($id)
             ?? throw new InformationException('Transaction not found');
-        if ($tx->getStatus() === \Model_Transaction::STATUS_PROCESSED && empty($tx->getError())) {
+        if ($tx->getStatus() === Transaction::STATUS_PROCESSED && empty($tx->getError())) {
             return;
         }
 
@@ -170,7 +170,7 @@ class ServiceTransaction implements InjectionAwareInterface
             ?? ($data['get']['payment_intent'] ?? null);
         if ($txnIdCandidate && !empty($data['gateway_id'])) {
             $existing = $this->di['em']->getRepository(Transaction::class)->findOneBy(['txnId' => $txnIdCandidate, 'gatewayId' => (int) $data['gateway_id']]);
-            if ($existing instanceof Transaction && $existing->getStatus() === \Model_Transaction::STATUS_PROCESSED) {
+            if ($existing instanceof Transaction && $existing->getStatus() === Transaction::STATUS_PROCESSED) {
                 $this->di['logger']->info('Duplicate transaction ignored, returning existing processed transaction #%s', $existing->getId());
 
                 return $existing->getId();
@@ -245,7 +245,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return $this->transactionIpnHashColumnExists;
     }
 
-    public function delete(\Model_Transaction $model): bool
+    public function delete(Transaction $model): bool
     {
         $id = $model->id;
         $this->di['em']->remove($model);
@@ -255,7 +255,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return true;
     }
 
-    public function toApiArray(\Model_Transaction|Transaction $model, $deep = false, $identity = null): array
+    public function toApiArray(Transaction $model, $deep = false, $identity = null): array
     {
         $gateway = null;
         if ($model->gateway_id ?? $model->getGatewayId() ?? false) {
@@ -396,33 +396,33 @@ class ServiceTransaction implements InjectionAwareInterface
 
         return [
             'total' => array_sum($data),
-            \Model_Transaction::STATUS_RECEIVED => $data[\Model_Transaction::STATUS_RECEIVED] ?? 0,
-            \Model_Transaction::STATUS_APPROVED => $data[\Model_Transaction::STATUS_APPROVED] ?? 0,
-            \Model_Transaction::STATUS_PROCESSING => $data[\Model_Transaction::STATUS_PROCESSING] ?? 0,
-            \Model_Transaction::STATUS_PROCESSED => $data[\Model_Transaction::STATUS_PROCESSED] ?? 0,
-            \Model_Transaction::STATUS_ERROR => $data[\Model_Transaction::STATUS_ERROR] ?? 0,
+            Transaction::STATUS_RECEIVED => $data[Transaction::STATUS_RECEIVED] ?? 0,
+            Transaction::STATUS_APPROVED => $data[Transaction::STATUS_APPROVED] ?? 0,
+            Transaction::STATUS_PROCESSING => $data[Transaction::STATUS_PROCESSING] ?? 0,
+            Transaction::STATUS_PROCESSED => $data[Transaction::STATUS_PROCESSED] ?? 0,
+            Transaction::STATUS_ERROR => $data[Transaction::STATUS_ERROR] ?? 0,
         ];
     }
 
     public function getStatusPairs(): array
     {
         return [
-            \Model_Transaction::STATUS_RECEIVED => 'Received',
-            \Model_Transaction::STATUS_APPROVED => 'Approved',
-            \Model_Transaction::STATUS_PROCESSING => 'Processing',
-            \Model_Transaction::STATUS_PROCESSED => 'Processed',
-            \Model_Transaction::STATUS_ERROR => 'Error',
+            Transaction::STATUS_RECEIVED => 'Received',
+            Transaction::STATUS_APPROVED => 'Approved',
+            Transaction::STATUS_PROCESSING => 'Processing',
+            Transaction::STATUS_PROCESSED => 'Processed',
+            Transaction::STATUS_ERROR => 'Error',
         ];
     }
 
     public function getStatuses(): array
     {
         return [
-            \Model_Transaction::STATUS_RECEIVED => 'Received',
-            \Model_Transaction::STATUS_APPROVED => 'Approved/Verified',
-            \Model_Transaction::STATUS_PROCESSING => 'Processing',
-            \Model_Transaction::STATUS_PROCESSED => 'Processed',
-            \Model_Transaction::STATUS_ERROR => 'Error',
+            Transaction::STATUS_RECEIVED => 'Received',
+            Transaction::STATUS_APPROVED => 'Approved/Verified',
+            Transaction::STATUS_PROCESSING => 'Processing',
+            Transaction::STATUS_PROCESSED => 'Processed',
+            Transaction::STATUS_ERROR => 'Error',
         ];
     }
 
@@ -457,8 +457,8 @@ class ServiceTransaction implements InjectionAwareInterface
                 ORDER BY m.id DESC';
 
         return $this->di['dbal']->fetchAllAssociative($sql, [
-            'received_status' => \Model_Transaction::STATUS_RECEIVED,
-            'processing_status' => \Model_Transaction::STATUS_PROCESSING,
+            'received_status' => Transaction::STATUS_RECEIVED,
+            'processing_status' => Transaction::STATUS_PROCESSING,
             'processing_retry_after' => $this->getProcessingRecoveryThreshold(),
         ]);
     }
@@ -487,12 +487,12 @@ class ServiceTransaction implements InjectionAwareInterface
         $affectedRows = $this->di['dbal']->executeStatement(
             'UPDATE transaction SET status = :status, updated_at = :updated_at WHERE id = :id AND (status IN (:received, :error_status) OR (status = :processing AND (updated_at IS NULL OR updated_at <= :threshold)))',
             [
-                'status' => \Model_Transaction::STATUS_PROCESSING,
+                'status' => Transaction::STATUS_PROCESSING,
                 'updated_at' => date('Y-m-d H:i:s'),
                 'id' => $id,
-                'received' => \Model_Transaction::STATUS_RECEIVED,
-                'error_status' => \Model_Transaction::STATUS_ERROR,
-                'processing' => \Model_Transaction::STATUS_PROCESSING,
+                'received' => Transaction::STATUS_RECEIVED,
+                'error_status' => Transaction::STATUS_ERROR,
+                'processing' => Transaction::STATUS_PROCESSING,
                 'threshold' => $this->getProcessingRecoveryThreshold(),
             ]
         );
@@ -526,11 +526,11 @@ class ServiceTransaction implements InjectionAwareInterface
     private function markTransactionError(int $id, \Throwable $e): void
     {
         $tx = $this->getTransactionRepository()->find($id);
-        if (!$tx instanceof Transaction || $tx->getStatus() === \Model_Transaction::STATUS_PROCESSED) {
+        if (!$tx instanceof Transaction || $tx->getStatus() === Transaction::STATUS_PROCESSED) {
             return;
         }
 
-        $tx->setStatus(\Model_Transaction::STATUS_ERROR);
+        $tx->setStatus(Transaction::STATUS_ERROR);
         $tx->setError($e->getMessage());
         $tx->setErrorCode($e->getCode());
         $tx->setUpdatedAt(new \DateTime());
@@ -578,7 +578,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return $adapter->processTransaction($this->di['api_system'], (int) $id, $ipn, $gatewayId);
     }
 
-    public function process(\Model_Transaction|Transaction $tx): \Model_Transaction|Transaction
+    public function process(Transaction $tx): Transaction
     {
         $id = $tx instanceof Transaction ? $tx->getId() : $tx->id;
         $transaction = $this->getTransactionRepository()->find($id);
@@ -603,7 +603,7 @@ class ServiceTransaction implements InjectionAwareInterface
                 throw new \FOSSBilling\Exception('Unknown transaction #:id type: :type', [':id' => $transaction->getId(), ':type' => $type], 632);
             }
         } catch (\Exception $e) {
-            $transaction->setStatus(\Model_Transaction::STATUS_ERROR);
+            $transaction->setStatus(Transaction::STATUS_ERROR);
             $transaction->setError($e->getMessage());
             $transaction->setErrorCode($e->getCode());
             $transaction->setUpdatedAt(new \DateTime());
@@ -623,7 +623,7 @@ class ServiceTransaction implements InjectionAwareInterface
 
     private function _isProcessed(Transaction $tx): bool
     {
-        if ($tx->getStatus() == \Model_Transaction::STATUS_PROCESSED) {
+        if ($tx->getStatus() == Transaction::STATUS_PROCESSED) {
             $tx->setError(null);
             $tx->setErrorCode(null);
             $tx->setUpdatedAt(new \DateTime());
@@ -709,7 +709,7 @@ class ServiceTransaction implements InjectionAwareInterface
     {
         $tx->setError(null);
         $tx->setErrorCode(null);
-        $tx->setStatus(\Model_Transaction::STATUS_PROCESSED);
+        $tx->setStatus(Transaction::STATUS_PROCESSED);
         $tx->setUpdatedAt(new \DateTime());
         $this->di['em']->persist($tx);
         $this->di['em']->flush();
@@ -717,7 +717,7 @@ class ServiceTransaction implements InjectionAwareInterface
 
     private function _parseIpnAndApprove(Transaction &$tx): Transaction
     {
-        if ($tx->getStatus() == \Model_Transaction::STATUS_APPROVED) {
+        if ($tx->getStatus() == Transaction::STATUS_APPROVED) {
             return $tx;
         }
 
@@ -795,7 +795,7 @@ class ServiceTransaction implements InjectionAwareInterface
             $tx->setCurrency($response->getCurrency());
         }
 
-        $tx->setStatus(\Model_Transaction::STATUS_APPROVED);
+        $tx->setStatus(Transaction::STATUS_APPROVED);
         $tx->setUpdatedAt(new \DateTime());
         $this->di['em']->persist($tx);
         $this->di['em']->flush();
@@ -904,7 +904,7 @@ class ServiceTransaction implements InjectionAwareInterface
 
     private function _validateApprovedTransaction(Transaction $tx): void
     {
-        if ($tx->getStatus() != \Model_Transaction::STATUS_APPROVED) {
+        if ($tx->getStatus() != Transaction::STATUS_APPROVED) {
             throw new \FOSSBilling\Exception('Only approved transaction can be processed');
         }
 

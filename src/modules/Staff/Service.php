@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Staff;
 
+use Box\Mod\Activity\Entity\ActivityAdminHistory;
 use Box\Mod\Order\Entity\Order as OrderEntity;
 use Box\Mod\Staff\Entity\Admin;
 use Box\Mod\Staff\Entity\AdminGroup;
@@ -118,7 +119,7 @@ class Service implements InjectionAwareInterface
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminLogin', 'params' => $event_params]);
 
         $model = $this->authorizeAdmin($email, $password);
-        if (!$model instanceof \Model_Admin) {
+        if (!$model instanceof Admin) {
             $this->di['events_manager']->fire(['event' => 'onEventAdminLoginFailed', 'params' => $event_params]);
 
             throw new \FOSSBilling\InformationException('Check your login details', null, 403);
@@ -175,12 +176,12 @@ class Service implements InjectionAwareInterface
     /**
      * Determines if a staff member has the required permissions.
      *
-     * @param \Model_Admin|null $member     The model for the staff member to check. If you pass null, FOSSBilling will automatically get the currently authenticated staff member.
+     * @param Admin|null $member     The model for the staff member to check. If you pass null, FOSSBilling will automatically get the currently authenticated staff member.
      * @param string            $module     what module to check permission for
      * @param string|null       $key        the permission key for the associated module
      * @param mixed             $constraint if the permission key allows for multiple options, specify the one you want to use as a constraint here
      */
-    public function hasPermission(?\Model_Admin $member, string $module, ?string $key = null, mixed $constraint = null): bool
+    public function hasPermission(?Admin $member, string $module, ?string $key = null, mixed $constraint = null): bool
     {
         $alwaysAllowed = ['index', 'dashboard', 'profile'];
 
@@ -236,9 +237,9 @@ class Service implements InjectionAwareInterface
      * @param string            $module     what module to check permission for
      * @param string|null       $key        the permission key for the associated module
      * @param mixed             $constraint if the permission key allows for multiple options, specify the one you want to use as a constraint here
-     * @param \Model_Admin|null $member     the staff member to check permissions for, or null to use the currently logged-in staff member
+     * @param Admin|null $member     the staff member to check permissions for, or null to use the currently logged-in staff member
      */
-    public function checkPermissionsAndThrowException(string $module, ?string $key = null, mixed $constraint = null, ?\Model_Admin $member = null): void
+    public function checkPermissionsAndThrowException(string $module, ?string $key = null, mixed $constraint = null, ?Admin $member = null): void
     {
         if (!$this->hasPermission($member, $module, $key, $constraint)) {
             $requiredPermission = is_null($key) ? $module : "{$module}.{$key}";
@@ -421,7 +422,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @return \Model_Admin|Admin
+     * @return Admin|Admin
      */
     public function getCronAdmin()
     {
@@ -460,7 +461,7 @@ class Service implements InjectionAwareInterface
         return $data;
     }
 
-    public function toModel_AdminApiArray(\Model_Admin $model, $deep = false): array
+    public function toModel_AdminApiArray(Admin $model, $deep = false): array
     {
         $admin = $this->adminRepository->find((int) $model->id);
 
@@ -482,7 +483,7 @@ class Service implements InjectionAwareInterface
         return $this->toAdminApiArray($admin);
     }
 
-    public function update(\Model_Admin $model, $data): bool
+    public function update(Admin $model, $data): bool
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffUpdate', 'params' => ['id' => $model->id]]);
 
@@ -531,7 +532,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function delete(\Model_Admin $model): bool
+    public function delete(Admin $model): bool
     {
         if ($model->isCron()) {
             throw new \FOSSBilling\InformationException('The cron administrator account cannot be removed');
@@ -561,7 +562,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function changePassword(\Model_Admin $model, $password): bool
+    public function changePassword(Admin $model, $password): bool
     {
         $this->checkPermissionsAndThrowException('staff', 'reset_staff_password');
         $this->assertCanManageAdmin($model);
@@ -748,7 +749,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function addAdminToGroup(\Model_Admin $admin, AdminGroup $group): bool
+    public function addAdminToGroup(Admin $admin, AdminGroup $group): bool
     {
         $this->checkPermissionsAndThrowException('staff', 'manage_groups');
         $this->assertCanManageAdmin($admin);
@@ -769,7 +770,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function removeAdminFromGroup(\Model_Admin $admin, AdminGroup $group): bool
+    public function removeAdminFromGroup(Admin $admin, AdminGroup $group): bool
     {
         $this->checkPermissionsAndThrowException('staff', 'manage_groups');
         $this->assertCanManageAdmin($admin);
@@ -802,12 +803,12 @@ class Service implements InjectionAwareInterface
         return $this->adminGroupMemberRepository->adminBelongsToSystemGroup((int) $memberId, AdminGroup::SYSTEM_SUPER_ADMIN);
     }
 
-    private function actorBypassesHierarchy(\Model_Admin $actor): bool
+    private function actorBypassesHierarchy(Admin $actor): bool
     {
         return $actor->isCron() || $this->isSuperAdministrator($actor->id);
     }
 
-    private function assertCanManageAdmin(\Model_Admin $target): void
+    private function assertCanManageAdmin(Admin $target): void
     {
         $actor = $this->di['loggedin_admin'];
         if ($this->actorBypassesHierarchy($actor)) {
@@ -844,7 +845,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    private function assertCanRemoveActiveSuperAdministrator(\Model_Admin $admin): void
+    private function assertCanRemoveActiveSuperAdministrator(Admin $admin): void
     {
         if ($admin->status !== Admin::STATUS_ACTIVE) {
             return;
@@ -916,7 +917,7 @@ class Service implements InjectionAwareInterface
         return [$sql, $params];
     }
 
-    public function toActivityAdminHistoryApiArray(\Model_ActivityAdminHistory $model, $deep = false): array
+    public function toActivityAdminHistoryApiArray(ActivityAdminHistory $model, $deep = false): array
     {
         $result = [
             'id' => $model->id,
@@ -938,14 +939,14 @@ class Service implements InjectionAwareInterface
     public function authorizeAdmin($email, $plainTextPassword)
     {
         $model = $this->di['db']->findOne('Admin', 'email = ? AND status = ?', [$email, Admin::STATUS_ACTIVE]);
-        if ($model instanceof \Model_Admin && $model->isCron()) {
+        if ($model instanceof Admin && $model->isCron()) {
             $model = null;
         }
 
         return $this->di['auth']->authorizeUser($model, $plainTextPassword);
     }
 
-    private function getLoggedInAdminOrCronAdmin(): \Model_Admin
+    private function getLoggedInAdminOrCronAdmin(): Admin
     {
         if (isset($this->di['auth']) && !$this->di['auth']->isAdminLoggedIn()) {
             if (isset($this->di['is_cron']) && $this->di['is_cron'] === true) {
