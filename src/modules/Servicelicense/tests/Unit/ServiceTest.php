@@ -321,7 +321,7 @@ test('is valid ip', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('is valid ip test2', function (): void {
+test('is valid ip when ip is not in allowed list and validation is not enforced returns true', function (): void {
     $service = new Service();
     $serviceLicenseModel = new Model_ServiceLicense();
     $serviceLicenseModel->loadBean(new Tests\Helpers\DummyBean());
@@ -340,7 +340,7 @@ test('is valid ip test2', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('is valid ip test3', function (): void {
+test('is valid ip when validate_ip is set and ip does not match returns false', function (): void {
     $service = new Service();
     $serviceLicenseModel = new Model_ServiceLicense();
     $serviceLicenseModel->loadBean(new Tests\Helpers\DummyBean());
