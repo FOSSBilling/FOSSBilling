@@ -1279,12 +1279,7 @@ test('sets invoice defaults', function (): void {
     $serviceTaxMock = Mockery::mock(ServiceTax::class);
     $serviceTaxMock->shouldReceive('getTaxRateForClient');
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once();
-
     $di = container();
-    $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($clientService, $systemService, $serviceTaxMock) {
         if ($serviceName == 'Client') {
             return $clientService;
@@ -1319,12 +1314,7 @@ test('approves an invoice', function (): void {
     $eventManagerMock->shouldReceive('fire')
         ->atLeast()->once();
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once();
-
     $di = container();
-    $di['db'] = $dbMock;
     $di['events_manager'] = $eventManagerMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
@@ -1516,10 +1506,6 @@ test('updates an invoice', function (): void {
     $ref = new ReflectionProperty($invoiceItemEntity, 'id');
     $ref->setValue($invoiceItemEntity, 0);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once();
-
     $di = container();
     $di['em']->shouldReceive('getRepository')
         ->with(Box\Mod\Invoice\Entity\InvoiceItem::class)
@@ -1529,7 +1515,6 @@ test('updates an invoice', function (): void {
 
             return $repo;
         });
-    $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $itemInvoiceServiceMock);
     $di['events_manager'] = $eventManagerMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -2089,12 +2074,7 @@ test('sends invoice reminder', function (): void {
     $eventManagerMock->shouldReceive('fire')
         ->atLeast()->once();
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once();
-
     $di = container();
-    $di['db'] = $dbMock;
     $di['events_manager'] = $eventManagerMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
@@ -2456,12 +2436,7 @@ test('adds note to invoice', function (): void {
 
     $invoiceModel = createEntity(\Box\Mod\Invoice\Entity\Invoice::class);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once();
-
     $di = container();
-    $di['db'] = $dbMock;
     $service->setDi($di);
 
     $result = $service->addNote($invoiceModel, $note);
@@ -2801,10 +2776,6 @@ test('markAsPaid transitions a deposit invoice to paid status', function (): voi
         'task' => 'void',
     ]);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once();
-
     $systemService = Mockery::mock(SystemService::class);
     $systemService->shouldReceive('getParamValue')
         ->with('invoice_series_paid')
@@ -2839,7 +2810,6 @@ test('markAsPaid transitions a deposit invoice to paid status', function (): voi
 
             return $repo;
         });
-    $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $productService = Mockery::mock(ProductService::class)->shouldIgnoreMissing();
     $di['mod_service'] = $di->protect(fn ($name, $sub = '') => match ([$name, $sub]) {
