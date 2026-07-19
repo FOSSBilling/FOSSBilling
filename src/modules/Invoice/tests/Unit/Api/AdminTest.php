@@ -876,8 +876,7 @@ test('copies a gateway', function (): void {
         ->andReturn($newGatewayId);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_PayGateway();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(\Box\Mod\Invoice\Entity\PayGateway::class);
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -904,8 +903,7 @@ test('updates a gateway', function (): void {
         ->andReturn(true);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_PayGateway();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(\Box\Mod\Invoice\Entity\PayGateway::class);
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -932,8 +930,7 @@ test('deletes a gateway', function (): void {
         ->andReturn(true);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_PayGateway();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(\Box\Mod\Invoice\Entity\PayGateway::class);
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -986,11 +983,8 @@ test('creates a subscription', function (): void {
         ->andReturn($newSubscriptionId);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_PayGateway();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->currency = 'EU';
+    $model = createEntity(\Box\Mod\Invoice\Entity\PayGateway::class);
+    $client = createEntity(\Box\Mod\Client\Entity\Client::class, ['currency' => 'EU']);
 
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
@@ -1015,10 +1009,8 @@ test('throws exception when creating subscription with currency mismatch', funct
     ];
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_PayGateway();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(\Box\Mod\Invoice\Entity\PayGateway::class);
+    $client = createEntity(\Box\Mod\Client\Entity\Client::class);
 
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
@@ -1047,11 +1039,8 @@ test('creates a subscription with case-insensitive currency match', function ():
         ->andReturn($newSubscriptionId);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_PayGateway();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->currency = 'USD';
+    $model = createEntity(\Box\Mod\Invoice\Entity\PayGateway::class);
+    $client = createEntity(\Box\Mod\Client\Entity\Client::class, ['currency' => 'USD']);
 
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
@@ -1079,8 +1068,7 @@ test('updates a subscription', function (): void {
         ->andReturn(true);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_Subscription();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(\Box\Mod\Invoice\Entity\Subscription::class);
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -1107,8 +1095,7 @@ test('gets a subscription', function (): void {
         ->andReturn([]);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_Subscription();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(\Box\Mod\Invoice\Entity\Subscription::class);
     $dbMock->shouldReceive('load')
         ->atLeast()->once()
         ->andReturn($model);
@@ -1135,8 +1122,7 @@ test('deletes a subscription', function (): void {
         ->andReturn(true);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_Subscription();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(\Box\Mod\Invoice\Entity\Subscription::class);
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -1163,8 +1149,7 @@ test('deletes a tax', function (): void {
         ->andReturn(true);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_Tax();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(\Box\Mod\Invoice\Entity\Tax::class);
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -1280,8 +1265,7 @@ test('gets a tax', function (): void {
         ->andReturn([]);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_Tax();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(\Box\Mod\Invoice\Entity\Tax::class);
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -1292,7 +1276,7 @@ test('gets a tax', function (): void {
 
     $api->setDi($di);
     $api->setService($taxService);
-    $api->setIdentity(new Model_Admin());
+    $api->setIdentity(createEntity(\Box\Mod\Staff\Entity\Admin::class));
 
     $data['id'] = 1;
     $result = $api->tax_get($data);
@@ -1307,8 +1291,7 @@ test('updates a tax', function (): void {
         ->andReturn(true);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_Tax();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(\Box\Mod\Invoice\Entity\Tax::class);
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -1319,7 +1302,7 @@ test('updates a tax', function (): void {
 
     $api->setDi($di);
     $api->setService($taxService);
-    $api->setIdentity(new Model_Admin());
+    $api->setIdentity(createEntity(\Box\Mod\Staff\Entity\Admin::class));
 
     $data['id'] = 1;
     $result = $api->tax_update($data);
