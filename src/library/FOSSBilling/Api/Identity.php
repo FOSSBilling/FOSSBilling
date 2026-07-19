@@ -30,7 +30,14 @@ final readonly class Identity
         }
 
         // Doctrine entity classes — extract the short name (e.g. Client, Admin, Guest)
-        $shortName = (new \ReflectionClass($class))->getShortName();
+        $ref = new \ReflectionClass($class);
+        $shortName = $ref->getShortName();
+
+        // Handle entity proxy classes (e.g. Tests\Helpers\EntityProxy_xxx) by
+        // falling back to the parent class short name.
+        if (str_starts_with($shortName, 'EntityProxy_') && $parent = $ref->getParentClass()) {
+            $shortName = $parent->getShortName();
+        }
 
         return strtolower($shortName);
     }

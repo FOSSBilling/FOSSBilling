@@ -778,7 +778,7 @@ class Service implements InjectionAwareInterface
 
     public function createPasswordResetRequestForClient(Client $client): string
     {
-        $clientId = $client instanceof Client ? (int) $client->id : (int) $client->getId();
+        $clientId = (int) $client->getId();
         $clientIp = $client instanceof Client ? ($client->ip ?? null) : $client->getIp();
 
         $existingReset = $this->clientPasswordResetRepository->findOneBy(['clientId' => $clientId]);
@@ -806,7 +806,7 @@ class Service implements InjectionAwareInterface
 
     public function sendPasswordResetRequestEmailForClient(Client $client, string $hash, bool $sendNow = true): void
     {
-        $clientId = $client instanceof Client ? (int) $client->id : (int) $client->getId();
+        $clientId = (int) $client->getId();
 
         $email = [
             'to_client' => $clientId,
@@ -822,12 +822,12 @@ class Service implements InjectionAwareInterface
     public function sendAdminCreatedWelcomeEmailForClient(Client $client): void
     {
         try {
-            $clientId = $client instanceof Client ? (int) $client->id : (int) $client->getId();
+        $clientId = (int) $client->getId();
 
-            $email = [];
-            $email['to_client'] = $clientId;
-            $email['code'] = 'mod_client_signup_admin';
-            $email['hash'] = $this->createPasswordResetRequestForClient($client);
+        $email = [];
+        $email['to_client'] = $clientId;
+        $email['code'] = 'mod_client_signup_admin';
+        $email['hash'] = $this->createPasswordResetRequestForClient($client);
             $email['send_now'] = true;
             $email['require_email_confirmation'] = false;
 
@@ -894,7 +894,7 @@ class Service implements InjectionAwareInterface
 
     public function sendEmailConfirmationForClient(Client $client): void
     {
-        $clientId = $client instanceof Client ? (int) $client->id : (int) $client->getId();
+        $clientId = (int) $client->getId();
 
         try {
             $email = [];

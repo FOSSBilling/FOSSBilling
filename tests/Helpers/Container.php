@@ -776,16 +776,28 @@ class %s extends \%s
             $this->$setter($value);
             return;
         }
+        // When there is no setter but the parent entity has the property,
+        // write to it via reflection so that getter methods (e.g. getId())
+        // that read the property directly still return the correct value.
+        try {
+            $ref = new \ReflectionProperty(parent::class, $name);
+            $ref->setValue($this, $value);
+        } catch (\ReflectionException) {
+            // Property doesn't exist on the parent – store in _extra only.
+        }
         $this->_extra[$name] = $value;
     }
 
     public function __get(string $name): mixed
     {
+        if (array_key_exists($name, $this->_extra)) {
+            return $this->_extra[$name];
+        }
         $getter = self::_toGetter($name);
         if ($getter !== null && method_exists($this, $getter)) {
             return $this->$getter();
         }
-        return $this->_extra[$name] ?? null;
+        return null;
     }
 
     public function __isset(string $name): bool

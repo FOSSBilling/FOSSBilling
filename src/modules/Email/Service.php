@@ -113,7 +113,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function rmByClient(Client $client): bool
     {
-        $this->getActivityClientEmailRepository()->deleteByClientId((int) $client->id);
+        $this->getActivityClientEmailRepository()->deleteByClientId((int) $client->getId());
 
         return true;
     }
