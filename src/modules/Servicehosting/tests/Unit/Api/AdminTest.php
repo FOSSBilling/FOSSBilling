@@ -61,15 +61,12 @@ test('testChangePlan', function (): void {
 });
 
 test('testChangePlanMissingPlanId', function (): void {
-    $api = apiEndpoint(new Admin());
-    $data = [];
+    $adminApi = apiEndpoint(new Admin());
 
-    $di = container();
-    $api->setDi($di);
+    $dispatcher = new FOSSBilling\Api\Dispatcher();
 
-    $this->expectException(FOSSBilling\Exception::class);
-    $this->expectExceptionMessage('plan_id is missing');
-    $api->change_plan($data);
+    expect(fn () => $dispatcher->validateRequiredParams($adminApi, 'change_plan', []))
+        ->toThrow(FOSSBilling\InformationException::class, 'plan_id is missing');
 });
 
 test('testChangeUsername', function (): void {
