@@ -64,7 +64,7 @@ class Helpdesk implements ApiArrayInterface, TimestampInterface
 
     public function toApiArray(object|null $identity = null): array
     {
-        if ($identity instanceof \Model_Admin) {
+        if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
             return [
                 'id' => $this->id,
                 'name' => $this->name,

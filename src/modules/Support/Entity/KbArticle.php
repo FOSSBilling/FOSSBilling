@@ -88,7 +88,7 @@ class KbArticle implements ApiArrayInterface, TimestampInterface
             $data['content'] = $this->content;
         }
 
-        if ($identity instanceof \Model_Admin) {
+        if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
             $data['status'] = $this->status;
             $data['kb_article_category_id'] = $this->getKbArticleCategoryId();
         }

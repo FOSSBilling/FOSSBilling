@@ -136,7 +136,7 @@ class SupportTicket implements ApiArrayInterface, TimestampInterface
             $data['hash'] = $data['access_hash'];
         }
 
-        if ($identity instanceof \Model_Admin) {
+        if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
             return $data;
         }
 

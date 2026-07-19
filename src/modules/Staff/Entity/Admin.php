@@ -192,7 +192,7 @@ class Admin implements ApiArrayInterface
         return $this->status === self::STATUS_ACTIVE;
     }
 
-    public function toApiArray(\Model_Admin|\Model_Client|\Model_Guest|null $identity = null): array
+    public function toApiArray(Admin|\Box\Mod\Client\Entity\Client|\Model_Guest|null $identity = null): array
     {
         return [
             'id' => $this->id,

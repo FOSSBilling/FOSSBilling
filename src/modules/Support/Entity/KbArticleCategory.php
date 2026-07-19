@@ -69,7 +69,7 @@ class KbArticleCategory implements ApiArrayInterface, TimestampInterface
         ];
 
         foreach ($this->articles as $article) {
-            if (!$identity instanceof \Model_Admin && $article->getStatus() !== KbArticle::ACTIVE) {
+            if (!$identity instanceof \Box\Mod\Staff\Entity\Admin && $article->getStatus() !== KbArticle::ACTIVE) {
                 continue;
             }
 

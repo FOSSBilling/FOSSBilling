@@ -875,7 +875,7 @@ class Client implements ApiArrayInterface
         return $this->updatedAt;
     }
 
-    public function toApiArray(\Model_Admin|\Model_Client|\Model_Guest|null $identity = null): array
+    public function toApiArray(\Box\Mod\Staff\Entity\Admin|Client|\Model_Guest|null $identity = null): array
     {
         return [
             'id' => $this->id,
