@@ -26,8 +26,7 @@ test('cartProductToApiArray uses resolved initial domain term pricing', function
     $cartReflection = new ReflectionProperty($cart, 'id');
     $cartReflection->setValue($cart, 20);
 
-    $cartProduct = new Model_CartProduct();
-    $cartProduct->loadBean(new Tests\Helpers\DummyBean());
+    $cartProduct = createEntity(Box\Mod\Cart\Entity\CartProduct::class);
     $cartProduct->id = 10;
     $cartProduct->cart_id = 20;
     $cartProduct->product_id = 1;
