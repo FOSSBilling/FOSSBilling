@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Client;
 
+use Box\Mod\Client\Entity\Client;
+use Box\Mod\Client\Repository\ClientRepository;
 use FOSSBilling\i18n;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
@@ -22,6 +24,7 @@ use Symfony\Component\Intl\Locales;
 class Service implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
+    private ?ClientRepository $clientRepository = null;
 
     public function getModulePermissions(): array
     {
@@ -104,6 +107,19 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function getClientRepository(): ClientRepository
+    {
+        if ($this->clientRepository === null) {
+            if ($this->di === null) {
+                throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
+            }
+
+            $this->clientRepository = $this->di['em']->getRepository(Client::class);
+        }
+
+        return $this->clientRepository;
+    }
+
     public function approveClientEmailByHash($hash): bool
     {
         $db = $this->di['db'];
@@ -160,9 +176,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function getSearchQuery($data, $selectStmt = 'SELECT c.*,
-        cg.title AS client_group_title,
-        COALESCE((SELECT SUM(cb.amount) FROM client_balance cb WHERE cb.client_id = c.id), 0) AS balance'): array
+    public function getSearchQuery($data, $selectStmt = 'SELECT c.*'): array
     {
         $sql = $selectStmt;
         $sql .= ' FROM client as c left join client_group as cg on c.client_group_id = cg.id';
@@ -252,58 +266,6 @@ class Service implements InjectionAwareInterface
         $sql .= ' ORDER BY c.created_at desc';
 
         return [$sql, $params];
-    }
-
-    /**
-     * Convert an enriched client search result without loading the model, balance, or group again.
-     */
-    public function searchResultToApiArray(array $row): array
-    {
-        $details = [
-            'id' => $row['id'],
-            'email' => $row['email'],
-            'email_approved' => $row['email_approved'],
-            'type' => $row['type'],
-            'company' => $row['company'],
-            'company_vat' => $row['company_vat'],
-            'company_number' => $row['company_number'],
-            'first_name' => $row['first_name'],
-            'last_name' => $row['last_name'],
-            'gender' => $row['gender'],
-            'birthday' => $row['birthday'],
-            'phone_cc' => $row['phone_cc'],
-            'phone' => $row['phone'],
-            'address_1' => $row['address_1'],
-            'address_2' => $row['address_2'],
-            'city' => $row['city'],
-            'state' => $row['state'],
-            'postcode' => $row['postcode'],
-            'country' => $row['country'],
-            'currency' => $row['currency'],
-            'lang' => $row['lang'],
-            'timezone' => $row['timezone'],
-            'billing_email' => $row['billing_email'],
-            'balance' => (float) ($row['balance'] ?? 0),
-            'aid' => $row['aid'],
-            'auth_type' => $row['auth_type'],
-            'created_at' => $row['created_at'],
-            'group_id' => $row['client_group_id'],
-            'ip' => $row['ip'],
-            'notes' => $row['notes'],
-            'status' => $row['status'],
-            'tax_exempt' => $row['tax_exempt'],
-            'group' => $row['client_group_title'] ?? null,
-            'updated_at' => $row['updated_at'],
-        ];
-
-        for ($i = 1; $i < 21; ++$i) {
-            $key = 'custom_' . $i;
-            if (!empty($row[$key])) {
-                $details[$key] = $row[$key];
-            }
-        }
-
-        return $details;
     }
 
     public function getPairs($data)

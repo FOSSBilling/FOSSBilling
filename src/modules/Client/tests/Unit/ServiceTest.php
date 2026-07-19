@@ -278,56 +278,6 @@ test('getSearchQuery with custom select statement', function (): void {
     expect(str_contains((string) $result[0], $selectStmt))->toBeTrue($result[0]);
 });
 
-test('default client search includes balance and group data for list serialization', function (): void {
-    $service = new Box\Mod\Client\Service();
-
-    [$query] = $service->getSearchQuery([]);
-
-    expect($query)
-        ->toContain('SUM(cb.amount)')
-        ->toContain('cg.title AS client_group_title');
-});
-
-test('converts a client search result without database access', function (): void {
-    $service = new Box\Mod\Client\Service();
-    $di = container();
-    $di['db'] = static function (): never {
-        throw new RuntimeException('Search result conversion must not access the database');
-    };
-    $service->setDi($di);
-
-    $row = array_fill_keys([
-        'email_approved', 'type', 'company_vat', 'company_number', 'gender', 'birthday',
-        'phone_cc', 'phone', 'address_2', 'state', 'postcode', 'currency', 'lang', 'timezone',
-        'billing_email', 'aid', 'auth_type', 'client_group_id', 'ip', 'notes', 'tax_exempt',
-        'client_group_title', 'updated_at',
-    ], null);
-    $row += [
-        'id' => 42,
-        'email' => 'ada@example.com',
-        'company' => 'Analytical Engines Ltd',
-        'first_name' => 'Ada',
-        'last_name' => 'Lovelace',
-        'address_1' => '1 Computing Way',
-        'city' => 'London',
-        'country' => 'GB',
-        'balance' => '12.50',
-        'created_at' => '2026-07-19 10:00:00',
-        'status' => 'active',
-        'custom_15' => 'VIP',
-    ];
-
-    $result = $service->searchResultToApiArray($row);
-
-    expect($result)->toMatchArray([
-        'id' => 42,
-        'email' => 'ada@example.com',
-        'balance' => 12.5,
-        'group' => null,
-        'custom_15' => 'VIP',
-    ]);
-});
-
 test('getPairs returns array', function (): void {
     $service = new Box\Mod\Client\Service();
     $data = [];
