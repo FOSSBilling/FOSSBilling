@@ -15,9 +15,11 @@ use Box\Mod\Cart\Entity\CartProduct;
 use Box\Mod\Cart\Repository\CartProductRepository;
 use Box\Mod\Cart\Repository\CartRepository;
 use Box\Mod\Cart\Service;
+use Box\Mod\Client\Entity\Client;
 use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Currency\Repository\CurrencyRepository;
 use Box\Mod\Currency\Service as CurrencyService;
+use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Product\Entity\Promo;
@@ -26,6 +28,7 @@ use Box\Mod\Product\Service as ProductService;
 use Symfony\Component\HttpFoundation\Request;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 function createProductEntity(?int $id = null, ?string $type = null, ?string $config = null): Product
 {
@@ -444,8 +447,7 @@ test('isClientAbleToUsePromo returns false when client cannot use promo', functi
     $promo = createPromoEntity(1)
         ->setOncePerClient(true);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client = createEntity(Client::class);
 
     $productService = Mockery::mock(ProductService::class);
     $productService->shouldReceive('canClientUsePromo')->once()->with($client, $promo)->andReturn(false);
@@ -464,8 +466,7 @@ test('isClientAbleToUsePromo returns false when client cannot use promo', functi
 test('clientHadUsedPromo returns true', function (): void {
     $promo = createPromoEntity(1);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client = createEntity(Client::class);
 
     $productService = Mockery::mock(ProductService::class);
     $productService->shouldReceive('clientHasActivePromoApplication')->once()->with($client, $promo)->andReturn(true);
@@ -486,8 +487,7 @@ test('clientHadUsedPromo returns true', function (): void {
 test('isClientAbleToUsePromo returns true once per client', function (): void {
     $promo = createPromoEntity(1);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client = createEntity(Client::class);
 
     $productService = Mockery::mock(ProductService::class);
     $productService->shouldReceive('canClientUsePromo')->once()->with($client, $promo)->andReturn(true);
@@ -506,8 +506,7 @@ test('isClientAbleToUsePromo returns true once per client', function (): void {
 test('isClientAbleToUsePromo returns false when promo cannot be applied', function (): void {
     $promo = createPromoEntity(1);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client = createEntity(Client::class);
 
     $productService = Mockery::mock(ProductService::class);
     $productService->shouldReceive('canClientUsePromo')->once()->with($client, $promo)->andReturn(false);
@@ -565,8 +564,7 @@ test('getCartProducts returns array of cart products', function (): void {
 });
 
 test('checkoutCart returns array with expected keys', function (): void {
-    $cart = new Model_Cart();
-    $cart->loadBean(new Tests\Helpers\DummyBean());
+    $cart = createEntity(Cart::class);
     $cart->promo_id = 1;
 
     $order = new Order();
@@ -582,16 +580,14 @@ test('checkoutCart returns array with expected keys', function (): void {
     $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
-    $invoice = new Model_Invoice();
-    $invoice->loadBean(new Tests\Helpers\DummyBean());
+    $invoice = createEntity(Invoice::class);
     $invoice->hash = sha1('str');
 
     $promo = new Promo();
 
     $dbMock = Mockery::mock(Box_Database::class)->shouldIgnoreMissing();
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client = createEntity(Client::class);
 
     $productService = Mockery::mock(ProductService::class);
     $productService->shouldReceive('findPromoById')->once()->with(1)->andReturn($promo);
@@ -614,12 +610,10 @@ test('checkoutCart returns array with expected keys', function (): void {
 });
 
 test('checkoutCart throws exception when client is not able to use promo', function (): void {
-    $cart = new Model_Cart();
-    $cart->loadBean(new Tests\Helpers\DummyBean());
+    $cart = createEntity(Cart::class);
     $cart->promo_id = 1;
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order = createEntity(Order::class);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('isClientAbleToUsePromo')->atLeast()->once()->andReturn(false);
@@ -629,8 +623,7 @@ test('checkoutCart throws exception when client is not able to use promo', funct
     $productService = Mockery::mock(ProductService::class);
     $productService->shouldReceive('findPromoById')->once()->with(1)->andReturn($promo);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client = createEntity(Client::class);
 
     $di = container();
     $di['db'] = $dbMock;
@@ -658,12 +651,10 @@ test('usePromo returns null', function (): void {
 });
 
 test('createFromCart uses database transaction', function (): void {
-    $cart = new Model_Cart();
-    $cart->loadBean(new Tests\Helpers\DummyBean());
+    $cart = createEntity(Cart::class);
     $cart->currency_id = 2;
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client = createEntity(Client::class);
     $client->currency = 'USD';
 
     $currency = Mockery::mock(Currency::class)->makePartial();
@@ -714,14 +705,12 @@ test('createFromCart uses database transaction', function (): void {
 });
 
 test('createFromCart with promo entity uses product promo service', function (): void {
-    $cart = new Model_Cart();
-    $cart->loadBean(new Tests\Helpers\DummyBean());
+    $cart = createEntity(Cart::class);
     $cart->id = 3;
     $cart->currency_id = 2;
     $cart->promo_id = 7;
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client = createEntity(Client::class);
     $client->id = 9;
     $client->currency = 'USD';
 
@@ -761,8 +750,7 @@ test('createFromCart with promo entity uses product promo service', function ():
     $product->setType('service');
     $product->setSetup('manual');
 
-    $cartProduct = new Model_CartProduct();
-    $cartProduct->loadBean(new Tests\Helpers\DummyBean());
+    $cartProduct = createEntity(CartProduct::class);
     $cartProduct->id = 13;
 
     $orderService = Mockery::mock(Box\Mod\Order\Service::class)->makePartial();
@@ -826,14 +814,12 @@ test('createFromCart with promo entity uses product promo service', function ():
 });
 
 test('createFromCart compensates promo usage on transaction failure', function (): void {
-    $cart = new Model_Cart();
-    $cart->loadBean(new Tests\Helpers\DummyBean());
+    $cart = createEntity(Cart::class);
     $cart->id = 3;
     $cart->currency_id = 2;
     $cart->promo_id = 7;
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client = createEntity(Client::class);
     $client->id = 9;
     $client->currency = 'USD';
 
@@ -875,8 +861,7 @@ test('createFromCart compensates promo usage on transaction failure', function (
     $product->setType('service');
     $product->setSetup('manual');
 
-    $cartProduct = new Model_CartProduct();
-    $cartProduct->loadBean(new Tests\Helpers\DummyBean());
+    $cartProduct = createEntity(CartProduct::class);
     $cartProduct->id = 13;
 
     $orderService = Mockery::mock(Box\Mod\Order\Service::class)->makePartial();
@@ -963,8 +948,7 @@ test('findActivePromoByCode returns promo', function (): void {
 });
 
 test('addItem throws exception when recurring payment period param missing', function (): void {
-    $cartModel = new Model_Cart();
-    $cartModel->loadBean(new Tests\Helpers\DummyBean());
+    $cartModel = createEntity(Cart::class);
 
     $productModel = createProductEntity(type: 'Custom');
 
@@ -998,8 +982,7 @@ test('addItem throws exception when recurring payment period param missing', fun
 });
 
 test('addItem throws exception when recurring payment period is not enabled', function (): void {
-    $cartModel = new Model_Cart();
-    $cartModel->loadBean(new Tests\Helpers\DummyBean());
+    $cartModel = createEntity(Cart::class);
 
     $productModel = createProductEntity(type: 'hosting');
 
@@ -1085,8 +1068,7 @@ test('addItem rejects cumulative stock overflow', function (): void {
     $productModel->setStockControl(true);
     $productModel->setQuantityInStock(1);
 
-    $existingCartProduct = new Model_CartProduct();
-    $existingCartProduct->loadBean(new Tests\Helpers\DummyBean());
+    $existingCartProduct = createEntity(CartProduct::class);
     $existingCartProduct->product_id = 7;
     $existingCartProduct->config = json_encode(['quantity' => 1]);
 
@@ -1131,8 +1113,7 @@ test('addItem rejects duplicate domain register', function (): void {
     $productModel = createProductEntity(type: 'domain');
 
     // An existing cart item already holds example.com via register keys.
-    $existingCartProduct = new Model_CartProduct();
-    $existingCartProduct->loadBean(new Tests\Helpers\DummyBean());
+    $existingCartProduct = createEntity(CartProduct::class);
     $existingCartProduct->config = json_encode(['register_sld' => 'example', 'register_tld' => '.com']);
 
     $cartProductRepo = Mockery::mock(CartProductRepository::class);
@@ -1175,8 +1156,7 @@ test('addItem rejects duplicate domain transfer', function (): void {
     $productModel = createProductEntity(type: 'domain');
 
     // An existing cart item holds example.net via transfer keys.
-    $existingCartProduct = new Model_CartProduct();
-    $existingCartProduct->loadBean(new Tests\Helpers\DummyBean());
+    $existingCartProduct = createEntity(CartProduct::class);
     $existingCartProduct->config = json_encode(['transfer_sld' => 'example', 'transfer_tld' => '.net']);
 
     $cartProductRepo = Mockery::mock(CartProductRepository::class);
@@ -1219,8 +1199,7 @@ test('addItem rejects duplicate domain nested', function (): void {
     $productModel = createProductEntity(type: 'hosting');
 
     // An existing hosting cart item stores the domain under the nested 'domain' key.
-    $existingCartProduct = new Model_CartProduct();
-    $existingCartProduct->loadBean(new Tests\Helpers\DummyBean());
+    $existingCartProduct = createEntity(CartProduct::class);
     $existingCartProduct->config = json_encode([
         'domain' => ['register_sld' => 'mysite', 'register_tld' => '.org'],
     ]);
@@ -1400,11 +1379,9 @@ test('addItem for custom type returns true', function (): void {
 });
 
 test('toApiArray returns expected structure', function (): void {
-    $cartModel = new Model_Cart();
-    $cartModel->loadBean(new Tests\Helpers\DummyBean());
+    $cartModel = createEntity(Cart::class);
 
-    $cartProductModel = new Model_CartProduct();
-    $cartProductModel->loadBean(new Tests\Helpers\DummyBean());
+    $cartProductModel = createEntity(CartProduct::class);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('getCartProducts')->atLeast()->once()->andReturn([$cartProductModel]);
@@ -1449,12 +1426,10 @@ test('toApiArray returns expected structure', function (): void {
 });
 
 test('cart is not subscribable when items use different billing periods', function (): void {
-    $cartModel = new Model_Cart();
-    $cartModel->loadBean(new Tests\Helpers\DummyBean());
+    $cartModel = createEntity(Cart::class);
 
-    $cartProducts = [new Model_CartProduct(), new Model_CartProduct()];
+    $cartProducts = [createEntity(CartProduct::class), createEntity(CartProduct::class)];
     foreach ($cartProducts as $cartProduct) {
-        $cartProduct->loadBean(new Tests\Helpers\DummyBean());
     }
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -1589,7 +1564,7 @@ test('getProductDiscount returns free setup discount', function (): void {
     expect($result[1])->toEqual($discountSetup);
 });
 
-test('isPromoAvailableForClientGroup returns expected result', function (Promo $promo, ?Model_Client $client, bool $expectedResult): void {
+test('isPromoAvailableForClientGroup returns expected result', function (Promo $promo, ?Client $client, bool $expectedResult): void {
     $productService = Mockery::mock(ProductService::class);
     $productService->shouldReceive('isPromoAvailableForClientGroup')->once()->with($promo)->andReturn($expectedResult);
 
@@ -1603,33 +1578,10 @@ test('isPromoAvailableForClientGroup returns expected result', function (Promo $
 
     expect($result)->toEqual($expectedResult);
 })->with([
-    [createPromoEntity(1)->setClientGroups(json_encode([])), (function (): Model_Client {
-        $c = new Model_Client();
-        $c->loadBean(new Tests\Helpers\DummyBean());
-
-        return $c;
-    })(), true],
-    [createPromoEntity(2)->setClientGroups(json_encode([1, 2])), (function (): Model_Client {
-        $c = new Model_Client();
-        $c->loadBean(new Tests\Helpers\DummyBean());
-        $c->client_group_id = null;
-
-        return $c;
-    })(), false],
-    [createPromoEntity(3)->setClientGroups(json_encode([1, 2])), (function (): Model_Client {
-        $c = new Model_Client();
-        $c->loadBean(new Tests\Helpers\DummyBean());
-        $c->client_group_id = 3;
-
-        return $c;
-    })(), false],
-    [createPromoEntity(4)->setClientGroups(json_encode([1, 2])), (function (): Model_Client {
-        $c = new Model_Client();
-        $c->loadBean(new Tests\Helpers\DummyBean());
-        $c->client_group_id = 2;
-
-        return $c;
-    })(), true],
+    [createPromoEntity(1)->setClientGroups(json_encode([])), createEntity(Client::class), true],
+    [createPromoEntity(2)->setClientGroups(json_encode([1, 2])), createEntity(Client::class, ['clientGroupId' => null]), false],
+    [createPromoEntity(3)->setClientGroups(json_encode([1, 2])), createEntity(Client::class, ['clientGroupId' => 3]), false],
+    [createPromoEntity(4)->setClientGroups(json_encode([1, 2])), createEntity(Client::class, ['clientGroupId' => 2]), true],
     [createPromoEntity(5)->setClientGroups(json_encode([])), null, true],
     [createPromoEntity(6)->setClientGroups(json_encode([1, 2])), null, false],
 ]);

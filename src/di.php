@@ -369,7 +369,7 @@ $di['is_admin_logged'] = function () use ($di) {
  *
  * @param void
  *
- * @return \Model_Client The existing logged-in client model object.
+ * @return \Box\Mod\Client\Entity\Client The existing logged-in client model object.
  */
 $di['loggedin_client'] = function () use ($di) {
     $di['is_client_logged'];
@@ -378,8 +378,8 @@ $di['loggedin_client'] = function () use ($di) {
     $client_id = $session->get('client_id');
 
     try {
-        $client = $di['db']->getExistingModelById('Client', $client_id);
-        if ($client->status !== Model_Client::ACTIVE) {
+        $client = $di['em']->getRepository(\Box\Mod\Client\Entity\Client::class)->find($client_id);
+        if (!$client || $client->getStatus() !== \Box\Mod\Client\Entity\Client::ACTIVE) {
             throw new Exception('Client account is not active');
         }
 
@@ -404,7 +404,7 @@ $di['is_cron'] = false;
  *
  * @param void
  *
- * @return \Model_Admin|null The existing logged-in admin model object, or null if no admin is logged in.
+ * @return \Box\Mod\Staff\Entity\Admin|null The existing logged-in admin model object, or null if no admin is logged in.
  *
  * @throws \FOSSBilling\Exception If the script is running in CLI or CGI mode and there is no cron admin available.
  */
@@ -419,8 +419,8 @@ $di['loggedin_admin'] = function () use ($di) {
     $admin = $session->get('admin');
 
     try {
-        $model = $di['db']->getExistingModelById('Admin', $admin['id']);
-        if ($model->status !== Model_Admin::STATUS_ACTIVE) {
+        $model = $di['em']->getRepository(\Box\Mod\Staff\Entity\Admin::class)->find($admin['id']);
+        if (!$model || $model->getStatus() !== \Box\Mod\Staff\Entity\Admin::STATUS_ACTIVE) {
             throw new Exception('Admin account is not active');
         }
 
