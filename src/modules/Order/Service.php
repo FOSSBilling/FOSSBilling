@@ -1685,7 +1685,7 @@ class Service implements InjectionAwareInterface
         ]);
         foreach ($items as $item) {
             if ($item instanceof InvoiceItem) {
-                $this->di['db']->trash($item);
+                $this->di['em']->remove($item);
             } elseif ($item instanceof InvoiceItem) {
                 $this->di['em']->remove($item);
             }
@@ -1727,7 +1727,7 @@ class Service implements InjectionAwareInterface
             $this->di['em']->remove($model);
             $this->di['em']->flush();
         } else {
-            $this->di['db']->trash($model);
+            $this->di['em']->remove($model);
         }
     }
 

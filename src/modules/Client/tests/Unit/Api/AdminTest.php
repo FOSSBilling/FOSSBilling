@@ -432,11 +432,7 @@ test('balanceDelete returns true', function (): void {
         'id' => 1,
     ];
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('trash')->atLeast()->once();
-
     $di = container();
-    $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $validatorStub = $this->createStub(FOSSBilling\Validate::class);
     $di['validator'] = $validatorStub;
@@ -476,14 +472,10 @@ test('batchExpirePasswordReminders returns true', function (): void {
         createEntity(\Box\Mod\Client\Entity\ClientPasswordReset::class),
     ];
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('trash')->atLeast()->once();
-
     $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
     $serviceMock->shouldReceive('getExpiredPasswordReminders')->atLeast()->once()->andReturn($expiredArr);
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(moduleService(['client' => $serviceMock]));
     $di['logger'] = new Tests\Helpers\TestLogger();
 

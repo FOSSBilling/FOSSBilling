@@ -957,7 +957,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $this->di['em']->flush();
         } else {
             $id = $model->id;
-            $this->di['db']->trash($model);
+            $this->di['em']->remove($model);
         }
         $this->di['logger']->info('Deleted top level domain %s', $id);
 

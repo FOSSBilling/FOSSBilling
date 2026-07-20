@@ -438,7 +438,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $client_id = $model->client_id;
         $amount = $model->amount;
 
-        $this->getDi()['db']->trash($model);
+        $this->getDi()['em']->remove($model);
 
         $this->getDi()['logger']->info('Removed line %s from client #%s balance for %s', $id, $client_id, $amount);
 
@@ -474,7 +474,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $service = $this->getDi()['mod_service']('client');
         $expired = $service->getExpiredPasswordReminders();
         foreach ($expired as $model) {
-            $this->getDi()['db']->trash($model);
+            $this->getDi()['em']->remove($model);
         }
 
         $this->getDi()['logger']->info('Executed action to delete expired clients password reminders');

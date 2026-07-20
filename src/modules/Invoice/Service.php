@@ -1562,7 +1562,7 @@ class Service implements InjectionAwareInterface
             $this->di['em']->remove($model);
             $this->di['em']->flush();
         } else {
-            $this->di['db']->trash($model);
+            $this->di['em']->remove($model);
         }
 
         return true;
