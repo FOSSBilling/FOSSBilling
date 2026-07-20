@@ -313,7 +313,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             $customFields[$fieldName] = $field;
         }
 
-        uasort($customFields, fn ($a, $b): int => strnatcasecmp((string) ($a['title'] ?? ''), (string) ($b['title'] ?? '')));
+        uasort($customFields, fn ($a, $b): int => strnatcasecmp($a['title'], $b['title']));
 
         return $customFields;
     }
