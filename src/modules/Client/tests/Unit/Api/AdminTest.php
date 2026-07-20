@@ -235,10 +235,6 @@ test('update returns true', function (): void {
         'custom_10' => '',
     ];
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-        ->shouldReceive('store')->atLeast()->once()->andReturn(1);
-
     $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
     $serviceMock->shouldReceive('emailAlreadyRegistered')->atLeast()->once()->andReturn(false);
     $serviceMock->shouldReceive('canChangeCurrency')->atLeast()->once()->andReturn(true);
@@ -250,7 +246,6 @@ test('update returns true', function (): void {
     $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(moduleService(['client' => $serviceMock]));
     $di['events_manager'] = $eventMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -349,10 +344,6 @@ test('changePassword returns true', function (): void {
         'password_confirm' => 'strongPass',
     ];
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-        ->shouldReceive('store')->atLeast()->once()->andReturn(1);
-
     $eventMock = Mockery::mock('\Box_EventManager');
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
@@ -363,7 +354,6 @@ test('changePassword returns true', function (): void {
     $profileService->shouldReceive('invalidateSessions')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['events_manager'] = $eventMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['password'] = $passwordMock;
@@ -583,12 +573,7 @@ test('groupUpdate returns true', function (): void {
     $data['id'] = '2';
     $data['title'] = 'test Group updated';
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-        ->shouldReceive('store')->atLeast()->once()->andReturn(1);
-
     $di = container();
-    $di['db'] = $dbMock;
 
     $validatorStub = $this->createStub(FOSSBilling\Validate::class);
     $di['validator'] = $validatorStub;

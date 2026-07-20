@@ -469,7 +469,7 @@ class Service implements InjectionAwareInterface
         $config[self::STORED_FILENAME_CONFIG_KEY] = $storedFilename;
         $order->config = json_encode($config);
         $order->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($order);
+        $this->di['em']->persist($order);
 
         $this->di['em']->flush();
 

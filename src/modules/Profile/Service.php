@@ -52,7 +52,7 @@ class Service implements InjectionAwareInterface
         if ($admin instanceof Admin) {
             $this->di['em']->persist($admin);
         } else {
-            $this->di['db']->store($admin);
+            $this->di['em']->persist($admin);
         }
         $this->di['em']->flush();
 
@@ -76,7 +76,7 @@ class Service implements InjectionAwareInterface
         if ($admin instanceof Admin) {
             $this->di['em']->persist($admin);
         } else {
-            $this->di['db']->store($admin);
+            $this->di['em']->persist($admin);
         }
         $this->di['em']->flush();
 
@@ -103,7 +103,7 @@ class Service implements InjectionAwareInterface
         if ($admin instanceof Admin) {
             $this->di['em']->persist($admin);
         } else {
-            $this->di['db']->store($admin);
+            $this->di['em']->persist($admin);
         }
         $this->di['em']->flush();
 
@@ -232,7 +232,7 @@ class Service implements InjectionAwareInterface
         if ($client instanceof Client) {
             $this->di['em']->persist($client);
         } else {
-            $this->di['db']->store($client);
+            $this->di['em']->persist($client);
         }
         $this->di['em']->flush();
 
@@ -251,7 +251,7 @@ class Service implements InjectionAwareInterface
         if ($client instanceof Client) {
             $this->di['em']->persist($client);
         } else {
-            $this->di['db']->store($client);
+            $this->di['em']->persist($client);
         }
         $this->di['em']->flush();
 
@@ -269,7 +269,7 @@ class Service implements InjectionAwareInterface
         if ($client instanceof Client) {
             $this->di['em']->persist($client);
         } else {
-            $this->di['db']->store($client);
+            $this->di['em']->persist($client);
         }
         $this->di['em']->flush();
 

@@ -354,7 +354,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $client->updated_at = date('Y-m-d H:i:s');
 
-        $this->getDi()['db']->store($client);
+        $this->getDi()['em']->persist($client);
 
         if ($client->status !== Client::ACTIVE && $previousStatus === Client::ACTIVE) {
             $profileService = $this->getDi()['mod_service']('profile');
@@ -386,7 +386,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $client->pass = $this->getDi()['password']->hashIt($data['password']);
         $client->updated_at = date('Y-m-d H:i:s');
-        $this->getDi()['db']->store($client);
+        $this->getDi()['em']->persist($client);
 
         $profileService = $this->getDi()['mod_service']('profile');
         $profileService->invalidateSessions('client', (int) $data['id']);
@@ -568,7 +568,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model->title = $data['title'] ?? $model->title;
         $model->updated_at = date('Y-m-d H:i:s');
-        $this->getDi()['db']->store($model);
+        $this->getDi()['em']->persist($model);
 
         return true;
     }

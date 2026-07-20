@@ -67,12 +67,8 @@ class Box_Authorization
             if ($this->di['password']->needsRehash($user->pass)) {
                 $user->pass = $this->di['password']->hashIt($plainTextPassword);
                 $user->updated_at = date('Y-m-d H:i:s');
-                if ($user instanceof RedBeanPHP\SimpleModel) {
-                    $this->di['db']->store($user);
-                } else {
-                    $this->di['em']->persist($user);
-                    $this->di['em']->flush();
-                }
+                $this->di['em']->persist($user);
+                $this->di['em']->flush();
             }
 
             return $user;

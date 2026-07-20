@@ -1067,7 +1067,7 @@ class Service implements InjectionAwareInterface
                 } else {
                     $order->service_id = $service->id;
                     $order->updated_at = date('Y-m-d H:i:s');
-                    $this->di['db']->store($order);
+                    $this->di['em']->persist($order);
                 }
             }
         }
@@ -1081,7 +1081,7 @@ class Service implements InjectionAwareInterface
                 $this->di['em']->flush();
             } else {
                 $order->status = Order::STATUS_FAILED_SETUP;
-                $this->di['db']->store($order);
+                $this->di['em']->persist($order);
             }
 
             $this->saveStatusChange($order, $e->getMessage());
@@ -1117,7 +1117,7 @@ class Service implements InjectionAwareInterface
             $order->suspended_at = null;
             $order->canceled_at = null;
             $order->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($order);
+            $this->di['em']->persist($order);
         }
 
         if ($order instanceof Order ? $order->getProductId() : $order->product_id) {
@@ -1336,7 +1336,7 @@ class Service implements InjectionAwareInterface
             $this->di['em']->flush();
         } else {
             $order->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($order);
+            $this->di['em']->persist($order);
         }
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderUpdate', 'params' => ['id' => $orderId]]);
@@ -1385,7 +1385,7 @@ class Service implements InjectionAwareInterface
                 $this->di['em']->flush();
             } else {
                 $order->status = Order::STATUS_FAILED_RENEW;
-                $this->di['db']->store($order);
+                $this->di['em']->persist($order);
             }
 
             $this->saveStatusChange($order, $e->getMessage());
@@ -1434,7 +1434,7 @@ class Service implements InjectionAwareInterface
             $order->unsuspended_at = null;
             $order->canceled_at = null;
             $order->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($order);
+            $this->di['em']->persist($order);
         }
 
         $this->saveStatusChange($order, 'Order renewed');
@@ -1467,7 +1467,7 @@ class Service implements InjectionAwareInterface
             $order->reason = $reason;
             $order->suspended_at = date('Y-m-d H:i:s');
             $order->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($order);
+            $this->di['em']->persist($order);
         }
 
         $note = ($reason === null) ? 'Order suspended' : 'Order suspended for ' . $reason;
@@ -1503,7 +1503,7 @@ class Service implements InjectionAwareInterface
             $order->suspended_at = null;
             $order->unsuspended_at = date('Y-m-d H:i:s');
             $order->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($order);
+            $this->di['em']->persist($order);
         }
 
         $this->saveStatusChange($order, 'Order unsuspended');
@@ -1564,7 +1564,7 @@ class Service implements InjectionAwareInterface
         } else {
             $order->reason = $reason;
             $order->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($order);
+            $this->di['em']->persist($order);
         }
         $this->saveStatusChange($order, 'Cancellation scheduled at the end of the current billing period');
         $this->di['logger']->info('Scheduled cancellation for order #%s at the end of the current billing period', $orderId);
@@ -1622,7 +1622,7 @@ class Service implements InjectionAwareInterface
             $order->expires_at = null;
             $order->suspended_at = null;
             $order->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($order);
+            $this->di['em']->persist($order);
         }
         $this->di['em']->getConnection()->executeStatement(
             'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND name = :name',
@@ -1663,7 +1663,7 @@ class Service implements InjectionAwareInterface
             $order->suspended_at = null;
             $order->canceled_at = null;
             $order->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($order);
+            $this->di['em']->persist($order);
         }
 
         $this->saveStatusChange($order, 'Activated canceled order');
@@ -1716,7 +1716,7 @@ class Service implements InjectionAwareInterface
                 } else {
                     $addon->group_master = 1;
                     $addon->group_id = 0;
-                    $this->di['db']->store($addon);
+                    $this->di['em']->persist($addon);
                 }
             }
             if ($addon instanceof Order) {
@@ -1859,7 +1859,7 @@ class Service implements InjectionAwareInterface
         } else {
             $order->config = json_encode($config);
             $order->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($order);
+            $this->di['em']->persist($order);
         }
 
         $this->di['logger']->info(sprintf("Order #%s config changes:\n%s\n%s", $orderId, $oldConfig, $order instanceof Order ? $order->getConfig() : $order->config));
@@ -2018,7 +2018,7 @@ class Service implements InjectionAwareInterface
         } else {
             $order->unpaid_invoice_id = $proforma->id;
             $order->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($order);
+            $this->di['em']->persist($order);
         }
     }
 
@@ -2033,7 +2033,7 @@ class Service implements InjectionAwareInterface
         } else {
             $order->unpaid_invoice_id = null;
             $order->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($order);
+            $this->di['em']->persist($order);
         }
     }
 

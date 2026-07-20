@@ -874,7 +874,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $model->allow_transfer = $data['allow_transfer'] ?? $model->allow_transfer;
             $model->active = $data['active'] ?? $model->active;
             $model->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($model);
+            $this->di['em']->persist($model);
             $this->di['logger']->info('Updated top level domain %s', $model->tld);
 
             return true;

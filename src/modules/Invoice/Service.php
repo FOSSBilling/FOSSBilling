@@ -708,7 +708,7 @@ class Service implements InjectionAwareInterface
             $invoice->status = Invoice::STATUS_PAID;
             $invoice->paid_at = date('Y-m-d H:i:s');
             $invoice->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($invoice);
+            $this->di['em']->persist($invoice);
         }
 
         $this->countIncome($invoice);
@@ -753,7 +753,7 @@ class Service implements InjectionAwareInterface
             } else {
                 $invoice->gateway_id = (int) $payGateway->getId();
                 $invoice->updated_at = date('Y-m-d H:i:s');
-                $this->di['db']->store($invoice);
+                $this->di['em']->persist($invoice);
             }
         }
 
@@ -884,7 +884,7 @@ class Service implements InjectionAwareInterface
             } else {
                 $invoice->base_refund = null;
             }
-            $this->di['db']->store($invoice);
+            $this->di['em']->persist($invoice);
         }
     }
 
@@ -1044,7 +1044,7 @@ class Service implements InjectionAwareInterface
 
             $model->notes = $this->di['mod_service']('system')->getParamValue('invoice_default_note');
 
-            $this->di['db']->store($model);
+            $this->di['em']->persist($model);
         }
     }
 
@@ -1059,7 +1059,7 @@ class Service implements InjectionAwareInterface
         } else {
             $invoice->approved = 1;
             $invoice->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($invoice);
+            $this->di['em']->persist($invoice);
         }
 
         if (isset($data['use_credits']) && $data['use_credits']) {
@@ -1522,7 +1522,7 @@ class Service implements InjectionAwareInterface
             $this->di['em']->flush();
         } else {
             $model->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($model);
+            $this->di['em']->persist($model);
         }
 
         if ($previousStatus === Invoice::STATUS_UNPAID && $status === Invoice::STATUS_CANCELED) {
@@ -1866,7 +1866,7 @@ class Service implements InjectionAwareInterface
         } else {
             $invoice->reminded_at = date('Y-m-d H:i:s');
             $invoice->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($invoice);
+            $this->di['em']->persist($invoice);
         }
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceReminderSent', 'params' => ['id' => $invoiceId]]);
@@ -2123,7 +2123,7 @@ class Service implements InjectionAwareInterface
             $n = $model->notes;
             $model->notes = $n . date('Y-m-d H:i:s') . ': ' . $note . '       ' . PHP_EOL;
             $model->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($model);
+            $this->di['em']->persist($model);
         }
 
         return true;
@@ -2440,7 +2440,7 @@ class Service implements InjectionAwareInterface
                 $invoice->hash = bin2hex(random_bytes(random_int(15, 30)));
             }
             $invoice->hash_expires_at = $expiration;
-            $this->di['db']->store($invoice);
+            $this->di['em']->persist($invoice);
         }
     }
 
@@ -2466,7 +2466,7 @@ class Service implements InjectionAwareInterface
         } else {
             $invoice->hash = bin2hex(random_bytes(random_int(15, 30)));
             $invoice->hash_expires_at = $expiration;
-            $this->di['db']->store($invoice);
+            $this->di['em']->persist($invoice);
         }
     }
 

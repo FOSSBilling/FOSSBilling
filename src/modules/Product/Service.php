@@ -1275,7 +1275,7 @@ class Service implements InjectionAwareInterface
         } else {
             $order->promo_recurring = (int) !empty($promoData['recurring']);
             $order->promo_used = 1;
-            $this->di['db']->store($order);
+            $this->di['em']->persist($order);
         }
     }
 
