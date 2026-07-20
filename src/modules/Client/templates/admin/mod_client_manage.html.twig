@@ -583,7 +583,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% set invoices = admin.invoice_get_list({ 'per_page': 100, 'client_id': client.id }) %}
+                                {% set invoices = admin.invoice_get_list({ 'per_page': 100, 'client_id': client.id, 'summary': 1 }) %}
                                 {% for invoice in invoices.list %}
                                 <tr>
                                     <td>

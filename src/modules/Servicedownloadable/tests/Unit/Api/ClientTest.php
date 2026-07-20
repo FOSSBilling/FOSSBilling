@@ -62,6 +62,7 @@ test('throws exception when sending file with order not activated', function ():
     $modelClient = createEntity(\Box\Mod\Client\Entity\Client::class);
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
+    $orderServiceMock->shouldReceive('assertOrderUsable')->atLeast()->once();
     $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once();
 
     $dbMock = Mockery::mock('\Box_Database');
@@ -97,6 +98,9 @@ test('sends file', function (): void {
         ->andReturn($response);
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
+    $orderServiceMock->shouldReceive('assertOrderUsable')
+        ->atLeast()
+        ->once();
     $orderServiceMock->shouldReceive('getOrderService')
         ->atLeast()
         ->once()
@@ -120,4 +124,42 @@ test('sends file', function (): void {
 
     $result = $api->send_file($data);
     expect($result)->toBe($response);
+});
+
+test('throws exception when sending file for expired order', function (): void {
+    $api = apiEndpoint(new Box\Mod\Servicedownloadable\Api\Client());
+    $data = [
+        'order_id' => 1,
+    ];
+
+    $modelClient = new Model_Client();
+    $modelClient->loadBean(new Tests\Helpers\DummyBean());
+
+    $expiredOrder = new Model_ClientOrder();
+    $expiredOrder->loadBean(new Tests\Helpers\DummyBean());
+    $expiredOrder->status = 'active';
+    $expiredOrder->expires_at = date('Y-m-d H:i:s', time() - 3600);
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('findOne')
+        ->atLeast()
+        ->once()
+        ->andReturn($expiredOrder);
+
+    $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
+    $orderServiceMock->shouldReceive('assertOrderUsable')
+        ->once()
+        ->with($expiredOrder)
+        ->andThrow(new FOSSBilling\InformationException('Subscription expired'));
+    $orderServiceMock->shouldReceive('getOrderService')->never();
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(moduleService(['order' => $orderServiceMock]));
+
+    $api->setDi($di);
+    $api->setIdentity($modelClient);
+
+    expect(fn (): Response => $api->send_file($data))
+        ->toThrow(FOSSBilling\InformationException::class, 'Subscription expired');
 });

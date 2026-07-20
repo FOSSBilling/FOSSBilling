@@ -317,26 +317,59 @@ test('hasPermission returns false for staff without method permission', function
 
 test('onAfterClientReplyTicket sends email notification', function (): void {
     $eventMock = Mockery::mock('\Box_Event');
+    $ticketId = 42;
+    $clientId = 7;
+    $ticketModel = (new Box\Mod\Support\Entity\SupportTicket())
+        ->setClientId($clientId)
+        ->setPriority(25);
+    $clientModel = Mockery::mock(Model_Client::class);
+    $clientDetails = [
+        'id' => $clientId,
+        'email' => 'client@example.com',
+        'first_name' => 'Example',
+        'last_name' => 'Client',
+    ];
 
     $supportServiceMock = Mockery::mock(Box\Mod\Support\Service::class);
-    $supportServiceMock->shouldReceive('getTicketById')->atLeast()->once()
-        ->andReturn(new Box\Mod\Support\Entity\SupportTicket());
-    $supportServiceMock->shouldReceive('toApiArray')->atLeast()->once()
-        ->andReturn([]);
+    $supportServiceMock->shouldReceive('getTicketById')->once()
+        ->with($ticketId)
+        ->andReturn($ticketModel);
+    $supportServiceMock->shouldReceive('toApiArray')->once()
+        ->with($ticketModel, true)
+        ->andReturn(['subject' => 'Example ticket']);
+
+    $clientServiceMock = Mockery::mock(Box\Mod\Client\Service::class);
+    $clientServiceMock->shouldReceive('get')->once()
+        ->with(['id' => $clientId])
+        ->andReturn($clientModel);
+    $clientServiceMock->shouldReceive('toApiArray')->once()
+        ->with($clientModel)
+        ->andReturn($clientDetails);
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
-    $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()
-        ->with(Mockery::on(fn ($email): bool => $email['code'] === 'mod_staff_ticket_reply'));
+    $emailServiceMock->shouldReceive('sendTemplate')->once()
+        ->with([
+            'to_staff' => true,
+            'code' => 'mod_staff_ticket_reply',
+            'ticket' => [
+                'subject' => 'Example ticket',
+                'priority' => 25,
+                'client' => $clientDetails,
+            ],
+        ]);
 
-    $eventMock->shouldReceive('getparameters')->atLeast()->once()
-        ->andReturn(['id' => random_int(1, 100)]);
+    $eventMock->shouldReceive('getParameters')->once()
+        ->andReturn(['id' => $ticketId]);
 
     $service = new Service();
 
     $di = container();
-    $di['mod_service'] = $di->protect(function ($name) use ($supportServiceMock, $emailServiceMock) {
+    $di['mod_service'] = $di->protect(function ($name) use ($supportServiceMock, $clientServiceMock, $emailServiceMock) {
         if ($name == 'support') {
             return $supportServiceMock;
+        }
+        if ($name == 'client') {
+            return $clientServiceMock;
         }
         if ($name == 'email') {
             return $emailServiceMock;
@@ -347,6 +380,51 @@ test('onAfterClientReplyTicket sends email notification', function (): void {
         ->andReturn($di);
     $service->setDi($di);
     $service->onAfterClientReplyTicket($eventMock);
+});
+
+test('onAfterClientReplyTicket still sends when its client no longer exists', function (): void {
+    $eventMock = Mockery::mock('\\Box_Event');
+    $ticketId = 42;
+    $clientId = 7;
+    $ticketModel = (new Box\Mod\Support\Entity\SupportTicket())
+        ->setClientId($clientId)
+        ->setPriority(25);
+
+    $supportServiceMock = Mockery::mock(Box\Mod\Support\Service::class);
+    $supportServiceMock->shouldReceive('getTicketById')->once()
+        ->with($ticketId)
+        ->andReturn($ticketModel);
+    $supportServiceMock->shouldReceive('toApiArray')->once()
+        ->with($ticketModel, true)
+        ->andReturn(['subject' => 'Example ticket']);
+
+    $clientServiceMock = Mockery::mock(Box\Mod\Client\Service::class);
+    $clientServiceMock->shouldReceive('get')->once()
+        ->with(['id' => $clientId])
+        ->andThrow(new FOSSBilling\InformationException('Client not found'));
+
+    $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
+    $emailServiceMock->shouldReceive('sendTemplate')->once()
+        ->with([
+            'to_staff' => true,
+            'code' => 'mod_staff_ticket_reply',
+            'ticket' => [
+                'subject' => 'Example ticket',
+                'priority' => 25,
+            ],
+        ]);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn ($name) => match ($name) {
+        'support' => $supportServiceMock,
+        'client' => $clientServiceMock,
+        'email' => $emailServiceMock,
+    });
+
+    $eventMock->shouldReceive('getParameters')->once()->andReturn(['id' => $ticketId]);
+    $eventMock->shouldReceive('getDi')->once()->andReturn($di);
+
+    Service::onAfterClientReplyTicket($eventMock);
 });
 
 test('onAfterClientReplyTicket handles email exception', function (): void {
@@ -728,7 +806,7 @@ test('onAfterClientOpenTicket sends mod_staff_ticket_open email', function (): v
     $emailConfig = [
         'to_staff' => true,
         'code' => 'mod_staff_ticket_open',
-        'ticket' => $supportTicketArray,
+        'ticket' => ['priority' => 100],
     ];
     $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()
         ->with($emailConfig)
@@ -789,7 +867,7 @@ test('onAfterClientOpenTicket sends mod_support_helpdesk_ticket_open email', fun
     $emailConfig = [
         'to' => $helpdeskModel->getEmail(),
         'code' => 'mod_support_helpdesk_ticket_open',
-        'ticket' => $supportTicketArray,
+        'ticket' => ['priority' => 100],
     ];
     $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()
         ->with($emailConfig)

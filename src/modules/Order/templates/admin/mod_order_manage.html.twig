@@ -559,7 +559,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% set invoices = admin.invoice_get_list({ 'per_page': 50, 'order_id': order.id }) %}
+                                {% set invoices = admin.invoice_get_list({ 'per_page': 50, 'order_id': order.id, 'summary': 1 }) %}
                                 {% for invoice in invoices.list %}
                                 <tr>
                                     <td><a href='{{ "invoice/manage/#{invoice.id}"|url }}'>#{{ invoice.id }}</a></td>
@@ -610,7 +610,7 @@
                                 {% for i, sh in statuses.list %}
                                 <tr>
                                     <td class="d-none d-lg-table-cell">{{ sh.created_at|format_datetime }}</td>
-                                    <td class="d-lg-none">{{ sh.created_at|format_datetime(pattern="MM/DD/YY MM:HH") }}</td>
+                                    <td class="d-lg-none">{{ sh.created_at|format_datetime(pattern="MM/dd/yy HH:mm") }}</td>
                                     <td>{{ mf.status_badge(sh.status, 'order') }}</td>
                                     <td class="text-wrap">{{ sh.notes }}</td>
                                     <td>

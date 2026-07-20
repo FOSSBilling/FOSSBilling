@@ -236,6 +236,42 @@ test('getVars supplies the default currency for invoice template previews', func
     ]);
 });
 
+test('getVars supplies preview variables for support and staff templates before their first send', function (): void {
+    $service = new Box\Mod\Email\Service();
+
+    $supportVars = $service->getVars(emailTemplate('mod_support_ticket_staff_open'));
+    expect($supportVars)
+        ->toHaveKeys(['c.email', 'ticket.subject', 'ticket.client.first_name', 'ticket.messages.0.content'])
+        ->not->toHaveKeys(['ticket.priority', 'ticket.client.email', 'ticket.messages.0.author.email']);
+
+    $staffVars = $service->getVars(emailTemplate('mod_staff_ticket_open'));
+    expect($staffVars)
+        ->toHaveKeys(['staff.email', 'ticket.priority', 'ticket.client.email', 'ticket.messages.0.content']);
+
+    $passwordResetVars = $service->getVars(emailTemplate('mod_staff_password_reset_approve'));
+    expect($passwordResetVars)->toHaveKeys(['c.id', 'c.email', 'c.name']);
+
+    $signupVars = $service->getVars(emailTemplate('mod_staff_client_signup'));
+    expect($signupVars)->toHaveKeys(['c.email', 'c.first_name', 'c.last_name', 'staff.email']);
+});
+
+test('getVars merges stored examples over preview defaults', function (): void {
+    $service = new Box\Mod\Email\Service();
+
+    $cryptMock = Mockery::mock('\Box_Crypt');
+    $cryptMock->shouldReceive('decrypt')->once()->andReturn('{"ticket":{"subject":"Stored subject"}}');
+
+    $di = container();
+    $di['crypt'] = $cryptMock;
+    $service->setDi($di);
+
+    $template = emailTemplate('mod_staff_ticket_reply', data: ['vars' => 'encrypted']);
+    $vars = $service->getVars($template);
+
+    expect($vars['ticket']['subject'])->toBe('Stored subject')
+        ->and($vars)->toHaveKeys(['staff.email', 'ticket.priority', 'ticket.client.email']);
+});
+
 test('sendTemplate returns false when template does not exist', function (): void {
     $service = new Box\Mod\Email\Service();
     $di = container();
@@ -1027,7 +1063,7 @@ test('templateCreate creates new template', function (): void {
     expect($result->getActionCode())->toBe($data['action_code']);
 });
 
-test('templateBatchRegenerate resets existing built-in templates skipped by active module sync', function (): void {
+test('templateBatchRegenerate resets existing built-in templates without module discovery', function (): void {
     $template = emailTemplate('mod_invoice_created', 1, [
         'subject' => 'Legacy subject',
         'content' => '{{ invoice.total|money(invoice.currency) }}',
@@ -1046,13 +1082,9 @@ test('templateBatchRegenerate resets existing built-in templates skipped by acti
     $em = emailBuildEm(templateRepo: $templateRepository);
     $em->shouldReceive('flush')->once();
 
-    $extensionService = Mockery::mock(Box\Mod\Extension\Service::class);
-    $extensionService->shouldReceive('isExtensionActive')->andReturnFalse();
-
     $di = container();
     $di['em'] = $em;
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['mod_service'] = $di->protect(moduleService(['extension' => $extensionService]));
 
     $service = new Box\Mod\Email\Service();
     $service->setDi($di);
@@ -1065,7 +1097,9 @@ test('templateBatchRegenerate resets existing built-in templates skipped by acti
         ->and($customTemplate->getContent())->toBe('Custom template content');
 
     $logMessages = array_map(static fn (array $call): string => $call['params'][0], $di['logger']->calls);
-    expect($logMessages)->toContain('Regenerated 1 file-backed email templates.');
+    expect($logMessages)
+        ->not->toContain('Synced file-backed email templates for installed modules.')
+        ->toContain('Regenerated 1 existing file-backed email templates.');
 });
 
 test('templateBatchDisable disables all templates', function (): void {

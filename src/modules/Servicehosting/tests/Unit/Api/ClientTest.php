@@ -122,6 +122,9 @@ test('testGetService', function (): void {
     $model = new ServiceHosting();
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
     $orderServiceMock
+    ->shouldReceive('assertOrderUsable')
+    ->atLeast()->once();
+    $orderServiceMock
     ->shouldReceive('getOrderService')
     ->atLeast()->once()
     ->andReturn($model);
@@ -155,6 +158,9 @@ test('testGetServiceOrderNotActivated', function (): void {
 
     $model = null;
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
+    $orderServiceMock
+    ->shouldReceive('assertOrderUsable')
+    ->atLeast()->once();
     $orderServiceMock
     ->shouldReceive('getOrderService')
     ->atLeast()->once()
@@ -207,4 +213,40 @@ test('testGetServiceMissingOrderId', function (): void {
     $this->expectException(FOSSBilling\Exception::class);
     $this->expectExceptionMessage('Order ID is required');
     $api->_getService($data);
+});
+
+test('testGetServiceThrowsForExpiredOrder', function (): void {
+    $api = apiEndpoint(new Client());
+    $data = [
+        'order_id' => 1,
+    ];
+
+    $clientOrderModel = new Model_ClientOrder();
+    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel->status = Model_ClientOrder::STATUS_ACTIVE;
+    $clientOrderModel->expires_at = date('Y-m-d H:i:s', time() - 3600);
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('findOne')->atLeast()->once()->andReturn($clientOrderModel);
+
+    $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
+    $orderServiceMock->shouldReceive('assertOrderUsable')
+        ->once()
+        ->with($clientOrderModel)
+        ->andThrow(new FOSSBilling\InformationException('Subscription expired'));
+    $orderServiceMock->shouldReceive('getOrderService')->never();
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
+    $di['db'] = $dbMock;
+
+    $api->setDi($di);
+
+    $clientModel = new Model_Client();
+    $clientModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientModel->id = 1;
+    $api->setIdentity($clientModel);
+
+    expect(fn () => $api->_getService($data))
+        ->toThrow(FOSSBilling\InformationException::class, 'Subscription expired');
 });

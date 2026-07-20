@@ -511,7 +511,15 @@ class Service implements InjectionAwareInterface
             Order::STATUS_CANCELED,
         ];
 
-        return !in_array($order->status, $badStatus);
+        if (in_array($order->status, $badStatus)) {
+            return false;
+        }
+
+        if ($order->expires_at !== null && strtotime((string) $order->expires_at) <= time()) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -668,6 +676,85 @@ class Service implements InjectionAwareInterface
             $result['username'] = $this->_getModelProperty($model, 'username');
             $result['created_at'] = $this->_getModelProperty($model, 'created_at');
             $result['updated_at'] = $this->_getModelProperty($model, 'updated_at');
+        }
+
+        return $result;
+    }
+
+    /**
+     * Enrich a page of hosting-account search results with orders and clients in batches.
+     */
+    public function getAccountsBatchForApi(array $accounts, $identity = null): array
+    {
+        if (empty($accounts)) {
+            return [];
+        }
+
+        $serviceIds = array_values(array_unique(array_map(
+            intval(...),
+            array_filter(array_column($accounts, 'id'), is_numeric(...)),
+        )));
+
+        $orderIdsByServiceId = [];
+        if (!empty($serviceIds)) {
+            $placeholders = implode(',', array_fill(0, count($serviceIds), '?'));
+            $orderRows = $this->di['db']->getAll(
+                "SELECT id, service_id FROM client_order WHERE service_type = ? AND service_id IN ($placeholders) ORDER BY id ASC",
+                array_merge(['hosting'], $serviceIds),
+            );
+            foreach ($orderRows as $orderRow) {
+                $serviceId = (int) $orderRow['service_id'];
+                $orderIdsByServiceId[$serviceId] ??= (int) $orderRow['id'];
+            }
+        }
+
+        $ordersById = [];
+        if (!empty($orderIdsByServiceId)) {
+            $orderService = $this->di['mod_service']('order');
+            $orders = $orderService->getBatchForApi(array_values($orderIdsByServiceId), $identity);
+            foreach ($orders as $order) {
+                $ordersById[(int) $order['id']] = $order;
+            }
+        }
+
+        $result = [];
+        foreach ($accounts as $account) {
+            $accountData = $this->hostingAccountSearchResultToApiArray($account, $identity);
+            $orderId = $orderIdsByServiceId[(int) $account['id']] ?? null;
+            if ($orderId === null || !isset($ordersById[$orderId])) {
+                $accountData['order'] = null;
+                $result[] = $accountData;
+
+                continue;
+            }
+
+            $order = $ordersById[$orderId];
+            $accountData['client'] = $order['client'];
+            unset($order['client']);
+            $accountData['order'] = $order;
+            $result[] = $accountData;
+        }
+
+        return $result;
+    }
+
+    private function hostingAccountSearchResultToApiArray(array $account, $identity = null): array
+    {
+        $result = [
+            'id' => $account['id'],
+            'sld' => $account['sld'],
+            'tld' => $account['tld'],
+            'client_id' => $account['client_id'],
+            'server_id' => $account['service_hosting_server_id'],
+            'plan_id' => $account['service_hosting_hp_id'],
+            'reseller' => $account['reseller'],
+        ];
+
+        if ($identity instanceof \Model_Admin) {
+            $result['ip'] = $account['ip'];
+            $result['username'] = $account['username'];
+            $result['created_at'] = $account['created_at'];
+            $result['updated_at'] = $account['updated_at'];
         }
 
         return $result;

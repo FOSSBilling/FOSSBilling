@@ -217,6 +217,7 @@
                         card_class: 'm-3'
                     } %}
                         {% block section_content %}
+                        {% import 'partial_email_template_macros.html.twig' as email_template %}
                         <div class="table-responsive">
                             <table class="table card-table table-vcenter table-striped text-nowrap">
                                 <thead>
@@ -226,41 +227,13 @@
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {% for k,var in template.vars %}
-                                    {% if var is iterable %}
-                                        {% for subkey,subvalue in var %}
-                                            {% if subvalue is iterable %}
-                                                {% for subsubkey,subsubvalue in var %}
-                                                    {% if subsubvalue is not iterable %}
-                                                        <tr>
-                                                            <td>{{ '{{' }} {{ k }}.{{ subkey }}.{{ subsubkey }}{{ '}}' }}</td>
-                                                            <td>{{ subsubvalue }}</td>
-                                                        </tr>
-                                                    {% else %}
-                                                        <tr>
-                                                            <td>{{ '{{' }} {{ k }}.{{ subkey }}.{{ subsubkey }}{{ '}}' }}</td>
-                                                            <td>Array [ ]</td>
-                                                        </tr>
-                                                    {% endif %}
-                                                {% endfor %}
-                                            {% else %}
-                                                <tr>
-                                                    <td>{{ '{{' }} {{ k }}.{{ subkey }} {{ '}}' }}</td>
-                                                    <td>{{ subvalue }}</td>
-                                                </tr>
-                                            {% endif %}
-                                        {% endfor %}
-                                    {% else %}
-                                        <tr>
-                                            <td>{{ '{{' }} {{ k }} {{ '}}' }}</td>
-                                            <td>{{ var }}</td>
-                                        </tr>
-                                    {% endif %}
+                                {% if template.vars|length > 0 %}
+                                    {{ email_template.render_vars(template.vars) }}
                                 {% else %}
                                     <tr>
                                         <td class="text-muted" colspan="2">{{ 'This template has no known parameters, you may need to take an action to trigger its sending before they become known.'|trans }}</td>
                                     </tr>
-                                {% endfor %}
+                                {% endif %}
                                 </tbody>
                             </table>
                         </div>

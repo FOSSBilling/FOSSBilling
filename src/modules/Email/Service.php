@@ -149,7 +149,100 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $vars['invoice'] = $invoice;
         }
 
+        $defaults = $this->getTemplateVarDefaults($template->getActionCode());
+        if ($defaults !== []) {
+            $vars = array_replace_recursive($defaults, $vars);
+        }
+
         return $vars;
+    }
+
+    private function getTemplateVarDefaults(string $actionCode): array
+    {
+        $staff = [
+            'id' => 1,
+            'email' => 'staff@example.com',
+            'name' => 'Staff Member',
+            'signature' => '',
+        ];
+        $client = [
+            'id' => 1,
+            'email' => 'client@example.com',
+            'email_approved' => true,
+            'type' => 'individual',
+            'company' => '',
+            'company_vat' => '',
+            'company_number' => '',
+            'first_name' => 'Example',
+            'last_name' => 'Client',
+            'gender' => '',
+            'birthday' => '',
+            'phone_cc' => '',
+            'phone' => '',
+            'address_1' => '',
+            'address_2' => '',
+            'city' => '',
+            'state' => '',
+            'postcode' => '',
+            'country' => '',
+            'currency' => '',
+            'lang' => '',
+            'timezone' => '',
+        ];
+        $message = [
+            'id' => 1,
+            'content' => 'Example ticket message',
+            'attachment' => '',
+            'created_at' => '',
+            'updated_at' => '',
+            'author' => [
+                'name' => 'Example Client',
+                'role' => 'client',
+            ],
+        ];
+        $ticket = [
+            'id' => 1,
+            'subject' => 'Example support ticket',
+            'status' => 'open',
+            'created_at' => '',
+            'updated_at' => '',
+            'replies' => 0,
+            'first' => $message,
+            'helpdesk' => [
+                'id' => 1,
+                'name' => 'Support',
+                'can_reopen' => true,
+            ],
+            'author' => [
+                'id' => 1,
+                'name' => 'Example Client',
+                'first_name' => 'Example',
+                'last_name' => 'Client',
+                'email' => 'client@example.com',
+                'role' => 'client',
+            ],
+            'client' => [
+                'id' => 1,
+                'first_name' => 'Example',
+                'last_name' => 'Client',
+            ],
+            'messages' => [$message],
+        ];
+        $staffTicket = $ticket;
+        $staffTicket['priority'] = 100;
+        $staffTicket['client'] = $client;
+
+        return match ($actionCode) {
+            'mod_support_ticket_staff_open',
+            'mod_support_ticket_staff_close',
+            'mod_support_ticket_staff_reply' => ['c' => $client, 'ticket' => $ticket],
+            'mod_staff_ticket_open',
+            'mod_staff_ticket_reply',
+            'mod_staff_ticket_close' => ['staff' => $staff, 'ticket' => $staffTicket],
+            'mod_staff_password_reset_approve' => ['c' => $staff],
+            'mod_staff_client_signup' => ['c' => $client, 'staff' => $staff],
+            default => [],
+        };
     }
 
     public function sendTemplate($data)
@@ -901,7 +994,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function templateBatchRegenerate(): bool
     {
-        $this->templateBatchGenerate();
         $regenerated = 0;
 
         foreach ($this->getTemplateRepository()->findAll() as $template) {
@@ -910,14 +1002,16 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             }
 
             $default = $this->getDefaultTemplate($template->getActionCode());
-            if ($default !== null) {
-                $this->resetBuiltinTemplate($template, $default);
-                ++$regenerated;
+            if ($default === null) {
+                continue;
             }
+
+            $this->resetBuiltinTemplate($template, $default);
+            ++$regenerated;
         }
 
         $this->di['em']->flush();
-        $this->di['logger']->info(sprintf('Regenerated %d file-backed email templates.', $regenerated));
+        $this->di['logger']->info(sprintf('Regenerated %d existing file-backed email templates.', $regenerated));
 
         return true;
     }
@@ -925,6 +1019,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     private function syncFileBackedTemplates(): bool
     {
         $extensionService = $this->di['mod_service']('extension');
+        $templatesByCode = [];
+        foreach ($this->getTemplateRepository()->findAll() as $template) {
+            $templatesByCode[$template->getActionCode()] = $template;
+        }
 
         $finder = new Finder();
         $finder = $finder->files()->in(PATH_MODS . '/*/templates/email/')->name('*.html.twig');
@@ -938,7 +1036,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 continue;
             }
 
-            $template = $this->getTemplateRepository()->findOneByActionCode($code);
+            $template = $templatesByCode[$code] ?? null;
             $default = $this->getDefaultTemplate($code, ['code' => $code]);
             if ($default === null) {
                 continue;

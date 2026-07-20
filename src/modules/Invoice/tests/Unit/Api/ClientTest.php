@@ -188,14 +188,22 @@ test('gets transaction list', function (): void {
     $transactionService->shouldReceive('getSearchQuery')
         ->atLeast()->once()
         ->andReturn(['SqlString', []]);
+    $transactionService->shouldReceive('searchResultToApiArray')
+        ->once()
+        ->with(['id' => 1])
+        ->andReturn(['id' => 1, 'gateway' => 'Stripe']);
 
     $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
     $paginatorMock->shouldReceive('getPaginatedResultSet')
         ->atLeast()->once()
-        ->andReturn(['list' => []]);
+        ->andReturn(['list' => [['id' => 1]]]);
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldNotReceive('getExistingModelById');
 
     $di = container();
     $di['pager'] = $paginatorMock;
+    $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(moduleService(['invoice:transaction' => $transactionService]));
 
     $api->setDi($di);
@@ -203,7 +211,7 @@ test('gets transaction list', function (): void {
     $identity = createEntity(\Box\Mod\Client\Entity\Client::class);
     $api->setIdentity($identity);
     $result = $api->transaction_get_list([]);
-    expect($result)->toBeArray();
+    expect($result['list'])->toBe([['id' => 1, 'gateway' => 'Stripe']]);
 });
 
 test('gets tax rate for client', function (): void {

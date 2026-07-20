@@ -91,6 +91,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
         }
 
         $orderService = $this->getDi()['mod_service']('order');
+        $orderService->assertOrderUsable($order);
         $s = $orderService->getOrderService($order);
         if ((!$s instanceof ServiceHosting) || $order->status !== Order::STATUS_ACTIVE) {
             throw new \FOSSBilling\InformationException('Order is not activated');
