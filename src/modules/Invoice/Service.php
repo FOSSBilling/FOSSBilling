@@ -214,15 +214,9 @@ class Service implements InjectionAwareInterface
     {
         $this->ensureValidHash($invoice);
 
-        if ($invoice instanceof Invoice) {
-            $row = $this->buildRowFromEntity($invoice);
+        $row = $this->buildRowFromEntity($invoice);
             $invoiceId = $invoice->getId();
             $items = $this->getInvoiceItemRepository()->findByInvoiceId($invoiceId);
-        } else {
-            $row = $this->di['db']->toArray($invoice);
-            $invoiceId = $row['id'];
-            $items = $this->getInvoiceItemRepository()->findByInvoiceId((int) $row['id']);
-        }
 
         $lines = [];
         $total = 0;

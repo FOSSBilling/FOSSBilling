@@ -606,7 +606,12 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getDi()['em']->getRepository(ClientGroup::class)->find($data['id']) ?? throw new InformationException('Group not found');
 
-        return $this->getDi()['db']->toArray($model);
+        return [
+            'id' => $model->getId(),
+            'title' => $model->getTitle(),
+            'created_at' => $model->getCreatedAt(),
+            'updated_at' => $model->getUpdatedAt(),
+        ];
     }
 
     /**

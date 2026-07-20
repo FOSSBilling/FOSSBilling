@@ -609,12 +609,7 @@ test('groupGet returns array', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $data['id'] = '2';
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-        ->shouldReceive('toArray')->atLeast()->once()->andReturn([]);
-
     $di = container();
-    $di['db'] = $dbMock;
     $validatorStub = $this->createStub(FOSSBilling\Validate::class);
     $di['validator'] = $validatorStub;
 

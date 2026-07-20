@@ -442,8 +442,7 @@ class Service implements InjectionAwareInterface
         $clientService = $this->di['mod_service']('client');
         $supportService = $this->di['mod_service']('support');
 
-        if ($model instanceof Order) {
-            $data = [
+        $data = [
                 'id' => $model->getId(),
                 'client_id' => $model->getClientId(),
                 'product_id' => $model->getProductId(),
@@ -481,13 +480,6 @@ class Service implements InjectionAwareInterface
             $modelConfig = $model->getConfig();
             $modelTitle = $model->getTitle();
             $modelClientId = $model->getClientId();
-        } else {
-            $data = $this->di['db']->toArray($model);
-            $modelId = $model->id;
-            $modelConfig = $model->config;
-            $modelTitle = $model->title;
-            $modelClientId = $model->client_id;
-        }
 
         $data['config'] = json_decode($modelConfig ?? '', true) ?? [];
         $data['total'] = $this->getTotal($model);

@@ -143,20 +143,16 @@ class ServiceTax implements InjectionAwareInterface
 
     public function toApiArray(Tax $model, $deep = false, $identity = null)
     {
-        if ($model instanceof Tax) {
-            return [
-                'id' => $model->getId(),
-                'level' => $model->getLevel(),
-                'name' => $model->getName(),
-                'country' => $model->getCountry(),
-                'state' => $model->getState(),
-                'taxrate' => $model->getTaxrate(),
-                'created_at' => $model->getCreatedAt(),
-                'updated_at' => $model->getUpdatedAt(),
-            ];
-        }
-
-        return $this->di['db']->toArray($model);
+        return [
+            'id' => $model->getId(),
+            'level' => $model->getLevel(),
+            'name' => $model->getName(),
+            'country' => $model->getCountry(),
+            'state' => $model->getState(),
+            'taxrate' => $model->getTaxrate(),
+            'created_at' => $model->getCreatedAt(),
+            'updated_at' => $model->getUpdatedAt(),
+        ];
     }
 
     private function getInvoiceItemRepository(): InvoiceItemRepository

@@ -915,17 +915,12 @@ class Service implements InjectionAwareInterface
         $list = [];
         $products = $this->getCartProducts($cart);
         foreach ($products as $p) {
-            if ($p instanceof CartProduct) {
-                $item = [
+            $item = [
                     'id' => $p->getId(),
                     'cart_id' => $p->getCartId(),
                     'product_id' => $p->getProductId(),
                     'config' => $this->getItemConfig($p),
                 ];
-            } else {
-                $item = $this->di['db']->toArray($p);
-                $item['config'] = $this->getItemConfig($p);
-            }
             $list[] = $item;
         }
 
