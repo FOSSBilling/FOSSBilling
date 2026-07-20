@@ -176,14 +176,14 @@ test('update finalization status falls back to legacy admin while pending', func
     $updateFinalization->shouldReceive('isRequired')->once()->andReturn(true);
     $updateFinalization->shouldReceive('getStatus')->once()->withNoArgs()->andReturn(['required' => true]);
 
-    $db = Mockery::mock(Box_Database::class);
-    $db->shouldReceive('getCell')->once()->with("SHOW COLUMNS FROM `admin` LIKE 'role'")->andReturn('role');
-    $db->shouldReceive('getCell')->once()->with('SELECT role FROM admin WHERE id = :id', ['id' => 1])->andReturn('admin');
+    $connection = Mockery::mock(\Doctrine\DBAL\Connection::class)->shouldIgnoreMissing();
+    $connection->shouldReceive('fetchOne')->once()->with("SHOW COLUMNS FROM `admin` LIKE 'role'")->andReturn('role');
+    $connection->shouldReceive('fetchOne')->once()->with('SELECT role FROM admin WHERE id = :id', ['id' => 1])->andReturn('admin');
 
     $di = container();
     $di['update_finalization'] = $updateFinalization;
     $di['mod_service'] = $di->protect(fn (string $serviceName): mixed => $serviceName === 'Staff' ? $staffService : false);
-    $di['db'] = $db;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $api->setDi($di);
 
     expect($api->update_finalization_status())->toBe(['required' => true]);
@@ -201,14 +201,14 @@ test('update finalization status rejects legacy non-admin while pending', functi
     $updateFinalization = Mockery::mock();
     $updateFinalization->shouldReceive('isRequired')->once()->andReturn(true);
 
-    $db = Mockery::mock(Box_Database::class);
-    $db->shouldReceive('getCell')->once()->with("SHOW COLUMNS FROM `admin` LIKE 'role'")->andReturn('role');
-    $db->shouldReceive('getCell')->once()->with('SELECT role FROM admin WHERE id = :id', ['id' => 1])->andReturn('staff');
+    $connection = Mockery::mock(\Doctrine\DBAL\Connection::class)->shouldIgnoreMissing();
+    $connection->shouldReceive('fetchOne')->once()->with("SHOW COLUMNS FROM `admin` LIKE 'role'")->andReturn('role');
+    $connection->shouldReceive('fetchOne')->once()->with('SELECT role FROM admin WHERE id = :id', ['id' => 1])->andReturn('staff');
 
     $di = container();
     $di['update_finalization'] = $updateFinalization;
     $di['mod_service'] = $di->protect(fn (string $serviceName): mixed => $serviceName === 'Staff' ? $staffService : false);
-    $di['db'] = $db;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $api->setDi($di);
 
     expect(fn (): array => $api->update_finalization_status())

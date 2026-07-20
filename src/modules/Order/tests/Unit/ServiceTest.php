@@ -537,11 +537,7 @@ test('onAfterAdminOrderUncancel logs exceptions', function (): void {
 test('getOrderService returns core service', function (): void {
     $service = createEntity(\Box\Mod\Servicecustom\Entity\ServiceCustom::class);
 
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('to_camel_case')->atLeast()->once()->andReturn('ServiceCustom');
-
     $di = container();
-    $di['tools'] = $toolsMock;
     $di['em']->getRepository(\Box\Mod\Servicecustom\Entity\ServiceCustom::class)->shouldReceive('find')->andReturn($service);
 
     $svc = new Service();
