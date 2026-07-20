@@ -296,8 +296,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
                 // If the installation hasn't migrated to the new group structure yet,
                 // Manually look for the old "admin" role
                 if (
-                    $this->getDi()['db']->getCell("SHOW COLUMNS FROM `admin` LIKE 'role'")
-                    && $this->getDi()['db']->getCell('SELECT role FROM admin WHERE id = :id', ['id' => (int) $this->identity->id]) === 'admin'
+                    $this->getDi()['em']->getConnection()->fetchOne("SHOW COLUMNS FROM `admin` LIKE 'role'")
+                    && $this->getDi()['em']->getConnection()->fetchOne('SELECT role FROM admin WHERE id = :id', ['id' => (int) $this->identity->id]) === 'admin'
                 ) {
                     return;
                 }

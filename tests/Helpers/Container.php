@@ -542,6 +542,12 @@ function container(): Container
         $serviceDownloadableRepository->shouldReceive('findOneBy')->byDefault()->andReturn(null);
 
         $em = \Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
+        $connectionMock = \Mockery::mock(\Doctrine\DBAL\Connection::class)->shouldIgnoreMissing();
+        $connectionMock->shouldReceive('executeStatement')->byDefault()->andReturn(1);
+        $connectionMock->shouldReceive('fetchOne')->byDefault()->andReturn(null);
+        $connectionMock->shouldReceive('fetchAssociative')->byDefault()->andReturn(null);
+        $connectionMock->shouldReceive('fetchAllAssociative')->byDefault()->andReturn([]);
+        $em->shouldReceive('getConnection')->byDefault()->andReturn($connectionMock);
         $em->shouldReceive('getRepository')->byDefault()->andReturnUsing(static fn (string $class): object => match ($class) {
             \Box\Mod\Staff\Entity\Admin::class => $adminRepository,
             \Box\Mod\Staff\Entity\AdminGroup::class => $adminGroupRepository,

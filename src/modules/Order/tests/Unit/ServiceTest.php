@@ -537,16 +537,12 @@ test('onAfterAdminOrderUncancel logs exceptions', function (): void {
 test('getOrderService returns core service', function (): void {
     $service = createEntity(\Box\Mod\Servicecustom\Entity\ServiceCustom::class);
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('findOne')->never();
-    $dbMock->shouldReceive('load')->atLeast()->once()->andReturn($service);
-
     $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
     $toolsMock->shouldReceive('to_camel_case')->atLeast()->once()->andReturn('ServiceCustom');
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['tools'] = $toolsMock;
+    $di['em']->getRepository(\Box\Mod\Servicecustom\Entity\ServiceCustom::class)->shouldReceive('find')->andReturn($service);
 
     $svc = new Service();
     $svc->setDi($di);
@@ -562,14 +558,10 @@ test('getOrderService returns core service', function (): void {
 });
 
 test('getOrderService returns non-core service', function (): void {
-    $service = createEntity(\Box\Mod\Servicecustom\Entity\ServiceCustom::class);
-
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('getExistingModelById')->never();
-    $dbMock->shouldReceive('findOne')->atLeast()->once()->andReturn($service);
+    $serviceData = ['id' => 1, 'product_id' => 5];
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->getConnection()->shouldReceive('fetchAssociative')->atLeast()->once()->andReturn($serviceData);
 
     $svc = new Service();
     $svc->setDi($di);
@@ -580,7 +572,7 @@ test('getOrderService returns non-core service', function (): void {
 
     $result = $svc->getOrderService($order);
 
-    expect($result)->toBeInstanceOf(\Box\Mod\Servicecustom\Entity\ServiceCustom::class);
+    expect($result)->toBeArray();
 });
 
 test('getOrderService returns null when service id is not set', function (): void {

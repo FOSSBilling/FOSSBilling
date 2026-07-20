@@ -585,7 +585,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getDi()['em']->getRepository(ClientGroup::class)->find($data['id']) ?? throw new InformationException('Group not found');
 
-        $clients = $this->getDi()['db']->find('Client', 'client_group_id = :group_id', [':group_id' => $data['id']]);
+        $clients = $this->getDi()['em']->getRepository(Client::class)->findBy(['clientGroupId' => $data['id']]);
 
         if (Tools::safeCount($clients) > 0) {
             throw new InformationException('Group has clients assigned. Please reassign them first.');

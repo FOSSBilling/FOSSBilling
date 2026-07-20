@@ -304,15 +304,17 @@ class Service implements InjectionAwareInterface
                 \Box\Mod\Product\Service::DOMAIN,
             ];
             if (in_array($serviceType, $builtInServiceTypes, true)) {
-                $repo_class = $this->_getServiceClassName($order);
+                $entityClass = $this->_getServiceEntityClass($order);
+                if ($entityClass !== null) {
+                    return $this->di['em']->getRepository($entityClass)->find($serviceId);
+                }
 
-                return $this->di['db']->load($repo_class, $serviceId);
+                return null;
             }
 
-            return $this->di['db']->findOne(
-                'service_' . $serviceType,
-                'id = :id',
-                [':id' => $serviceId]
+            return $this->di['em']->getConnection()->fetchAssociative(
+                'SELECT * FROM service_' . $serviceType . ' WHERE id = :id',
+                ['id' => $serviceId]
             );
         }
 
@@ -325,6 +327,21 @@ class Service implements InjectionAwareInterface
         $s = $this->di['tools']->to_camel_case($serviceType, true);
 
         return 'Service' . ucfirst((string) $s);
+    }
+
+    protected function _getServiceEntityClass(Order $order): ?string
+    {
+        $serviceType = $order instanceof Order ? $order->getServiceType() : $order->service_type;
+
+        return match ($serviceType) {
+            \Box\Mod\Product\Service::HOSTING => \Box\Mod\Servicehosting\Entity\ServiceHosting::class,
+            \Box\Mod\Product\Service::DOMAIN => \Box\Mod\Servicedomain\Entity\ServiceDomain::class,
+            \Box\Mod\Product\Service::LICENSE => \Box\Mod\Servicelicense\Entity\ServiceLicense::class,
+            \Box\Mod\Product\Service::DOWNLOADABLE => \Box\Mod\Servicedownloadable\Entity\ServiceDownloadable::class,
+            \Box\Mod\Product\Service::CUSTOM => \Box\Mod\Servicecustom\Entity\ServiceCustom::class,
+            \Box\Mod\Product\Service::APIKEY => \Box\Mod\Serviceapikey\Entity\ServiceApiKey::class,
+            default => null,
+        };
     }
 
     public function getServiceOrder($service)
@@ -551,7 +568,7 @@ class Service implements InjectionAwareInterface
         $activeTickets = [];
         if (!empty($orderIds)) {
             $placeholders = implode(',', array_fill(0, count($orderIds), '?'));
-            $rows = $this->di['db']->getAll(
+            $rows = $this->di['em']->getConnection()->fetchAllAssociative(
                 "SELECT rel_id, COUNT(id) as counter FROM support_ticket
                 WHERE rel_type = 'order'
                 AND rel_id IN ($placeholders)
@@ -1163,7 +1180,10 @@ class Service implements InjectionAwareInterface
         $service = null;
         $sdbname = 'service_' . $serviceType;
         if ($serviceId) {
-            $service = $this->di['db']->load($sdbname, $serviceId);
+            $service = $this->di['em']->getConnection()->fetchAssociative(
+                'SELECT * FROM ' . $sdbname . ' WHERE id = :id',
+                ['id' => $serviceId]
+            );
         }
         if (method_exists($repo, $action) && is_callable([$repo, $action])) {
             return $repo->$action($o, $service);

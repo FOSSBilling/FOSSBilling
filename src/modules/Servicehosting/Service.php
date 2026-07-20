@@ -699,7 +699,7 @@ class Service implements InjectionAwareInterface
         $orderIdsByServiceId = [];
         if (!empty($serviceIds)) {
             $placeholders = implode(',', array_fill(0, count($serviceIds), '?'));
-            $orderRows = $this->di['db']->getAll(
+            $orderRows = $this->di['em']->getConnection()->fetchAllAssociative(
                 "SELECT id, service_id FROM client_order WHERE service_type = ? AND service_id IN ($placeholders) ORDER BY id ASC",
                 array_merge(['hosting'], $serviceIds),
             );

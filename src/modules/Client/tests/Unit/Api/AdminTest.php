@@ -581,10 +581,6 @@ test('groupDelete returns true', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $data['id'] = '2';
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('find')->atLeast()->once()->with('Client', 'client_group_id = :group_id', [':group_id' => $data['id']])
-        ->andReturn([]);
-
     $serviceMock = Mockery::mock(Box\Mod\Client\Service::class)->makePartial();
     $serviceMock
     ->shouldReceive('deleteGroup')
@@ -592,7 +588,6 @@ test('groupDelete returns true', function (): void {
     ->andReturn(true);
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $validatorStub = $this->createStub(FOSSBilling\Validate::class);
     $di['validator'] = $validatorStub;
