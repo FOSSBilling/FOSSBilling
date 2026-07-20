@@ -168,10 +168,10 @@
                                 </div>
                             </div>
                             {% for custom, current in guest.client_custom_fields|default({}) %}
-                                {% if current.active %}
+                                {% if current.active|default(false) %}
                                     <div class="mb-3">
-                                        <label class="form-label" for="{{ custom }}">{{ current.title }}</label>
-                                        <input type="text" class="form-control" name="{{ custom }}" id="{{ custom }}" value="{{ profile[custom] }}" {% if current.required %} required {% endif %}>
+                                        <label class="form-label" for="{{ custom }}">{{ current.title|default('') is not empty ? current.title : custom|capitalize }}</label>
+                                        <input type="text" class="form-control" name="{{ custom }}" id="{{ custom }}" value="{{ profile[custom]|default('') }}" {% if current.required|default(false) %} required {% endif %}>
                                     </div>
                                 {% endif %}
                             {% endfor %}

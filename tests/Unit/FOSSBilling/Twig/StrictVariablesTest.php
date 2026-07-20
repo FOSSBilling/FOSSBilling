@@ -10,6 +10,7 @@
 
 declare(strict_types=1);
 
+use Tests\Support\PermissiveStub;
 use Tests\Support\StrictTemplateRenderer;
 
 test('cron settings renders when module config has not been saved', function (): void {
@@ -168,6 +169,26 @@ test('orderbutton checkout renders for guests under strict_variables', function 
         ->and($html)->toContain('Subscription Gateway')
         ->and($html)->toContain('id="order-gateway-2" value="2" autocomplete="off" checked')
         ->and($html)->not->toContain('id="order-gateway-3" value="3" autocomplete="off" checked');
+});
+
+test('orderbutton client form renders incomplete custom field configuration under strict_variables', function (): void {
+    $renderer = new StrictTemplateRenderer();
+
+    $html = $renderer->renderTemplate(PATH_MODS . '/Orderbutton/templates/client/mod_orderbutton_client.html.twig', [
+        'client' => null,
+        'request' => new PermissiveStub(['checkout' => true]),
+        'settings' => new PermissiveStub(['signup_tos' => 'disabled']),
+        'guest' => new PermissiveStub([
+            'client_custom_fields' => [
+                'custom_1' => ['title' => 'Inactive field'],
+                'custom_2' => ['title' => 'Active field', 'active' => true],
+            ],
+        ]),
+    ]);
+
+    expect($html)
+        ->not->toContain('id="custom_1"')
+        ->toContain('id="custom_2"');
 });
 
 /*

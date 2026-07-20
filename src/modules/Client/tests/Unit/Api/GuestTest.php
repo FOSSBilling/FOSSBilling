@@ -374,3 +374,46 @@ test('custom_fields returns fields sorted alphabetically by title', function ():
     $result = $guestClient->custom_fields();
     expect(array_keys($result))->toBe(['custom_3', 'custom_1', 'custom_2']);
 });
+
+test('custom_fields normalizes incomplete and malformed field configuration', function (): void {
+    $guestClient = apiEndpoint(new Box\Mod\Client\Api\Guest());
+    $configArr = [
+        'custom_fields' => [
+            'custom_1' => ['title' => 'Optional field'],
+            'custom_2' => ['active' => '1', 'required' => '0', 'title' => 'Required flags'],
+            'custom_3' => null,
+        ],
+    ];
+
+    $di = container();
+    $di['mod_config'] = $di->protect(fn ($name): array => $configArr);
+
+    $guestClient->setDi($di);
+
+    $result = $guestClient->custom_fields();
+    expect($result['custom_1'])->toBe([
+        'title' => 'Optional field',
+        'active' => false,
+        'required' => false,
+    ]);
+    expect($result['custom_2'])->toBe([
+        'active' => true,
+        'required' => false,
+        'title' => 'Required flags',
+    ]);
+    expect($result['custom_3'])->toBe([
+        'title' => '',
+        'active' => false,
+        'required' => false,
+    ]);
+});
+
+test('custom_fields returns an empty array when custom field configuration is malformed', function (): void {
+    $guestClient = apiEndpoint(new Box\Mod\Client\Api\Guest());
+    $di = container();
+    $di['mod_config'] = $di->protect(fn ($name): array => ['custom_fields' => 'invalid']);
+
+    $guestClient->setDi($di);
+
+    expect($guestClient->custom_fields())->toBe([]);
+});

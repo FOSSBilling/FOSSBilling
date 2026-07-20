@@ -129,10 +129,12 @@
                                             <input class="form-control mb-3" id="custom-field-title-{{ i }}" type="text" placeholder="{{ 'Field title'|trans }}" name="custom_fields[{{ field_name }}][title]" value="{{ custom_field.title|default('') }}">
                                             <div class="d-flex flex-column gap-2">
                                                 <label class="form-check form-switch form-switch-2">
+                                                    <input type="hidden" name="custom_fields[{{ field_name }}][active]" value="0">
                                                     <input class="form-check-input" id="checkboxActive-{{ field_name }}" type="checkbox" name="custom_fields[{{ field_name }}][active]" value="1"{% if custom_field.active|default(false) %} checked{% endif %}>
                                                     <span class="form-check-label">{{ 'Active'|trans }}</span>
                                                 </label>
                                                 <label class="form-check form-switch form-switch-2">
+                                                    <input type="hidden" name="custom_fields[{{ field_name }}][required]" value="0">
                                                     <input class="form-check-input" id="checkboxRequired-{{ field_name }}" type="checkbox" name="custom_fields[{{ field_name }}][required]" value="1"{% if custom_field.required|default(false) %} checked{% endif %}>
                                                     <span class="form-check-label">{{ 'Required'|trans }}</span>
                                                 </label>
