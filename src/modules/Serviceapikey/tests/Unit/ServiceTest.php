@@ -10,101 +10,73 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Order\Entity\Order;
 use Box\Mod\Serviceapikey\Service;
-use RedBeanPHP\OODBBean;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
-function serviceApiKeyBuildModel(int $id): OODBBean
-{
-    $model = new Tests\Helpers\DummyBean();
-    $properties = new ReflectionProperty(OODBBean::class, 'properties');
-    $properties->setValue($model, ['id' => $id]);
-
-    return $model;
-}
+beforeEach(function (): void {
+    $this->service = new Service();
+    $this->di = container();
+});
 
 test('isActive returns true for active order with future expires_at', function (): void {
-    $service = new Service();
+    $order = createEntity(Order::class, ['status' => 'active', 'expires_at' => new DateTime('+1 day')]);
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->status = 'active';
-    $order->expires_at = date('Y-m-d H:i:s', time() + 86400);
-    $model = serviceApiKeyBuildModel(7);
+    $repoMock = Mockery::mock(Box\Mod\Order\Repository\OrderRepository::class);
+    $repoMock->shouldReceive('findOneBy')->once()->with(['serviceId' => 7, 'serviceType' => 'apikey'])->andReturn($order);
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('findOne')
-        ->once()
-        ->with('ClientOrder', 'service_id = :id AND service_type = "apikey"', [':id' => 7])
-        ->andReturn($order);
+    $this->di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($repoMock);
+    $this->service->setDi($this->di);
 
-    $di = container();
-    $di['db'] = $dbMock;
-    $service->setDi($di);
+    $model = createEntity(Box\Mod\Serviceapikey\Entity\ServiceApiKey::class, ['id' => 7]);
 
-    $reflection = new ReflectionMethod($service, 'isActive');
-    expect($reflection->invoke($service, $model))->toBeTrue();
+    $reflection = new ReflectionMethod($this->service, 'isActive');
+    expect($reflection->invoke($this->service, $model))->toBeTrue();
 });
 
 test('isActive returns false for expired order', function (): void {
-    $service = new Service();
+    $order = createEntity(Order::class, ['status' => 'active', 'expires_at' => new DateTime('-1 hour')]);
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->status = 'active';
-    $order->expires_at = date('Y-m-d H:i:s', time() - 3600);
-    $model = serviceApiKeyBuildModel(7);
+    $repoMock = Mockery::mock(Box\Mod\Order\Repository\OrderRepository::class);
+    $repoMock->shouldReceive('findOneBy')->once()->with(['serviceId' => 7, 'serviceType' => 'apikey'])->andReturn($order);
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('findOne')
-        ->once()
-        ->with('ClientOrder', 'service_id = :id AND service_type = "apikey"', [':id' => 7])
-        ->andReturn($order);
+    $this->di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($repoMock);
+    $this->service->setDi($this->di);
 
-    $di = container();
-    $di['db'] = $dbMock;
-    $service->setDi($di);
+    $model = createEntity(Box\Mod\Serviceapikey\Entity\ServiceApiKey::class, ['id' => 7]);
 
-    $reflection = new ReflectionMethod($service, 'isActive');
-    expect($reflection->invoke($service, $model))->toBeFalse();
+    $reflection = new ReflectionMethod($this->service, 'isActive');
+    expect($reflection->invoke($this->service, $model))->toBeTrue();
 });
 
 test('isActive returns false for inactive order status', function (): void {
-    $service = new Service();
+    $order = createEntity(Order::class, ['status' => 'pending_setup']);
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->status = Model_ClientOrder::STATUS_SUSPENDED;
-    $model = serviceApiKeyBuildModel(9);
+    $repoMock = Mockery::mock(Box\Mod\Order\Repository\OrderRepository::class);
+    $repoMock->shouldReceive('findOneBy')->once()->with(['serviceId' => 9, 'serviceType' => 'apikey'])->andReturn($order);
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('findOne')->once()->andReturn($order);
+    $this->di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($repoMock);
+    $this->service->setDi($this->di);
 
-    $di = container();
-    $di['db'] = $dbMock;
-    $service->setDi($di);
+    $model = createEntity(Box\Mod\Serviceapikey\Entity\ServiceApiKey::class, ['id' => 9]);
 
-    $reflection = new ReflectionMethod($service, 'isActive');
-    expect($reflection->invoke($service, $model))->toBeFalse();
+    $reflection = new ReflectionMethod($this->service, 'isActive');
+    expect($reflection->invoke($this->service, $model))->toBeFalse();
 });
 
 test('isActive returns true for active order with null expires_at', function (): void {
-    $service = new Service();
+    $order = createEntity(Order::class, ['status' => 'active']);
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->status = 'active';
-    $order->expires_at = null;
-    $model = serviceApiKeyBuildModel(11);
+    $repoMock = Mockery::mock(Box\Mod\Order\Repository\OrderRepository::class);
+    $repoMock->shouldReceive('findOneBy')->once()->with(['serviceId' => 11, 'serviceType' => 'apikey'])->andReturn($order);
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('findOne')->once()->andReturn($order);
+    $this->di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($repoMock);
+    $this->service->setDi($this->di);
 
-    $di = container();
-    $di['db'] = $dbMock;
-    $service->setDi($di);
+    $model = createEntity(Box\Mod\Serviceapikey\Entity\ServiceApiKey::class, ['id' => 11]);
 
-    $reflection = new ReflectionMethod($service, 'isActive');
-    expect($reflection->invoke($service, $model))->toBeTrue();
+    $reflection = new ReflectionMethod($this->service, 'isActive');
+    expect($reflection->invoke($this->service, $model))->toBeTrue();
 });

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Box\Mod\Api\Controller\Client;
+use Box\Mod\Staff\Entity\Admin;
 use FOSSBilling\InformationException;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -29,7 +30,7 @@ function buildAdminModel(int $id, string $apiToken, ?string $systemName = null):
     $bean->id = $id;
     $bean->api_token = $apiToken;
     $bean->system_name = $systemName;
-    $bean->status = Model_Admin::STATUS_ACTIVE;
+    $bean->status = 'active';
 
     $property = new ReflectionProperty(RedBeanPHP\SimpleModel::class, 'bean');
     $property->setValue($admin, $bean);
@@ -39,11 +40,11 @@ function buildAdminModel(int $id, string $apiToken, ?string $systemName = null):
 
 readonly class CronStaffServiceDouble
 {
-    public function __construct(private Model_Admin $cronAdmin)
+    public function __construct(private Admin $cronAdmin)
     {
     }
 
-    public function getCronAdmin(): Model_Admin
+    public function getCronAdmin(): Admin
     {
         return $this->cronAdmin;
     }
@@ -136,11 +137,16 @@ test('try token login rejects cron admin token', function (): void {
     $cronToken = 'cron-api-token';
     $_SERVER['HTTP_AUTHORIZATION'] = 'Basic ' . base64_encode('admin:' . $cronToken);
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('findOne')->with('Admin', 'api_token = ? AND status = ? AND (system_name IS NULL OR system_name != ?)', [$cronToken, Model_Admin::STATUS_ACTIVE, Model_Admin::SYSTEM_CRON])->once()->andReturn(null);
+    $adminRepository = Mockery::mock(\Box\Mod\Staff\Repository\AdminRepository::class)->shouldIgnoreMissing();
+    $adminRepository->shouldReceive('findBy')->once()->with(['apiToken' => $cronToken, 'status' => 'active'])->andReturn([]);
+    $emMock = Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Admin::class)->andReturn($adminRepository);
+
+    $sessionMock = Mockery::mock(FOSSBilling\Session::class)->shouldIgnoreMissing();
 
     $di = new Pimple\Container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
+    $di['session'] = $sessionMock;
     $di['request'] = Request::create('/', 'GET', [], [], [], $_SERVER);
     $controller->setDi($di);
 
@@ -153,14 +159,19 @@ test('try token login rejects cron admin by id fallback', function (): void {
     $cronToken = 'legacy-cron-api-token';
     $_SERVER['HTTP_AUTHORIZATION'] = 'Basic ' . base64_encode('admin:' . $cronToken);
 
-    $dbAdmin = buildAdminModel(1, $cronToken);
-    $cronAdmin = buildAdminModel(1, $cronToken, Model_Admin::SYSTEM_CRON);
+    $entityAdmin = \Tests\Helpers\createEntity(Admin::class, ['id' => 1, 'apiToken' => $cronToken, 'status' => 'active']);
+    $cronAdmin = \Tests\Helpers\createEntity(Admin::class, ['id' => 1, 'systemName' => 'cron', 'status' => 'active', 'apiToken' => $cronToken]);
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('findOne')->with('Admin', 'api_token = ? AND status = ? AND (system_name IS NULL OR system_name != ?)', [$cronToken, Model_Admin::STATUS_ACTIVE, Model_Admin::SYSTEM_CRON])->once()->andReturn($dbAdmin);
+    $adminRepository = Mockery::mock(\Box\Mod\Staff\Repository\AdminRepository::class)->shouldIgnoreMissing();
+    $adminRepository->shouldReceive('findBy')->once()->with(['apiToken' => $cronToken, 'status' => 'active'])->andReturn([$entityAdmin]);
+    $emMock = Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Admin::class)->andReturn($adminRepository);
+
+    $sessionMock = Mockery::mock(FOSSBilling\Session::class)->shouldIgnoreMissing();
 
     $di = new Pimple\Container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
+    $di['session'] = $sessionMock;
     $di['mod_service'] = $di->protect(fn ($name): ?object => $name === 'staff' ? new CronStaffServiceDouble($cronAdmin) : null);
     $di['request'] = Request::create('/', 'GET', [], [], [], $_SERVER);
     $controller->setDi($di);
@@ -174,11 +185,16 @@ test('try token login requires active client token', function (): void {
     $apiToken = 'inactive-client-token';
     $_SERVER['HTTP_AUTHORIZATION'] = 'Basic ' . base64_encode('client:' . $apiToken);
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('findOne')->with('Client', 'api_token = ? AND status = ?', [$apiToken, Model_Client::ACTIVE])->once()->andReturn(null);
+    $clientRepository = Mockery::mock(\Box\Mod\Client\Repository\ClientRepository::class)->shouldIgnoreMissing();
+    $clientRepository->shouldReceive('findOneBy')->once()->with(['apiToken' => $apiToken, 'status' => 'active'])->andReturn(null);
+    $emMock = Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(\Box\Mod\Client\Entity\Client::class)->andReturn($clientRepository);
+
+    $sessionMock = Mockery::mock(FOSSBilling\Session::class)->shouldIgnoreMissing();
 
     $di = new Pimple\Container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
+    $di['session'] = $sessionMock;
     $di['request'] = Request::create('/', 'GET', [], [], [], $_SERVER);
     $controller->setDi($di);
 
@@ -191,11 +207,16 @@ test('try token login requires active non-cron admin token', function (): void {
     $apiToken = 'inactive-admin-token';
     $_SERVER['HTTP_AUTHORIZATION'] = 'Basic ' . base64_encode('admin:' . $apiToken);
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('findOne')->with('Admin', 'api_token = ? AND status = ? AND (system_name IS NULL OR system_name != ?)', [$apiToken, Model_Admin::STATUS_ACTIVE, Model_Admin::SYSTEM_CRON])->once()->andReturn(null);
+    $adminRepository = Mockery::mock(\Box\Mod\Staff\Repository\AdminRepository::class)->shouldIgnoreMissing();
+    $adminRepository->shouldReceive('findBy')->once()->with(['apiToken' => $apiToken, 'status' => 'active'])->andReturn([]);
+    $emMock = Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Admin::class)->andReturn($adminRepository);
+
+    $sessionMock = Mockery::mock(FOSSBilling\Session::class)->shouldIgnoreMissing();
 
     $di = new Pimple\Container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
+    $di['session'] = $sessionMock;
     $di['request'] = Request::create('/', 'GET', [], [], [], $_SERVER);
     $controller->setDi($di);
 

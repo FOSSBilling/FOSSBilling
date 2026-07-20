@@ -615,12 +615,6 @@ test('testGetService', function (): void {
     ];
 
     $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn($clientOrderModel);
-
     $model = new ServiceHosting();
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
     $orderServiceMock
@@ -630,7 +624,6 @@ test('testGetService', function (): void {
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
-    $di['db'] = $dbMock;
 
     $api->setDi($di);
 
@@ -647,12 +640,6 @@ test('testGetServiceOrderNotActivated', function (): void {
     ];
 
     $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn($clientOrderModel);
-
     $model = null;
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
     $orderServiceMock
@@ -662,7 +649,6 @@ test('testGetServiceOrderNotActivated', function (): void {
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
-    $di['db'] = $dbMock;
     $api->setDi($di);
 
     $this->expectException(FOSSBilling\Exception::class);

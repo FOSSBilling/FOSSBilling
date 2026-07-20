@@ -51,16 +51,9 @@ test('balanceGetList returns array', function (): void {
     ->andReturn($simpleResultArr);
 
     $model = createEntity(\Box\Mod\Client\Entity\ClientBalance::class);
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn($model);
-
     $di = container();
     $di['mod_service'] = $di->protect(moduleService(['client:balance' => $serviceMock]));
     $di['pager'] = $pagerMock;
-    $di['db'] = $dbMock;
 
     $api->setDi($di);
     $api->setService($serviceMock);

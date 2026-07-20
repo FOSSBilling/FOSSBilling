@@ -34,14 +34,9 @@ test('gets an invoice', function (): void {
         ->atLeast()->once()
         ->andReturn([]);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $model = createEntity(\Box\Mod\Invoice\Entity\Invoice::class);
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn($model);
-
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->getRepository(\Box\Mod\Invoice\Entity\Invoice::class)
+        ->shouldReceive('findOneBy')->andReturn(createEntity(\Box\Mod\Invoice\Entity\Invoice::class));
 
     $api->setDi($di);
     $api->setService($serviceMock);
@@ -55,14 +50,8 @@ test('gets an invoice', function (): void {
 
 test('throws exception when invoice is not found', function (): void {
     $api = apiEndpoint(new Client());
-    $dbMock = Mockery::mock('\Box_Database');
     $model = createEntity(\Box\Mod\Invoice\Entity\Invoice::class);
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn(null);
-
     $di = container();
-    $di['db'] = $dbMock;
 
     $api->setDi($di);
     $identity = createEntity(\Box\Mod\Client\Entity\Client::class);
@@ -84,14 +73,9 @@ test('creates renewal invoice', function (): void {
         ->andReturn($model);
     $serviceMock->shouldReceive('approveInvoice');
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $clientOrder = createEntity(\Box\Mod\Order\Entity\Order::class, ['price' => 10]);
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn($clientOrder);
-
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->getRepository(\Box\Mod\Order\Entity\Order::class)
+        ->shouldReceive('findOneBy')->andReturn(createEntity(\Box\Mod\Order\Entity\Order::class, ['price' => 10]));
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $api->setDi($di);
@@ -115,15 +99,9 @@ test('creates renewal invoice for free order', function (): void {
         ->andReturn($model);
     $serviceMock->shouldReceive('approveInvoice');
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $clientOrder = createEntity(\Box\Mod\Order\Entity\Order::class, ['id' => 1, 'price' => 0]);
-
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn($clientOrder);
-
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->getRepository(\Box\Mod\Order\Entity\Order::class)
+        ->shouldReceive('findOneBy')->andReturn(createEntity(\Box\Mod\Order\Entity\Order::class, ['id' => 1, 'price' => 0]));
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $api->setDi($di);
@@ -138,15 +116,9 @@ test('creates renewal invoice for free order', function (): void {
 
 test('throws exception when creating renewal invoice for order not found', function (): void {
     $api = apiEndpoint(new Client());
-    $dbMock = Mockery::mock('\Box_Database');
     $clientOrder = createEntity(\Box\Mod\Order\Entity\Order::class, ['price' => 10]);
 
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn(null);
-
     $di = container();
-    $di['db'] = $dbMock;
 
     $api->setDi($di);
     $identity = createEntity(\Box\Mod\Staff\Entity\Admin::class);
@@ -188,9 +160,8 @@ test('gets transaction list', function (): void {
     $transactionService->shouldReceive('getSearchQuery')
         ->atLeast()->once()
         ->andReturn(['SqlString', []]);
-    $transactionService->shouldReceive('searchResultToApiArray')
+    $transactionService->shouldReceive('toApiArray')
         ->once()
-        ->with(['id' => 1])
         ->andReturn(['id' => 1, 'gateway' => 'Stripe']);
 
     $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
@@ -198,12 +169,8 @@ test('gets transaction list', function (): void {
         ->atLeast()->once()
         ->andReturn(['list' => [['id' => 1]]]);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldNotReceive('getExistingModelById');
-
     $di = container();
     $di['pager'] = $paginatorMock;
-    $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(moduleService(['invoice:transaction' => $transactionService]));
 
     $api->setDi($di);

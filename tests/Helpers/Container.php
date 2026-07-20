@@ -163,52 +163,33 @@ function container(): Container
         $extensionRepo = \Mockery::mock(\Box\Mod\Extension\Repository\ExtensionRepository::class)->shouldIgnoreMissing();
 
         $adminRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminRepository::class)->shouldIgnoreMissing();
+        $adminRepository->shouldReceive('find')->byDefault()->andReturnUsing(static function (int $id): ?object {
+            return \Tests\Helpers\createEntity(\Box\Mod\Staff\Entity\Admin::class, ['id' => $id]);
+        });
         $adminGroupRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminGroupRepository::class)->shouldIgnoreMissing();
         $adminGroupMemberRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminGroupMemberRepository::class)->shouldIgnoreMissing();
 
         $clientRepository = \Mockery::mock(\Box\Mod\Client\Repository\ClientRepository::class)->shouldIgnoreMissing();
         $clientRepository->shouldReceive('find')->byDefault()->andReturnUsing(static function (int $id): ?object {
-            $client = new \Box\Mod\Client\Entity\Client();
-            $prop = new \ReflectionProperty($client, 'id');
-            $prop->setValue($client, $id);
-
-            return $client;
+            return \Tests\Helpers\createEntity(\Box\Mod\Client\Entity\Client::class, ['id' => $id]);
         });
         $clientRepository->shouldReceive('findOneByEmail')->byDefault()->andReturnUsing(static function (string $email): ?object {
-            $client = new \Box\Mod\Client\Entity\Client();
-            $prop = new \ReflectionProperty($client, 'id');
-            $prop->setValue($client, 1);
-
-            return $client;
+            return \Tests\Helpers\createEntity(\Box\Mod\Client\Entity\Client::class, ['id' => 1]);
         });
         $clientRepository->shouldReceive('findOneByEmailAndActive')->byDefault()->andReturnUsing(static function (string $email): ?object {
-            $client = new \Box\Mod\Client\Entity\Client();
-            $prop = new \ReflectionProperty($client, 'id');
-            $prop->setValue($client, 1);
-            $statusProp = new \ReflectionProperty($client, 'status');
-            $statusProp->setValue($client, 'active');
-
-            return $client;
+            return \Tests\Helpers\createEntity(\Box\Mod\Client\Entity\Client::class, ['id' => 1, 'status' => 'active']);
         });
         $clientRepository->shouldReceive('getIdNamePairs')->byDefault()->andReturn([]);
         $clientRepository->shouldReceive('getStatusCounts')->byDefault()->andReturn(['active' => 1, 'suspended' => 0, 'canceled' => 0]);
         $clientGroupRepository = \Mockery::mock(\Box\Mod\Client\Repository\ClientGroupRepository::class)->shouldIgnoreMissing();
         $clientGroupRepository->shouldReceive('getIdTitlePairs')->byDefault()->andReturn([]);
         $clientGroupRepository->shouldReceive('find')->byDefault()->andReturnUsing(static function (int $id): ?object {
-            $group = new \Box\Mod\Client\Entity\ClientGroup();
-            $prop = new \ReflectionProperty($group, 'id');
-            $prop->setValue($group, $id);
-
-            return $group;
+            return \Tests\Helpers\createEntity(\Box\Mod\Client\Entity\ClientGroup::class, ['id' => $id]);
         });
         $clientBalanceRepository = \Mockery::mock(\Box\Mod\Client\Repository\ClientBalanceRepository::class)->shouldIgnoreMissing();
         $clientBalanceRepository->shouldReceive('getClientBalanceSum')->byDefault()->andReturn(0.0);
         $clientBalanceRepository->shouldReceive('find')->byDefault()->andReturnUsing(static function (int $id): ?object {
-            $balance = new \Box\Mod\Client\Entity\ClientBalance();
-            $prop = new \ReflectionProperty($balance, 'id');
-            $prop->setValue($balance, $id);
-
-            return $balance;
+            return \Tests\Helpers\createEntity(\Box\Mod\Client\Entity\ClientBalance::class, ['id' => $id]);
         });
         $clientPasswordResetRepository = \Mockery::mock(\Box\Mod\Client\Repository\ClientPasswordResetRepository::class)->shouldIgnoreMissing();
         $clientPasswordResetRepository->shouldReceive('findOneByHash')->byDefault()->andReturn(null);
@@ -228,11 +209,7 @@ function container(): Container
             if ($id === null) {
                 return null;
             }
-            $invoice = new \Box\Mod\Invoice\Entity\Invoice();
-            $prop = new \ReflectionProperty($invoice, 'id');
-            $prop->setValue($invoice, $id);
-
-            return $invoice;
+            return \Tests\Helpers\createEntity(\Box\Mod\Invoice\Entity\Invoice::class, ['id' => $id]);
         });
         $invoiceRepository->shouldReceive('getSearchQueryBuilder')->byDefault()->andReturnUsing(static function (): object {
             $qb = \Mockery::mock(\Doctrine\ORM\QueryBuilder::class)->shouldIgnoreMissing();
@@ -258,6 +235,9 @@ function container(): Container
         $invoiceItemRepository = \Mockery::mock(\Box\Mod\Invoice\Repository\InvoiceItemRepository::class)->shouldIgnoreMissing();
         $invoiceItemRepository->shouldReceive('findByInvoiceId')->byDefault()->andReturn([]);
         $invoiceItemRepository->shouldReceive('findPendingRenewal')->byDefault()->andReturn([]);
+        $invoiceItemRepository->shouldReceive('find')->byDefault()->andReturnUsing(static function (?int $id): ?object {
+            return \Tests\Helpers\createEntity(\Box\Mod\Invoice\Entity\InvoiceItem::class, ['id' => $id]);
+        });
 
         $transactionRepository = \Mockery::mock(\Box\Mod\Invoice\Repository\TransactionRepository::class)->shouldIgnoreMissing();
         $transactionRepository->shouldReceive('findByInvoiceId')->byDefault()->andReturn([]);
@@ -267,11 +247,7 @@ function container(): Container
             if ($id === null) {
                 return null;
             }
-            $transaction = new \Box\Mod\Invoice\Entity\Transaction();
-            $prop = new \ReflectionProperty($transaction, 'id');
-            $prop->setValue($transaction, $id);
-
-            return $transaction;
+            return \Tests\Helpers\createEntity(\Box\Mod\Invoice\Entity\Transaction::class, ['id' => $id]);
         });
         $transactionRepository->shouldReceive('findOneBy')->byDefault()->andReturn(null);
 
@@ -282,11 +258,7 @@ function container(): Container
             if ($id === null) {
                 return null;
             }
-            $subscription = new \Box\Mod\Invoice\Entity\Subscription();
-            $prop = new \ReflectionProperty($subscription, 'id');
-            $prop->setValue($subscription, $id);
-
-            return $subscription;
+            return \Tests\Helpers\createEntity(\Box\Mod\Invoice\Entity\Subscription::class, ['id' => $id]);
         });
 
         $payGatewayRepository = \Mockery::mock(\Box\Mod\Invoice\Repository\PayGatewayRepository::class)->shouldIgnoreMissing();
@@ -296,11 +268,7 @@ function container(): Container
             if ($id === null) {
                 return null;
             }
-            $payGateway = new \Box\Mod\Invoice\Entity\PayGateway();
-            $prop = new \ReflectionProperty($payGateway, 'id');
-            $prop->setValue($payGateway, $id);
-
-            return $payGateway;
+            return \Tests\Helpers\createEntity(\Box\Mod\Invoice\Entity\PayGateway::class, ['id' => $id]);
         });
 
         $taxRepository = \Mockery::mock(\Box\Mod\Invoice\Repository\TaxRepository::class)->shouldIgnoreMissing();
@@ -308,11 +276,7 @@ function container(): Container
             if ($id === null) {
                 return null;
             }
-            $tax = new \Box\Mod\Invoice\Entity\Tax();
-            $prop = new \ReflectionProperty($tax, 'id');
-            $prop->setValue($tax, $id);
-
-            return $tax;
+            return \Tests\Helpers\createEntity(\Box\Mod\Invoice\Entity\Tax::class, ['id' => $id]);
         });
         $taxRepository->shouldReceive('findOneBy')->byDefault()->andReturn(null);
         $taxRepository->shouldReceive('findByCountryAndState')->byDefault()->andReturn(null);
@@ -324,11 +288,7 @@ function container(): Container
             if ($id === null) {
                 return null;
             }
-            $order = new \Box\Mod\Order\Entity\Order();
-            $prop = new \ReflectionProperty($order, 'id');
-            $prop->setValue($order, $id);
-
-            return $order;
+            return \Tests\Helpers\createEntity(\Box\Mod\Order\Entity\Order::class, ['id' => $id]);
         });
         $orderRepository->shouldReceive('findByClientId')->byDefault()->andReturn([]);
         $orderRepository->shouldReceive('findForClientById')->byDefault()->andReturn(null);
@@ -380,11 +340,7 @@ function container(): Container
             if ($id === null) {
                 return null;
             }
-            $entity = new \Box\Mod\Servicehosting\Entity\ServiceHosting();
-            $prop = new \ReflectionProperty($entity, 'id');
-            $prop->setValue($entity, $id);
-
-            return $entity;
+            return \Tests\Helpers\createEntity(\Box\Mod\Servicehosting\Entity\ServiceHosting::class, ['id' => $id]);
         });
         $serviceHostingRepository->shouldReceive('findBy')->byDefault()->andReturn([]);
         $serviceHostingRepository->shouldReceive('findOneBy')->byDefault()->andReturn(null);
@@ -397,11 +353,7 @@ function container(): Container
             if ($id === null) {
                 return null;
             }
-            $entity = new \Box\Mod\Servicehosting\Entity\ServiceHostingHp();
-            $prop = new \ReflectionProperty($entity, 'id');
-            $prop->setValue($entity, $id);
-
-            return $entity;
+            return \Tests\Helpers\createEntity(\Box\Mod\Servicehosting\Entity\ServiceHostingHp::class, ['id' => $id]);
         });
         $serviceHostingHpRepository->shouldReceive('findBy')->byDefault()->andReturn([]);
         $serviceHostingHpRepository->shouldReceive('findOneBy')->byDefault()->andReturn(null);

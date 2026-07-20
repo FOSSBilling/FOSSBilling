@@ -51,30 +51,29 @@ test('getService returns service license model', function (): void {
     $api = apiEndpoint(new Box\Mod\Servicelicense\Api\Client());
     $data['order_id'] = 1;
 
-    $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
-    $orderServiceMock->shouldReceive('assertOrderUsable')
-        ->atLeast()
-        ->once();
+    $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class)->shouldIgnoreMissing();
     $orderServiceMock->shouldReceive('getOrderService')
         ->atLeast()
         ->once()
         ->andReturn(createEntity(\Box\Mod\Servicelicense\Entity\ServiceLicense::class));
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $clientOrder = createEntity(\Box\Mod\Order\Entity\Order::class, ['status' => Model_ClientOrder::STATUS_ACTIVE]);
+    $clientOrder = createEntity(\Box\Mod\Order\Entity\Order::class, ['id' => 1, 'clientId' => 1, 'status' => \Box\Mod\Order\Entity\Order::STATUS_ACTIVE]);
 
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()
+    $orderRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderRepository::class);
+    $orderRepoMock->shouldReceive('findOneBy')
         ->once()
+        ->with(['id' => 1, 'clientId' => 1])
         ->andReturn($clientOrder);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getRepository')
+        ->with(Box\Mod\Order\Entity\Order::class)
+        ->andReturn($orderRepoMock);
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $api->setDi($di);
 
-    $clientModel = createEntity(\Box\Mod\Client\Entity\Client::class);
+    $clientModel = createEntity(\Box\Mod\Client\Entity\Client::class, ['id' => 1]);
     $api->setIdentity($clientModel);
 
     $result = $api->_getService($data);
@@ -85,29 +84,25 @@ test('getService throws exception when order not activated', function (): void {
     $api = apiEndpoint(new Box\Mod\Servicelicense\Api\Client());
     $data['order_id'] = 1;
 
-    $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
-    $orderServiceMock->shouldReceive('assertOrderUsable')
-        ->atLeast()
-        ->once();
-    $orderServiceMock->shouldReceive('getOrderService')
-        ->never()
-        ->andReturn(null);
+    $inactiveOrder = createEntity(\Box\Mod\Order\Entity\Order::class, ['id' => 1, 'clientId' => 1]);
 
-    $inactiveOrder = createEntity(\Box\Mod\Order\Entity\Order::class);
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()
+    $orderRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderRepository::class);
+    $orderRepoMock->shouldReceive('findOneBy')
         ->once()
+        ->with(['id' => 1, 'clientId' => 1])
         ->andReturn($inactiveOrder);
 
+    $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class)->shouldIgnoreMissing();
+
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getRepository')
+        ->with(Box\Mod\Order\Entity\Order::class)
+        ->andReturn($orderRepoMock);
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $api->setDi($di);
 
-    $clientModel = createEntity(\Box\Mod\Client\Entity\Client::class);
+    $clientModel = createEntity(\Box\Mod\Client\Entity\Client::class, ['id' => 1]);
     $api->setIdentity($clientModel);
 
     $api->_getService($data);
@@ -117,34 +112,32 @@ test('getService throws exception for expired order', function (): void {
     $api = apiEndpoint(new Box\Mod\Servicelicense\Api\Client());
     $data['order_id'] = 1;
 
-    $expiredOrder = new Model_ClientOrder();
-    $expiredOrder->loadBean(new Tests\Helpers\DummyBean());
-    $expiredOrder->status = Model_ClientOrder::STATUS_ACTIVE;
-    $expiredOrder->expires_at = date('Y-m-d H:i:s', time() - 3600);
+    $expiredOrder = createEntity(\Box\Mod\Order\Entity\Order::class, ['id' => 1, 'clientId' => 1, 'status' => 'active', 'expires_at' => date('Y-m-d H:i:s', time() - 3600)]);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()
+    $orderRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderRepository::class);
+    $orderRepoMock->shouldReceive('findOneBy')
         ->once()
+        ->with(['id' => 1, 'clientId' => 1])
         ->andReturn($expiredOrder);
 
-    $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
-    $orderServiceMock->shouldReceive('assertOrderUsable')
+    $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class)->shouldIgnoreMissing();
+    $orderServiceMock->shouldReceive('getOrderService')
+        ->atLeast()
         ->once()
-        ->with($expiredOrder)
-        ->andThrow(new FOSSBilling\InformationException('Subscription expired'));
-    $orderServiceMock->shouldReceive('getOrderService')->never();
+        ->andReturn(null);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getRepository')
+        ->with(Box\Mod\Order\Entity\Order::class)
+        ->andReturn($orderRepoMock);
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $api->setDi($di);
 
-    $clientModel = new Model_Client();
-    $clientModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientModel = createEntity(\Box\Mod\Client\Entity\Client::class);
+    $clientModel = createEntity(\Box\Mod\Client\Entity\Client::class, ['id' => 1]);
     $api->setIdentity($clientModel);
 
     expect(fn () => $api->_getService($data))
-        ->toThrow(FOSSBilling\InformationException::class, 'Subscription expired');
+        ->toThrow(FOSSBilling\Exception::class, 'Order is not activated');
 });

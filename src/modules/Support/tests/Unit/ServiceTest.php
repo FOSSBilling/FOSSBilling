@@ -694,10 +694,7 @@ test('auto closes a ticket', function (): void {
 
 test('checks if ticket can be reopened when not closed', function (): void {
     $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-
     $di = container();
-    $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
@@ -849,11 +846,11 @@ test('converts ticket to api array', function (): void {
     $helpdeskRepo->shouldReceive('find')
         ->atLeast()->once()
         ->andReturn($helpdesk);
-    $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
-    supportWireKbRepositories($emMock, helpdeskRepo: $helpdeskRepo);
     $di = container();
+    $di['em']->shouldReceive('getRepository')
+        ->with(Box\Mod\Support\Entity\Helpdesk::class)
+        ->andReturn($helpdeskRepo);
     $di['dbal'] = $dbalMock;
-    $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(fn () => $clientServiceMock);
     $serviceMock->setDi($di);
@@ -883,21 +880,7 @@ test('converts ticket to api array', function (): void {
 
 test('converts ticket to api array with rel details', function (): void {
     $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database')->shouldIgnoreMissing();
-
     $callCount = 0;
-    $dbMock->shouldReceive('load')
-        ->atLeast()->once()
-        ->andReturnUsing(function () use (&$callCount) {
-            ++$callCount;
-
-            return supportClientFixture();
-        });
-
-    $dbMock->shouldReceive('toArray')
-        ->byDefault()
-        ->andReturn([]);
-
     $ticketMessages = [new SupportTicketMessage(), new SupportTicketMessage()];
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('messageGetRepliesCount')
@@ -931,11 +914,10 @@ test('converts ticket to api array with rel details', function (): void {
     $helpdeskRepo->shouldReceive('find')
         ->atLeast()->once()
         ->andReturn(helpdeskFixture());
-    $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
-    supportWireKbRepositories($emMock, helpdeskRepo: $helpdeskRepo);
     $di = container();
-    $di['db'] = $dbMock;
-    $di['em'] = $emMock;
+    $di['em']->shouldReceive('getRepository')
+        ->with(Box\Mod\Support\Entity\Helpdesk::class)
+        ->andReturn($helpdeskRepo);
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(fn () => $clientServiceMock);
     $serviceMock->setDi($di);

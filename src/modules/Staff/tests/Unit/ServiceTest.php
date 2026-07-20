@@ -149,13 +149,15 @@ test('login returns admin details on successful login', function (): void {
 
     $admin = createEntity(Admin::class, ['id' => 1, 'email' => $email, 'name' => 'Admin']);
 
+    $adminRepoMock = Mockery::mock(Box\Mod\Staff\Repository\AdminRepository::class);
+    $adminRepoMock->shouldReceive('findOneBy')
+        ->once()
+        ->with(['email' => $email, 'status' => Admin::STATUS_ACTIVE])
+        ->andReturn($admin);
+
     $emMock = Mockery::mock('\Box_EventManager');
     $emMock->shouldReceive('fire')->atLeast()->once()
         ->andReturn(true);
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')->atLeast()->once()
-        ->andReturn($admin);
 
     $sessionMock = Mockery::mock(FOSSBilling\Session::class);
     $sessionMock->shouldReceive('regenerateId')->atLeast()->once();
@@ -167,8 +169,10 @@ test('login returns admin details on successful login', function (): void {
         ->andReturn($admin);
 
     $di = container();
+    $di['em']->shouldReceive('getRepository')
+        ->with(Admin::class)
+        ->andReturn($adminRepoMock);
     $di['events_manager'] = $emMock;
-    $di['db'] = $dbMock;
     $di['session'] = $sessionMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['auth'] = $authMock;
@@ -196,10 +200,6 @@ test('login throws exception when credentials are invalid', function (): void {
     $emMock->shouldReceive('fire')->atLeast()->once()
         ->andReturn(true);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')->atLeast()->once()
-        ->andReturn(null);
-
     $authMock = Mockery::mock('\Box_Authorization');
     $authMock->shouldReceive('authorizeUser')->atLeast()->once()
         ->with(null, $password)
@@ -207,7 +207,6 @@ test('login throws exception when credentials are invalid', function (): void {
 
     $di = container();
     $di['events_manager'] = $emMock;
-    $di['db'] = $dbMock;
     $di['auth'] = $authMock;
 
     $service = new Service();
@@ -322,7 +321,12 @@ test('onAfterClientReplyTicket sends email notification', function (): void {
     $ticketModel = (new Box\Mod\Support\Entity\SupportTicket())
         ->setClientId($clientId)
         ->setPriority(25);
-    $clientModel = Mockery::mock(Model_Client::class);
+    $clientModel = createEntity(\Box\Mod\Client\Entity\Client::class, [
+        'id' => $clientId,
+        'email' => 'client@example.com',
+        'firstName' => 'Example',
+        'lastName' => 'Client',
+    ]);
     $clientDetails = [
         'id' => $clientId,
         'email' => 'client@example.com',
@@ -1112,16 +1116,12 @@ test('update rejects deactivating own staff account', function (): void {
     $eventsMock = Mockery::mock('\Box_EventManager');
     $eventsMock->shouldReceive('fire')->atLeast()->once();
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')->never();
-
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('hasPermission')->once()->andReturn(true);
 
     $di = container();
     $di['em'] = staffEntityManager(Mockery::mock(AdminGroupRepository::class), Mockery::mock(AdminGroupMemberRepository::class));
     $di['events_manager'] = $eventsMock;
-    $di['db'] = $dbMock;
     $di['loggedin_admin'] = staffRegularAdmin();
     $serviceMock->setDi($di);
 
@@ -1967,17 +1967,12 @@ test('authorizeAdmin returns null when email not found', function (): void {
     $email = 'example@fossbilling.vm';
     $password = '123456';
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')->atLeast()->once()
-        ->andReturn(null);
-
     $authMock = Mockery::mock('\Box_Authorization');
     $authMock->shouldReceive('authorizeUser')->atLeast()->once()
         ->with(null, $password)
         ->andReturn(null);
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['auth'] = $authMock;
 
     $service = new Service();
@@ -1993,8 +1988,10 @@ test('authorizeAdmin returns admin model on success', function (): void {
 
     $model = createEntity(Admin::class);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')->atLeast()->once()
+    $adminRepoMock = Mockery::mock(Box\Mod\Staff\Repository\AdminRepository::class);
+    $adminRepoMock->shouldReceive('findOneBy')
+        ->once()
+        ->with(['email' => $email, 'status' => Admin::STATUS_ACTIVE])
         ->andReturn($model);
 
     $authMock = Mockery::mock('\Box_Authorization');
@@ -2002,14 +1999,13 @@ test('authorizeAdmin returns admin model on success', function (): void {
         ->with($model, $password)
         ->andReturn($model);
 
-    $di = container();
-    $di['db'] = $dbMock;
-    $di['auth'] = $authMock;
-
     $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
     $groupMemberRepository->shouldReceive('adminBelongsToSystemGroup')->andReturn(false);
-    $emMock = staffEntityManager(groupMemberRepository: $groupMemberRepository);
+    $emMock = staffEntityManager(adminRepository: $adminRepoMock, groupMemberRepository: $groupMemberRepository);
+
+    $di = container();
     $di['em'] = $emMock;
+    $di['auth'] = $authMock;
 
     $service = new Service();
     $service->setDi($di);

@@ -108,14 +108,7 @@ test('gets service', function (): void {
         ->once()
         ->andReturn(createEntity(\Box\Mod\Servicelicense\Entity\ServiceLicense::class));
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()
-        ->once()
-        ->andReturn(createEntity(\Box\Mod\Order\Entity\Order::class));
-
     $di = container();
-    $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $api->setDi($di);
@@ -134,14 +127,7 @@ test('throws exception when order not activated', function (): void {
         ->once()
         ->andReturn(null);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()
-        ->once()
-        ->andReturn(createEntity(\Box\Mod\Order\Entity\Order::class));
-
     $di = container();
-    $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $api->setDi($di);

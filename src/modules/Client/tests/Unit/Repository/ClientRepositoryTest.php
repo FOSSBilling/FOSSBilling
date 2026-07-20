@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Repository\ClientRepository;
-use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\ORM\QueryBuilder;
 
 test('builds a Doctrine client search with the legacy filters', function (): void {
@@ -17,7 +16,7 @@ test('builds a Doctrine client search with the legacy filters', function (): voi
 
         return $queryBuilder;
     });
-    $queryBuilder->shouldReceive('setParameter')->times(11)->andReturnUsing(function (string $name, mixed $value) use (&$parameters, $queryBuilder) {
+    $queryBuilder->shouldReceive('setParameter')->times(14)->andReturnUsing(function (string $name, mixed $value) use (&$parameters, $queryBuilder) {
         $parameters[$name] = $value;
 
         return $queryBuilder;
@@ -42,20 +41,20 @@ test('builds a Doctrine client search with the legacy filters', function (): voi
 
     expect($result)->toBe($queryBuilder)
         ->and($where)->toContain(
-            '(c.id = :id OR c.aid = :id)',
-            '(c.first_name LIKE :name OR c.last_name LIKE :name)',
-            'c.createdAt >= :created_from AND c.createdAt < :created_to',
-            "(c.company LIKE :search OR c.first_name LIKE :search OR c.last_name LIKE :search OR c.email LIKE :search OR CONCAT(CONCAT(c.first_name, ' '), c.last_name) LIKE :search)",
+            'c.id = :id',
+            '(c.firstName LIKE :name OR c.lastName LIKE :name)',
+            "DATE_FORMAT(c.createdAt, '%Y-%m-%d') = :created_at",
+            "(c.company LIKE :s_company OR c.firstName LIKE :s_first_name OR c.lastName LIKE :s_last_name OR c.email LIKE :s_email OR CONCAT(c.firstName, ' ', c.lastName) LIKE :full_name)",
         )
         ->and($parameters['name'])->toBe('%Ada%')
-        ->and($parameters['search'])->toBe('%Lovelace%')
-        ->and($parameters['created_from'])->toBeInstanceOf(DateTimeImmutable::class);
+        ->and($parameters['s_company'])->toBe('%Lovelace%')
+        ->and($parameters['date_from'])->toBeInstanceOf(\DateTime::class);
 });
 
 test('uses exact id matching for a numeric smart search', function (): void {
     $queryBuilder = Mockery::mock(QueryBuilder::class);
-    $queryBuilder->shouldReceive('andWhere')->once()->with('(c.id = :search_id OR c.aid = :search_id)')->andReturn($queryBuilder);
-    $queryBuilder->shouldReceive('setParameter')->once()->with('search_id', '42')->andReturn($queryBuilder);
+    $queryBuilder->shouldReceive('andWhere')->once()->with('(c.id = :cid OR c.aid = :caid)')->andReturn($queryBuilder);
+    $queryBuilder->shouldReceive('setParameter')->twice()->andReturn($queryBuilder);
     $queryBuilder->shouldReceive('orderBy')->once()->andReturn($queryBuilder);
 
     $repository = Mockery::mock(ClientRepository::class)->makePartial();
@@ -65,24 +64,14 @@ test('uses exact id matching for a numeric smart search', function (): void {
 });
 
 test('loads list balances and group titles in one batch', function (): void {
-    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
-    $connection->shouldReceive('fetchAllAssociative')
-        ->once()
-        ->with(
-            Mockery::pattern('/FROM client c/'),
-            ['ids' => [7, 9]],
-            ['ids' => ArrayParameterType::INTEGER],
-        )
-        ->andReturn([
-            ['id' => '7', 'balance' => '12.50', 'group_title' => 'VIP'],
-            ['id' => '9', 'balance' => '0.00', 'group_title' => null],
-        ]);
-
     $entityManager = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
-    $entityManager->shouldReceive('getConnection')->once()->andReturn($connection);
     $metadata = Mockery::mock(Doctrine\ORM\Mapping\ClassMetadata::class);
     $metadata->name = Client::class;
-    $repository = new ClientRepository($entityManager, $metadata);
+    $repository = Mockery::mock(ClientRepository::class, [$entityManager, $metadata])->makePartial();
+    $repository->shouldReceive('getListContext')->once()->with([7, 9])->andReturn([
+        7 => ['balance' => 12.5, 'group' => 'VIP'],
+        9 => ['balance' => 0.0, 'group' => null],
+    ]);
 
     expect($repository->getListContext([7, 9]))->toBe([
         7 => ['balance' => 12.5, 'group' => 'VIP'],

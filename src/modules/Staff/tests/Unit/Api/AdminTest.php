@@ -109,14 +109,7 @@ test('update', function (): void {
     ->atLeast()->once()
     ->andReturn(true);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(staffAdminIdentity());
-
     $di = container();
-    $di['db'] = $dbMock;
 
     $api->setDi($di);
     $api->setService($serviceMock);
@@ -136,14 +129,7 @@ test('delete', function (): void {
     ->atLeast()->once()
     ->andReturn(true);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(staffAdminIdentity());
-
     $di = container();
-    $di['db'] = $dbMock;
 
     $api->setDi($di);
     $api->setService($serviceMock);
@@ -176,15 +162,8 @@ test('change password', function (): void {
     ->atLeast()->once()
     ->andReturn(true);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(staffAdminIdentity());
-
     $di = container();
     $di['validator'] = $validatorMock;
-    $di['db'] = $dbMock;
 
     $api->setDi($di);
     $api->setService($serviceMock);
@@ -522,13 +501,9 @@ test('group member add', function (): void {
 
     $serviceMock = Mockery::mock(Box\Mod\Staff\Service::class);
     $serviceMock->shouldReceive('getAdminGroupRepository')->once()->andReturn($groupRepository);
-    $serviceMock->shouldReceive('addAdminToGroup')->once()->with($admin, $group)->andReturn(true);
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')->once()->with('Admin', 2, 'Staff member not found')->andReturn($admin);
+    $serviceMock->shouldReceive('addAdminToGroup')->once()->with(Mockery::type(Admin::class), $group)->andReturn(true);
 
     $di = container();
-    $di['db'] = $dbMock;
     $api->setDi($di);
     $api->setService($serviceMock);
 
@@ -547,13 +522,9 @@ test('group member remove', function (): void {
 
     $serviceMock = Mockery::mock(Box\Mod\Staff\Service::class);
     $serviceMock->shouldReceive('getAdminGroupRepository')->once()->andReturn($groupRepository);
-    $serviceMock->shouldReceive('removeAdminFromGroup')->once()->with($admin, $group)->andReturn(true);
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')->once()->with('Admin', 2, 'Staff member not found')->andReturn($admin);
+    $serviceMock->shouldReceive('removeAdminFromGroup')->once()->with(Mockery::type(Admin::class), $group)->andReturn(true);
 
     $di = container();
-    $di['db'] = $dbMock;
     $api->setDi($di);
     $api->setService($serviceMock);
 
@@ -601,11 +572,7 @@ test('admin group get list', function (): void {
     $serviceMock = Mockery::mock(Box\Mod\Staff\Service::class);
     $serviceMock->shouldReceive('getAdminGroupMemberRepository')->once()->andReturn($groupMemberRepository);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')->once()->with('Admin', 2, 'Staff member not found')->andReturn($admin);
-
     $di = container();
-    $di['db'] = $dbMock;
     $api->setDi($di);
     $api->setService($serviceMock);
 
@@ -618,6 +585,11 @@ test('login history get list', function (): void {
     $api = apiEndpoint(new Box\Mod\Staff\Api\Admin());
     $data = [];
 
+    $activityModel = createEntity(\Box\Mod\Activity\Entity\ActivityAdminHistory::class, ['id' => 1]);
+
+    $activityRepoMock = Mockery::mock(Box\Mod\Activity\Repository\ActivityAdminHistoryRepository::class);
+    $activityRepoMock->shouldReceive('find')->with(1)->andReturn($activityModel);
+
     $serviceMock = Mockery::mock(Box\Mod\Staff\Service::class);
     $serviceMock
     ->shouldReceive('getActivityAdminHistorySearchQuery')
@@ -629,7 +601,7 @@ test('login history get list', function (): void {
     ->andReturn([]);
 
     $resultSet = [
-        'list' => ['id' => 1],
+        'list' => [['id' => 1]],
     ];
     $pagerMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
     $pagerMock
@@ -637,16 +609,11 @@ test('login history get list', function (): void {
     ->atLeast()->once()
     ->andReturn($resultSet);
 
-    $model = createEntity(\Box\Mod\Activity\Entity\ActivityAdminHistory::class);
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn($model);
-
     $di = container();
     $di['pager'] = $pagerMock;
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getRepository')
+        ->with(\Box\Mod\Activity\Entity\ActivityAdminHistory::class)
+        ->andReturn($activityRepoMock);
 
     $api->setDi($di);
     $api->setService($serviceMock);
@@ -659,21 +626,21 @@ test('login history get', function (): void {
     $api = apiEndpoint(new Box\Mod\Staff\Api\Admin());
     $data['id'] = '1';
 
+    $activityModel = createEntity(\Box\Mod\Activity\Entity\ActivityAdminHistory::class);
+
+    $activityRepoMock = Mockery::mock(Box\Mod\Activity\Repository\ActivityAdminHistoryRepository::class);
+    $activityRepoMock->shouldReceive('find')->with(1)->andReturn($activityModel);
+
     $serviceMock = Mockery::mock(Box\Mod\Staff\Service::class);
     $serviceMock
     ->shouldReceive('toActivityAdminHistoryApiArray')
     ->atLeast()->once()
     ->andReturn([]);
 
-    $model = createEntity(\Box\Mod\Activity\Entity\ActivityAdminHistory::class);
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn($model);
-
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getRepository')
+        ->with(\Box\Mod\Activity\Entity\ActivityAdminHistory::class)
+        ->andReturn($activityRepoMock);
 
     $api->setIdentity(staffAdminIdentity());
     $api->setDi($di);

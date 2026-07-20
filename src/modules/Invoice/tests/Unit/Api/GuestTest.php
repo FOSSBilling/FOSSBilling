@@ -35,14 +35,9 @@ test('gets an invoice', function (): void {
         ->atLeast()->once()
         ->andReturn([]);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $model = createEntity(\Box\Mod\Invoice\Entity\Invoice::class);
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn($model);
-
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->getRepository(\Box\Mod\Invoice\Entity\Invoice::class)
+        ->shouldReceive('findOneBy')->andReturn(createEntity(\Box\Mod\Invoice\Entity\Invoice::class));
 
     $api->setDi($di);
     $api->setService($serviceMock);
@@ -55,14 +50,8 @@ test('gets an invoice', function (): void {
 
 test('throws exception when invoice is not found', function (): void {
     $api = apiEndpoint(new Guest());
-    $dbMock = Mockery::mock('\Box_Database');
     $model = createEntity(\Box\Mod\Invoice\Entity\Invoice::class);
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn(null);
-
     $di = container();
-    $di['db'] = $dbMock;
 
     $api->setDi($di);
     $api->setIdentity(createEntity(\Box\Mod\Staff\Entity\Admin::class));

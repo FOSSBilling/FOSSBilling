@@ -718,11 +718,6 @@ test('gets service', function (): void {
 
     $adminApi->setService($serviceMock);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn(createEntity(\Box\Mod\Order\Entity\Order::class));
-
     $orderServiceMock = Mockery::mock(OrderService::class);
     $serviceDomain = createEntity(\Box\Mod\Servicedomain\Entity\ServiceDomain::class);
     $orderServiceMock->shouldReceive('getOrderService')
@@ -734,7 +729,6 @@ test('gets service', function (): void {
         ->with('servicedomain', 'manage_domains', Mockery::any(), Mockery::any());
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (string $name = ''): Mockery\MockInterface => strtolower($name) === 'staff' ? $staffServiceMock : $orderServiceMock);
     $di['validator'] = new FOSSBilling\Validate();
 
@@ -757,10 +751,6 @@ test('throws exception when getting service without order_id', function (): void
 
     $adminApi->setService($serviceMock);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('load')
-        ->never();
-
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getOrderService')
         ->never();
@@ -769,7 +759,6 @@ test('throws exception when getting service without order_id', function (): void
         ->never();
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (string $name = ''): Mockery\MockInterface => strtolower($name) === 'staff' ? $staffServiceMock : $orderServiceMock);
     $di['validator'] = new FOSSBilling\Validate();
 
@@ -792,11 +781,6 @@ test('throws exception when getting service for not activated order', function (
 
     $adminApi->setService($serviceMock);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn(createEntity(\Box\Mod\Order\Entity\Order::class));
-
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getOrderService')
         ->atLeast()->once()
@@ -807,7 +791,6 @@ test('throws exception when getting service for not activated order', function (
         ->with('servicedomain', 'manage_domains', Mockery::any(), Mockery::any());
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (string $name = ''): Mockery\MockInterface => strtolower($name) === 'staff' ? $staffServiceMock : $orderServiceMock);
     $di['validator'] = new FOSSBilling\Validate();
 

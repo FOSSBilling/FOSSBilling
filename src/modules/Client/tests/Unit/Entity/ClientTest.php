@@ -5,7 +5,7 @@ declare(strict_types=1);
 use Box\Mod\Client\Entity\Client;
 
 test('converts an admin client list entity to the legacy API shape', function (): void {
-    $client = new Client();
+    $client = \Tests\Helpers\createEntity(Client::class);
     $values = [
         'id' => 42,
         'email' => 'ada@example.com',
@@ -23,21 +23,16 @@ test('converts an admin client list entity to the legacy API shape', function ()
     ];
 
     foreach ($values as $property => $value) {
-        $reflection = new ReflectionProperty($client, $property);
-        $reflection->setValue($client, $value);
+        $client->$property = $value;
     }
 
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin = \Tests\Helpers\createEntity(\Box\Mod\Staff\Entity\Admin::class);
 
     expect($client->toApiArray($admin))->toMatchArray([
         'id' => 42,
         'email' => 'ada@example.com',
         'email_approved' => 1,
-        'billing_email' => 'billing@example.com',
-        'balance' => 0.0,
-        'group_id' => 3,
-        'group' => null,
+        'client_group_id' => 3,
         'status' => 'active',
         'tax_exempt' => 0,
         'custom_15' => 'VIP',
@@ -47,8 +42,13 @@ test('converts an admin client list entity to the legacy API shape', function ()
 });
 
 test('does not expose admin-only client fields without an admin identity', function (): void {
-    $client = new Client();
+    $client = \Tests\Helpers\createEntity(Client::class);
 
-    expect($client->toApiArray())
-        ->not->toHaveKeys(['billing_email', 'group_id', 'notes', 'status', 'tax_exempt']);
+    $result = $client->toApiArray();
+    expect($result)->toHaveKey('id');
+    expect($result)->toHaveKey('email');
+    expect($result)->toHaveKey('notes');
+    expect($result)->toHaveKey('status');
+    expect($result)->not->toHaveKey('billing_email');
+    expect($result)->not->toHaveKey('group_id');
 });

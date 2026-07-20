@@ -566,13 +566,17 @@ test('clientAlreadyExists returns true when client exists', function (): void {
 test('getByLoginDetails returns Model_Client', function (): void {
     $service = new Box\Mod\Client\Service();
     $model = createEntity(\Box\Mod\Client\Entity\Client::class);
-    $database = Mockery::mock('\Box_Database');
-    $database->shouldReceive('findOne')
+
+    $clientRepoMock = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepoMock->shouldReceive('findOneBy')
         ->atLeast()->once()
+        ->with(['email' => 'email@example.com', 'pass' => 'password', 'status' => 'active'])
         ->andReturn($model);
 
     $di = container();
-    $di['db'] = $database;
+    $di['em']->shouldReceive('getRepository')
+        ->with(\Box\Mod\Client\Entity\Client::class)
+        ->andReturn($clientRepoMock);
 
     $service->setDi($di);
 
@@ -770,12 +774,6 @@ test('authorizeClient returns null when email not found', function (): void {
     $email = 'example@fossbilling.vm';
     $password = '123456';
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->with('Client', Mockery::any(), Mockery::any())
-        ->andReturn(null);
-
     $authMock = Mockery::mock('\Box_Authorization');
     $authMock->shouldReceive('authorizeUser')
         ->atLeast()->once()
@@ -783,7 +781,6 @@ test('authorizeClient returns null when email not found', function (): void {
         ->andReturn(null);
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['auth'] = $authMock;
 
     $service->setDi($di);
@@ -799,10 +796,10 @@ test('authorizeClient returns Model_Client', function (): void {
 
     $clientModel = createEntity(\Box\Mod\Client\Entity\Client::class);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')
+    $clientRepoMock = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepoMock->shouldReceive('findOneBy')
         ->atLeast()->once()
-        ->with('Client', Mockery::any(), Mockery::any())
+        ->with(['email' => $email, 'status' => 'active'])
         ->andReturn($clientModel);
 
     $authMock = Mockery::mock('\Box_Authorization');
@@ -812,7 +809,9 @@ test('authorizeClient returns Model_Client', function (): void {
         ->andReturn($clientModel);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getRepository')
+        ->with(\Box\Mod\Client\Entity\Client::class)
+        ->andReturn($clientRepoMock);
     $di['auth'] = $authMock;
     $di['mod_config'] = $di->protect(fn ($name): array => ['require_email_confirmation' => false]);
 
@@ -829,10 +828,10 @@ test('authorizeClient with confirmed email returns Model_Client', function (): v
 
     $clientModel = createEntity(\Box\Mod\Client\Entity\Client::class, ['email_approved' => 1]);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')
+    $clientRepoMock = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepoMock->shouldReceive('findOneBy')
         ->atLeast()->once()
-        ->with('Client', Mockery::any(), Mockery::any())
+        ->with(['email' => $email, 'status' => 'active'])
         ->andReturn($clientModel);
 
     $authMock = Mockery::mock('\Box_Authorization');
@@ -842,7 +841,9 @@ test('authorizeClient with confirmed email returns Model_Client', function (): v
         ->andReturn($clientModel);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getRepository')
+        ->with(\Box\Mod\Client\Entity\Client::class)
+        ->andReturn($clientRepoMock);
     $di['auth'] = $authMock;
     $di['mod_config'] = $di->protect(fn ($name): array => ['require_email_confirmation' => true]);
 
