@@ -1159,3 +1159,54 @@ test('updateServer replaces the stored secret when a new value is submitted', fu
     expect($hostingServerModel->getUsername())->toBe('new-admin');
     expect($hostingServerModel->getAccesshash())->toBe('new-hash');
 });
+
+test('_performOnService rejects expired active order', function (): void {
+    $service = new Service();
+
+    $reflection = new ReflectionMethod($service, '_performOnService');
+
+    $expiredOrder = createEntity(\Box\Mod\Order\Entity\Order::class, [
+        'status' => \Box\Mod\Order\Entity\Order::STATUS_ACTIVE,
+        'expires_at' => date('Y-m-d H:i:s', time() - 3600),
+    ]);
+
+    expect($reflection->invoke($service, $expiredOrder))->toBeFalse();
+});
+
+test('_performOnService rejects suspended order', function (): void {
+    $service = new Service();
+
+    $reflection = new ReflectionMethod($service, '_performOnService');
+
+    $suspendedOrder = createEntity(\Box\Mod\Order\Entity\Order::class, [
+        'status' => \Box\Mod\Order\Entity\Order::STATUS_SUSPENDED,
+    ]);
+
+    expect($reflection->invoke($service, $suspendedOrder))->toBeFalse();
+});
+
+test('_performOnService accepts active order with future expires_at', function (): void {
+    $service = new Service();
+
+    $reflection = new ReflectionMethod($service, '_performOnService');
+
+    $activeOrder = createEntity(\Box\Mod\Order\Entity\Order::class, [
+        'status' => \Box\Mod\Order\Entity\Order::STATUS_ACTIVE,
+        'expires_at' => date('Y-m-d H:i:s', time() + 86400),
+    ]);
+
+    expect($reflection->invoke($service, $activeOrder))->toBeTrue();
+});
+
+test('_performOnService accepts one-time active order with null expires_at', function (): void {
+    $service = new Service();
+
+    $reflection = new ReflectionMethod($service, '_performOnService');
+
+    $oneTimeOrder = createEntity(\Box\Mod\Order\Entity\Order::class, [
+        'status' => \Box\Mod\Order\Entity\Order::STATUS_ACTIVE,
+        'expires_at' => null,
+    ]);
+
+    expect($reflection->invoke($service, $oneTimeOrder))->toBeTrue();
+});

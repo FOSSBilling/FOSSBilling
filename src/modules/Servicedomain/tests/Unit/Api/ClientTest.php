@@ -202,6 +202,8 @@ test('gets service', function (): void {
     $orderServiceMock->shouldReceive('findForClientById')
         ->atLeast()->once()
         ->andReturn($order);
+    $orderServiceMock->shouldReceive('assertOrderUsable')
+        ->atLeast()->once();
     $serviceDomain = createEntity(\Box\Mod\Servicedomain\Entity\ServiceDomain::class);
     $orderServiceMock->shouldReceive('getOrderService')
         ->atLeast()->once()
@@ -278,6 +280,41 @@ test('throws exception when getting service order not found', function (): void 
         ->toThrow(FOSSBilling\Exception::class);
 });
 
+test('throws exception when getting service for expired order', function (): void {
+    $clientApi = apiEndpoint(new Client());
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('lock')->never();
+    $clientApi->setService($serviceMock);
+
+    $expiredOrder = createEntity(\Box\Mod\Order\Entity\Order::class, [
+        'status' => \Box\Mod\Order\Entity\Order::STATUS_ACTIVE,
+        'expires_at' => new \DateTime('-1 hour'),
+    ]);
+
+    $orderServiceMock = Mockery::mock(OrderService::class);
+    $orderServiceMock->shouldReceive('findForClientById')
+        ->atLeast()->once()
+        ->andReturn($expiredOrder);
+    $orderServiceMock->shouldReceive('assertOrderUsable')
+        ->once()
+        ->with($expiredOrder)
+        ->andThrow(new FOSSBilling\InformationException('Subscription expired'));
+    $orderServiceMock->shouldReceive('getOrderService')->never();
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
+    $clientApi->setDi($di);
+
+    $clientApi->setIdentity(createEntity(\Box\Mod\Client\Entity\Client::class));
+
+    $data = [
+        'order_id' => 1,
+    ];
+
+    expect(fn () => $clientApi->lock($data))
+        ->toThrow(FOSSBilling\InformationException::class, 'Subscription expired');
+});
+
 test('throws exception when getting service order not activated', function (): void {
     $clientApi = apiEndpoint(new Client());
     $api = apiEndpoint(new Client());
@@ -291,6 +328,8 @@ test('throws exception when getting service order not activated', function (): v
     $orderServiceMock->shouldReceive('findForClientById')
         ->atLeast()->once()
         ->andReturn(createEntity(\Box\Mod\Order\Entity\Order::class));
+    $orderServiceMock->shouldReceive('assertOrderUsable')
+        ->atLeast()->once();
     $orderServiceMock->shouldReceive('getOrderService')
         ->atLeast()->once()
         ->andReturn(null);

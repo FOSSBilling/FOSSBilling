@@ -239,7 +239,15 @@ class Service implements InjectionAwareInterface
         $orderService = $this->di['mod_service']('order');
         $o = $orderService->getServiceOrder($model);
         if ($o instanceof Order) {
-            return $o->status == Order::STATUS_ACTIVE;
+            if ($o->status != Order::STATUS_ACTIVE) {
+                return false;
+            }
+
+            if ($o->getExpiresAt() !== null && $o->getExpiresAt() <= new \DateTime()) {
+                return false;
+            }
+
+            return true;
         }
 
         return false;

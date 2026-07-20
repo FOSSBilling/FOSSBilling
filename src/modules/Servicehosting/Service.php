@@ -515,7 +515,8 @@ class Service implements InjectionAwareInterface
             return false;
         }
 
-        if ($order->expires_at !== null && strtotime((string) $order->expires_at) <= time()) {
+        $expiresAt = $order instanceof Order ? $order->getExpiresAt() : ($order->expires_at ?? null);
+        if ($expiresAt !== null && $expiresAt <= new \DateTime()) {
             return false;
         }
 

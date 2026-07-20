@@ -38,22 +38,19 @@ class Client extends \FOSSBilling\Api\AbstractApi
 
         $client = $this->getIdentity();
 
-        $bindings = [
-            ':id' => $data['order_id'],
-            ':client_id' => $client->getId(),
-        ];
-
         $order = $this->getDi()['em']->getRepository(Order::class)->findOneBy(['id' => $data['order_id'], 'clientId' => $client->getId()]);
 
         if (!$order instanceof Order) {
             throw new \FOSSBilling\InformationException('Order not found');
         }
 
+        $orderService = $this->getDi()['mod_service']('order');
+        $orderService->assertOrderUsable($order);
+
         if ($order->status !== Order::STATUS_ACTIVE) {
             throw new \FOSSBilling\InformationException('Order is not activated');
         }
 
-        $orderService = $this->getDi()['mod_service']('order');
         $s = $orderService->getOrderService($order);
         if (!$s instanceof ServiceLicense) {
             throw new \FOSSBilling\Exception('Order is not activated');
