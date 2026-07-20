@@ -249,7 +249,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
-        if (!$model instanceof ServiceDomain && !$model instanceof ServiceDomain) {
+        if (!$model instanceof ServiceDomain) {
             throw new \FOSSBilling\Exception('Could not activate order. Service was not created');
         }
 
@@ -279,7 +279,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
-        if (!$model instanceof ServiceDomain && !$model instanceof ServiceDomain) {
+        if (!$model instanceof ServiceDomain) {
             throw new \FOSSBilling\Exception('Order :id has no active service', [':id' => $order->id]);
         }
 
@@ -305,7 +305,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
-        if (!$model instanceof ServiceDomain && !$model instanceof ServiceDomain) {
+        if (!$model instanceof ServiceDomain) {
             throw new \FOSSBilling\Exception('Order :id has no active service', [':id' => $order->id]);
         }
 
@@ -327,7 +327,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $orderService = $this->di['mod_service']('order');
         $service = $orderService->getOrderService($order);
 
-        if ($service instanceof ServiceDomain || $service instanceof ServiceDomain) {
+        if ($service instanceof ServiceDomain) {
             if ($order->status != Order::STATUS_CANCELED) {
                 $this->action_cancel($order);
             }
@@ -1266,281 +1266,179 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $date?->format('Y-m-d H:i:s');
     }
 
-    // -- Accessor helpers to bridge ServiceDomain Entity and RedBean model --
-
-    private function getModelId($model): ?int
+    private function getModelId(ServiceDomain $model): ?int
     {
-        return $model instanceof ServiceDomain ? $model->getId() : $model->id;
+        return $model->getId();
     }
 
-    private function getModelAction($model): ?string
+    private function getModelAction(ServiceDomain $model): ?string
     {
-        return $model instanceof ServiceDomain ? $model->getAction() : $model->action;
+        return $model->getAction();
     }
 
-    private function setModelAction($model, ?string $value): void
+    private function setModelAction(ServiceDomain $model, ?string $value): void
     {
-        if ($model instanceof ServiceDomain) {
-            $model->setAction($value);
-        } else {
-            $model->action = $value;
-        }
+        $model->setAction($value);
     }
 
-    private function setModelLocked($model, ?bool $value): void
+    private function setModelLocked(ServiceDomain $model, ?bool $value): void
     {
-        if ($model instanceof ServiceDomain) {
-            $model->setLocked($value);
-        } else {
-            $model->locked = $value;
-        }
+        $model->setLocked($value);
     }
 
-    private function setModelPrivacy($model, ?bool $value): void
+    private function setModelPrivacy(ServiceDomain $model, ?bool $value): void
     {
-        if ($model instanceof ServiceDomain) {
-            $model->setPrivacy($value);
-        } else {
-            $model->privacy = $value;
-        }
+        $model->setPrivacy($value);
     }
 
-    private function setModelContactFirstName($model, ?string $value): void
+    private function setModelContactFirstName(ServiceDomain $model, ?string $value): void
     {
-        if ($model instanceof ServiceDomain) {
-            $model->setContactFirstName($value);
-        } else {
-            $model->contact_first_name = $value;
-        }
+        $model->setContactFirstName($value);
     }
 
-    private function setModelContactLastName($model, ?string $value): void
+    private function setModelContactLastName(ServiceDomain $model, ?string $value): void
     {
-        if ($model instanceof ServiceDomain) {
-            $model->setContactLastName($value);
-        } else {
-            $model->contact_last_name = $value;
-        }
+        $model->setContactLastName($value);
     }
 
-    private function setModelContactEmail($model, ?string $value): void
+    private function setModelContactEmail(ServiceDomain $model, ?string $value): void
     {
-        if ($model instanceof ServiceDomain) {
-            $model->setContactEmail($value);
-        } else {
-            $model->contact_email = $value;
-        }
+        $model->setContactEmail($value);
     }
 
-    private function setModelContactCompany($model, ?string $value): void
+    private function setModelContactCompany(ServiceDomain $model, ?string $value): void
     {
-        if ($model instanceof ServiceDomain) {
-            $model->setContactCompany($value);
-        } else {
-            $model->contact_company = $value;
-        }
+        $model->setContactCompany($value);
     }
 
-    private function setModelContactAddress1($model, ?string $value): void
+    private function setModelContactAddress1(ServiceDomain $model, ?string $value): void
     {
-        if ($model instanceof ServiceDomain) {
-            $model->setContactAddress1($value);
-        } else {
-            $model->contact_address1 = $value;
-        }
+        $model->setContactAddress1($value);
     }
 
-    private function setModelContactAddress2($model, ?string $value): void
+    private function setModelContactAddress2(ServiceDomain $model, ?string $value): void
     {
-        if ($model instanceof ServiceDomain) {
-            $model->setContactAddress2($value);
-        } else {
-            $model->contact_address2 = $value;
-        }
+        $model->setContactAddress2($value);
     }
 
-    private function setModelContactCountry($model, ?string $value): void
+    private function setModelContactCountry(ServiceDomain $model, ?string $value): void
     {
-        if ($model instanceof ServiceDomain) {
-            $model->setContactCountry($value);
-        } else {
-            $model->contact_country = $value;
-        }
+        $model->setContactCountry($value);
     }
 
-    private function setModelContactCity($model, ?string $value): void
+    private function setModelContactCity(ServiceDomain $model, ?string $value): void
     {
-        if ($model instanceof ServiceDomain) {
-            $model->setContactCity($value);
-        } else {
-            $model->contact_city = $value;
-        }
+        $model->setContactCity($value);
     }
 
-    private function setModelContactState($model, ?string $value): void
+    private function setModelContactState(ServiceDomain $model, ?string $value): void
     {
-        if ($model instanceof ServiceDomain) {
-            $model->setContactState($value);
-        } else {
-            $model->contact_state = $value;
-        }
+        $model->setContactState($value);
     }
 
-    private function setModelContactPostcode($model, ?string $value): void
+    private function setModelContactPostcode(ServiceDomain $model, ?string $value): void
     {
-        if ($model instanceof ServiceDomain) {
-            $model->setContactPostcode($value);
-        } else {
-            $model->contact_postcode = $value;
-        }
+        $model->setContactPostcode($value);
     }
 
-    private function setModelContactPhoneCc($model, ?string $value): void
+    private function setModelContactPhoneCc(ServiceDomain $model, ?string $value): void
     {
-        if ($model instanceof ServiceDomain) {
-            $model->setContactPhoneCc($value);
-        } else {
-            $model->contact_phone_cc = $value;
-        }
+        $model->setContactPhoneCc($value);
     }
 
-    private function setModelContactPhone($model, ?string $value): void
+    private function setModelContactPhone(ServiceDomain $model, ?string $value): void
     {
-        if ($model instanceof ServiceDomain) {
-            $model->setContactPhone($value);
-        } else {
-            $model->contact_phone = $value;
-        }
+        $model->setContactPhone($value);
     }
 
-    private function setModelDetails($model, ?string $value): void
+    private function setModelDetails(ServiceDomain $model, ?string $value): void
     {
-        if ($model instanceof ServiceDomain) {
-            $model->setDetails($value);
-        } else {
-            $model->details = $value;
-        }
+        $model->setDetails($value);
     }
 
-    private function setModelExpiresAt($model, ?string $value): void
+    private function setModelExpiresAt(ServiceDomain $model, ?string $value): void
     {
-        if ($model instanceof ServiceDomain) {
-            $model->setExpiresAt($value !== null ? new \DateTime($value) : null);
-        } else {
-            $model->expires_at = $value;
-        }
+        $model->setExpiresAt($value !== null ? new \DateTime($value) : null);
     }
 
-    private function setModelRegisteredAt($model, ?string $value): void
+    private function setModelRegisteredAt(ServiceDomain $model, ?string $value): void
     {
-        if ($model instanceof ServiceDomain) {
-            $model->setRegisteredAt($value !== null ? new \DateTime($value) : null);
-        } else {
-            $model->registered_at = $value;
-        }
+        $model->setRegisteredAt($value !== null ? new \DateTime($value) : null);
     }
 
-    private function setModelUpdatedAt($model, ?string $value): void
+    private function setModelUpdatedAt(ServiceDomain $model, ?string $value): void
     {
-        if ($model instanceof ServiceDomain) {
-            $model->setUpdatedAt($value !== null ? new \DateTime($value) : null);
-        } else {
-            $model->updated_at = $value;
-        }
+        $model->setUpdatedAt($value !== null ? new \DateTime($value) : null);
     }
 
-    private function setModelNs1($model, ?string $value): void
+    private function setModelNs1(ServiceDomain $model, ?string $value): void
     {
-        if ($model instanceof ServiceDomain) {
-            $model->setNs1($value);
-        } else {
-            $model->ns1 = $value;
-        }
+        $model->setNs1($value);
     }
 
-    private function setModelNs2($model, ?string $value): void
+    private function setModelNs2(ServiceDomain $model, ?string $value): void
     {
-        if ($model instanceof ServiceDomain) {
-            $model->setNs2($value);
-        } else {
-            $model->ns2 = $value;
-        }
+        $model->setNs2($value);
     }
 
-    private function setModelNs3($model, ?string $value): void
+    private function setModelNs3(ServiceDomain $model, ?string $value): void
     {
-        if ($model instanceof ServiceDomain) {
-            $model->setNs3($value);
-        } else {
-            $model->ns3 = $value;
-        }
+        $model->setNs3($value);
     }
 
-    private function setModelNs4($model, ?string $value): void
+    private function setModelNs4(ServiceDomain $model, ?string $value): void
     {
-        if ($model instanceof ServiceDomain) {
-            $model->setNs4($value);
-        } else {
-            $model->ns4 = $value;
-        }
+        $model->setNs4($value);
     }
 
-    private function getModelNs1($model): ?string
+    private function getModelNs1(ServiceDomain $model): ?string
     {
-        return $model instanceof ServiceDomain ? $model->getNs1() : $model->ns1;
+        return $model->getNs1();
     }
 
-    private function getModelNs2($model): ?string
+    private function getModelNs2(ServiceDomain $model): ?string
     {
-        return $model instanceof ServiceDomain ? $model->getNs2() : $model->ns2;
+        return $model->getNs2();
     }
 
-    private function getModelNs3($model): ?string
+    private function getModelNs3(ServiceDomain $model): ?string
     {
-        return $model instanceof ServiceDomain ? $model->getNs3() : $model->ns3;
+        return $model->getNs3();
     }
 
-    private function getModelNs4($model): ?string
+    private function getModelNs4(ServiceDomain $model): ?string
     {
-        return $model instanceof ServiceDomain ? $model->getNs4() : $model->ns4;
+        return $model->getNs4();
     }
 
-    private function getModelPeriod($model): ?int
+    private function getModelPeriod(ServiceDomain $model): ?int
     {
-        return $model instanceof ServiceDomain ? $model->getPeriod() : $model->period;
+        return $model->getPeriod();
     }
 
-    private function setModelPeriod($model, ?int $value): void
+    private function setModelPeriod(ServiceDomain $model, ?int $value): void
     {
-        if ($model instanceof ServiceDomain) {
-            $model->setPeriod($value);
-        } else {
-            $model->period = $value;
-        }
+        $model->setPeriod($value);
     }
 
-    private function getModelPrivacy($model): ?bool
+    private function getModelPrivacy(ServiceDomain $model): ?bool
     {
-        return $model instanceof ServiceDomain ? $model->getPrivacy() : $model->privacy;
+        return $model->getPrivacy();
     }
 
-    private function getModelLocked($model): ?bool
+    private function getModelLocked(ServiceDomain $model): ?bool
     {
-        return $model instanceof ServiceDomain ? $model->isLocked() : $model->locked;
+        return $model->isLocked();
     }
 
-    private function getModelTransferCode($model): ?string
+    private function getModelTransferCode(ServiceDomain $model): ?string
     {
-        return $model instanceof ServiceDomain ? $model->getTransferCode() : $model->transfer_code;
+        return $model->getTransferCode();
     }
 
-    private function setModelTransferCode($model, ?string $value): void
+    private function setModelTransferCode(ServiceDomain $model, ?string $value): void
     {
-        if ($model instanceof ServiceDomain) {
-            $model->setTransferCode($value);
-        } else {
-            $model->transfer_code = $value;
-        }
+        $model->setTransferCode($value);
     }
 
     // -- Repository accessors --

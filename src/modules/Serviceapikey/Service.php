@@ -69,7 +69,7 @@ class Service implements InjectionAwareInterface
         return $model;
     }
 
-    public function activate(Order|\RedBeanPHP\OODBBean $order, \RedBeanPHP\OODBBean|ServiceApiKey $model): bool
+    public function activate(Order $order, ServiceApiKey $model): bool
     {
         $config = json_decode($order->config ?? '', true);
         $this->_setModelProperty($model, 'api_key', $this->generateKey($config));
@@ -81,7 +81,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function suspend(Order|\RedBeanPHP\OODBBean $order, \RedBeanPHP\OODBBean|ServiceApiKey $model): bool
+    public function suspend(Order $order, ServiceApiKey $model): bool
     {
         $this->_setModelProperty($model, 'updated_at', date('Y-m-d H:i:s'));
         $this->di['em']->persist($model);
@@ -90,7 +90,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function unsuspend(Order|\RedBeanPHP\OODBBean $order, \RedBeanPHP\OODBBean|ServiceApiKey $model): bool
+    public function unsuspend(Order $order, ServiceApiKey $model): bool
     {
         $this->_setModelProperty($model, 'updated_at', date('Y-m-d H:i:s'));
         $this->di['em']->persist($model);
@@ -99,17 +99,17 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function cancel(Order|\RedBeanPHP\OODBBean $order, \RedBeanPHP\OODBBean|ServiceApiKey $model): bool
+    public function cancel(Order $order, ServiceApiKey $model): bool
     {
         return $this->suspend($order, $model);
     }
 
-    public function uncancel(Order|\RedBeanPHP\OODBBean $order, \RedBeanPHP\OODBBean|ServiceApiKey $model): bool
+    public function uncancel(Order $order, ServiceApiKey $model): bool
     {
         return $this->unsuspend($order, $model);
     }
 
-    public function delete(?Order $order, \RedBeanPHP\OODBBean|ServiceApiKey|null $model): void
+    public function delete(?Order $order, ServiceApiKey|null $model): void
     {
         if (is_object($model)) {
             $this->di['em']->remove($model);
@@ -117,24 +117,14 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function toApiArray(\RedBeanPHP\OODBBean|ServiceApiKey $model): array
+    public function toApiArray(ServiceApiKey $model): array
     {
-        if ($model instanceof ServiceApiKey) {
-            return [
-                'id' => $model->getId(),
-                'created_at' => $model->getCreatedAt(),
-                'updated_at' => $model->getUpdatedAt(),
-                'api_key' => $model->getApiKey(),
-                'config' => json_decode($model->getConfig() ?? '', true),
-            ];
-        }
-
         return [
-            'id' => $model->id,
-            'created_at' => $model->created_at,
-            'updated_at' => $model->updated_at,
-            'api_key' => $model->api_key,
-            'config' => json_decode($model->config ?? '', true),
+            'id' => $model->getId(),
+            'created_at' => $model->getCreatedAt(),
+            'updated_at' => $model->getUpdatedAt(),
+            'api_key' => $model->getApiKey(),
+            'config' => json_decode($model->getConfig() ?? '', true),
         ];
     }
 
@@ -185,7 +175,7 @@ class Service implements InjectionAwareInterface
             $client = $this->di['loggedin_client'];
         }
 
-        $modelClientId = $model instanceof ServiceApiKey ? $model->getClientId() : $model->client_id;
+        $modelClientId = $model->getClientId();
         if (!is_null($client) && $client->id !== $modelClientId) {
             throw new \FOSSBilling\Exception('API key does not exist');
         }
@@ -194,7 +184,7 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Order is not active');
         }
 
-        $config = json_decode($model instanceof ServiceApiKey ? ($model->getConfig() ?? '') : ($model->config ?? ''), true);
+        $config = json_decode($model->getConfig() ?? '', true);
 
         $this->_setModelProperty($model, 'api_key', $this->generateKey($config));
         $this->_setModelProperty($model, 'updated_at', date('Y-m-d H:i:s'));
@@ -226,12 +216,12 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('API key does not exist');
         }
 
-        $currentApiKey = $model instanceof ServiceApiKey ? $model->getApiKey() : $model->api_key;
+        $currentApiKey = $model->getApiKey();
         if (isset($data['api_key']) && $currentApiKey !== $data['api_key']) {
             throw new \FOSSBilling\Exception('To change the API key, please use the reset function rather than updating it.');
         }
 
-        $currentConfig = $model instanceof ServiceApiKey ? $model->getConfig() : $model->config;
+        $currentConfig = $model->getConfig();
         $config = !empty($data['config']) ? json_encode($data['config']) : $currentConfig;
 
         $this->_setModelProperty($model, 'config', $config);
@@ -332,9 +322,9 @@ class Service implements InjectionAwareInterface
         return $apiKey;
     }
 
-    private function isActive(\RedBeanPHP\OODBBean|ServiceApiKey $model): bool
+    private function isActive(ServiceApiKey $model): bool
     {
-        $modelId = $model instanceof ServiceApiKey ? $model->getId() : $model->id;
+        $modelId = $model->getId();
         $order = $this->di['em']->getRepository(Order::class)->findOneBy(['serviceId' => $modelId, 'serviceType' => 'apikey']);
         if (is_null($order)) {
             throw new \FOSSBilling\Exception('API key does not exist');
@@ -343,22 +333,16 @@ class Service implements InjectionAwareInterface
         return $order->getStatus() === 'active';
     }
 
-    private function _setModelProperty(\RedBeanPHP\OODBBean|ServiceApiKey $model, string $property, mixed $value): void
+    private function _setModelProperty(ServiceApiKey $model, string $property, mixed $value): void
     {
-        if ($model instanceof ServiceApiKey) {
-            match ($property) {
-                'id' => $model->setId($value),
-                'api_key' => $model->setApiKey($value),
-                'client_id' => $model->setClientId($value),
-                'config' => $model->setConfig($value),
-                'created_at' => $model->setCreatedAt(is_string($value) ? new \DateTime($value) : $value),
-                'updated_at' => $model->setUpdatedAt(is_string($value) ? new \DateTime($value) : $value),
-                default => null,
-            };
-
-            return;
-        }
-
-        $model->{$property} = $value;
+        match ($property) {
+            'id' => $model->setId($value),
+            'api_key' => $model->setApiKey($value),
+            'client_id' => $model->setClientId($value),
+            'config' => $model->setConfig($value),
+            'created_at' => $model->setCreatedAt(is_string($value) ? new \DateTime($value) : $value),
+            'updated_at' => $model->setUpdatedAt(is_string($value) ? new \DateTime($value) : $value),
+            default => null,
+        };
     }
 }

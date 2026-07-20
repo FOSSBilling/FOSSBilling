@@ -197,7 +197,7 @@ class Service implements InjectionAwareInterface
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
 
-        if (!$model instanceof \RedBeanPHP\SimpleModel && !$model instanceof ServiceHosting) {
+        if (!$model instanceof ServiceHosting) {
             throw new Exception('Order :id has no active service', [':id' => $order->id]);
         }
 
@@ -241,7 +241,7 @@ class Service implements InjectionAwareInterface
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
-        if (!$model instanceof \RedBeanPHP\SimpleModel && !$model instanceof ServiceHosting) {
+        if (!$model instanceof ServiceHosting) {
             throw new Exception('Order :id has no active service', [':id' => $order->id]);
         }
 
@@ -259,7 +259,7 @@ class Service implements InjectionAwareInterface
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
-        if (!$model instanceof \RedBeanPHP\SimpleModel && !$model instanceof ServiceHosting) {
+        if (!$model instanceof ServiceHosting) {
             throw new Exception('Order :id has no active service', [':id' => $order->id]);
         }
         [$adapter, $account] = $this->_getAM($model);
@@ -279,7 +279,7 @@ class Service implements InjectionAwareInterface
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
-        if (!$model instanceof \RedBeanPHP\SimpleModel && !$model instanceof ServiceHosting) {
+        if (!$model instanceof ServiceHosting) {
             throw new Exception('Order :id has no active service', [':id' => $order->id]);
         }
         [$adapter, $account] = $this->_getAM($model);
@@ -299,7 +299,7 @@ class Service implements InjectionAwareInterface
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
-        if (!$model instanceof \RedBeanPHP\SimpleModel && !$model instanceof ServiceHosting) {
+        if (!$model instanceof ServiceHosting) {
             throw new Exception('Order :id has no active service', [':id' => $order->id]);
         }
         [$adapter, $account] = $this->_getAM($model);
@@ -1558,7 +1558,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Get a property value from either an entity (using getter) or legacy RedBean model (direct access).
+     * Get a property value from a hosting entity using getter methods.
      */
     private function _getModelProperty(object $model, string $property): mixed
     {
@@ -1628,14 +1628,12 @@ class Service implements InjectionAwareInterface
                 'updated_at' => $model->getUpdatedAt(),
                 default => null,
             };
-        }
 
-        // Legacy RedBean model — direct property access
-        return $model->{$property} ?? null;
+        }
     }
 
     /**
-     * Set a property value on either an entity (using setter) or legacy RedBean model (direct access).
+     * Set a property value on a hosting entity using setter methods.
      */
     private function _setModelProperty(object $model, string $property, mixed $value): void
     {
@@ -1710,8 +1708,5 @@ class Service implements InjectionAwareInterface
 
             return;
         }
-
-        // Legacy RedBean model — direct property access
-        $model->{$property} = $value;
     }
 }

@@ -121,7 +121,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
-        if (!$model instanceof \RedBeanPHP\SimpleModel && !$model instanceof ServiceCustom) {
+        if (!$model instanceof ServiceCustom) {
             throw new \FOSSBilling\Exception('Could not activate order. Service was not created', null, 7456);
         }
 
@@ -330,7 +330,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
-        if (!$model instanceof \RedBeanPHP\SimpleModel && !$model instanceof ServiceCustom) {
+        if (!$model instanceof ServiceCustom) {
             throw new \FOSSBilling\Exception('Order :id has no active service', [':id' => $order->id]);
         }
 
@@ -339,39 +339,29 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     private function _getModelProperty(ServiceCustom $model, string $property): mixed
     {
-        if ($model instanceof ServiceCustom) {
-            return match ($property) {
-                'id' => $model->getId(),
-                'client_id' => $model->getClientId(),
-                'plugin' => $model->getPlugin(),
-                'plugin_config' => $model->getPluginConfig(),
-                'config' => $model->getConfig(),
-                'created_at' => $model->getCreatedAt(),
-                'updated_at' => $model->getUpdatedAt(),
-                default => null,
-            };
-        }
-
-        return $model->{$property} ?? null;
+        return match ($property) {
+            'id' => $model->getId(),
+            'client_id' => $model->getClientId(),
+            'plugin' => $model->getPlugin(),
+            'plugin_config' => $model->getPluginConfig(),
+            'config' => $model->getConfig(),
+            'created_at' => $model->getCreatedAt(),
+            'updated_at' => $model->getUpdatedAt(),
+            default => null,
+        };
     }
 
     private function _setModelProperty(ServiceCustom $model, string $property, mixed $value): void
     {
-        if ($model instanceof ServiceCustom) {
-            match ($property) {
-                'id' => $model->setId($value),
-                'client_id' => $model->setClientId($value),
-                'plugin' => $model->setPlugin($value),
-                'plugin_config' => $model->setPluginConfig($value),
-                'config' => $model->setConfig($value),
-                'created_at' => $model->setCreatedAt(is_string($value) ? new \DateTime($value) : $value),
-                'updated_at' => $model->setUpdatedAt(is_string($value) ? new \DateTime($value) : $value),
-                default => null,
-            };
-
-            return;
-        }
-
-        $model->{$property} = $value;
+        match ($property) {
+            'id' => $model->setId($value),
+            'client_id' => $model->setClientId($value),
+            'plugin' => $model->setPlugin($value),
+            'plugin_config' => $model->setPluginConfig($value),
+            'config' => $model->setConfig($value),
+            'created_at' => $model->setCreatedAt(is_string($value) ? new \DateTime($value) : $value),
+            'updated_at' => $model->setUpdatedAt(is_string($value) ? new \DateTime($value) : $value),
+            default => null,
+        };
     }
 }
