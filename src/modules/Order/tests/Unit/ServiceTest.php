@@ -12,6 +12,9 @@ declare(strict_types=1);
 
 use Box\Mod\Order\Service;
 use Box\Mod\Product\Entity\Product;
+use Box\Mod\Servicedownloadable\Entity\ServiceDownloadable;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\EntityRepository;
 
 use function Tests\Helpers\container;
 
@@ -651,6 +654,26 @@ test('getOrderService returns core service', function (): void {
     $result = $svc->getOrderService($order);
 
     expect($result)->toBeInstanceOf(Model_ServiceCustom::class);
+});
+
+test('getOrderService resolves downloadable services through Doctrine', function (): void {
+    $downloadable = new ServiceDownloadable();
+    $repository = Mockery::mock(EntityRepository::class);
+    $repository->shouldReceive('find')->once()->with(1)->andReturn($downloadable);
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->once()->with(ServiceDownloadable::class)->andReturn($repository);
+
+    $di = container();
+    $di['em'] = $em;
+    $svc = new Service();
+    $svc->setDi($di);
+
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order->service_id = 1;
+    $order->service_type = Box\Mod\Product\Service::DOWNLOADABLE;
+
+    expect($svc->getOrderService($order))->toBe($downloadable);
 });
 
 test('getOrderService returns non-core service', function (): void {

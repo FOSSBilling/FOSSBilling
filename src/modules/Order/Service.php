@@ -13,6 +13,7 @@ namespace Box\Mod\Order;
 
 use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Product\Entity\Product;
+use Box\Mod\Servicedownloadable\Entity\ServiceDownloadable;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Validation\PriceValidator;
@@ -234,10 +235,13 @@ class Service implements InjectionAwareInterface
     public function getOrderService(\Model_ClientOrder $order)
     {
         if ($order->service_id !== null) {
+            if ($order->service_type === \Box\Mod\Product\Service::DOWNLOADABLE) {
+                return $this->di['em']->getRepository(ServiceDownloadable::class)->find((int) $order->service_id);
+            }
+
             $builtInServiceTypes = [
                 \Box\Mod\Product\Service::CUSTOM,
                 \Box\Mod\Product\Service::LICENSE,
-                \Box\Mod\Product\Service::DOWNLOADABLE,
                 \Box\Mod\Product\Service::HOSTING,
                 \Box\Mod\Product\Service::DOMAIN,
             ];
@@ -266,11 +270,14 @@ class Service implements InjectionAwareInterface
 
     public function getServiceOrder($service)
     {
-        $type = $this->di['tools']->from_camel_case(str_replace('Model_Service', '', $service::class));
+        $type = $service instanceof ServiceDownloadable
+            ? \Box\Mod\Product\Service::DOWNLOADABLE
+            : $this->di['tools']->from_camel_case(str_replace('Model_Service', '', $service::class));
+        $serviceId = $service instanceof ServiceDownloadable ? $service->getId() : $service->id;
 
         $bindings = [
             'service_type' => $type,
-            ':service_id' => $service->id,
+            ':service_id' => $serviceId,
         ];
 
         return $this->di['db']->findOne('ClientOrder', 'service_type  = :service_type AND service_id = :service_id', $bindings);
@@ -940,7 +947,7 @@ class Service implements InjectionAwareInterface
                     throw new \FOSSBilling\Exception('Error creating ' . $order->service_type . ' service for order ' . $order->id);
                 }
 
-                $order->service_id = $service->id;
+                $order->service_id = $service instanceof ServiceDownloadable ? $service->getId() : $service->id;
                 $order->updated_at = date('Y-m-d H:i:s');
                 $this->di['db']->store($order);
             }
