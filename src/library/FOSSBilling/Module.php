@@ -240,13 +240,12 @@ class Module implements InjectionAwareInterface
     {
         $modName = "mod_{$this->module}";
 
-        $meta = $this->di['em']->getRepository(ExtensionMeta::class)->findOneBy(['extension' => $modName, 'metaKey' => 'config']);
-        $metaValue = $meta?->getMetaValue();
-        if (!$metaValue) {
+        $bean = $this->di['em']->getConnection()->fetchAssociative('SELECT * FROM extension_meta WHERE extension = :ext AND meta_key = :key', ['ext' => $modName, 'key' => 'config']);
+        if (!$bean || empty($bean['meta_value'])) {
             return [];
         }
 
-        $decrypted = $this->di['crypt']->decrypt($metaValue, Config::getProperty('info.salt'));
+        $decrypted = $this->di['crypt']->decrypt($bean['meta_value'], Config::getProperty('info.salt'));
         if (!is_string($decrypted) || !json_validate($decrypted)) {
             return [];
         }

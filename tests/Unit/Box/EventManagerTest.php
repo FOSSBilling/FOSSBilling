@@ -18,15 +18,15 @@ test('empty fire', function (): void {
 });
 
 test('fire', function (): void {
+    $connMock = Mockery::mock(\Doctrine\DBAL\Connection::class)->shouldIgnoreMissing();
+    $connMock->shouldReceive('fetchAllAssociative')->atLeast()->once()->andReturn([]);
+
     $di = container();
-    $connectionMock = Mockery::mock(Doctrine\DBAL\Connection::class);
-    $connectionMock->shouldReceive('fetchAllAssociative')->andReturn([]);
-    $di['em']->shouldReceive('getConnection')->andReturn($connectionMock);
     $di['logger'] = new Box_Log();
+    $di['em']->shouldReceive('getConnection')->andReturn($connMock);
 
     $manager = new Box_EventManager();
     $manager->setDi($di);
 
-    $result = $manager->fire(['event' => 'onBeforeClientSignup']);
-    expect($result)->toBeNull();
+    $manager->fire(['event' => 'onBeforeClientSignup']);
 });

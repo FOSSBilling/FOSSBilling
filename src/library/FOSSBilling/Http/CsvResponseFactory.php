@@ -16,21 +16,21 @@ use League\Csv\Writer;
 use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\Response;
 
-final readonly class CsvResponseFactory
+final class CsvResponseFactory
 {
-    public function __construct(private \Box_Database $database)
+    public function __construct(private \Pimple\Container $di)
     {
     }
 
     public function create(string $table, string $outputName = 'export.csv', array $headers = [], int $limit = 0): Response
     {
-        if ($limit > 0) {
-            $beans = $this->database->findAll($table, 'LIMIT :limit', [':limit' => $limit]);
-        } else {
-            $beans = $this->database->findAll($table);
-        }
+        $conn = $this->di['em']->getConnection();
 
-        $rows = array_map(static fn ($bean) => $bean->export(), $beans);
+        if ($limit > 0) {
+            $rows = $conn->fetchAllAssociative("SELECT * FROM `{$table}` LIMIT :limit", ['limit' => $limit]);
+        } else {
+            $rows = $conn->fetchAllAssociative("SELECT * FROM `{$table}`");
+        }
 
         if ($headers) {
             $rows = array_map(static fn (array $row): array => array_intersect_key($row, array_flip($headers)), $rows);

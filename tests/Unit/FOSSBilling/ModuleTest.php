@@ -15,7 +15,11 @@ use FOSSBilling\Module;
 use function Tests\Helpers\container;
 
 test('empty config', function (): void {
+    $connMock = Mockery::mock(\Doctrine\DBAL\Connection::class)->shouldIgnoreMissing();
+    $connMock->shouldReceive('fetchAssociative')->atLeast()->once()->andReturn(false);
+
     $di = container();
+    $di['em']->shouldReceive('getConnection')->andReturn($connMock);
 
     $mod = new Module('api');
     $mod->setDi($di);

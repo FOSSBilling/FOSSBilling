@@ -38,19 +38,22 @@ class Model_ActivityClientHistoryTable implements FOSSBilling\InjectionAwareInte
             $ip = $data['ip'];
         }
 
-        $entry = $this->di['db']->dispense('ActivityClientHistory');
-        $entry->client_id = $data['client_id'];
-        $entry->ip = $ip;
-        $entry->created_at = date('Y-m-d H:i:s');
-        $entry->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($entry);
+        $this->di['em']->getConnection()->executeStatement(
+            'INSERT INTO activity_client_history (client_id, ip, created_at, updated_at) VALUES (:client_id, :ip, :created_at, :updated_at)',
+            [
+                'client_id' => $data['client_id'],
+                'ip' => $ip,
+                'created_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]
+        );
     }
 
     public function rmByClient(Model_Client $client): void
     {
-        $models = $this->di['db']->find('ActivityClientHistory', 'client_id = ?', [$client->id]);
-        foreach ($models as $model) {
-            $this->di['db']->trash($model);
-        }
+        $this->di['em']->getConnection()->executeStatement(
+            'DELETE FROM activity_client_history WHERE client_id = :client_id',
+            ['client_id' => $client->id]
+        );
     }
 }

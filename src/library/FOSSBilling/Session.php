@@ -143,15 +143,16 @@ class Session implements InjectionAwareInterface
         $maxAge = time() - Config::getProperty('security.session_lifespan', 7200);
 
         $fingerprint = new Fingerprint($this->di['request']);
-        $session = $this->di['em']->getConnection()->fetchAssociative('SELECT * FROM session WHERE id = :id', ['id' => $sessionID]);
+        $conn = $this->di['em']->getConnection();
+        $session = $conn->fetchAssociative('SELECT * FROM session WHERE id = :id', ['id' => $sessionID]);
 
         if (empty($session['fingerprint'])) {
             return;
         }
 
         if (empty($session['created_at'])) {
+            $conn->executeStatement('UPDATE session SET created_at = :ca WHERE id = :id', ['ca' => time(), 'id' => $sessionID]);
             $session['created_at'] = time();
-            $this->di['em']->getConnection()->update('session', $session, ['id' => $session['id']]);
         }
 
         $storedFingerprint = json_decode($session['fingerprint'] ?? '', true);
@@ -165,7 +166,7 @@ class Session implements InjectionAwareInterface
         }
 
         if ($invalid) {
-            $this->di['em']->getConnection()->delete('session', ['id' => $session['id']]);
+            $conn->executeStatement('DELETE FROM session WHERE id = :id', ['id' => $sessionID]);
             $cookieParams = session_get_cookie_params();
             $cookieOptions = [
                 'expires' => time() - 3600,
@@ -195,7 +196,8 @@ class Session implements InjectionAwareInterface
             return;
         }
 
-        $session = $this->di['em']->getConnection()->fetchAssociative('SELECT * FROM session WHERE id = :id', ['id' => $sessionID]);
+        $conn = $this->di['em']->getConnection();
+        $session = $conn->fetchAssociative('SELECT * FROM session WHERE id = :id', ['id' => $sessionID]);
         $fingerprint = new Fingerprint($this->di['request']);
 
         if (Config::getProperty('security.perform_session_fingerprinting', true)) {
@@ -206,8 +208,10 @@ class Session implements InjectionAwareInterface
 
         // Fix for the installer which temporarily uses FS sessions before FOSSBilling is completely setup.
         if ($session !== false) {
-            $session['fingerprint'] = json_encode($updatedFingerprint);
-            $this->di['em']->getConnection()->update('session', $session, ['id' => $session['id']]);
+            $conn->executeStatement('UPDATE session SET fingerprint = :fp WHERE id = :id', [
+                'fp' => json_encode($updatedFingerprint),
+                'id' => $sessionID,
+            ]);
         }
     }
 

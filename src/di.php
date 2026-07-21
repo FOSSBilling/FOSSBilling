@@ -741,12 +741,7 @@ $di['translate'] = $di->protect(function ($textDomain = '') use ($di) {
 });
 
 $di['csv_response_factory'] = function () use ($di): FOSSBilling\Http\CsvResponseFactory {
-    $database = $di->offsetGet('db');
-    if (!$database instanceof Box_Database) {
-        throw new RuntimeException('Database service must resolve to a Box_Database instance');
-    }
-
-    return new FOSSBilling\Http\CsvResponseFactory($database);
+    return new FOSSBilling\Http\CsvResponseFactory($di);
 };
 
 $di['twig_factory'] = fn (): FOSSBilling\Twig\TwigFactory => new FOSSBilling\Twig\TwigFactory($di);

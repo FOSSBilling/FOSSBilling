@@ -72,12 +72,12 @@ class TwigFactory
         if ($auth instanceof \Box_Authorization) {
             if ($auth->isClientLoggedIn()) {
                 $client = $this->di['em']->getRepository(Client::class)->find($this->di['session']->get('client_id'));
-                $clientTimezone = $client?->getTimezone();
+                $clientTimezone = $client?->getTimezone() ?? null;
             } elseif ($auth->isAdminLoggedIn()) {
                 $admin = $this->di['session']->get('admin');
                 if (is_array($admin) && !empty($admin['id'])) {
                     $adminModel = $this->di['em']->getRepository(Admin::class)->find($admin['id']);
-                    $adminTimezone = $adminModel?->getTimezone();
+                    $adminTimezone = $adminModel?->getTimezone() ?? null;
                 }
             }
         }

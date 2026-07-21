@@ -8,7 +8,6 @@ declare(strict_types=1);
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Staff\Entity\Admin;
 
@@ -29,7 +28,7 @@ class Box_Authorization
         }
 
         $client = $this->di['em']->getRepository(Client::class)->find($clientId);
-        if (!$client || $client->getStatus() !== Client::ACTIVE) {
+        if (!$client || $client->getStatus() !== 'active') {
             $this->session->delete('client_id');
 
             return false;
@@ -46,7 +45,7 @@ class Box_Authorization
         }
 
         $adminModel = $this->di['em']->getRepository(Admin::class)->find($admin['id']);
-        if (!$adminModel || $adminModel->getStatus() !== Admin::STATUS_ACTIVE || $adminModel->isCron()) {
+        if (!$adminModel || $adminModel->getStatus() !== 'active' || $adminModel->isCron()) {
             $this->session->delete('admin');
 
             return false;
