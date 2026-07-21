@@ -62,10 +62,15 @@ class Box_Authorization
             return null;
         }
 
-        if ($this->di['password']->verify($plainTextPassword, $user->pass)) {
-            if ($this->di['password']->needsRehash($user->pass)) {
-                $user->pass = $this->di['password']->hashIt($plainTextPassword);
-                $user->updated_at = date('Y-m-d H:i:s');
+        $pass = $user instanceof Client ? $user->getPass() : ($user instanceof Admin ? $user->getPass() : throw new \RuntimeException('Unknown user type'));
+        if ($this->di['password']->verify($plainTextPassword, $pass)) {
+            if ($this->di['password']->needsRehash($pass)) {
+                $newPass = $this->di['password']->hashIt($plainTextPassword);
+                if ($user instanceof Client) {
+                    $user->setPass($newPass);
+                } elseif ($user instanceof Admin) {
+                    $user->setPass($newPass);
+                }
                 $this->di['em']->persist($user);
                 $this->di['em']->flush();
             }

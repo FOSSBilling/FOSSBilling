@@ -1233,11 +1233,11 @@ class Service implements InjectionAwareInterface
             return false;
         }
 
-        if (!$client->client_group_id) {
+        if (!$client->getClientGroupId()) {
             return false;
         }
 
-        return in_array($client->client_group_id, $clientGroups);
+        return in_array($client->getClientGroupId(), $clientGroups);
     }
 
     public function canClientUsePromo(Client $client, Promo $promo): bool

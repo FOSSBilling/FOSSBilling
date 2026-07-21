@@ -145,12 +145,6 @@ parameters:
 			path: src/modules/Activity/Entity/ActivitySystem.php
 
 		-
-			message: '#^Access to private property Box\\Mod\\Client\\Entity\\Client\:\:\$currency\.$#'
-			identifier: property.private
-			count: 1
-			path: src/modules/Cart/Service.php
-
-		-
 			message: '#^Instanceof between Box\\Mod\\Cart\\Entity\\Cart and Box\\Mod\\Cart\\Entity\\Cart will always evaluate to true\.$#'
 			identifier: instanceof.alwaysTrue
 			count: 7

@@ -676,7 +676,7 @@ class Service implements InjectionAwareInterface
         $reservedCount = 0;
 
         if (!$client->getCurrency()) {
-            $client->currency = $currencyCode;
+            $client->setCurrency($currencyCode);
             $this->di['em']->persist($client);
         }
 

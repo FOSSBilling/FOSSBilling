@@ -207,13 +207,14 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getDi()['em']->getRepository(Client::class)->find($data['id']) ?? throw new InformationException('Client not found');
 
-        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminClientDelete', 'params' => ['id' => $model->id]]);
+        $clientId = $model->getId();
 
-        $id = $model->id;
+        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminClientDelete', 'params' => ['id' => $clientId]]);
+
         $this->getService()->remove($model);
-        $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminClientDelete', 'params' => ['id' => $id]]);
+        $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminClientDelete', 'params' => ['id' => $clientId]]);
 
-        $this->getDi()['logger']->info('Removed client #%s', $id);
+        $this->getDi()['logger']->info('Removed client #%s', $clientId);
 
         return true;
     }

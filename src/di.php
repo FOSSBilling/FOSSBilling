@@ -300,7 +300,7 @@ $di['is_client_logged'] = function () use ($di) {
 $di['is_client_email_validated'] = $di->protect(function ($model) use ($di) {
     $config = $di['mod_config']('client');
     if (isset($config['require_email_confirmation']) && (bool) $config['require_email_confirmation']) {
-        return (bool) $model->email_approved;
+        return (bool) ($model instanceof \Box\Mod\Client\Entity\Client ? $model->getEmailApproved() : $model->email_approved);
     }
 
     return true;
