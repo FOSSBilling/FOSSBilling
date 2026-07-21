@@ -28,7 +28,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
     public function get_list($data)
     {
         $identity = $this->getIdentity();
-        $data['client_id'] = $identity->id;
+        $data['client_id'] = $identity->getId();
 
         if (isset($data['expiring'])) {
             [$query, $bindings] = $this->getService()->getSoonExpiringActiveOrdersQuery($data);

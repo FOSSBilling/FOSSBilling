@@ -1071,7 +1071,7 @@ class Service implements InjectionAwareInterface
      */
     public function getCartProductViewData(CartProduct $item): array
     {
-        $product = $this->findProductById((int) $item->product_id);
+        $product = $this->findProductById((int) $item->getProductId());
         $config = json_decode($item->config ?? '', true) ?? [];
         $line = $this->getProductOrderLineConfig($product, $config);
 
@@ -1396,13 +1396,13 @@ class Service implements InjectionAwareInterface
      */
     public function getRenewalPromoAdjustment(Order $order, float $price, float $quantity): ?array
     {
-        if (!$order->promo_recurring || !$order->promo_id) {
+        if (!$order->isPromoRecurring() || !$order->getPromoId()) {
             return null;
         }
 
-        $promo = $this->findPromoById((int) $order->promo_id);
-        $product = $this->findProductById((int) $order->product_id);
-        $discountAmount = (float) $order->discount;
+        $promo = $this->findPromoById((int) $order->getPromoId());
+        $product = $this->findProductById((int) $order->getProductId());
+        $discountAmount = (float) $order->getDiscount();
 
         if ($product->getType() === self::DOMAIN) {
             $config = json_decode($order->config ?? '', true) ?? [];
@@ -1410,9 +1410,9 @@ class Service implements InjectionAwareInterface
 
             $currencyService = $this->di['mod_service']('Currency');
             $currencyRepository = $currencyService->getCurrencyRepository();
-            $rate = $currencyRepository->getRateByCode($order->currency);
+            $rate = $currencyRepository->getRateByCode($order->getCurrency());
             if ($rate === null) {
-                throw new \FOSSBilling\Exception("Currency conversion rate cannot be determined for code {$order->currency}");
+                throw new \FOSSBilling\Exception("Currency conversion rate cannot be determined for code {$order->getCurrency()}");
             }
 
             $discountAmount *= $rate;
@@ -1427,8 +1427,8 @@ class Service implements InjectionAwareInterface
         return [
             'promo' => $promo,
             'discount_amount' => $discountAmount,
-            'title' => $this->getPromoDiscountTitle($promo, $order->currency),
-            'currency' => $order->currency,
+            'title' => $this->getPromoDiscountTitle($promo, $order->getCurrency()),
+            'currency' => $order->getCurrency(),
         ];
     }
 
@@ -1522,13 +1522,13 @@ class Service implements InjectionAwareInterface
     {
         $promoId = (int) ($this->getPromoSourceArray($promo)['id'] ?? 0);
 
-        return $this->getPromoRedemptionRepository()->clientHasActiveCheckoutApplication($promoId, (int) $client->id);
+        return $this->getPromoRedemptionRepository()->clientHasActiveCheckoutApplication($promoId, (int) $client->getId());
     }
 
     public function commitReservedPromoRedemptionsForInvoice(Invoice $invoice): void
     {
         $redemptions = $this->getPromoRedemptionRepository()->findBy([
-            'invoiceId' => (int) $invoice->id,
+            'invoiceId' => (int) $invoice->getId(),
             'status' => PromoRedemption::STATUS_RESERVED,
         ]);
 
@@ -1536,7 +1536,7 @@ class Service implements InjectionAwareInterface
             return;
         }
 
-        $committedAt = $invoice->paid_at ? new \DateTime((string) $invoice->paid_at) : new \DateTime();
+        $committedAt = $invoice->getPaidAt() ? new \DateTime((string) $invoice->getPaidAt()) : new \DateTime();
         foreach ($redemptions as $redemption) {
             if (!$redemption instanceof PromoRedemption) {
                 continue;
@@ -1555,7 +1555,7 @@ class Service implements InjectionAwareInterface
     public function releaseReservedPromoRedemptionsForInvoice(Invoice $invoice, string $reason): void
     {
         $redemptions = $this->getPromoRedemptionRepository()->findBy([
-            'invoiceId' => (int) $invoice->id,
+            'invoiceId' => (int) $invoice->getId(),
             'status' => PromoRedemption::STATUS_RESERVED,
         ]);
 
@@ -1565,7 +1565,7 @@ class Service implements InjectionAwareInterface
     public function releaseReservedPromoRedemptionsForOrder(Order $order, string $reason): void
     {
         $redemptions = $this->getPromoRedemptionRepository()->findBy([
-            'clientOrderId' => (int) $order->id,
+            'clientOrderId' => (int) $order->getId(),
             'status' => PromoRedemption::STATUS_RESERVED,
         ]);
 
@@ -2028,7 +2028,7 @@ class Service implements InjectionAwareInterface
         $redemption = new PromoRedemption();
         $redemption
             ->setPromoId($promoId)
-            ->setClientId((int) $client->id)
+            ->setClientId((int) $client->getId())
             ->setClientOrderId(
                 $order !== null
                     ? ($order instanceof Order ? $order->getId() : $order->id)
@@ -2150,7 +2150,7 @@ class Service implements InjectionAwareInterface
         }
 
         return [
-            'price' => (float) $tld->price_transfer,
+            'price' => (float) $tld->getPriceTransfer(),
             'quantity' => 1,
             'setup_price' => 0.0,
         ];
@@ -2164,7 +2164,7 @@ class Service implements InjectionAwareInterface
         $tld = $this->getDomainTldModel($config);
 
         return [
-            'price' => (float) $tld->price_renew,
+            'price' => (float) $tld->getPriceRenew(),
             'quantity' => $this->getDomainRegistrationYears($config),
         ];
     }
@@ -2178,8 +2178,8 @@ class Service implements InjectionAwareInterface
         $tld = $this->getDomainTldModel($config);
 
         return match ($config['action'] ?? null) {
-            'register' => (float) $tld->price_registration,
-            'transfer' => (float) $tld->price_transfer,
+            'register' => (float) $tld->getPriceRegistration(),
+            'transfer' => (float) $tld->getPriceTransfer(),
             default => 0.0,
         };
     }

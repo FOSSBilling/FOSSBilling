@@ -298,8 +298,8 @@ class Client implements InjectionAwareInterface
 
                 $sessionAdminArray = [
                     'id' => $model->getId(),
-                    'email' => $model->email,
-                    'name' => $model->name,
+                    'email' => $model->getEmail(),
+                    'name' => $model->getName(),
                 ];
                 $this->di['session']->set('admin', $sessionAdminArray);
 

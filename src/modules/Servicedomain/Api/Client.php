@@ -86,7 +86,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $orderService->assertOrderUsable($order);
 
         $s = $orderService->getOrderService($order);
-        if ((!$s instanceof ServiceDomain) || $order->status !== Order::STATUS_ACTIVE) {
+        if ((!$s instanceof ServiceDomain) || $order->getStatus() !== Order::STATUS_ACTIVE) {
             throw new \FOSSBilling\Exception('Order is not activated');
         }
 

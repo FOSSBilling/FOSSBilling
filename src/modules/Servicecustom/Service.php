@@ -100,16 +100,16 @@ class Service implements \FOSSBilling\InjectionAwareInterface
      */
     public function action_create(Order $order)
     {
-        $product = $this->di['mod_service']('product')->findProductById((int) $order->product_id);
+        $product = $this->di['mod_service']('product')->findProductById((int) $order->getProductId());
         if (!$product instanceof Product) {
             throw new \FOSSBilling\InformationException('Product not found');
         }
 
         $model = new ServiceCustom();
-        $model->setClientId($order->client_id);
+        $model->setClientId($order->getClientId());
         $model->setPlugin($product->getPlugin());
         $model->setPluginConfig($product->getPluginConfig());
-        $model->setConfig($order->config);
+        $model->setConfig($order->getConfig());
 
         $this->di['em']->persist($model);
         $this->di['em']->flush();
@@ -213,7 +213,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function getConfig(ServiceCustom $model): array
     {
-        $config = $model instanceof ServiceCustom ? $model->getConfig() : $model->config;
+        $config = $model instanceof ServiceCustom ? $model->getConfig() : $model->getConfig();
 
         return json_decode($config ?? '', true) ?? [];
     }
@@ -221,11 +221,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function toApiArray(ServiceCustom $model): array
     {
         $data = $this->getConfig($model);
-        $data['id'] = $model instanceof ServiceCustom ? $model->getId() : $model->id;
-        $data['client_id'] = $model instanceof ServiceCustom ? $model->getClientId() : $model->client_id;
-        $data['plugin'] = $model instanceof ServiceCustom ? $model->getPlugin() : $model->plugin;
-        $data['updated_at'] = $model instanceof ServiceCustom ? $model->getUpdatedAt() : $model->updated_at;
-        $data['created_at'] = $model instanceof ServiceCustom ? $model->getCreatedAt() : $model->created_at;
+        $data['id'] = $model instanceof ServiceCustom ? $model->getId() : $model->getId();
+        $data['client_id'] = $model instanceof ServiceCustom ? $model->getClientId() : $model->getClientId();
+        $data['plugin'] = $model instanceof ServiceCustom ? $model->getPlugin() : $model->getPlugin();
+        $data['updated_at'] = $model instanceof ServiceCustom ? $model->getUpdatedAt() : $model->getUpdatedAt();
+        $data['created_at'] = $model instanceof ServiceCustom ? $model->getCreatedAt() : $model->getCreatedAt();
 
         return $data;
     }
@@ -261,7 +261,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['em']->persist($model);
         $this->di['em']->flush();
 
-        $modelId = $model instanceof ServiceCustom ? $model->getId() : $model->id;
+        $modelId = $model instanceof ServiceCustom ? $model->getId() : $model->getId();
         $this->di['logger']->info('Custom service updated #%s', $modelId);
     }
 
@@ -292,7 +292,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     private function callOnAdapter(ServiceCustom $model, $method, $params = [])
     {
-        $plugin = $model instanceof ServiceCustom ? $model->getPlugin() : $model->plugin;
+        $plugin = $model instanceof ServiceCustom ? $model->getPlugin() : $model->getPlugin();
         if (empty($plugin)) {
             return null;
         }
@@ -309,7 +309,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         require_once Path::normalize($file);
 
-        $pluginConfig = $model instanceof ServiceCustom ? $model->getPluginConfig() : $model->plugin_config;
+        $pluginConfig = $model instanceof ServiceCustom ? $model->getPluginConfig() : $model->getPluginConfig();
         $config = json_decode($pluginConfig ?? '', true) ?? [];
 
         $adapter = new $plugin($config);
@@ -331,7 +331,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
         if (!$model instanceof ServiceCustom) {
-            throw new \FOSSBilling\Exception('Order :id has no active service', [':id' => $order->id]);
+            throw new \FOSSBilling\Exception('Order :id has no active service', [':id' => $order->getId()]);
         }
 
         return $model;

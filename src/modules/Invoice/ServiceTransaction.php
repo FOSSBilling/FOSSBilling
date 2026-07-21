@@ -63,26 +63,26 @@ class ServiceTransaction implements InjectionAwareInterface
 
     public function update(Transaction $model, array $data): bool
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminTransactionUpdate', 'params' => ['id' => $model->id]]);
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminTransactionUpdate', 'params' => ['id' => $model->getId()]]);
 
-        $model->invoice_id = $data['invoice_id'] ?? $model->invoice_id;
-        $model->txn_id = $data['txn_id'] ?? $model->txn_id;
-        $model->txn_status = $data['txn_status'] ?? $model->txn_status;
-        $model->gateway_id = $data['gateway_id'] ?? $model->gateway_id;
-        $model->amount = $data['amount'] ?? $model->amount;
-        $model->currency = $data['currency'] ?? $model->currency;
-        $model->type = $data['type'] ?? $model->type;
-        $model->note = $data['note'] ?? $model->note;
-        $model->status = $data['status'] ?? $model->status;
-        $model->error = $data['error'] ?? $model->error;
-        $model->error_code = $data['error_code'] ?? $model->error_code;
-        $model->validate_ipn = $data['validate_ipn'] ?? $model->validate_ipn;
+        $model->invoice_id = $data['invoice_id'] ?? $model->getInvoiceId();
+        $model->txn_id = $data['txn_id'] ?? $model->getTxnId();
+        $model->txn_status = $data['txn_status'] ?? $model->getTxnStatus();
+        $model->gateway_id = $data['gateway_id'] ?? $model->getGatewayId();
+        $model->amount = $data['amount'] ?? $model->getAmount();
+        $model->currency = $data['currency'] ?? $model->getCurrency();
+        $model->type = $data['type'] ?? $model->getType();
+        $model->note = $data['note'] ?? $model->getNote();
+        $model->status = $data['status'] ?? $model->getStatus();
+        $model->error = $data['error'] ?? $model->getError();
+        $model->error_code = $data['error_code'] ?? $model->getErrorCode();
+        $model->validate_ipn = $data['validate_ipn'] ?? $model->isValidateIpn();
         $model->updated_at = date('Y-m-d H:i:s');
         $this->di['em']->persist($model);
         $this->di['em']->flush();
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminTransactionUpdate', 'params' => ['id' => $model->id]]);
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminTransactionUpdate', 'params' => ['id' => $model->getId()]]);
 
-        $this->di['logger']->info('Updated transaction #%s', $model->id);
+        $this->di['logger']->info('Updated transaction #%s', $model->getId());
 
         return true;
     }
@@ -247,7 +247,7 @@ class ServiceTransaction implements InjectionAwareInterface
 
     public function delete(Transaction $model): bool
     {
-        $id = $model->id;
+        $id = $model->getId();
         $this->di['em']->remove($model);
         $this->di['em']->flush();
         $this->di['logger']->info('Removed transaction #%s', $id);
@@ -258,7 +258,7 @@ class ServiceTransaction implements InjectionAwareInterface
     public function toApiArray(Transaction $model, $deep = false, $identity = null): array
     {
         $gateway = null;
-        if ($model->gateway_id ?? $model->getGatewayId() ?? false) {
+        if ($model->getGatewayId() ?? $model->getGatewayId() ?? false) {
             $gId = $model instanceof Transaction ? $model->getGatewayId() : $model->gateway_id;
             $gtw = $this->getPayGatewayRepository()->find($gId);
             if ($gtw instanceof PayGateway) {

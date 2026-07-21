@@ -40,7 +40,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
     {
         $itemId = $item instanceof InvoiceItem ? $item->getId() : $item->id;
 
-        if ($charge && !$item->charged) {
+        if ($charge && !$item->isCharged()) {
             $this->creditInvoiceItem($item);
             $item->charged = true;
             $item->updated_at = date('Y-m-d H:i:s');
@@ -61,18 +61,18 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
     public function executeTask(InvoiceItem $item)
     {
-        if ($item->status == InvoiceItem::STATUS_EXECUTED) {
+        if ($item->getStatus() == InvoiceItem::STATUS_EXECUTED) {
             return true;
         }
 
-        if ($item->type == InvoiceItem::TYPE_ORDER) {
+        if ($item->getType() == InvoiceItem::TYPE_ORDER) {
             $order_id = $this->getOrderId($item);
             $order = $this->di['em']->getRepository(OrderEntity::class)->find($order_id);
             if (!$order instanceof OrderEntity && !$order instanceof OrderEntity) {
                 throw new \FOSSBilling\Exception('Could not activate proforma item. Order :id not found', [':id' => $order_id]);
             }
             $orderService = $this->di['mod_service']('Order');
-            switch ($item->task) {
+            switch ($item->getTask()) {
                 case InvoiceItem::TASK_ACTIVATE:
                     $productId = $order instanceof OrderEntity ? (int) $order->getProductId() : (int) $order->product_id;
                     $product = $this->di['mod_service']('Product')->findProductById($productId);
@@ -112,23 +112,23 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             $this->markAsExecuted($item);
         }
 
-        if ($item->type == InvoiceItem::TYPE_HOOK_CALL) {
+        if ($item->getType() == InvoiceItem::TYPE_HOOK_CALL) {
             try {
-                $params = json_decode($item->rel_id ?? '');
-                $this->di['events_manager']->fire(['event' => $item->task, 'params' => $params]);
+                $params = json_decode($item->getRelId() ?? '');
+                $this->di['events_manager']->fire(['event' => $item->getTask(), 'params' => $params]);
             } catch (\Exception $e) {
                 error_log($e->getMessage());
             }
             $this->markAsExecuted($item);
         }
 
-        if ($item->type == InvoiceItem::TYPE_DEPOSIT) {
+        if ($item->getType() == InvoiceItem::TYPE_DEPOSIT) {
             // do not request to add funds to client balance
             // associated invoice will have already been marked with a valid transaction and funds added
             $this->markAsExecuted($item);
         }
 
-        if ($item->type == InvoiceItem::TYPE_CUSTOM) {
+        if ($item->getType() == InvoiceItem::TYPE_CUSTOM) {
             // @todo ?
             $this->markAsExecuted($item);
         }
@@ -183,7 +183,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
     public function getTotal(InvoiceItem $item): float
     {
-        return floatval($item->price * $item->quantity);
+        return floatval($item->getPrice() * $item->getQuantity());
     }
 
     public function getTax(InvoiceItem $item)
@@ -206,7 +206,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
     public function update(InvoiceItem $item, array $data): void
     {
-        $item->title = $data['title'] ?? $item->title;
+        $item->title = $data['title'] ?? $item->getTitle();
         if (isset($data['price'])) {
             $item->price = PriceValidator::validateSignedAmount($data['price']);
         }
@@ -282,13 +282,13 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
     public function getTotalWithTax(InvoiceItem $item): float
     {
-        return $this->getTotal($item) + $this->getTax($item) * $item->quantity;
+        return $this->getTotal($item) + $this->getTax($item) * $item->getQuantity();
     }
 
     public function getOrderId(InvoiceItem $item): int
     {
-        if ($item->type == InvoiceItem::TYPE_ORDER) {
-            return (int) $item->rel_id;
+        if ($item->getType() == InvoiceItem::TYPE_ORDER) {
+            return (int) $item->getRelId();
         }
 
         return 0;
@@ -345,7 +345,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                 'price' => $promoAdjustment['discount_amount'] * -1,
                 'quantity' => 1,
                 'unit' => 'discount',
-                'rel_id' => $order->id,
+                'rel_id' => $order->getId(),
                 'taxed' => $taxed,
             ];
 
@@ -358,7 +358,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                 \Box\Mod\Product\Entity\PromoRedemption::PHASE_RENEWAL,
                 $promoAdjustment['discount_amount'],
                 $promoAdjustment['currency'],
-                $proforma->created_at ?? date('Y-m-d H:i:s'),
+                $proforma->getCreatedAt() ?? date('Y-m-d H:i:s'),
                 \Box\Mod\Product\Entity\PromoRedemption::STATUS_RESERVED,
             );
         }

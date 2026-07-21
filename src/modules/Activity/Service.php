@@ -237,7 +237,7 @@ class Service implements InjectionAwareInterface
     {
         $client = $this->getDbal()->executeQuery(
             'SELECT id, first_name, last_name, email FROM client WHERE id = ?',
-            [$model->client_id]
+            [$model->getClientId()]
         )->fetchAssociative();
 
         if ($client === false) {
@@ -245,9 +245,9 @@ class Service implements InjectionAwareInterface
         }
 
         return [
-            'id' => $model->id,
-            'ip' => $model->ip,
-            'created_at' => $model->created_at,
+            'id' => $model->getId(),
+            'ip' => $model->getIp(),
+            'created_at' => $model->getCreatedAt(),
             'client' => [
                 'id' => $client['id'],
                 'first_name' => $client['first_name'],
@@ -259,6 +259,6 @@ class Service implements InjectionAwareInterface
 
     public function rmByClient(Client $client): void
     {
-        $this->getDbal()->executeStatement('DELETE FROM activity_system WHERE client_id = ?', [$client->id]);
+        $this->getDbal()->executeStatement('DELETE FROM activity_system WHERE client_id = ?', [$client->getId()]);
     }
 }

@@ -60,8 +60,8 @@ class Service implements InjectionAwareInterface
     public function create(Order $order)
     {
         $model = new ServiceApiKey();
-        $model->setClientId($order->client_id);
-        $model->setConfig($order->config);
+        $model->setClientId($order->getClientId());
+        $model->setConfig($order->getConfig());
 
         $this->di['em']->persist($model);
         $this->di['em']->flush();
@@ -71,7 +71,7 @@ class Service implements InjectionAwareInterface
 
     public function activate(Order $order, ServiceApiKey $model): bool
     {
-        $config = json_decode($order->config ?? '', true);
+        $config = json_decode($order->getConfig() ?? '', true);
         $this->_setModelProperty($model, 'api_key', $this->generateKey($config));
         $this->_setModelProperty($model, 'updated_at', date('Y-m-d H:i:s'));
 
@@ -176,7 +176,7 @@ class Service implements InjectionAwareInterface
         }
 
         $modelClientId = $model->getClientId();
-        if (!is_null($client) && $client->id !== $modelClientId) {
+        if (!is_null($client) && $client->getId() !== $modelClientId) {
             throw new \FOSSBilling\Exception('API key does not exist');
         }
 

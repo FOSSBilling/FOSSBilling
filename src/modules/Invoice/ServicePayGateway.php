@@ -203,27 +203,27 @@ class ServicePayGateway implements InjectionAwareInterface
     public function copy(PayGateway $model): int
     {
         $new = new PayGateway();
-        $new->setName($model->name . ' (Copy)');
-        $new->setGateway($model->gateway);
+        $new->setName($model->getName() . ' (Copy)');
+        $new->setGateway($model->getGateway());
         $new->setEnabled(false);
-        $new->setAcceptedCurrencies($model->accepted_currencies);
-        $new->setTestMode((bool) $model->test_mode);
-        $new->setConfig($model->config);
+        $new->setAcceptedCurrencies($model->getAcceptedCurrencies());
+        $new->setTestMode((bool) $model->isTestMode());
+        $new->setConfig($model->getConfig());
         $this->di['em']->persist($new);
         $this->di['em']->flush();
         $newId = $new->getId();
-        $this->di['logger']->info('Copied payment gateway #%s - %s', $newId, $model->gateway);
+        $this->di['logger']->info('Copied payment gateway #%s - %s', $newId, $model->getGateway());
 
         return $newId;
     }
 
     public function update(PayGateway $model, array $data): bool
     {
-        $model->name = $data['title'] ?? $model->name;
+        $model->name = $data['title'] ?? $model->getName();
 
-        $newEnabled = isset($data['enabled']) ? (bool) $data['enabled'] : (bool) $model->enabled;
-        $newTestMode = isset($data['test_mode']) ? (bool) $data['test_mode'] : (bool) $model->test_mode;
-        $mergedConfig = json_decode($model->config ?? '', true) ?? [];
+        $newEnabled = isset($data['enabled']) ? (bool) $data['enabled'] : (bool) $model->isEnabled();
+        $newTestMode = isset($data['test_mode']) ? (bool) $data['test_mode'] : (bool) $model->isTestMode();
+        $mergedConfig = json_decode($model->getConfig() ?? '', true) ?? [];
         if (isset($data['config']) && is_array($data['config'])) {
             $mergedConfig = array_merge($mergedConfig, $data['config']);
         }
@@ -241,12 +241,12 @@ class ServicePayGateway implements InjectionAwareInterface
         }
 
         $model->enabled = $newEnabled;
-        $model->allow_single = (bool) ($data['allow_single'] ?? $model->allow_single);
-        $model->allow_recurrent = (bool) ($data['allow_recurrent'] ?? $model->allow_recurrent);
+        $model->allow_single = (bool) ($data['allow_single'] ?? $model->isAllowSingle());
+        $model->allow_recurrent = (bool) ($data['allow_recurrent'] ?? $model->isAllowRecurrent());
         $model->test_mode = $newTestMode;
         $this->di['em']->persist($model);
         $this->di['em']->flush();
-        $this->di['logger']->info('Updated payment gateway %s', $model->gateway);
+        $this->di['logger']->info('Updated payment gateway %s', $model->getGateway());
 
         return true;
     }
@@ -277,7 +277,7 @@ class ServicePayGateway implements InjectionAwareInterface
 
     public function delete(PayGateway $model): bool
     {
-        $id = $model->id;
+        $id = $model->getId();
         $this->di['em']->remove($model);
         $this->di['em']->flush();
         $this->di['logger']->info('Removed payment gateway %s', $id);
@@ -360,8 +360,8 @@ class ServicePayGateway implements InjectionAwareInterface
         $defaults['continue_shopping_url'] = $this->di['tools']->url('/order');
         $defaults['single_page'] = true;
         if ($model instanceof Invoice) {
-            $defaults['thankyou_url'] = $this->di['url']->link("/invoice/thank-you/{$model->hash}", ['restore_token' => Tools::createSessionRestoreToken(session_id())]);
-            $defaults['invoice_url'] = $this->di['tools']->url("/invoice/{$model->hash}");
+            $defaults['thankyou_url'] = $this->di['url']->link("/invoice/thank-you/{$model->getHash()}", ['restore_token' => Tools::createSessionRestoreToken(session_id())]);
+            $defaults['invoice_url'] = $this->di['tools']->url("/invoice/{$model->getHash()}");
         }
 
         if (isset($optional['auto_redirect'])) {
@@ -479,7 +479,7 @@ class ServicePayGateway implements InjectionAwareInterface
             'gateway_id' => $pgId,
         ];
         if ($model instanceof Invoice) {
-            $p['invoice_id'] = $model->id;
+            $p['invoice_id'] = $model->getId();
         }
 
         return SYSTEM_URL . 'ipn.php?' . http_build_query($p);
@@ -491,7 +491,7 @@ class ServicePayGateway implements InjectionAwareInterface
     private function getReturnUrl(PayGateway $pg, $model = null): string
     {
         if ($model instanceof Invoice) {
-            return $this->di['url']->link("/invoice/{$model->hash}", ['status' => 'ok', 'restore_token' => Tools::createSessionRestoreToken(session_id())]);
+            return $this->di['url']->link("/invoice/{$model->getHash()}", ['status' => 'ok', 'restore_token' => Tools::createSessionRestoreToken(session_id())]);
         }
 
         return $this->di['url']->link('/invoice', ['status' => 'ok', 'restore_token' => Tools::createSessionRestoreToken(session_id())]);
@@ -503,7 +503,7 @@ class ServicePayGateway implements InjectionAwareInterface
     private function getCancelUrl(PayGateway $pg, $model = null): string
     {
         if ($model instanceof Invoice) {
-            return $this->di['url']->link("/invoice/{$model->hash}", ['status' => 'cancel', 'restore_token' => Tools::createSessionRestoreToken(session_id())]);
+            return $this->di['url']->link("/invoice/{$model->getHash()}", ['status' => 'cancel', 'restore_token' => Tools::createSessionRestoreToken(session_id())]);
         }
 
         return $this->di['url']->link('/invoice', ['status' => 'cancel', 'restore_token' => Tools::createSessionRestoreToken(session_id())]);
@@ -515,12 +515,12 @@ class ServicePayGateway implements InjectionAwareInterface
     private function getCallbackRedirect(PayGateway $pg, $model = null): string
     {
         $p = [
-            'gateway_id' => $pg->id,
+            'gateway_id' => $pg->getId(),
         ];
 
         if ($model instanceof Invoice) {
-            $p['invoice_id'] = $model->id;
-            $p['invoice_hash'] = $model->hash;
+            $p['invoice_id'] = $model->getId();
+            $p['invoice_hash'] = $model->getHash();
             $p['redirect'] = 1;
         }
 

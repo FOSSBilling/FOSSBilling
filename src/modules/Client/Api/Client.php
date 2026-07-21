@@ -29,7 +29,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
     public function balance_get_list($data)
     {
         $service = $this->getDi()['mod_service']('Client', 'Balance');
-        $data['client_id'] = $this->identity->id;
+        $data['client_id'] = $this->getIdentity()->getId();
 
         [$q, $params] = $service->getSearchQuery($data);
         $pager = $this->getDi()['pager']->getPaginatedResultSet($q, $params, PaginationOptions::fromArray($data));
@@ -63,13 +63,13 @@ class Client extends \FOSSBilling\Api\AbstractApi
     {
         $client = $this->getIdentity();
 
-        if ($client->email_approved) {
+        if ($client->getEmailApproved()) {
             // Email is already validated, so we don't need to do so again
             return true;
         }
 
         $this->getDi()['rate_limiter']->consumeOrThrow('client_email_verification_resend_ip', (string) $this->getIp());
-        $this->getDi()['rate_limiter']->consumeOrThrow('client_email_verification_resend_account', 'client:' . $client->id);
+        $this->getDi()['rate_limiter']->consumeOrThrow('client_email_verification_resend_account', 'client:' . $client->getId());
 
         return $this->getService()->sendEmailConfirmationForClient($client);
     }

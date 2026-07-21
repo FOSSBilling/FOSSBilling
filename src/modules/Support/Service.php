@@ -292,7 +292,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
      */
     public function findOneByClient(Client $c, int $id): SupportTicket
     {
-        return $this->getSupportTicketRepository()->findOneByClientOrFail((int) $c->id, $id);
+        return $this->getSupportTicketRepository()->findOneByClientOrFail((int) $c->getId(), $id);
     }
 
     public function counter(): array
@@ -324,7 +324,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function checkIfTaskAlreadyExists(Client $client, int $rel_id, string $rel_type, string $rel_task): bool
     {
-        return $this->getSupportTicketRepository()->hasPendingTaskForClient((int) $client->id, $rel_id, $rel_type, $rel_task);
+        return $this->getSupportTicketRepository()->hasPendingTaskForClient((int) $client->getId(), $rel_id, $rel_type, $rel_task);
     }
 
     public function closeTicket(SupportTicket $ticket, Admin|Client|Guest $identity): bool
@@ -390,7 +390,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function rmByClient(Client $client): void
     {
         $em = $this->di['em'];
-        foreach ($this->getSupportTicketRepository()->findByClientId((int) $client->id) as $ticket) {
+        foreach ($this->getSupportTicketRepository()->findByClientId((int) $client->getId()) as $ticket) {
             $em->remove($ticket);
         }
         $em->flush();
@@ -721,9 +721,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         return [
-            'id' => $client->id,
-            'first_name' => $client->first_name,
-            'last_name' => $client->last_name,
+            'id' => $client->getId(),
+            'first_name' => $client->getFirstName(),
+            'last_name' => $client->getLastName(),
         ];
     }
 
@@ -929,7 +929,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $history = new SupportTicketMessageHistory();
         $history->setMessage($model);
-        $history->setAdminId((int) $identity->id);
+        $history->setAdminId((int) $identity->getId());
         $history->setContent($previousContent);
         $this->di['em']->persist($history);
 
@@ -969,9 +969,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $msg = new SupportTicketMessage();
         $msg->setSupportTicket($ticket);
         if ($identity instanceof Admin) {
-            $msg->setAdminId((int) $identity->id);
+            $msg->setAdminId((int) $identity->getId());
         } elseif ($identity instanceof Client) {
-            $msg->setClientId((int) $identity->id);
+            $msg->setClientId((int) $identity->getId());
         }
         $msg->setContent($content);
         $msg->setIp($this->di['request']->getClientIp());
@@ -1013,8 +1013,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $em->flush();
 
         $msg = new SupportTicketMessage();
-        $msg->setAdminId((int) $identity->id);
-        $msg->setSupportTicket($ticket);
+        $msg->setAdminId((int) $identity->getId());        $msg->setSupportTicket($ticket);
         $msg->setContent($data['content']);
         $msg->setIp($this->di['request']->getClientIp());
         $em->persist($msg);
@@ -1101,7 +1100,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $hours = $config['wait_hours'];
 
         $lastTicket = $this->getSupportTicketRepository()->findOneBy(
-            ['clientId' => (int) $client->id],
+            ['clientId' => (int) $client->getId()],
             ['createdAt' => 'DESC']
         );
         if (!$lastTicket instanceof SupportTicket) {
@@ -1173,11 +1172,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $event_params = $data;
         $event_params['author_role'] = 'client';
-        $event_params['client_id'] = $client->id;
+        $event_params['client_id'] = $client->getId();
         $this->di['events_manager']->fire(['event' => 'onBeforeClientOpenTicket', 'params' => $event_params]);
 
         $ticket = new SupportTicket();
-        $ticket->setClientId((int) $client->id);
+        $ticket->setClientId((int) $client->getId());
         $ticket->setSubject($data['subject']);
         $ticket->setSupportHelpdesk($helpdesk);
 
@@ -1242,9 +1241,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $msg = new SupportTicketMessage();
         $msg->setSupportTicket($ticket);
         if ($identity instanceof Admin) {
-            $msg->setAdminId((int) $identity->id);
+            $msg->setAdminId((int) $identity->getId());
         } elseif ($identity instanceof Client) {
-            $msg->setClientId((int) $identity->id);
+            $msg->setClientId((int) $identity->getId());
         } else {
             throw new \FOSSBilling\Exception('Identity is invalid');
         }
@@ -1419,7 +1418,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $em = $this->di['em'];
         $model = new SupportTicketNote();
         $model->setSupportTicket($ticket);
-        $model->setAdminId((int) $identity->id);
+        $model->setAdminId((int) $identity->getId());
         $model->setNote($note);
         $em->persist($model);
         $em->flush();

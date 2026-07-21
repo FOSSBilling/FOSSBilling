@@ -28,7 +28,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
     public function get_list($data)
     {
         $client = $this->getIdentity();
-        $data['client_id'] = $client->id;
+        $data['client_id'] = $client->getId();
 
         $repo = $this->getService()->getActivityClientEmailRepository();
 
@@ -49,7 +49,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
     public function get($data)
     {
         $model = $this->getService()->getActivityClientEmailRepository()->findOneForClientByIdOrFail(
-            (int) $this->getIdentity()->id,
+            (int) $this->getIdentity()->getId(),
             (int) $data['id'],
         );
 
@@ -69,10 +69,10 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $client = $this->getIdentity();
 
         $this->getDi()['rate_limiter']->consumeOrThrow('client_email_resend_ip', (string) $this->getIp());
-        $this->getDi()['rate_limiter']->consumeOrThrow('client_email_resend_account', 'client:' . $client->id);
+        $this->getDi()['rate_limiter']->consumeOrThrow('client_email_resend_account', 'client:' . $client->getId());
 
         $model = $this->getService()->getActivityClientEmailRepository()->findOneForClientByIdOrFail(
-            (int) $client->id,
+            (int) $client->getId(),
             (int) $data['id'],
         );
 
@@ -89,7 +89,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
     {
         $em = $this->getDi()['em'];
         $model = $this->getService()->getActivityClientEmailRepository()->findOneForClientByIdOrFail(
-            (int) $this->getIdentity()->id,
+            (int) $this->getIdentity()->getId(),
             (int) $data['id'],
         );
         $em->remove($model);

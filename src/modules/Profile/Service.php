@@ -44,7 +44,7 @@ class Service implements InjectionAwareInterface
 
     public function changeAdminPassword(Admin $admin, $new_password): bool
     {
-        $event_params = ['id' => $admin->id];
+        $event_params = ['id' => $admin->getId()];
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffProfilePasswordChange', 'params' => $event_params]);
 
         $admin->pass = $this->di['password']->hashIt($new_password);
@@ -57,7 +57,7 @@ class Service implements InjectionAwareInterface
         $this->di['em']->flush();
 
         $event_params = [];
-        $event_params['id'] = $admin->id;
+        $event_params['id'] = $admin->getId();
         $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffProfilePasswordChange', 'params' => $event_params]);
 
         $this->di['logger']->info('Changed profile password');
@@ -68,7 +68,7 @@ class Service implements InjectionAwareInterface
     public function generateNewApiKey(Admin $admin): bool
     {
         $event_params = [];
-        $event_params['id'] = $admin->id;
+        $event_params['id'] = $admin->getId();
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffApiKeyChange', 'params' => $event_params]);
 
         $admin->api_token = $this->di['tools']->generatePassword(32);
@@ -90,12 +90,12 @@ class Service implements InjectionAwareInterface
     public function updateAdmin(Admin $admin, array $data): bool
     {
         $event_params = $data;
-        $event_params['id'] = $admin->id;
+        $event_params['id'] = $admin->getId();
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffProfileUpdate', 'params' => $event_params]);
 
-        $admin->email = $data['email'] ?? $admin->email;
-        $admin->name = $data['name'] ?? $admin->name;
-        $admin->signature = $data['signature'] ?? $admin->signature;
+        $admin->email = $data['email'] ?? $admin->getEmail();
+        $admin->name = $data['name'] ?? $admin->getName();
+        $admin->signature = $data['signature'] ?? $admin->getSignature();
         if (array_key_exists('timezone', $data)) {
             $admin->timezone = i18n::validateTimezone($data['timezone']);
         }
@@ -108,7 +108,7 @@ class Service implements InjectionAwareInterface
         $this->di['em']->flush();
 
         $event_params = [];
-        $event_params['id'] = $admin->id;
+        $event_params['id'] = $admin->getId();
         $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffProfileUpdate', 'params' => $event_params]);
 
         $this->di['logger']->info('Updated profile');
@@ -119,29 +119,29 @@ class Service implements InjectionAwareInterface
     public function getAdminIdentityArray(Admin $identity): array
     {
         return [
-            'id' => $identity->id,
-            'email' => $identity->email,
-            'name' => $identity->name,
-            'signature' => $identity->signature,
-            'status' => $identity->status,
-            'api_token' => $identity->api_token,
-            'timezone' => $identity->timezone,
-            'created_at' => $identity->created_at,
-            'updated_at' => $identity->updated_at,
+            'id' => $identity->getId(),
+            'email' => $identity->getEmail(),
+            'name' => $identity->getName(),
+            'signature' => $identity->getSignature(),
+            'status' => $identity->getStatus(),
+            'api_token' => $identity->getApiToken(),
+            'timezone' => $identity->getTimezone(),
+            'created_at' => $identity->getCreatedAt()?->format('Y-m-d') ?? $identity->created_at,
+            'updated_at' => $identity->getUpdatedAt()?->format('Y-m-d') ?? $identity->updated_at,
         ];
     }
 
     public function updateClient(Client $client, array $data = []): bool
     {
         $event_params = $data;
-        $event_params['id'] = $client->id;
+        $event_params['id'] = $client->getId();
         $this->di['events_manager']->fire(['event' => 'onBeforeClientProfileUpdate', 'params' => $event_params]);
 
         $mod = $this->di['mod']('client');
         $config = $mod->getConfig();
         $email = $data['email'] ?? '';
         if (
-            $client->email != $email
+            $client->getEmail() != $email
             && isset($config['disable_change_email'])
             && $config['disable_change_email']
         ) {
@@ -156,7 +156,7 @@ class Service implements InjectionAwareInterface
                 throw new InformationException('This email address is already registered.');
             }
 
-            if ($client->email !== $email) {
+            if ($client->getEmail() !== $email) {
                 $client->email = $email;
                 $client->email_approved = false;
 
@@ -176,28 +176,28 @@ class Service implements InjectionAwareInterface
             $client->phone = Tools::validatePhoneNumber($data['phone']);
         }
 
-        $client->first_name = $data['first_name'] ?? $client->first_name;
+        $client->first_name = $data['first_name'] ?? $client->getFirstName();
         if (array_key_exists('billing_email', $data)) {
             $client->billing_email = $data['billing_email'];
         }
-        $client->last_name = $data['last_name'] ?? $client->last_name;
-        $client->gender = ClientValidator::validateGender($data['gender'] ?? $client->gender);
-        $client->birthday = ClientValidator::validateBirthday($data['birthday'] ?? $client->birthday);
-        $client->company = $data['company'] ?? $client->company;
-        $client->company_vat = $data['company_vat'] ?? $client->company_vat;
-        $client->company_number = $data['company_number'] ?? $client->company_number;
-        $client->type = $data['type'] ?? $client->type;
-        $client->address_1 = $data['address_1'] ?? $client->address_1;
-        $client->address_2 = $data['address_2'] ?? $client->address_2;
-        $country = $data['country'] ?? $client->country;
+        $client->last_name = $data['last_name'] ?? $client->getLastName();
+        $client->gender = ClientValidator::validateGender($data['gender'] ?? $client->getGender());
+        $client->birthday = ClientValidator::validateBirthday($data['birthday'] ?? $client->getBirthday());
+        $client->company = $data['company'] ?? $client->getCompany();
+        $client->company_vat = $data['company_vat'] ?? $client->getCompanyVat();
+        $client->company_number = $data['company_number'] ?? $client->getCompanyNumber();
+        $client->type = $data['type'] ?? $client->getType();
+        $client->address_1 = $data['address_1'] ?? $client->getAddress1();
+        $client->address_2 = $data['address_2'] ?? $client->getAddress2();
+        $country = $data['country'] ?? $client->getCountry();
         if (!empty($country) && !Countries::exists($country)) {
             throw new InformationException('Invalid country code: :code', [':code' => $country]);
         }
         $client->country = $country;
-        $client->postcode = $data['postcode'] ?? $client->postcode;
-        $client->city = $data['city'] ?? $client->city;
-        $client->state = $data['state'] ?? $client->state;
-        $lang = $data['lang'] ?? $client->lang;
+        $client->postcode = $data['postcode'] ?? $client->getPostcode();
+        $client->city = $data['city'] ?? $client->getCity();
+        $client->state = $data['state'] ?? $client->getState();
+        $lang = $data['lang'] ?? $client->getLang();
         if (!empty($lang) && !Locales::exists($lang)) {
             throw new InformationException('Invalid locale code: :code', [':code' => $lang]);
         }
@@ -205,27 +205,27 @@ class Service implements InjectionAwareInterface
         if (array_key_exists('timezone', $data)) {
             $client->timezone = i18n::validateTimezone($data['timezone']);
         }
-        $client->notes = $data['notes'] ?? $client->notes;
-        $client->custom_1 = $data['custom_1'] ?? $client->custom_1;
-        $client->custom_2 = $data['custom_2'] ?? $client->custom_2;
-        $client->custom_3 = $data['custom_3'] ?? $client->custom_3;
-        $client->custom_4 = $data['custom_4'] ?? $client->custom_4;
-        $client->custom_5 = $data['custom_5'] ?? $client->custom_5;
-        $client->custom_6 = $data['custom_6'] ?? $client->custom_6;
-        $client->custom_7 = $data['custom_7'] ?? $client->custom_7;
-        $client->custom_8 = $data['custom_8'] ?? $client->custom_8;
-        $client->custom_9 = $data['custom_9'] ?? $client->custom_9;
-        $client->custom_10 = $data['custom_10'] ?? $client->custom_10;
-        $client->custom_11 = $data['custom_11'] ?? $client->custom_11;
-        $client->custom_12 = $data['custom_12'] ?? $client->custom_12;
-        $client->custom_13 = $data['custom_13'] ?? $client->custom_13;
-        $client->custom_14 = $data['custom_14'] ?? $client->custom_14;
-        $client->custom_15 = $data['custom_15'] ?? $client->custom_15;
-        $client->custom_16 = $data['custom_16'] ?? $client->custom_16;
-        $client->custom_17 = $data['custom_17'] ?? $client->custom_17;
-        $client->custom_18 = $data['custom_18'] ?? $client->custom_18;
-        $client->custom_19 = $data['custom_19'] ?? $client->custom_19;
-        $client->custom_20 = $data['custom_20'] ?? $client->custom_20;
+        $client->notes = $data['notes'] ?? $client->getNotes();
+        $client->custom_1 = $data['custom_1'] ?? $client->getCustom1();
+        $client->custom_2 = $data['custom_2'] ?? $client->getCustom2();
+        $client->custom_3 = $data['custom_3'] ?? $client->getCustom3();
+        $client->custom_4 = $data['custom_4'] ?? $client->getCustom4();
+        $client->custom_5 = $data['custom_5'] ?? $client->getCustom5();
+        $client->custom_6 = $data['custom_6'] ?? $client->getCustom6();
+        $client->custom_7 = $data['custom_7'] ?? $client->getCustom7();
+        $client->custom_8 = $data['custom_8'] ?? $client->getCustom8();
+        $client->custom_9 = $data['custom_9'] ?? $client->getCustom9();
+        $client->custom_10 = $data['custom_10'] ?? $client->getCustom10();
+        $client->custom_11 = $data['custom_11'] ?? $client->getCustom11();
+        $client->custom_12 = $data['custom_12'] ?? $client->getCustom12();
+        $client->custom_13 = $data['custom_13'] ?? $client->getCustom13();
+        $client->custom_14 = $data['custom_14'] ?? $client->getCustom14();
+        $client->custom_15 = $data['custom_15'] ?? $client->getCustom15();
+        $client->custom_16 = $data['custom_16'] ?? $client->getCustom16();
+        $client->custom_17 = $data['custom_17'] ?? $client->getCustom17();
+        $client->custom_18 = $data['custom_18'] ?? $client->getCustom18();
+        $client->custom_19 = $data['custom_19'] ?? $client->getCustom19();
+        $client->custom_20 = $data['custom_20'] ?? $client->getCustom20();
 
         $client->updated_at = date('Y-m-d H:i:s');
 
@@ -236,7 +236,7 @@ class Service implements InjectionAwareInterface
         }
         $this->di['em']->flush();
 
-        $this->di['events_manager']->fire(['event' => 'onAfterClientProfileUpdate', 'params' => ['id' => $client->id]]);
+        $this->di['events_manager']->fire(['event' => 'onAfterClientProfileUpdate', 'params' => ['id' => $client->getId()]]);
 
         $this->di['logger']->info('Updated profile');
 
@@ -257,12 +257,12 @@ class Service implements InjectionAwareInterface
 
         $this->di['logger']->info('Generated new API key');
 
-        return $client->api_token;
+        return $client->getApiToken();
     }
 
     public function changeClientPassword(Client $client, $new_password): bool
     {
-        $event_params = ['id' => $client->id];
+        $event_params = ['id' => $client->getId()];
         $this->di['events_manager']->fire(['event' => 'onBeforeClientProfilePasswordChange', 'params' => $event_params]);
 
         $client->pass = $this->di['password']->hashIt($new_password);
@@ -273,7 +273,7 @@ class Service implements InjectionAwareInterface
         }
         $this->di['em']->flush();
 
-        $this->di['events_manager']->fire(['event' => 'onAfterClientProfilePasswordChange', 'params' => ['id' => $client->id]]);
+        $this->di['events_manager']->fire(['event' => 'onAfterClientProfilePasswordChange', 'params' => ['id' => $client->getId()]]);
 
         $this->di['logger']->info('Changed profile password');
 

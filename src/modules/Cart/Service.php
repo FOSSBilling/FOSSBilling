@@ -602,7 +602,7 @@ class Service implements InjectionAwareInterface
                 'event' => 'onBeforeClientCheckout',
                 'params' => [
                     'ip' => $this->di['request']->getClientIp(),
-                    'client_id' => $client->id,
+                    'client_id' => $client->getId(),
                     'cart_id' => $this->cartId($cart),
                 ],
             ]
@@ -619,7 +619,7 @@ class Service implements InjectionAwareInterface
                 'event' => 'onAfterClientOrderCreate',
                 'params' => [
                     'ip' => $this->di['request']->getClientIp(),
-                    'client_id' => $client->id,
+                    'client_id' => $client->getId(),
                     'id' => $order->getId(),
                 ],
             ]
@@ -635,7 +635,7 @@ class Service implements InjectionAwareInterface
         // invoice may not be created if total is 0
         $isInvoiceUnpaid = $invoice instanceof Invoice
             ? $invoice->getStatus() === Invoice::STATUS_UNPAID
-            : ($invoice instanceof Invoice && $invoice->status == Invoice::STATUS_UNPAID);
+            : $invoice->status === Invoice::STATUS_UNPAID;
 
         if ($isInvoiceUnpaid) {
             $result['invoice_hash'] = $invoice instanceof Invoice
@@ -675,15 +675,15 @@ class Service implements InjectionAwareInterface
         $reservedOrderIds = [];
         $reservedCount = 0;
 
-        if (!$client->currency) {
+        if (!$client->getCurrency()) {
             $client->currency = $currencyCode;
             $this->di['em']->persist($client);
         }
 
         try {
             return $this->di['em']->wrapInTransaction(function () use ($ca, $cart, $client, $currency, $currencyCode, $gateway_id, $taxed, $promo, $promoProductService, $promoId, &$reservedOrderIds, &$reservedCount) {
-                if ($client->currency != $currencyCode) {
-                    throw new \FOSSBilling\InformationException('Selected currency :selected does not match your profile currency :code. Please change cart currency to continue.', [':selected' => $currencyCode, ':code' => $client->currency]);
+                if ($client->getCurrency() != $currencyCode) {
+                    throw new \FOSSBilling\InformationException('Selected currency :selected does not match your profile currency :code. Please change cart currency to continue.', [':selected' => $currencyCode, ':code' => $client->getCurrency()]);
                 }
 
                 $orders = [];
@@ -727,7 +727,7 @@ class Service implements InjectionAwareInterface
                     }
 
                     $order = new Order();
-                    $order->setClientId($client->id);
+                    $order->setClientId($client->getId());
                     $order->setPromoId($promoId);
                     $order->setProductId($item['product_id']);
                     $order->setFormId($item['form_id']);
@@ -804,7 +804,7 @@ class Service implements InjectionAwareInterface
 
                 if ($ca['total'] > 0) { // crete invoice if order total > 0
                     $invoiceService = $this->di['mod_service']('Invoice');
-                    $invoiceModel = $invoiceService->prepareInvoice($client, ['client_id' => $client->id, 'items' => $invoice_items, 'gateway_id' => $gateway_id]);
+                    $invoiceModel = $invoiceService->prepareInvoice($client, ['client_id' => $client->getId(), 'items' => $invoice_items, 'gateway_id' => $gateway_id]);
 
                     $clientBalanceService = $this->di['mod_service']('Client', 'Balance');
                     $balanceAmount = $clientBalanceService->getClientBalance($client);
@@ -814,12 +814,12 @@ class Service implements InjectionAwareInterface
 
                     $isUnpaid = $invoiceModel instanceof Invoice
                         ? $invoiceModel->getStatus() === Invoice::STATUS_UNPAID
-                        : $invoiceModel->status === Invoice::STATUS_UNPAID;
+                        : $invoiceModel->getStatus() === Invoice::STATUS_UNPAID;
 
                     if ($isUnpaid) {
                         $invoiceId = $invoiceModel instanceof Invoice
                             ? $invoiceModel->getId()
-                            : $invoiceModel->id;
+                            : $invoiceModel->getId();
                         foreach ($orders as $order) {
                             $order->setUnpaidInvoiceId($invoiceId);
                             $this->di['em']->persist($order);
@@ -831,7 +831,7 @@ class Service implements InjectionAwareInterface
                 if ($promo instanceof Promo && $promoProductService !== null) {
                     $redemptionStatus = isset($invoiceModel) && (
                         ($invoiceModel instanceof Invoice && $invoiceModel->getStatus() === Invoice::STATUS_UNPAID)
-                        || ($invoiceModel instanceof Invoice && $invoiceModel->status === Invoice::STATUS_UNPAID)
+                        || ($invoiceModel instanceof Invoice && $invoiceModel->getStatus() === Invoice::STATUS_UNPAID)
                     )
                         ? \Box\Mod\Product\Entity\PromoRedemption::STATUS_RESERVED
                         : \Box\Mod\Product\Entity\PromoRedemption::STATUS_COMMITTED;

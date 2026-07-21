@@ -822,7 +822,7 @@ class Service implements InjectionAwareInterface
     public function findPaidInvoicesForOrder(OrderEntity $order): array
     {
         $bindings = [
-            ':rel_id' => $order->id,
+            ':rel_id' => $order->getId(),
             ':status' => Invoice::STATUS_PAID,
         ];
 
@@ -884,9 +884,9 @@ class Service implements InjectionAwareInterface
 
     public function prepareInvoice(ClientEntity $client, array $data)
     {
-        $clientEntity = $this->di['em']->getRepository(ClientEntity::class)->find($client->id);
+        $clientEntity = $this->di['em']->getRepository(ClientEntity::class)->find($client->getId());
 
-        if (!$client->currency) {
+        if (!$client->getCurrency()) {
             $currencyService = $this->di['mod_service']('currency');
             /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
             $currencyRepository = $currencyService->getCurrencyRepository();
@@ -1364,27 +1364,27 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $text1 = $data['text_1'] ?? ($isEntity ? (empty($model->getText1()) ? null : $model->getText1()) : (empty($model->text_1) ? null : $model->text_1));
-        $text2 = $data['text_2'] ?? ($isEntity ? (empty($model->getText2()) ? null : $model->getText2()) : (empty($model->text_2) ? null : $model->text_2));
-        $sellerCompany = $data['seller_company'] ?? ($isEntity ? (empty($model->getSellerCompany()) ? null : $model->getSellerCompany()) : (empty($model->seller_company) ? null : $model->seller_company));
-        $sellerCompanyVat = $data['seller_company_vat'] ?? ($isEntity ? (empty($model->getSellerCompanyVat()) ? null : $model->getSellerCompanyVat()) : (empty($model->seller_company_vat) ? null : $model->seller_company_vat));
-        $sellerCompanyNumber = $data['seller_company_number'] ?? ($isEntity ? (empty($model->getSellerCompanyNumber()) ? null : $model->getSellerCompanyNumber()) : (empty($model->seller_company_number) ? null : $model->seller_company_number));
-        $sellerAddress = $data['seller_address'] ?? ($isEntity ? (empty($model->getSellerAddress()) ? null : $model->getSellerAddress()) : (empty($model->seller_address) ? null : $model->seller_address));
-        $sellerPhone = $data['seller_phone'] ?? ($isEntity ? (empty($model->getSellerPhone()) ? null : $model->getSellerPhone()) : (empty($model->seller_phone) ? null : $model->seller_phone));
-        $sellerEmail = $data['seller_email'] ?? ($isEntity ? (empty($model->getSellerEmail()) ? null : $model->getSellerEmail()) : (empty($model->seller_email) ? null : $model->seller_email));
+        $text1 = $data['text_1'] ?? ($isEntity ? (empty($model->getText1()) ? null : $model->getText1()) : (empty($model->getText1()) ? null : $model->getText1()));
+        $text2 = $data['text_2'] ?? ($isEntity ? (empty($model->getText2()) ? null : $model->getText2()) : (empty($model->getText2()) ? null : $model->getText2()));
+        $sellerCompany = $data['seller_company'] ?? ($isEntity ? (empty($model->getSellerCompany()) ? null : $model->getSellerCompany()) : (empty($model->getSellerCompany()) ? null : $model->getSellerCompany()));
+        $sellerCompanyVat = $data['seller_company_vat'] ?? ($isEntity ? (empty($model->getSellerCompanyVat()) ? null : $model->getSellerCompanyVat()) : (empty($model->getSellerCompanyVat()) ? null : $model->getSellerCompanyVat()));
+        $sellerCompanyNumber = $data['seller_company_number'] ?? ($isEntity ? (empty($model->getSellerCompanyNumber()) ? null : $model->getSellerCompanyNumber()) : (empty($model->getSellerCompanyNumber()) ? null : $model->getSellerCompanyNumber()));
+        $sellerAddress = $data['seller_address'] ?? ($isEntity ? (empty($model->getSellerAddress()) ? null : $model->getSellerAddress()) : (empty($model->getSellerAddress()) ? null : $model->getSellerAddress()));
+        $sellerPhone = $data['seller_phone'] ?? ($isEntity ? (empty($model->getSellerPhone()) ? null : $model->getSellerPhone()) : (empty($model->getSellerPhone()) ? null : $model->getSellerPhone()));
+        $sellerEmail = $data['seller_email'] ?? ($isEntity ? (empty($model->getSellerEmail()) ? null : $model->getSellerEmail()) : (empty($model->getSellerEmail()) ? null : $model->getSellerEmail()));
 
-        $buyerFirstName = $data['buyer_first_name'] ?? ($isEntity ? (empty($model->getBuyerFirstName()) ? null : $model->getBuyerFirstName()) : (empty($model->buyer_first_name) ? null : $model->buyer_first_name));
-        $buyerLastName = $data['buyer_last_name'] ?? ($isEntity ? (empty($model->getBuyerLastName()) ? null : $model->getBuyerLastName()) : (empty($model->buyer_last_name) ? null : $model->buyer_last_name));
-        $buyerCompany = $data['buyer_company'] ?? ($isEntity ? (empty($model->getBuyerCompany()) ? null : $model->getBuyerCompany()) : (empty($model->buyer_company) ? null : $model->buyer_company));
-        $buyerCompanyVat = $data['buyer_company_vat'] ?? ($isEntity ? (empty($model->getBuyerCompanyVat()) ? null : $model->getBuyerCompanyVat()) : (empty($model->buyer_company_vat) ? null : $model->buyer_company_vat));
-        $buyerCompanyNumber = $data['buyer_company_number'] ?? ($isEntity ? (empty($model->getBuyerCompanyNumber()) ? null : $model->getBuyerCompanyNumber()) : (empty($model->buyer_company_number) ? null : $model->buyer_company_number));
-        $buyerAddress = $data['buyer_address'] ?? ($isEntity ? (empty($model->getBuyerAddress()) ? null : $model->getBuyerAddress()) : (empty($model->buyer_address) ? null : $model->buyer_address));
-        $buyerCity = $data['buyer_city'] ?? ($isEntity ? (empty($model->getBuyerCity()) ? null : $model->getBuyerCity()) : (empty($model->buyer_city) ? null : $model->buyer_city));
-        $buyerState = $data['buyer_state'] ?? ($isEntity ? (empty($model->getBuyerState()) ? null : $model->getBuyerState()) : (empty($model->buyer_state) ? null : $model->buyer_state));
-        $buyerCountry = $data['buyer_country'] ?? ($isEntity ? (empty($model->getBuyerCountry()) ? null : $model->getBuyerCountry()) : (empty($model->buyer_country) ? null : $model->buyer_country));
-        $buyerZip = $data['buyer_zip'] ?? ($isEntity ? (empty($model->getBuyerZip()) ? null : $model->getBuyerZip()) : (empty($model->buyer_zip) ? null : $model->buyer_zip));
-        $buyerPhone = $data['buyer_phone'] ?? ($isEntity ? (empty($model->getBuyerPhone()) ? null : $model->getBuyerPhone()) : (empty($model->buyer_phone) ? null : $model->buyer_phone));
-        $buyerEmail = $data['buyer_email'] ?? ($isEntity ? (empty($model->getBuyerEmail()) ? null : $model->getBuyerEmail()) : (empty($model->buyer_email) ? null : $model->buyer_email));
+        $buyerFirstName = $data['buyer_first_name'] ?? ($isEntity ? (empty($model->getBuyerFirstName()) ? null : $model->getBuyerFirstName()) : (empty($model->getBuyerFirstName()) ? null : $model->getBuyerFirstName()));
+        $buyerLastName = $data['buyer_last_name'] ?? ($isEntity ? (empty($model->getBuyerLastName()) ? null : $model->getBuyerLastName()) : (empty($model->getBuyerLastName()) ? null : $model->getBuyerLastName()));
+        $buyerCompany = $data['buyer_company'] ?? ($isEntity ? (empty($model->getBuyerCompany()) ? null : $model->getBuyerCompany()) : (empty($model->getBuyerCompany()) ? null : $model->getBuyerCompany()));
+        $buyerCompanyVat = $data['buyer_company_vat'] ?? ($isEntity ? (empty($model->getBuyerCompanyVat()) ? null : $model->getBuyerCompanyVat()) : (empty($model->getBuyerCompanyVat()) ? null : $model->getBuyerCompanyVat()));
+        $buyerCompanyNumber = $data['buyer_company_number'] ?? ($isEntity ? (empty($model->getBuyerCompanyNumber()) ? null : $model->getBuyerCompanyNumber()) : (empty($model->getBuyerCompanyNumber()) ? null : $model->getBuyerCompanyNumber()));
+        $buyerAddress = $data['buyer_address'] ?? ($isEntity ? (empty($model->getBuyerAddress()) ? null : $model->getBuyerAddress()) : (empty($model->getBuyerAddress()) ? null : $model->getBuyerAddress()));
+        $buyerCity = $data['buyer_city'] ?? ($isEntity ? (empty($model->getBuyerCity()) ? null : $model->getBuyerCity()) : (empty($model->getBuyerCity()) ? null : $model->getBuyerCity()));
+        $buyerState = $data['buyer_state'] ?? ($isEntity ? (empty($model->getBuyerState()) ? null : $model->getBuyerState()) : (empty($model->getBuyerState()) ? null : $model->getBuyerState()));
+        $buyerCountry = $data['buyer_country'] ?? ($isEntity ? (empty($model->getBuyerCountry()) ? null : $model->getBuyerCountry()) : (empty($model->getBuyerCountry()) ? null : $model->getBuyerCountry()));
+        $buyerZip = $data['buyer_zip'] ?? ($isEntity ? (empty($model->getBuyerZip()) ? null : $model->getBuyerZip()) : (empty($model->getBuyerZip()) ? null : $model->getBuyerZip()));
+        $buyerPhone = $data['buyer_phone'] ?? ($isEntity ? (empty($model->getBuyerPhone()) ? null : $model->getBuyerPhone()) : (empty($model->getBuyerPhone()) ? null : $model->getBuyerPhone()));
+        $buyerEmail = $data['buyer_email'] ?? ($isEntity ? (empty($model->getBuyerEmail()) ? null : $model->getBuyerEmail()) : (empty($model->getBuyerEmail()) ? null : $model->getBuyerEmail()));
 
         if ($isEntity) {
             $model->setText1($text1);
@@ -1408,29 +1408,29 @@ class Service implements InjectionAwareInterface
             $model->setBuyerPhone($buyerPhone);
             $model->setBuyerEmail($buyerEmail);
         } else {
-            $model->text_1 = $data['text_1'] ?? (empty($model->text_1) ? null : $model->text_1);
-            $model->text_2 = $data['text_2'] ?? (empty($model->text_2) ? null : $model->text_2);
-            $model->seller_company = $data['seller_company'] ?? (empty($model->seller_company) ? null : $model->seller_company);
-            $model->seller_company_vat = $data['seller_company_vat'] ?? (empty($model->seller_company_vat) ? null : $model->seller_company_vat);
-            $model->seller_company_number = $data['seller_company_number'] ?? (empty($model->seller_company_number) ? null : $model->seller_company_number);
-            $model->seller_address = $data['seller_address'] ?? (empty($model->seller_address) ? null : $model->seller_address);
-            $model->seller_phone = $data['seller_phone'] ?? (empty($model->seller_phone) ? null : $model->seller_phone);
-            $model->seller_email = $data['seller_email'] ?? (empty($model->seller_email) ? null : $model->seller_email);
-            $model->buyer_first_name = $data['buyer_first_name'] ?? (empty($model->buyer_first_name) ? null : $model->buyer_first_name);
-            $model->buyer_last_name = $data['buyer_last_name'] ?? (empty($model->buyer_last_name) ? null : $model->buyer_last_name);
-            $model->buyer_company = $data['buyer_company'] ?? (empty($model->buyer_company) ? null : $model->buyer_company);
-            $model->buyer_company_vat = $data['buyer_company_vat'] ?? (empty($model->buyer_company_vat) ? null : $model->buyer_company_vat);
-            $model->buyer_company_number = $data['buyer_company_number'] ?? (empty($model->buyer_company_number) ? null : $model->buyer_company_number);
-            $model->buyer_address = $data['buyer_address'] ?? (empty($model->buyer_address) ? null : $model->buyer_address);
-            $model->buyer_city = $data['buyer_city'] ?? (empty($model->buyer_city) ? null : $model->buyer_city);
-            $model->buyer_state = $data['buyer_state'] ?? (empty($model->buyer_state) ? null : $model->buyer_state);
-            $model->buyer_country = $data['buyer_country'] ?? (empty($model->buyer_country) ? null : $model->buyer_country);
-            $model->buyer_zip = $data['buyer_zip'] ?? (empty($model->buyer_zip) ? null : $model->buyer_zip);
-            $model->buyer_phone = $data['buyer_phone'] ?? (empty($model->buyer_phone) ? null : $model->buyer_phone);
-            $model->buyer_email = $data['buyer_email'] ?? (empty($model->buyer_email) ? null : $model->buyer_email);
+            $model->text_1 = $data['text_1'] ?? (empty($model->getText1()) ? null : $model->getText1());
+            $model->text_2 = $data['text_2'] ?? (empty($model->getText2()) ? null : $model->getText2());
+            $model->seller_company = $data['seller_company'] ?? (empty($model->getSellerCompany()) ? null : $model->getSellerCompany());
+            $model->seller_company_vat = $data['seller_company_vat'] ?? (empty($model->getSellerCompanyVat()) ? null : $model->getSellerCompanyVat());
+            $model->seller_company_number = $data['seller_company_number'] ?? (empty($model->getSellerCompanyNumber()) ? null : $model->getSellerCompanyNumber());
+            $model->seller_address = $data['seller_address'] ?? (empty($model->getSellerAddress()) ? null : $model->getSellerAddress());
+            $model->seller_phone = $data['seller_phone'] ?? (empty($model->getSellerPhone()) ? null : $model->getSellerPhone());
+            $model->seller_email = $data['seller_email'] ?? (empty($model->getSellerEmail()) ? null : $model->getSellerEmail());
+            $model->buyer_first_name = $data['buyer_first_name'] ?? (empty($model->getBuyerFirstName()) ? null : $model->getBuyerFirstName());
+            $model->buyer_last_name = $data['buyer_last_name'] ?? (empty($model->getBuyerLastName()) ? null : $model->getBuyerLastName());
+            $model->buyer_company = $data['buyer_company'] ?? (empty($model->getBuyerCompany()) ? null : $model->getBuyerCompany());
+            $model->buyer_company_vat = $data['buyer_company_vat'] ?? (empty($model->getBuyerCompanyVat()) ? null : $model->getBuyerCompanyVat());
+            $model->buyer_company_number = $data['buyer_company_number'] ?? (empty($model->getBuyerCompanyNumber()) ? null : $model->getBuyerCompanyNumber());
+            $model->buyer_address = $data['buyer_address'] ?? (empty($model->getBuyerAddress()) ? null : $model->getBuyerAddress());
+            $model->buyer_city = $data['buyer_city'] ?? (empty($model->getBuyerCity()) ? null : $model->getBuyerCity());
+            $model->buyer_state = $data['buyer_state'] ?? (empty($model->getBuyerState()) ? null : $model->getBuyerState());
+            $model->buyer_country = $data['buyer_country'] ?? (empty($model->getBuyerCountry()) ? null : $model->getBuyerCountry());
+            $model->buyer_zip = $data['buyer_zip'] ?? (empty($model->getBuyerZip()) ? null : $model->getBuyerZip());
+            $model->buyer_phone = $data['buyer_phone'] ?? (empty($model->getBuyerPhone()) ? null : $model->getBuyerPhone());
+            $model->buyer_email = $data['buyer_email'] ?? (empty($model->getBuyerEmail()) ? null : $model->getBuyerEmail());
         }
 
-        $paid_at = $data['paid_at'] ?? ($isEntity ? ($model->getPaidAt()?->format('Y-m-d H:i:s')) : $model->paid_at);
+        $paid_at = $data['paid_at'] ?? ($isEntity ? ($model->getPaidAt()?->format('Y-m-d H:i:s')) : $model->getPaidAt()?->format('Y-m-d H:i:s'));
         if (empty($paid_at)) {
             if ($isEntity) {
                 $model->setPaidAt(null);
@@ -1446,7 +1446,7 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $due_at = $data['due_at'] ?? ($isEntity ? ($model->getDueAt()?->format('Y-m-d H:i:s')) : $model->due_at);
+        $due_at = $data['due_at'] ?? ($isEntity ? ($model->getDueAt()?->format('Y-m-d H:i:s')) : $model->getDueAt()?->format('Y-m-d H:i:s'));
         if (empty($due_at)) {
             if ($isEntity) {
                 $model->setDueAt(null);
@@ -1462,13 +1462,13 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $serie = $data['serie'] ?? ($isEntity ? (empty($model->getSerie()) ? null : $model->getSerie()) : (empty($model->serie) ? null : $model->serie));
-        $nr = $data['nr'] ?? ($isEntity ? (empty($model->getNr()) ? null : $model->getNr()) : (empty($model->nr) ? null : $model->nr));
-        $status = $data['status'] ?? ($isEntity ? (empty($model->getStatus()) ? null : $model->getStatus()) : (empty($model->status) ? null : $model->status));
-        $taxrate = $data['taxrate'] ?? ($isEntity ? (empty($model->getTaxrate()) ? null : $model->getTaxrate()) : (empty($model->taxrate) ? null : $model->taxrate));
-        $taxname = $data['taxname'] ?? ($isEntity ? (empty($model->getTaxname()) ? null : $model->getTaxname()) : (empty($model->taxname) ? null : $model->taxname));
-        $approved = (int) ($data['approved'] ?? ($isEntity ? ($model->isApproved() === false && $model->isApproved() !== null ? null : (int) $model->isApproved()) : (empty($model->approved) ? null : $model->approved)));
-        $notes = $data['notes'] ?? ($isEntity ? (empty($model->getNotes()) ? null : $model->getNotes()) : (empty($model->notes) ? null : $model->notes));
+        $serie = $data['serie'] ?? ($isEntity ? (empty($model->getSerie()) ? null : $model->getSerie()) : (empty($model->getSerie()) ? null : $model->getSerie()));
+        $nr = $data['nr'] ?? ($isEntity ? (empty($model->getNr()) ? null : $model->getNr()) : (empty($model->getNr()) ? null : $model->getNr()));
+        $status = $data['status'] ?? ($isEntity ? (empty($model->getStatus()) ? null : $model->getStatus()) : (empty($model->getStatus()) ? null : $model->getStatus()));
+        $taxrate = $data['taxrate'] ?? ($isEntity ? (empty($model->getTaxrate()) ? null : $model->getTaxrate()) : (empty($model->getTaxrate()) ? null : $model->getTaxrate()));
+        $taxname = $data['taxname'] ?? ($isEntity ? (empty($model->getTaxname()) ? null : $model->getTaxname()) : (empty($model->getTaxname()) ? null : $model->getTaxname()));
+        $approved = (int) ($data['approved'] ?? ($isEntity ? ($model->isApproved() === false && $model->isApproved() !== null ? null : (int) $model->isApproved()) : (empty($model->isApproved()) ? null : $model->isApproved())));
+        $notes = $data['notes'] ?? ($isEntity ? (empty($model->getNotes()) ? null : $model->getNotes()) : (empty($model->getNotes()) ? null : $model->getNotes()));
 
         if ($isEntity) {
             $model->setSerie($serie);
@@ -1479,13 +1479,13 @@ class Service implements InjectionAwareInterface
             $model->setApproved((bool) $approved);
             $model->setNotes($notes);
         } else {
-            $model->serie = $data['serie'] ?? (empty($model->serie) ? null : $model->serie);
-            $model->nr = $data['nr'] ?? (empty($model->nr) ? null : $model->nr);
-            $model->status = $data['status'] ?? (empty($model->status) ? null : $model->status);
-            $model->taxrate = $data['taxrate'] ?? (empty($model->taxrate) ? null : $model->taxrate);
-            $model->taxname = $data['taxname'] ?? (empty($model->taxname) ? null : $model->taxname);
-            $model->approved = (int) ($data['approved'] ?? (empty($model->approved) ? null : $model->approved));
-            $model->notes = $data['notes'] ?? (empty($model->notes) ? null : $model->notes);
+            $model->serie = $data['serie'] ?? (empty($model->getSerie()) ? null : $model->getSerie());
+            $model->nr = $data['nr'] ?? (empty($model->getNr()) ? null : $model->getNr());
+            $model->status = $data['status'] ?? (empty($model->getStatus()) ? null : $model->getStatus());
+            $model->taxrate = $data['taxrate'] ?? (empty($model->getTaxrate()) ? null : $model->getTaxrate());
+            $model->taxname = $data['taxname'] ?? (empty($model->getTaxname()) ? null : $model->getTaxname());
+            $model->approved = (int) ($data['approved'] ?? (empty($model->isApproved()) ? null : $model->isApproved()));
+            $model->notes = $data['notes'] ?? (empty($model->getNotes()) ? null : $model->getNotes());
         }
 
         $created_at = $data['created_at'] ?? '';
@@ -1526,7 +1526,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceUpdate', 'params' => $this->toApiArray($model)]);
 
-        $invoiceId = $isEntity ? $model->getId() : $model->id;
+        $invoiceId = $isEntity ? $model->getId() : $model->getId();
         $this->di['logger']->info("Updated invoice {$invoiceId}.");
 
         return true;
@@ -1579,14 +1579,14 @@ class Service implements InjectionAwareInterface
 
     public function renewInvoice(OrderEntity $model, array $data)
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminGenerateRenewalInvoice', 'params' => ['order_id' => $model->id]]);
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminGenerateRenewalInvoice', 'params' => ['order_id' => $model->getId()]]);
 
         $due_days = isset($data['due_days']) ? (int) $data['due_days'] : null;
         $invoice = $this->generateForOrder($model, $due_days);
         $invoiceId = $invoice instanceof Invoice ? $invoice->getId() : $invoice->id;
         $this->approveInvoice($invoice, ['id' => $invoiceId, 'use_credits' => true]);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminGenerateRenewalInvoice', 'params' => ['order_id' => $model->id, 'id' => $invoiceId]]);
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminGenerateRenewalInvoice', 'params' => ['order_id' => $model->getId(), 'id' => $invoiceId]]);
 
         $this->di['logger']->info("Generated renewal invoice #{$invoiceId}.");
 
@@ -1635,7 +1635,7 @@ class Service implements InjectionAwareInterface
                 return $p;
             }
 
-            if ($p instanceof Invoice && $p->status === Invoice::STATUS_UNPAID) {
+            if ($p instanceof Invoice && $p->getStatus() === Invoice::STATUS_UNPAID) {
                 return $p;
             }
 
@@ -1892,7 +1892,7 @@ class Service implements InjectionAwareInterface
 
     public function generateFundsInvoice(ClientEntity $client, $amount)
     {
-        if (!$client->currency) {
+        if (!$client->getCurrency()) {
             throw new InformationException('You must have at least one active order before you can add funds so you cannot proceed at the current time!');
         }
 
@@ -1910,9 +1910,9 @@ class Service implements InjectionAwareInterface
         }
 
         $proforma = new Invoice();
-        $proforma->setClientId($client->id);
+        $proforma->setClientId($client->getId());
         $proforma->setStatus(Invoice::STATUS_UNPAID);
-        $proforma->setCurrency($client->currency);
+        $proforma->setCurrency($client->getCurrency());
         $proforma->setApproved($this->_isAutoApproved());
         $proforma->setCreatedAt(new \DateTime());
         $proforma->setUpdatedAt(new \DateTime());
@@ -2335,7 +2335,7 @@ class Service implements InjectionAwareInterface
 
     public function rmByClient(ClientEntity $client): void
     {
-        $invoices = $this->getInvoiceRepository()->findByClientId($client->id);
+        $invoices = $this->getInvoiceRepository()->findByClientId($client->getId());
         foreach ($invoices as $invoice) {
             if ($invoice instanceof Invoice) {
                 $this->rmInvoice($invoice);
@@ -2385,7 +2385,7 @@ class Service implements InjectionAwareInterface
         if ($this->di['auth']->isClientLoggedIn()) {
             $client = $this->di['loggedin_client'];
         }
-        $isOwner = $client !== null && (int) $invoiceClientId === (int) $client->id;
+        $isOwner = $client !== null && (int) $invoiceClientId === (int) $client->getId();
 
         if (!$isOwner && $this->isHashExpired($invoice)) {
             throw new InformationException('This invoice link has expired', [], 403);

@@ -141,7 +141,7 @@ class ServiceSubscription implements InjectionAwareInterface
 
     public function delete(Subscription $model): bool
     {
-        $id = $model->id;
+        $id = $model->getId();
         $this->di['em']->remove($model);
         $this->di['em']->flush();
 
@@ -234,7 +234,7 @@ class ServiceSubscription implements InjectionAwareInterface
 
     public function getSubscriptionPeriod(Invoice $invoice): ?string
     {
-        return $this->getSubscriptionPeriodByInvoiceId((int) $invoice->id);
+        return $this->getSubscriptionPeriodByInvoiceId((int) $invoice->getId());
     }
 
     public function unsubscribe(Subscription $model): void
@@ -406,7 +406,7 @@ class ServiceSubscription implements InjectionAwareInterface
             ->andWhere('ii.rel_id = :order_id')
             ->setParameter('rel_type', 'invoice')
             ->setParameter('item_type', InvoiceItem::TYPE_ORDER)
-            ->setParameter('order_id', $order->id);
+            ->setParameter('order_id', $order->getId());
 
         if ($status !== null) {
             $query->andWhere('s.status = :status')->setParameter('status', $status);

@@ -112,9 +112,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $staff = $this->getIdentity();
 
         $this->getDi()['rate_limiter']->consumeOrThrow('profile_password_change_ip', (string) $this->getIp());
-        $this->getDi()['rate_limiter']->consumeOrThrow('profile_password_change_account', 'admin:' . $staff->id);
+        $this->getDi()['rate_limiter']->consumeOrThrow('profile_password_change_account', 'admin:' . $staff->getId());
 
-        if (!$this->getDi()['password']->verify($data['current_password'], $staff->pass)) {
+        if (!$this->getDi()['password']->verify($data['current_password'], $staff->getPass())) {
             throw new \FOSSBilling\InformationException('Current password incorrect');
         }
 

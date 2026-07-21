@@ -31,7 +31,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
      */
     public function get_list($data)
     {
-        $data['client_id'] = $this->getIdentity()->id;
+        $data['client_id'] = $this->getIdentity()->getId();
         $data['approved'] = true;
 
         [$sql, $params] = $this->getService()->getSearchQuery($data);
@@ -123,7 +123,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
      */
     public function transaction_get_list($data)
     {
-        $data['client_id'] = $this->getIdentity()->id;
+        $data['client_id'] = $this->getIdentity()->getId();
         $data['status'] = 'processed';
         $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
         [$sql, $params] = $transactionService->getSearchQuery($data);

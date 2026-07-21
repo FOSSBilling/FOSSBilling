@@ -355,7 +355,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         return array_map(
             static fn (AdminGroup $group): array => $group->toApiArray(),
-            $this->getService()->getAdminGroupMemberRepository()->findGroupsForAdmin((int) $admin->id),
+            $this->getService()->getAdminGroupMemberRepository()->findGroupsForAdmin((int) $admin->getId()),
         );
     }
 

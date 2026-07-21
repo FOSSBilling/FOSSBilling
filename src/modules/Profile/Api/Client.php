@@ -100,7 +100,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
     {
         $client = $this->getIdentity();
 
-        return $client->api_token;
+        return $client->getApiToken();
     }
 
     /**
@@ -131,9 +131,9 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $client = $this->getIdentity();
 
         $this->getDi()['rate_limiter']->consumeOrThrow('profile_password_change_ip', (string) $this->getIp());
-        $this->getDi()['rate_limiter']->consumeOrThrow('profile_password_change_account', 'client:' . $client->id);
+        $this->getDi()['rate_limiter']->consumeOrThrow('profile_password_change_account', 'client:' . $client->getId());
 
-        if (!$this->getDi()['password']->verify($data['current_password'], $client->pass)) {
+        if (!$this->getDi()['password']->verify($data['current_password'], $client->getPass())) {
             throw new \FOSSBilling\InformationException('Current password incorrect');
         }
 

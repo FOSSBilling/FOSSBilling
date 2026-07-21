@@ -185,14 +185,14 @@ class Service implements InjectionAwareInterface
      */
     public function action_create(Order $order)
     {
-        $c = json_decode($order->config ?? '', true);
+        $c = json_decode($order->getConfig() ?? '', true);
         if (!is_array($c)) {
-            throw new \FOSSBilling\Exception(sprintf('Order #%s config is missing', $order->id));
+            throw new \FOSSBilling\Exception(sprintf('Order #%s config is missing', $order->getId()));
         }
         $this->validateOrderData($c);
 
         $model = new ServiceDownloadable();
-        $model->setClientId($order->client_id);
+        $model->setClientId($order->getClientId());
         $model->setFilename($c['filename']);
         $model->setStoredFilename($c[self::STORED_FILENAME_CONFIG_KEY]);
         $model->setDownloads(0);
@@ -264,14 +264,14 @@ class Service implements InjectionAwareInterface
     public function toApiArray(ServiceDownloadable $model, $deep = false, $identity = null): array
     {
         $result = [
-            'filename' => $model instanceof ServiceDownloadable ? $model->getFilename() : $model->filename,
+            'filename' => $model instanceof ServiceDownloadable ? $model->getFilename() : $model->getFilename(),
         ];
 
         if ($identity instanceof Admin) {
             $result['path'] = $this->getStoredFilePath(
-                $model instanceof ServiceDownloadable ? $model->getStoredFilename() : $model->stored_filename
+                $model instanceof ServiceDownloadable ? $model->getStoredFilename() : $model->getStoredFilename()
             );
-            $result['downloads'] = $model instanceof ServiceDownloadable ? $model->getDownloads() : $model->downloads;
+            $result['downloads'] = $model instanceof ServiceDownloadable ? $model->getDownloads() : $model->getDownloads();
         }
 
         return $result;
@@ -412,7 +412,7 @@ class Service implements InjectionAwareInterface
     public function updateProductFile(ServiceDownloadable $serviceDownloadable, Order $order, ?string $filename = null, ?string $storedFilename = null): bool
     {
         $request = $this->di['request'];
-        $oldStoredFilename = $serviceDownloadable instanceof ServiceDownloadable ? $serviceDownloadable->getStoredFilename() : $serviceDownloadable->stored_filename;
+        $oldStoredFilename = $serviceDownloadable instanceof ServiceDownloadable ? $serviceDownloadable->getStoredFilename() : $serviceDownloadable->getStoredFilename();
 
         if ($filename !== null) {
             $fileName = $filename;
@@ -432,19 +432,19 @@ class Service implements InjectionAwareInterface
             $storedFilename = $this->storeUploadedFile($file);
         } else {
             $fileName = null;
-            if (isset($order->config)) {
-                $config = json_decode($order->config, true);
+            if ($order->getConfig() !== null) {
+                $config = json_decode($order->getConfig(), true);
                 $fileName = $config['filename'] ?? null;
                 $storedFilename = $config[self::STORED_FILENAME_CONFIG_KEY] ?? null;
             }
-            if (!$fileName && isset($serviceDownloadable->filename)) {
-                $fileName = $serviceDownloadable instanceof ServiceDownloadable ? $serviceDownloadable->getFilename() : $serviceDownloadable->filename;
+            if (!$fileName && $serviceDownloadable->getFilename() !== null) {
+                $fileName = $serviceDownloadable instanceof ServiceDownloadable ? $serviceDownloadable->getFilename() : $serviceDownloadable->getFilename();
             }
             if (!$fileName) {
                 throw new \FOSSBilling\Exception('No filename available for order file update');
             }
-            if (!$storedFilename && isset($serviceDownloadable->stored_filename)) {
-                $storedFilename = $serviceDownloadable instanceof ServiceDownloadable ? $serviceDownloadable->getStoredFilename() : $serviceDownloadable->stored_filename;
+            if (!$storedFilename && $serviceDownloadable->getStoredFilename() !== null) {
+                $storedFilename = $serviceDownloadable instanceof ServiceDownloadable ? $serviceDownloadable->getStoredFilename() : $serviceDownloadable->getStoredFilename();
             }
             if (!$storedFilename) {
                 throw new \FOSSBilling\Exception('No stored filename available for order file update');
@@ -464,7 +464,7 @@ class Service implements InjectionAwareInterface
         }
         $this->di['em']->persist($serviceDownloadable);
 
-        $config = json_decode($order->config ?? '', true) ?: [];
+        $config = json_decode($order->getConfig() ?? '', true) ?: [];
         $config['filename'] = $fileName;
         $config[self::STORED_FILENAME_CONFIG_KEY] = $storedFilename;
         $order->config = json_encode($config);
@@ -473,7 +473,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Uploaded new file for order %s', $order->id);
+        $this->di['logger']->info('Uploaded new file for order %s', $order->getId());
 
         if (isset($oldStoredFilename) && $oldStoredFilename !== $storedFilename) {
             $this->removeStoredFileIfOrphaned($oldStoredFilename);
@@ -498,8 +498,8 @@ class Service implements InjectionAwareInterface
 
     public function sendFile(ServiceDownloadable $serviceDownloadable): Response
     {
-        $fileName = $serviceDownloadable instanceof ServiceDownloadable ? $serviceDownloadable->getFilename() : $serviceDownloadable->filename;
-        $storedFilename = $serviceDownloadable instanceof ServiceDownloadable ? $serviceDownloadable->getStoredFilename() : $serviceDownloadable->stored_filename;
+        $fileName = $serviceDownloadable instanceof ServiceDownloadable ? $serviceDownloadable->getFilename() : $serviceDownloadable->getFilename();
+        $storedFilename = $serviceDownloadable instanceof ServiceDownloadable ? $serviceDownloadable->getStoredFilename() : $serviceDownloadable->getStoredFilename();
         if (!$storedFilename) {
             throw new \FOSSBilling\Exception('File cannot be downloaded at the moment. Please contact support.', null, 404);
         }
@@ -529,7 +529,7 @@ class Service implements InjectionAwareInterface
         $response->headers->set('Content-Type', 'application/octet-stream');
         $response->headers->set('Content-Disposition', $disposition);
 
-        $this->di['logger']->info('Downloaded service %s file', $serviceDownloadable instanceof ServiceDownloadable ? $serviceDownloadable->getId() : $serviceDownloadable->id);
+        $this->di['logger']->info('Downloaded service %s file', $serviceDownloadable instanceof ServiceDownloadable ? $serviceDownloadable->getId() : $serviceDownloadable->getId());
 
         return $response;
     }

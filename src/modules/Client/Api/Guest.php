@@ -137,18 +137,18 @@ class Guest extends \FOSSBilling\Api\AbstractApi
                 throw new \FOSSBilling\InformationException('Please check your login details.', [], 401);
             }
 
-            $this->getDi()['events_manager']->fire(['event' => 'onAfterClientLogin', 'params' => ['id' => $client->id, 'ip' => $this->ip]]);
+            $this->getDi()['events_manager']->fire(['event' => 'onAfterClientLogin', 'params' => ['id' => $client->getId(), 'ip' => $this->ip]]);
 
             $oldSession = $this->getDi()['session']->getId();
             $this->getDi()['session']->regenerateId();
             $result = $service->toSessionArray($client);
-            $this->getDi()['session']->set('client_id', $client->id);
+            $this->getDi()['session']->set('client_id', $client->getId());
 
-            $this->getDi()['logger']->info('Client #%s logged in', $client->id);
+            $this->getDi()['logger']->info('Client #%s logged in', $client->getId());
             $this->getDi()['session']->delete('redirect_uri');
 
-            if (!empty($client->lang)) {
-                $this->getDi()['cookie_queue']->queue('fb_locale', (string) $client->lang, strtotime('+1 month'), '/');
+            if (!empty($client->getLang())) {
+                $this->getDi()['cookie_queue']->queue('fb_locale', (string) $client->getLang(), strtotime('+1 month'), '/');
             }
 
             $this->getDi()['mod_service']('cart')->transferFromOtherSession($oldSession);

@@ -289,16 +289,16 @@ class Service implements InjectionAwareInterface
     public function toSessionArray(Client $model): array
     {
         return [
-            'id' => $model->id,
-            'email' => $model->email,
+            'id' => $model->getId(),
+            'email' => $model->getEmail(),
             'name' => $model->getFullName(),
-            'role' => $model->role,
+            'role' => $model->getRole(),
         ];
     }
 
     public function emailAlreadyRegistered($new_email, ?Client $model = null)
     {
-        if ($model instanceof Client && $model->email == $new_email) {
+        if ($model instanceof Client && $model->getEmail() == $new_email) {
             return false;
         }
 
@@ -307,20 +307,20 @@ class Service implements InjectionAwareInterface
 
     public function canChangeCurrency(Client $model, $currency = null): bool
     {
-        if (!$model->currency) {
+        if (!$model->getCurrency()) {
             return true;
         }
 
-        if ($model->currency == $currency) {
+        if ($model->getCurrency() == $currency) {
             return false;
         }
 
-        $invoice = $this->di['em']->getRepository(Invoice::class)->findOneBy(['clientId' => $model->id]);
+        $invoice = $this->di['em']->getRepository(Invoice::class)->findOneBy(['clientId' => $model->getId()]);
         if ($invoice instanceof Invoice) {
             throw new InformationException('Currency cannot be changed. Client already has invoices issued.');
         }
 
-        $order = $this->di['em']->getRepository(OrderEntity::class)->findOneBy(['clientId' => $model->id]);
+        $order = $this->di['em']->getRepository(OrderEntity::class)->findOneBy(['clientId' => $model->getId()]);
         if ($order instanceof OrderEntity) {
             throw new InformationException('Currency cannot be changed. Client already has orders.');
         }
@@ -330,7 +330,7 @@ class Service implements InjectionAwareInterface
 
     public function addFunds(Client $client, $amount, $description, array $data = []): bool
     {
-        if (!$client->currency) {
+        if (!$client->getCurrency()) {
             throw new InformationException('You must define the client\'s currency before adding funds.');
         }
 
@@ -343,7 +343,7 @@ class Service implements InjectionAwareInterface
         }
 
         $credit = new ClientBalance();
-        $credit->setClientId((int) $client->id);
+        $credit->setClientId((int) $client->getId());
         $credit->setType($data['type'] ?? 'gift');
         $credit->setRelId($data['rel_id'] ?? null);
         $credit->setDescription($description);
@@ -454,7 +454,7 @@ class Service implements InjectionAwareInterface
 
     public function toApiArray(Client $model, $deep = false, $identity = null, bool $includeSensitive = false): array
     {
-        $modelId = $model instanceof Client ? $model->getId() : $model->id;
+        $modelId = $model instanceof Client ? $model->getId() : $model->getId();
         $client = $model instanceof Client ? $model : $this->clientRepository->find((int) $modelId);
 
         if (!$client instanceof Client) {
@@ -466,32 +466,32 @@ class Service implements InjectionAwareInterface
             }
 
             $details = [
-                'id' => $model->id,
-                'email' => $model->email,
-                'email_approved' => $model->email_approved,
-                'type' => $model->type,
-                'company' => $model->company,
-                'company_vat' => $model->company_vat,
-                'company_number' => $model->company_number,
-                'first_name' => $model->first_name,
-                'last_name' => $model->last_name,
-                'gender' => $model->gender,
-                'birthday' => $model->birthday,
-                'phone_cc' => $model->phone_cc,
-                'phone' => $model->phone,
-                'address_1' => $model->address_1,
-                'address_2' => $model->address_2,
-                'city' => $model->city,
-                'state' => $model->state,
-                'postcode' => $model->postcode,
-                'country' => $model->country,
-                'currency' => $model->currency,
-                'lang' => $model->lang,
-                'timezone' => $model->timezone,
+                'id' => $model->getId(),
+                'email' => $model->getEmail(),
+                'email_approved' => $model->getEmailApproved(),
+                'type' => $model->getType(),
+                'company' => $model->getCompany(),
+                'company_vat' => $model->getCompanyVat(),
+                'company_number' => $model->getCompanyNumber(),
+                'first_name' => $model->getFirstName(),
+                'last_name' => $model->getLastName(),
+                'gender' => $model->getGender(),
+                'birthday' => $model->getBirthday(),
+                'phone_cc' => $model->getPhoneCc(),
+                'phone' => $model->getPhone(),
+                'address_1' => $model->getAddress1(),
+                'address_2' => $model->getAddress2(),
+                'city' => $model->getCity(),
+                'state' => $model->getState(),
+                'postcode' => $model->getPostcode(),
+                'country' => $model->getCountry(),
+                'currency' => $model->getCurrency(),
+                'lang' => $model->getLang(),
+                'timezone' => $model->getTimezone(),
             ];
 
-            if ($identity instanceof Admin || ($identity instanceof Client && (int) $identity->id === (int) $model->id)) {
-                $details['billing_email'] = $model->billing_email;
+            if ($identity instanceof Admin || ($identity instanceof Client && (int) $identity->getId() === (int) $model->getId())) {
+                $details['billing_email'] = $model->getBillingEmail();
             }
 
             return $details;
@@ -505,8 +505,8 @@ class Service implements InjectionAwareInterface
         $isAdmin = $identity instanceof Admin;
         $details = $client->toApiArray();
 
-        if ($isAdmin || ($identity instanceof Client && (int) $identity->id === (int) $client->getId())) {
-            $details['billing_email'] = $model?->billing_email ?? $client->getBillingEmail();
+        if ($isAdmin || ($identity instanceof Client && (int) $identity->getId() === (int) $client->getId())) {
+            $details['billing_email'] = $model?->getBillingEmail() ?? $client->getBillingEmail();
         }
 
         if ($deep) {
@@ -548,7 +548,7 @@ class Service implements InjectionAwareInterface
 
     public function getClientBalance(Client $c): float
     {
-        $clientId = $c instanceof Client ? $c->getId() : $c->id;
+        $clientId = $c instanceof Client ? $c->getId() : $c->getId();
 
         return $this->clientBalanceRepository->getClientBalanceSum((int) $clientId);
     }
@@ -588,7 +588,7 @@ class Service implements InjectionAwareInterface
             return false;
         }
 
-        $taxExempt = $model instanceof Client ? $model->isTaxExempt() : $model->tax_exempt;
+        $taxExempt = $model instanceof Client ? $model->isTaxExempt() : $model->isTaxExempt();
         if ($taxExempt) {
             return false;
         }
@@ -611,17 +611,17 @@ class Service implements InjectionAwareInterface
 
     public function deleteGroup(ClientGroup $model): bool
     {
-        $client = $this->clientRepository->findOneBy(['clientGroupId' => $model->id]);
+        $client = $this->clientRepository->findOneBy(['clientGroupId' => $model->getId()]);
         if ($client) {
             throw new \FOSSBilling\Exception('Cannot remove groups with clients');
         }
 
-        $group = $this->clientGroupRepository->find((int) $model->id);
+        $group = $this->clientGroupRepository->find((int) $model->getId());
         if ($group instanceof ClientGroup) {
             $this->di['em']->remove($group);
             $this->di['em']->flush();
         }
-        $this->di['logger']->info('Removed client group #%s', $model->id);
+        $this->di['logger']->info('Removed client group #%s', $model->getId());
 
         return true;
     }
@@ -779,7 +779,7 @@ class Service implements InjectionAwareInterface
     public function createPasswordResetRequestForClient(Client $client): string
     {
         $clientId = (int) $client->getId();
-        $clientIp = $client instanceof Client ? ($client->ip ?? null) : $client->getIp();
+        $clientIp = $client instanceof Client ? ($client->getIp() ?? null) : $client->getIp();
 
         $existingReset = $this->clientPasswordResetRepository->findOneBy(['clientId' => $clientId]);
         if ($existingReset instanceof ClientPasswordReset) {
@@ -855,14 +855,14 @@ class Service implements InjectionAwareInterface
         $service = $this->di['mod_service']('Client', 'Balance');
         $service->rmByClient($model);
 
-        $this->di['em']->getConnection()->executeStatement('DELETE FROM activity_client_history WHERE client_id = :id', ['id' => $model->id]);
+        $this->di['em']->getConnection()->executeStatement('DELETE FROM activity_client_history WHERE client_id = :id', ['id' => $model->getId()]);
 
         $service = $this->di['mod_service']('Email');
         $service->rmByClient($model);
         $service = $this->di['mod_service']('Activity');
         $service->rmByClient($model);
 
-        $resetRecords = $this->clientPasswordResetRepository->findBy(['clientId' => (int) $model->id]);
+        $resetRecords = $this->clientPasswordResetRepository->findBy(['clientId' => (int) $model->getId()]);
         foreach ($resetRecords as $resetRecord) {
             $this->di['em']->remove($resetRecord);
         }
@@ -871,10 +871,10 @@ class Service implements InjectionAwareInterface
         $query
             ->delete('extension_meta')
             ->where('client_id = :id')
-            ->setParameter('id', $model->id);
+            ->setParameter('id', $model->getId());
         $query->executeStatement();
 
-        $client = $this->clientRepository->find((int) $model->id);
+        $client = $this->clientRepository->find((int) $model->getId());
         if ($client instanceof Client) {
             $this->di['em']->remove($client);
         }
@@ -915,7 +915,7 @@ class Service implements InjectionAwareInterface
         $config = $this->di['mod_config']('client');
 
         if (
-            $client->email != $email
+            $client->getEmail() != $email
             && isset($config['disable_change_email'])
             && $config['disable_change_email']
         ) {
@@ -972,7 +972,7 @@ class Service implements InjectionAwareInterface
             if ($title === '' || !array_filter($keywords, fn ($k): bool => str_contains($title, (string) $k))) {
                 continue;
             }
-            $value = $client->{$fieldName} ?? null;
+            $value = $client->{'get' . str_replace(' ', '', ucwords(str_replace('_', ' ', $fieldName)))}() ?? null;
             if ($value !== null && $value !== '') {
                 return (string) $value;
             }

@@ -93,7 +93,7 @@ class ServiceTax implements InjectionAwareInterface
 
     public function delete(Tax $model): bool
     {
-        $name = $model->name;
+        $name = $model->getName();
         $this->di['em']->remove($model);
         $this->di['em']->flush();
         $this->di['logger']->info('Deleted tax rule %s', $name);
@@ -127,7 +127,7 @@ class ServiceTax implements InjectionAwareInterface
         $this->di['em']->persist($model);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Updated tax rule %s', $model->name);
+        $this->di['logger']->info('Updated tax rule %s', $model->getName());
 
         return true;
     }

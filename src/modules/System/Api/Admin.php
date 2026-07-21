@@ -289,7 +289,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         if ($this->identity instanceof \Box\Mod\Staff\Entity\Admin) {
             try {
-                if ($this->getDi()['mod_service']('Staff')->isSuperAdministrator($this->identity->id)) {
+                if ($this->getDi()['mod_service']('Staff')->isSuperAdministrator($this->identity->getId())) {
                     return;
                 }
             } catch (\Doctrine\DBAL\Exception) {
@@ -297,7 +297,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
                 // Manually look for the old "admin" role
                 if (
                     $this->getDi()['em']->getConnection()->fetchOne("SHOW COLUMNS FROM `admin` LIKE 'role'")
-                    && $this->getDi()['em']->getConnection()->fetchOne('SELECT role FROM admin WHERE id = :id', ['id' => (int) $this->identity->id]) === 'admin'
+                    && $this->getDi()['em']->getConnection()->fetchOne('SELECT role FROM admin WHERE id = :id', ['id' => (int) $this->identity->getId()]) === 'admin'
                 ) {
                     return;
                 }

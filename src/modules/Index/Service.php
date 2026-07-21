@@ -41,7 +41,7 @@ class Service implements InjectionAwareInterface
      */
     public function getDashboardData(Client $client): array
     {
-        $data['client_id'] = $client->id;
+        $data['client_id'] = $client->getId();
 
         return [
             'profile' => $this->getProfile($client),

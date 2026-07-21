@@ -208,7 +208,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $tldModel = $this->tldFindOneByTld($tld);
 
         $model = new ServiceDomain();
-        $model->setClientId($order->client_id);
+        $model->setClientId($order->getClientId());
         $model->setTldRegistrarId($tldModel->getTldRegistrarId());
         $model->setSld($sld);
         $model->setTld($tld);
@@ -280,7 +280,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
         if (!$model instanceof ServiceDomain) {
-            throw new \FOSSBilling\Exception('Order :id has no active service', [':id' => $order->id]);
+            throw new \FOSSBilling\Exception('Order :id has no active service', [':id' => $order->getId()]);
         }
 
         [$domain, $adapter] = $this->_getD($model);
@@ -306,7 +306,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
         if (!$model instanceof ServiceDomain) {
-            throw new \FOSSBilling\Exception('Order :id has no active service', [':id' => $order->id]);
+            throw new \FOSSBilling\Exception('Order :id has no active service', [':id' => $order->getId()]);
         }
 
         [$domain, $adapter] = $this->_getD($model);
@@ -328,7 +328,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $service = $orderService->getOrderService($order);
 
         if ($service instanceof ServiceDomain) {
-            if ($order->status != Order::STATUS_CANCELED) {
+            if ($order->getStatus() != Order::STATUS_CANCELED) {
                 $this->action_cancel($order);
             }
             $this->di['em']->remove($service);
@@ -570,16 +570,16 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Domain name is invalid');
         }
 
-        $allowTransfer = $model instanceof Tld ? $model->isAllowTransfer() : $model->allow_transfer;
+        $allowTransfer = $model instanceof Tld ? $model->isAllowTransfer() : $model->isAllowTransfer();
         if (!$allowTransfer) {
             throw new \FOSSBilling\InformationException('Domain cannot be transferred', null, 403);
         }
 
         $domain = new \Registrar_Domain();
-        $domain->setTld($model instanceof Tld ? $model->getTld() : $model->tld);
+        $domain->setTld($model instanceof Tld ? $model->getTld() : $model->getTld());
         $domain->setSld($sld);
 
-        $tldRegistrarId = $model instanceof Tld ? $model->getTldRegistrarId() : $model->tld_registrar_id;
+        $tldRegistrarId = $model instanceof Tld ? $model->getTldRegistrarId() : $model->getTldRegistrarId();
         $tldRegistrar = $this->getTldRegistrarRepository()->find($tldRegistrarId);
         $adapter = $this->registrarGetRegistrarAdapter($tldRegistrar);
 
@@ -602,16 +602,16 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Domain name :domain is invalid', [':domain' => $safe_dom]);
         }
 
-        $allowRegister = $model instanceof Tld ? $model->isAllowRegister() : $model->allow_register;
+        $allowRegister = $model instanceof Tld ? $model->isAllowRegister() : $model->isAllowRegister();
         if (!$allowRegister) {
             throw new \FOSSBilling\InformationException('Domain cannot be registered', null, 403);
         }
 
         $domain = new \Registrar_Domain();
-        $domain->setTld($model instanceof Tld ? $model->getTld() : $model->tld);
+        $domain->setTld($model instanceof Tld ? $model->getTld() : $model->getTld());
         $domain->setSld($sld);
 
-        $tldRegistrarId = $model instanceof Tld ? $model->getTldRegistrarId() : $model->tld_registrar_id;
+        $tldRegistrarId = $model instanceof Tld ? $model->getTldRegistrarId() : $model->getTldRegistrarId();
         $tldRegistrar = $this->getTldRegistrarRepository()->find($tldRegistrarId);
         $adapter = $this->registrarGetRegistrarAdapter($tldRegistrar);
 
@@ -630,38 +630,38 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $isDomain = $model instanceof ServiceDomain;
 
         $data = [
-            'domain' => ($isDomain ? $model->getSld() : $model->sld) . ($isDomain ? $model->getTld() : $model->tld),
-            'sld' => $isDomain ? $model->getSld() : $model->sld,
-            'tld' => $isDomain ? $model->getTld() : $model->tld,
-            'ns1' => $isDomain ? $model->getNs1() : $model->ns1,
-            'ns2' => $isDomain ? $model->getNs2() : $model->ns2,
-            'ns3' => $isDomain ? $model->getNs3() : $model->ns3,
-            'ns4' => $isDomain ? $model->getNs4() : $model->ns4,
-            'period' => $isDomain ? $model->getPeriod() : $model->period,
-            'privacy' => $isDomain ? $model->getPrivacy() : $model->privacy,
-            'locked' => $isDomain ? $model->isLocked() : $model->locked,
-            'registered_at' => $isDomain ? $this->formatDateForApi($model->getRegisteredAt()) : $model->registered_at,
-            'expires_at' => $isDomain ? $this->formatDateForApi($model->getExpiresAt()) : $model->expires_at,
+            'domain' => ($isDomain ? $model->getSld() : $model->getSld()) . ($isDomain ? $model->getTld() : $model->getTld()),
+            'sld' => $isDomain ? $model->getSld() : $model->getSld(),
+            'tld' => $isDomain ? $model->getTld() : $model->getTld(),
+            'ns1' => $isDomain ? $model->getNs1() : $model->getNs1(),
+            'ns2' => $isDomain ? $model->getNs2() : $model->getNs2(),
+            'ns3' => $isDomain ? $model->getNs3() : $model->getNs3(),
+            'ns4' => $isDomain ? $model->getNs4() : $model->getNs4(),
+            'period' => $isDomain ? $model->getPeriod() : $model->getPeriod(),
+            'privacy' => $isDomain ? $model->getPrivacy() : $model->getPrivacy(),
+            'locked' => $isDomain ? $model->isLocked() : $model->isLocked(),
+            'registered_at' => $isDomain ? $this->formatDateForApi($model->getRegisteredAt()) : $model->getRegisteredAt(),
+            'expires_at' => $isDomain ? $this->formatDateForApi($model->getExpiresAt()) : $model->getExpiresAt(),
             'contact' => [
-                'first_name' => $isDomain ? $model->getContactFirstName() : $model->contact_first_name,
-                'last_name' => $isDomain ? $model->getContactLastName() : $model->contact_last_name,
-                'email' => $isDomain ? $model->getContactEmail() : $model->contact_email,
-                'company' => $isDomain ? $model->getContactCompany() : $model->contact_company,
-                'address1' => $isDomain ? $model->getContactAddress1() : $model->contact_address1,
-                'address2' => $isDomain ? $model->getContactAddress2() : $model->contact_address2,
-                'country' => $isDomain ? $model->getContactCountry() : $model->contact_country,
-                'city' => $isDomain ? $model->getContactCity() : $model->contact_city,
-                'state' => $isDomain ? $model->getContactState() : $model->contact_state,
-                'postcode' => $isDomain ? $model->getContactPostcode() : $model->contact_postcode,
-                'phone_cc' => $isDomain ? $model->getContactPhoneCc() : $model->contact_phone_cc,
-                'phone' => $isDomain ? $model->getContactPhone() : $model->contact_phone,
+                'first_name' => $isDomain ? $model->getContactFirstName() : $model->getContactFirstName(),
+                'last_name' => $isDomain ? $model->getContactLastName() : $model->getContactLastName(),
+                'email' => $isDomain ? $model->getContactEmail() : $model->getContactEmail(),
+                'company' => $isDomain ? $model->getContactCompany() : $model->getContactCompany(),
+                'address1' => $isDomain ? $model->getContactAddress1() : $model->getContactAddress1(),
+                'address2' => $isDomain ? $model->getContactAddress2() : $model->getContactAddress2(),
+                'country' => $isDomain ? $model->getContactCountry() : $model->getContactCountry(),
+                'city' => $isDomain ? $model->getContactCity() : $model->getContactCity(),
+                'state' => $isDomain ? $model->getContactState() : $model->getContactState(),
+                'postcode' => $isDomain ? $model->getContactPostcode() : $model->getContactPostcode(),
+                'phone_cc' => $isDomain ? $model->getContactPhoneCc() : $model->getContactPhoneCc(),
+                'phone' => $isDomain ? $model->getContactPhone() : $model->getContactPhone(),
             ],
         ];
 
         if ($identity instanceof Admin) {
-            $data['transfer_code'] = $isDomain ? $model->getTransferCode() : $model->transfer_code;
+            $data['transfer_code'] = $isDomain ? $model->getTransferCode() : $model->getTransferCode();
 
-            $tldRegistrarId = $isDomain ? $model->getTldRegistrarId() : $model->tld_registrar_id;
+            $tldRegistrarId = $isDomain ? $model->getTldRegistrarId() : $model->getTldRegistrarId();
             $tldRegistrar = $this->getTldRegistrarRepository()->find($tldRegistrarId);
             $data['registrar'] = $tldRegistrar instanceof TldRegistrar ? $tldRegistrar->getName() : null;
         }
@@ -700,7 +700,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $orderService = $this->di['mod_service']('order');
         $order = $orderService->getServiceOrder($model);
 
-        $tldRegistrarId = $model instanceof ServiceDomain ? $model->getTldRegistrarId() : $model->tld_registrar_id;
+        $tldRegistrarId = $model instanceof ServiceDomain ? $model->getTldRegistrarId() : $model->getTldRegistrarId();
         $tldRegistrar = $this->getTldRegistrarRepository()->find($tldRegistrarId);
 
         if ($order instanceof Order) {
@@ -711,27 +711,27 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $d = new \Registrar_Domain();
 
-        $d->setLocked($model instanceof ServiceDomain ? $model->isLocked() : $model->locked);
-        $d->setNs1($model instanceof ServiceDomain ? $model->getNs1() : $model->ns1);
-        $d->setNs2($model instanceof ServiceDomain ? $model->getNs2() : $model->ns2);
-        $d->setNs3($model instanceof ServiceDomain ? $model->getNs3() : $model->ns3);
-        $d->setNs4($model instanceof ServiceDomain ? $model->getNs4() : $model->ns4);
+        $d->setLocked($model instanceof ServiceDomain ? $model->isLocked() : $model->isLocked());
+        $d->setNs1($model instanceof ServiceDomain ? $model->getNs1() : $model->getNs1());
+        $d->setNs2($model instanceof ServiceDomain ? $model->getNs2() : $model->getNs2());
+        $d->setNs3($model instanceof ServiceDomain ? $model->getNs3() : $model->getNs3());
+        $d->setNs4($model instanceof ServiceDomain ? $model->getNs4() : $model->getNs4());
 
-        $clientId = $model instanceof ServiceDomain ? $model->getClientId() : $model->client_id;
+        $clientId = $model instanceof ServiceDomain ? $model->getClientId() : $model->getClientId();
         $client = $this->di['em']->getRepository(Client::class)->find($clientId);
 
-        $contactEmail = $model instanceof ServiceDomain ? $model->getContactEmail() : $model->contact_email;
-        $contactFirstName = $model instanceof ServiceDomain ? $model->getContactFirstName() : $model->contact_first_name;
-        $contactLastName = $model instanceof ServiceDomain ? $model->getContactLastName() : $model->contact_last_name;
-        $contactCity = $model instanceof ServiceDomain ? $model->getContactCity() : $model->contact_city;
-        $contactPostcode = $model instanceof ServiceDomain ? $model->getContactPostcode() : $model->contact_postcode;
-        $contactCountry = $model instanceof ServiceDomain ? $model->getContactCountry() : $model->contact_country;
-        $contactState = $model instanceof ServiceDomain ? $model->getContactState() : $model->contact_state;
-        $contactPhone = $model instanceof ServiceDomain ? $model->getContactPhone() : $model->contact_phone;
-        $contactPhoneCc = $model instanceof ServiceDomain ? $model->getContactPhoneCc() : $model->contact_phone_cc;
-        $contactCompany = $model instanceof ServiceDomain ? $model->getContactCompany() : $model->contact_company;
-        $contactAddress1 = $model instanceof ServiceDomain ? $model->getContactAddress1() : $model->contact_address1;
-        $contactAddress2 = $model instanceof ServiceDomain ? $model->getContactAddress2() : $model->contact_address2;
+        $contactEmail = $model instanceof ServiceDomain ? $model->getContactEmail() : $model->getContactEmail();
+        $contactFirstName = $model instanceof ServiceDomain ? $model->getContactFirstName() : $model->getContactFirstName();
+        $contactLastName = $model instanceof ServiceDomain ? $model->getContactLastName() : $model->getContactLastName();
+        $contactCity = $model instanceof ServiceDomain ? $model->getContactCity() : $model->getContactCity();
+        $contactPostcode = $model instanceof ServiceDomain ? $model->getContactPostcode() : $model->getContactPostcode();
+        $contactCountry = $model instanceof ServiceDomain ? $model->getContactCountry() : $model->getContactCountry();
+        $contactState = $model instanceof ServiceDomain ? $model->getContactState() : $model->getContactState();
+        $contactPhone = $model instanceof ServiceDomain ? $model->getContactPhone() : $model->getContactPhone();
+        $contactPhoneCc = $model instanceof ServiceDomain ? $model->getContactPhoneCc() : $model->getContactPhoneCc();
+        $contactCompany = $model instanceof ServiceDomain ? $model->getContactCompany() : $model->getContactCompany();
+        $contactAddress1 = $model instanceof ServiceDomain ? $model->getContactAddress1() : $model->getContactAddress1();
+        $contactAddress2 = $model instanceof ServiceDomain ? $model->getContactAddress2() : $model->getContactAddress2();
 
         $email = empty($contactEmail) ? $client->getEmail() : $contactEmail;
         $first_name = empty($contactFirstName) ? $client->getFirstName() : $contactFirstName;
@@ -776,12 +776,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $d->setContactTech($contact);
         $d->setContactBilling($contact);
 
-        $d->setTld($model instanceof ServiceDomain ? $model->getTld() : $model->tld);
-        $d->setSld($model instanceof ServiceDomain ? $model->getSld() : $model->sld);
-        $d->setRegistrationPeriod($model instanceof ServiceDomain ? $model->getPeriod() : $model->period);
-        $d->setEpp($model instanceof ServiceDomain ? $model->getTransferCode() : $model->transfer_code);
+        $d->setTld($model instanceof ServiceDomain ? $model->getTld() : $model->getTld());
+        $d->setSld($model instanceof ServiceDomain ? $model->getSld() : $model->getSld());
+        $d->setRegistrationPeriod($model instanceof ServiceDomain ? $model->getPeriod() : $model->getPeriod());
+        $d->setEpp($model instanceof ServiceDomain ? $model->getTransferCode() : $model->getTransferCode());
 
-        $expiresAt = $model instanceof ServiceDomain ? $model->getExpiresAt() : $model->expires_at;
+        $expiresAt = $model instanceof ServiceDomain ? $model->getExpiresAt() : $model->getExpiresAt();
         if ($expiresAt) {
             $timestamp = $model instanceof ServiceDomain ? $expiresAt->getTimestamp() : strtotime($expiresAt);
             $d->setExpirationTime($timestamp);
@@ -865,17 +865,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $model->setAllowTransfer($data['allow_transfer'] ?? $model->isAllowTransfer());
             $model->setActive($data['active'] ?? $model->isActive());
         } else {
-            $model->tld_registrar_id = $data['tld_registrar_id'] ?? $model->tld_registrar_id;
-            $model->price_registration = $data['price_registration'] ?? $model->price_registration;
-            $model->price_renew = $data['price_renew'] ?? $model->price_renew;
-            $model->price_transfer = $data['price_transfer'] ?? $model->price_transfer;
-            $model->min_years = $data['min_years'] ?? $model->min_years;
-            $model->allow_register = $data['allow_register'] ?? $model->allow_register;
-            $model->allow_transfer = $data['allow_transfer'] ?? $model->allow_transfer;
-            $model->active = $data['active'] ?? $model->active;
+            $model->tld_registrar_id = $data['tld_registrar_id'] ?? $model->getTldRegistrarId();
+            $model->price_registration = $data['price_registration'] ?? $model->getPriceRegistration();
+            $model->price_renew = $data['price_renew'] ?? $model->getPriceRenew();
+            $model->price_transfer = $data['price_transfer'] ?? $model->getPriceTransfer();
+            $model->min_years = $data['min_years'] ?? $model->getMinYears();
+            $model->allow_register = $data['allow_register'] ?? $model->isAllowRegister();
+            $model->allow_transfer = $data['allow_transfer'] ?? $model->isAllowTransfer();
+            $model->active = $data['active'] ?? $model->isActive();
             $model->updated_at = date('Y-m-d H:i:s');
             $this->di['em']->persist($model);
-            $this->di['logger']->info('Updated top level domain %s', $model->tld);
+            $this->di['logger']->info('Updated top level domain %s', $model->getTld());
 
             return true;
         }
@@ -956,7 +956,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $this->di['em']->remove($model);
             $this->di['em']->flush();
         } else {
-            $id = $model->id;
+            $id = $model->getId();
             $this->di['em']->remove($model);
         }
         $this->di['logger']->info('Deleted top level domain %s', $id);
@@ -972,19 +972,19 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $isTld = $model instanceof Tld;
 
         $result = [
-            'id' => $isTld ? $model->getId() : $model->id,
-            'tld' => $isTld ? $model->getTld() : $model->tld,
-            'price_registration' => $isTld ? $model->getPriceRegistration() : $model->price_registration,
-            'price_renew' => $isTld ? $model->getPriceRenew() : $model->price_renew,
-            'price_transfer' => $isTld ? $model->getPriceTransfer() : $model->price_transfer,
-            'active' => $isTld ? $model->isActive() : $model->active,
-            'allow_register' => $isTld ? $model->isAllowRegister() : $model->allow_register,
-            'allow_transfer' => $isTld ? $model->isAllowTransfer() : $model->allow_transfer,
-            'min_years' => $isTld ? $model->getMinYears() : $model->min_years,
+            'id' => $isTld ? $model->getId() : $model->getId(),
+            'tld' => $isTld ? $model->getTld() : $model->getTld(),
+            'price_registration' => $isTld ? $model->getPriceRegistration() : $model->getPriceRegistration(),
+            'price_renew' => $isTld ? $model->getPriceRenew() : $model->getPriceRenew(),
+            'price_transfer' => $isTld ? $model->getPriceTransfer() : $model->getPriceTransfer(),
+            'active' => $isTld ? $model->isActive() : $model->isActive(),
+            'allow_register' => $isTld ? $model->isAllowRegister() : $model->isAllowRegister(),
+            'allow_transfer' => $isTld ? $model->isAllowTransfer() : $model->isAllowTransfer(),
+            'min_years' => $isTld ? $model->getMinYears() : $model->getMinYears(),
         ];
 
         if ($identity instanceof Admin) {
-            $tldRegistrarId = $isTld ? $model->getTldRegistrarId() : $model->tld_registrar_id;
+            $tldRegistrarId = $isTld ? $model->getTldRegistrarId() : $model->getTldRegistrarId();
             $tldRegistrar = $this->getTldRegistrarRepository()->find($tldRegistrarId);
 
             $result['registrar'] = [
@@ -1055,7 +1055,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
      */
     public function registrarGetConfiguration($model): array
     {
-        $config = $model instanceof TldRegistrar ? $model->getConfig() : $model->config;
+        $config = $model instanceof TldRegistrar ? $model->getConfig() : $model->getConfig();
 
         return json_decode($config ?? '', true) ?? [];
     }
@@ -1075,7 +1075,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
      */
     private function registrarGetRegistrarAdapterClassName($model): string
     {
-        $registrar = $model instanceof TldRegistrar ? $model->getRegistrar() : $model->registrar;
+        $registrar = $model instanceof TldRegistrar ? $model->getRegistrar() : $model->getRegistrar();
         $file = Path::join(PATH_LIBRARY, 'Registrar', 'Adapter', "{$registrar}.php");
         if (!$this->filesystem->exists($file)) {
             throw new \FOSSBilling\InformationException('Domain registrar :adapter was not found', [':adapter' => $registrar]);
@@ -1111,7 +1111,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $registrar->setOrder($order);
         }
 
-        $testMode = $r instanceof TldRegistrar ? $r->isTestMode() : $r->test_mode;
+        $testMode = $r instanceof TldRegistrar ? $r->isTestMode() : $r->isTestMode();
         if ($testMode) {
             $registrar->enableTestMode();
         }
@@ -1140,14 +1140,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function registrarCopy($model): int
     {
         $new = new TldRegistrar();
-        $new->setName(($model instanceof TldRegistrar ? $model->getName() : $model->name) . ' (Copy)');
-        $new->setRegistrar($model instanceof TldRegistrar ? $model->getRegistrar() : $model->registrar);
-        $new->setTestMode($model instanceof TldRegistrar ? $model->isTestMode() : $model->test_mode);
+        $new->setName(($model instanceof TldRegistrar ? $model->getName() : $model->getName()) . ' (Copy)');
+        $new->setRegistrar($model instanceof TldRegistrar ? $model->getRegistrar() : $model->getRegistrar());
+        $new->setTestMode($model instanceof TldRegistrar ? $model->isTestMode() : $model->isTestMode());
 
         $this->di['em']->persist($new);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Copied domain registrar %s', $model instanceof TldRegistrar ? $model->getRegistrar() : $model->registrar);
+        $this->di['logger']->info('Copied domain registrar %s', $model instanceof TldRegistrar ? $model->getRegistrar() : $model->getRegistrar());
 
         return $new->getId();
     }
@@ -1164,8 +1164,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 $model->setConfig(json_encode($data['config']));
             }
         } else {
-            $model->name = $data['title'] ?? $model->name;
-            $model->test_mode = $data['test_mode'] ?? $model->test_mode;
+            $model->name = $data['title'] ?? $model->getName();
+            $model->test_mode = $data['test_mode'] ?? $model->isTestMode();
             if (isset($data['config']) && is_array($data['config'])) {
                 $model->config = json_encode($data['config']);
             }
@@ -1174,7 +1174,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['em']->persist($model);
         $this->di['em']->flush();
 
-        $registrar = $model instanceof TldRegistrar ? $model->getRegistrar() : $model->registrar;
+        $registrar = $model instanceof TldRegistrar ? $model->getRegistrar() : $model->getRegistrar();
         $this->di['logger']->info('Updated domain registrar %s configuration', $registrar);
 
         return true;
@@ -1185,7 +1185,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
      */
     public function registrarRm($model): bool
     {
-        $registrarId = $model instanceof TldRegistrar ? $model->getId() : $model->id;
+        $registrarId = $model instanceof TldRegistrar ? $model->getId() : $model->getId();
         $domains = $this->getDomainRepository()->findByTldRegistrarId($registrarId);
         $count = count($domains);
 
@@ -1200,7 +1200,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Registrar is used by :count: TLDs', [':count:' => $count], 707);
         }
 
-        $name = $model instanceof TldRegistrar ? $model->getName() : $model->name;
+        $name = $model instanceof TldRegistrar ? $model->getName() : $model->getName();
 
         $this->di['em']->remove($model);
         $this->di['em']->flush();
@@ -1218,12 +1218,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $c = $this->registrarGetRegistrarAdapterConfig($model);
 
         return [
-            'id' => $model instanceof TldRegistrar ? $model->getId() : $model->id,
-            'title' => $model instanceof TldRegistrar ? $model->getName() : $model->name,
+            'id' => $model instanceof TldRegistrar ? $model->getId() : $model->getId(),
+            'title' => $model instanceof TldRegistrar ? $model->getName() : $model->getName(),
             'label' => $c['label'],
             'config' => $this->registrarGetConfiguration($model),
             'form' => $c['form'],
-            'test_mode' => $model instanceof TldRegistrar ? $model->isTestMode() : $model->test_mode,
+            'test_mode' => $model instanceof TldRegistrar ? $model->isTestMode() : $model->isTestMode(),
         ];
     }
 

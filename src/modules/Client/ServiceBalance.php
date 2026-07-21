@@ -42,7 +42,7 @@ class ServiceBalance implements InjectionAwareInterface
 
     public function rmByClient(Client $client): void
     {
-        $balances = $this->clientBalanceRepository->findBy(['clientId' => (int) $client->id]);
+        $balances = $this->clientBalanceRepository->findBy(['clientId' => (int) $client->getId()]);
         foreach ($balances as $balance) {
             $this->di['em']->remove($balance);
         }
@@ -53,7 +53,7 @@ class ServiceBalance implements InjectionAwareInterface
 
     public function rm(ClientBalance $model): void
     {
-        $balance = $this->clientBalanceRepository->find((int) $model->id);
+        $balance = $this->clientBalanceRepository->find((int) $model->getId());
         if ($balance instanceof ClientBalance) {
             $this->di['em']->remove($balance);
             $this->di['em']->flush();
@@ -62,7 +62,7 @@ class ServiceBalance implements InjectionAwareInterface
 
     public function toApiArray(ClientBalance $model): array
     {
-        $balance = $this->clientBalanceRepository->find((int) $model->id);
+        $balance = $this->clientBalanceRepository->find((int) $model->getId());
         $client = $balance instanceof ClientBalance && $balance->getClientId() !== null
             ? $this->clientRepository->find($balance->getClientId())
             : null;
@@ -78,11 +78,11 @@ class ServiceBalance implements InjectionAwareInterface
         }
 
         return [
-            'id' => $model->id,
-            'description' => $model->description,
-            'amount' => $model->amount,
+            'id' => $model->getId(),
+            'description' => $model->getDescription(),
+            'amount' => $model->getAmount(),
             'currency' => '',
-            'created_at' => $model->created_at,
+            'created_at' => $model->getCreatedAt()?->format('Y-m-d H:i:s'),
         ];
     }
 
@@ -146,7 +146,7 @@ class ServiceBalance implements InjectionAwareInterface
         }
 
         $credit = new ClientBalance();
-        $credit->setClientId((int) $client->id);
+        $credit->setClientId((int) $client->getId());
         $credit->setType($data['type'] ?? 'default');
         $credit->setRelId(isset($data['rel_id']) ? (string) $data['rel_id'] : null);
         $credit->setDescription($description);
