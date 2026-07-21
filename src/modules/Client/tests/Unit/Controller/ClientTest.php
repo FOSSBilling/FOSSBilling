@@ -16,7 +16,7 @@ use function Tests\Helpers\container;
 use function Tests\Helpers\moduleService;
 
 test('password reset confirmation passes the validated hash to the template', function (): void {
-    $hash = 'validresethash';
+    $hash = 'password';
 
     $service = Mockery::mock(Box\Mod\Client\Service::class);
     $service->shouldReceive('password_reset_valid')
