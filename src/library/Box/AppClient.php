@@ -114,7 +114,15 @@ class Box_AppClient extends Box_App
             throw new FOSSBilling\InformationException('Page not found', null, 404);
         }
 
-        return $template->render($variableArray);
+        try {
+            return $template->render($variableArray);
+        } catch (\Throwable $e) {
+            error_log('=== TWIG RENDER EXCEPTION === ' . $e->getMessage());
+            error_log($e->getTraceAsString());
+            error_log('=== END TWIG RENDER EXCEPTION ===');
+
+            throw $e;
+        }
     }
 
     /**

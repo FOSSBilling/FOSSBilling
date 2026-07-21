@@ -158,7 +158,9 @@ function exceptionHandler(Exception|Error $e): void
         @file_put_contents(Path::join(PATH_LOG, 'exception_handler.log'), date('c') . ' ' . $msg, FILE_APPEND);
         @file_put_contents(Path::join(PATH_ROOT, 'data', 'log', 'exception_handler.log'), date('c') . ' ' . $msg, FILE_APPEND);
     } else {
-        error_log("{$e->getMessage()} at {$e->getFile()} : {$e->getLine()}");
+        error_log("=== GLOBAL EXCEPTION HANDLER === {$e->getMessage()} at {$e->getFile()} : {$e->getLine()}");
+        error_log($e->getTraceAsString());
+        error_log('=== END GLOBAL EXCEPTION HANDLER ===');
     }
 
     emitResponse($exceptionResponseFactory->create($e));

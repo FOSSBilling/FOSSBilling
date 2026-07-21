@@ -96,6 +96,10 @@ class Client implements InjectionAwareInterface
             // Sentry by default only captures unhandled exceptions, so we need to manually capture these.
             \Sentry\captureException($exc);
 
+            error_log('=== API EXCEPTION TRACE === ' . $exc->getMessage());
+            error_log($exc->getTraceAsString());
+            error_log('=== END API EXCEPTION TRACE ===');
+
             return $this->renderJson(null, $exc);
         }
     }
