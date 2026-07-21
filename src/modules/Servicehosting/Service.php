@@ -1580,7 +1580,7 @@ class Service implements InjectionAwareInterface
                 'id' => $model->setId($value),
                 'client_id' => $model->setClientId($value),
                 'service_hosting_server_id' => $model->setServiceHostingServerId($value),
-                'service_hoting_hp_id' => $model->setServiceHostingHpId($value),
+                'service_hosting_hp_id' => $model->setServiceHostingHpId($value),
                 'sld' => $model->setSld($value),
                 'tld' => $model->setTld($value),
                 'ip' => $model->setIp($value),
