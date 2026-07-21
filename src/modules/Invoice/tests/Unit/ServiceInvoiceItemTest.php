@@ -63,7 +63,7 @@ test('marks item as paid', function (): void {
 
 test('returns true when executing task on already executed item', function (): void {
     $service = new ServiceInvoiceItem();
-    $invoiceItemModel = createEntity(\Box\Mod\Invoice\Entity\InvoiceItem::class, ['status' => Model_InvoiceItem::STATUS_EXECUTED]);
+    $invoiceItemModel = createEntity(\Box\Mod\Invoice\Entity\InvoiceItem::class, ['status' => \Box\Mod\Invoice\Entity\InvoiceItem::STATUS_EXECUTED]);
 
     $result = $service->executeTask($invoiceItemModel);
     expect($result)->toBeTrue();
@@ -71,7 +71,7 @@ test('returns true when executing task on already executed item', function (): v
 
 test('throws exception when executing task for order type with client order not found', function (): void {
     $service = new ServiceInvoiceItem();
-    $invoiceItemModel = createEntity(\Box\Mod\Invoice\Entity\InvoiceItem::class, ['type' => Model_InvoiceItem::TYPE_ORDER]);
+    $invoiceItemModel = createEntity(\Box\Mod\Invoice\Entity\InvoiceItem::class, ['type' => \Box\Mod\Invoice\Entity\InvoiceItem::TYPE_ORDER]);
     $orderId = 22;
 
     $serviceMock = Mockery::mock(ServiceInvoiceItem::class)->makePartial()->shouldAllowMockingProtectedMethods();
@@ -100,7 +100,7 @@ test('throws exception when executing task for order type with client order not 
 test('executes task for hook call type', function (): void {
     $service = new ServiceInvoiceItem();
     $invoiceItemModel = createEntity(\Box\Mod\Invoice\Entity\InvoiceItem::class, [
-        'type' => Model_InvoiceItem::TYPE_HOOK_CALL,
+        'type' => \Box\Mod\Invoice\Entity\InvoiceItem::TYPE_HOOK_CALL,
         'rel_id' => '{}',
     ]);
 
@@ -121,7 +121,7 @@ test('executes task for hook call type', function (): void {
 
 test('executes task for deposit type', function (): void {
     $service = new ServiceInvoiceItem();
-    $invoiceItemModel = createEntity(\Box\Mod\Invoice\Entity\InvoiceItem::class, ['type' => Model_InvoiceItem::TYPE_DEPOSIT]);
+    $invoiceItemModel = createEntity(\Box\Mod\Invoice\Entity\InvoiceItem::class, ['type' => \Box\Mod\Invoice\Entity\InvoiceItem::TYPE_DEPOSIT]);
 
     $invoiceModel = createEntity(\Box\Mod\Invoice\Entity\Invoice::class);
 
@@ -148,7 +148,7 @@ test('executes task for deposit type', function (): void {
 
 test('executes task for custom type', function (): void {
     $service = new ServiceInvoiceItem();
-    $invoiceItemModel = createEntity(\Box\Mod\Invoice\Entity\InvoiceItem::class, ['type' => Model_InvoiceItem::TYPE_CUSTOM]);
+    $invoiceItemModel = createEntity(\Box\Mod\Invoice\Entity\InvoiceItem::class, ['type' => \Box\Mod\Invoice\Entity\InvoiceItem::TYPE_CUSTOM]);
 
     $serviceMock = Mockery::mock(ServiceInvoiceItem::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('markAsExecuted')
@@ -324,7 +324,7 @@ test('gets order id', function (): void {
     $orderId = 2;
     $invoiceItemModel = createEntity(\Box\Mod\Invoice\Entity\InvoiceItem::class, [
         'rel_id' => $orderId,
-        'type' => Model_InvoiceItem::TYPE_ORDER,
+        'type' => \Box\Mod\Invoice\Entity\InvoiceItem::TYPE_ORDER,
     ]);
 
     $result = $service->getOrderId($invoiceItemModel);

@@ -25,7 +25,7 @@ function createControllerDiWithRequest(): Pimple\Container
 
 function buildAdminModel(int $id, string $apiToken, ?string $systemName = null): Model_Admin
 {
-    $admin = new Model_Admin();
+    $admin = createEntity(\Box\Mod\Staff\Entity\Admin::class);
     $bean = new stdClass();
     $bean->id = $id;
     $bean->api_token = $apiToken;

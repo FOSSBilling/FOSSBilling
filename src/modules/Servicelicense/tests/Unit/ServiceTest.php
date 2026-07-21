@@ -281,7 +281,7 @@ test('reset', function (): void {
 
 test('is license active', function (): void {
     $service = new Service();
-    $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class, ['status' => Model_ClientOrder::STATUS_ACTIVE]);
+    $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class, ['status' => \Box\Mod\Order\Entity\Order::STATUS_ACTIVE]);
 
     $serviceLicenseModel = createEntity(\Box\Mod\Servicelicense\Entity\ServiceLicense::class);
 

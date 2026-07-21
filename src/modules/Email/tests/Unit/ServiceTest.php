@@ -299,7 +299,7 @@ test('sendTemplate returns false when template does not exist', function (): voi
     $di['em'] = $em;
     $di['crypt'] = $cryptMock;
     $di['api_admin'] = function () use ($di) {
-        $api = new FOSSBilling\Api\Proxy(new Model_Admin());
+        $api = new FOSSBilling\Api\Proxy(createEntity(\Box\Mod\Staff\Entity\Admin::class));
         $api->setDi($di);
 
         return $api;
@@ -347,7 +347,7 @@ test('sendTemplate sends email when template exists', function (): void {
     $twigStub = Mockery::mock(Twig\Environment::class);
 
     $di['api_admin'] = function () use ($di) {
-        $api = new FOSSBilling\Api\Proxy(new Model_Admin());
+        $api = new FOSSBilling\Api\Proxy(createEntity(\Box\Mod\Staff\Entity\Admin::class));
         $api->setDi($di);
 
         return $api;
@@ -427,7 +427,7 @@ test('sendTemplate forwards the attachment to the queue and strips it from the s
         ->andReturn('rendered content');
 
     $di['api_admin'] = function () use ($di) {
-        $api = new FOSSBilling\Api\Proxy(new Model_Admin());
+        $api = new FOSSBilling\Api\Proxy(createEntity(\Box\Mod\Staff\Entity\Admin::class));
         $api->setDi($di);
 
         return $api;
@@ -587,7 +587,7 @@ test('sendTemplate handles to_staff and to_client options', function (array $dat
         ->atLeast()->once();
 
     $di['api_admin'] = function () use ($di) {
-        $api = new FOSSBilling\Api\Proxy(new Model_Admin());
+        $api = new FOSSBilling\Api\Proxy(createEntity(\Box\Mod\Staff\Entity\Admin::class));
         $api->setDi($di);
 
         return $api;

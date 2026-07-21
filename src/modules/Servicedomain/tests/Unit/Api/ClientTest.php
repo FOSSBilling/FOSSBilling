@@ -198,7 +198,7 @@ test('gets service', function (): void {
     $clientApi->setService($serviceMock);
 
     $orderServiceMock = Mockery::mock(OrderService::class);
-    $order = createEntity(\Box\Mod\Order\Entity\Order::class, ['status' => Model_ClientOrder::STATUS_ACTIVE]);
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class, ['status' => \Box\Mod\Order\Entity\Order::STATUS_ACTIVE]);
     $orderServiceMock->shouldReceive('findForClientById')
         ->atLeast()->once()
         ->andReturn($order);

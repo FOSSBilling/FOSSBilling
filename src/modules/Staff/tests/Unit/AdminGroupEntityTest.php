@@ -78,9 +78,9 @@ test('admin group member repository excludes cron from active system group count
         ->with(
             Mockery::on(static fn (string $sql): bool => str_contains($sql, 'a.system_name IS NULL OR a.system_name != :cron_system_name')),
             [
-                'status' => Model_Admin::STATUS_ACTIVE,
+                'status' => \Box\Mod\Staff\Entity\Admin::STATUS_ACTIVE,
                 'system_name' => AdminGroup::SYSTEM_SUPER_ADMIN,
-                'cron_system_name' => Model_Admin::SYSTEM_CRON,
+                'cron_system_name' => \Box\Mod\Staff\Entity\Admin::SYSTEM_CRON,
             ],
         )
         ->andReturn(1);

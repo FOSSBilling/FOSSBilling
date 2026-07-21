@@ -522,7 +522,7 @@ test('deletes action', function (): void {
     $di['mod_service'] = $di->protect(fn ($name) => $orderServiceMock);
     $serviceMock->setDi($di);
 
-    $order = createEntity(\Box\Mod\Order\Entity\Order::class, ['status' => Model_ClientOrder::STATUS_ACTIVE]);
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class, ['status' => \Box\Mod\Order\Entity\Order::STATUS_ACTIVE]);
     $result = $serviceMock->action_delete($order);
 
     expect($result)->toBeNull();

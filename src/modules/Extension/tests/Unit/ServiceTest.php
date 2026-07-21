@@ -17,6 +17,7 @@ use Box\Mod\Extension\Repository\ExtensionRepository;
 use Box\Mod\Extension\Service;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 use function Tests\Helpers\setEntityId;
 
 class ExtensionPdoMock extends PDO
@@ -303,7 +304,7 @@ test('getAdminNavigation returns admin navigation', function (): void {
     $di['em'] = extensionBuildEm($extensionRepository);
 
     $service->setDi($di);
-    $result = $service->getAdminNavigation(new Model_Admin());
+    $result = $service->getAdminNavigation(createEntity(\Box\Mod\Staff\Entity\Admin::class));
     expect($result)->toBeArray();
 });
 

@@ -257,7 +257,7 @@ test('finalizes a scheduled cancellation by canceling its order and service', fu
     $orderEntity = new Box\Mod\Order\Entity\Order();
     $orderIdProp = new ReflectionProperty($orderEntity, 'id');
     $orderIdProp->setValue($orderEntity, 10);
-    $orderEntity->setStatus(Model_ClientOrder::STATUS_ACTIVE);
+    $orderEntity->setStatus(\Box\Mod\Order\Entity\Order::STATUS_ACTIVE);
 
     $dbal = createSubscriptionDbal();
     $dbal->insert('client_order_meta', [

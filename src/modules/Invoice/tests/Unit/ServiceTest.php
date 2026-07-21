@@ -54,7 +54,7 @@ test('gets search query with various parameters', function (array $data, string 
         ['order_id' => '1'],
         'AND pi.type = :item_type AND pi.rel_id = :order_id',
         [
-            'item_type' => Model_InvoiceItem::TYPE_ORDER,
+            'item_type' => \Box\Mod\Invoice\Entity\InvoiceItem::TYPE_ORDER,
             'order_id' => 1,
         ],
     ],
@@ -930,7 +930,7 @@ test('marks invoice as paid', function (): void {
     $serviceMock->shouldReceive('countIncome')
         ->atLeast()->once();
 
-    $invoiceModel = createEntity(\Box\Mod\Invoice\Entity\Invoice::class, ['status' => Model_Invoice::STATUS_UNPAID]);
+    $invoiceModel = createEntity(\Box\Mod\Invoice\Entity\Invoice::class, ['status' => \Box\Mod\Invoice\Entity\Invoice::STATUS_UNPAID]);
 
     $invoiceItemModel = createEntity(\Box\Mod\Invoice\Entity\InvoiceItem::class);
 
@@ -1005,7 +1005,7 @@ test('admin mark as paid with custom gateway records transaction and marks invoi
         'id' => 10,
         'gateway_id' => 5,
         'currency' => 'USD',
-        'status' => Model_Invoice::STATUS_UNPAID,
+        'status' => \Box\Mod\Invoice\Entity\Invoice::STATUS_UNPAID,
     ]);
 
     $payGatewayEntity = new Box\Mod\Invoice\Entity\PayGateway();
@@ -1087,7 +1087,7 @@ test('admin mark as paid with custom gateway records transaction and marks invoi
     expect($result)->toBeTrue()
         ->and($transactionEntity->getAmount())->toBe('42.5')
         ->and($transactionEntity->getCurrency())->toBe('USD')
-        ->and($transactionEntity->getStatus())->toBe(Model_Transaction::STATUS_PROCESSED)
+        ->and($transactionEntity->getStatus())->toBe(\Box\Mod\Invoice\Entity\Transaction::STATUS_PROCESSED)
         ->and(str_contains($transactionEntity->getNote(), 'Manual payment transaction No:'))->toBeTrue();
 });
 
@@ -1103,7 +1103,7 @@ test('admin mark as paid with custom gateway rejects transaction linked to anoth
         'id' => 10,
         'gateway_id' => 5,
         'currency' => 'USD',
-        'status' => Model_Invoice::STATUS_UNPAID,
+        'status' => \Box\Mod\Invoice\Entity\Invoice::STATUS_UNPAID,
     ]);
 
     $payGatewayEntity = new Box\Mod\Invoice\Entity\PayGateway();
@@ -1346,7 +1346,7 @@ test('pays a zero-total invoice without recording a balance transaction', functi
         'id' => 10,
         'client_id' => 20,
         'approved' => 1,
-        'status' => Model_Invoice::STATUS_UNPAID,
+        'status' => \Box\Mod\Invoice\Entity\Invoice::STATUS_UNPAID,
     ]);
 
     $balanceService = Mockery::mock(Box\Mod\Client\ServiceBalance::class);
@@ -1652,7 +1652,7 @@ test('returns existing invoice when generating for order with unpaid invoice', f
     $service->setDi($di);
     $result = $service->generateForOrder($clientOrder);
     expect($result)->toBeInstanceOf(Invoice::class);
-    expect($result->getStatus())->toBe(Model_Invoice::STATUS_UNPAID);
+    expect($result->getStatus())->toBe(\Box\Mod\Invoice\Entity\Invoice::STATUS_UNPAID);
 });
 
 test('clears stale paid invoice reference when generating for order', function (): void {
@@ -1702,7 +1702,7 @@ test('generates invoice for active order using the order price, not the product 
         ->once();
 
     $orderModel = createEntity(\Box\Mod\Order\Entity\Order::class, [
-        'status' => Model_ClientOrder::STATUS_ACTIVE,
+        'status' => \Box\Mod\Order\Entity\Order::STATUS_ACTIVE,
         'product_id' => 5,
         'currency' => 'USD',
         'price' => 25,
@@ -2053,7 +2053,7 @@ test('invokes due event in batch', function (): void {
 
 test('protects from sending reminders to paid invoices', function (): void {
     $service = new Service();
-    $invoiceModel = createEntity(\Box\Mod\Invoice\Entity\Invoice::class, ['status' => Model_Invoice::STATUS_PAID]);
+    $invoiceModel = createEntity(\Box\Mod\Invoice\Entity\Invoice::class, ['status' => \Box\Mod\Invoice\Entity\Invoice::STATUS_PAID]);
 
     $result = $service->sendInvoiceReminder($invoiceModel);
     expect($result)->toBeBool()->toBeTrue();
@@ -2087,7 +2087,7 @@ test('sends invoice reminder', function (): void {
 test('counts invoices', function (): void {
     $service = new Service();
     $sqlResult = [
-        ['status' => Model_Invoice::STATUS_PAID,
+        ['status' => \Box\Mod\Invoice\Entity\Invoice::STATUS_PAID,
             'counter' => 2],
     ];
     $connectionMock = Mockery::mock(Doctrine\DBAL\Connection::class);
@@ -2533,7 +2533,7 @@ test('checks if invoice type is deposit', function (): void {
     $service = new Service();
     $di = container();
 
-    $modelInvoiceItem = createEntity(\Box\Mod\Invoice\Entity\InvoiceItem::class, ['type' => Model_InvoiceItem::TYPE_DEPOSIT]);
+    $modelInvoiceItem = createEntity(\Box\Mod\Invoice\Entity\InvoiceItem::class, ['type' => \Box\Mod\Invoice\Entity\InvoiceItem::TYPE_DEPOSIT]);
 
     $invoiceItems = [$modelInvoiceItem];
 
@@ -2559,7 +2559,7 @@ test('returns false when invoice type is not deposit', function (): void {
     $service = new Service();
     $di = container();
 
-    $modelInvoiceItem = createEntity(\Box\Mod\Invoice\Entity\InvoiceItem::class, ['type' => Model_InvoiceItem::TYPE_ORDER]);
+    $modelInvoiceItem = createEntity(\Box\Mod\Invoice\Entity\InvoiceItem::class, ['type' => \Box\Mod\Invoice\Entity\InvoiceItem::TYPE_ORDER]);
 
     $invoiceItems = [$modelInvoiceItem];
 
@@ -2676,7 +2676,7 @@ test('generateRenewalInvoiceForSubscriptionPayment returns null when original or
     $relIdProp = new ReflectionProperty($subscriptionEntity, 'relId');
     $relIdProp->setValue($subscriptionEntity, 82);
 
-    $originalOrder = createEntity(\Box\Mod\Order\Entity\Order::class, ['status' => Model_ClientOrder::STATUS_PENDING_SETUP]);
+    $originalOrder = createEntity(\Box\Mod\Order\Entity\Order::class, ['status' => \Box\Mod\Order\Entity\Order::STATUS_PENDING_SETUP]);
 
     $subscriptionRepo = Mockery::mock(Box\Mod\Invoice\Repository\SubscriptionRepository::class);
     $subscriptionRepo->shouldReceive('findBySId')
@@ -2719,7 +2719,7 @@ test('generateRenewalInvoiceForSubscriptionPayment uses the original order and n
     $originalOrderEntity = new Box\Mod\Order\Entity\Order();
     $orderIdProp = new ReflectionProperty($originalOrderEntity, 'id');
     $orderIdProp->setValue($originalOrderEntity, 82);
-    $originalOrderEntity->setStatus(Model_ClientOrder::STATUS_ACTIVE);
+    $originalOrderEntity->setStatus(\Box\Mod\Order\Entity\Order::STATUS_ACTIVE);
 
     $orderRepo = Mockery::mock(Box\Mod\Order\Repository\OrderRepository::class);
     $orderRepo->shouldReceive('find')
@@ -2759,14 +2759,14 @@ test('markAsPaid transitions a deposit invoice to paid status', function (): voi
 
     $depositInvoice = createEntity(\Box\Mod\Invoice\Entity\Invoice::class, [
         'id' => 89,
-        'status' => Model_Invoice::STATUS_UNPAID,
+        'status' => \Box\Mod\Invoice\Entity\Invoice::STATUS_UNPAID,
         'approved' => true,
         'currency' => 'USD',
     ]);
 
     $depositItem = createEntity(\Box\Mod\Invoice\Entity\InvoiceItem::class, [
         'id' => 96,
-        'type' => Model_InvoiceItem::TYPE_DEPOSIT,
+        'type' => \Box\Mod\Invoice\Entity\InvoiceItem::TYPE_DEPOSIT,
         'task' => 'void',
     ]);
 
@@ -2819,7 +2819,7 @@ test('markAsPaid transitions a deposit invoice to paid status', function (): voi
     $result = $service->markAsPaid($depositInvoice);
 
     expect($result)->toBeTrue();
-    expect($depositInvoice->status)->toBe(Model_Invoice::STATUS_PAID);
+    expect($depositInvoice->status)->toBe(\Box\Mod\Invoice\Entity\Invoice::STATUS_PAID);
     expect($depositInvoice->paid_at)->not->toBeNull();
 });
 

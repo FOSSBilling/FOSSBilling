@@ -8,6 +8,8 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+use function Tests\Helpers\createEntity;
+
 class ClientTestRateLimiterDouble
 {
     public function __construct(private ArrayObject $calls)
@@ -29,9 +31,9 @@ class ClientTestRateLimiterDouble
 
 class ClientTestDefaultApiDouble
 {
-    public function getIdentity(): Model_Client
+    public function getIdentity(): \Box\Mod\Client\Entity\Client
     {
-        return new Model_Client();
+        return createEntity(\Box\Mod\Client\Entity\Client::class);
     }
 }
 

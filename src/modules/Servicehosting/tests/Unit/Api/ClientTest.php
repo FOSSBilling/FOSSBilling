@@ -112,7 +112,7 @@ test('testGetService', function (): void {
         'order_id' => 1,
     ];
 
-    $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class, ['status' => Model_ClientOrder::STATUS_ACTIVE]);
+    $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class, ['status' => \Box\Mod\Order\Entity\Order::STATUS_ACTIVE]);
     $model = new ServiceHosting();
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class)->shouldIgnoreMissing();
     $orderServiceMock

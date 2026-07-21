@@ -81,7 +81,7 @@ function staffSetEntityId(object $entity, int $id): void
 
 function staffHierarchyBypassAdmin(): Admin
 {
-    $admin = createEntity(Admin::class, ['id' => 99, 'system_name' => Model_Admin::SYSTEM_CRON]);
+    $admin = createEntity(Admin::class, ['id' => 99, 'system_name' => \Box\Mod\Staff\Entity\Admin::SYSTEM_CRON]);
 
     return $admin;
 }
@@ -235,7 +235,7 @@ test('hasPermission does not allow staff without group permissions', function ()
 });
 
 test('hasPermission falls back to cron admin only within cron context', function (): void {
-    $cronAdmin = createEntity(Admin::class, ['system_name' => Model_Admin::SYSTEM_CRON]);
+    $cronAdmin = createEntity(Admin::class, ['system_name' => \Box\Mod\Staff\Entity\Admin::SYSTEM_CRON]);
 
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('getCronAdmin')
@@ -931,22 +931,22 @@ dataset('searchFilters', fn (): array => [
     'empty filters exclude cron by default' => [
         [],
         'system_name != :system_name',
-        [':system_name' => Model_Admin::SYSTEM_CRON],
+        [':system_name' => \Box\Mod\Staff\Entity\Admin::SYSTEM_CRON],
     ],
     'search by keyword' => [
         ['search' => 'keyword'],
         '(name LIKE :name OR email LIKE :email )',
-        [':name' => '%keyword%', ':email' => '%keyword%', ':system_name' => Model_Admin::SYSTEM_CRON],
+        [':name' => '%keyword%', ':email' => '%keyword%', ':system_name' => \Box\Mod\Staff\Entity\Admin::SYSTEM_CRON],
     ],
     'filter by status' => [
         ['status' => 'active'],
         'status = :status',
-        [':status' => 'active', ':system_name' => Model_Admin::SYSTEM_CRON],
+        [':status' => 'active', ':system_name' => \Box\Mod\Staff\Entity\Admin::SYSTEM_CRON],
     ],
     'filter by no_cron' => [
         ['no_cron' => 'true'],
         'system_name != :system_name',
-        [':system_name' => Model_Admin::SYSTEM_CRON],
+        [':system_name' => \Box\Mod\Staff\Entity\Admin::SYSTEM_CRON],
     ],
     'do not filter by false no_cron' => [
         ['no_cron' => 'false'],
@@ -1087,7 +1087,7 @@ test('update updates admin details', function (): void {
 });
 
 test('update rejects deactivating last active super administrator', function (): void {
-    $adminModel = createEntity(Admin::class, ['id' => 3, 'status' => Model_Admin::STATUS_ACTIVE]);
+    $adminModel = createEntity(Admin::class, ['id' => 3, 'status' => \Box\Mod\Staff\Entity\Admin::STATUS_ACTIVE]);
 
     $groupRepository = Mockery::mock(AdminGroupRepository::class);
     $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
@@ -1106,12 +1106,12 @@ test('update rejects deactivating last active super administrator', function ():
     $di['loggedin_admin'] = staffHierarchyBypassAdmin();
     $serviceMock->setDi($di);
 
-    expect(fn () => $serviceMock->update($adminModel, ['status' => Model_Admin::STATUS_INACTIVE]))
+    expect(fn () => $serviceMock->update($adminModel, ['status' => \Box\Mod\Staff\Entity\Admin::STATUS_INACTIVE]))
         ->toThrow(FOSSBilling\InformationException::class, 'Cannot remove the last active super administrator');
 });
 
 test('update rejects deactivating own staff account', function (): void {
-    $adminModel = createEntity(Admin::class, ['id' => 10, 'status' => Model_Admin::STATUS_ACTIVE]);
+    $adminModel = createEntity(Admin::class, ['id' => 10, 'status' => \Box\Mod\Staff\Entity\Admin::STATUS_ACTIVE]);
 
     $eventsMock = Mockery::mock('\Box_EventManager');
     $eventsMock->shouldReceive('fire')->atLeast()->once();
@@ -1125,7 +1125,7 @@ test('update rejects deactivating own staff account', function (): void {
     $di['loggedin_admin'] = staffRegularAdmin();
     $serviceMock->setDi($di);
 
-    expect(fn () => $serviceMock->update($adminModel, ['status' => Model_Admin::STATUS_INACTIVE]))
+    expect(fn () => $serviceMock->update($adminModel, ['status' => \Box\Mod\Staff\Entity\Admin::STATUS_INACTIVE]))
         ->toThrow(FOSSBilling\InformationException::class, 'You cannot deactivate your own staff account');
 });
 
@@ -1163,7 +1163,7 @@ test('delete removes admin account', function (): void {
 });
 
 test('delete rejects removing last active super administrator', function (): void {
-    $adminModel = createEntity(Admin::class, ['id' => 3, 'status' => Model_Admin::STATUS_ACTIVE]);
+    $adminModel = createEntity(Admin::class, ['id' => 3, 'status' => \Box\Mod\Staff\Entity\Admin::STATUS_ACTIVE]);
 
     $groupRepository = Mockery::mock(AdminGroupRepository::class);
     $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
@@ -1183,7 +1183,7 @@ test('delete rejects removing last active super administrator', function (): voi
 });
 
 test('delete rejects cron account', function (): void {
-    $adminModel = createEntity(Admin::class, ['system_name' => Model_Admin::SYSTEM_CRON]);
+    $adminModel = createEntity(Admin::class, ['system_name' => \Box\Mod\Staff\Entity\Admin::SYSTEM_CRON]);
 
     $service = new Service();
 
@@ -1707,7 +1707,7 @@ test('addAdminToGroup is idempotent for existing membership', function (): void 
 });
 
 test('removeAdminFromGroup removes membership', function (): void {
-    $admin = createEntity(Admin::class, ['id' => 3, 'status' => Model_Admin::STATUS_ACTIVE]);
+    $admin = createEntity(Admin::class, ['id' => 3, 'status' => \Box\Mod\Staff\Entity\Admin::STATUS_ACTIVE]);
 
     $group = new AdminGroup();
     staffSetEntityId($group, 2);
@@ -1732,7 +1732,7 @@ test('removeAdminFromGroup removes membership', function (): void {
 });
 
 test('removeAdminFromGroup rejects removing last active super administrator', function (): void {
-    $admin = createEntity(Admin::class, ['id' => 3, 'status' => Model_Admin::STATUS_ACTIVE]);
+    $admin = createEntity(Admin::class, ['id' => 3, 'status' => \Box\Mod\Staff\Entity\Admin::STATUS_ACTIVE]);
 
     $group = (new AdminGroup())->setSystemName(AdminGroup::SYSTEM_SUPER_ADMIN);
     staffSetEntityId($group, 1);

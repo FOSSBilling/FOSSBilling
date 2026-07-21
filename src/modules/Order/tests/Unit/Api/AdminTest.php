@@ -299,7 +299,7 @@ test('renews an order', function (): void {
 
 test('renewing a pending setup order delegates to activate', function (): void {
     $order = createEntity(\Box\Mod\Order\Entity\Order::class);
-    $order->status = Model_ClientOrder::STATUS_PENDING_SETUP;
+    $order->status = \Box\Mod\Order\Entity\Order::STATUS_PENDING_SETUP;
 
     $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
@@ -334,7 +334,7 @@ test('suspends an order', function (): void {
 
 test('unsuspends a suspended order', function (): void {
     $order = createEntity(\Box\Mod\Order\Entity\Order::class);
-    $order->status = Model_ClientOrder::STATUS_SUSPENDED;
+    $order->status = \Box\Mod\Order\Entity\Order::STATUS_SUSPENDED;
 
     $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
@@ -353,7 +353,7 @@ test('unsuspends a suspended order', function (): void {
 
 test('throws exception when unsuspending non-suspended order', function (): void {
     $order = createEntity(\Box\Mod\Order\Entity\Order::class);
-    $order->status = Model_ClientOrder::STATUS_ACTIVE;
+    $order->status = \Box\Mod\Order\Entity\Order::STATUS_ACTIVE;
 
     $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
@@ -432,7 +432,7 @@ test('checks whether an order supports cancellation at period end', function ():
 
 test('uncancels a canceled order', function (): void {
     $order = createEntity(\Box\Mod\Order\Entity\Order::class);
-    $order->status = Model_ClientOrder::STATUS_CANCELED;
+    $order->status = \Box\Mod\Order\Entity\Order::STATUS_CANCELED;
 
     $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
@@ -451,7 +451,7 @@ test('uncancels a canceled order', function (): void {
 
 test('throws exception when uncanceling non-canceled order', function (): void {
     $order = createEntity(\Box\Mod\Order\Entity\Order::class);
-    $order->status = Model_ClientOrder::STATUS_ACTIVE;
+    $order->status = \Box\Mod\Order\Entity\Order::STATUS_ACTIVE;
 
     $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
@@ -626,7 +626,7 @@ test('adds order status history', function (): void {
     $apiMock->setDi($di);
     $apiMock->setService($serviceMock);
 
-    $data = ['status' => Model_ClientOrder::STATUS_ACTIVE];
+    $data = ['status' => \Box\Mod\Order\Entity\Order::STATUS_ACTIVE];
     $result = $apiMock->status_history_add($data);
 
     expect($result)->toBeTrue();
@@ -688,7 +688,7 @@ test('gets addons for an order', function (): void {
 
     $apiMock->setService($serviceMock);
 
-    $data = ['status' => Model_ClientOrder::STATUS_ACTIVE];
+    $data = ['status' => \Box\Mod\Order\Entity\Order::STATUS_ACTIVE];
     $result = $apiMock->addons($data);
 
     expect($result)->toBeArray();

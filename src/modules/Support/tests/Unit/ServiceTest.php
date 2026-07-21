@@ -596,8 +596,7 @@ test('gets active tickets count for order', function (): void {
     $di['em'] = $emMock;
     $service->setDi($di);
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class);
 
     $result = $service->getSupportTicketRepository()->countActiveTicketsForOrder((int) $order->id);
     expect($result)->toBeInt();

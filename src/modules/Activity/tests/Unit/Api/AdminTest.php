@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 use function Tests\Helpers\moduleService;
 
 test('log get list with staff user', function (): void {
@@ -20,7 +21,7 @@ test('log get list with staff user', function (): void {
     $di['pager'] = $paginatorStub;
     $di['mod_service'] = $di->protect(moduleService(['activity' => $serviceStub]));
 
-    $api = new FOSSBilling\Api\Proxy(new Model_Admin());
+    $api = new FOSSBilling\Api\Proxy(createEntity(\Box\Mod\Staff\Entity\Admin::class));
     $api->setDi($di);
     $di['api_admin'] = $api;
 
@@ -51,8 +52,7 @@ test('log get list with staff user', function (): void {
     $expectation3->atLeast()->once();
     $expectation3->andReturn($simpleResultArr);
 
-    $model = new Model_ActivitySystem();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(\Box\Mod\Activity\Entity\ActivitySystem::class);
 
     $di['pager'] = $paginatorMock;
     $activity->setService($serviceMock);
@@ -66,7 +66,7 @@ test('log get list with client user', function (): void {
     $di['pager'] = $paginatorStub;
     $di['mod_service'] = $di->protect(moduleService(['activity' => $serviceStub]));
 
-    $api = new FOSSBilling\Api\Proxy(new Model_Admin());
+    $api = new FOSSBilling\Api\Proxy(createEntity(\Box\Mod\Staff\Entity\Admin::class));
     $api->setDi($di);
     $di['api_admin'] = $api;
 
@@ -97,8 +97,7 @@ test('log get list with client user', function (): void {
     $expectation3->atLeast()->once();
     $expectation3->andReturn($simpleResultArr);
 
-    $model = new Model_ActivitySystem();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(\Box\Mod\Activity\Entity\ActivitySystem::class);
 
     $di['pager'] = $paginatorMock;
     $activity->setService($serviceMock);

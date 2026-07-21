@@ -534,9 +534,9 @@ test('counter returns array', function (): void {
 
     $expected = [
         'total' => 0,
-        Model_Client::ACTIVE => 0,
-        Model_Client::SUSPENDED => 0,
-        Model_Client::CANCELED => 0,
+        \Box\Mod\Client\Entity\Client::ACTIVE => 0,
+        \Box\Mod\Client\Entity\Client::SUSPENDED => 0,
+        \Box\Mod\Client\Entity\Client::CANCELED => 0,
     ];
 });
 

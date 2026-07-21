@@ -55,17 +55,6 @@ function container(): Container
 
         return $session;
     };
-    $di['db'] = static function (): object {
-        $db = \Mockery::mock(\Box_Database::class)->shouldIgnoreMissing();
-        $db->shouldReceive('find')->byDefault()->andReturn([]);
-        $db->shouldReceive('getAll')->byDefault()->andReturn([]);
-        $db->shouldReceive('getAssoc')->byDefault()->andReturn([]);
-        $db->shouldReceive('toArray')->byDefault()->andReturn([]);
-        $db->shouldReceive('exec')->byDefault()->andReturn(1);
-        $db->shouldReceive('transaction')->byDefault()->andReturnUsing(static fn (callable $callback): mixed => $callback());
-
-        return $db;
-    };
     $di['dbal'] = static function (): object {
         $dbal = \Mockery::mock(\Doctrine\DBAL\Connection::class)->shouldIgnoreMissing();
         $result = \Mockery::mock(\Doctrine\DBAL\Result::class)->shouldIgnoreMissing();

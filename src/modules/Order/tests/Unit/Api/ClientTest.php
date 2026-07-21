@@ -97,7 +97,7 @@ test('gets addons', function (): void {
 
     $apiMock->setService($serviceMock);
 
-    $data = ['status' => Model_ClientOrder::STATUS_ACTIVE];
+    $data = ['status' => \Box\Mod\Order\Entity\Order::STATUS_ACTIVE];
     $result = $apiMock->addons($data);
 
     expect($result)->toBeArray();
@@ -105,7 +105,7 @@ test('gets addons', function (): void {
 });
 
 test('gets order service', function (): void {
-    $order = createEntity(\Box\Mod\Order\Entity\Order::class, ['status' => Model_ClientOrder::STATUS_ACTIVE]);
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class, ['status' => \Box\Mod\Order\Entity\Order::STATUS_ACTIVE]);
 
     $apiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
@@ -152,7 +152,7 @@ test('gets upgradables', function (): void {
 });
 
 test('deletes a pending setup order', function (): void {
-    $order = createEntity(\Box\Mod\Order\Entity\Order::class, ['status' => Model_ClientOrder::STATUS_PENDING_SETUP]);
+    $order = createEntity(\Box\Mod\Order\Entity\Order::class, ['status' => \Box\Mod\Order\Entity\Order::STATUS_PENDING_SETUP]);
 
     $apiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();

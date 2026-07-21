@@ -212,7 +212,7 @@ test('resetPassword returns true with new flow', function (): void {
     $eventMock = Mockery::mock('\Box_EventManager');
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
-    $modelClient = createEntity(\Box\Mod\Client\Entity\Client::class, ['id' => 1, 'status' => Model_Client::ACTIVE]);
+    $modelClient = createEntity(\Box\Mod\Client\Entity\Client::class, ['id' => 1, 'status' => \Box\Mod\Client\Entity\Client::ACTIVE]);
 
     $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
     $serviceMock->shouldReceive('createPasswordResetRequestForClient')->atLeast()->once()->andReturn('hashedString');

@@ -34,7 +34,7 @@ function orderServiceCreateProductEntity(?int $id = null, ?string $type = null):
 test('counter returns status counts', function (): void {
     $service = new Service();
 
-    $counter = [Model_ClientOrder::STATUS_ACTIVE => 1];
+    $counter = [\Box\Mod\Order\Entity\Order::STATUS_ACTIVE => 1];
     $connectionMock = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connectionMock->shouldReceive('fetchAllKeyValue')->atLeast()->once()->andReturn($counter);
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
@@ -49,11 +49,11 @@ test('counter returns status counts', function (): void {
     expect($result)->toBeArray();
     expect($result)->toHaveKey('total');
     expect($result['total'])->toEqual(array_sum($counter));
-    expect($result)->toHaveKey(Model_ClientOrder::STATUS_PENDING_SETUP);
-    expect($result)->toHaveKey(Model_ClientOrder::STATUS_FAILED_SETUP);
-    expect($result)->toHaveKey(Model_ClientOrder::STATUS_ACTIVE);
-    expect($result)->toHaveKey(Model_ClientOrder::STATUS_SUSPENDED);
-    expect($result)->toHaveKey(Model_ClientOrder::STATUS_CANCELED);
+    expect($result)->toHaveKey(\Box\Mod\Order\Entity\Order::STATUS_PENDING_SETUP);
+    expect($result)->toHaveKey(\Box\Mod\Order\Entity\Order::STATUS_FAILED_SETUP);
+    expect($result)->toHaveKey(\Box\Mod\Order\Entity\Order::STATUS_ACTIVE);
+    expect($result)->toHaveKey(\Box\Mod\Order\Entity\Order::STATUS_SUSPENDED);
+    expect($result)->toHaveKey(\Box\Mod\Order\Entity\Order::STATUS_CANCELED);
 });
 
 test('onAfterAdminOrderActivate fires template', function (): void {
@@ -778,12 +778,12 @@ test('getSoonExpiringActiveOrdersQuery builds expected SQL and bindings', functi
 
     $expectedBindings = [
         ':client_id' => $randId,
-        ':unpaid_invoice_status' => Model_Invoice::STATUS_UNPAID,
-        ':pending_item_type' => Model_InvoiceItem::TYPE_ORDER,
-        ':pending_item_task' => Model_InvoiceItem::TASK_RENEW,
-        ':pending_item_status' => Model_InvoiceItem::STATUS_EXECUTED,
-        ':pending_invoice_status' => Model_Invoice::STATUS_PAID,
-        ':status' => Model_ClientOrder::STATUS_ACTIVE,
+        ':unpaid_invoice_status' => \Box\Mod\Invoice\Entity\Invoice::STATUS_UNPAID,
+        ':pending_item_type' => \Box\Mod\Invoice\Entity\InvoiceItem::TYPE_ORDER,
+        ':pending_item_task' => \Box\Mod\Invoice\Entity\InvoiceItem::TASK_RENEW,
+        ':pending_item_status' => \Box\Mod\Invoice\Entity\InvoiceItem::STATUS_EXECUTED,
+        ':pending_invoice_status' => \Box\Mod\Invoice\Entity\Invoice::STATUS_PAID,
+        ':status' => \Box\Mod\Order\Entity\Order::STATUS_ACTIVE,
         ':invoice_option' => 'issue-invoice',
         ':days_until_expiration' => $randId,
     ];
@@ -1689,14 +1689,14 @@ test('getMasterOrderForClient returns master order', function (): void {
 
 test('activateOrder throws for non-pending order', function (): void {
     $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
-    $clientOrderModel->status = Model_ClientOrder::STATUS_CANCELED;
+    $clientOrderModel->status = \Box\Mod\Order\Entity\Order::STATUS_CANCELED;
     $clientOrderModel->id = 1;
 
     $orderEntity = new Order();
     $idProp = new ReflectionProperty($orderEntity, 'id');
     $idProp->setValue($orderEntity, 1);
     $statusProp = new ReflectionProperty($orderEntity, 'status');
-    $statusProp->setValue($orderEntity, Model_ClientOrder::STATUS_CANCELED);
+    $statusProp->setValue($orderEntity, \Box\Mod\Order\Entity\Order::STATUS_CANCELED);
 
     $orderRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderRepository::class)->shouldIgnoreMissing();
     $orderRepoMock->shouldReceive('find')->with(1)->andReturn($orderEntity);
@@ -1717,7 +1717,7 @@ test('activateOrder throws for non-pending order', function (): void {
 
 test('activateOrder activates pending order', function (): void {
     $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
-    $clientOrderModel->status = Model_ClientOrder::STATUS_PENDING_SETUP;
+    $clientOrderModel->status = \Box\Mod\Order\Entity\Order::STATUS_PENDING_SETUP;
     $clientOrderModel->group_master = 1;
     $clientOrderModel->id = 1;
 
@@ -1725,7 +1725,7 @@ test('activateOrder activates pending order', function (): void {
     $idProp = new ReflectionProperty($orderEntity, 'id');
     $idProp->setValue($orderEntity, 1);
     $statusProp = new ReflectionProperty($orderEntity, 'status');
-    $statusProp->setValue($orderEntity, Model_ClientOrder::STATUS_PENDING_SETUP);
+    $statusProp->setValue($orderEntity, \Box\Mod\Order\Entity\Order::STATUS_PENDING_SETUP);
 
     $orderRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderRepository::class)->shouldIgnoreMissing();
     $orderRepoMock->shouldReceive('find')->with(1)->andReturn($orderEntity);
@@ -1756,7 +1756,7 @@ test('activateOrder activates pending order', function (): void {
 
 test('activateOrder is a no-op when order was already activated by a stale reference', function (): void {
     $staleOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class, [
-        'status' => Model_ClientOrder::STATUS_PENDING_SETUP,
+        'status' => \Box\Mod\Order\Entity\Order::STATUS_PENDING_SETUP,
         'id' => 1,
     ]);
 
@@ -1764,7 +1764,7 @@ test('activateOrder is a no-op when order was already activated by a stale refer
     $idProp = new ReflectionProperty($activeOrderEntity, 'id');
     $idProp->setValue($activeOrderEntity, 1);
     $statusProp = new ReflectionProperty($activeOrderEntity, 'status');
-    $statusProp->setValue($activeOrderEntity, Model_ClientOrder::STATUS_ACTIVE);
+    $statusProp->setValue($activeOrderEntity, \Box\Mod\Order\Entity\Order::STATUS_ACTIVE);
 
     $orderRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderRepository::class)->shouldIgnoreMissing();
     $orderRepoMock->shouldReceive('find')->with(1)->andReturn($activeOrderEntity);
@@ -1790,7 +1790,7 @@ test('activateOrder is a no-op when order was already activated by a stale refer
 
 test('activateOrder force re-activates an already active order', function (): void {
     $activeOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class, [
-        'status' => Model_ClientOrder::STATUS_ACTIVE,
+        'status' => \Box\Mod\Order\Entity\Order::STATUS_ACTIVE,
         'group_master' => 1,
         'id' => 1,
     ]);
@@ -1799,7 +1799,7 @@ test('activateOrder force re-activates an already active order', function (): vo
     $idProp = new ReflectionProperty($orderEntity, 'id');
     $idProp->setValue($orderEntity, 1);
     $statusProp = new ReflectionProperty($orderEntity, 'status');
-    $statusProp->setValue($orderEntity, Model_ClientOrder::STATUS_ACTIVE);
+    $statusProp->setValue($orderEntity, \Box\Mod\Order\Entity\Order::STATUS_ACTIVE);
 
     $orderRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderRepository::class)->shouldIgnoreMissing();
     $orderRepoMock->shouldReceive('find')->with(1)->andReturn($orderEntity);
@@ -1836,7 +1836,7 @@ test('activateOrderAddons activates addons', function (): void {
     $serviceMock->shouldReceive('createFromOrder')->atLeast()->once()->andReturn([]);
 
     $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
-    $clientOrderModel->status = Model_ClientOrder::STATUS_PENDING_SETUP;
+    $clientOrderModel->status = \Box\Mod\Order\Entity\Order::STATUS_PENDING_SETUP;
     $clientOrderModel->group_master = 1;
 
     $serviceMock->shouldReceive('getOrderAddonsList')
@@ -1966,7 +1966,7 @@ test('updateOrder updates fields', function (): void {
 test('renewOrder renews order', function (): void {
     $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
     $clientOrderModel->group_master = 1;
-    $clientOrderModel->status = Model_ClientOrder::STATUS_PENDING_SETUP;
+    $clientOrderModel->status = \Box\Mod\Order\Entity\Order::STATUS_PENDING_SETUP;
 
     $eventMock = Mockery::mock(Box_EventManager::class);
     $eventMock->shouldReceive('fire')->atLeast()->once();
@@ -2015,13 +2015,13 @@ test('renewFromOrder extends expiration', function (): void {
     $serviceMock->renewFromOrder($clientOrderModel);
 
     expect($clientOrderModel->expires_at)->toEqual(new \DateTime('2027-01-01 00:00:00'));
-    expect($clientOrderModel->status)->toEqual(Model_ClientOrder::STATUS_ACTIVE);
+    expect($clientOrderModel->status)->toEqual(\Box\Mod\Order\Entity\Order::STATUS_ACTIVE);
 });
 
 test('renewFromOrder extends free first term on first paid renewal', function (): void {
     $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
     $clientOrderModel->period = '1Y';
-    $clientOrderModel->status = Model_ClientOrder::STATUS_ACTIVE;
+    $clientOrderModel->status = \Box\Mod\Order\Entity\Order::STATUS_ACTIVE;
     $clientOrderModel->activated_at = '2025-01-01 00:00:00';
     $clientOrderModel->expires_at = '2026-01-01 00:00:00';
 
@@ -2029,7 +2029,7 @@ test('renewFromOrder extends free first term on first paid renewal', function ()
     $serviceMock->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('_callOnService')
         ->once()
-        ->with(Mockery::on(fn ($order): bool => $order === $clientOrderModel), Model_ClientOrder::ACTION_RENEW);
+        ->with(Mockery::on(fn ($order): bool => $order === $clientOrderModel), \Box\Mod\Order\Entity\Order::ACTION_RENEW);
 
     $expectedExpiration = strtotime('2027-01-01 00:00:00');
     $periodMock = Mockery::mock(Box_Period::class);
@@ -2050,12 +2050,12 @@ test('renewFromOrder extends free first term on first paid renewal', function ()
     $serviceMock->renewFromOrder($clientOrderModel);
 
     expect($clientOrderModel->expires_at)->toEqual(new \DateTime('2027-01-01 00:00:00'));
-    expect($clientOrderModel->status)->toEqual(Model_ClientOrder::STATUS_ACTIVE);
+    expect($clientOrderModel->status)->toEqual(\Box\Mod\Order\Entity\Order::STATUS_ACTIVE);
 });
 
 test('suspendFromOrder throws for non-active order', function (): void {
     $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
-    $clientOrderModel->status = Model_ClientOrder::STATUS_SUSPENDED;
+    $clientOrderModel->status = \Box\Mod\Order\Entity\Order::STATUS_SUSPENDED;
 
     $eventMock = Mockery::mock(Box_EventManager::class);
     $eventMock->shouldReceive('fire')->atLeast()->once();
@@ -2072,7 +2072,7 @@ test('suspendFromOrder throws for non-active order', function (): void {
 
 test('suspendFromOrder suspends active order', function (): void {
     $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
-    $clientOrderModel->status = Model_ClientOrder::STATUS_ACTIVE;
+    $clientOrderModel->status = \Box\Mod\Order\Entity\Order::STATUS_ACTIVE;
 
     $eventMock = Mockery::mock(Box_EventManager::class);
     $eventMock->shouldReceive('fire')->atLeast()->once();
@@ -2096,7 +2096,7 @@ test('suspendFromOrder suspends active order', function (): void {
 test('cancelFromOrder cancels linked subscriptions', function (): void {
     $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
     $clientOrderModel->id = 10;
-    $clientOrderModel->status = Model_ClientOrder::STATUS_ACTIVE;
+    $clientOrderModel->status = \Box\Mod\Order\Entity\Order::STATUS_ACTIVE;
 
     $calls = [];
     $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
@@ -2147,14 +2147,14 @@ test('cancelFromOrder cancels linked subscriptions', function (): void {
     $serviceMock->setDi($di);
 
     expect($serviceMock->cancelFromOrder($clientOrderModel, skipEvent: true))->toBeTrue()
-        ->and($clientOrderModel->status)->toBe(Model_ClientOrder::STATUS_CANCELED)
+        ->and($clientOrderModel->status)->toBe(\Box\Mod\Order\Entity\Order::STATUS_CANCELED)
         ->and($calls)->toBe(['service', 'subscriptions']);
 });
 
 test('scheduleCancellationFromOrder keeps the service active', function (): void {
     $order = createEntity(\Box\Mod\Order\Entity\Order::class, [
         'id' => 10,
-        'status' => Model_ClientOrder::STATUS_ACTIVE,
+        'status' => \Box\Mod\Order\Entity\Order::STATUS_ACTIVE,
     ]);
 
     $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
@@ -2178,13 +2178,13 @@ test('scheduleCancellationFromOrder keeps the service active', function (): void
     $service->setDi($di);
 
     expect($service->scheduleCancellationFromOrder($order, 'Customer request'))->toBeTrue()
-        ->and($order->status)->toBe(Model_ClientOrder::STATUS_ACTIVE)
+        ->and($order->status)->toBe(\Box\Mod\Order\Entity\Order::STATUS_ACTIVE)
         ->and($order->reason)->toBe('Customer request');
 });
 
 test('scheduleCancellationFromOrder does not mark the order when no subscription was scheduled', function (): void {
     $order = createEntity(\Box\Mod\Order\Entity\Order::class, [
-        'status' => Model_ClientOrder::STATUS_ACTIVE,
+        'status' => \Box\Mod\Order\Entity\Order::STATUS_ACTIVE,
     ]);
 
     $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
@@ -2204,7 +2204,7 @@ test('scheduleCancellationFromOrder does not mark the order when no subscription
 
 test('cancelFromOrder does not cancel subscriptions when service cancellation fails', function (): void {
     $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
-    $clientOrderModel->status = Model_ClientOrder::STATUS_ACTIVE;
+    $clientOrderModel->status = \Box\Mod\Order\Entity\Order::STATUS_ACTIVE;
 
     $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
     $subscriptionService->shouldNotReceive('cancelForOrder');
@@ -2226,12 +2226,12 @@ test('cancelFromOrder does not cancel subscriptions when service cancellation fa
 
     expect(fn () => $serviceMock->cancelFromOrder($clientOrderModel, skipEvent: true))
         ->toThrow(RuntimeException::class, 'Service cancellation failed')
-        ->and($clientOrderModel->status)->toBe(Model_ClientOrder::STATUS_ACTIVE);
+        ->and($clientOrderModel->status)->toBe(\Box\Mod\Order\Entity\Order::STATUS_ACTIVE);
 });
 
 test('cancelFromOrder remains retryable when subscription cancellation fails', function (): void {
     $clientOrderModel = createEntity(\Box\Mod\Order\Entity\Order::class);
-    $clientOrderModel->status = Model_ClientOrder::STATUS_ACTIVE;
+    $clientOrderModel->status = \Box\Mod\Order\Entity\Order::STATUS_ACTIVE;
 
     $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
     $subscriptionService->shouldReceive('cancelForOrder')
@@ -2254,7 +2254,7 @@ test('cancelFromOrder remains retryable when subscription cancellation fails', f
 
     expect(fn () => $serviceMock->cancelFromOrder($clientOrderModel, skipEvent: true))
         ->toThrow(RuntimeException::class, 'Subscription cancellation failed')
-        ->and($clientOrderModel->status)->toBe(Model_ClientOrder::STATUS_ACTIVE);
+        ->and($clientOrderModel->status)->toBe(\Box\Mod\Order\Entity\Order::STATUS_ACTIVE);
 });
 
 test('rmByClient removes all client orders', function (): void {
