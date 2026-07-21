@@ -33,8 +33,8 @@ if ((bool) ($config['debug_and_monitoring']['debug'] ?? false)) {
     // PDO collector
     $pdoCollector = new DebugBar\DataCollector\PDO\PDOCollector();
 
-    // RedBean
-    $pdoCollector->addConnection($di['pdo'], 'RedBeanPHP');
+    // PDO
+    $pdoCollector->addConnection($di['pdo'], 'PDO');
 
     // Doctrine
     $connection = $di['em']->getConnection();

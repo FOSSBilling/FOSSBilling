@@ -24,17 +24,9 @@ final readonly class Identity
     {
         $class = $identity::class;
 
-        // Legacy RedBeanPHP model classes (deprecated, kept for backward compatibility)
-        if (str_starts_with($class, 'Model_')) {
-            return str_replace('model_', '', strtolower($class));
-        }
-
-        // Doctrine entity classes — extract the short name (e.g. Client, Admin, Guest)
         $ref = new \ReflectionClass($class);
         $shortName = $ref->getShortName();
 
-        // Handle entity proxy classes (e.g. Tests\Helpers\EntityProxy_xxx) by
-        // falling back to the parent class short name.
         if (str_starts_with($shortName, 'EntityProxy_') && $parent = $ref->getParentClass()) {
             $shortName = $parent->getShortName();
         }

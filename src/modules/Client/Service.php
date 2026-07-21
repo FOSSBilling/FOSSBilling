@@ -855,8 +855,7 @@ class Service implements InjectionAwareInterface
         $service = $this->di['mod_service']('Client', 'Balance');
         $service->rmByClient($model);
 
-        $table = $this->di['table']('ActivityClientHistory');
-        $table->rmByClient($model);
+        $this->di['em']->getConnection()->executeStatement('DELETE FROM activity_client_history WHERE client_id = :id', ['id' => $model->id]);
 
         $service = $this->di['mod_service']('Email');
         $service->rmByClient($model);

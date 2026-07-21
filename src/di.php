@@ -19,7 +19,6 @@ use FOSSBilling\Http\RequestFactory;
 use FOSSBilling\Security\AuthenticationRequiredException;
 use FOSSBilling\Security\EmailValidationRequiredException;
 use FOSSBilling\Version;
-use RedBeanPHP\Facade;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -112,43 +111,6 @@ $di['pdo'] = function () {
     }
 
     return new DebugBar\DataCollector\PDO\TraceablePDO($pdo);
-};
-
-/*
- *
- * @param void
- *
- * @return \Box_Database The new Box_Database object that was just created.
- */
-$di['db'] = function () use ($di) {
-    $pdo = $di->offsetGet('pdo');
-    if (!$pdo instanceof PDO) {
-        throw new RuntimeException('PDO service must resolve to a PDO instance');
-    }
-
-    RedBeanPHP\R::setup($pdo);
-    RedBeanPHP\Util\DispenseHelper::setEnforceNamingPolicy(false);
-
-    // SECURITY: bind string literals as PARAM_STR, not PARAM_INT. Without
-    // this, ?hash=107 in /api/guest/invoice/get resolves to the invoice
-    // whose hash starts with '107' because MySQL coerces VARCHAR against
-    // int to a leading-digits match. Do not remove; see RedBeanBindingTest.
-    /* @phpstan-ignore-next-line Adapter::getDatabase() returns the abstract Driver; the concrete RPDO implements setUseStringOnlyBinding. */
-    Facade::getDatabaseAdapter()->getDatabase()->setUseStringOnlyBinding(true);
-
-    $helper = new Box_BeanHelper();
-    $helper->setDi($di);
-
-    $mapper = new Facade();
-    $mapper->getRedBean()->setBeanHelper($helper);
-    $freeze = Config::getProperty('db.freeze', true);
-    $mapper->freeze($freeze);
-
-    $db = new Box_Database();
-    $db->setDi($di);
-    $db->setDataMapper($mapper);
-
-    return $db;
 };
 
 /*
@@ -671,21 +633,6 @@ $di['cart'] = function () use ($di) {
     return $service->getSessionCart();
 };
 
-/*
- * Creates a new table object and returns it.
- *
- * @param string $name The name of the table to create.
- *
- * @return \Box_Table The new table object that was just created.
- */
-$di['table'] = $di->protect(function ($name) use ($di) {
-    $tools = new FOSSBilling\Tools();
-    $tools->setDi($di);
-    $table = $tools->getTable($name);
-    $table->setDi($di);
-
-    return $table;
-});
 
 /*
  * @param void

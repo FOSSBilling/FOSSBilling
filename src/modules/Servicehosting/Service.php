@@ -751,7 +751,7 @@ class Service implements InjectionAwareInterface
             'reseller' => $account['reseller'],
         ];
 
-        if ($identity instanceof \Model_Admin) {
+        if ($identity instanceof Admin) {
             $result['ip'] = $account['ip'];
             $result['username'] = $account['username'];
             $result['created_at'] = $account['created_at'];

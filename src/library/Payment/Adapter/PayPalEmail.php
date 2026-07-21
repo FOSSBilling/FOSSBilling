@@ -9,6 +9,7 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
+use Box\Mod\Invoice\Entity\Transaction;
 use FOSSBilling\Environment;
 use Pimple\Container;
 
@@ -120,12 +121,12 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
             case 'subscr_payment':
                 if ($ipn['payment_status'] == 'Completed') {
                     // Skip only if we've already processed a Completed payment for this transaction
-                    if (isset($tx['status'], $tx['txn_status']) && $tx['status'] === Model_Transaction::STATUS_PROCESSED && $tx['txn_status'] === 'Completed') {
+                    if (isset($tx['status'], $tx['txn_status']) && $tx['status'] === Transaction::STATUS_PROCESSED && $tx['txn_status'] === 'Completed') {
                         $d = [
                             'id' => $id,
                             'error' => '',
                             'error_code' => null,
-                            'status' => Model_Transaction::STATUS_PROCESSED,
+                            'status' => Transaction::STATUS_PROCESSED,
                             'updated_at' => date('Y-m-d H:i:s'),
                         ];
                         $api_admin->invoice_transaction_update($d);
@@ -142,7 +143,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                     $api_admin->invoice_transaction_update([
                         'id' => $id,
                         'txn_status' => (string) ($ipn['payment_status'] ?? ''),
-                        'status' => Model_Transaction::STATUS_RECEIVED,
+                        'status' => Transaction::STATUS_RECEIVED,
                         'error' => sprintf('PayPal payment not completed: %s', (string) ($ipn['payment_status'] ?? 'unknown')),
                         'updated_at' => date('Y-m-d H:i:s'),
                     ]);
@@ -273,7 +274,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
             'id' => $id,
             'error' => '',
             'error_code' => null,
-            'status' => Model_Transaction::STATUS_PROCESSED,
+            'status' => Transaction::STATUS_PROCESSED,
             'updated_at' => date('Y-m-d H:i:s'),
         ];
         $api_admin->invoice_transaction_update($d);

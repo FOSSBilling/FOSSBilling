@@ -153,18 +153,6 @@ class Tools
         return $result;
     }
 
-    public function getTable($type)
-    {
-        $class = 'Model_' . ucfirst((string) $type) . 'Table';
-        $file = Path::join(PATH_LIBRARY, 'Model', "{$type}Table.php");
-        if (!$this->filesystem->exists($file)) {
-            throw new Exception('Service class :class was not found in :path', [':class' => $class, ':path' => $file]);
-        }
-        require_once $file;
-
-        return new $class();
-    }
-
     /**
      * @return mixed[]
      */

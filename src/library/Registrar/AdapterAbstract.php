@@ -22,7 +22,7 @@ abstract class Registrar_AdapterAbstract
     /**
      * Related order.
      */
-    protected ?Model_ClientOrder $_order = null;
+    protected ?\Box\Mod\Order\Entity\Order $_order = null;
 
     /**
      * Return array with configuration.
@@ -240,7 +240,7 @@ abstract class Registrar_AdapterAbstract
     /**
      * Sets the order related to the domain.
      */
-    public function setOrder(Model_ClientOrder $order): static
+    public function setOrder(\Box\Mod\Order\Entity\Order $order): static
     {
         $this->_order = $order;
 
