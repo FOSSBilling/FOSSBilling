@@ -154,7 +154,6 @@ abstract class Server_Manager
     {
         if (!$this->_log instanceof Box_Log) {
             $log = new Box_Log();
-            $log->addWriter(new Box_LogDb('Model_ActivitySystem'));
 
             return $log;
         }
