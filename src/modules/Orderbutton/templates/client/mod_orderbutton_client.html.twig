@@ -214,14 +214,14 @@
 
                             {% set custom_fields = guest.client_custom_fields %}
                             {% for field_name, field in custom_fields %}
-                                {% if field.active %}
+                                {% if field.active|default(false) %}
                                     <div class="row">
                                         <div class="form-floating col-md-7 mb-3">
                                             <input class="form-control form-control-sm" type="text" name="{{ field_name }}" id="{{ field_name }}"
-                                                   value="{{ request.(field_name) }}"
-                                                   {% if field.required %}required="required"{% endif %}
+                                                   value="{{ request.(field_name)|default('') }}"
+                                                   {% if field.required|default(false) %}required="required"{% endif %}
                                                    placeholder="{{ field_name|capitalize }}">
-                                            <label class="ms-2" for="{{ field_name }}">{% if field.title is not empty %}{{ field.title }}{% else %} {{ field_name|capitalize }} {% endif %}</label>
+                                            <label class="ms-2" for="{{ field_name }}">{% if field.title|default('') is not empty %}{{ field.title }}{% else %} {{ field_name|capitalize }} {% endif %}</label>
                                         </div>
                                     </div>
                                 {% endif %}

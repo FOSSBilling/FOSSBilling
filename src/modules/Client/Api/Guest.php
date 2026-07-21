@@ -308,8 +308,19 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     {
         $config = $this->getDi()['mod_config']('client');
         $customFields = $config['custom_fields'] ?? [];
+        $customFields = is_array($customFields) ? $customFields : [];
 
-        uasort($customFields, fn ($a, $b): int => strnatcasecmp((string) ($a['title'] ?? ''), (string) ($b['title'] ?? '')));
+        foreach ($customFields as $fieldName => $field) {
+            $field = is_array($field) ? $field : [];
+            $title = $field['title'] ?? '';
+
+            $field['title'] = is_scalar($title) ? (string) $title : '';
+            $field['active'] = Tools::normalizeBoolean($field['active'] ?? false);
+            $field['required'] = Tools::normalizeBoolean($field['required'] ?? false);
+            $customFields[$fieldName] = $field;
+        }
+
+        uasort($customFields, fn ($a, $b): int => strnatcasecmp($a['title'], $b['title']));
 
         return $customFields;
     }

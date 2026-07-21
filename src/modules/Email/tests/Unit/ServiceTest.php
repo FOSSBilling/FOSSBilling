@@ -241,8 +241,12 @@ test('getVars supplies preview variables for support and staff templates before 
 
     $supportVars = $service->getVars(emailTemplate('mod_support_ticket_staff_open'));
     expect($supportVars)
-        ->toHaveKeys(['c.email', 'ticket.subject', 'ticket.client.first_name', 'ticket.messages.0.content'])
-        ->not->toHaveKeys(['ticket.priority', 'ticket.client.email', 'ticket.messages.0.author.email']);
+        ->toHaveKeys(['c.email', 'ticket.subject', 'ticket.priority', 'ticket.client.first_name', 'ticket.messages.0.content'])
+        ->not->toHaveKeys(['ticket.client.email', 'ticket.messages.0.author.email']);
+
+    foreach (['mod_support_ticket_staff_open', 'mod_support_ticket_staff_close', 'mod_support_ticket_staff_reply'] as $actionCode) {
+        expect($service->getVars(emailTemplate($actionCode))['ticket']['priority'])->toBe(100);
+    }
 
     $staffVars = $service->getVars(emailTemplate('mod_staff_ticket_open'));
     expect($staffVars)
