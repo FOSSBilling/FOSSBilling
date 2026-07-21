@@ -350,6 +350,14 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         foreach ($allowedFields as $field) {
             $client->{$field} = $data[$field] ?? $client->{$field};
         }
+
+        // The admin client form submits the group as `group_id` (see the
+        // documented @optional param above), but the allow-list only applies
+        // `client_group_id`, so the selection was never saved. Map it here.
+        if (array_key_exists('group_id', $data)) {
+            $client->client_group_id = empty($data['group_id']) ? null : (int) $data['group_id'];
+        }
+
         if (array_key_exists('billing_email', $data)) {
             $client->billing_email = $data['billing_email'];
         }
