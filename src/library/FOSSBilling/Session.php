@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -142,31 +142,37 @@ class Session implements InjectionAwareInterface
         }
         $maxAge = time() - Config::getProperty('security.session_lifespan', 7200);
 
-        $fingerprint = new Fingerprint($this->di['request']);
-        /** @var \RedBeanPHP\OODBBean $session */
-        $session = $this->di['db']->findOne('session', 'id = :id', [':id' => $sessionID]);
+        $connection = $this->di['dbal'];
+        $session = $connection->fetchAssociative('SELECT fingerprint, created_at FROM session WHERE id = :id', ['id' => $sessionID]);
 
-        if (empty($session->fingerprint)) {
+        if ($session === false || empty($session['fingerprint'])) {
             return;
         }
 
-        if (empty($session->created_at)) {
-            $session->created_at = time();
-            $this->di['db']->store($session);
+        if (empty($session['created_at'])) {
+            $createdAt = time();
+            $connection->executeStatement('UPDATE session SET created_at = :created_at WHERE id = :id', [
+                'created_at' => $createdAt,
+                'id' => $sessionID,
+            ]);
+            $session['created_at'] = $createdAt;
         }
 
-        $storedFingerprint = json_decode($session->fingerprint ?? '', true);
-        if (!$fingerprint->checkFingerprint($storedFingerprint) && Config::getProperty('security.perform_session_fingerprinting', true)) {
-            $invalid = true;
-            error_log("Session ID $sessionID has potentially been hijacked as it failed the fingerprint check. The session has automatically been destroyed.");
+        if (Config::getProperty('security.perform_session_fingerprinting', true)) {
+            $fingerprint = new Fingerprint($this->di['request']);
+            $storedFingerprint = json_decode((string) $session['fingerprint'], true);
+            if (!is_array($storedFingerprint) || !$fingerprint->checkFingerprint($storedFingerprint)) {
+                $invalid = true;
+                error_log("Session ID $sessionID has potentially been hijacked as it failed the fingerprint check. The session has automatically been destroyed.");
+            }
         }
 
-        if ($session->created_at <= $maxAge) {
+        if ((int) $session['created_at'] <= $maxAge) {
             $invalid = true;
         }
 
         if ($invalid) {
-            $this->di['db']->trash($session);
+            $connection->executeStatement('DELETE FROM session WHERE id = :id', ['id' => $sessionID]);
             $cookieParams = session_get_cookie_params();
             $cookieOptions = [
                 'expires' => time() - 3600,
@@ -176,8 +182,10 @@ class Session implements InjectionAwareInterface
                 'httponly' => $cookieParams['httponly'],
             ];
             $cookieOptions['samesite'] = $cookieParams['samesite'];
-            setcookie($sessionName, '', $cookieOptions);
-            unset($_COOKIE[$sessionName]);
+            if ($sessionName !== false) {
+                setcookie($sessionName, '', $cookieOptions);
+                unset($_COOKIE[$sessionName]);
+            }
         }
     }
 
@@ -196,19 +204,21 @@ class Session implements InjectionAwareInterface
             return;
         }
 
-        $session = $this->di['db']->findOne('session', 'id = :id', [':id' => $sessionID]);
-        $fingerprint = new Fingerprint($this->di['request']);
+        $connection = $this->di['dbal'];
+        $session = $connection->fetchAssociative('SELECT id FROM session WHERE id = :id', ['id' => $sessionID]);
 
         if (Config::getProperty('security.perform_session_fingerprinting', true)) {
-            $updatedFingerprint = $fingerprint->fingerprint();
+            $updatedFingerprint = (new Fingerprint($this->di['request']))->fingerprint();
         } else {
             $updatedFingerprint = [];
         }
 
         // Fix for the installer which temporarily uses FS sessions before FOSSBilling is completely setup.
-        if (!is_null($session)) {
-            $session->fingerprint = json_encode($updatedFingerprint);
-            $this->di['db']->store($session);
+        if ($session !== false) {
+            $connection->executeStatement('UPDATE session SET fingerprint = :fingerprint WHERE id = :id', [
+                'fingerprint' => json_encode($updatedFingerprint, JSON_THROW_ON_ERROR),
+                'id' => $sessionID,
+            ]);
         }
     }
 
