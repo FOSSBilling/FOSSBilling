@@ -204,6 +204,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'id' => 1,
             'subject' => 'Example support ticket',
             'status' => 'open',
+            'priority' => 100,
             'created_at' => '',
             'updated_at' => '',
             'replies' => 0,
@@ -229,7 +230,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'messages' => [$message],
         ];
         $staffTicket = $ticket;
-        $staffTicket['priority'] = 100;
         $staffTicket['client'] = $client;
 
         return match ($actionCode) {
