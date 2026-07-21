@@ -102,7 +102,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         }
 
         if ($result !== false) {
-            return $app->render('mod_client_set_new_password');
+            return $app->render('mod_client_set_new_password', ['hash' => $hash]);
         }
 
         return $app->redirect('/');
