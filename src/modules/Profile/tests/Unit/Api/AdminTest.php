@@ -34,15 +34,15 @@ test('gets admin profile', function (): void {
     $adminApi->setService($service);
     $result = $adminApi->get();
     $expected = [
-        'id' => $model->id,
-        'email' => $model->email,
-        'name' => $model->name,
-        'signature' => $model->signature,
-        'status' => $model->status,
-        'api_token' => null,
-        'timezone' => null,
-        'created_at' => $model->created_at,
-        'updated_at' => $model->updated_at,
+        'id' => $model->getId(),
+        'email' => $model->getEmail(),
+        'name' => $model->getName(),
+        'signature' => $model->getSignature(),
+        'status' => $model->getStatus(),
+        'api_token' => $model->getApiToken(),
+        'timezone' => $model->getTimezone(),
+        'created_at' => $model->getCreatedAt()?->format('Y-m-d'),
+        'updated_at' => $model->getUpdatedAt()?->format('Y-m-d'),
     ];
     expect($result)->toBe($expected);
 });

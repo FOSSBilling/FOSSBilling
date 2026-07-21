@@ -100,8 +100,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $result = $service->toSessionArray($client);
 
         $session = $this->getDi()['session'];
-        $session->set('client_id', $client->id);
-        $this->getDi()['logger']->info('Logged in as client #%s', $client->id);
+        $session->set('client_id', $client->getId());
+        $this->getDi()['logger']->info('Logged in as client #%s', $client->getId());
 
         return $result;
     }
@@ -298,24 +298,24 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $currency = $data['currency'] ?? null;
         if ($currency && $service->canChangeCurrency($client, $currency)) {
-            $client->currency = $currency;
+            $client->setCurrency($currency);
         }
 
         $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminClientUpdate', 'params' => $data]);
 
         // Special handling for the phone country codes
-        $phoneCountryCode = $data['phone_cc'] ?? $client->phone_cc;
+        $phoneCountryCode = $data['phone_cc'] ?? $client->getPhoneCc();
         if (!empty($phoneCountryCode)) {
-            $client->phone_cc = Tools::validatePhoneCC($phoneCountryCode);
+            $client->setPhoneCc((string) Tools::validatePhoneCC($phoneCountryCode));
         }
 
         // Special handling for the phone number itself
-        $phone = $data['phone'] ?? $client->phone;
+        $phone = $data['phone'] ?? $client->getPhone();
         if (!empty($phone) && is_string($phone)) {
-            $client->phone = Tools::validatePhoneNumber($phone);
+            $client->setPhone(Tools::validatePhoneNumber($phone));
         }
 
-        $previousStatus = $client->status;
+        $previousStatus = $client->getStatus();
 
         if (!empty($data['country']) && !Countries::exists($data['country'])) {
             throw new InformationException('Invalid country code: :code', [':code' => $data['country']]);
@@ -329,41 +329,93 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             throw new InformationException('Invalid timezone: :tz', [':tz' => $data['timezone']]);
         }
 
-        $allowedFields = [
-            'email', 'first_name', 'last_name', 'aid', 'gender', 'birthday',
-            'company', 'company_vat', 'address_1', 'address_2',
-            'notes', 'country', 'postcode', 'state', 'city',
-            'status', 'email_approved', 'tax_exempt', 'created_at',
-            'custom_1', 'custom_2', 'custom_3', 'custom_4', 'custom_5',
-            'custom_6', 'custom_7', 'custom_8', 'custom_9', 'custom_10',
-            'custom_11', 'custom_12', 'custom_13', 'custom_14', 'custom_15',
-            'custom_16', 'custom_17', 'custom_18', 'custom_19', 'custom_20',
-            'client_group_id', 'company_number', 'type', 'lang', 'timezone',
+        $simpleFields = [
+            'email' => 'setEmail',
+            'first_name' => 'setFirstName',
+            'last_name' => 'setLastName',
+            'aid' => 'setAid',
+            'gender' => 'setGender',
+            'company' => 'setCompany',
+            'company_vat' => 'setCompanyVat',
+            'address_1' => 'setAddress1',
+            'address_2' => 'setAddress2',
+            'notes' => 'setNotes',
+            'country' => 'setCountry',
+            'postcode' => 'setPostcode',
+            'state' => 'setState',
+            'city' => 'setCity',
+            'status' => 'setStatus',
+            'client_group_id' => 'setClientGroupId',
+            'company_number' => 'setCompanyNumber',
+            'type' => 'setType',
+            'lang' => 'setLang',
+            'timezone' => 'setTimezone',
+            'custom_1' => 'setCustom1',
+            'custom_2' => 'setCustom2',
+            'custom_3' => 'setCustom3',
+            'custom_4' => 'setCustom4',
+            'custom_5' => 'setCustom5',
+            'custom_6' => 'setCustom6',
+            'custom_7' => 'setCustom7',
+            'custom_8' => 'setCustom8',
+            'custom_9' => 'setCustom9',
+            'custom_10' => 'setCustom10',
+            'custom_11' => 'setCustom11',
+            'custom_12' => 'setCustom12',
+            'custom_13' => 'setCustom13',
+            'custom_14' => 'setCustom14',
+            'custom_15' => 'setCustom15',
+            'custom_16' => 'setCustom16',
+            'custom_17' => 'setCustom17',
+            'custom_18' => 'setCustom18',
+            'custom_19' => 'setCustom19',
+            'custom_20' => 'setCustom20',
         ];
 
-        foreach ($allowedFields as $field) {
-            $client->{$field} = $data[$field] ?? $client->{$field};
+        foreach ($simpleFields as $field => $setter) {
+            if (array_key_exists($field, $data)) {
+                $client->{$setter}($data[$field]);
+            }
         }
+
+        if (array_key_exists('email_approved', $data)) {
+            $client->setEmailApproved((bool) $data['email_approved']);
+        }
+
+        if (array_key_exists('tax_exempt', $data)) {
+            $client->setTaxExempt((bool) $data['tax_exempt']);
+        }
+
+        if (array_key_exists('birthday', $data) && $data['birthday'] !== null && $data['birthday'] !== '') {
+            $client->setBirthday(new \DateTime($data['birthday']));
+        } elseif (array_key_exists('birthday', $data)) {
+            $client->setBirthday(null);
+        }
+
+        if (array_key_exists('created_at', $data) && $data['created_at'] !== null && $data['created_at'] !== '') {
+            $client->setCreatedAt(new \DateTime($data['created_at']));
+        } elseif (array_key_exists('created_at', $data)) {
+            $client->setCreatedAt(null);
+        }
+
         if (array_key_exists('billing_email', $data)) {
-            $client->billing_email = $data['billing_email'];
+            $client->setBillingEmail($data['billing_email']);
         }
 
-        if ($client->status !== Client::ACTIVE) {
-            $client->api_token = null;
+        if ($client->getStatus() !== Client::ACTIVE) {
+            $client->setApiToken(null);
         }
-
-        $client->updated_at = date('Y-m-d H:i:s');
 
         $this->getDi()['em']->persist($client);
 
-        if ($client->status !== Client::ACTIVE && $previousStatus === Client::ACTIVE) {
+        if ($client->getStatus() !== Client::ACTIVE && $previousStatus === Client::ACTIVE) {
             $profileService = $this->getDi()['mod_service']('profile');
-            $profileService->invalidateSessions('client', (int) $client->id);
+            $profileService->invalidateSessions('client', (int) $client->getId());
         }
 
-        $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminClientUpdate', 'params' => ['id' => $client->id]]);
+        $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminClientUpdate', 'params' => ['id' => $client->getId()]]);
 
-        $this->getDi()['logger']->info('Updated client #%s profile', $client->id);
+        $this->getDi()['logger']->info('Updated client #%s profile', $client->getId());
 
         return true;
     }
@@ -382,18 +434,17 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $client = $this->getDi()['em']->getRepository(Client::class)->find($data['id']) ?? throw new InformationException('Client not found');
 
-        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminClientPasswordChange', 'params' => ['id' => $client->id]]);
+        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminClientPasswordChange', 'params' => ['id' => $client->getId()]]);
 
-        $client->pass = $this->getDi()['password']->hashIt($data['password']);
-        $client->updated_at = date('Y-m-d H:i:s');
+        $client->setPass($this->getDi()['password']->hashIt($data['password']));
         $this->getDi()['em']->persist($client);
 
         $profileService = $this->getDi()['mod_service']('profile');
         $profileService->invalidateSessions('client', (int) $data['id']);
 
-        $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminClientPasswordChange', 'params' => ['id' => $client->id]]);
+        $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminClientPasswordChange', 'params' => ['id' => $client->getId()]]);
 
-        $this->getDi()['logger']->info('Changed client #%s password', $client->id);
+        $this->getDi()['logger']->info('Changed client #%s password', $client->getId());
 
         return true;
     }

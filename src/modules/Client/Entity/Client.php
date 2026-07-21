@@ -870,9 +870,23 @@ class Client implements ApiArrayInterface
         return $this->createdAt;
     }
 
+    public function setCreatedAt(?\DateTime $createdAt): self
+    {
+        $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
     public function getUpdatedAt(): ?\DateTime
     {
         return $this->updatedAt;
+    }
+
+    public function setUpdatedAt(?\DateTime $updatedAt): self
+    {
+        $this->updatedAt = $updatedAt;
+
+        return $this;
     }
 
     public function toApiArray(\Box\Mod\Staff\Entity\Admin|Client|\FOSSBilling\Identity\Guest|null $identity = null): array

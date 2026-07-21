@@ -51,10 +51,10 @@ $di['logger'] = function () use ($di) {
 
     if ($di['auth']->isAdminLoggedIn()) {
         $admin = $di['loggedin_admin'];
-        $log->setEventItem('admin_id', $admin->id);
+        $log->setEventItem('admin_id', $admin->getId());
     } elseif ($di['auth']->isClientLoggedIn()) {
         $client = $di['loggedin_client'];
-        $log->setEventItem('client_id', $client->id);
+        $log->setEventItem('client_id', $client->getId());
     }
 
     $monolog = new FOSSBilling\Monolog();

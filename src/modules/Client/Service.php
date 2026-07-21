@@ -643,7 +643,7 @@ class Service implements InjectionAwareInterface
 
         $phoneCC = $data['phone_cc'] ?? null;
         if (!empty($phoneCC)) {
-            $client->setPhoneCc(Tools::validatePhoneCC($phoneCC));
+            $client->setPhoneCc((string) Tools::validatePhoneCC($phoneCC));
         }
 
         $phone = $data['phone'] ?? null;
