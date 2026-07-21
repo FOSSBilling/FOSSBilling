@@ -1023,7 +1023,7 @@ test('getCronAdmin creates and returns new cron admin', function (): void {
     expect($result)->toBeInstanceOf(Admin::class);
 });
 
-test('toModel_AdminApiArray returns admin array data', function (): void {
+test('toAdminApiArray returns admin array data', function (): void {
     $adminModel = createEntity(Admin::class);
 
     $expected =
@@ -1043,7 +1043,7 @@ test('toModel_AdminApiArray returns admin array data', function (): void {
 
     $service = new Service();
     $service->setDi($di);
-    $result = $service->toModel_AdminApiArray($adminModel);
+    $result = $service->toAdminApiArray($adminModel);
 
     expect($result)->not->toBeEmpty();
     expect($result)->toBeArray();

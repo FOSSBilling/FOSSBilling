@@ -470,19 +470,7 @@ class Service implements InjectionAwareInterface
         return $cron;
     }
 
-    public function toAdminApiArray(Admin $admin): array
-    {
-        $data = $admin->toApiArray();
-
-        $data['groups'] = array_map(
-            static fn (AdminGroup $group): array => $group->toApiArray(),
-            $this->adminGroupMemberRepository->findGroupsForAdmin((int) $admin->getId()),
-        );
-
-        return $data;
-    }
-
-    public function toModel_AdminApiArray(Admin $model, $deep = false): array
+    public function toAdminApiArray(Admin $model): array
     {
         $admin = $this->adminRepository->find((int) $model->id);
 
@@ -501,7 +489,14 @@ class Service implements InjectionAwareInterface
             ];
         }
 
-        return $this->toAdminApiArray($admin);
+        $data = $admin->toApiArray();
+
+        $data['groups'] = array_map(
+            static fn (AdminGroup $group): array => $group->toApiArray(),
+            $this->adminGroupMemberRepository->findGroupsForAdmin((int) $admin->getId()),
+        );
+
+        return $data;
     }
 
     public function update(Admin $model, $data): bool

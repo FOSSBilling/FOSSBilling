@@ -563,7 +563,7 @@ test('clientAlreadyExists returns true when client exists', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('getByLoginDetails returns Model_Client', function (): void {
+test('getByLoginDetails returns Client', function (): void {
     $service = new Box\Mod\Client\Service();
     $model = createEntity(\Box\Mod\Client\Entity\Client::class);
 
@@ -589,7 +589,7 @@ dataset('getProvider', [
     ['email', 'test@email.com'],
 ]);
 
-test('get returns Model_Client', function ($fieldName, $fieldValue): void {
+test('get returns Client', function ($fieldName, $fieldValue): void {
     $service = new Box\Mod\Client\Service();
 
     $di = container();
@@ -789,7 +789,7 @@ test('authorizeClient returns null when email not found', function (): void {
     expect($result)->toBeNull();
 });
 
-test('authorizeClient returns Model_Client', function (): void {
+test('authorizeClient returns Client', function (): void {
     $service = new Box\Mod\Client\Service();
     $email = 'example@fossbilling.vm';
     $password = '123456';
@@ -821,7 +821,7 @@ test('authorizeClient returns Model_Client', function (): void {
     expect($result)->toBeInstanceOf(\Box\Mod\Client\Entity\Client::class);
 });
 
-test('authorizeClient with confirmed email returns Model_Client', function (): void {
+test('authorizeClient with confirmed email returns Client', function (): void {
     $service = new Box\Mod\Client\Service();
     $email = 'example@fossbilling.vm';
     $password = '123456';

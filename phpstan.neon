@@ -14,16 +14,10 @@ parameters:
 	excludePaths:
 		analyse:
 		- src/vendor
-		- src/library/Model/Admin.php
-		- src/library/Model/Client.php
-		- src/library/Model/ServiceLicense.php
 		- src/library/Server/Manager/Custom.php
 		- src/library/Server/Manager/Whm.php
 		- src/data/cache (?)
 		- '*/tests/*'
-	universalObjectCratesClasses:
-		- RedBeanPHP\SimpleModel
-		- RedBeanPHP\OODBBean
 	ignoreErrors:
 		- '#^Function __trans not found\.$#'
 		- '#^Function __pluralTrans not found\.$#'

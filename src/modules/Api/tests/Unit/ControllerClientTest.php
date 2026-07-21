@@ -23,20 +23,6 @@ function createControllerDiWithRequest(): Pimple\Container
     return $di;
 }
 
-function buildAdminModel(int $id, string $apiToken, ?string $systemName = null): Model_Admin
-{
-    $admin = createEntity(\Box\Mod\Staff\Entity\Admin::class);
-    $bean = new stdClass();
-    $bean->id = $id;
-    $bean->api_token = $apiToken;
-    $bean->system_name = $systemName;
-    $bean->status = 'active';
-
-    $property = new ReflectionProperty(RedBeanPHP\SimpleModel::class, 'bean');
-    $property->setValue($admin, $bean);
-
-    return $admin;
-}
 
 readonly class CronStaffServiceDouble
 {

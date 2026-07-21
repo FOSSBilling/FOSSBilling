@@ -14,9 +14,8 @@ namespace FOSSBilling\Enums;
 /**
  * Canonical client lifecycle status.
  *
- * The underlying string values must match the existing RedBean `client.status`
- * column values and the `Model_Client::ACTIVE/SUSPENDED/CANCELED` constants
- * so the enum is interchangeable with the legacy code paths.
+ * The underlying string values must match the existing `client.status`
+ * column values so the enum is interchangeable with legacy code paths.
  */
 enum ClientStatusEnum: string
 {

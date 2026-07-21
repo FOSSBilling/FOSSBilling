@@ -14,9 +14,8 @@ namespace FOSSBilling\Enums;
 /**
  * Canonical client order lifecycle status.
  *
- * The underlying string values must match the existing RedBean `client_order.status`
- * column values and the `Model_ClientOrder::STATUS_*` constants so the enum is
- * interchangeable with the legacy code paths.
+ * The underlying string values must match the existing `client_order.status`
+ * column values so the enum is interchangeable with legacy code paths.
  */
 enum ClientOrderStatusEnum: string
 {

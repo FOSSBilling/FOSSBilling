@@ -24,7 +24,7 @@ use function Tests\Helpers\createEntity;
 
 class ServicedomainServiceSyncProbe extends Service
 {
-    public function syncWhoisPublic(ServiceDomain|Model_ServiceDomain $model, Order $order): void
+    public function syncWhoisPublic(ServiceDomain $model, Order $order): void
     {
         $this->syncWhois($model, $order);
     }

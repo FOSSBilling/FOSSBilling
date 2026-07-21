@@ -346,7 +346,7 @@ class Service implements InjectionAwareInterface
 
     public function getServiceOrder($service)
     {
-        $type = $this->di['tools']->from_camel_case(str_replace('Model_Service', '', $service::class));
+        $type = $this->di['tools']->from_camel_case($service::class);
 
         return $this->getOrderRepository()->findOneBy([
             'serviceType' => $type,
@@ -372,7 +372,6 @@ class Service implements InjectionAwareInterface
         $orderStatus = $order instanceof Order ? $order->getStatus() : $order->status;
 
         $log = $this->di['logger'];
-        $log->addWriter(new \Box_LogDb('Model_ClientOrderStatus'));
         $log->setEventItem('client_order_id', $orderId);
         $log->setEventItem('status', $orderStatus);
 

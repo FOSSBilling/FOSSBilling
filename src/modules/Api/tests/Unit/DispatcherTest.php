@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Staff\Entity\Admin;
 use function Tests\Helpers\createEntity;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -58,7 +59,7 @@ function createApiDispatcherDi(bool $extensionActive = true, bool $moduleHasServ
     };
 
     $staffService ??= new class {
-        public function hasPermission(Model_Admin $identity, string $mod): bool
+        public function hasPermission(Admin $identity, string $mod): bool
         {
             return true;
         }

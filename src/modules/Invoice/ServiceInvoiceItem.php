@@ -367,7 +367,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
     /**
      * Get list of paid invoice not executed invoice items.
      *
-     * @return array - array of Model_InvoiceItem items
+     * @return array - array of InvoiceItem items
      */
     public function getAllNotExecutePaidItems()
     {
