@@ -35,8 +35,8 @@ class Setting implements TimestampInterface
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $value = null;
 
-    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
-    private bool $public = false;
+    #[ORM\Column(type: Types::BOOLEAN, nullable: true, options: ['default' => false])]
+    private ?bool $public = null;
 
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     private ?string $category = null;
