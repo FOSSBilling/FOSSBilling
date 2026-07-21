@@ -165,10 +165,8 @@ test('removes an order file and its config in one Doctrine transaction', functio
     $connection = Mockery::mock(Connection::class);
     $connection->shouldReceive('update')
         ->once()
-        ->with('client_order', Mockery::on(static function (array $data): bool {
-            return json_decode($data['config'], true) === ['files' => []]
-                && is_string($data['updated_at']);
-        }), ['id' => 10]);
+        ->with('client_order', Mockery::on(static fn (array $data): bool => json_decode($data['config'], true) === ['files' => []]
+            && is_string($data['updated_at'])), ['id' => 10]);
 
     $repository = Mockery::mock(Box\Mod\Servicedownloadable\Repository\ServiceDownloadableFileRepository::class);
     $repository->shouldReceive('isStoredFilenameReferenced')->once()->andReturnTrue();
