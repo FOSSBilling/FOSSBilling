@@ -168,6 +168,6 @@ class Service
         $maxAge = time() - Config::getProperty('security.session_lifespan', 7200);
         $sql = 'DELETE FROM session WHERE created_at <= :age';
 
-        return $this->di['em']->getConnection()->executeStatement($sql, [':age' => $maxAge]);
+        return $this->di['em']->getConnection()->executeStatement($sql, ['age' => $maxAge]);
     }
 }

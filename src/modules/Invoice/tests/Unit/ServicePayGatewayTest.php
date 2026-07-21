@@ -41,7 +41,7 @@ test('gets search query with additional params', function (): void {
 
     $service->setDi($di);
     $data = ['search' => 'keyword'];
-    $expectedParams = [':search' => "%$data[search]%"];
+    $expectedParams = ['search' => "%$data[search]%"];
 
     $result = $service->getSearchQuery($data);
     expect($result)->toBeArray();

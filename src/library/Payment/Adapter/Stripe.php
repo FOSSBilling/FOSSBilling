@@ -186,7 +186,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     {
         $invoiceItems = $this->di['em']->getConnection()->fetchAllAssociative(
             'SELECT title FROM invoice_item WHERE invoice_id = :invoice_id',
-            [':invoice_id' => $invoice->getId()]
+            ['invoice_id' => $invoice->getId()]
         );
 
         $params = [
@@ -1207,7 +1207,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     {
         $invoiceItems = $this->di['em']->getConnection()->fetchAllAssociative(
             'SELECT title FROM invoice_item WHERE invoice_id = :invoice_id',
-            [':invoice_id' => $invoice->getId()]
+            ['invoice_id' => $invoice->getId()]
         );
 
         if (empty($invoiceItems)) {

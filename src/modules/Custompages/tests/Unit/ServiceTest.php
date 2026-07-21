@@ -14,7 +14,7 @@ test('search pages builds expanded search query', function (): void {
             expect($query)->toContain('description LIKE :q');
             expect($query)->toContain('keywords LIKE :q');
             expect($query)->toContain('content LIKE :q');
-            expect($params)->toBe([':q' => '%landing%']);
+            expect($params)->toBe(['q' => '%landing%']);
 
             return ['list' => []];
         },
@@ -35,7 +35,7 @@ test('search pages builds filter query', function (): void {
         function (string $query, array $params, PaginationOptions $opts) {
             expect($query)->toContain('id = :id');
             expect($query)->toContain('slug LIKE :slug');
-            expect($params)->toBe([':id' => 12, ':slug' => '%docs%']);
+            expect($params)->toBe(['id' => 12, 'slug' => '%docs%']);
 
             return ['list' => []];
         },

@@ -162,10 +162,10 @@ class Service implements InjectionAwareInterface
 
         if ($priority !== null && $priority !== '') {
             $where[] = 'm.priority = :priority';
-            $params[':priority'] = $priority;
+            $params['priority'] = $priority;
         } elseif ($min_priority !== null && $min_priority !== '') {
             $where[] = 'm.priority <= :min_priority';
-            $params[':min_priority'] = $min_priority;
+            $params['min_priority'] = $min_priority;
         }
 
         if ($user_filter === 'only_staff') {
@@ -176,32 +176,32 @@ class Service implements InjectionAwareInterface
 
         if ($admin_id) {
             $where[] = 'm.admin_id = :admin_id';
-            $params[':admin_id'] = $admin_id;
+            $params['admin_id'] = $admin_id;
         }
 
         if ($client_id) {
             $where[] = 'm.client_id = :client_id';
-            $params[':client_id'] = $client_id;
+            $params['client_id'] = $client_id;
         }
 
         if ($date_from) {
             $where[] = 'm.created_at >= :date_from';
-            $params[':date_from'] = date('Y-m-d 00:00:00', strtotime((string) $date_from));
+            $params['date_from'] = date('Y-m-d 00:00:00', strtotime((string) $date_from));
         }
 
         if ($date_to) {
             $where[] = 'm.created_at <= :date_to';
-            $params[':date_to'] = date('Y-m-d 23:59:59', strtotime((string) $date_to));
+            $params['date_to'] = date('Y-m-d 23:59:59', strtotime((string) $date_to));
         }
 
         if ($ip) {
             $where[] = 'm.ip = :ip';
-            $params[':ip'] = $ip;
+            $params['ip'] = $ip;
         }
 
         if ($search) {
             $where[] = 'm.message LIKE :search';
-            $params[':search'] = '%' . $search . '%';
+            $params['search'] = '%' . $search . '%';
         }
 
         if ($where !== []) {

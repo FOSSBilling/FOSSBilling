@@ -1528,7 +1528,7 @@ describe('Stripe webhook gateway ownership', function (): void {
         $connectionMock = Mockery::mock(Doctrine\DBAL\Connection::class);
         $connectionMock->shouldReceive('fetchAllAssociative')
             ->once()
-            ->with('SELECT title FROM invoice_item WHERE invoice_id = :invoice_id', [':invoice_id' => 15])
+            ->with('SELECT title FROM invoice_item WHERE invoice_id = :invoice_id', ['invoice_id' => 15])
             ->andReturn([['title' => 'Hosting']]);
 
         $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);

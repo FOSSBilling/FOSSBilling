@@ -735,7 +735,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         if ($id !== null && $id !== '') {
             $where[] = 'id = :id';
-            $bindings[':id'] = (int) $id;
+            $bindings['id'] = (int) $id;
         }
 
         if ($search) {
@@ -743,40 +743,40 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
             $where[] = '(recipient LIKE :recipient OR subject LIKE :subject OR content LIKE :content OR to_name LIKE :to_name)';
 
-            $bindings[':recipient'] = $search;
-            $bindings[':subject'] = $search;
-            $bindings[':content'] = $search;
-            $bindings[':to_name'] = $search;
+            $bindings['recipient'] = $search;
+            $bindings['subject'] = $search;
+            $bindings['content'] = $search;
+            $bindings['to_name'] = $search;
         }
 
         if ($recipient !== null && $recipient !== '') {
             $where[] = 'recipient LIKE :filter_recipient';
-            $bindings[':filter_recipient'] = '%' . $recipient . '%';
+            $bindings['filter_recipient'] = '%' . $recipient . '%';
         }
 
         if ($subject !== null && $subject !== '') {
             $where[] = 'subject LIKE :filter_subject';
-            $bindings[':filter_subject'] = '%' . $subject . '%';
+            $bindings['filter_subject'] = '%' . $subject . '%';
         }
 
         if ($status !== null && $status !== '') {
             $where[] = 'status = :status';
-            $bindings[':status'] = $status;
+            $bindings['status'] = $status;
         }
 
         if ($tries !== null && $tries !== '') {
             $where[] = 'tries = :tries';
-            $bindings[':tries'] = (int) $tries;
+            $bindings['tries'] = (int) $tries;
         }
 
         if ($date_from !== null && $date_from !== '') {
             $where[] = 'created_at >= :date_from';
-            $bindings[':date_from'] = date('Y-m-d 00:00:00', strtotime((string) $date_from));
+            $bindings['date_from'] = date('Y-m-d 00:00:00', strtotime((string) $date_from));
         }
 
         if ($date_to !== null && $date_to !== '') {
             $where[] = 'created_at <= :date_to';
-            $bindings[':date_to'] = date('Y-m-d 23:59:59', strtotime((string) $date_to));
+            $bindings['date_to'] = date('Y-m-d 23:59:59', strtotime((string) $date_to));
         }
 
         if (!empty($where)) {

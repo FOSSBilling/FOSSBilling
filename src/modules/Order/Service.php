@@ -433,7 +433,7 @@ class Service implements InjectionAwareInterface
 
         if ($client_id !== null) {
             $where[] = 'co.client_id = :client_id';
-            $bindings[':client_id'] = $client_id;
+            $bindings['client_id'] = $client_id;
         }
 
         if (!empty($where)) {
@@ -441,14 +441,14 @@ class Service implements InjectionAwareInterface
         }
 
         $query .= ' HAVING DATEDIFF(co.expires_at, NOW()) <= :days_until_expiration ORDER BY co.client_id DESC';
-        $bindings[':status'] = Order::STATUS_ACTIVE;
-        $bindings[':invoice_option'] = 'issue-invoice';
-        $bindings[':unpaid_invoice_status'] = Invoice::STATUS_UNPAID;
-        $bindings[':pending_item_type'] = InvoiceItem::TYPE_ORDER;
-        $bindings[':pending_item_task'] = InvoiceItem::TASK_RENEW;
-        $bindings[':pending_item_status'] = InvoiceItem::STATUS_EXECUTED;
-        $bindings[':pending_invoice_status'] = Invoice::STATUS_PAID;
-        $bindings[':days_until_expiration'] = $days_until_expiration;
+        $bindings['status'] = Order::STATUS_ACTIVE;
+        $bindings['invoice_option'] = 'issue-invoice';
+        $bindings['unpaid_invoice_status'] = Invoice::STATUS_UNPAID;
+        $bindings['pending_item_type'] = InvoiceItem::TYPE_ORDER;
+        $bindings['pending_item_task'] = InvoiceItem::TASK_RENEW;
+        $bindings['pending_item_status'] = InvoiceItem::STATUS_EXECUTED;
+        $bindings['pending_invoice_status'] = Invoice::STATUS_PAID;
+        $bindings['days_until_expiration'] = $days_until_expiration;
 
         return [$query, $bindings];
     }
@@ -664,17 +664,17 @@ class Service implements InjectionAwareInterface
 
         if ($client_id) {
             $where[] = 'co.client_id = :client_id';
-            $bindings[':client_id'] = $client_id;
+            $bindings['client_id'] = $client_id;
         }
 
         if ($invoice_option) {
             $where[] = 'co.invoice_option = :invoice_option';
-            $bindings[':invoice_option'] = $invoice_option;
+            $bindings['invoice_option'] = $invoice_option;
         }
 
         if ($id) {
             $where[] = 'co.id = :id';
-            $bindings[':id'] = $id;
+            $bindings['id'] = $id;
         }
 
         if ($show_action_required) {
@@ -683,32 +683,32 @@ class Service implements InjectionAwareInterface
 
         if ($status) {
             $where[] = 'co.status = :status';
-            $bindings[':status'] = $status;
+            $bindings['status'] = $status;
         }
 
         if ($product_id) {
             $where[] = 'co.product_id = :product_id';
-            $bindings[':product_id'] = $product_id;
+            $bindings['product_id'] = $product_id;
         }
 
         if ($promo_id) {
             $where[] = 'co.promo_id = :promo_id';
-            $bindings[':promo_id'] = $promo_id;
+            $bindings['promo_id'] = $promo_id;
         }
 
         if ($type) {
             $where[] = 'co.service_type = :service_type';
-            $bindings[':service_type'] = $type;
+            $bindings['service_type'] = $type;
         }
 
         if ($title) {
             $where[] = 'co.title LIKE :title';
-            $bindings[':title'] = '%' . $title . '%';
+            $bindings['title'] = '%' . $title . '%';
         }
 
         if ($period) {
             $where[] = 'co.period = :period';
-            $bindings[':period'] = $period;
+            $bindings['period'] = $period;
         }
 
         if ($hide_addons) {
@@ -717,42 +717,42 @@ class Service implements InjectionAwareInterface
 
         if ($created_at) {
             $where[] = "DATE_FORMAT(co.created_at, '%Y-%m-%d') = :created_at";
-            $bindings[':created_at'] = date('Y-m-d', strtotime((string) $created_at));
+            $bindings['created_at'] = date('Y-m-d', strtotime((string) $created_at));
         }
 
         if ($date_from) {
             $where[] = 'UNIX_TIMESTAMP(co.created_at) >= :date_from';
-            $bindings[':date_from'] = strtotime((string) $date_from);
+            $bindings['date_from'] = strtotime((string) $date_from);
         }
 
         if ($date_to) {
             $where[] = 'UNIX_TIMESTAMP(co.created_at) <= :date_to';
-            $bindings[':date_to'] = strtotime((string) $date_to);
+            $bindings['date_to'] = strtotime((string) $date_to);
         }
 
         // smartSearch
         if ($search) {
             if (is_numeric($search)) {
                 $where[] = 'co.id = :search';
-                $bindings[':search'] = $search;
+                $bindings['search'] = $search;
             } else {
                 $where[] = '(c.first_name LIKE :first_name OR c.last_name LIKE :last_name OR co.title LIKE :title)';
-                $bindings[':first_name'] = "%$search%";
-                $bindings[':last_name'] = "%$search%";
-                $bindings[':title'] = "%$search%";
+                $bindings['first_name'] = "%$search%";
+                $bindings['last_name'] = "%$search%";
+                $bindings['title'] = "%$search%";
             }
         }
 
         if ($ids) {
             $where[] = 'co.id IN (:ids)';
-            $bindings[':ids'] = implode(', ', $ids);
+            $bindings['ids'] = implode(', ', $ids);
         }
         if ($meta) {
             $i = 1;
             foreach ($meta as $k => $v) {
                 $where[] = "(meta.name = :meta_name$i AND meta.value LIKE :meta_value$i)";
-                $bindings[':meta_name' . $i] = $k;
-                $bindings[':meta_value' . $i] = $v . '%';
+                $bindings['meta_name' . $i] = $k;
+                $bindings['meta_value' . $i] = $v . '%';
                 ++$i;
             }
         }
@@ -1828,7 +1828,7 @@ class Service implements InjectionAwareInterface
             ORDER BY id DESC
         ";
 
-        $orders = $this->di['em']->getConnection()->fetchAllAssociative($sql, [':days' => $days]);
+        $orders = $this->di['em']->getConnection()->fetchAllAssociative($sql, ['days' => $days]);
 
         foreach ($orders as $orderArr) {
             try {
@@ -1927,7 +1927,7 @@ class Service implements InjectionAwareInterface
         if ($oid !== null) {
             $where[] = 'client_order_id = :client_order_id';
 
-            $bindings[':client_order_id'] = $oid;
+            $bindings['client_order_id'] = $oid;
         }
 
         if (!empty($where)) {

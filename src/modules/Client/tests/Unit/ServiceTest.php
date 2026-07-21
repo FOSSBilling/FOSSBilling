@@ -182,61 +182,61 @@ dataset('searchQueryData', [
     [
         ['id' => 1],
         '(c.id = :client_id OR c.aid = :alt_client_id)',
-        [':client_id' => '', ':alt_client_id' => ''],
+        ['client_id' => '', 'alt_client_id' => ''],
     ],
     [
         ['name' => 'test'],
         '(c.first_name LIKE :first_name or c.last_name LIKE :last_name )',
-        [':first_name' => '', ':last_name' => ''],
+        ['first_name' => '', 'last_name' => ''],
     ],
     [
         ['email' => 'test@example.com'],
         'c.email LIKE :email',
-        [':email' => 'test@example.com'],
+        ['email' => 'test@example.com'],
     ],
     [
         ['company' => 'LTD company'],
         'c.company LIKE :company',
-        [':company' => 'LTD company'],
+        ['company' => 'LTD company'],
     ],
     [
         ['status' => 'TEST status'],
         'c.status = :status',
-        [':status' => 'TEST status'],
+        ['status' => 'TEST status'],
     ],
     [
         ['group_id' => '1'],
         'c.client_group_id = :group_id',
-        [':group_id' => '1'],
+        ['group_id' => '1'],
     ],
     [
         ['created_at' => '2012-12-12'],
         "DATE_FORMAT(c.created_at, '%Y-%m-%d') = :created_at",
-        [':created_at' => '2012-12-12'],
+        ['created_at' => '2012-12-12'],
     ],
     [
         ['date_from' => '2012-12-10'],
         'UNIX_TIMESTAMP(c.created_at) >= :date_from',
-        [':date_from' => '2012-12-10'],
+        ['date_from' => '2012-12-10'],
     ],
     [
         ['date_to' => '2012-12-11'],
         'UNIX_TIMESTAMP(c.created_at) <= :date_to',
-        [':date_to' => '2012-12-11'],
+        ['date_to' => '2012-12-11'],
     ],
     [
         ['search' => '2'],
         '(c.id = :cid OR c.aid = :caid)',
-        [':cid' => '2', ':caid' => '2'],
+        ['cid' => '2', 'caid' => '2'],
     ],
     [
         ['search' => 'Keyword'],
         "(c.company LIKE :s_company OR c.first_name LIKE :s_first_name OR c.last_name LIKE :s_last_name OR c.email LIKE :s_email OR CONCAT(c.first_name,  ' ', c.last_name ) LIKE  :full_name)",
-        [':s_company' => 'Keyword',
-            ':s_first_name' => 'Keyword',
-            ':s_last_name' => 'Keyword',
-            ':s_email' => 'Keyword',
-            ':full_name' => 'Keyword',
+        ['s_company' => 'Keyword',
+            's_first_name' => 'Keyword',
+            's_last_name' => 'Keyword',
+            's_email' => 'Keyword',
+            'full_name' => 'Keyword',
         ],
     ],
 ]);
@@ -398,22 +398,22 @@ dataset('searchBalanceQueryData', [
     [
         ['id' => 1],
         'm.id = :id',
-        [':id' => '1'],
+        ['id' => '1'],
     ],
     [
         ['client_id' => 1],
         'm.client_id = :client_id',
-        [':client_id' => '1'],
+        ['client_id' => '1'],
     ],
     [
         ['date_from' => '2012-12-10'],
         'm.created_at >= :date_from',
-        [':date_from' => '2012-12-10'],
+        ['date_from' => '2012-12-10'],
     ],
     [
         ['date_to' => '2012-12-11'],
         'm.created_at <= :date_to',
-        [':date_to' => '2012-12-11'],
+        ['date_to' => '2012-12-11'],
     ],
 ]);
 
@@ -496,15 +496,15 @@ dataset('searchHistoryQueryData', [
         ['search' => 'sameValue'],
         '(c.first_name LIKE :first_name OR c.last_name LIKE :last_name OR c.email LIKE :email OR c.id LIKE :id)',
         [
-            ':first_name' => '%sameValue%',
-            ':last_name' => '%sameValue%',
-            ':email' => '%sameValue%',
-            ':id' => 'sameValue'],
+            'first_name' => '%sameValue%',
+            'last_name' => '%sameValue%',
+            'email' => '%sameValue%',
+            'id' => 'sameValue'],
     ],
     [
         ['client_id' => '1'],
         'ach.client_id = :client_id',
-        [':client_id' => '1'],
+        ['client_id' => '1'],
     ],
 ]);
 

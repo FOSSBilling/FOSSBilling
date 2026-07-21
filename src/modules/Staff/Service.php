@@ -414,24 +414,24 @@ class Service implements InjectionAwareInterface
 
         if ($id !== null && $id !== '') {
             $where[] = 'id = :id';
-            $bindings[':id'] = (int) $id;
+            $bindings['id'] = (int) $id;
         }
 
         if ($search) {
             $search = "%$search%";
             $where[] = '(name LIKE :name OR email LIKE :email )';
-            $bindings[':name'] = $search;
-            $bindings[':email'] = $search;
+            $bindings['name'] = $search;
+            $bindings['email'] = $search;
         }
 
         if ($status) {
             $where[] = 'status = :status';
-            $bindings[':status'] = $status;
+            $bindings['status'] = $status;
         }
 
         if ($no_cron) {
             $where[] = '(system_name IS NULL OR system_name != :system_name)';
-            $bindings[':system_name'] = Admin::SYSTEM_CRON;
+            $bindings['system_name'] = Admin::SYSTEM_CRON;
         }
 
         if (!empty($where)) {

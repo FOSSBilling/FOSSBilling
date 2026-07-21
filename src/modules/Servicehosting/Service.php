@@ -148,10 +148,10 @@ class Service implements InjectionAwareInterface
                 AND co.status != :canceled_status';
 
         $count = (int) $this->di['em']->getConnection()->fetchOne($query, [
-            ':service_type' => \Box\Mod\Product\Service::HOSTING,
-            ':sld' => $sld,
-            ':tld' => $tld,
-            ':canceled_status' => Order::STATUS_CANCELED,
+            'service_type' => \Box\Mod\Product\Service::HOSTING,
+            'sld' => $sld,
+            'tld' => $tld,
+            'canceled_status' => Order::STATUS_CANCELED,
         ]);
 
         if ($count > 0) {

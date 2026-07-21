@@ -931,22 +931,22 @@ dataset('searchFilters', fn (): array => [
     'empty filters exclude cron by default' => [
         [],
         'system_name != :system_name',
-        [':system_name' => \Box\Mod\Staff\Entity\Admin::SYSTEM_CRON],
+        ['system_name' => \Box\Mod\Staff\Entity\Admin::SYSTEM_CRON],
     ],
     'search by keyword' => [
         ['search' => 'keyword'],
         '(name LIKE :name OR email LIKE :email )',
-        [':name' => '%keyword%', ':email' => '%keyword%', ':system_name' => \Box\Mod\Staff\Entity\Admin::SYSTEM_CRON],
+        ['name' => '%keyword%', 'email' => '%keyword%', 'system_name' => \Box\Mod\Staff\Entity\Admin::SYSTEM_CRON],
     ],
     'filter by status' => [
         ['status' => 'active'],
         'status = :status',
-        [':status' => 'active', ':system_name' => \Box\Mod\Staff\Entity\Admin::SYSTEM_CRON],
+        ['status' => 'active', 'system_name' => \Box\Mod\Staff\Entity\Admin::SYSTEM_CRON],
     ],
     'filter by no_cron' => [
         ['no_cron' => 'true'],
         'system_name != :system_name',
-        [':system_name' => \Box\Mod\Staff\Entity\Admin::SYSTEM_CRON],
+        ['system_name' => \Box\Mod\Staff\Entity\Admin::SYSTEM_CRON],
     ],
     'do not filter by false no_cron' => [
         ['no_cron' => 'false'],

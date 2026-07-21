@@ -299,7 +299,7 @@ class Service implements InjectionAwareInterface
                ';
         $theme = $this->di['em']->getConnection()->fetchOne($query, ['param' => 'admin_theme']);
         // Cache the raw database value (use empty string instead of null to mark as cached)
-        self::$adminThemeCache = $theme ?? '';
+        self::$adminThemeCache = is_string($theme) ? $theme : '';
 
         // Apply default logic for the return value
         if ($theme == null || !$this->filesystem->exists(Path::join(PATH_THEMES, $theme))) {

@@ -372,9 +372,9 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                 WHERE invoice_item.status != :item_status and invoice.status = :invoice_status
                 AND (invoice.paid_at IS NULL OR invoice.paid_at <= :cutoff_time)';
         $bindings = [
-            ':item_status' => InvoiceItem::STATUS_EXECUTED,
-            ':invoice_status' => Invoice::STATUS_PAID,
-            ':cutoff_time' => date('Y-m-d H:i:s', strtotime('-10 minutes')),
+            'item_status' => InvoiceItem::STATUS_EXECUTED,
+            'invoice_status' => Invoice::STATUS_PAID,
+            'cutoff_time' => date('Y-m-d H:i:s', strtotime('-10 minutes')),
         ];
 
         return $this->di['dbal']->fetchAllAssociative($sql, $bindings);

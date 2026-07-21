@@ -777,15 +777,15 @@ test('getSoonExpiringActiveOrdersQuery builds expected SQL and bindings', functi
                 ) AND co.client_id = :client_id HAVING DATEDIFF(co.expires_at, NOW()) <= :days_until_expiration ORDER BY co.client_id DESC';
 
     $expectedBindings = [
-        ':client_id' => $randId,
-        ':unpaid_invoice_status' => \Box\Mod\Invoice\Entity\Invoice::STATUS_UNPAID,
-        ':pending_item_type' => \Box\Mod\Invoice\Entity\InvoiceItem::TYPE_ORDER,
-        ':pending_item_task' => \Box\Mod\Invoice\Entity\InvoiceItem::TASK_RENEW,
-        ':pending_item_status' => \Box\Mod\Invoice\Entity\InvoiceItem::STATUS_EXECUTED,
-        ':pending_invoice_status' => \Box\Mod\Invoice\Entity\Invoice::STATUS_PAID,
-        ':status' => \Box\Mod\Order\Entity\Order::STATUS_ACTIVE,
-        ':invoice_option' => 'issue-invoice',
-        ':days_until_expiration' => $randId,
+        'client_id' => $randId,
+        'unpaid_invoice_status' => \Box\Mod\Invoice\Entity\Invoice::STATUS_UNPAID,
+        'pending_item_type' => \Box\Mod\Invoice\Entity\InvoiceItem::TYPE_ORDER,
+        'pending_item_task' => \Box\Mod\Invoice\Entity\InvoiceItem::TASK_RENEW,
+        'pending_item_status' => \Box\Mod\Invoice\Entity\InvoiceItem::STATUS_EXECUTED,
+        'pending_invoice_status' => \Box\Mod\Invoice\Entity\Invoice::STATUS_PAID,
+        'status' => \Box\Mod\Order\Entity\Order::STATUS_ACTIVE,
+        'invoice_option' => 'issue-invoice',
+        'days_until_expiration' => $randId,
     ];
 
     expect($result[0])->toBeString();
@@ -951,42 +951,42 @@ dataset('searchQueryData', fn (): array => [
     'client_id' => [
         ['client_id' => 1],
         'co.client_id = :client_id',
-        [':client_id' => '1'],
+        ['client_id' => '1'],
     ],
     'invoice_option' => [
         ['invoice_option' => 'issue-invoice'],
         'co.invoice_option = :invoice_option',
-        [':invoice_option' => 'issue-invoice'],
+        ['invoice_option' => 'issue-invoice'],
     ],
     'id' => [
         ['id' => 1],
         'co.id = :id',
-        [':id' => '1'],
+        ['id' => '1'],
     ],
     'status' => [
         ['status' => 'pending_setup'],
         'co.status = :status',
-        [':status' => 'pending_setup'],
+        ['status' => 'pending_setup'],
     ],
     'product_id' => [
         ['product_id' => 1],
         'co.product_id = :product_id',
-        [':product_id' => '1'],
+        ['product_id' => '1'],
     ],
     'type' => [
         ['type' => 'custom'],
         'co.service_type = :service_type',
-        [':service_type' => 'custom'],
+        ['service_type' => 'custom'],
     ],
     'title' => [
         ['title' => 'titleField'],
         'co.title LIKE :title',
-        [':title' => '%titleField%'],
+        ['title' => '%titleField%'],
     ],
     'period' => [
         ['period' => '1Y'],
         'co.period = :period',
-        [':period' => '1Y'],
+        ['period' => '1Y'],
     ],
     'hide_addons' => [
         ['hide_addons' => true],
@@ -996,48 +996,48 @@ dataset('searchQueryData', fn (): array => [
     'created_at' => [
         ['created_at' => '2012-12-11'],
         "DATE_FORMAT(co.created_at, '%Y-%m-%d') = :created_at",
-        [':created_at' => '2012-12-11'],
+        ['created_at' => '2012-12-11'],
     ],
     'date_from' => [
         ['date_from' => '2012-12-11'],
         'UNIX_TIMESTAMP(co.created_at) >= :date_from',
-        [':date_from' => strtotime('2012-12-11')],
+        ['date_from' => strtotime('2012-12-11')],
     ],
     'date_to' => [
         ['date_to' => '2012-12-11'],
         'UNIX_TIMESTAMP(co.created_at) <= :date_to',
-        [':date_to' => strtotime('2012-12-11')],
+        ['date_to' => strtotime('2012-12-11')],
     ],
     'search numeric' => [
         ['search' => 120],
         'co.id = :search',
-        [':search' => 120],
+        ['search' => 120],
     ],
     'search string' => [
         ['search' => 'John'],
         '(c.first_name LIKE :first_name OR c.last_name LIKE :last_name OR co.title LIKE :title)',
         [
-            ':first_name' => '%John%',
-            ':last_name' => '%John%',
-            ':title' => '%John%',
+            'first_name' => '%John%',
+            'last_name' => '%John%',
+            'title' => '%John%',
         ],
     ],
     'ids' => [
         ['ids' => [1, 2, 3]],
         'co.id IN (:ids)',
-        [':ids' => '1, 2, 3'],
+        ['ids' => '1, 2, 3'],
     ],
     'promo_id' => [
         ['promo_id' => 9],
         'co.promo_id = :promo_id',
-        [':promo_id' => 9],
+        ['promo_id' => 9],
     ],
     'meta' => [
         ['meta' => ['param' => 'value']],
         '(meta.name = :meta_name1 AND meta.value LIKE :meta_value1)',
         [
-            ':meta_name1' => 'param',
-            ':meta_value1' => 'value%',
+            'meta_name1' => 'param',
+            'meta_value1' => 'value%',
         ],
     ],
 ]);
@@ -1069,7 +1069,7 @@ test('getSearchQuery keeps client scope when action required filter is used', fu
 
     expect($query)->toContain('co.client_id = :client_id');
     expect($query)->toContain("(co.status = 'pending_setup' OR co.status = 'failed_setup' OR co.status ='failed_renew')");
-    expect($bindings[':client_id'])->toBe(42);
+    expect($bindings['client_id'])->toBe(42);
 });
 
 test('createOrder throws when no order currency is set', function (): void {

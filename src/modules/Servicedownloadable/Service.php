@@ -313,7 +313,7 @@ class Service implements InjectionAwareInterface
     {
         $count = (int) $this->di['em']->getConnection()->fetchOne(
             'SELECT COUNT(*) FROM service_downloadable WHERE stored_filename = :stored_filename',
-            [':stored_filename' => $storedFilename]
+            ['stored_filename' => $storedFilename]
         );
         if ($count > 0) {
             return true;
@@ -321,7 +321,7 @@ class Service implements InjectionAwareInterface
 
         $count = (int) $this->di['em']->getConnection()->fetchOne(
             'SELECT COUNT(*) FROM product WHERE config LIKE :pattern',
-            [':pattern' => '%' . $storedFilename . '%']
+            ['pattern' => '%' . $storedFilename . '%']
         );
         if ($count > 0) {
             return true;
@@ -329,7 +329,7 @@ class Service implements InjectionAwareInterface
 
         $count = (int) $this->di['em']->getConnection()->fetchOne(
             'SELECT COUNT(*) FROM client_order WHERE config LIKE :pattern',
-            [':pattern' => '%' . $storedFilename . '%']
+            ['pattern' => '%' . $storedFilename . '%']
         );
 
         return $count > 0;

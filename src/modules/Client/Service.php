@@ -205,66 +205,66 @@ class Service implements InjectionAwareInterface
         $params = [];
         if ($id) {
             $where[] = '(c.id = :client_id OR c.aid = :alt_client_id)';
-            $params[':client_id'] = $id;
-            $params[':alt_client_id'] = $id;
+            $params['client_id'] = $id;
+            $params['alt_client_id'] = $id;
         }
 
         if ($name) {
             $where[] = '(c.first_name LIKE :first_name or c.last_name LIKE :last_name )';
             $name = '%' . $name . '%';
-            $params[':first_name'] = $name;
-            $params[':last_name'] = $name;
+            $params['first_name'] = $name;
+            $params['last_name'] = $name;
         }
 
         if ($email) {
             $where[] = 'c.email LIKE :email';
-            $params[':email'] = '%' . $email . '%';
+            $params['email'] = '%' . $email . '%';
         }
 
         if ($company) {
             $where[] = 'c.company LIKE :company';
-            $params[':company'] = '%' . $company . '%';
+            $params['company'] = '%' . $company . '%';
         }
 
         if ($status) {
             $where[] = 'c.status = :status';
-            $params[':status'] = $status;
+            $params['status'] = $status;
         }
 
         if ($group_id) {
             $where[] = 'c.client_group_id = :group_id';
-            $params[':group_id'] = $group_id;
+            $params['group_id'] = $group_id;
         }
 
         if ($created_at) {
             $where[] = "DATE_FORMAT(c.created_at, '%Y-%m-%d') = :created_at";
-            $params[':created_at'] = date('Y-m-d', strtotime((string) $created_at));
+            $params['created_at'] = date('Y-m-d', strtotime((string) $created_at));
         }
 
         if ($date_from) {
             $where[] = 'UNIX_TIMESTAMP(c.created_at) >= :date_from';
-            $params[':date_from'] = strtotime((string) $date_from);
+            $params['date_from'] = strtotime((string) $date_from);
         }
 
         if ($date_to) {
             $where[] = 'UNIX_TIMESTAMP(c.created_at) <= :date_to';
-            $params[':date_to'] = strtotime((string) $date_to);
+            $params['date_to'] = strtotime((string) $date_to);
         }
 
         // smartSearch
         if ($search) {
             if (is_numeric($search)) {
                 $where[] = '(c.id = :cid OR c.aid = :caid)';
-                $params[':cid'] = $search;
-                $params[':caid'] = $search;
+                $params['cid'] = $search;
+                $params['caid'] = $search;
             } else {
                 $where[] = "(c.company LIKE :s_company OR c.first_name LIKE :s_first_name OR c.last_name LIKE :s_last_name OR c.email LIKE :s_email OR CONCAT(c.first_name,  ' ', c.last_name ) LIKE  :full_name)";
                 $search = '%' . $search . '%';
-                $params[':s_company'] = $search;
-                $params[':s_first_name'] = $search;
-                $params[':s_last_name'] = $search;
-                $params[':s_email'] = $search;
-                $params[':full_name'] = $search;
+                $params['s_company'] = $search;
+                $params['s_first_name'] = $search;
+                $params['s_last_name'] = $search;
+                $params['s_email'] = $search;
+                $params['full_name'] = $search;
             }
         }
 
@@ -385,35 +385,35 @@ class Service implements InjectionAwareInterface
 
         if ($id !== null && $id !== '') {
             $where[] = 'ach.id = :event_id';
-            $params[':event_id'] = (int) $id;
+            $params['event_id'] = (int) $id;
         }
 
         if ($search) {
             $where[] = '(c.first_name LIKE :first_name OR c.last_name LIKE :last_name OR c.email LIKE :email OR c.id LIKE :id)';
-            $params[':first_name'] = '%' . $search . '%';
-            $params[':last_name'] = '%' . $search . '%';
-            $params[':email'] = '%' . $search . '%';
-            $params[':id'] = $search;
+            $params['first_name'] = '%' . $search . '%';
+            $params['last_name'] = '%' . $search . '%';
+            $params['email'] = '%' . $search . '%';
+            $params['id'] = $search;
         }
 
         if ($client_id) {
             $where[] = 'ach.client_id = :client_id';
-            $params[':client_id'] = $client_id;
+            $params['client_id'] = $client_id;
         }
 
         if ($ip !== null && $ip !== '') {
             $where[] = 'ach.ip LIKE :ip';
-            $params[':ip'] = '%' . $ip . '%';
+            $params['ip'] = '%' . $ip . '%';
         }
 
         if ($date_from !== null && $date_from !== '') {
             $where[] = 'ach.created_at >= :date_from';
-            $params[':date_from'] = date('Y-m-d 00:00:00', strtotime((string) $date_from));
+            $params['date_from'] = date('Y-m-d 00:00:00', strtotime((string) $date_from));
         }
 
         if ($date_to !== null && $date_to !== '') {
             $where[] = 'ach.created_at <= :date_to';
-            $params[':date_to'] = date('Y-m-d 23:59:59', strtotime((string) $date_to));
+            $params['date_to'] = date('Y-m-d 23:59:59', strtotime((string) $date_to));
         }
 
         if (!empty($where)) {

@@ -544,7 +544,7 @@ class Service implements InjectionAwareInterface
             // fallback both firing it, etc).
             $claimed = (bool) $di['em']->getConnection()->executeStatement(
                 "UPDATE invoice SET reminded_at = NOW(), updated_at = NOW() WHERE id = :id AND status = 'unpaid' AND approved = 1 AND due_at > NOW() AND (reminded_at IS NULL OR DATE(reminded_at) < CURDATE())",
-                [':id' => $params['id'] ?? 0]
+                ['id' => $params['id'] ?? 0]
             );
             if (!$claimed) {
                 return;
@@ -560,7 +560,7 @@ class Service implements InjectionAwareInterface
                 // catches its own failures internally, so any exception reaching here means the
                 // email was never queued. Release the claim so a later cron run retries it instead
                 // of the reminder being silently lost for the day.
-                $di['em']->getConnection()->executeStatement('UPDATE invoice SET reminded_at = NULL WHERE id = :id', [':id' => $params['id'] ?? 0]);
+                $di['em']->getConnection()->executeStatement('UPDATE invoice SET reminded_at = NULL WHERE id = :id', ['id' => $params['id'] ?? 0]);
             }
             $di['logger']->setChannel('email')->error('Failed to send invoice reminder email', ['id' => $params['id'] ?? null, 'exception' => $exc->getMessage()]);
         }
@@ -575,7 +575,7 @@ class Service implements InjectionAwareInterface
             // removing old invoices
             $days = (int) $remove_after_days;
             $sql = 'DELETE FROM invoice WHERE status = :status AND DATEDIFF(NOW(), due_at) > :days';
-            $di['em']->getConnection()->executeStatement($sql, [':days' => $days, ':status' => Invoice::STATUS_UNPAID]);
+            $di['em']->getConnection()->executeStatement($sql, ['days' => $days, 'status' => Invoice::STATUS_UNPAID]);
         }
     }
 
@@ -598,7 +598,7 @@ class Service implements InjectionAwareInterface
             // updated_at, so there's no need to store the loaded model again once sent below.
             $claimed = (bool) $di['em']->getConnection()->executeStatement(
                 "UPDATE invoice SET reminded_at = NOW(), updated_at = NOW() WHERE id = :id AND status = 'unpaid' AND approved = 1 AND ((due_at < NOW()) OR (ABS(DATEDIFF(due_at, NOW())) = 0)) AND (reminded_at IS NULL OR DATE(reminded_at) < CURDATE())",
-                [':id' => $params['id'] ?? 0]
+                ['id' => $params['id'] ?? 0]
             );
             if (!$claimed) {
                 return;
@@ -632,7 +632,7 @@ class Service implements InjectionAwareInterface
                 // Nothing past sendTemplate() can throw, so reaching here with a claim already
                 // made means the email was never confirmed queued. Release the claim so a later
                 // cron run retries this invoice instead of losing the reminder.
-                $di['em']->getConnection()->executeStatement('UPDATE invoice SET reminded_at = NULL WHERE id = :id', [':id' => $params['id'] ?? 0]);
+                $di['em']->getConnection()->executeStatement('UPDATE invoice SET reminded_at = NULL WHERE id = :id', ['id' => $params['id'] ?? 0]);
             }
             $di['logger']->setChannel('email')->error('Failed to send overdue invoice email', ['id' => $params['id'] ?? null, 'exception' => $exc->getMessage()]);
         }
@@ -822,8 +822,8 @@ class Service implements InjectionAwareInterface
     public function findPaidInvoicesForOrder(OrderEntity $order): array
     {
         $bindings = [
-            ':rel_id' => $order->getId(),
-            ':status' => Invoice::STATUS_PAID,
+            'rel_id' => $order->getId(),
+            'status' => Invoice::STATUS_PAID,
         ];
 
         return $this->di['em']->getConnection()->fetchAllAssociative(
