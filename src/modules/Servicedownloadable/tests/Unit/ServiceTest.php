@@ -15,6 +15,7 @@ use Box\Mod\Product\Entity\Product;
 use Box\Mod\Servicedownloadable\Entity\ServiceDownloadable;
 use Box\Mod\Servicedownloadable\Entity\ServiceDownloadableFile;
 use Box\Mod\Servicedownloadable\Service;
+use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
@@ -144,6 +145,49 @@ test('creates a downloadable service with all snapshotted files', function (): v
     expect($downloadable->getFiles())->toHaveCount(2)
         ->and($downloadable->getFiles()->first())->toBeInstanceOf(ServiceDownloadableFile::class)
         ->and($downloadable->getFiles()->first()->getLabel())->toBe('Installer');
+});
+
+test('removes an order file and its config in one Doctrine transaction', function (): void {
+    $file = new ServiceDownloadableFile(str_repeat('a', 32), 'file.zip', str_repeat('b', 64));
+    (new ReflectionProperty($file, 'id'))->setValue($file, 2);
+    $downloadable = new ServiceDownloadable();
+    $downloadable->addFile($file);
+
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order->id = 10;
+    $order->config = json_encode(['files' => [[
+        'id' => str_repeat('a', 32),
+        'filename' => 'file.zip',
+        'stored_filename' => str_repeat('b', 64),
+    ]]]);
+
+    $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('update')
+        ->once()
+        ->with('client_order', Mockery::on(static function (array $data): bool {
+            return json_decode($data['config'], true) === ['files' => []]
+                && is_string($data['updated_at']);
+        }), ['id' => 10]);
+
+    $repository = Mockery::mock(Box\Mod\Servicedownloadable\Repository\ServiceDownloadableFileRepository::class);
+    $repository->shouldReceive('isStoredFilenameReferenced')->once()->andReturnTrue();
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('wrapInTransaction')
+        ->once()
+        ->andReturnUsing(static fn (callable $callback): mixed => $callback());
+    $em->shouldReceive('getConnection')->once()->andReturn($connection);
+    $em->shouldReceive('getRepository')->once()->with(ServiceDownloadableFile::class)->andReturn($repository);
+
+    $di = container();
+    $di['em'] = $em;
+    $service = new Service();
+    $service->setDi($di);
+
+    expect($service->removeOrderFile($downloadable, $order, 2))->toBeTrue()
+        ->and($downloadable->getFiles())->toHaveCount(0)
+        ->and(json_decode($order->config, true))->toBe(['files' => []]);
 });
 
 test('rejects duplicate file IDs in order configuration', function (): void {

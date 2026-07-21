@@ -276,7 +276,7 @@ class Service implements InjectionAwareInterface
         $serviceId = $service instanceof ServiceDownloadable ? $service->getId() : $service->id;
 
         $bindings = [
-            'service_type' => $type,
+            ':service_type' => $type,
             ':service_id' => $serviceId,
         ];
 

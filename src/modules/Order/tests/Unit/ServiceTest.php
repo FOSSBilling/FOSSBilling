@@ -724,7 +724,13 @@ test('getServiceOrder returns order', function (): void {
     $order->loadBean(new Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('findOne')->atLeast()->once()->andReturn($order);
+    $dbMock->shouldReceive('findOne')
+        ->once()
+        ->with('ClientOrder', 'service_type  = :service_type AND service_id = :service_id', [
+            ':service_type' => 'servicecustom',
+            ':service_id' => 1,
+        ])
+        ->andReturn($order);
 
     $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
     $toolsMock->shouldReceive('from_camel_case')->atLeast()->once()->andReturn('servicecustom');

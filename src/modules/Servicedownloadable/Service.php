@@ -350,17 +350,17 @@ class Service implements InjectionAwareInterface
         $file = $this->getUploadedFile();
         $fileDefinition = $this->createUploadedFileDefinition($file, $data);
 
-        $config = json_decode($productModel->getConfig() ?? '', true) ?? [];
-        $config[self::FILES_CONFIG_KEY] ??= [];
-        $config[self::FILES_CONFIG_KEY][] = $fileDefinition;
-        $productModel->setConfig(json_encode($config, JSON_THROW_ON_ERROR));
-        $productModel->setUpdatedAt(new \DateTime());
+        $this->di['em']->wrapInTransaction(function () use ($productModel, $fileDefinition): void {
+            $config = json_decode($productModel->getConfig() ?? '', true) ?? [];
+            $config[self::FILES_CONFIG_KEY] ??= [];
+            $config[self::FILES_CONFIG_KEY][] = $fileDefinition;
+            $productModel->setConfig(json_encode($config, JSON_THROW_ON_ERROR));
+            $productModel->setUpdatedAt(new \DateTime());
 
-        if (Tools::normalizeBoolean($config['update_orders'] ?? false)) {
-            $this->addFileToExistingOrders($productModel, $fileDefinition);
-        }
-
-        $this->di['em']->flush();
+            if (Tools::normalizeBoolean($config['update_orders'] ?? false)) {
+                $this->addFileToExistingOrders($productModel, $fileDefinition);
+            }
+        });
         $this->di['logger']->info('Uploaded new file for product %s', $productModel->getId());
 
         return true;
@@ -373,13 +373,14 @@ class Service implements InjectionAwareInterface
         $index = $this->findFileDefinitionIndex($config[self::FILES_CONFIG_KEY] ?? [], $fileKey);
         $config[self::FILES_CONFIG_KEY][$index]['label'] = $this->normalizeLabel($data['label'] ?? null);
         $config[self::FILES_CONFIG_KEY][$index]['description'] = $this->normalizeDescription($data['description'] ?? null);
-        $product->setConfig(json_encode($config, JSON_THROW_ON_ERROR));
 
-        if (Tools::normalizeBoolean($config['update_orders'] ?? false)) {
-            $this->updateFileInExistingOrders($product, $config[self::FILES_CONFIG_KEY][$index]);
-        }
+        $this->di['em']->wrapInTransaction(function () use ($product, $config, $index): void {
+            $product->setConfig(json_encode($config, JSON_THROW_ON_ERROR));
 
-        $this->di['em']->flush();
+            if (Tools::normalizeBoolean($config['update_orders'] ?? false)) {
+                $this->updateFileInExistingOrders($product, $config[self::FILES_CONFIG_KEY][$index]);
+            }
+        });
 
         return true;
     }
@@ -391,13 +392,14 @@ class Service implements InjectionAwareInterface
         $index = $this->findFileDefinitionIndex($config[self::FILES_CONFIG_KEY] ?? [], $fileKey);
         $storedFilename = $config[self::FILES_CONFIG_KEY][$index]['stored_filename'];
         array_splice($config[self::FILES_CONFIG_KEY], $index, 1);
-        $product->setConfig(json_encode($config, JSON_THROW_ON_ERROR));
 
-        if (Tools::normalizeBoolean($config['update_orders'] ?? false)) {
-            $this->removeFileFromExistingOrders($product, $fileKey);
-        }
+        $this->di['em']->wrapInTransaction(function () use ($product, $config, $fileKey): void {
+            $product->setConfig(json_encode($config, JSON_THROW_ON_ERROR));
 
-        $this->di['em']->flush();
+            if (Tools::normalizeBoolean($config['update_orders'] ?? false)) {
+                $this->removeFileFromExistingOrders($product, $fileKey);
+            }
+        });
         $this->removeStoredFileIfOrphaned($storedFilename);
 
         return true;
@@ -407,13 +409,14 @@ class Service implements InjectionAwareInterface
     {
         $file = $this->getUploadedFile();
         $definition = $this->createUploadedFileDefinition($file, $data);
-        $service->addFile($this->createServiceFile($definition, $service->getFiles()->count()));
+        $this->di['em']->wrapInTransaction(function () use ($service, $order, $definition): void {
+            $service->addFile($this->createServiceFile($definition, $service->getFiles()->count()));
 
-        $config = json_decode($order->config ?? '', true) ?: [];
-        $config[self::FILES_CONFIG_KEY] ??= [];
-        $config[self::FILES_CONFIG_KEY][] = $definition;
-        $this->saveOrderConfig($order, $config);
-        $this->di['em']->flush();
+            $config = json_decode($order->config ?? '', true) ?: [];
+            $config[self::FILES_CONFIG_KEY] ??= [];
+            $config[self::FILES_CONFIG_KEY][] = $definition;
+            $this->saveOrderConfig($order, $config);
+        });
 
         return true;
     }
@@ -427,14 +430,15 @@ class Service implements InjectionAwareInterface
 
         $storedFilename = $file->getStoredFilename();
         $fileKey = $file->getFileKey();
-        $service->removeFile($file);
-        $config = json_decode($order->config ?? '', true) ?: [];
-        $config[self::FILES_CONFIG_KEY] = array_values(array_filter(
-            $config[self::FILES_CONFIG_KEY] ?? [],
-            static fn (array $definition): bool => ($definition['id'] ?? null) !== $fileKey,
-        ));
-        $this->saveOrderConfig($order, $config);
-        $this->di['em']->flush();
+        $this->di['em']->wrapInTransaction(function () use ($service, $order, $file, $fileKey): void {
+            $service->removeFile($file);
+            $config = json_decode($order->config ?? '', true) ?: [];
+            $config[self::FILES_CONFIG_KEY] = array_values(array_filter(
+                $config[self::FILES_CONFIG_KEY] ?? [],
+                static fn (array $definition): bool => ($definition['id'] ?? null) !== $fileKey,
+            ));
+            $this->saveOrderConfig($order, $config);
+        });
         $this->removeStoredFileIfOrphaned($storedFilename);
 
         return true;
@@ -717,7 +721,10 @@ class Service implements InjectionAwareInterface
     {
         $order->config = json_encode($config, JSON_THROW_ON_ERROR);
         $order->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($order);
+        $this->di['em']->getConnection()->update('client_order', [
+            'config' => $order->config,
+            'updated_at' => $order->updated_at,
+        ], ['id' => $order->id]);
     }
 
     private function getFileRepository(): ServiceDownloadableFileRepository
