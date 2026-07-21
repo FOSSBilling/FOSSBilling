@@ -894,7 +894,7 @@ class Client implements ApiArrayInterface
         return [
             'id' => $this->id,
             'aid' => $this->aid,
-            'client_group_id' => $this->clientGroupId,
+            'group_id' => $this->clientGroupId,
             'role' => $this->role,
             'auth_type' => $this->authType,
             'email' => $this->email,

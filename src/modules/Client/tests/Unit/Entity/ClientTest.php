@@ -32,7 +32,7 @@ test('converts an admin client list entity to the legacy API shape', function ()
         'id' => 42,
         'email' => 'ada@example.com',
         'email_approved' => 1,
-        'client_group_id' => 3,
+        'group_id' => 3,
         'status' => 'active',
         'tax_exempt' => 0,
         'custom_15' => 'VIP',
@@ -49,6 +49,6 @@ test('does not expose admin-only client fields without an admin identity', funct
     expect($result)->toHaveKey('email');
     expect($result)->toHaveKey('notes');
     expect($result)->toHaveKey('status');
+    expect($result)->toHaveKey('group_id');
     expect($result)->not->toHaveKey('billing_email');
-    expect($result)->not->toHaveKey('group_id');
 });
