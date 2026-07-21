@@ -282,7 +282,7 @@ class Service
     {
         $query = 'SELECT param, value
                   FROM setting';
-        $rows = $this->di['db']->getAll($query);
+        $rows = $this->di['dbal']->fetchAllAssociative($query);
         $result = [];
         foreach ($rows as $row) {
             $result[$row['param']] = $row['value'];
@@ -679,7 +679,7 @@ class Service
     {
         $query = "SELECT param, value FROM setting WHERE param IN ('nameserver_1', 'nameserver_2', 'nameserver_3', 'nameserver_4')";
 
-        return $this->di['db']->getAssoc($query);
+        return $this->di['dbal']->fetchAllKeyValue($query);
     }
 
     public function getPendingMessages()
