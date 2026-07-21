@@ -84,9 +84,9 @@ class QueuedEmail implements ApiArrayInterface, TimestampInterface
     {
         return [
             'id' => $this->id,
-            'recipient' => $this->recipient,
-            'subject' => $this->subject,
-            'content' => $this->content,
+            'recipient' => $this->recipient ?? '', /* @phpstan-ignore nullCoalesce.property (Doctrine's newInstanceWithoutConstructor skips default init) */
+            'subject' => $this->subject ?? '', /* @phpstan-ignore nullCoalesce.property (Doctrine's newInstanceWithoutConstructor skips default init) */
+            'content' => $this->content ?? '', /* @phpstan-ignore nullCoalesce.property (Doctrine's newInstanceWithoutConstructor skips default init) */
             'to_name' => $this->toName,
             'status' => $this->status,
             'tries' => $this->tries,

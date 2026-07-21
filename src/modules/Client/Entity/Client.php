@@ -895,12 +895,12 @@ class Client implements ApiArrayInterface
             'id' => $this->id,
             'aid' => $this->aid,
             'group_id' => $this->clientGroupId,
-            'role' => $this->role,
+            'role' => $this->role ?? 'client', /* @phpstan-ignore nullCoalesce.property (Doctrine's newInstanceWithoutConstructor skips default init) */
             'auth_type' => $this->authType,
             'email' => $this->email,
-            'status' => $this->status,
+            'status' => $this->status ?? self::ACTIVE, /* @phpstan-ignore nullCoalesce.property (Doctrine's newInstanceWithoutConstructor skips default init) */
             'email_approved' => $this->emailApproved,
-            'tax_exempt' => $this->taxExempt,
+            'tax_exempt' => $this->taxExempt ?? false, /* @phpstan-ignore nullCoalesce.property (Doctrine's newInstanceWithoutConstructor skips default init) */
             'type' => $this->type,
             'first_name' => $this->firstName,
             'last_name' => $this->lastName,
