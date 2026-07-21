@@ -4,7 +4,7 @@
         <form method="post" action="{{ 'servicedownloadable/config_save'|api_url }}" {{ fb_api_form({ message: 'Settings Updated'|trans}) }}>
             <div class="mb-3">
                 <h3 class="card-title mb-1">{{ 'Download Settings'|trans }}</h3>
-                <p class="text-secondary mb-0">{{ 'Choose whether existing orders should automatically reference the latest uploaded file for this product.'|trans }}</p>
+                <p class="text-secondary mb-0">{{ 'Choose whether file changes should also be applied to existing orders for this product.'|trans }}</p>
             </div>
             <div class="row g-3">
                 <div class="col-lg-6">
@@ -32,24 +32,59 @@
 
     <div>
         <div class="mb-3">
-            <h3 class="card-title mb-1">{{ 'Product File'|trans }}</h3>
-            <p class="text-secondary mb-0">{{ 'Upload the file customers will receive when ordering this downloadable product.'|trans }}</p>
+            <h3 class="card-title mb-1">{{ 'Product Files'|trans }}</h3>
+            <p class="text-secondary mb-0">{{ 'Manage the files customers will receive when ordering this downloadable product.'|trans }}</p>
         </div>
+
+        {% if config.files|default([]) %}
+            <div class="table-responsive mb-4">
+                <table class="table table-vcenter">
+                    <thead>
+                        <tr>
+                            <th>{{ 'File'|trans }}</th>
+                            <th>{{ 'Label'|trans }}</th>
+                            <th>{{ 'Description'|trans }}</th>
+                            <th class="w-1"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for file in config.files %}
+                            <tr>
+                                <td><a href="{{ 'servicedownloadable/get-file'|url }}/{{ product.id }}/{{ file.id }}" target="_blank">{{ file.filename }}</a></td>
+                                <td colspan="2">
+                                    <form class="row g-2" method="post" action="{{ 'servicedownloadable/file_update'|api_url }}" {{ fb_api_form({ message: 'File details updated'|trans, reload: true }) }}>
+                                        <input type="hidden" name="id" value="{{ product.id }}">
+                                        <input type="hidden" name="file_id" value="{{ file.id }}">
+                                        <div class="col-md-4"><input class="form-control" name="label" value="{{ file.label|default('') }}" maxlength="255" placeholder="{{ 'Optional label'|trans }}"></div>
+                                        <div class="col-md-6"><input class="form-control" name="description" value="{{ file.description|default('') }}" maxlength="1000" placeholder="{{ 'Optional description'|trans }}"></div>
+                                        <div class="col-md-2"><button class="btn btn-outline-primary w-100" type="submit">{{ 'Save'|trans }}</button></div>
+                                    </form>
+                                </td>
+                                <td>
+                                    <a class="btn btn-icon btn-outline-danger" href="{{ 'servicedownloadable/file_delete'|api_url(query: {id: product.id, file_id: file.id}) }}" {{ fb_api_link({modal: {type: 'danger', title: 'Remove this file?'|trans, button: 'Remove'|trans}, reload: true}) }} title="{{ 'Remove'|trans }}">
+                                        <svg class="icon"><use href="#trash" /></svg>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
 
         <form method="post" action="{{ 'servicedownloadable/upload'|api_url }}" enctype="multipart/form-data" id="upload-form">
             <div class="row g-3">
-                {% if config.filename is defined and config.filename %}
-                    <div class="col-12">
-                        <label class="form-label">{{ 'Currently Uploaded File'|trans }}</label>
-                        <div class="form-control-plaintext">
-                            <a href="{{ 'servicedownloadable/get-file'|url }}/{{ product.id }}" target="_blank">{{ config.filename }}</a>
-                        </div>
-                    </div>
-                {% endif %}
-
-                <div class="col-lg-6">
-                    <label class="form-label">{{ 'Upload New File'|trans }}</label>
-                    <input class="form-control" type="file" name="file_data" id="file_data">
+                <div class="col-lg-4">
+                    <label class="form-label">{{ 'Add File'|trans }}</label>
+                    <input class="form-control" type="file" name="file_data" id="file_data" required>
+                </div>
+                <div class="col-lg-3">
+                    <label class="form-label">{{ 'Label'|trans }}</label>
+                    <input class="form-control" name="label" maxlength="255" placeholder="{{ 'Optional label'|trans }}">
+                </div>
+                <div class="col-lg-5">
+                    <label class="form-label">{{ 'Description'|trans }}</label>
+                    <input class="form-control" name="description" maxlength="1000" placeholder="{{ 'Optional description'|trans }}">
                 </div>
             </div>
             <input type="hidden" name="id" value="{{ product.id }}">
@@ -82,6 +117,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     submitButton.disabled = false;
                 }
                 FOSSBilling.message("{{ 'File was uploaded'|trans }}");
+                window.location.reload();
             },
             function (error) {
                 if (submitButton) {

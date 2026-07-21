@@ -304,7 +304,7 @@ LOCK TABLES `setting` WRITE;
 
 INSERT INTO `setting` (`id`, `param`, `value`, `public`, `category`, `hash`, `created_at`, `updated_at`)
 VALUES
-	(1,'last_patch','91',0,NULL,NULL,NOW(),NOW()),
+	(1,'last_patch','92',0,NULL,NULL,NOW(),NOW()),
 	(2,'company_name','Company Name',0,NULL,NULL,NOW(),NOW()),
 	(3,'company_email','support@yourcompany.com',0,NULL,NULL,NOW(),NOW()),
 	(4,'company_signature','FOSSBilling.org - Client Management, Invoicing and Support Software',0,NULL,NULL,NOW(),NOW()),

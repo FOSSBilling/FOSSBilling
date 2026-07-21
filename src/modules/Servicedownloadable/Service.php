@@ -12,6 +12,9 @@ declare(strict_types=1);
 namespace Box\Mod\Servicedownloadable;
 
 use Box\Mod\Product\Entity\Product;
+use Box\Mod\Servicedownloadable\Entity\ServiceDownloadable;
+use Box\Mod\Servicedownloadable\Entity\ServiceDownloadableFile;
+use Box\Mod\Servicedownloadable\Repository\ServiceDownloadableFileRepository;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
@@ -22,7 +25,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class Service implements InjectionAwareInterface
 {
-    private const string STORED_FILENAME_CONFIG_KEY = 'stored_filename';
+    private const string FILES_CONFIG_KEY = 'files';
 
     private const array DEFAULT_ALLOWED_EXTENSIONS = [
         'zip', 'tar', 'gz', 'tgz', 'bz2', 'xz', 'rar', '7z',
@@ -149,49 +152,41 @@ class Service implements InjectionAwareInterface
     public function attachOrderConfig(Product $product, array &$data): array
     {
         $config = json_decode($product->getConfig() ?? '', true) ?? [];
-        $required = [
-            'filename' => 'Product is not configured completely.',
-            self::STORED_FILENAME_CONFIG_KEY => 'Product is not configured completely.',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $config);
+        $files = $this->validateFileDefinitions($config[self::FILES_CONFIG_KEY] ?? null);
+        if ($files === []) {
+            throw new \FOSSBilling\Exception('Product is not configured completely.');
+        }
 
-        $data['filename'] = $config['filename'];
-        $data[self::STORED_FILENAME_CONFIG_KEY] = $this->validateStoredFilename($config[self::STORED_FILENAME_CONFIG_KEY] ?? null);
+        $data[self::FILES_CONFIG_KEY] = $files;
 
         return array_merge($config, $data);
     }
 
     public function validateOrderData(array &$data): void
     {
-        $required = [
-            'filename' => 'Filename is missing in product config',
-            self::STORED_FILENAME_CONFIG_KEY => 'Stored filename is missing in product config',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
-        $data[self::STORED_FILENAME_CONFIG_KEY] = $this->validateStoredFilename($data[self::STORED_FILENAME_CONFIG_KEY] ?? null);
+        $data[self::FILES_CONFIG_KEY] = $this->validateFileDefinitions($data[self::FILES_CONFIG_KEY] ?? null);
+        if ($data[self::FILES_CONFIG_KEY] === []) {
+            throw new \FOSSBilling\Exception('Downloadable files are missing in product config');
+        }
     }
 
-    /**
-     * @return \Model_ServiceDownloadable
-     */
-    public function action_create(\Model_ClientOrder $order)
+    public function action_create(\Model_ClientOrder $order): ServiceDownloadable
     {
-        $c = json_decode($order->config ?? '', true);
-        if (!is_array($c)) {
+        $config = json_decode($order->config ?? '', true);
+        if (!is_array($config)) {
             throw new \FOSSBilling\Exception(sprintf('Order #%s config is missing', $order->id));
         }
-        $this->validateOrderData($c);
+        $this->validateOrderData($config);
 
-        $model = $this->di['db']->dispense('ServiceDownloadable');
-        $model->client_id = $order->client_id;
-        $model->filename = $c['filename'];
-        $model->stored_filename = $c[self::STORED_FILENAME_CONFIG_KEY];
-        $model->downloads = 0;
-        $model->created_at = date('Y-m-d H:i:s');
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $service = (new ServiceDownloadable())->setClientId((int) $order->client_id);
+        foreach ($config[self::FILES_CONFIG_KEY] as $position => $file) {
+            $service->addFile($this->createServiceFile($file, $position));
+        }
 
-        return $model;
+        $this->di['em']->persist($service);
+        $this->di['em']->flush();
+
+        return $service;
     }
 
     public function action_activate(\Model_ClientOrder $order): bool
@@ -246,23 +241,39 @@ class Service implements InjectionAwareInterface
     {
         $orderService = $this->di['mod_service']('order');
         $service = $orderService->getOrderService($order);
-        if ($service instanceof \Model_ServiceDownloadable) {
-            $this->di['db']->trash($service);
+        if ($service instanceof ServiceDownloadable) {
+            $storedFilenames = array_map(
+                static fn (ServiceDownloadableFile $file): string => $file->getStoredFilename(),
+                $service->getFiles()->toArray(),
+            );
+            $this->di['em']->remove($service);
+            $this->di['em']->flush();
+
+            foreach ($storedFilenames as $storedFilename) {
+                $this->removeStoredFileIfOrphaned($storedFilename);
+            }
         }
     }
 
-    public function toApiArray(\Model_ServiceDownloadable $model, $deep = false, $identity = null): array
+    public function toApiArray(ServiceDownloadable $model, $deep = false, $identity = null): array
     {
-        $result = [
-            'filename' => $model->filename,
-        ];
+        $files = [];
+        foreach ($model->getFiles() as $file) {
+            $item = [
+                'id' => $file->getId(),
+                'filename' => $file->getFilename(),
+                'label' => $file->getLabel(),
+                'description' => $file->getDescription(),
+            ];
 
-        if ($identity instanceof \Model_Admin) {
-            $result['path'] = $this->getStoredFilePath($model->stored_filename);
-            $result['downloads'] = $model->downloads;
+            if ($identity instanceof \Model_Admin) {
+                $item['path'] = $this->getStoredFilePath($file->getStoredFilename());
+                $item['downloads'] = $file->getDownloads();
+            }
+            $files[] = $item;
         }
 
-        return $result;
+        return ['files' => $files];
     }
 
     private function validateStoredFilename(mixed $storedFilename): string
@@ -299,11 +310,7 @@ class Service implements InjectionAwareInterface
 
     private function isStoredFilenameReferenced(string $storedFilename): bool
     {
-        $count = (int) $this->di['db']->getCell(
-            'SELECT COUNT(*) FROM service_downloadable WHERE stored_filename = :stored_filename',
-            [':stored_filename' => $storedFilename]
-        );
-        if ($count > 0) {
+        if ($this->getFileRepository()->isStoredFilenameReferenced($storedFilename)) {
             return true;
         }
 
@@ -338,130 +345,101 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function uploadProductFile(Product $productModel): bool
+    public function uploadProductFile(Product $productModel, array $data = []): bool
     {
-        $productService = $this->di['mod_service']('product');
-        $request = $this->di['request'];
+        $file = $this->getUploadedFile();
+        $fileDefinition = $this->createUploadedFileDefinition($file, $data);
 
-        if ($request->files->count() == 0) {
-            throw new \FOSSBilling\Exception('File upload failed: no files in request.');
-        }
-        $file = $request->files->get('file_data');
-        $fileName = $file->getClientOriginalName();
+        $this->di['em']->wrapInTransaction(function () use ($productModel, $fileDefinition): void {
+            $config = json_decode($productModel->getConfig() ?? '', true) ?? [];
+            $config[self::FILES_CONFIG_KEY] ??= [];
+            $config[self::FILES_CONFIG_KEY][] = $fileDefinition;
+            $productModel->setConfig(json_encode($config, JSON_THROW_ON_ERROR));
+            $productModel->setUpdatedAt(new \DateTime());
 
-        $errorCode = $file->getError();
-        if ($errorCode !== UPLOAD_ERR_OK) {
-            throw new \FOSSBilling\Exception('File upload failed: ' . $this->_error_message($errorCode));
-        }
-
-        $this->validateFileUpload($file);
-
-        $storedFilename = $this->storeUploadedFile($file);
-
-        $config = json_decode($productModel->getConfig() ?? '', true) ?? [];
-        $oldStoredFilename = $config[self::STORED_FILENAME_CONFIG_KEY] ?? null;
-
-        // Check if update_orders is true and update all orders
-        if (isset($config['update_orders']) && $config['update_orders']) {
-            $orderService = $this->di['mod_service']('order');
-            $orders = $productService->getOrdersForProduct($productModel);
-
-            foreach ($orders as $order) {
-                $ordermodel = $this->di['db']->getExistingModelById('ClientOrder', $order['id']);
-                $serviceDownloadable = $orderService->getOrderService($ordermodel);
-
-                // Update the filename
-                $oldconfig = json_decode($order['config'] ?? '', true) ?: [];
-                $oldconfig['filename'] = $fileName;
-                $oldconfig[self::STORED_FILENAME_CONFIG_KEY] = $storedFilename;
-                $ordermodel->config = json_encode($oldconfig);
-
-                // Pass the filename since the file was already uploaded and moved
-                $this->updateProductFile($serviceDownloadable, $ordermodel, $fileName, $storedFilename);
+            if (Tools::normalizeBoolean($config['update_orders'] ?? false)) {
+                $this->addFileToExistingOrders($productModel, $fileDefinition);
             }
-        }
-
-        $config['filename'] = $fileName;
-        $config[self::STORED_FILENAME_CONFIG_KEY] = $storedFilename;
-        $updatedAt = new \DateTime();
-        $productModel->setConfig(json_encode($config));
-        $productModel->setUpdatedAt($updatedAt);
-        $this->di['em']->flush();
-
+        });
         $this->di['logger']->info('Uploaded new file for product %s', $productModel->getId());
-
-        if ($oldStoredFilename !== null && $oldStoredFilename !== $storedFilename) {
-            $this->removeStoredFileIfOrphaned($oldStoredFilename);
-        }
 
         return true;
     }
 
-    /**
-     * @throws \FOSSBilling\Exception
-     */
-    public function updateProductFile(\Model_ServiceDownloadable $serviceDownloadable, \Model_ClientOrder $order, ?string $filename = null, ?string $storedFilename = null): bool
+    public function updateProductFile(Product $product, array $data): bool
     {
-        $request = $this->di['request'];
-        $oldStoredFilename = $serviceDownloadable->stored_filename ?? null;
+        $fileKey = $this->validateFileKey($data['file_id'] ?? null);
+        $config = json_decode($product->getConfig() ?? '', true) ?: [];
+        $index = $this->findFileDefinitionIndex($config[self::FILES_CONFIG_KEY] ?? [], $fileKey);
+        $config[self::FILES_CONFIG_KEY][$index]['label'] = $this->normalizeLabel($data['label'] ?? null);
+        $config[self::FILES_CONFIG_KEY][$index]['description'] = $this->normalizeDescription($data['description'] ?? null);
 
-        // If filename is provided, use it directly (file was already uploaded in uploadProductFile)
-        if ($filename !== null) {
-            $fileName = $filename;
-            if ($storedFilename === null) {
-                throw new \FOSSBilling\Exception('No stored filename available for order file update');
-            }
-        } elseif ($request->files->count() > 0) {
-            $file = $request->files->get('file_data');
-            $fileName = $file->getClientOriginalName();
+        $this->di['em']->wrapInTransaction(function () use ($product, $config, $index): void {
+            $product->setConfig(json_encode($config, JSON_THROW_ON_ERROR));
 
-            $errorCode = $file->getError();
-            if ($errorCode !== UPLOAD_ERR_OK) {
-                throw new \FOSSBilling\Exception('File upload failed: ' . $this->_error_message($errorCode));
+            if (Tools::normalizeBoolean($config['update_orders'] ?? false)) {
+                $this->updateFileInExistingOrders($product, $config[self::FILES_CONFIG_KEY][$index]);
             }
+        });
 
-            $this->validateFileUpload($file);
-            $storedFilename = $this->storeUploadedFile($file);
-        } else {
-            $fileName = null;
-            if (isset($order->config)) {
-                $config = json_decode($order->config, true);
-                $fileName = $config['filename'] ?? null;
-                $storedFilename = $config[self::STORED_FILENAME_CONFIG_KEY] ?? null;
+        return true;
+    }
+
+    public function removeProductFile(Product $product, mixed $fileKey): bool
+    {
+        $fileKey = $this->validateFileKey($fileKey);
+        $config = json_decode($product->getConfig() ?? '', true) ?: [];
+        $index = $this->findFileDefinitionIndex($config[self::FILES_CONFIG_KEY] ?? [], $fileKey);
+        $storedFilename = $config[self::FILES_CONFIG_KEY][$index]['stored_filename'];
+        array_splice($config[self::FILES_CONFIG_KEY], $index, 1);
+
+        $this->di['em']->wrapInTransaction(function () use ($product, $config, $fileKey): void {
+            $product->setConfig(json_encode($config, JSON_THROW_ON_ERROR));
+
+            if (Tools::normalizeBoolean($config['update_orders'] ?? false)) {
+                $this->removeFileFromExistingOrders($product, $fileKey);
             }
-            if (!$fileName && isset($serviceDownloadable->filename)) {
-                $fileName = $serviceDownloadable->filename;
-            }
-            if (!$fileName) {
-                throw new \FOSSBilling\Exception('No filename available for order file update');
-            }
-            if (!$storedFilename && isset($serviceDownloadable->stored_filename)) {
-                $storedFilename = $serviceDownloadable->stored_filename;
-            }
-            if (!$storedFilename) {
-                throw new \FOSSBilling\Exception('No stored filename available for order file update');
-            }
+        });
+        $this->removeStoredFileIfOrphaned($storedFilename);
+
+        return true;
+    }
+
+    public function uploadOrderFile(ServiceDownloadable $service, \Model_ClientOrder $order, array $data = []): bool
+    {
+        $file = $this->getUploadedFile();
+        $definition = $this->createUploadedFileDefinition($file, $data);
+        $this->di['em']->wrapInTransaction(function () use ($service, $order, $definition): void {
+            $service->addFile($this->createServiceFile($definition, $service->getFiles()->count()));
+
+            $config = json_decode($order->config ?? '', true) ?: [];
+            $config[self::FILES_CONFIG_KEY] ??= [];
+            $config[self::FILES_CONFIG_KEY][] = $definition;
+            $this->saveOrderConfig($order, $config);
+        });
+
+        return true;
+    }
+
+    public function removeOrderFile(ServiceDownloadable $service, \Model_ClientOrder $order, int $fileId): bool
+    {
+        $file = $service->findFileById($fileId);
+        if (!$file instanceof ServiceDownloadableFile) {
+            throw new \FOSSBilling\InformationException('File not found');
         }
 
-        $storedFilename = $this->validateStoredFilename($storedFilename);
-
-        $serviceDownloadable->filename = $fileName;
-        $serviceDownloadable->stored_filename = $storedFilename;
-        $serviceDownloadable->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($serviceDownloadable);
-
-        $config = json_decode($order->config ?? '', true) ?: [];
-        $config['filename'] = $fileName;
-        $config[self::STORED_FILENAME_CONFIG_KEY] = $storedFilename;
-        $order->config = json_encode($config);
-        $order->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($order);
-
-        $this->di['logger']->info('Uploaded new file for order %s', $order->id);
-
-        if (isset($oldStoredFilename) && $oldStoredFilename !== $storedFilename) {
-            $this->removeStoredFileIfOrphaned($oldStoredFilename);
-        }
+        $storedFilename = $file->getStoredFilename();
+        $fileKey = $file->getFileKey();
+        $this->di['em']->wrapInTransaction(function () use ($service, $order, $file, $fileKey): void {
+            $service->removeFile($file);
+            $config = json_decode($order->config ?? '', true) ?: [];
+            $config[self::FILES_CONFIG_KEY] = array_values(array_filter(
+                $config[self::FILES_CONFIG_KEY] ?? [],
+                static fn (array $definition): bool => ($definition['id'] ?? null) !== $fileKey,
+            ));
+            $this->saveOrderConfig($order, $config);
+        });
+        $this->removeStoredFileIfOrphaned($storedFilename);
 
         return true;
     }
@@ -480,35 +458,29 @@ class Service implements InjectionAwareInterface
         };
     }
 
-    public function sendFile(\Model_ServiceDownloadable $serviceDownloadable): Response
+    public function sendFile(ServiceDownloadableFile $file, bool $countDownload = true): Response
     {
-        $fileName = $serviceDownloadable->filename;
-        $storedFilename = $serviceDownloadable->stored_filename;
-        if (!$storedFilename) {
-            throw new \FOSSBilling\Exception('File cannot be downloaded at the moment. Please contact support.', null, 404);
-        }
-
-        $filePath = $this->getStoredFilePath($storedFilename);
+        $filePath = $this->getStoredFilePath($file->getStoredFilename());
         if (!$this->filesystem->exists($filePath)) {
             throw new \FOSSBilling\Exception('File cannot be downloaded at the moment. Please contact support.', null, 404);
         }
 
-        // Increase download hit count.
-        ++$serviceDownloadable->downloads;
-        $serviceDownloadable->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($serviceDownloadable);
+        if ($countDownload) {
+            $file->incrementDownloads();
+            $this->di['em']->flush();
+        }
 
         $response = new BinaryFileResponse($filePath);
 
         $disposition = $response->headers->makeDisposition(
             HeaderUtils::DISPOSITION_ATTACHMENT,
-            $fileName
+            $file->getFilename()
         );
 
         $response->headers->set('Content-Type', 'application/octet-stream');
         $response->headers->set('Content-Disposition', $disposition);
 
-        $this->di['logger']->info('Downloaded service %s file', $serviceDownloadable->id);
+        $this->di['logger']->info('Downloaded service file %s', $file->getId());
 
         return $response;
     }
@@ -518,28 +490,20 @@ class Service implements InjectionAwareInterface
         $config = json_decode($productModel->getConfig() ?? '', true) ?: [];
         $config['update_orders'] = Tools::normalizeBoolean($data['update_orders'] ?? false);
         $updatedAt = new \DateTime();
-        $productModel->setConfig(json_encode($config));
+        $productModel->setConfig(json_encode($config, JSON_THROW_ON_ERROR));
         $productModel->setUpdatedAt($updatedAt);
         $this->di['em']->flush();
 
         return true;
     }
 
-    /**
-     * Sends the file associated with a product for download.
-     *
-     * @throws \FOSSBilling\Exception
-     */
-    public function sendProductFile(Product $product): Response
+    public function sendProductFile(Product $product, mixed $fileKey): Response
     {
         $config = json_decode($product->getConfig() ?? '', true) ?: [];
-
-        if (!isset($config['filename'], $config[self::STORED_FILENAME_CONFIG_KEY])) {
-            throw new \FOSSBilling\Exception('No file associated with this product.', null, 404);
-        }
-
-        $fileName = $config['filename'];
-        $filePath = $this->getStoredFilePath($config[self::STORED_FILENAME_CONFIG_KEY]);
+        $fileKey = $this->validateFileKey($fileKey);
+        $index = $this->findFileDefinitionIndex($config[self::FILES_CONFIG_KEY] ?? [], $fileKey);
+        $definition = $config[self::FILES_CONFIG_KEY][$index];
+        $filePath = $this->getStoredFilePath($definition['stored_filename']);
 
         if (!$this->filesystem->exists($filePath)) {
             throw new \FOSSBilling\Exception('File cannot be downloaded at the moment. Please contact support.', null, 404);
@@ -549,7 +513,7 @@ class Service implements InjectionAwareInterface
 
         $disposition = $response->headers->makeDisposition(
             HeaderUtils::DISPOSITION_ATTACHMENT,
-            $fileName
+            $definition['filename']
         );
 
         $response->headers->set('Content-Type', 'application/octet-stream');
@@ -558,5 +522,213 @@ class Service implements InjectionAwareInterface
         $this->di['logger']->info('Downloaded product %s file by admin.', $product->getId());
 
         return $response;
+    }
+
+    private function getUploadedFile(): \Symfony\Component\HttpFoundation\File\UploadedFile
+    {
+        $file = $this->di['request']->files->get('file_data');
+        if (!$file instanceof \Symfony\Component\HttpFoundation\File\UploadedFile) {
+            throw new \FOSSBilling\Exception('File upload failed: no files in request.');
+        }
+
+        $errorCode = $file->getError();
+        if ($errorCode !== UPLOAD_ERR_OK) {
+            throw new \FOSSBilling\Exception('File upload failed: ' . $this->_error_message($errorCode));
+        }
+        $this->validateFileUpload($file);
+
+        return $file;
+    }
+
+    private function createUploadedFileDefinition(\Symfony\Component\HttpFoundation\File\UploadedFile $file, array $data): array
+    {
+        $filename = $this->validateDisplayFilename($file->getClientOriginalName());
+        $label = $this->normalizeLabel($data['label'] ?? null);
+        $description = $this->normalizeDescription($data['description'] ?? null);
+
+        return [
+            'id' => bin2hex(random_bytes(16)),
+            'filename' => $filename,
+            'stored_filename' => $this->storeUploadedFile($file),
+            'label' => $label,
+            'description' => $description,
+        ];
+    }
+
+    private function createServiceFile(array $definition, int $sortOrder): ServiceDownloadableFile
+    {
+        $file = new ServiceDownloadableFile(
+            $this->validateFileKey($definition['id'] ?? null),
+            $this->validateDisplayFilename($definition['filename'] ?? null),
+            $this->validateStoredFilename($definition['stored_filename'] ?? null),
+        );
+
+        return $file
+            ->setLabel($this->normalizeLabel($definition['label'] ?? null))
+            ->setDescription($this->normalizeDescription($definition['description'] ?? null))
+            ->setSortOrder($sortOrder);
+    }
+
+    private function validateFileDefinitions(mixed $files): array
+    {
+        if (!is_array($files)) {
+            return [];
+        }
+
+        $validated = [];
+        $fileKeys = [];
+        foreach ($files as $file) {
+            if (!is_array($file)) {
+                throw new \FOSSBilling\Exception('Downloadable file configuration is invalid');
+            }
+            $fileKey = $this->validateFileKey($file['id'] ?? null);
+            if (isset($fileKeys[$fileKey])) {
+                throw new \FOSSBilling\Exception('Downloadable file configuration contains duplicate file IDs');
+            }
+            $fileKeys[$fileKey] = true;
+            $validated[] = [
+                'id' => $fileKey,
+                'filename' => $this->validateDisplayFilename($file['filename'] ?? null),
+                'stored_filename' => $this->validateStoredFilename($file['stored_filename'] ?? null),
+                'label' => $this->normalizeLabel($file['label'] ?? null),
+                'description' => $this->normalizeDescription($file['description'] ?? null),
+            ];
+        }
+
+        return $validated;
+    }
+
+    private function validateFileKey(mixed $fileKey): string
+    {
+        if (!is_string($fileKey) || preg_match('/\A[a-f0-9]{32}\z/', $fileKey) !== 1) {
+            throw new \FOSSBilling\InformationException('File not found');
+        }
+
+        return $fileKey;
+    }
+
+    private function normalizeOptionalText(mixed $value): ?string
+    {
+        if (!is_string($value)) {
+            return null;
+        }
+
+        $value = trim($value);
+
+        return $value === '' ? null : $value;
+    }
+
+    private function normalizeLabel(mixed $value): ?string
+    {
+        $label = $this->normalizeOptionalText($value);
+        if ($label !== null && mb_strlen($label) > 255) {
+            throw new \FOSSBilling\Exception('File label cannot exceed 255 characters');
+        }
+
+        return $label;
+    }
+
+    private function normalizeDescription(mixed $value): ?string
+    {
+        $description = $this->normalizeOptionalText($value);
+        if ($description !== null && mb_strlen($description) > 1000) {
+            throw new \FOSSBilling\Exception('File description cannot exceed 1000 characters');
+        }
+
+        return $description;
+    }
+
+    private function validateDisplayFilename(mixed $filename): string
+    {
+        if (!is_string($filename) || $filename === '' || mb_strlen($filename) > 255) {
+            throw new \FOSSBilling\Exception('Downloadable filename is invalid');
+        }
+
+        return $filename;
+    }
+
+    private function findFileDefinitionIndex(array $files, string $fileKey): int
+    {
+        foreach ($files as $index => $file) {
+            if (($file['id'] ?? null) === $fileKey) {
+                return $index;
+            }
+        }
+
+        throw new \FOSSBilling\InformationException('File not found');
+    }
+
+    private function addFileToExistingOrders(Product $product, array $definition): void
+    {
+        $this->forEachProductOrder($product, function (\Model_ClientOrder $order, ?ServiceDownloadable $service) use ($definition): void {
+            $config = json_decode($order->config ?? '', true) ?: [];
+            $config[self::FILES_CONFIG_KEY] ??= [];
+            $config[self::FILES_CONFIG_KEY][] = $definition;
+            $this->saveOrderConfig($order, $config);
+            $service?->addFile($this->createServiceFile($definition, $service->getFiles()->count()));
+        });
+    }
+
+    private function updateFileInExistingOrders(Product $product, array $definition): void
+    {
+        $this->forEachProductOrder($product, function (\Model_ClientOrder $order, ?ServiceDownloadable $service) use ($definition): void {
+            $config = json_decode($order->config ?? '', true) ?: [];
+            foreach ($config[self::FILES_CONFIG_KEY] ?? [] as $index => $file) {
+                if (($file['id'] ?? null) === $definition['id']) {
+                    $config[self::FILES_CONFIG_KEY][$index] = $definition;
+                }
+            }
+            $this->saveOrderConfig($order, $config);
+
+            $serviceFile = $service?->findFileByKey($definition['id']);
+            if ($serviceFile instanceof ServiceDownloadableFile) {
+                $serviceFile
+                    ->setLabel($definition['label'])
+                    ->setDescription($definition['description']);
+            }
+        });
+    }
+
+    private function removeFileFromExistingOrders(Product $product, string $fileKey): void
+    {
+        $this->forEachProductOrder($product, function (\Model_ClientOrder $order, ?ServiceDownloadable $service) use ($fileKey): void {
+            $config = json_decode($order->config ?? '', true) ?: [];
+            $config[self::FILES_CONFIG_KEY] = array_values(array_filter(
+                $config[self::FILES_CONFIG_KEY] ?? [],
+                static fn (array $file): bool => ($file['id'] ?? null) !== $fileKey,
+            ));
+            $this->saveOrderConfig($order, $config);
+
+            $serviceFile = $service?->findFileByKey($fileKey);
+            if ($serviceFile instanceof ServiceDownloadableFile) {
+                $service->removeFile($serviceFile);
+            }
+        });
+    }
+
+    private function forEachProductOrder(Product $product, callable $callback): void
+    {
+        $productService = $this->di['mod_service']('product');
+        $orderService = $this->di['mod_service']('order');
+        foreach ($productService->getOrdersForProduct($product) as $orderData) {
+            $order = $this->di['db']->getExistingModelById('ClientOrder', $orderData['id']);
+            $service = $orderService->getOrderService($order);
+            $callback($order, $service instanceof ServiceDownloadable ? $service : null);
+        }
+    }
+
+    private function saveOrderConfig(\Model_ClientOrder $order, array $config): void
+    {
+        $order->config = json_encode($config, JSON_THROW_ON_ERROR);
+        $order->updated_at = date('Y-m-d H:i:s');
+        $this->di['em']->getConnection()->update('client_order', [
+            'config' => $order->config,
+            'updated_at' => $order->updated_at,
+        ], ['id' => $order->id]);
+    }
+
+    private function getFileRepository(): ServiceDownloadableFileRepository
+    {
+        return $this->di['em']->getRepository(ServiceDownloadableFile::class);
     }
 }
