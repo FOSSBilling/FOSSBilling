@@ -270,6 +270,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $custom_18 - Custom field 18
      * @optional string $custom_19 - Custom field 19
      * @optional string $custom_20 - Custom field 20
+     * @optional string $group_id - client group id
      */
     #[RequiredParams(['id' => 'Client ID was not passed'])]
     public function update($data = []): bool
@@ -350,6 +351,25 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         foreach ($allowedFields as $field) {
             $client->{$field} = $data[$field] ?? $client->{$field};
         }
+
+        // The admin client form submits the group as `group_id` (see the
+        // documented @optional param above), but the allow-list only applies
+        // `client_group_id`, so the selection was never saved. Map it here.
+        // An empty value clears the group; any other value must be a positive
+        // integer that resolves to an existing client group.
+        if (array_key_exists('group_id', $data)) {
+            if (empty($data['group_id'])) {
+                $client->client_group_id = null;
+            } else {
+                $groupId = filter_var($data['group_id'], FILTER_VALIDATE_INT);
+                if ($groupId === false || $groupId <= 0) {
+                    throw new InformationException('Invalid client group ID: :id', [':id' => $data['group_id']]);
+                }
+                $this->getDi()['db']->getExistingModelById('ClientGroup', $groupId, 'Client group not found');
+                $client->client_group_id = $groupId;
+            }
+        }
+
         if (array_key_exists('billing_email', $data)) {
             $client->billing_email = $data['billing_email'];
         }
