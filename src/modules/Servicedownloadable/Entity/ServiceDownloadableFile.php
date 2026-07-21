@@ -36,15 +36,6 @@ class ServiceDownloadableFile implements TimestampInterface
     #[ORM\JoinColumn(name: 'service_downloadable_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
     private ?ServiceDownloadable $service = null;
 
-    #[ORM\Column(name: 'file_key', type: Types::STRING, length: 32)]
-    private string $fileKey;
-
-    #[ORM\Column(type: Types::STRING, length: 255)]
-    private string $filename;
-
-    #[ORM\Column(name: 'stored_filename', type: Types::STRING, length: 64)]
-    private string $storedFilename;
-
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     private ?string $label = null;
 
@@ -57,11 +48,14 @@ class ServiceDownloadableFile implements TimestampInterface
     #[ORM\Column(name: 'sort_order', type: Types::INTEGER, options: ['default' => 0])]
     private int $sortOrder = 0;
 
-    public function __construct(string $fileKey, string $filename, string $storedFilename)
-    {
-        $this->fileKey = $fileKey;
-        $this->filename = $filename;
-        $this->storedFilename = $storedFilename;
+    public function __construct(
+        #[ORM\Column(name: 'file_key', type: Types::STRING, length: 32)]
+        private string $fileKey,
+        #[ORM\Column(type: Types::STRING, length: 255)]
+        private string $filename,
+        #[ORM\Column(name: 'stored_filename', type: Types::STRING, length: 64)]
+        private string $storedFilename,
+    ) {
     }
 
     public function getId(): ?int
