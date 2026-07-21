@@ -47,6 +47,16 @@ test('stores all form field values', function (): void {
         ->and($field->getTextSize())->toBe(40);
 });
 
+test('treats nullable boolean flags as false by default', function (): void {
+    $field = new FormField();
+
+    expect($field->isHideLabel())->toBeFalse()
+        ->and($field->isRequired())->toBeFalse()
+        ->and($field->isHidden())->toBeFalse()
+        ->and($field->isReadonly())->toBeFalse()
+        ->and($field->isUnique())->toBeFalse();
+});
+
 test('manages form field timestamps', function (): void {
     $createdAt = new DateTime('2026-01-01 12:00:00');
     $field = new FormField();
