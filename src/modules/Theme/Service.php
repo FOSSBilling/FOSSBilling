@@ -297,7 +297,8 @@ class Service implements InjectionAwareInterface
                 FROM setting
                 WHERE param = :param
                ';
-        $theme = $this->di['db']->getCell($query, ['param' => 'admin_theme']);
+        $theme = $this->di['dbal']->fetchOne($query, ['param' => 'admin_theme']);
+        $theme = is_string($theme) ? $theme : null;
         // Cache the raw database value (use empty string instead of null to mark as cached)
         self::$adminThemeCache = $theme ?? '';
 
@@ -324,7 +325,8 @@ class Service implements InjectionAwareInterface
             return !empty(self::$clientThemeCache) ? self::$clientThemeCache : 'huraga';
         }
 
-        $theme = $this->di['db']->getCell("SELECT value FROM setting WHERE param = 'theme' ");
+        $theme = $this->di['dbal']->fetchOne("SELECT value FROM setting WHERE param = 'theme' ");
+        $theme = is_string($theme) ? $theme : null;
         // Cache the raw database value (use empty string instead of null to mark as cached)
         self::$clientThemeCache = $theme ?? '';
 

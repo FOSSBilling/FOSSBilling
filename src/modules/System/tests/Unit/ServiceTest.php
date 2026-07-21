@@ -100,18 +100,37 @@ test('getParams returns system parameters', function (): void {
             'value' => 'work@example.eu',
         ],
     ];
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')->atLeast()->once()
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('fetchAllAssociative')->once()
+        ->with(Mockery::on(static fn (string $query): bool => preg_replace('/\s+/', ' ', trim($query)) === 'SELECT param, value FROM setting'))
         ->andReturn($multParamsResults);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['dbal'] = $dbalMock;
 
     $service->setDi($di);
 
     $result = $service->getParams([]);
     expect($result)->toBeArray();
     expect($result)->toBe($expected);
+});
+
+test('getNameservers returns setting pairs', function (): void {
+    $service = new Service();
+    $expected = [
+        'nameserver_1' => 'ns1.example.test',
+        'nameserver_2' => 'ns2.example.test',
+    ];
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('fetchAllKeyValue')->once()
+        ->with("SELECT param, value FROM setting WHERE param IN ('nameserver_1', 'nameserver_2', 'nameserver_3', 'nameserver_4')")
+        ->andReturn($expected);
+
+    $di = container();
+    $di['dbal'] = $dbalMock;
+    $service->setDi($di);
+
+    expect($service->getNameservers())->toBe($expected);
 });
 
 test('updateParams updates system parameters', function (): void {
