@@ -42,8 +42,8 @@ class ServiceTax implements InjectionAwareInterface
             return 0;
         }
 
-        $state = $model instanceof ClientEntity ? $model->getState() : $model->state;
-        $country = $model instanceof ClientEntity ? $model->getCountry() : $model->country;
+        $state = $model->getState();
+        $country = $model->getCountry();
 
         $tax = $this->getTaxRepository()->findByCountryAndState($state, $country);
         // find rate which matches clients country and state
@@ -75,17 +75,17 @@ class ServiceTax implements InjectionAwareInterface
 
     public function getTax(Invoice $invoice)
     {
-        $taxrate = $invoice instanceof Entity\Invoice ? $invoice->getTaxrate() : $invoice->taxrate;
+        $taxrate = $invoice->getTaxrate();
         if ($taxrate <= 0) {
             return 0;
         }
 
-        $invoiceId = $invoice instanceof Entity\Invoice ? $invoice->getId() : $invoice->id;
+        $invoiceId = $invoice->getId();
         $tax = 0;
         $invoiceItems = $this->getInvoiceItemRepository()->findByInvoiceId((int) $invoiceId);
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
         foreach ($invoiceItems as $item) {
-            $tax += $invoiceItemService->getTax($item) * ($item instanceof InvoiceItem ? $item->getQuantity() : $item->quantity);
+            $tax += $invoiceItemService->getTax($item) * $item->getQuantity();
         }
 
         return $tax;
@@ -119,11 +119,10 @@ class ServiceTax implements InjectionAwareInterface
 
     public function update(Tax $model, array $data): bool
     {
-        $model->name = $data['name'];
-        $model->country = (!isset($data['country']) || empty($data['country'])) ? null : $data['country'];
-        $model->state = (!isset($data['state']) || empty($data['state'])) ? null : $data['state'];
-        $model->taxrate = $data['taxrate'];
-        $model->updated_at = date('Y-m-d H:i:s');
+        $model->setName($data['name']);
+        $model->setCountry((!isset($data['country']) || empty($data['country'])) ? null : $data['country']);
+        $model->setState((!isset($data['state']) || empty($data['state'])) ? null : $data['state']);
+        $model->setTaxrate($data['taxrate']);
         $this->di['em']->persist($model);
         $this->di['em']->flush();
 

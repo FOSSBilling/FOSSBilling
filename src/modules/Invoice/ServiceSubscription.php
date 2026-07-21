@@ -67,7 +67,7 @@ class ServiceSubscription implements InjectionAwareInterface
     {
         $status = $data['status'] ?? null;
         if ($status === 'canceled') {
-            $this->cancelAtGateway($model, (string) ($data['sid'] ?? ($model instanceof Subscription ? $model->getSid() : $model->sid)));
+            $this->cancelAtGateway($model, (string) ($data['sid'] ?? $model->getSid()));
         }
 
         return $this->persistUpdate($model, $data);
@@ -83,24 +83,15 @@ class ServiceSubscription implements InjectionAwareInterface
 
     private function persistUpdate(Subscription $model, array $data): bool
     {
-        if ($model instanceof Subscription) {
-            $model->setStatus($data['status'] ?? $model->getStatus());
-            $model->setSid($data['sid'] ?? $model->getSid());
-            $model->setPeriod($data['period'] ?? $model->getPeriod());
-            $model->setAmount($data['amount'] ?? $model->getAmount());
-            $model->setCurrency($data['currency'] ?? $model->getCurrency());
-        } else {
-            $model->status = $data['status'] ?? $model->status;
-            $model->sid = $data['sid'] ?? $model->sid;
-            $model->period = $data['period'] ?? $model->period;
-            $model->amount = $data['amount'] ?? $model->amount;
-            $model->currency = $data['currency'] ?? $model->currency;
-            $model->updated_at = date('Y-m-d H:i:s');
-        }
+        $model->setStatus($data['status'] ?? $model->getStatus());
+        $model->setSid($data['sid'] ?? $model->getSid());
+        $model->setPeriod($data['period'] ?? $model->getPeriod());
+        $model->setAmount($data['amount'] ?? $model->getAmount());
+        $model->setCurrency($data['currency'] ?? $model->getCurrency());
         $this->di['em']->persist($model);
         $this->di['em']->flush();
 
-        $id = $model instanceof Subscription ? $model->getId() : $model->id;
+        $id = $model->getId();
         $this->di['logger']->info('Updated subscription %s', $id);
 
         return true;
@@ -109,16 +100,16 @@ class ServiceSubscription implements InjectionAwareInterface
     public function toApiArray(Subscription $model, $deep = false, $identity = null): array
     {
         $result = [
-            'id' => $model instanceof Subscription ? $model->getId() : $model->id,
-            'sid' => $model instanceof Subscription ? $model->getSid() : $model->sid,
-            'period' => $model instanceof Subscription ? $model->getPeriod() : $model->period,
-            'amount' => $model instanceof Subscription ? $model->getAmount() : $model->amount,
-            'currency' => $model instanceof Subscription ? $model->getCurrency() : $model->currency,
-            'status' => $model instanceof Subscription ? $model->getStatus() : $model->status,
-            'created_at' => $model instanceof Subscription ? $model->getCreatedAt() : $model->created_at,
-            'updated_at' => $model instanceof Subscription ? $model->getUpdatedAt() : $model->updated_at,
+            'id' => $model->getId(),
+            'sid' => $model->getSid(),
+            'period' => $model->getPeriod(),
+            'amount' => $model->getAmount(),
+            'currency' => $model->getCurrency(),
+            'status' => $model->getStatus(),
+            'created_at' => $model->getCreatedAt(),
+            'updated_at' => $model->getUpdatedAt(),
         ];
-        $clientId = $model instanceof Subscription ? $model->getClientId() : $model->client_id;
+        $clientId = $model->getClientId();
         $client = $this->di['em']->getRepository(ClientEntity::class)->find($clientId);
         if ($client instanceof ClientEntity) {
             $clientService = $this->di['mod_service']('Client');
@@ -127,7 +118,7 @@ class ServiceSubscription implements InjectionAwareInterface
             $result['client'] = [];
         }
 
-        $payGatewayId = $model instanceof Subscription ? $model->getPayGatewayId() : $model->pay_gateway_id;
+        $payGatewayId = $model->getPayGatewayId();
         $gtw = $this->getPayGatewayRepository()->find($payGatewayId);
         if ($gtw instanceof PayGateway) {
             $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
@@ -239,13 +230,8 @@ class ServiceSubscription implements InjectionAwareInterface
 
     public function unsubscribe(Subscription $model): void
     {
-        if ($model instanceof Subscription) {
-            $model->setStatus('canceled');
-            $model->setUpdatedAt(new \DateTime());
-        } else {
-            $model->status = 'canceled';
-            $model->updated_at = date('Y-m-d H:i:s');
-        }
+        $model->setStatus('canceled');
+        $model->setUpdatedAt(new \DateTime());
         $this->di['em']->persist($model);
         $this->di['em']->flush();
     }
@@ -258,7 +244,7 @@ class ServiceSubscription implements InjectionAwareInterface
 
     public function scheduleCancellation(Subscription $model): void
     {
-        $subscriptionId = trim((string) ($model instanceof Subscription ? $model->getSid() : $model->sid));
+        $subscriptionId = trim((string) $model->getSid());
         if ($subscriptionId === '') {
             throw new InformationException('The subscription cannot be canceled at the end of its billing period because it has no gateway ID.');
         }
@@ -288,7 +274,7 @@ class ServiceSubscription implements InjectionAwareInterface
 
     private function getGatewayAdapter(Subscription $model): object
     {
-        $payGatewayId = $model instanceof Subscription ? $model->getPayGatewayId() : $model->pay_gateway_id;
+        $payGatewayId = $model->getPayGatewayId();
         $gateway = $this->getPayGatewayRepository()->find($payGatewayId)
             ?? throw new InformationException('Payment gateway not found');
         $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
@@ -346,7 +332,7 @@ class ServiceSubscription implements InjectionAwareInterface
                 if (!$order instanceof OrderEntity) {
                     throw new InformationException('Order not found');
                 }
-                $orderStatus = $order instanceof OrderEntity ? $order->getStatus() : $order->status;
+                $orderStatus = $order->getStatus();
                 if (in_array($orderStatus, [OrderEntity::STATUS_CANCELED, OrderEntity::STATUS_PENDING_SETUP, OrderEntity::STATUS_FAILED_SETUP], true)) {
                     continue;
                 }

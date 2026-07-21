@@ -486,9 +486,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getDi()['em']->getRepository(ClientBalance::class)->find($data['id']) ?? throw new InformationException('Balance line not found');
 
-        $id = $model->id;
-        $client_id = $model->client_id;
-        $amount = $model->amount;
+        $id = $model->getId();
+        $client_id = $model->getClientId();
+        $amount = $model->getAmount();
 
         $this->getDi()['em']->remove($model);
 
@@ -618,8 +618,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getDi()['em']->getRepository(ClientGroup::class)->find($data['id']) ?? throw new InformationException('Group not found');
 
-        $model->title = $data['title'] ?? $model->title;
-        $model->updated_at = date('Y-m-d H:i:s');
+        $model->setTitle($data['title'] ?? $model->getTitle());
         $this->getDi()['em']->persist($model);
 
         return true;

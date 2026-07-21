@@ -65,19 +65,18 @@ class ServiceTransaction implements InjectionAwareInterface
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminTransactionUpdate', 'params' => ['id' => $model->getId()]]);
 
-        $model->invoice_id = $data['invoice_id'] ?? $model->getInvoiceId();
-        $model->txn_id = $data['txn_id'] ?? $model->getTxnId();
-        $model->txn_status = $data['txn_status'] ?? $model->getTxnStatus();
-        $model->gateway_id = $data['gateway_id'] ?? $model->getGatewayId();
-        $model->amount = $data['amount'] ?? $model->getAmount();
-        $model->currency = $data['currency'] ?? $model->getCurrency();
-        $model->type = $data['type'] ?? $model->getType();
-        $model->note = $data['note'] ?? $model->getNote();
-        $model->status = $data['status'] ?? $model->getStatus();
-        $model->error = $data['error'] ?? $model->getError();
-        $model->error_code = $data['error_code'] ?? $model->getErrorCode();
-        $model->validate_ipn = $data['validate_ipn'] ?? $model->isValidateIpn();
-        $model->updated_at = date('Y-m-d H:i:s');
+        $model->setInvoiceId($data['invoice_id'] ?? $model->getInvoiceId());
+        $model->setTxnId(isset($data['txn_id']) ? (string) $data['txn_id'] : $model->getTxnId());
+        $model->setTxnStatus($data['txn_status'] ?? $model->getTxnStatus());
+        $model->setGatewayId($data['gateway_id'] ?? $model->getGatewayId());
+        $model->setAmount($data['amount'] ?? $model->getAmount());
+        $model->setCurrency($data['currency'] ?? $model->getCurrency());
+        $model->setType($data['type'] ?? $model->getType());
+        $model->setNote($data['note'] ?? $model->getNote());
+        $model->setStatus($data['status'] ?? $model->getStatus());
+        $model->setError($data['error'] ?? $model->getError());
+        $model->setErrorCode($data['error_code'] ?? $model->getErrorCode());
+        $model->setValidateIpn((bool) ($data['validate_ipn'] ?? $model->isValidateIpn()));
         $this->di['em']->persist($model);
         $this->di['em']->flush();
         $this->di['events_manager']->fire(['event' => 'onAfterAdminTransactionUpdate', 'params' => ['id' => $model->getId()]]);
@@ -258,8 +257,8 @@ class ServiceTransaction implements InjectionAwareInterface
     public function toApiArray(Transaction $model, $deep = false, $identity = null): array
     {
         $gateway = null;
-        if ($model->getGatewayId() ?? $model->getGatewayId() ?? false) {
-            $gId = $model instanceof Transaction ? $model->getGatewayId() : $model->gateway_id;
+        if ($model->getGatewayId()) {
+            $gId = $model->getGatewayId();
             $gtw = $this->getPayGatewayRepository()->find($gId);
             if ($gtw instanceof PayGateway) {
                 $gateway = $gtw->getName();
@@ -267,26 +266,26 @@ class ServiceTransaction implements InjectionAwareInterface
         }
 
         $result = [
-            'id' => $model instanceof Transaction ? $model->getId() : $model->id,
-            'invoice_id' => $model instanceof Transaction ? $model->getInvoiceId() : $model->invoice_id,
-            'txn_id' => $model instanceof Transaction ? $model->getTxnId() : $model->txn_id,
-            'txn_status' => $model instanceof Transaction ? $model->getTxnStatus() : $model->txn_status,
-            'gateway_id' => $model instanceof Transaction ? $model->getGatewayId() : $model->gateway_id,
+            'id' => $model->getId(),
+            'invoice_id' => $model->getInvoiceId(),
+            'txn_id' => $model->getTxnId(),
+            'txn_status' => $model->getTxnStatus(),
+            'gateway_id' => $model->getGatewayId(),
             'gateway' => $gateway,
-            'amount' => (float) (($model instanceof Transaction ? $model->getAmount() : $model->amount) ?? 0),
-            'currency' => $model instanceof Transaction ? $model->getCurrency() : $model->currency,
-            'type' => $model instanceof Transaction ? $model->getType() : $model->type,
-            'status' => $model instanceof Transaction ? $model->getStatus() : $model->status,
-            'ip' => $model instanceof Transaction ? $model->getIp() : $model->ip,
-            'validate_ipn' => $model instanceof Transaction ? $model->isValidateIpn() : $model->validate_ipn,
-            'error' => $model instanceof Transaction ? $model->getError() : $model->error,
-            'error_code' => $model instanceof Transaction ? $model->getErrorCode() : $model->error_code,
-            'note' => $model instanceof Transaction ? $model->getNote() : $model->note,
-            'created_at' => $model instanceof Transaction ? $model->getCreatedAt() : $model->created_at,
-            'updated_at' => $model instanceof Transaction ? $model->getUpdatedAt() : $model->updated_at,
+            'amount' => (float) ($model->getAmount() ?? 0),
+            'currency' => $model->getCurrency(),
+            'type' => $model->getType(),
+            'status' => $model->getStatus(),
+            'ip' => $model->getIp(),
+            'validate_ipn' => $model->isValidateIpn(),
+            'error' => $model->getError(),
+            'error_code' => $model->getErrorCode(),
+            'note' => $model->getNote(),
+            'created_at' => $model->getCreatedAt(),
+            'updated_at' => $model->getUpdatedAt(),
         ];
         if ($deep) {
-            $ipn = $model instanceof Transaction ? $model->getIpn() : $model->ipn;
+            $ipn = $model->getIpn();
             $result['ipn'] = json_decode($ipn ?? '', true);
         }
 
@@ -607,7 +606,7 @@ class ServiceTransaction implements InjectionAwareInterface
 
     public function process(Transaction $tx): Transaction
     {
-        $id = $tx instanceof Transaction ? $tx->getId() : $tx->id;
+        $id = $tx->getId();
         $transaction = $this->getTransactionRepository()->find($id);
 
         if ($this->_isProcessed($transaction)) {
@@ -957,7 +956,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $proforma = $this->getInvoiceRepository()->find($tx->getInvoiceId());
         $client = $this->di['em']->getRepository(ClientEntity::class)->find($proforma->getClientId());
 
-        $clientCurrency = $client instanceof ClientEntity ? $client->getCurrency() : $client->currency;
+        $clientCurrency = $client->getCurrency();
         if ($clientCurrency != $proforma->getCurrency()) {
             throw new \FOSSBilling\Exception('Client currency does not match invoice currency');
         }
@@ -968,7 +967,7 @@ class ServiceTransaction implements InjectionAwareInterface
         }
 
         $credit = new ClientBalance();
-        $credit->setClientId($client instanceof ClientEntity ? $client->getId() : $client->id);
+        $credit->setClientId($client->getId());
         $credit->setType('transaction');
         $credit->setRelId((string) $tx->getId());
         $credit->setDescription('Invoice #' . $proforma->getId() . ' payment received from transaction #' . $tx->getId());

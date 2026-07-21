@@ -108,7 +108,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $invoice = $this->getService()->prepareInvoice($client, $data);
 
-        return $invoice->id;
+        return $invoice->getId();
     }
 
     /**

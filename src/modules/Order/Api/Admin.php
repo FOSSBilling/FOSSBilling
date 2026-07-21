@@ -176,7 +176,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $order = $this->_getOrder($data);
 
-        if ($order->status == Order::STATUS_PENDING_SETUP || $order->status == Order::STATUS_FAILED_SETUP) {
+        if ($order->getStatus() == Order::STATUS_PENDING_SETUP || $order->getStatus() == Order::STATUS_FAILED_SETUP) {
             return $this->activate($data);
         }
 
@@ -213,7 +213,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('order', 'manage');
 
         $order = $this->_getOrder($data);
-        if ($order->status != Order::STATUS_SUSPENDED) {
+        if ($order->getStatus() != Order::STATUS_SUSPENDED) {
             throw new InformationException('Only suspended orders can be unsuspended');
         }
 
@@ -268,7 +268,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('order', 'manage');
 
         $order = $this->_getOrder($data);
-        if ($order->status != Order::STATUS_CANCELED) {
+        if ($order->getStatus() != Order::STATUS_CANCELED) {
             throw new InformationException('Only canceled orders can be uncanceled');
         }
 
@@ -370,7 +370,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $order = $this->_getOrder($data);
 
-        $data['client_order_id'] = $order->id;
+        $data['client_order_id'] = $order->getId();
 
         [$sql, $bindings] = $this->getService()->getOrderStatusSearchQuery($data);
 

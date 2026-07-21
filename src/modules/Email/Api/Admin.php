@@ -392,11 +392,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $email = [
             'code' => 'mod_email_test',
-            'to' => $currentUser->email ?? '',
-            'to_name' => $currentUser->name ?? '',
+            'to' => $currentUser?->getEmail() ?? '',
+            'to_name' => $currentUser?->getName() ?? '',
             'send_now' => true,
             'throw_exceptions' => true,
-            'staff_member_name' => $currentUser->name ?? '',
+            'staff_member_name' => $currentUser?->getName() ?? '',
         ];
 
         return $this->getService()->sendTemplate($email);
