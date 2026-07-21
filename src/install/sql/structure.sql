@@ -1030,13 +1030,34 @@ CREATE TABLE `service_domain` (
 CREATE TABLE `service_downloadable` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `client_id` bigint(20) DEFAULT NULL,
-  `filename` varchar(100) DEFAULT NULL,
-  `stored_filename` varchar(100) DEFAULT NULL,
-  `downloads` int(11) DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `client_id_idx` (`client_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `service_downloadable_file`
+--
+
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `service_downloadable_file` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `service_downloadable_id` bigint(20) NOT NULL,
+  `file_key` varchar(32) NOT NULL,
+  `filename` varchar(255) NOT NULL,
+  `stored_filename` varchar(64) NOT NULL,
+  `label` varchar(255) DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `downloads` int(11) NOT NULL DEFAULT 0,
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `service_downloadable_file_key_idx` (`service_downloadable_id`,`file_key`),
+  KEY `service_downloadable_file_stored_filename_idx` (`stored_filename`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
