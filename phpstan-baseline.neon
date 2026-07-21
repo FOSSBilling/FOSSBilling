@@ -529,6 +529,12 @@ parameters:
 			path: src/modules/Invoice/Service.php
 
 		-
+			message: '#^Offset ''quantity'' on array\{price\: mixed, quantity\: float\|int\|string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/modules/Invoice/Service.php
+
+		-
 			message: '#^Property Box\\Mod\\Invoice\\Entity\\Invoice\:\:\$approved \(bool\) does not accept int\.$#'
 			identifier: assign.propertyType
 			count: 1
@@ -855,7 +861,7 @@ parameters:
 		-
 			message: '#^Expression on left side of \?\? is not nullable\.$#'
 			identifier: nullCoalesce.expr
-			count: 1
+			count: 3
 			path: src/modules/Order/Service.php
 
 		-
@@ -909,12 +915,6 @@ parameters:
 		-
 			message: '#^Cannot cast DateTime to string\.$#'
 			identifier: cast.string
-			count: 1
-			path: src/modules/Product/Service.php
-
-		-
-			message: '#^Instanceof between Box\\Mod\\Invoice\\Entity\\Invoice and Box\\Mod\\Invoice\\Entity\\Invoice will always evaluate to true\.$#'
-			identifier: instanceof.alwaysTrue
 			count: 1
 			path: src/modules/Product/Service.php
 
@@ -1271,36 +1271,6 @@ parameters:
 			identifier: instanceof.alwaysTrue
 			count: 8
 			path: src/modules/Servicecustom/Service.php
-
-		-
-			message: '#^Instanceof between Box\\Mod\\Servicedomain\\Entity\\ServiceDomain and Box\\Mod\\Servicedomain\\Entity\\ServiceDomain will always evaluate to true\.$#'
-			identifier: instanceof.alwaysTrue
-			count: 24
-			path: src/modules/Servicedomain/Service.php
-
-		-
-			message: '#^Instanceof between Box\\Mod\\Servicedomain\\Entity\\Tld and Box\\Mod\\Servicedomain\\Entity\\Tld will always evaluate to true\.$#'
-			identifier: instanceof.alwaysTrue
-			count: 4
-			path: src/modules/Servicedomain/Service.php
-
-		-
-			message: '#^Instanceof between Box\\Mod\\Servicedomain\\Entity\\TldRegistrar and Box\\Mod\\Servicedomain\\Entity\\TldRegistrar will always evaluate to true\.$#'
-			identifier: instanceof.alwaysTrue
-			count: 6
-			path: src/modules/Servicedomain/Service.php
-
-		-
-			message: '#^Parameter \#1 \$datetime of function strtotime expects string, DateTime given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/modules/Servicedomain/Service.php
-
-		-
-			message: '#^Ternary operator condition is always true\.$#'
-			identifier: ternary.alwaysTrue
-			count: 35
-			path: src/modules/Servicedomain/Service.php
 
 		-
 			message: '#^Access to an undefined property Box\\Mod\\Order\\Entity\\Order\:\:\$updated_at\.$#'

@@ -2031,12 +2031,12 @@ class Service implements InjectionAwareInterface
             ->setClientId((int) $client->getId())
             ->setClientOrderId(
                 $order !== null
-                    ? ($order instanceof Order ? $order->getId() : $order->id)
+                    ? $order->getId()
                     : null
             )
             ->setInvoiceId(
                 $invoice !== null
-                    ? ($invoice instanceof Invoice ? $invoice->getId() : $invoice->id)
+                    ? $invoice->getId()
                     : null
             )
             ->setPhase($phase)
@@ -2106,25 +2106,17 @@ class Service implements InjectionAwareInterface
     /**
      * @param Tld $tld
      */
-    private function getDomainRegistrationTotal($tld, int $years): float
+    private function getDomainRegistrationTotal(Tld $tld, int $years): float
     {
         if ($years <= 0) {
             return 0.0;
         }
 
-        if ($tld instanceof Tld) {
-            if ($years <= 1) {
-                return (float) $tld->getPriceRegistration();
-            }
-
-            return (float) $tld->getPriceRegistration() + (($years - 1) * (float) $tld->getPriceRenew());
-        }
-
         if ($years <= 1) {
-            return (float) $tld->price_registration;
+            return (float) $tld->getPriceRegistration();
         }
 
-        return (float) $tld->price_registration + (($years - 1) * (float) $tld->price_renew);
+        return (float) $tld->getPriceRegistration() + (($years - 1) * (float) $tld->getPriceRenew());
     }
 
     /**

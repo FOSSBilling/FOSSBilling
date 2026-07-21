@@ -4,7 +4,6 @@ includes:
 parameters:
 	level: 5
 	reportUnmatchedIgnoredErrors: false
-	treatPhpDocTypesAsCertain: false
 	dynamicConstantNames:
 		- DEBUG
 		- INSTANCE_ID

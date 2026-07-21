@@ -2444,7 +2444,7 @@ class Service implements InjectionAwareInterface
      */
     public function ensureValidHash(Invoice $invoice): void
     {
-        $hash = $invoice instanceof Invoice ? $invoice->getHash() : $invoice->hash;
+        $hash = $invoice->getHash();
         $isModern = is_string($hash) && preg_match('/^[a-f0-9]{30,60}$/', $hash) === 1;
         if ($isModern) {
             return;
@@ -2452,21 +2452,15 @@ class Service implements InjectionAwareInterface
 
         $expiration = $this->computeHashExpiration();
 
-        if ($invoice instanceof Invoice) {
-            $invoice->setHash(bin2hex(random_bytes(random_int(15, 30))));
-            $invoice->setHashExpiresAt($expiration !== null ? new \DateTime($expiration) : null);
-            $this->di['em']->persist($invoice);
-            $this->di['em']->flush();
-        } else {
-            $invoice->hash = bin2hex(random_bytes(random_int(15, 30)));
-            $invoice->hash_expires_at = $expiration;
-            $this->di['em']->persist($invoice);
-        }
+        $invoice->setHash(bin2hex(random_bytes(random_int(15, 30))));
+        $invoice->setHashExpiresAt($expiration !== null ? new \DateTime($expiration) : null);
+        $this->di['em']->persist($invoice);
+        $this->di['em']->flush();
     }
 
     private function isHashExpired(Invoice $invoice): bool
     {
-        $expires = $invoice instanceof Invoice ? $invoice->getHashExpiresAt() : ($invoice->hash_expires_at ?? null);
+        $expires = $invoice->getHashExpiresAt();
         if ($expires instanceof \DateTime) {
             return $expires->getTimestamp() < time();
         }
@@ -2743,7 +2737,7 @@ class Service implements InjectionAwareInterface
             }
 
             $invoice = $this->generateForOrder($originalOrder);
-            $invoiceId = $invoice instanceof Invoice ? $invoice->getId() : $invoice->id;
+            $invoiceId = $invoice->getId();
             $this->approveInvoice($invoice, ['use_credits' => false]);
 
             $this->di['logger']->info("Generated renewal invoice #{$invoiceId} for subscription payment (SID: {$subscriptionSid}).");

@@ -366,7 +366,7 @@ class ServiceSubscription implements InjectionAwareInterface
         }
 
         foreach ($subscriptions as $subscription) {
-            if (trim((string) ($subscription instanceof Subscription ? $subscription->getSid() : $subscription->sid)) === '') {
+            if (trim((string) $subscription->getSid()) === '') {
                 return false;
             }
 
