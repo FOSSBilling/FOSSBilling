@@ -132,10 +132,7 @@ class Session implements InjectionAwareInterface
     {
         $invalid = false;
         $sessionName = session_name();
-        $sessionID = session_id();
-        if ($sessionID === '') {
-            $sessionID = $sessionName !== false ? ($_COOKIE[$sessionName] ?? '') : '';
-        }
+        $sessionID = $this->resolveSessionId();
 
         if ($sessionID === '') {
             return;
@@ -143,19 +140,24 @@ class Session implements InjectionAwareInterface
         $maxAge = time() - Config::getProperty('security.session_lifespan', 7200);
 
         $connection = $this->di['dbal'];
-        $session = $connection->fetchAssociative('SELECT fingerprint, created_at FROM session WHERE id = :id', ['id' => $sessionID]);
 
-        if ($session === false || empty($session['fingerprint'])) {
+        try {
+            $session = $connection->fetchAssociative('SELECT fingerprint, created_at FROM session WHERE id = :id', ['id' => $sessionID]);
+
+            if ($session === false || empty($session['fingerprint'])) {
+                return;
+            }
+
+            if (empty($session['created_at'])) {
+                $createdAt = time();
+                $connection->executeStatement('UPDATE session SET created_at = :created_at WHERE id = :id', [
+                    'created_at' => $createdAt,
+                    'id' => $sessionID,
+                ]);
+                $session['created_at'] = $createdAt;
+            }
+        } catch (\Doctrine\DBAL\Exception) {
             return;
-        }
-
-        if (empty($session['created_at'])) {
-            $createdAt = time();
-            $connection->executeStatement('UPDATE session SET created_at = :created_at WHERE id = :id', [
-                'created_at' => $createdAt,
-                'id' => $sessionID,
-            ]);
-            $session['created_at'] = $createdAt;
         }
 
         if (Config::getProperty('security.perform_session_fingerprinting', true)) {
@@ -172,7 +174,11 @@ class Session implements InjectionAwareInterface
         }
 
         if ($invalid) {
-            $connection->executeStatement('DELETE FROM session WHERE id = :id', ['id' => $sessionID]);
+            try {
+                $connection->executeStatement('DELETE FROM session WHERE id = :id', ['id' => $sessionID]);
+            } catch (\Doctrine\DBAL\Exception) {
+                // The cookie is still expired below so the unusable session is not reused.
+            }
             $cookieParams = session_get_cookie_params();
             $cookieOptions = [
                 'expires' => time() - 3600,
@@ -194,32 +200,47 @@ class Session implements InjectionAwareInterface
      */
     private function updateFingerprint(): void
     {
-        $sessionID = session_id();
-        if ($sessionID === '') {
-            $sessionName = session_name();
-            $sessionID = $sessionName !== false ? ($_COOKIE[$sessionName] ?? '') : '';
-        }
+        $sessionID = $this->resolveSessionId();
 
         if ($sessionID === '') {
             return;
         }
 
         $connection = $this->di['dbal'];
-        $session = $connection->fetchAssociative('SELECT id FROM session WHERE id = :id', ['id' => $sessionID]);
 
-        if (Config::getProperty('security.perform_session_fingerprinting', true)) {
-            $updatedFingerprint = (new Fingerprint($this->di['request']))->fingerprint();
-        } else {
-            $updatedFingerprint = [];
-        }
+        try {
+            $session = $connection->fetchAssociative('SELECT id FROM session WHERE id = :id', ['id' => $sessionID]);
 
-        // Fix for the installer which temporarily uses FS sessions before FOSSBilling is completely setup.
-        if ($session !== false) {
+            if (Config::getProperty('security.perform_session_fingerprinting', true)) {
+                $updatedFingerprint = (new Fingerprint($this->di['request']))->fingerprint();
+            } else {
+                $updatedFingerprint = [];
+            }
+
+            // Fix for the installer which temporarily uses FS sessions before FOSSBilling is completely setup.
+            if ($session === false) {
+                return;
+            }
+
             $connection->executeStatement('UPDATE session SET fingerprint = :fingerprint WHERE id = :id', [
                 'fingerprint' => json_encode($updatedFingerprint, JSON_THROW_ON_ERROR),
                 'id' => $sessionID,
             ]);
+        } catch (\Doctrine\DBAL\Exception|\JsonException) {
+            return;
         }
+    }
+
+    private function resolveSessionId(): string
+    {
+        $sessionID = session_id();
+        if ($sessionID !== '') {
+            return $sessionID;
+        }
+
+        $sessionName = session_name();
+
+        return $sessionName !== false ? ($_COOKIE[$sessionName] ?? '') : '';
     }
 
     private function handleObsoleteSession(): void

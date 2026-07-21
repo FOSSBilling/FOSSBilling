@@ -75,7 +75,7 @@ class Setting implements TimestampInterface
 
     public function isPublic(): bool
     {
-        return $this->public;
+        return $this->public ?? false;
     }
 
     public function setPublic(bool $public): self

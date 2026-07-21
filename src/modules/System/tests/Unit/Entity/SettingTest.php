@@ -41,3 +41,11 @@ test('stores setting values and manages timestamps', function (): void {
         ->and($setting->getCreatedAt())->toBe($createdAt)
         ->and($setting->getUpdatedAt())->toBeInstanceOf(DateTime::class);
 });
+
+test('treats a null public value as private', function (): void {
+    $setting = new Setting();
+
+    expect($setting->isPublic())->toBeFalse()
+        ->and($setting->setPublic(true)->isPublic())->toBeTrue()
+        ->and($setting->setPublic(false)->isPublic())->toBeFalse();
+});

@@ -42,6 +42,11 @@ function setSessionCookie(string $sessionId): void
     }
 }
 
+function createSessionDbalException(): RuntimeException
+{
+    return new class('Session database unavailable') extends RuntimeException implements Doctrine\DBAL\Exception {};
+}
+
 function invokePrivate(object $instance, string $method, array $args = []): mixed
 {
     $reflection = new ReflectionClass($instance);
@@ -71,6 +76,18 @@ test('session validation ignores a missing database record', function (): void {
     invokePrivate($session, 'canUseSession');
 });
 
+test('session validation tolerates a database lookup failure', function (): void {
+    $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('fetchAssociative')
+        ->once()
+        ->andThrow(createSessionDbalException());
+
+    [$session] = createDatabaseSession($connection);
+    setSessionCookie('unavailable-session');
+
+    invokePrivate($session, 'canUseSession');
+});
+
 test('session validation initializes a missing creation time', function (): void {
     $connection = Mockery::mock(Connection::class);
     [$session, $di] = createDatabaseSession($connection);
@@ -90,6 +107,22 @@ test('session validation initializes a missing creation time', function (): void
         ->andReturn(1);
 
     setSessionCookie('new-session');
+
+    invokePrivate($session, 'canUseSession');
+});
+
+test('session validation tolerates a creation time update failure', function (): void {
+    $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('fetchAssociative')
+        ->once()
+        ->andReturn(['fingerprint' => '[]', 'created_at' => null]);
+    $connection->shouldReceive('executeStatement')
+        ->once()
+        ->withArgs(fn (string $query): bool => str_starts_with($query, 'UPDATE session SET created_at'))
+        ->andThrow(createSessionDbalException());
+
+    [$session] = createDatabaseSession($connection);
+    setSessionCookie('unavailable-session');
 
     invokePrivate($session, 'canUseSession');
 });
@@ -131,6 +164,25 @@ test('session validation deletes a malformed fingerprint', function (): void {
     invokePrivate($session, 'canUseSession');
 });
 
+test('session validation clears an invalid cookie when database deletion fails', function (): void {
+    $connection = Mockery::mock(Connection::class);
+    [$session] = createDatabaseSession($connection);
+
+    $connection->shouldReceive('fetchAssociative')
+        ->once()
+        ->andReturn(['fingerprint' => '{malformed', 'created_at' => time()]);
+    $connection->shouldReceive('executeStatement')
+        ->once()
+        ->with('DELETE FROM session WHERE id = :id', ['id' => 'unavailable-session'])
+        ->andThrow(createSessionDbalException());
+
+    setSessionCookie('unavailable-session');
+
+    invokePrivate($session, 'canUseSession');
+
+    expect($_COOKIE)->not->toHaveKey((string) session_name());
+});
+
 test('fingerprint update persists the current fingerprint', function (): void {
     $connection = Mockery::mock(Connection::class);
     [$session] = createDatabaseSession($connection);
@@ -165,6 +217,59 @@ test('fingerprint update ignores a missing database record', function (): void {
     setSessionCookie('missing-session');
 
     invokePrivate($session, 'updateFingerprint');
+});
+
+test('fingerprint update tolerates a database failure', function (): void {
+    $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('fetchAssociative')
+        ->once()
+        ->andThrow(createSessionDbalException());
+
+    [$session] = createDatabaseSession($connection);
+    setSessionCookie('unavailable-session');
+
+    invokePrivate($session, 'updateFingerprint');
+});
+
+test('disabled fingerprinting skips validation and stores an empty fingerprint', function (): void {
+    $previousSetting = FOSSBilling\Config::getProperty('security.perform_session_fingerprinting', true);
+    FOSSBilling\Config::setProperty('security.perform_session_fingerprinting', false, false);
+
+    try {
+        $connection = Mockery::mock(Connection::class);
+        [$session] = createDatabaseSession($connection);
+
+        $connection->shouldReceive('fetchAssociative')
+            ->once()
+            ->with('SELECT fingerprint, created_at FROM session WHERE id = :id', ['id' => 'fingerprinting-disabled'])
+            ->andReturn(['fingerprint' => '{not-valid-json', 'created_at' => null]);
+        $connection->shouldReceive('executeStatement')
+            ->once()
+            ->withArgs(function (string $query, array $parameters): bool {
+                return $query === 'UPDATE session SET created_at = :created_at WHERE id = :id'
+                    && $parameters['id'] === 'fingerprinting-disabled'
+                    && is_int($parameters['created_at']);
+            })
+            ->andReturn(1);
+        $connection->shouldReceive('fetchAssociative')
+            ->once()
+            ->with('SELECT id FROM session WHERE id = :id', ['id' => 'fingerprinting-disabled'])
+            ->andReturn(['id' => 'fingerprinting-disabled']);
+        $connection->shouldReceive('executeStatement')
+            ->once()
+            ->with('UPDATE session SET fingerprint = :fingerprint WHERE id = :id', [
+                'fingerprint' => '[]',
+                'id' => 'fingerprinting-disabled',
+            ])
+            ->andReturn(1);
+
+        setSessionCookie('fingerprinting-disabled');
+
+        invokePrivate($session, 'canUseSession');
+        invokePrivate($session, 'updateFingerprint');
+    } finally {
+        FOSSBilling\Config::setProperty('security.perform_session_fingerprinting', $previousSetting, false);
+    }
 });
 
 test('obsolete session is detected', function (): void {
