@@ -96,7 +96,7 @@ test('all templates render under strict_variables', function (): void {
     }
 });
 
-test('orderbutton checkout renders for guests under strict_variables', function (): void {
+test('orderbutton checkout renders one-time items without a period under strict_variables', function (): void {
     $renderer = new StrictTemplateRenderer();
 
     $html = $renderer->renderTemplate(PATH_MODS . '/Orderbutton/templates/client/mod_orderbutton_checkout.html.twig', [
@@ -115,7 +115,6 @@ test('orderbutton checkout renders for guests under strict_variables', function 
                         'id' => 1,
                         'title' => 'Test product',
                         'quantity' => 1,
-                        'period' => null,
                         'discount_price' => 0,
                         'total' => 10,
                         'setup_price' => 0,
