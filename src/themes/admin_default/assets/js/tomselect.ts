@@ -18,7 +18,8 @@ const createTomSelectTemplate = (data, escape, options = {}) => {
 export default function initTomSelectControls() {
   const localeSelectorEl = document.querySelector('.js-locale-selector');
   if (localeSelectorEl !== null) {
-    const selectedLang = FOSSBilling.cookieRead("fb_locale") || localeSelectorEl.value;
+    const localeCookie = FOSSBilling.cookieNames?.locale || "fossbilling_locale";
+    const selectedLang = FOSSBilling.cookieRead(localeCookie) || localeSelectorEl.value;
     const localeSelector = new TomSelect(".js-locale-selector", {
       copyClassesToDropdown: false,
       controlClass: "ts-control locale",
@@ -33,7 +34,7 @@ export default function initTomSelectControls() {
     });
 
     localeSelector.on("change", (value) => {
-      FOSSBilling.cookieCreate("fb_locale", value, 365);
+      FOSSBilling.cookieCreate(localeCookie, value, 365);
       window.location.reload();
     });
   }

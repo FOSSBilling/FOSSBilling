@@ -12,6 +12,10 @@
   const editorsByElement = new WeakMap();
   const editorsByName = new Map();
   const adapters = new Map();
+  const cookieNames = Object.freeze({
+    locale: 'fossbilling_locale',
+    timezone: 'fossbilling_timezone',
+  });
 
   function runReadyCallback(callback) {
     try {
@@ -38,6 +42,7 @@
     while (readyCallbacks.length > 0) {
       runReadyCallback(readyCallbacks.shift());
     }
+    migrateCookie(cookieNames.locale, 'fb_locale', 365);
     initTimezone();
   });
 
@@ -86,6 +91,22 @@
     return null;
   };
 
+  function migrateCookie(name, legacyName, days) {
+    const currentValue = FOSSBilling.cookieRead(name);
+    const legacyValue = FOSSBilling.cookieRead(legacyName);
+
+    if (!currentValue && legacyValue) {
+      FOSSBilling.cookieCreate(name, legacyValue, days);
+    }
+    if (legacyValue !== null) {
+      FOSSBilling.cookieCreate(legacyName, '', -1);
+    }
+
+    return currentValue || legacyValue;
+  }
+
+  FOSSBilling.cookieNames = cookieNames;
+
   // Returns the IANA timezone identifier the browser is running in, or null.
   // Used by signup and the public layout so guests see dates in their own zone.
   FOSSBilling.detectTimezone = FOSSBilling.detectTimezone || function () {
@@ -101,7 +122,7 @@
     return null;
   };
 
-  // Seeds the `fb_timezone` cookie and pre-selects the detected timezone on any
+  // Seeds the `fossbilling_timezone` cookie and pre-selects the detected timezone on any
   // `<select data-timezone-select>` that doesn't already have a value. Lets the
   // server pre-fill a stored timezone without being clobbered by the auto-detect.
   function initTimezone() {
@@ -110,8 +131,8 @@
       return;
     }
 
-    if (!FOSSBilling.cookieRead('fb_timezone')) {
-      FOSSBilling.cookieCreate('fb_timezone', detected, 365);
+    if (!migrateCookie(cookieNames.timezone, 'fb_timezone', 365)) {
+      FOSSBilling.cookieCreate(cookieNames.timezone, detected, 365);
     }
 
     const selects = document.querySelectorAll('select[data-timezone-select]');
