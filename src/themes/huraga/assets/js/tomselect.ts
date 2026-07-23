@@ -36,7 +36,8 @@ export default function initLanguageSelector() {
     return;
   }
 
-  const selectedLang = FOSSBilling.cookieRead('fb_locale') || localeSelectorEl.value;
+  const localeCookie = FOSSBilling.cookieNames?.locale || 'fossbilling_locale';
+  const selectedLang = FOSSBilling.cookieRead(localeCookie) || localeSelectorEl.value;
 
   new TomSelect('.js-locale-selector', {
     copyClassesToDropdown: false,
@@ -50,7 +51,7 @@ export default function initLanguageSelector() {
       option: (data, escape) => localeSelectorTemplate(data, escape),
     },
     onItemAdd: (value) => {
-      FOSSBilling.cookieCreate('fb_locale', value, 365);
+      FOSSBilling.cookieCreate(localeCookie, value, 365);
       window.location.reload();
     },
   });

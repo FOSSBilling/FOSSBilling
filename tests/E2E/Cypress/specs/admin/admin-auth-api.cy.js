@@ -12,7 +12,7 @@ describe('admin auth and API protections', () => {
   it('allows authenticated admin profile API requests', () => {
     cy.loginAsAdmin();
 
-    cy.getCookie('csrf_token').should('exist').then((cookie) => {
+    cy.getCookie('fossbilling_csrf').should('exist').then((cookie) => {
       cy.request({
         url: '/api/admin/profile/get',
         qs: { CSRFToken: cookie.value },

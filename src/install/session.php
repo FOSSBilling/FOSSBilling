@@ -1,6 +1,9 @@
 <?php
 
 declare(strict_types=1);
+
+use FOSSBilling\Http\CookieNames;
+
 class Session
 {
     private $_handler;
@@ -49,8 +52,8 @@ class Box_SessionFile
     {
         if (!isset(self::$instance)) {
             self::$instance = new self();
+            session_name(CookieNames::SESSION);
             if (!self::$instance->sessionExists() && !headers_sent()) {
-                session_name('fb_sid');
                 self::$instance->sessionState = session_start();
             }
         }

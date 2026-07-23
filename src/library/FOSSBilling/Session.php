@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
+use FOSSBilling\Http\CookieNames;
+
 class Session implements InjectionAwareInterface
 {
     private const string OBSOLETE_FLAG = 'fb_session_obsolete';
@@ -18,6 +20,7 @@ class Session implements InjectionAwareInterface
     private const int DEFAULT_REGENERATION_GRACE_PERIOD = 300;
 
     private ?\Pimple\Container $di = null;
+    private ?string $legacySessionCookie = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -39,6 +42,7 @@ class Session implements InjectionAwareInterface
             return;
         }
 
+        $this->configureCookieName();
         $this->canUseSession();
 
         if (!headers_sent()) {
@@ -64,6 +68,7 @@ class Session implements InjectionAwareInterface
 
         session_set_cookie_params($cookieParams);
         session_start();
+        $this->expireLegacySessionCookies();
 
         $this->handleObsoleteSession();
         $this->updateFingerprint();
@@ -179,17 +184,8 @@ class Session implements InjectionAwareInterface
             } catch (\Doctrine\DBAL\Exception) {
                 // The cookie is still expired below so the unusable session is not reused.
             }
-            $cookieParams = session_get_cookie_params();
-            $cookieOptions = [
-                'expires' => time() - 3600,
-                'path' => $cookieParams['path'],
-                'domain' => $cookieParams['domain'],
-                'secure' => $cookieParams['secure'],
-                'httponly' => $cookieParams['httponly'],
-            ];
-            $cookieOptions['samesite'] = $cookieParams['samesite'];
             if ($sessionName !== false) {
-                setcookie($sessionName, '', $cookieOptions);
+                setcookie($sessionName, '', $this->getSessionCookieOptions(time() - 3600));
                 unset($_COOKIE[$sessionName]);
             }
         }
@@ -243,6 +239,45 @@ class Session implements InjectionAwareInterface
         return $sessionName !== false ? ($_COOKIE[$sessionName] ?? '') : '';
     }
 
+    private function configureCookieName(): void
+    {
+        $previousName = session_name();
+
+        session_name(CookieNames::SESSION);
+
+        if (
+            $previousName === false
+            || $previousName === CookieNames::SESSION
+            || !isset($_COOKIE[$previousName])
+        ) {
+            return;
+        }
+
+        $this->legacySessionCookie = $previousName;
+        if (isset($_COOKIE[CookieNames::SESSION])) {
+            return;
+        }
+
+        $sessionId = $_COOKIE[$previousName];
+        if (
+            is_string($sessionId)
+            && $sessionId !== ''
+            && preg_match('/^[A-Za-z0-9,-]+$/D', $sessionId) === 1
+        ) {
+            session_id($sessionId);
+        }
+    }
+
+    private function expireLegacySessionCookies(): void
+    {
+        if ($this->legacySessionCookie === null || headers_sent()) {
+            return;
+        }
+
+        setcookie($this->legacySessionCookie, '', $this->getSessionCookieOptions(time() - 3600));
+        unset($_COOKIE[$this->legacySessionCookie]);
+    }
+
     private function handleObsoleteSession(): void
     {
         if (!$this->isObsoleteSession($_SESSION)) {
@@ -265,19 +300,27 @@ class Session implements InjectionAwareInterface
         $sessionName = session_name();
         $sessionId = session_id();
         if ($sessionId !== '') {
-            $params = session_get_cookie_params();
-
-            setcookie($sessionName, $sessionId, [
-                'expires' => 0,
-                'path' => $params['path'],
-                'domain' => $params['domain'],
-                'secure' => $params['secure'],
-                'httponly' => $params['httponly'],
-                'samesite' => $params['samesite'],
-            ]);
+            setcookie($sessionName, $sessionId, $this->getSessionCookieOptions(0));
 
             $_COOKIE[$sessionName] = $sessionId;
         }
+    }
+
+    /**
+     * @return array{expires: int, path: string, domain: string, secure: bool, httponly: bool, samesite: string}
+     */
+    private function getSessionCookieOptions(int $expires): array
+    {
+        $params = session_get_cookie_params();
+
+        return [
+            'expires' => $expires,
+            'path' => $params['path'],
+            'domain' => $params['domain'],
+            'secure' => $params['secure'],
+            'httponly' => $params['httponly'],
+            'samesite' => $params['samesite'],
+        ];
     }
 
     private function clearAuthenticationData(): void
