@@ -43,19 +43,19 @@
                     </div>
                     <div class="col-lg-3">
                         <label class="form-label">{{ 'Registration Price'|trans }}</label>
-                        <input class="form-control" type="text" name="price_registration" value="{{ tld.price_registration }}" required>
+                        <input class="form-control" type="number" min="0" step="any" name="price_registration" value="{{ tld.price_registration }}" required>
                     </div>
                     <div class="col-lg-3">
                         <label class="form-label">{{ 'Renewal Price'|trans }}</label>
-                        <input class="form-control" type="text" name="price_renew" value="{{ tld.price_renew }}" required>
+                        <input class="form-control" type="number" min="0" step="any" name="price_renew" value="{{ tld.price_renew }}" required>
                     </div>
                     <div class="col-lg-3">
                         <label class="form-label">{{ 'Transfer Price'|trans }}</label>
-                        <input class="form-control" type="text" name="price_transfer" value="{{ tld.price_transfer }}" required>
+                        <input class="form-control" type="number" min="0" step="any" name="price_transfer" value="{{ tld.price_transfer }}" required>
                     </div>
                     <div class="col-lg-3">
                         <label class="form-label">{{ 'Minimum Years of Registration'|trans }}</label>
-                        <input class="form-control" type="text" name="min_years" value="{{ tld.min_years }}" required>
+                        <input class="form-control" type="number" min="1" step="1" name="min_years" value="{{ tld.min_years }}" required>
                     </div>
                     <div class="col-lg-2">
                         <label class="form-label d-block">{{ 'Allow Registration'|trans }}</label>

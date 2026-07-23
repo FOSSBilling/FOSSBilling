@@ -109,6 +109,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             if (!$validator->isTldValid($data['owndomain_tld'])) {
                 throw new \FOSSBilling\InformationException('TLD is invalid');
             }
+
+            $data['owndomain_tld'] = $this->normalizeTld($data['owndomain_tld']);
         }
 
         if ($action == 'transfer') {
@@ -128,6 +130,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             if (!$tld instanceof \Model_Tld) {
                 throw new \FOSSBilling\InformationException('TLD not found');
             }
+            if (!$tld->active) {
+                throw new \FOSSBilling\InformationException('TLD is not active');
+            }
+            $data['transfer_tld'] = $tld->tld;
 
             $domain = $data['transfer_sld'] . $tld->tld;
             if (!$this->canBeTransferred($tld, $data['transfer_sld'])) {
@@ -156,8 +162,15 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             if (!$tld instanceof \Model_Tld) {
                 throw new \FOSSBilling\InformationException('TLD not found');
             }
+            if (!$tld->active) {
+                throw new \FOSSBilling\InformationException('TLD is not active');
+            }
+            $data['register_tld'] = $tld->tld;
 
-            $years = (int) $data['register_years'];
+            $years = filter_var($data['register_years'], FILTER_VALIDATE_INT);
+            if ($years === false || $years < 1) {
+                throw new \FOSSBilling\InformationException('Domain registration period must be a positive integer');
+            }
             if ($years < $tld->min_years) {
                 throw new \FOSSBilling\Exception(':tld can be registered for at least :years years', [':tld' => $tld->tld, ':years' => $tld->min_years]);
             }
@@ -557,7 +570,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $domain->setTld($model->tld);
         $domain->setSld($sld);
 
-        $tldRegistrar = $this->di['db']->load('TldRegistrar', $model->tld_registrar_id);
+        $tldRegistrar = $this->di['db']->getExistingModelById('TldRegistrar', $model->tld_registrar_id, 'Registrar not found');
+        $this->registrarValidateConfiguration($tldRegistrar);
         $adapter = $this->registrarGetRegistrarAdapter($tldRegistrar);
 
         return $adapter->isDomaincanBeTransferred($domain);
@@ -585,7 +599,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $domain->setTld($model->tld);
         $domain->setSld($sld);
 
-        $tldRegistrar = $this->di['db']->load('TldRegistrar', $model->tld_registrar_id);
+        $tldRegistrar = $this->di['db']->getExistingModelById('TldRegistrar', $model->tld_registrar_id, 'Registrar not found');
+        $this->registrarValidateConfiguration($tldRegistrar);
         $adapter = $this->registrarGetRegistrarAdapter($tldRegistrar);
 
         return $adapter->isDomainAvailable($domain);
@@ -780,8 +795,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function tldCreate($data)
     {
+        $data = $this->validateTldConfiguration($data);
+        $normalizedTld = $this->normalizeTld($data['tld']);
+        $registrar = $this->di['db']->getExistingModelById('TldRegistrar', $data['tld_registrar_id'], 'Registrar not found');
+        $this->registrarValidateConfiguration($registrar);
+
         $model = $this->di['db']->dispense('Tld');
-        $model->tld = $data['tld'];
+        $model->tld = $normalizedTld;
         $model->tld_registrar_id = $data['tld_registrar_id'];
         $model->price_registration = $data['price_registration'];
         $model->price_renew = $data['price_renew'];
@@ -789,7 +809,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->min_years = isset($data['min_years']) ? (int) $data['min_years'] : 1;
         $model->allow_register = isset($data['allow_register']) ? (bool) $data['allow_register'] : true;
         $model->allow_transfer = isset($data['allow_transfer']) ? (bool) $data['allow_transfer'] : true;
-        $model->active = isset($data['active']) && (bool) $data['active'];
+        $model->active = isset($data['active']) ? (bool) $data['active'] : true;
         $model->updated_at = date('Y-m-d H:i:s');
         $model->created_at = date('Y-m-d H:i:s');
 
@@ -802,6 +822,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function tldUpdate(\Model_Tld $model, $data): bool
     {
+        $data = $this->validateTldConfiguration($data);
+        $model->tld = $this->normalizeTld($model->tld);
+
+        if (array_key_exists('tld_registrar_id', $data)) {
+            $registrar = $this->di['db']->getExistingModelById('TldRegistrar', $data['tld_registrar_id'], 'Registrar not found');
+            $this->registrarValidateConfiguration($registrar);
+        }
+
         $model->tld_registrar_id = $data['tld_registrar_id'] ?? $model->tld_registrar_id;
         $model->price_registration = $data['price_registration'] ?? $model->price_registration;
         $model->price_renew = $data['price_renew'] ?? $model->price_renew;
@@ -817,6 +845,35 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['logger']->info('Updated top level domain %s', $model->tld);
 
         return true;
+    }
+
+    private function validateTldConfiguration(array $data): array
+    {
+        foreach (['price_registration', 'price_renew', 'price_transfer'] as $field) {
+            if (!array_key_exists($field, $data)) {
+                continue;
+            }
+
+            if (!is_numeric($data[$field])) {
+                throw new \FOSSBilling\InformationException('Domain price must be a non-negative number');
+            }
+
+            $price = (float) $data[$field];
+            if (!is_finite($price) || $price < 0) {
+                throw new \FOSSBilling\InformationException('Domain price must be a non-negative number');
+            }
+            $data[$field] = $price;
+        }
+
+        if (array_key_exists('min_years', $data)) {
+            $minimumYears = filter_var($data['min_years'], FILTER_VALIDATE_INT);
+            if ($minimumYears === false || $minimumYears < 1) {
+                throw new \FOSSBilling\InformationException('Minimum registration period must be a positive integer');
+            }
+            $data['min_years'] = $minimumYears;
+        }
+
+        return $data;
     }
 
     public function tldGetSearchQuery($data): array
@@ -868,9 +925,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function tldAlreadyRegistered($tld): bool
     {
-        $tld = $this->di['db']->findOne('Tld', 'tld = :tld ORDER by id ASC', [':tld' => $tld]);
-
-        return $tld instanceof \Model_Tld;
+        return $this->tldFindOneByTld($tld) instanceof \Model_Tld;
     }
 
     public function tldRm(\Model_Tld $model): bool
@@ -913,12 +968,69 @@ class Service implements \FOSSBilling\InjectionAwareInterface
      */
     public function tldFindOneByTld($tld)
     {
-        return $this->di['db']->findOne('Tld', 'tld = :tld ORDER by id ASC', [':tld' => $tld]);
+        $normalizedTld = $this->normalizeTld($tld);
+        $model = $this->di['db']->findOne('Tld', 'tld = ? ORDER by id ASC', [$normalizedTld]);
+        if (!$model instanceof \Model_Tld) {
+            $model = $this->di['db']->findOne('Tld', 'tld = ? ORDER by id ASC', [ltrim($normalizedTld, '.')]);
+        }
+
+        if (!$model instanceof \Model_Tld) {
+            // Compatibility fallback for older rows containing whitespace,
+            // mixed case, or a trailing dot.
+            $model = $this->di['db']->findOne(
+                'Tld',
+                "LOWER(TRIM(TRAILING '.' FROM TRIM(tld))) IN (?, ?) ORDER by id ASC",
+                [$normalizedTld, ltrim($normalizedTld, '.')],
+            );
+        }
+
+        if ($model instanceof \Model_Tld) {
+            // Keep legacy rows usable without performing an unexpected
+            // database write during a read.
+            $model->tld = $normalizedTld;
+        }
+
+        return $model;
+    }
+
+    /**
+     * Convert a TLD or public suffix to the representation used throughout
+     * FOSSBilling and registrar adapters.
+     */
+    public function normalizeTld(string $tld): string
+    {
+        $tld = trim($tld);
+        $tld = trim($tld, '.');
+        if ($tld === '') {
+            throw new \FOSSBilling\InformationException('TLD is invalid.');
+        }
+
+        $asciiTld = idn_to_ascii($tld, IDNA_DEFAULT, INTL_IDNA_VARIANT_UTS46);
+        if ($asciiTld === false || strlen($asciiTld) > 253) {
+            throw new \FOSSBilling\InformationException('TLD is invalid.');
+        }
+
+        foreach (explode('.', strtolower($asciiTld)) as $label) {
+            if (!preg_match('/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/', $label)) {
+                throw new \FOSSBilling\InformationException('TLD is invalid.');
+            }
+        }
+
+        return '.' . strtolower($asciiTld);
     }
 
     public function tldFindOneById($id)
     {
-        return $this->di['db']->findOne('Tld', 'id = :id ORDER by id ASC', [':id' => $id]);
+        $model = $this->di['db']->findOne('Tld', 'id = :id ORDER by id ASC', [':id' => $id]);
+        if ($model instanceof \Model_Tld) {
+            try {
+                $model->tld = $this->normalizeTld($model->tld);
+            } catch (\FOSSBilling\InformationException) {
+                // Keep malformed legacy rows accessible to administrators.
+            }
+        }
+
+        return $model;
     }
 
     public function registrarGetSearchQuery($data): array
@@ -1017,6 +1129,33 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $registrar;
     }
 
+    public function registrarValidateConfiguration(\Model_TldRegistrar $model): void
+    {
+        $configuration = $this->registrarGetConfiguration($model);
+        $adapterConfiguration = $this->registrarGetRegistrarAdapterConfig($model);
+
+        foreach ($adapterConfiguration['form'] ?? [] as $field => $element) {
+            $options = $element[1] ?? [];
+            $required = isset($options['required']) && $options['required'] !== false && $options['required'] !== 'false';
+
+            if (isset($options['required_when']) && is_array($options['required_when'])) {
+                $required = true;
+                foreach ($options['required_when'] as $modelField => $expectedValue) {
+                    if ($model->{$modelField} != $expectedValue) {
+                        $required = false;
+
+                        break;
+                    }
+                }
+            }
+
+            $value = $configuration[$field] ?? null;
+            if ($required && ($value === null || $value === '' || $value === [])) {
+                throw new \FOSSBilling\InformationException('Registrar :registrar is missing required configuration: :field', [':registrar' => $model->name ?: $model->registrar, ':field' => $options['label'] ?? $field]);
+            }
+        }
+    }
+
     public function registrarCreate($code): bool
     {
         $model = $this->di['db']->dispense('TldRegistrar');
@@ -1050,7 +1189,18 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->name = $data['title'] ?? $model->name;
         $model->test_mode = $data['test_mode'] ?? $model->test_mode;
         if (isset($data['config']) && is_array($data['config'])) {
-            $model->config = json_encode($data['config']);
+            $configuration = array_replace($this->registrarGetConfiguration($model), $data['config']);
+            $adapterConfiguration = $this->registrarGetRegistrarAdapterConfig($model);
+
+            foreach ($adapterConfiguration['form'] ?? [] as $field => $element) {
+                $options = $element[1] ?? [];
+                if (!array_key_exists($field, $configuration) && array_key_exists('default', $options)) {
+                    $configuration[$field] = $options['default'];
+                }
+            }
+
+            $model->config = json_encode($configuration, JSON_THROW_ON_ERROR);
+            $this->registrarValidateConfiguration($model);
         }
 
         $this->di['db']->store($model);

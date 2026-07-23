@@ -231,7 +231,8 @@
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label" for="new-tld-name">{{ 'TLD'|trans }}</label>
-                                    <input class="form-control" id="new-tld-name" type="text" name="tld" value="." required title="{{ 'Must start with a dot'|trans }}">
+                                    <input class="form-control" id="new-tld-name" type="text" name="tld" placeholder=".example" required>
+                                    <div class="form-hint">{{ 'The leading dot is optional. The value will be normalized automatically.'|trans }}</div>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label" for="new-tld-registrar">{{ 'Registrar'|trans }}</label>
@@ -243,19 +244,19 @@
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label" for="new-tld-registration-price">{{ 'Registration Price'|trans }}</label>
-                                    <input class="form-control" id="new-tld-registration-price" type="text" name="price_registration" required>
+                                    <input class="form-control" id="new-tld-registration-price" type="number" min="0" step="any" name="price_registration" required>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label" for="new-tld-renewal-price">{{ 'Renewal Price'|trans }}</label>
-                                    <input class="form-control" id="new-tld-renewal-price" type="text" name="price_renew" required>
+                                    <input class="form-control" id="new-tld-renewal-price" type="number" min="0" step="any" name="price_renew" required>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label" for="new-tld-transfer-price">{{ 'Transfer Price'|trans }}</label>
-                                    <input class="form-control" id="new-tld-transfer-price" type="text" name="price_transfer" required>
+                                    <input class="form-control" id="new-tld-transfer-price" type="number" min="0" step="any" name="price_transfer" required>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label" for="new-tld-min-years">{{ 'Minimum Years of Registration'|trans }}</label>
-                                    <input class="form-control" id="new-tld-min-years" type="text" name="min_years" value="1" required>
+                                    <input class="form-control" id="new-tld-min-years" type="number" min="1" step="1" name="min_years" value="1" required>
                                 </div>
                             </div>
                         </section>
