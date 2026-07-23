@@ -287,6 +287,10 @@ test('deletes tld', function (): void {
     $tldMock->tld = '.com';
 
     $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('normalizeTld')
+        ->once()
+        ->with('.com')
+        ->andReturn('.com');
     $serviceMock->shouldReceive('tldFindOneByTld')
         ->atLeast()->once()
         ->andReturn($tldMock);
@@ -297,7 +301,7 @@ test('deletes tld', function (): void {
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('find')
         ->once()
-        ->with('ServiceDomain', 'tld = :tld', [':tld' => $tldMock->tld])
+        ->with('ServiceDomain', "LOWER(TRIM(TRAILING '.' FROM TRIM(tld))) IN (?, ?)", ['.com', 'com'])
         ->andReturn([]);
 
     $di = container();
@@ -314,10 +318,40 @@ test('deletes tld', function (): void {
     expect($result)->toBeTrue();
 });
 
+test('prevents deleting a tld used by a legacy uppercase domain row', function (): void {
+    $adminApi = apiEndpoint(new Admin());
+    $tld = new Model_Tld();
+    $tld->loadBean(new Tests\Helpers\DummyBean());
+    $tld->tld = '.com';
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('normalizeTld')->once()->with('.COM.')->andReturn('.com');
+    $serviceMock->shouldReceive('tldFindOneByTld')->once()->with('.com')->andReturn($tld);
+    $serviceMock->shouldReceive('tldRm')->never();
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('find')
+        ->once()
+        ->with('ServiceDomain', "LOWER(TRIM(TRAILING '.' FROM TRIM(tld))) IN (?, ?)", ['.com', 'com'])
+        ->andReturn([new Model_ServiceDomain()]);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $adminApi->setDi($di);
+    $adminApi->setService($serviceMock);
+
+    expect(fn () => $adminApi->tld_delete(['tld' => '.COM.']))
+        ->toThrow(FOSSBilling\InformationException::class, 'TLD is used by 1 domains');
+});
+
 test('throws exception when deleting tld not found', function (): void {
     $adminApi = apiEndpoint(new Admin());
     $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('normalizeTld')
+        ->once()
+        ->with('.com')
+        ->andReturn('.com');
     $serviceMock->shouldReceive('tldFindOneByTld')
         ->atLeast()->once()
         ->andReturn(null);

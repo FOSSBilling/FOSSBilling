@@ -177,12 +177,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('servicedomain', 'manage_tlds');
 
-        $tld = $data['tld'];
-        if ($tld[0] != '.') {
-            $tld = '.' . $tld;
-        }
-
-        $model = $this->getService()->tldFindOneByTld($tld);
+        $model = $this->getService()->tldFindOneByTld($data['tld']);
         if (!$model instanceof \Model_Tld) {
             throw new \FOSSBilling\InformationException('TLD not found');
         }
@@ -222,12 +217,17 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('servicedomain', 'manage_tlds');
 
-        $model = $this->getService()->tldFindOneByTld($data['tld']);
+        $normalizedTld = $this->getService()->normalizeTld($data['tld']);
+        $model = $this->getService()->tldFindOneByTld($normalizedTld);
 
         if (!$model instanceof \Model_Tld) {
             throw new \FOSSBilling\InformationException('TLD not found');
         }
-        $service_domains = $this->getDi()['db']->find('ServiceDomain', 'tld = :tld', [':tld' => $data['tld']]);
+        $service_domains = $this->getDi()['db']->find(
+            'ServiceDomain',
+            "LOWER(TRIM(TRAILING '.' FROM TRIM(tld))) IN (?, ?)",
+            [$normalizedTld, ltrim($normalizedTld, '.')],
+        );
         $count = \FOSSBilling\Tools::safeCount($service_domains);
         if ($count > 0) {
             throw new \FOSSBilling\InformationException('TLD is used by :count: domains', [':count:' => $count], 707);
