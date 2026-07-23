@@ -126,7 +126,7 @@ test('orderbutton checkout renders one-time items without a period under strict_
                 'discount' => 0,
                 'subtotal' => 10,
                 'total' => 10,
-                'subscribable' => true,
+                'subscribable' => false,
                 'currency' => [
                     'code' => 'USD',
                 ],
@@ -165,9 +165,9 @@ test('orderbutton checkout renders one-time items without a period under strict_
     ]);
 
     expect($html)->toContain('You must first login / create an account before you can checkout.')
-        ->and($html)->toContain('Subscription Gateway')
-        ->and($html)->toContain('id="order-gateway-2" value="2" autocomplete="off" checked')
-        ->and($html)->not->toContain('id="order-gateway-3" value="3" autocomplete="off" checked');
+        ->and($html)->toContain('Secondary Gateway')
+        ->and($html)->toContain('id="order-gateway-3" value="3" autocomplete="off" checked')
+        ->and($html)->not->toContain('Subscription Gateway');
 });
 
 test('orderbutton client form renders incomplete custom field configuration under strict_variables', function (): void {
