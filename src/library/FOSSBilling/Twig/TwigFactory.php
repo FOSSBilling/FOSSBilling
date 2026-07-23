@@ -470,16 +470,31 @@ class TwigFactory
     public function configureCsrf(): void
     {
         $csrfToken = $this->getCsrfToken();
+        $request = $this->di['request'];
+        $secure = $request->isSecure();
         $this->di['cookie_queue']->queue(
             CookieNames::CSRF,
             $csrfToken,
             0,
             '/',
             null,
-            $this->di['request']->isSecure(),
+            $secure,
             false,
             'Strict',
         );
+
+        if ($request->cookies->has(CookieNames::LEGACY_CSRF)) {
+            $this->di['cookie_queue']->queue(
+                CookieNames::LEGACY_CSRF,
+                '',
+                time() - 3600,
+                '/',
+                null,
+                $secure,
+                false,
+                'Strict',
+            );
+        }
     }
 
     private function getCsrfToken(): string
