@@ -1904,7 +1904,7 @@ test('updateGroup rejects moving group below its own child', function (): void {
 dataset('ActivityAdminHistorySearchFilters', fn (): array => [
     'empty filters' => [
         [],
-        'SELECT m.*, a.email, a.name',
+        'SELECT m.*, a.id AS staff_id, a.email, a.name',
         [],
     ],
     'search by keyword' => [
@@ -1931,6 +1931,44 @@ test('getActivityAdminHistorySearchQuery returns correct query and params', func
     expect(str_contains((string) $result[0], $expectedStr))->toBeTrue($result[0]);
     expect(array_diff_key($result[1], $expectedParams))->toBe([]);
 })->with('ActivityAdminHistorySearchFilters');
+
+test('toActivityAdminHistoryRowApiArray returns paginated history data without additional lookups', function (): void {
+    $service = new Service();
+
+    $withStaff = $service->toActivityAdminHistoryRowApiArray([
+        'id' => '1',
+        'admin_id' => '2',
+        'ip' => '192.0.2.1',
+        'created_at' => '2026-01-01 12:00:00',
+        'staff_id' => '2',
+        'name' => 'Administrator',
+        'email' => 'admin@example.test',
+    ]);
+    $withoutStaff = $service->toActivityAdminHistoryRowApiArray([
+        'id' => '2',
+        'admin_id' => '3',
+        'ip' => null,
+        'created_at' => '2026-01-02 12:00:00',
+        'staff_id' => null,
+        'name' => null,
+        'email' => null,
+    ]);
+
+    expect($withStaff)->toBe([
+        'id' => 1,
+        'ip' => '192.0.2.1',
+        'created_at' => '2026-01-01 12:00:00',
+        'staff' => [
+            'id' => 2,
+            'name' => 'Administrator',
+            'email' => 'admin@example.test',
+        ],
+    ])->and($withoutStaff)->toBe([
+        'id' => 2,
+        'ip' => null,
+        'created_at' => '2026-01-02 12:00:00',
+    ]);
+});
 
 test('toActivityAdminHistoryApiArray returns history array data', function (): void {
     $createdAt = new DateTime('2026-01-01 12:00:00');

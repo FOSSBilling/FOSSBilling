@@ -361,11 +361,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         [$sql, $params] = $this->getService()->getActivityAdminHistorySearchQuery($data);
         $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
-        /** @var ActivityAdminHistoryRepository $repository */
-        $repository = $this->getDi()['em']->getRepository(ActivityAdminHistory::class);
         foreach ($pager['list'] as $key => $item) {
-            $activity = $repository->findOneByIdOrFail((int) ($item['id'] ?? 0));
-            $pager['list'][$key] = $this->getService()->toActivityAdminHistoryApiArray($activity);
+            $pager['list'][$key] = $this->getService()->toActivityAdminHistoryRowApiArray($item);
         }
 
         return $pager;

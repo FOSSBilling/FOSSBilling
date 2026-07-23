@@ -842,7 +842,7 @@ class Service implements InjectionAwareInterface
 
     public function getActivityAdminHistorySearchQuery($data): array
     {
-        $sql = 'SELECT m.*, a.email, a.name
+        $sql = 'SELECT m.*, a.id AS staff_id, a.email, a.name
                 FROM activity_admin_history as m
                 LEFT JOIN admin as a on m.admin_id = a.id
                 ';
@@ -895,6 +895,25 @@ class Service implements InjectionAwareInterface
         $sql .= ' ORDER BY m.id DESC';
 
         return [$sql, $params];
+    }
+
+    public function toActivityAdminHistoryRowApiArray(array $row): array
+    {
+        $result = [
+            'id' => (int) $row['id'],
+            'ip' => $row['ip'],
+            'created_at' => $row['created_at'],
+        ];
+
+        if ($row['staff_id'] !== null) {
+            $result['staff'] = [
+                'id' => (int) $row['staff_id'],
+                'name' => $row['name'],
+                'email' => $row['email'],
+            ];
+        }
+
+        return $result;
     }
 
     public function toActivityAdminHistoryApiArray(ActivityAdminHistory $model, $deep = false): array

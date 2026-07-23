@@ -634,33 +634,42 @@ test('login history get list', function (): void {
     ->atLeast()->once()
     ->andReturn(['sqlString', []]);
     $serviceMock
-    ->shouldReceive('toActivityAdminHistoryApiArray')
-    ->atLeast()->once()
-    ->andReturn([]);
+    ->shouldReceive('toActivityAdminHistoryRowApiArray')
+    ->once()
+    ->with([
+        'id' => 1,
+        'admin_id' => 2,
+        'ip' => '192.0.2.1',
+        'created_at' => '2026-01-01 12:00:00',
+        'staff_id' => 2,
+        'name' => 'Administrator',
+        'email' => 'admin@example.test',
+    ])
+    ->andReturn(['id' => 1]);
 
-    $resultSet = ['list' => [['id' => 1]]];
+    $resultSet = ['list' => [[
+        'id' => 1,
+        'admin_id' => 2,
+        'ip' => '192.0.2.1',
+        'created_at' => '2026-01-01 12:00:00',
+        'staff_id' => 2,
+        'name' => 'Administrator',
+        'email' => 'admin@example.test',
+    ]]];
     $pagerMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
     $pagerMock
     ->shouldReceive('getPaginatedResultSet')
     ->atLeast()->once()
     ->andReturn($resultSet);
 
-    $history = new ActivityAdminHistory();
-    staffAdminSetEntityId($history, 1);
-    $repository = Mockery::mock(ActivityAdminHistoryRepository::class);
-    $repository->shouldReceive('findOneByIdOrFail')->once()->with(1)->andReturn($history);
-    $entityManager = Mockery::mock(EntityManagerInterface::class);
-    $entityManager->shouldReceive('getRepository')->once()->with(ActivityAdminHistory::class)->andReturn($repository);
-
     $di = container();
     $di['pager'] = $pagerMock;
-    $di['em'] = $entityManager;
 
     $api->setDi($di);
     $api->setService($serviceMock);
 
     $result = $api->login_history_get_list($data);
-    expect($result)->toBeArray();
+    expect($result['list'])->toBe([['id' => 1]]);
 });
 
 test('login history get', function (): void {
