@@ -15,9 +15,11 @@ use Box\Mod\Activity\Entity\ActivityClientHistory;
 use Box\Mod\Activity\Entity\ActivitySystem;
 use Box\Mod\Activity\Repository\ActivityClientHistoryRepository;
 use Box\Mod\Activity\Repository\ActivitySystemRepository;
+use Box\Mod\Client\Entity\Client;
 use Doctrine\ORM\EntityManagerInterface;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\setEntityId;
 
 dataset('searchFilters', fn (): array => [
     [[], 'FROM activity_system ', true],
@@ -246,4 +248,40 @@ test('remove by client', function (): void {
     $service->setDi($di);
 
     $service->rmByClient($clientModel);
+});
+
+test('remove by Doctrine client', function (): void {
+    $service = new Box\Mod\Activity\Service();
+    $client = new Client();
+    setEntityId($client, 2);
+
+    $clientHistoryRepository = Mockery::mock(ActivityClientHistoryRepository::class);
+    $clientHistoryRepository->shouldReceive('deleteByClientId')->once()->with(2)->andReturn(1);
+    $activitySystemRepository = Mockery::mock(ActivitySystemRepository::class);
+    $activitySystemRepository->shouldReceive('deleteByClientId')->once()->with(2)->andReturn(1);
+
+    $entityManager = Mockery::mock(EntityManagerInterface::class);
+    $entityManager->shouldReceive('getRepository')->once()->with(ActivityClientHistory::class)->andReturn($clientHistoryRepository);
+    $entityManager->shouldReceive('getRepository')->once()->with(ActivitySystem::class)->andReturn($activitySystemRepository);
+
+    $di = container();
+    $di['em'] = $entityManager;
+    $service->setDi($di);
+
+    $service->rmByClient($client);
+});
+
+test('remove by client returns early when the client id is null', function (): void {
+    $service = new Box\Mod\Activity\Service();
+    $client = new Model_Client();
+    $client->loadBean(new Tests\Helpers\DummyBean());
+
+    $entityManager = Mockery::mock(EntityManagerInterface::class);
+    $entityManager->shouldNotReceive('getRepository');
+
+    $di = container();
+    $di['em'] = $entityManager;
+    $service->setDi($di);
+
+    $service->rmByClient($client);
 });

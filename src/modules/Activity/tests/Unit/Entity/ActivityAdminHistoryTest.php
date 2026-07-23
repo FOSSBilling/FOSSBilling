@@ -19,7 +19,7 @@ test('maps the existing admin activity history table', function (): void {
         ->and($metadata->table['indexes']['admin_id_idx']['columns'])->toBe(['admin_id']);
 });
 
-test('stores admin activity history and initializes its timestamp', function (): void {
+test('stores admin activity history and preserves its timestamp', function (): void {
     $createdAt = new DateTime('2026-01-01 12:00:00');
     $history = (new ActivityAdminHistory())
         ->setAdminId(2)
@@ -32,4 +32,12 @@ test('stores admin activity history and initializes its timestamp', function ():
         ->and($history->getAdminId())->toBe(2)
         ->and($history->getIp())->toBe('192.0.2.1')
         ->and($history->getCreatedAt())->toBe($createdAt);
+});
+
+test('initializes the timestamp when it is unset', function (): void {
+    $history = new ActivityAdminHistory();
+
+    $history->onPrePersist();
+
+    expect($history->getCreatedAt())->toBeInstanceOf(DateTime::class);
 });

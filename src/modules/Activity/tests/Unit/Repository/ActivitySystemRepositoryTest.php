@@ -8,9 +8,10 @@ use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\Tools\SchemaTool;
+use Symfony\Component\Filesystem\Path;
 
 test('deletes system activity by client id', function (): void {
-    $config = ORMSetup::createAttributeMetadataConfig([dirname(__DIR__, 3) . '/Entity'], true);
+    $config = ORMSetup::createAttributeMetadataConfig([Path::join(__DIR__, '..', '..', '..', 'Entity')], true);
     $config->setProxyDir(sys_get_temp_dir());
     $config->setProxyNamespace('FOSSBilling\\Tests\\DoctrineProxies');
     $entityManager = new EntityManager(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
@@ -26,5 +27,7 @@ test('deletes system activity by client id', function (): void {
 
     expect($repository)->toBeInstanceOf(ActivitySystemRepository::class)
         ->and($repository->deleteByClientId(3))->toBe(2)
-        ->and($repository->count([]))->toBe(1);
+        ->and($repository->count([]))->toBe(1)
+        ->and($repository->count(['clientId' => 3]))->toBe(0)
+        ->and($repository->count(['clientId' => 4]))->toBe(1);
 });

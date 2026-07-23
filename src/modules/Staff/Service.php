@@ -916,7 +916,7 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    public function toActivityAdminHistoryApiArray(ActivityAdminHistory $model, $deep = false): array
+    public function toActivityAdminHistoryApiArray(ActivityAdminHistory $model): array
     {
         $result = [
             'id' => $model->getId(),
