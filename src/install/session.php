@@ -49,8 +49,8 @@ class Box_SessionFile
     {
         if (!isset(self::$instance)) {
             self::$instance = new self();
+            session_name('fossbilling_session');
             if (!self::$instance->sessionExists() && !headers_sent()) {
-                session_name('fb_sid');
                 self::$instance->sessionState = session_start();
             }
         }

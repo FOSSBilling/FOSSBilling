@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
+use FOSSBilling\Http\CookieNames;
+
 class Session implements InjectionAwareInterface
 {
     private const string OBSOLETE_FLAG = 'fb_session_obsolete';
@@ -18,6 +20,7 @@ class Session implements InjectionAwareInterface
     private const int DEFAULT_REGENERATION_GRACE_PERIOD = 300;
 
     private ?\Pimple\Container $di = null;
+    private ?string $legacySessionCookie = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -39,6 +42,7 @@ class Session implements InjectionAwareInterface
             return;
         }
 
+        $this->configureCookieName();
         $this->canUseSession();
 
         if (!headers_sent()) {
@@ -64,6 +68,7 @@ class Session implements InjectionAwareInterface
 
         session_set_cookie_params($cookieParams);
         session_start();
+        $this->expireLegacySessionCookies();
 
         $this->handleObsoleteSession();
         $this->updateFingerprint();
@@ -241,6 +246,53 @@ class Session implements InjectionAwareInterface
         $sessionName = session_name();
 
         return $sessionName !== false ? ($_COOKIE[$sessionName] ?? '') : '';
+    }
+
+    private function configureCookieName(): void
+    {
+        $previousName = session_name();
+
+        session_name(CookieNames::SESSION);
+
+        if (
+            $previousName === false
+            || $previousName === CookieNames::SESSION
+            || !isset($_COOKIE[$previousName])
+        ) {
+            return;
+        }
+
+        $this->legacySessionCookie = $previousName;
+        if (isset($_COOKIE[CookieNames::SESSION])) {
+            return;
+        }
+
+        $sessionId = $_COOKIE[$previousName];
+        if (
+            is_string($sessionId)
+            && $sessionId !== ''
+            && preg_match('/^[A-Za-z0-9,-]+$/D', $sessionId) === 1
+        ) {
+            session_id($sessionId);
+        }
+    }
+
+    private function expireLegacySessionCookies(): void
+    {
+        if ($this->legacySessionCookie === null || headers_sent()) {
+            return;
+        }
+
+        $params = session_get_cookie_params();
+        setcookie($this->legacySessionCookie, '', [
+            'expires' => time() - 3600,
+            'path' => $params['path'],
+            'domain' => $params['domain'],
+            'secure' => $params['secure'],
+            'httponly' => $params['httponly'],
+            'samesite' => $params['samesite'],
+        ]);
+        unset($_COOKIE[$this->legacySessionCookie]);
     }
 
     private function handleObsoleteSession(): void

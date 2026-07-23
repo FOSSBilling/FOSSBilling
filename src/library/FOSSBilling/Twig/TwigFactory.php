@@ -15,6 +15,7 @@ use Box\Mod\Currency\Entity\Currency;
 use DebugBar\Bridge\Twig\NamespacedTwigProfileCollector;
 use DebugBar\StandardDebugBar;
 use FOSSBilling\Config;
+use FOSSBilling\Http\CookieNames;
 use FOSSBilling\Http\RequestFactory;
 use FOSSBilling\i18n;
 use FOSSBilling\Tools;
@@ -80,7 +81,7 @@ class TwigFactory
             }
         }
 
-        return i18n::getActiveTimezone($this->di['request'], $clientTimezone, $adminTimezone);
+        return i18n::getActiveTimezone($this->di['request'], $clientTimezone, $adminTimezone, $this->di['cookie_queue']);
     }
 
     /**
@@ -470,7 +471,7 @@ class TwigFactory
     {
         $csrfToken = $this->getCsrfToken();
         $this->di['cookie_queue']->queue(
-            'csrf_token',
+            CookieNames::CSRF,
             $csrfToken,
             0,
             '/',
