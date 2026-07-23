@@ -51,9 +51,6 @@ test('log get list with staff user', function (): void {
     $expectation3->atLeast()->once();
     $expectation3->andReturn($simpleResultArr);
 
-    $model = new Model_ActivitySystem();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-
     $di['pager'] = $paginatorMock;
     $activity->setService($serviceMock);
     $activity->log_get_list([]);
@@ -96,9 +93,6 @@ test('log get list with client user', function (): void {
     $expectation3 = $paginatorMock->shouldReceive('getPaginatedResultSet');
     $expectation3->atLeast()->once();
     $expectation3->andReturn($simpleResultArr);
-
-    $model = new Model_ActivitySystem();
-    $model->loadBean(new Tests\Helpers\DummyBean());
 
     $di['pager'] = $paginatorMock;
     $activity->setService($serviceMock);
