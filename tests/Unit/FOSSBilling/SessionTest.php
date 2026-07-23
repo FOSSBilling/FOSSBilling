@@ -120,11 +120,9 @@ test('session validation initializes a missing creation time', function (): void
         ->andReturn(['fingerprint' => $fingerprint, 'created_at' => null]);
     $connection->shouldReceive('executeStatement')
         ->once()
-        ->withArgs(function (string $query, array $parameters): bool {
-            return $query === 'UPDATE session SET created_at = :created_at WHERE id = :id'
-                && $parameters['id'] === 'new-session'
-                && is_int($parameters['created_at']);
-        })
+        ->withArgs(fn (string $query, array $parameters): bool => $query === 'UPDATE session SET created_at = :created_at WHERE id = :id'
+            && $parameters['id'] === 'new-session'
+            && is_int($parameters['created_at']))
         ->andReturn(1);
 
     setSessionCookie('new-session');
@@ -214,11 +212,9 @@ test('fingerprint update persists the current fingerprint', function (): void {
         ->andReturn(['id' => 'current-session']);
     $connection->shouldReceive('executeStatement')
         ->once()
-        ->withArgs(function (string $query, array $parameters): bool {
-            return $query === 'UPDATE session SET fingerprint = :fingerprint WHERE id = :id'
-                && $parameters['id'] === 'current-session'
-                && is_array(json_decode($parameters['fingerprint'], true));
-        })
+        ->withArgs(fn (string $query, array $parameters): bool => $query === 'UPDATE session SET fingerprint = :fingerprint WHERE id = :id'
+            && $parameters['id'] === 'current-session'
+            && is_array(json_decode($parameters['fingerprint'], true)))
         ->andReturn(1);
 
     setSessionCookie('current-session');
@@ -266,11 +262,9 @@ test('disabled fingerprinting skips validation and stores an empty fingerprint',
             ->andReturn(['fingerprint' => '{not-valid-json', 'created_at' => null]);
         $connection->shouldReceive('executeStatement')
             ->once()
-            ->withArgs(function (string $query, array $parameters): bool {
-                return $query === 'UPDATE session SET created_at = :created_at WHERE id = :id'
-                    && $parameters['id'] === 'fingerprinting-disabled'
-                    && is_int($parameters['created_at']);
-            })
+            ->withArgs(fn (string $query, array $parameters): bool => $query === 'UPDATE session SET created_at = :created_at WHERE id = :id'
+                && $parameters['id'] === 'fingerprinting-disabled'
+                && is_int($parameters['created_at']))
             ->andReturn(1);
         $connection->shouldReceive('fetchAssociative')
             ->once()

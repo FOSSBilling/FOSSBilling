@@ -318,7 +318,7 @@ class Service implements InjectionAwareInterface
         return $this->getTheme($code);
     }
 
-    public function getCurrentClientAreaThemeCode()
+    public function getCurrentClientAreaThemeCode(): string
     {
         if (self::$clientThemeCache !== null) {
             // Apply default logic when returning from cache

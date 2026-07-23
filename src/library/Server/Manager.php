@@ -153,9 +153,7 @@ abstract class Server_Manager
     public function getLog(): ?Box_Log
     {
         if (!$this->_log instanceof Box_Log) {
-            $log = new Box_Log();
-
-            return $log;
+            return new Box_Log();
         }
 
         return $this->_log;
