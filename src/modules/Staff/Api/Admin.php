@@ -15,6 +15,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Staff\Api;
 
+use Box\Mod\Activity\Entity\ActivityAdminHistory;
+use Box\Mod\Activity\Repository\ActivityAdminHistoryRepository;
 use Box\Mod\Staff\Entity\AdminGroup;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
@@ -359,11 +361,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         [$sql, $params] = $this->getService()->getActivityAdminHistorySearchQuery($data);
         $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
+        /** @var ActivityAdminHistoryRepository $repository */
+        $repository = $this->getDi()['em']->getRepository(ActivityAdminHistory::class);
         foreach ($pager['list'] as $key => $item) {
-            $activity = $this->getDi()['db']->getExistingModelById('ActivityAdminHistory', $item['id'] ?? 0, sprintf('Staff activity item #%s not found', $item['id'] ?? 'unknown'));
-            if ($activity) {
-                $pager['list'][$key] = $this->getService()->toActivityAdminHistoryApiArray($activity);
-            }
+            $activity = $repository->findOneByIdOrFail((int) ($item['id'] ?? 0));
+            $pager['list'][$key] = $this->getService()->toActivityAdminHistoryApiArray($activity);
         }
 
         return $pager;
@@ -379,7 +381,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('staff', 'manage_settings');
 
-        $model = $this->getDi()['db']->getExistingModelById('ActivityAdminHistory', $data['id'], 'Event not found');
+        /** @var ActivityAdminHistoryRepository $repository */
+        $repository = $this->getDi()['em']->getRepository(ActivityAdminHistory::class);
+        $model = $repository->findOneByIdOrFail((int) $data['id']);
 
         return $this->getService()->toActivityAdminHistoryApiArray($model);
     }

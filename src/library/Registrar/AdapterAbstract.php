@@ -211,7 +211,6 @@ abstract class Registrar_AdapterAbstract
         $log = $this->_log;
         if (!$log instanceof Box_Log) {
             $log = new Box_Log();
-            $log->addWriter(new Box_LogDb('Model_ActivitySystem'));
         }
 
         return $log;

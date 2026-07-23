@@ -10,9 +10,12 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Activity\Entity\ActivityAdminHistory;
+use Box\Mod\Activity\Repository\ActivityAdminHistoryRepository;
 use Box\Mod\Staff\Entity\AdminGroup;
 use Box\Mod\Staff\Repository\AdminGroupMemberRepository;
 use Box\Mod\Staff\Repository\AdminGroupRepository;
+use Doctrine\ORM\EntityManagerInterface;
 
 use function Tests\Helpers\container;
 
@@ -635,26 +638,23 @@ test('login history get list', function (): void {
     ->atLeast()->once()
     ->andReturn([]);
 
-    $resultSet = [
-        'list' => ['id' => 1],
-    ];
+    $resultSet = ['list' => [['id' => 1]]];
     $pagerMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
     $pagerMock
     ->shouldReceive('getPaginatedResultSet')
     ->atLeast()->once()
     ->andReturn($resultSet);
 
-    $model = new Model_ActivityAdminHistory();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn($model);
+    $history = new ActivityAdminHistory();
+    staffAdminSetEntityId($history, 1);
+    $repository = Mockery::mock(ActivityAdminHistoryRepository::class);
+    $repository->shouldReceive('findOneByIdOrFail')->once()->with(1)->andReturn($history);
+    $entityManager = Mockery::mock(EntityManagerInterface::class);
+    $entityManager->shouldReceive('getRepository')->once()->with(ActivityAdminHistory::class)->andReturn($repository);
 
     $di = container();
     $di['pager'] = $pagerMock;
-    $di['db'] = $dbMock;
+    $di['em'] = $entityManager;
 
     $api->setDi($di);
     $api->setService($serviceMock);
@@ -673,16 +673,15 @@ test('login history get', function (): void {
     ->atLeast()->once()
     ->andReturn([]);
 
-    $model = new Model_ActivityAdminHistory();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn($model);
+    $history = new ActivityAdminHistory();
+    staffAdminSetEntityId($history, 1);
+    $repository = Mockery::mock(ActivityAdminHistoryRepository::class);
+    $repository->shouldReceive('findOneByIdOrFail')->once()->with(1)->andReturn($history);
+    $entityManager = Mockery::mock(EntityManagerInterface::class);
+    $entityManager->shouldReceive('getRepository')->once()->with(ActivityAdminHistory::class)->andReturn($repository);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $entityManager;
 
     $api->setIdentity(staffAdminIdentity());
     $api->setDi($di);

@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Staff;
 
+use Box\Mod\Activity\Entity\ActivityAdminHistory;
+use Box\Mod\Staff\Entity\Admin;
 use Box\Mod\Staff\Entity\AdminGroup;
 use Box\Mod\Staff\Entity\AdminGroupMember;
 use Box\Mod\Staff\Repository\AdminGroupMemberRepository;
@@ -895,19 +897,20 @@ class Service implements InjectionAwareInterface
         return [$sql, $params];
     }
 
-    public function toActivityAdminHistoryApiArray(\Model_ActivityAdminHistory $model, $deep = false): array
+    public function toActivityAdminHistoryApiArray(ActivityAdminHistory $model, $deep = false): array
     {
         $result = [
-            'id' => $model->id,
-            'ip' => $model->ip,
-            'created_at' => $model->created_at,
+            'id' => $model->getId(),
+            'ip' => $model->getIp(),
+            'created_at' => $model->getCreatedAt()?->format('Y-m-d H:i:s'),
         ];
-        if ($model->admin_id) {
-            $adminModel = $this->di['db']->load('Admin', $model->admin_id);
-            if ($adminModel instanceof \Model_Admin && $adminModel->id) {
-                $result['staff']['id'] = $adminModel->id;
-                $result['staff']['name'] = $adminModel->name;
-                $result['staff']['email'] = $adminModel->email;
+        $adminId = $model->getAdminId();
+        if ($adminId !== null) {
+            $admin = $this->di['em']->getRepository(Admin::class)->find($adminId);
+            if ($admin instanceof Admin && $admin->getId() !== null) {
+                $result['staff']['id'] = $admin->getId();
+                $result['staff']['name'] = $admin->getName();
+                $result['staff']['email'] = $admin->getEmail();
             }
         }
 
