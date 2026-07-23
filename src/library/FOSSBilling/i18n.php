@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
+use FOSSBilling\Http\CookieNames;
 use FOSSBilling\Http\CookieQueue;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -40,8 +41,9 @@ class i18n
     {
         $locale = null;
 
-        $cookieLocale = $request->cookies->get('fb_locale');
-        $cookieBBLANG = $request->cookies->get('BBLANG');
+        $cookieLocale = $request->cookies->get(CookieNames::LOCALE);
+        $legacyCookieLocale = $request->cookies->get(CookieNames::LEGACY_LOCALE);
+        $cookieBBLANG = $request->cookies->get(CookieNames::LEGACY_BOX_LOCALE);
 
         /*
          * If the locale cookie is set and it's one of the enabled locales, use that.
@@ -49,13 +51,17 @@ class i18n
          */
         if (!empty($cookieLocale) && in_array($cookieLocale, self::getLocales())) {
             $locale = $cookieLocale;
+        } elseif (!empty($legacyCookieLocale) && in_array($legacyCookieLocale, self::getLocales())) {
+            $locale = $legacyCookieLocale;
+            $cookies?->queue(CookieNames::LOCALE, (string) $locale, strtotime('+1 month'), '/');
         } elseif (!empty($cookieBBLANG) && in_array($cookieBBLANG, self::getLocales())) {
             $locale = $cookieBBLANG;
-            $cookies?->queue('fb_locale', (string) $locale, strtotime('+1 month'), '/');
-            $cookies?->queue('BBLANG', '', time() - 3600, '/');
+            $cookies?->queue(CookieNames::LOCALE, (string) $locale, strtotime('+1 month'), '/');
         } elseif ($autoDetect && self::isBrowserLocaleDetectionEnabled()) {
             $locale = self::getBrowserLocale($request, $cookies);
         }
+
+        self::expireLegacyLocaleCookies($request, $cookies);
 
         // If we somehow still don't have a locale, use the default / fallback.
         if (!$locale) {
@@ -107,14 +113,14 @@ class i18n
             }
             foreach (self::getLocales() as $locale) {
                 if (str_starts_with((string) $locale, substr($detectedLocale, 0, 2))) {
-                    $cookies?->queue('fb_locale', (string) $locale, strtotime('+1 month'), '/');
+                    $cookies?->queue(CookieNames::LOCALE, (string) $locale, strtotime('+1 month'), '/');
 
                     return $locale;
                 }
             }
         }
 
-        $cookies?->queue('fb_locale', (string) $matchingLocale, strtotime('+1 month'), '/');
+        $cookies?->queue(CookieNames::LOCALE, (string) $matchingLocale, strtotime('+1 month'), '/');
 
         return $matchingLocale;
     }
@@ -122,14 +128,33 @@ class i18n
     /**
      * Returns the timezone the current request should be rendered in.
      *
-     * Resolves in order: client -> admin -> `fb_timezone` cookie -> `i18n.timezone` config -> `UTC`.
+     * Resolves in order: client -> admin -> `fossbilling_timezone` cookie -> `i18n.timezone` config -> `UTC`.
      * Invalid values are silently dropped so a stale cookie or corrupt DB value can't crash the date formatter.
      */
-    public static function getActiveTimezone(Request $request, ?string $clientTimezone = null, ?string $adminTimezone = null): string
-    {
+    public static function getActiveTimezone(
+        Request $request,
+        ?string $clientTimezone = null,
+        ?string $adminTimezone = null,
+        ?CookieQueue $cookies = null,
+    ): string {
         $valid = self::getTimezoneList();
+        $cookieTimezone = $request->cookies->get(CookieNames::TIMEZONE);
+        $legacyCookieTimezone = $request->cookies->get(CookieNames::LEGACY_TIMEZONE);
 
-        foreach ([$clientTimezone, $adminTimezone, $request->cookies->get('fb_timezone')] as $candidate) {
+        if ($request->cookies->has(CookieNames::LEGACY_TIMEZONE)) {
+            if (
+                (!is_string($cookieTimezone) || !in_array($cookieTimezone, $valid, true))
+                && is_string($legacyCookieTimezone)
+                && in_array($legacyCookieTimezone, $valid, true)
+            ) {
+                $cookies?->queue(CookieNames::TIMEZONE, $legacyCookieTimezone, strtotime('+1 year'), '/');
+                $cookieTimezone = $legacyCookieTimezone;
+            }
+
+            $cookies?->queue(CookieNames::LEGACY_TIMEZONE, '', time() - 3600, '/');
+        }
+
+        foreach ([$clientTimezone, $adminTimezone, $cookieTimezone] as $candidate) {
             if (is_string($candidate) && $candidate !== '' && in_array($candidate, $valid, true)) {
                 return $candidate;
             }
@@ -141,6 +166,15 @@ class i18n
         }
 
         return 'UTC';
+    }
+
+    private static function expireLegacyLocaleCookies(Request $request, ?CookieQueue $cookies): void
+    {
+        foreach ([CookieNames::LEGACY_LOCALE, CookieNames::LEGACY_BOX_LOCALE] as $name) {
+            if ($request->cookies->has($name)) {
+                $cookies?->queue($name, '', time() - 3600, '/');
+            }
+        }
     }
 
     /**

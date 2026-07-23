@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Client\Api;
 
+use FOSSBilling\Http\CookieNames;
 use FOSSBilling\Security\RandomizedTimeFloor;
 use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
@@ -146,7 +147,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             $this->getDi()['session']->delete('redirect_uri');
 
             if (!empty($client->lang)) {
-                $this->getDi()['cookie_queue']->queue('fb_locale', (string) $client->lang, strtotime('+1 month'), '/');
+                $this->getDi()['cookie_queue']->queue(CookieNames::LOCALE, (string) $client->lang, strtotime('+1 month'), '/');
             }
 
             $this->getDi()['mod_service']('cart')->transferFromOtherSession($oldSession);

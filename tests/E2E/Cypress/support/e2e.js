@@ -158,7 +158,7 @@ Cypress.Commands.add('loginAsClient', (client) => {
   }, {
     cacheAcrossSpecs: true,
     validate() {
-      cy.getCookie('csrf_token').should('exist').then((cookie) => {
+      cy.getCookie('fossbilling_csrf').should('exist').then((cookie) => {
         cy.request({
           url: '/api/client/profile/get',
           qs: { CSRFToken: cookie.value },

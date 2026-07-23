@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use FOSSBilling\Http\CookieNames;
+
 function createSession(): FOSSBilling\Session
 {
     $handler = new class extends PdoSessionHandler {
@@ -23,6 +25,30 @@ function invokePrivate(object $instance, string $method, array $args = []): mixe
 
 afterEach(function (): void {
     $_SESSION = [];
+    foreach ([
+        CookieNames::SESSION,
+        'PHPSESSID',
+    ] as $sessionName) {
+        unset($_COOKIE[$sessionName]);
+    }
+    if (session_status() === PHP_SESSION_NONE) {
+        session_id('');
+        session_name('PHPSESSID');
+    }
+});
+
+test('session cookie name migrates and expires the previous session cookie', function (): void {
+    $_COOKIE['PHPSESSID'] = 'legacy-session';
+    $session = createSession();
+
+    invokePrivate($session, 'configureCookieName');
+
+    expect(session_name())->toBe(CookieNames::SESSION)
+        ->and(session_id())->toBe('legacy-session');
+
+    invokePrivate($session, 'expireLegacySessionCookies');
+
+    expect($_COOKIE)->not->toHaveKey('PHPSESSID');
 });
 
 test('obsolete session is detected', function (): void {

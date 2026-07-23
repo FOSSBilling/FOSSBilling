@@ -55,6 +55,10 @@ interface FOSSBillingRuntime {
   charts?: {
     renderTimeSeriesSparkline: (target: HTMLElement | string, data: unknown, options?: Record<string, unknown>) => unknown;
   };
+  cookieNames?: {
+    locale: string;
+    timezone: string;
+  };
   cookieCreate?: (name: string, value: string, days?: number) => void;
   cookieRead?: (name: string) => string | null;
   detectTimezone?: () => string;

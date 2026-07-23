@@ -22,7 +22,7 @@ describe('client authentication', () => {
     });
 
     cy.location('pathname', { timeout: 10000 }).should('eq', '/');
-    cy.getCookie('csrf_token').should('exist').then((cookie) => {
+    cy.getCookie('fossbilling_csrf').should('exist').then((cookie) => {
       cy.request({
         url: '/api/client/profile/get',
         qs: { CSRFToken: cookie.value },

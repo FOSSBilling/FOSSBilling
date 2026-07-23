@@ -465,7 +465,8 @@ class Client implements InjectionAwareInterface
             $data = new \stdClass();
         }
 
-        $cookieToken = $this->di['request']->cookies->get('csrf_token');
+        $cookieToken = $this->di['request']->cookies->get(\FOSSBilling\Http\CookieNames::CSRF)
+            ?? $this->di['request']->cookies->get(\FOSSBilling\Http\CookieNames::LEGACY_CSRF);
         $headerToken = $this->di['request']->headers->get('X-CSRF-TOKEN');
 
         $token = $data->CSRFToken
