@@ -29,8 +29,8 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     public function register(\Box_App &$app): void
     {
-        $app->get('/servicedownloadable/get-file/:id/:file_id', 'get_download', ['id' => '[0-9]+', 'file_id' => '[a-f0-9]{32}'], static::class);
-        $app->get('/servicedownloadable/order-file/:order_id/:file_id', 'get_order_download', ['order_id' => '[0-9]+', 'file_id' => '[0-9]+'], static::class);
+        $app->get('/servicedownloadable/get-file/:id/:fileId', 'get_download', ['id' => '[0-9]+', 'fileId' => '[a-f0-9]{32}'], static::class);
+        $app->get('/servicedownloadable/order-file/:orderId/:fileId', 'get_order_download', ['orderId' => '[0-9]+', 'fileId' => '[0-9]+'], static::class);
     }
 
     public function get_download(\Box_App $app, $id, $fileId): Response

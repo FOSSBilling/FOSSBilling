@@ -29,7 +29,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
 
     public function register(\Box_App &$app): void
     {
-        $app->get('/servicedownloadable/get-file/:order_id/:file_id', 'get_download', ['order_id' => '[0-9]+', 'file_id' => '[0-9]+'], static::class);
+        $app->get('/servicedownloadable/get-file/:orderId/:fileId', 'get_download', ['orderId' => '[0-9]+', 'fileId' => '[0-9]+'], static::class);
     }
 
     public function get_download(\Box_App $app, $orderId, $fileId): Response
