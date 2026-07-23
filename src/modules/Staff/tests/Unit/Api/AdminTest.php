@@ -10,9 +10,12 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Activity\Entity\ActivityAdminHistory;
+use Box\Mod\Activity\Repository\ActivityAdminHistoryRepository;
 use Box\Mod\Staff\Entity\AdminGroup;
 use Box\Mod\Staff\Repository\AdminGroupMemberRepository;
 use Box\Mod\Staff\Repository\AdminGroupRepository;
+use Doctrine\ORM\EntityManagerInterface;
 
 use function Tests\Helpers\container;
 
@@ -631,36 +634,42 @@ test('login history get list', function (): void {
     ->atLeast()->once()
     ->andReturn(['sqlString', []]);
     $serviceMock
-    ->shouldReceive('toActivityAdminHistoryApiArray')
-    ->atLeast()->once()
-    ->andReturn([]);
+    ->shouldReceive('toActivityAdminHistoryRowApiArray')
+    ->once()
+    ->with([
+        'id' => 1,
+        'admin_id' => 2,
+        'ip' => '192.0.2.1',
+        'created_at' => '2026-01-01 12:00:00',
+        'staff_id' => 2,
+        'name' => 'Administrator',
+        'email' => 'admin@example.test',
+    ])
+    ->andReturn(['id' => 1]);
 
-    $resultSet = [
-        'list' => ['id' => 1],
-    ];
+    $resultSet = ['list' => [[
+        'id' => 1,
+        'admin_id' => 2,
+        'ip' => '192.0.2.1',
+        'created_at' => '2026-01-01 12:00:00',
+        'staff_id' => 2,
+        'name' => 'Administrator',
+        'email' => 'admin@example.test',
+    ]]];
     $pagerMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
     $pagerMock
     ->shouldReceive('getPaginatedResultSet')
     ->atLeast()->once()
     ->andReturn($resultSet);
 
-    $model = new Model_ActivityAdminHistory();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn($model);
-
     $di = container();
     $di['pager'] = $pagerMock;
-    $di['db'] = $dbMock;
 
     $api->setDi($di);
     $api->setService($serviceMock);
 
     $result = $api->login_history_get_list($data);
-    expect($result)->toBeArray();
+    expect($result['list'])->toBe([['id' => 1]]);
 });
 
 test('login history get', function (): void {
@@ -673,16 +682,15 @@ test('login history get', function (): void {
     ->atLeast()->once()
     ->andReturn([]);
 
-    $model = new Model_ActivityAdminHistory();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn($model);
+    $history = new ActivityAdminHistory();
+    staffAdminSetEntityId($history, 1);
+    $repository = Mockery::mock(ActivityAdminHistoryRepository::class);
+    $repository->shouldReceive('findOneByIdOrFail')->once()->with(1)->andReturn($history);
+    $entityManager = Mockery::mock(EntityManagerInterface::class);
+    $entityManager->shouldReceive('getRepository')->once()->with(ActivityAdminHistory::class)->andReturn($repository);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $entityManager;
 
     $api->setIdentity(staffAdminIdentity());
     $api->setDi($di);

@@ -10,10 +10,13 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Activity\Entity\ActivityAdminHistory;
+use Box\Mod\Staff\Entity\Admin;
 use Box\Mod\Staff\Entity\AdminGroup;
 use Box\Mod\Staff\Entity\AdminGroupMember;
 use Box\Mod\Staff\Repository\AdminGroupMemberRepository;
 use Box\Mod\Staff\Repository\AdminGroupRepository;
+use Box\Mod\Staff\Repository\AdminRepository;
 use Box\Mod\Staff\Service;
 use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Repository\HelpdeskRepository;
@@ -1901,7 +1904,7 @@ test('updateGroup rejects moving group below its own child', function (): void {
 dataset('ActivityAdminHistorySearchFilters', fn (): array => [
     'empty filters' => [
         [],
-        'SELECT m.*, a.email, a.name',
+        'SELECT m.*, a.id AS staff_id, a.email, a.name',
         [],
     ],
     'search by keyword' => [
@@ -1929,40 +1932,85 @@ test('getActivityAdminHistorySearchQuery returns correct query and params', func
     expect(array_diff_key($result[1], $expectedParams))->toBe([]);
 })->with('ActivityAdminHistorySearchFilters');
 
+test('toActivityAdminHistoryRowApiArray returns paginated history data without additional lookups', function (): void {
+    $service = new Service();
+
+    $withStaff = $service->toActivityAdminHistoryRowApiArray([
+        'id' => '1',
+        'admin_id' => '2',
+        'ip' => '192.0.2.1',
+        'created_at' => '2026-01-01 12:00:00',
+        'staff_id' => '2',
+        'name' => 'Administrator',
+        'email' => 'admin@example.test',
+    ]);
+    $withoutStaff = $service->toActivityAdminHistoryRowApiArray([
+        'id' => '2',
+        'admin_id' => '3',
+        'ip' => null,
+        'created_at' => '2026-01-02 12:00:00',
+        'staff_id' => null,
+        'name' => null,
+        'email' => null,
+    ]);
+
+    expect($withStaff)->toBe([
+        'id' => 1,
+        'ip' => '192.0.2.1',
+        'created_at' => '2026-01-01 12:00:00',
+        'staff' => [
+            'id' => 2,
+            'name' => 'Administrator',
+            'email' => 'admin@example.test',
+        ],
+    ])->and($withoutStaff)->toBe([
+        'id' => 2,
+        'ip' => null,
+        'created_at' => '2026-01-02 12:00:00',
+    ]);
+});
+
 test('toActivityAdminHistoryApiArray returns history array data', function (): void {
-    $adminHistoryModel = new Model_ActivityAdminHistory();
-    $adminHistoryModel->loadBean(new Tests\Helpers\DummyBean());
-    $adminHistoryModel->admin_id = 2;
+    $createdAt = new DateTime('2026-01-01 12:00:00');
+    $adminHistory = (new ActivityAdminHistory())
+        ->setAdminId(2)
+        ->setIp('192.0.2.1')
+        ->setCreatedAt($createdAt);
+    staffSetEntityId($adminHistory, 1);
 
     $expected = [
-        'id' => '',
-        'ip' => '',
-        'created_at' => '',
+        'id' => 1,
+        'ip' => '192.0.2.1',
+        'created_at' => '2026-01-01 12:00:00',
         'staff' => [
-            'id' => $adminHistoryModel->admin_id,
-            'name' => '',
-            'email' => '',
+            'id' => 2,
+            'name' => 'Administrator',
+            'email' => 'admin@example.test',
         ],
     ];
 
-    $adminModel = new Model_Admin();
-    $adminModel->loadBean(new Tests\Helpers\DummyBean());
-    $adminModel->id = 2;
+    $admin = (new Admin())
+        ->setName('Administrator')
+        ->setEmail('admin@example.test');
+    staffSetEntityId($admin, 2);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('load')->atLeast()->once()
-        ->andReturn($adminModel);
+    $adminRepository = Mockery::mock(AdminRepository::class);
+    $adminRepository->shouldReceive('find')->once()->with(2)->andReturn($admin);
+    $groupRepository = Mockery::mock(AdminGroupRepository::class)->shouldIgnoreMissing();
+    $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class)->shouldIgnoreMissing();
+    $entityManager = Mockery::mock(EntityManagerInterface::class);
+    $entityManager->shouldReceive('getRepository')->with(AdminGroup::class)->andReturn($groupRepository);
+    $entityManager->shouldReceive('getRepository')->with(AdminGroupMember::class)->andReturn($groupMemberRepository);
+    $entityManager->shouldReceive('getRepository')->once()->with(Admin::class)->andReturn($adminRepository);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $entityManager;
 
     $service = new Service();
     $service->setDi($di);
-    $result = $service->toActivityAdminHistoryApiArray($adminHistoryModel);
+    $result = $service->toActivityAdminHistoryApiArray($adminHistory);
 
-    expect($result)->not->toBeEmpty();
-    expect($result)->toBeArray();
-    expect(count(array_diff(array_keys($expected), array_keys($result))))->toBe(0, 'Missing array key values.');
+    expect($result)->toBe($expected);
 });
 
 test('getPermissions returns empty array when staff has no groups', function (): void {
