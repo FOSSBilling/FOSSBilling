@@ -7,6 +7,7 @@
 /src/config.old.php
 /src/data/log/*
 /src/data/cache/*
+/src/data/uploads/*
 /src/data/update-finalization.json
 !/src/data/cache/.gitkeep
 /src/public/assets
