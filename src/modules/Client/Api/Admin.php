@@ -355,7 +355,6 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             'state' => 'setState',
             'city' => 'setCity',
             'status' => 'setStatus',
-            'client_group_id' => 'setClientGroupId',
             'company_number' => 'setCompanyNumber',
             'type' => 'setType',
             'lang' => 'setLang',
@@ -384,22 +383,21 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         foreach ($simpleFields as $field => $setter) {
             if (array_key_exists($field, $data)) {
-                $value = $data[$field];
-                if ($field === 'client_group_id') {
-                    $value = empty($value) ? null : (int) $value;
-                }
-
-                $client->{$setter}($value);
+                $client->{$setter}($data[$field]);
             }
         }
 
-        if (array_key_exists('group_id', $data)) {
-            if (empty($data['group_id'])) {
+        $groupField = array_key_exists('group_id', $data)
+            ? 'group_id'
+            : (array_key_exists('client_group_id', $data) ? 'client_group_id' : null);
+        if ($groupField !== null) {
+            $groupValue = $data[$groupField];
+            if (empty($groupValue)) {
                 $client->setClientGroupId(null);
             } else {
-                $groupId = filter_var($data['group_id'], FILTER_VALIDATE_INT);
+                $groupId = filter_var($groupValue, FILTER_VALIDATE_INT);
                 if ($groupId === false || $groupId <= 0) {
-                    throw new InformationException('Invalid client group ID: :id', [':id' => $data['group_id']]);
+                    throw new InformationException('Invalid client group ID: :id', [':id' => $groupValue]);
                 }
 
                 $this->getDi()['em']->getRepository(ClientGroup::class)->find($groupId)

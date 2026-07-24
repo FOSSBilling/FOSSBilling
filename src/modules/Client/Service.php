@@ -921,41 +921,54 @@ class Service implements InjectionAwareInterface
     {
         $clientId = $this->getClientId($model);
         $legacyClient = $model instanceof \Model_Client ? $model : $this->getLegacyClient($clientId);
+        $entityManager = $this->di['em'];
+        $connection = $entityManager->getConnection();
 
-        $service = $this->di['mod_service']('Order');
-        $service->rmByClient($legacyClient);
-        $service = $this->di['mod_service']('Invoice');
-        $service->rmByClient($legacyClient);
-        $service = $this->di['mod_service']('Support');
-        $service->rmByClient($legacyClient);
-        $service = $this->di['mod_service']('Client', 'Balance');
-        $service->rmByClient($model);
+        $entityManager->beginTransaction();
 
-        $this->di['dbal']->executeStatement('DELETE FROM activity_client_history WHERE client_id = :id', ['id' => $clientId]);
+        try {
+            $service = $this->di['mod_service']('Order');
+            $service->rmByClient($legacyClient);
+            $service = $this->di['mod_service']('Invoice');
+            $service->rmByClient($legacyClient);
+            $service = $this->di['mod_service']('Support');
+            $service->rmByClient($legacyClient);
+            $service = $this->di['mod_service']('Client', 'Balance');
+            $service->rmByClient($model);
 
-        $service = $this->di['mod_service']('Email');
-        $service->rmByClient($legacyClient);
-        $service = $this->di['mod_service']('Activity');
-        $service->rmByClient($model);
+            $connection->executeStatement('DELETE FROM activity_client_history WHERE client_id = :id', ['id' => $clientId]);
 
-        $resetRecords = $this->clientPasswordResetRepository->findBy(['clientId' => $clientId]);
-        foreach ($resetRecords as $resetRecord) {
-            $this->di['em']->remove($resetRecord);
+            $service = $this->di['mod_service']('Email');
+            $service->rmByClient($legacyClient);
+            $service = $this->di['mod_service']('Activity');
+            $service->rmByClient($model);
+
+            $resetRecords = $this->clientPasswordResetRepository->findBy(['clientId' => $clientId]);
+            foreach ($resetRecords as $resetRecord) {
+                $entityManager->remove($resetRecord);
+            }
+
+            $query = $connection->createQueryBuilder();
+            $query
+                ->delete('extension_meta')
+                ->where('client_id = :id')
+                ->setParameter('id', $clientId);
+            $query->executeStatement();
+
+            $client = $model instanceof Client ? $model : $this->clientRepository->find($clientId);
+            if ($client instanceof Client) {
+                $entityManager->remove($client);
+            }
+
+            $entityManager->flush();
+            $entityManager->commit();
+        } catch (\Throwable $exception) {
+            if ($connection->isTransactionActive()) {
+                $entityManager->rollback();
+            }
+
+            throw $exception;
         }
-
-        $query = $this->di['dbal']->createQueryBuilder();
-        $query
-            ->delete('extension_meta')
-            ->where('client_id = :id')
-            ->setParameter('id', $clientId);
-        $query->executeStatement();
-
-        $client = $model instanceof Client ? $model : $this->clientRepository->find($clientId);
-        if ($client instanceof Client) {
-            $this->di['em']->remove($client);
-        }
-
-        $this->di['em']->flush();
     }
 
     public function authorizeClient($email, $plainTextPassword)

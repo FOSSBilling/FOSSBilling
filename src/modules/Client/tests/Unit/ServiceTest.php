@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
+use function Tests\Helpers\moduleService;
 
 test('getDi returns dependency injection container', function (): void {
     $service = new Box\Mod\Client\Service();
@@ -621,6 +622,91 @@ test('getClientBalance returns numeric', function (): void {
 
     $result = $service->getClientBalance($model);
     expect($result)->toBeNumeric();
+});
+
+test('remove wraps client cleanup and flush in one transaction', function (): void {
+    $service = new Box\Mod\Client\Service();
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
+    $legacyClient = Mockery::mock(Model_Client::class);
+    $reset = createEntity(Box\Mod\Client\Entity\ClientPasswordReset::class, ['client_id' => 1]);
+
+    $db = container()['db'];
+    $db->shouldReceive('getExistingModelById')->once()->with('Client', 1)->andReturn($legacyClient);
+
+    $services = [];
+    foreach (['order', 'invoice', 'support', 'email'] as $module) {
+        $moduleService = Mockery::mock();
+        $moduleService->shouldReceive('rmByClient')->once()->with($legacyClient);
+        $services[$module] = $moduleService;
+    }
+
+    $balanceService = Mockery::mock();
+    $balanceService->shouldReceive('rmByClient')->once()->with($client);
+    $services['client:balance'] = $balanceService;
+
+    $activityService = Mockery::mock();
+    $activityService->shouldReceive('rmByClient')->once()->with($client);
+    $services['activity'] = $activityService;
+
+    $di = container();
+    $di['db'] = $db;
+    $di['mod_service'] = $di->protect(moduleService($services));
+
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $query = Mockery::mock(Doctrine\DBAL\Query\QueryBuilder::class);
+    $query->shouldReceive('delete')->once()->with('extension_meta')->andReturnSelf();
+    $query->shouldReceive('where')->once()->with('client_id = :id')->andReturnSelf();
+    $query->shouldReceive('setParameter')->once()->with('id', 1)->andReturnSelf();
+    $query->shouldReceive('executeStatement')->once()->andReturn(1);
+    $connection->shouldReceive('executeStatement')->once()
+        ->with('DELETE FROM activity_client_history WHERE client_id = :id', ['id' => 1])
+        ->andReturn(1);
+    $connection->shouldReceive('createQueryBuilder')->once()->andReturn($query);
+
+    $passwordRepository = Mockery::mock(Box\Mod\Client\Repository\ClientPasswordResetRepository::class);
+    $passwordRepository->shouldReceive('findBy')->once()->with(['clientId' => 1])->andReturn([$reset]);
+
+    $em = $di['em'];
+    $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\ClientPasswordReset::class)->andReturn($passwordRepository);
+    $em->shouldReceive('getConnection')->once()->andReturn($connection);
+    $em->shouldReceive('beginTransaction')->once();
+    $em->shouldReceive('remove')->once()->with($reset);
+    $em->shouldReceive('remove')->once()->with($client);
+    $em->shouldReceive('flush')->once();
+    $em->shouldReceive('commit')->once();
+
+    $service->setDi($di);
+    $service->remove($client);
+});
+
+test('remove rolls back and rethrows cleanup failures', function (): void {
+    $service = new Box\Mod\Client\Service();
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
+    $legacyClient = Mockery::mock(Model_Client::class);
+    $exception = new RuntimeException('cleanup failed');
+
+    $db = container()['db'];
+    $db->shouldReceive('getExistingModelById')->once()->with('Client', 1)->andReturn($legacyClient);
+
+    $orderService = Mockery::mock();
+    $orderService->shouldReceive('rmByClient')->once()->with($legacyClient)->andThrow($exception);
+
+    $di = container();
+    $di['db'] = $db;
+    $di['mod_service'] = $di->protect(moduleService(['order' => $orderService]));
+
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('isTransactionActive')->once()->andReturnTrue();
+
+    $em = $di['em'];
+    $em->shouldReceive('getConnection')->once()->andReturn($connection);
+    $em->shouldReceive('beginTransaction')->once();
+    $em->shouldReceive('rollback')->once();
+    $em->shouldReceive('commit')->never();
+
+    $service->setDi($di);
+
+    expect(fn () => $service->remove($client))->toThrow($exception);
 });
 
 test('toApiArray returns array', function (): void {

@@ -8,6 +8,7 @@ use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Client\Repository\ClientBalanceRepository;
 use Box\Mod\Client\Repository\ClientRepository;
+use Doctrine\ORM\QueryBuilder;
 use FOSSBilling\InjectionAwareInterface;
 
 class ServiceBalance implements InjectionAwareInterface
@@ -58,10 +59,10 @@ class ServiceBalance implements InjectionAwareInterface
         $this->di['em']->flush();
     }
 
-    public function toApiArray(ClientBalance $model): array
+    public function toApiArray(ClientBalance $model, ?Client $client = null): array
     {
         $clientId = $model->getClientId();
-        $client = $clientId !== null ? $this->clientRepository->find($clientId) : null;
+        $client ??= $clientId !== null ? $this->clientRepository->find($clientId) : null;
         if (!$client instanceof Client) {
             throw new \FOSSBilling\InformationException('Client not found');
         }
@@ -73,6 +74,38 @@ class ServiceBalance implements InjectionAwareInterface
             'currency' => $client->getCurrency(),
             'created_at' => $model->getCreatedAt()?->format('Y-m-d H:i:s'),
         ];
+    }
+
+    public function getSearchQueryBuilder(array $data = []): QueryBuilder
+    {
+        $queryBuilder = $this->clientBalanceRepository->createQueryBuilder('m');
+
+        $id = $data['id'] ?? null;
+        $clientId = $data['client_id'] ?? null;
+        $dateFrom = $data['date_from'] ?? null;
+        $dateTo = $data['date_to'] ?? null;
+
+        if ($id !== null && $id !== '') {
+            $queryBuilder->andWhere('m.id = :id')
+                ->setParameter('id', $id);
+        }
+
+        if ($clientId !== null && $clientId !== '') {
+            $queryBuilder->andWhere('m.clientId = :client_id')
+                ->setParameter('client_id', $clientId);
+        }
+
+        if ($dateFrom !== null && $dateFrom !== '') {
+            $queryBuilder->andWhere('m.createdAt >= :date_from')
+                ->setParameter('date_from', new \DateTimeImmutable(date('Y-m-d H:i:s', strtotime((string) $dateFrom))));
+        }
+
+        if ($dateTo !== null && $dateTo !== '') {
+            $queryBuilder->andWhere('m.createdAt <= :date_to')
+                ->setParameter('date_to', new \DateTimeImmutable(date('Y-m-d H:i:s', strtotime((string) $dateTo))));
+        }
+
+        return $queryBuilder->orderBy('m.id', 'DESC');
     }
 
     public function getSearchQuery($data): array

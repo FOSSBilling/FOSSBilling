@@ -27,28 +27,34 @@ test('balanceGetList returns array', function (): void {
     $data = [];
 
     $client = createEntity(Box\Mod\Client\Entity\Client::class);
+    $balance = createEntity(Box\Mod\Client\Entity\ClientBalance::class, [
+        'id' => 1,
+        'client_id' => $client->getId(),
+    ]);
+    $queryBuilder = Mockery::mock(Doctrine\ORM\QueryBuilder::class);
 
     $serviceMock = Mockery::mock(Box\Mod\Client\ServiceBalance::class);
     $serviceMock
-    ->shouldReceive('getSearchQuery')
-    ->atLeast()->once()
-    ->andReturn(['sql', []]);
+    ->shouldReceive('getSearchQueryBuilder')
+    ->once()
+    ->with(Mockery::on(static fn (array $query): bool => $query['client_id'] === $client->getId()))
+    ->andReturn($queryBuilder);
     $serviceMock
     ->shouldReceive('toApiArray')
-    ->atLeast()->once()
+    ->once()
+    ->with($balance, $client)
     ->andReturn([]);
-
-    $simpleResultArr = [
-        'list' => [
-            ['id' => 1],
-        ],
-    ];
 
     $pagerMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
     $pagerMock
-    ->shouldReceive('getPaginatedResultSet')
-    ->atLeast()->once()
-    ->andReturn($simpleResultArr);
+    ->shouldReceive('paginateMappedQuery')
+    ->once()
+    ->andReturnUsing(static function (Doctrine\ORM\QueryBuilder $query, FOSSBilling\PaginationOptions $pagination, callable $mapper) use ($queryBuilder, $balance): array {
+        expect($query)->toBe($queryBuilder)
+            ->and($pagination)->toBeInstanceOf(FOSSBilling\PaginationOptions::class);
+
+        return ['list' => [$mapper($balance)]];
+    });
 
     $di = container();
     $di['mod_service'] = $di->protect(moduleService(['client:balance' => $serviceMock]));

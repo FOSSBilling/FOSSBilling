@@ -175,7 +175,7 @@ test('updates client', function (): void {
     $service->setDi($di);
     $result = $service->updateClient($model, $data);
     expect($result)->toBeTrue();
-    expect($model->billing_email)->toBe('billing@example.com');
+    expect($model->getBillingEmail())->toBe('billing@example.com');
 });
 
 test('throws exception when email change is not allowed', function (): void {

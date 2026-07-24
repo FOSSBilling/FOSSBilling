@@ -33,15 +33,11 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $client = $this->getClientEntity($this->getIdentity());
         $data['client_id'] = $client->getId();
 
-        [$q, $params] = $service->getSearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($q, $params, PaginationOptions::fromArray($data));
-
-        foreach ($pager['list'] as $key => $item) {
-            $balance = $this->getDi()['em']->getRepository(ClientBalance::class)->find($item['id']) ?? throw new InformationException('Balance not found');
-            $pager['list'][$key] = $service->toApiArray($balance);
-        }
-
-        return $pager;
+        return $this->getDi()['pager']->paginateMappedQuery(
+            $service->getSearchQueryBuilder($data),
+            PaginationOptions::fromArray($data),
+            fn (ClientBalance $balance): array => $service->toApiArray($balance, $client),
+        );
     }
 
     /**

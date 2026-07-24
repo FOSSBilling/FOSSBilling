@@ -267,6 +267,70 @@ test('update returns true', function (): void {
     expect($result)->toBeTrue();
 });
 
+test('update validates and assigns client_group_id through the group repository', function (): void {
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1, 'client_group_id' => 3]);
+    $group = createEntity(Box\Mod\Client\Entity\ClientGroup::class, ['id' => 7]);
+
+    $clientRepository = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepository->shouldReceive('find')->once()->with(1)->andReturn($client);
+    $groupRepository = Mockery::mock(Box\Mod\Client\Repository\ClientGroupRepository::class);
+    $groupRepository->shouldReceive('find')->once()->with(7)->andReturn($group);
+
+    $di = container();
+    $em = $di['em'];
+    $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepository);
+    $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\ClientGroup::class)->andReturn($groupRepository);
+    $em->shouldReceive('persist')->once()->with($client);
+    $em->shouldReceive('flush')->once();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(moduleService(['client' => Mockery::mock(Box\Mod\Client\Service::class)]));
+
+    $adminClient->setDi($di);
+
+    expect($adminClient->update(['id' => 1, 'client_group_id' => '7']))->toBeTrue()
+        ->and($client->getClientGroupId())->toBe(7);
+});
+
+test('update clears client_group_id when the alias is empty', function (): void {
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1, 'client_group_id' => 3]);
+
+    $clientRepository = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepository->shouldReceive('find')->once()->with(1)->andReturn($client);
+
+    $di = container();
+    $em = $di['em'];
+    $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepository);
+    $em->shouldReceive('persist')->once()->with($client);
+    $em->shouldReceive('flush')->once();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(moduleService(['client' => Mockery::mock(Box\Mod\Client\Service::class)]));
+
+    $adminClient->setDi($di);
+
+    expect($adminClient->update(['id' => 1, 'client_group_id' => '']))->toBeTrue()
+        ->and($client->getClientGroupId())->toBeNull();
+});
+
+test('update rejects a non-integer client_group_id alias', function (): void {
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
+
+    $clientRepository = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepository->shouldReceive('find')->once()->with(1)->andReturn($client);
+
+    $di = container();
+    $em = $di['em'];
+    $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepository);
+    $di['mod_service'] = $di->protect(moduleService(['client' => Mockery::mock(Box\Mod\Client\Service::class)]));
+
+    $adminClient->setDi($di);
+
+    expect(fn () => $adminClient->update(['id' => 1, 'client_group_id' => 'invalid']))
+        ->toThrow(FOSSBilling\InformationException::class, 'Invalid client group ID');
+});
+
 test('update throws exception when email is already registered', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $data = [
