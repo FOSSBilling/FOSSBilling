@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Cart\Api;
 
+use Box\Mod\Cart\Entity\Cart;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
@@ -30,7 +31,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $cartArr) {
-            $cart = $this->getDi()['db']->getExistingModelById('Cart', $cartArr['id'], 'Cart not found');
+            $cart = $this->getDi()['em']->getRepository(Cart::class)->find((int) $cartArr['id']);
+            if (!$cart instanceof Cart) {
+                throw new \FOSSBilling\Exception('Cart not found');
+            }
             $pager['list'][$key] = $this->getService()->toApiArray($cart);
         }
 
@@ -47,7 +51,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Shopping cart ID is missing'])]
     public function get($data)
     {
-        $cart = $this->getDi()['db']->getExistingModelById('Cart', $data['id'], 'Shopping cart not found');
+        $cart = $this->getDi()['em']->getRepository(Cart::class)->find((int) $data['id']);
+        if (!$cart instanceof Cart) {
+            throw new \FOSSBilling\Exception('Shopping cart not found');
+        }
 
         return $this->getService()->toApiArray($cart);
     }
@@ -61,14 +68,14 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->getDi()['logger']->info('Executed action to clear expired shopping carts from database');
 
-        $query = 'SELECT id, created_at FROM `cart` WHERE DATEDIFF(CURDATE(), created_at) > 7;';
-        $list = $this->getDi()['db']->getAssoc($query);
-        if ($list) {
-            foreach ($list as $id => $created_at) {
-                $this->getDi()['db']->exec('DELETE FROM `cart_product` WHERE cart_id = :id', [':id' => $id]);
-                $this->getDi()['db']->exec('DELETE FROM `cart` WHERE id = :id', [':id' => $id]);
+        $conn = $this->getDi()['em']->getConnection();
+        $expiredCarts = $conn->fetchAllKeyValue('SELECT id, created_at FROM cart WHERE DATEDIFF(CURDATE(), created_at) > 7');
+        if ($expiredCarts) {
+            foreach ($expiredCarts as $id => $created_at) {
+                $conn->executeStatement('DELETE FROM cart_product WHERE cart_id = :id', ['id' => $id]);
+                $conn->executeStatement('DELETE FROM cart WHERE id = :id', ['id' => $id]);
             }
-            $this->getDi()['logger']->info('Removed %s expired shopping carts', \FOSSBilling\Tools::safeCount($list));
+            $this->getDi()['logger']->info('Removed %s expired shopping carts', \FOSSBilling\Tools::safeCount($expiredCarts));
         }
 
         return true;

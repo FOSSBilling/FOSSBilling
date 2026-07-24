@@ -10,6 +10,7 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Client\Entity\Client;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Product\Entity\ProductCategory;
 use Box\Mod\Product\Entity\ProductPayment;
@@ -25,6 +26,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 function productTestCreateProductEntity(int $id): Product
 {
@@ -60,6 +62,26 @@ function productTestCreateProductPaymentEntity(int $id): ProductPayment
     $reflection->setValue($productPayment, $id);
 
     return $productPayment;
+}
+
+function productTestCreateTldModel(array $properties = []): Model_Tld
+{
+    $tld = new Model_Tld();
+    $tld->loadBean(new Tests\Helpers\DummyBean());
+    foreach ($properties as $name => $value) {
+        $tld->$name = $value;
+    }
+
+    return $tld;
+}
+
+function productTestCreateInvoiceModel(int $id): Model_Invoice
+{
+    $invoice = new Model_Invoice();
+    $invoice->loadBean(new Tests\Helpers\DummyBean());
+    $invoice->id = $id;
+
+    return $invoice;
 }
 
 function productTestCreateEntityManagerWithRepositories(
@@ -261,7 +283,7 @@ test('to api array', function (): void {
 
     $serviceMock->setDi($di);
 
-    $result = $serviceMock->toApiArray($model, true, new Model_Admin());
+    $result = $serviceMock->toApiArray($model, true, createEntity(Box\Mod\Staff\Entity\Admin::class));
     expect($result)->toBeArray();
 });
 
@@ -489,12 +511,12 @@ test('get product renewal line config uses generic pricing implementation', func
 
 test('get related product discount uses domain pricing implementation', function (): void {
     $service = new Service();
-    $tld = new Model_Tld();
-    $tld->loadBean(new Tests\Helpers\DummyBean());
-    $tld->tld = '.com';
-    $tld->price_registration = 13;
-    $tld->price_renew = 20;
-    $tld->price_transfer = 15;
+    $tld = productTestCreateTldModel([
+        'tld' => '.com',
+        'price_registration' => 13,
+        'price_renew' => 20,
+        'price_transfer' => 15,
+    ]);
 
     $tldService = productTestCreateDomainTldServiceMock($tld);
 
@@ -576,12 +598,12 @@ test('get product unit uses domain unit', function (): void {
 
 test('get product order line config uses domain pricing implementation', function (): void {
     $service = new Service();
-    $tld = new Model_Tld();
-    $tld->loadBean(new Tests\Helpers\DummyBean());
-    $tld->tld = '.com';
-    $tld->price_registration = 13;
-    $tld->price_renew = 20;
-    $tld->price_transfer = 15;
+    $tld = productTestCreateTldModel([
+        'tld' => '.com',
+        'price_registration' => 13,
+        'price_renew' => 20,
+        'price_transfer' => 15,
+    ]);
 
     $tldService = productTestCreateDomainTldServiceMock($tld);
 
@@ -610,12 +632,12 @@ test('get product order line config uses domain pricing implementation', functio
 
 test('get product renewal line config uses domain pricing implementation', function (): void {
     $service = new Service();
-    $tld = new Model_Tld();
-    $tld->loadBean(new Tests\Helpers\DummyBean());
-    $tld->tld = '.com';
-    $tld->price_registration = 13;
-    $tld->price_renew = 20;
-    $tld->price_transfer = 15;
+    $tld = productTestCreateTldModel([
+        'tld' => '.com',
+        'price_registration' => 13,
+        'price_renew' => 20,
+        'price_transfer' => 15,
+    ]);
 
     $tldService = productTestCreateDomainTldServiceMock($tld);
 
@@ -1097,9 +1119,7 @@ test('client has active promo application', function (): void {
     $service = new Service();
     $promo = productTestCreatePromoEntity(5);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->id = 9;
+    $client = createEntity(Client::class, ['id' => 9]);
 
     $repoMock = Mockery::mock(PromoRedemptionRepository::class);
     $repoMock->shouldReceive('clientHasActiveCheckoutApplication')->once()->with(5, 9)->andReturn(true);
@@ -1140,8 +1160,7 @@ test('can client use promo returns false when promo cannot be applied', function
 
     $promo = productTestCreatePromoEntity(1);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client = createEntity(Client::class);
 
     expect($serviceMock->canClientUsePromo($client, $promo))->toBeFalse();
 });
@@ -1154,8 +1173,7 @@ test('can client use promo returns true when promo is not once per client', func
     $promo = productTestCreatePromoEntity(1)
         ->setOncePerClient(false);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client = createEntity(Client::class);
 
     expect($serviceMock->canClientUsePromo($client, $promo))->toBeTrue();
 });
@@ -1167,8 +1185,7 @@ test('can client use promo returns false when client already has active promo ap
     $promo = productTestCreatePromoEntity(1)
         ->setOncePerClient(true);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client = createEntity(Client::class);
 
     $serviceMock->shouldReceive('clientHasActivePromoApplication')->once()->with($client, $promo)->andReturn(true);
 
@@ -1232,50 +1249,50 @@ test('reserve promo for order', function (): void {
     $promo = productTestCreatePromoEntity(1)
         ->setRecurring(true);
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')->once()->with($order);
+    $order = createEntity(Box\Mod\Order\Entity\Order::class);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('usePromo')->once()->with($promo);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = new readonly class {
+        public function persist(object $entity): void
+        {
+        }
+
+        public function flush(): void
+        {
+        }
+    };
     $serviceMock->setDi($di);
 
     $serviceMock->reservePromoForOrder($promo, $order);
 
-    expect($order->promo_recurring)->toBe(1);
-    expect($order->promo_used)->toBe(1);
+    expect($order->isPromoRecurring())->toBeTrue();
+    expect($order->getPromoUsed())->toBe(1);
 });
 
 test('create checkout promo redemptions persists each order and flushes once', function (): void {
     $service = new Service();
     $promo = productTestCreatePromoEntity(4);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->id = 8;
+    $client = createEntity(Client::class, ['id' => 8]);
 
-    $invoice = new Model_Invoice();
-    $invoice->loadBean(new Tests\Helpers\DummyBean());
-    $invoice->id = 16;
+    $invoice = productTestCreateInvoiceModel(16);
 
-    $firstOrder = new Model_ClientOrder();
-    $firstOrder->loadBean(new Tests\Helpers\DummyBean());
-    $firstOrder->id = 11;
-    $firstOrder->discount = 5.0;
-    $firstOrder->currency = 'USD';
-    $firstOrder->created_at = '2026-01-01 12:00:00';
+    $firstOrder = createEntity(Box\Mod\Order\Entity\Order::class, [
+        'id' => 11,
+        'discount' => 5.0,
+        'currency' => 'USD',
+        'created_at' => '2026-01-01 12:00:00',
+    ]);
 
-    $secondOrder = new Model_ClientOrder();
-    $secondOrder->loadBean(new Tests\Helpers\DummyBean());
-    $secondOrder->id = 12;
-    $secondOrder->discount = 7.0;
-    $secondOrder->currency = 'USD';
-    $secondOrder->created_at = '2026-01-01 12:05:00';
+    $secondOrder = createEntity(Box\Mod\Order\Entity\Order::class, [
+        'id' => 12,
+        'discount' => 7.0,
+        'currency' => 'USD',
+        'created_at' => '2026-01-01 12:05:00',
+    ]);
 
     $emMock = new class {
         public array $persisted = [];
@@ -1362,18 +1379,23 @@ test('get promo discount title', function (): void {
 
 test('get renewal promo adjustment for domain order', function (): void {
     $service = new Service();
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->promo_id = 15;
-    $order->promo_recurring = true;
-    $order->product_id = 17;
-    $order->discount = 2.0;
-    $order->currency = 'EUR';
-    $order->config = json_encode(['period' => '1Y']);
+    $order = createEntity(Box\Mod\Order\Entity\Order::class, [
+        'promo_id' => 15,
+        'promo_recurring' => true,
+        'product_id' => 17,
+        'discount' => 2.0,
+        'currency' => 'EUR',
+        'config' => json_encode(['period' => '1Y']),
+    ]);
+
+    // The Order entity uses isPromoRecurring() but production code accesses ->promo_recurring.
+    // The proxy __get can't find getPromoRecurring(), so set the _extra fallback.
+    $ref = new ReflectionProperty($order, '_extra');
+    $extra = $ref->getValue($order);
+    $extra['promo_recurring'] = true;
+    $ref->setValue($order, $extra);
 
     $product = productTestCreateProductEntity(17)->setType(Service::DOMAIN);
-
-    $dbMock = Mockery::mock('\Box_Database')->shouldIgnoreMissing();
 
     $promoEntity = productTestCreatePromoEntity(15)
         ->setCode('PROMO')
@@ -1381,7 +1403,7 @@ test('get renewal promo adjustment for domain order', function (): void {
         ->setValue(5.0);
 
     $promoRepo = Mockery::mock(PromoRepository::class);
-    $promoRepo->shouldReceive('find')->once()->with(15)->andReturn($promoEntity);
+    $promoRepo->shouldNotReceive('find');
 
     $currencyRepository = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
     $currencyRepository->shouldReceive('getRateByCode')->once()->with('EUR')->andReturn(2.0);
@@ -1397,11 +1419,11 @@ test('get renewal promo adjustment for domain order', function (): void {
     };
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('findPromoById')->once()->with(15)->andReturn($promoEntity);
     $serviceMock->shouldReceive('findProductById')->once()->with((int) $order->product_id)->andReturn($product);
     $serviceMock->shouldReceive('getRenewalProductDiscount')->once()->with($product, $promoEntity, ['period' => '1Y'])->andReturn(5.0);
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['api_guest'] = $apiGuest;
     $di['em'] = new readonly class($promoRepo) {
         public function __construct(private object $promoRepo)
@@ -1425,6 +1447,26 @@ test('get renewal promo adjustment for domain order', function (): void {
     expect($result['discount_amount'])->toBe(10.0);
     expect($result['title'])->toBe('Promotional Code: PROMO - EUR 5 Discount');
     expect($result['currency'])->toBe('EUR');
+});
+
+test('get renewal promo adjustment ignores missing promo for non-domain order', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $order = createEntity(Box\Mod\Order\Entity\Order::class, [
+        'promo_id' => 15,
+        'promo_recurring' => true,
+        'product_id' => 17,
+        'discount' => 2.0,
+        'currency' => 'EUR',
+    ]);
+    $product = productTestCreateProductEntity(17)->setType('service');
+
+    $serviceMock->shouldReceive('findProductById')->once()->with(17)->andReturn($product);
+    $serviceMock->shouldReceive('findPromoById')
+        ->once()
+        ->with(15)
+        ->andThrow(new FOSSBilling\InformationException('Promo not found'));
+
+    expect($serviceMock->getRenewalPromoAdjustment($order, 20.0, 1.0))->toBeNull();
 });
 
 test('get product discount uses product order line config', function (): void {
@@ -1461,7 +1503,7 @@ test('get renewal product discount uses product renewal line config', function (
     expect($serviceMock->getRenewalProductDiscount($product, $promo, ['period' => '1Y']))->toBe(20.0);
 });
 
-test('is promo available for client group', function (Promo $promo, ?Model_Client $client, bool $expectedResult): void {
+test('is promo available for client group', function (Promo $promo, ?Client $client, bool $expectedResult): void {
     $service = new Service();
     $di = container();
     $di['loggedin_client'] = $client;
@@ -1469,25 +1511,19 @@ test('is promo available for client group', function (Promo $promo, ?Model_Clien
 
     expect($service->isPromoAvailableForClientGroup($promo))->toBe($expectedResult);
 })->with([
-    'no restrictions' => [fn (): Promo => productTestCreatePromoEntity(1)->setClientGroups(json_encode([])), fn (): Model_Client => $client = new Model_Client(), true],
+    'no restrictions' => [fn (): Promo => productTestCreatePromoEntity(1)->setClientGroups(json_encode([])), fn (): Client => $client = createEntity(Client::class), true],
     'restricted and no client group' => [fn (): Promo => productTestCreatePromoEntity(2)->setClientGroups(json_encode([1, 2])), function () {
-        $client = new Model_Client();
-        $client->loadBean(new Tests\Helpers\DummyBean());
-        $client->client_group_id = null;
+        $client = createEntity(Client::class, ['client_group_id' => null]);
 
         return $client;
     }, false],
     'restricted and wrong client group' => [fn (): Promo => productTestCreatePromoEntity(3)->setClientGroups(json_encode([1, 2])), function () {
-        $client = new Model_Client();
-        $client->loadBean(new Tests\Helpers\DummyBean());
-        $client->client_group_id = 3;
+        $client = createEntity(Client::class, ['client_group_id' => 3]);
 
         return $client;
     }, false],
     'restricted and matching client group' => [fn (): Promo => productTestCreatePromoEntity(4)->setClientGroups(json_encode([1, 2])), function () {
-        $client = new Model_Client();
-        $client->loadBean(new Tests\Helpers\DummyBean());
-        $client->client_group_id = 2;
+        $client = createEntity(Client::class, ['client_group_id' => 2]);
 
         return $client;
     }, true],
@@ -1497,9 +1533,7 @@ test('is promo available for client group', function (Promo $promo, ?Model_Clien
 
 test('release reserved promo redemptions for invoice releases reservations and decrements operational counter', function (): void {
     $service = new Service();
-    $invoice = new Model_Invoice();
-    $invoice->loadBean(new Tests\Helpers\DummyBean());
-    $invoice->id = 11;
+    $invoice = productTestCreateInvoiceModel(11);
 
     $checkoutRedemption = (new PromoRedemption())
         ->setPromoId(7)
@@ -1763,9 +1797,7 @@ test('is promo linked to tld returns true when promo has no product restrictions
     $service = new Service();
     $promo = new Promo();
 
-    $tld = new Model_Tld();
-    $tld->loadBean(new Tests\Helpers\DummyBean());
-    $tld->id = 1;
+    $tld = productTestCreateTldModel(['id' => 1]);
 
     expect($service->isPromoLinkedToTld($promo, $tld))->toBeTrue();
 });
@@ -1778,9 +1810,7 @@ test('is promo linked to tld uses main domain product linkage', function (): voi
     $domainProduct = productTestCreateProductEntity(10)
         ->setIsAddon(false);
 
-    $tld = new Model_Tld();
-    $tld->loadBean(new Tests\Helpers\DummyBean());
-    $tld->id = 1;
+    $tld = productTestCreateTldModel(['id' => 1]);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('getMainDomainProduct')->once()->andReturn($domainProduct);
@@ -1796,9 +1826,7 @@ test('is promo linked to tld returns false when domain product is not linked', f
     $domainProduct = productTestCreateProductEntity(10)
         ->setIsAddon(false);
 
-    $tld = new Model_Tld();
-    $tld->loadBean(new Tests\Helpers\DummyBean());
-    $tld->id = 1;
+    $tld = productTestCreateTldModel(['id' => 1]);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('getMainDomainProduct')->once()->andReturn($domainProduct);

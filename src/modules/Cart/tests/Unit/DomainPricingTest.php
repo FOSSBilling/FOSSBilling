@@ -10,19 +10,24 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Cart\Entity\Cart;
+use Box\Mod\Cart\Entity\CartProduct;
+use Box\Mod\Cart\Repository\CartProductRepository;
+use Box\Mod\Cart\Repository\CartRepository;
 use Box\Mod\Cart\Service;
 use Box\Mod\Product\Service as ProductService;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 test('cartProductToApiArray uses resolved initial domain term pricing', function (): void {
     $service = new Service();
 
-    $cart = new Model_Cart();
-    $cart->loadBean(new Tests\Helpers\DummyBean());
+    $cart = new Cart();
+    $cartReflection = new ReflectionProperty($cart, 'id');
+    $cartReflection->setValue($cart, 20);
 
-    $cartProduct = new Model_CartProduct();
-    $cartProduct->loadBean(new Tests\Helpers\DummyBean());
+    $cartProduct = createEntity(CartProduct::class);
     $cartProduct->id = 10;
     $cartProduct->cart_id = 20;
     $cartProduct->product_id = 1;
@@ -34,9 +39,15 @@ test('cartProductToApiArray uses resolved initial domain term pricing', function
         'period' => '2Y',
     ]);
 
-    $db = Mockery::mock(Box_Database::class);
-    $db->shouldReceive('load')->once()->with('Cart', $cartProduct->cart_id)->andReturn($cart);
-    $db->shouldReceive('find')->once()->with('CartProduct', 'cart_id = :cart_id ORDER BY id ASC', [':cart_id' => $cart->id])->andReturn([]);
+    $cartRepo = Mockery::mock(CartRepository::class);
+    $cartRepo->shouldReceive('find')->once()->with(20)->andReturn($cart);
+
+    $cartProductRepo = Mockery::mock(CartProductRepository::class);
+    $cartProductRepo->shouldReceive('findByCartId')->once()->with(20)->andReturn([]);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Cart::class)->andReturn($cartRepo);
+    $emMock->shouldReceive('getRepository')->with(CartProduct::class)->andReturn($cartProductRepo);
 
     $productService = Mockery::mock(ProductService::class);
     $productService->shouldReceive('getCartProductViewData')->once()->with($cartProduct)->andReturn([
@@ -68,7 +79,7 @@ test('cartProductToApiArray uses resolved initial domain term pricing', function
         ->andReturn(0.0);
 
     $di = container();
-    $di['db'] = $db;
+    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(function (string $serviceName) use ($productService) {
         if ($serviceName === 'Product') {
             return $productService;
