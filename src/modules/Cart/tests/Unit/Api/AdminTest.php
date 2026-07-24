@@ -10,11 +10,13 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Cart\Entity\Cart;
+
 use function Tests\Helpers\container;
 
 test('getList returns array', function (): void {
     $adminApi = apiEndpoint(new Box\Mod\Cart\Api\Admin());
-    $api = apiEndpoint(new Box\Mod\Cart\Api\Admin());
+
     $simpleResultArr = [
         'list' => [
             ['id' => 1],
@@ -35,17 +37,19 @@ test('getList returns array', function (): void {
     ->atLeast()->once()
     ->andReturn([]);
 
-    $model = new Model_Cart();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn($model);
+    $cart = new Cart();
+    $cartReflection = new ReflectionProperty($cart, 'id');
+    $cartReflection->setValue($cart, 1);
+
+    $cartRepo = Mockery::mock(Box\Mod\Cart\Repository\CartRepository::class);
+    $cartRepo->shouldReceive('find')->atLeast()->once()->with(1)->andReturn($cart);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Cart::class)->andReturn($cartRepo);
 
     $di = container();
     $di['pager'] = $paginatorMock;
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
 
     $adminApi->setDi($di);
 
@@ -59,19 +63,23 @@ test('getList returns array', function (): void {
 
 test('get returns array', function (): void {
     $adminApi = apiEndpoint(new Box\Mod\Cart\Api\Admin());
-    $api = apiEndpoint(new Box\Mod\Cart\Api\Admin());
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(new Model_Cart());
+
+    $cart = new Cart();
+    $cartReflection = new ReflectionProperty($cart, 'id');
+    $cartReflection->setValue($cart, 1);
+
+    $cartRepo = Mockery::mock(Box\Mod\Cart\Repository\CartRepository::class);
+    $cartRepo->shouldReceive('find')->atLeast()->once()->with(1)->andReturn($cart);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Cart::class)->andReturn($cartRepo);
 
     $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)->makePartial();
     $serviceMock->shouldReceive('toApiArray')->atLeast()->once()
         ->andReturn([]);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $adminApi->setDi($di);
 
     $adminApi->setService($serviceMock);
@@ -86,22 +94,18 @@ test('get returns array', function (): void {
 
 test('batchExpire returns true', function (): void {
     $adminApi = apiEndpoint(new Box\Mod\Cart\Api\Admin());
-    $api = apiEndpoint(new Box\Mod\Cart\Api\Admin());
 
     $logStub = $this->createStub('\Box_Log');
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getAssoc')
-    ->atLeast()->once()
-    ->andReturn([1, date('Y-m-d H:i:s')]);
-    $dbMock
-    ->shouldReceive('exec')
-    ->atLeast()->once()
-    ->andReturn(null);
+    $conn = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $conn->shouldReceive('fetchAllKeyValue')->atLeast()->once()->andReturn([1 => date('Y-m-d H:i:s')]);
+    $conn->shouldReceive('executeStatement')->atLeast()->once()->andReturn(1);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getConnection')->atLeast()->once()->andReturn($conn);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['logger'] = $logStub;
     $adminApi->setDi($di);
 

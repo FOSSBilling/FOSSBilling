@@ -14,6 +14,7 @@ use Box\Mod\Order\Api\Client;
 use Box\Mod\Order\Service;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 test('gets list of orders', function (): void {
     $api = apiEndpoint(new Client());
@@ -27,9 +28,7 @@ test('gets list of orders', function (): void {
     $pagerMock = Mockery::mock(FOSSBilling\Pagination::class);
     $pagerMock->shouldReceive('getPaginatedResultSet')->atLeast()->once()->andReturn(['list' => [$orderArr]]);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->id = 1;
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
 
     $di = container();
     $di['pager'] = $pagerMock;
@@ -53,9 +52,7 @@ test('gets list of expiring orders', function (): void {
     $pagerMock = Mockery::mock(FOSSBilling\Pagination::class);
     $pagerMock->shouldReceive('getPaginatedResultSet')->atLeast()->once()->andReturn(['list' => []]);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->id = 1;
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
 
     $di = container();
     $di['pager'] = $pagerMock;
@@ -70,8 +67,7 @@ test('gets list of expiring orders', function (): void {
 });
 
 test('gets a single order', function (): void {
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order = createEntity(Box\Mod\Order\Entity\Order::class);
 
     $apiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
@@ -89,20 +85,19 @@ test('gets a single order', function (): void {
 });
 
 test('gets addons', function (): void {
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order = createEntity(Box\Mod\Order\Entity\Order::class);
 
     $apiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
     $apiMock->shouldReceive('_getOrder')->atLeast()->once()->andReturn($order);
 
     $serviceMock = Mockery::mock(Service::class);
-    $serviceMock->shouldReceive('getOrderAddonsList')->atLeast()->once()->andReturn([new Model_ClientOrder()]);
+    $serviceMock->shouldReceive('getOrderAddonsList')->atLeast()->once()->andReturn([createEntity(Box\Mod\Order\Entity\Order::class)]);
     $serviceMock->shouldReceive('toApiArray')->atLeast()->once()->andReturn([]);
 
     $apiMock->setService($serviceMock);
 
-    $data = ['status' => Model_ClientOrder::STATUS_ACTIVE];
+    $data = ['status' => Box\Mod\Order\Entity\Order::STATUS_ACTIVE];
     $result = $apiMock->addons($data);
 
     expect($result)->toBeArray();
@@ -110,9 +105,7 @@ test('gets addons', function (): void {
 });
 
 test('gets order service', function (): void {
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->status = Model_ClientOrder::STATUS_ACTIVE;
+    $order = createEntity(Box\Mod\Order\Entity\Order::class, ['status' => Box\Mod\Order\Entity\Order::STATUS_ACTIVE]);
 
     $apiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
@@ -121,8 +114,7 @@ test('gets order service', function (): void {
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getOrderServiceData')->atLeast()->once()->andReturn([]);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client = createEntity(Box\Mod\Client\Entity\Client::class);
 
     $apiMock->setService($serviceMock);
     $apiMock->setIdentity($client);
@@ -134,9 +126,7 @@ test('gets order service', function (): void {
 });
 
 test('gets upgradables', function (): void {
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->product_id = 5;
+    $order = createEntity(Box\Mod\Order\Entity\Order::class, ['product_id' => 5]);
 
     $apiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
@@ -162,9 +152,7 @@ test('gets upgradables', function (): void {
 });
 
 test('deletes a pending setup order', function (): void {
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->status = Model_ClientOrder::STATUS_PENDING_SETUP;
+    $order = createEntity(Box\Mod\Order\Entity\Order::class, ['status' => Box\Mod\Order\Entity\Order::STATUS_PENDING_SETUP]);
 
     $apiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
@@ -182,8 +170,7 @@ test('deletes a pending setup order', function (): void {
 });
 
 test('throws exception when deleting non-pending order', function (): void {
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order = createEntity(Box\Mod\Order\Entity\Order::class);
 
     $apiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial());
     $apiMock->shouldAllowMockingProtectedMethods();
@@ -202,15 +189,13 @@ test('throws exception when deleting non-pending order', function (): void {
 test('gets order via getOrder', function (): void {
     $api = apiEndpoint(new Client());
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order = createEntity(Box\Mod\Order\Entity\Order::class);
 
     $serviceMock = Mockery::mock(Service::class);
-    $serviceMock->shouldReceive('findForClientById')->atLeast()->once()->andReturn($order);
+    $serviceMock->shouldReceive('findEntityForClientById')->atLeast()->once()->andReturn($order);
     $serviceMock->shouldReceive('toApiArray')->atLeast()->once()->andReturn([]);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client = createEntity(Box\Mod\Client\Entity\Client::class);
 
     $di = container();
     $api->setDi($di);
@@ -225,11 +210,10 @@ test('throws exception when order not found', function (): void {
     $api = apiEndpoint(new Client());
 
     $serviceMock = Mockery::mock(Service::class);
-    $serviceMock->shouldReceive('findForClientById')->atLeast()->once()->andReturn(null);
+    $serviceMock->shouldReceive('findEntityForClientById')->atLeast()->once()->andReturn(null);
     $serviceMock->shouldReceive('toApiArray')->never()->andReturn([]);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client = createEntity(Box\Mod\Client\Entity\Client::class);
 
     $di = container();
     $api->setDi($di);

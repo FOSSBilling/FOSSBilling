@@ -20,6 +20,7 @@ use Box\Mod\Product\Entity\Promo;
 use Box\Mod\Product\Service as ProductService;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 function getAllowedRateLimiter(): object
 {
@@ -34,7 +35,7 @@ function getAllowedRateLimiter(): object
 test('get returns array', function (): void {
     $guestApi = apiEndpoint(new Guest());
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serviceMock->shouldReceive('getSessionCart')->atLeast()->once()->andReturn(new Model_Cart());
+    $serviceMock->shouldReceive('getSessionCart')->atLeast()->once()->andReturn(createEntity(Box\Mod\Cart\Entity\Cart::class));
     $serviceMock->shouldReceive('toApiArray')->atLeast()->once()->andReturn([]);
 
     $guestApi->setService($serviceMock);
@@ -47,7 +48,7 @@ test('get returns array', function (): void {
 test('reset returns true', function (): void {
     $guestApi = apiEndpoint(new Guest());
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serviceMock->shouldReceive('getSessionCart')->atLeast()->once()->andReturn(new Model_Cart());
+    $serviceMock->shouldReceive('getSessionCart')->atLeast()->once()->andReturn(createEntity(Box\Mod\Cart\Entity\Cart::class));
     $serviceMock->shouldReceive('resetCart')->atLeast()->once()->andReturn(true);
 
     $guestApi->setService($serviceMock);
@@ -60,7 +61,7 @@ test('reset returns true', function (): void {
 test('setCurrency returns true', function (): void {
     $guestApi = apiEndpoint(new Guest());
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serviceMock->shouldReceive('getSessionCart')->atLeast()->once()->andReturn(new Model_Cart());
+    $serviceMock->shouldReceive('getSessionCart')->atLeast()->once()->andReturn(createEntity(Box\Mod\Cart\Entity\Cart::class));
     $serviceMock->shouldReceive('changeCartCurrency')->atLeast()->once()->andReturn(true);
 
     $validatorMock = Mockery::mock(FOSSBilling\Validate::class)->shouldIgnoreMissing();
@@ -118,8 +119,7 @@ test('setCurrency throws exception when currency is not found', function (): voi
 
 test('getCurrency returns array when currency found', function (): void {
     $guestApi = apiEndpoint(new Guest());
-    $cart = new Model_Cart();
-    $cart->loadBean(new Tests\Helpers\DummyBean());
+    $cart = createEntity(Box\Mod\Cart\Entity\Cart::class);
     $cart->currency_id = 1;
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -148,8 +148,7 @@ test('getCurrency returns array when currency found', function (): void {
 
 test('getCurrency returns default currency array when currency not found', function (): void {
     $guestApi = apiEndpoint(new Guest());
-    $cart = new Model_Cart();
-    $cart->loadBean(new Tests\Helpers\DummyBean());
+    $cart = createEntity(Box\Mod\Cart\Entity\Cart::class);
     $cart->currency_id = 1;
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -178,8 +177,7 @@ test('getCurrency returns default currency array when currency not found', funct
 
 test('applyPromo returns true', function (): void {
     $guestApi = apiEndpoint(new Guest());
-    $cart = new Model_Cart();
-    $cart->loadBean(new Tests\Helpers\DummyBean());
+    $cart = createEntity(Box\Mod\Cart\Entity\Cart::class);
     $cart->currency_id = 1;
     $promo = new Promo();
 
@@ -206,8 +204,7 @@ test('applyPromo returns true', function (): void {
 
 test('applyPromo throws exception when promo not found', function (): void {
     $guestApi = apiEndpoint(new Guest());
-    $cart = new Model_Cart();
-    $cart->loadBean(new Tests\Helpers\DummyBean());
+    $cart = createEntity(Box\Mod\Cart\Entity\Cart::class);
     $cart->currency_id = 1;
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -233,8 +230,7 @@ test('applyPromo throws exception when promo not found', function (): void {
 
 test('applyPromo throws exception when promo cannot be applied', function (): void {
     $guestApi = apiEndpoint(new Guest());
-    $cart = new Model_Cart();
-    $cart->loadBean(new Tests\Helpers\DummyBean());
+    $cart = createEntity(Box\Mod\Cart\Entity\Cart::class);
     $cart->currency_id = 1;
     $promo = new Promo();
 
@@ -261,8 +257,7 @@ test('applyPromo throws exception when promo cannot be applied', function (): vo
 
 test('applyPromo throws exception when promo cannot be applied for user', function (): void {
     $guestApi = apiEndpoint(new Guest());
-    $cart = new Model_Cart();
-    $cart->loadBean(new Tests\Helpers\DummyBean());
+    $cart = createEntity(Box\Mod\Cart\Entity\Cart::class);
     $cart->currency_id = 1;
     $promo = new Promo();
 
@@ -288,8 +283,7 @@ test('applyPromo throws exception when promo cannot be applied for user', functi
 
 test('removePromo returns true', function (): void {
     $guestApi = apiEndpoint(new Guest());
-    $cart = new Model_Cart();
-    $cart->loadBean(new Tests\Helpers\DummyBean());
+    $cart = createEntity(Box\Mod\Cart\Entity\Cart::class);
     $cart->currency_id = 1;
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -305,8 +299,7 @@ test('removePromo returns true', function (): void {
 
 test('removeItem returns true', function (): void {
     $guestApi = apiEndpoint(new Guest());
-    $cart = new Model_Cart();
-    $cart->loadBean(new Tests\Helpers\DummyBean());
+    $cart = createEntity(Box\Mod\Cart\Entity\Cart::class);
     $cart->currency_id = 1;
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -329,8 +322,7 @@ test('removeItem returns true', function (): void {
 
 test('addItem returns true when multiple is true', function (): void {
     $guestApi = apiEndpoint(new Guest());
-    $cart = new Model_Cart();
-    $cart->loadBean(new Tests\Helpers\DummyBean());
+    $cart = createEntity(Box\Mod\Cart\Entity\Cart::class);
     $cart->currency_id = 1;
     $product = new Product();
     $product->setIsAddon(false);
@@ -361,8 +353,7 @@ test('addItem returns true when multiple is true', function (): void {
 
 test('addItem returns true when multiple is false', function (): void {
     $guestApi = apiEndpoint(new Guest());
-    $cart = new Model_Cart();
-    $cart->loadBean(new Tests\Helpers\DummyBean());
+    $cart = createEntity(Box\Mod\Cart\Entity\Cart::class);
     $cart->currency_id = 1;
     $product = new Product();
     $product->setIsAddon(false);
