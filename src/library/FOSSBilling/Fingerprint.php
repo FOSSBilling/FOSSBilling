@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
+use FOSSBilling\Http\CookieNames;
 use Symfony\Component\HttpFoundation\Request;
 
 class Fingerprint
@@ -169,7 +170,7 @@ class Fingerprint
 
         // If fingerprint debugging is enabled and it failed, print some debug info to the log
         if (!$valid && Config::getProperty('security.debug_fingerprint', false)) {
-            $ID = $this->request->cookies->get('PHPSESSID');
+            $ID = session_id() ?: $this->request->cookies->get(CookieNames::SESSION);
             if (!$ID) {
                 return $valid;
             }

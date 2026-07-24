@@ -29,18 +29,30 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     public function register(\Box_App &$app): void
     {
-        $app->get('/servicedownloadable/get-file/:id', 'get_download', ['id' => '[0-9]+'], static::class);
+        $app->get('/servicedownloadable/get-file/:id/:fileId', 'get_download', ['id' => '[0-9]+', 'fileId' => '[a-f0-9]{32}'], static::class);
+        $app->get('/servicedownloadable/order-file/:orderId/:fileId', 'get_order_download', ['orderId' => '[0-9]+', 'fileId' => '[0-9]+'], static::class);
     }
 
-    public function get_download(\Box_App $app, $id): Response
+    public function get_download(\Box_App $app, $id, $fileId): Response
     {
         $this->di['is_admin_logged'];
 
         $api = $this->di['api_admin'];
         $data = [
             'id' => $id,
+            'file_id' => $fileId,
         ];
 
         return $api->servicedownloadable_send_file($data);
+    }
+
+    public function get_order_download(\Box_App $app, $orderId, $fileId): Response
+    {
+        $this->di['is_admin_logged'];
+
+        return $this->di['api_admin']->servicedownloadable_send_order_file([
+            'order_id' => $orderId,
+            'file_id' => $fileId,
+        ]);
     }
 }

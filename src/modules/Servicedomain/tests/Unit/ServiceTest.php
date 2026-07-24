@@ -10,21 +10,15 @@
 
 declare(strict_types=1);
 
-use Box\Mod\Client\Entity\Client;
-use Box\Mod\Order\Entity\Order;
 use Box\Mod\Order\Service as OrderService;
-use Box\Mod\Servicedomain\Entity\ServiceDomain;
-use Box\Mod\Servicedomain\Entity\Tld;
-use Box\Mod\Servicedomain\Entity\TldRegistrar;
 use Box\Mod\Servicedomain\Service;
 use Box\Mod\System\Service as SystemService;
 
 use function Tests\Helpers\container;
-use function Tests\Helpers\createEntity;
 
 class ServicedomainServiceSyncProbe extends Service
 {
-    public function syncWhoisPublic(ServiceDomain $model, Order $order): void
+    public function syncWhoisPublic(Model_ServiceDomain $model, Model_ClientOrder $order): void
     {
         $this->syncWhois($model, $order);
     }
@@ -114,8 +108,10 @@ test('throws exception for transfer order data with invalid tld', function (arra
     expect(fn () => $serviceMock->validateOrderData($data))
         ->toThrow(FOSSBilling\Exception::class);
 })->with(function () {
-    $tldModel = new Tld();
-    $tldModel->setTld('.com');
+    $tldModel = new Model_Tld();
+    $tldModel->loadBean(new Tests\Helpers\DummyBean());
+    $tldModel->tld = '.com';
+    $tldModel->active = true;
 
     return [
         [
@@ -165,9 +161,11 @@ test('throws exception for register order data with invalid tld', function (arra
     expect(fn () => $serviceMock->validateOrderData($data))
         ->toThrow(FOSSBilling\Exception::class);
 })->with(function () {
-    $tldModel = new Tld();
-    $tldModel->setTld('.com');
-    $tldModel->setMinYears(2);
+    $tldModel = new Model_Tld();
+    $tldModel->loadBean(new Tests\Helpers\DummyBean());
+    $tldModel->tld = '.com';
+    $tldModel->min_years = 2;
+    $tldModel->active = true;
 
     return [
         [
@@ -185,7 +183,7 @@ test('throws exception for register order data with invalid tld', function (arra
             [
                 'action' => 'register',
                 'register_sld' => 'example',
-                'register_years' => $tldModel->getMinYears() - 1,
+                'register_years' => $tldModel->min_years - 1,
                 'register_tld' => '.com',
             ],
             ['called' => 'atLeast', 'returns' => true],
@@ -206,10 +204,39 @@ test('throws exception for register order data with invalid tld', function (arra
     ];
 });
 
+test('rejects a crafted order for an inactive tld before contacting the registrar', function (string $action): void {
+    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock->shouldReceive('checkRequiredParamsForArray')->atLeast()->once();
+    $validatorMock->shouldReceive('isSldValid')->once()->andReturnTrue();
+
+    $tld = new Model_Tld();
+    $tld->loadBean(new Tests\Helpers\DummyBean());
+    $tld->tld = '.com';
+    $tld->active = false;
+    $tld->min_years = 1;
+
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('tldFindOneByTld')->once()->andReturn($tld);
+    $service->shouldReceive('isDomainAvailable')->never();
+    $service->shouldReceive('canBeTransferred')->never();
+
+    $di = container();
+    $di['validator'] = $validatorMock;
+    $service->setDi($di);
+
+    $data = $action === 'register'
+        ? ['action' => 'register', 'register_sld' => 'example', 'register_tld' => '.com', 'register_years' => 1]
+        : ['action' => 'transfer', 'transfer_sld' => 'example', 'transfer_tld' => '.com'];
+
+    expect(fn () => $service->validateOrderData($data))
+        ->toThrow(FOSSBilling\InformationException::class, 'TLD is not active');
+})->with(['register', 'transfer']);
+
 test('creates action', function (): void {
     $service = new Service();
-    $tldModel = new Tld();
-    $tldModel->setTldRegistrarId(1);
+    $tldModel = new Model_Tld();
+    $tldModel->loadBean(new Tests\Helpers\DummyBean());
+    $tldModel->tld_registrar_id = 1;
 
     $data = [
         'action' => 'register',
@@ -240,29 +267,36 @@ test('creates action', function (): void {
         ->andReturn($tldModel);
     $serviceMock->shouldReceive('validateOrderData');
 
-    $client = new Client();
-    $client->setFirstName('first_name');
-    $client->setLastName('last_name');
-    $client->setEmail('email');
-    $client->setCompany('company');
-    $client->setAddress1('address_1');
-    $client->setAddress2('address_2');
-    $client->setCountry('country');
-    $client->setCity('city');
-    $client->setState('state');
-    $client->setPostcode('postcode');
-    $client->setPhoneCc('phone_cc');
-    $client->setPhone('phone');
+    $client = new Model_Client();
+    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client->first_name = 'first_name';
+    $client->last_name = 'last_name';
+    $client->email = 'email';
+    $client->company = 'company';
+    $client->address_1 = 'address_1';
+    $client->address_2 = 'address_2';
+    $client->country = 'country';
+    $client->city = 'city';
+    $client->state = 'state';
+    $client->postcode = 'postcode';
+    $client->phone_cc = 'phone_cc';
+    $client->phone = 'phone';
 
-    $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
-    $clientRepo->shouldReceive('find')->atLeast()->once()->andReturn($client);
+    $serviceDomainModel = new Model_ServiceDomain();
+    $serviceDomainModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
-    $emMock->shouldReceive('getRepository')->with(Client::class)->andReturn($clientRepo);
-    $emMock->shouldIgnoreMissing();
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getExistingModelById')
+        ->atLeast()->once()
+        ->andReturn($client);
+    $dbMock->shouldReceive('dispense')
+        ->atLeast()->once()
+        ->andReturn($serviceDomainModel);
+    $dbMock->shouldReceive('store')
+        ->atLeast()->once()
+        ->andReturn(1);
 
     $di = container();
-    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(function ($name) use ($orderServiceMock, $systemServiceMock) {
         if ($name == 'order') {
             return $orderServiceMock;
@@ -270,19 +304,23 @@ test('creates action', function (): void {
 
         return $systemServiceMock;
     });
+    $di['db'] = $dbMock;
 
     $serviceMock->setDi($di);
 
-    $order = createEntity(\Box\Mod\Order\Entity\Order::class, ['client_id' => 1]);
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order->client_id = 1;
 
     $result = $serviceMock->action_create($order);
-    expect($result)->toBeInstanceOf(ServiceDomain::class);
+    expect($result)->toBeInstanceOf(Model_ServiceDomain::class);
 });
 
 test('throws exception when creating action with missing nameservers', function (): void {
     $service = new Service();
-    $tldModel = new Tld();
-    $tldModel->setTldRegistrarId(1);
+    $tldModel = new Model_Tld();
+    $tldModel->loadBean(new Tests\Helpers\DummyBean());
+    $tldModel->tld_registrar_id = 1;
 
     $data = [
         'action' => 'register',
@@ -315,7 +353,9 @@ test('throws exception when creating action with missing nameservers', function 
     });
     $serviceMock->setDi($di);
 
-    $order = createEntity(\Box\Mod\Order\Entity\Order::class, ['client_id' => 1]);
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order->client_id = 1;
 
     expect(fn () => $serviceMock->action_create($order))
         ->toThrow(FOSSBilling\Exception::class);
@@ -323,9 +363,14 @@ test('throws exception when creating action with missing nameservers', function 
 
 test('activates action', function (string $action, string $registerDomainCalled, string $transferDomainCalled): void {
     $service = new Service();
-    $domainModel = new ServiceDomain();
-    $domainModel->setTldRegistrarId(1);
-    $domainModel->setAction($action);
+    $tldModel = new Model_Tld();
+    $tldModel->loadBean(new Tests\Helpers\DummyBean());
+    $tldModel->tld_registrar_id = 1;
+
+    $domainModel = new Model_ServiceDomain();
+    $domainModel->loadBean(new Tests\Helpers\DummyBean());
+    $domainModel->tld_registrar_id = 1;
+    $domainModel->action = $action;
 
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getOrderService')
@@ -346,13 +391,21 @@ test('activates action', function (string $action, string $registerDomainCalled,
         ->atLeast()->once()
         ->andReturn(null);
 
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('store')
+        ->atLeast()->once()
+        ->andReturn(1);
+
     $di = container();
     $di['mod_service'] = $di->protect(fn ($name) => $orderServiceMock);
+    $di['db'] = $dbMock;
     $serviceMock->setDi($di);
 
-    $order = createEntity(\Box\Mod\Order\Entity\Order::class, ['client_id' => 1]);
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order->client_id = 1;
     $result = $serviceMock->action_activate($order);
-    expect($result)->toBeInstanceOf(ServiceDomain::class);
+    expect($result)->toBeInstanceOf(Model_ServiceDomain::class);
 })->with([
     ['register', 'atLeast', 'never'],
     ['transfer', 'never', 'atLeast'],
@@ -369,7 +422,9 @@ test('throws exception when activating without order service', function (): void
     $di['mod_service'] = $di->protect(fn ($name) => $orderServiceMock);
     $service->setDi($di);
 
-    $order = createEntity(\Box\Mod\Order\Entity\Order::class, ['client_id' => 1]);
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order->client_id = 1;
 
     expect(fn () => $service->action_activate($order))
         ->toThrow(FOSSBilling\Exception::class);
@@ -377,9 +432,10 @@ test('throws exception when activating without order service', function (): void
 
 test('renews action', function (): void {
     $service = new Service();
-    $domainModel = new ServiceDomain();
-    $domainModel->setTldRegistrarId(1);
-    $domainModel->setAction('register');
+    $domainModel = new Model_ServiceDomain();
+    $domainModel->loadBean(new Tests\Helpers\DummyBean());
+    $domainModel->tld_registrar_id = 1;
+    $domainModel->action = 'register';
 
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getOrderService')
@@ -401,7 +457,9 @@ test('renews action', function (): void {
     $di['mod_service'] = $di->protect(fn ($name) => $orderServiceMock);
     $serviceMock->setDi($di);
 
-    $order = createEntity(\Box\Mod\Order\Entity\Order::class, ['client_id' => 1]);
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order->client_id = 1;
     $result = $serviceMock->action_renew($order);
 
     expect($result)->toBeTrue();
@@ -418,7 +476,10 @@ test('throws exception when renewing without order service', function (): void {
     $di['mod_service'] = $di->protect(fn ($name) => $orderServiceMock);
     $service->setDi($di);
 
-    $order = createEntity(\Box\Mod\Order\Entity\Order::class, ['id' => 1, 'client_id' => 1]);
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order->id = 1;
+    $order->client_id = 1;
 
     expect(fn (): bool => $service->action_renew($order))
         ->toThrow(FOSSBilling\Exception::class);
@@ -426,23 +487,30 @@ test('throws exception when renewing without order service', function (): void {
 
 test('suspends action', function (): void {
     $service = new Service();
-    $order = createEntity(\Box\Mod\Order\Entity\Order::class);
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
     $result = $service->action_suspend($order);
     expect($result)->toBeTrue();
 });
 
 test('unsuspends action', function (): void {
     $service = new Service();
-    $order = createEntity(\Box\Mod\Order\Entity\Order::class);
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
     $result = $service->action_unsuspend($order);
     expect($result)->toBeTrue();
 });
 
 test('cancels action', function (): void {
     $service = new Service();
-    $domainModel = new ServiceDomain();
-    $domainModel->setTldRegistrarId(1);
-    $domainModel->setAction('register');
+    $tldModel = new Model_Tld();
+    $tldModel->loadBean(new Tests\Helpers\DummyBean());
+    $tldModel->tld_registrar_id = 1;
+
+    $domainModel = new Model_ServiceDomain();
+    $domainModel->loadBean(new Tests\Helpers\DummyBean());
+    $domainModel->tld_registrar_id = 1;
+    $domainModel->action = 'register';
 
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getOrderService')
@@ -462,7 +530,9 @@ test('cancels action', function (): void {
     $di['mod_service'] = $di->protect(fn ($name) => $orderServiceMock);
     $serviceMock->setDi($di);
 
-    $order = createEntity(\Box\Mod\Order\Entity\Order::class, ['client_id' => 1]);
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order->client_id = 1;
     $result = $serviceMock->action_cancel($order);
 
     expect($result)->toBeTrue();
@@ -479,7 +549,10 @@ test('throws exception when canceling without order service', function (): void 
     $di['mod_service'] = $di->protect(fn ($name) => $orderServiceMock);
     $service->setDi($di);
 
-    $order = createEntity(\Box\Mod\Order\Entity\Order::class, ['id' => 1, 'client_id' => 1]);
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order->id = 1;
+    $order->client_id = 1;
 
     expect(fn (): bool => $service->action_cancel($order))
         ->toThrow(FOSSBilling\Exception::class);
@@ -492,7 +565,9 @@ test('uncancels action', function (): void {
         ->atLeast()->once()
         ->andReturn(null);
 
-    $order = createEntity(\Box\Mod\Order\Entity\Order::class, ['client_id' => 1]);
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order->client_id = 1;
     $result = $serviceMock->action_uncancel($order);
 
     expect($result)->toBeTrue();
@@ -500,9 +575,14 @@ test('uncancels action', function (): void {
 
 test('deletes action', function (): void {
     $service = new Service();
-    $domainModel = new ServiceDomain();
-    $domainModel->setTldRegistrarId(1);
-    $domainModel->setAction('register');
+    $tldModel = new Model_Tld();
+    $tldModel->loadBean(new Tests\Helpers\DummyBean());
+    $tldModel->tld_registrar_id = 1;
+
+    $domainModel = new Model_ServiceDomain();
+    $domainModel->loadBean(new Tests\Helpers\DummyBean());
+    $domainModel->tld_registrar_id = 1;
+    $domainModel->action = 'register';
 
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getOrderService')
@@ -518,11 +598,19 @@ test('deletes action', function (): void {
         ->atLeast()->once()
         ->andReturn([new Registrar_Domain(), $registrarAdapterMock]);
 
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('trash')
+        ->atLeast()->once()
+        ->andReturn(null);
+
     $di = container();
     $di['mod_service'] = $di->protect(fn ($name) => $orderServiceMock);
+    $di['db'] = $dbMock;
     $serviceMock->setDi($di);
 
-    $order = createEntity(\Box\Mod\Order\Entity\Order::class, ['status' => \Box\Mod\Order\Entity\Order::STATUS_ACTIVE]);
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order->status = Model_ClientOrder::STATUS_ACTIVE;
     $result = $serviceMock->action_delete($order);
 
     expect($result)->toBeNull();
@@ -539,7 +627,13 @@ test('updates nameservers', function (): void {
         ->atLeast()->once()
         ->andReturn([new Registrar_Domain(), $registrarAdapterMock]);
 
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('store')
+        ->atLeast()->once()
+        ->andReturn(1);
+
     $di = container();
+    $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $serviceMock->setDi($di);
 
@@ -550,7 +644,8 @@ test('updates nameservers', function (): void {
         'ns4' => 'ns4.example.com',
     ];
 
-    $serviceDomainModel = new ServiceDomain();
+    $serviceDomainModel = new Model_ServiceDomain();
+    $serviceDomainModel->loadBean(new Tests\Helpers\DummyBean());
     $result = $serviceMock->updateNameservers($serviceDomainModel, $data);
 
     expect($result)->toBeTrue();
@@ -558,7 +653,8 @@ test('updates nameservers', function (): void {
 
 test('throws exception when updating nameservers with missing ns1 or ns2', function (array $data): void {
     $service = new Service();
-    $serviceDomainModel = new ServiceDomain();
+    $serviceDomainModel = new Model_ServiceDomain();
+    $serviceDomainModel->loadBean(new Tests\Helpers\DummyBean());
 
     expect(fn (): bool => $service->updateNameservers($serviceDomainModel, $data))
         ->toThrow(FOSSBilling\Exception::class);
@@ -578,11 +674,17 @@ test('updates contacts', function (): void {
         ->atLeast()->once()
         ->andReturn([new Registrar_Domain(), $registrarAdapterMock]);
 
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('store')
+        ->atLeast()->once()
+        ->andReturn(1);
+
     $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')
         ->zeroOrMoreTimes();
 
     $di = container();
+    $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['validator'] = $validatorMock;
     $serviceMock->setDi($di);
@@ -603,7 +705,8 @@ test('updates contacts', function (): void {
             'phone' => 'phone',
         ],
     ];
-    $serviceDomainModel = new ServiceDomain();
+    $serviceDomainModel = new Model_ServiceDomain();
+    $serviceDomainModel->loadBean(new Tests\Helpers\DummyBean());
     $result = $serviceMock->updateContacts($serviceDomainModel, $data);
 
     expect($result)->toBeTrue();
@@ -623,7 +726,8 @@ test('gets transfer code', function (): void {
         ->atLeast()->once()
         ->andReturn([new Registrar_Domain(), $registrarAdapterMock]);
 
-    $serviceDomainModel = new ServiceDomain();
+    $serviceDomainModel = new Model_ServiceDomain();
+    $serviceDomainModel->loadBean(new Tests\Helpers\DummyBean());
     $result = $serviceMock->getTransferCode($serviceDomainModel);
 
     expect($result)->toBeString();
@@ -641,11 +745,18 @@ test('locks domain', function (): void {
         ->atLeast()->once()
         ->andReturn([new Registrar_Domain(), $registrarAdapterMock]);
 
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('store')
+        ->atLeast()->once()
+        ->andReturn(1);
+
     $di = container();
+    $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $serviceMock->setDi($di);
 
-    $serviceDomainModel = new ServiceDomain();
+    $serviceDomainModel = new Model_ServiceDomain();
+    $serviceDomainModel->loadBean(new Tests\Helpers\DummyBean());
     $result = $serviceMock->lock($serviceDomainModel);
 
     expect($result)->toBeTrue();
@@ -662,11 +773,18 @@ test('unlocks domain', function (): void {
         ->atLeast()->once()
         ->andReturn([new Registrar_Domain(), $registrarAdapterMock]);
 
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('store')
+        ->atLeast()->once()
+        ->andReturn(1);
+
     $di = container();
+    $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $serviceMock->setDi($di);
 
-    $serviceDomainModel = new ServiceDomain();
+    $serviceDomainModel = new Model_ServiceDomain();
+    $serviceDomainModel->loadBean(new Tests\Helpers\DummyBean());
     $result = $serviceMock->unlock($serviceDomainModel);
 
     expect($result)->toBeTrue();
@@ -683,11 +801,18 @@ test('enables privacy protection', function (): void {
         ->atLeast()->once()
         ->andReturn([new Registrar_Domain(), $registrarAdapterMock]);
 
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('store')
+        ->atLeast()->once()
+        ->andReturn(1);
+
     $di = container();
+    $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $serviceMock->setDi($di);
 
-    $serviceDomainModel = new ServiceDomain();
+    $serviceDomainModel = new Model_ServiceDomain();
+    $serviceDomainModel->loadBean(new Tests\Helpers\DummyBean());
     $result = $serviceMock->enablePrivacyProtection($serviceDomainModel);
 
     expect($result)->toBeTrue();
@@ -704,11 +829,18 @@ test('disables privacy protection', function (): void {
         ->atLeast()->once()
         ->andReturn([new Registrar_Domain(), $registrarAdapterMock]);
 
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('store')
+        ->atLeast()->once()
+        ->andReturn(1);
+
     $di = container();
+    $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $serviceMock->setDi($di);
 
-    $serviceDomainModel = new ServiceDomain();
+    $serviceDomainModel = new Model_ServiceDomain();
+    $serviceDomainModel->loadBean(new Tests\Helpers\DummyBean());
     $result = $serviceMock->disablePrivacyProtection($serviceDomainModel);
 
     expect($result)->toBeTrue();
@@ -722,30 +854,30 @@ test('checks if domain can be transferred', function (): void {
         ->andReturn(true);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('registrarValidateConfiguration')->once();
     $serviceMock->shouldReceive('registrarGetRegistrarAdapter')
-        ->atLeast()->once()
+        ->once()
         ->andReturn($registrarAdapterMock);
 
-    $tldRegistrar = new TldRegistrar();
-    $tldRegistrar->setId(1);
+    $tldRegistrar = new Model_TldRegistrar();
+    $tldRegistrar->loadBean(new Tests\Helpers\DummyBean());
+    $tldRegistrar->tld_registrar_id = 1;
 
-    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
-    $emMock->shouldReceive('getRepository')->with(TldRegistrar::class)->andReturnUsing(function () use ($tldRegistrar) {
-        $repo = Mockery::mock(Box\Mod\Servicedomain\Repository\TldRegistrarRepository::class);
-        $repo->shouldReceive('find')->with(1)->andReturn($tldRegistrar);
-        $repo->shouldIgnoreMissing();
-
-        return $repo;
-    });
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getExistingModelById')
+        ->atLeast()->once()
+        ->with('TldRegistrar', 1, 'Registrar not found')
+        ->andReturn($tldRegistrar);
 
     $di = container();
-    $di['em'] = $emMock;
+    $di['db'] = $dbMock;
     $serviceMock->setDi($di);
 
-    $tld = new Tld();
-    $tld->setAllowTransfer(true);
-    $tld->setTld('.com');
-    $tld->setTldRegistrarId(1);
+    $tld = new Model_Tld();
+    $tld->loadBean(new Tests\Helpers\DummyBean());
+    $tld->allow_transfer = true;
+    $tld->tld = '.com';
+    $tld->tld_registrar_id = 1;
 
     $result = $serviceMock->canBeTransferred($tld, 'example');
 
@@ -754,14 +886,15 @@ test('checks if domain can be transferred', function (): void {
 
 test('throws exception when checking transfer with empty sld', function (): void {
     $service = new Service();
-    expect(fn () => $service->canBeTransferred(new Tld(), ''))
+    expect(fn () => $service->canBeTransferred(new Model_Tld(), ''))
         ->toThrow(FOSSBilling\Exception::class);
 });
 
 test('throws exception when checking transfer not allowed', function (): void {
     $service = new Service();
-    $tldModel = new Tld();
-    $tldModel->setAllowTransfer(false);
+    $tldModel = new Model_Tld();
+    $tldModel->loadBean(new Tests\Helpers\DummyBean());
+    $tldModel->allow_transfer = false;
 
     expect(fn () => $service->canBeTransferred($tldModel, 'example'))
         ->toThrow(FOSSBilling\Exception::class);
@@ -775,21 +908,20 @@ test('checks if domain is available', function (): void {
         ->andReturn(true);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('registrarValidateConfiguration')->once();
     $serviceMock->shouldReceive('registrarGetRegistrarAdapter')
-        ->atLeast()->once()
+        ->once()
         ->andReturn($registrarAdapterMock);
 
-    $tldRegistrar = new TldRegistrar();
-    $tldRegistrar->setId(1);
+    $tldRegistrar = new Model_TldRegistrar();
+    $tldRegistrar->loadBean(new Tests\Helpers\DummyBean());
+    $tldRegistrar->tld_registrar_id = 1;
 
-    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
-    $emMock->shouldReceive('getRepository')->with(TldRegistrar::class)->andReturnUsing(function () use ($tldRegistrar) {
-        $repo = Mockery::mock(Box\Mod\Servicedomain\Repository\TldRegistrarRepository::class);
-        $repo->shouldReceive('find')->with(1)->andReturn($tldRegistrar);
-        $repo->shouldIgnoreMissing();
-
-        return $repo;
-    });
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getExistingModelById')
+        ->atLeast()->once()
+        ->with('TldRegistrar', 1, 'Registrar not found')
+        ->andReturn($tldRegistrar);
 
     $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
     $validatorMock->shouldReceive('isSldValid')
@@ -797,14 +929,15 @@ test('checks if domain is available', function (): void {
         ->andReturn(true);
 
     $di = container();
-    $di['em'] = $emMock;
+    $di['db'] = $dbMock;
     $di['validator'] = $validatorMock;
     $serviceMock->setDi($di);
 
-    $tld = new Tld();
-    $tld->setAllowRegister(true);
-    $tld->setTld('.com');
-    $tld->setTldRegistrarId(1);
+    $tld = new Model_Tld();
+    $tld->loadBean(new Tests\Helpers\DummyBean());
+    $tld->allow_register = true;
+    $tld->tld = '.com';
+    $tld->tld_registrar_id = 1;
 
     $result = $serviceMock->isDomainAvailable($tld, 'example');
 
@@ -813,7 +946,8 @@ test('checks if domain is available', function (): void {
 
 test('throws exception when checking availability with empty sld', function (): void {
     $service = new Service();
-    $tldModel = new Tld();
+    $tldModel = new Model_Tld();
+    $tldModel->loadBean(new Tests\Helpers\DummyBean());
 
     expect(fn () => $service->isDomainAvailable($tldModel, ''))
         ->toThrow(FOSSBilling\Exception::class);
@@ -830,7 +964,8 @@ test('throws exception when checking availability with invalid sld', function ()
     $di['validator'] = $validatorMock;
     $service->setDi($di);
 
-    $tldModel = new Tld();
+    $tldModel = new Model_Tld();
+    $tldModel->loadBean(new Tests\Helpers\DummyBean());
 
     expect(fn () => $service->isDomainAvailable($tldModel, 'example'))
         ->toThrow(FOSSBilling\Exception::class);
@@ -847,8 +982,9 @@ test('throws exception when checking availability not allowed to register', func
     $di['validator'] = $validatorMock;
     $service->setDi($di);
 
-    $model = new Tld();
-    $model->setAllowRegister(false);
+    $model = new Model_Tld();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->allow_register = false;
 
     expect(fn () => $service->isDomainAvailable($model, 'example'))
         ->toThrow(FOSSBilling\Exception::class);
@@ -856,7 +992,8 @@ test('throws exception when checking availability not allowed to register', func
 
 test('syncs expiration date', function (): void {
     $service = new Service();
-    $model = new ServiceDomain();
+    $model = new Model_ServiceDomain();
+    $model->loadBean(new Tests\Helpers\DummyBean());
     $result = $service->syncExpirationDate($model);
 
     expect($result)->toBeNull();
@@ -888,65 +1025,70 @@ test('syncWhois stores null dates when registrar dates are unavailable', functio
         ->once()
         ->andReturn([new Registrar_Domain(), $adapter]);
 
-    $model = new ServiceDomain();
+    $model = new Model_ServiceDomain();
+    $model->loadBean(new Tests\Helpers\DummyBean());
 
-    $order = createEntity(\Box\Mod\Order\Entity\Order::class);
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+
+    $db = Mockery::mock(Box_Database::class);
+    $db->shouldReceive('store')
+        ->once()
+        ->with($model);
 
     $di = container();
+    $di['db'] = $db;
     $service->setDi($di);
 
     $service->syncWhoisPublic($model, $order);
 
-    expect($model->getExpiresAt())->toBeNull()
-        ->and($model->getRegisteredAt())->toBeNull();
+    expect($model->expires_at)->toBeNull()
+        ->and($model->registered_at)->toBeNull();
 });
 
-test('converts to api array', function (?\Box\Mod\Staff\Entity\Admin $identity, string $dbLoadCalled): void {
+test('converts to api array', function (?Model_Admin $identity, string $dbLoadCalled): void {
     $service = new Service();
-    $model = new ServiceDomain();
+    $model = new Model_ServiceDomain();
+    $model->loadBean(new Tests\Helpers\DummyBean());
 
-    $model->setSld('sld');
-    $model->setTld('tld');
-    $model->setNs1('ns1.example.com');
-    $model->setNs2('ns2.example.com');
-    $model->setNs3('ns3.example.com');
-    $model->setNs4('ns4.example.com');
-    $model->setPeriod(1);
-    $model->setPrivacy(true);
-    $model->setLocked(true);
-    $model->setRegisteredAt(new DateTime(date('Y-m-d H:i:s')));
-    $model->setExpiresAt(new DateTime(date('Y-m-d H:i:s')));
+    $model->sld = 'sld';
+    $model->tld = 'tld';
+    $model->ns1 = 'ns1.example.com';
+    $model->ns2 = 'ns2.example.com';
+    $model->ns3 = 'ns3.example.com';
+    $model->ns4 = 'ns4.example.com';
+    $model->period = 'period';
+    $model->privacy = 'privacy';
+    $model->locked = 'locked';
+    $model->registered_at = date('Y-m-d H:i:s');
+    $model->expires_at = date('Y-m-d H:i:s');
 
-    $model->setContactFirstName('first_name');
-    $model->setContactLastName('last_name');
-    $model->setContactEmail('email');
-    $model->setContactCompany('company');
-    $model->setContactAddress1('address1');
-    $model->setContactAddress2('address2');
-    $model->setContactCountry('country');
-    $model->setContactCity('city');
-    $model->setContactState('state');
-    $model->setContactPostcode('postcode');
-    $model->setContactPhoneCc('phone_cc');
-    $model->setContactPhone('phone');
-    $model->setTransferCode('EPPCODE');
-    $model->setTldRegistrarId(1);
+    $model->contact_first_name = 'first_name';
+    $model->contact_last_name = 'last_name';
+    $model->contact_email = 'email';
+    $model->contact_company = 'company';
+    $model->contact_address1 = 'address1';
+    $model->contact_address2 = 'address2';
+    $model->contact_country = 'country';
+    $model->contact_city = 'city';
+    $model->contact_state = 'state';
+    $model->contact_postcode = 'postcode';
+    $model->contact_phone_cc = 'phone_cc';
+    $model->contact_phone = 'phone';
+    $model->transfer_code = 'EPPCODE';
+    $model->tld_registrar_id = 1;
 
-    $tldRegistrar = new TldRegistrar();
-    $tldRegistrar->setName('ResellerClub');
-    $tldRegistrar->setId(1);
+    $tldRegistrar = new Model_TldRegistrar();
+    $tldRegistrar->loadBean(new Tests\Helpers\DummyBean());
+    $tldRegistrar->name = 'ResellerClub';
 
-    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
-    $emMock->shouldReceive('getRepository')->with(TldRegistrar::class)->andReturnUsing(function () use ($tldRegistrar) {
-        $repo = Mockery::mock(Box\Mod\Servicedomain\Repository\TldRegistrarRepository::class);
-        $repo->shouldReceive('find')->with(1)->andReturn($tldRegistrar);
-        $repo->shouldIgnoreMissing();
-
-        return $repo;
-    });
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('load')
+        ->{$dbLoadCalled}()
+        ->andReturn($tldRegistrar);
 
     $di = container();
-    $di['em'] = $emMock;
+    $di['db'] = $dbMock;
     $service->setDi($di);
 
     $result = $service->toApiArray($model, true, $identity);
@@ -981,39 +1123,42 @@ test('converts to api array', function (?\Box\Mod\Staff\Entity\Admin $identity, 
     expect($contact)->toHaveKey('phone_cc');
     expect($contact)->toHaveKey('phone');
 
-    expect($result['domain'])->toBe($model->getSld() . $model->getTld());
-    expect($result['sld'])->toBe($model->getSld());
-    expect($result['tld'])->toBe($model->getTld());
-    expect($result['ns1'])->toBe($model->getNs1());
-    expect($result['ns2'])->toBe($model->getNs2());
-    expect($result['ns3'])->toBe($model->getNs3());
-    expect($result['ns4'])->toBe($model->getNs4());
-    expect($result['period'])->toBe($model->getPeriod());
-    expect($result['privacy'])->toBe($model->getPrivacy());
-    expect($result['locked'])->toBe($model->isLocked());
+    expect($result['domain'])->toBe($model->sld . $model->tld);
+    expect($result['sld'])->toBe($model->sld);
+    expect($result['tld'])->toBe($model->tld);
+    expect($result['ns1'])->toBe($model->ns1);
+    expect($result['ns2'])->toBe($model->ns2);
+    expect($result['ns3'])->toBe($model->ns3);
+    expect($result['ns4'])->toBe($model->ns4);
+    expect($result['period'])->toBe($model->period);
+    expect($result['privacy'])->toBe($model->privacy);
+    expect($result['locked'])->toBe($model->locked);
+    expect($result['registered_at'])->toBe($model->registered_at);
+    expect($result['expires_at'])->toBe($model->expires_at);
 
-    expect($contact['first_name'])->toBe($model->getContactFirstName());
-    expect($contact['last_name'])->toBe($model->getContactLastName());
-    expect($contact['email'])->toBe($model->getContactEmail());
-    expect($contact['company'])->toBe($model->getContactCompany());
-    expect($contact['address1'])->toBe($model->getContactAddress1());
-    expect($contact['address2'])->toBe($model->getContactAddress2());
-    expect($contact['country'])->toBe($model->getContactCountry());
-    expect($contact['city'])->toBe($model->getContactCity());
-    expect($contact['state'])->toBe($model->getContactState());
-    expect($contact['postcode'])->toBe($model->getContactPostcode());
-    expect($contact['phone_cc'])->toBe($model->getContactPhoneCc());
-    expect($contact['phone'])->toBe($model->getContactPhone());
+    expect($contact['first_name'])->toBe($model->contact_first_name);
+    expect($contact['last_name'])->toBe($model->contact_last_name);
+    expect($contact['email'])->toBe($model->contact_email);
+    expect($contact['company'])->toBe($model->contact_company);
+    expect($contact['address1'])->toBe($model->contact_address1);
+    expect($contact['address2'])->toBe($model->contact_address2);
+    expect($contact['country'])->toBe($model->contact_country);
+    expect($contact['city'])->toBe($model->contact_city);
+    expect($contact['state'])->toBe($model->contact_state);
+    expect($contact['postcode'])->toBe($model->contact_postcode);
+    expect($contact['phone_cc'])->toBe($model->contact_phone_cc);
+    expect($contact['phone'])->toBe($model->contact_phone);
 
-    if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
+    if ($identity instanceof Model_Admin) {
         expect($result)->toHaveKey('transfer_code');
         expect($result)->toHaveKey('registrar');
-        expect($result['transfer_code'])->toBe($model->getTransferCode());
-        expect($result['registrar'])->toBe($tldRegistrar->getName());
+        expect($result['transfer_code'])->toBe($model->transfer_code);
+        expect($result['registrar'])->toBe($tldRegistrar->name);
     }
 })->with([
     [function () {
-        $model = createEntity(\Box\Mod\Staff\Entity\Admin::class);
+        $model = new Model_Admin();
+        $model->loadBean(new Tests\Helpers\DummyBean());
 
         return $model;
     }, 'atLeast'],
@@ -1052,17 +1197,20 @@ test('batch syncs expiration dates', function (): void {
     $systemServiceMock->shouldReceive('setParamValue')
         ->atLeast()->once();
 
-    $domainModel = new ServiceDomain();
-    $domainRepo = Mockery::mock(Box\Mod\Servicedomain\Repository\DomainRepository::class);
-    $domainRepo->shouldReceive('findAll')->andReturn([$domainModel]);
-    $domainRepo->shouldIgnoreMissing();
-
-    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
-    $emMock->shouldReceive('getRepository')->with(ServiceDomain::class)->andReturn($domainRepo);
+    $domains = [
+        'domain1.com',
+        'domain2.com',
+        'domain3.com',
+        'domain4.com',
+    ];
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('find')
+        ->atLeast()->once()
+        ->andReturn($domains);
 
     $di = container();
-    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn ($name) => $systemServiceMock);
+    $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $serviceMock->setDi($di);
 
@@ -1080,8 +1228,14 @@ test('returns false when batch sync already run today', function (): void {
     $systemServiceMock->shouldReceive('setParamValue')
         ->never();
 
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('find')
+        ->never()
+        ->andReturn([]);
+
     $di = container();
     $di['mod_service'] = $di->protect(fn ($name) => $systemServiceMock);
+    $di['db'] = $dbMock;
     $service->setDi($di);
 
     $result = $service->batchSyncExpirationDates();
@@ -1129,7 +1283,13 @@ test('gets tld search query', function (array $data, string $expectedQuery, arra
 
 test('finds all active tlds', function (): void {
     $service = new Service();
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('find')
+        ->atLeast()->once()
+        ->andReturn([]);
+
     $di = container();
+    $di['db'] = $dbMock;
     $service->setDi($di);
 
     $result = $service->tldFindAllActive();
@@ -1139,23 +1299,20 @@ test('finds all active tlds', function (): void {
 
 test('finds one active tld by id', function (): void {
     $service = new Service();
-    $tldModel = new Tld();
-    $tldModel->setId(1);
-
-    $tldRepo = Mockery::mock(Box\Mod\Servicedomain\Repository\TldRepository::class);
-    $tldRepo->shouldReceive('findOneActiveById')->with(1)->andReturn($tldModel);
-    $tldRepo->shouldIgnoreMissing();
-
-    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
-    $emMock->shouldReceive('getRepository')->with(Tld::class)->andReturn($tldRepo);
+    $tldModel = new Model_Tld();
+    $tldModel->loadBean(new Tests\Helpers\DummyBean());
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('findOne')
+        ->atLeast()->once()
+        ->andReturn($tldModel);
 
     $di = container();
-    $di['em'] = $emMock;
+    $di['db'] = $dbMock;
     $service->setDi($di);
 
     $result = $service->tldFindOneActiveById(1);
 
-    expect($result)->toBeInstanceOf(Tld::class);
+    expect($result)->toBeInstanceOf(Model_Tld::class);
 });
 
 test('gets tld pairs', function (): void {
@@ -1163,16 +1320,13 @@ test('gets tld pairs', function (): void {
     $returns = [
         0 => '.com',
     ];
-
-    $tldRepo = Mockery::mock(Box\Mod\Servicedomain\Repository\TldRepository::class);
-    $tldRepo->shouldReceive('getIdTldPairs')->andReturn($returns);
-    $tldRepo->shouldIgnoreMissing();
-
-    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
-    $emMock->shouldReceive('getRepository')->with(Tld::class)->andReturn($tldRepo);
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getAssoc')
+        ->atLeast()->once()
+        ->andReturn($returns);
 
     $di = container();
-    $di['em'] = $emMock;
+    $di['db'] = $dbMock;
     $service->setDi($di);
 
     $result = $service->tldGetPairs();
@@ -1183,18 +1337,15 @@ test('gets tld pairs', function (): void {
 
 test('checks if tld is already registered', function (): void {
     $service = new Service();
-    $tldModel = new Tld();
-    $tldModel->setTld('.com');
-
-    $tldRepo = Mockery::mock(Box\Mod\Servicedomain\Repository\TldRepository::class);
-    $tldRepo->shouldReceive('findOneByTld')->with('.com')->andReturn($tldModel);
-    $tldRepo->shouldIgnoreMissing();
-
-    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
-    $emMock->shouldReceive('getRepository')->with(Tld::class)->andReturn($tldRepo);
+    $tldModel = new Model_Tld();
+    $tldModel->loadBean(new Tests\Helpers\DummyBean());
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('findOne')
+        ->atLeast()->once()
+        ->andReturn($tldModel);
 
     $di = container();
-    $di['em'] = $emMock;
+    $di['db'] = $dbMock;
     $service->setDi($di);
 
     $result = $service->tldAlreadyRegistered('.com');
@@ -1204,16 +1355,13 @@ test('checks if tld is already registered', function (): void {
 
 test('checks if tld is not registered', function (): void {
     $service = new Service();
-
-    $tldRepo = Mockery::mock(Box\Mod\Servicedomain\Repository\TldRepository::class);
-    $tldRepo->shouldReceive('findOneByTld')->with('.com')->andReturn(null);
-    $tldRepo->shouldIgnoreMissing();
-
-    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
-    $emMock->shouldReceive('getRepository')->with(Tld::class)->andReturn($tldRepo);
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('findOne')
+        ->atLeast()->once()
+        ->andReturn(null);
 
     $di = container();
-    $di['em'] = $emMock;
+    $di['db'] = $dbMock;
     $service->setDi($di);
 
     $result = $service->tldAlreadyRegistered('.com');
@@ -1223,13 +1371,19 @@ test('checks if tld is not registered', function (): void {
 
 test('removes tld', function (): void {
     $service = new Service();
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('trash')
+        ->atLeast()->once()
+        ->andReturn(null);
 
     $di = container();
+    $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
-    $model = new Tld();
-    $model->setId(1);
+    $model = new Model_Tld();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->id = 1;
 
     $result = $service->tldRm($model);
 
@@ -1238,34 +1392,32 @@ test('removes tld', function (): void {
 
 test('converts tld to api array', function (): void {
     $service = new Service();
-    $tldRegistrar = new TldRegistrar();
-    $tldRegistrar->setName('ResellerClub');
-    $tldRegistrar->setId(1);
+    $tldRegistrar = new Model_TldRegistrar();
+    $tldRegistrar->loadBean(new Tests\Helpers\DummyBean());
+    $tldRegistrar->name = 'ResellerClub';
 
-    $trRepo = Mockery::mock(Box\Mod\Servicedomain\Repository\TldRegistrarRepository::class);
-    $trRepo->shouldReceive('find')->with(1)->andReturn($tldRegistrar);
-    $trRepo->shouldIgnoreMissing();
-
-    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
-    $emMock->shouldReceive('getRepository')->with(TldRegistrar::class)->andReturn($trRepo);
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('load')
+        ->atLeast()->once()
+        ->andReturn($tldRegistrar);
 
     $di = container();
-    $di['em'] = $emMock;
+    $di['db'] = $dbMock;
     $service->setDi($di);
 
-    $model = new Tld();
-    $model->setId(1);
-    $model->setTld('.com');
-    $model->setPriceRegistration('1.00');
-    $model->setPriceRenew('1.00');
-    $model->setPriceTransfer('1.00');
-    $model->setActive(true);
-    $model->setAllowRegister(true);
-    $model->setAllowTransfer(true);
-    $model->setMinYears(2);
-    $model->setTldRegistrarId(1);
+    $model = new Model_Tld();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->tld = '.com';
+    $model->price_registration = 1;
+    $model->price_renew = 1;
+    $model->price_transfer = 1;
+    $model->active = 1;
+    $model->allow_register = 1;
+    $model->allow_transfer = 1;
+    $model->min_years = 2;
+    $model->tld_registrar_id = 1;
 
-    $result = $service->tldToApiArray($model, createEntity(\Box\Mod\Staff\Entity\Admin::class));
+    $result = $service->tldToApiArray($model, new Model_Admin());
     expect($result)->toBeArray();
 
     expect($result)->toHaveKey('tld');
@@ -1283,38 +1435,112 @@ test('converts tld to api array', function (): void {
     expect($registrar)->toHaveKey('id');
     expect($registrar)->toHaveKey('title');
 
-    expect($result['tld'])->toBe($model->getTld());
-    expect($result['price_registration'])->toBe($model->getPriceRegistration());
-    expect($result['price_renew'])->toBe($model->getPriceRenew());
-    expect($result['price_transfer'])->toBe($model->getPriceTransfer());
-    expect($result['active'])->toBe($model->isActive());
-    expect($result['allow_register'])->toBe($model->isAllowRegister());
-    expect($result['allow_transfer'])->toBe($model->isAllowTransfer());
-    expect($result['min_years'])->toBe($model->getMinYears());
+    expect($result['tld'])->toBe($model->tld);
+    expect($result['price_registration'])->toBe($model->price_registration);
+    expect($result['price_renew'])->toBe($model->price_renew);
+    expect($result['price_transfer'])->toBe($model->price_transfer);
+    expect($result['active'])->toBe($model->active);
+    expect($result['allow_register'])->toBe($model->allow_register);
+    expect($result['allow_transfer'])->toBe($model->allow_transfer);
+    expect($result['min_years'])->toBe($model->min_years);
 
-    expect($registrar['id'])->toBe($model->getTldRegistrarId());
-    expect($registrar['title'])->toBe($tldRegistrar->getName());
+    expect($registrar['id'])->toBe($model->tld_registrar_id);
+    expect($registrar['title'])->toBe($tldRegistrar->name);
 });
 
 test('finds one tld by tld', function (): void {
     $service = new Service();
-    $tldModel = new Tld();
-
-    $tldRepo = Mockery::mock(Box\Mod\Servicedomain\Repository\TldRepository::class);
-    $tldRepo->shouldReceive('findOneByTld')->with('.com')->andReturn($tldModel);
-    $tldRepo->shouldIgnoreMissing();
-
-    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
-    $emMock->shouldReceive('getRepository')->with(Tld::class)->andReturn($tldRepo);
+    $tldModel = new Model_Tld();
+    $tldModel->loadBean(new Tests\Helpers\DummyBean());
+    $tldModel->tld = 'com';
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('findOne')
+        ->once()
+        ->with('Tld', 'tld = ? ORDER by id ASC', ['.com'])
+        ->andReturn(null);
+    $dbMock->shouldReceive('findOne')
+        ->once()
+        ->with('Tld', 'tld = ? ORDER by id ASC', ['com'])
+        ->andReturn($tldModel);
 
     $di = container();
-    $di['em'] = $emMock;
+    $di['db'] = $dbMock;
+    $service->setDi($di);
+
+    $result = $service->tldFindOneByTld(' COM. ');
+
+    expect($result)->toBeInstanceOf(Model_Tld::class);
+    expect($result->tld)->toBe('.com');
+});
+
+test('finds a non-canonical legacy tld as a compatibility fallback', function (): void {
+    $service = new Service();
+    $tldModel = new Model_Tld();
+    $tldModel->loadBean(new Tests\Helpers\DummyBean());
+    $tldModel->tld = ' .COM. ';
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('findOne')->twice()->andReturnNull();
+    $dbMock->shouldReceive('findOne')
+        ->once()
+        ->with(
+            'Tld',
+            "LOWER(TRIM(TRAILING '.' FROM TRIM(tld))) IN (?, ?) ORDER by id ASC",
+            ['.com', 'com'],
+        )
+        ->andReturn($tldModel);
+
+    $di = container();
+    $di['db'] = $dbMock;
     $service->setDi($di);
 
     $result = $service->tldFindOneByTld('.com');
 
-    expect($result)->toBeInstanceOf(Tld::class);
+    expect($result)->toBe($tldModel);
+    expect($result->tld)->toBe('.com');
 });
+
+test('normalizes tlds', function (string $input, string $expected): void {
+    $service = new Service();
+
+    expect($service->normalizeTld($input))->toBe($expected);
+})->with([
+    'leading dot' => ['.com', '.com'],
+    'missing leading dot' => ['com', '.com'],
+    'case and whitespace' => [' .COM.UA. ', '.com.ua'],
+    'internationalized tld' => ['.рф', '.xn--p1ai'],
+]);
+
+test('keeps a malformed legacy tld accessible when finding it by id', function (): void {
+    $service = new Service();
+    $model = new Model_Tld();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->tld = 'not a valid tld';
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('findOne')->once()->andReturn($model);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $service->setDi($di);
+
+    expect($service->tldFindOneById(1))->toBe($model);
+    expect($model->tld)->toBe('not a valid tld');
+});
+
+test('rejects invalid tlds', function (string $input): void {
+    $service = new Service();
+
+    expect(fn (): string => $service->normalizeTld($input))
+        ->toThrow(FOSSBilling\InformationException::class, 'TLD is invalid');
+})->with([
+    'empty' => '',
+    'only dots' => '..',
+    'empty label' => '.com..ua',
+    'whitespace within label' => '.com ua',
+    'leading hyphen' => '.-com',
+    'trailing hyphen' => '.com-',
+]);
 
 test('gets registrar search query', function (): void {
     $service = new Service();
@@ -1331,17 +1557,13 @@ test('gets available registrars', function (): void {
         'Resellerclub' => 'Reseller Club',
     ];
 
-    $connMock = Mockery::mock(Doctrine\DBAL\Connection::class);
-    $connMock->shouldReceive('fetchAllKeyValue')
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getAssoc')
         ->atLeast()->once()
         ->andReturn($registrars);
 
-    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
-    $emMock->shouldReceive('getConnection')->andReturn($connMock);
-    $emMock->shouldReceive('getRepository')->byDefault()->andReturn(Mockery::mock()->shouldIgnoreMissing());
-
     $di = container();
-    $di['em'] = $emMock;
+    $di['db'] = $dbMock;
     $service->setDi($di);
 
     $result = $service->registrarGetAvailable();
@@ -1356,15 +1578,13 @@ test('gets registrar pairs', function (): void {
         3 => 'Custom',
     ];
 
-    $trRepo = Mockery::mock(Box\Mod\Servicedomain\Repository\TldRegistrarRepository::class);
-    $trRepo->shouldReceive('getIdNamePairs')->andReturn($registrars);
-    $trRepo->shouldIgnoreMissing();
-
-    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
-    $emMock->shouldReceive('getRepository')->with(TldRegistrar::class)->andReturn($trRepo);
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getAssoc')
+        ->atLeast()->once()
+        ->andReturn($registrars);
 
     $di = container();
-    $di['em'] = $emMock;
+    $di['db'] = $dbMock;
     $service->setDi($di);
 
     $result = $service->registrarGetPairs();
@@ -1375,23 +1595,21 @@ test('gets registrar pairs', function (): void {
 
 test('gets active registrar', function (): void {
     $service = new Service();
-    $tldRegistrarModel = new TldRegistrar();
-    $tldRegistrarModel->setConfig(json_encode(['key' => 'val']));
+    $tldRegistrarModel = new Model_TldRegistrar();
+    $tldRegistrarModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $trRepo = Mockery::mock(Box\Mod\Servicedomain\Repository\TldRegistrarRepository::class);
-    $trRepo->shouldReceive('findActiveRegistrar')->andReturn($tldRegistrarModel);
-    $trRepo->shouldIgnoreMissing();
-
-    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
-    $emMock->shouldReceive('getRepository')->with(TldRegistrar::class)->andReturn($trRepo);
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('findOne')
+        ->atLeast()->once()
+        ->andReturn($tldRegistrarModel);
 
     $di = container();
-    $di['em'] = $emMock;
+    $di['db'] = $dbMock;
     $service->setDi($di);
 
     $result = $service->registrarGetActiveRegistrar();
 
-    expect($result)->toBeInstanceOf(TldRegistrar::class);
+    expect($result)->toBeInstanceOf(Model_TldRegistrar::class);
 });
 
 test('gets registrar configuration', function (): void {
@@ -1403,8 +1621,9 @@ test('gets registrar configuration', function (): void {
     $di = container();
     $service->setDi($di);
 
-    $model = new TldRegistrar();
-    $model->setConfig(json_encode($config));
+    $model = new Model_TldRegistrar();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->config = json_encode($config);
 
     $result = $service->registrarGetConfiguration($model);
 
@@ -1414,8 +1633,9 @@ test('gets registrar configuration', function (): void {
 
 test('gets registrar adapter config', function (): void {
     $service = new Service();
-    $model = new TldRegistrar();
-    $model->setRegistrar('Custom');
+    $model = new Model_TldRegistrar();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->registrar = 'Custom';
 
     $result = $service->registrarGetRegistrarAdapterConfig($model);
     expect($result)->toBeArray();
@@ -1423,8 +1643,9 @@ test('gets registrar adapter config', function (): void {
 
 test('throws exception when getting registrar adapter config for non-existing registrar', function (): void {
     $service = new Service();
-    $model = new TldRegistrar();
-    $model->setRegistrar('NonExisting');
+    $model = new Model_TldRegistrar();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->registrar = 'NonExisting';
 
     expect(fn () => $service->registrarGetRegistrarAdapterConfig($model))
         ->toThrow(FOSSBilling\Exception::class);
@@ -1435,22 +1656,43 @@ test('gets registrar adapter', function (): void {
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
-    $model = new TldRegistrar();
-    $model->setRegistrar('Custom');
+    $model = new Model_TldRegistrar();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->registrar = 'Custom';
 
     $result = $service->registrarGetRegistrarAdapter($model);
 
-    expect($result)->toBeInstanceOf('Registrar_Adapter_' . $model->getRegistrar());
+    expect($result)->toBeInstanceOf('Registrar_Adapter_' . $model->registrar);
+});
+
+test('validates required registrar fields even when the adapter constructor does not', function (): void {
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('registrarGetConfiguration')->once()->andReturn([]);
+    $service->shouldReceive('registrarGetRegistrarAdapterConfig')->once()->andReturn([
+        'form' => [
+            'host' => ['text', ['label' => 'EPP host', 'required' => true]],
+        ],
+    ]);
+    $model = new Model_TldRegistrar();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->name = 'Namingo EPP';
+    $model->registrar = 'Namingo';
+    $model->test_mode = false;
+
+    expect(fn () => $service->registrarValidateConfiguration($model))
+        ->toThrow(FOSSBilling\InformationException::class, 'missing required configuration');
 });
 
 test('throws exception when getting registrar adapter for non-existing registrar', function (): void {
+    $service = new Service();
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('registrarGetConfiguration')
         ->atLeast()->once()
         ->andReturn([]);
 
-    $model = new TldRegistrar();
-    $model->setRegistrar('NonExisting');
+    $model = new Model_TldRegistrar();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->registrar = 'NonExisting';
 
     expect(fn () => $serviceMock->registrarGetRegistrarAdapter($model))
         ->toThrow(Error::class);
@@ -1458,27 +1700,23 @@ test('throws exception when getting registrar adapter for non-existing registrar
 
 test('removes registrar', function (): void {
     $service = new Service();
-
-    $domainRepo = Mockery::mock(Box\Mod\Servicedomain\Repository\DomainRepository::class);
-    $domainRepo->shouldReceive('findByTldRegistrarId')->with(1)->andReturn([]);
-    $domainRepo->shouldIgnoreMissing();
-
-    $tldRepo = Mockery::mock(Box\Mod\Servicedomain\Repository\TldRepository::class);
-    $tldRepo->shouldReceive('findBy')->with(['tldRegistrarId' => 1])->andReturn([]);
-    $tldRepo->shouldIgnoreMissing();
-
-    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
-    $emMock->shouldReceive('getRepository')->with(ServiceDomain::class)->andReturn($domainRepo);
-    $emMock->shouldReceive('getRepository')->with(Tld::class)->andReturn($tldRepo);
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('find')
+        ->atLeast()->once()
+        ->andReturn([]);
+    $dbMock->shouldReceive('trash')
+        ->atLeast()->once()
+        ->andReturn(null);
 
     $di = container();
-    $di['em'] = $emMock;
+    $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
-    $model = new TldRegistrar();
-    $model->setId(1);
-    $model->setName('ResellerClub');
+    $model = new Model_TldRegistrar();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->id = 1;
+    $model->name = 'ResellerClub';
 
     $result = $service->registrarRm($model);
 
@@ -1487,22 +1725,23 @@ test('removes registrar', function (): void {
 
 test('throws exception when removing registrar with domains', function (): void {
     $service = new Service();
-    $serviceDomainModel = new ServiceDomain();
+    $serviceDomainModel = new Model_ServiceDomain();
+    $serviceDomainModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $domainRepo = Mockery::mock(Box\Mod\Servicedomain\Repository\DomainRepository::class);
-    $domainRepo->shouldReceive('findByTldRegistrarId')->with(1)->andReturn([$serviceDomainModel]);
-    $domainRepo->shouldIgnoreMissing();
-
-    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
-    $emMock->shouldReceive('getRepository')->with(ServiceDomain::class)->andReturn($domainRepo);
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('find')
+        ->with('ServiceDomain', 'tld_registrar_id = :registrar_id', [':registrar_id' => 1])
+        ->atLeast()->once()
+        ->andReturn([$serviceDomainModel]);
 
     $di = container();
-    $di['em'] = $emMock;
+    $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
-    $model = new TldRegistrar();
-    $model->setId(1);
+    $model = new Model_TldRegistrar();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->id = 1;
 
     expect(fn (): bool => $service->registrarRm($model))
         ->toThrow(FOSSBilling\InformationException::class, 'Registrar is used by 1 domains');
@@ -1523,22 +1762,24 @@ test('converts registrar to api array', function (): void {
         ->atLeast()->once()
         ->andReturn(['param1' => 'value1']);
 
-    $model = new TldRegistrar();
-    $model->setId(1);
-    $model->setName('ResellerClub');
-    $model->setTestMode(true);
+    $model = new Model_TldRegistrar();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->id = 1;
+    $model->name = 'ResellerClub';
+    $model->test_mode = true;
 
     $serviceMock->registrarToApiArray($model);
 });
 
 test('creates tld', function (): void {
-    $service = new Service();
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('registrarValidateConfiguration')->once();
     $data = [
-        'tld' => '.com',
+        'tld' => ' COM.UA. ',
         'tld_registrar_id' => 1,
-        'price_registration' => '1.00',
-        'price_renew' => '1.00',
-        'price_transfer' => '1.00',
+        'price_registration' => 1,
+        'price_renew' => 1,
+        'price_transfer' => 1,
         'min_years' => random_int(1, 5),
         'allow_register' => 1,
         'allow_transfer' => 1,
@@ -1546,24 +1787,45 @@ test('creates tld', function (): void {
         'created_at' => date('Y-m-d H:i:s'),
     ];
 
+    $randId = 1;
+
+    $tldModel = new Model_Tld();
+    $tldModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getExistingModelById')
+        ->once()
+        ->with('TldRegistrar', 1, 'Registrar not found')
+        ->andReturn(new Model_TldRegistrar());
+    $dbMock->shouldReceive('store')
+        ->atLeast()->once()
+        ->andReturn($randId);
+    $dbMock->shouldReceive('dispense')
+        ->atLeast()->once()
+        ->andReturn($tldModel);
+
     $di = container();
-    $di['em'] = Tests\Helpers\entityManagerWithIds($di);
+    $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
     $result = $service->tldCreate($data);
 
     expect($result)->toBeInt();
+    expect($result)->toBe($randId);
+    expect($tldModel->tld)->toBe('.com.ua');
+    expect($tldModel->active)->toBeTruthy();
 });
 
 test('updates tld', function (): void {
-    $service = new Service();
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('registrarValidateConfiguration')->once();
     $data = [
         'tld' => '.com',
         'tld_registrar_id' => 1,
-        'price_registration' => '1.00',
-        'price_renew' => '1.00',
-        'price_transfer' => '1.00',
+        'price_registration' => 1,
+        'price_renew' => 1,
+        'price_transfer' => 1,
         'min_years' => random_int(1, 5),
         'allow_register' => true,
         'allow_transfer' => true,
@@ -1572,23 +1834,72 @@ test('updates tld', function (): void {
         'created_at' => date('Y-m-d H:i:s'),
     ];
 
+    $randId = 1;
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getExistingModelById')
+        ->once()
+        ->with('TldRegistrar', 1, 'Registrar not found')
+        ->andReturn(new Model_TldRegistrar());
+    $dbMock->shouldReceive('store')
+        ->atLeast()->once()
+        ->andReturn($randId);
+
     $di = container();
+    $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service->setDi($di);
 
-    $model = new Tld();
-    $model->setTld('.com');
+    $model = new Model_Tld();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->tld = '.com';
 
     $result = $service->tldUpdate($model, $data);
 
     expect($result)->toBeTrue();
 });
 
-test('creates registrar', function (): void {
-    $service = new Service();
+test('rejects invalid tld pricing and minimum periods', function (array $data): void {
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('registrarValidateConfiguration')->never();
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldNotReceive('getExistingModelById');
 
     $di = container();
+    $di['db'] = $dbMock;
+    $service->setDi($di);
+
+    expect(fn () => $service->tldCreate(array_replace([
+        'tld' => '.com',
+        'tld_registrar_id' => 1,
+        'price_registration' => 1,
+        'price_renew' => 1,
+        'price_transfer' => 1,
+        'min_years' => 1,
+    ], $data)))->toThrow(FOSSBilling\InformationException::class);
+})->with([
+    'negative registration price' => [['price_registration' => -1]],
+    'non-numeric renewal price' => [['price_renew' => 'free']],
+    'non-positive minimum period' => [['min_years' => 0]],
+]);
+
+test('creates registrar', function (): void {
+    $service = new Service();
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('store')
+        ->atLeast()->once()
+        ->andReturn(1);
+
+    $model = new Model_TldRegistrar();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $dbMock->shouldReceive('dispense')
+        ->atLeast()->once()
+        ->andReturn($model);
+
+    $di = container();
+    $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
@@ -1599,50 +1910,123 @@ test('creates registrar', function (): void {
 
 test('copies registrar', function (): void {
     $service = new Service();
+    $newId = 1;
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('store')
+        ->atLeast()->once()
+        ->andReturn($newId);
+
+    $model = new Model_TldRegistrar();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $dbMock->shouldReceive('dispense')
+        ->atLeast()->once()
+        ->andReturn($model);
 
     $di = container();
-    $di['em'] = Tests\Helpers\entityManagerWithIds($di);
+    $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
-    $model = new TldRegistrar();
-    $model->setName('ResellerClub');
-    $model->setRegistrar('ResellerClub');
-    $model->setTestMode(true);
+    $model = new Model_TldRegistrar();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->name = 'ResellerClub';
+    $model->registrar = 'ResellerClub';
+    $model->test_mode = 1;
 
     $result = $service->registrarCopy($model);
 
     expect($result)->toBeInt();
+    expect($result)->toBe($newId);
 });
 
 test('updates registrar', function (): void {
     $service = new Service();
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('store')
+        ->atLeast()->once()
+        ->andReturn(1);
 
     $di = container();
+    $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service->setDi($di);
 
     $data = [
         'title' => 'ResellerClub',
-        'test_mode' => true,
+        'test_mode' => 1,
         'config' => [
             'param1' => 'value1',
         ],
     ];
 
-    $model = new TldRegistrar();
-    $model->setRegistrar('Custom');
+    $model = new Model_TldRegistrar();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->registrar = 'Custom';
 
     $result = $service->registrarUpdate($model, $data);
 
     expect($result)->toBeTrue();
 });
 
-test('updates domain', function (): void {
-    $service = new Service();
+test('preserves registrar configuration fields omitted from an update', function (): void {
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('registrarGetRegistrarAdapterConfig')
+        ->once()
+        ->andReturn(['form' => []]);
+    $service->shouldReceive('registrarValidateConfiguration')->once();
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('store')->once()->andReturn(1);
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    $model = new Model_TldRegistrar();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->registrar = 'Custom';
+    $model->config = json_encode(['existing' => 'value']);
+
+    $service->registrarUpdate($model, ['config' => ['new' => 'value']]);
+
+    expect(json_decode($model->config, true))->toBe([
+        'existing' => 'value',
+        'new' => 'value',
+    ]);
+});
+
+test('allows registrar metadata updates with an incomplete existing configuration', function (): void {
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('registrarValidateConfiguration')->never();
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('store')->once()->andReturn(1);
 
     $di = container();
+    $di['db'] = $dbMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    $model = new Model_TldRegistrar();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->name = 'Old name';
+    $model->registrar = 'Custom';
+    $model->config = null;
+
+    expect($service->registrarUpdate($model, ['title' => 'New name']))->toBeTrue();
+    expect($model->name)->toBe('New name');
+});
+
+test('updates domain', function (): void {
+    $service = new Service();
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('store')
+        ->atLeast()->once()
+        ->andReturn(1);
+
+    $di = container();
+    $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service->setDi($di);
@@ -1658,8 +2042,9 @@ test('updates domain', function (): void {
         'transfer_code' => 'EPPCODE',
     ];
 
-    $model = new ServiceDomain();
-    $model->setId(1);
+    $model = new Model_ServiceDomain();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->id = 1;
 
     $result = $service->updateDomain($model, $data);
 

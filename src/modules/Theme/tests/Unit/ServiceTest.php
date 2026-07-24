@@ -387,14 +387,13 @@ test('regenerateThemeCssAndJsFiles handles empty files', function (): void {
 test('getCurrentAdminAreaTheme returns theme configuration', function (): void {
     Service::clearThemeCache();
     $service = new Service();
-    $connectionMock = Mockery::mock(Doctrine\DBAL\Connection::class);
-    $connectionMock->shouldReceive('fetchOne')
-        ->atLeast()
-        ->once()
-        ->andReturn('');
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('fetchOne')->once()
+        ->with(Mockery::type('string'), ['param' => 'admin_theme'])
+        ->andReturn(false);
 
     $di = container();
-    $di['em']->shouldReceive('getConnection')->andReturn($connectionMock);
+    $di['dbal'] = $dbalMock;
 
     $service->setDi($di);
 
@@ -424,17 +423,31 @@ test('getCurrentClientAreaTheme returns Theme model', function (): void {
 test('getCurrentClientAreaThemeCode returns theme code', function (): void {
     Service::clearThemeCache();
     $service = new Service();
-    $connectionMock = Mockery::mock(Doctrine\DBAL\Connection::class);
-    $connectionMock->shouldReceive('fetchOne')
-        ->atLeast()
-        ->once()
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('fetchOne')->once()
+        ->with("SELECT value FROM setting WHERE param = 'theme' ")
         ->andReturn('huraga');
 
     $di = container();
-    $di['em']->shouldReceive('getConnection')->andReturn($connectionMock);
+    $di['dbal'] = $dbalMock;
     $service->setDi($di);
 
     $result = $service->getCurrentClientAreaThemeCode();
     expect($result)->toBeString();
     expect($result)->toBe('huraga');
+});
+
+test('getCurrentClientAreaThemeCode falls back when the setting is missing', function (): void {
+    Service::clearThemeCache();
+    $service = new Service();
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('fetchOne')->once()
+        ->with("SELECT value FROM setting WHERE param = 'theme' ")
+        ->andReturn(false);
+
+    $di = container();
+    $di['dbal'] = $dbalMock;
+    $service->setDi($di);
+
+    expect($service->getCurrentClientAreaThemeCode())->toBe('huraga');
 });

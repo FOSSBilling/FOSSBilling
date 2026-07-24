@@ -1,38 +1,55 @@
 <div class="card-body">
     <div class="mb-3">
-        <h3 class="card-title mb-1">{{ 'File Information'|trans }}</h3>
-        <p class="text-secondary mb-0">{{ 'Review the file currently assigned to this order and upload a replacement when needed.'|trans }}</p>
+        <h3 class="card-title mb-1">{{ 'Order Files'|trans }}</h3>
+        <p class="text-secondary mb-0">{{ 'Review and manage the files available to this customer.'|trans }}</p>
     </div>
 
-    <table class="table card-table table-vcenter table-striped text-nowrap">
-        <tbody>
-            <tr class="noborder">
-                <td>{{ 'Filename'|trans }}:</td>
-                <td>{{ service.filename }}</td>
-            </tr>
-            <tr>
-                <td>{{ 'Location'|trans }}:</td>
-                <td>{{ service.path }}</td>
-            </tr>
-            <tr>
-                <td>{{ 'Downloads'|trans }}:</td>
-                <td>{{ service.downloads }}</td>
-            </tr>
-        </tbody>
-    </table>
+    <div class="table-responsive">
+        <table class="table card-table table-vcenter table-striped">
+            <thead><tr><th>{{ 'File'|trans }}</th><th>{{ 'Description'|trans }}</th><th>{{ 'Downloads'|trans }}</th><th class="w-1"></th></tr></thead>
+            <tbody>
+                {% for file in service.files %}
+                    <tr>
+                        <td>
+                            <a href="{{ "servicedownloadable/order-file/#{order.id}/#{file.id}"|url }}" target="_blank">{{ file.label|default(file.filename) }}</a>
+                            {% if file.label %}<div class="text-secondary small">{{ file.filename }}</div>{% endif %}
+                            <div class="text-secondary small">{{ file.path }}</div>
+                        </td>
+                        <td>{{ file.description|default('-') }}</td>
+                        <td>{{ file.downloads }}</td>
+                        <td>
+                            <a class="btn btn-icon btn-outline-danger" href="{{ 'servicedownloadable/order_file_delete'|api_url(query: {order_id: order.id, file_id: file.id}) }}" {{ fb_api_link({modal: {type: 'danger', title: 'Remove this file?'|trans, button: 'Remove'|trans}, reload: true}) }} title="{{ 'Remove'|trans }}">
+                                <svg class="icon"><use href="#trash" /></svg>
+                            </a>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="4" class="text-secondary">{{ 'No files are currently assigned to this order.'|trans }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
     <hr class="my-4" />
 
     <div class="mb-3">
         <h3 class="card-title mb-1">{{ 'Upload New File for This Order'|trans }}</h3>
-        <p class="text-secondary mb-0">{{ 'Use this function to replace the existing order file. The client will be able to download the new file from the client area.'|trans }}</p>
+        <p class="text-secondary mb-0">{{ 'Add a file to this order only. The client will be able to download it from the client area.'|trans }}</p>
     </div>
 
-    <form method="post" action="{{ 'servicedownloadable/upload'|api_url }}" enctype="multipart/form-data" id="upload-form">
+    <form method="post" action="{{ 'servicedownloadable/update'|api_url }}" enctype="multipart/form-data" id="upload-form">
         <div class="row g-3">
-            <div class="col-lg-6">
+            <div class="col-lg-4">
                 <label class="form-label">{{ 'Upload New File'|trans }}</label>
-                <input class="form-control" type="file" name="file_data" id="file_data">
+                <input class="form-control" type="file" name="file_data" id="file_data" required>
+            </div>
+            <div class="col-lg-3">
+                <label class="form-label">{{ 'Label'|trans }}</label>
+                <input class="form-control" name="label" maxlength="255" placeholder="{{ 'Optional label'|trans }}">
+            </div>
+            <div class="col-lg-5">
+                <label class="form-label">{{ 'Description'|trans }}</label>
+                <input class="form-control" name="description" maxlength="1000" placeholder="{{ 'Optional description'|trans }}">
             </div>
         </div>
 
@@ -59,12 +76,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const formData = new FormData(form);
-        FOSSBilling.api.admin.post('servicedownloadable/upload', formData,
+        FOSSBilling.api.admin.post('servicedownloadable/update', formData,
             function () {
                 if (submitButton) {
                     submitButton.disabled = false;
                 }
                 FOSSBilling.message("{{ 'File was uploaded'|trans }}");
+                window.location.reload();
             },
             function (error) {
                 if (submitButton) {

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
+use FOSSBilling\Http\CookieNames;
+
 class Session implements InjectionAwareInterface
 {
     private const string OBSOLETE_FLAG = 'fb_session_obsolete';
@@ -18,6 +20,7 @@ class Session implements InjectionAwareInterface
     private const int DEFAULT_REGENERATION_GRACE_PERIOD = 300;
 
     private ?\Pimple\Container $di = null;
+    private ?string $legacySessionCookie = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -39,6 +42,7 @@ class Session implements InjectionAwareInterface
             return;
         }
 
+        $this->configureCookieName();
         $this->canUseSession();
 
         if (!headers_sent()) {
@@ -64,6 +68,7 @@ class Session implements InjectionAwareInterface
 
         session_set_cookie_params($cookieParams);
         session_start();
+        $this->expireLegacySessionCookies();
 
         $this->handleObsoleteSession();
         $this->updateFingerprint();
@@ -132,52 +137,57 @@ class Session implements InjectionAwareInterface
     {
         $invalid = false;
         $sessionName = session_name();
-        $sessionID = session_id();
-        if ($sessionID === '') {
-            $sessionID = $sessionName !== false ? ($_COOKIE[$sessionName] ?? '') : '';
-        }
+        $sessionID = $this->resolveSessionId();
 
         if ($sessionID === '') {
             return;
         }
         $maxAge = time() - Config::getProperty('security.session_lifespan', 7200);
 
-        $fingerprint = new Fingerprint($this->di['request']);
-        $conn = $this->di['em']->getConnection();
-        $session = $conn->fetchAssociative('SELECT * FROM session WHERE id = :id', ['id' => $sessionID]);
+        $connection = $this->di['dbal'];
 
-        if (empty($session['fingerprint'])) {
+        try {
+            $session = $connection->fetchAssociative('SELECT fingerprint, created_at FROM session WHERE id = :id', ['id' => $sessionID]);
+
+            if ($session === false || empty($session['fingerprint'])) {
+                return;
+            }
+
+            if (empty($session['created_at'])) {
+                $createdAt = time();
+                $connection->executeStatement('UPDATE session SET created_at = :created_at WHERE id = :id', [
+                    'created_at' => $createdAt,
+                    'id' => $sessionID,
+                ]);
+                $session['created_at'] = $createdAt;
+            }
+        } catch (\Doctrine\DBAL\Exception) {
             return;
         }
 
-        if (empty($session['created_at'])) {
-            $conn->executeStatement('UPDATE session SET created_at = :ca WHERE id = :id', ['ca' => time(), 'id' => $sessionID]);
-            $session['created_at'] = time();
+        if (Config::getProperty('security.perform_session_fingerprinting', true)) {
+            $fingerprint = new Fingerprint($this->di['request']);
+            $storedFingerprint = json_decode((string) $session['fingerprint'], true);
+            if (!is_array($storedFingerprint) || !$fingerprint->checkFingerprint($storedFingerprint)) {
+                $invalid = true;
+                error_log("Session ID $sessionID has potentially been hijacked as it failed the fingerprint check. The session has automatically been destroyed.");
+            }
         }
 
-        $storedFingerprint = json_decode($session['fingerprint'] ?? '', true);
-        if (!$fingerprint->checkFingerprint($storedFingerprint) && Config::getProperty('security.perform_session_fingerprinting', true)) {
-            $invalid = true;
-            error_log("Session ID $sessionID has potentially been hijacked as it failed the fingerprint check. The session has automatically been destroyed.");
-        }
-
-        if ($session['created_at'] <= $maxAge) {
+        if ((int) $session['created_at'] <= $maxAge) {
             $invalid = true;
         }
 
         if ($invalid) {
-            $conn->executeStatement('DELETE FROM session WHERE id = :id', ['id' => $sessionID]);
-            $cookieParams = session_get_cookie_params();
-            $cookieOptions = [
-                'expires' => time() - 3600,
-                'path' => $cookieParams['path'],
-                'domain' => $cookieParams['domain'],
-                'secure' => $cookieParams['secure'],
-                'httponly' => $cookieParams['httponly'],
-            ];
-            $cookieOptions['samesite'] = $cookieParams['samesite'];
-            setcookie($sessionName, '', $cookieOptions);
-            unset($_COOKIE[$sessionName]);
+            try {
+                $connection->executeStatement('DELETE FROM session WHERE id = :id', ['id' => $sessionID]);
+            } catch (\Doctrine\DBAL\Exception) {
+                // The cookie is still expired below so the unusable session is not reused.
+            }
+            if ($sessionName !== false) {
+                setcookie($sessionName, '', $this->getSessionCookieOptions(time() - 3600));
+                unset($_COOKIE[$sessionName]);
+            }
         }
     }
 
@@ -186,33 +196,86 @@ class Session implements InjectionAwareInterface
      */
     private function updateFingerprint(): void
     {
-        $sessionID = session_id();
-        if ($sessionID === '') {
-            $sessionName = session_name();
-            $sessionID = $sessionName !== false ? ($_COOKIE[$sessionName] ?? '') : '';
-        }
+        $sessionID = $this->resolveSessionId();
 
         if ($sessionID === '') {
             return;
         }
 
-        $conn = $this->di['em']->getConnection();
-        $session = $conn->fetchAssociative('SELECT * FROM session WHERE id = :id', ['id' => $sessionID]);
-        $fingerprint = new Fingerprint($this->di['request']);
+        $connection = $this->di['dbal'];
 
-        if (Config::getProperty('security.perform_session_fingerprinting', true)) {
-            $updatedFingerprint = $fingerprint->fingerprint();
-        } else {
-            $updatedFingerprint = [];
-        }
+        try {
+            $session = $connection->fetchAssociative('SELECT id FROM session WHERE id = :id', ['id' => $sessionID]);
 
-        // Fix for the installer which temporarily uses FS sessions before FOSSBilling is completely setup.
-        if ($session !== false) {
-            $conn->executeStatement('UPDATE session SET fingerprint = :fp WHERE id = :id', [
-                'fp' => json_encode($updatedFingerprint),
+            if (Config::getProperty('security.perform_session_fingerprinting', true)) {
+                $updatedFingerprint = (new Fingerprint($this->di['request']))->fingerprint();
+            } else {
+                $updatedFingerprint = [];
+            }
+
+            // Fix for the installer which temporarily uses FS sessions before FOSSBilling is completely setup.
+            if ($session === false) {
+                return;
+            }
+
+            $connection->executeStatement('UPDATE session SET fingerprint = :fingerprint WHERE id = :id', [
+                'fingerprint' => json_encode($updatedFingerprint, JSON_THROW_ON_ERROR),
                 'id' => $sessionID,
             ]);
+        } catch (\Doctrine\DBAL\Exception|\JsonException) {
+            return;
         }
+    }
+
+    private function resolveSessionId(): string
+    {
+        $sessionID = session_id();
+        if ($sessionID !== '') {
+            return $sessionID;
+        }
+
+        $sessionName = session_name();
+
+        return $sessionName !== false ? ($_COOKIE[$sessionName] ?? '') : '';
+    }
+
+    private function configureCookieName(): void
+    {
+        $previousName = session_name();
+
+        session_name(CookieNames::SESSION);
+
+        if (
+            $previousName === false
+            || $previousName === CookieNames::SESSION
+            || !isset($_COOKIE[$previousName])
+        ) {
+            return;
+        }
+
+        $this->legacySessionCookie = $previousName;
+        if (isset($_COOKIE[CookieNames::SESSION])) {
+            return;
+        }
+
+        $sessionId = $_COOKIE[$previousName];
+        if (
+            is_string($sessionId)
+            && $sessionId !== ''
+            && preg_match('/^[A-Za-z0-9,-]+$/D', $sessionId) === 1
+        ) {
+            session_id($sessionId);
+        }
+    }
+
+    private function expireLegacySessionCookies(): void
+    {
+        if ($this->legacySessionCookie === null || headers_sent()) {
+            return;
+        }
+
+        setcookie($this->legacySessionCookie, '', $this->getSessionCookieOptions(time() - 3600));
+        unset($_COOKIE[$this->legacySessionCookie]);
     }
 
     private function handleObsoleteSession(): void
@@ -237,19 +300,27 @@ class Session implements InjectionAwareInterface
         $sessionName = session_name();
         $sessionId = session_id();
         if ($sessionId !== '') {
-            $params = session_get_cookie_params();
-
-            setcookie($sessionName, $sessionId, [
-                'expires' => 0,
-                'path' => $params['path'],
-                'domain' => $params['domain'],
-                'secure' => $params['secure'],
-                'httponly' => $params['httponly'],
-                'samesite' => $params['samesite'],
-            ]);
+            setcookie($sessionName, $sessionId, $this->getSessionCookieOptions(0));
 
             $_COOKIE[$sessionName] = $sessionId;
         }
+    }
+
+    /**
+     * @return array{expires: int, path: string, domain: string, secure: bool, httponly: bool, samesite: string}
+     */
+    private function getSessionCookieOptions(int $expires): array
+    {
+        $params = session_get_cookie_params();
+
+        return [
+            'expires' => $expires,
+            'path' => $params['path'],
+            'domain' => $params['domain'],
+            'secure' => $params['secure'],
+            'httponly' => $params['httponly'],
+            'samesite' => $params['samesite'],
+        ];
     }
 
     private function clearAuthenticationData(): void

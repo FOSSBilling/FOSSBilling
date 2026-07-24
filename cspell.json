@@ -320,7 +320,6 @@
         "tailwindcss",
         "flexbox",
         "juoda",
-        "fb_sid",
         "texgt",
         "Domaincan",
         "datagrid",
@@ -535,7 +534,9 @@
         "docstrings",
         "tablesort",
         "Brien",
-        "whsec"
+        "whsec",
+        "IDNA",
+        "Namingo"
     ],
     "ignorePaths": [
         "node_modules/**",

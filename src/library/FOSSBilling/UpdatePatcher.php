@@ -501,6 +501,7 @@ class UpdatePatcher implements InjectionAwareInterface
             89 => 'patch89',
             90 => 'patch90',
             91 => 'patch91',
+            92 => 'patch92',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2435,6 +2436,128 @@ class UpdatePatcher implements InjectionAwareInterface
             'UPDATE pay_gateway SET allow_single = 1 WHERE gateway = :gateway AND allow_single = 0',
             ['gateway' => 'ClientBalance']
         );
+    }
+
+    private function patch92(): void
+    {
+        if (!$this->tableExists('service_downloadable_file')) {
+            $this->executeSql(
+                'CREATE TABLE `service_downloadable_file` (
+                    `id` BIGINT NOT NULL AUTO_INCREMENT,
+                    `service_downloadable_id` BIGINT NOT NULL,
+                    `file_key` VARCHAR(32) NOT NULL,
+                    `filename` VARCHAR(255) NOT NULL,
+                    `stored_filename` VARCHAR(64) NOT NULL,
+                    `label` VARCHAR(255) DEFAULT NULL,
+                    `description` TEXT DEFAULT NULL,
+                    `downloads` INT NOT NULL DEFAULT 0,
+                    `sort_order` INT NOT NULL DEFAULT 0,
+                    `created_at` DATETIME DEFAULT NULL,
+                    `updated_at` DATETIME DEFAULT NULL,
+                    PRIMARY KEY (`id`),
+                    UNIQUE KEY `service_downloadable_file_key_idx` (`service_downloadable_id`, `file_key`),
+                    KEY `service_downloadable_file_stored_filename_idx` (`stored_filename`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8'
+            );
+        }
+
+        $productFiles = [];
+        $products = $this->fetchAll("SELECT id, config FROM product WHERE type = 'downloadable'");
+        foreach ($products as $product) {
+            $config = json_decode((string) $product['config'], true) ?: [];
+            if (!isset($config['files']) && !empty($config['filename']) && !empty($config['stored_filename'])) {
+                $config['files'] = [[
+                    'id' => bin2hex(random_bytes(16)),
+                    'filename' => $config['filename'],
+                    'stored_filename' => $config['stored_filename'],
+                    'label' => null,
+                    'description' => null,
+                ]];
+            }
+            unset($config['filename'], $config['stored_filename']);
+            $productFiles[(int) $product['id']] = $config['files'] ?? [];
+            $this->executeSql('UPDATE product SET config = :config WHERE id = :id', [
+                'config' => json_encode($config, JSON_THROW_ON_ERROR),
+                'id' => $product['id'],
+            ]);
+        }
+
+        $orders = $this->fetchAll("SELECT id, product_id, config FROM client_order WHERE service_type = 'downloadable'");
+        foreach ($orders as $order) {
+            $config = json_decode((string) $order['config'], true) ?: [];
+            if (!isset($config['files']) && !empty($config['filename']) && !empty($config['stored_filename'])) {
+                $matchingProductFile = null;
+                foreach ($productFiles[(int) $order['product_id']] ?? [] as $productFile) {
+                    if (($productFile['stored_filename'] ?? null) === $config['stored_filename']) {
+                        $matchingProductFile = $productFile;
+
+                        break;
+                    }
+                }
+                $config['files'] = [$matchingProductFile ?? [
+                    'id' => bin2hex(random_bytes(16)),
+                    'filename' => $config['filename'],
+                    'stored_filename' => $config['stored_filename'],
+                    'label' => null,
+                    'description' => null,
+                ]];
+            }
+            unset($config['filename'], $config['stored_filename']);
+            $this->executeSql('UPDATE client_order SET config = :config WHERE id = :id', [
+                'config' => json_encode($config, JSON_THROW_ON_ERROR),
+                'id' => $order['id'],
+            ]);
+        }
+
+        if ($this->tableHasColumn('service_downloadable', 'filename')) {
+            $services = $this->fetchAll(
+                "SELECT sd.id, sd.filename, sd.stored_filename, sd.downloads, sd.created_at, sd.updated_at, co.config
+                 FROM service_downloadable sd
+                 LEFT JOIN client_order co ON co.service_type = 'downloadable' AND co.service_id = sd.id"
+            );
+            foreach ($services as $service) {
+                $config = json_decode((string) ($service['config'] ?? ''), true) ?: [];
+                $files = $config['files'] ?? [];
+                if ($files === [] && !empty($service['filename']) && !empty($service['stored_filename'])) {
+                    $files = [[
+                        'id' => bin2hex(random_bytes(16)),
+                        'filename' => $service['filename'],
+                        'stored_filename' => $service['stored_filename'],
+                        'label' => null,
+                        'description' => null,
+                    ]];
+                }
+
+                foreach ($files as $position => $file) {
+                    if (empty($file['id']) || empty($file['filename']) || empty($file['stored_filename'])) {
+                        continue;
+                    }
+                    $this->executeSql(
+                        'INSERT INTO service_downloadable_file (service_downloadable_id, file_key, filename, stored_filename, label, description, downloads, sort_order, created_at, updated_at)
+                         VALUES (:service_id, :file_key, :filename, :stored_filename, :label, :description, :downloads, :sort_order, :created_at, :updated_at)
+                         ON DUPLICATE KEY UPDATE filename = VALUES(filename), stored_filename = VALUES(stored_filename), label = VALUES(label), description = VALUES(description), downloads = VALUES(downloads), sort_order = VALUES(sort_order), updated_at = VALUES(updated_at)',
+                        [
+                            'service_id' => $service['id'],
+                            'file_key' => $file['id'],
+                            'filename' => $file['filename'],
+                            'stored_filename' => $file['stored_filename'],
+                            'label' => $file['label'] ?? null,
+                            'description' => $file['description'] ?? null,
+                            'downloads' => $position === 0 ? (int) ($service['downloads'] ?? 0) : 0,
+                            'sort_order' => $position,
+                            'created_at' => $service['created_at'],
+                            'updated_at' => $service['updated_at'],
+                        ]
+                    );
+                }
+            }
+        }
+
+        foreach (['filename', 'stored_filename', 'downloads'] as $column) {
+            if ($this->tableHasColumn('service_downloadable', $column)) {
+                $this->executeSql(sprintf('ALTER TABLE `service_downloadable` DROP COLUMN `%s`', $column));
+            }
+        }
     }
 
     private function generateDownloadableStoredFilename(): string

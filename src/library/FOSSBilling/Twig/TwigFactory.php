@@ -17,6 +17,7 @@ use Box\Mod\Staff\Entity\Admin;
 use DebugBar\Bridge\Twig\NamespacedTwigProfileCollector;
 use DebugBar\StandardDebugBar;
 use FOSSBilling\Config;
+use FOSSBilling\Http\CookieNames;
 use FOSSBilling\Http\RequestFactory;
 use FOSSBilling\i18n;
 use FOSSBilling\Tools;
@@ -82,7 +83,7 @@ class TwigFactory
             }
         }
 
-        return i18n::getActiveTimezone($this->di['request'], $clientTimezone, $adminTimezone);
+        return i18n::getActiveTimezone($this->di['request'], $clientTimezone, $adminTimezone, $this->di['cookie_queue']);
     }
 
     /**
@@ -471,16 +472,31 @@ class TwigFactory
     public function configureCsrf(): void
     {
         $csrfToken = $this->getCsrfToken();
+        $request = $this->di['request'];
+        $secure = $request->isSecure();
         $this->di['cookie_queue']->queue(
-            'csrf_token',
+            CookieNames::CSRF,
             $csrfToken,
             0,
             '/',
             null,
-            $this->di['request']->isSecure(),
+            $secure,
             false,
             'Strict',
         );
+
+        if ($request->cookies->has(CookieNames::LEGACY_CSRF)) {
+            $this->di['cookie_queue']->queue(
+                CookieNames::LEGACY_CSRF,
+                '',
+                time() - 3600,
+                '/',
+                null,
+                $secure,
+                false,
+                'Strict',
+            );
+        }
     }
 
     private function getCsrfToken(): string

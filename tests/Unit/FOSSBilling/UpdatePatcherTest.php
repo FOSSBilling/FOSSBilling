@@ -6,13 +6,24 @@ use FOSSBilling\UpdatePatcher;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
-test('client balance gateway repair follows the legacy email template repair', function (): void {
+test('downloadable file migration follows the client balance gateway repair', function (): void {
     $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 89);
 
     expect($patches)->toHaveKey(90)
         ->and($patches[90][1])->toBe('patch90')
         ->and($patches)->toHaveKey(91)
-        ->and($patches[91][1])->toBe('patch91');
+        ->and($patches[91][1])->toBe('patch91')
+        ->and($patches)->toHaveKey(92)
+        ->and($patches[92][1])->toBe('patch92');
+});
+
+test('fresh installs start at the latest patch level', function (): void {
+    $content = file_get_contents(Path::join(PATH_ROOT, 'install', 'sql', 'content.sql'));
+    expect($content)->toBeString();
+
+    preg_match("/\\(1,'last_patch','(\\d+)'/", $content, $matches);
+
+    expect((int) ($matches[1] ?? 0))->toBe((new UpdatePatcher())->latestPatchLevel());
 });
 
 test('client balance gateway patch restores one-time payments', function (): void {

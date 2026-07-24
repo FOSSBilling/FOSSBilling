@@ -40,7 +40,7 @@
 	<p>Hello {{ c.first_name|default('') }} {{ c.last_name|default('') }},</p>
 	<p>Your <strong>{{ order.title|default('') }}</strong> is now activated and ready for download.</p>
 
-    <p>You may <a href="{{'login'|url(query: { 'email' : c.email|default('') }, area: 'client') }}" target="_blank">login</a> or <a href='{{ "servicedownloadable/get-file/#{order.id|default('')}"|url(area: 'client') }}' target="_blank">download your order now.</a>
+    <p>You may <a href="{{'login'|url(query: { 'email' : c.email|default('') }, area: 'client') }}" target="_blank">login</a> or <a href='{{ "order/service/manage/#{order.id|default('')}"|url(area: 'client') }}' target="_blank">view your downloads now.</a>
 
 	<div class="signature">{{ guest.system_email.signature }}</div>
 </body>

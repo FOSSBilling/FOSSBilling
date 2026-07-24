@@ -63,7 +63,7 @@ describe('client support tickets', () => {
     cy.contains('button', 'Close Ticket').should('not.exist');
 
     cy.then(() => {
-      cy.getCookie('csrf_token').should('exist').then((cookie) => {
+      cy.getCookie('fossbilling_csrf').should('exist').then((cookie) => {
         cy.request({
           url: '/api/client/support/ticket_get',
           qs: {
