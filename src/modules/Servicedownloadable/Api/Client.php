@@ -46,7 +46,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
             throw new \FOSSBilling\Exception('Order is not activated');
         }
 
-        $file = $s->findFileById((int) $data['file_id']);
+        $file = $this->getDi()['em']->getRepository(ServiceDownloadableFile::class)->find((int) $data['file_id']);
         if (!$file instanceof ServiceDownloadableFile) {
             throw new \FOSSBilling\InformationException('File not found');
         }

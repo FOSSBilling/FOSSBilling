@@ -14,8 +14,6 @@ namespace Box\Mod\Activity;
 use Box\Mod\Activity\Entity\ActivityAdminHistory;
 use Box\Mod\Activity\Entity\ActivityClientHistory;
 use Box\Mod\Activity\Entity\ActivitySystem;
-use Box\Mod\Activity\Repository\ActivityClientHistoryRepository;
-use Box\Mod\Activity\Repository\ActivitySystemRepository;
 use Box\Mod\Client\Entity\Client;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Types\Types;
@@ -69,12 +67,12 @@ class Service implements InjectionAwareInterface
             ? null
             : $this->di['request']->getClientIp();
 
-        $activity = (new ActivitySystem())
-            ->setClientId(isset($data['client_id']) ? (int) $data['client_id'] : null)
-            ->setAdminId(isset($data['admin_id']) ? (int) $data['admin_id'] : null)
-            ->setPriority(isset($data['priority']) ? (int) $data['priority'] : null)
-            ->setMessage((string) $data['message'])
-            ->setIp($ip);
+        $activity = new ActivitySystem();
+        $activity->setClientId(isset($data['client_id']) ? (int) $data['client_id'] : null);
+        $activity->setAdminId(isset($data['admin_id']) ? (int) $data['admin_id'] : null);
+        $activity->setPriority(isset($data['priority']) ? (int) $data['priority'] : null);
+        $activity->setMessage((string) $data['message']);
+        $activity->setIp($ip);
 
         $this->di['em']->persist($activity);
         $this->di['em']->flush();
@@ -88,9 +86,9 @@ class Service implements InjectionAwareInterface
         $extensionService = $di['mod_service']('extension');
         $ip = $extensionService->isExtensionActive('mod', 'demo') ? null : $params['ip'];
 
-        $history = (new ActivityClientHistory())
-            ->setClientId((int) $params['id'])
-            ->setIp($ip);
+        $history = new ActivityClientHistory();
+        $history->setClientId((int) $params['id']);
+        $history->setIp($ip);
 
         $di['em']->persist($history);
         $di['em']->flush();
@@ -104,9 +102,9 @@ class Service implements InjectionAwareInterface
         $extensionService = $di['mod_service']('extension');
         $ip = $extensionService->isExtensionActive('mod', 'demo') ? null : $params['ip'];
 
-        $history = (new ActivityAdminHistory())
-            ->setAdminId((int) $params['id'])
-            ->setIp($ip);
+        $history = new ActivityAdminHistory();
+        $history->setAdminId((int) $params['id']);
+        $history->setIp($ip);
 
         $di['em']->persist($history);
         $di['em']->flush();
@@ -269,12 +267,7 @@ public function rmByClient(Client $client): void
             return;
         }
 
-        /** @var ActivityClientHistoryRepository $clientHistoryRepository */
-        $clientHistoryRepository = $this->di['em']->getRepository(ActivityClientHistory::class);
-        $clientHistoryRepository->deleteByClientId((int) $clientId);
-
-        /** @var ActivitySystemRepository $activitySystemRepository */
-        $activitySystemRepository = $this->di['em']->getRepository(ActivitySystem::class);
-        $activitySystemRepository->deleteByClientId((int) $clientId);
+        $this->di['dbal']->delete('activity_client_history', ['client_id' => $clientId]);
+        $this->di['dbal']->delete('activity_system', ['client_id' => $clientId]);
     }
 }
