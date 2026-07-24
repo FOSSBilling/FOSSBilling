@@ -14,9 +14,9 @@ class OrderMetaRepository extends EntityRepository
      */
     public function getPairsForOrder(int $orderId): array
     {
-        $metas = $this->findBy(['clientOrderId' => $orderId]);
+        $metadata = $this->findBy(['clientOrderId' => $orderId]);
         $pairs = [];
-        foreach ($metas as $meta) {
+        foreach ($metadata as $meta) {
             $pairs[$meta->getName()] = $meta->getValue();
         }
 
