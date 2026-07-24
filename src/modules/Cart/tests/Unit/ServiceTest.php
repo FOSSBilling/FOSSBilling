@@ -165,6 +165,58 @@ test('getSessionCart creates a new cart when one does not exist', function (?int
     [null, 'never', 'atLeastOnce'],
 ]);
 
+test('getSessionCart reloads the existing cart after a concurrent insert wins', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldAllowMockingProtectedMethods();
+
+    $sessionId = 'rrcpqo7tkjh14d2vmf0car64k7';
+    $currency = createEntity(Currency::class, ['id' => 1]);
+    $winningCart = createEntity(Cart::class, ['id' => 2, 'session_id' => $sessionId]);
+
+    $initialRepository = Mockery::mock(CartRepository::class);
+    $initialRepository->shouldReceive('findBySessionId')->once()->with($sessionId)->andReturn(null);
+
+    $winningRepository = Mockery::mock(CartRepository::class);
+    $winningRepository->shouldReceive('findBySessionId')->once()->with($sessionId)->andReturn($winningCart);
+
+    $driverException = new class extends Exception implements Doctrine\DBAL\Driver\Exception {
+        public function getSQLState(): ?string
+        {
+            return '23000';
+        }
+    };
+    $duplicateKeyException = new Doctrine\DBAL\Exception\UniqueConstraintViolationException($driverException, null);
+
+    $initialEntityManager = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $initialEntityManager->shouldReceive('getRepository')->once()->with(Cart::class)->andReturn($initialRepository);
+    $initialEntityManager->shouldReceive('persist')->once();
+    $initialEntityManager->shouldReceive('flush')->once()->andThrow($duplicateKeyException);
+
+    $winningEntityManager = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $winningEntityManager->shouldReceive('getRepository')->once()->with(Cart::class)->andReturn($winningRepository);
+
+    $currencyRepository = Mockery::mock(CurrencyRepository::class);
+    $currencyRepository->shouldReceive('findDefault')->once()->andReturn($currency);
+    $currencyService = Mockery::mock(CurrencyService::class);
+    $currencyService->shouldReceive('getCurrencyRepository')->once()->andReturn($currencyRepository);
+
+    $session = Mockery::mock(FOSSBilling\Session::class);
+    $session->shouldReceive('getId')->once()->andReturn($sessionId);
+    $session->shouldReceive('get')->once()->with('client_id')->andReturn(null);
+
+    $di = container();
+    $di['em'] = $initialEntityManager;
+    $di['session'] = $session;
+    $di['mod_service'] = $di->protect(fn () => $currencyService);
+    $serviceMock->shouldReceive('resetEntityManager')->once()->andReturnUsing(function () use ($di, $winningEntityManager): void {
+        unset($di['em']);
+        $di['em'] = $winningEntityManager;
+    });
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->getSessionCart())->toBe($winningCart);
+});
+
 test('isStockAvailable returns false when product out of stock', function (): void {
     $product = createProductEntity();
     $productService = Mockery::mock(ProductService::class);
@@ -1402,7 +1454,10 @@ test('toApiArray returns expected structure', function (): void {
         'discount' => 0,
         'period' => '1M',
     ];
-    $serviceMock->shouldReceive('cartProductToApiArray')->atLeast()->once()->andReturn($cartProductApiArray);
+    $serviceMock->shouldReceive('cartProductToApiArray')
+        ->once()
+        ->with($cartProductModel, $cartModel, [$cartProductModel])
+        ->andReturn($cartProductApiArray);
 
     $currencyService = Mockery::mock(CurrencyService::class)->shouldIgnoreMissing();
 

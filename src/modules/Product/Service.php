@@ -1402,8 +1402,17 @@ class Service implements InjectionAwareInterface
         $productId = $order instanceof Order ? $order->getProductId() : $order->product_id;
         $discountAmount = (float) ($order instanceof Order ? $order->getDiscount() : $order->discount);
         $currency = (string) ($order instanceof Order ? $order->getCurrency() : $order->currency);
-        $promo = $this->findPromoById((int) $promoId);
         $product = $this->findProductById((int) $productId);
+
+        if ($product->getType() !== self::DOMAIN) {
+            try {
+                $promo = $this->findPromoById((int) $promoId);
+            } catch (\FOSSBilling\Exception) {
+                return null;
+            }
+        } else {
+            $promo = $this->findPromoById((int) $promoId);
+        }
 
         if ($product->getType() === self::DOMAIN) {
             $configValue = $order instanceof Order ? $order->getConfig() : $order->config;

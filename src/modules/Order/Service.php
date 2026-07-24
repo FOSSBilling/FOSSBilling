@@ -1510,7 +1510,7 @@ class Service implements InjectionAwareInterface
         $currentStatus = $this->orderStatus($order);
         if (isset($data['status']) && $data['status'] !== $currentStatus) {
             if (!in_array($data['status'], Order::getValidStatuses(), true)) {
-                throw new InformationException('Invalid order status: :status', [':status:' => $data['status']]);
+                throw new InformationException('Invalid order status: :status', [':status' => $data['status']]);
             }
             if ($order instanceof Order) {
                 $order->setStatus($data['status']);
@@ -1602,7 +1602,7 @@ class Service implements InjectionAwareInterface
             if ($logic == 'from_today') {
                 $from_time = time();
             } elseif ($logic == 'from_greater') {
-                $expiresTimestamp = $order instanceof Order ? $expiresAt->getTimestamp() : strtotime((string) $expiresAt);
+                $expiresTimestamp = $expiresAt === null ? time() : ($order instanceof Order ? $expiresAt->getTimestamp() : strtotime((string) $expiresAt));
                 if ($expiresTimestamp > time()) {
                     $from_time = $expiresTimestamp;
                 } else {
@@ -2114,7 +2114,7 @@ class Service implements InjectionAwareInterface
     public function orderStatusAdd(Order|\Model_ClientOrder $order, $status, $notes = null): bool
     {
         if (!in_array($status, Order::getValidStatuses(), true)) {
-            throw new InformationException('Invalid order status: :status', [':status:' => $status]);
+            throw new InformationException('Invalid order status: :status', [':status' => $status]);
         }
 
         $orderId = $this->orderId($order);

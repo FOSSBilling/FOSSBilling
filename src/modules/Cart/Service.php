@@ -20,6 +20,8 @@ use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Product\Entity\Promo;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
@@ -34,6 +36,12 @@ class Service implements InjectionAwareInterface
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
+    }
+
+    protected function resetEntityManager(): void
+    {
+        unset($this->di['em']);
+        $this->di['em'] = EntityManagerFactory::create();
     }
 
     public function getCartRepository(): CartRepository
@@ -250,8 +258,17 @@ class Service implements InjectionAwareInterface
         $cart = new Cart();
         $cart->setSessionId($sessionID);
         $cart->setCurrencyId($currency->getId());
-        $this->di['em']->persist($cart);
-        $this->di['em']->flush();
+
+        try {
+            $this->di['em']->persist($cart);
+            $this->di['em']->flush();
+        } catch (UniqueConstraintViolationException $exception) {
+            $this->resetEntityManager();
+            $cart = $this->getCartRepository()->findBySessionId($sessionID);
+            if (!$cart instanceof Cart) {
+                throw $exception;
+            }
+        }
 
         return $cart;
     }
@@ -594,7 +611,7 @@ class Service implements InjectionAwareInterface
         $cart_discount = 0;
         $items_discount = 0;
         foreach ($products as $product) {
-            $p = $this->cartProductToApiArray($product);
+            $p = $this->cartProductToApiArray($product, $model, $products);
             $total += $p['total'] + $p['setup_price'];
             $items_discount += $p['discount'];
             $items[] = $p;
@@ -1001,12 +1018,15 @@ class Service implements InjectionAwareInterface
      * Function checks if product is related to other products in cart
      * If relation exists then count discount for this.
      */
-    protected function getRelatedItemsDiscount(Cart|\Model_Cart $cart, CartProduct|\Model_CartProduct $model): float
-    {
+    protected function getRelatedItemsDiscount(
+        Cart|\Model_Cart $cart,
+        CartProduct|\Model_CartProduct $model,
+        ?array $cartProducts = null,
+    ): float {
         $config = $this->getItemConfig($model);
 
         $list = [];
-        $products = $this->getCartProducts($cart);
+        $products = $cartProducts ?? $this->getCartProducts($cart);
         foreach ($products as $p) {
             $item = [
                 'id' => $this->cartProductId($p),
@@ -1047,15 +1067,18 @@ class Service implements InjectionAwareInterface
         return (string) $product->getTitle();
     }
 
-    public function cartProductToApiArray(CartProduct|\Model_CartProduct $model): array
-    {
+    public function cartProductToApiArray(
+        CartProduct|\Model_CartProduct $model,
+        Cart|\Model_Cart|null $cart = null,
+        ?array $cartProducts = null,
+    ): array {
         $productView = $this->getProductService()->getCartProductViewData($model);
         $config = $productView['config'];
         $setup = $productView['setup_price'];
         $price = $productView['price'];
         $qty = $productView['quantity'];
 
-        [$discount_price, $discount_setup] = $this->getProductDiscount($model, $setup);
+        [$discount_price, $discount_setup] = $this->getProductDiscount($model, $setup, $cart, $cartProducts);
 
         $discount_total = $discount_price + $discount_setup;
 
@@ -1082,15 +1105,21 @@ class Service implements InjectionAwareInterface
         ]);
     }
 
-    public function getProductDiscount(CartProduct|\Model_CartProduct $cartProduct, $setup): array
-    {
-        $cart = $cartProduct instanceof CartProduct
-            ? $this->getCartRepository()->find((int) $this->cartProductCartId($cartProduct))
-            : $this->di['db']->findOne('Cart', 'id = ?', [(int) $this->cartProductCartId($cartProduct)]);
+    public function getProductDiscount(
+        CartProduct|\Model_CartProduct $cartProduct,
+        $setup,
+        Cart|\Model_Cart|null $cart = null,
+        ?array $cartProducts = null,
+    ): array {
+        if ($cart === null) {
+            $cart = $cartProduct instanceof CartProduct
+                ? $this->getCartRepository()->find((int) $this->cartProductCartId($cartProduct))
+                : $this->di['db']->findOne('Cart', 'id = ?', [(int) $this->cartProductCartId($cartProduct)]);
+        }
         if (!$cart instanceof Cart && !$cart instanceof \Model_Cart) {
             throw new \FOSSBilling\Exception('Cart not found');
         }
-        $discount_price = $this->getRelatedItemsDiscount($cart, $cartProduct);
+        $discount_price = $this->getRelatedItemsDiscount($cart, $cartProduct, $cartProducts);
         $discount_setup = 0;
         if ($this->cartPromoId($cart)) {
             $promo = $this->getProductService()->findPromoById((int) $this->cartPromoId($cart));

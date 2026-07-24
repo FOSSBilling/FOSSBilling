@@ -2074,6 +2074,30 @@ test('renewFromOrder extends expiration', function (): void {
     expect($clientOrderModel->status)->toEqual(Order::STATUS_ACTIVE);
 });
 
+test('renewFromOrder treats a missing Doctrine expiration as now', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('_callOnService')->once();
+    $serviceMock->shouldReceive('saveStatusChange')->once()->with(Mockery::type(Order::class), 'Order renewed');
+
+    $order = createEntity(Order::class, ['period' => '1Y']);
+    $periodMock = Mockery::mock(Box_Period::class);
+    $periodMock->shouldReceive('getExpirationTime')
+        ->once()
+        ->with(Mockery::on(static fn (int $from): bool => abs(time() - $from) <= 1))
+        ->andReturn(strtotime('2027-01-01 00:00:00'));
+
+    $di = container();
+    $di['mod_config'] = $di->protect(fn ($name): array => ['order_renewal_logic' => 'from_greater']);
+    $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
+
+    $serviceMock->setDi($di);
+    $serviceMock->renewFromOrder($order);
+
+    expect($order->getExpiresAt())->toEqual(new DateTime('2027-01-01 00:00:00'))
+        ->and($order->getStatus())->toBe(Order::STATUS_ACTIVE);
+});
+
 test('renewFromOrder extends free first term on first paid renewal', function (): void {
     $clientOrderModel = createEntity(Order::class);
     $clientOrderModel->period = '1Y';

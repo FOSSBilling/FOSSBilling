@@ -1449,6 +1449,26 @@ test('get renewal promo adjustment for domain order', function (): void {
     expect($result['currency'])->toBe('EUR');
 });
 
+test('get renewal promo adjustment ignores missing promo for non-domain order', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $order = createEntity(Box\Mod\Order\Entity\Order::class, [
+        'promo_id' => 15,
+        'promo_recurring' => true,
+        'product_id' => 17,
+        'discount' => 2.0,
+        'currency' => 'EUR',
+    ]);
+    $product = productTestCreateProductEntity(17)->setType('service');
+
+    $serviceMock->shouldReceive('findProductById')->once()->with(17)->andReturn($product);
+    $serviceMock->shouldReceive('findPromoById')
+        ->once()
+        ->with(15)
+        ->andThrow(new FOSSBilling\InformationException('Promo not found'));
+
+    expect($serviceMock->getRenewalPromoAdjustment($order, 20.0, 1.0))->toBeNull();
+});
+
 test('get product discount uses product order line config', function (): void {
     $service = new Service();
     $promo = new Promo();

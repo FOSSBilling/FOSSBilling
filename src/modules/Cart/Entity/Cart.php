@@ -9,7 +9,7 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Cart\Repository\CartRepository::class)]
 #[ORM\Table(name: 'cart')]
-#[ORM\Index(name: 'session_id_idx', columns: ['session_id'])]
+#[ORM\UniqueConstraint(name: 'session_id_idx', columns: ['session_id'])]
 #[ORM\Index(name: 'currency_id_idx', columns: ['currency_id'])]
 #[ORM\Index(name: 'promo_id_idx', columns: ['promo_id'])]
 #[ORM\HasLifecycleCallbacks]
