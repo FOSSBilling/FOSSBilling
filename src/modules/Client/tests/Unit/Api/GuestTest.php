@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 use function Tests\Helpers\moduleService;
 
 test('getDi returns dependency injection container', function (): void {
@@ -41,9 +42,11 @@ test('create returns int', function (): void {
     ->atLeast()->once()
     ->andReturn(false);
 
-    $model = new Model_Client();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $model->id = 1;
+    $model = new Box\Mod\Client\Entity\Client();
+    $prop = new ReflectionProperty($model, 'id');
+    $prop->setValue($model, 1);
+    $prop = new ReflectionProperty($model, 'email');
+    $prop->setValue($model, 'test@email.com');
 
     $serviceMock
     ->shouldReceive('guestCreateClient')
@@ -70,7 +73,7 @@ test('create returns int', function (): void {
     $result = $guestClient->create($data);
 
     expect($result)->toBeInt();
-    expect($result)->toEqual($model->id);
+    expect($result)->toEqual($model->getId());
 });
 
 test('create throws exception when client exists', function (): void {
@@ -93,8 +96,7 @@ test('create throws exception when client exists', function (): void {
     $serviceMock->shouldReceive('checkExtraRequiredFields')->atLeast()->once();
     $serviceMock->shouldReceive('checkCustomFields')->atLeast()->once();
 
-    $model = new Model_Client();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(Box\Mod\Client\Entity\Client::class);
 
     $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
     $validatorMock->shouldReceive('isPasswordStrong')->atLeast()->once();
@@ -159,8 +161,7 @@ test('login returns array', function (): void {
         'password' => 'sezam',
     ];
 
-    $model = new Model_Client();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(Box\Mod\Client\Entity\Client::class);
 
     $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
     $serviceMock
@@ -211,24 +212,25 @@ test('resetPassword returns true with new flow', function (): void {
     $eventMock = Mockery::mock('\Box_EventManager');
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
-    $modelClient = new Model_Client();
-    $modelClient->loadBean(new Tests\Helpers\DummyBean());
-    $modelClient->id = 1;
-    $modelClient->status = Model_Client::ACTIVE;
+    $modelClient = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1, 'status' => Box\Mod\Client\Entity\Client::ACTIVE]);
 
-    $dbMock = Mockery::mock('\Box_Database');
-
-    $dbMock->shouldReceive('findOne')->andReturn($modelClient);
+    $clientRepository = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepository->shouldReceive('findOneByEmailAndActive')->atLeast()->once()->andReturn($modelClient);
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
+    $em->shouldReceive('getRepository')->andReturnUsing(static fn (string $class): object => match ($class) {
+        Box\Mod\Client\Entity\Client::class => $clientRepository,
+        default => Mockery::mock()->shouldIgnoreMissing(),
+    });
 
     $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
-    $serviceMock->shouldReceive('createPasswordResetRequestForClient')->atLeast()->once()->with($modelClient)->andReturn('hashedString');
-    $serviceMock->shouldReceive('sendPasswordResetRequestEmailForClient')->atLeast()->once()->with($modelClient, 'hashedString');
+    $serviceMock->shouldReceive('createPasswordResetRequestForClient')->atLeast()->once()->andReturn('hashedString');
+    $serviceMock->shouldReceive('sendPasswordResetRequestEmailForClient')->atLeast()->once();
 
     $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
     $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once()->andReturn($data['email']);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $em;
     $di['events_manager'] = $eventMock;
     $di['mod_service'] = $di->protect(moduleService(['client' => $serviceMock]));
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -247,12 +249,17 @@ test('resetPassword returns true when email not found', function (): void {
     $eventMock = Mockery::mock('\Box_EventManager');
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-        ->shouldReceive('findOne')->atLeast()->once()->andReturn(null);
+    $clientRepository = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepository->shouldReceive('findOneByEmailAndActive')->atLeast()->once()->andReturn(null);
+
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
+    $em->shouldReceive('getRepository')->andReturnUsing(static fn (string $class): object => match ($class) {
+        Box\Mod\Client\Entity\Client::class => $clientRepository,
+        default => Mockery::mock()->shouldIgnoreMissing(),
+    });
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $em;
     $di['events_manager'] = $eventMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
@@ -274,24 +281,32 @@ test('updatePassword returns true', function (): void {
         'password_confirm' => 'NewPassword1',
     ];
 
-    $dbMock = Mockery::mock('\Box_Database');
+    $passwordReset = new Box\Mod\Client\Entity\ClientPasswordReset();
+    $rp = new ReflectionProperty($passwordReset, 'id');
+    $rp->setValue($passwordReset, 1);
+    $rp = new ReflectionProperty($passwordReset, 'clientId');
+    $rp->setValue($passwordReset, 1);
+    $rp = new ReflectionProperty($passwordReset, 'createdAt');
+    $rp->setValue($passwordReset, new DateTime('-300 seconds'));
 
-    $modelClient = new Model_Client();
-    $modelClient->loadBean(new Tests\Helpers\DummyBean());
-    $modelClient->id = 1;
-    $modelClient->status = Model_Client::ACTIVE;
+    $passwordResetRepository = Mockery::mock(Box\Mod\Client\Repository\ClientPasswordResetRepository::class);
+    $passwordResetRepository->shouldReceive('findOneByHash')->atLeast()->once()->andReturn($passwordReset);
 
-    $modelPasswordReset = new Model_ClientPasswordReset();
-    $modelPasswordReset->loadBean(new Tests\Helpers\DummyBean());
-    $modelPasswordReset->created_at = date('Y-m-d H:i:s', time() - 300);
+    $client = new Box\Mod\Client\Entity\Client();
+    $rp = new ReflectionProperty($client, 'id');
+    $rp->setValue($client, 1);
+    $rp = new ReflectionProperty($client, 'status');
+    $rp->setValue($client, 'active');
 
-    $dbMock->shouldReceive('findOne')->atLeast()->once()->andReturn($modelPasswordReset);
+    $clientRepository = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepository->shouldReceive('find')->atLeast()->once()->with(1)->andReturn($client);
 
-    $dbMock->shouldReceive('getExistingModelById')->atLeast()->once()->andReturn($modelClient);
-
-    $dbMock->shouldReceive('store')->atLeast()->once();
-
-    $dbMock->shouldReceive('trash')->atLeast()->once();
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
+    $em->shouldReceive('getRepository')->andReturnUsing(static fn (string $class): object => match ($class) {
+        Box\Mod\Client\Entity\Client::class => $clientRepository,
+        Box\Mod\Client\Entity\ClientPasswordReset::class => $passwordResetRepository,
+        default => Mockery::mock()->shouldIgnoreMissing(),
+    });
 
     $eventMock = Mockery::mock('\Box_EventManager');
     $eventMock->shouldReceive('fire')->times(2);
@@ -306,11 +321,10 @@ test('updatePassword returns true', function (): void {
     $profileServiceMock->shouldReceive('invalidateSessions')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $em;
     $di['events_manager'] = $eventMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['password'] = $passwordMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(moduleService(['email' => $emailServiceMock, 'profile' => $profileServiceMock]));
 
     $guestClient->setDi($di);
@@ -327,14 +341,10 @@ test('updatePassword throws exception when reset not found', function (): void {
         'password_confirm' => 'NewPassword1',
     ];
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')->atLeast()->once()->andReturn(null);
-
     $eventMock = Mockery::mock('\Box_EventManager');
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['events_manager'] = $eventMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
 

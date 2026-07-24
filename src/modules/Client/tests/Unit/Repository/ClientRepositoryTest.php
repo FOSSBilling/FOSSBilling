@@ -7,6 +7,8 @@ use Box\Mod\Client\Repository\ClientRepository;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\ORM\QueryBuilder;
 
+use function Tests\Helpers\createEntity;
+
 test('builds a Doctrine client search with the legacy filters', function (): void {
     $where = [];
     $parameters = [];
@@ -43,9 +45,9 @@ test('builds a Doctrine client search with the legacy filters', function (): voi
     expect($result)->toBe($queryBuilder)
         ->and($where)->toContain(
             '(c.id = :id OR c.aid = :id)',
-            '(c.first_name LIKE :name OR c.last_name LIKE :name)',
+            '(c.firstName LIKE :name OR c.lastName LIKE :name)',
             'c.createdAt >= :created_from AND c.createdAt < :created_to',
-            "(c.company LIKE :search OR c.first_name LIKE :search OR c.last_name LIKE :search OR c.email LIKE :search OR CONCAT(CONCAT(c.first_name, ' '), c.last_name) LIKE :search)",
+            "(c.company LIKE :search OR c.firstName LIKE :search OR c.lastName LIKE :search OR c.email LIKE :search OR CONCAT(CONCAT(c.firstName, ' '), c.lastName) LIKE :search)",
         )
         ->and($parameters['name'])->toBe('%Ada%')
         ->and($parameters['search'])->toBe('%Lovelace%')
@@ -62,6 +64,26 @@ test('uses exact id matching for a numeric smart search', function (): void {
     $repository->shouldReceive('createQueryBuilder')->once()->andReturn($queryBuilder);
 
     expect($repository->getSearchQueryBuilder(['search' => '42']))->toBe($queryBuilder);
+});
+
+test('builds filtered client name pairs from entities', function (): void {
+    $query = Mockery::mock(Doctrine\ORM\Query::class);
+    $query->shouldReceive('getResult')->once()->andReturn([
+        createEntity(Client::class, ['id' => 7, 'first_name' => 'Ada', 'last_name' => 'Lovelace', 'company' => 'Analytical Engines']),
+        createEntity(Client::class, ['id' => 9, 'first_name' => 'Grace', 'last_name' => 'Hopper']),
+    ]);
+
+    $queryBuilder = Mockery::mock(QueryBuilder::class);
+    $queryBuilder->shouldReceive('setMaxResults')->once()->with(30)->andReturn($queryBuilder);
+    $queryBuilder->shouldReceive('getQuery')->once()->andReturn($query);
+
+    $repository = Mockery::mock(ClientRepository::class)->makePartial();
+    $repository->shouldReceive('getSearchQueryBuilder')->once()->with(['search' => 'Ada'])->andReturn($queryBuilder);
+
+    expect($repository->getIdNamePairs(['search' => 'Ada']))->toBe([
+        7 => 'Ada Lovelace (Analytical Engines)',
+        9 => 'Grace Hopper',
+    ]);
 });
 
 test('loads list balances and group titles in one batch', function (): void {

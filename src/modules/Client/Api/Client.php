@@ -15,6 +15,9 @@ declare(strict_types=1);
 
 namespace Box\Mod\Client\Api;
 
+use Box\Mod\Client\Entity\Client as ClientEntity;
+use Box\Mod\Client\Entity\ClientBalance;
+use FOSSBilling\InformationException;
 use FOSSBilling\PaginationOptions;
 
 class Client extends \FOSSBilling\Api\AbstractApi
@@ -27,17 +30,14 @@ class Client extends \FOSSBilling\Api\AbstractApi
     public function balance_get_list($data)
     {
         $service = $this->getDi()['mod_service']('Client', 'Balance');
-        $data['client_id'] = $this->identity->id;
+        $client = $this->getClientEntity($this->getIdentity());
+        $data['client_id'] = $client->getId();
 
-        [$q, $params] = $service->getSearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($q, $params, PaginationOptions::fromArray($data));
-
-        foreach ($pager['list'] as $key => $item) {
-            $balance = $this->getDi()['db']->getExistingModelById('ClientBalance', $item['id'], 'Balance not found');
-            $pager['list'][$key] = $service->toApiArray($balance);
-        }
-
-        return $pager;
+        return $this->getDi()['pager']->paginateMappedQuery(
+            $service->getSearchQueryBuilder($data),
+            PaginationOptions::fromArray($data),
+            fn (ClientBalance $balance): array => $service->toApiArray($balance, $client),
+        );
     }
 
     /**
@@ -49,26 +49,42 @@ class Client extends \FOSSBilling\Api\AbstractApi
     {
         $service = $this->getDi()['mod_service']('Client', 'Balance');
 
-        return $service->getClientBalance($this->identity);
+        return $service->getClientBalance($this->getClientEntity($this->getIdentity()));
     }
 
     public function is_taxable()
     {
-        return $this->getService()->isClientTaxable($this->identity);
+        return $this->getService()->isClientTaxable($this->getClientEntity($this->getIdentity()));
     }
 
     public function resend_email_verification()
     {
-        $client = $this->getIdentity();
+        $client = $this->getClientEntity($this->getIdentity());
 
-        if ($client->email_approved) {
+        $emailApproved = $client->getEmailApproved();
+        if ($emailApproved) {
             // Email is already validated, so we don't need to do so again
             return true;
         }
 
         $this->getDi()['rate_limiter']->consumeOrThrow('client_email_verification_resend_ip', (string) $this->getIp());
-        $this->getDi()['rate_limiter']->consumeOrThrow('client_email_verification_resend_account', 'client:' . $client->id);
+        $clientId = $client->getId();
+        $this->getDi()['rate_limiter']->consumeOrThrow('client_email_verification_resend_account', 'client:' . $clientId);
 
         return $this->getService()->sendEmailConfirmationForClient($client);
+    }
+
+    private function getClientEntity(ClientEntity|\Model_Admin|\Model_Client|\Model_Guest $identity): ClientEntity
+    {
+        if ($identity instanceof ClientEntity) {
+            return $identity;
+        }
+
+        $client = $this->getDi()['em']->getRepository(ClientEntity::class)->find((int) $identity->id);
+        if (!$client instanceof ClientEntity) {
+            throw new InformationException('Client not found');
+        }
+
+        return $client;
     }
 }

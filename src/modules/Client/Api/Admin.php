@@ -15,6 +15,9 @@ declare(strict_types=1);
 
 namespace Box\Mod\Client\Api;
 
+use Box\Mod\Client\Entity\Client;
+use Box\Mod\Client\Entity\ClientBalance;
+use Box\Mod\Client\Entity\ClientGroup;
 use FOSSBilling\InformationException;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Tools;
@@ -100,14 +103,14 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('client', 'impersonate_login');
 
-        $client = $this->getDi()['db']->getExistingModelById('Client', $data['id'], 'Client not found');
+        $client = $this->getDi()['em']->getRepository(Client::class)->find($data['id']) ?? throw new InformationException('Client not found');
 
         $service = $this->getDi()['mod_service']('client');
         $result = $service->toSessionArray($client);
 
         $session = $this->getDi()['session'];
-        $session->set('client_id', $client->id);
-        $this->getDi()['logger']->info('Logged in as client #%s', $client->id);
+        $session->set('client_id', $client->getId());
+        $this->getDi()['logger']->info('Logged in as client #%s', $client->getId());
 
         return $result;
     }
@@ -183,12 +186,12 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         }
 
         $password = trim((string) ($data['password'] ?? ''));
-        $status = $data['status'] ?? \Model_Client::ACTIVE;
+        $status = $data['status'] ?? Client::ACTIVE;
         if (!$data['send_welcome_email'] && $password === '') {
             throw new InformationException('A password is required when the welcome email is disabled.');
         }
 
-        if ($data['send_welcome_email'] && $status !== \Model_Client::ACTIVE) {
+        if ($data['send_welcome_email'] && $status !== Client::ACTIVE) {
             throw new InformationException('Welcome email can only be sent for active clients.');
         }
 
@@ -211,15 +214,16 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('client', 'delete');
 
-        $model = $this->getDi()['db']->getExistingModelById('Client', $data['id'], 'Client not found');
+        $model = $this->getDi()['em']->getRepository(Client::class)->find($data['id']) ?? throw new InformationException('Client not found');
 
-        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminClientDelete', 'params' => ['id' => $model->id]]);
+        $clientId = $model->getId();
 
-        $id = $model->id;
+        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminClientDelete', 'params' => ['id' => $clientId]]);
+
         $this->getService()->remove($model);
-        $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminClientDelete', 'params' => ['id' => $id]]);
+        $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminClientDelete', 'params' => ['id' => $clientId]]);
 
-        $this->getDi()['logger']->info('Removed client #%s', $id);
+        $this->getDi()['logger']->info('Removed client #%s', $clientId);
 
         return true;
     }
@@ -270,14 +274,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $custom_18 - Custom field 18
      * @optional string $custom_19 - Custom field 19
      * @optional string $custom_20 - Custom field 20
-     * @optional string $group_id - client group id
      */
     #[RequiredParams(['id' => 'Client ID was not passed'])]
     public function update($data = []): bool
     {
         $this->checkPermissions('client', 'edit_profile');
 
-        $client = $this->getDi()['db']->getExistingModelById('Client', $data['id'], 'Client not found');
+        $client = $this->getDi()['em']->getRepository(Client::class)->find($data['id']) ?? throw new InformationException('Client not found');
 
         $service = $this->getDi()['mod_service']('client');
 
@@ -305,24 +308,24 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $currency = $data['currency'] ?? null;
         if ($currency && $service->canChangeCurrency($client, $currency)) {
-            $client->currency = $currency;
+            $client->setCurrency($currency);
         }
 
         $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminClientUpdate', 'params' => $data]);
 
         // Special handling for the phone country codes
-        $phoneCountryCode = $data['phone_cc'] ?? $client->phone_cc;
+        $phoneCountryCode = $data['phone_cc'] ?? $client->getPhoneCc();
         if (!empty($phoneCountryCode)) {
-            $client->phone_cc = Tools::validatePhoneCC($phoneCountryCode);
+            $client->setPhoneCc((string) Tools::validatePhoneCC($phoneCountryCode));
         }
 
         // Special handling for the phone number itself
-        $phone = $data['phone'] ?? $client->phone;
+        $phone = $data['phone'] ?? $client->getPhone();
         if (!empty($phone) && is_string($phone)) {
-            $client->phone = Tools::validatePhoneNumber($phone);
+            $client->setPhone(Tools::validatePhoneNumber($phone));
         }
 
-        $previousStatus = $client->status;
+        $previousStatus = $client->getStatus();
 
         if (!empty($data['country']) && !Countries::exists($data['country'])) {
             throw new InformationException('Invalid country code: :code', [':code' => $data['country']]);
@@ -336,60 +339,112 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             throw new InformationException('Invalid timezone: :tz', [':tz' => $data['timezone']]);
         }
 
-        $allowedFields = [
-            'email', 'first_name', 'last_name', 'aid', 'gender', 'birthday',
-            'company', 'company_vat', 'address_1', 'address_2',
-            'notes', 'country', 'postcode', 'state', 'city',
-            'status', 'email_approved', 'tax_exempt', 'created_at',
-            'custom_1', 'custom_2', 'custom_3', 'custom_4', 'custom_5',
-            'custom_6', 'custom_7', 'custom_8', 'custom_9', 'custom_10',
-            'custom_11', 'custom_12', 'custom_13', 'custom_14', 'custom_15',
-            'custom_16', 'custom_17', 'custom_18', 'custom_19', 'custom_20',
-            'client_group_id', 'company_number', 'type', 'lang', 'timezone',
+        $simpleFields = [
+            'email' => 'setEmail',
+            'first_name' => 'setFirstName',
+            'last_name' => 'setLastName',
+            'aid' => 'setAid',
+            'gender' => 'setGender',
+            'company' => 'setCompany',
+            'company_vat' => 'setCompanyVat',
+            'address_1' => 'setAddress1',
+            'address_2' => 'setAddress2',
+            'notes' => 'setNotes',
+            'country' => 'setCountry',
+            'postcode' => 'setPostcode',
+            'state' => 'setState',
+            'city' => 'setCity',
+            'status' => 'setStatus',
+            'company_number' => 'setCompanyNumber',
+            'type' => 'setType',
+            'lang' => 'setLang',
+            'timezone' => 'setTimezone',
+            'custom_1' => 'setCustom1',
+            'custom_2' => 'setCustom2',
+            'custom_3' => 'setCustom3',
+            'custom_4' => 'setCustom4',
+            'custom_5' => 'setCustom5',
+            'custom_6' => 'setCustom6',
+            'custom_7' => 'setCustom7',
+            'custom_8' => 'setCustom8',
+            'custom_9' => 'setCustom9',
+            'custom_10' => 'setCustom10',
+            'custom_11' => 'setCustom11',
+            'custom_12' => 'setCustom12',
+            'custom_13' => 'setCustom13',
+            'custom_14' => 'setCustom14',
+            'custom_15' => 'setCustom15',
+            'custom_16' => 'setCustom16',
+            'custom_17' => 'setCustom17',
+            'custom_18' => 'setCustom18',
+            'custom_19' => 'setCustom19',
+            'custom_20' => 'setCustom20',
         ];
 
-        foreach ($allowedFields as $field) {
-            $client->{$field} = $data[$field] ?? $client->{$field};
-        }
-
-        // The admin client form submits the group as `group_id` (see the
-        // documented @optional param above), but the allow-list only applies
-        // `client_group_id`, so the selection was never saved. Map it here.
-        // An empty value clears the group; any other value must be a positive
-        // integer that resolves to an existing client group.
-        if (array_key_exists('group_id', $data)) {
-            if (empty($data['group_id'])) {
-                $client->client_group_id = null;
-            } else {
-                $groupId = filter_var($data['group_id'], FILTER_VALIDATE_INT);
-                if ($groupId === false || $groupId <= 0) {
-                    throw new InformationException('Invalid client group ID: :id', [':id' => $data['group_id']]);
-                }
-                $this->getDi()['db']->getExistingModelById('ClientGroup', $groupId, 'Client group not found');
-                $client->client_group_id = $groupId;
+        foreach ($simpleFields as $field => $setter) {
+            if (array_key_exists($field, $data)) {
+                $client->{$setter}($data[$field]);
             }
         }
 
+        $groupField = array_key_exists('group_id', $data)
+            ? 'group_id'
+            : (array_key_exists('client_group_id', $data) ? 'client_group_id' : null);
+        if ($groupField !== null) {
+            $groupValue = $data[$groupField];
+            if (empty($groupValue)) {
+                $client->setClientGroupId(null);
+            } else {
+                $groupId = filter_var($groupValue, FILTER_VALIDATE_INT);
+                if ($groupId === false || $groupId <= 0) {
+                    throw new InformationException('Invalid client group ID: :id', [':id' => $groupValue]);
+                }
+
+                $this->getDi()['em']->getRepository(ClientGroup::class)->find($groupId)
+                    ?? throw new InformationException('Client group not found');
+                $client->setClientGroupId($groupId);
+            }
+        }
+
+        if (array_key_exists('email_approved', $data)) {
+            $client->setEmailApproved((bool) $data['email_approved']);
+        }
+
+        if (array_key_exists('tax_exempt', $data)) {
+            $client->setTaxExempt((bool) $data['tax_exempt']);
+        }
+
+        if (array_key_exists('birthday', $data) && $data['birthday'] !== null && $data['birthday'] !== '') {
+            $client->setBirthday(new \DateTime($data['birthday']));
+        } elseif (array_key_exists('birthday', $data)) {
+            $client->setBirthday(null);
+        }
+
+        if (array_key_exists('created_at', $data) && $data['created_at'] !== null && $data['created_at'] !== '') {
+            $client->setCreatedAt(new \DateTime($data['created_at']));
+        } elseif (array_key_exists('created_at', $data)) {
+            $client->setCreatedAt(null);
+        }
+
         if (array_key_exists('billing_email', $data)) {
-            $client->billing_email = $data['billing_email'];
+            $client->setBillingEmail($data['billing_email']);
         }
 
-        if ($client->status !== \Model_Client::ACTIVE) {
-            $client->api_token = null;
+        if ($client->getStatus() !== Client::ACTIVE) {
+            $client->setApiToken(null);
         }
 
-        $client->updated_at = date('Y-m-d H:i:s');
+        $this->getDi()['em']->persist($client);
+        $this->getDi()['em']->flush();
 
-        $this->getDi()['db']->store($client);
-
-        if ($client->status !== \Model_Client::ACTIVE && $previousStatus === \Model_Client::ACTIVE) {
+        if ($client->getStatus() !== Client::ACTIVE && $previousStatus === Client::ACTIVE) {
             $profileService = $this->getDi()['mod_service']('profile');
-            $profileService->invalidateSessions('client', (int) $client->id);
+            $profileService->invalidateSessions('client', (int) $client->getId());
         }
 
-        $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminClientUpdate', 'params' => ['id' => $client->id]]);
+        $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminClientUpdate', 'params' => ['id' => $client->getId()]]);
 
-        $this->getDi()['logger']->info('Updated client #%s profile', $client->id);
+        $this->getDi()['logger']->info('Updated client #%s profile', $client->getId());
 
         return true;
     }
@@ -406,20 +461,20 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $this->getDi()['validator']->isPasswordStrong($data['password']);
 
-        $client = $this->getDi()['db']->getExistingModelById('Client', $data['id'], 'Client not found');
+        $client = $this->getDi()['em']->getRepository(Client::class)->find($data['id']) ?? throw new InformationException('Client not found');
 
-        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminClientPasswordChange', 'params' => ['id' => $client->id]]);
+        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminClientPasswordChange', 'params' => ['id' => $client->getId()]]);
 
-        $client->pass = $this->getDi()['password']->hashIt($data['password']);
-        $client->updated_at = date('Y-m-d H:i:s');
-        $this->getDi()['db']->store($client);
+        $client->setPass($this->getDi()['password']->hashIt($data['password']));
+        $this->getDi()['em']->persist($client);
+        $this->getDi()['em']->flush();
 
         $profileService = $this->getDi()['mod_service']('profile');
         $profileService->invalidateSessions('client', (int) $data['id']);
 
-        $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminClientPasswordChange', 'params' => ['id' => $client->id]]);
+        $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminClientPasswordChange', 'params' => ['id' => $client->getId()]]);
 
-        $this->getDi()['logger']->info('Changed client #%s password', $client->id);
+        $this->getDi()['logger']->info('Changed client #%s password', $client->getId());
 
         return true;
     }
@@ -458,13 +513,14 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('client', 'manage_balance');
 
-        $model = $this->getDi()['db']->getExistingModelById('ClientBalance', $data['id'], 'Balance line not found');
+        $model = $this->getDi()['em']->getRepository(ClientBalance::class)->find($data['id']) ?? throw new InformationException('Balance line not found');
 
-        $id = $model->id;
-        $client_id = $model->client_id;
-        $amount = $model->amount;
+        $id = $model->getId();
+        $client_id = $model->getClientId();
+        $amount = $model->getAmount();
 
-        $this->getDi()['db']->trash($model);
+        $this->getDi()['em']->remove($model);
+        $this->getDi()['em']->flush();
 
         $this->getDi()['logger']->info('Removed line %s from client #%s balance for %s', $id, $client_id, $amount);
 
@@ -482,7 +538,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('client', 'manage_balance');
 
-        $client = $this->getDi()['db']->getExistingModelById('Client', $data['id'], 'Client not found');
+        $client = $this->getDi()['em']->getRepository(Client::class)->find($data['id']) ?? throw new InformationException('Client not found');
 
         $service = $this->getDi()['mod_service']('client');
         $service->addFunds($client, $data['amount'], $data['description'], $data);
@@ -500,8 +556,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $service = $this->getDi()['mod_service']('client');
         $expired = $service->getExpiredPasswordReminders();
         foreach ($expired as $model) {
-            $this->getDi()['db']->trash($model);
+            $this->getDi()['em']->remove($model);
         }
+        $this->getDi()['em']->flush();
 
         $this->getDi()['logger']->info('Executed action to delete expired clients password reminders');
 
@@ -590,11 +647,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('client', 'manage_groups');
 
-        $model = $this->getDi()['db']->getExistingModelById('ClientGroup', $data['id'], 'Group not found');
+        $model = $this->getDi()['em']->getRepository(ClientGroup::class)->find($data['id']) ?? throw new InformationException('Group not found');
 
-        $model->title = $data['title'] ?? $model->title;
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->getDi()['db']->store($model);
+        $model->setTitle($data['title'] ?? $model->getTitle());
+        $this->getDi()['em']->persist($model);
+        $this->getDi()['em']->flush();
 
         return true;
     }
@@ -609,9 +666,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('client', 'manage_groups');
 
-        $model = $this->getDi()['db']->getExistingModelById('ClientGroup', $data['id'], 'Group not found');
+        $model = $this->getDi()['em']->getRepository(ClientGroup::class)->find($data['id']) ?? throw new InformationException('Group not found');
 
-        $clients = $this->getDi()['db']->find('Client', 'client_group_id = :group_id', [':group_id' => $data['id']]);
+        $clients = $this->getDi()['em']->getRepository(Client::class)->findBy(['clientGroupId' => $data['id']]);
 
         if (Tools::safeCount($clients) > 0) {
             throw new InformationException('Group has clients assigned. Please reassign them first.');
@@ -630,9 +687,14 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('client', 'manage_groups');
 
-        $model = $this->getDi()['db']->getExistingModelById('ClientGroup', $data['id'], 'Group not found');
+        $model = $this->getDi()['em']->getRepository(ClientGroup::class)->find($data['id']) ?? throw new InformationException('Group not found');
 
-        return $this->getDi()['db']->toArray($model);
+        return [
+            'id' => $model->getId(),
+            'title' => $model->getTitle(),
+            'created_at' => $model->getCreatedAt()?->format('Y-m-d H:i:s'),
+            'updated_at' => $model->getUpdatedAt()?->format('Y-m-d H:i:s'),
+        ];
     }
 
     /**

@@ -13,6 +13,7 @@ use Box\Mod\Profile\Api\Client;
 use Box\Mod\Profile\Service;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 test('gets client profile', function (): void {
     $api = apiEndpoint(new Client());
@@ -24,7 +25,7 @@ test('gets client profile', function (): void {
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $clientService);
     $api->setDi($di);
-    $api->setIdentity(new Model_Client());
+    $api->setIdentity(createEntity(Box\Mod\Client\Entity\Client::class));
 
     $result = $api->get();
     expect($result)->toBeArray();
@@ -38,7 +39,7 @@ test('updates client profile', function (): void {
         ->andReturn(true);
 
     $api->setService($service);
-    $api->setIdentity(new Model_Client());
+    $api->setIdentity(createEntity(Box\Mod\Client\Entity\Client::class));
 
     $result = $api->update([]);
     expect($result)->toBeTrue();
@@ -46,9 +47,7 @@ test('updates client profile', function (): void {
 
 test('gets api key', function (): void {
     $api = apiEndpoint(new Client());
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->api_token = '16047a3e69f5245756d73b419348f0c7';
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['api_token' => '16047a3e69f5245756d73b419348f0c7']);
     $api->setIdentity($client);
 
     $result = $api->api_key_get([]);
@@ -64,7 +63,7 @@ test('resets api key', function (): void {
         ->andReturn($apiKey);
 
     $api->setService($service);
-    $api->setIdentity(new Model_Client());
+    $api->setIdentity(createEntity(Box\Mod\Client\Entity\Client::class));
 
     $result = $api->api_key_reset([]);
     expect($result)->toBe($apiKey);
@@ -91,9 +90,7 @@ test('changes client password', function (): void {
     $di['validator'] = $validatorMock;
     $di['password'] = new FOSSBilling\PasswordManager();
 
-    $model = new Model_Client();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $model->pass = $di['password']->hashIt('oldpw');
+    $model = createEntity(Box\Mod\Client\Entity\Client::class, ['pass' => $di['password']->hashIt('oldpw')]);
 
     $api->setDi($di);
     $api->setService($service);
@@ -119,7 +116,7 @@ test('throws exception when passwords do not match', function (): void {
 
     $api->setDi($di);
     $api->setService($service);
-    $api->setIdentity(new Model_Client());
+    $api->setIdentity(createEntity(Box\Mod\Client\Entity\Client::class));
 
     $data = [
         'current_password' => '1234',
