@@ -15,6 +15,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Profile\Api;
 
+use Box\Mod\Client\Entity\Client as ClientEntity;
+use FOSSBilling\InformationException;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Client extends \FOSSBilling\Api\AbstractApi
@@ -25,8 +27,9 @@ class Client extends \FOSSBilling\Api\AbstractApi
     public function get()
     {
         $clientService = $this->getDi()['mod_service']('client');
+        $client = $this->getClientEntity();
 
-        return $clientService->toApiArray($this->getIdentity(), true, $this->getIdentity());
+        return $clientService->toApiArray($client, true, $client);
     }
 
     /**
@@ -90,7 +93,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
                 : $this->getDi()['tools']->validateAndSanitizeEmail($data['billing_email']);
         }
 
-        return $this->getService()->updateClient($this->getIdentity(), $data);
+        return $this->getService()->updateClient($this->getClientEntity(), $data);
     }
 
     /**
@@ -98,9 +101,9 @@ class Client extends \FOSSBilling\Api\AbstractApi
      */
     public function api_key_get($data)
     {
-        $client = $this->getIdentity();
+        $client = $this->getClientEntity();
 
-        return $client->api_token;
+        return $client->getApiToken();
     }
 
     /**
@@ -108,7 +111,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
      */
     public function api_key_reset($data)
     {
-        return $this->getService()->resetApiKey($this->getIdentity());
+        return $this->getService()->resetApiKey($this->getClientEntity());
     }
 
     /**
@@ -128,13 +131,13 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $this->getDi()['validator']->isPasswordStrong($data['new_password']);
         $this->getDi()['validator']->passwordsMatch($data, 'new_password', 'confirm_password');
 
-        $client = $this->getIdentity();
+        $client = $this->getClientEntity();
 
         $this->getDi()['rate_limiter']->consumeOrThrow('profile_password_change_ip', (string) $this->getIp());
-        $this->getDi()['rate_limiter']->consumeOrThrow('profile_password_change_account', 'client:' . $client->id);
+        $this->getDi()['rate_limiter']->consumeOrThrow('profile_password_change_account', 'client:' . $client->getId());
 
-        if (!$this->getDi()['password']->verify($data['current_password'], $client->pass)) {
-            throw new \FOSSBilling\InformationException('Current password incorrect');
+        if (!$this->getDi()['password']->verify($data['current_password'], $client->getPass())) {
+            throw new InformationException('Current password incorrect');
         }
 
         $this->getService()->invalidateSessions();
@@ -158,5 +161,25 @@ class Client extends \FOSSBilling\Api\AbstractApi
     public function destroy_sessions(array $data): bool
     {
         return $this->getService()->invalidateSessions();
+    }
+
+    private function getClientEntity(): ClientEntity
+    {
+        return $this->resolveClientEntity($this->getIdentity());
+    }
+
+    private function resolveClientEntity(ClientEntity|\Model_Admin|\Model_Client|\Model_Guest $identity): ClientEntity
+    {
+        if ($identity instanceof ClientEntity) {
+            return $identity;
+        }
+
+        $clientId = (int) ($identity->id ?? 0);
+        $client = $this->getDi()['em']->getRepository(ClientEntity::class)->find($clientId);
+        if (!$client instanceof ClientEntity) {
+            throw new InformationException('Client not found');
+        }
+
+        return $client;
     }
 }

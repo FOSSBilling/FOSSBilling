@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Profile;
 
+use Box\Mod\Client\Entity\Client;
 use FOSSBilling\InformationException;
 
 class ClientValidator
@@ -18,7 +19,7 @@ class ClientValidator
         }
         $gender = strtolower(trim($gender));
 
-        if (!in_array($gender, \Model_Client::ALLOWED_GENDERS, true)) {
+        if (!in_array($gender, Client::ALLOWED_GENDERS, true)) {
             throw new InformationException('Invalid gender value. Allowed: male, female, nonbinary, other');
         }
 

@@ -45,7 +45,6 @@ function container(): Container
         }
     };
     $di['request'] = fn (): Request => Request::create('http://localhost/');
-    $di['filesystem'] = fn (): \Symfony\Component\Filesystem\Filesystem => new \Symfony\Component\Filesystem\Filesystem();
     $di['session'] = static function (): object {
         $session = \Mockery::mock(\FOSSBilling\Session::class)->shouldIgnoreMissing();
         $session->shouldReceive('regenerateId')->byDefault()->andReturnNull();
@@ -163,6 +162,52 @@ function container(): Container
         $adminGroupRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminGroupRepository::class)->shouldIgnoreMissing();
         $adminGroupMemberRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminGroupMemberRepository::class)->shouldIgnoreMissing();
 
+        $clientQueryBuilder = \Mockery::mock(\Doctrine\ORM\QueryBuilder::class)->shouldIgnoreMissing();
+        foreach (['andWhere', 'orWhere', 'setParameter', 'orderBy', 'setFirstResult', 'setMaxResults', 'delete', 'where'] as $method) {
+            $clientQueryBuilder->shouldReceive($method)->byDefault()->andReturn($clientQueryBuilder);
+        }
+        $clientQuery = \Mockery::mock(\Doctrine\ORM\AbstractQuery::class)->shouldIgnoreMissing();
+        $clientQuery->shouldReceive('getResult')->byDefault()->andReturn([]);
+        $clientQuery->shouldReceive('execute')->byDefault()->andReturn(0);
+        $clientQueryBuilder->shouldReceive('getQuery')->byDefault()->andReturn($clientQuery);
+
+        $clientRepository = \Mockery::mock(\Box\Mod\Client\Repository\ClientRepository::class)->shouldIgnoreMissing();
+        $clientRepository->shouldReceive('find')->byDefault()->andReturnUsing(static function (int $id): ?object {
+            return createEntity(\Box\Mod\Client\Entity\Client::class, ['id' => $id]);
+        });
+        $clientRepository->shouldReceive('findOneBy')->byDefault()->andReturn(null);
+        $clientRepository->shouldReceive('findOneByEmail')->byDefault()->andReturnUsing(static function (string $email): ?object {
+            return createEntity(\Box\Mod\Client\Entity\Client::class, ['id' => 1, 'email' => $email]);
+        });
+        $clientRepository->shouldReceive('findOneByEmailAndActive')->byDefault()->andReturnUsing(static function (string $email): ?object {
+            return createEntity(\Box\Mod\Client\Entity\Client::class, ['id' => 1, 'email' => $email, 'status' => 'active']);
+        });
+        $clientRepository->shouldReceive('findOneByApiToken')->byDefault()->andReturn(null);
+        $clientRepository->shouldReceive('getIdNamePairs')->byDefault()->andReturn([]);
+        $clientRepository->shouldReceive('getStatusCounts')->byDefault()->andReturn(['active' => 1, 'suspended' => 0, 'canceled' => 0]);
+        $clientRepository->shouldReceive('createQueryBuilder')->byDefault()->andReturn($clientQueryBuilder);
+
+        $clientBalanceRepository = \Mockery::mock(\Box\Mod\Client\Repository\ClientBalanceRepository::class)->shouldIgnoreMissing();
+        $clientBalanceRepository->shouldReceive('find')->byDefault()->andReturnUsing(static function (int $id): ?object {
+            return createEntity(\Box\Mod\Client\Entity\ClientBalance::class, ['id' => $id]);
+        });
+        $clientBalanceRepository->shouldReceive('findBy')->byDefault()->andReturn([]);
+        $clientBalanceRepository->shouldReceive('getClientBalanceSum')->byDefault()->andReturn(0.0);
+
+        $clientGroupRepository = \Mockery::mock(\Box\Mod\Client\Repository\ClientGroupRepository::class)->shouldIgnoreMissing();
+        $clientGroupRepository->shouldReceive('find')->byDefault()->andReturnUsing(static function (int $id): ?object {
+            return createEntity(\Box\Mod\Client\Entity\ClientGroup::class, ['id' => $id]);
+        });
+        $clientGroupRepository->shouldReceive('getIdTitlePairs')->byDefault()->andReturn([]);
+
+        $clientPasswordResetRepository = \Mockery::mock(\Box\Mod\Client\Repository\ClientPasswordResetRepository::class)->shouldIgnoreMissing();
+        $clientPasswordResetRepository->shouldReceive('find')->byDefault()->andReturn(null);
+        $clientPasswordResetRepository->shouldReceive('findBy')->byDefault()->andReturn([]);
+        $clientPasswordResetRepository->shouldReceive('findOneBy')->byDefault()->andReturn(null);
+        $clientPasswordResetRepository->shouldReceive('findOneByHash')->byDefault()->andReturn(null);
+        $clientPasswordResetRepository->shouldReceive('findExpiredBefore')->byDefault()->andReturn([]);
+        $clientPasswordResetRepository->shouldReceive('createQueryBuilder')->byDefault()->andReturn($clientQueryBuilder);
+
         $extensionMetaRepository = \Mockery::mock(\Box\Mod\Extension\Repository\ExtensionMetaRepository::class)->shouldIgnoreMissing();
         $extensionMetaRepository->shouldReceive('findOneByExtensionAndScope')->byDefault()->andReturn(null);
         $extensionMetaRepository->shouldReceive('findByExtensionAndScope')->byDefault()->andReturn([]);
@@ -193,6 +238,10 @@ function container(): Container
 
         $em = \Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
         $em->shouldReceive('getRepository')->byDefault()->andReturnUsing(static fn (string $class): object => match ($class) {
+            \Box\Mod\Client\Entity\Client::class => $clientRepository,
+            \Box\Mod\Client\Entity\ClientBalance::class => $clientBalanceRepository,
+            \Box\Mod\Client\Entity\ClientGroup::class => $clientGroupRepository,
+            \Box\Mod\Client\Entity\ClientPasswordReset::class => $clientPasswordResetRepository,
             \Box\Mod\Staff\Entity\AdminGroup::class => $adminGroupRepository,
             \Box\Mod\Staff\Entity\AdminGroupMember::class => $adminGroupMemberRepository,
             \Box\Mod\Email\Entity\EmailTemplate::class => $emailTemplateRepository,
@@ -301,6 +350,117 @@ function accessPrivate(object $instance, string $property, mixed $value = null):
 
     // Otherwise, get the property value
     return $prop->getValue($instance);
+}
+
+/**
+ * Create a Doctrine entity proxy that accepts snake_case and camelCase properties.
+ *
+ * The helper keeps focused unit tests concise while leaving production entities
+ * with explicit getters and setters.
+ *
+ * @param class-string $class
+ */
+function createEntity(string $class, array $properties = []): object
+{
+    static $proxied = [];
+
+    $key = md5($class);
+    if (!isset($proxied[$key])) {
+        $namespace = 'Tests\\Helpers';
+        $shortName = 'EntityProxy_' . $key;
+        $fqcn = $namespace . '\\' . $shortName;
+        $code = sprintf(
+            <<<'PHP'
+                namespace %s;
+
+                class %s extends \%s
+                {
+                    private array $_extra = [];
+
+                    public function __construct(array $properties = [])
+                    {
+                        foreach ($properties as $name => $value) {
+                            $this->$name = $value;
+                        }
+                    }
+
+                        public function __set(string $name, mixed $value): void
+                        {
+                            $method = 'set' . str_replace('_', '', ucwords($name, '_'));
+                            if (method_exists($this, $method)) {
+                                $parameter = (new \ReflectionMethod($this, $method))->getParameters()[0] ?? null;
+                                $type = $parameter?->getType();
+                                if ($type instanceof \ReflectionNamedType) {
+                                    if ($type->getName() === \DateTime::class && is_string($value)) {
+                                        $value = new \DateTime($value);
+                                    } elseif ($type->getName() === 'int' && is_string($value) && ctype_digit($value)) {
+                                        $value = (int) $value;
+                                    } elseif ($type->getName() === 'float' && is_numeric($value)) {
+                                        $value = (float) $value;
+                                    } elseif ($type->getName() === 'bool' && is_int($value)) {
+                                        $value = (bool) $value;
+                                    } elseif ($type->getName() === 'string' && is_scalar($value)) {
+                                        $value = (string) $value;
+                                    }
+                                }
+                                $this->$method($value);
+                                return;
+                            }
+
+                            $propertyName = lcfirst(str_replace('_', '', ucwords($name, '_')));
+                            $reflection = new \ReflectionClass($this);
+                            while (!$reflection->hasProperty($propertyName) && ($parent = $reflection->getParentClass())) {
+                                $reflection = $parent;
+                            }
+                            if ($reflection->hasProperty($propertyName)) {
+                                $property = $reflection->getProperty($propertyName);
+                                $type = $property->getType();
+                                if ($type instanceof \ReflectionNamedType) {
+                                    if ($type->getName() === \DateTime::class && is_string($value)) {
+                                        $value = new \DateTime($value);
+                                    } elseif ($type->getName() === 'int' && is_numeric($value)) {
+                                        $value = (int) $value;
+                                    } elseif ($type->getName() === 'bool' && is_int($value)) {
+                                        $value = (bool) $value;
+                                    } elseif ($type->getName() === 'string' && is_scalar($value)) {
+                                        $value = (string) $value;
+                                    }
+                                }
+                                $property->setValue($this, $value);
+                                return;
+                            }
+
+                            $this->_extra[$name] = $value;
+                        }
+
+                    public function __get(string $name): mixed
+                    {
+                        if (array_key_exists($name, $this->_extra)) {
+                            return $this->_extra[$name];
+                        }
+
+                        $method = 'get' . str_replace('_', '', ucwords($name, '_'));
+
+                        return method_exists($this, $method) ? $this->$method() : null;
+                    }
+
+                    public function __isset(string $name): bool
+                    {
+                        return $this->__get($name) !== null;
+                    }
+                }
+                PHP,
+            $namespace,
+            $shortName,
+            $class,
+        );
+        eval($code);
+        $proxied[$key] = $fqcn;
+    }
+
+    $proxy = $proxied[$key];
+
+    return new $proxy($properties);
 }
 
 /**

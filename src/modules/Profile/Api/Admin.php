@@ -15,6 +15,9 @@ declare(strict_types=1);
 
 namespace Box\Mod\Profile\Api;
 
+use Box\Mod\Client\Entity\Client;
+use Box\Mod\Staff\Entity\Admin as AdminEntity;
+use FOSSBilling\InformationException;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Admin extends \FOSSBilling\Api\AbstractApi
@@ -42,7 +45,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function get()
     {
-        return $this->getService()->getAdminIdentityArray($this->getIdentity());
+        return $this->getService()->getAdminIdentityArray($this->getAdminEntity());
     }
 
     /**
@@ -74,7 +77,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
         }
 
-        return $this->getService()->updateAdmin($this->getIdentity(), $data);
+        return $this->getService()->updateAdmin($this->getAdminEntity(), $data);
     }
 
     /**
@@ -84,7 +87,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     public function generate_api_key($data)
     {
-        return $this->getService()->generateNewApiKey($this->getIdentity());
+        return $this->getService()->generateNewApiKey($this->getAdminEntity());
     }
 
     /**
@@ -105,16 +108,16 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->getDi()['validator']->isPasswordStrong($newPassword);
 
         if ($newPassword != $data['confirm_password']) {
-            throw new \FOSSBilling\InformationException('Passwords do not match');
+            throw new InformationException('Passwords do not match');
         }
 
-        $staff = $this->getIdentity();
+        $staff = $this->getAdminEntity();
 
         $this->getDi()['rate_limiter']->consumeOrThrow('profile_password_change_ip', (string) $this->getIp());
-        $this->getDi()['rate_limiter']->consumeOrThrow('profile_password_change_account', 'admin:' . $staff->id);
+        $this->getDi()['rate_limiter']->consumeOrThrow('profile_password_change_account', 'admin:' . $staff->getId());
 
-        if (!$this->getDi()['password']->verify($data['current_password'], $staff->pass)) {
-            throw new \FOSSBilling\InformationException('Current password incorrect');
+        if (!$this->getDi()['password']->verify($data['current_password'], $staff->getPass())) {
+            throw new InformationException('Current password incorrect');
         }
 
         $this->getService()->invalidateSessions();
@@ -140,8 +143,29 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('client', 'manage_api_keys');
 
-        $client = $this->getDi()['db']->getExistingModelById('Client', $data['id']);
+        $client = $this->getDi()['em']->getRepository(Client::class)->find($data['id'])
+            ?? throw new InformationException('Client not found');
 
         return $this->getService()->resetApiKey($client);
+    }
+
+    private function getAdminEntity(): AdminEntity
+    {
+        return $this->resolveAdminEntity($this->getIdentity());
+    }
+
+    private function resolveAdminEntity(AdminEntity|\Model_Admin|\Model_Client|\Model_Guest $identity): AdminEntity
+    {
+        if ($identity instanceof AdminEntity) {
+            return $identity;
+        }
+
+        $adminId = (int) ($identity->id ?? 0);
+        $admin = $this->getDi()['em']->getRepository(AdminEntity::class)->find($adminId);
+        if (!$admin instanceof AdminEntity) {
+            throw new InformationException('Admin not found');
+        }
+
+        return $admin;
     }
 }
