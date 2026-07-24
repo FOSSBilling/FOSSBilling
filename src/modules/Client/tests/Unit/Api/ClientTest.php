@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 use function Tests\Helpers\moduleService;
 
 test('getDi returns dependency injection container', function (): void {
@@ -25,8 +26,7 @@ test('balanceGetList returns array', function (): void {
     $api = apiEndpoint(new Box\Mod\Client\Api\Client());
     $data = [];
 
-    $model = new Model_Client();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $client = createEntity(Box\Mod\Client\Entity\Client::class);
 
     $serviceMock = Mockery::mock(Box\Mod\Client\ServiceBalance::class);
     $serviceMock
@@ -50,22 +50,13 @@ test('balanceGetList returns array', function (): void {
     ->atLeast()->once()
     ->andReturn($simpleResultArr);
 
-    $model = new Model_ClientBalance();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn($model);
-
     $di = container();
     $di['mod_service'] = $di->protect(moduleService(['client:balance' => $serviceMock]));
     $di['pager'] = $pagerMock;
-    $di['db'] = $dbMock;
 
     $api->setDi($di);
     $api->setService($serviceMock);
-    $api->setIdentity($model);
+    $api->setIdentity($client);
 
     $result = $api->balance_get_list($data);
 
@@ -75,8 +66,7 @@ test('balanceGetList returns array', function (): void {
 test('balanceGetTotal returns float', function (): void {
     $api = apiEndpoint(new Box\Mod\Client\Api\Client());
     $balanceAmount = 0.00;
-    $model = new Model_Client();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(Box\Mod\Client\Entity\Client::class);
 
     $serviceMock = Mockery::mock(Box\Mod\Client\ServiceBalance::class);
     $serviceMock
@@ -106,8 +96,7 @@ test('isTaxable returns boolean', function (): void {
     ->atLeast()->once()
     ->andReturn($clientIsTaxable);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client = createEntity(Box\Mod\Client\Entity\Client::class);
 
     $api->setService($serviceMock);
     $api->setIdentity($client);

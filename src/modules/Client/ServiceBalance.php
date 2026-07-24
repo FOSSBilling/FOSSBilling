@@ -1,25 +1,26 @@
 <?php
 
 declare(strict_types=1);
-/**
- * Copyright 2022-2025 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0.
- *
- * @copyright FOSSBilling (https://www.fossbilling.org)
- * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
- */
 
 namespace Box\Mod\Client;
 
+use Box\Mod\Client\Entity\Client;
+use Box\Mod\Client\Entity\ClientBalance;
+use Box\Mod\Client\Repository\ClientBalanceRepository;
+use Box\Mod\Client\Repository\ClientRepository;
 use FOSSBilling\InjectionAwareInterface;
 
 class ServiceBalance implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
+    private ClientBalanceRepository $clientBalanceRepository;
+    private ClientRepository $clientRepository;
 
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        $this->clientBalanceRepository = $di['em']->getRepository(ClientBalance::class);
+        $this->clientRepository = $di['em']->getRepository(Client::class);
     }
 
     public function getDi(): ?\Pimple\Container
@@ -27,46 +28,50 @@ class ServiceBalance implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function getClientBalance(\Model_Client $c): float
+    public function getClientBalance(Client|\Model_Client $c): float
     {
         return (float) $this->clientTotal($c);
     }
 
-    public function clientTotal(\Model_Client $c)
+    public function clientTotal(Client|\Model_Client $c): float
     {
-        $sql = '
-        SELECT SUM(amount) as client_total
-        FROM client_balance
-        WHERE client_id = ?
-        GROUP BY client_id
-        ';
+        $clientId = $c instanceof Client ? $c->getId() : $c->id;
 
-        return $this->di['db']->getCell($sql, [$c->id]);
+        return $this->clientBalanceRepository->getClientBalanceSum((int) $clientId);
     }
 
-    public function rmByClient(\Model_Client $client): void
+    public function rmByClient(Client|\Model_Client $client): void
     {
-        $clientBalances = $this->di['db']->find('ClientBalance', 'client_id = ?', [$client->id]);
-        foreach ($clientBalances as $balanceModel) {
-            $this->di['db']->trash($balanceModel);
+        $clientId = $client instanceof Client ? $client->getId() : $client->id;
+        $balances = $this->clientBalanceRepository->findBy(['clientId' => (int) $clientId]);
+        foreach ($balances as $balance) {
+            $this->di['em']->remove($balance);
+        }
+        if (!empty($balances)) {
+            $this->di['em']->flush();
         }
     }
 
-    public function rm(\Model_ClientBalance $model): void
+    public function rm(ClientBalance $model): void
     {
-        $this->di['db']->trash($model);
+        $this->di['em']->remove($model);
+        $this->di['em']->flush();
     }
 
-    public function toApiArray(\Model_ClientBalance $model): array
+    public function toApiArray(ClientBalance $model): array
     {
-        $client = $this->di['db']->getExistingModelById('Client', $model->client_id, 'Client not found');
+        $clientId = $model->getClientId();
+        $client = $clientId !== null ? $this->clientRepository->find($clientId) : null;
+        if (!$client instanceof Client) {
+            throw new \FOSSBilling\InformationException('Client not found');
+        }
 
         return [
-            'id' => $model->id,
-            'description' => $model->description,
-            'amount' => $model->amount,
-            'currency' => $client->currency,
-            'created_at' => $model->created_at,
+            'id' => $model->getId(),
+            'description' => $model->getDescription(),
+            'amount' => $model->getAmount(),
+            'currency' => $client->getCurrency(),
+            'created_at' => $model->getCreatedAt()?->format('Y-m-d H:i:s'),
         ];
     }
 
@@ -114,13 +119,10 @@ class ServiceBalance implements InjectionAwareInterface
 
     /**
      * @param float|string $amount
-     * @param string       $description
-     *
-     * @return \Model_ClientBalance
      *
      * @throws \FOSSBilling\InformationException
      */
-    public function deductFunds(\Model_Client $client, $amount, $description, ?array $data = null)
+    public function deductFunds(Client|\Model_Client $client, $amount, $description, ?array $data = null): ClientBalance
     {
         if (!is_numeric($amount)) {
             throw new \FOSSBilling\InformationException('Funds amount is invalid');
@@ -130,15 +132,16 @@ class ServiceBalance implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Funds description is invalid');
         }
 
-        $credit = $this->di['db']->dispense('ClientBalance');
-        $credit->client_id = $client->id;
-        $credit->type = $data['type'] ?? 'default';
-        $credit->rel_id = $data['rel_id'] ?? null;
-        $credit->description = $description;
-        $credit->amount = -$amount;
-        $credit->created_at = date('Y-m-d H:i:s');
-        $credit->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($credit);
+        $credit = new ClientBalance();
+        $clientId = $client instanceof Client ? $client->getId() : $client->id;
+        $credit->setClientId((int) $clientId);
+        $credit->setType($data['type'] ?? 'default');
+        $credit->setRelId(isset($data['rel_id']) ? (string) $data['rel_id'] : null);
+        $credit->setDescription($description);
+        $credit->setAmount((string) (-(float) $amount));
+
+        $this->di['em']->persist($credit);
+        $this->di['em']->flush();
 
         return $credit;
     }
