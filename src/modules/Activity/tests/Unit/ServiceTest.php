@@ -116,7 +116,7 @@ test('log email stores the given attachment', function (): void {
 
 test('to api array', function (): void {
     $service = new Box\Mod\Activity\Service();
-    $clientHistoryModel = createEntity(\Box\Mod\Activity\Entity\ActivityClientHistory::class, ['client_id' => 1]);
+    $clientHistoryModel = createEntity(Box\Mod\Activity\Entity\ActivityClientHistory::class, ['client_id' => 1]);
 
     $resultMock = Mockery::mock(Doctrine\DBAL\Result::class);
     $resultMock->shouldReceive('fetchAssociative')
@@ -154,7 +154,7 @@ test('to api array', function (): void {
 
 test('remove by client', function (): void {
     $service = new Box\Mod\Activity\Service();
-    $clientModel = createEntity(\Box\Mod\Client\Entity\Client::class, ['id' => 1]);
+    $clientModel = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
 
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
     $dbalMock->shouldReceive('executeStatement')
@@ -172,4 +172,18 @@ test('remove by client', function (): void {
     $service->setDi($di);
 
     $service->rmByClient($clientModel);
+});
+
+test('remove by client returns early when the client id is null', function (): void {
+    $service = new Box\Mod\Activity\Service();
+    $client = new Box\Mod\Client\Entity\Client();
+
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldNotReceive('executeStatement');
+
+    $di = container();
+    $di['dbal'] = $dbalMock;
+    $service->setDi($di);
+
+    $service->rmByClient($client);
 });

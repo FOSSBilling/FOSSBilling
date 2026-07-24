@@ -11,6 +11,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Table(name: 'activity_system')]
 #[ORM\Index(name: 'admin_id_idx', columns: ['admin_id'])]
 #[ORM\Index(name: 'client_id_idx', columns: ['client_id'])]
+#[ORM\HasLifecycleCallbacks]
 class ActivitySystem
 {
     #[ORM\Id]
@@ -104,6 +105,6 @@ class ActivitySystem
     #[ORM\PrePersist]
     public function onPrePersist(): void
     {
-        $this->createdAt = new \DateTime();
+        $this->createdAt ??= new \DateTime();
     }
 }

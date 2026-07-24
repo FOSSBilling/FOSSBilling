@@ -17,14 +17,14 @@ class Setting
     #[ORM\Column(type: Types::BIGINT)]
     private ?int $id = null;
 
-    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: true, unique: true)]
     private ?string $param = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $value = null;
 
-    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
-    private bool $public = false;
+    #[ORM\Column(type: Types::BOOLEAN, nullable: true, options: ['default' => false])]
+    private ?bool $public = null;
 
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     private ?string $category = null;
@@ -65,7 +65,7 @@ class Setting
 
     public function isPublic(): bool
     {
-        return $this->public;
+        return $this->public ?? false;
     }
 
     public function setPublic(bool $public): void
@@ -116,7 +116,7 @@ class Setting
     #[ORM\PrePersist]
     public function onPrePersist(): void
     {
-        $this->createdAt = new \DateTime();
+        $this->createdAt ??= new \DateTime();
         $this->updatedAt = new \DateTime();
     }
 

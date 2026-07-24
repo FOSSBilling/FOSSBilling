@@ -14,6 +14,6 @@ class FormFieldRepository extends EntityRepository
      */
     public function findByFormId(int $formId): array
     {
-        return $this->findBy(['formId' => $formId]);
+        return $this->findBy(['formId' => $formId], ['id' => 'ASC']);
     }
 }

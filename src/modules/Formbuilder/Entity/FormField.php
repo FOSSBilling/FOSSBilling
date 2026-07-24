@@ -116,12 +116,12 @@ class FormField
         $this->label = $label;
     }
 
-    public function isHideLabel(): ?bool
+    public function isHideLabel(): bool
     {
-        return $this->hideLabel;
+        return $this->hideLabel ?? false;
     }
 
-    public function setHideLabel(?bool $hideLabel): void
+    public function setHideLabel(bool $hideLabel): void
     {
         $this->hideLabel = $hideLabel;
     }
@@ -156,42 +156,42 @@ class FormField
         $this->defaultValue = $defaultValue;
     }
 
-    public function isRequired(): ?bool
+    public function isRequired(): bool
     {
-        return $this->required;
+        return $this->required ?? false;
     }
 
-    public function setRequired(?bool $required): void
+    public function setRequired(bool $required): void
     {
         $this->required = $required;
     }
 
-    public function isHidden(): ?bool
+    public function isHidden(): bool
     {
-        return $this->hidden;
+        return $this->hidden ?? false;
     }
 
-    public function setHidden(?bool $hidden): void
+    public function setHidden(bool $hidden): void
     {
         $this->hidden = $hidden;
     }
 
-    public function isReadonly(): ?bool
+    public function isReadonly(): bool
     {
-        return $this->readonly;
+        return $this->readonly ?? false;
     }
 
-    public function setReadonly(?bool $readonly): void
+    public function setReadonly(bool $readonly): void
     {
         $this->readonly = $readonly;
     }
 
-    public function isUnique(): ?bool
+    public function isUnique(): bool
     {
-        return $this->isUnique;
+        return $this->isUnique ?? false;
     }
 
-    public function setIsUnique(?bool $isUnique): void
+    public function setIsUnique(bool $isUnique): void
     {
         $this->isUnique = $isUnique;
     }
@@ -299,7 +299,7 @@ class FormField
     #[ORM\PrePersist]
     public function onPrePersist(): void
     {
-        $this->createdAt = new \DateTime();
+        $this->createdAt ??= new \DateTime();
         $this->updatedAt = new \DateTime();
     }
 

@@ -250,7 +250,7 @@ class Service implements InjectionAwareInterface
         return [
             'id' => $model->getId(),
             'ip' => $model->getIp(),
-'created_at' => $model->getCreatedAt()?->format('Y-m-d H:i:s'),
+            'created_at' => $model->getCreatedAt()?->format('Y-m-d H:i:s'),
             'client' => [
                 'id' => $client['id'],
                 'first_name' => $client['first_name'],
@@ -260,7 +260,7 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-public function rmByClient(Client $client): void
+    public function rmByClient(Client $client): void
     {
         $clientId = $client->getId();
         if ($clientId === null) {

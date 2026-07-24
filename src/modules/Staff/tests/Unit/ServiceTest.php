@@ -1862,7 +1862,7 @@ test('updateGroup rejects moving group below its own child', function (): void {
 dataset('ActivityAdminHistorySearchFilters', fn (): array => [
     'empty filters' => [
         [],
-        'SELECT m.*, a.email, a.name',
+        'SELECT m.*, a.id AS staff_id, a.email, a.name',
         [],
     ],
     'search by keyword' => [
@@ -1890,8 +1890,50 @@ test('getActivityAdminHistorySearchQuery returns correct query and params', func
     expect(array_diff_key($result[1], $expectedParams))->toBe([]);
 })->with('ActivityAdminHistorySearchFilters');
 
+test('toActivityAdminHistoryRowApiArray returns paginated history data without additional lookups', function (): void {
+    $service = new Service();
+
+    $withStaff = $service->toActivityAdminHistoryRowApiArray([
+        'id' => '1',
+        'admin_id' => '2',
+        'ip' => '192.0.2.1',
+        'created_at' => '2026-01-01 12:00:00',
+        'staff_id' => '2',
+        'name' => 'Administrator',
+        'email' => 'admin@example.test',
+    ]);
+    $withoutStaff = $service->toActivityAdminHistoryRowApiArray([
+        'id' => '2',
+        'admin_id' => '3',
+        'ip' => null,
+        'created_at' => '2026-01-02 12:00:00',
+        'staff_id' => null,
+        'name' => null,
+        'email' => null,
+    ]);
+
+    expect($withStaff)->toBe([
+        'id' => 1,
+        'ip' => '192.0.2.1',
+        'created_at' => '2026-01-01 12:00:00',
+        'staff' => [
+            'id' => 2,
+            'name' => 'Administrator',
+            'email' => 'admin@example.test',
+        ],
+    ])->and($withoutStaff)->toBe([
+        'id' => 2,
+        'ip' => null,
+        'created_at' => '2026-01-02 12:00:00',
+    ]);
+});
+
 test('toActivityAdminHistoryApiArray returns history array data', function (): void {
-    $adminHistoryModel = createEntity(\Box\Mod\Activity\Entity\ActivityAdminHistory::class, ['admin_id' => 2]);
+    $createdAt = new DateTime('2026-01-01 12:00:00');
+    $adminHistoryModel = createEntity(Box\Mod\Activity\Entity\ActivityAdminHistory::class, [
+        'admin_id' => 2,
+        'created_at' => $createdAt,
+    ]);
 
     $expected = [
         'id' => '',
@@ -1920,6 +1962,7 @@ test('toActivityAdminHistoryApiArray returns history array data', function (): v
     expect($result)->not->toBeEmpty();
     expect($result)->toBeArray();
     expect(count(array_diff(array_keys($expected), array_keys($result))))->toBe(0, 'Missing array key values.');
+    expect($result['created_at'])->toBe('2026-01-01 12:00:00');
 });
 
 test('getPermissions returns empty array when staff has no groups', function (): void {

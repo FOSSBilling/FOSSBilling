@@ -585,24 +585,34 @@ test('login history get list', function (): void {
     $api = apiEndpoint(new Box\Mod\Staff\Api\Admin());
     $data = [];
 
-    $activityModel = createEntity(\Box\Mod\Activity\Entity\ActivityAdminHistory::class, ['id' => 1]);
-
-    $activityRepoMock = Mockery::mock(Box\Mod\Activity\Repository\ActivityAdminHistoryRepository::class);
-    $activityRepoMock->shouldReceive('find')->with(1)->andReturn($activityModel);
-
     $serviceMock = Mockery::mock(Box\Mod\Staff\Service::class);
     $serviceMock
     ->shouldReceive('getActivityAdminHistorySearchQuery')
     ->atLeast()->once()
     ->andReturn(['sqlString', []]);
     $serviceMock
-    ->shouldReceive('toActivityAdminHistoryApiArray')
-    ->atLeast()->once()
-    ->andReturn([]);
+    ->shouldReceive('toActivityAdminHistoryRowApiArray')
+    ->once()
+    ->with([
+        'id' => 1,
+        'admin_id' => 2,
+        'ip' => '192.0.2.1',
+        'created_at' => '2026-01-01 12:00:00',
+        'staff_id' => 2,
+        'name' => 'Administrator',
+        'email' => 'admin@example.test',
+    ])
+    ->andReturn(['id' => 1]);
 
-    $resultSet = [
-        'list' => [['id' => 1]],
-    ];
+    $resultSet = ['list' => [[
+        'id' => 1,
+        'admin_id' => 2,
+        'ip' => '192.0.2.1',
+        'created_at' => '2026-01-01 12:00:00',
+        'staff_id' => 2,
+        'name' => 'Administrator',
+        'email' => 'admin@example.test',
+    ]]];
     $pagerMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
     $pagerMock
     ->shouldReceive('getPaginatedResultSet')
@@ -611,22 +621,19 @@ test('login history get list', function (): void {
 
     $di = container();
     $di['pager'] = $pagerMock;
-    $di['em']->shouldReceive('getRepository')
-        ->with(\Box\Mod\Activity\Entity\ActivityAdminHistory::class)
-        ->andReturn($activityRepoMock);
 
     $api->setDi($di);
     $api->setService($serviceMock);
 
     $result = $api->login_history_get_list($data);
-    expect($result)->toBeArray();
+    expect($result['list'])->toBe([['id' => 1]]);
 });
 
 test('login history get', function (): void {
     $api = apiEndpoint(new Box\Mod\Staff\Api\Admin());
     $data['id'] = '1';
 
-    $activityModel = createEntity(\Box\Mod\Activity\Entity\ActivityAdminHistory::class);
+    $activityModel = createEntity(Box\Mod\Activity\Entity\ActivityAdminHistory::class);
 
     $activityRepoMock = Mockery::mock(Box\Mod\Activity\Repository\ActivityAdminHistoryRepository::class);
     $activityRepoMock->shouldReceive('find')->with(1)->andReturn($activityModel);
@@ -639,7 +646,7 @@ test('login history get', function (): void {
 
     $di = container();
     $di['em']->shouldReceive('getRepository')
-        ->with(\Box\Mod\Activity\Entity\ActivityAdminHistory::class)
+        ->with(Box\Mod\Activity\Entity\ActivityAdminHistory::class)
         ->andReturn($activityRepoMock);
 
     $api->setIdentity(staffAdminIdentity());

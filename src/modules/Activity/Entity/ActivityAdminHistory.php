@@ -10,6 +10,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: \Box\Mod\Activity\Repository\ActivityAdminHistoryRepository::class)]
 #[ORM\Table(name: 'activity_admin_history')]
 #[ORM\Index(name: 'admin_id_idx', columns: ['admin_id'])]
+#[ORM\HasLifecycleCallbacks]
 class ActivityAdminHistory
 {
     #[ORM\Id]
@@ -64,6 +65,6 @@ class ActivityAdminHistory
     #[ORM\PrePersist]
     public function onPrePersist(): void
     {
-        $this->createdAt = new \DateTime();
+        $this->createdAt ??= new \DateTime();
     }
 }

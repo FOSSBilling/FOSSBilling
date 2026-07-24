@@ -77,7 +77,7 @@ class Form
     #[ORM\PrePersist]
     public function onPrePersist(): void
     {
-        $this->createdAt = new \DateTime();
+        $this->createdAt ??= new \DateTime();
         $this->updatedAt = new \DateTime();
     }
 
