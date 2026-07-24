@@ -267,7 +267,7 @@ public function rmByClient(Client $client): void
             return;
         }
 
-        $this->di['dbal']->delete('activity_client_history', ['client_id' => $clientId]);
-        $this->di['dbal']->delete('activity_system', ['client_id' => $clientId]);
+        $this->di['dbal']->executeStatement('DELETE FROM activity_client_history WHERE client_id = ?', [$clientId]);
+        $this->di['dbal']->executeStatement('DELETE FROM activity_system WHERE client_id = ?', [$clientId]);
     }
 }

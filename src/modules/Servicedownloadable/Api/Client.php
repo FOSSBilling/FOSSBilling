@@ -13,7 +13,6 @@ namespace Box\Mod\Servicedownloadable\Api;
 
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Servicedownloadable\Entity\ServiceDownloadable;
-use Box\Mod\Servicedownloadable\Entity\ServiceDownloadableFile;
 use FOSSBilling\Validation\Api\RequiredParams;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -26,7 +25,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
      * Use GET to call this method. Sends file attached to order.
      * Sends file as attachment.
      */
-    #[RequiredParams(['order_id' => 'Order ID is required', 'file_id' => 'File ID is required'])]
+    #[RequiredParams(['order_id' => 'Order ID is required'])]
     public function send_file($data): Response
     {
         if (empty($data['order_id'])) {
@@ -46,13 +45,8 @@ class Client extends \FOSSBilling\Api\AbstractApi
             throw new \FOSSBilling\Exception('Order is not activated');
         }
 
-        $file = $this->getDi()['em']->getRepository(ServiceDownloadableFile::class)->find((int) $data['file_id']);
-        if (!$file instanceof ServiceDownloadableFile) {
-            throw new \FOSSBilling\InformationException('File not found');
-        }
-
         $service = $this->getService();
 
-        return $service->sendFile($file);
+        return $service->sendFile($s);
     }
 }

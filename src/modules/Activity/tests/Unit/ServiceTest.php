@@ -159,6 +159,10 @@ test('remove by client', function (): void {
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
     $dbalMock->shouldReceive('executeStatement')
         ->once()
+        ->with('DELETE FROM activity_client_history WHERE client_id = ?', [$clientModel->id])
+        ->andReturn(1);
+    $dbalMock->shouldReceive('executeStatement')
+        ->once()
         ->with('DELETE FROM activity_system WHERE client_id = ?', [$clientModel->id])
         ->andReturn(1);
 

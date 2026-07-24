@@ -13,7 +13,6 @@ namespace Box\Mod\Servicedownloadable\Api;
 
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Servicedownloadable\Entity\ServiceDownloadable;
-use Box\Mod\Servicedownloadable\Entity\ServiceDownloadableFile;
 use FOSSBilling\Validation\Api\RequiredParams;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -42,7 +41,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $service = $this->getService();
 
-        return $service->uploadProductFile($model, $data);
+        return $service->uploadProductFile($model);
     }
 
     /**
@@ -69,41 +68,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $service = $this->getService();
 
-        return $service->uploadOrderFile($serviceDownloadable, $order, $data);
-    }
-
-    #[RequiredParams(['id' => 'Product ID was not passed', 'file_id' => 'File ID was not passed'])]
-    public function file_update($data): bool
-    {
-        $this->checkPermissions('servicedownloadable', 'manage');
-        $product = $this->di['mod_service']('product')->findProductById((int) $data['id']);
-
-        return $this->getService()->updateProductFile($product, $data);
-    }
-
-    #[RequiredParams(['id' => 'Product ID was not passed', 'file_id' => 'File ID was not passed'])]
-    public function file_delete($data): bool
-    {
-        $this->checkPermissions('servicedownloadable', 'manage');
-        $product = $this->di['mod_service']('product')->findProductById((int) $data['id']);
-
-        return $this->getService()->removeProductFile($product, $data['file_id']);
-    }
-
-    #[RequiredParams(['order_id' => 'Order ID was not passed', 'file_id' => 'File ID was not passed'])]
-    public function order_file_delete($data): bool
-    {
-        $this->checkPermissions('servicedownloadable', 'manage');
-        $order = $this->getDi()['em']->getRepository(Order::class)->find((int) $data['order_id']);
-        if (!$order instanceof Order) {
-            throw new \FOSSBilling\InformationException('Order not found');
-        }
-        $service = $this->getDi()['mod_service']('order')->getOrderService($order);
-        if (!$service instanceof ServiceDownloadable) {
-            throw new \FOSSBilling\Exception('Order is not activated');
-        }
-
-        return $this->getService()->removeOrderFile($service, $order, (int) $data['file_id']);
+        return $service->updateProductFile($serviceDownloadable, $order);
     }
 
     /**
@@ -125,13 +90,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Send file for download for a specific product.
      *
-     * @param array{id:int|string, file_id:string} $data data required to send the product file
+     * @param array{id:int|string} $data data required to send the product file, must contain the product ID as `id`
      *
      * @return Response the product file download response
      *
      * @throws \FOSSBilling\Exception if the product cannot be found or the file cannot be sent
      */
-    #[RequiredParams(['id' => 'Product ID was not passed', 'file_id' => 'File ID was not passed'])]
+    #[RequiredParams(['id' => 'Product ID was not passed'])]
     public function send_file($data): Response
     {
         $this->checkPermissions('servicedownloadable', 'manage');
@@ -140,27 +105,6 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $service = $this->getService();
 
-        return $service->sendProductFile($model, $data['file_id']);
-    }
-
-    #[RequiredParams(['order_id' => 'Order ID was not passed', 'file_id' => 'File ID was not passed'])]
-    public function send_order_file($data): Response
-    {
-        $this->checkPermissions('servicedownloadable', 'manage');
-        $order = $this->getDi()['em']->getRepository(Order::class)->find((int) $data['order_id']);
-        if (!$order instanceof Order) {
-            throw new \FOSSBilling\InformationException('Order not found');
-        }
-        $service = $this->getDi()['mod_service']('order')->getOrderService($order);
-        if (!$service instanceof ServiceDownloadable) {
-            throw new \FOSSBilling\Exception('Order is not activated');
-        }
-
-        $file = $this->getDi()['em']->getRepository(ServiceDownloadableFile::class)->find((int) $data['file_id']);
-        if (!$file instanceof ServiceDownloadableFile) {
-            throw new \FOSSBilling\InformationException('File not found');
-        }
-
-        return $this->getService()->sendFile($file, false);
+        return $service->sendProductFile($model);
     }
 }
