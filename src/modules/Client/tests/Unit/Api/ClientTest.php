@@ -26,7 +26,7 @@ test('balanceGetList returns array', function (): void {
     $api = apiEndpoint(new Box\Mod\Client\Api\Client());
     $data = [];
 
-    $client = createEntity(Box\Mod\Client\Entity\Client::class);
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
     $balance = createEntity(Box\Mod\Client\Entity\ClientBalance::class, [
         'id' => 1,
         'client_id' => $client->getId(),

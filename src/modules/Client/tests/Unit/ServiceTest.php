@@ -521,6 +521,10 @@ test('counter returns array', function (): void {
     $service = new Box\Mod\Client\Service();
 
     $di = container();
+    $di['em']->getRepository(Box\Mod\Client\Entity\Client::class)
+        ->shouldReceive('getStatusCounts')
+        ->once()
+        ->andReturn(['active' => 0, 'suspended' => 0, 'canceled' => 0]);
 
     $service->setDi($di);
 
@@ -533,6 +537,8 @@ test('counter returns array', function (): void {
         Box\Mod\Client\Entity\Client::SUSPENDED => 0,
         Box\Mod\Client\Entity\Client::CANCELED => 0,
     ];
+
+    expect($result)->toMatchArray($expected);
 });
 
 test('getGroupPairs returns array', function (): void {
