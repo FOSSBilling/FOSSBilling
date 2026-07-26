@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicelicense;
 
+use Box\Mod\Servicelicense\Entity\ServiceLicense;
+
 class Server implements \FOSSBilling\InjectionAwareInterface
 {
     private array $_result = [
@@ -45,14 +47,14 @@ class Server implements \FOSSBilling\InjectionAwareInterface
         }
 
         $service = $this->di['mod_service']('servicelicense');
-        $model = $this->di['db']->findOne('ServiceLicense', 'license_key = :license_key', [':license_key' => $data['license']]);
+        $model = $this->di['em']->getRepository(ServiceLicense::class)->findByLicenseKey($data['license']);
 
-        if (!$model instanceof \Model_ServiceLicense) {
+        if (!$model instanceof ServiceLicense) {
             throw new \LogicException('Your license key is invalid.', 1005);
         }
 
-        $model->pinged_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $model->setPingedAt(new \DateTime());
+        $this->di['em']->flush();
 
         if (!isset($data['host']) || empty($data['host'])) {
             throw new \LogicException('Host key is not present in call', 1002);
@@ -92,7 +94,7 @@ class Server implements \FOSSBilling\InjectionAwareInterface
         }
 
         $this->_result['licensed_to'] = $service->getOwnerName($model);
-        $this->_result['created_at'] = $model->created_at;
+        $this->_result['created_at'] = $model->getCreatedAt()?->format('Y-m-d H:i:s');
         $this->_result['expires_at'] = $service->getExpirationDate($model);
         $this->_result['valid'] = true;
 
