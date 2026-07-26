@@ -225,10 +225,11 @@ test('get', function (): void {
     ->atLeast()->once()
     ->andReturn([
         'code' => 'EUR',
-        'title' => 'Euro',
+        'name' => 'Euro',
+        'symbol' => '€',
         'conversion_rate' => 1.0,
-        'format' => '€{{price}}',
-        'price_format' => '€{{price}}',
+        'format_pattern' => null,
+        'fraction_digits' => null,
     ]);
 
     $repositoryMock = Mockery::mock('\\' . Box\Mod\Currency\Repository\CurrencyRepository::class);
@@ -260,10 +261,11 @@ test('get default', function (): void {
 
     $returnArr = [
         'code' => 'EUR',
-        'title' => 'Euro',
+        'name' => 'Euro',
+        'symbol' => '€',
         'conversion_rate' => 3.4528,
-        'format' => '',
-        'price_format' => '',
+        'format_pattern' => null,
+        'fraction_digits' => null,
         'default' => true,
     ];
 
@@ -291,11 +293,11 @@ test('get default', function (): void {
     expect($result)->toBeArray();
     expect($returnArr)->toEqual($result);
     expect($returnArr['code'])->toEqual('EUR');
-    expect($returnArr['title'])->toEqual('Euro');
+    expect($returnArr['name'])->toEqual('Euro');
     expect($returnArr['conversion_rate'])->toBeFloat();
     expect($returnArr['conversion_rate'])->toEqual(3.4528);
-    expect($returnArr['format'])->toEqual('');
-    expect($returnArr['price_format'])->toEqual('');
+    expect($returnArr['format_pattern'])->toBeNull();
+    expect($returnArr['fraction_digits'])->toBeNull();
     expect($returnArr['default'])->toBeTrue();
 });
 
@@ -389,16 +391,19 @@ test('update', function (): void {
 
     $data = [
         'code' => 'EUR',
-        'format' => '€{{price}}',
-        'title' => 'Euros',
-        'price_format' => '€{{Price}}',
         'conversion_rate' => 0.6,
+        'format_pattern' => '{amount} EUR',
+        'fraction_digits' => '0',
     ];
 
     $service = Mockery::mock(Box\Mod\Currency\Service::class);
     $service
     ->shouldReceive('updateCurrency')
-    ->atLeast()->once()
+    ->once()
+    ->with('EUR', 0.6, [
+        'format_pattern' => '{amount} EUR',
+        'fraction_digits' => '0',
+    ])
     ->andReturn(true);
 
     $di = container();
@@ -409,6 +414,22 @@ test('update', function (): void {
 
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
+});
+
+test('update forwards individual formatting fields without clearing the other setting', function (): void {
+    $adminApi = apiEndpoint(new Box\Mod\Currency\Api\Admin());
+    $service = Mockery::mock(Box\Mod\Currency\Service::class);
+    $service->expects('updateCurrency')
+        ->with('EUR', null, ['format_pattern' => '{amount} EUR'])
+        ->andReturnTrue();
+
+    $adminApi->setDi(container());
+    $adminApi->setService($service);
+
+    expect($adminApi->update([
+        'code' => 'EUR',
+        'format_pattern' => '{amount} EUR',
+    ]))->toBeTrue();
 });
 
 test('delete exception', function (): void {

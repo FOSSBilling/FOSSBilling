@@ -59,6 +59,16 @@ final class PermissiveStub implements \ArrayAccess, \Countable, \IteratorAggrega
         return $this->data[$name] ?? new self();
     }
 
+    public function __invoke(mixed ...$arguments): self
+    {
+        return $this;
+    }
+
+    public function formatCurrency(mixed $amount, string $currency, array $attributes = [], ?string $locale = null): string
+    {
+        return '';
+    }
+
     public function __toString(): string
     {
         return '';

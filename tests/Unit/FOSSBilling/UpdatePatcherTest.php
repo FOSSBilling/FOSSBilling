@@ -14,7 +14,9 @@ test('downloadable file migration follows the client balance gateway repair', fu
         ->and($patches)->toHaveKey(91)
         ->and($patches[91][1])->toBe('patch91')
         ->and($patches)->toHaveKey(92)
-        ->and($patches[92][1])->toBe('patch92');
+        ->and($patches[92][1])->toBe('patch92')
+        ->and($patches)->toHaveKey(93)
+        ->and($patches[93][1])->toBe('patch93');
 });
 
 test('fresh installs start at the latest patch level', function (): void {

@@ -215,6 +215,16 @@ class FOSSBillingExtension
         return \FOSSBilling\Tools::humanReadableBytes($size);
     }
 
+    /**
+     * Preserve Twig IntlExtra's format_currency signature while applying the
+     * optional FOSSBilling per-currency display override.
+     */
+    #[AsTwigFilter('format_currency')]
+    public function formatCurrency(mixed $amount, string $currency, array $attrs = [], ?string $locale = null): string
+    {
+        return $this->di['mod_service']('currency')->formatCurrency($amount, $currency, $attrs, $locale);
+    }
+
     #[AsTwigFilter('hash')]
     public function hash(mixed $value, string $algo = 'xxh128'): string
     {
