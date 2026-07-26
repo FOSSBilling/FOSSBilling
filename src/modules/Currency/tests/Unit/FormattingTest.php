@@ -133,7 +133,7 @@ test('currency formatting settings are normalized and can be reset', function ()
 dataset('invalid currency formatting settings', [
     ['บาท', '0'],
     ['{amount} {amount}', '0'],
-    ["{amount}\nบาท", '0'],
+    ['{amount}' . PHP_EOL . 'บาท', '0'],
     ['{amount}', '-1'],
     ['{amount}', '7'],
     ['{amount}', '1.5'],
