@@ -12,6 +12,12 @@ declare(strict_types=1);
 
 use Tests\Support\PermissiveStub;
 use Tests\Support\StrictTemplateRenderer;
+use Twig\Environment;
+use Twig\Loader\ArrayLoader;
+use Twig\Loader\ChainLoader;
+use Twig\Loader\FilesystemLoader;
+use Twig\TwigFilter;
+use Twig\TwigFunction;
 
 test('cron settings renders when module config has not been saved', function (): void {
     $renderer = new StrictTemplateRenderer();
@@ -188,6 +194,72 @@ test('orderbutton client form renders incomplete custom field configuration unde
     expect($html)
         ->not->toContain('id="custom_1"')
         ->toContain('id="custom_2"');
+});
+
+test('signup renders country options with one default-country lookup', function (): void {
+    $guest = new class {
+        public int $defaultCountryLookups = 0;
+
+        public function __isset(string $name): bool
+        {
+            return true;
+        }
+
+        public function __get(string $name): mixed
+        {
+            return match ($name) {
+                'client_required' => ['country'],
+                'system_countries' => ['GB' => 'United Kingdom', 'US' => 'United States'],
+                'system_default_country' => $this->defaultCountry(),
+                'system_timezones', 'client_custom_fields' => [],
+                default => null,
+            };
+        }
+
+        private function defaultCountry(): string
+        {
+            ++$this->defaultCountryLookups;
+
+            return 'GB';
+        }
+    };
+    $request = new class {
+        public function __isset(string $name): bool
+        {
+            return true;
+        }
+
+        public function __get(string $name): mixed
+        {
+            return null;
+        }
+    };
+    $templateLoader = new FilesystemLoader();
+    $templateLoader->addPath(PATH_MODS . '/Page/templates/client', 'Page_client');
+    $twig = new Environment(new ChainLoader([
+        $templateLoader,
+        new ArrayLoader([
+            'layout_public.html.twig' => '{% block body %}{% endblock %}',
+            'macro_functions.html.twig' => '{% macro recaptcha() %}{% endmacro %}',
+        ]),
+    ]), ['strict_variables' => true]);
+    $twig->addFilter(new TwigFilter('trans', static fn (string $value): string => $value));
+    $twig->addFilter(new TwigFilter('url', static fn (string $value): string => $value));
+    $twig->addFilter(new TwigFilter('api_url', static fn (string $action, ?array $query = null, ?string $role = null): string => '/'));
+    $twig->addFunction(new TwigFunction('antispam_honeypot', static fn (): array => ['enabled' => false]));
+    $twig->addFunction(new TwigFunction('fb_api_form', static fn (array $config = []): string => ''));
+
+    $html = $twig->render('@Page_client/mod_page_signup.html.twig', [
+        'guest' => $guest,
+        'request' => $request,
+        'settings' => new PermissiveStub(['signup_tos' => 'disabled']),
+        'public_logo_url' => false,
+        'public_dark_logo_url' => false,
+    ]);
+
+    expect($html)
+        ->toContain('<option value="GB" label="United Kingdom" selected>United Kingdom</option>')
+        ->and($guest->defaultCountryLookups)->toBe(1);
 });
 
 /*
