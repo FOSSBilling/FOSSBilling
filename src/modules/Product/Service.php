@@ -41,6 +41,7 @@ class Service implements InjectionAwareInterface
     final public const string DOWNLOADABLE = 'downloadable';
     final public const string HOSTING = 'hosting';
     final public const string VPS = 'vps';
+    final public const string APIKEY = 'apikey';
 
     final public const string SETUP_AFTER_ORDER = 'after_order';
     final public const string SETUP_AFTER_PAYMENT = 'after_payment';

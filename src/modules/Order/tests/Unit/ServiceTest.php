@@ -565,14 +565,19 @@ test('onAfterAdminOrderUncancel logs exceptions', function (): void {
 });
 
 test('getOrderService returns core service', function (): void {
-    $service = new Model_ServiceCustom();
-    $service->loadBean(new Tests\Helpers\DummyBean());
-    $service->id = 1;
+    $serviceEntity = new Box\Mod\Servicecustom\Entity\ServiceCustom();
+
+    $serviceRepo = Mockery::mock(Doctrine\ORM\EntityRepository::class);
+    $serviceRepo->shouldReceive('find')->once()->with(1)->andReturn($serviceEntity);
+
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')
+        ->once()
+        ->with(Box\Mod\Servicecustom\Entity\ServiceCustom::class)
+        ->andReturn($serviceRepo);
 
     $di = container();
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('load')->once()->with('ServiceCustom', 1)->andReturn($service);
-    $di['db'] = $dbMock;
+    $di['em'] = $em;
 
     $svc = new Service();
     $svc->setDi($di);
@@ -584,7 +589,7 @@ test('getOrderService returns core service', function (): void {
 
     $result = $svc->getOrderService($order);
 
-    expect($result)->toBeInstanceOf(Model_ServiceCustom::class);
+    expect($result)->toBeInstanceOf(Box\Mod\Servicecustom\Entity\ServiceCustom::class);
 });
 
 test('getOrderService returns non-core service', function (): void {

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Servicecustom;
 
 use Box\Mod\Product\Entity\Product;
+use Box\Mod\Servicecustom\Entity\ServiceCustom;
 use FOSSBilling\Environment;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -87,37 +88,28 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
     }
 
-    /**
-     * @return \Model_ServiceCustom
-     */
-    public function action_create(\Model_ClientOrder $order)
+    public function action_create(\Model_ClientOrder $order): ServiceCustom
     {
         $product = $this->di['mod_service']('product')->findProductById((int) $order->product_id);
         if (!$product instanceof Product) {
             throw new \FOSSBilling\InformationException('Product not found');
         }
 
-        $model = $this->di['db']->dispense('ServiceCustom');
-        $model->client_id = $order->client_id;
-        $model->plugin = $product->getPlugin();
-        $model->plugin_config = $product->getPluginConfig();
-        $model->config = $order->config;
-        $model->created_at = date('Y-m-d H:i:s');
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $model = new ServiceCustom();
+        $model->setClientId((int) $order->client_id);
+        $model->setPlugin($product->getPlugin());
+        $model->setPluginConfig($product->getPluginConfig());
+        $model->setConfig($order->config);
+
+        $this->di['em']->persist($model);
+        $this->di['em']->flush();
 
         return $model;
     }
 
     public function action_activate(\Model_ClientOrder $order): bool
     {
-        $orderService = $this->di['mod_service']('order');
-        $model = $orderService->getOrderService($order);
-        if (!$model instanceof \RedBeanPHP\SimpleModel) {
-            throw new \FOSSBilling\Exception('Could not activate order. Service was not created', null, 7456);
-        }
-
-        // @phpstan-ignore argument.type (Model is guaranteed to be Model_ServiceCustom by getOrderService)
+        $model = $this->_getOrderService($order);
         $this->callOnAdapter($model, 'activate');
 
         return true;
@@ -125,69 +117,54 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function action_renew(\Model_ClientOrder $order): bool
     {
-        // move expiration period to future
         $model = $this->_getOrderService($order);
         $this->callOnAdapter($model, 'renew');
 
-        $model->updated_at = date('Y-m-d H:i:s');
-
-        $this->di['db']->store($model);
+        $this->di['em']->flush();
 
         return true;
     }
 
     public function action_suspend(\Model_ClientOrder $order): bool
     {
-        // move expiration period to future
         $model = $this->_getOrderService($order);
 
         $this->callOnAdapter($model, 'suspend');
 
-        $model->updated_at = date('Y-m-d H:i:s');
-
-        $this->di['db']->store($model);
+        $this->di['em']->flush();
 
         return true;
     }
 
     public function action_unsuspend(\Model_ClientOrder $order): bool
     {
-        // move expiration period to future
         $model = $this->_getOrderService($order);
 
         $this->callOnAdapter($model, 'unsuspend');
 
-        $model->updated_at = date('Y-m-d H:i:s');
-
-        $this->di['db']->store($model);
+        $this->di['em']->flush();
 
         return true;
     }
 
     public function action_cancel(\Model_ClientOrder $order): bool
     {
-        // move expiration period to future
         $model = $this->_getOrderService($order);
 
         $this->callOnAdapter($model, 'cancel');
 
-        $model->updated_at = date('Y-m-d H:i:s');
-
-        $this->di['db']->store($model);
+        $this->di['em']->flush();
 
         return true;
     }
 
     public function action_uncancel(\Model_ClientOrder $order): bool
     {
-        // move expiration period to future
         $model = $this->_getOrderService($order);
 
         $this->callOnAdapter($model, 'uncancel');
 
-        $model->updated_at = date('Y-m-d H:i:s');
-
-        $this->di['db']->store($model);
+        $this->di['em']->flush();
 
         return true;
     }
@@ -203,29 +180,30 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         $this->callOnAdapter($model, 'delete');
-        $this->di['db']->trash($model);
+        $this->di['em']->remove($model);
+        $this->di['em']->flush();
 
         return true;
     }
 
-    public function getConfig(\Model_ServiceCustom $model): array
+    public function getConfig(ServiceCustom $model): array
     {
-        return json_decode($model->config ?? '', true) ?? [];
+        return json_decode($model->getConfig() ?? '', true) ?? [];
     }
 
-    public function toApiArray(\Model_ServiceCustom $model): array
+    public function toApiArray(ServiceCustom $model): array
     {
         $data = $this->getConfig($model);
-        $data['id'] = $model->id;
-        $data['client_id'] = $model->client_id;
-        $data['plugin'] = $model->plugin;
-        $data['updated_at'] = $model->updated_at;
-        $data['created_at'] = $model->created_at;
+        $data['id'] = $model->getId();
+        $data['client_id'] = $model->getClientId();
+        $data['plugin'] = $model->getPlugin();
+        $data['updated_at'] = $model->getUpdatedAt()?->format('Y-m-d H:i:s');
+        $data['created_at'] = $model->getCreatedAt()?->format('Y-m-d H:i:s');
 
         return $data;
     }
 
-    public function customCall(\Model_ServiceCustom $model, $method, $params = [])
+    public function customCall(ServiceCustom $model, $method, $params = [])
     {
         $forbidden_methods = [
             'delete',
@@ -250,15 +228,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         $model = $this->getServiceCustomByOrderId($orderId);
-        $model->config = json_encode($config);
-        $model->updated_at = date('Y-m-d H:i:s');
+        $model->setConfig(json_encode($config));
 
-        $this->di['db']->store($model);
+        $this->di['em']->flush();
 
-        $this->di['logger']->info('Custom service updated #%s', $model->id);
+        $this->di['logger']->info('Custom service updated #%s', $model->getId());
     }
 
-    public function getServiceCustomByOrderId($orderId, $clientId = null)
+    public function getServiceCustomByOrderId($orderId, $clientId = null): ?ServiceCustom
     {
         $orderService = $this->di['mod_service']('order');
 
@@ -279,18 +256,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $s = $orderService->getOrderService($order);
 
-        if (!$s instanceof \Model_ServiceCustom) {
+        if (!$s instanceof ServiceCustom) {
             throw new \FOSSBilling\Exception('Order is not activated');
         }
 
         return $s;
     }
 
-    private function callOnAdapter(\Model_ServiceCustom $model, $method, $params = [])
+    private function callOnAdapter(ServiceCustom $model, $method, $params = [])
     {
-        $plugin = $model->plugin;
+        $plugin = $model->getPlugin();
         if (empty($plugin)) {
-            // error_log('Plugin is not used for this custom service');
             return null;
         }
 
@@ -308,7 +284,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         require_once Path::normalize($file);
 
-        $config = json_decode($model->plugin_config ?? '', true) ?? [];
+        $config = json_decode($model->getPluginConfig() ?? '', true) ?? [];
 
         $adapter = new $plugin($config);
 
@@ -324,11 +300,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $adapter->$method($data, $order_data, $params);
     }
 
-    private function _getOrderService(\Model_ClientOrder $order)
+    private function _getOrderService(\Model_ClientOrder $order): ServiceCustom
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
-        if (!$model instanceof \RedBeanPHP\SimpleModel) {
+        if (!$model instanceof ServiceCustom) {
             throw new \FOSSBilling\Exception('Order :id has no active service', [':id' => $order->id]);
         }
 

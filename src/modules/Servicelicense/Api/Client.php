@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicelicense\Api;
 
+use Box\Mod\Servicelicense\Entity\ServiceLicense;
+
 /**
  *License Service management.
  */
@@ -28,33 +30,31 @@ class Client extends \FOSSBilling\Api\AbstractApi
         return $this->getService()->reset($s);
     }
 
-    public function _getService(array $data)
+    public function _getService(array $data): ServiceLicense
     {
         $required = ['order_id' => 'Order ID is required'];
         $this->getDi()['validator']->checkRequiredParamsForArray($required, $data);
 
         $client = $this->getIdentity();
 
-        $bindings = [
-            ':id' => $data['order_id'],
-            ':client_id' => $client->id,
-        ];
+        $order = $this->getDi()['em']->getRepository(\Box\Mod\Order\Entity\Order::class)->findOneBy([
+            'id' => $data['order_id'],
+            'clientId' => $client->id,
+        ]);
 
-        $order = $this->getDi()['db']->findOne('ClientOrder', 'id = :id AND client_id = :client_id', $bindings);
-
-        if (!$order instanceof \Model_ClientOrder) {
+        if (!$order instanceof \Box\Mod\Order\Entity\Order) {
             throw new \FOSSBilling\InformationException('Order not found');
         }
 
         $orderService = $this->getDi()['mod_service']('order');
         $orderService->assertOrderUsable($order);
 
-        if ($order->status !== \Model_ClientOrder::STATUS_ACTIVE) {
+        if ($order->getStatus() !== \Box\Mod\Order\Entity\Order::STATUS_ACTIVE) {
             throw new \FOSSBilling\InformationException('Order is not activated');
         }
 
         $s = $orderService->getOrderService($order);
-        if (!$s instanceof \Model_ServiceLicense) {
+        if (!$s instanceof ServiceLicense) {
             throw new \FOSSBilling\Exception('Order is not activated');
         }
 

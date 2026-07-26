@@ -30,6 +30,15 @@ class Service implements InjectionAwareInterface
 {
     public const META_CANCEL_AT_PERIOD_END = 'cancel_at_period_end';
 
+    private const BUILT_IN_SERVICE_TYPES = [
+        \Box\Mod\Product\Service::CUSTOM,
+        \Box\Mod\Product\Service::LICENSE,
+        \Box\Mod\Product\Service::DOWNLOADABLE,
+        \Box\Mod\Product\Service::HOSTING,
+        \Box\Mod\Product\Service::DOMAIN,
+        \Box\Mod\Product\Service::APIKEY,
+    ];
+
     protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
@@ -420,14 +429,7 @@ class Service implements InjectionAwareInterface
         $serviceType = $this->orderServiceType($order);
 
         if ($serviceId !== null) {
-            $builtInServiceTypes = [
-                \Box\Mod\Product\Service::CUSTOM,
-                \Box\Mod\Product\Service::LICENSE,
-                \Box\Mod\Product\Service::DOWNLOADABLE,
-                \Box\Mod\Product\Service::HOSTING,
-                \Box\Mod\Product\Service::DOMAIN,
-            ];
-            if (in_array($serviceType, $builtInServiceTypes, true)) {
+            if (in_array($serviceType, self::BUILT_IN_SERVICE_TYPES, true)) {
                 $entityClass = $this->_getServiceEntityClass($order);
                 if ($entityClass !== null) {
                     return $this->di['em']->getRepository($entityClass)->find($serviceId);
@@ -460,17 +462,29 @@ class Service implements InjectionAwareInterface
 
         return match ($serviceType) {
             \Box\Mod\Product\Service::DOWNLOADABLE => \Box\Mod\Servicedownloadable\Entity\ServiceDownloadable::class,
+            \Box\Mod\Product\Service::LICENSE => \Box\Mod\Servicelicense\Entity\ServiceLicense::class,
+            \Box\Mod\Product\Service::CUSTOM => \Box\Mod\Servicecustom\Entity\ServiceCustom::class,
+            \Box\Mod\Product\Service::APIKEY => \Box\Mod\Serviceapikey\Entity\ServiceApiKey::class,
             default => null,
         };
     }
 
+    private const SERVICE_ENTITY_TYPE_MAP = [
+        \Box\Mod\Servicedownloadable\Entity\ServiceDownloadable::class => \Box\Mod\Product\Service::DOWNLOADABLE,
+        \Box\Mod\Servicelicense\Entity\ServiceLicense::class => \Box\Mod\Product\Service::LICENSE,
+        \Box\Mod\Servicecustom\Entity\ServiceCustom::class => \Box\Mod\Product\Service::CUSTOM,
+        \Box\Mod\Serviceapikey\Entity\ServiceApiKey::class => \Box\Mod\Product\Service::APIKEY,
+    ];
+
     public function getServiceOrder($service)
     {
-        if ($service instanceof \Box\Mod\Servicedownloadable\Entity\ServiceDownloadable) {
-            return $this->getOrderRepository()->findOneBy([
-                'serviceType' => \Box\Mod\Product\Service::DOWNLOADABLE,
-                'serviceId' => $service->getId(),
-            ]);
+        foreach (self::SERVICE_ENTITY_TYPE_MAP as $entityClass => $serviceType) {
+            if ($service instanceof $entityClass) {
+                return $this->getOrderRepository()->findOneBy([
+                    'serviceType' => $serviceType,
+                    'serviceId' => $service->getId(),
+                ]);
+            }
         }
 
         $className = $service::class;
@@ -1330,15 +1344,8 @@ class Service implements InjectionAwareInterface
         $orderId = $this->orderId($order);
 
         $repo = $this->di['mod_service']('service' . $serviceType);
-        $builtInServiceTypes = [
-            \Box\Mod\Product\Service::CUSTOM,
-            \Box\Mod\Product\Service::LICENSE,
-            \Box\Mod\Product\Service::DOWNLOADABLE,
-            \Box\Mod\Product\Service::HOSTING,
-            \Box\Mod\Product\Service::DOMAIN,
-        ];
 
-        if (in_array($serviceType, $builtInServiceTypes, true)) {
+        if (in_array($serviceType, self::BUILT_IN_SERVICE_TYPES, true)) {
             $m = 'action_' . $action;
             if (!method_exists($repo, $m) || !is_callable([$repo, $m])) {
                 throw new \FOSSBilling\Exception('Service ' . $serviceType . ' do not support ' . $m);
