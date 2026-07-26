@@ -223,6 +223,17 @@ test('signup renders country options with one default-country lookup', function 
             return 'GB';
         }
     };
+    $request = new class {
+        public function __isset(string $name): bool
+        {
+            return true;
+        }
+
+        public function __get(string $name): mixed
+        {
+            return null;
+        }
+    };
     $templateLoader = new FilesystemLoader();
     $templateLoader->addPath(PATH_MODS . '/Page/templates/client', 'Page_client');
     $twig = new Environment(new ChainLoader([
@@ -231,7 +242,7 @@ test('signup renders country options with one default-country lookup', function 
             'layout_public.html.twig' => '{% block body %}{% endblock %}',
             'macro_functions.html.twig' => '{% macro recaptcha() %}{% endmacro %}',
         ]),
-    ]));
+    ]), ['strict_variables' => true]);
     $twig->addFilter(new TwigFilter('trans', static fn (string $value): string => $value));
     $twig->addFilter(new TwigFilter('url', static fn (string $value): string => $value));
     $twig->addFilter(new TwigFilter('api_url', static fn (string $action, ?array $query = null, ?string $role = null): string => '/'));
@@ -240,8 +251,10 @@ test('signup renders country options with one default-country lookup', function 
 
     $html = $twig->render('@Page_client/mod_page_signup.html.twig', [
         'guest' => $guest,
-        'request' => [],
-        'settings' => ['signup_tos' => 'disabled'],
+        'request' => $request,
+        'settings' => new PermissiveStub(['signup_tos' => 'disabled']),
+        'public_logo_url' => false,
+        'public_dark_logo_url' => false,
     ]);
 
     expect($html)
