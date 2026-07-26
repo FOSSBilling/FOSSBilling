@@ -99,6 +99,9 @@
         const defaultPreview = document.getElementById('currency-default-preview');
         const effectivePreview = document.getElementById('currency-effective-preview');
         const resetButton = document.getElementById('reset-formatting');
+        if (!fractionDigits || !formatPattern || !defaultPreview || !effectivePreview || !resetButton) {
+            return;
+        }
 
         const renderPreview = function () {
             const selectedDigits = fractionDigits.value === '' ? null : Number(fractionDigits.value);
