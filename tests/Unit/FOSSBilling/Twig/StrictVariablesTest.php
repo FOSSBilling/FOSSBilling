@@ -14,6 +14,8 @@ use Tests\Support\PermissiveStub;
 use Tests\Support\StrictTemplateRenderer;
 use Twig\Environment;
 use Twig\Loader\ArrayLoader;
+use Twig\Loader\ChainLoader;
+use Twig\Loader\FilesystemLoader;
 use Twig\TwigFilter;
 use Twig\TwigFunction;
 
@@ -221,13 +223,14 @@ test('signup renders country options with one default-country lookup', function 
             return 'GB';
         }
     };
-    $templateSource = file_get_contents(PATH_MODS . '/Page/templates/client/mod_page_signup.html.twig');
-    expect($templateSource)->not->toBeFalse();
-
-    $twig = new Environment(new ArrayLoader([
-        'signup' => $templateSource,
-        'layout_public.html.twig' => '{% block body %}{% endblock %}',
-        'macro_functions.html.twig' => '{% macro recaptcha() %}{% endmacro %}',
+    $templateLoader = new FilesystemLoader();
+    $templateLoader->addPath(PATH_MODS . '/Page/templates/client', 'Page_client');
+    $twig = new Environment(new ChainLoader([
+        $templateLoader,
+        new ArrayLoader([
+            'layout_public.html.twig' => '{% block body %}{% endblock %}',
+            'macro_functions.html.twig' => '{% macro recaptcha() %}{% endmacro %}',
+        ]),
     ]));
     $twig->addFilter(new TwigFilter('trans', static fn (string $value): string => $value));
     $twig->addFilter(new TwigFilter('url', static fn (string $value): string => $value));
@@ -235,7 +238,7 @@ test('signup renders country options with one default-country lookup', function 
     $twig->addFunction(new TwigFunction('antispam_honeypot', static fn (): array => ['enabled' => false]));
     $twig->addFunction(new TwigFunction('fb_api_form', static fn (array $config = []): string => ''));
 
-    $html = $twig->render('signup', [
+    $html = $twig->render('@Page_client/mod_page_signup.html.twig', [
         'guest' => $guest,
         'request' => [],
         'settings' => ['signup_tos' => 'disabled'],
