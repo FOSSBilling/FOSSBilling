@@ -102,12 +102,13 @@
                             {% endif %}
 
                             {% if 'country' in r %}
+                                {% set selected_country = request.country|default(guest.system_default_country) %}
                                 <div class="mb-3">
                                     <label class="form-label" for="country">{{ 'Country'|trans }}</label>
                                     <select class="form-select" id="country" name="country" required="required">
                                         <option value="">{{ '-- Select Country --'|trans }}</option>
                                         {% for val,label in guest.system_countries %}
-                                            <option value="{{ val }}" label="{{ label|e }}" {% if request.country|default(guest.system_default_country) == val %}selected{% endif %}>{{ label|e }}</option>
+                                            <option value="{{ val }}" label="{{ label|e }}" {% if selected_country == val %}selected{% endif %}>{{ label|e }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
