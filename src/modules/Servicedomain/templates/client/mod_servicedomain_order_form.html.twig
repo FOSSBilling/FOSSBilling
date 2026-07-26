@@ -115,6 +115,8 @@
     }
 
     document.addEventListener('DOMContentLoaded', function () {
+        const currencyFormat = JSON.parse('{{ currency|json_encode|e('js') }}');
+
         document.querySelectorAll('ul.nav.nav-tabs > li.domain-tab a').forEach(a => {
             a.addEventListener('click', function () {
                 document.getElementById('domain-action').value = this.getAttribute('rel');
@@ -155,11 +157,10 @@
             if (typeof multiply !== 'undefined') {
                 total *= multiply;
             }
-            return new Intl.NumberFormat(undefined, {
-                style: 'currency',
-                currency: code,
-                currencyDisplay: 'narrowSymbol',
-            }).format(total);
+            return FOSSBilling.currency.format(total, {
+                ...currencyFormat,
+                code: code,
+            });
         };
 
         const transferCheck = document.getElementById('transfer-check');

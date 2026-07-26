@@ -431,6 +431,8 @@ CREATE TABLE `currency` (
   `code` varchar(3) DEFAULT NULL,
   `is_default` tinyint(1) DEFAULT '0',
   `conversion_rate` decimal(13,6) DEFAULT '1.000000',
+  `format_pattern` varchar(100) DEFAULT NULL,
+  `fraction_digits` smallint DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),

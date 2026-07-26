@@ -493,6 +493,7 @@
                         height: 112,
                         valueFormat: 'currency',
                         currency: "{{ currency.code|default('USD') }}",
+                        currencyFormat: JSON.parse('{{ currency|json_encode|e('js') }}'),
                     }],
                     ['chart-orders', {{ admin.stats_get_orders({ 'date_from': request.date_from, 'date_to': request.date_to })|json_encode }}, {
                         label: "{{ 'Orders'|trans }}",

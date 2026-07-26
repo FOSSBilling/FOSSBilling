@@ -38,6 +38,12 @@ class Currency implements ApiArrayInterface, TimestampInterface
 
     private ?float $conversionRateFloat = null;
 
+    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 100, nullable: true)]
+    private ?string $formatPattern = null;
+
+    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::SMALLINT, nullable: true)]
+    private ?int $fractionDigits = null;
+
     public function __construct(
         #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 3, unique: true)]
         private string $code,
@@ -51,6 +57,8 @@ class Currency implements ApiArrayInterface, TimestampInterface
             'name' => Currencies::getName($this->getCode()),
             'symbol' => Currencies::getSymbol($this->getCode()),
             'conversion_rate' => $this->getConversionRate(),
+            'format_pattern' => $this->getFormatPattern(),
+            'fraction_digits' => $this->getFractionDigits(),
             'default' => $this->isDefault(),
         ];
     }
@@ -82,6 +90,16 @@ class Currency implements ApiArrayInterface, TimestampInterface
     public function getConversionRateRaw(): string
     {
         return $this->conversionRate;
+    }
+
+    public function getFormatPattern(): ?string
+    {
+        return $this->formatPattern;
+    }
+
+    public function getFractionDigits(): ?int
+    {
+        return $this->fractionDigits;
     }
 
     public function getCreatedAt(): ?\DateTime
@@ -120,6 +138,20 @@ class Currency implements ApiArrayInterface, TimestampInterface
         }
         // Invalidate cached float value so it will be recalculated on next access
         $this->conversionRateFloat = null;
+
+        return $this;
+    }
+
+    public function setFormatPattern(?string $formatPattern): self
+    {
+        $this->formatPattern = $formatPattern;
+
+        return $this;
+    }
+
+    public function setFractionDigits(?int $fractionDigits): self
+    {
+        $this->fractionDigits = $fractionDigits;
 
         return $this;
     }

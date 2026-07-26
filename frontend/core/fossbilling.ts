@@ -1,4 +1,6 @@
 // @ts-nocheck -- Runtime DOM/widget integration; converted to TS without changing behavior.
+import { formatCurrencyAmount } from './currency-format.mts';
+
 /**
  * FOSSBilling browser runtime.
  *
@@ -106,6 +108,10 @@
   }
 
   FOSSBilling.cookieNames = cookieNames;
+
+  FOSSBilling.currency = Object.assign({
+    format: formatCurrencyAmount,
+  }, FOSSBilling.currency || {});
 
   // Returns the IANA timezone identifier the browser is running in, or null.
   // Used by signup and the public layout so guests see dates in their own zone.

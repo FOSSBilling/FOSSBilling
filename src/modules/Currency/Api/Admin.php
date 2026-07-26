@@ -134,6 +134,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * Updates system currency settings.
      *
      * @optional float $conversion_rate - new currency conversion rate
+     * @optional string $format_pattern - plain-text display pattern containing one {amount} placeholder
+     * @optional int $fraction_digits - fraction digit override from 0 to 6, blank to use the ISO default
      *
      * @throws \FOSSBilling\Exception
      */
@@ -143,8 +145,16 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('currency', 'edit');
 
         $conversionRate = $data['conversion_rate'] ?? null;
+        $formatting = array_intersect_key($data, [
+            'format_pattern' => true,
+            'fraction_digits' => true,
+        ]);
 
-        return $this->getService()->updateCurrency($data['code'], $conversionRate);
+        return $this->getService()->updateCurrency(
+            $data['code'],
+            $conversionRate,
+            $formatting,
+        );
     }
 
     /**
