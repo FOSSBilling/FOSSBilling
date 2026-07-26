@@ -40,40 +40,70 @@
                     <input class="form-control" type="text" name="conversion_rate" value="{{ currency.conversion_rate }}" required>
                 </div>
                 <div class="col-12">
-                    <hr class="my-2">
-                    <h4 class="mb-1">{{ 'Display Formatting'|trans }}</h4>
-                    <p class="text-secondary mb-0">
-                        {{ 'Leave these fields blank to use the standard format for the active language and currency. These settings affect display only; calculations and payment gateway values are unchanged.'|trans }}
-                    </p>
-                </div>
-                <div class="col-lg-6">
-                    <label class="form-label" for="fraction-digits">{{ 'Decimal Places'|trans }}</label>
-                    <select class="form-select" id="fraction-digits" name="fraction_digits">
-                        <option value="">{{ 'Automatic (currency default)'|trans }}</option>
-                        {% for digit in 0..6 %}
-                            <option value="{{ digit }}"{% if currency.fraction_digits is same as(digit) %} selected{% endif %}>{{ digit }}</option>
-                        {% endfor %}
-                    </select>
-                    <div class="form-hint">{{ 'Overrides only the number of displayed decimal places.'|trans }}</div>
-                </div>
-                <div class="col-lg-6">
-                    <label class="form-label" for="format-pattern">{{ 'Format Pattern'|trans }}</label>
-                    <input
-                        class="form-control"
-                        id="format-pattern"
-                        type="text"
-                        name="format_pattern"
-                        value="{{ currency.format_pattern|default('') }}"
-                        maxlength="100"
-                        placeholder="{amount} บาท"
-                    >
-                    <div class="form-hint">{{ 'Plain text containing {amount} exactly once. Example: {amount} บาท'|trans }}</div>
-                </div>
-                <div class="col-12">
-                    <div class="rounded border p-3">
-                        <div><span class="text-secondary">{{ 'Standard format:'|trans }}</span> <span id="currency-default-preview"></span></div>
-                        <div><span class="text-secondary">{{ 'Effective display:'|trans }}</span> <strong id="currency-effective-preview"></strong></div>
-                        <button class="btn btn-sm btn-ghost-secondary mt-2" id="reset-formatting" type="button">{{ 'Reset to standard format'|trans }}</button>
+                    {% set has_formatting_overrides = currency.format_pattern|default('') is not empty or currency.fraction_digits|default(null) is not null %}
+                    <div class="accordion" id="currency-formatting-accordion">
+                        <div class="accordion-item">
+                            <div class="accordion-header">
+                                <button
+                                    class="accordion-button{% if not has_formatting_overrides %} collapsed{% endif %}"
+                                    type="button"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#currency-formatting"
+                                    aria-expanded="{{ has_formatting_overrides ? 'true' : 'false' }}"
+                                    aria-controls="currency-formatting"
+                                >
+                                    {{ 'Display Formatting (Advanced)'|trans }}
+                                    <div class="accordion-button-toggle">
+                                        <svg class="icon">
+                                            <use href="#chevron-down" />
+                                        </svg>
+                                    </div>
+                                </button>
+                            </div>
+                            <div
+                                class="accordion-collapse collapse{% if has_formatting_overrides %} show{% endif %}"
+                                id="currency-formatting"
+                                data-bs-parent="#currency-formatting-accordion"
+                            >
+                                <div class="accordion-body">
+                                    <p class="text-secondary">
+                                        {{ 'Leave these fields blank to use the standard format for the active language and currency. These settings affect display only; calculations and payment gateway values are unchanged.'|trans }}
+                                    </p>
+                                    <div class="row g-3">
+                                        <div class="col-lg-6">
+                                            <label class="form-label" for="fraction-digits">{{ 'Decimal Places'|trans }}</label>
+                                            <select class="form-select" id="fraction-digits" name="fraction_digits">
+                                                <option value="">{{ 'Automatic (Currency Default)'|trans }}</option>
+                                                {% for digit in 0..6 %}
+                                                    <option value="{{ digit }}"{% if currency.fraction_digits is same as(digit) %} selected{% endif %}>{{ digit }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <div class="form-hint">{{ 'Overrides only the number of displayed decimal places.'|trans }}</div>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <label class="form-label" for="format-pattern">{{ 'Format Pattern'|trans }}</label>
+                                            <input
+                                                class="form-control"
+                                                id="format-pattern"
+                                                type="text"
+                                                name="format_pattern"
+                                                value="{{ currency.format_pattern|default('') }}"
+                                                maxlength="100"
+                                                placeholder="{{ currency.code }} {amount}"
+                                            >
+                                            <div class="form-hint">{{ 'Plain text containing {amount} exactly once. Example: %code% {amount}'|trans({'%code%': currency.code}) }}</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="rounded border p-3">
+                                                <div><span class="text-secondary">{{ 'Standard Format:'|trans }}</span> <span id="currency-default-preview"></span></div>
+                                                <div><span class="text-secondary">{{ 'Effective Display:'|trans }}</span> <strong id="currency-effective-preview"></strong></div>
+                                            </div>
+                                            <button class="btn btn-sm btn-ghost-secondary mt-2" id="reset-formatting" type="button">{{ 'Reset to Standard Format'|trans }}</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
