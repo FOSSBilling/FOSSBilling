@@ -61,6 +61,17 @@ interface FOSSBillingRuntime {
   };
   cookieCreate?: (name: string, value: string, days?: number) => void;
   cookieRead?: (name: string) => string | null;
+  currency?: {
+    format: (
+      amount: number,
+      options: {
+        code: string;
+        format_pattern?: string | null;
+        fraction_digits?: number | null;
+      },
+      locale?: string | string[],
+    ) => string;
+  };
   detectTimezone?: () => string;
   editor?: FOSSBillingEditorRegistry;
   initTimezone?: () => void;

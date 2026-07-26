@@ -62,6 +62,14 @@ function formatTooltipValue(value, options) {
 
   if (options.valueFormat === 'currency' && options.currency) {
     try {
+      if (globalThis.FOSSBilling?.currency?.format) {
+        return globalThis.FOSSBilling.currency.format(numericValue, {
+          code: options.currency,
+          format_pattern: options.currencyFormat?.format_pattern,
+          fraction_digits: options.currencyFormat?.fraction_digits,
+        });
+      }
+
       return new Intl.NumberFormat(undefined, {
         style: 'currency',
         currency: options.currency,

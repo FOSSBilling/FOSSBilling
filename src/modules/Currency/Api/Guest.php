@@ -14,7 +14,6 @@ namespace Box\Mod\Currency\Api;
 use Box\Mod\Currency\Entity\Currency;
 use FOSSBilling\i18n;
 use FOSSBilling\Tools;
-use Symfony\Component\Intl\Currencies;
 
 class Guest extends \FOSSBilling\Api\AbstractApi
 {
@@ -77,15 +76,9 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $locale = i18n::getActiveLocale($di['request'], true, $di['cookie_queue']);
 
         if ($withoutCurrency) {
-            $fractionDigits = Currencies::getFractionDigits($c['code']);
-            $formatter = new \NumberFormatter($locale, \NumberFormatter::DECIMAL);
-            $formatter->setAttribute(\NumberFormatter::FRACTION_DIGITS, $fractionDigits);
-
-            return $formatter->format($p);
+            return $this->getService()->formatNumber($p, $c['code'], locale: $locale);
         }
 
-        $formatter = new \NumberFormatter($locale, \NumberFormatter::CURRENCY);
-
-        return $formatter->formatCurrency($p, $c['code']);
+        return $this->getService()->formatCurrency($p, $c['code'], locale: $locale);
     }
 }
