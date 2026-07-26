@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use Box\Mod\Servicecustom\Api\Client;
+use Box\Mod\Servicecustom\Entity\ServiceCustom;
 use Box\Mod\Servicecustom\Service;
 
 test('calls custom service method', function (): void {
@@ -20,9 +21,9 @@ test('calls custom service method', function (): void {
     $serviceMock->shouldReceive('getServiceCustomByOrderId')
         ->with(1, 1)
         ->atLeast()->once()
-        ->andReturn(new Model_ServiceCustom());
+        ->andReturn(new ServiceCustom());
     $serviceMock->shouldReceive('customCall')
-        ->with(Mockery::type(Model_ServiceCustom::class), 'delete', Mockery::type('array'))
+        ->with(Mockery::type(ServiceCustom::class), 'delete', Mockery::type('array'))
         ->atLeast()->once()
         ->andReturn(null);
 
