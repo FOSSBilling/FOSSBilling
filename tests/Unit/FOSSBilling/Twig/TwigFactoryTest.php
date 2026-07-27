@@ -34,3 +34,22 @@ test('configureCsrf expires the legacy cookie with matching attributes', functio
         ->and($cookies[CookieNames::LEGACY_CSRF]->isHttpOnly())->toBeFalse()
         ->and($cookies[CookieNames::LEGACY_CSRF]->getSameSite())->toBe($cookies[CookieNames::CSRF]->getSameSite());
 });
+
+test('getDefaultCurrencyCode returns null instead of crashing when the currency table is missing patched columns', function (): void {
+    $di = Tests\Helpers\container();
+
+    $currencyRepository = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $currencyRepository->shouldReceive('findDefault')
+        ->once()
+        ->andThrow(new class('Column not found: 1054 Unknown column t0.format_pattern') extends RuntimeException implements Doctrine\DBAL\Exception {});
+
+    $di['em'] = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
+    $di['em']->shouldReceive('getRepository')
+        ->with(Box\Mod\Currency\Entity\Currency::class)
+        ->andReturn($currencyRepository);
+
+    $factory = new TwigFactory($di);
+    $result = (new ReflectionMethod($factory, 'getDefaultCurrencyCode'))->invoke($factory);
+
+    expect($result)->toBeNull();
+});
