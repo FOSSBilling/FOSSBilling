@@ -446,8 +446,15 @@ class TwigFactory
             return null;
         }
 
-        $repository = $this->di['em']->getRepository(Currency::class);
-        $currency = $repository->findDefault();
+        try {
+            $repository = $this->di['em']->getRepository(Currency::class);
+            $currency = $repository->findDefault();
+        } catch (\Doctrine\DBAL\Exception) {
+            // The currency table may not have the latest columns yet if pending
+            // database patches have not been applied. Number formatting falls
+            // back to its default rather than breaking every page render.
+            return null;
+        }
 
         return $currency instanceof Currency ? $currency->getCode() : null;
     }
