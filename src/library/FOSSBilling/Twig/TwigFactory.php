@@ -50,10 +50,15 @@ class TwigFactory
     private readonly array $baseConfig;
     private ?Environment $adapterEnvironment = null;
     private ?Environment $themeSettingsEnvironment = null;
+    private array $installedBoxExtension = [];
 
     public function __construct(private \Pimple\Container $di)
     {
         $this->baseConfig = Config::getProperty('twig', []);
+        $this->installedBoxExtension = $this->di['em']->getRepository(\Box\Mod\Extension\Entity\Extension::class)
+            ->getSearchQueryBuilder(['status' => \Box\Mod\Extension\Entity\Extension::STATUS_INSTALLED])
+            ->getQuery()
+            ->getResult();
     }
 
     /**
@@ -154,6 +159,11 @@ class TwigFactory
         $twig->addGlobal('admin', $this->di['auth']->isAdminLoggedIn() ? $this->di['api_admin'] : null);
         $twig->addGlobal('client', $this->di['auth']->isClientLoggedIn() ? $this->di['api_client'] : null);
 
+        foreach ($this->installedBoxExtension as $ext) {
+            $m = $this->di['mod']($ext->getName());
+            $m->extendTwig($twig, 'admin');
+        }
+
         $this->configureDebugging($twig, $debugBar);
 
         // Set CSRF cookie for browser-facing double-submit pattern.
@@ -184,6 +194,11 @@ class TwigFactory
         $twig->addGlobal('app_area', AppArea::CLIENT->value);
         $twig->addGlobal('client', $this->di['auth']->isClientLoggedIn() ? $this->di['api_client'] : null);
         $twig->addGlobal('admin', $this->di['auth']->isAdminLoggedIn() ? $this->di['api_admin'] : null);
+
+        foreach ($this->installedBoxExtension as $ext) {
+            $m = $this->di['mod']($ext->getName());
+            $m->extendTwig($twig, 'client');
+        }
 
         $this->configureDebugging($twig, $debugBar);
 
@@ -274,6 +289,11 @@ class TwigFactory
         ]);
         $twig->addGlobal('default_currency', $this->getDefaultCurrencyCode());
         $twig->addGlobal('FOSSBillingVersion', Version::VERSION);
+
+        foreach ($this->installedBoxExtension as $ext) {
+            $m = $this->di['mod']($ext->getName());
+            $m->extendTwig($twig, 'email');
+        }
 
         return $twig;
     }

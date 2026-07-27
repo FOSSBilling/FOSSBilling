@@ -13,6 +13,7 @@ namespace FOSSBilling;
 
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
+use Twig\Environment;
 
 class Module implements InjectionAwareInterface
 {
@@ -287,5 +288,28 @@ class Module implements InjectionAwareInterface
         }
 
         return $instance;
+    }
+
+    public function extendTwig(Environment $twig, string $environmentType): void
+    {
+        if ($this->hasService()) {
+            $s = $this->getService();
+
+            if (method_exists($s, 'extendTwig')) {
+                $s->extendTwig($twig, $environmentType);
+            }else{
+                if (method_exists($s, 'extendTwigAdmin')) {
+                    $s->extendTwig($twig, 'admin');
+                }
+
+                if (method_exists($s, 'extendTwigClient')) {
+                    $s->extendTwig($twig, 'client');
+                }
+
+                if (method_exists($s, 'extendTwigEmail')) {
+                    $s->extendTwig($twig, 'email');
+                }
+            }
+        }
     }
 }
