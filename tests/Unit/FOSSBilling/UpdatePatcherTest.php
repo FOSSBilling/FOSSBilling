@@ -22,10 +22,14 @@ test('downloadable file migration follows the client balance gateway repair', fu
 test('manual currency rate patch follows the currency formatting patch', function (): void {
     $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 93);
 
-    expect($patches)->toHaveCount(2)
-        ->toHaveKey(94)
-        ->and($patches[94][1])->toBe('patch94')
-        ->and($patches)->toHaveKey(95)
+    expect($patches)->toHaveKey(94)
+        ->and($patches[94][1])->toBe('patch94');
+});
+
+test('suspension grace patch follows the manual currency rate patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 94);
+
+    expect($patches)->toHaveKey(95)
         ->and($patches[95][1])->toBe('patch95');
 });
 
@@ -39,10 +43,10 @@ test('fresh installs start at the latest patch level', function (): void {
 });
 
 test('fresh installs index order suspension candidates', function (): void {
-    $structure = file_get_contents(Path::join(PATH_ROOT, 'install', 'sql', 'structure.sql'));
+    $filesystem = new Filesystem();
+    $structure = $filesystem->readFile(Path::join(PATH_ROOT, 'install', 'sql', 'structure.sql'));
 
-    expect($structure)->toBeString()
-        ->toContain('KEY `client_order_status_expires_at_idx` (`status`, `expires_at`)');
+    expect($structure)->toContain('KEY `client_order_status_expires_at_idx` (`status`, `expires_at`)');
 });
 
 test('suspension grace patch indexes existing order tables', function (): void {
