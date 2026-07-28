@@ -620,7 +620,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         if ($identity instanceof \Model_Admin) {
             $data['transfer_code'] = $model->getTransferCode();
 
-            $tldRegistrar = $this->getTldRegistrarRepository()->find($model->getTldRegistrarId());
+            $tldRegistrarId = $model->getTldRegistrarId();
+            $tldRegistrar = $tldRegistrarId !== null ? $this->getTldRegistrarRepository()->find($tldRegistrarId) : null;
             $data['registrar'] = $tldRegistrar instanceof TldRegistrar ? $tldRegistrar->getName() : null;
         }
 
@@ -865,12 +866,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         if ($allow_register !== null) {
             $query->andWhere('t.allowRegister = :allowRegister')
-                ->setParameter('allowRegister', true);
+                ->setParameter('allowRegister', (bool) $allow_register);
         }
 
         if ($allow_transfer !== null) {
             $query->andWhere('t.allowTransfer = :allowTransfer')
-                ->setParameter('allowTransfer', true);
+                ->setParameter('allowTransfer', (bool) $allow_transfer);
         }
 
         return $query->orderBy('t.id', 'ASC');
@@ -927,10 +928,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         ];
 
         if ($identity instanceof \Model_Admin) {
-            $tldRegistrar = $this->getTldRegistrarRepository()->find($model->getTldRegistrarId());
+            $tldRegistrarId = $model->getTldRegistrarId();
+            $tldRegistrar = $tldRegistrarId !== null ? $this->getTldRegistrarRepository()->find($tldRegistrarId) : null;
 
             $result['registrar'] = [
-                'id' => $model->getTldRegistrarId(),
+                'id' => $tldRegistrarId,
                 'title' => $tldRegistrar instanceof TldRegistrar ? $tldRegistrar->getName() : null,
             ];
         }
@@ -982,6 +984,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function registrarGetSearchQuery($data): QueryBuilder
     {
+        // Registrar listings currently have no filters.
+        unset($data);
+
         return $this->getTldRegistrarRepository()
             ->createQueryBuilder('tr')
             ->orderBy('tr.name', 'ASC');

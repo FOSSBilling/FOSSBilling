@@ -1087,6 +1087,20 @@ test('converts to api array', function (?Model_Admin $identity, string $dbLoadCa
     [null, 'never'],
 ]);
 
+test('converts admin domain to api array without a registrar', function (): void {
+    $service = new Service();
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldNotReceive('getRepository');
+
+    $di = container();
+    $di['em'] = $emMock;
+    $service->setDi($di);
+
+    $result = $service->toApiArray(new ServiceDomain(), false, new Model_Admin());
+
+    expect($result['registrar'])->toBeNull();
+});
+
 test('handles on before admin cron run event', function (): void {
     $service = new Service();
     $di = container();
@@ -1159,9 +1173,9 @@ test('returns false when batch sync already run today', function (): void {
 test('gets tld search query', function (array $data, array $expectedConditions): void {
     $service = new Service();
     $query = Mockery::mock(QueryBuilder::class);
-    foreach ($expectedConditions as [$condition, $parameter]) {
+    foreach ($expectedConditions as [$condition, $parameter, $value]) {
         $query->shouldReceive('andWhere')->once()->with($condition)->andReturnSelf();
-        $query->shouldReceive('setParameter')->once()->with($parameter, true)->andReturnSelf();
+        $query->shouldReceive('setParameter')->once()->with($parameter, $value)->andReturnSelf();
     }
     $query->shouldReceive('orderBy')->once()->with('t.id', 'ASC')->andReturnSelf();
 
@@ -1184,22 +1198,30 @@ test('gets tld search query', function (array $data, array $expectedConditions):
     ],
     [
         ['hide_inactive' => true],
-        [['t.active = :active', 'active']],
+        [['t.active = :active', 'active', true]],
     ],
     [
         ['allow_register' => true],
-        [['t.allowRegister = :allowRegister', 'allowRegister']],
+        [['t.allowRegister = :allowRegister', 'allowRegister', true]],
+    ],
+    [
+        ['allow_register' => false],
+        [['t.allowRegister = :allowRegister', 'allowRegister', false]],
     ],
     [
         ['allow_transfer' => true],
-        [['t.allowTransfer = :allowTransfer', 'allowTransfer']],
+        [['t.allowTransfer = :allowTransfer', 'allowTransfer', true]],
+    ],
+    [
+        ['allow_transfer' => false],
+        [['t.allowTransfer = :allowTransfer', 'allowTransfer', false]],
     ],
     [
         ['hide_inactive' => true, 'allow_register' => true, 'allow_transfer' => true],
         [
-            ['t.active = :active', 'active'],
-            ['t.allowRegister = :allowRegister', 'allowRegister'],
-            ['t.allowTransfer = :allowTransfer', 'allowTransfer'],
+            ['t.active = :active', 'active', true],
+            ['t.allowRegister = :allowRegister', 'allowRegister', true],
+            ['t.allowTransfer = :allowTransfer', 'allowTransfer', true],
         ],
     ],
 ]);
@@ -1380,6 +1402,23 @@ test('converts tld to api array', function (): void {
 
     expect($registrar['id'])->toBe($model->getTldRegistrarId());
     expect($registrar['title'])->toBe($tldRegistrar->getName());
+});
+
+test('converts admin tld to api array without a registrar', function (): void {
+    $service = new Service();
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldNotReceive('getRepository');
+
+    $di = container();
+    $di['em'] = $emMock;
+    $service->setDi($di);
+
+    $result = $service->tldToApiArray(new Tld(), new Model_Admin());
+
+    expect($result['registrar'])->toBe([
+        'id' => null,
+        'title' => null,
+    ]);
 });
 
 test('finds one tld by tld', function (): void {
