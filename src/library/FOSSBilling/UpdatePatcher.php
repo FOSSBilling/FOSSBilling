@@ -503,6 +503,7 @@ class UpdatePatcher implements InjectionAwareInterface
             91 => 'patch91',
             92 => 'patch92',
             93 => 'patch93',
+            94 => 'patch94',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2569,6 +2570,13 @@ class UpdatePatcher implements InjectionAwareInterface
 
         if (!$this->tableHasColumn('currency', 'fraction_digits')) {
             $this->executeSql('ALTER TABLE `currency` ADD COLUMN `fraction_digits` smallint DEFAULT NULL AFTER `format_pattern`');
+        }
+    }
+
+    private function patch94(): void
+    {
+        if (!$this->tableHasColumn('currency', 'is_rate_manual')) {
+            $this->executeSql("ALTER TABLE `currency` ADD COLUMN `is_rate_manual` tinyint(1) DEFAULT '0' AFTER `conversion_rate`");
         }
     }
 

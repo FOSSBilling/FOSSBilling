@@ -13,6 +13,7 @@ namespace Box\Mod\Currency\Api;
 
 use Box\Mod\Currency\Entity\Currency;
 use FOSSBilling\PaginationOptions;
+use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 use Symfony\Component\Intl\Currencies;
 
@@ -126,14 +127,16 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         }
 
         $conversionRate = $data['conversion_rate'] ?? null;
+        $isRateManual = Tools::normalizeBoolean($data['is_rate_manual'] ?? false);
 
-        return $service->createCurrency($data['code'] ?? null, $conversionRate);
+        return $service->createCurrency($data['code'] ?? null, $conversionRate, $isRateManual);
     }
 
     /**
      * Updates system currency settings.
      *
      * @optional float $conversion_rate - new currency conversion rate
+     * @optional bool $is_rate_manual - preserve the conversion rate during automatic and manual bulk synchronization
      * @optional string $format_pattern - plain-text display pattern containing one {amount} placeholder
      * @optional int $fraction_digits - fraction digit override from 0 to 6, blank to use the ISO default
      *
@@ -145,6 +148,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('currency', 'edit');
 
         $conversionRate = $data['conversion_rate'] ?? null;
+        $isRateManual = array_key_exists('is_rate_manual', $data)
+            ? Tools::normalizeBoolean($data['is_rate_manual'])
+            : null;
         $formatting = array_intersect_key($data, [
             'format_pattern' => true,
             'fraction_digits' => true,
@@ -154,6 +160,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             $data['code'],
             $conversionRate,
             $formatting,
+            $isRateManual,
         );
     }
 

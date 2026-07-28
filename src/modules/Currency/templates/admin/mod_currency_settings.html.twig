@@ -95,6 +95,7 @@
                                     <th>{{ 'Currency Code'|trans }}</th>
                                     <th>{{ 'Currency'|trans }}</th>
                                     <th>{{ 'Conversion Rate'|trans }}</th>
+                                    <th>{{ 'Rate Updates'|trans }}</th>
                                     <th>{{ 'Example Price'|trans }}</th>
                                     <th class="w-1">{{ 'Actions'|trans }}</th>
                                 </tr>
@@ -108,6 +109,15 @@
                                         <a href='{{ "currency/manage/#{currency.code}"|url }}'>{{ currency.code|currency_name }}</a>
                                     </td>
                                     <td>{{ currency.conversion_rate }}</td>
+                                    <td>
+                                        {% if currency.default %}
+                                            <span class="badge bg-secondary-lt">{{ 'Fixed'|trans }}</span>
+                                        {% elseif currency.is_rate_manual|default(false) %}
+                                            <span class="badge bg-blue-lt">{{ 'Manual'|trans }}</span>
+                                        {% else %}
+                                            <span class="badge bg-green-lt">{{ 'Automatic'|trans }}</span>
+                                        {% endif %}
+                                    </td>
                                     <td>{{ 1|format_currency(default_currency.code) }} = {{ (1 * currency.conversion_rate)|format_currency(currency.code) }}</td>
                                     <td>
                                         {% if can_edit_currency %}
@@ -140,7 +150,7 @@
                                 </tr>
                             {% else %}
                                 <tr>
-                                    <td colspan="5" class="text-center text-muted py-3">{{ 'The list is empty'|trans }}</td>
+                                    <td colspan="6" class="text-center text-muted py-3">{{ 'The list is empty'|trans }}</td>
                                 </tr>
                             {% endfor %}
                             </tbody>
@@ -288,6 +298,13 @@
                         <div>
                             <label class="form-label" for="new-currency-rate">{{ 'Conversion Rate'|trans }}</label>
                             <input class="form-control" id="new-currency-rate" type="text" name="conversion_rate" value="" placeholder="{{ 'Leave blank to automatically set'|trans }}">
+                            <div class="form-hint">{{ 'Enter the value of one unit of the default currency in this currency.'|trans }}</div>
+                        </div>
+                        <div class="form-check mt-3">
+                            <input type="hidden" name="is_rate_manual" value="0">
+                            <input class="form-check-input" id="new-currency-manual-rate" type="checkbox" name="is_rate_manual" value="1">
+                            <label class="form-check-label" for="new-currency-manual-rate">{{ 'Keep this as a manual override'|trans }}</label>
+                            <div class="form-hint">{{ 'Manual rates are preserved when scheduled or on-demand rate synchronization runs.'|trans }}</div>
                         </div>
                     </div>
                     <div class="modal-footer">
