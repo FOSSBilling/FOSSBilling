@@ -465,6 +465,8 @@ class Service implements InjectionAwareInterface
             \Box\Mod\Product\Service::LICENSE => \Box\Mod\Servicelicense\Entity\ServiceLicense::class,
             \Box\Mod\Product\Service::CUSTOM => \Box\Mod\Servicecustom\Entity\ServiceCustom::class,
             \Box\Mod\Product\Service::APIKEY => \Box\Mod\Serviceapikey\Entity\ServiceApiKey::class,
+            \Box\Mod\Product\Service::HOSTING => \Box\Mod\Servicehosting\Entity\ServiceHosting::class,
+            \Box\Mod\Product\Service::DOMAIN => \Box\Mod\Servicedomain\Entity\ServiceDomain::class,
             default => null,
         };
     }
@@ -474,6 +476,8 @@ class Service implements InjectionAwareInterface
         \Box\Mod\Servicelicense\Entity\ServiceLicense::class => \Box\Mod\Product\Service::LICENSE,
         \Box\Mod\Servicecustom\Entity\ServiceCustom::class => \Box\Mod\Product\Service::CUSTOM,
         \Box\Mod\Serviceapikey\Entity\ServiceApiKey::class => \Box\Mod\Product\Service::APIKEY,
+        \Box\Mod\Servicehosting\Entity\ServiceHosting::class => \Box\Mod\Product\Service::HOSTING,
+        \Box\Mod\Servicedomain\Entity\ServiceDomain::class => \Box\Mod\Product\Service::DOMAIN,
     ];
 
     public function getServiceOrder($service)

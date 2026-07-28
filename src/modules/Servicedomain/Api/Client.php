@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicedomain\Api;
 
+use Box\Mod\Servicedomain\Entity\ServiceDomain;
+
 /**
  * Domain service management.
  */
@@ -124,7 +126,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $orderService->assertOrderUsable($order);
 
         $s = $orderService->getOrderService($order);
-        if (!$s instanceof \Model_ServiceDomain || $order->status !== \Model_ClientOrder::STATUS_ACTIVE) {
+        if (!$s instanceof ServiceDomain || $order->status !== \Model_ClientOrder::STATUS_ACTIVE) {
             throw new \FOSSBilling\Exception('Order is not activated');
         }
 
