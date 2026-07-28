@@ -19,6 +19,7 @@ use Box\Mod\Servicedomain\Repository\TldRegistrarRepository;
 use Box\Mod\Servicedomain\Service;
 use Doctrine\ORM\EntityManagerInterface;
 use FOSSBilling\Pagination;
+use FOSSBilling\PaginationOptions;
 
 use function Tests\Helpers\container;
 
@@ -209,15 +210,17 @@ test('unlocks domain', function (): void {
 test('gets tld list', function (): void {
     $adminApi = apiEndpoint(new Admin());
     $api = apiEndpoint(new Admin());
+    $query = Mockery::mock(Doctrine\ORM\QueryBuilder::class);
     $paginatorMock = Mockery::mock(Pagination::class);
-    $paginatorMock->shouldReceive('getPaginatedResultSet')
+    $paginatorMock->shouldReceive('paginateMappedQuery')
         ->atLeast()->once()
+        ->with($query, Mockery::type(PaginationOptions::class), Mockery::type('callable'))
         ->andReturn(['list' => []]);
 
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldGetSearchQuery')
         ->atLeast()->once()
-        ->andReturn(['query', []]);
+        ->andReturn($query);
 
     $di = container();
     $di['pager'] = $paginatorMock;
@@ -468,32 +471,20 @@ test('throws exception when updating tld not found', function (): void {
 test('gets registrar list', function (): void {
     $adminApi = apiEndpoint(new Admin());
     $api = apiEndpoint(new Admin());
+    $query = Mockery::mock(Doctrine\ORM\QueryBuilder::class);
     $paginatorMock = Mockery::mock(Pagination::class);
-    $paginatorMock->shouldReceive('getPaginatedResultSet')
+    $paginatorMock->shouldReceive('paginateMappedQuery')
         ->atLeast()->once()
+        ->with($query, Mockery::type(PaginationOptions::class), Mockery::type('callable'))
         ->andReturn(['list' => []]);
-
-    $trRepo = Mockery::mock(TldRegistrarRepository::class);
-    $trRepo->shouldReceive('findBy')
-        ->atLeast()->once()
-        ->with([], ['name' => 'ASC'])
-        ->andReturn([]);
-    $trRepo->shouldIgnoreMissing();
 
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('registrarGetSearchQuery')
         ->atLeast()->once()
-        ->andReturn(['query', []]);
-
-    $emMock = Mockery::mock(EntityManagerInterface::class);
-    $emMock->shouldReceive('getRepository')
-        ->atLeast()->once()
-        ->with(TldRegistrar::class)
-        ->andReturn($trRepo);
+        ->andReturn($query);
 
     $di = container();
     $di['pager'] = $paginatorMock;
-    $di['em'] = $emMock;
 
     $adminApi->setDi($di);
     $adminApi->setService($serviceMock);

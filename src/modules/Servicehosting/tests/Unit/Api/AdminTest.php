@@ -24,6 +24,21 @@ use Doctrine\ORM\EntityManagerInterface;
 use function Tests\Helpers\container;
 use function Tests\Helpers\moduleService;
 
+/**
+ * @param array<class-string, Mockery\MockInterface> $repositories
+ */
+function serviceHostingAdminEmWith(array $repositories): EntityManagerInterface
+{
+    $em = Mockery::mock(EntityManagerInterface::class);
+    foreach ($repositories as $entityClass => $repository) {
+        $repository->shouldIgnoreMissing();
+        $em->shouldReceive('getRepository')->with($entityClass)->andReturn($repository);
+    }
+    $em->shouldIgnoreMissing();
+
+    return $em;
+}
+
 afterEach(function (): void {
     Mockery::close();
 });
@@ -58,11 +73,8 @@ test('testChangePlan', function (): void {
 
     $hpRepo = Mockery::mock(ServiceHostingHpRepository::class);
     $hpRepo->shouldReceive('find')->atLeast()->once()->andReturn(new ServiceHostingHp());
-    $hpRepo->shouldIgnoreMissing();
 
-    $emMock = Mockery::mock(EntityManagerInterface::class);
-    $emMock->shouldReceive('getRepository')->with(ServiceHostingHp::class)->andReturn($hpRepo);
-    $emMock->shouldIgnoreMissing();
+    $emMock = serviceHostingAdminEmWith([ServiceHostingHp::class => $hpRepo]);
 
     $di = container();
     $di['em'] = $emMock;
@@ -286,20 +298,30 @@ test('testAccountGetList', function (): void {
 
 test('testServerGetList', function (): void {
     $api = apiEndpoint(new Admin());
+    $server = (new ServiceHostingServer())->setId(1);
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock
     ->shouldReceive('getServersSearchQuery')
     ->atLeast()->once()
     ->andReturn(['SQLstring', []]);
+    $serviceMock
+    ->shouldReceive('toHostingServerApiArray')
+    ->once()
+    ->with($server, false, null)
+    ->andReturn(['id' => 1]);
 
     $pagerMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
     $pagerMock
     ->shouldReceive('getPaginatedResultSet')
     ->atLeast()->once()
-    ->andReturn(['list' => []]);
+    ->andReturn(['list' => [['id' => 1]]]);
+
+    $serverRepo = Mockery::mock(ServiceHostingServerRepository::class);
+    $serverRepo->shouldReceive('findBy')->once()->with(['id' => [1]])->andReturn([$server]);
 
     $di = container();
     $di['pager'] = $pagerMock;
+    $di['em'] = serviceHostingAdminEmWith([ServiceHostingServer::class => $serverRepo]);
     $dbStub = Mockery::mock('Box_Database');
     $di['db'] = $dbStub;
 
@@ -307,7 +329,7 @@ test('testServerGetList', function (): void {
     $api->setService($serviceMock);
 
     $result = $api->server_get_list([]);
-    expect($result)->toBeArray();
+    expect($result['list'])->toBe([['id' => 1]]);
 });
 
 test('testServerCreate', function (): void {
@@ -348,11 +370,8 @@ test('testServerGet', function (): void {
 
     $serverRepo = Mockery::mock(ServiceHostingServerRepository::class);
     $serverRepo->shouldReceive('find')->atLeast()->once()->andReturn(new ServiceHostingServer());
-    $serverRepo->shouldIgnoreMissing();
 
-    $emMock = Mockery::mock(EntityManagerInterface::class);
-    $emMock->shouldReceive('getRepository')->with(ServiceHostingServer::class)->andReturn($serverRepo);
-    $emMock->shouldIgnoreMissing();
+    $emMock = serviceHostingAdminEmWith([ServiceHostingServer::class => $serverRepo]);
 
     $di = container();
     $di['em'] = $emMock;
@@ -376,16 +395,14 @@ test('testServerDelete', function (): void {
 
     $serverRepo = Mockery::mock(ServiceHostingServerRepository::class);
     $serverRepo->shouldReceive('find')->atLeast()->once()->andReturn(new ServiceHostingServer());
-    $serverRepo->shouldIgnoreMissing();
 
     $serviceHostingRepo = Mockery::mock(ServiceHostingRepository::class);
-    $serviceHostingRepo->shouldReceive('findBy')->atLeast()->once()->andReturn([]);
-    $serviceHostingRepo->shouldIgnoreMissing();
+    $serviceHostingRepo->shouldReceive('count')->once()->with(['serviceHostingServerId' => 1])->andReturn(0);
 
-    $emMock = Mockery::mock(EntityManagerInterface::class);
-    $emMock->shouldReceive('getRepository')->with(ServiceHostingServer::class)->andReturn($serverRepo);
-    $emMock->shouldReceive('getRepository')->with(ServiceHosting::class)->andReturn($serviceHostingRepo);
-    $emMock->shouldIgnoreMissing();
+    $emMock = serviceHostingAdminEmWith([
+        ServiceHostingServer::class => $serverRepo,
+        ServiceHosting::class => $serviceHostingRepo,
+    ]);
 
     $di = container();
     $di['em'] = $emMock;
@@ -400,16 +417,14 @@ test('testServerDelete', function (): void {
 
     $serverRepo2 = Mockery::mock(ServiceHostingServerRepository::class);
     $serverRepo2->shouldReceive('find')->atLeast()->once()->andReturn(new ServiceHostingServer());
-    $serverRepo2->shouldIgnoreMissing();
 
     $serviceHostingRepo2 = Mockery::mock(ServiceHostingRepository::class);
-    $serviceHostingRepo2->shouldReceive('findBy')->atLeast()->once()->andReturn([new ServiceHosting()]);
-    $serviceHostingRepo2->shouldIgnoreMissing();
+    $serviceHostingRepo2->shouldReceive('count')->once()->with(['serviceHostingServerId' => 2])->andReturn(1);
 
-    $emMock2 = Mockery::mock(EntityManagerInterface::class);
-    $emMock2->shouldReceive('getRepository')->with(ServiceHostingServer::class)->andReturn($serverRepo2);
-    $emMock2->shouldReceive('getRepository')->with(ServiceHosting::class)->andReturn($serviceHostingRepo2);
-    $emMock2->shouldIgnoreMissing();
+    $emMock2 = serviceHostingAdminEmWith([
+        ServiceHostingServer::class => $serverRepo2,
+        ServiceHosting::class => $serviceHostingRepo2,
+    ]);
 
     $di = container();
     $di['em'] = $emMock2;
@@ -439,11 +454,8 @@ test('testServerUpdate', function (): void {
     $serverModel = new ServiceHostingServer();
     $serverRepo = Mockery::mock(ServiceHostingServerRepository::class);
     $serverRepo->shouldReceive('find')->atLeast()->once()->andReturn($serverModel);
-    $serverRepo->shouldIgnoreMissing();
 
-    $emMock = Mockery::mock(EntityManagerInterface::class);
-    $emMock->shouldReceive('getRepository')->with(ServiceHostingServer::class)->andReturn($serverRepo);
-    $emMock->shouldIgnoreMissing();
+    $emMock = serviceHostingAdminEmWith([ServiceHostingServer::class => $serverRepo]);
 
     $di = container();
     $di['em'] = $emMock;
@@ -472,11 +484,8 @@ test('testServerUpdateSurfacesServerManagerErrorsAsInformationException', functi
     $serverModel = new ServiceHostingServer();
     $serverRepo = Mockery::mock(ServiceHostingServerRepository::class);
     $serverRepo->shouldReceive('find')->atLeast()->once()->andReturn($serverModel);
-    $serverRepo->shouldIgnoreMissing();
 
-    $emMock = Mockery::mock(EntityManagerInterface::class);
-    $emMock->shouldReceive('getRepository')->with(ServiceHostingServer::class)->andReturn($serverRepo);
-    $emMock->shouldIgnoreMissing();
+    $emMock = serviceHostingAdminEmWith([ServiceHostingServer::class => $serverRepo]);
 
     $di = container();
     $di['em'] = $emMock;
@@ -498,11 +507,8 @@ test('testServerTestConnection', function (): void {
 
     $serverRepo = Mockery::mock(ServiceHostingServerRepository::class);
     $serverRepo->shouldReceive('find')->atLeast()->once()->andReturn(new ServiceHostingServer());
-    $serverRepo->shouldIgnoreMissing();
 
-    $emMock = Mockery::mock(EntityManagerInterface::class);
-    $emMock->shouldReceive('getRepository')->with(ServiceHostingServer::class)->andReturn($serverRepo);
-    $emMock->shouldIgnoreMissing();
+    $emMock = serviceHostingAdminEmWith([ServiceHostingServer::class => $serverRepo]);
 
     $di = container();
     $di['em'] = $emMock;
@@ -529,26 +535,36 @@ test('testHpGetPairs', function (): void {
 
 test('testHpGetList', function (): void {
     $api = apiEndpoint(new Admin());
+    $hp = (new ServiceHostingHp())->setId(1);
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock
     ->shouldReceive('getHpSearchQuery')
     ->atLeast()->once()
     ->andReturn(['SQLstring', []]);
+    $serviceMock
+    ->shouldReceive('toHostingHpApiArray')
+    ->once()
+    ->with($hp, false, null)
+    ->andReturn(['id' => 1]);
 
     $pagerMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
     $pagerMock
     ->shouldReceive('getPaginatedResultSet')
     ->atLeast()->once()
-    ->andReturn(['list' => []]);
+    ->andReturn(['list' => [['id' => 1]]]);
+
+    $hpRepo = Mockery::mock(ServiceHostingHpRepository::class);
+    $hpRepo->shouldReceive('findBy')->once()->with(['id' => [1]])->andReturn([$hp]);
 
     $di = container();
     $di['pager'] = $pagerMock;
+    $di['em'] = serviceHostingAdminEmWith([ServiceHostingHp::class => $hpRepo]);
 
     $api->setDi($di);
     $api->setService($serviceMock);
 
     $result = $api->hp_get_list([]);
-    expect($result)->toBeArray();
+    expect($result['list'])->toBe([['id' => 1]]);
 });
 
 test('testHpDelete', function (): void {
@@ -565,16 +581,14 @@ test('testHpDelete', function (): void {
 
     $hpRepo = Mockery::mock(ServiceHostingHpRepository::class);
     $hpRepo->shouldReceive('find')->atLeast()->once()->andReturn(new ServiceHostingHp());
-    $hpRepo->shouldIgnoreMissing();
 
     $serviceHostingRepo = Mockery::mock(ServiceHostingRepository::class);
-    $serviceHostingRepo->shouldReceive('findBy')->atLeast()->once()->andReturn([]);
-    $serviceHostingRepo->shouldIgnoreMissing();
+    $serviceHostingRepo->shouldReceive('count')->once()->with(['serviceHostingHpId' => 1])->andReturn(0);
 
-    $emMock = Mockery::mock(EntityManagerInterface::class);
-    $emMock->shouldReceive('getRepository')->with(ServiceHostingHp::class)->andReturn($hpRepo);
-    $emMock->shouldReceive('getRepository')->with(ServiceHosting::class)->andReturn($serviceHostingRepo);
-    $emMock->shouldIgnoreMissing();
+    $emMock = serviceHostingAdminEmWith([
+        ServiceHostingHp::class => $hpRepo,
+        ServiceHosting::class => $serviceHostingRepo,
+    ]);
 
     $di = container();
     $di['em'] = $emMock;
@@ -608,11 +622,8 @@ test('testHpGet', function (): void {
 
     $hpRepo = Mockery::mock(ServiceHostingHpRepository::class);
     $hpRepo->shouldReceive('find')->atLeast()->once()->andReturn(new ServiceHostingHp());
-    $hpRepo->shouldIgnoreMissing();
 
-    $emMock = Mockery::mock(EntityManagerInterface::class);
-    $emMock->shouldReceive('getRepository')->with(ServiceHostingHp::class)->andReturn($hpRepo);
-    $emMock->shouldIgnoreMissing();
+    $emMock = serviceHostingAdminEmWith([ServiceHostingHp::class => $hpRepo]);
 
     $di = container();
     $di['em'] = $emMock;
@@ -637,11 +648,8 @@ test('testHpUpdate', function (): void {
 
     $hpRepo = Mockery::mock(ServiceHostingHpRepository::class);
     $hpRepo->shouldReceive('find')->atLeast()->once()->andReturn(new ServiceHostingHp());
-    $hpRepo->shouldIgnoreMissing();
 
-    $emMock = Mockery::mock(EntityManagerInterface::class);
-    $emMock->shouldReceive('getRepository')->with(ServiceHostingHp::class)->andReturn($hpRepo);
-    $emMock->shouldIgnoreMissing();
+    $emMock = serviceHostingAdminEmWith([ServiceHostingHp::class => $hpRepo]);
 
     $di = container();
     $di['em'] = $emMock;

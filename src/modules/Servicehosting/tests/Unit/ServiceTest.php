@@ -189,12 +189,7 @@ test('action renew', function (): void {
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($hostingServiceModel);
 
-    $emMock = Mockery::mock(EntityManagerInterface::class);
-    $emMock->shouldReceive('flush')->atLeast()->once();
-    $emMock->shouldIgnoreMissing();
-
     $di = container();
-    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $service->setDi($di);
@@ -759,9 +754,11 @@ test('get server search query', function (): void {
 test('create server', function (): void {
     $service = new Service();
     $newId = 1;
+    $persistedServer = null;
     $emMock = Mockery::mock(EntityManagerInterface::class);
-    $emMock->shouldReceive('persist')->atLeast()->once()->andReturnUsing(function (ServiceHostingServer $server) use ($newId): void {
+    $emMock->shouldReceive('persist')->atLeast()->once()->andReturnUsing(function (ServiceHostingServer $server) use ($newId, &$persistedServer): void {
         $server->setId($newId);
+        $persistedServer = $server;
     });
     $emMock->shouldReceive('flush')->atLeast()->once();
     $emMock->shouldIgnoreMissing();
@@ -776,12 +773,16 @@ test('create server', function (): void {
     $ip = '1.1.1.1';
     $manager = 'Custom';
     $data = [
-        'active' => true,
-        'secure' => true,
+        'active' => 1,
+        'secure' => 0,
     ];
     $result = $service->createServer($name, $ip, $manager, $data);
     expect($result)->toBeInt();
     expect($result)->toBe($newId);
+    expect($persistedServer)->toBeInstanceOf(ServiceHostingServer::class);
+    expect($persistedServer->isActive())->toBeTrue();
+    expect($persistedServer->isSecure())->toBeFalse();
+    expect($persistedServer->getMaxAccounts())->toBeNull();
 });
 
 test('delete server', function (): void {
@@ -809,7 +810,8 @@ test('update server', function (): void {
         'name' => 'newName',
         'ip' => '1.1.1.1',
         'hostname' => 'unknownStar',
-        'active' => true,
+        'active' => 1,
+        'max_accounts' => '12',
         'status_url' => 'na',
         'ns1' => 'ns1.testserver.eu',
         'ns2' => 'ns2.testserver.eu',
@@ -819,7 +821,7 @@ test('update server', function (): void {
         'username' => 'testingJohn',
         'password' => 'hardToGuess',
         'accesshash' => 'secret',
-        'secure' => false,
+        'secure' => 0,
     ];
 
     $hostingServerModel = new ServiceHostingServer();
@@ -838,6 +840,9 @@ test('update server', function (): void {
 
     $result = $service->updateServer($hostingServerModel, $data);
     expect($result)->toBeTrue();
+    expect($hostingServerModel->isActive())->toBeTrue();
+    expect($hostingServerModel->isSecure())->toBeFalse();
+    expect($hostingServerModel->getMaxAccounts())->toBe(12);
 });
 
 test('get server manager', function (): void {
@@ -956,6 +961,7 @@ test('to hosting hp api array', function (): void {
 
     $result = $service->toHostingHpApiArray($model);
     expect($result)->toBeArray();
+    expect($model->getConfig())->toBeNull();
 });
 
 test('update hp', function (): void {
@@ -989,13 +995,15 @@ test('update hp', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('create hp', function (): void {
+test('create hp', function (array $data, string $expectedBandwidth, string $expectedMaxFtp): void {
     $service = new Service();
     $newId = 1;
+    $persistedHp = null;
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
-    $emMock->shouldReceive('persist')->atLeast()->once()->andReturnUsing(function (ServiceHostingHp $hp) use ($newId): void {
+    $emMock->shouldReceive('persist')->atLeast()->once()->andReturnUsing(function (ServiceHostingHp $hp) use ($newId, &$persistedHp): void {
         $hp->setId($newId);
+        $persistedHp = $hp;
     });
     $emMock->shouldReceive('flush')->atLeast()->once();
     $emMock->shouldIgnoreMissing();
@@ -1006,20 +1014,33 @@ test('create hp', function (): void {
 
     $service->setDi($di);
 
-    $data = [
-        'bandwidth' => '1048576',
-        'quota' => '1048576',
-        'max_addon' => '1',
-        'max_park' => '1',
-        'max_sub' => '1',
-        'max_pop' => '1',
-        'max_sql' => '1',
-        'max_ftp' => '1',
-    ];
     $result = $service->createHp('Free Plan', $data);
     expect($result)->toBeInt();
     expect($result)->toBe($newId);
-});
+    expect($persistedHp)->toBeInstanceOf(ServiceHostingHp::class);
+    expect($persistedHp->getBandwidth())->toBe($expectedBandwidth);
+    expect($persistedHp->getMaxFtp())->toBe($expectedMaxFtp);
+})->with([
+    'provided optional limits' => [
+        [
+            'bandwidth' => '2048',
+            'quota' => '4096',
+            'max_addon' => '2',
+            'max_park' => '2',
+            'max_sub' => '2',
+            'max_pop' => '2',
+            'max_sql' => '2',
+            'max_ftp' => '2',
+        ],
+        '2048',
+        '2',
+    ],
+    'omitted optional limits' => [
+        [],
+        '1048576',
+        '1',
+    ],
+]);
 
 test('get server package', function (): void {
     $service = new Service();

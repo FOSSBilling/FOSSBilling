@@ -37,8 +37,11 @@ class TldRegistrarRepository extends EntityRepository
 
     public function findActiveRegistrar(): ?TldRegistrar
     {
-        $result = $this->findOneBy([], ['id' => 'ASC']);
-
-        return $result instanceof TldRegistrar && $result->getConfig() !== null ? $result : null;
+        return $this->createQueryBuilder('tr')
+            ->where('tr.config IS NOT NULL')
+            ->orderBy('tr.id', 'ASC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 }

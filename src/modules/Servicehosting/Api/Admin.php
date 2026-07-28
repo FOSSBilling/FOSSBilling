@@ -156,8 +156,19 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         [$sql, $params] = $this->getService()->getServersSearchQuery($data);
         $result = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
+        $ids = array_map(static fn (array $server): int => (int) $server['id'], $result['list']);
+        $models = $this->getDi()['em']->getRepository(ServiceHostingServer::class)->findBy(['id' => $ids]);
+        $modelsById = [];
+        foreach ($models as $model) {
+            $modelsById[$model->getId()] = $model;
+        }
+
         foreach ($result['list'] as $key => $server) {
-            $model = $this->_getServer((int) $server['id']);
+            $id = (int) $server['id'];
+            $model = $modelsById[$id] ?? null;
+            if (!$model instanceof ServiceHostingServer) {
+                throw new \FOSSBilling\Exception(sprintf('Server %d not found', $id));
+            }
 
             $result['list'][$key] = $this->getService()->toHostingServerApiArray($model, false, $this->getIdentity());
         }
@@ -252,9 +263,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->_getServer((int) $data['id']);
 
-        $hosting_services = $this->getDi()['em']->getRepository(ServiceHosting::class)
-            ->findBy(['serviceHostingServerId' => (int) $data['id']]);
-        $count = is_array($hosting_services) ? count($hosting_services) : 0;
+        $count = $this->getDi()['em']->getRepository(ServiceHosting::class)
+            ->count(['serviceHostingServerId' => (int) $data['id']]);
 
         if ($count > 0) {
             throw new \FOSSBilling\InformationException('Hosting server is used by :count: service hostings', [':count:' => $count], 704);
@@ -353,8 +363,19 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         [$sql, $params] = $this->getService()->getHpSearchQuery($data);
         $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
+        $ids = array_map(static fn (array $item): int => (int) $item['id'], $pager['list']);
+        $models = $this->getDi()['em']->getRepository(ServiceHostingHp::class)->findBy(['id' => $ids]);
+        $modelsById = [];
+        foreach ($models as $model) {
+            $modelsById[$model->getId()] = $model;
+        }
+
         foreach ($pager['list'] as $key => $item) {
-            $model = $this->_getHp((int) $item['id']);
+            $id = (int) $item['id'];
+            $model = $modelsById[$id] ?? null;
+            if (!$model instanceof ServiceHostingHp) {
+                throw new \FOSSBilling\Exception(sprintf('Hosting plan %d not found', $id));
+            }
             $pager['list'][$key] = $this->getService()->toHostingHpApiArray($model, false, $this->getIdentity());
         }
 
@@ -373,11 +394,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->_getHp((int) $data['id']);
 
-        $hosting_services = $this->getDi()['em']->getRepository(ServiceHosting::class)
-            ->findBy(['serviceHostingHpId' => (int) $data['id']]);
-
-        // Ensure $hosting_services is an array before counting its elements
-        $count = is_array($hosting_services) ? count($hosting_services) : 0;
+        $count = $this->getDi()['em']->getRepository(ServiceHosting::class)
+            ->count(['serviceHostingHpId' => (int) $data['id']]);
         if ($count > 0) {
             throw new \FOSSBilling\InformationException('Hosting plan is used by :count: service hostings', [':count:' => $count], 704);
         }
