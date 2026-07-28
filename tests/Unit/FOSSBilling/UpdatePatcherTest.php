@@ -15,6 +15,14 @@ test('client balance gateway repair follows the legacy email template repair', f
         ->and($patches[91][1])->toBe('patch91');
 });
 
+test('manual currency rate patch follows the currency formatting patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 95);
+
+    expect($patches)->toHaveCount(1)
+        ->toHaveKey(96)
+        ->and($patches[96][1])->toBe('patch96');
+});
+
 test('fresh installs start at the latest patch level', function (): void {
     $content = file_get_contents(Path::join(PATH_ROOT, 'install', 'sql', 'content.sql'));
     expect($content)->toBeString();
