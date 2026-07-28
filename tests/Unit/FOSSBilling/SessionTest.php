@@ -115,3 +115,38 @@ test('destroying an admin login preserves the client login', function (): void {
         ->and($_SESSION)->not->toHaveKey('admin')
         ->and($_SESSION)->toHaveKeys(['client', 'client_id']);
 });
+
+test('destroying a client login regenerates the session with the configured grace period, not zero', function (): void {
+    $handler = new class extends PdoSessionHandler {
+        public function __construct()
+        {
+        }
+    };
+
+    $session = Mockery::mock(FOSSBilling\Session::class, [$handler])->makePartial();
+    $session->shouldReceive('regenerateId')->withNoArgs()->once();
+
+    $_SESSION = [
+        'client' => ['id' => 2],
+        'client_id' => 2,
+    ];
+
+    $session->destroy('client');
+});
+
+test('destroying an admin login regenerates the session with the configured grace period, not zero', function (): void {
+    $handler = new class extends PdoSessionHandler {
+        public function __construct()
+        {
+        }
+    };
+
+    $session = Mockery::mock(FOSSBilling\Session::class, [$handler])->makePartial();
+    $session->shouldReceive('regenerateId')->withNoArgs()->once();
+
+    $_SESSION = [
+        'admin' => ['id' => 1],
+    ];
+
+    $session->destroy('admin');
+});
