@@ -59,8 +59,8 @@
                         <div class="col-xl-6">
                             <label class="form-label" for="period">{{ 'Period'|trans }}</label>
                             <select class="form-select" name="period" id="period" required>
-                                {% for val,label in guest.system_periods %}
-                                <option value="{{ val }}" label="{{ label|e }}" data-price="{{ product.pricing.recurrent[val].price }}" data-status="{{ product.pricing.recurrent[val].enabled }}" {% if request.period == val %}selected="selected"{% endif %}>{{ label|e }}</option>
+                                {% for val,pricing in product.pricing.recurrent %}
+                                <option value="{{ val }}" label="{{ guest.system_periods[val]|e }}" data-price="{{ pricing.price }}" data-status="{{ pricing.enabled }}" {% if request.period == val %}selected="selected"{% endif %}>{{ guest.system_periods[val]|e }}</option>
                                 {% endfor %}
                             </select>
                             <div id="period-info" class="form-hint mt-2"></div>
