@@ -19,7 +19,7 @@ class CartRepository extends EntityRepository
     public function getSearchQueryBuilder(array $data): \Doctrine\ORM\QueryBuilder
     {
         return $this->createQueryBuilder('cart')
-            ->leftJoin('Box\Mod\Currency\Entity\Currency', 'currency', 'WITH', 'currency.id = cart.currencyId')
-            ->leftJoin('Box\Mod\Product\Entity\Promo', 'promo', 'WITH', 'promo.id = cart.promoId');
+            ->leftJoin(\Box\Mod\Currency\Entity\Currency::class, 'currency', 'WITH', 'currency.id = cart.currencyId')
+            ->leftJoin(\Box\Mod\Product\Entity\Promo::class, 'promo', 'WITH', 'promo.id = cart.promoId');
     }
 }

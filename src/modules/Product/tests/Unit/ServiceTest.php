@@ -1509,21 +1509,9 @@ test('is promo available for client group', function (Promo $promo, ?Client $cli
     expect($service->isPromoAvailableForClientGroup($promo))->toBe($expectedResult);
 })->with([
     'no restrictions' => [fn (): Promo => productTestCreatePromoEntity(1)->setClientGroups(json_encode([])), fn (): Client => $client = createEntity(Client::class), true],
-    'restricted and no client group' => [fn (): Promo => productTestCreatePromoEntity(2)->setClientGroups(json_encode([1, 2])), function () {
-        $client = createEntity(Client::class, ['client_group_id' => null]);
-
-        return $client;
-    }, false],
-    'restricted and wrong client group' => [fn (): Promo => productTestCreatePromoEntity(3)->setClientGroups(json_encode([1, 2])), function () {
-        $client = createEntity(Client::class, ['client_group_id' => 3]);
-
-        return $client;
-    }, false],
-    'restricted and matching client group' => [fn (): Promo => productTestCreatePromoEntity(4)->setClientGroups(json_encode([1, 2])), function () {
-        $client = createEntity(Client::class, ['client_group_id' => 2]);
-
-        return $client;
-    }, true],
+    'restricted and no client group' => [fn (): Promo => productTestCreatePromoEntity(2)->setClientGroups(json_encode([1, 2])), fn () => createEntity(Client::class, ['client_group_id' => null]), false],
+    'restricted and wrong client group' => [fn (): Promo => productTestCreatePromoEntity(3)->setClientGroups(json_encode([1, 2])), fn () => createEntity(Client::class, ['client_group_id' => 3]), false],
+    'restricted and matching client group' => [fn (): Promo => productTestCreatePromoEntity(4)->setClientGroups(json_encode([1, 2])), fn () => createEntity(Client::class, ['client_group_id' => 2]), true],
     'no restrictions and no client' => [fn (): Promo => productTestCreatePromoEntity(5)->setClientGroups(json_encode([])), null, true],
     'restricted and no client' => [fn (): Promo => productTestCreatePromoEntity(6)->setClientGroups(json_encode([1, 2])), null, false],
 ]);
