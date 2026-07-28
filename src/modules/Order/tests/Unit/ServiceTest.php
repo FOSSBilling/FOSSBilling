@@ -954,6 +954,7 @@ test('toApiArray returns expected keys', function (): void {
         'quantity' => 1,
         'client_id' => 1,
     ]);
+    $model->setProductId(1);
 
     $clientService = Mockery::mock(Box\Mod\Client\Service::class);
     $clientService->shouldReceive('toApiArray')->atLeast()->once()->andReturn([]);
@@ -979,8 +980,10 @@ test('toApiArray returns expected keys', function (): void {
     $emMock->shouldIgnoreMissing();
 
     $productService = Mockery::mock(Box\Mod\Product\Service::class);
-    $productService->shouldReceive('getProductPluginById')->once()->with((int) $model->product_id)->andReturn(null);
-    $productService->shouldReceive('findProductById')->once()->with((int) $model->product_id)->andReturn(new Product());
+    $productService->shouldReceive('getProductPluginById')->once()->with(1)->andReturn(null);
+    $productRepository = Mockery::mock(Box\Mod\Product\Repository\ProductRepository::class);
+    $productRepository->shouldReceive('find')->once()->with(1)->andReturn(null);
+    $productService->shouldReceive('getProductRepository')->once()->andReturn($productRepository);
 
     $di = container();
     $di['mod_service'] = $di->protect(function ($serviceName) use ($clientService, $supportService, $productService) {
@@ -1008,6 +1011,7 @@ test('toApiArray returns expected keys', function (): void {
     expect($result)->toHaveKey('meta');
     expect($result)->toHaveKey('active_tickets');
     expect($result)->toHaveKey('plugin');
+    expect($result['product_suspension_grace_days'])->toBeNull();
     expect($result)->toHaveKey('client');
 });
 

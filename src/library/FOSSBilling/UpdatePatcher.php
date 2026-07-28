@@ -2590,6 +2590,10 @@ class UpdatePatcher implements InjectionAwareInterface
         if (!$this->tableHasColumn('client_order', 'suspension_grace_days')) {
             $this->executeSql('ALTER TABLE `client_order` ADD COLUMN `suspension_grace_days` int(11) DEFAULT NULL AFTER `config`');
         }
+
+        if (!$this->tableHasIndex('client_order', 'client_order_status_expires_at_idx')) {
+            $this->executeSql('ALTER TABLE `client_order` ADD INDEX `client_order_status_expires_at_idx` (`status`, `expires_at`)');
+        }
     }
 
     private function generateDownloadableStoredFilename(): string

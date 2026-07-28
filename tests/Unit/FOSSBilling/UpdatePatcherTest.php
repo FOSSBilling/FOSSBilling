@@ -38,6 +38,49 @@ test('fresh installs start at the latest patch level', function (): void {
     expect((int) ($matches[1] ?? 0))->toBe((new UpdatePatcher())->latestPatchLevel());
 });
 
+test('fresh installs index order suspension candidates', function (): void {
+    $structure = file_get_contents(Path::join(PATH_ROOT, 'install', 'sql', 'structure.sql'));
+
+    expect($structure)->toBeString()
+        ->toContain('KEY `client_order_status_expires_at_idx` (`status`, `expires_at`)');
+});
+
+test('suspension grace patch indexes existing order tables', function (): void {
+    $productColumns = Mockery::mock(PDOStatement::class);
+    $productColumns->expects('execute')->with([])->andReturnTrue();
+    $productColumns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Field' => 'suspension_grace_days'],
+    ]);
+
+    $orderColumns = Mockery::mock(PDOStatement::class);
+    $orderColumns->expects('execute')->with([])->andReturnTrue();
+    $orderColumns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Field' => 'suspension_grace_days'],
+    ]);
+
+    $orderIndexes = Mockery::mock(PDOStatement::class);
+    $orderIndexes->expects('execute')->with([])->andReturnTrue();
+    $orderIndexes->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([]);
+
+    $addIndex = Mockery::mock(PDOStatement::class);
+    $addIndex->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `product`')->andReturn($productColumns);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `client_order`')->andReturn($orderColumns);
+    $pdo->expects('prepare')->with('SHOW INDEX FROM `client_order`')->andReturn($orderIndexes);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `client_order` ADD INDEX `client_order_status_expires_at_idx` (`status`, `expires_at`)')
+        ->andReturn($addIndex);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch95'))->invoke($patcher);
+});
+
 test('client balance gateway patch restores one-time payments', function (): void {
     $statement = Mockery::mock(PDOStatement::class);
     $statement->expects('execute')

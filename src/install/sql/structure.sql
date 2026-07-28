@@ -361,7 +361,8 @@ CREATE TABLE `client_order` (
   KEY `client_id_idx` (`client_id`),
   KEY `product_id_idx` (`product_id`),
   KEY `form_id_idx` (`form_id`),
-  KEY `promo_id_idx` (`promo_id`)
+  KEY `promo_id_idx` (`promo_id`),
+  KEY `client_order_status_expires_at_idx` (`status`, `expires_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

@@ -68,10 +68,31 @@ test('suspendAccount sends the suspension reason to DirectAdmin', function (): v
 
     expect($requests[1]['method'])->toBe('POST')
         ->and($requests[1]['url'])->toContain('CMD_API_SELECT_USERS')
-        ->and($fields['reason'])->toBe('Non-payment');
+        ->and($fields['reason'])->toBe('billing')
+        ->and($fields['details'])->toBe('Non-payment');
 });
 
-test('suspendAccount omits an empty suspension reason', function (?string $reason): void {
+test('suspendAccount maps a custom suspension note to other', function (): void {
+    $requests = [];
+    $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$requests): MockResponse {
+        $requests[] = ['method' => $method, 'url' => $url, 'options' => $options];
+
+        return new MockResponse(str_contains($url, 'CMD_API_SHOW_USER_CONFIG') ? 'suspended=no' : '');
+    });
+    $manager = createDirectadminManager($httpClient);
+    $account = (new Server_Account())
+        ->setUsername('example')
+        ->setNote('Terms of service violation');
+
+    expect($manager->suspendAccount($account))->toBeTrue();
+
+    parse_str((string) parse_url($requests[1]['url'], PHP_URL_QUERY), $fields);
+
+    expect($fields['reason'])->toBe('other')
+        ->and($fields['details'])->toBe('Terms of service violation');
+});
+
+test('suspendAccount omits an empty suspension reason and details', function (?string $reason): void {
     $requests = [];
     $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$requests): MockResponse {
         $requests[] = ['method' => $method, 'url' => $url, 'options' => $options];
@@ -88,5 +109,6 @@ test('suspendAccount omits an empty suspension reason', function (?string $reaso
 
     parse_str((string) parse_url($requests[1]['url'], PHP_URL_QUERY), $fields);
 
-    expect($fields)->not->toHaveKey('reason');
+    expect($fields)->not->toHaveKey('reason')
+        ->not->toHaveKey('details');
 })->with([null, '']);

@@ -23,6 +23,7 @@ use Box\Mod\Product\Entity\Product;
 use Box\Mod\Staff\Entity\Admin;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Validation\NonNegativeIntegerValidator;
 use FOSSBilling\Validation\PriceValidator;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -689,9 +690,11 @@ class Service implements InjectionAwareInterface
         if ($identity instanceof Admin) {
             $data['config'] = $this->getConfig($model);
             $productService = $this->di['mod_service']('product');
-            $data['plugin'] = $productService->getProductPluginById((int) $this->orderProductId($model));
-            $product = $productService->findProductById((int) $this->orderProductId($model));
-            $data['product_suspension_grace_days'] = $product->getSuspensionGraceDays();
+            $productId = $this->orderProductId($model);
+            $hasProduct = $productId !== null && $productId > 0;
+            $data['plugin'] = $hasProduct ? $productService->getProductPluginById($productId) : null;
+            $product = $hasProduct ? $productService->getProductRepository()->find($productId) : null;
+            $data['product_suspension_grace_days'] = $product instanceof Product ? $product->getSuspensionGraceDays() : null;
         }
 
         return $data;
@@ -1546,10 +1549,10 @@ class Service implements InjectionAwareInterface
         if (array_key_exists('suspension_grace_days', $data)) {
             $graceDays = $data['suspension_grace_days'] === '' || $data['suspension_grace_days'] === null
                 ? null
-                : filter_var($data['suspension_grace_days'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
-            if ($graceDays === false) {
-                throw new InformationException('Suspension grace days must be a non-negative integer or empty to inherit the product setting.');
-            }
+                : NonNegativeIntegerValidator::validate(
+                    $data['suspension_grace_days'],
+                    'Suspension grace days must be a non-negative integer or empty to inherit the product setting.',
+                );
             if ($order instanceof Order) {
                 $order->setSuspensionGraceDays($graceDays);
             } else {

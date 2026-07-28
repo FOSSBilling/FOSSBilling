@@ -458,8 +458,10 @@ class Server_Manager_Directadmin extends Server_Manager
             'suspend' => 'Suspend',
             'select0' => $account->getUsername(),
         ];
-        if ($account->getNote() !== null && $account->getNote() !== '') {
-            $fields['reason'] = $account->getNote();
+        $note = $account->getNote();
+        if ($note !== null && $note !== '') {
+            $fields['reason'] = strcasecmp($note, 'Non-payment') === 0 ? 'billing' : 'other';
+            $fields['details'] = $note;
         }
 
         $this->request('API_SELECT_USERS', $fields);

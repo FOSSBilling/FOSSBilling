@@ -13,6 +13,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Index(name: 'product_id_idx', columns: ['product_id'])]
 #[ORM\Index(name: 'form_id_idx', columns: ['form_id'])]
 #[ORM\Index(name: 'promo_id_idx', columns: ['promo_id'])]
+#[ORM\Index(name: 'client_order_status_expires_at_idx', columns: ['status', 'expires_at'])]
 #[ORM\HasLifecycleCallbacks]
 class Order
 {
