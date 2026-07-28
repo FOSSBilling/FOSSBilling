@@ -32,6 +32,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\ORM\QueryBuilder;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\PaginationOptions;
+use FOSSBilling\Validation\NonNegativeIntegerValidator;
 
 class Service implements InjectionAwareInterface
 {
@@ -218,6 +219,7 @@ class Service implements InjectionAwareInterface
         if ($isAdmin) {
             $result['created_at'] = $this->formatDateTimeValue($model->getCreatedAt());
             $result['updated_at'] = $this->formatDateTimeValue($model->getUpdatedAt());
+            $result['suspension_grace_days'] = $model->getSuspensionGraceDays();
             $result['addons'] = $addons;
             $result['quantity_in_stock'] = $model->getQuantityInStock();
             $result['stock_control'] = $model->isStockControl();
@@ -440,6 +442,14 @@ class Service implements InjectionAwareInterface
 
     public function updateProduct(Product $model, $data): bool
     {
+        if (array_key_exists('suspension_grace_days', $data)) {
+            $graceDays = NonNegativeIntegerValidator::validate(
+                $data['suspension_grace_days'],
+                'Suspension grace days must be a non-negative integer.',
+            );
+            $model->setSuspensionGraceDays($graceDays);
+        }
+
         // pricing
         if (isset($data['pricing'])) {
             $types = $this->getPaymentTypes();

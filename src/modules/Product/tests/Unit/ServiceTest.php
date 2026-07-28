@@ -772,6 +772,7 @@ test('update product', function (): void {
         'stock_control' => false,
         'allow_quantity_select' => false,
         'quantity_in_stock' => 0,
+        'suspension_grace_days' => 5,
         'description' => 'Product description',
         'plugin' => 'plug in',
     ];
@@ -790,8 +791,17 @@ test('update product', function (): void {
     $serviceMock->setDi($di);
 
     $result = $serviceMock->updateProduct($modelProduct, $data);
-    expect($result)->toBeTrue();
+    expect($result)->toBeTrue()
+        ->and($modelProduct->getSuspensionGraceDays())->toBe(5);
 });
+
+test('update product rejects invalid suspension grace days', function (mixed $invalidGraceDays): void {
+    $service = new Service();
+    $product = productTestCreateProductEntity(1);
+
+    expect(fn () => $service->updateProduct($product, ['suspension_grace_days' => $invalidGraceDays]))
+        ->toThrow(FOSSBilling\InformationException::class, 'Suspension grace days must be a non-negative integer.');
+})->with([-1, '-1', '1.5', '01', PHP_INT_MAX . '0']);
 
 test('update priority', function (): void {
     $service = new Service();

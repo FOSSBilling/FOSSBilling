@@ -234,12 +234,14 @@ test('action suspend', function (): void {
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serverManagerMock = Mockery::mock('\Server_Manager_Custom');
-    $serverManagerMock->shouldReceive('suspendAccount')->atLeast()->once();
+    $serverManagerMock->shouldReceive('suspendAccount')->once()->with(Mockery::on(
+        fn (Server_Account $account): bool => $account->getNote() === 'Non-payment'
+    ));
     $AMresultArray = [$serverManagerMock, new Server_Account()];
     $serviceMock->shouldReceive('_getAM')->atLeast()->once()->andReturn($AMresultArray);
 
     $serviceMock->setDi($di);
-    $result = $serviceMock->action_suspend($orderModel);
+    $result = $serviceMock->action_suspend($orderModel, 'Non-payment');
     expect($result)->toBeTrue();
 });
 
