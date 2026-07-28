@@ -38,7 +38,18 @@
                 <div class="col-lg-6">
                     <label class="form-label">{{ 'Conversion Rate'|trans }}</label>
                     <input class="form-control" type="text" name="conversion_rate" value="{{ currency.conversion_rate }}" required>
+                    <div class="form-hint">{{ 'The value of one unit of the default currency in this currency.'|trans }}</div>
                 </div>
+                {% if not currency.default %}
+                <div class="col-lg-6 d-flex align-items-end">
+                    <div class="form-check mb-2">
+                        <input type="hidden" name="is_rate_manual" value="0">
+                        <input class="form-check-input" id="is-rate-manual" type="checkbox" name="is_rate_manual" value="1"{% if currency.is_rate_manual|default(false) %} checked{% endif %}>
+                        <label class="form-check-label" for="is-rate-manual">{{ 'Manual rate override'|trans }}</label>
+                        <div class="form-hint">{{ 'Preserve this rate when scheduled or on-demand rate synchronization runs.'|trans }}</div>
+                    </div>
+                </div>
+                {% endif %}
                 <div class="col-12">
                     {% set has_formatting_overrides = currency.format_pattern|default('') is not empty or currency.fraction_digits|default(null) is not null %}
                     <div class="accordion" id="currency-formatting-accordion">

@@ -356,6 +356,8 @@ test('create', function (): void {
 
     $data = [
         'code' => 'EUR',
+        'conversion_rate' => '0.92',
+        'is_rate_manual' => '1',
         'format' => '€{{price}}',
     ];
 
@@ -372,7 +374,8 @@ test('create', function (): void {
     ->andReturn($repositoryMock);
     $service
     ->shouldReceive('createCurrency')
-    ->atLeast()->once()
+    ->once()
+    ->with('EUR', '0.92', true)
     ->andReturn($data['code']);
 
     $di = container();
@@ -392,6 +395,7 @@ test('update', function (): void {
     $data = [
         'code' => 'EUR',
         'conversion_rate' => 0.6,
+        'is_rate_manual' => '1',
         'format_pattern' => '{amount} EUR',
         'fraction_digits' => '0',
     ];
@@ -403,7 +407,7 @@ test('update', function (): void {
     ->with('EUR', 0.6, [
         'format_pattern' => '{amount} EUR',
         'fraction_digits' => '0',
-    ])
+    ], true)
     ->andReturn(true);
 
     $di = container();
@@ -420,7 +424,7 @@ test('update forwards individual formatting fields without clearing the other se
     $adminApi = apiEndpoint(new Box\Mod\Currency\Api\Admin());
     $service = Mockery::mock(Box\Mod\Currency\Service::class);
     $service->expects('updateCurrency')
-        ->with('EUR', null, ['format_pattern' => '{amount} EUR'])
+        ->with('EUR', null, ['format_pattern' => '{amount} EUR'], null)
         ->andReturnTrue();
 
     $adminApi->setDi(container());

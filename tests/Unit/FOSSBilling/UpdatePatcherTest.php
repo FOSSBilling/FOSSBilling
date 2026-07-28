@@ -19,6 +19,14 @@ test('downloadable file migration follows the client balance gateway repair', fu
         ->and($patches[93][1])->toBe('patch93');
 });
 
+test('manual currency rate patch follows the currency formatting patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 93);
+
+    expect($patches)->toHaveCount(1)
+        ->toHaveKey(94)
+        ->and($patches[94][1])->toBe('patch94');
+});
+
 test('fresh installs start at the latest patch level', function (): void {
     $content = file_get_contents(Path::join(PATH_ROOT, 'install', 'sql', 'content.sql'));
     expect($content)->toBeString();
