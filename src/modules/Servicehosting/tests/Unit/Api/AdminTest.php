@@ -10,10 +10,23 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Order\Service as OrderService;
 use Box\Mod\Servicehosting\Api\Admin;
+use Box\Mod\Servicehosting\Entity\ServiceHosting;
+use Box\Mod\Servicehosting\Entity\ServiceHostingHp;
+use Box\Mod\Servicehosting\Entity\ServiceHostingServer;
+use Box\Mod\Servicehosting\Repository\ServiceHostingHpRepository;
+use Box\Mod\Servicehosting\Repository\ServiceHostingRepository;
+use Box\Mod\Servicehosting\Repository\ServiceHostingServerRepository;
+use Box\Mod\Servicehosting\Service;
+use Doctrine\ORM\EntityManagerInterface;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\moduleService;
+
+afterEach(function (): void {
+    Mockery::close();
+});
 
 test('testGetDi', function (): void {
     $api = apiEndpoint(new Admin());
@@ -29,7 +42,7 @@ test('testChangePlan', function (): void {
         'plan_id' => 1,
     ];
 
-    $getServiceReturnValue = [new Model_ClientOrder(), new Model_ServiceHosting()];
+    $getServiceReturnValue = [new Model_ClientOrder(), new ServiceHosting()];
     $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
 
     $apiMock
@@ -37,20 +50,22 @@ test('testChangePlan', function (): void {
     ->atLeast()->once()
     ->andReturn($getServiceReturnValue);
 
-    $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceMock = Mockery::mock(Service::class);
     $serviceMock
     ->shouldReceive('changeAccountPlan')
     ->atLeast()->once()
     ->andReturn(true);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(new Model_ServiceHostingHp());
+    $hpRepo = Mockery::mock(ServiceHostingHpRepository::class);
+    $hpRepo->shouldReceive('find')->atLeast()->once()->andReturn(new ServiceHostingHp());
+    $hpRepo->shouldIgnoreMissing();
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(ServiceHostingHp::class)->andReturn($hpRepo);
+    $emMock->shouldIgnoreMissing();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
 
     $apiMock->setDi($di);
     $apiMock->setService($serviceMock);
@@ -71,7 +86,7 @@ test('testChangePlanMissingPlanId', function (): void {
 
 test('testChangeUsername', function (): void {
     $api = apiEndpoint(new Admin());
-    $getServiceReturnValue = [new Model_ClientOrder(), new Model_ServiceHosting()];
+    $getServiceReturnValue = [new Model_ClientOrder(), new ServiceHosting()];
     $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
 
     $apiMock
@@ -79,7 +94,7 @@ test('testChangeUsername', function (): void {
     ->atLeast()->once()
     ->andReturn($getServiceReturnValue);
 
-    $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceMock = Mockery::mock(Service::class);
     $serviceMock
     ->shouldReceive('changeAccountUsername')
     ->atLeast()->once()
@@ -94,7 +109,7 @@ test('testChangeUsername', function (): void {
 
 test('testChangeIp', function (): void {
     $api = apiEndpoint(new Admin());
-    $getServiceReturnValue = [new Model_ClientOrder(), new Model_ServiceHosting()];
+    $getServiceReturnValue = [new Model_ClientOrder(), new ServiceHosting()];
     $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
 
     $apiMock
@@ -102,7 +117,7 @@ test('testChangeIp', function (): void {
     ->atLeast()->once()
     ->andReturn($getServiceReturnValue);
 
-    $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceMock = Mockery::mock(Service::class);
     $serviceMock
     ->shouldReceive('changeAccountIp')
     ->atLeast()->once()
@@ -117,7 +132,7 @@ test('testChangeIp', function (): void {
 
 test('testChangeDomain', function (): void {
     $api = apiEndpoint(new Admin());
-    $getServiceReturnValue = [new Model_ClientOrder(), new Model_ServiceHosting()];
+    $getServiceReturnValue = [new Model_ClientOrder(), new ServiceHosting()];
     $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
 
     $apiMock
@@ -125,7 +140,7 @@ test('testChangeDomain', function (): void {
     ->atLeast()->once()
     ->andReturn($getServiceReturnValue);
 
-    $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceMock = Mockery::mock(Service::class);
     $serviceMock
     ->shouldReceive('changeAccountDomain')
     ->atLeast()->once()
@@ -140,7 +155,7 @@ test('testChangeDomain', function (): void {
 
 test('testChangePassword', function (): void {
     $api = apiEndpoint(new Admin());
-    $getServiceReturnValue = [new Model_ClientOrder(), new Model_ServiceHosting()];
+    $getServiceReturnValue = [new Model_ClientOrder(), new ServiceHosting()];
     $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
 
     $apiMock
@@ -148,7 +163,7 @@ test('testChangePassword', function (): void {
     ->atLeast()->once()
     ->andReturn($getServiceReturnValue);
 
-    $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceMock = Mockery::mock(Service::class);
     $serviceMock
     ->shouldReceive('changeAccountPassword')
     ->atLeast()->once()
@@ -163,7 +178,7 @@ test('testChangePassword', function (): void {
 
 test('testSync', function (): void {
     $api = apiEndpoint(new Admin());
-    $getServiceReturnValue = [new Model_ClientOrder(), new Model_ServiceHosting()];
+    $getServiceReturnValue = [new Model_ClientOrder(), new ServiceHosting()];
     $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
 
     $apiMock
@@ -171,7 +186,7 @@ test('testSync', function (): void {
     ->atLeast()->once()
     ->andReturn($getServiceReturnValue);
 
-    $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceMock = Mockery::mock(Service::class);
     $serviceMock
     ->shouldReceive('sync')
     ->atLeast()->once()
@@ -186,7 +201,7 @@ test('testSync', function (): void {
 
 test('testUpdate', function (): void {
     $api = apiEndpoint(new Admin());
-    $getServiceReturnValue = [new Model_ClientOrder(), new Model_ServiceHosting()];
+    $getServiceReturnValue = [new Model_ClientOrder(), new ServiceHosting()];
     $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
 
     $apiMock
@@ -194,7 +209,7 @@ test('testUpdate', function (): void {
     ->atLeast()->once()
     ->andReturn($getServiceReturnValue);
 
-    $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceMock = Mockery::mock(Service::class);
     $serviceMock
     ->shouldReceive('update')
     ->atLeast()->once()
@@ -209,7 +224,7 @@ test('testUpdate', function (): void {
 
 test('testManagerGetPairs', function (): void {
     $api = apiEndpoint(new Admin());
-    $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceMock = Mockery::mock(Service::class);
     $serviceMock
     ->shouldReceive('getServerManagers')
     ->atLeast()->once()
@@ -223,7 +238,7 @@ test('testManagerGetPairs', function (): void {
 
 test('testServerGetPairs', function (): void {
     $api = apiEndpoint(new Admin());
-    $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceMock = Mockery::mock(Service::class);
     $serviceMock
     ->shouldReceive('getServerPairs')
     ->atLeast()->once()
@@ -237,7 +252,7 @@ test('testServerGetPairs', function (): void {
 
 test('testAccountGetList', function (): void {
     $api = apiEndpoint(new Admin());
-    $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceMock = Mockery::mock(Service::class);
     $serviceMock
     ->shouldReceive('getAccountsSearchQuery')
     ->atLeast()->once()
@@ -271,7 +286,7 @@ test('testAccountGetList', function (): void {
 
 test('testServerGetList', function (): void {
     $api = apiEndpoint(new Admin());
-    $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceMock = Mockery::mock(Service::class);
     $serviceMock
     ->shouldReceive('getServersSearchQuery')
     ->atLeast()->once()
@@ -305,7 +320,7 @@ test('testServerCreate', function (): void {
 
     $newServerId = 1;
 
-    $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceMock = Mockery::mock(Service::class);
     $serviceMock
     ->shouldReceive('createServer')
     ->atLeast()->once()
@@ -325,20 +340,22 @@ test('testServerGet', function (): void {
     $api = apiEndpoint(new Admin());
     $data['id'] = 1;
 
-    $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceMock = Mockery::mock(Service::class);
     $serviceMock
     ->shouldReceive('toHostingServerApiArray')
     ->atLeast()->once()
     ->andReturn([]);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(new Model_ServiceHostingServer());
+    $serverRepo = Mockery::mock(ServiceHostingServerRepository::class);
+    $serverRepo->shouldReceive('find')->atLeast()->once()->andReturn(new ServiceHostingServer());
+    $serverRepo->shouldIgnoreMissing();
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(ServiceHostingServer::class)->andReturn($serverRepo);
+    $emMock->shouldIgnoreMissing();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $api->setDi($di);
     $api->setService($serviceMock);
 
@@ -351,24 +368,27 @@ test('testServerDelete', function (): void {
     // Test case 1: Server can be deleted
     $data['id'] = 1;
 
-    $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceMock = Mockery::mock(Service::class);
     $serviceMock
     ->shouldReceive('deleteServer')
     ->atLeast()->once()
     ->andReturn(true);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(new Model_ServiceHostingServer());
-    $dbMock
-    ->shouldReceive('find')
-    ->atLeast()->once()
-    ->andReturn([]);
+    $serverRepo = Mockery::mock(ServiceHostingServerRepository::class);
+    $serverRepo->shouldReceive('find')->atLeast()->once()->andReturn(new ServiceHostingServer());
+    $serverRepo->shouldIgnoreMissing();
+
+    $serviceHostingRepo = Mockery::mock(ServiceHostingRepository::class);
+    $serviceHostingRepo->shouldReceive('findBy')->atLeast()->once()->andReturn([]);
+    $serviceHostingRepo->shouldIgnoreMissing();
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(ServiceHostingServer::class)->andReturn($serverRepo);
+    $emMock->shouldReceive('getRepository')->with(ServiceHosting::class)->andReturn($serviceHostingRepo);
+    $emMock->shouldIgnoreMissing();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $api->setDi($di);
     $api->setService($serviceMock);
 
@@ -378,20 +398,21 @@ test('testServerDelete', function (): void {
     // Test case 2: Server is used by service_hostings and cannot be deleted
     $data['id'] = 2;
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(new Model_ServiceHostingServer());
+    $serverRepo2 = Mockery::mock(ServiceHostingServerRepository::class);
+    $serverRepo2->shouldReceive('find')->atLeast()->once()->andReturn(new ServiceHostingServer());
+    $serverRepo2->shouldIgnoreMissing();
 
-    // Mock the 'find' method to return a non-empty array, simulating the server being used by service hostings
-    $dbMock
-    ->shouldReceive('find')
-    ->atLeast()->once()
-    ->andReturn(['dummy_data']);
+    $serviceHostingRepo2 = Mockery::mock(ServiceHostingRepository::class);
+    $serviceHostingRepo2->shouldReceive('findBy')->atLeast()->once()->andReturn([new ServiceHosting()]);
+    $serviceHostingRepo2->shouldIgnoreMissing();
+
+    $emMock2 = Mockery::mock(EntityManagerInterface::class);
+    $emMock2->shouldReceive('getRepository')->with(ServiceHostingServer::class)->andReturn($serverRepo2);
+    $emMock2->shouldReceive('getRepository')->with(ServiceHosting::class)->andReturn($serviceHostingRepo2);
+    $emMock2->shouldIgnoreMissing();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock2;
     $api->setDi($di);
 
     // Now, we expect an exception to be thrown because the server is used by service_hostings
@@ -405,7 +426,7 @@ test('testServerUpdate', function (): void {
     $api = apiEndpoint(new Admin());
     $data['id'] = 1;
 
-    $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceMock = Mockery::mock(Service::class);
     $serviceMock
     ->shouldReceive('updateServer')
     ->atLeast()->once()
@@ -415,14 +436,17 @@ test('testServerUpdate', function (): void {
     ->atLeast()->once()
     ->andReturn(new Server_Manager_Custom([]));
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(new Model_ServiceHostingServer());
+    $serverModel = new ServiceHostingServer();
+    $serverRepo = Mockery::mock(ServiceHostingServerRepository::class);
+    $serverRepo->shouldReceive('find')->atLeast()->once()->andReturn($serverModel);
+    $serverRepo->shouldIgnoreMissing();
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(ServiceHostingServer::class)->andReturn($serverRepo);
+    $emMock->shouldIgnoreMissing();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $api->setDi($di);
     $api->setService($serviceMock);
 
@@ -435,7 +459,7 @@ test('testServerUpdateSurfacesServerManagerErrorsAsInformationException', functi
     $api = apiEndpoint(new Admin());
     $data['id'] = 1;
 
-    $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceMock = Mockery::mock(Service::class);
     $serviceMock
     ->shouldReceive('updateServer')
     ->atLeast()->once()
@@ -445,14 +469,17 @@ test('testServerUpdateSurfacesServerManagerErrorsAsInformationException', functi
     ->atLeast()->once()
     ->andThrow(new Server_Exception('Server manager is not fully configured.'));
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(new Model_ServiceHostingServer());
+    $serverModel = new ServiceHostingServer();
+    $serverRepo = Mockery::mock(ServiceHostingServerRepository::class);
+    $serverRepo->shouldReceive('find')->atLeast()->once()->andReturn($serverModel);
+    $serverRepo->shouldIgnoreMissing();
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(ServiceHostingServer::class)->andReturn($serverRepo);
+    $emMock->shouldIgnoreMissing();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $api->setDi($di);
     $api->setService($serviceMock);
 
@@ -463,20 +490,22 @@ test('testServerTestConnection', function (): void {
     $api = apiEndpoint(new Admin());
     $data['id'] = 1;
 
-    $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceMock = Mockery::mock(Service::class);
     $serviceMock
     ->shouldReceive('testConnection')
     ->atLeast()->once()
     ->andReturn(true);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn(new Model_ServiceHostingServer());
+    $serverRepo = Mockery::mock(ServiceHostingServerRepository::class);
+    $serverRepo->shouldReceive('find')->atLeast()->once()->andReturn(new ServiceHostingServer());
+    $serverRepo->shouldIgnoreMissing();
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(ServiceHostingServer::class)->andReturn($serverRepo);
+    $emMock->shouldIgnoreMissing();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $api->setDi($di);
     $api->setService($serviceMock);
 
@@ -487,7 +516,7 @@ test('testServerTestConnection', function (): void {
 
 test('testHpGetPairs', function (): void {
     $api = apiEndpoint(new Admin());
-    $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceMock = Mockery::mock(Service::class);
     $serviceMock
     ->shouldReceive('getHpPairs')
     ->atLeast()->once()
@@ -500,7 +529,7 @@ test('testHpGetPairs', function (): void {
 
 test('testHpGetList', function (): void {
     $api = apiEndpoint(new Admin());
-    $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceMock = Mockery::mock(Service::class);
     $serviceMock
     ->shouldReceive('getHpSearchQuery')
     ->atLeast()->once()
@@ -528,26 +557,27 @@ test('testHpDelete', function (): void {
         'id' => 1,
     ];
 
-    $model = new Model_ServiceHostingHp();
-
-    $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceMock = Mockery::mock(Service::class);
     $serviceMock
     ->shouldReceive('deleteHp')
     ->atLeast()->once()
     ->andReturn(true);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn($model);
-    $dbMock
-    ->shouldReceive('find')
-    ->atLeast()->once()
-    ->andReturn([]);
+    $hpRepo = Mockery::mock(ServiceHostingHpRepository::class);
+    $hpRepo->shouldReceive('find')->atLeast()->once()->andReturn(new ServiceHostingHp());
+    $hpRepo->shouldIgnoreMissing();
+
+    $serviceHostingRepo = Mockery::mock(ServiceHostingRepository::class);
+    $serviceHostingRepo->shouldReceive('findBy')->atLeast()->once()->andReturn([]);
+    $serviceHostingRepo->shouldIgnoreMissing();
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(ServiceHostingHp::class)->andReturn($hpRepo);
+    $emMock->shouldReceive('getRepository')->with(ServiceHosting::class)->andReturn($serviceHostingRepo);
+    $emMock->shouldIgnoreMissing();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $api->setDi($di);
     $api->setService($serviceMock);
 
@@ -570,22 +600,22 @@ test('testHpGet', function (): void {
         'id' => 1,
     ];
 
-    $model = new Model_ServiceHostingHp();
-
-    $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceMock = Mockery::mock(Service::class);
     $serviceMock
     ->shouldReceive('toHostingHpApiArray')
     ->atLeast()->once()
     ->andReturn([]);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn($model);
+    $hpRepo = Mockery::mock(ServiceHostingHpRepository::class);
+    $hpRepo->shouldReceive('find')->atLeast()->once()->andReturn(new ServiceHostingHp());
+    $hpRepo->shouldIgnoreMissing();
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(ServiceHostingHp::class)->andReturn($hpRepo);
+    $emMock->shouldIgnoreMissing();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $api->setDi($di);
     $api->setService($serviceMock);
 
@@ -599,22 +629,22 @@ test('testHpUpdate', function (): void {
         'id' => 1,
     ];
 
-    $model = new Model_ServiceHostingHp();
-
-    $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceMock = Mockery::mock(Service::class);
     $serviceMock
     ->shouldReceive('updateHp')
     ->atLeast()->once()
     ->andReturn(true);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn($model);
+    $hpRepo = Mockery::mock(ServiceHostingHpRepository::class);
+    $hpRepo->shouldReceive('find')->atLeast()->once()->andReturn(new ServiceHostingHp());
+    $hpRepo->shouldIgnoreMissing();
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(ServiceHostingHp::class)->andReturn($hpRepo);
+    $emMock->shouldIgnoreMissing();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $api->setDi($di);
     $api->setService($serviceMock);
 
@@ -631,7 +661,7 @@ test('testHpCreate', function (): void {
 
     $newHpId = 2;
 
-    $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceMock = Mockery::mock(Service::class);
     $serviceMock
     ->shouldReceive('createHp')
     ->atLeast()->once()
@@ -660,8 +690,8 @@ test('testGetService', function (): void {
     ->atLeast()->once()
     ->andReturn($clientOrderModel);
 
-    $model = new Model_ServiceHosting();
-    $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
+    $model = new ServiceHosting();
+    $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock
     ->shouldReceive('getOrderService')
     ->atLeast()->once()
@@ -676,7 +706,7 @@ test('testGetService', function (): void {
     $result = $api->_getService($data);
     expect($result)->toBeArray();
     expect($result[0])->toBeInstanceOf('\Model_ClientOrder');
-    expect($result[1])->toBeInstanceOf('\Model_ServiceHosting');
+    expect($result[1])->toBeInstanceOf(ServiceHosting::class);
 });
 
 test('testGetServiceOrderNotActivated', function (): void {
@@ -693,7 +723,7 @@ test('testGetServiceOrderNotActivated', function (): void {
     ->andReturn($clientOrderModel);
 
     $model = null;
-    $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
+    $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock
     ->shouldReceive('getOrderService')
     ->atLeast()->once()

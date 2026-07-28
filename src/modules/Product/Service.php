@@ -26,6 +26,7 @@ use Box\Mod\Product\Repository\ProductPaymentRepository;
 use Box\Mod\Product\Repository\ProductRepository;
 use Box\Mod\Product\Repository\PromoRedemptionRepository;
 use Box\Mod\Product\Repository\PromoRepository;
+use Box\Mod\Servicedomain\Entity\Tld;
 use Box\Mod\Staff\Entity\Admin;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\QueryBuilder;
@@ -1970,7 +1971,7 @@ class Service implements InjectionAwareInterface
         };
     }
 
-    public function isPromoLinkedToTld(Promo $promo, \Model_Tld $tld): bool
+    public function isPromoLinkedToTld(Promo $promo, Tld $tld): bool
     {
         unset($tld);
 
@@ -2087,7 +2088,7 @@ class Service implements InjectionAwareInterface
         return max(1, (int) ($config['register_years'] ?? $config['quantity'] ?? 1));
     }
 
-    private function getDomainTldModel(array $config): \Model_Tld
+    private function getDomainTldModel(array $config): Tld
     {
         $tldService = $this->di['mod_service']('servicedomain', 'Tld');
         $tld = '';
@@ -2105,24 +2106,24 @@ class Service implements InjectionAwareInterface
         }
 
         $tld = $tldService->findOneByTld($tld);
-        if (!$tld instanceof \Model_Tld) {
+        if (!$tld instanceof Tld) {
             throw new \FOSSBilling\Exception('Unknown TLD. Could not determine registration price');
         }
 
         return $tld;
     }
 
-    private function getDomainRegistrationTotal(\Model_Tld $tld, int $years): float
+    private function getDomainRegistrationTotal(Tld $tld, int $years): float
     {
         if ($years <= 0) {
             return 0.0;
         }
 
         if ($years <= 1) {
-            return (float) $tld->price_registration;
+            return (float) $tld->getPriceRegistration();
         }
 
-        return (float) $tld->price_registration + (($years - 1) * (float) $tld->price_renew);
+        return (float) $tld->getPriceRegistration() + (($years - 1) * (float) $tld->getPriceRenew());
     }
 
     /**
@@ -2148,7 +2149,7 @@ class Service implements InjectionAwareInterface
         }
 
         return [
-            'price' => (float) $tld->price_transfer,
+            'price' => (float) $tld->getPriceTransfer(),
             'quantity' => 1,
             'setup_price' => 0.0,
         ];
@@ -2162,7 +2163,7 @@ class Service implements InjectionAwareInterface
         $tld = $this->getDomainTldModel($config);
 
         return [
-            'price' => (float) $tld->price_renew,
+            'price' => (float) $tld->getPriceRenew(),
             'quantity' => $this->getDomainRegistrationYears($config),
         ];
     }
@@ -2176,8 +2177,8 @@ class Service implements InjectionAwareInterface
         $tld = $this->getDomainTldModel($config);
 
         return match ($config['action'] ?? null) {
-            'register' => (float) $tld->price_registration,
-            'transfer' => (float) $tld->price_transfer,
+            'register' => (float) $tld->getPriceRegistration(),
+            'transfer' => (float) $tld->getPriceTransfer(),
             default => 0.0,
         };
     }

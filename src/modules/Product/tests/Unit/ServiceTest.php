@@ -22,6 +22,7 @@ use Box\Mod\Product\Repository\ProductRepository;
 use Box\Mod\Product\Repository\PromoRedemptionRepository;
 use Box\Mod\Product\Repository\PromoRepository;
 use Box\Mod\Product\Service;
+use Box\Mod\Servicedomain\Entity\Tld;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 
@@ -64,13 +65,9 @@ function productTestCreateProductPaymentEntity(int $id): ProductPayment
     return $productPayment;
 }
 
-function productTestCreateTldModel(array $properties = []): Model_Tld
+function productTestCreateTldModel(array $properties = []): Tld
 {
-    $tld = new Model_Tld();
-    $tld->loadBean(new Tests\Helpers\DummyBean());
-    foreach ($properties as $name => $value) {
-        $tld->$name = $value;
-    }
+    $tld = createEntity(Tld::class, $properties);
 
     return $tld;
 }
@@ -210,7 +207,7 @@ function productTestCreateProductOrderDbalConnection(): Connection
     return $connection;
 }
 
-function productTestCreateDomainTldServiceMock(Model_Tld $tld): Mockery\MockInterface
+function productTestCreateDomainTldServiceMock(Tld $tld): Mockery\MockInterface
 {
     $tldService = Mockery::mock(Box\Mod\Servicedomain\ServiceTld::class);
     $tldService->shouldReceive('findOneByTld')->atLeast()->once()->with('.com')->andReturn($tld);
