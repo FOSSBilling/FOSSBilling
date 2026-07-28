@@ -23,9 +23,7 @@
 {% set active_menu = 'order' %}
 
 {% set service_partial = 'mod_service' ~ order.service_type ~ '_manage.html.twig' %}
-{% if order.group_master == 1 %}
-    {% set addons = admin.order_addons({ 'id': order.id }) %}
-{% endif %}
+{% set addons = order.group_master == 1 ? admin.order_addons({ 'id': order.id }) : [] %}
 {% if order.status == 'active' or order.status == 'failed_renew' %}
     {% set can_cancel_at_period_end = admin.order_can_cancel_at_period_end({ 'id': order.id }) %}
 {% endif %}
