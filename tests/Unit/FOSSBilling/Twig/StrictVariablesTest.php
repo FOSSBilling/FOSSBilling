@@ -75,7 +75,7 @@ test('order new only lists periods the product is actually priced for', function
             ],
         ],
         'guest' => [
-            'system_periods' => \Box_Period::getPredefined(),
+            'system_periods' => Box_Period::getPredefined(),
         ],
     ]);
 

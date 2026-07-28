@@ -476,7 +476,7 @@ test('applyPromo throws exception when cart is empty', function (): void {
     $service = new Service();
     $service->setDi($di);
 
-    expect(fn () => $service->applyPromo($cart, $promo))->toThrow(FOSSBilling\Exception::class);
+    expect(fn (): bool => $service->applyPromo($cart, $promo))->toThrow(FOSSBilling\Exception::class);
 });
 
 test('rm returns true', function (): void {
@@ -1643,13 +1643,11 @@ test('isPromoAvailableForClientGroup returns expected result', function (Promo $
     $result = $service->isPromoAvailableForClientGroup($promo);
 
     expect($result)->toEqual($expectedResult);
-})->with(function () {
-    return [
-        [createPromoEntity(1)->setClientGroups(json_encode([])), createEntity(Client::class), true],
-        [createPromoEntity(2)->setClientGroups(json_encode([1, 2])), createEntity(Client::class, ['clientGroupId' => null]), false],
-        [createPromoEntity(3)->setClientGroups(json_encode([1, 2])), createEntity(Client::class, ['clientGroupId' => 3]), false],
-        [createPromoEntity(4)->setClientGroups(json_encode([1, 2])), createEntity(Client::class, ['clientGroupId' => 2]), true],
-        [createPromoEntity(5)->setClientGroups(json_encode([])), null, true],
-        [createPromoEntity(6)->setClientGroups(json_encode([1, 2])), null, false],
-    ];
-});
+})->with(fn () => [
+    [createPromoEntity(1)->setClientGroups(json_encode([])), createEntity(Client::class), true],
+    [createPromoEntity(2)->setClientGroups(json_encode([1, 2])), createEntity(Client::class, ['clientGroupId' => null]), false],
+    [createPromoEntity(3)->setClientGroups(json_encode([1, 2])), createEntity(Client::class, ['clientGroupId' => 3]), false],
+    [createPromoEntity(4)->setClientGroups(json_encode([1, 2])), createEntity(Client::class, ['clientGroupId' => 2]), true],
+    [createPromoEntity(5)->setClientGroups(json_encode([])), null, true],
+    [createPromoEntity(6)->setClientGroups(json_encode([1, 2])), null, false],
+]);

@@ -448,7 +448,7 @@ class Service implements InjectionAwareInterface
         return $this->clientRepository->findOneByEmail($email) instanceof Client;
     }
 
-    public function getByLoginDetails($email, $password)
+    public function getByLoginDetails($email, $password): ?object
     {
         return $this->clientRepository->findOneBy(['email' => $email, 'pass' => $password, 'status' => Client::ACTIVE]);
     }
@@ -670,7 +670,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function createGroup(array $data)
+    public function createGroup(array $data): int
     {
         $group = new ClientGroup();
         $group->setTitle($data['title']);
@@ -790,7 +790,7 @@ class Service implements InjectionAwareInterface
         return $client;
     }
 
-    public function adminCreateClient(array $data)
+    public function adminCreateClient(array $data): int
     {
         $eventParams = $data;
         unset($eventParams['password'], $eventParams['password_confirm']);
@@ -971,7 +971,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function authorizeClient($email, $plainTextPassword)
+    public function authorizeClient($email, $plainTextPassword): ?Client
     {
         // The shared authorization service still reads the legacy bean fields directly.
         // Keep that boundary until the identity/authentication slice migrates as well.

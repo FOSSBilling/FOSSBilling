@@ -172,32 +172,22 @@ function container(): Container
         $clientQueryBuilder->shouldReceive('getQuery')->byDefault()->andReturn($clientQuery);
 
         $clientRepository = \Mockery::mock(\Box\Mod\Client\Repository\ClientRepository::class)->shouldIgnoreMissing();
-        $clientRepository->shouldReceive('find')->byDefault()->andReturnUsing(static function (int $id): ?object {
-            return createEntity(\Box\Mod\Client\Entity\Client::class, ['id' => $id]);
-        });
+        $clientRepository->shouldReceive('find')->byDefault()->andReturnUsing(static fn (int $id): ?object => createEntity(\Box\Mod\Client\Entity\Client::class, ['id' => $id]));
         $clientRepository->shouldReceive('findOneBy')->byDefault()->andReturn(null);
-        $clientRepository->shouldReceive('findOneByEmail')->byDefault()->andReturnUsing(static function (string $email): ?object {
-            return createEntity(\Box\Mod\Client\Entity\Client::class, ['id' => 1, 'email' => $email]);
-        });
-        $clientRepository->shouldReceive('findOneByEmailAndActive')->byDefault()->andReturnUsing(static function (string $email): ?object {
-            return createEntity(\Box\Mod\Client\Entity\Client::class, ['id' => 1, 'email' => $email, 'status' => 'active']);
-        });
+        $clientRepository->shouldReceive('findOneByEmail')->byDefault()->andReturnUsing(static fn (string $email): ?object => createEntity(\Box\Mod\Client\Entity\Client::class, ['id' => 1, 'email' => $email]));
+        $clientRepository->shouldReceive('findOneByEmailAndActive')->byDefault()->andReturnUsing(static fn (string $email): ?object => createEntity(\Box\Mod\Client\Entity\Client::class, ['id' => 1, 'email' => $email, 'status' => 'active']));
         $clientRepository->shouldReceive('findOneByApiToken')->byDefault()->andReturn(null);
         $clientRepository->shouldReceive('getIdNamePairs')->byDefault()->andReturn([]);
         $clientRepository->shouldReceive('getStatusCounts')->byDefault()->andReturn(['active' => 1, 'suspended' => 0, 'canceled' => 0]);
         $clientRepository->shouldReceive('createQueryBuilder')->byDefault()->andReturn($clientQueryBuilder);
 
         $clientBalanceRepository = \Mockery::mock(\Box\Mod\Client\Repository\ClientBalanceRepository::class)->shouldIgnoreMissing();
-        $clientBalanceRepository->shouldReceive('find')->byDefault()->andReturnUsing(static function (int $id): ?object {
-            return createEntity(\Box\Mod\Client\Entity\ClientBalance::class, ['id' => $id]);
-        });
+        $clientBalanceRepository->shouldReceive('find')->byDefault()->andReturnUsing(static fn (int $id): ?object => createEntity(\Box\Mod\Client\Entity\ClientBalance::class, ['id' => $id]));
         $clientBalanceRepository->shouldReceive('findBy')->byDefault()->andReturn([]);
         $clientBalanceRepository->shouldReceive('getClientBalanceSum')->byDefault()->andReturn(0.0);
 
         $clientGroupRepository = \Mockery::mock(\Box\Mod\Client\Repository\ClientGroupRepository::class)->shouldIgnoreMissing();
-        $clientGroupRepository->shouldReceive('find')->byDefault()->andReturnUsing(static function (int $id): ?object {
-            return createEntity(\Box\Mod\Client\Entity\ClientGroup::class, ['id' => $id]);
-        });
+        $clientGroupRepository->shouldReceive('find')->byDefault()->andReturnUsing(static fn (int $id): ?object => createEntity(\Box\Mod\Client\Entity\ClientGroup::class, ['id' => $id]));
         $clientGroupRepository->shouldReceive('getIdTitlePairs')->byDefault()->andReturn([]);
 
         $clientPasswordResetRepository = \Mockery::mock(\Box\Mod\Client\Repository\ClientPasswordResetRepository::class)->shouldIgnoreMissing();

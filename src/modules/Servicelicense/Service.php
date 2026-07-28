@@ -317,7 +317,7 @@ class Service implements InjectionAwareInterface
         return [];
     }
 
-    public function getOwnerName(ServiceLicense $model)
+    public function getOwnerName(ServiceLicense $model): string
     {
         $clientId = $model->getClientId();
         if ($clientId === null) {
