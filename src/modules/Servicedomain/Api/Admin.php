@@ -157,18 +157,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     public function tld_get_list($data)
     {
         $this->checkPermissions('servicedomain', 'manage_tlds');
-        [$sql, $params] = $this->getService()->tldGetSearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $query = $this->getService()->tldGetSearchQuery($data);
 
-        foreach ($pager['list'] as $key => $tldArr) {
-            $tld = $this->getService()->tldFindOneById($tldArr['id']);
-            if (!$tld instanceof Tld) {
-                throw new \FOSSBilling\InformationException(sprintf('Tld #%s not found', $tldArr['id']));
-            }
-            $pager['list'][$key] = $this->getService()->tldToApiArray($tld, $this->identity);
-        }
-
-        return $pager;
+        return $this->getDi()['pager']->paginateMappedQuery(
+            $query,
+            PaginationOptions::fromArray($data),
+            fn (Tld $tld): array => $this->getService()->tldToApiArray($tld, $this->identity),
+        );
     }
 
     /**
@@ -299,19 +294,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     public function registrar_get_list($data)
     {
         $this->checkPermissions('servicedomain', 'manage_registrars');
-        [$sql, $params] = $this->getService()->registrarGetSearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $query = $this->getService()->registrarGetSearchQuery($data);
 
-        $registrars = $this->getDi()['em']->getRepository(TldRegistrar::class)->findBy([], ['name' => 'ASC']);
-
-        $registrarsArr = [];
-        foreach ($registrars as $registrar) {
-            $registrarsArr[] = $this->getService()->registrarToApiArray($registrar);
-        }
-
-        $pager['list'] = $registrarsArr;
-
-        return $pager;
+        return $this->getDi()['pager']->paginateMappedQuery(
+            $query,
+            PaginationOptions::fromArray($data),
+            fn (TldRegistrar $registrar): array => $this->getService()->registrarToApiArray($registrar),
+        );
     }
 
     /**

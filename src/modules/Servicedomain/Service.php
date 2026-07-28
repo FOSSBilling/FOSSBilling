@@ -18,6 +18,7 @@ use Box\Mod\Servicedomain\Entity\TldRegistrar;
 use Box\Mod\Servicedomain\Repository\DomainRepository;
 use Box\Mod\Servicedomain\Repository\TldRegistrarRepository;
 use Box\Mod\Servicedomain\Repository\TldRepository;
+use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
@@ -228,9 +229,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->setPrivacy(false);
         $model->setAction($c['action']);
         $model->setNs1(isset($c['ns1']) && !empty($c['ns1']) ? $c['ns1'] : $ns['nameserver_1']);
-        $model->setNs2(isset($c['ns2']) && !empty($c['ns1']) ? $c['ns2'] : $ns['nameserver_2']);
-        $model->setNs3(isset($c['ns3']) && !empty($c['ns1']) ? $c['ns3'] : $ns['nameserver_3']);
-        $model->setNs4(isset($c['ns4']) && !empty($c['ns1']) ? $c['ns4'] : $ns['nameserver_4']);
+        $model->setNs2(!empty($c['ns2']) ? $c['ns2'] : $ns['nameserver_2']);
+        $model->setNs3(!empty($c['ns3']) ? $c['ns3'] : $ns['nameserver_3']);
+        $model->setNs4(!empty($c['ns4']) ? $c['ns4'] : $ns['nameserver_4']);
 
         $client = $this->di['db']->getExistingModelById('Client', $model->getClientId(), 'Client not found');
 
@@ -440,9 +441,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->setContactFirstName($contact['first_name']);
         $model->setContactLastName($contact['last_name']);
         $model->setContactEmail($contact['email']);
-        $model->setContactCompany($contact['company']);
+        $model->setContactCompany($contact['company'] ?? null);
         $model->setContactAddress1($contact['address1']);
-        $model->setContactAddress2($contact['address2']);
+        $model->setContactAddress2($contact['address2'] ?? null);
         $model->setContactCountry($contact['country']);
         $model->setContactCity($contact['city']);
         $model->setContactState($contact['state']);
@@ -654,7 +655,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $orderService = $this->di['mod_service']('order');
         $order = $orderService->getServiceOrder($model);
 
-        $tldRegistrar = $this->getTldRegistrarRepository()->find($model->getTldRegistrarId());
+        $tldRegistrar = $this->getExistingRegistrar($model->getTldRegistrarId());
 
         if ($order instanceof \Model_ClientOrder) {
             $adapter = $this->registrarGetRegistrarAdapter($tldRegistrar, $order);
@@ -849,36 +850,30 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $data;
     }
 
-    public function tldGetSearchQuery($data): array
+    public function tldGetSearchQuery($data): QueryBuilder
     {
-        $query = 'SELECT * FROM tld';
+        $query = $this->getTldRepository()->createQueryBuilder('t');
 
         $hide_inactive = (bool) ($data['hide_inactive'] ?? false);
         $allow_register = $data['allow_register'] ?? null;
         $allow_transfer = $data['allow_transfer'] ?? null;
 
-        $where = [];
-        $bindings = [];
-
         if ($hide_inactive) {
-            $where[] = 'active = 1';
+            $query->andWhere('t.active = :active')
+                ->setParameter('active', true);
         }
 
         if ($allow_register !== null) {
-            $where[] = 'allow_register = 1';
+            $query->andWhere('t.allowRegister = :allowRegister')
+                ->setParameter('allowRegister', true);
         }
 
         if ($allow_transfer !== null) {
-            $where[] = 'allow_transfer = 1';
+            $query->andWhere('t.allowTransfer = :allowTransfer')
+                ->setParameter('allowTransfer', true);
         }
 
-        if (!empty($where)) {
-            $query = $query . ' WHERE ' . implode(' AND ', $where);
-        }
-
-        $query .= ' ORDER BY id ASC';
-
-        return [$query, $bindings];
+        return $query->orderBy('t.id', 'ASC');
     }
 
     /**
@@ -985,12 +980,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->getTldRepository()->find((int) $id);
     }
 
-    public function registrarGetSearchQuery($data): array
+    public function registrarGetSearchQuery($data): QueryBuilder
     {
-        $query = 'SELECT * FROM tld_registrar ORDER BY name ASC';
-        $bindings = [];
-
-        return [$query, $bindings];
+        return $this->getTldRegistrarRepository()
+            ->createQueryBuilder('tr')
+            ->orderBy('tr.name', 'ASC');
     }
 
     /**
@@ -1091,8 +1085,15 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             if (isset($options['required_when']) && is_array($options['required_when'])) {
                 $required = true;
                 foreach ($options['required_when'] as $modelField => $expectedValue) {
-                    $method = 'get' . ucfirst($modelField);
-                    $currentValue = method_exists($model, $method) ? $model->$method() : null;
+                    $property = str_replace('_', '', ucwords((string) $modelField, '_'));
+                    $currentValue = null;
+                    foreach (['get' . $property, 'is' . $property] as $method) {
+                        if (method_exists($model, $method)) {
+                            $currentValue = $model->$method();
+
+                            break;
+                        }
+                    }
                     if ($currentValue != $expectedValue) {
                         $required = false;
 
@@ -1239,9 +1240,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $dateTime?->format('Y-m-d H:i:s');
     }
 
-    private function getExistingRegistrar(int $id): TldRegistrar
+    private function getExistingRegistrar(?int $id): TldRegistrar
     {
-        $registrar = $this->getTldRegistrarRepository()->find($id);
+        $registrar = $id === null ? null : $this->getTldRegistrarRepository()->find($id);
         if (!$registrar instanceof TldRegistrar) {
             throw new \FOSSBilling\Exception('Registrar not found');
         }

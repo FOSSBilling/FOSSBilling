@@ -230,10 +230,8 @@ class Service implements InjectionAwareInterface
      */
     public function action_renew(\Model_ClientOrder $order): bool
     {
-        $model = $this->_getOrderService($order);
-        // @todo ?
-
-        $this->di['em']->flush();
+        // Ensures the order has an active hosting service before renewal.
+        $this->_getOrderService($order);
 
         return true;
     }
@@ -502,8 +500,6 @@ class Service implements InjectionAwareInterface
         $server = $this->getExistingServer((int) $model->getServiceHostingServerId(), 'Server not found');
         $client = $this->di['db']->getExistingModelById('Client', $model->getClientId(), 'Client not found');
 
-        $hp_config = $hp->getConfig();
-
         $server_client = new \Server_Client();
         $server_client
             ->setEmail($client->email)
@@ -546,8 +542,8 @@ class Service implements InjectionAwareInterface
 
     public function toApiArray(ServiceHosting $model, $deep = false, $identity = null): array
     {
-        $serviceHostingServerModel = $this->getServiceHostingServerRepository()->find($model->getServiceHostingServerId());
-        $serviceHostingHpModel = $this->getServiceHostingHpRepository()->find($model->getServiceHostingHpId());
+        $serviceHostingServerModel = $this->getExistingServer((int) $model->getServiceHostingServerId(), 'Server not found');
+        $serviceHostingHpModel = $this->getExistingHp((int) $model->getServiceHostingHpId(), 'Hosting plan not found');
         $server = $this->toHostingServerApiArray($serviceHostingServerModel, $deep, $identity);
         $hp = $this->toHostingHpApiArray($serviceHostingHpModel, $deep, $identity);
 
@@ -957,9 +953,9 @@ class Service implements InjectionAwareInterface
             $model->setAssignedIps(self::processAssignedIPs($assigned_ips));
         }
 
-        $model->setActive($data['active'] ?? 1);
+        $model->setActive(Tools::normalizeBoolean($data['active'] ?? true));
         $model->setStatusUrl($data['status_url'] ?? null);
-        $model->setMaxAccounts($data['max_accounts'] ?? null);
+        $model->setMaxAccounts(isset($data['max_accounts']) ? (int) $data['max_accounts'] : null);
 
         $model->setNs1($data['ns1'] ?? null);
         $model->setNs2($data['ns2'] ?? null);
@@ -974,7 +970,7 @@ class Service implements InjectionAwareInterface
         $model->setPort($normalizedPort !== null ? (string) $normalizedPort : null);
         $model->setConfig(isset($data['config']) ? json_encode($data['config']) : null);
         $model->setPasswordLength(is_numeric($data['passwordLength'] ?? '') ? intval($data['passwordLength']) : null);
-        $model->setSecure($data['secure'] ?? 1);
+        $model->setSecure(Tools::normalizeBoolean($data['secure'] ?? true));
 
         $this->di['em']->persist($model);
         $this->di['em']->flush();
@@ -1007,9 +1003,9 @@ class Service implements InjectionAwareInterface
             $model->setAssignedIps(self::processAssignedIPs($assigned_ips));
         }
 
-        $model->setActive(array_key_exists('active', $data) ? $data['active'] : $model->isActive());
+        $model->setActive(array_key_exists('active', $data) ? Tools::normalizeBoolean($data['active']) : $model->isActive());
         $model->setStatusUrl($data['status_url'] ?? $model->getStatusUrl());
-        $model->setMaxAccounts($data['max_accounts'] ?? $model->getMaxAccounts());
+        $model->setMaxAccounts(array_key_exists('max_accounts', $data) ? ($data['max_accounts'] !== null ? (int) $data['max_accounts'] : null) : $model->getMaxAccounts());
         $model->setNs1($data['ns1'] ?? $model->getNs1());
         $model->setNs2($data['ns2'] ?? $model->getNs2());
         $model->setNs3($data['ns3'] ?? $model->getNs3());
@@ -1023,7 +1019,7 @@ class Service implements InjectionAwareInterface
         $port = Tools::normalizePort($data['port'] ?? null);
         $model->setPort($port !== null ? (string) $port : $model->getPort());
         $model->setConfig(isset($data['config']) ? json_encode($data['config']) : $model->getConfig());
-        $model->setSecure(array_key_exists('secure', $data) ? $data['secure'] : $model->isSecure());
+        $model->setSecure(array_key_exists('secure', $data) ? Tools::normalizeBoolean($data['secure']) : $model->isSecure());
         $model->setUsername($this->normalizeCredential('username', $data['username'] ?? null, $model->getUsername(), $model->getId(), false));
         $model->setPassword($this->normalizeCredential('password', $data['password'] ?? null, $model->getPassword(), $model->getId(), true));
         $model->setAccesshash($this->normalizeCredential('accesshash', $data['accesshash'] ?? null, $model->getAccesshash(), $model->getId(), true));
@@ -1144,11 +1140,6 @@ class Service implements InjectionAwareInterface
 
     public function toHostingHpApiArray(ServiceHostingHp $model, $deep = false, $identity = null): array
     {
-        $config = $model->getConfig();
-        if ($config === null) {
-            $model->setConfig('');
-        }
-
         return [
             'id' => $model->getId(),
 
@@ -1215,15 +1206,15 @@ class Service implements InjectionAwareInterface
         $model = new ServiceHostingHp();
         $model->setName($name);
 
-        $model->setBandwidth($data['bandwidth'] ?? 1024 * 1024);
-        $model->setQuota($data['quota'] ?? 1024 * 1024);
+        $model->setBandwidth((string) ($data['bandwidth'] ?? 1024 * 1024));
+        $model->setQuota((string) ($data['quota'] ?? 1024 * 1024));
 
-        $model->setMaxAddon($data['max_addon'] ?? 1);
-        $model->setMaxPark($data['max_park'] ?? 1);
-        $model->setMaxSub($data['max_sub'] ?? 1);
-        $model->setMaxPop($data['max_pop'] ?? 1);
-        $model->setMaxSql($data['max_sql'] ?? 1);
-        $model->setMaxFtp($data['max_ftp'] ?? 1);
+        $model->setMaxAddon((string) ($data['max_addon'] ?? 1));
+        $model->setMaxPark((string) ($data['max_park'] ?? 1));
+        $model->setMaxSub((string) ($data['max_sub'] ?? 1));
+        $model->setMaxPop((string) ($data['max_pop'] ?? 1));
+        $model->setMaxSql((string) ($data['max_sql'] ?? 1));
+        $model->setMaxFtp((string) ($data['max_ftp'] ?? 1));
 
         $this->di['em']->persist($model);
         $this->di['em']->flush();

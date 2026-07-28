@@ -20,6 +20,7 @@ use Box\Mod\Servicedomain\Repository\TldRepository;
 use Box\Mod\Servicedomain\Service;
 use Box\Mod\System\Service as SystemService;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\QueryBuilder;
 
 use function Tests\Helpers\container;
 
@@ -246,6 +247,7 @@ test('creates action', function (): void {
         'register_sld' => 'example',
         'register_tld' => '.com',
         'register_years' => 2,
+        'ns2' => 'custom-ns2.example.com',
     ];
 
     $orderServiceMock = Mockery::mock(OrderService::class);
@@ -308,6 +310,7 @@ test('creates action', function (): void {
 
     $result = $serviceMock->action_create($order);
     expect($result)->toBeInstanceOf(ServiceDomain::class);
+    expect($result->getNs2())->toBe('custom-ns2.example.com');
 });
 
 test('throws exception when creating action with missing nameservers', function (): void {
@@ -648,9 +651,7 @@ test('updates contacts', function (): void {
             'first_name' => 'first_name',
             'last_name' => 'last_name',
             'email' => 'email',
-            'company' => 'company',
             'address1' => 'address1',
-            'address2' => 'address2',
             'country' => 'country',
             'city' => 'city',
             'state' => 'state',
@@ -663,6 +664,8 @@ test('updates contacts', function (): void {
     $result = $serviceMock->updateContacts($serviceDomainModel, $data);
 
     expect($result)->toBeTrue();
+    expect($serviceDomainModel->getContactCompany())->toBeNull();
+    expect($serviceDomainModel->getContactAddress2())->toBeNull();
 });
 
 test('gets transfer code', function (): void {
@@ -820,6 +823,16 @@ test('throws exception when checking transfer not allowed', function (): void {
 
     expect(fn () => $service->canBeTransferred($tldModel, 'example'))
         ->toThrow(FOSSBilling\Exception::class);
+});
+
+test('throws registrar not found when checking transfer without registrar', function (): void {
+    $service = new Service();
+    $tldModel = new Tld();
+    $tldModel->setAllowTransfer(true);
+    $tldModel->setTld('.com');
+
+    expect(fn () => $service->canBeTransferred($tldModel, 'example'))
+        ->toThrow(FOSSBilling\Exception::class, 'Registrar not found');
 });
 
 test('checks if domain is available', function (): void {
@@ -1143,41 +1156,51 @@ test('returns false when batch sync already run today', function (): void {
     expect($result)->toBeFalse();
 });
 
-test('gets tld search query', function (array $data, string $expectedQuery, array $expectedBindings): void {
+test('gets tld search query', function (array $data, array $expectedConditions): void {
     $service = new Service();
+    $query = Mockery::mock(QueryBuilder::class);
+    foreach ($expectedConditions as [$condition, $parameter]) {
+        $query->shouldReceive('andWhere')->once()->with($condition)->andReturnSelf();
+        $query->shouldReceive('setParameter')->once()->with($parameter, true)->andReturnSelf();
+    }
+    $query->shouldReceive('orderBy')->once()->with('t.id', 'ASC')->andReturnSelf();
+
+    $tldRepo = Mockery::mock(TldRepository::class);
+    $tldRepo->shouldReceive('createQueryBuilder')->once()->with('t')->andReturn($query);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->once()->with(Tld::class)->andReturn($tldRepo);
+
     $di = container();
+    $di['em'] = $emMock;
 
     $service->setDi($di);
-    [$query, $bindings] = $service->tldGetSearchQuery($data);
 
-    expect($query)->toBe($expectedQuery);
-    expect($bindings)->toBeArray();
-    expect($bindings)->toBe($expectedBindings);
+    expect($service->tldGetSearchQuery($data))->toBe($query);
 })->with([
     [
         [],
-        'SELECT * FROM tld ORDER BY id ASC',
         [],
     ],
     [
         ['hide_inactive' => true],
-        'SELECT * FROM tld WHERE active = 1 ORDER BY id ASC',
-        [],
+        [['t.active = :active', 'active']],
     ],
     [
         ['allow_register' => true],
-        'SELECT * FROM tld WHERE allow_register = 1 ORDER BY id ASC',
-        [],
+        [['t.allowRegister = :allowRegister', 'allowRegister']],
     ],
     [
         ['allow_transfer' => true],
-        'SELECT * FROM tld WHERE allow_transfer = 1 ORDER BY id ASC',
-        [],
+        [['t.allowTransfer = :allowTransfer', 'allowTransfer']],
     ],
     [
         ['hide_inactive' => true, 'allow_register' => true, 'allow_transfer' => true],
-        'SELECT * FROM tld WHERE active = 1 AND allow_register = 1 AND allow_transfer = 1 ORDER BY id ASC',
-        [],
+        [
+            ['t.active = :active', 'active'],
+            ['t.allowRegister = :allowRegister', 'allowRegister'],
+            ['t.allowTransfer = :allowTransfer', 'allowTransfer'],
+        ],
     ],
 ]);
 
@@ -1427,11 +1450,20 @@ test('rejects invalid tlds', function (string $input): void {
 
 test('gets registrar search query', function (): void {
     $service = new Service();
-    [$query, $bindings] = $service->registrarGetSearchQuery([]);
+    $query = Mockery::mock(QueryBuilder::class);
+    $query->shouldReceive('orderBy')->once()->with('tr.name', 'ASC')->andReturnSelf();
 
-    expect($query)->toBe('SELECT * FROM tld_registrar ORDER BY name ASC');
-    expect($bindings)->toBeArray();
-    expect($bindings)->toBe([]);
+    $registrarRepo = Mockery::mock(TldRegistrarRepository::class);
+    $registrarRepo->shouldReceive('createQueryBuilder')->once()->with('tr')->andReturn($query);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->once()->with(TldRegistrar::class)->andReturn($registrarRepo);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $service->setDi($di);
+
+    expect($service->registrarGetSearchQuery([]))->toBe($query);
 });
 
 test('gets available registrars', function (): void {
@@ -1564,6 +1596,25 @@ test('validates required registrar fields even when the adapter constructor does
     $model->setName('Namingo EPP');
     $model->setRegistrar('Namingo');
     $model->setTestMode(false);
+
+    expect(fn () => $service->registrarValidateConfiguration($model))
+        ->toThrow(FOSSBilling\InformationException::class, 'missing required configuration');
+});
+
+test('validates conditional registrar fields using boolean snake case accessors', function (): void {
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('registrarGetConfiguration')->once()->andReturn([]);
+    $service->shouldReceive('registrarGetRegistrarAdapterConfig')->once()->andReturn([
+        'form' => [
+            'sandbox_key' => ['text', [
+                'required_when' => ['test_mode' => true],
+            ]],
+        ],
+    ]);
+
+    $model = new TldRegistrar();
+    $model->setName('Custom');
+    $model->setTestMode(true);
 
     expect(fn () => $service->registrarValidateConfiguration($model))
         ->toThrow(FOSSBilling\InformationException::class, 'missing required configuration');
