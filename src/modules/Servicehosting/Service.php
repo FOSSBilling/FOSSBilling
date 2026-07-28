@@ -239,10 +239,11 @@ class Service implements InjectionAwareInterface
     /**
      * @throws Exception
      */
-    public function action_suspend(\Model_ClientOrder $order): bool
+    public function action_suspend(\Model_ClientOrder $order, ?string $reason = null): bool
     {
         $model = $this->_getOrderService($order);
         [$adapter, $account] = $this->_getAM($model);
+        $account->setNote($reason);
         $adapter->suspendAccount($account);
 
         $this->di['em']->flush();

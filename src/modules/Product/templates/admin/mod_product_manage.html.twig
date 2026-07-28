@@ -88,6 +88,14 @@
                                         <option value="manual"{% if product.setup == 'manual' %} selected{% endif %}>{{ 'Manual Activation'|trans }}</option>
                                     </select>
                                 </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="suspension_grace_days">{{ 'Suspension Grace Period'|trans }}</label>
+                                    <div class="input-group">
+                                        <input class="form-control" id="suspension_grace_days" type="number" min="0" step="1" name="suspension_grace_days" value="{{ product.suspension_grace_days|default(0) }}">
+                                        <span class="input-group-text">{{ 'days'|trans }}</span>
+                                    </div>
+                                    <div class="form-text">{{ 'Keep services active for this many days after expiration before automatic suspension.'|trans }}</div>
+                                </div>
                                 <div class="col-12">
                                     <input type="hidden" name="hidden" value="0">
                                     <label class="form-label d-block">{{ 'Storefront Visibility'|trans }}</label>

@@ -13,6 +13,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Index(name: 'product_id_idx', columns: ['product_id'])]
 #[ORM\Index(name: 'form_id_idx', columns: ['form_id'])]
 #[ORM\Index(name: 'promo_id_idx', columns: ['promo_id'])]
+#[ORM\Index(name: 'client_order_status_expires_at_idx', columns: ['status', 'expires_at'])]
 #[ORM\HasLifecycleCallbacks]
 class Order
 {
@@ -117,6 +118,9 @@ class Order
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $config = null;
+
+    #[ORM\Column(name: 'suspension_grace_days', type: Types::INTEGER, nullable: true)]
+    private ?int $suspensionGraceDays = null;
 
     #[ORM\Column(name: 'referred_by', type: Types::STRING, length: 255, nullable: true)]
     private ?string $referredBy = null;
@@ -380,6 +384,16 @@ class Order
     public function setConfig(?string $config): void
     {
         $this->config = $config;
+    }
+
+    public function getSuspensionGraceDays(): ?int
+    {
+        return $this->suspensionGraceDays;
+    }
+
+    public function setSuspensionGraceDays(?int $suspensionGraceDays): void
+    {
+        $this->suspensionGraceDays = $suspensionGraceDays;
     }
 
     public function getReferredBy(): ?string
