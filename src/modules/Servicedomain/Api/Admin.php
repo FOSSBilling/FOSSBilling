@@ -11,6 +11,9 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicedomain\Api;
 
+use Box\Mod\Servicedomain\Entity\ServiceDomain;
+use Box\Mod\Servicedomain\Entity\Tld;
+use Box\Mod\Servicedomain\Entity\TldRegistrar;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
@@ -154,15 +157,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     public function tld_get_list($data)
     {
         $this->checkPermissions('servicedomain', 'manage_tlds');
-        [$sql, $params] = $this->getService()->tldGetSearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $query = $this->getService()->tldGetSearchQuery($data);
 
-        foreach ($pager['list'] as $key => $tldArr) {
-            $tld = $this->getDi()['db']->getExistingModelById('Tld', $tldArr['id'], sprintf('Tld #%s not found', $tldArr['id']));
-            $pager['list'][$key] = $this->getService()->tldToApiArray($tld, $this->identity);
-        }
-
-        return $pager;
+        return $this->getDi()['pager']->paginateMappedQuery(
+            $query,
+            PaginationOptions::fromArray($data),
+            fn (Tld $tld): array => $this->getService()->tldToApiArray($tld, $this->identity),
+        );
     }
 
     /**
@@ -178,7 +179,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('servicedomain', 'manage_tlds');
 
         $model = $this->getService()->tldFindOneByTld($data['tld']);
-        if (!$model instanceof \Model_Tld) {
+        if (!$model instanceof Tld) {
             throw new \FOSSBilling\InformationException('TLD not found');
         }
 
@@ -198,7 +199,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('servicedomain', 'manage_tlds');
 
         $model = $this->getService()->tldFindOneById($data['id']);
-        if (!$model instanceof \Model_Tld) {
+        if (!$model instanceof Tld) {
             throw new \FOSSBilling\InformationException('TLD not found');
         }
 
@@ -220,12 +221,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $normalizedTld = $this->getService()->normalizeTld($data['tld']);
         $model = $this->getService()->tldFindOneByTld($normalizedTld);
 
-        if (!$model instanceof \Model_Tld) {
+        if (!$model instanceof Tld) {
             throw new \FOSSBilling\InformationException('TLD not found');
         }
-        $service_domains = $this->getDi()['db']->find(
-            'ServiceDomain',
-            "LOWER(TRIM(TRAILING '.' FROM TRIM(tld))) IN (?, ?)",
+        $service_domains = $this->getDi()['em']->getConnection()->fetchAllAssociative(
+            'SELECT id FROM service_domain WHERE LOWER(TRIM(TRAILING \'.\' FROM TRIM(tld))) IN (?, ?)',
             [$normalizedTld, ltrim($normalizedTld, '.')],
         );
         $count = \FOSSBilling\Tools::safeCount($service_domains);
@@ -279,7 +279,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('servicedomain', 'manage_tlds');
 
         $model = $this->getService()->tldFindOneByTld($data['tld']);
-        if (!$model instanceof \Model_Tld) {
+        if (!$model instanceof Tld) {
             throw new \FOSSBilling\InformationException('TLD not found');
         }
 
@@ -294,19 +294,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     public function registrar_get_list($data)
     {
         $this->checkPermissions('servicedomain', 'manage_registrars');
-        [$sql, $params] = $this->getService()->registrarGetSearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $query = $this->getService()->registrarGetSearchQuery($data);
 
-        $registrars = $this->getDi()['db']->find('TldRegistrar', 'ORDER By name ASC');
-
-        $registrarsArr = [];
-        foreach ($registrars as $registrar) {
-            $registrarsArr[] = $this->getService()->registrarToApiArray($registrar);
-        }
-
-        $pager['list'] = $registrarsArr;
-
-        return $pager;
+        return $this->getDi()['pager']->paginateMappedQuery(
+            $query,
+            PaginationOptions::fromArray($data),
+            fn (TldRegistrar $registrar): array => $this->getService()->registrarToApiArray($registrar),
+        );
     }
 
     /**
@@ -361,7 +355,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('servicedomain', 'manage_registrars');
 
-        $model = $this->getDi()['db']->getExistingModelById('TldRegistrar', $data['id'], 'Registrar not found');
+        $model = $this->_getRegistrar((int) $data['id']);
 
         return $this->getService()->registrarRm($model);
     }
@@ -376,7 +370,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('servicedomain', 'manage_registrars');
 
-        $model = $this->getDi()['db']->getExistingModelById('TldRegistrar', $data['id'], 'Registrar not found');
+        $model = $this->_getRegistrar((int) $data['id']);
 
         return $this->getService()->registrarCopy($model);
     }
@@ -391,7 +385,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('servicedomain', 'manage_registrars');
 
-        $registrar = $this->getDi()['db']->getExistingModelById('TldRegistrar', $data['id'], 'Registrar not found');
+        $registrar = $this->_getRegistrar((int) $data['id']);
 
         return $this->getService()->registrarToApiArray($registrar);
     }
@@ -422,7 +416,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('servicedomain', 'manage_registrars');
 
-        $model = $this->getDi()['db']->getExistingModelById('TldRegistrar', $data['id'], 'Registrar not found');
+        $model = $this->_getRegistrar((int) $data['id']);
 
         return $this->getService()->registrarUpdate($model, $data);
     }
@@ -437,10 +431,20 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $orderService = $this->getDi()['mod_service']('order');
         $s = $orderService->getOrderService($order);
 
-        if (!$s instanceof \Model_ServiceDomain) {
+        if (!$s instanceof ServiceDomain) {
             throw new \FOSSBilling\Exception('Domain order is not activated');
         }
 
         return $s;
+    }
+
+    private function _getRegistrar(int $id): TldRegistrar
+    {
+        $model = $this->getDi()['em']->getRepository(TldRegistrar::class)->find($id);
+        if (!$model instanceof TldRegistrar) {
+            throw new \FOSSBilling\Exception('Registrar not found');
+        }
+
+        return $model;
     }
 }

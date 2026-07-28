@@ -10,9 +10,16 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Order\Service as OrderService;
 use Box\Mod\Servicehosting\Api\Client;
+use Box\Mod\Servicehosting\Entity\ServiceHosting;
+use Box\Mod\Servicehosting\Service;
 
 use function Tests\Helpers\container;
+
+afterEach(function (): void {
+    Mockery::close();
+});
 
 test('testGetDi', function (): void {
     $api = apiEndpoint(new Client());
@@ -24,7 +31,7 @@ test('testGetDi', function (): void {
 
 test('testChangeUsername', function (): void {
     $api = apiEndpoint(new Client());
-    $getServiceReturnValue = [new Model_ClientOrder(), new Model_ServiceHosting()];
+    $getServiceReturnValue = [new Model_ClientOrder(), new ServiceHosting()];
     $apiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial());
 
     $apiMock
@@ -32,7 +39,7 @@ test('testChangeUsername', function (): void {
     ->atLeast()->once()
     ->andReturn($getServiceReturnValue);
 
-    $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceMock = Mockery::mock(Service::class);
     $serviceMock
     ->shouldReceive('changeAccountUsername')
     ->atLeast()->once()
@@ -47,7 +54,7 @@ test('testChangeUsername', function (): void {
 
 test('testChangeDomain', function (): void {
     $api = apiEndpoint(new Client());
-    $getServiceReturnValue = [new Model_ClientOrder(), new Model_ServiceHosting()];
+    $getServiceReturnValue = [new Model_ClientOrder(), new ServiceHosting()];
     $apiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial());
 
     $apiMock
@@ -55,7 +62,7 @@ test('testChangeDomain', function (): void {
     ->atLeast()->once()
     ->andReturn($getServiceReturnValue);
 
-    $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceMock = Mockery::mock(Service::class);
     $serviceMock
     ->shouldReceive('changeAccountDomain')
     ->atLeast()->once()
@@ -70,7 +77,7 @@ test('testChangeDomain', function (): void {
 
 test('testChangePassword', function (): void {
     $api = apiEndpoint(new Client());
-    $getServiceReturnValue = [new Model_ClientOrder(), new Model_ServiceHosting()];
+    $getServiceReturnValue = [new Model_ClientOrder(), new ServiceHosting()];
     $apiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial());
 
     $apiMock
@@ -78,7 +85,7 @@ test('testChangePassword', function (): void {
     ->atLeast()->once()
     ->andReturn($getServiceReturnValue);
 
-    $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceMock = Mockery::mock(Service::class);
     $serviceMock
     ->shouldReceive('changeAccountPassword')
     ->atLeast()->once()
@@ -93,7 +100,7 @@ test('testChangePassword', function (): void {
 
 test('testHpGetPairs', function (): void {
     $api = apiEndpoint(new Client());
-    $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceMock = Mockery::mock(Service::class);
     $serviceMock
     ->shouldReceive('getHpPairs')
     ->atLeast()->once()
@@ -119,8 +126,8 @@ test('testGetService', function (): void {
     ->atLeast()->once()
     ->andReturn($clientOrderModel);
 
-    $model = new Model_ServiceHosting();
-    $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
+    $model = new ServiceHosting();
+    $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock
     ->shouldReceive('assertOrderUsable')
     ->atLeast()->once();
@@ -142,7 +149,7 @@ test('testGetService', function (): void {
     $result = $api->_getService($data);
     expect($result)->toBeArray();
     expect($result[0])->toBeInstanceOf('\Model_ClientOrder');
-    expect($result[1])->toBeInstanceOf('\Model_ServiceHosting');
+    expect($result[1])->toBeInstanceOf(ServiceHosting::class);
 });
 
 test('testGetServiceOrderNotActivated', function (): void {
@@ -152,6 +159,8 @@ test('testGetServiceOrderNotActivated', function (): void {
     ];
 
     $clientOrderModel = new Model_ClientOrder();
+    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel->status = Model_ClientOrder::STATUS_ACTIVE;
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock
     ->shouldReceive('findOne')
@@ -159,7 +168,7 @@ test('testGetServiceOrderNotActivated', function (): void {
     ->andReturn($clientOrderModel);
 
     $model = null;
-    $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
+    $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock
     ->shouldReceive('assertOrderUsable')
     ->atLeast()->once();
@@ -235,7 +244,7 @@ test('testGetServiceThrowsForExpiredOrder', function (): void {
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('findOne')->atLeast()->once()->andReturn($clientOrderModel);
 
-    $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
+    $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('assertOrderUsable')
         ->once()
         ->with($clientOrderModel)
