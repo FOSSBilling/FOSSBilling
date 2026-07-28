@@ -82,6 +82,7 @@ class Service
                 'invoice_batch_generate',
                 'invoice_batch_send_reminders',
                 'invoice_batch_invoke_due_event',
+                'order_batch_send_suspension_warnings',
                 'order_batch_suspend_expired',
                 'order_batch_cancel_suspended',
                 'support_batch_ticket_auto_close',

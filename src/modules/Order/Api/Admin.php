@@ -137,6 +137,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $reason - order status change reason
      * @optional string $notes - order notes
      * @optional array  $meta - list of meta properties
+     * @optional int $suspension_grace_days - per-order grace period override; empty inherits the product setting
      *
      * @return bool
      */
@@ -310,6 +311,18 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('order', 'manage');
 
         return $this->getService()->batchSuspendExpired();
+    }
+
+    /**
+     * Send final warnings for orders due to be suspended within 24 hours.
+     *
+     * @return bool
+     */
+    public function batch_send_suspension_warnings($data)
+    {
+        $this->checkPermissions('order', 'manage');
+
+        return $this->getService()->batchSendSuspensionWarnings();
     }
 
     /**

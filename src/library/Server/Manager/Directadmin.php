@@ -458,6 +458,9 @@ class Server_Manager_Directadmin extends Server_Manager
             'suspend' => 'Suspend',
             'select0' => $account->getUsername(),
         ];
+        if ($account->getNote() !== null && $account->getNote() !== '') {
+            $fields['reason'] = $account->getNote();
+        }
 
         $this->request('API_SELECT_USERS', $fields);
 

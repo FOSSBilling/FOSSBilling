@@ -29,6 +29,7 @@ use Symfony\Component\HttpFoundation\Response;
 class Service implements InjectionAwareInterface
 {
     public const META_CANCEL_AT_PERIOD_END = 'cancel_at_period_end';
+    private const string META_SUSPENSION_WARNING_FOR = 'suspension_warning_for';
 
     private const array BUILT_IN_SERVICE_TYPES = [
         \Box\Mod\Product\Service::CUSTOM,
@@ -170,6 +171,13 @@ class Service implements InjectionAwareInterface
     private function orderConfig(Order|\Model_ClientOrder $order): ?string
     {
         return $order instanceof Order ? $order->getConfig() : $order->config;
+    }
+
+    private function orderSuspensionGraceDays(Order|\Model_ClientOrder $order): ?int
+    {
+        $graceDays = $order instanceof Order ? $order->getSuspensionGraceDays() : $order->suspension_grace_days;
+
+        return $graceDays === null ? null : (int) $graceDays;
     }
 
     private function orderNotes(Order|\Model_ClientOrder $order): ?string
@@ -647,6 +655,7 @@ class Service implements InjectionAwareInterface
             'reason' => $this->orderReason($model),
             'notes' => $this->orderNotes($model),
             'config' => $this->orderConfig($model),
+            'suspension_grace_days' => $this->orderSuspensionGraceDays($model),
             'referred_by' => $model instanceof Order ? $model->getReferredBy() : $model->referred_by,
             'expires_at' => $model instanceof Order ? $model->getExpiresAt()?->format('Y-m-d H:i:s') : $model->expires_at,
             'activated_at' => $model instanceof Order ? $model->getActivatedAt()?->format('Y-m-d H:i:s') : $model->activated_at,
@@ -681,6 +690,8 @@ class Service implements InjectionAwareInterface
             $data['config'] = $this->getConfig($model);
             $productService = $this->di['mod_service']('product');
             $data['plugin'] = $productService->getProductPluginById((int) $this->orderProductId($model));
+            $product = $productService->findProductById((int) $this->orderProductId($model));
+            $data['product_suspension_grace_days'] = $product->getSuspensionGraceDays();
         }
 
         return $data;
@@ -1341,7 +1352,7 @@ class Service implements InjectionAwareInterface
         return array_values(array_filter($addons, fn (Order $addon): bool => $addon->getId() !== $order->getId() && !$addon->isGroupMaster()));
     }
 
-    protected function _callOnService(Order|\Model_ClientOrder $order, $action)
+    protected function _callOnService(Order|\Model_ClientOrder $order, $action, mixed ...$arguments)
     {
         $serviceType = $this->orderServiceType($order);
         $serviceId = $this->orderServiceId($order);
@@ -1355,7 +1366,7 @@ class Service implements InjectionAwareInterface
                 throw new \FOSSBilling\Exception('Service ' . $serviceType . ' do not support ' . $m);
             }
 
-            return $repo->$m($order instanceof Order ? $this->getLegacyOrder($order) : $order);
+            return $repo->$m($order instanceof Order ? $this->getLegacyOrder($order) : $order, ...$arguments);
         }
 
         $o = $this->getLegacyOrder($order);
@@ -1532,6 +1543,19 @@ class Service implements InjectionAwareInterface
 
         $notes = $data['notes'] ?? $this->orderNotes($order);
         $reason = $data['reason'] ?? $this->orderReason($order);
+        if (array_key_exists('suspension_grace_days', $data)) {
+            $graceDays = $data['suspension_grace_days'] === '' || $data['suspension_grace_days'] === null
+                ? null
+                : filter_var($data['suspension_grace_days'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
+            if ($graceDays === false) {
+                throw new InformationException('Suspension grace days must be a non-negative integer or empty to inherit the product setting.');
+            }
+            if ($order instanceof Order) {
+                $order->setSuspensionGraceDays($graceDays);
+            } else {
+                $order->suspension_grace_days = $graceDays;
+            }
+        }
         if ($order instanceof Order) {
             $order->setNotes($notes);
             $order->setReason($reason);
@@ -1660,7 +1684,8 @@ class Service implements InjectionAwareInterface
             throw new InformationException('Only active orders can be suspended');
         }
 
-        $this->_callOnService($order, Order::ACTION_SUSPEND);
+        $arguments = $this->orderServiceType($order) === \Box\Mod\Product\Service::HOSTING ? [$reason] : [];
+        $this->_callOnService($order, Order::ACTION_SUSPEND, ...$arguments);
 
         if ($order instanceof Order) {
             $order->setStatus(Order::STATUS_SUSPENDED);
@@ -1960,6 +1985,83 @@ class Service implements InjectionAwareInterface
         return $this->getOrderRepository()->getExpired();
     }
 
+    public function batchSendSuspensionWarnings(): bool
+    {
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminBatchSendSuspensionWarnings']);
+
+        $emailService = $this->di['mod_service']('email');
+        foreach ($this->getOrderRepository()->getDueSuspensionWarnings() as $candidate) {
+            $order = $this->getOrderRepository()->find($candidate['id']);
+            if (!$order instanceof Order || !$this->claimSuspensionWarning($order, $candidate['suspension_at'])) {
+                continue;
+            }
+
+            try {
+                $orderData = $this->toApiArray($order, false);
+                $orderData['suspension_at'] = $candidate['suspension_at'];
+                $emailService->sendTemplate([
+                    'to_client' => $order->getClientId(),
+                    'code' => 'mod_order_suspension_warning',
+                    'order' => $orderData,
+                ]);
+            } catch (\Throwable $exception) {
+                $this->releaseSuspensionWarningClaim($order, $candidate['suspension_at']);
+                $this->di['logger']->setChannel('email')->error('Failed to send order suspension warning email', [
+                    'order_id' => $order->getId(),
+                    'exception' => $exception->getMessage(),
+                ]);
+            }
+        }
+
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminBatchSendSuspensionWarnings']);
+        $this->di['logger']->info('Executed action to send order suspension warnings');
+
+        return true;
+    }
+
+    private function claimSuspensionWarning(Order $order, string $suspensionAt): bool
+    {
+        $connection = $this->di['em']->getConnection();
+
+        return $connection->transactional(function () use ($connection, $order, $suspensionAt): bool {
+            $connection->fetchOne('SELECT id FROM client_order WHERE id = :id FOR UPDATE', ['id' => $order->getId()]);
+            $existing = $connection->fetchAssociative(
+                'SELECT id, value FROM client_order_meta WHERE client_order_id = :order_id AND name = :name ORDER BY id LIMIT 1',
+                ['order_id' => $order->getId(), 'name' => self::META_SUSPENSION_WARNING_FOR]
+            );
+
+            if (is_array($existing) && $existing['value'] === $suspensionAt) {
+                return false;
+            }
+
+            if (is_array($existing)) {
+                $connection->update('client_order_meta', [
+                    'value' => $suspensionAt,
+                    'updated_at' => date('Y-m-d H:i:s'),
+                ], ['id' => $existing['id']]);
+            } else {
+                $connection->insert('client_order_meta', [
+                    'client_order_id' => $order->getId(),
+                    'name' => self::META_SUSPENSION_WARNING_FOR,
+                    'value' => $suspensionAt,
+                    'created_at' => date('Y-m-d H:i:s'),
+                    'updated_at' => date('Y-m-d H:i:s'),
+                ]);
+            }
+
+            return true;
+        });
+    }
+
+    private function releaseSuspensionWarningClaim(Order $order, string $suspensionAt): void
+    {
+        $this->di['em']->getConnection()->delete('client_order_meta', [
+            'client_order_id' => $order->getId(),
+            'name' => self::META_SUSPENSION_WARNING_FOR,
+            'value' => $suspensionAt,
+        ]);
+    }
+
     public function batchSuspendExpired(): bool
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminBatchSuspendOrders']);
@@ -1967,7 +2069,8 @@ class Service implements InjectionAwareInterface
         $mod = $this->di['mod']('order');
         $c = $mod->getConfig();
 
-        $reason = $c['batch_suspend_reason'] ?? null;
+        $configuredReason = trim((string) ($c['batch_suspend_reason'] ?? ''));
+        $reason = $configuredReason !== '' ? $configuredReason : 'Non-payment';
 
         $list = $this->getExpiredOrders();
 

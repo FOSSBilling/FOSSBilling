@@ -980,6 +980,7 @@ test('toApiArray returns expected keys', function (): void {
 
     $productService = Mockery::mock(Box\Mod\Product\Service::class);
     $productService->shouldReceive('getProductPluginById')->once()->with((int) $model->product_id)->andReturn(null);
+    $productService->shouldReceive('findProductById')->once()->with((int) $model->product_id)->andReturn(new Product());
 
     $di = container();
     $di['mod_service'] = $di->protect(function ($serviceName) use ($clientService, $supportService, $productService) {
@@ -2009,6 +2010,7 @@ test('updateOrder updates fields', function (): void {
         'status' => 'active',
         'notes' => 'Empty note',
         'reason' => 'non',
+        'suspension_grace_days' => 3,
         'meta' => [],
     ];
 
@@ -2021,7 +2023,8 @@ test('updateOrder updates fields', function (): void {
 
     $result = $serviceMock->updateOrder($clientOrderModel, $data);
 
-    expect($result)->toBeTrue();
+    expect($result)->toBeTrue()
+        ->and($clientOrderModel->getSuspensionGraceDays())->toBe(3);
 });
 
 test('renewOrder renews order', function (): void {
@@ -3032,7 +3035,7 @@ test('createOrder does not roll back when invoice generation fails for a negativ
     expect($result)->toBe($newId);
 });
 
-test('getExpiredOrders uses strict expires_at <= NOW() filter', function (): void {
+test('getExpiredOrders delegates grace-aware selection to the repository', function (): void {
     $service = new Service();
 
     $orderRepository = Mockery::mock(Box\Mod\Order\Repository\OrderRepository::class)->shouldIgnoreMissing();
@@ -3048,4 +3051,106 @@ test('getExpiredOrders uses strict expires_at <= NOW() filter', function (): voi
     $service->setDi($di);
 
     expect($service->getExpiredOrders())->toBe([]);
+});
+
+test('batchSendSuspensionWarnings claims and queues each warning once', function (): void {
+    $order = createEntity(Order::class, ['id' => 8, 'client_id' => 12]);
+    $repository = Mockery::mock(Box\Mod\Order\Repository\OrderRepository::class);
+    $repository->shouldReceive('getDueSuspensionWarnings')->twice()->andReturn([
+        ['id' => 8, 'suspension_at' => '2026-08-01 12:00:00'],
+    ]);
+    $repository->shouldReceive('find')->twice()->with(8)->andReturn($order);
+
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('transactional')->twice()->andReturnUsing(fn (callable $callback): mixed => $callback());
+    $connection->shouldReceive('fetchOne')->twice()->with(
+        'SELECT id FROM client_order WHERE id = :id FOR UPDATE',
+        ['id' => 8]
+    )->andReturn(8);
+    $connection->shouldReceive('fetchAssociative')->twice()->andReturn(
+        false,
+        ['id' => 14, 'value' => '2026-08-01 12:00:00']
+    );
+    $connection->shouldReceive('insert')->once()->with('client_order_meta', Mockery::on(
+        fn (array $data): bool => $data['client_order_id'] === 8
+            && $data['name'] === 'suspension_warning_for'
+            && $data['value'] === '2026-08-01 12:00:00'
+    ));
+
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(Order::class)->once()->andReturn($repository);
+    $em->shouldReceive('getConnection')->twice()->andReturn($connection);
+
+    $emailService = Mockery::mock(Box\Mod\Email\Service::class);
+    $emailService->shouldReceive('sendTemplate')->once()->with(Mockery::on(
+        fn (array $email): bool => $email['to_client'] === 12
+            && $email['code'] === 'mod_order_suspension_warning'
+            && $email['order']['suspension_at'] === '2026-08-01 12:00:00'
+    ))->andReturn(true);
+
+    $events = Mockery::mock(Box_EventManager::class);
+    $events->shouldReceive('fire')->times(4);
+
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('toApiArray')->once()->with($order, false)->andReturn(['id' => 8]);
+
+    $di = container();
+    $di['em'] = $em;
+    $di['events_manager'] = $events;
+    $di['logger'] = new Box_Log();
+    $di['mod_service'] = $di->protect(fn (string $name): Box\Mod\Email\Service => $emailService);
+    $service->setDi($di);
+
+    expect($service->batchSendSuspensionWarnings())->toBeTrue()
+        ->and($service->batchSendSuspensionWarnings())->toBeTrue();
+});
+
+test('batchSendSuspensionWarnings releases a failed claim so the warning can be retried', function (): void {
+    $order = createEntity(Order::class, ['id' => 8, 'client_id' => 12]);
+    $candidate = ['id' => 8, 'suspension_at' => '2026-08-01 12:00:00'];
+    $repository = Mockery::mock(Box\Mod\Order\Repository\OrderRepository::class);
+    $repository->shouldReceive('getDueSuspensionWarnings')->twice()->andReturn([$candidate]);
+    $repository->shouldReceive('find')->twice()->with(8)->andReturn($order);
+
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('transactional')->twice()->andReturnUsing(fn (callable $callback): mixed => $callback());
+    $connection->shouldReceive('fetchOne')->twice()->andReturn(8);
+    $connection->shouldReceive('fetchAssociative')->twice()->andReturn(false);
+    $connection->shouldReceive('insert')->twice();
+    $connection->shouldReceive('delete')->once()->with('client_order_meta', [
+        'client_order_id' => 8,
+        'name' => 'suspension_warning_for',
+        'value' => $candidate['suspension_at'],
+    ]);
+
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(Order::class)->once()->andReturn($repository);
+    $em->shouldReceive('getConnection')->times(3)->andReturn($connection);
+
+    $attempts = 0;
+    $emailService = Mockery::mock(Box\Mod\Email\Service::class);
+    $emailService->shouldReceive('sendTemplate')->twice()->andReturnUsing(function () use (&$attempts): bool {
+        if (++$attempts === 1) {
+            throw new RuntimeException('Queue unavailable');
+        }
+
+        return true;
+    });
+
+    $events = Mockery::mock(Box_EventManager::class);
+    $events->shouldReceive('fire')->times(4);
+
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('toApiArray')->twice()->with($order, false)->andReturn(['id' => 8]);
+
+    $di = container();
+    $di['em'] = $em;
+    $di['events_manager'] = $events;
+    $di['logger'] = new Box_Log();
+    $di['mod_service'] = $di->protect(fn (string $name): Box\Mod\Email\Service => $emailService);
+    $service->setDi($di);
+
+    expect($service->batchSendSuspensionWarnings())->toBeTrue()
+        ->and($service->batchSendSuspensionWarnings())->toBeTrue()
+        ->and($attempts)->toBe(2);
 });

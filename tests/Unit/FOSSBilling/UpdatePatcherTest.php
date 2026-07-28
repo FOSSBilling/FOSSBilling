@@ -22,9 +22,11 @@ test('downloadable file migration follows the client balance gateway repair', fu
 test('manual currency rate patch follows the currency formatting patch', function (): void {
     $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 93);
 
-    expect($patches)->toHaveCount(1)
+    expect($patches)->toHaveCount(2)
         ->toHaveKey(94)
-        ->and($patches[94][1])->toBe('patch94');
+        ->and($patches[94][1])->toBe('patch94')
+        ->and($patches)->toHaveKey(95)
+        ->and($patches[95][1])->toBe('patch95');
 });
 
 test('fresh installs start at the latest patch level', function (): void {

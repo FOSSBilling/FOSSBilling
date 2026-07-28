@@ -118,6 +118,9 @@ class Order
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $config = null;
 
+    #[ORM\Column(name: 'suspension_grace_days', type: Types::INTEGER, nullable: true)]
+    private ?int $suspensionGraceDays = null;
+
     #[ORM\Column(name: 'referred_by', type: Types::STRING, length: 255, nullable: true)]
     private ?string $referredBy = null;
 
@@ -380,6 +383,16 @@ class Order
     public function setConfig(?string $config): void
     {
         $this->config = $config;
+    }
+
+    public function getSuspensionGraceDays(): ?int
+    {
+        return $this->suspensionGraceDays;
+    }
+
+    public function setSuspensionGraceDays(?int $suspensionGraceDays): void
+    {
+        $this->suspensionGraceDays = $suspensionGraceDays;
     }
 
     public function getReferredBy(): ?string

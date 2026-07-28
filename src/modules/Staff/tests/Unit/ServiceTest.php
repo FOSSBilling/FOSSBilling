@@ -325,6 +325,42 @@ test('hasPermission returns false for staff without method permission', function
     expect($result)->toBeFalse();
 });
 
+test('onAfterAdminOrderSuspend sends a staff notification', function (): void {
+    $order = Tests\Helpers\createEntity(Box\Mod\Order\Entity\Order::class, ['id' => 42]);
+    $orderRepository = Mockery::mock(Box\Mod\Order\Repository\OrderRepository::class);
+    $orderRepository->shouldReceive('find')->once()->with(42)->andReturn($order);
+
+    $entityManager = Mockery::mock(EntityManagerInterface::class);
+    $entityManager->shouldReceive('getRepository')
+        ->once()
+        ->with(Box\Mod\Order\Entity\Order::class)
+        ->andReturn($orderRepository);
+
+    $orderData = ['id' => 42, 'title' => 'Hosting', 'reason' => 'Non-payment'];
+    $orderService = Mockery::mock(Box\Mod\Order\Service::class);
+    $orderService->shouldReceive('toApiArray')->once()->with($order, false)->andReturn($orderData);
+
+    $emailService = Mockery::mock(Box\Mod\Email\Service::class);
+    $emailService->shouldReceive('sendTemplate')->once()->with([
+        'to_staff' => true,
+        'code' => 'mod_staff_order_suspended',
+        'order' => $orderData,
+    ]);
+
+    $di = container();
+    $di['em'] = $entityManager;
+    $di['mod_service'] = $di->protect(fn (string $name): object => match ($name) {
+        'order' => $orderService,
+        'email' => $emailService,
+    });
+
+    $event = Mockery::mock(Box_Event::class);
+    $event->shouldReceive('getDi')->once()->andReturn($di);
+    $event->shouldReceive('getParameters')->once()->andReturn(['id' => 42]);
+
+    Service::onAfterAdminOrderSuspend($event);
+});
+
 test('onAfterClientReplyTicket sends email notification', function (): void {
     $eventMock = Mockery::mock('\Box_Event');
     $ticketId = 42;

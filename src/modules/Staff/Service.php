@@ -261,6 +261,31 @@ class Service implements InjectionAwareInterface
         }
     }
 
+    public static function onAfterAdminOrderSuspend(\Box_Event $event): void
+    {
+        $di = $event->getDi();
+        $params = $event->getParameters();
+
+        try {
+            $order = $di['em']->getRepository(\Box\Mod\Order\Entity\Order::class)->find((int) $params['id']);
+            if (!$order instanceof \Box\Mod\Order\Entity\Order) {
+                throw new \FOSSBilling\Exception('Order not found');
+            }
+
+            $orderService = $di['mod_service']('order');
+            $emailService = $di['mod_service']('email');
+            $emailService->sendTemplate([
+                'to_staff' => true,
+                'code' => 'mod_staff_order_suspended',
+                'order' => $orderService->toApiArray($order, false),
+            ]);
+        } catch (\Throwable $exception) {
+            $di['logger']->setChannel('email')->error('Failed to send staff order suspension notification email', [
+                'exception' => $exception->getMessage(),
+            ]);
+        }
+    }
+
     public static function onAfterClientOpenTicket(\Box_Event $event): void
     {
         $di = $event->getDi();
