@@ -69,7 +69,7 @@ class OrderRepository extends EntityRepository
             ['status' => Order::STATUS_ACTIVE]
         );
 
-        return $ids === [] ? [] : $this->findBy(['id' => array_map('intval', $ids)]);
+        return $ids === [] ? [] : $this->findBy(['id' => array_map(intval(...), $ids)]);
     }
 
     /**

@@ -3060,7 +3060,7 @@ test('getExpiredOrders delegates grace-aware selection to the repository', funct
 
 test('batchSendSuspensionWarnings claims and queues each warning once', function (): void {
     $order = createEntity(Order::class, ['id' => 8, 'client_id' => 12]);
-    $repository = Mockery::mock(Box\Mod\Order\Repository\OrderRepository::class);
+    $repository = Mockery::mock(OrderRepository::class);
     $repository->shouldReceive('getDueSuspensionWarnings')->twice()->andReturn([
         ['id' => 8, 'suspension_at' => '2026-08-01 12:00:00'],
     ]);
@@ -3113,7 +3113,7 @@ test('batchSendSuspensionWarnings claims and queues each warning once', function
 test('batchSendSuspensionWarnings releases a failed claim so the warning can be retried', function (): void {
     $order = createEntity(Order::class, ['id' => 8, 'client_id' => 12]);
     $candidate = ['id' => 8, 'suspension_at' => '2026-08-01 12:00:00'];
-    $repository = Mockery::mock(Box\Mod\Order\Repository\OrderRepository::class);
+    $repository = Mockery::mock(OrderRepository::class);
     $repository->shouldReceive('getDueSuspensionWarnings')->twice()->andReturn([$candidate]);
     $repository->shouldReceive('find')->twice()->with(8)->andReturn($order);
 

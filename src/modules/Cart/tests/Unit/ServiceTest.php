@@ -1643,7 +1643,7 @@ test('isPromoAvailableForClientGroup returns expected result', function (Promo $
     $result = $service->isPromoAvailableForClientGroup($promo);
 
     expect($result)->toEqual($expectedResult);
-})->with(fn () => [
+})->with(fn (): array => [
     [createPromoEntity(1)->setClientGroups(json_encode([])), createEntity(Client::class), true],
     [createPromoEntity(2)->setClientGroups(json_encode([1, 2])), createEntity(Client::class, ['clientGroupId' => null]), false],
     [createPromoEntity(3)->setClientGroups(json_encode([1, 2])), createEntity(Client::class, ['clientGroupId' => 3]), false],

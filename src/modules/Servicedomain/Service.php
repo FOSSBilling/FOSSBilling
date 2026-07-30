@@ -770,7 +770,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function tldCreate($data)
+    public function tldCreate($data): ?int
     {
         $data = $this->validateTldConfiguration($data);
         $normalizedTld = $this->normalizeTld($data['tld']);
@@ -1131,7 +1131,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function registrarCopy(TldRegistrar $model)
+    public function registrarCopy(TldRegistrar $model): ?int
     {
         $new = new TldRegistrar();
         $new->setName($model->getName() . ' (Copy)');

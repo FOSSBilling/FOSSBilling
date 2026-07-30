@@ -938,7 +938,7 @@ class Service implements InjectionAwareInterface
         return [$sql, $params];
     }
 
-    public function createServer($name, $ip, $manager, $data)
+    public function createServer($name, $ip, $manager, $data): ?int
     {
         if (!in_array($manager, $this->_getServerManagers(), true)) {
             throw new Exception('Server manager :manager is not a valid server manager', [':manager' => $manager]);
@@ -1202,7 +1202,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function createHp($name, $data)
+    public function createHp($name, $data): ?int
     {
         $model = new ServiceHostingHp();
         $model->setName($name);

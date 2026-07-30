@@ -67,9 +67,7 @@ function productTestCreateProductPaymentEntity(int $id): ProductPayment
 
 function productTestCreateTldModel(array $properties = []): Tld
 {
-    $tld = createEntity(Tld::class, $properties);
-
-    return $tld;
+    return createEntity(Tld::class, $properties);
 }
 
 function productTestCreateInvoiceModel(int $id): Model_Invoice
@@ -799,7 +797,7 @@ test('update product rejects invalid suspension grace days', function (mixed $in
     $service = new Service();
     $product = productTestCreateProductEntity(1);
 
-    expect(fn () => $service->updateProduct($product, ['suspension_grace_days' => $invalidGraceDays]))
+    expect(fn (): bool => $service->updateProduct($product, ['suspension_grace_days' => $invalidGraceDays]))
         ->toThrow(FOSSBilling\InformationException::class, 'Suspension grace days must be a non-negative integer.');
 })->with([-1, '-1', '1.5', '01', PHP_INT_MAX . '0']);
 
@@ -1519,9 +1517,9 @@ test('is promo available for client group', function (Promo $promo, ?Client $cli
     expect($service->isPromoAvailableForClientGroup($promo))->toBe($expectedResult);
 })->with([
     'no restrictions' => [fn (): Promo => productTestCreatePromoEntity(1)->setClientGroups(json_encode([])), fn (): Client => $client = createEntity(Client::class), true],
-    'restricted and no client group' => [fn (): Promo => productTestCreatePromoEntity(2)->setClientGroups(json_encode([1, 2])), fn () => createEntity(Client::class, ['client_group_id' => null]), false],
-    'restricted and wrong client group' => [fn (): Promo => productTestCreatePromoEntity(3)->setClientGroups(json_encode([1, 2])), fn () => createEntity(Client::class, ['client_group_id' => 3]), false],
-    'restricted and matching client group' => [fn (): Promo => productTestCreatePromoEntity(4)->setClientGroups(json_encode([1, 2])), fn () => createEntity(Client::class, ['client_group_id' => 2]), true],
+    'restricted and no client group' => [fn (): Promo => productTestCreatePromoEntity(2)->setClientGroups(json_encode([1, 2])), fn (): object => createEntity(Client::class, ['client_group_id' => null]), false],
+    'restricted and wrong client group' => [fn (): Promo => productTestCreatePromoEntity(3)->setClientGroups(json_encode([1, 2])), fn (): object => createEntity(Client::class, ['client_group_id' => 3]), false],
+    'restricted and matching client group' => [fn (): Promo => productTestCreatePromoEntity(4)->setClientGroups(json_encode([1, 2])), fn (): object => createEntity(Client::class, ['client_group_id' => 2]), true],
     'no restrictions and no client' => [fn (): Promo => productTestCreatePromoEntity(5)->setClientGroups(json_encode([])), null, true],
     'restricted and no client' => [fn (): Promo => productTestCreatePromoEntity(6)->setClientGroups(json_encode([1, 2])), null, false],
 ]);
