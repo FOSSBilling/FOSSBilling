@@ -615,9 +615,9 @@ class Service implements InjectionAwareInterface
         $bindings['status'] = Order::STATUS_ACTIVE;
         $bindings['invoice_option'] = 'issue-invoice';
         $bindings['unpaid_invoice_status'] = \Model_Invoice::STATUS_UNPAID;
-        $bindings['pending_item_type'] = \Model_InvoiceItem::TYPE_ORDER;
-        $bindings['pending_item_task'] = \Model_InvoiceItem::TASK_RENEW;
-        $bindings['pending_item_status'] = \Model_InvoiceItem::STATUS_EXECUTED;
+        $bindings['pending_item_type'] = \Box\Mod\Invoice\Entity\InvoiceItem::TYPE_ORDER;
+        $bindings['pending_item_task'] = \Box\Mod\Invoice\Entity\InvoiceItem::TASK_RENEW;
+        $bindings['pending_item_status'] = \Box\Mod\Invoice\Entity\InvoiceItem::STATUS_EXECUTED;
         $bindings['pending_invoice_status'] = \Model_Invoice::STATUS_PAID;
         $bindings['days_until_expiration'] = $days_until_expiration;
 
@@ -1907,7 +1907,7 @@ class Service implements InjectionAwareInterface
             'DELETE FROM invoice_item WHERE rel_id = :rel_id AND status = :status',
             [
                 'rel_id' => (string) $this->orderId($order),
-                'status' => \Model_InvoiceItem::STATUS_PENDING_PAYMENT,
+                'status' => \Box\Mod\Invoice\Entity\InvoiceItem::STATUS_PENDING_PAYMENT,
             ],
         );
     }

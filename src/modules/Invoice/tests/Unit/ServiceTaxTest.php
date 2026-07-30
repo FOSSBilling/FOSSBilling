@@ -11,7 +11,9 @@
 declare(strict_types=1);
 
 use Box\Mod\Client\Service as ClientService;
+use Box\Mod\Invoice\Entity\InvoiceItem;
 use Box\Mod\Invoice\Entity\Tax;
+use Box\Mod\Invoice\Repository\InvoiceItemRepository;
 use Box\Mod\Invoice\Repository\TaxRepository;
 use Box\Mod\Invoice\ServiceInvoiceItem;
 use Box\Mod\Invoice\ServiceTax;
@@ -151,25 +153,25 @@ test('returns zero tax when invoice tax rate is zero', function (): void {
 });
 
 test('gets tax for an invoice', function (): void {
-    $taxRepo = Mockery::mock(TaxRepository::class);
-    $service = taxService($taxRepo);
-
     $invoiceModel = new Model_Invoice();
     $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
     $invoiceModel->taxrate = 15;
 
-    $invoiceItemModel = new Model_InvoiceItem();
-    $invoiceItemModel->loadBean(new Tests\Helpers\DummyBean());
-    $invoiceItemModel->quantity = 1;
+    $invoiceItem = createEntity(InvoiceItem::class, ['quantity' => 1]);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('find')->andReturn([$invoiceItemModel]);
+    $invoiceItemRepo = Mockery::mock(InvoiceItemRepository::class);
+    $invoiceItemRepo->shouldReceive('findByInvoiceId')->andReturn([$invoiceItem]);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($invoiceItemRepo);
+
+    $taxRepo = Mockery::mock(TaxRepository::class);
+    $service = taxService($taxRepo, $em);
 
     $invoiceItemService = Mockery::mock(ServiceInvoiceItem::class);
     $invoiceItemService->shouldReceive('getTax')->andReturn(21);
 
     $di = $service->getDi();
-    $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $invoiceItemService);
 
     expect($service->getTax($invoiceModel))->toBeInt();

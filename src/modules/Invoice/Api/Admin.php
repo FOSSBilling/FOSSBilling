@@ -205,7 +205,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_invoices');
 
-        $model = $this->getDi()['db']->getExistingModelById('InvoiceItem', $data['id'], 'Invoice item was not found');
+        $model = $this->getDi()['em']->getRepository(\Box\Mod\Invoice\Entity\InvoiceItem::class)->find((int) $data['id']);
+        if (!$model instanceof \Box\Mod\Invoice\Entity\InvoiceItem) {
+            throw new InformationException('Invoice item was not found');
+        }
         $invoiceItemService = $this->getDi()['mod_service']('Invoice', 'InvoiceItem');
 
         return $invoiceItemService->remove($model);

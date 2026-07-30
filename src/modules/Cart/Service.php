@@ -881,9 +881,9 @@ class Service implements InjectionAwareInterface
                         'unit' => $order->getUnit(),
                         'period' => $order->getPeriod(),
                         'taxed' => $taxed,
-                        'type' => \Model_InvoiceItem::TYPE_ORDER,
+                        'type' => \Box\Mod\Invoice\Entity\InvoiceItem::TYPE_ORDER,
                         'rel_id' => $order->getId(),
-                        'task' => \Model_InvoiceItem::TASK_ACTIVATE,
+                        'task' => \Box\Mod\Invoice\Entity\InvoiceItem::TASK_ACTIVATE,
                     ];
 
                     if ($order->getDiscount() > 0) {

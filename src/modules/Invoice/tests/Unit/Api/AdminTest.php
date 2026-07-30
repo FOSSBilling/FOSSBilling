@@ -11,13 +11,16 @@
 declare(strict_types=1);
 
 use Box\Mod\Invoice\Api\Admin;
+use Box\Mod\Invoice\Entity\InvoiceItem;
 use Box\Mod\Invoice\Entity\Tax;
+use Box\Mod\Invoice\Repository\InvoiceItemRepository;
 use Box\Mod\Invoice\Repository\TaxRepository;
 use Box\Mod\Invoice\Service;
 use Box\Mod\Invoice\ServicePayGateway;
 use Box\Mod\Invoice\ServiceSubscription;
 use Box\Mod\Invoice\ServiceTax;
 use Box\Mod\Invoice\ServiceTransaction;
+use Doctrine\ORM\EntityManagerInterface;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
@@ -334,15 +337,18 @@ test('deletes an invoice item', function (): void {
         ->atLeast()->once()
         ->andReturn(true);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_InvoiceItem();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock->shouldReceive('getExistingModelById')
+    $model = createEntity(InvoiceItem::class, ['id' => 1]);
+
+    $invoiceItemRepo = Mockery::mock(InvoiceItemRepository::class);
+    $invoiceItemRepo->shouldReceive('find')
         ->atLeast()->once()
         ->andReturn($model);
 
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($invoiceItemRepo);
+
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $em;
     $di['mod_service'] = $di->protect(moduleService(['invoice:invoiceitem' => $invoiceItemService]));
 
     $api->setDi($di);
