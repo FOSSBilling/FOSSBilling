@@ -11,6 +11,8 @@
 declare(strict_types=1);
 
 use Box\Mod\Invoice\Api\Admin;
+use Box\Mod\Invoice\Entity\Tax;
+use Box\Mod\Invoice\Repository\TaxRepository;
 use Box\Mod\Invoice\Service;
 use Box\Mod\Invoice\ServicePayGateway;
 use Box\Mod\Invoice\ServiceSubscription;
@@ -18,6 +20,7 @@ use Box\Mod\Invoice\ServiceTax;
 use Box\Mod\Invoice\ServiceTransaction;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 use function Tests\Helpers\moduleService;
 
 test('gets dependency injection container', function (): void {
@@ -1224,20 +1227,18 @@ test('deletes a tax', function (): void {
         'id' => 1,
     ];
 
+    $taxEntity = createEntity(Tax::class, ['id' => 1]);
+
+    $taxRepo = Mockery::mock(TaxRepository::class);
+    $taxRepo->shouldReceive('find')->with(1)->andReturn($taxEntity);
+
     $taxService = Mockery::mock(ServiceTax::class);
+    $taxService->shouldReceive('getTaxRepository')->andReturn($taxRepo);
     $taxService->shouldReceive('delete')
         ->atLeast()->once()
         ->andReturn(true);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_Tax();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn($model);
-
     $di = container();
-    $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(moduleService(['invoice:tax' => $taxService]));
 
     $api->setDi($di);
@@ -1268,16 +1269,18 @@ test('creates a tax', function (): void {
 
 test('gets tax list', function (): void {
     $api = apiEndpoint(new Admin());
-    $taxService = Mockery::mock(ServiceTax::class);
-    $taxService->shouldReceive('getSearchQuery')
+
+    $qb = Mockery::mock(Doctrine\ORM\QueryBuilder::class);
+    $taxRepo = Mockery::mock(TaxRepository::class);
+    $taxRepo->shouldReceive('getSearchQueryBuilder')
         ->atLeast()->once()
-        ->andReturn(['SqlString', []]);
+        ->andReturn($qb);
+
+    $taxService = Mockery::mock(ServiceTax::class);
+    $taxService->shouldReceive('getTaxRepository')->andReturn($taxRepo);
 
     $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
-    $paginatorMock->shouldReceive('getDefaultPerPage')
-        ->byDefault()
-        ->andReturn(25);
-    $paginatorMock->shouldReceive('getPaginatedResultSet')
+    $paginatorMock->shouldReceive('paginateDoctrineQuery')
         ->atLeast()->once()
         ->andReturn([]);
 
@@ -1341,20 +1344,19 @@ test('deletes taxes in batch', function (): void {
 
 test('gets a tax', function (): void {
     $api = apiEndpoint(new Admin());
+
+    $taxEntity = createEntity(Tax::class, ['id' => 1]);
+
+    $taxRepo = Mockery::mock(TaxRepository::class);
+    $taxRepo->shouldReceive('find')->with(1)->andReturn($taxEntity);
+
     $taxService = Mockery::mock(ServiceTax::class);
+    $taxService->shouldReceive('getTaxRepository')->andReturn($taxRepo);
     $taxService->shouldReceive('toApiArray')
         ->atLeast()->once()
         ->andReturn([]);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_Tax();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn($model);
-
     $di = container();
-    $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(moduleService(['invoice:tax' => $taxService]));
 
     $api->setDi($di);
@@ -1368,20 +1370,19 @@ test('gets a tax', function (): void {
 
 test('updates a tax', function (): void {
     $api = apiEndpoint(new Admin());
+
+    $taxEntity = createEntity(Tax::class, ['id' => 1]);
+
+    $taxRepo = Mockery::mock(TaxRepository::class);
+    $taxRepo->shouldReceive('find')->with(1)->andReturn($taxEntity);
+
     $taxService = Mockery::mock(ServiceTax::class);
+    $taxService->shouldReceive('getTaxRepository')->andReturn($taxRepo);
     $taxService->shouldReceive('update')
         ->atLeast()->once()
         ->andReturn(true);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_Tax();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn($model);
-
     $di = container();
-    $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(moduleService(['invoice:tax' => $taxService]));
 
     $api->setDi($di);

@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice\Api;
 
+use Box\Mod\Invoice\Entity\Tax;
 use FOSSBilling\InformationException;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
@@ -887,8 +888,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_tax');
 
-        $model = $this->getDi()['db']->getExistingModelById('Tax', $data['id'], 'Tax rule not found');
         $taxService = $this->getDi()['mod_service']('Invoice', 'Tax');
+        $model = $taxService->getTaxRepository()->find($data['id']);
+        if (!$model instanceof Tax) {
+            throw new InformationException('Tax rule not found');
+        }
 
         return $taxService->delete($model);
     }
@@ -921,9 +925,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_tax');
 
-        $tax = $this->getDi()['db']->getExistingModelById('Tax', $data['id'], 'Tax rule not found');
-
         $taxService = $this->getDi()['mod_service']('Invoice', 'Tax');
+        $tax = $taxService->getTaxRepository()->find($data['id']);
+        if (!$tax instanceof Tax) {
+            throw new InformationException('Tax rule not found');
+        }
 
         return $taxService->toApiArray($tax);
     }
@@ -942,9 +948,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_tax');
 
-        $tax = $this->getDi()['db']->getExistingModelById('Tax', $data['id'], 'Tax rule not found');
-
         $taxService = $this->getDi()['mod_service']('Invoice', 'Tax');
+        $tax = $taxService->getTaxRepository()->find($data['id']);
+        if (!$tax instanceof Tax) {
+            throw new InformationException('Tax rule not found');
+        }
 
         return $taxService->update($tax, $data);
     }
@@ -959,9 +967,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('invoice', 'manage_tax');
 
         $taxService = $this->getDi()['mod_service']('Invoice', 'Tax');
-        [$sql, $params] = $taxService->getSearchQuery($data);
+        $qb = $taxService->getTaxRepository()->getSearchQueryBuilder($data);
 
-        return $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
     }
 
     /**

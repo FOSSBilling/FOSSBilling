@@ -1,0 +1,120 @@
+<?php
+
+declare(strict_types=1);
+/**
+ * Copyright 2022-2025 FOSSBilling
+ * SPDX-License-Identifier: Apache-2.0.
+ *
+ * @copyright FOSSBilling (https://www.fossbilling.org)
+ * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
+ */
+
+namespace Box\Mod\Invoice\Entity;
+
+use Doctrine\DBAL\Types\Types;
+use Doctrine\ORM\Mapping as ORM;
+use FOSSBilling\Doctrine\TimestampTrait;
+use FOSSBilling\Interfaces\ApiArrayInterface;
+use FOSSBilling\Interfaces\TimestampInterface;
+
+#[ORM\Entity(repositoryClass: \Box\Mod\Invoice\Repository\TaxRepository::class)]
+#[ORM\Table(name: 'tax')]
+#[ORM\HasLifecycleCallbacks]
+class Tax implements ApiArrayInterface, TimestampInterface
+{
+    use TimestampTrait;
+
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: Types::BIGINT)]
+    private ?int $id = null;
+
+    #[ORM\Column(type: Types::BIGINT, nullable: true)]
+    private ?int $level = null;
+
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
+    private ?string $name = null;
+
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
+    private ?string $country = null;
+
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
+    private ?string $state = null;
+
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
+    private ?string $taxrate = null;
+
+    public function getId(): ?int
+    {
+        return $this->id;
+    }
+
+    public function setId(?int $id): void
+    {
+        $this->id = $id;
+    }
+
+    public function getLevel(): ?int
+    {
+        return $this->level;
+    }
+
+    public function setLevel(?int $level): void
+    {
+        $this->level = $level;
+    }
+
+    public function getName(): ?string
+    {
+        return $this->name;
+    }
+
+    public function setName(?string $name): void
+    {
+        $this->name = $name;
+    }
+
+    public function getCountry(): ?string
+    {
+        return $this->country;
+    }
+
+    public function setCountry(?string $country): void
+    {
+        $this->country = $country;
+    }
+
+    public function getState(): ?string
+    {
+        return $this->state;
+    }
+
+    public function setState(?string $state): void
+    {
+        $this->state = $state;
+    }
+
+    public function getTaxrate(): ?string
+    {
+        return $this->taxrate;
+    }
+
+    public function setTaxrate(?string $taxrate): void
+    {
+        $this->taxrate = $taxrate;
+    }
+
+    public function toApiArray(): array
+    {
+        return [
+            'id' => $this->getId(),
+            'level' => $this->getLevel(),
+            'name' => $this->getName(),
+            'country' => $this->getCountry(),
+            'state' => $this->getState(),
+            'taxrate' => $this->getTaxrate(),
+            'created_at' => $this->getCreatedAt()?->format('Y-m-d H:i:s'),
+            'updated_at' => $this->getUpdatedAt()?->format('Y-m-d H:i:s'),
+        ];
+    }
+}
