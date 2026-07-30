@@ -28,12 +28,12 @@ test('maps tax table without changing columns', function (): void {
             'id', 'level', 'name', 'country', 'state', 'taxrate',
             'created_at', 'updated_at',
         ])
-        ->and($meta->getFieldMapping('level')['nullable'])->toBeTrue()
-        ->and($meta->getFieldMapping('name')['nullable'])->toBeTrue()
-        ->and($meta->getFieldMapping('country')['nullable'])->toBeTrue()
-        ->and($meta->getFieldMapping('state')['nullable'])->toBeTrue()
-        ->and($meta->getFieldMapping('taxrate')['nullable'])->toBeTrue()
-        ->and($meta->getFieldMapping('taxrate')['type'])->toBe('string');
+        ->and($meta->getFieldMapping('level')->nullable)->toBeTrue()
+        ->and($meta->getFieldMapping('name')->nullable)->toBeTrue()
+        ->and($meta->getFieldMapping('country')->nullable)->toBeTrue()
+        ->and($meta->getFieldMapping('state')->nullable)->toBeTrue()
+        ->and($meta->getFieldMapping('taxrate')->nullable)->toBeTrue()
+        ->and($meta->getFieldMapping('taxrate')->type)->toBe('string');
 });
 
 test('tax getters and setters round-trip values', function (): void {
