@@ -679,11 +679,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     /**
      * Get client group details.
-     *
-     * @return array
      */
     #[RequiredParams(['id' => 'Group ID is missing'])]
-    public function group_get($data)
+    public function group_get($data): array
     {
         $this->checkPermissions('client', 'manage_groups');
 

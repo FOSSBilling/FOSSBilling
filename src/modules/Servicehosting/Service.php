@@ -12,6 +12,12 @@ declare(strict_types=1);
 namespace Box\Mod\Servicehosting;
 
 use Box\Mod\Product\Entity\Product;
+use Box\Mod\Servicehosting\Entity\ServiceHosting;
+use Box\Mod\Servicehosting\Entity\ServiceHostingHp;
+use Box\Mod\Servicehosting\Entity\ServiceHostingServer;
+use Box\Mod\Servicehosting\Repository\ServiceHostingHpRepository;
+use Box\Mod\Servicehosting\Repository\ServiceHostingRepository;
+use Box\Mod\Servicehosting\Repository\ServiceHostingServerRepository;
 use FOSSBilling\Exception;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
@@ -141,27 +147,26 @@ class Service implements InjectionAwareInterface
      *
      * @todo
      */
-    public function action_create(\Model_ClientOrder $order): \Model_ServiceHosting
+    public function action_create(\Model_ClientOrder $order): ServiceHosting
     {
         $orderService = $this->di['mod_service']('order');
         $c = $orderService->getConfig($order);
         $this->validateOrderData($c);
 
-        $server = $this->di['db']->getExistingModelById('ServiceHostingServer', $c['server_id'], 'Server from order configuration was not found');
+        $server = $this->getExistingServer((int) $c['server_id'], 'Server from order configuration was not found');
+        $hp = $this->getExistingHp((int) $c['hosting_plan_id'], 'Hosting plan from order configuration was not found');
 
-        $hp = $this->di['db']->getExistingModelById('ServiceHostingHp', $c['hosting_plan_id'], 'Hosting plan from order configuration was not found');
+        $model = new ServiceHosting();
+        $model->setClientId((int) $order->client_id);
+        $model->setServiceHostingServerId($server->getId());
+        $model->setServiceHostingHpId($hp->getId());
+        $model->setSld($c['sld']);
+        $model->setTld($c['tld']);
+        $model->setIp($server->getIp());
+        $model->setReseller(Tools::normalizeBoolean($c['reseller'] ?? false));
 
-        $model = $this->di['db']->dispense('ServiceHosting');
-        $model->client_id = $order->client_id;
-        $model->service_hosting_server_id = $server->id;
-        $model->service_hosting_hp_id = $hp->id;
-        $model->sld = $c['sld'];
-        $model->tld = $c['tld'];
-        $model->ip = $server->ip;
-        $model->reseller = Tools::normalizeBoolean($c['reseller'] ?? false);
-        $model->created_at = date('Y-m-d H:i:s');
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $this->di['em']->persist($model);
+        $this->di['em']->flush();
 
         return $model;
     }
@@ -172,15 +177,10 @@ class Service implements InjectionAwareInterface
     public function action_activate(\Model_ClientOrder $order): array
     {
         // Retrieve the service associated with the order
-        $orderService = $this->di['mod_service']('order');
-        $model = $orderService->getOrderService($order);
-
-        // If the service is not found, throw an exception
-        if (!$model instanceof \RedBeanPHP\SimpleModel) {
-            throw new Exception('Order :id has no active service', [':id' => $order->id]);
-        }
+        $model = $this->_getOrderService($order);
 
         // Retrieve the order's configuration
+        $orderService = $this->di['mod_service']('order');
         $config = $orderService->getConfig($order);
 
         // Retrieve the server manager for the order
@@ -198,12 +198,12 @@ class Service implements InjectionAwareInterface
         if (isset($config['username']) && !empty($config['username'])) {
             $username = $config['username'];
         } else {
-            $username = $serverManager->generateUsername($model->sld . $model->tld);
+            $username = $serverManager->generateUsername($model->getSld() . $model->getTld());
         }
 
         // Update the service's username and password
-        $model->username = $username;
-        $model->pass = $pass;
+        $model->setUsername($username);
+        $model->setPass($pass);
 
         // If the order's configuration does not specify that the service should be imported, create an account for the service on the server
         if (!isset($config['import']) || !$config['import']) {
@@ -212,10 +212,10 @@ class Service implements InjectionAwareInterface
         }
 
         // Update the service's password to a placeholder value for security reasons
-        $model->pass = self::PASSWORD_PLACEHOLDER;
+        $model->setPass(self::PASSWORD_PLACEHOLDER);
 
         // Save the service
-        $this->di['db']->store($model);
+        $this->di['em']->flush();
 
         // Return the username for post-activation flows without exposing the password.
         return [
@@ -230,16 +230,8 @@ class Service implements InjectionAwareInterface
      */
     public function action_renew(\Model_ClientOrder $order): bool
     {
-        // move expiration period to future
-        $orderService = $this->di['mod_service']('order');
-        $model = $orderService->getOrderService($order);
-        if (!$model instanceof \RedBeanPHP\SimpleModel) {
-            throw new Exception('Order :id has no active service', [':id' => $order->id]);
-        }
-        // @todo ?
-
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        // Ensures the order has an active hosting service before renewal.
+        $this->_getOrderService($order);
 
         return true;
     }
@@ -247,18 +239,14 @@ class Service implements InjectionAwareInterface
     /**
      * @throws Exception
      */
-    public function action_suspend(\Model_ClientOrder $order): bool
+    public function action_suspend(\Model_ClientOrder $order, ?string $reason = null): bool
     {
-        $orderService = $this->di['mod_service']('order');
-        $model = $orderService->getOrderService($order);
-        if (!$model instanceof \RedBeanPHP\SimpleModel) {
-            throw new Exception('Order :id has no active service', [':id' => $order->id]);
-        }
+        $model = $this->_getOrderService($order);
         [$adapter, $account] = $this->_getAM($model);
+        $account->setNote($reason);
         $adapter->suspendAccount($account);
 
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $this->di['em']->flush();
 
         return true;
     }
@@ -268,16 +256,11 @@ class Service implements InjectionAwareInterface
      */
     public function action_unsuspend(\Model_ClientOrder $order): bool
     {
-        $orderService = $this->di['mod_service']('order');
-        $model = $orderService->getOrderService($order);
-        if (!$model instanceof \RedBeanPHP\SimpleModel) {
-            throw new Exception('Order :id has no active service', [':id' => $order->id]);
-        }
+        $model = $this->_getOrderService($order);
         [$adapter, $account] = $this->_getAM($model);
         $adapter->unsuspendAccount($account);
 
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $this->di['em']->flush();
 
         return true;
     }
@@ -287,16 +270,11 @@ class Service implements InjectionAwareInterface
      */
     public function action_cancel(\Model_ClientOrder $order): bool
     {
-        $orderService = $this->di['mod_service']('order');
-        $model = $orderService->getOrderService($order);
-        if (!$model instanceof \RedBeanPHP\SimpleModel) {
-            throw new Exception('Order :id has no active service', [':id' => $order->id]);
-        }
+        $model = $this->_getOrderService($order);
         [$adapter, $account] = $this->_getAM($model);
         $adapter->cancelAccount($account);
 
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $this->di['em']->flush();
 
         return true;
     }
@@ -307,25 +285,24 @@ class Service implements InjectionAwareInterface
     public function action_uncancel(\Model_ClientOrder $order): bool
     {
         $this->action_create($order);
-        $orderService = $this->di['mod_service']('order');
-        $model = $orderService->getOrderService($order);
+        $model = $this->_getOrderService($order);
 
         // Retrieve the server manager for the order
         $serverManager = $this->_getServerManagerForOrder($model);
 
         // As we replace the password internally with asterisks, generate a new password
         $pass = $this->di['tools']->generatePassword($serverManager->getPasswordLength(), true);
-        $model->pass = $pass;
+        $model->setPass($pass);
 
         // Retrieve the adapter and account, then create the account on the server
         [$adapter, $account] = $this->_getAM($model);
         $adapter->createAccount($account);
 
         // Update the service's password to a placeholder value for security reasons
-        $model->pass = self::PASSWORD_PLACEHOLDER;
+        $model->setPass(self::PASSWORD_PLACEHOLDER);
 
         // Save the service
-        $this->di['db']->store($model);
+        $this->di['em']->flush();
 
         return true;
     }
@@ -334,32 +311,32 @@ class Service implements InjectionAwareInterface
     {
         $orderService = $this->di['mod_service']('order');
         $service = $orderService->getOrderService($order);
-        if ($service instanceof \Model_ServiceHosting) {
+        if ($service instanceof ServiceHosting) {
             // cancel if not canceled
             if ($order->status != \Model_ClientOrder::STATUS_CANCELED) {
                 $this->action_cancel($order);
             }
-            $this->di['db']->trash($service);
+            $this->di['em']->remove($service);
+            $this->di['em']->flush();
         }
     }
 
-    public function changeAccountPlan(\Model_ClientOrder $order, \Model_ServiceHosting $model, \Model_ServiceHostingHp $hp): bool
+    public function changeAccountPlan(\Model_ClientOrder $order, ServiceHosting $model, ServiceHostingHp $hp): bool
     {
-        $model->service_hosting_hp_id = $hp->id;
+        $model->setServiceHostingHpId($hp->getId());
         if ($this->_performOnService($order)) {
             $package = $this->getServerPackage($hp);
             [$adapter, $account] = $this->_getAM($model);
             $adapter->changeAccountPackage($account, $package);
         }
 
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
-        $this->di['logger']->info('Changed hosting plan of account #%s', $model->id);
+        $this->di['em']->flush();
+        $this->di['logger']->info('Changed hosting plan of account #%s', $model->getId());
 
         return true;
     }
 
-    public function changeAccountUsername(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data): bool
+    public function changeAccountUsername(\Model_ClientOrder $order, ServiceHosting $model, $data): bool
     {
         if (!isset($data['username']) || empty($data['username'])) {
             throw new InformationException('Account username is missing or is invalid');
@@ -372,16 +349,15 @@ class Service implements InjectionAwareInterface
             $adapter->changeAccountUsername($account, $u);
         }
 
-        $model->username = $u;
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $model->setUsername($u);
+        $this->di['em']->flush();
 
-        $this->di['logger']->info('Changed hosting account %s username', $model->id);
+        $this->di['logger']->info('Changed hosting account %s username', $model->getId());
 
         return true;
     }
 
-    public function changeAccountIp(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data): bool
+    public function changeAccountIp(\Model_ClientOrder $order, ServiceHosting $model, $data): bool
     {
         if (!isset($data['ip']) || empty($data['ip'])) {
             throw new InformationException('Account IP address is missing or is invalid');
@@ -394,15 +370,14 @@ class Service implements InjectionAwareInterface
             $adapter->changeAccountIp($account, $ip);
         }
 
-        $model->ip = $ip;
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
-        $this->di['logger']->info('Changed hosting account %s ip', $model->id);
+        $model->setIp($ip);
+        $this->di['em']->flush();
+        $this->di['logger']->info('Changed hosting account %s ip', $model->getId());
 
         return true;
     }
 
-    public function changeAccountDomain(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data): bool
+    public function changeAccountDomain(\Model_ClientOrder $order, ServiceHosting $model, $data): bool
     {
         if (
             !isset($data['tld']) || empty($data['tld'])
@@ -419,16 +394,15 @@ class Service implements InjectionAwareInterface
             $adapter->changeAccountDomain($account, $sld . $tld);
         }
 
-        $model->sld = $sld;
-        $model->tld = $tld;
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
-        $this->di['logger']->info('Changed hosting account %s domain', $model->id);
+        $model->setSld($sld);
+        $model->setTld($tld);
+        $this->di['em']->flush();
+        $this->di['logger']->info('Changed hosting account %s domain', $model->getId());
 
         return true;
     }
 
-    public function changeAccountPassword(\Model_ClientOrder $order, \Model_ServiceHosting $model, $data): bool
+    public function changeAccountPassword(\Model_ClientOrder $order, ServiceHosting $model, $data): bool
     {
         if (
             !isset($data['password']) || !isset($data['password_confirm'])
@@ -444,35 +418,33 @@ class Service implements InjectionAwareInterface
             $adapter->changeAccountPassword($account, $newPassword);
         }
 
-        $model->pass = self::PASSWORD_PLACEHOLDER;
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
-        $this->di['logger']->info('Changed hosting account %s password', $model->id);
+        $model->setPass(self::PASSWORD_PLACEHOLDER);
+        $this->di['em']->flush();
+        $this->di['logger']->info('Changed hosting account %s password', $model->getId());
 
         return true;
     }
 
-    public function sync(\Model_ClientOrder $order, \Model_ServiceHosting $model): bool
+    public function sync(\Model_ClientOrder $order, ServiceHosting $model): bool
     {
         [$adapter, $account] = $this->_getAM($model);
         $updated = $adapter->synchronizeAccount($account);
 
         if ($account->getUsername() != $updated->getUsername()) {
-            $model->username = $updated->getUsername();
+            $model->setUsername($updated->getUsername());
         }
 
         if ($account->getIp() != $updated->getIp()) {
-            $model->ip = $updated->getIp();
+            $model->setIp($updated->getIp());
         }
 
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
-        $this->di['logger']->info('Synchronizing hosting account %s with server', $model->id);
+        $this->di['em']->flush();
+        $this->di['logger']->info('Synchronizing hosting account %s with server', $model->getId());
 
         return true;
     }
 
-    private function _getDomainOrderId(\Model_ServiceHosting $model)
+    private function _getDomainOrderId(ServiceHosting $model)
     {
         $orderService = $this->di['mod_service']('order');
         $o = $orderService->getServiceOrder($model);
@@ -513,23 +485,21 @@ class Service implements InjectionAwareInterface
     /**
      * @throws Exception
      */
-    private function _getServerManagerForOrder($model)
+    private function _getServerManagerForOrder(ServiceHosting $model)
     {
-        $server = $this->di['db']->getExistingModelById('ServiceHostingServer', $model->service_hosting_server_id, 'Server not found');
+        $server = $this->getExistingServer((int) $model->getServiceHostingServerId(), 'Server not found');
 
         return $this->getServerManager($server);
     }
 
-    public function _getAM(\RedBeanPHP\SimpleModel $model, ?\Model_ServiceHostingHp $hp = null): array
+    public function _getAM(ServiceHosting $model, ?ServiceHostingHp $hp = null): array
     {
-        if (!$hp instanceof \Model_ServiceHostingHp) {
-            $hp = $this->di['db']->getExistingModelById('ServiceHostingHp', $model->service_hosting_hp_id, 'Hosting plan not found');
+        if (!$hp instanceof ServiceHostingHp) {
+            $hp = $this->getExistingHp((int) $model->getServiceHostingHpId(), 'Hosting plan not found');
         }
 
-        $server = $this->di['db']->getExistingModelById('ServiceHostingServer', $model->service_hosting_server_id, 'Server not found');
-        $client = $this->di['db']->getExistingModelById('Client', $model->client_id, 'Client not found');
-
-        $hp_config = $hp->config;
+        $server = $this->getExistingServer((int) $model->getServiceHostingServerId(), 'Server not found');
+        $client = $this->di['db']->getExistingModelById('Client', $model->getClientId(), 'Client not found');
 
         $server_client = new \Server_Client();
         $server_client
@@ -550,15 +520,15 @@ class Service implements InjectionAwareInterface
         $server_account
             ->setClient($server_client)
             ->setPackage($package)
-            ->setUsername($model->username)
-            ->setReseller(Tools::normalizeBoolean($model->reseller))
-            ->setDomain($model->sld . $model->tld)
-            ->setPassword($model->pass)
-            ->setNs1($server->ns1)
-            ->setNs2($server->ns2)
-            ->setNs3($server->ns3)
-            ->setNs4($server->ns4)
-            ->setIp($model->ip);
+            ->setUsername($model->getUsername())
+            ->setReseller(Tools::normalizeBoolean($model->isReseller()))
+            ->setDomain($model->getSld() . $model->getTld())
+            ->setPassword($model->getPass())
+            ->setNs1($server->getNs1())
+            ->setNs2($server->getNs2())
+            ->setNs3($server->getNs3())
+            ->setNs4($server->getNs4())
+            ->setIp($model->getIp());
 
         $orderService = $this->di['mod_service']('order');
         $order = $orderService->getServiceOrder($model);
@@ -571,58 +541,58 @@ class Service implements InjectionAwareInterface
         return [$adapter, $server_account];
     }
 
-    public function toApiArray(\Model_ServiceHosting $model, $deep = false, $identity = null): array
+    public function toApiArray(ServiceHosting $model, $deep = false, $identity = null): array
     {
-        $serviceHostingServerModel = $this->di['db']->load('ServiceHostingServer', $model->service_hosting_server_id);
-        $serviceHostingHpModel = $this->di['db']->load('ServiceHostingHp', $model->service_hosting_hp_id);
+        $serviceHostingServerModel = $this->getExistingServer((int) $model->getServiceHostingServerId(), 'Server not found');
+        $serviceHostingHpModel = $this->getExistingHp((int) $model->getServiceHostingHpId(), 'Hosting plan not found');
         $server = $this->toHostingServerApiArray($serviceHostingServerModel, $deep, $identity);
         $hp = $this->toHostingHpApiArray($serviceHostingHpModel, $deep, $identity);
 
         return [
-            'ip' => $model->ip,
-            'sld' => $model->sld,
-            'tld' => $model->tld,
-            'domain' => $model->sld . $model->tld,
-            'username' => $model->username,
-            'reseller' => $model->reseller,
+            'ip' => $model->getIp(),
+            'sld' => $model->getSld(),
+            'tld' => $model->getTld(),
+            'domain' => $model->getSld() . $model->getTld(),
+            'username' => $model->getUsername(),
+            'reseller' => $model->isReseller(),
             'server' => $server,
             'hosting_plan' => $hp,
             'domain_order_id' => $this->_getDomainOrderId($model),
         ];
     }
 
-    public function toHostingServerApiArray(\Model_ServiceHostingServer $model, $deep = false, $identity = null): array
+    public function toHostingServerApiArray(ServiceHostingServer $model, $deep = false, $identity = null): array
     {
         [$cpanel_url, $whm_url] = $this->getManagerUrls($model);
         $result = [
-            'name' => $model->name,
-            'hostname' => $model->hostname,
-            'ip' => $model->ip,
-            'ns1' => $model->ns1,
-            'ns2' => $model->ns2,
-            'ns3' => $model->ns3,
-            'ns4' => $model->ns4,
+            'name' => $model->getName(),
+            'hostname' => $model->getHostname(),
+            'ip' => $model->getIp(),
+            'ns1' => $model->getNs1(),
+            'ns2' => $model->getNs2(),
+            'ns3' => $model->getNs3(),
+            'ns4' => $model->getNs4(),
             'cpanel_url' => $cpanel_url,
             'reseller_cpanel_url' => $whm_url,
         ];
 
         if ($identity instanceof \Model_Admin) {
-            $result['id'] = $model->id;
-            $result['active'] = $model->active;
-            $result['secure'] = $model->secure;
-            $result['assigned_ips'] = json_decode($model->assigned_ips ?? '[]', true) ?? [];
-            $result['status_url'] = $model->status_url;
-            $result['max_accounts'] = $model->max_accounts;
-            $result['manager'] = $model->manager;
-            $result['config'] = json_decode($model->config ?? '', true) ?? [];
-            $result['port'] = Tools::normalizePort($model->port);
-            $result['passwordLength'] = $model->passwordLength;
-            $result['created_at'] = $model->created_at;
-            $result['updated_at'] = $model->updated_at;
+            $result['id'] = $model->getId();
+            $result['active'] = $model->isActive();
+            $result['secure'] = $model->isSecure();
+            $result['assigned_ips'] = json_decode($model->getAssignedIps() ?? '[]', true) ?? [];
+            $result['status_url'] = $model->getStatusUrl();
+            $result['max_accounts'] = $model->getMaxAccounts();
+            $result['manager'] = $model->getManager();
+            $result['config'] = json_decode($model->getConfig() ?? '', true) ?? [];
+            $result['port'] = Tools::normalizePort($model->getPort());
+            $result['passwordLength'] = $model->getPasswordLength();
+            $result['created_at'] = $this->formatDateTime($model->getCreatedAt());
+            $result['updated_at'] = $this->formatDateTime($model->getUpdatedAt());
 
-            $secretFields = $this->getServerManagerSecretFields((string) $model->manager);
+            $secretFields = $this->getServerManagerSecretFields((string) $model->getManager());
             foreach ($secretFields as $field) {
-                $raw = $model->{$field} ?? null;
+                $raw = $this->getServerSecretField($model, $field);
                 $result[$field] = null;
                 $result[$field . '_set'] = $raw !== null && $raw !== '';
             }
@@ -632,23 +602,23 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    public function toHostingAccountApiArray(\Model_ServiceHosting $model, $deep = false, $identity = null): array
+    public function toHostingAccountApiArray(ServiceHosting $model, $deep = false, $identity = null): array
     {
         $result = [
-            'id' => $model->id,
-            'sld' => $model->sld,
-            'tld' => $model->tld,
-            'client_id' => $model->client_id,
-            'server_id' => $model->service_hosting_server_id,
-            'plan_id' => $model->service_hosting_hp_id,
-            'reseller' => $model->reseller,
+            'id' => $model->getId(),
+            'sld' => $model->getSld(),
+            'tld' => $model->getTld(),
+            'client_id' => $model->getClientId(),
+            'server_id' => $model->getServiceHostingServerId(),
+            'plan_id' => $model->getServiceHostingHpId(),
+            'reseller' => $model->isReseller(),
         ];
 
         if ($identity instanceof \Model_Admin) {
-            $result['ip'] = $model->ip;
-            $result['username'] = $model->username;
-            $result['created_at'] = $model->created_at;
-            $result['updated_at'] = $model->updated_at;
+            $result['ip'] = $model->getIp();
+            $result['username'] = $model->getUsername();
+            $result['created_at'] = $this->formatDateTime($model->getCreatedAt());
+            $result['updated_at'] = $this->formatDateTime($model->getUpdatedAt());
         }
 
         return $result;
@@ -799,21 +769,19 @@ class Service implements InjectionAwareInterface
         return [$sld, $tld];
     }
 
-    public function update(\Model_ServiceHosting $model, array $data): bool
+    public function update(ServiceHosting $model, array $data): bool
     {
         if (isset($data['username']) && !empty($data['username'])) {
-            $model->username = $data['username'];
+            $model->setUsername($data['username']);
         }
 
         if (isset($data['ip']) && !empty($data['ip'])) {
-            $model->ip = $data['ip'];
+            $model->setIp($data['ip']);
         }
 
-        $model->updated_at = date('Y-m-d H:i:s');
+        $this->di['em']->flush();
 
-        $this->di['db']->store($model);
-
-        $this->di['logger']->info('Updated hosting account %s without sending actions to server', $model->id);
+        $this->di['logger']->info('Updated hosting account %s without sending actions to server', $model->getId());
 
         return true;
     }
@@ -976,89 +944,91 @@ class Service implements InjectionAwareInterface
             throw new Exception('Server manager :manager is not a valid server manager', [':manager' => $manager]);
         }
 
-        $model = $this->di['db']->dispense('ServiceHostingServer');
-        $model->name = $name;
-        $model->ip = $ip;
+        $model = new ServiceHostingServer();
+        $model->setName($name);
+        $model->setIp($ip);
 
-        $model->hostname = $data['hostname'] ?? null;
+        $model->setHostname($data['hostname'] ?? null);
         $assigned_ips = $data['assigned_ips'] ?? '';
         if (!empty($assigned_ips)) {
-            $model->assigned_ips = self::processAssignedIPs($assigned_ips);
+            $model->setAssignedIps(self::processAssignedIPs($assigned_ips));
         }
 
-        $model->active = $data['active'] ?? 1;
-        $model->status_url = $data['status_url'] ?? null;
-        $model->max_accounts = $data['max_accounts'] ?? null;
+        $model->setActive(Tools::normalizeBoolean($data['active'] ?? true));
+        $model->setStatusUrl($data['status_url'] ?? null);
+        $model->setMaxAccounts(isset($data['max_accounts']) ? (int) $data['max_accounts'] : null);
 
-        $model->ns1 = $data['ns1'] ?? null;
-        $model->ns2 = $data['ns2'] ?? null;
-        $model->ns3 = $data['ns3'] ?? null;
-        $model->ns4 = $data['ns4'] ?? null;
+        $model->setNs1($data['ns1'] ?? null);
+        $model->setNs2($data['ns2'] ?? null);
+        $model->setNs3($data['ns3'] ?? null);
+        $model->setNs4($data['ns4'] ?? null);
 
-        $model->manager = $manager;
-        $model->username = $data['username'] ?? null;
-        $model->password = $data['password'] ?? null;
-        $model->accesshash = $data['accesshash'] ?? null;
-        $model->port = Tools::normalizePort($data['port'] ?? null);
-        $model->config = isset($data['config']) ? json_encode($data['config']) : null;
-        $model->passwordLength = is_numeric($data['passwordLength'] ?? '') ? intval($data['passwordLength']) : null;
-        $model->secure = $data['secure'] ?? 1;
+        $model->setManager($manager);
+        $model->setUsername($data['username'] ?? null);
+        $model->setPassword($data['password'] ?? null);
+        $model->setAccesshash($data['accesshash'] ?? null);
+        $normalizedPort = Tools::normalizePort($data['port'] ?? null);
+        $model->setPort($normalizedPort !== null ? (string) $normalizedPort : null);
+        $model->setConfig(isset($data['config']) ? json_encode($data['config']) : null);
+        $model->setPasswordLength(is_numeric($data['passwordLength'] ?? '') ? intval($data['passwordLength']) : null);
+        $model->setSecure(Tools::normalizeBoolean($data['secure'] ?? true));
 
-        $model->created_at = date('Y-m-d H:i:s');
-        $model->updated_at = date('Y-m-d H:i:s');
-        $newId = $this->di['db']->store($model);
+        $this->di['em']->persist($model);
+        $this->di['em']->flush();
+
+        $newId = $model->getId();
 
         $this->di['logger']->info('Added new hosting server %s', $newId);
 
         return $newId;
     }
 
-    public function deleteServer(\Model_ServiceHostingServer $model): bool
+    public function deleteServer(ServiceHostingServer $model): bool
     {
-        $id = $model->id;
-        $this->di['db']->trash($model);
+        $id = $model->getId();
+        $this->di['em']->remove($model);
+        $this->di['em']->flush();
         $this->di['logger']->info('Deleted hosting server %s', $id);
 
         return true;
     }
 
-    public function updateServer(\Model_ServiceHostingServer $model, array $data): bool
+    public function updateServer(ServiceHostingServer $model, array $data): bool
     {
-        $model->name = $data['name'] ?? $model->name;
-        $model->ip = $data['ip'] ?? $model->ip;
-        $model->hostname = $data['hostname'] ?? $model->hostname;
+        $model->setName($data['name'] ?? $model->getName());
+        $model->setIp($data['ip'] ?? $model->getIp());
+        $model->setHostname($data['hostname'] ?? $model->getHostname());
 
         $assigned_ips = $data['assigned_ips'] ?? '';
         if (!empty($assigned_ips)) {
-            $model->assigned_ips = self::processAssignedIPs($assigned_ips);
+            $model->setAssignedIps(self::processAssignedIPs($assigned_ips));
         }
 
-        $model->active = $data['active'] ?? $model->active;
-        $model->status_url = $data['status_url'] ?? $model->status_url;
-        $model->max_accounts = $data['max_accounts'] ?? $model->max_accounts;
-        $model->ns1 = $data['ns1'] ?? $model->ns1;
-        $model->ns2 = $data['ns2'] ?? $model->ns2;
-        $model->ns3 = $data['ns3'] ?? $model->ns3;
-        $model->ns4 = $data['ns4'] ?? $model->ns4;
+        $model->setActive(array_key_exists('active', $data) ? Tools::normalizeBoolean($data['active']) : $model->isActive());
+        $model->setStatusUrl($data['status_url'] ?? $model->getStatusUrl());
+        $model->setMaxAccounts(array_key_exists('max_accounts', $data) ? ($data['max_accounts'] !== null ? (int) $data['max_accounts'] : null) : $model->getMaxAccounts());
+        $model->setNs1($data['ns1'] ?? $model->getNs1());
+        $model->setNs2($data['ns2'] ?? $model->getNs2());
+        $model->setNs3($data['ns3'] ?? $model->getNs3());
+        $model->setNs4($data['ns4'] ?? $model->getNs4());
         if (isset($data['manager'])) {
             if (!in_array($data['manager'], $this->_getServerManagers(), true)) {
                 throw new Exception('Server manager :manager is not a valid server manager', [':manager' => $data['manager']]);
             }
-            $model->manager = $data['manager'];
+            $model->setManager($data['manager']);
         }
         $port = Tools::normalizePort($data['port'] ?? null);
-        $model->port = $port ?? $model->port;
-        $model->config = isset($data['config']) ? json_encode($data['config']) : $model->config;
-        $model->secure = $data['secure'] ?? $model->secure;
-        $model->username = $this->normalizeCredential('username', $data['username'] ?? null, $model->username, $model->id, false);
-        $model->password = $this->normalizeCredential('password', $data['password'] ?? null, $model->password, $model->id, true);
-        $model->accesshash = $this->normalizeCredential('accesshash', $data['accesshash'] ?? null, $model->accesshash, $model->id, true);
-        $model->passwordLength = is_numeric($data['passwordLength'] ?? '') ? intval($data['passwordLength']) : $model->passwordLength;
-        $model->updated_at = date('Y-m-d H:i:s');
+        $model->setPort($port !== null ? (string) $port : $model->getPort());
+        $model->setConfig(isset($data['config']) ? json_encode($data['config']) : $model->getConfig());
+        $model->setSecure(array_key_exists('secure', $data) ? Tools::normalizeBoolean($data['secure']) : $model->isSecure());
+        $model->setUsername($this->normalizeCredential('username', $data['username'] ?? null, $model->getUsername(), $model->getId(), false));
+        $model->setPassword($this->normalizeCredential('password', $data['password'] ?? null, $model->getPassword(), $model->getId(), true));
+        $model->setAccesshash($this->normalizeCredential('accesshash', $data['accesshash'] ?? null, $model->getAccesshash(), $model->getId(), true));
+        $model->setPasswordLength(is_numeric($data['passwordLength'] ?? '') ? intval($data['passwordLength']) : $model->getPasswordLength());
 
-        $this->di['db']->store($model);
+        $this->di['em']->flush();
 
-        $this->di['logger']->info('Update hosting server %s', $model->id);
+        $this->di['logger']->info('Update hosting server %s', $model->getId());
 
         return true;
     }
@@ -1092,28 +1062,28 @@ class Service implements InjectionAwareInterface
     /**
      * @throws Exception
      */
-    public function getServerManager(\Model_ServiceHostingServer $model)
+    public function getServerManager(ServiceHostingServer $model)
     {
-        if (empty($model->manager)) {
+        if (empty($model->getManager())) {
             throw new Exception('Invalid server manager. Server was not configured properly.', null, 654);
         }
 
         $config = [];
-        $config['ip'] = $model->ip;
-        $config['host'] = $model->hostname;
-        $config['port'] = Tools::normalizePort($model->port);
+        $config['ip'] = $model->getIp();
+        $config['host'] = $model->getHostname();
+        $config['port'] = Tools::normalizePort($model->getPort());
         $config['config'] = [];
-        $config['config'] = json_decode($model->config ?? '', true) ?? [];
-        $config['secure'] = $model->secure;
-        $config['username'] = $model->username;
-        $config['password'] = $model->password;
-        $config['accesshash'] = $model->accesshash;
-        $config['passwordLength'] = $model->passwordLength;
+        $config['config'] = json_decode($model->getConfig() ?? '', true) ?? [];
+        $config['secure'] = $model->isSecure();
+        $config['username'] = $model->getUsername();
+        $config['password'] = $model->getPassword();
+        $config['accesshash'] = $model->getAccesshash();
+        $config['passwordLength'] = $model->getPasswordLength();
 
-        $manager = $this->di['server_manager']($model->manager, $config);
+        $manager = $this->di['server_manager']($model->getManager(), $config);
 
         if (!$manager instanceof \Server_Manager) {
-            throw new Exception('Server manager :adapter is invalid.', [':adapter' => $model->manager]);
+            throw new Exception('Server manager :adapter is invalid.', [':adapter' => $model->getManager()]);
         }
 
         return $manager;
@@ -1123,7 +1093,7 @@ class Service implements InjectionAwareInterface
      * @throws \Server_Exception
      * @throws Exception
      */
-    public function testConnection(\Model_ServiceHostingServer $model)
+    public function testConnection(ServiceHostingServer $model)
     {
         $manager = $this->getServerManager($model);
 
@@ -1155,59 +1125,56 @@ class Service implements InjectionAwareInterface
     /**
      * @throws InformationException
      */
-    public function deleteHp(\Model_ServiceHostingHp $model): bool
+    public function deleteHp(ServiceHostingHp $model): bool
     {
-        $id = $model->id;
-        $serviceHosting = $this->di['db']->findOne('ServiceHosting', 'service_hosting_hp_id = ?', [$model->id]);
+        $id = $model->getId();
+        $serviceHosting = $this->getServiceHostingRepository()->findOneBy(['serviceHostingHpId' => $id]);
         if ($serviceHosting) {
             throw new InformationException('Cannot remove hosting plan which has active accounts');
         }
-        $this->di['db']->trash($model);
+        $this->di['em']->remove($model);
+        $this->di['em']->flush();
         $this->di['logger']->info('Deleted hosting plan %s', $id);
 
         return true;
     }
 
-    public function toHostingHpApiArray(\Model_ServiceHostingHp $model, $deep = false, $identity = null): array
+    public function toHostingHpApiArray(ServiceHostingHp $model, $deep = false, $identity = null): array
     {
-        if (is_null($model->config)) {
-            $model->config = '';
-        }
-
         return [
-            'id' => $model->id,
+            'id' => $model->getId(),
 
-            'name' => $model->name,
-            'bandwidth' => $model->bandwidth,
-            'quota' => $model->quota,
+            'name' => $model->getName(),
+            'bandwidth' => $model->getBandwidth(),
+            'quota' => $model->getQuota(),
 
-            'max_ftp' => $model->max_ftp,
-            'max_sql' => $model->max_sql,
-            'max_pop' => $model->max_pop,
-            'max_sub' => $model->max_sub,
-            'max_park' => $model->max_park,
-            'max_addon' => $model->max_addon,
-            'config' => json_decode($model->config ?? '', true),
+            'max_ftp' => $model->getMaxFtp(),
+            'max_sql' => $model->getMaxSql(),
+            'max_pop' => $model->getMaxPop(),
+            'max_sub' => $model->getMaxSub(),
+            'max_park' => $model->getMaxPark(),
+            'max_addon' => $model->getMaxAddon(),
+            'config' => json_decode($model->getConfig() ?? '', true),
 
-            'created_at' => $model->created_at,
-            'updated_at' => $model->updated_at,
+            'created_at' => $this->formatDateTime($model->getCreatedAt()),
+            'updated_at' => $this->formatDateTime($model->getUpdatedAt()),
         ];
     }
 
-    public function updateHp(\Model_ServiceHostingHp $model, array $data): bool
+    public function updateHp(ServiceHostingHp $model, array $data): bool
     {
-        $model->name = $data['name'] ?? $model->name;
-        $model->bandwidth = $data['bandwidth'] ?? $model->bandwidth;
-        $model->quota = $data['quota'] ?? $model->quota;
-        $model->max_addon = $data['max_addon'] ?? $model->max_addon;
-        $model->max_ftp = $data['max_ftp'] ?? $model->max_ftp;
-        $model->max_sql = $data['max_sql'] ?? $model->max_sql;
-        $model->max_pop = $data['max_pop'] ?? $model->max_pop;
-        $model->max_sub = $data['max_sub'] ?? $model->max_sub;
-        $model->max_park = $data['max_park'] ?? $model->max_park;
+        $model->setName($data['name'] ?? $model->getName());
+        $model->setBandwidth($data['bandwidth'] ?? $model->getBandwidth());
+        $model->setQuota($data['quota'] ?? $model->getQuota());
+        $model->setMaxAddon($data['max_addon'] ?? $model->getMaxAddon());
+        $model->setMaxFtp($data['max_ftp'] ?? $model->getMaxFtp());
+        $model->setMaxSql($data['max_sql'] ?? $model->getMaxSql());
+        $model->setMaxPop($data['max_pop'] ?? $model->getMaxPop());
+        $model->setMaxSub($data['max_sub'] ?? $model->getMaxSub());
+        $model->setMaxPark($data['max_park'] ?? $model->getMaxPark());
 
         /* add new config value to hosting plan */
-        $config = json_decode($model->config ?? '', true) ?? [];
+        $config = json_decode($model->getConfig() ?? '', true) ?? [];
 
         $inConfig = $data['config'] ?? null;
 
@@ -1227,57 +1194,57 @@ class Service implements InjectionAwareInterface
             $config[$newConfigName] = $newConfigValue;
         }
 
-        $model->config = json_encode($config);
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $model->setConfig(json_encode($config));
+        $this->di['em']->flush();
 
-        $this->di['logger']->info('Updated hosting plan %s', $model->id);
+        $this->di['logger']->info('Updated hosting plan %s', $model->getId());
 
         return true;
     }
 
     public function createHp($name, $data)
     {
-        $model = $this->di['db']->dispense('ServiceHostingHp');
-        $model->name = $name;
+        $model = new ServiceHostingHp();
+        $model->setName($name);
 
-        $model->bandwidth = $data['bandwidth'] ?? 1024 * 1024;
-        $model->quota = $data['quota'] ?? 1024 * 1024;
+        $model->setBandwidth((string) ($data['bandwidth'] ?? 1024 * 1024));
+        $model->setQuota((string) ($data['quota'] ?? 1024 * 1024));
 
-        $model->max_addon = $data['max_addon'] ?? 1;
-        $model->max_park = $data['max_park'] ?? 1;
-        $model->max_sub = $data['max_sub'] ?? 1;
-        $model->max_pop = $data['max_pop'] ?? 1;
-        $model->max_sql = $data['max_sql'] ?? 1;
-        $model->max_ftp = $data['max_ftp'] ?? 1;
+        $model->setMaxAddon((string) ($data['max_addon'] ?? 1));
+        $model->setMaxPark((string) ($data['max_park'] ?? 1));
+        $model->setMaxSub((string) ($data['max_sub'] ?? 1));
+        $model->setMaxPop((string) ($data['max_pop'] ?? 1));
+        $model->setMaxSql((string) ($data['max_sql'] ?? 1));
+        $model->setMaxFtp((string) ($data['max_ftp'] ?? 1));
 
-        $model->created_at = date('Y-m-d H:i:s');
-        $model->updated_at = date('Y-m-d H:i:s');
-        $newId = $this->di['db']->store($model);
+        $this->di['em']->persist($model);
+        $this->di['em']->flush();
+
+        $newId = $model->getId();
 
         $this->di['logger']->info('Added new hosting plan %s', $newId);
 
         return $newId;
     }
 
-    public function getServerPackage(\Model_ServiceHostingHp $model): \Server_Package
+    public function getServerPackage(ServiceHostingHp $model): \Server_Package
     {
-        $config = json_decode($model->config ?? '', true);
+        $config = json_decode($model->getConfig() ?? '', true);
         if (!is_array($config)) {
             $config = [];
         }
 
         $p = new \Server_Package();
         $p->setCustomValues($config)
-            ->setMaxFtp($model->max_ftp)
-            ->setMaxSql($model->max_sql)
-            ->setMaxPop($model->max_pop)
-            ->setMaxSubdomains($model->max_sub)
-            ->setMaxParkedDomains($model->max_park)
-            ->setMaxDomains($model->max_addon)
-            ->setBandwidth($model->bandwidth)
-            ->setQuota($model->quota)
-            ->setName($model->name);
+            ->setMaxFtp($model->getMaxFtp())
+            ->setMaxSql($model->getMaxSql())
+            ->setMaxPop($model->getMaxPop())
+            ->setMaxSubdomains($model->getMaxSub())
+            ->setMaxParkedDomains($model->getMaxPark())
+            ->setMaxDomains($model->getMaxAddon())
+            ->setBandwidth($model->getBandwidth())
+            ->setQuota($model->getQuota())
+            ->setName($model->getName());
 
         return $p;
     }
@@ -1285,7 +1252,7 @@ class Service implements InjectionAwareInterface
     /**
      * @throws Exception
      */
-    public function getServerManagerWithLog(\Model_ServiceHostingServer $model, \Model_ClientOrder $order)
+    public function getServerManagerWithLog(ServiceHostingServer $model, \Model_ClientOrder $order)
     {
         $manager = $this->getServerManager($model);
 
@@ -1302,7 +1269,7 @@ class Service implements InjectionAwareInterface
      *
      * @return string[]|false[]
      */
-    public function getManagerUrls(\Model_ServiceHostingServer $model): array
+    public function getManagerUrls(ServiceHostingServer $model): array
     {
         try {
             $m = $this->getServerManager($model);
@@ -1319,10 +1286,10 @@ class Service implements InjectionAwareInterface
      * Generates either a reseller or standard login link for a given order.
      * If the server manager supports SSO, an SSO link will be returned.
      */
-    public function generateLoginUrl(\Model_ServiceHosting $model): string
+    public function generateLoginUrl(ServiceHosting $model): string
     {
         [$adapter, $account] = $this->_getAM($model);
-        if ($model->reseller) {
+        if ($model->isReseller()) {
             return $adapter->getResellerLoginUrl($account);
         }
 
@@ -1433,8 +1400,8 @@ class Service implements InjectionAwareInterface
         }
 
         if (empty($result)) {
-            $query = 'active = 1 and allow_register = 1';
-            $tlds = $this->di['db']->find('Tld', $query, []);
+            $tlds = $this->di['em']->getRepository(\Box\Mod\Servicedomain\Entity\Tld::class)
+                ->findBy(['active' => true, 'allowRegister' => true], ['id' => 'ASC']);
             $serviceDomainService = $this->di['mod_service']('Servicedomain');
             foreach ($tlds as $model) {
                 $result[] = $serviceDomainService->tldToApiArray($model, $identity);
@@ -1470,5 +1437,66 @@ class Service implements InjectionAwareInterface
         $array = array_filter($array, fn ($ip): bool => (bool) filter_var($ip, FILTER_VALIDATE_IP));
 
         return json_encode(array_values($array));
+    }
+
+    private function formatDateTime(?\DateTime $dateTime): ?string
+    {
+        return $dateTime?->format('Y-m-d H:i:s');
+    }
+
+    private function getServerSecretField(ServiceHostingServer $model, string $field): ?string
+    {
+        return match ($field) {
+            'password' => $model->getPassword(),
+            'accesshash' => $model->getAccesshash(),
+            'username' => $model->getUsername(),
+            default => null,
+        };
+    }
+
+    private function _getOrderService(\Model_ClientOrder $order): ServiceHosting
+    {
+        $orderService = $this->di['mod_service']('order');
+        $model = $orderService->getOrderService($order);
+        if (!$model instanceof ServiceHosting) {
+            throw new Exception('Order :id has no active service', [':id' => $order->id]);
+        }
+
+        return $model;
+    }
+
+    private function getExistingServer(int $id, string $message): ServiceHostingServer
+    {
+        $server = $this->getServiceHostingServerRepository()->find($id);
+        if (!$server instanceof ServiceHostingServer) {
+            throw new Exception($message);
+        }
+
+        return $server;
+    }
+
+    private function getExistingHp(int $id, string $message): ServiceHostingHp
+    {
+        $hp = $this->getServiceHostingHpRepository()->find($id);
+        if (!$hp instanceof ServiceHostingHp) {
+            throw new Exception($message);
+        }
+
+        return $hp;
+    }
+
+    private function getServiceHostingRepository(): ServiceHostingRepository
+    {
+        return $this->di['em']->getRepository(ServiceHosting::class);
+    }
+
+    private function getServiceHostingHpRepository(): ServiceHostingHpRepository
+    {
+        return $this->di['em']->getRepository(ServiceHostingHp::class);
+    }
+
+    private function getServiceHostingServerRepository(): ServiceHostingServerRepository
+    {
+        return $this->di['em']->getRepository(ServiceHostingServer::class);
     }
 }

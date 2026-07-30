@@ -21,8 +21,8 @@ use Twig\Extra\Intl\IntlExtension;
 
 class Service implements InjectionAwareInterface
 {
-    private const AMOUNT_PLACEHOLDER = '{amount}';
-    private const MAX_FRACTION_DIGITS = 6;
+    private const string AMOUNT_PLACEHOLDER = '{amount}';
+    private const int MAX_FRACTION_DIGITS = 6;
 
     protected ?\Pimple\Container $di = null;
     protected ?CurrencyRepository $currencyRepository = null;
@@ -213,7 +213,9 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception("Currency with code {$currencyCode} not found after clearing identity map.");
         }
 
-        $currency->setIsDefault(true);
+        $currency
+            ->setIsDefault(true)
+            ->setIsRateManual(false);
         $em->persist($currency);
         $em->flush();
 
@@ -238,13 +240,21 @@ class Service implements InjectionAwareInterface
      *
      * @param string            $currencyCode   The ISO currency code (e.g., 'USD')
      * @param string|float|null $conversionRate The conversion rate to the default currency (optional)
+     * @param bool              $isRateManual   Whether bulk rate synchronization should preserve this rate
      *
      * @return string The code of the newly created currency
      *
      * @throws \FOSSBilling\Exception If currency code is invalid or if fetching the conversion rate fails
      */
-    public function createCurrency(string $currencyCode, string|float|null $conversionRate = 1.0): string
-    {
+    public function createCurrency(
+        string $currencyCode,
+        string|float|null $conversionRate = 1.0,
+        bool $isRateManual = false,
+    ): string {
+        if ($isRateManual && ($conversionRate === null || $conversionRate === '')) {
+            throw new InformationException('A conversion rate is required when manual override is enabled.');
+        }
+
         if ($conversionRate === null || $conversionRate === '') {
             try {
                 $conversionRate = $this->getRate(null, $currencyCode);
@@ -266,7 +276,9 @@ class Service implements InjectionAwareInterface
         }
 
         $currency = new Currency($currencyCode);
-        $currency->setConversionRate($conversionRate);
+        $currency
+            ->setConversionRate($conversionRate)
+            ->setIsRateManual($isRateManual);
 
         $em = $this->di['em'];
         $em->persist($currency);
@@ -319,6 +331,7 @@ class Service implements InjectionAwareInterface
      *     format_pattern?: mixed,
      *     fraction_digits?: mixed
      * } $formatting Formatting values to update; omitted keys are left unchanged
+     * @param bool|null $isRateManual Whether bulk rate synchronization should preserve this rate; null leaves it unchanged
      *
      * @throws \FOSSBilling\Exception If currency not found
      * @throws InformationException   If a provided value is invalid
@@ -327,6 +340,7 @@ class Service implements InjectionAwareInterface
         string $currencyCode,
         string|float|null $conversionRate = null,
         array $formatting = [],
+        ?bool $isRateManual = null,
     ): bool {
         $model = $this->currencyRepository->findOneByCode($currencyCode);
         if (!$model instanceof Currency) {
@@ -337,6 +351,10 @@ class Service implements InjectionAwareInterface
         $updateFractionDigits = array_key_exists('fraction_digits', $formatting);
         $formatPattern = $updateFormatPattern ? $this->normalizeFormatPattern($formatting['format_pattern']) : null;
         $fractionDigits = $updateFractionDigits ? $this->normalizeFractionDigits($formatting['fraction_digits']) : null;
+
+        if ($isRateManual === true && $model->isDefault()) {
+            throw new InformationException('The default currency cannot use a manual rate override.');
+        }
 
         if ($conversionRate !== null) {
             if (!is_numeric($conversionRate) || $conversionRate <= 0) {
@@ -351,6 +369,10 @@ class Service implements InjectionAwareInterface
 
         if ($updateFractionDigits) {
             $model->setFractionDigits($fractionDigits);
+        }
+
+        if ($isRateManual !== null) {
+            $model->setIsRateManual($isRateManual);
         }
 
         $em = $this->di['em'];
@@ -507,6 +529,8 @@ class Service implements InjectionAwareInterface
         foreach ($all as $currency) {
             if ($currency->isDefault()) {
                 $rate = 1.0;
+            } elseif ($currency->isRateManual()) {
+                continue;
             } else {
                 $rate = $this->getRate($defaultCurrency->getCode(), $currency->getCode());
             }

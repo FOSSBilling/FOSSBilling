@@ -38,6 +38,9 @@ class Currency implements ApiArrayInterface, TimestampInterface
 
     private ?float $conversionRateFloat = null;
 
+    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::BOOLEAN, options: ['default' => false])]
+    private bool $isRateManual = false;
+
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 100, nullable: true)]
     private ?string $formatPattern = null;
 
@@ -57,6 +60,7 @@ class Currency implements ApiArrayInterface, TimestampInterface
             'name' => Currencies::getName($this->getCode()),
             'symbol' => Currencies::getSymbol($this->getCode()),
             'conversion_rate' => $this->getConversionRate(),
+            'is_rate_manual' => $this->isRateManual(),
             'format_pattern' => $this->getFormatPattern(),
             'fraction_digits' => $this->getFractionDigits(),
             'default' => $this->isDefault(),
@@ -90,6 +94,11 @@ class Currency implements ApiArrayInterface, TimestampInterface
     public function getConversionRateRaw(): string
     {
         return $this->conversionRate;
+    }
+
+    public function isRateManual(): bool
+    {
+        return $this->isRateManual;
     }
 
     public function getFormatPattern(): ?string
@@ -138,6 +147,13 @@ class Currency implements ApiArrayInterface, TimestampInterface
         }
         // Invalidate cached float value so it will be recalculated on next access
         $this->conversionRateFloat = null;
+
+        return $this;
+    }
+
+    public function setIsRateManual(bool $isRateManual): self
+    {
+        $this->isRateManual = $isRateManual;
 
         return $this;
     }

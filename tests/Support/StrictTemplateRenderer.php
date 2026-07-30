@@ -29,7 +29,7 @@ class UrlAwarePermissiveContainer extends \Pimple\Container
 {
     private readonly PermissiveStub $stub;
     /** @var array<string, mixed> */
-    private array $store = [];
+    private array $store;
 
     public function __construct()
     {

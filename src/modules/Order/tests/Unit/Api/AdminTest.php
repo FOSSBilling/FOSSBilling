@@ -520,6 +520,16 @@ test('batch suspends expired orders', function (): void {
     expect($result)->toBeTrue();
 });
 
+test('batch sends suspension warnings', function (): void {
+    $api = apiEndpoint(new Admin());
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('batchSendSuspensionWarnings')->once()->andReturn(true);
+    $api->setService($serviceMock);
+
+    expect($api->batch_send_suspension_warnings([]))->toBeTrue();
+});
+
 test('batch cancels suspended orders', function (): void {
     $api = apiEndpoint(new Admin());
 

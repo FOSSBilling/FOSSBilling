@@ -224,10 +224,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    /**
-     * @return Cart
-     */
-    public function getSessionCart(?string $sessionID = null)
+    public function getSessionCart(?string $sessionID = null): Cart
     {
         $sessionID ??= $this->di['session']->getId();
         $cart = $this->getCartRepository()->findBySessionId($sessionID);
@@ -473,7 +470,7 @@ class Service implements InjectionAwareInterface
             $config_main = json_decode($this->cartProductConfig($cartProduct) ?? '', true);
             $domain_name = $config_main['domain_name'] ?? '';
             $allCartProducts = $this->findCartProducts($cart);
-            foreach ((array) $allCartProducts as $cProduct) {
+            foreach ($allCartProducts as $cProduct) {
                 $config = json_decode($this->cartProductConfig($cProduct) ?? '', true);
                 if (isset($config['parent_id']) && $config['parent_id'] == $this->cartProductProductId($cartProduct)) {
                     $domain_name_addon = $config['domain_name'] ?? '';

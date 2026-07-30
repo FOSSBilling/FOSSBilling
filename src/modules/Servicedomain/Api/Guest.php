@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicedomain\Api;
 
+use Box\Mod\Servicedomain\Entity\Tld;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 /**
@@ -31,20 +32,17 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $allow_register = $data['allow_register'] ?? null;
         $allow_transfer = $data['allow_transfer'] ?? null;
 
-        $where = [];
-        $where[] = 'active = 1';
+        $criteria = ['active' => true];
 
         if ($allow_register !== null) {
-            $where[] = 'allow_register = 1';
+            $criteria['allowRegister'] = (bool) $allow_register;
         }
 
         if ($allow_transfer !== null) {
-            $where[] = 'allow_transfer = 1';
+            $criteria['allowTransfer'] = (bool) $allow_transfer;
         }
 
-        $query = implode(' AND ', $where);
-
-        $tlds = $this->getDi()['db']->find('Tld', $query, []);
+        $tlds = $this->getDi()['em']->getRepository(Tld::class)->findBy($criteria, ['id' => 'ASC']);
         $result = [];
         foreach ($tlds as $model) {
             $result[] = $this->getService()->tldToApiArray($model);
@@ -62,7 +60,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     public function pricing($data)
     {
         $model = $this->getService()->tldFindOneByTld($data['tld']);
-        if (!$model instanceof \Model_Tld) {
+        if (!$model instanceof Tld) {
             throw new \FOSSBilling\InformationException('TLD not found');
         }
 
@@ -90,10 +88,10 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         }
 
         $tld = $this->getService()->tldFindOneByTld($data['tld']);
-        if (!$tld instanceof \Model_Tld) {
+        if (!$tld instanceof Tld) {
             throw new \FOSSBilling\InformationException('Domain availability could not be determined. TLD is not configured.');
         }
-        if (!$tld->active) {
+        if (!$tld->isActive()) {
             throw new \FOSSBilling\InformationException('Domain availability could not be determined. TLD is not active.');
         }
 
@@ -119,10 +117,10 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $this->getDi()['rate_limiter']->consumeOrThrow('domain_lookup_ip', (string) $this->getIp());
 
         $tld = $this->getService()->tldFindOneByTld($data['tld']);
-        if (!$tld instanceof \Model_Tld) {
+        if (!$tld instanceof Tld) {
             throw new \FOSSBilling\InformationException('TLD is not configured.');
         }
-        if (!$tld->active) {
+        if (!$tld->isActive()) {
             throw new \FOSSBilling\InformationException('TLD is not active.');
         }
         if (!$this->getService()->canBeTransferred($tld, $data['sld'])) {

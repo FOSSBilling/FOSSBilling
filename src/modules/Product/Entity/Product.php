@@ -79,6 +79,9 @@ class Product implements TimestampInterface
     #[ORM\Column(name: 'quantity_in_stock', type: \Doctrine\DBAL\Types\Types::INTEGER, options: ['default' => 0])]
     private int $quantityInStock = 0;
 
+    #[ORM\Column(name: 'suspension_grace_days', type: \Doctrine\DBAL\Types\Types::INTEGER, options: ['default' => 0])]
+    private int $suspensionGraceDays = 0;
+
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 255, nullable: true)]
     private ?string $plugin = null;
 
@@ -302,6 +305,18 @@ class Product implements TimestampInterface
     public function setQuantityInStock(int $quantityInStock): self
     {
         $this->quantityInStock = $quantityInStock;
+
+        return $this;
+    }
+
+    public function getSuspensionGraceDays(): int
+    {
+        return $this->suspensionGraceDays;
+    }
+
+    public function setSuspensionGraceDays(int $suspensionGraceDays): self
+    {
+        $this->suspensionGraceDays = $suspensionGraceDays;
 
         return $this;
     }

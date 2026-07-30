@@ -23,9 +23,7 @@
 {% set active_menu = 'order' %}
 
 {% set service_partial = 'mod_service' ~ order.service_type ~ '_manage.html.twig' %}
-{% if order.group_master == 1 %}
-    {% set addons = admin.order_addons({ 'id': order.id }) %}
-{% endif %}
+{% set addons = order.group_master == 1 ? admin.order_addons({ 'id': order.id }) : [] %}
 {% if order.status == 'active' or order.status == 'failed_renew' %}
     {% set can_cancel_at_period_end = admin.order_can_cancel_at_period_end({ 'id': order.id }) %}
 {% endif %}
@@ -390,6 +388,21 @@
                                             </svg>
                                         </span>
                                     </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="order_suspension_grace_days">{{ 'Suspension Grace Period Override'|trans }}</label>
+                                    <div class="input-group">
+                                        <input class="form-control"
+                                               id="order_suspension_grace_days"
+                                               type="number"
+                                               min="0"
+                                               step="1"
+                                               name="suspension_grace_days"
+                                               value="{{ order.suspension_grace_days|default('') }}"
+                                               placeholder="{{ order.product_suspension_grace_days|default(0) }}">
+                                        <span class="input-group-text">{{ 'days'|trans }}</span>
+                                    </div>
+                                    <div class="form-text">{{ 'Leave empty to inherit the product setting (%days% days).'|trans({ '%days%': order.product_suspension_grace_days|default(0) }) }}</div>
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label" for="order_reason">{{ 'Reason'|trans }}</label>

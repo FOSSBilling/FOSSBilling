@@ -125,6 +125,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional bool $stock_control - product stock control flag.
      * @optional bool $allow_quantity_select - client can select product quantity on order form flag
      * @optional bool $quantity_in_stock - quantity available for sale. When out of stock, new order cannot be placed.
+     * @optional int $suspension_grace_days - days after service expiration before automatic suspension
      *
      * @return bool
      *

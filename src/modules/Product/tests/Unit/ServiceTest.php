@@ -22,6 +22,7 @@ use Box\Mod\Product\Repository\ProductRepository;
 use Box\Mod\Product\Repository\PromoRedemptionRepository;
 use Box\Mod\Product\Repository\PromoRepository;
 use Box\Mod\Product\Service;
+use Box\Mod\Servicedomain\Entity\Tld;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 
@@ -64,13 +65,9 @@ function productTestCreateProductPaymentEntity(int $id): ProductPayment
     return $productPayment;
 }
 
-function productTestCreateTldModel(array $properties = []): Model_Tld
+function productTestCreateTldModel(array $properties = []): Tld
 {
-    $tld = new Model_Tld();
-    $tld->loadBean(new Tests\Helpers\DummyBean());
-    foreach ($properties as $name => $value) {
-        $tld->$name = $value;
-    }
+    $tld = createEntity(Tld::class, $properties);
 
     return $tld;
 }
@@ -210,7 +207,7 @@ function productTestCreateProductOrderDbalConnection(): Connection
     return $connection;
 }
 
-function productTestCreateDomainTldServiceMock(Model_Tld $tld): Mockery\MockInterface
+function productTestCreateDomainTldServiceMock(Tld $tld): Mockery\MockInterface
 {
     $tldService = Mockery::mock(Box\Mod\Servicedomain\ServiceTld::class);
     $tldService->shouldReceive('findOneByTld')->atLeast()->once()->with('.com')->andReturn($tld);
@@ -775,6 +772,7 @@ test('update product', function (): void {
         'stock_control' => false,
         'allow_quantity_select' => false,
         'quantity_in_stock' => 0,
+        'suspension_grace_days' => 5,
         'description' => 'Product description',
         'plugin' => 'plug in',
     ];
@@ -793,8 +791,17 @@ test('update product', function (): void {
     $serviceMock->setDi($di);
 
     $result = $serviceMock->updateProduct($modelProduct, $data);
-    expect($result)->toBeTrue();
+    expect($result)->toBeTrue()
+        ->and($modelProduct->getSuspensionGraceDays())->toBe(5);
 });
+
+test('update product rejects invalid suspension grace days', function (mixed $invalidGraceDays): void {
+    $service = new Service();
+    $product = productTestCreateProductEntity(1);
+
+    expect(fn () => $service->updateProduct($product, ['suspension_grace_days' => $invalidGraceDays]))
+        ->toThrow(FOSSBilling\InformationException::class, 'Suspension grace days must be a non-negative integer.');
+})->with([-1, '-1', '1.5', '01', PHP_INT_MAX . '0']);
 
 test('update priority', function (): void {
     $service = new Service();
@@ -1512,21 +1519,9 @@ test('is promo available for client group', function (Promo $promo, ?Client $cli
     expect($service->isPromoAvailableForClientGroup($promo))->toBe($expectedResult);
 })->with([
     'no restrictions' => [fn (): Promo => productTestCreatePromoEntity(1)->setClientGroups(json_encode([])), fn (): Client => $client = createEntity(Client::class), true],
-    'restricted and no client group' => [fn (): Promo => productTestCreatePromoEntity(2)->setClientGroups(json_encode([1, 2])), function () {
-        $client = createEntity(Client::class, ['client_group_id' => null]);
-
-        return $client;
-    }, false],
-    'restricted and wrong client group' => [fn (): Promo => productTestCreatePromoEntity(3)->setClientGroups(json_encode([1, 2])), function () {
-        $client = createEntity(Client::class, ['client_group_id' => 3]);
-
-        return $client;
-    }, false],
-    'restricted and matching client group' => [fn (): Promo => productTestCreatePromoEntity(4)->setClientGroups(json_encode([1, 2])), function () {
-        $client = createEntity(Client::class, ['client_group_id' => 2]);
-
-        return $client;
-    }, true],
+    'restricted and no client group' => [fn (): Promo => productTestCreatePromoEntity(2)->setClientGroups(json_encode([1, 2])), fn () => createEntity(Client::class, ['client_group_id' => null]), false],
+    'restricted and wrong client group' => [fn (): Promo => productTestCreatePromoEntity(3)->setClientGroups(json_encode([1, 2])), fn () => createEntity(Client::class, ['client_group_id' => 3]), false],
+    'restricted and matching client group' => [fn (): Promo => productTestCreatePromoEntity(4)->setClientGroups(json_encode([1, 2])), fn () => createEntity(Client::class, ['client_group_id' => 2]), true],
     'no restrictions and no client' => [fn (): Promo => productTestCreatePromoEntity(5)->setClientGroups(json_encode([])), null, true],
     'restricted and no client' => [fn (): Promo => productTestCreatePromoEntity(6)->setClientGroups(json_encode([1, 2])), null, false],
 ]);

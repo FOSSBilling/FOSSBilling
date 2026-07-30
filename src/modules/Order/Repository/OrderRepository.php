@@ -53,14 +53,58 @@ class OrderRepository extends EntityRepository
      */
     public function getExpired(): array
     {
-        return $this->createQueryBuilder('o')
-            ->where('o.status = :status')
-            ->andWhere('o.expiresAt IS NOT NULL')
-            ->andWhere('o.expiresAt <= :now')
-            ->setParameter('status', Order::STATUS_ACTIVE)
-            ->setParameter('now', new \DateTime())
-            ->getQuery()
-            ->getResult();
+        $ids = $this->getEntityManager()->getConnection()->fetchFirstColumn(
+            <<<'SQL'
+                SELECT o.id
+                FROM client_order o
+                LEFT JOIN product p ON p.id = o.product_id
+                WHERE o.status = :status
+                  AND o.expires_at IS NOT NULL
+                  AND DATE_ADD(
+                      o.expires_at,
+                      INTERVAL GREATEST(COALESCE(o.suspension_grace_days, p.suspension_grace_days, 0), 0) DAY
+                  ) <= NOW()
+                ORDER BY o.id
+                SQL,
+            ['status' => Order::STATUS_ACTIVE]
+        );
+
+        return $ids === [] ? [] : $this->findBy(['id' => array_map('intval', $ids)]);
+    }
+
+    /**
+     * @return array<int, array{id: int, suspension_at: string}>
+     */
+    public function getDueSuspensionWarnings(): array
+    {
+        $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
+            <<<'SQL'
+                SELECT due.id, due.suspension_at
+                FROM (
+                    SELECT
+                        o.id,
+                        GREATEST(COALESCE(o.suspension_grace_days, p.suspension_grace_days, 0), 0) AS grace_days,
+                        DATE_ADD(
+                            o.expires_at,
+                            INTERVAL GREATEST(COALESCE(o.suspension_grace_days, p.suspension_grace_days, 0), 0) DAY
+                        ) AS suspension_at
+                    FROM client_order o
+                    LEFT JOIN product p ON p.id = o.product_id
+                    WHERE o.status = :status
+                      AND o.expires_at IS NOT NULL
+                ) due
+                WHERE due.grace_days > 0
+                  AND due.suspension_at > NOW()
+                  AND due.suspension_at <= DATE_ADD(NOW(), INTERVAL 1 DAY)
+                ORDER BY due.id
+                SQL,
+            ['status' => Order::STATUS_ACTIVE]
+        );
+
+        return array_map(static fn (array $row): array => [
+            'id' => (int) $row['id'],
+            'suspension_at' => (string) $row['suspension_at'],
+        ], $rows);
     }
 
     /**

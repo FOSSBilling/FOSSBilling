@@ -348,6 +348,7 @@ CREATE TABLE `client_order` (
   `reason` varchar(255) DEFAULT NULL COMMENT 'suspend/cancel reason',
   `notes` text,
   `config` text,
+  `suspension_grace_days` int(11) DEFAULT NULL,
   `referred_by` varchar(255) DEFAULT NULL,
   `expires_at` datetime DEFAULT NULL,
   `activated_at` datetime DEFAULT NULL,
@@ -360,7 +361,8 @@ CREATE TABLE `client_order` (
   KEY `client_id_idx` (`client_id`),
   KEY `product_id_idx` (`product_id`),
   KEY `form_id_idx` (`form_id`),
-  KEY `promo_id_idx` (`promo_id`)
+  KEY `promo_id_idx` (`promo_id`),
+  KEY `client_order_status_expires_at_idx` (`status`, `expires_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -429,6 +431,7 @@ CREATE TABLE `currency` (
   `code` varchar(3) DEFAULT NULL,
   `is_default` tinyint(1) DEFAULT '0',
   `conversion_rate` decimal(13,6) DEFAULT '1.000000',
+  `is_rate_manual` tinyint(1) DEFAULT '0',
   `format_pattern` varchar(100) DEFAULT NULL,
   `fraction_digits` smallint DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
@@ -815,6 +818,7 @@ CREATE TABLE `product` (
   `allow_quantity_select` tinyint(1) DEFAULT '0',
   `stock_control` tinyint(1) DEFAULT '0',
   `quantity_in_stock` int(11) DEFAULT '0',
+  `suspension_grace_days` int(11) NOT NULL DEFAULT '0',
   `plugin` varchar(255) DEFAULT NULL,
   `plugin_config` text,
   `upgrades` text,

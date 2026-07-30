@@ -11,29 +11,39 @@
 declare(strict_types=1);
 
 use Box\Mod\Servicedomain\Api\Guest;
+use Box\Mod\Servicedomain\Entity\Tld;
+use Box\Mod\Servicedomain\Repository\TldRepository;
 use Box\Mod\Servicedomain\Service;
+use Doctrine\ORM\EntityManagerInterface;
 
 use function Tests\Helpers\container;
 
 test('gets tlds', function (): void {
     $guestApi = apiEndpoint(new Guest());
     $api = apiEndpoint(new Guest());
+
+    $tldRepo = Mockery::mock(TldRepository::class);
+    $tldRepo->shouldReceive('findBy')
+        ->atLeast()->once()
+        ->andReturn([new Tld()]);
+    $tldRepo->shouldIgnoreMissing();
+
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldToApiArray')
         ->atLeast()->once()
         ->andReturn([]);
 
-    $guestApi->setService($serviceMock);
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('find')
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')
         ->atLeast()->once()
-        ->andReturn([new Model_Tld()]);
+        ->with(Tld::class)
+        ->andReturn($tldRepo);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
 
     $guestApi->setDi($di);
+    $guestApi->setService($serviceMock);
 
     $result = $guestApi->tlds([]);
     expect($result)->toBeArray();
@@ -46,7 +56,7 @@ test('gets pricing', function (): void {
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldFindOneByTld')
         ->atLeast()->once()
-        ->andReturn(new Model_Tld());
+        ->andReturn(new Tld());
     $serviceMock->shouldReceive('tldToApiArray')
         ->atLeast()->once()
         ->andReturn([]);
@@ -91,9 +101,8 @@ test('throws exception when getting pricing for tld not found', function (): voi
 test('checks domain availability', function (): void {
     $guestApi = apiEndpoint(new Guest());
     $api = apiEndpoint(new Guest());
-    $tld = new Model_Tld();
-    $tld->loadBean(new Tests\Helpers\DummyBean());
-    $tld->active = true;
+    $tld = new Tld();
+    $tld->setActive(true);
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldFindOneByTld')
         ->atLeast()->once()
@@ -176,9 +185,8 @@ test('throws exception when checking tld not found', function (): void {
 test('throws exception when checking domain not available', function (): void {
     $guestApi = apiEndpoint(new Guest());
     $api = apiEndpoint(new Guest());
-    $tld = new Model_Tld();
-    $tld->loadBean(new Tests\Helpers\DummyBean());
-    $tld->active = true;
+    $tld = new Tld();
+    $tld->setActive(true);
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldFindOneByTld')
         ->atLeast()->once()
@@ -209,9 +217,8 @@ test('throws exception when checking domain not available', function (): void {
 
 test('throws exception when checking an inactive tld', function (): void {
     $guestApi = apiEndpoint(new Guest());
-    $tld = new Model_Tld();
-    $tld->loadBean(new Tests\Helpers\DummyBean());
-    $tld->active = false;
+    $tld = new Tld();
+    $tld->setActive(false);
 
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldFindOneByTld')
@@ -237,9 +244,8 @@ test('throws exception when checking an inactive tld', function (): void {
 test('checks if domain can be transferred', function (): void {
     $guestApi = apiEndpoint(new Guest());
     $api = apiEndpoint(new Guest());
-    $tld = new Model_Tld();
-    $tld->loadBean(new Tests\Helpers\DummyBean());
-    $tld->active = true;
+    $tld = new Tld();
+    $tld->setActive(true);
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldFindOneByTld')
         ->atLeast()->once()
@@ -294,9 +300,8 @@ test('throws exception when checking transfer for tld not found', function (): v
 test('throws exception when checking domain cannot be transferred', function (): void {
     $guestApi = apiEndpoint(new Guest());
     $api = apiEndpoint(new Guest());
-    $tld = new Model_Tld();
-    $tld->loadBean(new Tests\Helpers\DummyBean());
-    $tld->active = true;
+    $tld = new Tld();
+    $tld->setActive(true);
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldFindOneByTld')
         ->atLeast()->once()

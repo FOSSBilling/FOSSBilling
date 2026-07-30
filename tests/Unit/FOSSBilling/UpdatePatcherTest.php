@@ -19,6 +19,20 @@ test('downloadable file migration follows the client balance gateway repair', fu
         ->and($patches[93][1])->toBe('patch93');
 });
 
+test('manual currency rate patch follows the currency formatting patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 93);
+
+    expect($patches)->toHaveKey(94)
+        ->and($patches[94][1])->toBe('patch94');
+});
+
+test('suspension grace patch follows the manual currency rate patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 94);
+
+    expect($patches)->toHaveKey(95)
+        ->and($patches[95][1])->toBe('patch95');
+});
+
 test('fresh installs start at the latest patch level', function (): void {
     $content = file_get_contents(Path::join(PATH_ROOT, 'install', 'sql', 'content.sql'));
     expect($content)->toBeString();
@@ -26,6 +40,49 @@ test('fresh installs start at the latest patch level', function (): void {
     preg_match("/\\(1,'last_patch','(\\d+)'/", $content, $matches);
 
     expect((int) ($matches[1] ?? 0))->toBe((new UpdatePatcher())->latestPatchLevel());
+});
+
+test('fresh installs index order suspension candidates', function (): void {
+    $filesystem = new Filesystem();
+    $structure = $filesystem->readFile(Path::join(PATH_ROOT, 'install', 'sql', 'structure.sql'));
+
+    expect($structure)->toContain('KEY `client_order_status_expires_at_idx` (`status`, `expires_at`)');
+});
+
+test('suspension grace patch indexes existing order tables', function (): void {
+    $productColumns = Mockery::mock(PDOStatement::class);
+    $productColumns->expects('execute')->with([])->andReturnTrue();
+    $productColumns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Field' => 'suspension_grace_days'],
+    ]);
+
+    $orderColumns = Mockery::mock(PDOStatement::class);
+    $orderColumns->expects('execute')->with([])->andReturnTrue();
+    $orderColumns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Field' => 'suspension_grace_days'],
+    ]);
+
+    $orderIndexes = Mockery::mock(PDOStatement::class);
+    $orderIndexes->expects('execute')->with([])->andReturnTrue();
+    $orderIndexes->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([]);
+
+    $addIndex = Mockery::mock(PDOStatement::class);
+    $addIndex->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `product`')->andReturn($productColumns);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `client_order`')->andReturn($orderColumns);
+    $pdo->expects('prepare')->with('SHOW INDEX FROM `client_order`')->andReturn($orderIndexes);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `client_order` ADD INDEX `client_order_status_expires_at_idx` (`status`, `expires_at`)')
+        ->andReturn($addIndex);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch95'))->invoke($patcher);
 });
 
 test('client balance gateway patch restores one-time payments', function (): void {

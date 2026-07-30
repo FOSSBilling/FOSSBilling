@@ -31,7 +31,7 @@ class ServiceBalance implements InjectionAwareInterface
 
     public function getClientBalance(Client|\Model_Client $c): float
     {
-        return (float) $this->clientTotal($c);
+        return $this->clientTotal($c);
     }
 
     public function clientTotal(Client|\Model_Client $c): float
@@ -161,7 +161,7 @@ class ServiceBalance implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Funds amount is invalid');
         }
 
-        if (strlen(trim($description)) == 0) {
+        if (strlen(trim((string) $description)) == 0) {
             throw new \FOSSBilling\InformationException('Funds description is invalid');
         }
 
