@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice;
 
+use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Invoice\Entity\InvoiceItem;
 use Box\Mod\Invoice\Repository\InvoiceItemRepository;
 use FOSSBilling\InjectionAwareInterface;
@@ -41,13 +42,20 @@ class ServiceInvoiceItem implements InjectionAwareInterface
     public function markAsPaid(InvoiceItem $item, $charge = true): void
     {
         if ($charge && !$item->getCharged()) {
-            $this->creditInvoiceItem($item);
-            $item->setCharged(true);
-        }
+            $em = $this->di['em'];
+            $em->wrapInTransaction(function () use ($item, $em): void {
+                $this->persistCredit($item);
+                $item->setCharged(true);
+                $item->setStatus(InvoiceItem::STATUS_PENDING_SETUP);
+                $em->persist($item);
+            });
 
-        $item->setStatus(InvoiceItem::STATUS_PENDING_SETUP);
-        $this->di['em']->persist($item);
-        $this->di['em']->flush();
+            $this->addChargeNote($item);
+        } else {
+            $item->setStatus(InvoiceItem::STATUS_PENDING_SETUP);
+            $this->di['em']->persist($item);
+            $this->di['em']->flush();
+        }
 
         $oid = $this->getOrderId($item);
         $orderService = $this->di['mod_service']('Order');
@@ -241,21 +249,33 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
     public function creditInvoiceItem(InvoiceItem $item): void
     {
+        $this->persistCredit($item);
+        $this->di['em']->flush();
+        $this->addChargeNote($item);
+    }
+
+    private function persistCredit(InvoiceItem $item): ClientBalance
+    {
         $total = $this->getTotalWithTax($item);
 
         $invoice = $this->di['db']->getExistingModelById('Invoice', $item->getInvoiceId(), 'Invoice not found');
         $client = $this->di['db']->getExistingModelById('Client', $invoice->client_id, 'Client not found');
 
-        $credit = $this->di['db']->dispense('ClientBalance');
-        $credit->client_id = $client->id;
-        $credit->type = 'invoice';
-        $credit->rel_id = $invoice->id;
-        $credit->description = $item->getTitle();
-        $credit->amount = -$total;
-        $credit->created_at = date('Y-m-d H:i:s');
-        $credit->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($credit);
+        $credit = new ClientBalance();
+        $credit->setClientId((int) $client->id);
+        $credit->setType('invoice');
+        $credit->setRelId((string) $invoice->id);
+        $credit->setDescription($item->getTitle());
+        $credit->setAmount((string) (-$total));
+        $this->di['em']->persist($credit);
 
+        return $credit;
+    }
+
+    private function addChargeNote(InvoiceItem $item): void
+    {
+        $invoice = $this->di['db']->getExistingModelById('Invoice', $item->getInvoiceId(), 'Invoice not found');
+        $total = $this->getTotalWithTax($item);
         $invoiceService = $this->di['mod_service']('Invoice');
         $invoiceService->addNote($invoice, sprintf('Charged clients balance with %s %s for %s', $total, $invoice->currency, $item->getTitle()));
     }

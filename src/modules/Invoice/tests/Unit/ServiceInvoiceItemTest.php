@@ -45,36 +45,63 @@ test('marks item as paid', function (): void {
     $item = createEntity(InvoiceItem::class, []);
 
     $serviceMock = Mockery::mock(ServiceInvoiceItem::class)->makePartial();
-    $serviceMock->shouldReceive('creditInvoiceItem')
-        ->atLeast()->once();
+    $serviceMock->shouldReceive('getTotalWithTax')
+        ->atLeast()
+        ->once()
+        ->andReturn(11.2);
     $serviceMock->shouldReceive('getOrderId')
-        ->atLeast()->once()
+        ->atLeast()
+        ->once()
         ->andReturn(1);
 
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientModel = new Model_Client();
+    $clientModel->loadBean(new Tests\Helpers\DummyBean());
     $clientOrder = new Model_ClientOrder();
     $clientOrder->loadBean(new Tests\Helpers\DummyBean());
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $callCount = 0;
+    $dbMock->shouldReceive('getExistingModelById')
+        ->atLeast()
+        ->once()
+        ->andReturnUsing(function () use ($invoiceModel, $clientModel, &$callCount) {
+            ++$callCount;
+
+            return $callCount === 2 ? $clientModel : $invoiceModel;
+        });
+    $dbMock->shouldReceive('load')
+        ->atLeast()
+        ->once()
+        ->andReturn($clientOrder);
 
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('unsetUnpaidInvoice')
         ->with($clientOrder);
 
+    $invoiceServiceMock = Mockery::mock(InvoiceService::class);
+    $invoiceServiceMock->shouldReceive('addNote')
+        ->atLeast()
+        ->once();
+
     $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('wrapInTransaction')
+        ->atLeast()
+        ->once()
+        ->andReturnUsing(function (callable $func) use ($em): mixed {
+            return $func($em);
+        });
     $em->shouldReceive('persist')
-        ->atLeast()->once();
-    $em->shouldReceive('flush')
-        ->atLeast()->once();
+        ->atLeast()
+        ->once();
     $repo = Mockery::mock(InvoiceItemRepository::class);
     $em->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($repo);
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('load')
-        ->atLeast()->once()
-        ->andReturn($clientOrder);
 
     $di = container();
     $di['em'] = $em;
     $di['db'] = $dbMock;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
+    $di['mod_service'] = $di->protect(fn (string $module): Mockery\MockInterface => $module === 'Order' ? $orderServiceMock : $invoiceServiceMock);
     $serviceMock->setDi($di);
 
     $serviceMock->markAsPaid($item);
@@ -322,25 +349,22 @@ test('credits invoice item', function (): void {
     $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
     $clientModel = new Model_Client();
     $clientModel->loadBean(new Tests\Helpers\DummyBean());
-    $clientBalanceModel = new Model_Client();
-    $clientBalanceModel->loadBean(new Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
     $callCount = 0;
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturnUsing(function () use ($invoiceModel, $clientModel, &$callCount) {
-            return ++$callCount === 1 ? $invoiceModel : $clientModel;
+            ++$callCount;
+
+            return $callCount === 2 ? $clientModel : $invoiceModel;
         });
-    $dbMock->shouldReceive('dispense')
-        ->atLeast()->once()
-        ->andReturn($clientBalanceModel);
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once();
 
     $em = Mockery::mock(EntityManagerInterface::class);
     $repo = Mockery::mock(InvoiceItemRepository::class);
     $em->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($repo);
+    $em->shouldReceive('persist')->atLeast()->once();
+    $em->shouldReceive('flush')->atLeast()->once();
 
     $invoiceServiceMock = Mockery::mock(InvoiceService::class);
     $invoiceServiceMock->shouldReceive('addNote')
