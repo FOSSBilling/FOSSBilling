@@ -300,7 +300,7 @@ class ServiceSubscription implements InjectionAwareInterface
                 ->andWhere('com.name = :meta_name')
                 ->andWhere('com.value = :meta_value')
                 ->setParameter('invoice_id', $subscription->rel_id)
-                ->setParameter('item_type', \Model_InvoiceItem::TYPE_ORDER)
+                ->setParameter('item_type', Entity\InvoiceItem::TYPE_ORDER)
                 ->setParameter('meta_name', \Box\Mod\Order\Service::META_CANCEL_AT_PERIOD_END)
                 ->setParameter('meta_value', '1')
                 ->executeQuery()
@@ -367,7 +367,7 @@ class ServiceSubscription implements InjectionAwareInterface
             ->andWhere('ii.type = :item_type')
             ->andWhere('ii.rel_id = :order_id')
             ->setParameter('rel_type', 'invoice')
-            ->setParameter('item_type', \Model_InvoiceItem::TYPE_ORDER)
+            ->setParameter('item_type', Entity\InvoiceItem::TYPE_ORDER)
             ->setParameter('order_id', $order->id);
 
         if ($status !== null) {

@@ -79,10 +79,10 @@ class ServiceTax implements InjectionAwareInterface
         }
 
         $tax = 0;
-        $invoiceItems = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', [$invoice->id]);
+        $invoiceItems = $this->di['em']->getRepository(Entity\InvoiceItem::class)->findByInvoiceId((int) $invoice->id);
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
         foreach ($invoiceItems as $item) {
-            $tax += $invoiceItemService->getTax($item) * $item->quantity;
+            $tax += $invoiceItemService->getTax($item) * ($item->getQuantity() ?? 0);
         }
 
         return $tax;
