@@ -233,7 +233,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $pi->setQuantity(1);
         $pi->setUnit(null);
         $pi->setCharged(1);
-        $pi->setPrice($amount);
+        $pi->setPrice(PriceValidator::validateSignedAmount($amount));
         $pi->setTaxed(false);
         $this->di['em']->persist($pi);
         $this->di['em']->flush();
