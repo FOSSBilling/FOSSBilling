@@ -609,7 +609,7 @@ test('copies registrar', function (): void {
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('registrarCopy')
         ->atLeast()->once()
-        ->andReturn(true);
+        ->andReturn(1);
 
     $di = container();
     $di['validator'] = new FOSSBilling\Validate();
@@ -623,7 +623,7 @@ test('copies registrar', function (): void {
     ];
     $result = $adminApi->registrar_copy($data);
 
-    expect($result)->toBeTrue();
+    expect($result)->toBe(1);
 });
 
 test('throws exception when copying registrar without id', function (): void {

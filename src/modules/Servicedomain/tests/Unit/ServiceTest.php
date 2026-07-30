@@ -412,7 +412,7 @@ test('throws exception when activating without order service', function (): void
     $order->loadBean(new Tests\Helpers\DummyBean());
     $order->client_id = 1;
 
-    expect(fn () => $service->action_activate($order))
+    expect(fn (): ServiceDomain => $service->action_activate($order))
         ->toThrow(FOSSBilling\Exception::class);
 });
 
@@ -1928,7 +1928,7 @@ test('preserves registrar configuration fields omitted from an update', function
 
     $service->registrarUpdate($model, ['config' => ['new' => 'value']]);
 
-    expect(json_decode($model->getConfig(), true))->toBe([
+    expect(json_decode((string) $model->getConfig(), true))->toBe([
         'existing' => 'value',
         'new' => 'value',
     ]);

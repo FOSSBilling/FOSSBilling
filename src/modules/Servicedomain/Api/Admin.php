@@ -226,7 +226,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         }
         $service_domains = $this->getDi()['em']->getConnection()->fetchAllAssociative(
             'SELECT id FROM service_domain WHERE LOWER(TRIM(TRAILING \'.\' FROM TRIM(tld))) IN (?, ?)',
-            [$normalizedTld, ltrim($normalizedTld, '.')],
+            [$normalizedTld, ltrim((string) $normalizedTld, '.')],
         );
         $count = \FOSSBilling\Tools::safeCount($service_domains);
         if ($count > 0) {

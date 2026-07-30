@@ -98,7 +98,7 @@ class ServiceTax implements InjectionAwareInterface
         return true;
     }
 
-    public function create(array $data)
+    public function create(array $data): ?int
     {
         $model = new Tax();
         $model->setName($data['name']);
