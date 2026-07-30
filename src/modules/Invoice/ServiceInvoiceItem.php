@@ -143,7 +143,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         }
 
         $pi = new InvoiceItem();
-        $pi->setInvoiceId($proforma->id);
+        $pi->setInvoiceId((int) $proforma->id);
         $pi->setType($data['type'] ?? InvoiceItem::TYPE_CUSTOM);
         $pi->setRelId($data['rel_id'] ?? null);
         $pi->setTask($data['task'] ?? InvoiceItem::TASK_VOID);
@@ -172,7 +172,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
     public function getTotal(InvoiceItem $item): float
     {
-        return floatval(($item->getPrice() ?? 0) * ($item->getQuantity() ?? 0));
+        return floatval(($item->getPrice() ?? 0) * ($item->getQuantity() ?? 1));
     }
 
     public function getTax(InvoiceItem $item)
@@ -223,7 +223,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
     public function generateForAddFunds(\Model_Invoice $proforma, $amount): void
     {
         $pi = new InvoiceItem();
-        $pi->setInvoiceId($proforma->id);
+        $pi->setInvoiceId((int) $proforma->id);
         $pi->setType(InvoiceItem::TYPE_DEPOSIT);
         $pi->setRelId(null);
         $pi->setTask(InvoiceItem::TASK_VOID);
@@ -262,7 +262,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
     public function getTotalWithTax(InvoiceItem $item): float
     {
-        return $this->getTotal($item) + $this->getTax($item) * ($item->getQuantity() ?? 0);
+        return $this->getTotal($item) + $this->getTax($item) * ($item->getQuantity() ?? 1);
     }
 
     public function getOrderId(InvoiceItem $item): int
@@ -296,16 +296,16 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         }
 
         $pi = new InvoiceItem();
-        $pi->setInvoiceId($proforma->id);
+        $pi->setInvoiceId((int) $proforma->id);
         $pi->setType(InvoiceItem::TYPE_ORDER);
-        $pi->setRelId($order->id);
+        $pi->setRelId((string) $order->id);
         $pi->setTask($task);
         $pi->setStatus(InvoiceItem::STATUS_PENDING_PAYMENT);
         $pi->setTitle($order->title);
         $pi->setPeriod($period);
-        $pi->setQuantity($quantity);
+        $pi->setQuantity(PriceValidator::validateQuantity($quantity));
         $pi->setUnit($unit);
-        $pi->setPrice($price);
+        $pi->setPrice(PriceValidator::validateSignedAmount($price));
         $pi->setTaxed($taxed);
         $this->di['em']->persist($pi);
         $this->di['em']->flush();

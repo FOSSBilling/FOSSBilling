@@ -1095,7 +1095,7 @@ class Service implements InjectionAwareInterface
         $taxable_subtotal = 0.0;
         foreach ($items as $item) {
             if ($item->getTaxed()) {
-                $taxable_subtotal += (($item->getPrice() ?? 0) * ($item->getQuantity() ?? 0));
+                $taxable_subtotal += (($item->getPrice() ?? 0) * ($item->getQuantity() ?? 1));
             }
         }
 
