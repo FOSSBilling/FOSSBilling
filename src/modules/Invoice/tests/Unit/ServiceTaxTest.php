@@ -11,187 +11,149 @@
 declare(strict_types=1);
 
 use Box\Mod\Client\Service as ClientService;
+use Box\Mod\Invoice\Entity\Tax;
+use Box\Mod\Invoice\Repository\TaxRepository;
 use Box\Mod\Invoice\ServiceInvoiceItem;
 use Box\Mod\Invoice\ServiceTax;
+use Doctrine\ORM\EntityManagerInterface;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
-test('gets dependency injection container', function (): void {
+function taxService(TaxRepository $taxRepository, ?EntityManagerInterface $em = null): ServiceTax
+{
     $service = new ServiceTax();
     $di = container();
+    $em ??= Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(Tax::class)->andReturn($taxRepository);
+    $di['em'] = $em;
     $service->setDi($di);
-    $getDi = $service->getDi();
-    expect($getDi)->toBe($di);
+
+    return $service;
+}
+
+test('gets dependency injection container', function (): void {
+    $taxRepo = Mockery::mock(TaxRepository::class);
+    $service = taxService($taxRepo);
+
+    expect($service->getDi())->toBeInstanceOf(Pimple\Container::class)
+        ->and($service->getTaxRepository())->toBe($taxRepo);
 });
 
 test('gets tax rate for client by country and state', function (): void {
-    $service = new ServiceTax();
-    $taxRateExpected = 0.21;
+    $taxEntity = createEntity(Tax::class, ['taxrate' => '0.21', 'name' => 'VAT']);
+
+    $taxRepo = Mockery::mock(TaxRepository::class);
+    $taxRepo->shouldReceive('findOneByStateAndCountry')->once()->andReturn($taxEntity);
+
+    $clientServiceMock = Mockery::mock(ClientService::class);
+    $clientServiceMock->shouldReceive('isClientTaxable')->andReturn(true);
+
     $clientModel = new Model_Client();
     $clientModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $clientServiceMock = Mockery::mock(ClientService::class);
-    $clientServiceMock->shouldReceive('isClientTaxable')
-        ->atLeast()->once()
-        ->andReturn(true);
+    $service = taxService($taxRepo);
+    $service->getDi()['mod_service'] = $service->getDi()->protect(fn (): Mockery\MockInterface => $clientServiceMock);
 
-    $taxModel = new Model_Tax();
-    $taxModel->loadBean(new Tests\Helpers\DummyBean());
-    $taxModel->taxrate = $taxRateExpected;
+    $title = null;
+    $result = $service->getTaxRateForClient($clientModel, $title);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn($taxModel);
-
-    $di = container();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $clientServiceMock);
-    $di['db'] = $dbMock;
-    $service->setDi($di);
-
-    $result = $service->getTaxRateForClient($clientModel);
-    expect($result)->toBeFloat();
-    expect($result)->toBe($taxRateExpected);
+    expect($result)->toBe('0.21')
+        ->and($title)->toBe('VAT');
 });
 
 test('gets tax rate for client by country', function (): void {
-    $service = new ServiceTax();
-    $taxRateExpected = 0.21;
+    $taxEntity = createEntity(Tax::class, ['taxrate' => '0.21', 'name' => 'VAT']);
+
+    $taxRepo = Mockery::mock(TaxRepository::class);
+    $taxRepo->shouldReceive('findOneByStateAndCountry')->once()->andReturn(null);
+    $taxRepo->shouldReceive('findOneByCountry')->once()->andReturn($taxEntity);
+
+    $clientServiceMock = Mockery::mock(ClientService::class);
+    $clientServiceMock->shouldReceive('isClientTaxable')->andReturn(true);
+
     $clientModel = new Model_Client();
     $clientModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $clientServiceMock = Mockery::mock(ClientService::class);
-    $clientServiceMock->shouldReceive('isClientTaxable')
-        ->atLeast()->once()
-        ->andReturn(true);
-
-    $taxModel = new Model_Tax();
-    $taxModel->loadBean(new Tests\Helpers\DummyBean());
-    $taxModel->taxrate = $taxRateExpected;
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $callCount = 0;
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturnUsing(function () use (&$callCount, $taxModel) {
-            ++$callCount;
-            if ($callCount == 1) {
-                return null;
-            }
-
-            return $taxModel;
-        });
-
-    $di = container();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $clientServiceMock);
-    $di['db'] = $dbMock;
-    $service->setDi($di);
+    $service = taxService($taxRepo);
+    $service->getDi()['mod_service'] = $service->getDi()->protect(fn (): Mockery\MockInterface => $clientServiceMock);
 
     $result = $service->getTaxRateForClient($clientModel);
-    expect($result)->toBeFloat();
-    expect($result)->toBe($taxRateExpected);
+
+    expect($result)->toBe('0.21');
 });
 
-test('gets tax rate for client', function (): void {
-    $service = new ServiceTax();
-    $taxRateExpected = 0.21;
+test('gets tax rate for client from global rule', function (): void {
+    $taxEntity = createEntity(Tax::class, ['taxrate' => '0.21', 'name' => 'Global VAT']);
+
+    $taxRepo = Mockery::mock(TaxRepository::class);
+    $taxRepo->shouldReceive('findOneByStateAndCountry')->once()->andReturn(null);
+    $taxRepo->shouldReceive('findOneByCountry')->once()->andReturn(null);
+    $taxRepo->shouldReceive('findGlobalRate')->once()->andReturn($taxEntity);
+
+    $clientServiceMock = Mockery::mock(ClientService::class);
+    $clientServiceMock->shouldReceive('isClientTaxable')->andReturn(true);
+
     $clientModel = new Model_Client();
     $clientModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $clientServiceMock = Mockery::mock(ClientService::class);
-    $clientServiceMock->shouldReceive('isClientTaxable')
-        ->atLeast()->once()
-        ->andReturn(true);
-
-    $taxModel = new Model_Tax();
-    $taxModel->loadBean(new Tests\Helpers\DummyBean());
-    $taxModel->taxrate = $taxRateExpected;
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $callCount = 0;
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturnUsing(function () use (&$callCount, $taxModel) {
-            ++$callCount;
-            if ($callCount <= 2) {
-                return null;
-            }
-
-            return $taxModel;
-        });
-
-    $di = container();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $clientServiceMock);
-    $di['db'] = $dbMock;
-    $service->setDi($di);
+    $service = taxService($taxRepo);
+    $service->getDi()['mod_service'] = $service->getDi()->protect(fn (): Mockery\MockInterface => $clientServiceMock);
 
     $result = $service->getTaxRateForClient($clientModel);
-    expect($result)->toBeFloat();
-    expect($result)->toBe($taxRateExpected);
+
+    expect($result)->toBe('0.21');
 });
 
 test('returns zero tax rate when tax not found', function (): void {
-    $service = new ServiceTax();
+    $taxRepo = Mockery::mock(TaxRepository::class);
+    $taxRepo->shouldReceive('findOneByStateAndCountry')->andReturn(null);
+    $taxRepo->shouldReceive('findOneByCountry')->andReturn(null);
+    $taxRepo->shouldReceive('findGlobalRate')->andReturn(null);
+
+    $clientServiceMock = Mockery::mock(ClientService::class);
+    $clientServiceMock->shouldReceive('isClientTaxable')->andReturn(true);
+
     $clientModel = new Model_Client();
     $clientModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $clientServiceMock = Mockery::mock(ClientService::class);
-    $clientServiceMock->shouldReceive('isClientTaxable')
-        ->atLeast()->once()
-        ->andReturn(true);
+    $service = taxService($taxRepo);
+    $service->getDi()['mod_service'] = $service->getDi()->protect(fn (): Mockery\MockInterface => $clientServiceMock);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn(null);
-
-    $di = container();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $clientServiceMock);
-    $di['db'] = $dbMock;
-    $service->setDi($di);
-
-    $taxRateExpected = 0;
-    $result = $service->getTaxRateForClient($clientModel);
-    expect($result)->toBeInt();
-    expect($result)->toBe($taxRateExpected);
+    expect($service->getTaxRateForClient($clientModel))->toBeInt()->toBe(0);
 });
 
 test('returns zero tax rate when client is not taxable', function (): void {
-    $service = new ServiceTax();
+    $taxRepo = Mockery::mock(TaxRepository::class);
+    $taxRepo->shouldNotReceive('findOneByStateAndCountry');
+
+    $clientServiceMock = Mockery::mock(ClientService::class);
+    $clientServiceMock->shouldReceive('isClientTaxable')->andReturn(false);
+
     $clientModel = new Model_Client();
     $clientModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $clientServiceMock = Mockery::mock(ClientService::class);
-    $clientServiceMock->shouldReceive('isClientTaxable')
-        ->atLeast()->once()
-        ->andReturn(false);
+    $service = taxService($taxRepo);
+    $service->getDi()['mod_service'] = $service->getDi()->protect(fn (): Mockery\MockInterface => $clientServiceMock);
 
-    $taxModel = new Model_Tax();
-    $taxModel->loadBean(new Tests\Helpers\DummyBean());
-
-    $di = container();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $clientServiceMock);
-    $service->setDi($di);
-
-    $taxRateExpected = 0;
-    $result = $service->getTaxRateForClient($clientModel);
-    expect($result)->toBeInt();
-    expect($result)->toBe($taxRateExpected);
+    expect($service->getTaxRateForClient($clientModel))->toBeInt()->toBe(0);
 });
 
-test('returns zero tax when tax rate is zero', function (): void {
-    $service = new ServiceTax();
+test('returns zero tax when invoice tax rate is zero', function (): void {
+    $taxRepo = Mockery::mock(TaxRepository::class);
+    $service = taxService($taxRepo);
+
     $invoiceModel = new Model_Invoice();
     $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
     $invoiceModel->taxrate = 0;
 
-    $result = $service->getTax($invoiceModel);
-    expect($result)->toBeInt();
-    expect($result)->toBe(0);
+    expect($service->getTax($invoiceModel))->toBeInt()->toBe(0);
 });
 
-test('gets tax', function (): void {
-    $service = new ServiceTax();
+test('gets tax for an invoice', function (): void {
+    $taxRepo = Mockery::mock(TaxRepository::class);
+    $service = taxService($taxRepo);
+
     $invoiceModel = new Model_Invoice();
     $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
     $invoiceModel->taxrate = 15;
@@ -201,114 +163,93 @@ test('gets tax', function (): void {
     $invoiceItemModel->quantity = 1;
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('find')
-        ->atLeast()->once()
-        ->andReturn([$invoiceItemModel]);
+    $dbMock->shouldReceive('find')->andReturn([$invoiceItemModel]);
 
     $invoiceItemService = Mockery::mock(ServiceInvoiceItem::class);
-    $invoiceItemService->shouldReceive('getTax')
-        ->atLeast()->once()
-        ->andReturn(21);
+    $invoiceItemService->shouldReceive('getTax')->andReturn(21);
 
-    $di = container();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $invoiceItemService);
+    $di = $service->getDi();
     $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $invoiceItemService);
 
-    $service->setDi($di);
-    $result = $service->getTax($invoiceModel);
-    expect($result)->toBeInt();
+    expect($service->getTax($invoiceModel))->toBeInt();
 });
 
 test('deletes a tax', function (): void {
-    $service = new ServiceTax();
-    $taxModel = new Model_Tax();
-    $taxModel->loadBean(new Tests\Helpers\DummyBean());
+    $taxEntity = createEntity(Tax::class, ['id' => 1, 'name' => 'VAT']);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('trash')
-        ->atLeast()->once();
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('remove')->with($taxEntity)->once();
+    $em->shouldReceive('flush')->once();
 
-    $di = container();
-    $di['db'] = $dbMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
-    $service->setDi($di);
+    $taxRepo = Mockery::mock(TaxRepository::class);
+    $service = taxService($taxRepo, $em);
+    $service->getDi()['logger'] = new Tests\Helpers\TestLogger();
 
-    $result = $service->delete($taxModel);
-    expect($result)->toBeTrue();
+    expect($service->delete($taxEntity))->toBeTrue();
 });
 
 test('creates a tax', function (): void {
-    $service = new ServiceTax();
-
-    $taxModel = new Model_Tax();
-    $taxModel->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('dispense')
-        ->atLeast()->once()
-        ->andReturn($taxModel);
     $newId = 2;
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn($newId);
 
-    $di = container();
-    $di['db'] = $dbMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
-    $service->setDi($di);
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('persist')
+        ->once()
+        ->withArgs(function (Tax $tax) use ($newId): bool {
+            $tax->setId($newId);
+
+            return true;
+        });
+    $em->shouldReceive('flush')->once();
+
+    $taxRepo = Mockery::mock(TaxRepository::class);
+    $service = taxService($taxRepo, $em);
+    $service->getDi()['logger'] = new Tests\Helpers\TestLogger();
 
     $data = [
         'name' => 'tax',
         'taxrate' => '0.18',
     ];
-    $result = $service->create($data);
-    expect($result)->toBeInt()->toBe($newId);
+
+    expect($service->create($data))->toBeInt()->toBe($newId);
 });
 
 test('updates a tax', function (): void {
-    $service = new ServiceTax();
-    $taxModel = new Model_Tax();
-    $taxModel->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn(2);
+    $taxEntity = createEntity(Tax::class, ['id' => 1, 'name' => 'tax', 'taxrate' => '0.10']);
 
-    $di = container();
-    $di['db'] = $dbMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
-    $service->setDi($di);
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('flush')->once();
+
+    $taxRepo = Mockery::mock(TaxRepository::class);
+    $service = taxService($taxRepo, $em);
+    $service->getDi()['logger'] = new Tests\Helpers\TestLogger();
 
     $data = [
         'name' => 'tax',
         'taxrate' => '0.18',
     ];
-    $result = $service->update($taxModel, $data);
-    expect($result)->toBeBool()->toBeTrue();
+
+    expect($service->update($taxEntity, $data))->toBeBool()->toBeTrue();
+    expect($taxEntity->getTaxrate())->toBe('0.18');
 });
 
-test('gets search query', function (): void {
-    $service = new ServiceTax();
-    $result = $service->getSearchQuery([]);
-    expect($result[0])->toBeString();
-    expect($result[1])->toBeArray();
-    expect($result[1])->toBe([]);
-});
+test('converts tax to api array', function (): void {
+    $taxEntity = createEntity(Tax::class, [
+        'id' => 1,
+        'level' => 1,
+        'name' => 'VAT',
+        'country' => 'US',
+        'state' => 'CA',
+        'taxrate' => '8.25',
+    ]);
 
-test('converts to api array', function (): void {
-    $service = new ServiceTax();
-    $taxModel = new Model_Tax();
-    $taxModel->loadBean(new Tests\Helpers\DummyBean());
+    $taxRepo = Mockery::mock(TaxRepository::class);
+    $service = taxService($taxRepo);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('toArray')
-        ->with($taxModel)
-        ->atLeast()->once()
-        ->andReturn([]);
+    $result = $service->toApiArray($taxEntity);
 
-    $di = container();
-    $di['db'] = $dbMock;
-    $service->setDi($di);
-
-    $result = $service->toApiArray($taxModel);
-    expect($result)->toBeArray();
+    expect($result)->toBeArray()
+        ->and($result['id'])->toBe(1)
+        ->and($result['name'])->toBe('VAT')
+        ->and($result['taxrate'])->toBe('8.25');
 });
