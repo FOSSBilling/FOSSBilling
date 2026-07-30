@@ -50,7 +50,7 @@ class TwigFactory
     private readonly array $baseConfig;
     private ?Environment $adapterEnvironment = null;
     private ?Environment $themeSettingsEnvironment = null;
-    private array $installedBoxExtension = [];
+    private ?array $installedBoxExtension = null;
 
     public function __construct(private \Pimple\Container $di)
     {
