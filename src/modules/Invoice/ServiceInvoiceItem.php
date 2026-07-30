@@ -42,15 +42,17 @@ class ServiceInvoiceItem implements InjectionAwareInterface
     public function markAsPaid(InvoiceItem $item, $charge = true): void
     {
         if ($charge && !$item->getCharged()) {
+            $invoice = $this->di['db']->getExistingModelById('Invoice', $item->getInvoiceId(), 'Invoice not found');
+            $total = $this->getTotalWithTax($item);
             $em = $this->di['em'];
-            $em->wrapInTransaction(function () use ($item, $em): void {
-                $this->persistCredit($item);
+            $em->wrapInTransaction(function () use ($item, $invoice, $total, $em): void {
+                $this->persistCredit($item, $invoice, $total);
                 $item->setCharged(true);
                 $item->setStatus(InvoiceItem::STATUS_PENDING_SETUP);
                 $em->persist($item);
             });
 
-            $this->addChargeNote($item);
+            $this->addChargeNote($item, $invoice, $total);
         } else {
             $item->setStatus(InvoiceItem::STATUS_PENDING_SETUP);
             $this->di['em']->persist($item);
@@ -249,16 +251,15 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
     public function creditInvoiceItem(InvoiceItem $item): void
     {
-        $this->persistCredit($item);
+        $invoice = $this->di['db']->getExistingModelById('Invoice', $item->getInvoiceId(), 'Invoice not found');
+        $total = $this->getTotalWithTax($item);
+        $this->persistCredit($item, $invoice, $total);
         $this->di['em']->flush();
-        $this->addChargeNote($item);
+        $this->addChargeNote($item, $invoice, $total);
     }
 
-    private function persistCredit(InvoiceItem $item): ClientBalance
+    private function persistCredit(InvoiceItem $item, \Model_Invoice $invoice, float $total): ClientBalance
     {
-        $total = $this->getTotalWithTax($item);
-
-        $invoice = $this->di['db']->getExistingModelById('Invoice', $item->getInvoiceId(), 'Invoice not found');
         $client = $this->di['db']->getExistingModelById('Client', $invoice->client_id, 'Client not found');
 
         $credit = new ClientBalance();
@@ -272,10 +273,8 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         return $credit;
     }
 
-    private function addChargeNote(InvoiceItem $item): void
+    private function addChargeNote(InvoiceItem $item, \Model_Invoice $invoice, float $total): void
     {
-        $invoice = $this->di['db']->getExistingModelById('Invoice', $item->getInvoiceId(), 'Invoice not found');
-        $total = $this->getTotalWithTax($item);
         $invoiceService = $this->di['mod_service']('Invoice');
         $invoiceService->addNote($invoice, sprintf('Charged clients balance with %s %s for %s', $total, $invoice->currency, $item->getTitle()));
     }

@@ -62,14 +62,11 @@ test('marks item as paid', function (): void {
     $clientOrder->loadBean(new Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
-    $callCount = 0;
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()
         ->once()
-        ->andReturnUsing(function () use ($invoiceModel, $clientModel, &$callCount) {
-            ++$callCount;
-
-            return $callCount === 2 ? $clientModel : $invoiceModel;
+        ->andReturnUsing(function (string $model) use ($invoiceModel, $clientModel) {
+            return $model === 'Client' ? $clientModel : $invoiceModel;
         });
     $dbMock->shouldReceive('load')
         ->atLeast()
@@ -351,13 +348,10 @@ test('credits invoice item', function (): void {
     $clientModel->loadBean(new Tests\Helpers\DummyBean());
 
     $dbMock = Mockery::mock('\Box_Database');
-    $callCount = 0;
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
-        ->andReturnUsing(function () use ($invoiceModel, $clientModel, &$callCount) {
-            ++$callCount;
-
-            return $callCount === 2 ? $clientModel : $invoiceModel;
+        ->andReturnUsing(function (string $model) use ($invoiceModel, $clientModel) {
+            return $model === 'Client' ? $clientModel : $invoiceModel;
         });
 
     $em = Mockery::mock(EntityManagerInterface::class);
