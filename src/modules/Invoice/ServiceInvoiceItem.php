@@ -14,6 +14,8 @@ namespace Box\Mod\Invoice;
 use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Invoice\Entity\InvoiceItem;
 use Box\Mod\Invoice\Repository\InvoiceItemRepository;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Validation\PriceValidator;
 
@@ -254,8 +256,25 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $invoice = $this->di['db']->getExistingModelById('Invoice', $item->getInvoiceId(), 'Invoice not found');
         $total = $this->getTotalWithTax($item);
         $this->persistCredit($item, $invoice, $total);
-        $this->di['em']->flush();
+
+        // Idempotency: the unique constraint on invoice_item_id guarantees at most one
+        // credit per item. A violation means a retry already credited it — treat as no-op.
+        try {
+            $this->di['em']->flush();
+        } catch (UniqueConstraintViolationException $e) {
+            $this->di['logger']->setChannel('billing')->info(sprintf('Invoice item #%d was already credited; skipping duplicate credit.', (int) $item->getId()));
+            $this->resetEntityManager();
+
+            return;
+        }
+
         $this->addChargeNote($item, $invoice, $total);
+    }
+
+    protected function resetEntityManager(): void
+    {
+        unset($this->di['em']);
+        $this->di['em'] = EntityManagerFactory::create();
     }
 
     private function persistCredit(InvoiceItem $item, \Model_Invoice $invoice, float $total): ClientBalance
@@ -266,6 +285,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $credit->setClientId((int) $client->id);
         $credit->setType('invoice');
         $credit->setRelId((string) $invoice->id);
+        $credit->setInvoiceItemId($item->getId());
         $credit->setDescription($item->getTitle());
         $credit->setAmount((string) (-$total));
         $this->di['em']->persist($credit);
