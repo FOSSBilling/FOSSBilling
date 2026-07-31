@@ -2614,8 +2614,8 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch97(): void
     {
-        // Tracks the number of failed execution attempts for an invoice item so that
-        // the cron processor can apply a bounded retry before marking it STATUS_FAILED.
+        // Failed execution attempt counter for the bounded-retry logic in
+        // ServiceInvoiceItem before an item is marked STATUS_FAILED.
         if (!$this->tableHasColumn('invoice_item', 'attempts')) {
             $this->executeSql("ALTER TABLE `invoice_item` ADD COLUMN `attempts` INT NOT NULL DEFAULT '0' AFTER `taxed`");
         }

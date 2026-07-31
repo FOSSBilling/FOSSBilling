@@ -215,8 +215,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
-     * Returns invoice items that have permanently failed task execution and
-     * require manual intervention.
+     * Returns invoice items whose task execution permanently failed.
      *
      * @return array
      */
@@ -231,8 +230,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
-     * Re-queue a failed invoice item for execution by resetting its status and
-     * clearing the attempt counter.
+     * Re-queue a failed invoice item for execution by resetting its status and attempt counter.
      *
      * @return bool
      */

@@ -1523,13 +1523,11 @@ class Service implements InjectionAwareInterface
         foreach ($invoiceItems as $item) {
             try {
                 $connection->transactional(function () use ($connection, $item, $invoiceItemService): void {
-                    // Atomically claim the row so concurrent cron processes (or the
-                    // synchronous payment path) cannot execute the same item twice.
+                    // Claim the row so concurrent cron processes cannot execute the same item twice.
                     $status = $connection->fetchOne(
                         'SELECT status FROM invoice_item WHERE id = :id FOR UPDATE',
                         ['id' => (int) ($item['id'] ?? 0)]
                     );
-                    // Another process already finalized this item; nothing to do.
                     if (in_array($status, [InvoiceItem::STATUS_EXECUTED, InvoiceItem::STATUS_FAILED], true)) {
                         return;
                     }
@@ -1541,8 +1539,7 @@ class Service implements InjectionAwareInterface
                     $invoiceItemService->executeTask($model);
                 });
             } catch (\Exception $e) {
-                // Clear the identity map after a rollback so subsequent iterations
-                // work with fresh, database-consistent entities.
+                // Clear the identity map so subsequent iterations work with fresh, database-consistent entities.
                 $this->di['em']->clear();
                 $this->di['logger']->error($e->getMessage());
             }

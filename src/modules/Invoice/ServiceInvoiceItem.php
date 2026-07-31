@@ -349,12 +349,6 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $this->di['em']->flush();
     }
 
-    /**
-     * Record a failed task execution attempt. The attempt counter is incremented
-     * and, once the configured cap is reached, the item is marked STATUS_FAILED so
-     * it is excluded from future cron runs. While under the cap the status is left
-     * unchanged (typically STATUS_PENDING_SETUP) so the item is retried next run.
-     */
     protected function recordTaskFailure(InvoiceItem $item): void
     {
         $attempts = $item->getAttempts() + 1;
@@ -369,18 +363,11 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $this->di['em']->flush();
     }
 
-    /**
-     * @return InvoiceItem[]
-     */
     public function getFailedItems(): array
     {
         return $this->invoiceItemRepository->findFailed();
     }
 
-    /**
-     * Reset a failed invoice item so it is re-queued for execution by the cron.
-     * Clears the attempt counter and sets the status back to STATUS_PENDING_SETUP.
-     */
     public function requeueItem(int $id): InvoiceItem
     {
         $item = $this->invoiceItemRepository->find($id);
