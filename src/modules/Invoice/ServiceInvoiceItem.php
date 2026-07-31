@@ -91,48 +91,54 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         }
 
         if ($item->getType() == InvoiceItem::TYPE_ORDER) {
-            $order_id = $this->getOrderId($item);
-            $order = $this->di['db']->load('ClientOrder', $order_id);
-            if (!$order instanceof \Model_ClientOrder) {
-                throw new \FOSSBilling\Exception('Could not activate proforma item. Order :id not found', [':id' => $order_id]);
-            }
-            $orderService = $this->di['mod_service']('Order');
             $taskFailed = false;
-            switch ($item->getTask()) {
-                case InvoiceItem::TASK_ACTIVATE:
-                    $product = $this->di['mod_service']('Product')->findProductById((int) $order->product_id);
-                    if ($product->getSetup() == \Box\Mod\Product\Service::SETUP_AFTER_PAYMENT) {
+
+            try {
+                $order_id = $this->getOrderId($item);
+                $order = $this->di['db']->load('ClientOrder', $order_id);
+                if (!$order instanceof \Model_ClientOrder) {
+                    throw new \FOSSBilling\Exception('Could not activate proforma item. Order :id not found', [':id' => $order_id]);
+                }
+                $orderService = $this->di['mod_service']('Order');
+                switch ($item->getTask()) {
+                    case InvoiceItem::TASK_ACTIVATE:
+                        $product = $this->di['mod_service']('Product')->findProductById((int) $order->product_id);
+                        if ($product->getSetup() == \Box\Mod\Product\Service::SETUP_AFTER_PAYMENT) {
+                            try {
+                                $orderService->activateOrder($order);
+                            } catch (\Exception $e) {
+                                error_log($e->getMessage());
+                                $orderService->saveStatusChange($order, "Order could not be activated due to error: {$e->getMessage()}.");
+                                $taskFailed = true;
+                            }
+                        }
+
+                        break;
+
+                    case InvoiceItem::TASK_RENEW:
                         try {
-                            $orderService->activateOrder($order);
+                            // Unsuspend order if suspended before renew
+                            if ($order->status == \Model_ClientOrder::STATUS_SUSPENDED) {
+                                $orderService->unsuspendFromOrder($order);
+                            }
+
+                            $order = $this->di['db']->load('ClientOrder', $order_id);
+                            $orderService->renewOrder($order);
                         } catch (\Exception $e) {
                             error_log($e->getMessage());
-                            $orderService->saveStatusChange($order, "Order could not be activated due to error: {$e->getMessage()}.");
+                            $orderService->saveStatusChange($order, "Order could not renew due to error: {$e->getMessage()}.");
                             $taskFailed = true;
                         }
-                    }
 
-                    break;
+                        break;
 
-                case InvoiceItem::TASK_RENEW:
-                    try {
-                        // Unsuspend order if suspended before renew
-                        if ($order->status == \Model_ClientOrder::STATUS_SUSPENDED) {
-                            $orderService->unsuspendFromOrder($order);
-                        }
-
-                        $order = $this->di['db']->load('ClientOrder', $order_id);
-                        $orderService->renewOrder($order);
-                    } catch (\Exception $e) {
-                        error_log($e->getMessage());
-                        $orderService->saveStatusChange($order, "Order could not renew due to error: {$e->getMessage()}.");
-                        $taskFailed = true;
-                    }
-
-                    break;
-
-                default:
-                    // do nothing for unregistered tasks
-                    break;
+                    default:
+                        // do nothing for unregistered tasks
+                        break;
+                }
+            } catch (\Exception $e) {
+                error_log($e->getMessage());
+                $taskFailed = true;
             }
 
             if (!$taskFailed) {

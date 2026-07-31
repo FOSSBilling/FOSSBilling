@@ -119,17 +119,17 @@ test('returns true when executing task on already executed item', function (): v
     expect($result)->toBeTrue();
 });
 
-test('throws exception when executing task for order type with client order not found', function (): void {
-    $service = new ServiceInvoiceItem();
-    $item = createEntity(InvoiceItem::class, ['type' => InvoiceItem::TYPE_ORDER]);
-    $orderId = 22;
+test('records failure when executing task for order type with client order not found', function (): void {
+    $item = createEntity(InvoiceItem::class, ['type' => InvoiceItem::TYPE_ORDER, 'status' => InvoiceItem::STATUS_PENDING_SETUP]);
 
-    $serviceMock = Mockery::mock(ServiceInvoiceItem::class)->makePartial();
+    $serviceMock = Mockery::mock(ServiceInvoiceItem::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('getOrderId')
         ->atLeast()->once()
-        ->andReturn($orderId);
+        ->andReturn(22);
 
     $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('persist')->once();
+    $em->shouldReceive('flush')->once();
     $repo = Mockery::mock(InvoiceItemRepository::class);
     $em->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($repo);
 
@@ -143,8 +143,10 @@ test('throws exception when executing task for order type with client order not 
     $di['db'] = $dbMock;
     $serviceMock->setDi($di);
 
-    expect(fn () => $serviceMock->executeTask($item))
-        ->toThrow(FOSSBilling\Exception::class, sprintf('Could not activate proforma item. Order %d not found', $orderId));
+    $serviceMock->executeTask($item);
+
+    expect($item->getAttempts())->toBe(1)
+        ->and($item->getStatus())->toBe(InvoiceItem::STATUS_PENDING_SETUP);
 });
 
 test('executes task for hook call type', function (): void {

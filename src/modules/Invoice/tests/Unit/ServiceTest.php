@@ -2284,6 +2284,36 @@ test('handles exception during batch paid invoice activation', function (): void
     expect($result)->toBeBool()->toBeTrue();
 });
 
+test('skips invoice items already finalized by another process during batch activation', function (): void {
+    $service = new Service();
+
+    $itemInvoiceServiceMock = Mockery::mock(ServiceInvoiceItem::class);
+    $itemInvoiceServiceMock->shouldReceive('getAllNotExecutePaidItems')
+        ->atLeast()->once()
+        ->andReturn([['id' => 1]]);
+    $itemInvoiceServiceMock->shouldNotReceive('executeTask');
+
+    [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
+    $invoiceItemRepo->shouldNotReceive('find');
+
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('transactional')
+        ->once()
+        ->andReturnUsing(fn (callable $func): mixed => $func($connection));
+    $connection->shouldReceive('fetchOne')
+        ->with('SELECT status FROM invoice_item WHERE id = :id FOR UPDATE', ['id' => 1])
+        ->andReturn(InvoiceItem::STATUS_FAILED);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $itemInvoiceServiceMock);
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $service->setDi($di);
+    expect($service->doBatchPaidInvoiceActivation())->toBeTrue();
+});
+
 test('sends reminders in batch at most once per day', function (): void {
     $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $service->shouldReceive('doBatchInvokeDueEvent')
