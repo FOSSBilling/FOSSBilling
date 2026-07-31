@@ -33,6 +33,7 @@ class InvoiceItem implements ApiArrayInterface
     final public const string STATUS_PENDING_PAYMENT = 'pending_payment';
     final public const string STATUS_PENDING_SETUP = 'pending_setup';
     final public const string STATUS_EXECUTED = 'executed';
+    final public const string STATUS_FAILED = 'failed';
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -74,6 +75,9 @@ class InvoiceItem implements ApiArrayInterface
 
     #[ORM\Column(type: Types::BOOLEAN, nullable: true, options: ['default' => false])]
     private ?bool $taxed = false;
+
+    #[ORM\Column(type: Types::INTEGER, options: ['default' => 0])]
+    private int $attempts = 0;
 
     #[ORM\Column(name: 'created_at', type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTime $createdAt = null;
@@ -211,6 +215,16 @@ class InvoiceItem implements ApiArrayInterface
         $this->taxed = $taxed === null ? null : (bool) $taxed;
     }
 
+    public function getAttempts(): int
+    {
+        return $this->attempts;
+    }
+
+    public function setAttempts(int $attempts): void
+    {
+        $this->attempts = $attempts;
+    }
+
     public function getCreatedAt(): ?\DateTime
     {
         return $this->createdAt;
@@ -247,6 +261,7 @@ class InvoiceItem implements ApiArrayInterface
             'price' => $this->price,
             'charged' => (int) $this->charged,
             'taxed' => (int) $this->taxed,
+            'attempts' => $this->attempts,
             'created_at' => $this->createdAt?->format('Y-m-d H:i:s'),
             'updated_at' => $this->updatedAt?->format('Y-m-d H:i:s'),
         ];

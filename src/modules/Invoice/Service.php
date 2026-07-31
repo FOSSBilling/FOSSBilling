@@ -1519,14 +1519,28 @@ class Service implements InjectionAwareInterface
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
 
         $invoiceItems = (array) $invoiceItemService->getAllNotExecutePaidItems();
+        $connection = $this->di['em']->getConnection();
         foreach ($invoiceItems as $item) {
             try {
-                $model = $this->getInvoiceItemRepository()->find((int) ($item['id'] ?? 0));
-                if (!$model instanceof InvoiceItem) {
-                    throw new InformationException('Invoice item was not found');
-                }
-                $invoiceItemService->executeTask($model);
+                $connection->transactional(function () use ($connection, $item, $invoiceItemService): void {
+                    // Claim the row so concurrent cron processes cannot execute the same item twice.
+                    $status = $connection->fetchOne(
+                        'SELECT status FROM invoice_item WHERE id = :id FOR UPDATE',
+                        ['id' => (int) ($item['id'] ?? 0)]
+                    );
+                    if (in_array($status, [InvoiceItem::STATUS_EXECUTED, InvoiceItem::STATUS_FAILED], true)) {
+                        return;
+                    }
+
+                    $model = $this->getInvoiceItemRepository()->find((int) ($item['id'] ?? 0));
+                    if (!$model instanceof InvoiceItem) {
+                        throw new InformationException('Invoice item was not found');
+                    }
+                    $invoiceItemService->executeTask($model);
+                });
             } catch (\Exception $e) {
+                // Clear the identity map so subsequent iterations work with fresh, database-consistent entities.
+                $this->di['em']->clear();
                 $this->di['logger']->error($e->getMessage());
             }
         }

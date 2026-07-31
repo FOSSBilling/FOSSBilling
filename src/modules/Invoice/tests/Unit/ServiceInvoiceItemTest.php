@@ -119,17 +119,17 @@ test('returns true when executing task on already executed item', function (): v
     expect($result)->toBeTrue();
 });
 
-test('throws exception when executing task for order type with client order not found', function (): void {
-    $service = new ServiceInvoiceItem();
-    $item = createEntity(InvoiceItem::class, ['type' => InvoiceItem::TYPE_ORDER]);
-    $orderId = 22;
+test('records failure when executing task for order type with client order not found', function (): void {
+    $item = createEntity(InvoiceItem::class, ['type' => InvoiceItem::TYPE_ORDER, 'status' => InvoiceItem::STATUS_PENDING_SETUP]);
 
-    $serviceMock = Mockery::mock(ServiceInvoiceItem::class)->makePartial();
+    $serviceMock = Mockery::mock(ServiceInvoiceItem::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('getOrderId')
         ->atLeast()->once()
-        ->andReturn($orderId);
+        ->andReturn(22);
 
     $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('persist')->once();
+    $em->shouldReceive('flush')->once();
     $repo = Mockery::mock(InvoiceItemRepository::class);
     $em->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($repo);
 
@@ -143,8 +143,10 @@ test('throws exception when executing task for order type with client order not 
     $di['db'] = $dbMock;
     $serviceMock->setDi($di);
 
-    expect(fn () => $serviceMock->executeTask($item))
-        ->toThrow(FOSSBilling\Exception::class, sprintf('Could not activate proforma item. Order %d not found', $orderId));
+    $serviceMock->executeTask($item);
+
+    expect($item->getAttempts())->toBe(1)
+        ->and($item->getStatus())->toBe(InvoiceItem::STATUS_PENDING_SETUP);
 });
 
 test('executes task for hook call type', function (): void {
@@ -418,16 +420,145 @@ test('returns zero when invoice item type is not order', function (): void {
     expect($result)->toBeInt()->toBe(0);
 });
 
-test('gets all not execute paid items', function (): void {
+test('gets all not execute paid items excluding executed and failed', function (): void {
     $service = invoiceItemService();
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getAll')
-        ->atLeast()->once()
+        ->withArgs(function (string $sql, array $bindings): bool {
+            return str_contains($sql, 'NOT IN (:status_executed, :status_failed)')
+                && $bindings[':status_executed'] === InvoiceItem::STATUS_EXECUTED
+                && $bindings[':status_failed'] === InvoiceItem::STATUS_FAILED;
+        })
+        ->atLeast()
+        ->once()
         ->andReturn([]);
 
     $service->getDi()['db'] = $dbMock;
 
     $result = $service->getAllNotExecutePaidItems();
     expect($result)->toBeArray();
+});
+
+test('increments attempts on hook call failure and keeps pending setup under the cap', function (): void {
+    $item = createEntity(InvoiceItem::class, [
+        'type' => InvoiceItem::TYPE_HOOK_CALL,
+        'rel_id' => '{}',
+        'status' => InvoiceItem::STATUS_PENDING_SETUP,
+        'attempts' => 0,
+    ]);
+
+    $eventManagerMock = Mockery::mock('\Box_EventManager');
+    $eventManagerMock->shouldReceive('fire')
+        ->andThrow(new Exception('hook failed'));
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('persist')->once();
+    $em->shouldReceive('flush')->once();
+    $repo = Mockery::mock(InvoiceItemRepository::class);
+    $em->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($repo);
+
+    $service = new ServiceInvoiceItem();
+    $di = container();
+    $di['em'] = $em;
+    $di['events_manager'] = $eventManagerMock;
+    $service->setDi($di);
+
+    $service->executeTask($item);
+
+    expect($item->getAttempts())->toBe(1)
+        ->and($item->getStatus())->toBe(InvoiceItem::STATUS_PENDING_SETUP);
+});
+
+test('marks item as failed when hook call failure reaches the attempt cap', function (): void {
+    $item = createEntity(InvoiceItem::class, [
+        'type' => InvoiceItem::TYPE_HOOK_CALL,
+        'rel_id' => '{}',
+        'status' => InvoiceItem::STATUS_PENDING_SETUP,
+        'attempts' => ServiceInvoiceItem::MAX_TASK_ATTEMPTS - 1,
+    ]);
+
+    $eventManagerMock = Mockery::mock('\Box_EventManager');
+    $eventManagerMock->shouldReceive('fire')
+        ->andThrow(new Exception('hook failed'));
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('persist')->once();
+    $em->shouldReceive('flush')->once();
+    $repo = Mockery::mock(InvoiceItemRepository::class);
+    $em->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($repo);
+
+    $service = new ServiceInvoiceItem();
+    $di = container();
+    $di['em'] = $em;
+    $di['events_manager'] = $eventManagerMock;
+    $service->setDi($di);
+
+    $service->executeTask($item);
+
+    expect($item->getAttempts())->toBe(ServiceInvoiceItem::MAX_TASK_ATTEMPTS)
+        ->and($item->getStatus())->toBe(InvoiceItem::STATUS_FAILED);
+});
+
+test('gets failed items via repository', function (): void {
+    $failedItem = createEntity(InvoiceItem::class, ['id' => 1, 'status' => InvoiceItem::STATUS_FAILED]);
+    $repo = Mockery::mock(InvoiceItemRepository::class);
+    $repo->shouldReceive('findFailed')
+        ->once()
+        ->andReturn([$failedItem]);
+
+    $service = invoiceItemService($repo);
+
+    expect($service->getFailedItems())->toBe([$failedItem]);
+});
+
+test('requeues a failed item resetting status and attempts', function (): void {
+    $item = createEntity(InvoiceItem::class, [
+        'id' => 7,
+        'status' => InvoiceItem::STATUS_FAILED,
+        'attempts' => ServiceInvoiceItem::MAX_TASK_ATTEMPTS,
+    ]);
+
+    $repo = Mockery::mock(InvoiceItemRepository::class);
+    $repo->shouldReceive('find')->with(7)->andReturn($item);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($repo);
+    $em->shouldReceive('persist')->once()->with($item);
+    $em->shouldReceive('flush')->once();
+
+    $service = new ServiceInvoiceItem();
+    $di = container();
+    $di['em'] = $em;
+    $service->setDi($di);
+
+    $result = $service->requeueItem(7);
+
+    expect($result)->toBe($item)
+        ->and($item->getStatus())->toBe(InvoiceItem::STATUS_PENDING_SETUP)
+        ->and($item->getAttempts())->toBe(0);
+});
+
+test('requeue throws when item is not found', function (): void {
+    $repo = Mockery::mock(InvoiceItemRepository::class);
+    $repo->shouldReceive('find')->with(99)->andReturn(null);
+
+    $service = invoiceItemService($repo);
+
+    expect(fn () => $service->requeueItem(99))->toThrow(FOSSBilling\InformationException::class);
+});
+
+test('requeue throws when item is not in a failed state', function (): void {
+    $item = createEntity(InvoiceItem::class, [
+        'id' => 7,
+        'status' => InvoiceItem::STATUS_EXECUTED,
+        'attempts' => 0,
+    ]);
+
+    $repo = Mockery::mock(InvoiceItemRepository::class);
+    $repo->shouldReceive('find')->with(7)->andReturn($item);
+
+    $service = invoiceItemService($repo);
+
+    expect(fn () => $service->requeueItem(7))->toThrow(FOSSBilling\InformationException::class);
 });

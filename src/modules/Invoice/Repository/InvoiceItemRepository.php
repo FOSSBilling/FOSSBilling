@@ -37,6 +37,14 @@ class InvoiceItemRepository extends EntityRepository
     }
 
     /**
+     * @return InvoiceItem[]
+     */
+    public function findFailed(): array
+    {
+        return $this->findBy(['status' => InvoiceItem::STATUS_FAILED], ['id' => 'DESC']);
+    }
+
+    /**
      * Build a QueryBuilder for invoice-item searches/listings.
      *
      * @param array $data filter and pagination parameters (unused for now)

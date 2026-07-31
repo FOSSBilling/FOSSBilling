@@ -26,7 +26,7 @@ test('maps invoice_item table without changing columns', function (): void {
     expect($meta->getTableName())->toBe('invoice_item')
         ->and($meta->getColumnNames())->toBe([
             'id', 'invoice_id', 'type', 'rel_id', 'task', 'status', 'title',
-            'period', 'quantity', 'unit', 'price', 'charged', 'taxed',
+            'period', 'quantity', 'unit', 'price', 'charged', 'taxed', 'attempts',
             'created_at', 'updated_at',
         ])
         ->and($meta->getFieldMapping('invoiceId')->nullable)->toBeTrue()
@@ -46,7 +46,8 @@ test('invoice item exposes the legacy type, task and status constants', function
         ->and(InvoiceItem::TASK_RENEW)->toBe('renew')
         ->and(InvoiceItem::STATUS_PENDING_PAYMENT)->toBe('pending_payment')
         ->and(InvoiceItem::STATUS_PENDING_SETUP)->toBe('pending_setup')
-        ->and(InvoiceItem::STATUS_EXECUTED)->toBe('executed');
+        ->and(InvoiceItem::STATUS_EXECUTED)->toBe('executed')
+        ->and(InvoiceItem::STATUS_FAILED)->toBe('failed');
 });
 
 test('invoice item getters and setters round-trip values', function (): void {
@@ -64,6 +65,7 @@ test('invoice item getters and setters round-trip values', function (): void {
     $entity->setPrice(12.5);
     $entity->setCharged(true);
     $entity->setTaxed(false);
+    $entity->setAttempts(3);
 
     expect($entity->getInvoiceId())->toBe(42)
         ->and($entity->getType())->toBe(InvoiceItem::TYPE_ORDER)
@@ -77,6 +79,7 @@ test('invoice item getters and setters round-trip values', function (): void {
         ->and($entity->getPrice())->toBe(12.5)
         ->and($entity->getCharged())->toBeTrue()
         ->and($entity->getTaxed())->toBeFalse()
+        ->and($entity->getAttempts())->toBe(3)
         ->and($entity->getId())->toBeNull();
 });
 
@@ -95,6 +98,7 @@ test('invoice item toApiArray matches the legacy toArray keys', function (): voi
     $entity->setPrice(2.0);
     $entity->setCharged(true);
     $entity->setTaxed(true);
+    $entity->setAttempts(2);
     $entity->setCreatedAt(new DateTime('2026-01-02 03:04:05'));
     $entity->setUpdatedAt(new DateTime('2026-01-02 03:04:05'));
 
@@ -112,6 +116,7 @@ test('invoice item toApiArray matches the legacy toArray keys', function (): voi
         'price' => 2.0,
         'charged' => 1,
         'taxed' => 1,
+        'attempts' => 2,
         'created_at' => '2026-01-02 03:04:05',
         'updated_at' => '2026-01-02 03:04:05',
     ]);
