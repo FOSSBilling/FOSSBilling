@@ -651,6 +651,7 @@ CREATE TABLE `invoice_item` (
   `price` double(18,2) DEFAULT NULL,
   `charged` tinyint(1) DEFAULT '0',
   `taxed` tinyint(1) DEFAULT '0',
+  `attempts` int(11) NOT NULL DEFAULT '0',
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),

@@ -21,6 +21,8 @@ use FOSSBilling\Validation\PriceValidator;
 
 class ServiceInvoiceItem implements InjectionAwareInterface
 {
+    public const int MAX_TASK_ATTEMPTS = 3;
+
     protected ?\Pimple\Container $di = null;
 
     protected InvoiceItemRepository $invoiceItemRepository;
@@ -95,6 +97,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                 throw new \FOSSBilling\Exception('Could not activate proforma item. Order :id not found', [':id' => $order_id]);
             }
             $orderService = $this->di['mod_service']('Order');
+            $taskFailed = false;
             switch ($item->getTask()) {
                 case InvoiceItem::TASK_ACTIVATE:
                     $product = $this->di['mod_service']('Product')->findProductById((int) $order->product_id);
@@ -104,6 +107,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                         } catch (\Exception $e) {
                             error_log($e->getMessage());
                             $orderService->saveStatusChange($order, "Order could not be activated due to error: {$e->getMessage()}.");
+                            $taskFailed = true;
                         }
                     }
 
@@ -121,6 +125,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                     } catch (\Exception $e) {
                         error_log($e->getMessage());
                         $orderService->saveStatusChange($order, "Order could not renew due to error: {$e->getMessage()}.");
+                        $taskFailed = true;
                     }
 
                     break;
@@ -130,17 +135,28 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                     break;
             }
 
-            $this->markAsExecuted($item);
+            if (!$taskFailed) {
+                $this->markAsExecuted($item);
+            } else {
+                $this->recordTaskFailure($item);
+            }
         }
 
         if ($item->getType() == InvoiceItem::TYPE_HOOK_CALL) {
+            $taskFailed = false;
+
             try {
                 $params = json_decode($item->getRelId() ?? '');
                 $this->di['events_manager']->fire(['event' => $item->getTask(), 'params' => $params]);
             } catch (\Exception $e) {
                 error_log($e->getMessage());
+                $taskFailed = true;
             }
-            $this->markAsExecuted($item);
+            if (!$taskFailed) {
+                $this->markAsExecuted($item);
+            } else {
+                $this->recordTaskFailure($item);
+            }
         }
 
         if ($item->getType() == InvoiceItem::TYPE_DEPOSIT) {
@@ -333,6 +349,58 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $this->di['em']->flush();
     }
 
+    /**
+     * Record a failed task execution attempt. The attempt counter is incremented
+     * and, once the configured cap is reached, the item is marked STATUS_FAILED so
+     * it is excluded from future cron runs. While under the cap the status is left
+     * unchanged (typically STATUS_PENDING_SETUP) so the item is retried next run.
+     */
+    protected function recordTaskFailure(InvoiceItem $item): void
+    {
+        $attempts = $item->getAttempts() + 1;
+        $item->setAttempts($attempts);
+
+        if ($attempts >= self::MAX_TASK_ATTEMPTS) {
+            $item->setStatus(InvoiceItem::STATUS_FAILED);
+            $this->di['logger']->setChannel('billing')->error(sprintf('Invoice item #%d marked as failed after %d task execution attempts.', (int) $item->getId(), $attempts));
+        }
+
+        $this->di['em']->persist($item);
+        $this->di['em']->flush();
+    }
+
+    /**
+     * @return InvoiceItem[]
+     */
+    public function getFailedItems(): array
+    {
+        return $this->invoiceItemRepository->findFailed();
+    }
+
+    /**
+     * Reset a failed invoice item so it is re-queued for execution by the cron.
+     * Clears the attempt counter and sets the status back to STATUS_PENDING_SETUP.
+     */
+    public function requeueItem(int $id): InvoiceItem
+    {
+        $item = $this->invoiceItemRepository->find($id);
+        if (!$item instanceof InvoiceItem) {
+            throw new \FOSSBilling\InformationException('Invoice item was not found');
+        }
+
+        if ($item->getStatus() !== InvoiceItem::STATUS_FAILED) {
+            throw new \FOSSBilling\InformationException('Invoice item is not in a failed state');
+        }
+
+        $item->setStatus(InvoiceItem::STATUS_PENDING_SETUP);
+        $item->setAttempts(0);
+        $this->di['em']->persist($item);
+        $this->di['em']->flush();
+        $this->di['logger']->setChannel('billing')->info(sprintf('Invoice item #%d re-queued for execution by an admin.', (int) $item->getId()));
+
+        return $item;
+    }
+
     public function generateFromOrder(\Model_Invoice $proforma, \Model_ClientOrder $order, $task, $price, array $line = []): void
     {
         $corderService = $this->di['mod_service']('Order');
@@ -402,10 +470,11 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $sql = 'SELECT invoice_item.*
                 FROM invoice_item
                   left join invoice on invoice_item.invoice_id = invoice.id
-                WHERE invoice_item.status != :item_status and invoice.status = :invoice_status
+                WHERE invoice_item.status NOT IN (:status_executed, :status_failed) and invoice.status = :invoice_status
                 AND (invoice.paid_at IS NULL OR invoice.paid_at <= :cutoff_time)';
         $bindings = [
-            ':item_status' => InvoiceItem::STATUS_EXECUTED,
+            ':status_executed' => InvoiceItem::STATUS_EXECUTED,
+            ':status_failed' => InvoiceItem::STATUS_FAILED,
             ':invoice_status' => \Model_Invoice::STATUS_PAID,
             ':cutoff_time' => date('Y-m-d H:i:s', strtotime('-10 minutes')),
         ];

@@ -40,6 +40,13 @@ test('client balance unique credit patch follows the suspension grace patch', fu
         ->and($patches[96][1])->toBe('patch96');
 });
 
+test('invoice item attempts patch follows the client balance credit patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 96);
+
+    expect($patches)->toHaveKey(97)
+        ->and($patches[97][1])->toBe('patch97');
+});
+
 test('fresh installs start at the latest patch level', function (): void {
     $content = file_get_contents(Path::join(PATH_ROOT, 'install', 'sql', 'content.sql'));
     expect($content)->toBeString();
