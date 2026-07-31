@@ -47,12 +47,25 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             $invoice = $this->di['db']->getExistingModelById('Invoice', $item->getInvoiceId(), 'Invoice not found');
             $total = $this->getTotalWithTax($item);
             $em = $this->di['em'];
-            $em->wrapInTransaction(function () use ($item, $invoice, $total, $em): void {
-                $this->persistCredit($item, $invoice, $total);
+
+            try {
+                $em->wrapInTransaction(function () use ($item, $invoice, $total, $em): void {
+                    $this->persistCredit($item, $invoice, $total);
+                    $item->setCharged(true);
+                    $item->setStatus(InvoiceItem::STATUS_PENDING_SETUP);
+                    $em->persist($item);
+                });
+            } catch (UniqueConstraintViolationException $e) {
+                // Idempotency: the unique constraint on invoice_item_id means a prior
+                // attempt already credited this item. Mark it as charged without re-crediting.
+                $this->di['logger']->setChannel('billing')->info(sprintf('Invoice item #%d was already credited; skipping duplicate credit.', (int) $item->getId()));
+                $this->resetEntityManager();
+                $item = $this->di['em']->find(InvoiceItem::class, $item->getId());
                 $item->setCharged(true);
                 $item->setStatus(InvoiceItem::STATUS_PENDING_SETUP);
-                $em->persist($item);
-            });
+                $this->di['em']->persist($item);
+                $this->di['em']->flush();
+            }
 
             $this->addChargeNote($item, $invoice, $total);
         } else {
