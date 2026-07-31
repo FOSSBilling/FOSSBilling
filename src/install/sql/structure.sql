@@ -293,11 +293,13 @@ CREATE TABLE `client_balance` (
   `client_id` bigint(20) DEFAULT NULL,
   `type` varchar(100) DEFAULT NULL,
   `rel_id` varchar(20) DEFAULT NULL,
+  `invoice_item_id` bigint(20) DEFAULT NULL,
   `amount` decimal(18,2) DEFAULT '0.00',
   `description` text,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_invoice_item_credit` (`invoice_item_id`),
   KEY `client_id_idx` (`client_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;

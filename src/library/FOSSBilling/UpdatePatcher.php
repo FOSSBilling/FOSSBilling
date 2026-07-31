@@ -505,6 +505,7 @@ class UpdatePatcher implements InjectionAwareInterface
             93 => 'patch93',
             94 => 'patch94',
             95 => 'patch95',
+            96 => 'patch96',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2593,6 +2594,20 @@ class UpdatePatcher implements InjectionAwareInterface
 
         if (!$this->tableHasIndex('client_order', 'client_order_status_expires_at_idx')) {
             $this->executeSql('ALTER TABLE `client_order` ADD INDEX `client_order_status_expires_at_idx` (`status`, `expires_at`)');
+        }
+    }
+
+    private function patch96(): void
+    {
+        // Unique constraint on client_balance.invoice_item_id prevents duplicate credits
+        // for the same invoice item. MySQL treats multiple NULLs as distinct, so other
+        // rows (transaction debits, default deductions) are unaffected.
+        if (!$this->tableHasColumn('client_balance', 'invoice_item_id')) {
+            $this->executeSql('ALTER TABLE `client_balance` ADD COLUMN `invoice_item_id` BIGINT DEFAULT NULL AFTER `rel_id`');
+        }
+
+        if (!$this->tableHasIndex('client_balance', 'uniq_invoice_item_credit')) {
+            $this->executeSql('ALTER TABLE `client_balance` ADD UNIQUE INDEX `uniq_invoice_item_credit` (`invoice_item_id`)');
         }
     }
 
