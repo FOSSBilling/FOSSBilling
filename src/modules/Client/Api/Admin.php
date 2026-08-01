@@ -96,6 +96,17 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Login to clients area with client id.
      *
+     * @optional bool $strip_admin_identity - Also remove the admin identity from the current
+     *                                        session, in the same request that sets the client
+     *                                        identity. Without this, impersonating a client and
+     *                                        then dropping admin access requires a second,
+     *                                        separate API call — which is unsafe with session ID
+     *                                        rotation enabled, since the session ID returned by
+     *                                        this call may already be stale by the time the
+     *                                        second call uses it, leaving the session in an
+     *                                        inconsistent state (see PR description for a
+     *                                        real-world example).
+     *
      * @return array - client details
      */
     #[RequiredParams(['id' => 'ID required'])]
@@ -111,6 +122,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $session = $this->getDi()['session'];
         $session->set('client_id', $client->getId());
         $this->getDi()['logger']->info('Logged in as client #%s', $client->getId());
+
+        if (!empty($data['strip_admin_identity'])) {
+            $session->destroy('admin');
+        }
 
         return $result;
     }
