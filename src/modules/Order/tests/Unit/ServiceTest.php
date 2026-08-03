@@ -3159,3 +3159,51 @@ test('batchSendSuspensionWarnings releases a failed claim so the warning can be 
         ->and($service->batchSendSuspensionWarnings())->toBeTrue()
         ->and($attempts)->toBe(2);
 });
+
+test('exportCSV strips config from numeric-array headers', function (): void {
+    $service = new Service();
+
+    $capturedHeaders = null;
+    $factoryMock = Mockery::mock();
+    $factoryMock->shouldReceive('create')
+        ->once()
+        ->andReturnUsing(function (string $table, string $name, array $headers) use (&$capturedHeaders): Symfony\Component\HttpFoundation\Response {
+            $capturedHeaders = $headers;
+
+            return new Symfony\Component\HttpFoundation\Response();
+        });
+
+    $di = container();
+    $di['csv_response_factory'] = $factoryMock;
+    $service->setDi($di);
+
+    $service->exportCSV(['config', 'id', 'title']);
+
+    expect($capturedHeaders)->not->toContain('config')
+        ->and($capturedHeaders)->toContain('id')
+        ->and($capturedHeaders)->toContain('title');
+});
+
+test('exportCSV falls back to defaults when only config is requested', function (): void {
+    $service = new Service();
+
+    $capturedHeaders = null;
+    $factoryMock = Mockery::mock();
+    $factoryMock->shouldReceive('create')
+        ->once()
+        ->andReturnUsing(function (string $table, string $name, array $headers) use (&$capturedHeaders): Symfony\Component\HttpFoundation\Response {
+            $capturedHeaders = $headers;
+
+            return new Symfony\Component\HttpFoundation\Response();
+        });
+
+    $di = container();
+    $di['csv_response_factory'] = $factoryMock;
+    $service->setDi($di);
+
+    $service->exportCSV(['config']);
+
+    expect($capturedHeaders)->toContain('id')
+        ->and($capturedHeaders)->toContain('title')
+        ->and($capturedHeaders)->not->toContain('config');
+});

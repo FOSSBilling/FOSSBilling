@@ -18,12 +18,23 @@ use Symfony\Component\HttpFoundation\Response;
 
 final readonly class CsvResponseFactory
 {
+    /**
+     * Credential columns that must never appear in any CSV export.
+     */
+    private const array SENSITIVE_COLUMNS = ['pass', 'salt', 'api_token', 'hash', 'config'];
+
     public function __construct(private \Box_Database $database)
     {
     }
 
     public function create(string $table, string $outputName = 'export.csv', array $headers = [], int $limit = 0): Response
     {
+        $headersRequested = $headers !== [];
+
+        if ($headers) {
+            $headers = array_values(array_diff($headers, self::SENSITIVE_COLUMNS));
+        }
+
         if ($limit > 0) {
             $beans = $this->database->findAll($table, 'LIMIT :limit', [':limit' => $limit]);
         } else {
@@ -34,8 +45,12 @@ final readonly class CsvResponseFactory
 
         if ($headers) {
             $rows = array_map(static fn (array $row): array => array_intersect_key($row, array_flip($headers)), $rows);
-        } elseif ($rows !== []) {
-            $headers = array_keys(reset($rows));
+        } elseif (!$headersRequested && $rows !== []) {
+            $headers = array_values(array_diff(array_keys(reset($rows)), self::SENSITIVE_COLUMNS));
+            $rows = array_map(static fn (array $row): array => array_intersect_key($row, array_flip($headers)), $rows);
+        } elseif ($headersRequested) {
+            // All requested headers were stripped as sensitive — export nothing.
+            $rows = [];
         }
 
         $csvFile = new \SplTempFileObject();
