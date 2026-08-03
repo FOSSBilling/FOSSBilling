@@ -1157,3 +1157,121 @@ test('i18n::validateTimezone returns the value when it is a known IANA identifie
 test('i18n::validateTimezone throws InformationException for an unknown identifier', function (): void {
     expect(fn (): ?string => FOSSBilling\i18n::validateTimezone('Mars/Olympus_Mons'))->toThrow(FOSSBilling\InformationException::class);
 });
+
+test('exportCSV uses default columns when no headers are provided', function (): void {
+    $service = new Box\Mod\Client\Service();
+
+    $capturedHeaders = null;
+    $factoryMock = Mockery::mock();
+    $factoryMock->shouldReceive('create')
+        ->once()
+        ->andReturnUsing(function (string $table, string $name, array $headers) use (&$capturedHeaders): Symfony\Component\HttpFoundation\Response {
+            $capturedHeaders = $headers;
+
+            return new Symfony\Component\HttpFoundation\Response();
+        });
+
+    $di = container();
+    $di['csv_response_factory'] = $factoryMock;
+    $service->setDi($di);
+
+    $service->exportCSV([]);
+
+    expect($capturedHeaders)->toBe(['id', 'email', 'status', 'first_name', 'last_name', 'phone_cc', 'phone', 'company', 'company_vat', 'company_number', 'address_1', 'address_2', 'city', 'state', 'postcode', 'country', 'currency']);
+});
+
+test('exportCSV strips pass, salt, and api_token from numeric-array headers', function (): void {
+    $service = new Box\Mod\Client\Service();
+
+    $capturedHeaders = null;
+    $factoryMock = Mockery::mock();
+    $factoryMock->shouldReceive('create')
+        ->once()
+        ->andReturnUsing(function (string $table, string $name, array $headers) use (&$capturedHeaders): Symfony\Component\HttpFoundation\Response {
+            $capturedHeaders = $headers;
+
+            return new Symfony\Component\HttpFoundation\Response();
+        });
+
+    $di = container();
+    $di['csv_response_factory'] = $factoryMock;
+    $service->setDi($di);
+
+    // Simulates: headers[]=pass&headers[]=salt&headers[]=api_token&headers[]=email
+    $service->exportCSV(['pass', 'salt', 'api_token', 'email']);
+
+    expect($capturedHeaders)->not->toContain('pass')
+        ->and($capturedHeaders)->not->toContain('salt')
+        ->and($capturedHeaders)->not->toContain('api_token')
+        ->and($capturedHeaders)->toContain('email');
+});
+
+test('exportCSV preserves allowlisted columns beyond the default set', function (): void {
+    $service = new Box\Mod\Client\Service();
+
+    $capturedHeaders = null;
+    $factoryMock = Mockery::mock();
+    $factoryMock->shouldReceive('create')
+        ->once()
+        ->andReturnUsing(function (string $table, string $name, array $headers) use (&$capturedHeaders): Symfony\Component\HttpFoundation\Response {
+            $capturedHeaders = $headers;
+
+            return new Symfony\Component\HttpFoundation\Response();
+        });
+
+    $di = container();
+    $di['csv_response_factory'] = $factoryMock;
+    $service->setDi($di);
+
+    $service->exportCSV(['email', 'created_at', 'custom_1']);
+
+    expect($capturedHeaders)->toHaveCount(3)
+        ->and($capturedHeaders)->toContain('email')
+        ->and($capturedHeaders)->toContain('created_at')
+        ->and($capturedHeaders)->toContain('custom_1');
+});
+
+test('exportCSV falls back to defaults when only sensitive columns are requested', function (): void {
+    $service = new Box\Mod\Client\Service();
+
+    $capturedHeaders = null;
+    $factoryMock = Mockery::mock();
+    $factoryMock->shouldReceive('create')
+        ->once()
+        ->andReturnUsing(function (string $table, string $name, array $headers) use (&$capturedHeaders): Symfony\Component\HttpFoundation\Response {
+            $capturedHeaders = $headers;
+
+            return new Symfony\Component\HttpFoundation\Response();
+        });
+
+    $di = container();
+    $di['csv_response_factory'] = $factoryMock;
+    $service->setDi($di);
+
+    $service->exportCSV(['pass', 'salt', 'api_token']);
+
+    expect($capturedHeaders)->toBe(['id', 'email', 'status', 'first_name', 'last_name', 'phone_cc', 'phone', 'company', 'company_vat', 'company_number', 'address_1', 'address_2', 'city', 'state', 'postcode', 'country', 'currency']);
+});
+
+test('exportCSV silently drops unknown column names', function (): void {
+    $service = new Box\Mod\Client\Service();
+
+    $capturedHeaders = null;
+    $factoryMock = Mockery::mock();
+    $factoryMock->shouldReceive('create')
+        ->once()
+        ->andReturnUsing(function (string $table, string $name, array $headers) use (&$capturedHeaders): Symfony\Component\HttpFoundation\Response {
+            $capturedHeaders = $headers;
+
+            return new Symfony\Component\HttpFoundation\Response();
+        });
+
+    $di = container();
+    $di['csv_response_factory'] = $factoryMock;
+    $service->setDi($di);
+
+    $service->exportCSV(['email', 'totally_fake_column', 'id']);
+
+    expect($capturedHeaders)->toBe(['id', 'email'])
+        ->and($capturedHeaders)->not->toContain('totally_fake_column');
+});

@@ -3288,3 +3288,51 @@ test('getInvoicePdfAttachment returns null and logs when PDF generation fails', 
     $errors = array_filter($logger->calls, fn ($c): bool => $c['method'] === 'error');
     expect($errors)->not->toBeEmpty();
 });
+
+test('exportCSV strips hash from numeric-array headers', function (): void {
+    $service = new Service();
+
+    $capturedHeaders = null;
+    $factoryMock = Mockery::mock();
+    $factoryMock->shouldReceive('create')
+        ->once()
+        ->andReturnUsing(function (string $table, string $name, array $headers) use (&$capturedHeaders): Symfony\Component\HttpFoundation\Response {
+            $capturedHeaders = $headers;
+
+            return new Symfony\Component\HttpFoundation\Response();
+        });
+
+    $di = container();
+    $di['csv_response_factory'] = $factoryMock;
+    $service->setDi($di);
+
+    $service->exportCSV(['hash', 'id', 'buyer_email']);
+
+    expect($capturedHeaders)->not->toContain('hash')
+        ->and($capturedHeaders)->toContain('id')
+        ->and($capturedHeaders)->toContain('buyer_email');
+});
+
+test('exportCSV falls back to defaults when only hash is requested', function (): void {
+    $service = new Service();
+
+    $capturedHeaders = null;
+    $factoryMock = Mockery::mock();
+    $factoryMock->shouldReceive('create')
+        ->once()
+        ->andReturnUsing(function (string $table, string $name, array $headers) use (&$capturedHeaders): Symfony\Component\HttpFoundation\Response {
+            $capturedHeaders = $headers;
+
+            return new Symfony\Component\HttpFoundation\Response();
+        });
+
+    $di = container();
+    $di['csv_response_factory'] = $factoryMock;
+    $service->setDi($di);
+
+    $service->exportCSV(['hash']);
+
+    expect($capturedHeaders)->toContain('id')
+        ->and($capturedHeaders)->toContain('buyer_email')
+        ->and($capturedHeaders)->not->toContain('hash');
+});

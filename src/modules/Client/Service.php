@@ -30,6 +30,32 @@ use Symfony\Component\Intl\Locales;
 
 class Service implements InjectionAwareInterface
 {
+    /**
+     * Columns on the `client` table permitted in CSV exports.
+     * Sensitive columns (pass, salt, api_token) are excluded by omission;
+     * new entity columns must be added here to be exportable.
+     */
+    private const array EXPORTABLE_COLUMNS = [
+        'id', 'aid', 'client_group_id', 'role', 'auth_type', 'email', 'status',
+        'email_approved', 'tax_exempt', 'type', 'first_name', 'last_name',
+        'gender', 'birthday', 'phone_cc', 'phone', 'company', 'company_vat',
+        'company_number', 'address_1', 'address_2', 'city', 'state', 'postcode',
+        'country', 'notes', 'currency', 'lang', 'timezone', 'ip', 'referred_by',
+        'billing_email',
+        'custom_1', 'custom_2', 'custom_3', 'custom_4', 'custom_5', 'custom_6',
+        'custom_7', 'custom_8', 'custom_9', 'custom_10', 'custom_11', 'custom_12',
+        'custom_13', 'custom_14', 'custom_15', 'custom_16', 'custom_17', 'custom_18',
+        'custom_19', 'custom_20',
+        'created_at', 'updated_at',
+    ];
+
+    /** Subset of EXPORTABLE_COLUMNS used when the caller passes no headers. */
+    private const array DEFAULT_EXPORT_COLUMNS = [
+        'id', 'email', 'status', 'first_name', 'last_name', 'phone_cc', 'phone',
+        'company', 'company_vat', 'company_number', 'address_1', 'address_2',
+        'city', 'state', 'postcode', 'country', 'currency',
+    ];
+
     protected ?\Pimple\Container $di = null;
 
     private ClientRepository $clientRepository;
@@ -1093,15 +1119,11 @@ class Service implements InjectionAwareInterface
     public function exportCSV(array $headers): Response
     {
         if ($headers) {
-            // Prevent the password / salt columns from being exported
-            if (isset($headers['pass'])) {
-                unset($headers['pass']);
-            }
-            if (isset($headers['salt'])) {
-                unset($headers['salt']);
-            }
-        } else {
-            $headers = ['id', 'email', 'status', 'first_name', 'last_name', 'phone_cc', 'phone', 'company', 'company_vat', 'company_number', 'address_1', 'address_2', 'city', 'state', 'postcode', 'country', 'currency'];
+            $headers = array_values(array_intersect(self::EXPORTABLE_COLUMNS, $headers));
+        }
+
+        if (!$headers) {
+            $headers = self::DEFAULT_EXPORT_COLUMNS;
         }
 
         return $this->di['csv_response_factory']->create('client', 'clients.csv', $headers);

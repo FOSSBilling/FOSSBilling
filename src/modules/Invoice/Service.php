@@ -28,6 +28,32 @@ use Twig\Loader\FilesystemLoader;
 
 class Service implements InjectionAwareInterface
 {
+    /**
+     * Columns on the `invoice` table permitted in CSV exports.
+     * The `hash` column (bearer token for public invoice access) is excluded.
+     */
+    private const array EXPORTABLE_COLUMNS = [
+        'id', 'client_id', 'serie', 'nr', 'currency', 'currency_rate',
+        'credit', 'base_income', 'base_refund', 'refund', 'notes',
+        'text_1', 'text_2', 'status', 'seller_company', 'seller_company_vat',
+        'seller_company_number', 'seller_address', 'seller_phone', 'seller_email',
+        'buyer_first_name', 'buyer_last_name', 'buyer_company', 'buyer_company_vat',
+        'buyer_company_number', 'buyer_address', 'buyer_city', 'buyer_state',
+        'buyer_country', 'buyer_zip', 'buyer_phone', 'buyer_phone_cc',
+        'buyer_email', 'gateway_id', 'approved', 'taxname', 'taxrate',
+        'due_at', 'reminded_at', 'paid_at', 'created_at', 'updated_at',
+    ];
+
+    /** Subset of EXPORTABLE_COLUMNS used when the caller passes no headers. */
+    private const array DEFAULT_EXPORT_COLUMNS = [
+        'id', 'client_id', 'nr', 'currency', 'credit', 'base_income', 'base_refund',
+        'refund', 'notes', 'status', 'buyer_first_name', 'buyer_last_name',
+        'buyer_company', 'buyer_company_vat', 'buyer_company_number', 'buyer_address',
+        'buyer_city', 'buyer_state', 'buyer_country', 'buyer_zip', 'buyer_phone',
+        'buyer_phone_cc', 'buyer_email', 'approved', 'taxname', 'taxrate',
+        'due_at', 'reminded_at', 'paid_at',
+    ];
+
     protected ?\Pimple\Container $di = null;
     private Filesystem $filesystem;
     private ?int $invoiceNumberPadding = null;
@@ -2066,8 +2092,12 @@ class Service implements InjectionAwareInterface
 
     public function exportCSV(array $headers): Response
     {
+        if ($headers) {
+            $headers = array_values(array_intersect(self::EXPORTABLE_COLUMNS, $headers));
+        }
+
         if (!$headers) {
-            $headers = ['id', 'client_id', 'nr', 'currency', 'credit', 'base_income', 'base_refund', 'refund', 'notes', 'status', 'buyer_first_name', 'buyer_last_name', 'buyer_company', 'buyer_company_vat', 'buyer_company_number', 'buyer_address', 'buyer_city', 'buyer_state', 'buyer_country', 'buyer_zip', 'buyer_phone', 'buyer_phone_cc', 'buyer_email', 'approved', 'taxname', 'taxrate', 'due_at', 'reminded_at', 'paid_at'];
+            $headers = self::DEFAULT_EXPORT_COLUMNS;
         }
 
         return $this->di['csv_response_factory']->create('invoice', 'invoices.csv', $headers);
