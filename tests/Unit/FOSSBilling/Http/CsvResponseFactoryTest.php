@@ -88,7 +88,7 @@ test('CSV factory does not leak all columns when every requested header is sensi
         ->and($content)->not->toContain('client@example.com');
 });
 
-test('CSV factory exports all columns when no headers are specified', function (): void {
+test('CSV factory exports all non-sensitive columns when no headers are specified', function (): void {
     $database = Mockery::mock(Box_Database::class);
     $database->shouldReceive('findAll')
         ->with('client')
@@ -96,6 +96,9 @@ test('CSV factory exports all columns when no headers are specified', function (
             csvTestBean([
                 'id' => 1,
                 'email' => 'client@example.com',
+                'pass' => 'leaked-hash',
+                'salt' => 'leaked-salt',
+                'api_token' => 'leaked-token',
                 'status' => 'active',
             ]),
         ]);
@@ -106,5 +109,11 @@ test('CSV factory exports all columns when no headers are specified', function (
 
     expect($content)->toContain('id')
         ->and($content)->toContain('email')
-        ->and($content)->toContain('status');
+        ->and($content)->toContain('status')
+        ->and($content)->not->toContain('pass')
+        ->and($content)->not->toContain('salt')
+        ->and($content)->not->toContain('api_token')
+        ->and($content)->not->toContain('leaked-hash')
+        ->and($content)->not->toContain('leaked-salt')
+        ->and($content)->not->toContain('leaked-token');
 });

@@ -46,7 +46,8 @@ final readonly class CsvResponseFactory
         if ($headers) {
             $rows = array_map(static fn (array $row): array => array_intersect_key($row, array_flip($headers)), $rows);
         } elseif (!$headersRequested && $rows !== []) {
-            $headers = array_keys(reset($rows));
+            $headers = array_values(array_diff(array_keys(reset($rows)), self::SENSITIVE_COLUMNS));
+            $rows = array_map(static fn (array $row): array => array_intersect_key($row, array_flip($headers)), $rows);
         } elseif ($headersRequested) {
             // All requested headers were stripped as sensitive — export nothing.
             $rows = [];
