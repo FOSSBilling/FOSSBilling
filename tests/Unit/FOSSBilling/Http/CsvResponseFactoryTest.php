@@ -28,7 +28,7 @@ if (!function_exists('csvTestBean')) {
     }
 }
 
-test('CSV factory strips pass, salt, and api_token from numeric-array headers', function (): void {
+test('CSV factory strips pass, salt, api_token, hash, and config from numeric-array headers', function (): void {
     $database = Mockery::mock(Box_Database::class);
     $database->shouldReceive('findAll')
         ->with('client')
@@ -39,12 +39,14 @@ test('CSV factory strips pass, salt, and api_token from numeric-array headers', 
                 'pass' => 'leaked-hash',
                 'salt' => 'leaked-salt',
                 'api_token' => 'leaked-token',
+                'hash' => 'leaked-invoice-hash',
+                'config' => '{"password":"leaked-config"}',
                 'status' => 'active',
             ]),
         ]);
 
     $factory = new CsvResponseFactory($database);
-    $response = $factory->create('client', 'clients.csv', ['id', 'email', 'pass', 'salt', 'api_token', 'status']);
+    $response = $factory->create('client', 'clients.csv', ['id', 'email', 'pass', 'salt', 'api_token', 'hash', 'config', 'status']);
     $content = $response->getContent();
 
     expect($content)->toContain('id')
@@ -53,9 +55,13 @@ test('CSV factory strips pass, salt, and api_token from numeric-array headers', 
         ->and($content)->not->toContain('pass')
         ->and($content)->not->toContain('salt')
         ->and($content)->not->toContain('api_token')
+        ->and($content)->not->toContain('hash')
+        ->and($content)->not->toContain('config')
         ->and($content)->not->toContain('leaked-hash')
         ->and($content)->not->toContain('leaked-salt')
-        ->and($content)->not->toContain('leaked-token');
+        ->and($content)->not->toContain('leaked-token')
+        ->and($content)->not->toContain('leaked-invoice-hash')
+        ->and($content)->not->toContain('leaked-config');
 });
 
 test('CSV factory does not leak all columns when every requested header is sensitive', function (): void {

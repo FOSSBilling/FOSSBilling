@@ -21,7 +21,7 @@ final readonly class CsvResponseFactory
     /**
      * Credential columns that must never appear in any CSV export.
      */
-    private const array SENSITIVE_COLUMNS = ['pass', 'salt', 'api_token'];
+    private const array SENSITIVE_COLUMNS = ['pass', 'salt', 'api_token', 'hash', 'config'];
 
     public function __construct(private \Box_Database $database)
     {

@@ -29,6 +29,25 @@ use Symfony\Component\HttpFoundation\Response;
 
 class Service implements InjectionAwareInterface
 {
+    /**
+     * Columns on the `client_order` table permitted in CSV exports.
+     * The `config` column (service provisioning credentials) is excluded.
+     */
+    private const array EXPORTABLE_COLUMNS = [
+        'id', 'client_id', 'product_id', 'form_id', 'promo_id', 'promo_recurring',
+        'promo_used', 'group_id', 'group_master', 'invoice_option', 'title',
+        'currency', 'unpaid_invoice_id', 'service_id', 'service_type', 'period',
+        'quantity', 'unit', 'price', 'discount', 'status', 'reason', 'notes',
+        'suspension_grace_days', 'referred_by', 'expires_at', 'activated_at',
+        'suspended_at', 'unsuspended_at', 'canceled_at', 'created_at', 'updated_at',
+    ];
+
+    /** Subset of EXPORTABLE_COLUMNS used when the caller passes no headers. */
+    private const array DEFAULT_EXPORT_COLUMNS = [
+        'id', 'client_id', 'product_id', 'title', 'currency', 'service_type',
+        'period', 'quantity', 'price', 'discount', 'status', 'reason', 'notes',
+    ];
+
     public const META_CANCEL_AT_PERIOD_END = 'cancel_at_period_end';
     private const string META_SUSPENSION_WARNING_FOR = 'suspension_warning_for';
 
@@ -2400,8 +2419,12 @@ class Service implements InjectionAwareInterface
 
     public function exportCSV(array $headers): Response
     {
+        if ($headers) {
+            $headers = array_values(array_intersect(self::EXPORTABLE_COLUMNS, $headers));
+        }
+
         if (!$headers) {
-            $headers = ['id', 'client_id', 'product_id', 'title', 'currency', 'service_type', 'period', 'quantity', 'price', 'discount', 'status', 'reason', 'notes'];
+            $headers = self::DEFAULT_EXPORT_COLUMNS;
         }
 
         return $this->di['csv_response_factory']->create('client_order', 'orders.csv', $headers);
