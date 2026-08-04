@@ -65,9 +65,7 @@ test('marks item as paid', function (): void {
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()
         ->once()
-        ->andReturnUsing(function (string $model) use ($invoiceModel, $clientModel) {
-            return $model === 'Client' ? $clientModel : $invoiceModel;
-        });
+        ->andReturnUsing(fn (string $model) => $model === 'Client' ? $clientModel : $invoiceModel);
     $dbMock->shouldReceive('load')
         ->atLeast()
         ->once()
@@ -86,9 +84,7 @@ test('marks item as paid', function (): void {
     $em->shouldReceive('wrapInTransaction')
         ->atLeast()
         ->once()
-        ->andReturnUsing(function (callable $func) use ($em): mixed {
-            return $func($em);
-        });
+        ->andReturnUsing(fn (callable $func): mixed => $func($em));
     $em->shouldReceive('persist')
         ->atLeast()
         ->once();
@@ -352,9 +348,7 @@ test('credits invoice item', function (): void {
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
-        ->andReturnUsing(function (string $model) use ($invoiceModel, $clientModel) {
-            return $model === 'Client' ? $clientModel : $invoiceModel;
-        });
+        ->andReturnUsing(fn (string $model) => $model === 'Client' ? $clientModel : $invoiceModel);
 
     $em = Mockery::mock(EntityManagerInterface::class);
     $repo = Mockery::mock(InvoiceItemRepository::class);
@@ -425,11 +419,9 @@ test('gets all not execute paid items excluding executed and failed', function (
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getAll')
-        ->withArgs(function (string $sql, array $bindings): bool {
-            return str_contains($sql, 'NOT IN (:status_executed, :status_failed)')
-                && $bindings[':status_executed'] === InvoiceItem::STATUS_EXECUTED
-                && $bindings[':status_failed'] === InvoiceItem::STATUS_FAILED;
-        })
+        ->withArgs(fn (string $sql, array $bindings): bool => str_contains($sql, 'NOT IN (:status_executed, :status_failed)')
+            && $bindings[':status_executed'] === InvoiceItem::STATUS_EXECUTED
+            && $bindings[':status_failed'] === InvoiceItem::STATUS_FAILED)
         ->atLeast()
         ->once()
         ->andReturn([]);
@@ -545,7 +537,7 @@ test('requeue throws when item is not found', function (): void {
 
     $service = invoiceItemService($repo);
 
-    expect(fn () => $service->requeueItem(99))->toThrow(FOSSBilling\InformationException::class);
+    expect(fn (): InvoiceItem => $service->requeueItem(99))->toThrow(FOSSBilling\InformationException::class);
 });
 
 test('requeue throws when item is not in a failed state', function (): void {
@@ -560,5 +552,5 @@ test('requeue throws when item is not in a failed state', function (): void {
 
     $service = invoiceItemService($repo);
 
-    expect(fn () => $service->requeueItem(7))->toThrow(FOSSBilling\InformationException::class);
+    expect(fn (): InvoiceItem => $service->requeueItem(7))->toThrow(FOSSBilling\InformationException::class);
 });
