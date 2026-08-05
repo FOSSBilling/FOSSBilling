@@ -131,15 +131,19 @@ body {
 
 .invoice-gateway {
     border: 1px solid var(--bs-border-color);
-    transition: border-color 0.15s ease-in-out, background-color 0.15s ease-in-out;
 
-    &:hover {
+    &:hover,
+    &:has(.btn-check:checked) {
         border: 1px solid var(--bs-primary);
     }
 
-    &:has(.btn-check:checked) {
-        border-color: var(--bs-primary);
-        background-color: rgba(var(--bs-primary-rgb), 0.08);
+    // Bootstrap's .btn-check:checked + .btn draws its own border using
+    // --bs-btn-active-border-color, which is never set on a bare .btn (no
+    // color variant). That leaves the browser to fall back to the inherited
+    // text color, drawing a stray dark border tight around the logo. The
+    // highlight above on the container is enough, so suppress it here.
+    .btn-check:checked + .btn {
+        border-color: transparent;
     }
 }
 
