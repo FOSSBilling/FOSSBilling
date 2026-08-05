@@ -15,7 +15,7 @@ use FOSSBilling\Http\CsvResponseFactory;
 if (!function_exists('csvTestBean')) {
     function csvTestBean(array $columns): object
     {
-        return new class($columns) {
+        return new readonly class($columns) {
             public function __construct(private array $columns)
             {
             }

@@ -57,7 +57,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                     $item->setStatus(InvoiceItem::STATUS_PENDING_SETUP);
                     $em->persist($item);
                 });
-            } catch (UniqueConstraintViolationException $e) {
+            } catch (UniqueConstraintViolationException) {
                 // Idempotency: the unique constraint on invoice_item_id means a prior
                 // attempt already credited this item. Mark it as charged without re-crediting.
                 $this->di['logger']->setChannel('billing')->info(sprintf('Invoice item #%d was already credited; skipping duplicate credit.', (int) $item->getId()));
@@ -296,7 +296,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         // credit per item. A violation means a retry already credited it — treat as no-op.
         try {
             $this->di['em']->flush();
-        } catch (UniqueConstraintViolationException $e) {
+        } catch (UniqueConstraintViolationException) {
             $this->di['logger']->setChannel('billing')->info(sprintf('Invoice item #%d was already credited; skipping duplicate credit.', (int) $item->getId()));
             $this->resetEntityManager();
 
