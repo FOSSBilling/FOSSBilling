@@ -131,9 +131,15 @@ body {
 
 .invoice-gateway {
     border: 1px solid var(--bs-border-color);
+    transition: border-color 0.15s ease-in-out, background-color 0.15s ease-in-out;
 
     &:hover {
         border: 1px solid var(--bs-primary);
+    }
+
+    &:has(.btn-check:checked) {
+        border-color: var(--bs-primary);
+        background-color: rgba(var(--bs-primary-rgb), 0.08);
     }
 }
 
