@@ -181,3 +181,19 @@ test('isActive throws when no matching order found', function (): void {
     expect(fn (): bool => $reflection->invoke($service, $entity))
         ->toThrow(Exception::class, 'API key does not exist');
 });
+
+test('clientSettableConfigKeys returns the apikey allowlist', function (): void {
+    $service = new Service();
+    $allowed = $service->clientSettableConfigKeys();
+
+    expect($allowed)->toBeArray();
+    expect($allowed)->toContain('period');
+    expect($allowed)->toContain('quantity');
+    // Admin-controlled keys must not appear - the central filter strips them
+    // before the merge, preventing client override of key generation params
+    // (length, split, split_interval, case, custom_* fields).
+    expect($allowed)->not->toContain('length');
+    expect($allowed)->not->toContain('split');
+    expect($allowed)->not->toContain('split_interval');
+    expect($allowed)->not->toContain('case');
+});

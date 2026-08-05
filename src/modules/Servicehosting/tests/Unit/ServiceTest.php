@@ -1278,3 +1278,22 @@ test('_performOnService accepts one-time active order with null expires_at', fun
 
     expect($reflection->invoke($service, $oneTimeOrder))->toBeTrue();
 });
+
+test('clientSettableConfigKeys returns the hosting allowlist', function (): void {
+    $service = new Service();
+    $allowed = $service->clientSettableConfigKeys();
+
+    expect($allowed)->toBeArray();
+    // Client may choose billing period, domain options, quantity, and
+    // whether multiple items are allowed in a single cart-add. Admin-
+    // controlled fields (hosting_plan_id, server_id, reseller, ...) are
+    // deliberately absent and will be stripped by the central filter in
+    // Product\Service::prepareCartProductConfig before attachOrderConfig runs.
+    expect($allowed)->toContain('period');
+    expect($allowed)->toContain('domain');
+    expect($allowed)->toContain('quantity');
+    expect($allowed)->toContain('multiple');
+    expect($allowed)->not->toContain('hosting_plan_id');
+    expect($allowed)->not->toContain('server_id');
+    expect($allowed)->not->toContain('reseller');
+});

@@ -146,7 +146,18 @@ class Service implements InjectionAwareInterface
         $this->filesystem = new Filesystem();
     }
 
-    public function attachOrderConfig(Product $product, array &$data): array
+    /**
+     * Top-level cart-config keys a client is authorized to set when ordering
+     * a downloadable product.
+     *
+     * @return list<string>
+     */
+    public function clientSettableConfigKeys(): array
+    {
+        return ['period', 'quantity'];
+    }
+
+    public function attachOrderConfig(Product $product, array $data): array
     {
         $config = json_decode($product->getConfig() ?? '', true) ?? [];
         $required = [
@@ -158,7 +169,9 @@ class Service implements InjectionAwareInterface
         $data['filename'] = $config['filename'];
         $data[self::STORED_FILENAME_CONFIG_KEY] = $this->validateStoredFilename($config[self::STORED_FILENAME_CONFIG_KEY] ?? null);
 
-        return array_merge($config, $data);
+        // Admin config wins on key collisions, unlike the other product-type
+        // services which rely solely on the central client-settable-keys filter.
+        return array_merge($data, $config);
     }
 
     public function validateOrderData(array &$data): void

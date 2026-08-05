@@ -327,6 +327,13 @@ class Service implements InjectionAwareInterface
     {
         $service = $this->getProductModuleService($product);
 
+        // Strip client-supplied keys the product-type service hasn't declared
+        // as client-settable, preventing mass-assignment of admin-controlled
+        // fields (e.g. hosting_plan_id, server_id) via the cart/add_item endpoint.
+        if (method_exists($service, 'clientSettableConfigKeys')) {
+            $config = $this->stripUnauthorizedConfigKeys($config, $service->clientSettableConfigKeys());
+        }
+
         if (method_exists($service, 'attachOrderConfig')) {
             $config = $service->attachOrderConfig($product, $config);
         }
@@ -337,6 +344,28 @@ class Service implements InjectionAwareInterface
 
         if (method_exists($service, 'validateCustomForm')) {
             $service->validateCustomForm($config, $this->getProductValidationData($product));
+        }
+
+        return $config;
+    }
+
+    /**
+     * Remove top-level keys from the client-supplied cart config that are not
+     * in the service's `clientSettableConfigKeys()` allowlist.
+     *
+     * @param array<string, mixed> $config      client-supplied cart config
+     * @param list<string>         $allowedKeys service-defined allowlist of client-settable keys
+     *
+     * @return array<string, mixed>
+     */
+    private function stripUnauthorizedConfigKeys(array $config, array $allowedKeys): array
+    {
+        $allowedKeys = array_flip($allowedKeys);
+
+        foreach (array_keys($config) as $key) {
+            if (!isset($allowedKeys[$key])) {
+                unset($config[$key]);
+            }
         }
 
         return $config;

@@ -2160,3 +2160,123 @@ test('assert upgrade allowed by ids throws helpful exception', function (): void
     expect(fn () => $serviceMock->assertUpgradeAllowedByIds(1, 2))
         ->toThrow(FOSSBilling\InformationException::class, 'Sorry, but "Starter" is not allowed to be upgraded to "Pro"');
 });
+
+test('prepareCartProductConfig strips client-supplied admin-controlled keys', function (): void {
+    $service = new Service();
+
+    $product = productTestCreateProductEntity(1)
+        ->setType('hosting')
+        ->setConfig('{"hosting_plan_id":1,"server_id":2,"allow_domain_register":true}');
+
+    // Real class implementing the contract. Using stdClass + a closure property
+    // would NOT satisfy method_exists(), which is how the central filter detects
+    // the allowlist. An anonymous class is the smallest vehicle that does.
+    $hostingService = new class {
+        public function clientSettableConfigKeys(): array
+        {
+            return ['period', 'domain', 'quantity'];
+        }
+    };
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (string $serviceName): object => match ($serviceName) {
+        'servicehosting' => $hostingService,
+        default => throw new RuntimeException('Unexpected service request ' . $serviceName),
+    });
+
+    $service->setDi($di);
+
+    $clientConfig = [
+        'period' => '1M',
+        'domain' => ['action' => 'owndomain', 'owndomain_sld' => 'example', 'owndomain_tld' => '.com'],
+        'quantity' => 1,
+        'hosting_plan_id' => 999,   // injected - should be stripped
+        'server_id' => 999,         // injected - should be stripped
+        'reseller' => true,         // injected - should be stripped
+    ];
+
+    $result = $service->prepareCartProductConfig($product, $clientConfig);
+
+    // Allowlisted client fields pass through.
+    expect($result)->toHaveKey('period');
+    expect($result)->toHaveKey('domain');
+    expect($result)->toHaveKey('quantity');
+
+    // Client-injected admin-controlled fields are stripped. Any values for
+    // those fields present in the result must come from attachOrderConfig's
+    // own merge with the product config, not from the client input. Since
+    // our stub here has no attachOrderConfig, no merge happens - so the
+    // injected keys must be absent entirely.
+    expect($result)->not->toHaveKey('hosting_plan_id');
+    expect($result)->not->toHaveKey('server_id');
+    expect($result)->not->toHaveKey('reseller');
+});
+
+test('prepareCartProductConfig preserves all allowlisted client keys', function (): void {
+    $service = new Service();
+
+    $product = productTestCreateProductEntity(1)
+        ->setType('hosting')
+        ->setConfig('{"hosting_plan_id":1}');
+
+    $hostingService = new class {
+        public function clientSettableConfigKeys(): array
+        {
+            return ['period', 'domain', 'quantity', 'multiple'];
+        }
+    };
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (string $serviceName): object => match ($serviceName) {
+        'servicehosting' => $hostingService,
+        default => throw new RuntimeException('Unexpected service request ' . $serviceName),
+    });
+
+    $service->setDi($di);
+
+    $clientConfig = [
+        'period' => '1Y',
+        'domain' => ['action' => 'owndomain', 'owndomain_sld' => 'example', 'owndomain_tld' => '.com'],
+        'quantity' => 2,
+        'multiple' => 1,
+    ];
+
+    $result = $service->prepareCartProductConfig($product, $clientConfig);
+
+    expect($result['period'])->toBe('1Y');
+    expect($result['quantity'])->toBe(2);
+    expect($result['multiple'])->toBe(1);
+    expect($result['domain'])->toHaveKey('action', 'owndomain');
+});
+
+test('prepareCartProductConfig does not filter when service has no clientSettableConfigKeys', function (): void {
+    $service = new Service();
+
+    // A custom service that does NOT implement the contract.
+    $product = productTestCreateProductEntity(1)
+        ->setType('custom')
+        ->setConfig('{"some_admin_field":"admin_value"}');
+
+    $customService = new stdClass();
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (string $serviceName): object => match ($serviceName) {
+        'servicecustom' => $customService,
+        default => throw new RuntimeException('Unexpected service request ' . $serviceName),
+    });
+
+    $service->setDi($di);
+
+    $clientConfig = [
+        'period' => '1M',
+        'arbitrary_field' => 'attacker_value',
+        'another_field' => 12345,
+    ];
+
+    $result = $service->prepareCartProductConfig($product, $clientConfig);
+
+    // Backward-compat: nothing is stripped when the contract is unimplemented.
+    expect($result)->toHaveKey('arbitrary_field', 'attacker_value');
+    expect($result)->toHaveKey('another_field', 12345);
+    expect($result)->toHaveKey('period', '1M');
+});
