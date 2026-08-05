@@ -706,3 +706,23 @@ test('server process rejects expired license', function (): void {
     expect(fn (): array => $server->process($data))
         ->toThrow(LogicException::class, 'License is not active');
 });
+
+test('clientSettableConfigKeys returns the license allowlist', function (): void {
+    $service = new Service();
+    $allowed = $service->clientSettableConfigKeys();
+
+    expect($allowed)->toBeArray();
+    expect($allowed)->toContain('period');
+    expect($allowed)->toContain('quantity');
+    // Admin-controlled keys must not appear - the central filter strips them
+    // before attachOrderConfig's merge runs, preventing client override of
+    // validation flags, plugin name, key length, prefix, and iterations.
+    expect($allowed)->not->toContain('plugin');
+    expect($allowed)->not->toContain('length');
+    expect($allowed)->not->toContain('prefix');
+    expect($allowed)->not->toContain('iterations');
+    expect($allowed)->not->toContain('validate_ip');
+    expect($allowed)->not->toContain('validate_host');
+    expect($allowed)->not->toContain('validate_path');
+    expect($allowed)->not->toContain('validate_version');
+});

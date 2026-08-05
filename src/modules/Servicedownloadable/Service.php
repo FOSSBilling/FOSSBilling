@@ -149,7 +149,18 @@ class Service implements InjectionAwareInterface
         $this->filesystem = new Filesystem();
     }
 
-    public function attachOrderConfig(Product $product, array &$data): array
+    /**
+     * Top-level cart-config keys a client is authorized to set when ordering
+     * a downloadable product.
+     *
+     * @return list<string>
+     */
+    public function clientSettableConfigKeys(): array
+    {
+        return ['period', 'quantity'];
+    }
+
+    public function attachOrderConfig(Product $product, array $data): array
     {
         $config = json_decode($product->getConfig() ?? '', true) ?? [];
         $files = $this->validateFileDefinitions($config[self::FILES_CONFIG_KEY] ?? null);
@@ -157,9 +168,12 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Product is not configured completely.');
         }
 
-        $data[self::FILES_CONFIG_KEY] = $files;
+        // Use the validated file list, not the raw product config value.
+        $config[self::FILES_CONFIG_KEY] = $files;
 
-        return array_merge($config, $data);
+        // Admin config wins on key collisions, unlike the other product-type
+        // services which rely solely on the central client-settable-keys filter.
+        return array_merge($data, $config);
     }
 
     public function validateOrderData(array &$data): void
