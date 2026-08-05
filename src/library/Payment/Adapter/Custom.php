@@ -103,14 +103,15 @@ class Payment_Adapter_Custom
             $invoiceTotal = $invoiceService->getTotalWithTax($invoice);
 
             // Add funds to the client's account and mark the invoice as paid
-            $tx_desc = $gateway->getName() . ' transaction No: ' . $tx->txn_id;
+            $gatewayName = $gateway->getName() ?: $gateway->getGateway();
+            $tx_desc = $gatewayName . ' transaction No: ' . $tx->txn_id;
             $clientService->addFunds($client, $invoiceTotal, $tx_desc, []);
             $invoiceService->markAsPaid($invoice, true, true);
 
             // Update the transaction status and details
             $tx->status = Model_Transaction::STATUS_PROCESSED;
             $tx->amount = $invoiceTotal;
-            $tx->note = $gateway->getName() . ' transaction No: ' . $tx->txn_id;
+            $tx->note = $gatewayName . ' transaction No: ' . $tx->txn_id;
             $tx->currency = $invoice->currency;
             $tx->updated_at = date('Y-m-d H:i:s');
 

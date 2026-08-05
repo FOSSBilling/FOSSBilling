@@ -60,20 +60,26 @@ test('getSearchQueryBuilder applies enabled, allow_single, allow_recurrent and t
 
 test('boolean filters normalize falsey string representations to false', function (): void {
     $repository = payGatewayEntityManager()->getRepository(PayGateway::class);
+    $filters = ['enabled', 'allow_single', 'allow_recurrent', 'test_mode'];
 
-    foreach (['false', 'off', '0', false, 0] as $falsey) {
-        $qb = $repository->getSearchQueryBuilder(['enabled' => $falsey]);
+    foreach ($filters as $filter) {
+        foreach (['false', 'off', '0', false, 0] as $falsey) {
+            $qb = $repository->getSearchQueryBuilder([$filter => $falsey]);
 
-        expect($qb->getParameter('enabled')->getValue())->toBeFalse();
+            expect($qb->getParameter($filter)->getValue())->toBeFalse();
+        }
     }
 });
 
 test('boolean filters normalize truthy representations to true', function (): void {
     $repository = payGatewayEntityManager()->getRepository(PayGateway::class);
+    $filters = ['enabled', 'allow_single', 'allow_recurrent', 'test_mode'];
 
-    foreach (['true', 'on', '1', true, 1] as $truthy) {
-        $qb = $repository->getSearchQueryBuilder(['test_mode' => $truthy]);
+    foreach ($filters as $filter) {
+        foreach (['true', 'on', '1', true, 1] as $truthy) {
+            $qb = $repository->getSearchQueryBuilder([$filter => $truthy]);
 
-        expect($qb->getParameter('test_mode')->getValue())->toBeTrue();
+            expect($qb->getParameter($filter)->getValue())->toBeTrue();
+        }
     }
 });
