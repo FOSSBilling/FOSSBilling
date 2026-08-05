@@ -10,9 +10,13 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Invoice\Entity\PayGateway;
+use Box\Mod\Invoice\Repository\PayGatewayRepository;
 use Box\Mod\Invoice\ServiceTransaction;
+use Doctrine\ORM\EntityManagerInterface;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 test('gets dependency injection container', function (): void {
     $service = new ServiceTransaction();
@@ -117,15 +121,14 @@ test('deletes a transaction', function (): void {
 
 test('converts to api array', function (): void {
     $service = new ServiceTransaction();
-    $dbMock = Mockery::mock('\Box_Database');
-    $payGatewayModel = new Model_PayGateway();
-    $payGatewayModel->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock->shouldReceive('load')
-        ->atLeast()->once()
-        ->andReturn($payGatewayModel);
+    $payGatewayModel = createEntity(PayGateway::class, ['id' => 1]);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($gatewayRepo = Mockery::mock(PayGatewayRepository::class));
+    $gatewayRepo->shouldReceive('find')->atLeast()->once()->andReturn($payGatewayModel);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $em;
     $service->setDi($di);
 
     $expected = [

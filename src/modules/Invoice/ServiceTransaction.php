@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice;
 
+use Box\Mod\Invoice\Entity\PayGateway;
 use FOSSBilling\Environment;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Tools;
@@ -118,8 +119,11 @@ class ServiceTransaction implements InjectionAwareInterface
         $skip_validation = Tools::normalizeBoolean($data['skip_validation'] ?? false);
         if (!empty($data['gateway_id'])) {
             try {
-                $this->di['db']->getExistingModelById('PayGateway', $data['gateway_id'], 'Gateway was not found');
+                $gateway = $this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']);
             } catch (\Exception) {
+                $gateway = null;
+            }
+            if ($gateway === null) {
                 if (isset($this->di['logger'])) {
                     $this->di['logger']->warning('IPN with invalid gateway_id rejected: ' . $data['gateway_id']);
                 }
@@ -136,7 +140,9 @@ class ServiceTransaction implements InjectionAwareInterface
                 throw new \FOSSBilling\InformationException('Payment gateway ID is missing');
             }
             $this->di['db']->getExistingModelById('Invoice', $data['invoice_id'], 'Invoice was not found');
-            $this->di['db']->getExistingModelById('PayGateway', $data['gateway_id'], 'Gateway was not found');
+            if ($this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']) === null) {
+                throw new \FOSSBilling\Exception('Gateway was not found');
+            }
         }
 
         // Early duplicate check: if gateway + external transaction identifier already exists
@@ -236,9 +242,9 @@ class ServiceTransaction implements InjectionAwareInterface
     {
         $gateway = null;
         if ($model->gateway_id) {
-            $gtw = $this->di['db']->load('PayGateway', $model->gateway_id);
-            if ($gtw instanceof \Model_PayGateway) {
-                $gateway = $gtw->name;
+            $gtw = $this->di['em']->getRepository(PayGateway::class)->find((int) $model->gateway_id);
+            if ($gtw instanceof PayGateway) {
+                $gateway = $gtw->getName();
             }
         }
 
@@ -562,15 +568,15 @@ class ServiceTransaction implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Could not determine transaction origin. Transaction payment gateway is unknown.', null, 701);
         }
 
-        $gtw = $this->di['db']->load('PayGateway', $tx->gateway_id);
-        if (!$gtw instanceof \Model_PayGateway) {
+        $gtw = $this->di['em']->getRepository(PayGateway::class)->find((int) $tx->gateway_id);
+        if (!$gtw instanceof PayGateway) {
             throw new \FOSSBilling\Exception('Cannot handle transaction received from unknown payment gateway: :id', [':id' => $tx->gateway_id], 704);
         }
 
         $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
         $adapter = $payGatewayService->getPaymentAdapter($gtw);
         if (!method_exists($adapter, 'processTransaction')) {
-            throw new \FOSSBilling\Exception('Payment adapter :adapter does not support action :action', [':adapter' => $gtw->name, ':action' => 'processTransaction'], 705);
+            throw new \FOSSBilling\Exception('Payment adapter :adapter does not support action :action', [':adapter' => $gtw->getName(), ':action' => 'processTransaction'], 705);
         }
 
         $ipn = json_decode($tx->ipn ?? '', true);
@@ -721,8 +727,8 @@ class ServiceTransaction implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Could not determine transaction origin. Transaction payment gateway is unknown.', null, 701);
         }
 
-        $gtw = $this->di['db']->load('PayGateway', $tx->gateway_id);
-        if (!$gtw instanceof \Model_PayGateway) {
+        $gtw = $this->di['em']->getRepository(PayGateway::class)->find((int) $tx->gateway_id);
+        if (!$gtw instanceof PayGateway) {
             throw new \FOSSBilling\Exception('Cannot handle transaction received from unknown payment gateway: :id', [':id' => $tx->gateway_id], 704);
         }
 
@@ -747,18 +753,18 @@ class ServiceTransaction implements InjectionAwareInterface
             if (!$adapter->isIpnValid($ipn, $mpi)) {
                 $tx->output = $adapter->getOutput();
 
-                throw new \FOSSBilling\Exception('Instant payment notification (IPN) did not pass gateway :id validation', [':id' => $gtw->gateway], 706);
+                throw new \FOSSBilling\Exception('Instant payment notification (IPN) did not pass gateway :id validation', [':id' => $gtw->getGateway()], 706);
             }
             $tx->output = $adapter->getOutput();
         }
 
         if (!method_exists($adapter, 'getTransaction')) {
-            throw new \FOSSBilling\Exception('Payment adapter :adapter does not support action :action', [':adapter' => $gtw->name, ':action' => 'getTransaction'], 705);
+            throw new \FOSSBilling\Exception('Payment adapter :adapter does not support action :action', [':adapter' => $gtw->getName(), ':action' => 'getTransaction'], 705);
         }
 
         $response = $adapter->getTransaction($ipn, $mpi);
         if (!$response instanceof \Payment_Transaction) {
-            throw new \FOSSBilling\Exception('Payment gateway :id method getTransaction should return Payment_Transaction object', [':id' => $gtw->gateway], 705);
+            throw new \FOSSBilling\Exception('Payment gateway :id method getTransaction should return Payment_Transaction object', [':id' => $gtw->getGateway()], 705);
         }
 
         // if tx type is already defined, do not set them again
