@@ -2227,9 +2227,7 @@ test('activates paid invoices in batch', function (): void {
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connection->shouldReceive('transactional')
         ->once()
-        ->andReturnUsing(function (callable $func) use ($connection) {
-            return $func($connection);
-        });
+        ->andReturnUsing(fn (callable $func) => $func($connection));
     $connection->shouldReceive('fetchOne')
         ->with('SELECT status FROM invoice_item WHERE id = :id FOR UPDATE', ['id' => 1])
         ->andReturn(InvoiceItem::STATUS_PENDING_SETUP);
@@ -2265,9 +2263,7 @@ test('handles exception during batch paid invoice activation', function (): void
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connection->shouldReceive('transactional')
         ->once()
-        ->andReturnUsing(function (callable $func) use ($connection) {
-            return $func($connection);
-        });
+        ->andReturnUsing(fn (callable $func) => $func($connection));
     $connection->shouldReceive('fetchOne')
         ->with('SELECT status FROM invoice_item WHERE id = :id FOR UPDATE', ['id' => 1])
         ->andReturn(InvoiceItem::STATUS_PENDING_SETUP);
