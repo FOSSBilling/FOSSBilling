@@ -14,10 +14,11 @@ use Box\Mod\Invoice\Entity\PayGateway;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMSetup;
+use Symfony\Component\Filesystem\Path;
 
 function payGatewayEntityManager(): EntityManager
 {
-    $config = ORMSetup::createAttributeMetadataConfig([dirname(__DIR__, 3) . '/Entity'], true);
+    $config = ORMSetup::createAttributeMetadataConfig([Path::join(__DIR__, '..', '..', '..', 'Entity')], true);
     $config->setProxyDir(sys_get_temp_dir());
     $config->setProxyNamespace('FOSSBilling\\Tests\\DoctrineProxies');
 
@@ -55,4 +56,24 @@ test('getSearchQueryBuilder applies enabled, allow_single, allow_recurrent and t
         ->and($dql)->toContain('pg.allowSingle = :allow_single')
         ->and($dql)->toContain('pg.allowRecurrent = :allow_recurrent')
         ->and($dql)->toContain('pg.testMode = :test_mode');
+});
+
+test('boolean filters normalize falsey string representations to false', function (): void {
+    $repository = payGatewayEntityManager()->getRepository(PayGateway::class);
+
+    foreach (['false', 'off', '0', false, 0] as $falsey) {
+        $qb = $repository->getSearchQueryBuilder(['enabled' => $falsey]);
+
+        expect($qb->getParameter('enabled')->getValue())->toBeFalse();
+    }
+});
+
+test('boolean filters normalize truthy representations to true', function (): void {
+    $repository = payGatewayEntityManager()->getRepository(PayGateway::class);
+
+    foreach (['true', 'on', '1', true, 1] as $truthy) {
+        $qb = $repository->getSearchQueryBuilder(['test_mode' => $truthy]);
+
+        expect($qb->getParameter('test_mode')->getValue())->toBeTrue();
+    }
 });

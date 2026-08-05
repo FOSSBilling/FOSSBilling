@@ -119,10 +119,11 @@ class ServiceTransaction implements InjectionAwareInterface
         $skip_validation = Tools::normalizeBoolean($data['skip_validation'] ?? false);
         if (!empty($data['gateway_id'])) {
             try {
-                if ($this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']) === null) {
-                    throw new \FOSSBilling\Exception('Gateway was not found');
-                }
+                $gateway = $this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']);
             } catch (\Exception) {
+                $gateway = null;
+            }
+            if ($gateway === null) {
                 if (isset($this->di['logger'])) {
                     $this->di['logger']->warning('IPN with invalid gateway_id rejected: ' . $data['gateway_id']);
                 }

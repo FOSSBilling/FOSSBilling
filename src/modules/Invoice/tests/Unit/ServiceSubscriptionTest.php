@@ -72,7 +72,12 @@ test('creates a subscription', function (): void {
         'gateway_id' => 2,
     ];
 
-    $result = $service->create(new Model_Client(), new PayGateway(), $data);
+    $client = new Model_Client();
+    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client->id = 1;
+    $pg = createEntity(PayGateway::class, ['id' => 2]);
+
+    $result = $service->create($client, $pg, $data);
     expect($result)->toBeInt()->toBe($newId);
 });
 

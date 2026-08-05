@@ -381,7 +381,8 @@ test('throws exception when adapter does not exist', function (): void {
 
     $serviceMock = Mockery::mock(ServicePayGateway::class, [$filesystemMock])->makePartial();
     $serviceMock->shouldReceive('getAdapterClassName')
-        ->atLeast()->once();
+        ->atLeast()->once()
+        ->andReturn('Payment_Adapter_Unknown');
 
     $service = payGatewayService();
     $serviceMock->setDi($service->getDi());

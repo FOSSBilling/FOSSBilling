@@ -195,7 +195,7 @@ class ServicePayGateway implements InjectionAwareInterface
         }
 
         if (isset($data['config']) && is_array($data['config'])) {
-            $model->setConfig(json_encode($data['config']));
+            $model->setConfig(json_encode($mergedConfig));
         }
 
         if (isset($data['accepted_currencies']) && is_array($data['accepted_currencies'])) {
@@ -376,6 +376,9 @@ class ServicePayGateway implements InjectionAwareInterface
     public function getAdapterClassName(PayGateway $pg): string
     {
         $gateway = $pg->getGateway();
+        if ($gateway === null || $gateway === '') {
+            throw new \FOSSBilling\Exception('Payment gateway :adapter was not found', [':adapter' => '']);
+        }
         $class = "Payment_Adapter_{$gateway}";
 
         if (!class_exists($class)) {
@@ -403,7 +406,9 @@ class ServicePayGateway implements InjectionAwareInterface
             return array_keys($currencyRepository->getPairs());
         }
 
-        return json_decode($accepted, true);
+        $decoded = json_decode($accepted, true);
+
+        return is_array($decoded) ? $decoded : [];
     }
 
     public function getFormElements(PayGateway $model): array

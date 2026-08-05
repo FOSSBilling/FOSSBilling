@@ -8,6 +8,9 @@ declare(strict_types=1);
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
+
+use Box\Mod\Invoice\Entity\PayGateway;
+
 class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterface
 {
     protected ?Pimple\Container $di = null;
@@ -137,8 +140,8 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
 
     public function getServiceUrl($invoice_id = 0)
     {
-        $gatewayModel = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\PayGateway::class)->findEnabledByGateway('ClientBalance');
-        if (!$gatewayModel instanceof Box\Mod\Invoice\Entity\PayGateway) {
+        $gatewayModel = $this->di['em']->getRepository(PayGateway::class)->findEnabledByGateway('ClientBalance');
+        if (!$gatewayModel instanceof PayGateway) {
             throw new Payment_Exception('ClientBalance gateway is not enabled', null, 301);
         }
 

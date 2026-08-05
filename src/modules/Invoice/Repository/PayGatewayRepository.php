@@ -14,6 +14,7 @@ namespace Box\Mod\Invoice\Repository;
 use Box\Mod\Invoice\Entity\PayGateway;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\Tools;
 
 class PayGatewayRepository extends EntityRepository
 {
@@ -54,25 +55,25 @@ class PayGatewayRepository extends EntityRepository
         $enabled = $data['enabled'] ?? null;
         if ($enabled !== null && $enabled !== '') {
             $qb->andWhere('pg.enabled = :enabled')
-                ->setParameter('enabled', (bool) $enabled);
+                ->setParameter('enabled', Tools::normalizeBoolean($enabled));
         }
 
         $allowSingle = $data['allow_single'] ?? null;
         if ($allowSingle !== null && $allowSingle !== '') {
             $qb->andWhere('pg.allowSingle = :allow_single')
-                ->setParameter('allow_single', (bool) $allowSingle);
+                ->setParameter('allow_single', Tools::normalizeBoolean($allowSingle));
         }
 
         $allowRecurrent = $data['allow_recurrent'] ?? null;
         if ($allowRecurrent !== null && $allowRecurrent !== '') {
             $qb->andWhere('pg.allowRecurrent = :allow_recurrent')
-                ->setParameter('allow_recurrent', (bool) $allowRecurrent);
+                ->setParameter('allow_recurrent', Tools::normalizeBoolean($allowRecurrent));
         }
 
         $testMode = $data['test_mode'] ?? null;
         if ($testMode !== null && $testMode !== '') {
             $qb->andWhere('pg.testMode = :test_mode')
-                ->setParameter('test_mode', (bool) $testMode);
+                ->setParameter('test_mode', Tools::normalizeBoolean($testMode));
         }
 
         $qb->orderBy('pg.gateway', 'ASC');

@@ -92,6 +92,9 @@ class Payment_Adapter_Custom
 
             // Load the payment gateway and client associated with the transaction
             $gateway = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\PayGateway::class)->find((int) $tx->gateway_id);
+            if (!$gateway instanceof Box\Mod\Invoice\Entity\PayGateway) {
+                throw new Exception('Payment gateway not found for transaction');
+            }
             $clientService = $this->di['mod_service']('Client');
             $client = $clientService->get(['id' => $invoice->client_id]);
 
@@ -100,15 +103,14 @@ class Payment_Adapter_Custom
             $invoiceTotal = $invoiceService->getTotalWithTax($invoice);
 
             // Add funds to the client's account and mark the invoice as paid
-            $gatewayName = $gateway?->getName() ?? '';
-            $tx_desc = $gatewayName . ' transaction No: ' . $tx->txn_id;
+            $tx_desc = $gateway->getName() . ' transaction No: ' . $tx->txn_id;
             $clientService->addFunds($client, $invoiceTotal, $tx_desc, []);
             $invoiceService->markAsPaid($invoice, true, true);
 
             // Update the transaction status and details
             $tx->status = Model_Transaction::STATUS_PROCESSED;
             $tx->amount = $invoiceTotal;
-            $tx->note = $gatewayName . ' transaction No: ' . $tx->txn_id;
+            $tx->note = $gateway->getName() . ' transaction No: ' . $tx->txn_id;
             $tx->currency = $invoice->currency;
             $tx->updated_at = date('Y-m-d H:i:s');
 

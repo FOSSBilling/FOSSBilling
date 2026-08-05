@@ -33,8 +33,8 @@ class ServiceSubscription implements InjectionAwareInterface
     public function create(\Model_Client $client, PayGateway $pg, array $data)
     {
         $model = $this->di['db']->dispense('Subscription');
-        $model->client_id = $data['client_id'];
-        $model->pay_gateway_id = $data['gateway_id'];
+        $model->client_id = $client->id;
+        $model->pay_gateway_id = $pg->getId();
 
         $model->sid = $data['sid'] ?? null;
         $model->status = $data['status'] ?? null;
