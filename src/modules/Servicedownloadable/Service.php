@@ -168,8 +168,8 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Product is not configured completely.');
         }
 
-        // Force the admin-controlled file list into the payload before the merge.
-        $data[self::FILES_CONFIG_KEY] = $files;
+        // Use the validated file list, not the raw product config value.
+        $config[self::FILES_CONFIG_KEY] = $files;
 
         // Admin config wins on key collisions, unlike the other product-type
         // services which rely solely on the central client-settable-keys filter.
