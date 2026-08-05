@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice;
 
+use Box\Mod\Invoice\Entity\PayGateway;
+use Box\Mod\Invoice\Repository\PayGatewayRepository;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
@@ -22,6 +24,8 @@ class ServicePayGateway implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
+    protected PayGatewayRepository $payGatewayRepository;
+
     public function __construct(private ?Filesystem $filesystem = null)
     {
     }
@@ -32,6 +36,7 @@ class ServicePayGateway implements InjectionAwareInterface
         if (isset($di['filesystem'])) {
             $this->filesystem = $di['filesystem'];
         }
+        $this->payGatewayRepository = $di['em']->getRepository(PayGateway::class);
     }
 
     public function getDi(): ?\Pimple\Container
@@ -39,46 +44,9 @@ class ServicePayGateway implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function getSearchQuery(array $data): array
+    public function getPayGatewayRepository(): PayGatewayRepository
     {
-        $sql = 'SELECT *
-            FROM pay_gateway
-            WHERE 1 ';
-
-        $search = $data['search'] ?? null;
-        $enabled = $data['enabled'] ?? null;
-        $allowSingle = $data['allow_single'] ?? null;
-        $allowRecurrent = $data['allow_recurrent'] ?? null;
-        $testMode = $data['test_mode'] ?? null;
-        $params = [];
-        if ($search) {
-            $sql .= 'AND (name LIKE :search OR gateway LIKE :search) ';
-            $params[':search'] = "%$search%";
-        }
-
-        if ($enabled !== null && $enabled !== '') {
-            $sql .= 'AND enabled = :enabled ';
-            $params[':enabled'] = (int) $enabled;
-        }
-
-        if ($allowSingle !== null && $allowSingle !== '') {
-            $sql .= 'AND allow_single = :allow_single ';
-            $params[':allow_single'] = (int) $allowSingle;
-        }
-
-        if ($allowRecurrent !== null && $allowRecurrent !== '') {
-            $sql .= 'AND allow_recurrent = :allow_recurrent ';
-            $params[':allow_recurrent'] = (int) $allowRecurrent;
-        }
-
-        if ($testMode !== null && $testMode !== '') {
-            $sql .= 'AND test_mode = :test_mode ';
-            $params[':test_mode'] = (int) $testMode;
-        }
-
-        $sql .= ' ORDER by gateway ASC';
-
-        return [$sql, $params];
+        return $this->payGatewayRepository;
     }
 
     /**
@@ -152,69 +120,72 @@ class ServicePayGateway implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Payment gateway is not available for installation.');
         }
 
-        $new = $this->di['db']->dispense('PayGateway');
-        $new->name = $code;
-        $new->gateway = $code;
-        $new->enabled = 0;
-        $new->accepted_currencies = null;
-        $new->test_mode = 0;
-        $new->config = null;
-        $this->di['db']->store($new);
+        $new = new PayGateway();
+        $new->setName($code);
+        $new->setGateway($code);
+        $new->setEnabled(false);
+        $new->setAcceptedCurrencies(null);
+        $new->setTestMode(false);
+        $new->setConfig(null);
+        $this->di['em']->persist($new);
+        $this->di['em']->flush();
 
         $this->di['logger']->info('Installed new payment gateway %s', $code);
 
         return true;
     }
 
-    public function toApiArray(\Model_PayGateway $model, $deep = false, $identity = null): array
+    public function toApiArray(PayGateway $model, $deep = false, $identity = null): array
     {
         [$single, $recurrent] = $this->_getAllowTuple($model);
 
         $result = [
-            'id' => $model->id,
-            'code' => $model->gateway,
-            'title' => $model->name,
-            'allow_single' => $model->allow_single,
-            'allow_recurrent' => $model->allow_recurrent,
+            'id' => $model->getId(),
+            'code' => $model->getGateway(),
+            'title' => $model->getName(),
+            'allow_single' => $model->isAllowSingle(),
+            'allow_recurrent' => $model->isAllowRecurrent(),
             'accepted_currencies' => $this->getAcceptedCurrencies($model),
         ];
 
         if ($identity instanceof \Model_Admin) {
             $result['supports_one_time_payments'] = $single;
             $result['supports_subscriptions'] = $recurrent;
-            $result['config'] = json_decode($model->config ?? '', true) ?? [];
+            $result['config'] = json_decode($model->getConfig() ?? '', true) ?? [];
             $result['form'] = $this->getFormElements($model);
             $result['description'] = $this->getDescription($model);
-            $result['enabled'] = $model->enabled;
-            $result['test_mode'] = $model->test_mode;
+            $result['enabled'] = $model->isEnabled();
+            $result['test_mode'] = $model->isTestMode();
             $result['callback'] = $this->getCallbackUrl($model);
         }
 
         return $result;
     }
 
-    public function copy(\Model_PayGateway $model): int
+    public function copy(PayGateway $model): int
     {
-        $new = $this->di['db']->dispense('PayGateway');
-        $new->name = $model->name . ' (Copy)';
-        $new->gateway = $model->gateway;
-        $new->enabled = 0;
-        $new->accepted_currencies = $model->accepted_currencies;
-        $new->test_mode = $model->test_mode;
-        $new->config = $model->config;
-        $newId = $this->di['db']->store($new);
-        $this->di['logger']->info('Copied payment gateway #%s - %s', $newId, $model->gateway);
+        $new = new PayGateway();
+        $new->setName($model->getName() . ' (Copy)');
+        $new->setGateway($model->getGateway());
+        $new->setEnabled(false);
+        $new->setAcceptedCurrencies($model->getAcceptedCurrencies());
+        $new->setTestMode($model->isTestMode());
+        $new->setConfig($model->getConfig());
+        $this->di['em']->persist($new);
+        $this->di['em']->flush();
+        $newId = (int) $new->getId();
+        $this->di['logger']->info('Copied payment gateway #%s - %s', $newId, $model->getGateway());
 
         return $newId;
     }
 
-    public function update(\Model_PayGateway $model, array $data): bool
+    public function update(PayGateway $model, array $data): bool
     {
-        $model->name = $data['title'] ?? $model->name;
+        $model->setName($data['title'] ?? $model->getName());
 
-        $newEnabled = isset($data['enabled']) ? (bool) $data['enabled'] : (bool) $model->enabled;
-        $newTestMode = isset($data['test_mode']) ? (bool) $data['test_mode'] : (bool) $model->test_mode;
-        $mergedConfig = json_decode($model->config ?? '', true) ?? [];
+        $newEnabled = isset($data['enabled']) ? (bool) $data['enabled'] : $model->isEnabled();
+        $newTestMode = isset($data['test_mode']) ? (bool) $data['test_mode'] : $model->isTestMode();
+        $mergedConfig = json_decode($model->getConfig() ?? '', true) ?? [];
         if (isset($data['config']) && is_array($data['config'])) {
             $mergedConfig = array_merge($mergedConfig, $data['config']);
         }
@@ -224,19 +195,19 @@ class ServicePayGateway implements InjectionAwareInterface
         }
 
         if (isset($data['config']) && is_array($data['config'])) {
-            $model->config = json_encode($data['config']);
+            $model->setConfig(json_encode($data['config']));
         }
 
         if (isset($data['accepted_currencies']) && is_array($data['accepted_currencies'])) {
-            $model->accepted_currencies = json_encode($data['accepted_currencies']);
+            $model->setAcceptedCurrencies(json_encode($data['accepted_currencies']));
         }
 
-        $model->enabled = $newEnabled;
-        $model->allow_single = (bool) ($data['allow_single'] ?? $model->allow_single);
-        $model->allow_recurrent = (bool) ($data['allow_recurrent'] ?? $model->allow_recurrent);
-        $model->test_mode = $newTestMode;
-        $this->di['db']->store($model);
-        $this->di['logger']->info('Updated payment gateway %s', $model->gateway);
+        $model->setEnabled($newEnabled);
+        $model->setAllowSingle((bool) ($data['allow_single'] ?? $model->isAllowSingle()));
+        $model->setAllowRecurrent((bool) ($data['allow_recurrent'] ?? $model->isAllowRecurrent()));
+        $model->setTestMode($newTestMode);
+        $this->di['em']->flush();
+        $this->di['logger']->info('Updated payment gateway %s', $model->getGateway());
 
         return true;
     }
@@ -247,7 +218,7 @@ class ServicePayGateway implements InjectionAwareInterface
      * required keys for the currently selected test mode are present before
      * persisting an "enabled" gateway update.
      */
-    private function validateGatewayConfig(\Model_PayGateway $model, array $config, bool $testMode): void
+    private function validateGatewayConfig(PayGateway $model, array $config, bool $testMode): void
     {
         $adapterConfig = $config;
         $adapterConfig['test_mode'] = $testMode;
@@ -265,10 +236,11 @@ class ServicePayGateway implements InjectionAwareInterface
         }
     }
 
-    public function delete(\Model_PayGateway $model): bool
+    public function delete(PayGateway $model): bool
     {
-        $id = $model->id;
-        $this->di['db']->trash($model);
+        $id = $model->getId();
+        $this->di['em']->remove($model);
+        $this->di['em']->flush();
         $this->di['logger']->info('Removed payment gateway %s', $id);
 
         return true;
@@ -281,11 +253,11 @@ class ServicePayGateway implements InjectionAwareInterface
     {
         $format = $data['format'] ?? null;
 
-        $gateways = $this->di['db']->find('PayGateway', 'enabled = 1 ORDER BY id desc');
+        $gateways = $this->payGatewayRepository->findEnabledOrderedByIdDesc();
         $result = [];
         foreach ($gateways as $gtw) {
             if ($format == 'pairs') {
-                $result[$gtw->id] = $gtw->name;
+                $result[$gtw->getId()] = $gtw->getName();
             } else {
                 $gateway = $this->toApiArray($gtw);
                 $adapter = $this->getPaymentAdapter($gtw);
@@ -321,23 +293,23 @@ class ServicePayGateway implements InjectionAwareInterface
         return $this->di['tools']->url('/public/gateways/default.png');
     }
 
-    public function canPerformRecurrentPayment(\Model_PayGateway $model): bool
+    public function canPerformRecurrentPayment(PayGateway $model): bool
     {
-        return (bool) $model->allow_recurrent;
+        return $model->isAllowRecurrent();
     }
 
-    public function canPerformSinglePayment(\Model_PayGateway $model): bool
+    public function canPerformSinglePayment(PayGateway $model): bool
     {
-        return (bool) $model->allow_single;
+        return $model->isAllowSingle();
     }
 
-    public function getPaymentAdapter(\Model_PayGateway $pg, ?\Model_Invoice $model = null, $optional = []): object
+    public function getPaymentAdapter(PayGateway $pg, ?\Model_Invoice $model = null, $optional = []): object
     {
-        $config = json_decode($pg->config ?? '', true) ?? [];
+        $config = json_decode($pg->getConfig() ?? '', true) ?? [];
         $defaults = [];
         $defaults['auto_redirect'] = false;
-        $defaults['gateway_id'] = (int) $pg->id;
-        $defaults['test_mode'] = $pg->test_mode;
+        $defaults['gateway_id'] = (int) $pg->getId();
+        $defaults['test_mode'] = $pg->isTestMode();
         $defaults['return_url'] = $this->getReturnUrl($pg, $model);
         $defaults['cancel_url'] = $this->getCancelUrl($pg, $model);
         $defaults['notify_url'] = $this->getCallbackUrl($pg, $model);
@@ -371,7 +343,7 @@ class ServicePayGateway implements InjectionAwareInterface
         return $adapter;
     }
 
-    private function _getAllowTuple(\Model_PayGateway $model): array
+    private function _getAllowTuple(PayGateway $model): array
     {
         $adapter_config = $this->getAdapterConfig($model);
         $single = $adapter_config['supports_one_time_payments'] ?? false;
@@ -383,12 +355,12 @@ class ServicePayGateway implements InjectionAwareInterface
         ];
     }
 
-    public function getAdapterConfig(\Model_PayGateway $pg): array
+    public function getAdapterConfig(PayGateway $pg): array
     {
         $class = $this->getAdapterClassName($pg);
 
         if (!class_exists($class)) {
-            throw new \FOSSBilling\Exception('Payment gateway :adapter was not found', [':adapter' => $pg->gateway]);
+            throw new \FOSSBilling\Exception('Payment gateway :adapter was not found', [':adapter' => $pg->getGateway()]);
         }
 
         if (!method_exists($class, 'getConfig')) {
@@ -401,13 +373,14 @@ class ServicePayGateway implements InjectionAwareInterface
         return call_user_func([$class, 'getConfig']);
     }
 
-    public function getAdapterClassName(\Model_PayGateway $pg): string
+    public function getAdapterClassName(PayGateway $pg): string
     {
-        $class = "Payment_Adapter_{$pg->gateway}";
+        $gateway = $pg->getGateway();
+        $class = "Payment_Adapter_{$gateway}";
 
         if (!class_exists($class)) {
-            $nestedFile = Path::join(PATH_LIBRARY, 'Payment', 'Adapter', $pg->gateway, "{$pg->gateway}.php");
-            $flatFile = Path::join(PATH_LIBRARY, 'Payment', 'Adapter', "{$pg->gateway}.php");
+            $nestedFile = Path::join(PATH_LIBRARY, 'Payment', 'Adapter', $gateway, "{$gateway}.php");
+            $flatFile = Path::join(PATH_LIBRARY, 'Payment', 'Adapter', "{$gateway}.php");
 
             if ($this->filesystem->exists($nestedFile)) {
                 require_once $nestedFile;
@@ -419,9 +392,10 @@ class ServicePayGateway implements InjectionAwareInterface
         return $class;
     }
 
-    public function getAcceptedCurrencies(\Model_PayGateway $model): array
+    public function getAcceptedCurrencies(PayGateway $model): array
     {
-        if ($model->accepted_currencies === null || empty($model->accepted_currencies)) {
+        $accepted = $model->getAcceptedCurrencies();
+        if ($accepted === null || empty($accepted)) {
             $currencyService = $this->di['mod_service']('currency');
             /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
             $currencyRepository = $currencyService->getCurrencyRepository();
@@ -429,10 +403,10 @@ class ServicePayGateway implements InjectionAwareInterface
             return array_keys($currencyRepository->getPairs());
         }
 
-        return json_decode($model->accepted_currencies ?? '', true);
+        return json_decode($accepted, true);
     }
 
-    public function getFormElements(\Model_PayGateway $model): array
+    public function getFormElements(PayGateway $model): array
     {
         $config = $this->getAdapterConfig($model);
         if (isset($config['form']) && is_array($config['form'])) {
@@ -442,7 +416,7 @@ class ServicePayGateway implements InjectionAwareInterface
         return [];
     }
 
-    public function getDescription(\Model_PayGateway $model): ?string
+    public function getDescription(PayGateway $model): ?string
     {
         $config = $this->getAdapterConfig($model);
 
@@ -452,10 +426,10 @@ class ServicePayGateway implements InjectionAwareInterface
     /**
      * @param \Model_Invoice $model
      */
-    public function getCallbackUrl(\Model_PayGateway $pg, $model = null): string
+    public function getCallbackUrl(PayGateway $pg, $model = null): string
     {
         $p = [
-            'gateway_id' => $pg->id,
+            'gateway_id' => $pg->getId(),
         ];
         if ($model instanceof \Model_Invoice) {
             $p['invoice_id'] = $model->id;
@@ -467,7 +441,7 @@ class ServicePayGateway implements InjectionAwareInterface
     /**
      * @param \Model_Invoice $model
      */
-    private function getReturnUrl(\Model_PayGateway $pg, $model = null): string
+    private function getReturnUrl(PayGateway $pg, $model = null): string
     {
         if ($model instanceof \Model_Invoice) {
             return $this->di['url']->link("/invoice/{$model->hash}", ['status' => 'ok', 'restore_token' => Tools::createSessionRestoreToken(session_id())]);
@@ -479,7 +453,7 @@ class ServicePayGateway implements InjectionAwareInterface
     /**
      * @param \Model_Invoice $model
      */
-    private function getCancelUrl(\Model_PayGateway $pg, $model = null): string
+    private function getCancelUrl(PayGateway $pg, $model = null): string
     {
         if ($model instanceof \Model_Invoice) {
             return $this->di['url']->link("/invoice/{$model->hash}", ['status' => 'cancel', 'restore_token' => Tools::createSessionRestoreToken(session_id())]);
@@ -491,10 +465,10 @@ class ServicePayGateway implements InjectionAwareInterface
     /**
      * @param \Model_Invoice $model
      */
-    private function getCallbackRedirect(\Model_PayGateway $pg, $model = null): string
+    private function getCallbackRedirect(PayGateway $pg, $model = null): string
     {
         $p = [
-            'gateway_id' => $pg->id,
+            'gateway_id' => $pg->getId(),
         ];
 
         if ($model instanceof \Model_Invoice) {

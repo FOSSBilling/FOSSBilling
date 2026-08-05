@@ -11,12 +11,16 @@
 declare(strict_types=1);
 
 use Box\Mod\Client\Service as ClientService;
+use Box\Mod\Invoice\Entity\PayGateway;
+use Box\Mod\Invoice\Repository\PayGatewayRepository;
 use Box\Mod\Invoice\ServicePayGateway;
 use Box\Mod\Invoice\ServiceSubscription;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
+use Doctrine\ORM\EntityManagerInterface;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 function createSubscriptionDbal(): Connection
 {
@@ -68,7 +72,7 @@ test('creates a subscription', function (): void {
         'gateway_id' => 2,
     ];
 
-    $result = $service->create(new Model_Client(), new Model_PayGateway(), $data);
+    $result = $service->create(new Model_Client(), new PayGateway(), $data);
     expect($result)->toBeInt()->toBe($newId);
 });
 
@@ -106,8 +110,7 @@ test('cancels a subscription at the gateway when canceled status is saved', func
     $subscriptionModel->sid = 'sub_old';
     $subscriptionModel->pay_gateway_id = 2;
 
-    $gatewayModel = new Model_PayGateway();
-    $gatewayModel->loadBean(new Tests\Helpers\DummyBean());
+    $gatewayModel = createEntity(PayGateway::class, ['id' => 2]);
 
     $adapter = new class {
         public ?string $canceledSubscriptionId = null;
@@ -124,15 +127,16 @@ test('cancels a subscription at the gateway when canceled status is saved', func
         ->with($gatewayModel)
         ->andReturn($adapter);
 
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($gatewayRepo = Mockery::mock(PayGatewayRepository::class));
+    $gatewayRepo->shouldReceive('find')->once()->with(2)->andReturn($gatewayModel);
+
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')
-        ->once()
-        ->with('PayGateway', 2, 'Payment gateway not found')
-        ->andReturn($gatewayModel);
     $dbMock->shouldReceive('store')->once()->andReturn(1);
 
     $di = container();
     $di['db'] = $dbMock;
+    $di['em'] = $em;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(fn () => $payGatewayService);
     $service->setDi($di);
@@ -170,8 +174,7 @@ test('schedules a subscription cancellation at the gateway', function (): void {
     $subscription->sid = 'sub_123';
     $subscription->pay_gateway_id = 2;
 
-    $gateway = new Model_PayGateway();
-    $gateway->loadBean(new Tests\Helpers\DummyBean());
+    $gateway = createEntity(PayGateway::class, ['id' => 2]);
 
     $adapter = new class {
         public ?string $scheduledSubscriptionId = null;
@@ -185,12 +188,16 @@ test('schedules a subscription cancellation at the gateway', function (): void {
     $payGatewayService = Mockery::mock(ServicePayGateway::class);
     $payGatewayService->shouldReceive('getPaymentAdapter')->once()->with($gateway)->andReturn($adapter);
 
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($gatewayRepo = Mockery::mock(PayGatewayRepository::class));
+    $gatewayRepo->shouldReceive('find')->once()->with(2)->andReturn($gateway);
+
     $db = Mockery::mock(Box_Database::class);
-    $db->shouldReceive('getExistingModelById')->once()->with('PayGateway', 2, 'Payment gateway not found')->andReturn($gateway);
     $db->shouldReceive('store')->once()->with($subscription)->andReturn(1);
 
     $di = container();
     $di['db'] = $db;
+    $di['em'] = $em;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(fn () => $payGatewayService);
 
@@ -304,8 +311,7 @@ test('reports end-of-period cancellation support for active gateway subscription
     $subscription->sid = 'sub_123';
     $subscription->pay_gateway_id = 2;
 
-    $gateway = new Model_PayGateway();
-    $gateway->loadBean(new Tests\Helpers\DummyBean());
+    $gateway = createEntity(PayGateway::class, ['id' => 2]);
     $adapter = new class {
         public function cancelSubscriptionAtPeriodEnd(string $subscriptionId): void
         {
@@ -314,13 +320,17 @@ test('reports end-of-period cancellation support for active gateway subscription
 
     $db = Mockery::mock(Box_Database::class);
     $db->shouldReceive('getExistingModelById')->once()->with('Subscription', 7, 'Subscription not found')->andReturn($subscription);
-    $db->shouldReceive('getExistingModelById')->once()->with('PayGateway', 2, 'Payment gateway not found')->andReturn($gateway);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($gatewayRepo = Mockery::mock(PayGatewayRepository::class));
+    $gatewayRepo->shouldReceive('find')->once()->with(2)->andReturn($gateway);
 
     $gatewayService = Mockery::mock(ServicePayGateway::class);
     $gatewayService->shouldReceive('getPaymentAdapter')->once()->with($gateway)->andReturn($adapter);
 
     $di = container();
     $di['db'] = $db;
+    $di['em'] = $em;
     $di['dbal'] = createSubscriptionDbal();
     $di['mod_service'] = $di->protect(fn () => $gatewayService);
 
@@ -359,16 +369,16 @@ test('converts to api array', function (): void {
     $clientModel = new Model_Client();
     $clientModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $gatewayModel = new Model_PayGateway();
-    $gatewayModel->loadBean(new Tests\Helpers\DummyBean());
+    $gatewayModel = createEntity(PayGateway::class, ['id' => 1]);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $callCount = 0;
     $dbMock->shouldReceive('load')
         ->atLeast()->once()
-        ->andReturnUsing(function () use ($clientModel, $gatewayModel, &$callCount) {
-            return ++$callCount === 1 ? $clientModel : $gatewayModel;
-        });
+        ->andReturn($clientModel);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($gatewayRepo = Mockery::mock(PayGatewayRepository::class));
+    $gatewayRepo->shouldReceive('find')->atLeast()->once()->andReturn($gatewayModel);
 
     $clientServiceMock = Mockery::mock(ClientService::class);
     $clientServiceMock->shouldReceive('toApiArray')
@@ -390,6 +400,7 @@ test('converts to api array', function (): void {
         }
     });
     $di['db'] = $dbMock;
+    $di['em'] = $em;
     $service->setDi($di);
 
     $expected = [

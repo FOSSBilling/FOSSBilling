@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice;
 
+use Box\Mod\Invoice\Entity\PayGateway;
 use FOSSBilling\InjectionAwareInterface;
 
 class ServiceSubscription implements InjectionAwareInterface
@@ -29,7 +30,7 @@ class ServiceSubscription implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function create(\Model_Client $client, \Model_PayGateway $pg, array $data)
+    public function create(\Model_Client $client, PayGateway $pg, array $data)
     {
         $model = $this->di['db']->dispense('Subscription');
         $model->client_id = $data['client_id'];
@@ -104,8 +105,8 @@ class ServiceSubscription implements InjectionAwareInterface
             $result['client'] = [];
         }
 
-        $gtw = $this->di['db']->load('PayGateway', $model->pay_gateway_id);
-        if ($gtw instanceof \Model_PayGateway) {
+        $gtw = $this->di['em']->getRepository(PayGateway::class)->find((int) $model->pay_gateway_id);
+        if ($gtw instanceof PayGateway) {
             $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
             $result['gateway'] = $payGatewayService->toApiArray($gtw, false, $identity);
         } else {
@@ -257,7 +258,10 @@ class ServiceSubscription implements InjectionAwareInterface
 
     private function getGatewayAdapter(\Model_Subscription $model): object
     {
-        $gateway = $this->di['db']->getExistingModelById('PayGateway', $model->pay_gateway_id, 'Payment gateway not found');
+        $gateway = $this->di['em']->getRepository(PayGateway::class)->find((int) $model->pay_gateway_id);
+        if (!$gateway instanceof PayGateway) {
+            throw new \FOSSBilling\Exception('Payment gateway not found');
+        }
         $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
 
         return $payGatewayService->getPaymentAdapter($gateway);

@@ -13,6 +13,7 @@ namespace Box\Mod\Invoice;
 
 use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Invoice\Entity\InvoiceItem;
+use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Repository\InvoiceItemRepository;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -785,13 +786,13 @@ class Service implements InjectionAwareInterface
         $payGateway = $this->validateAdminMarkAsPaidRequest($data, $invoice);
         $transactionId = isset($data['transactionId']) ? trim((string) $data['transactionId']) : null;
 
-        if ((int) $payGateway->id !== (int) $invoice->gateway_id) {
-            $invoice->gateway_id = (int) $payGateway->id;
+        if ((int) $payGateway->getId() !== (int) $invoice->gateway_id) {
+            $invoice->gateway_id = (int) $payGateway->getId();
             $invoice->updated_at = date('Y-m-d H:i:s');
             $this->di['db']->store($invoice);
         }
 
-        if (($payGateway->gateway ?? null) === 'Custom' && (int) ($payGateway->enabled ?? 0) === 1) {
+        if ($payGateway->getGateway() === 'Custom' && $payGateway->isEnabled()) {
             $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
             $invoiceTotal = $this->getTotalWithTax($invoice);
             $newtx = $transactionService->create([
@@ -816,7 +817,7 @@ class Service implements InjectionAwareInterface
                 $transaction->amount = $invoiceTotal;
                 $transaction->currency = $invoice->currency;
                 $transaction->status = \Model_Transaction::STATUS_PROCESSED;
-                $gatewayTitle = $payGateway->title ?: $payGateway->gateway;
+                $gatewayTitle = $payGateway->getName() ?: $payGateway->getGateway();
                 $transaction->note = sprintf('%s transaction No: %s', $gatewayTitle, $transactionId);
                 $transaction->updated_at = date('Y-m-d H:i:s');
                 $this->di['db']->store($transaction);
@@ -828,15 +829,18 @@ class Service implements InjectionAwareInterface
         return $this->markAsPaid($invoice, false, $execute);
     }
 
-    public function validateAdminMarkAsPaidRequest(array $data, ?\Model_Invoice $invoice = null): \Model_PayGateway
+    public function validateAdminMarkAsPaidRequest(array $data, ?\Model_Invoice $invoice = null): PayGateway
     {
         $gatewayId = isset($data['gateway_id']) && !empty($data['gateway_id']) ? (int) $data['gateway_id'] : (int) ($invoice->gateway_id ?? 0);
         if ($gatewayId <= 0) {
             throw new InformationException('Payment gateway is required when marking an invoice as paid.');
         }
 
-        $payGateway = $this->di['db']->getExistingModelById('PayGateway', $gatewayId, 'Payment gateway not found');
-        if (($payGateway->gateway ?? null) === 'Custom' && (int) ($payGateway->enabled ?? 0) === 1) {
+        $payGateway = $this->di['em']->getRepository(PayGateway::class)->find($gatewayId);
+        if ($payGateway === null) {
+            throw new InformationException('Payment gateway not found');
+        }
+        if ($payGateway->getGateway() === 'Custom' && $payGateway->isEnabled()) {
             $transactionId = trim((string) ($data['transactionId'] ?? ''));
             if ($transactionId === '') {
                 throw new InformationException('Transaction ID is required when using the Custom payment gateway.');
@@ -1263,11 +1267,11 @@ class Service implements InjectionAwareInterface
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceUpdate', 'params' => $data]);
 
         if (!empty($data['gateway_id'])) {
-            $gateway = $this->di['db']->load('PayGateway', $data['gateway_id']);
-            if (!$gateway instanceof \Model_PayGateway) {
+            $gateway = $this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']);
+            if (!$gateway instanceof PayGateway) {
                 throw new InformationException('Payment gateway not found');
             }
-            if (!$gateway->enabled) {
+            if (!$gateway->isEnabled()) {
                 throw new InformationException('Payment gateway is not enabled');
             }
             $model->gateway_id = intval($data['gateway_id']);
@@ -1735,12 +1739,12 @@ class Service implements InjectionAwareInterface
 
         $this->checkInvoiceAuth($invoice, InvoiceOperation::PAYMENT);
 
-        $gtw = $this->di['db']->load('PayGateway', $data['gateway_id']);
-        if (!$gtw instanceof \Model_PayGateway) {
+        $gtw = $this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']);
+        if (!$gtw instanceof PayGateway) {
             throw new InformationException('Payment method not found', null, 813);
         }
 
-        if (!$gtw->enabled) {
+        if (!$gtw->isEnabled()) {
             throw new \FOSSBilling\Exception('Payment method not enabled', null, 814);
         }
 
@@ -1781,7 +1785,7 @@ class Service implements InjectionAwareInterface
         $i = clone $invoice;
         $mpi = $this->getPaymentInvoice($i, $subscribe);
         $r = ($subscribe) ? $adapter->recurrentPayment($mpi) : $adapter->singlePayment($mpi);
-        $this->di['logger']->info('Went to pay for invoice #%s via %s', $invoice->id, $gtw->gateway);
+        $this->di['logger']->info('Went to pay for invoice #%s via %s', $invoice->id, $gtw->getGateway());
 
         // @bug https://github.com/boxbilling/boxbilling/issues/108
         if ($adapter->getType() != 'html') {

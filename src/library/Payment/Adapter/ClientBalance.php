@@ -137,8 +137,8 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
 
     public function getServiceUrl($invoice_id = 0)
     {
-        $gatewayModel = $this->di['db']->findOne('PayGateway', 'gateway = ? and enabled = 1', ['ClientBalance']);
-        if (!$gatewayModel instanceof Model_PayGateway) {
+        $gatewayModel = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\PayGateway::class)->findEnabledByGateway('ClientBalance');
+        if (!$gatewayModel instanceof Box\Mod\Invoice\Entity\PayGateway) {
             throw new Payment_Exception('ClientBalance gateway is not enabled', null, 301);
         }
 

@@ -226,6 +226,16 @@ function container(): Container
         $supportTicketNoteRepository = \Mockery::mock(\Box\Mod\Support\Repository\SupportTicketNoteRepository::class)->shouldIgnoreMissing();
         $supportTicketMessageHistoryRepository = \Mockery::mock(\Box\Mod\Support\Repository\SupportTicketMessageHistoryRepository::class)->shouldIgnoreMissing();
 
+        $payGatewayRepository = \Mockery::mock(\Box\Mod\Invoice\Repository\PayGatewayRepository::class)->shouldIgnoreMissing();
+        $payGatewayRepository->shouldReceive('find')->byDefault()->andReturn(null);
+        $payGatewayRepository->shouldReceive('findEnabledOrderedByIdDesc')->byDefault()->andReturn([]);
+        $payGatewayRepository->shouldReceive('findEnabledByGateway')->byDefault()->andReturn(null);
+        $payGatewayQueryBuilder = \Mockery::mock(\Doctrine\ORM\QueryBuilder::class)->shouldIgnoreMissing();
+        foreach (['andWhere', 'orWhere', 'setParameter', 'orderBy', 'setFirstResult', 'setMaxResults', 'where'] as $method) {
+            $payGatewayQueryBuilder->shouldReceive($method)->byDefault()->andReturn($payGatewayQueryBuilder);
+        }
+        $payGatewayRepository->shouldReceive('getSearchQueryBuilder')->byDefault()->andReturn($payGatewayQueryBuilder);
+
         $em = \Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
         $em->shouldReceive('getRepository')->byDefault()->andReturnUsing(static fn (string $class): object => match ($class) {
             \Box\Mod\Client\Entity\Client::class => $clientRepository,
@@ -247,6 +257,7 @@ function container(): Container
             \Box\Mod\Support\Entity\SupportTicketMessage::class => $supportTicketMessageRepository,
             \Box\Mod\Support\Entity\SupportTicketNote::class => $supportTicketNoteRepository,
             \Box\Mod\Support\Entity\SupportTicketMessageHistory::class => $supportTicketMessageHistoryRepository,
+            \Box\Mod\Invoice\Entity\PayGateway::class => $payGatewayRepository,
             \Box\Mod\Extension\Entity\Extension::class => \Mockery::mock(\Box\Mod\Extension\Repository\ExtensionRepository::class)->shouldIgnoreMissing(),
             default => $extensionMetaRepository,
         });

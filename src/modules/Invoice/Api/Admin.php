@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice\Api;
 
+use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Tax;
 use FOSSBilling\InformationException;
 use FOSSBilling\PaginationOptions;
@@ -637,16 +638,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('invoice', 'manage_gateways');
 
         $gatewayService = $this->getDi()['mod_service']('Invoice', 'PayGateway');
-        [$sql, $params] = $gatewayService->getSearchQuery($data);
+        $qb = $gatewayService->getPayGatewayRepository()->getSearchQueryBuilder($data);
+        $identity = $this->getIdentity();
 
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
-
-        foreach ($pager['list'] as $key => $item) {
-            $gateway = $this->getDi()['db']->getExistingModelById('PayGateway', $item['id'], 'Gateway not found');
-            $pager['list'][$key] = $gatewayService->toApiArray($gateway, false, $this->getIdentity());
-        }
-
-        return $pager;
+        return $this->getDi()['pager']->paginateMappedQuery($qb, PaginationOptions::fromArray($data), static fn ($entity): array => $gatewayService->toApiArray($entity, false, $identity));
     }
 
     /**
@@ -705,7 +700,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_gateways');
 
-        $model = $this->getDi()['db']->getExistingModelById('PayGateway', $data['id'], 'Gateway not found');
+        $model = $this->getDi()['em']->getRepository(PayGateway::class)->find((int) $data['id']);
+        if (!$model instanceof PayGateway) {
+            throw new \FOSSBilling\Exception('Gateway not found');
+        }
 
         $gatewayService = $this->getDi()['mod_service']('Invoice', 'PayGateway');
 
@@ -722,7 +720,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_gateways');
 
-        $model = $this->getDi()['db']->getExistingModelById('PayGateway', $data['id'], 'Gateway not found');
+        $model = $this->getDi()['em']->getRepository(PayGateway::class)->find((int) $data['id']);
+        if (!$model instanceof PayGateway) {
+            throw new \FOSSBilling\Exception('Gateway not found');
+        }
         $gatewayService = $this->getDi()['mod_service']('Invoice', 'PayGateway');
 
         return $gatewayService->copy($model);
@@ -748,7 +749,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_gateways');
 
-        $model = $this->getDi()['db']->getExistingModelById('PayGateway', $data['id'], 'Gateway not found');
+        $model = $this->getDi()['em']->getRepository(PayGateway::class)->find((int) $data['id']);
+        if (!$model instanceof PayGateway) {
+            throw new \FOSSBilling\Exception('Gateway not found');
+        }
         $gatewayService = $this->getDi()['mod_service']('Invoice', 'PayGateway');
 
         return $gatewayService->update($model, $data);
@@ -766,7 +770,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_gateways');
 
-        $model = $this->getDi()['db']->getExistingModelById('PayGateway', $data['id'], 'Gateway not found');
+        $model = $this->getDi()['em']->getRepository(PayGateway::class)->find((int) $data['id']);
+        if (!$model instanceof PayGateway) {
+            throw new \FOSSBilling\Exception('Gateway not found');
+        }
         $gatewayService = $this->getDi()['mod_service']('Invoice', 'PayGateway');
 
         return $gatewayService->delete($model);
@@ -820,7 +827,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('invoice', 'manage_subscriptions');
 
         $client = $this->getDi()['db']->getExistingModelById('Client', $data['client_id'], 'Client not found');
-        $payGateway = $this->getDi()['db']->getExistingModelById('PayGateway', $data['gateway_id'], 'Payment gateway not found');
+        $payGateway = $this->getDi()['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']);
+        if (!$payGateway instanceof PayGateway) {
+            throw new \FOSSBilling\Exception('Payment gateway not found');
+        }
 
         if (strtoupper((string) $client->currency) !== strtoupper((string) $data['currency'])) {
             throw new InformationException('Client currency must match subscription currency. Check if clients currency is defined.');

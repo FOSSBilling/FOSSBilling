@@ -12,8 +12,10 @@ declare(strict_types=1);
 
 use Box\Mod\Invoice\Api\Admin;
 use Box\Mod\Invoice\Entity\InvoiceItem;
+use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Tax;
 use Box\Mod\Invoice\Repository\InvoiceItemRepository;
+use Box\Mod\Invoice\Repository\PayGatewayRepository;
 use Box\Mod\Invoice\Repository\TaxRepository;
 use Box\Mod\Invoice\Service;
 use Box\Mod\Invoice\ServicePayGateway;
@@ -141,8 +143,7 @@ test('marks invoice as paid', function (): void {
     $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
     $invoiceModel->gateway_id = '1';
 
-    $gatewayModel = new Model_PayGateway();
-    $gatewayModel->loadBean(new Tests\Helpers\DummyBean());
+    $gatewayModel = createEntity(PayGateway::class, ['id' => 1]);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getExistingModelById')
@@ -841,18 +842,25 @@ test('gets transaction types', function (): void {
 
 test('gets gateway list', function (): void {
     $api = apiEndpoint(new Admin());
+    $gatewayEntity = createEntity(PayGateway::class, ['id' => 1, 'name' => 'Custom']);
+    $qb = Mockery::mock(Doctrine\ORM\QueryBuilder::class);
+
+    $gatewayRepo = Mockery::mock(PayGatewayRepository::class);
+    $gatewayRepo->shouldReceive('getSearchQueryBuilder')
+        ->once()
+        ->with([])
+        ->andReturn($qb);
+
     $gatewayService = Mockery::mock(ServicePayGateway::class);
-    $gatewayService->shouldReceive('getSearchQuery')
-        ->atLeast()->once()
-        ->andReturn(['SqlString', []]);
+    $gatewayService->shouldReceive('getPayGatewayRepository')->andReturn($gatewayRepo);
+    $gatewayService->shouldReceive('toApiArray')
+        ->andReturn(['id' => 1, 'code' => 'Custom']);
 
     $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
-    $paginatorMock->shouldReceive('getDefaultPerPage')
-        ->byDefault()
-        ->andReturn(25);
-    $paginatorMock->shouldReceive('getPaginatedResultSet')
-        ->atLeast()->once()
-        ->andReturn(['list' => []]);
+    $paginatorMock->shouldReceive('paginateMappedQuery')
+        ->once()
+        ->with($qb, Mockery::any(), Mockery::any())
+        ->andReturn(['list' => [['id' => 1, 'code' => 'Custom']], 'page' => 1, 'per_page' => 25, 'total' => 1, 'pages' => 1]);
 
     $di = container();
     $di['pager'] = $paginatorMock;
@@ -923,15 +931,12 @@ test('gets a gateway', function (): void {
         ->atLeast()->once()
         ->andReturn([]);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_PayGateway();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn($model);
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($gatewayRepo = Mockery::mock(PayGatewayRepository::class));
+    $gatewayRepo->shouldReceive('find')->with(1)->andReturn(createEntity(PayGateway::class, ['id' => 1]));
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $em;
     $di['mod_service'] = $di->protect(moduleService(['invoice:paygateway' => $gatewayService]));
 
     $api->setDi($di);
@@ -951,15 +956,12 @@ test('copies a gateway', function (): void {
         ->atLeast()->once()
         ->andReturn($newGatewayId);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_PayGateway();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn($model);
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($gatewayRepo = Mockery::mock(PayGatewayRepository::class));
+    $gatewayRepo->shouldReceive('find')->with(1)->andReturn(createEntity(PayGateway::class, ['id' => 1]));
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $em;
     $di['mod_service'] = $di->protect(moduleService(['invoice:paygateway' => $gatewayService]));
 
     $api->setDi($di);
@@ -979,15 +981,12 @@ test('updates a gateway', function (): void {
         ->atLeast()->once()
         ->andReturn(true);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_PayGateway();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn($model);
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($gatewayRepo = Mockery::mock(PayGatewayRepository::class));
+    $gatewayRepo->shouldReceive('find')->with(1)->andReturn(createEntity(PayGateway::class, ['id' => 1]));
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $em;
     $di['mod_service'] = $di->protect(moduleService(['invoice:paygateway' => $gatewayService]));
 
     $api->setDi($di);
@@ -1007,15 +1006,12 @@ test('deletes a gateway', function (): void {
         ->atLeast()->once()
         ->andReturn(true);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_PayGateway();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn($model);
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($gatewayRepo = Mockery::mock(PayGatewayRepository::class));
+    $gatewayRepo->shouldReceive('find')->with(1)->andReturn(createEntity(PayGateway::class, ['id' => 1]));
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $em;
     $di['mod_service'] = $di->protect(moduleService(['invoice:paygateway' => $gatewayService]));
 
     $api->setDi($di);
@@ -1062,18 +1058,21 @@ test('creates a subscription', function (): void {
         ->andReturn($newSubscriptionId);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_PayGateway();
-    $model->loadBean(new Tests\Helpers\DummyBean());
     $client = new Model_Client();
     $client->loadBean(new Tests\Helpers\DummyBean());
     $client->currency = 'EU';
 
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
-        ->andReturn($client, $model);
+        ->andReturn($client);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($gatewayRepo = Mockery::mock(PayGatewayRepository::class));
+    $gatewayRepo->shouldReceive('find')->with(1)->andReturn(createEntity(PayGateway::class, ['id' => 1]));
 
     $di = container();
     $di['db'] = $dbMock;
+    $di['em'] = $em;
     $di['mod_service'] = $di->protect(moduleService(['invoice:subscription' => $subscriptionService]));
 
     $api->setDi($di);
@@ -1091,17 +1090,20 @@ test('throws exception when creating subscription with currency mismatch', funct
     ];
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_PayGateway();
-    $model->loadBean(new Tests\Helpers\DummyBean());
     $client = new Model_Client();
     $client->loadBean(new Tests\Helpers\DummyBean());
 
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
-        ->andReturn($client, $model);
+        ->andReturn($client);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($gatewayRepo = Mockery::mock(PayGatewayRepository::class));
+    $gatewayRepo->shouldReceive('find')->with(1)->andReturn(createEntity(PayGateway::class, ['id' => 1]));
 
     $di = container();
     $di['db'] = $dbMock;
+    $di['em'] = $em;
 
     $api->setDi($di);
 
@@ -1123,18 +1125,21 @@ test('creates a subscription with case-insensitive currency match', function ():
         ->andReturn($newSubscriptionId);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_PayGateway();
-    $model->loadBean(new Tests\Helpers\DummyBean());
     $client = new Model_Client();
     $client->loadBean(new Tests\Helpers\DummyBean());
     $client->currency = 'USD';
 
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
-        ->andReturn($client, $model);
+        ->andReturn($client);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($gatewayRepo = Mockery::mock(PayGatewayRepository::class));
+    $gatewayRepo->shouldReceive('find')->with(1)->andReturn(createEntity(PayGateway::class, ['id' => 1]));
 
     $di = container();
     $di['db'] = $dbMock;
+    $di['em'] = $em;
     $di['mod_service'] = $di->protect(moduleService(['invoice:subscription' => $subscriptionService]));
 
     $api->setDi($di);
