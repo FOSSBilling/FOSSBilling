@@ -167,11 +167,7 @@ test('copies a gateway', function (): void {
     $serviceMock = Mockery::mock(ServicePayGateway::class)->makePartial();
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->shouldReceive('persist')->once();
-    $captured = null;
-    $em->shouldReceive('flush')
-        ->andReturnUsing(function () use (&$captured): void {
-            // Simulate the identity map assigning an id after flush.
-        });
+    $em->shouldReceive('flush')->once();
     $repo = Mockery::mock(PayGatewayRepository::class);
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
 

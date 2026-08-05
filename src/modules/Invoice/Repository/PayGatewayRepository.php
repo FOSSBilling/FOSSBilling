@@ -18,9 +18,6 @@ use Doctrine\ORM\QueryBuilder;
 class PayGatewayRepository extends EntityRepository
 {
     /**
-     * Enabled payment gateways ordered by id descending, mirroring the legacy
-     * `enabled = 1 ORDER BY id desc` lookup used by `ServicePayGateway::getActive`.
-     *
      * @return PayGateway[]
      */
     public function findEnabledOrderedByIdDesc(): array
@@ -30,9 +27,6 @@ class PayGatewayRepository extends EntityRepository
 
     /**
      * Find a single enabled gateway by its adapter code (the `gateway` column).
-     *
-     * Used by the ClientBalance adapter, which previously called
-     * `findOne('PayGateway', 'gateway = ? and enabled = 1', [$code])`.
      */
     public function findEnabledByGateway(string $gateway): ?PayGateway
     {
@@ -42,9 +36,7 @@ class PayGatewayRepository extends EntityRepository
     }
 
     /**
-     * Build a QueryBuilder for the gateway search/listing, preserving the legacy
-     * `ServicePayGateway::getSearchQuery` filters and the `ORDER BY gateway ASC`
-     * ordering.
+     * Build a QueryBuilder for the gateway search/listing.
      *
      * @param array $data optional filters: search, enabled, allow_single,
      *                    allow_recurrent, test_mode

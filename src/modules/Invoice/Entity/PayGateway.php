@@ -14,13 +14,6 @@ namespace Box\Mod\Invoice\Entity;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
-/**
- * Payment gateway configuration row (table `pay_gateway`).
- *
- * Stores the installed payment adapter instances together with their
- * user-configured settings. The table has no timestamp columns, so this entity
- * intentionally does not use the project's TimestampTrait.
- */
 #[ORM\Entity(repositoryClass: \Box\Mod\Invoice\Repository\PayGatewayRepository::class)]
 #[ORM\Table(name: 'pay_gateway')]
 class PayGateway
