@@ -14,14 +14,20 @@ use Payment_Adapter_PayPalEmail;
 
 use function Tests\Helpers\container;
 
-function buildPayPalEmailAdapter(string $configuredEmail, string $postbackResponse): Payment_Adapter_PayPalEmail
+function buildPayPalEmailAdapter(string $configuredEmail, string $postbackResponse, ?array &$capturedRequestBody = null): Payment_Adapter_PayPalEmail
 {
     $response = Mockery::mock();
     $response->shouldReceive('getContent')->andReturn($postbackResponse);
 
     $httpClient = Mockery::mock();
     $httpClient->shouldReceive('withOptions')->andReturnSelf();
-    $httpClient->shouldReceive('request')->with('POST', Mockery::any(), Mockery::any())->andReturn($response);
+    $httpClient->shouldReceive('request')
+        ->with('POST', Mockery::any(), Mockery::on(function (array $options) use (&$capturedRequestBody): bool {
+            parse_str((string) ($options['body'] ?? ''), $capturedRequestBody);
+
+            return true;
+        }))
+        ->andReturn($response);
 
     $adapter = new Payment_Adapter_PayPalEmail(['email' => $configuredEmail, 'test_mode' => false]);
     $di = container();
@@ -125,5 +131,19 @@ describe('_isIpnValid receiver verification', function (): void {
         ]));
 
         expect($result)->toBeFalse();
+    });
+
+    test('sends field values back to PayPal unmodified, backslashes included', function (): void {
+        $captured = [];
+        $adapter = buildPayPalEmailAdapter('merchant@example.com', 'VERIFIED', $captured);
+
+        $result = callIsIpnValid($adapter, http_build_query([
+            'receiver_email' => 'merchant@example.com',
+            'mc_gross' => '10.00',
+            'address_street' => 'C:\\Users\\Test 1\\2 Foo St',
+        ]));
+
+        expect($result)->toBeTrue();
+        expect($captured['address_street'])->toBe('C:\\Users\\Test 1\\2 Foo St');
     });
 });

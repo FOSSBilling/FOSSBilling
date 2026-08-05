@@ -294,7 +294,10 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         parse_str((string) $data['http_raw_post_data'], $post);
         $req = 'cmd=_notify-validate';
         foreach ($post as $key => $value) {
-            $value = urlencode(stripslashes($value));
+            // No stripslashes() here: that undid PHP's long-removed magic_quotes_gpc
+            // escaping. Applied unconditionally it corrupts any value containing a
+            // backslash, so the re-posted request no longer matches what PayPal sent.
+            $value = urlencode((string) $value);
             $req .= "&$key=$value";
         }
 
