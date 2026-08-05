@@ -58,7 +58,8 @@
         "Autoresponder",
         "initialises",
         "WORKTREE",
-        "previewable"
+        "previewable",
+        "falsey"
     ],
 
     "ignoreWords": [
