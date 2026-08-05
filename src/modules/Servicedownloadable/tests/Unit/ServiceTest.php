@@ -270,3 +270,49 @@ test('clientSettableConfigKeys returns the downloadable allowlist', function ():
     // other product-type services.
     expect($allowed)->not->toContain('files');
 });
+
+test('attachOrderConfig merges admin config over client data (admin wins)', function (): void {
+    $service = new Service();
+
+    // Admin product config carries the authoritative `files` list plus an
+    // admin-controlled flag (`update_orders`). Client input also carries a
+    // `update_orders` value and a `files` list - both must lose to admin.
+    $fileDefinition = [
+        'id' => str_repeat('a', 32),
+        'filename' => 'installer.zip',
+        'stored_filename' => str_repeat('b', 64),
+        'label' => 'Installer',
+        'description' => 'Application files',
+    ];
+
+    $productModel = serviceDownloadableCreateProductEntity(config: json_encode([
+        'files' => [$fileDefinition],
+        'update_orders' => true,
+    ], JSON_THROW_ON_ERROR));
+
+    $clientData = [
+        'period' => '1M',
+        'quantity' => 1,
+        'update_orders' => false,           // injected - admin must win
+        'files' => [['filename' => 'evil']], // injected - admin must win
+    ];
+
+    $result = $service->attachOrderConfig($productModel, $clientData);
+
+    // Allowlisted client keys are preserved (the merge is admin-over-client,
+    // not admin-replaces-entire-client).
+    expect($result['period'])->toBe('1M');
+    expect($result['quantity'])->toBe(1);
+
+    // Admin-controlled keys take precedence over the client-supplied values.
+    expect($result['update_orders'])->toBeTrue('client override of admin-controlled update_orders leaked through merge');
+    expect($result['files'])->toBe([$fileDefinition], 'client override of admin-controlled files leaked through merge');
+});
+
+test('attachOrderConfig throws when product has no files configured', function (): void {
+    $service = new Service();
+    $productModel = serviceDownloadableCreateProductEntity(config: '{"files": []}');
+
+    expect(fn (): array => $service->attachOrderConfig($productModel, ['period' => '1M']))
+        ->toThrow(Exception::class, 'Product is not configured completely.');
+});

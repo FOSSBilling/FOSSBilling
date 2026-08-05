@@ -163,7 +163,7 @@ class Service implements InjectionAwareInterface
         return ['period', 'quantity'];
     }
 
-    public function attachOrderConfig(Product $product, array &$data): array
+    public function attachOrderConfig(Product $product, array $data): array
     {
         $config = json_decode($product->getConfig() ?? '', true) ?? [];
         $files = $this->validateFileDefinitions($config[self::FILES_CONFIG_KEY] ?? null);
@@ -171,9 +171,20 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Product is not configured completely.');
         }
 
+        // Force-bind the admin-controlled file list into the client payload
+        // before the merge, so a client-supplied `files` key (which the central
+        // filter should already have stripped) cannot survive even if that
+        // filter is bypassed.
         $data[self::FILES_CONFIG_KEY] = $files;
 
-        return array_merge($config, $data);
+        // Merge with admin config taking precedence: any admin-controlled key
+        // present in both arrays wins the admin-configured value, never the
+        // client-supplied one. This is the opposite order from the other
+        // product-type services by design - those rely on the central filter
+        // to strip admin keys from client input before reaching here, while
+        // Servicedownloadable additionally self-protects at the merge site
+        // so the admin-wins contract is enforced locally too.
+        return array_merge($data, $config);
     }
 
     public function validateOrderData(array &$data): void
