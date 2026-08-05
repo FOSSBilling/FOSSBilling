@@ -46,6 +46,19 @@ class Service implements InjectionAwareInterface
     }
 
     /**
+     * Top-level cart-config keys that a client is authorized to set when
+     * ordering a license product. Admin-controlled fields (plugin,
+     * validate_ip, validate_host, validate_path, validate_version, length,
+     * prefix, iterations) are stripped from client input before the merge.
+     *
+     * @return list<string>
+     */
+    public function clientSettableConfigKeys(): array
+    {
+        return ['period', 'quantity'];
+    }
+
+    /**
      * Method called before adding product to cart.
      */
     public function attachOrderConfig(Product $product, array $data): array

@@ -149,6 +149,20 @@ class Service implements InjectionAwareInterface
         $this->filesystem = new Filesystem();
     }
 
+    /**
+     * Top-level cart-config keys that a client is authorized to set when
+     * ordering a downloadable product. The `files` key is admin-controlled
+     * and is forcibly overwritten from the product's config in attachOrderConfig
+     * anyway; declaring the allowlist here keeps this service consistent with
+     * the other product-type services under the central contract.
+     *
+     * @return list<string>
+     */
+    public function clientSettableConfigKeys(): array
+    {
+        return ['period', 'quantity'];
+    }
+
     public function attachOrderConfig(Product $product, array &$data): array
     {
         $config = json_decode($product->getConfig() ?? '', true) ?? [];

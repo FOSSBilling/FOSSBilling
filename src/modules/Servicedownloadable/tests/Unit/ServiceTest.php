@@ -256,3 +256,17 @@ test('validate file upload rejects unknown extension', function (): void {
     expect(fn (): mixed => $reflection->invoke($service, $file))
         ->toThrow(FOSSBilling\Exception::class);
 });
+
+test('clientSettableConfigKeys returns the downloadable allowlist', function (): void {
+    $service = new Service();
+    $allowed = $service->clientSettableConfigKeys();
+
+    expect($allowed)->toBeArray();
+    expect($allowed)->toContain('period');
+    expect($allowed)->toContain('quantity');
+    // The `files` key is admin-controlled and already forcibly overwritten
+    // in attachOrderConfig from the product's config; declare it as
+    // non-settable here too for defense-in-depth and consistency with the
+    // other product-type services.
+    expect($allowed)->not->toContain('files');
+});

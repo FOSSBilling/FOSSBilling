@@ -41,6 +41,20 @@ class Service implements InjectionAwareInterface
         ];
     }
 
+    /**
+     * Top-level cart-config keys that a client is authorized to set when
+     * ordering an API-key product. Admin-controlled fields (length, split,
+     * split_interval, case, custom_* params) are stripped from client input
+     * before the merge — preventing client-driven DoS of key generation via
+     * unbounded length and invalid case values.
+     *
+     * @return list<string>
+     */
+    public function clientSettableConfigKeys(): array
+    {
+        return ['period', 'quantity'];
+    }
+
     public function attachOrderConfig(Product $product, array $data): array
     {
         $config = json_decode($product->getConfig() ?? '', true) ?? [];

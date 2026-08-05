@@ -1296,12 +1296,25 @@ class Service implements InjectionAwareInterface
         return $adapter->getLoginUrl($account);
     }
 
+    /**
+     * Top-level cart-config keys that a client is authorized to set when
+     * ordering a hosting product. Any other client-supplied key is stripped
+     * before attachOrderConfig runs, so admin-controlled fields such as
+     * hosting_plan_id, server_id, reseller, subdomain_base_domain etc.
+     * cannot be mass-assigned via the cart.
+     *
+     * @return list<string>
+     */
+    public function clientSettableConfigKeys(): array
+    {
+        return ['period', 'domain', 'quantity', 'multiple'];
+    }
+
     public function attachOrderConfig(Product $product, array $data): array
     {
         $c = json_decode($product->getConfig() ?? '', true) ?? [];
 
         $data = array_merge($c, $data);
-
         if (($data['domain']['action'] ?? null) === 'subdomain' && array_key_exists('subdomain_base_domain', $c)) {
             $data['subdomain_base_domain'] = $c['subdomain_base_domain'];
         }

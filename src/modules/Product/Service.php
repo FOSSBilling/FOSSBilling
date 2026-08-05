@@ -330,6 +330,16 @@ class Service implements InjectionAwareInterface
     {
         $service = $this->getProductModuleService($product);
 
+        // Defense-in-depth: strip client-supplied keys that the product-type
+        // service has not declared as client-settable. This prevents
+        // mass-assignment of admin-controlled fields (e.g. hosting_plan_id,
+        // server_id, plugin, validate_* flags) via the cart/add_item endpoint.
+        // Admin-configured values are restored naturally by the downstream
+        // attachOrderConfig merge with the product's stored config.
+        if (method_exists($service, 'clientSettableConfigKeys')) {
+            $config = $this->stripUnauthorizedConfigKeys($config, $service->clientSettableConfigKeys());
+        }
+
         if (method_exists($service, 'attachOrderConfig')) {
             $config = $service->attachOrderConfig($product, $config);
         }
@@ -340,6 +350,31 @@ class Service implements InjectionAwareInterface
 
         if (method_exists($service, 'validateCustomForm')) {
             $service->validateCustomForm($config, $this->getProductValidationData($product));
+        }
+
+        return $config;
+    }
+
+    /**
+     * Remove top-level keys from the client-supplied cart config that the
+     * client is not authorized to set. Only keys declared in the service's
+     * `clientSettableConfigKeys()` allowlist are preserved; everything else
+     * is dropped before `attachOrderConfig` runs the merge with the product's
+     * stored admin config, so admin-controlled values win naturally.
+     *
+     * @param array<string, mixed> $config      client-supplied cart config
+     * @param list<string>         $allowedKeys service-defined allowlist of client-settable keys
+     *
+     * @return array<string, mixed>
+     */
+    private function stripUnauthorizedConfigKeys(array $config, array $allowedKeys): array
+    {
+        $allowedKeys = array_flip($allowedKeys);
+
+        foreach (array_keys($config) as $key) {
+            if (!isset($allowedKeys[$key])) {
+                unset($config[$key]);
+            }
         }
 
         return $config;
