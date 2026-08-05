@@ -264,10 +264,7 @@ test('clientSettableConfigKeys returns the downloadable allowlist', function ():
     expect($allowed)->toBeArray();
     expect($allowed)->toContain('period');
     expect($allowed)->toContain('quantity');
-    // The `files` key is admin-controlled and already forcibly overwritten
-    // in attachOrderConfig from the product's config; declare it as
-    // non-settable here too for defense-in-depth and consistency with the
-    // other product-type services.
+    // `files` is admin-controlled and must not be client-settable.
     expect($allowed)->not->toContain('files');
 });
 

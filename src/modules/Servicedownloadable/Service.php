@@ -150,11 +150,8 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Top-level cart-config keys that a client is authorized to set when
-     * ordering a downloadable product. The `files` key is admin-controlled
-     * and is forcibly overwritten from the product's config in attachOrderConfig
-     * anyway; declaring the allowlist here keeps this service consistent with
-     * the other product-type services under the central contract.
+     * Top-level cart-config keys a client is authorized to set when ordering
+     * a downloadable product.
      *
      * @return list<string>
      */
@@ -171,19 +168,11 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Product is not configured completely.');
         }
 
-        // Force-bind the admin-controlled file list into the client payload
-        // before the merge, so a client-supplied `files` key (which the central
-        // filter should already have stripped) cannot survive even if that
-        // filter is bypassed.
+        // Force the admin-controlled file list into the payload before the merge.
         $data[self::FILES_CONFIG_KEY] = $files;
 
-        // Merge with admin config taking precedence: any admin-controlled key
-        // present in both arrays wins the admin-configured value, never the
-        // client-supplied one. This is the opposite order from the other
-        // product-type services by design - those rely on the central filter
-        // to strip admin keys from client input before reaching here, while
-        // Servicedownloadable additionally self-protects at the merge site
-        // so the admin-wins contract is enforced locally too.
+        // Admin config wins on key collisions, unlike the other product-type
+        // services which rely solely on the central client-settable-keys filter.
         return array_merge($data, $config);
     }
 

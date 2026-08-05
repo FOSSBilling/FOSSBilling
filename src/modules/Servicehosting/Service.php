@@ -1297,11 +1297,10 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Top-level cart-config keys that a client is authorized to set when
-     * ordering a hosting product. Any other client-supplied key is stripped
-     * before attachOrderConfig runs, so admin-controlled fields such as
-     * hosting_plan_id, server_id, reseller, subdomain_base_domain etc.
-     * cannot be mass-assigned via the cart.
+     * Top-level cart-config keys a client is authorized to set when ordering
+     * a hosting product. Admin-controlled fields (hosting_plan_id, server_id,
+     * reseller, subdomain_base_domain, etc.) are stripped from client input
+     * before the merge.
      *
      * @return list<string>
      */

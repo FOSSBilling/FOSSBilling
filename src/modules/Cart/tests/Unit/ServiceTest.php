@@ -1652,15 +1652,13 @@ test('isPromoAvailableForClientGroup returns expected result', function (Promo $
     [createPromoEntity(6)->setClientGroups(json_encode([1, 2])), null, false],
 ]);
 
-test('addItem strips client-injected hosting_plan_id (CVE regression)', function (): void {
-    // Regression test for GHSA-7vcc-24pp-x3wv. A client must not be able to
-    // override the admin-configured hosting_plan_id by injecting it into the
-    // cart/add_item request. We assert this at the attachOrderConfig boundary:
-    // by the time the payload reaches Servicehosting::attachOrderConfig, the
-    // central filter in Product\Service::prepareCartProductConfig must have
-    // stripped the client-injected hosting_plan_id (and server_id). The admin-
-    // configured value comes back via attachOrderConfig's own array_merge with
-    // the product's stored config, which is out of scope here.
+test('addItem strips client-injected hosting_plan_id', function (): void {
+    // A client must not be able to override the admin-configured hosting_plan_id
+    // by injecting it into the cart/add_item request. We assert this at the
+    // attachOrderConfig boundary: by the time the payload reaches
+    // Servicehosting::attachOrderConfig, the central filter in
+    // Product\Service::prepareCartProductConfig must have stripped the
+    // client-injected hosting_plan_id (and server_id).
     $cartModel = new Cart();
     $cartReflection = new ReflectionProperty($cartModel, 'id');
     $cartReflection->setValue($cartModel, 1);
