@@ -1717,6 +1717,7 @@ test('getProductDiscount returns free setup discount', function (): void {
     $di['em'] = $emMock;
     $productService = Mockery::mock(ProductService::class)->shouldIgnoreMissing();
     $productService->shouldReceive('findPromoById')->once()->with(1)->andReturn($promoModel);
+    $productService->shouldReceive('isPromoApplicableToProductById')->atLeast()->once()->andReturn(true);
     $di['mod_service'] = $di->protect(fn () => $productService);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
@@ -1731,6 +1732,47 @@ test('getProductDiscount returns free setup discount', function (): void {
     expect($result[0])->toEqual($discountPrice);
     $discountSetup = $setupPrice;
     expect($result[1])->toEqual($discountSetup);
+});
+
+test('getProductDiscount does not waive setup fee for a product the promo is not applicable to', function (): void {
+    $cartProductModel = new CartProduct();
+    $cpReflection = new ReflectionProperty($cartProductModel, 'id');
+    $cpReflection->setValue($cartProductModel, 1);
+
+    $modelCart = new Cart();
+    $cartReflection = new ReflectionProperty($modelCart, 'id');
+    $cartReflection->setValue($modelCart, 1);
+    $modelCart->setPromoId(1);
+
+    $promoModel = new Promo();
+    $promoModel->setFreeSetup(true);
+
+    $cartRepo = Mockery::mock(CartRepository::class);
+    $cartRepo->shouldReceive('find')->atLeast()->once()->with(Mockery::any())->andReturn($modelCart);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Cart::class)->andReturn($cartRepo);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $productService = Mockery::mock(ProductService::class)->shouldIgnoreMissing();
+    $productService->shouldReceive('findPromoById')->once()->with(1)->andReturn($promoModel);
+    // Promo is restricted to a different product/period, so it does not apply here.
+    $productService->shouldReceive('isPromoApplicableToProductById')->atLeast()->once()->andReturn(false);
+    $di['mod_service'] = $di->protect(fn () => $productService);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('getRelatedItemsDiscount')->atLeast()->once()->andReturn(0);
+    // getItemPromoDiscount correctly returns 0 for a non-applicable product.
+    $serviceMock->shouldReceive('getItemPromoDiscount')->atLeast()->once()->andReturn(0);
+
+    $serviceMock->setDi($di);
+    $setupPrice = 25;
+    $result = $serviceMock->getProductDiscount($cartProductModel, $setupPrice);
+
+    expect($result)->toBeArray();
+    expect($result[0])->toEqual(0);
+    expect($result[1])->toEqual(0);
 });
 
 test('isPromoAvailableForClientGroup returns expected result', function (Promo $promo, ?Client $client, bool $expectedResult): void {
