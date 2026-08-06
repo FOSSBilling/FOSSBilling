@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice;
 
+use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Transaction;
@@ -968,14 +969,13 @@ class ServiceTransaction implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Cannot add negative amount to client balance for debit transaction');
         }
 
-        $credit = $this->di['db']->dispense('ClientBalance');
-        $credit->client_id = $client->id;
-        $credit->type = 'transaction';
-        $credit->rel_id = $tx->getId();
-        $credit->description = 'Invoice #' . $proforma->id . ' payment received from transaction #' . $tx->getId();
-        $credit->amount = $tx->getAmount();
-        $credit->created_at = date('Y-m-d H:i:s');
-        $credit->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($credit);
+        $credit = new ClientBalance();
+        $credit->setClientId((int) $client->id);
+        $credit->setType('transaction');
+        $credit->setRelId((string) $tx->getId());
+        $credit->setDescription('Invoice #' . $proforma->id . ' payment received from transaction #' . $tx->getId());
+        $credit->setAmount($tx->getAmount());
+        $this->di['em']->persist($credit);
+        $this->di['em']->flush();
     }
 }
