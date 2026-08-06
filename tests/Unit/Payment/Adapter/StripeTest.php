@@ -130,12 +130,6 @@ function buildTransaction(): Transaction
 }
 
 /**
- * Build a dedicated EntityManager + repository mock pair so individual tests
- * can assert exact Transaction/Subscription repository interactions without
- * relying on the shared container() em mock's default `shouldIgnoreMissing`.
- *
- * Returns ['em' => EntityManagerInterface, 'txRepo' => TransactionRepository, 'subRepo' => MockInterface].
- *
  * @return array{em: Mockery\MockInterface, txRepo: Mockery\MockInterface, subRepo: Mockery\MockInterface}
  */
 function buildEntityManagerMocks(): array

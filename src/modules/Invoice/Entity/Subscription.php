@@ -134,12 +134,6 @@ class Subscription
         return $this->amount;
     }
 
-    /**
-     * Accepts float or numeric string. String input arrives from
-     * `Transaction::amount` (a varchar column) during subscription creation,
-     * and from API payload data. Normalizes to float to match the
-     * double(18,2) column, mirroring the InvoiceItem union-setter precedent.
-     */
     public function setAmount(float|string|null $amount): void
     {
         $this->amount = is_string($amount) ? (float) $amount : $amount;
