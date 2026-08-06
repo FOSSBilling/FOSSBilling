@@ -1,14 +1,31 @@
 {% if product.type != 'domain' %}
 {% set currency_code = admin.currency_get_default.code %}
-{% set recurrent_periods = {
-    '1W': 'Weekly',
-    '1M': 'Monthly',
-    '3M': 'Every 3 Months',
-    '6M': 'Every 6 Months',
-    '1Y': 'Every Year',
-    '2Y': 'Every 2 Years',
-    '3Y': 'Every 3 Years'
+
+{# Canonical labels for Box_Period's built-in preset periods, kept in sync with Box_Period::getPredefined(). #}
+{% set preset_periods = {
+    '1W': 'Every Week'|trans,
+    '1M': 'Every Month'|trans,
+    '3M': 'Every 3 Months'|trans,
+    '6M': 'Every 6 Months'|trans,
+    '1Y': 'Every Year'|trans,
+    '2Y': 'Every 2 Years'|trans,
+    '3Y': 'Every 3 Years'|trans,
+    '4Y': 'Every 4 Years'|trans,
+    '5Y': 'Every 5 Years'|trans
 } %}
+{# Products with no configured periods yet (new products, or ones never saved as recurrent) #}
+{# still show these defaults so the form behaves the same as before periods were customizable. #}
+{# Configured periods are merged on top, overriding the defaults and adding any custom ones. #}
+{% set default_periods = {
+    '1W': { price: 0, setup: 0, enabled: true, title: preset_periods['1W'] },
+    '1M': { price: 0, setup: 0, enabled: true, title: preset_periods['1M'] },
+    '3M': { price: 0, setup: 0, enabled: true, title: preset_periods['3M'] },
+    '6M': { price: 0, setup: 0, enabled: true, title: preset_periods['6M'] },
+    '1Y': { price: 0, setup: 0, enabled: true, title: preset_periods['1Y'] },
+    '2Y': { price: 0, setup: 0, enabled: true, title: preset_periods['2Y'] },
+    '3Y': { price: 0, setup: 0, enabled: true, title: preset_periods['3Y'] }
+} %}
+{% set recurrent_periods = default_periods|merge(product.pricing.recurrent|default({})) %}
 
 <div class="d-flex flex-column gap-1 mb-4">
     <h6 class="card-title mb-0">{{ 'Billing Model'|trans }}</h6>
@@ -69,7 +86,7 @@
 
 <div class="pp-pane recurrent"{% if product.pricing.type != 'recurrent' %} style="display:none;"{% endif %}>
     <div class="table-responsive border rounded">
-        <table class="pp table card-table table-vcenter mb-0">
+        <table class="pp table card-table table-vcenter mb-0" id="pp-recurrent-table">
             <thead>
                 <tr>
                     <th>{{ 'Billing Period'|trans }}</th>
@@ -77,47 +94,101 @@
                     <th>{{ 'Price for Period'|trans }} ({{ currency_code }})</th>
                     <th>{{ 'First Payment Sum'|trans }}</th>
                     <th class="w-1 text-center">{{ 'Enabled'|trans }}</th>
+                    <th class="w-1"></th>
                 </tr>
             </thead>
-            <tbody>
-                {% for period, label in recurrent_periods %}
-                <tr>
-                    <td class="fw-medium">{{ label|trans }}</td>
-                    <td><input class="form-control price setup_price" type="text" name="pricing[recurrent][{{ period }}][setup]" value="{{ product.pricing.recurrent[period].setup }}"></td>
-                    <td><input class="form-control price bill_price" type="text" name="pricing[recurrent][{{ period }}][price]" value="{{ product.pricing.recurrent[period].price }}"></td>
+            <tbody id="pp-recurrent-tbody">
+                {% for code, prices in recurrent_periods %}
+                <tr data-period-code="{{ code }}">
+                    <td class="fw-medium">{{ prices.title }}</td>
+                    <td><input class="form-control price setup_price" type="text" name="pricing[recurrent][{{ code }}][setup]" value="{{ prices.setup }}"></td>
+                    <td><input class="form-control price bill_price" type="text" name="pricing[recurrent][{{ code }}][price]" value="{{ prices.price }}"></td>
                     <td><input class="form-control total price" type="text" readonly disabled></td>
-                    <td class="text-center"><input class="form-check-input" type="checkbox" name="pricing[recurrent][{{ period }}][enabled]" value="1"{% if (product.pricing.type == 'recurrent') and (product.pricing.recurrent[period].enabled) %} checked{% endif %}></td>
+                    <td class="text-center"><input class="form-check-input" type="checkbox" name="pricing[recurrent][{{ code }}][enabled]" value="1"{% if prices.enabled %} checked{% endif %}></td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-icon pp-remove-period" title="{{ 'Remove this billing period'|trans }}">
+                            <svg class="icon">
+                                <use href="#trash" />
+                            </svg>
+                        </button>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+
+    <div class="d-flex flex-wrap align-items-start gap-4 mt-3">
+        <div>
+            <label class="form-label mb-1" for="pp-add-qty">{{ 'Add a custom billing period'|trans }}</label>
+            <div class="input-group flex-nowrap" style="width:auto;">
+                <span class="input-group-text">{{ 'Every'|trans }}</span>
+                <input type="number" class="form-control" id="pp-add-qty" min="1" max="90" value="1" style="max-width:80px;">
+                <select class="form-select" id="pp-add-unit">
+                    <option value="D" data-min="1" data-max="90">{{ 'Day(s)'|trans }}</option>
+                    <option value="W" data-min="1" data-max="52">{{ 'Week(s)'|trans }}</option>
+                    <option value="M" data-min="1" data-max="24" selected>{{ 'Month(s)'|trans }}</option>
+                    <option value="Y" data-min="1" data-max="5">{{ 'Year(s)'|trans }}</option>
+                </select>
+                <button type="button" class="btn btn-outline-primary" id="pp-add-period-btn">
+                    <svg class="icon">
+                        <use href="#plus" />
+                    </svg>
+                    {{ 'Add'|trans }}
+                </button>
+            </div>
+            <div class="form-hint text-danger" id="pp-add-period-error"></div>
+        </div>
+        <div>
+            <div class="form-label mb-1">{{ 'Quick add'|trans }}</div>
+            <div class="d-flex flex-wrap gap-1">
+                {% for code, label in preset_periods %}
+                    <button type="button" class="btn btn-outline-secondary btn-sm pp-preset-period" data-code="{{ code }}" data-title="{{ label }}">{{ label }}</button>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        const priceInputs = document.querySelectorAll('.pp input.price:not(:disabled)');
-        priceInputs.forEach(function(input) {
-            function updateTotal() {
-                const row = input.closest('tr');
+        const recurrentTbody = document.getElementById('pp-recurrent-tbody');
+
+        function updateRowTotal(row) {
+            const setupPrice = row.querySelector('input.setup_price').value;
+            const billPrice = row.querySelector('input.bill_price').value;
+            const total = countTotal(billPrice, setupPrice);
+            const totalInput = row.querySelector('input.total');
+            totalInput.value = total;
+        }
+
+        // Event delegation so price totals recalculate for both the original rows and
+        // any custom billing period rows added client-side afterwards.
+        document.querySelectorAll('.pp').forEach(function(table) {
+            table.addEventListener('input', function(event) {
+                if (!event.target.matches('input.price:not(:disabled)')) {
+                    return;
+                }
+                updateRowTotal(event.target.closest('tr'));
+            });
+
+            table.addEventListener('change', function(event) {
+                if (!event.target.matches('input.price:not(:disabled)')) {
+                    return;
+                }
+                const row = event.target.closest('tr');
+                updateRowTotal(row);
                 const setupPrice = row.querySelector('input.setup_price').value;
                 const billPrice = row.querySelector('input.bill_price').value;
-                const total = countTotal(billPrice, setupPrice);
-                const totalInput = row.querySelector('input.total');
-                totalInput.value = total;
-            }
-
-            input.addEventListener('input', updateTotal);
-            updateTotal();
-
-            input.addEventListener('change', function() {
-                const row = this.closest('tr');
-                const setupPrice = row.querySelector('input.setup_price').value;
-                const billPrice = row.querySelector('input.bill_price').value;
-                const total = countTotal(billPrice, setupPrice);
                 const checkbox = row.querySelector('input.form-check-input');
                 if (checkbox) {
-                    checkbox.checked = total > 0;
+                    checkbox.checked = countTotal(billPrice, setupPrice) > 0;
+                }
+            });
+
+            table.querySelectorAll('tr').forEach(function(row) {
+                if (row.querySelector('input.price')) {
+                    updateRowTotal(row);
                 }
             });
         });
@@ -134,6 +205,72 @@
                 }
             });
         });
+
+        if (recurrentTbody) {
+            recurrentTbody.addEventListener('click', function(event) {
+                const removeButton = event.target.closest('.pp-remove-period');
+                if (removeButton) {
+                    removeButton.closest('tr').remove();
+                }
+            });
+
+            function addPeriodRow(code, title) {
+                const errorEl = document.getElementById('pp-add-period-error');
+                errorEl.textContent = '';
+
+                if (recurrentTbody.querySelector('tr[data-period-code="' + code + '"]') !== null) {
+                    errorEl.textContent = "{{ 'That billing period has already been added.'|trans|e('js') }}";
+                    return;
+                }
+
+                const row = document.createElement('tr');
+                row.dataset.periodCode = code;
+                row.innerHTML =
+                    '<td class="fw-medium"></td>' +
+                    '<td><input class="form-control price setup_price" type="text" value="0.00"></td>' +
+                    '<td><input class="form-control price bill_price" type="text" value="0.00"></td>' +
+                    '<td><input class="form-control total price" type="text" readonly disabled></td>' +
+                    '<td class="text-center"><input class="form-check-input" type="checkbox" checked></td>' +
+                    '<td class="text-center"><button type="button" class="btn btn-icon pp-remove-period" title="{{ 'Remove this billing period'|trans|e('js') }}"><svg class="icon"><use href="#trash" /></svg></button></td>';
+
+                row.querySelector('td').textContent = title;
+                row.querySelector('.setup_price').name = 'pricing[recurrent][' + code + '][setup]';
+                row.querySelector('.bill_price').name = 'pricing[recurrent][' + code + '][price]';
+                row.querySelector('.form-check-input').name = 'pricing[recurrent][' + code + '][enabled]';
+                row.querySelector('.form-check-input').value = '1';
+
+                recurrentTbody.appendChild(row);
+                updateRowTotal(row);
+            }
+
+            document.querySelectorAll('.pp-preset-period').forEach(function(button) {
+                button.addEventListener('click', function() {
+                    addPeriodRow(this.dataset.code, this.dataset.title);
+                });
+            });
+
+            document.getElementById('pp-add-period-btn').addEventListener('click', function() {
+                const errorEl = document.getElementById('pp-add-period-error');
+                errorEl.textContent = '';
+
+                const qtyInput = document.getElementById('pp-add-qty');
+                const unitSelect = document.getElementById('pp-add-unit');
+                const qty = parseInt(qtyInput.value, 10);
+                const unitOption = unitSelect.options[unitSelect.selectedIndex];
+                const unit = unitSelect.value;
+                const min = parseInt(unitOption.dataset.min, 10);
+                const max = parseInt(unitOption.dataset.max, 10);
+
+                if (isNaN(qty) || qty < min || qty > max) {
+                    errorEl.textContent = "{{ 'Enter a quantity within the allowed range for the selected unit.'|trans|e('js') }} (" + min + '-' + max + ')';
+                    return;
+                }
+
+                const code = qty + unit;
+                const title = unitOption.text.replace('(s)', qty === 1 ? '' : 's');
+                addPeriodRow(code, "{{ 'Every'|trans|e('js') }} " + qty + ' ' + title.toLowerCase());
+            });
+        }
     });
 
     function countTotal(price, setupPrice) {
