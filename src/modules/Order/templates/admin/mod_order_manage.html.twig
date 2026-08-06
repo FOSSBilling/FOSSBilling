@@ -372,7 +372,11 @@
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label">{{ 'Period'|trans }}</label>
-                                    {{ mf.selectbox('period', guest.system_periods, order.period, 0, 'Not recurrent'|trans) }}
+                                    {% set period_options = guest.system_periods %}
+                                    {% if order.period and order.period not in period_options|keys %}
+                                        {% set period_options = period_options|merge({ (order.period): guest.system_period_title({code: order.period}) }) %}
+                                    {% endif %}
+                                    {{ mf.selectbox('period', period_options, order.period, 0, 'Not recurrent'|trans) }}
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label" for="expires_at">{{ 'Date Expires'|trans }}</label>

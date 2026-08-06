@@ -867,28 +867,26 @@ CREATE TABLE `product_payment` (
   `type` varchar(30) DEFAULT NULL COMMENT 'free, once, recurrent',
   `once_price` decimal(18,2) DEFAULT '0.00',
   `once_setup_price` decimal(18,2) DEFAULT '0.00',
-  `w_price` decimal(18,2) DEFAULT '0.00',
-  `m_price` decimal(18,2) DEFAULT '0.00',
-  `q_price` decimal(18,2) DEFAULT '0.00',
-  `b_price` decimal(18,2) DEFAULT '0.00',
-  `a_price` decimal(18,2) DEFAULT '0.00',
-  `bia_price` decimal(18,2) DEFAULT '0.00',
-  `tria_price` decimal(18,2) DEFAULT '0.00',
-  `w_setup_price` decimal(18,2) DEFAULT '0.00',
-  `m_setup_price` decimal(18,2) DEFAULT '0.00',
-  `q_setup_price` decimal(18,2) DEFAULT '0.00',
-  `b_setup_price` decimal(18,2) DEFAULT '0.00',
-  `a_setup_price` decimal(18,2) DEFAULT '0.00',
-  `bia_setup_price` decimal(18,2) DEFAULT '0.00',
-  `tria_setup_price` decimal(18,2) DEFAULT '0.00',
-  `w_enabled` tinyint(1) DEFAULT '1',
-  `m_enabled` tinyint(1) DEFAULT '1',
-  `q_enabled` tinyint(1) DEFAULT '1',
-  `b_enabled` tinyint(1) DEFAULT '1',
-  `a_enabled` tinyint(1) DEFAULT '1',
-  `bia_enabled` tinyint(1) DEFAULT '1',
-  `tria_enabled` tinyint(1) DEFAULT '1',
   PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `product_payment_period`
+--
+
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `product_payment_period` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `product_payment_id` bigint(20) NOT NULL,
+  `code` varchar(10) NOT NULL COMMENT 'Box_Period code, e.g. 1M, 3Y, 45D',
+  `price` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `setup_price` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `enabled` tinyint(1) NOT NULL DEFAULT '1',
+  `sort_order` int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `product_payment_period_unique` (`product_payment_id`,`code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

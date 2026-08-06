@@ -56,10 +56,11 @@ test('cron settings renders when module config has not been saved', function ():
 test('order new only lists periods the product is actually priced for', function (): void {
     $renderer = new StrictTemplateRenderer();
 
-    // Box_Period::getPredefined() includes 4Y/5Y, but product_payment has no
-    // columns for those periods, so a product's pricing.recurrent never
-    // contains them. Regression test for #4063: indexing pricing.recurrent
-    // by every system period used to throw under strict_variables.
+    // Products can be priced with any custom billing period, not just the ones in
+    // Box_Period::getPredefined(). Regression test for #4063: indexing pricing.recurrent
+    // by every system period used to throw under strict_variables; the fix is for the
+    // template to read the period's own precomputed 'title' instead of doing a second
+    // lookup into a fixed system period list that a custom period wouldn't be in.
     $html = $renderer->renderTemplate(PATH_MODS . '/Order/templates/admin/mod_order_new.html.twig', [
         'admin' => new PermissiveStub(['system_template_exists' => false]),
         'client' => ['id' => 1, 'first_name' => 'Jane', 'last_name' => 'Doe'],
@@ -70,7 +71,7 @@ test('order new only lists periods the product is actually priced for', function
             'pricing' => [
                 'type' => 'recurrent',
                 'recurrent' => [
-                    '1Y' => ['price' => 10, 'setup' => 0, 'enabled' => true],
+                    '1Y' => ['price' => 10, 'setup' => 0, 'enabled' => true, 'title' => 'Every Year'],
                 ],
             ],
         ],
