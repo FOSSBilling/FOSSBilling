@@ -32,7 +32,7 @@ class SubscriptionRepository extends EntityRepository
      * Build a QueryBuilder for subscription searches/listings.
      *
      * @param array $data optional filters: search, id, sid, status, gateway_id,
-     *                    client_id, currency, date_from, date_to
+     *                    client_id, currency, invoice_id, date_from, date_to
      */
     public function getSearchQueryBuilder(array $data = []): QueryBuilder
     {
@@ -56,6 +56,13 @@ class SubscriptionRepository extends EntityRepository
         $currency = $data['currency'] ?? null;
         if ($currency) {
             $qb->andWhere('s.currency = :currency')->setParameter('currency', $currency);
+        }
+
+        $invoiceId = $data['invoice_id'] ?? null;
+        if ($invoiceId) {
+            $qb->andWhere('s.relType = :invoice_rel_type AND s.relId = :invoice_id')
+                ->setParameter('invoice_rel_type', 'invoice')
+                ->setParameter('invoice_id', (int) $invoiceId);
         }
 
         $dateFrom = $data['date_from'] ?? null;

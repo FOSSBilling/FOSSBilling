@@ -417,7 +417,13 @@ test('_subscribe creates and persists a subscription from an approved transactio
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo);
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn(Mockery::mock(PayGatewayRepository::class));
-    $em->shouldReceive('persist')->once();
+
+    $capturedSubscription = null;
+    $em->shouldReceive('persist')->once()->withArgs(function (object $entity) use (&$capturedSubscription): bool {
+        $capturedSubscription = $entity;
+
+        return $entity instanceof Subscription;
+    });
     $em->shouldReceive('flush')->atLeast()->once();
 
     $eventsMock = Mockery::mock('\Box_EventManager');
@@ -438,6 +444,16 @@ test('_subscribe creates and persists a subscription from an approved transactio
     $method->invoke($service, $tx);
 
     expect($tx->getStatus())->toBe(Transaction::STATUS_PROCESSED);
+    expect($capturedSubscription)->toBeInstanceOf(Subscription::class)
+        ->and($capturedSubscription->getSid())->toBe('sub_gateway_1')
+        ->and($capturedSubscription->getClientId())->toBe(7)
+        ->and($capturedSubscription->getPayGatewayId())->toBe(5)
+        ->and($capturedSubscription->getRelType())->toBe('invoice')
+        ->and($capturedSubscription->getRelId())->toBe(10)
+        ->and($capturedSubscription->getAmount())->toBe(29.99)
+        ->and($capturedSubscription->getCurrency())->toBe('USD')
+        ->and($capturedSubscription->getPeriod())->toBe('1M')
+        ->and($capturedSubscription->getStatus())->toBe('active');
 });
 
 test('_unsubscribe looks up the subscription by sid and delegates to the subscription service', function (): void {
