@@ -127,10 +127,10 @@
                 <span class="input-group-text">{{ 'Every'|trans }}</span>
                 <input type="number" class="form-control" id="pp-add-qty" min="1" max="90" value="1" style="max-width:80px;">
                 <select class="form-select" id="pp-add-unit">
-                    <option value="D" data-min="1" data-max="90">{{ 'Day(s)'|trans }}</option>
-                    <option value="W" data-min="1" data-max="52">{{ 'Week(s)'|trans }}</option>
-                    <option value="M" data-min="1" data-max="24" selected>{{ 'Month(s)'|trans }}</option>
-                    <option value="Y" data-min="1" data-max="5">{{ 'Year(s)'|trans }}</option>
+                    <option value="D" data-min="1" data-max="90" data-singular="{{ 'day'|trans }}" data-plural="{{ 'days'|trans }}">{{ 'Day(s)'|trans }}</option>
+                    <option value="W" data-min="1" data-max="52" data-singular="{{ 'week'|trans }}" data-plural="{{ 'weeks'|trans }}">{{ 'Week(s)'|trans }}</option>
+                    <option value="M" data-min="1" data-max="24" selected data-singular="{{ 'month'|trans }}" data-plural="{{ 'months'|trans }}">{{ 'Month(s)'|trans }}</option>
+                    <option value="Y" data-min="1" data-max="5" data-singular="{{ 'year'|trans }}" data-plural="{{ 'years'|trans }}">{{ 'Year(s)'|trans }}</option>
                 </select>
                 <button type="button" class="btn btn-outline-primary" id="pp-add-period-btn">
                     <svg class="icon">
@@ -257,20 +257,20 @@
 
                 const qtyInput = document.getElementById('pp-add-qty');
                 const unitSelect = document.getElementById('pp-add-unit');
-                const qty = parseInt(qtyInput.value, 10);
+                const qty = Number(qtyInput.value);
                 const unitOption = unitSelect.options[unitSelect.selectedIndex];
                 const unit = unitSelect.value;
                 const min = parseInt(unitOption.dataset.min, 10);
                 const max = parseInt(unitOption.dataset.max, 10);
 
-                if (isNaN(qty) || qty < min || qty > max) {
+                if (!Number.isInteger(qty) || qty < min || qty > max) {
                     errorEl.textContent = "{{ 'Enter a quantity within the allowed range for the selected unit.'|trans|e('js') }} (" + min + '-' + max + ')';
                     return;
                 }
 
                 const code = qty + unit;
-                const title = unitOption.text.replace('(s)', qty === 1 ? '' : 's');
-                addPeriodRow(code, "{{ 'Every'|trans|e('js') }} " + qty + ' ' + title.toLowerCase());
+                const unitLabel = qty === 1 ? unitOption.dataset.singular : unitOption.dataset.plural;
+                addPeriodRow(code, "{{ 'Every'|trans|e('js') }} " + qty + ' ' + unitLabel);
             });
         }
     });
