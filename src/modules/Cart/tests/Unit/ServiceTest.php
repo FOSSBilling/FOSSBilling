@@ -981,14 +981,11 @@ test('createFromCart compensates promo usage on transaction failure', function (
 });
 
 test('createFromCart does not roll back order creation when synchronous activation fails', function (): void {
-    // Regression test: a $0-total (e.g. free trial) or "activate after
-    // order" item is activated synchronously inside the same transaction
-    // that creates the order. If that activation throws, the recovery path
-    // used to call orderStatusAdd() with the literal string 'error', which
-    // is not a valid Order status and always threw InformationException
-    // itself - escaping the try/catch, rolling back the whole transaction,
-    // and making every order in the cart vanish instead of just failing to
-    // activate.
+    // A $0-total order is activated synchronously, inside the same
+    // transaction that creates it. The recovery path used to record the
+    // failure with the literal status 'error', which isn't a valid Order
+    // status - InformationException would escape and roll back the whole
+    // checkout, not just fail this one order.
     $cart = createEntity(Cart::class);
     $cart->id = 3;
     $cart->currency_id = 2;

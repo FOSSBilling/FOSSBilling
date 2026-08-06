@@ -972,11 +972,9 @@ class Service implements InjectionAwareInterface
                             $orderService->activateOrder($order);
                         }
                     } catch (\Throwable $e) {
-                        // Caught broadly so a failure here (of any kind) is
-                        // recorded on the order instead of escaping this loop:
-                        // that would bubble up through wrapInTransaction() and
-                        // roll back the whole checkout, including every order
-                        // and invoice already created for this cart.
+                        // An escaped failure here would roll back the whole
+                        // wrapInTransaction() below, including every order
+                        // already created for this cart - not just this one.
                         $this->di['logger']->error('Order activation failed after checkout: %s', $e->getMessage());
                         $notes = "Order could not be activated after checkout due to error: {$e->getMessage()}.";
                         $orderService->orderStatusAdd($order, Order::STATUS_FAILED_SETUP, $notes);
