@@ -1334,7 +1334,11 @@ class Service implements InjectionAwareInterface
             }
 
             $this->persistOrder($order);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            // Caught broadly (not just \Exception): an \Error or \TypeError
+            // here means the service was already provisioned remotely, so
+            // the order must still be recorded as failed_setup rather than
+            // left in pending_setup for a retry to re-provision it.
             if ($order instanceof Order) {
                 $order->setStatus(Order::STATUS_FAILED_SETUP);
             } else {

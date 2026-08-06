@@ -1825,6 +1825,41 @@ test('createFromOrder marks the order failed_setup when provisioning succeeds bu
     expect($order->getStatus())->toBe(Order::STATUS_FAILED_SETUP);
 });
 
+test('createFromOrder marks the order failed_setup when activation bookkeeping raises a TypeError', function (): void {
+    // Same regression as above, but for the wider \Throwable hierarchy: an
+    // \Error/\TypeError after a successful provisioning call must also be
+    // caught, otherwise the order is left in pending_setup with the remote
+    // account already created and a retry would call the provisioning
+    // action again against a service that already exists.
+    $order = createEntity(Order::class, [
+        'id' => 1,
+        'period' => '1Y',
+        'serviceType' => 'hosting',
+    ]);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn(new stdClass());
+    $serviceMock->shouldReceive('_callOnService')
+        ->once()
+        ->with($order, Order::ACTION_ACTIVATE)
+        ->andReturn(['username' => 'created-before-the-failure']);
+    $serviceMock->shouldReceive('saveStatusChange')
+        ->once()
+        ->with($order, 'Simulated TypeError after provisioning');
+
+    $di = container();
+    $di['period'] = $di->protect(function (): never {
+        throw new TypeError('Simulated TypeError after provisioning');
+    });
+    $serviceMock->setDi($di);
+
+    expect(fn (): mixed => $serviceMock->createFromOrder($order))
+        ->toThrow(TypeError::class, 'Simulated TypeError after provisioning');
+
+    expect($order->getStatus())->toBe(Order::STATUS_FAILED_SETUP);
+});
+
 test('activateOrder throws for non-pending order', function (): void {
     $clientOrderModel = createEntity(Order::class);
     $clientOrderModel->status = Order::STATUS_CANCELED;
