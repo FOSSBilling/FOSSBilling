@@ -120,12 +120,12 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
             case 'subscr_payment':
                 if ($ipn['payment_status'] == 'Completed') {
                     // Skip only if we've already processed a Completed payment for this transaction
-                    if (isset($tx['status'], $tx['txn_status']) && $tx['status'] === Model_Transaction::STATUS_PROCESSED && $tx['txn_status'] === 'Completed') {
+                    if (isset($tx['status'], $tx['txn_status']) && $tx['status'] === Box\Mod\Invoice\Entity\Transaction::STATUS_PROCESSED && $tx['txn_status'] === 'Completed') {
                         $d = [
                             'id' => $id,
                             'error' => '',
                             'error_code' => null,
-                            'status' => Model_Transaction::STATUS_PROCESSED,
+                            'status' => Box\Mod\Invoice\Entity\Transaction::STATUS_PROCESSED,
                             'updated_at' => date('Y-m-d H:i:s'),
                         ];
                         $api_admin->invoice_transaction_update($d);
@@ -142,7 +142,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                     $api_admin->invoice_transaction_update([
                         'id' => $id,
                         'txn_status' => (string) ($ipn['payment_status'] ?? ''),
-                        'status' => Model_Transaction::STATUS_RECEIVED,
+                        'status' => Box\Mod\Invoice\Entity\Transaction::STATUS_RECEIVED,
                         'error' => sprintf('PayPal payment not completed: %s', (string) ($ipn['payment_status'] ?? 'unknown')),
                         'updated_at' => date('Y-m-d H:i:s'),
                     ]);
@@ -216,9 +216,9 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                 break;
 
             case 'subscr_signup':
-                $existingSubscription = $this->di['db']->findOne('Subscription', 'sid = :sid', [':sid' => $ipn['subscr_id']]);
+                $existingSubscription = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Subscription::class)->findOneBy(['sid' => $ipn['subscr_id']]);
 
-                if (!$existingSubscription instanceof Model_Subscription) {
+                if (!$existingSubscription instanceof Box\Mod\Invoice\Entity\Subscription) {
                     $sd = [
                         'client_id' => $client_id,
                         'gateway_id' => $gateway_id,
@@ -273,7 +273,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
             'id' => $id,
             'error' => '',
             'error_code' => null,
-            'status' => Model_Transaction::STATUS_PROCESSED,
+            'status' => Box\Mod\Invoice\Entity\Transaction::STATUS_PROCESSED,
             'updated_at' => date('Y-m-d H:i:s'),
         ];
         $api_admin->invoice_transaction_update($d);

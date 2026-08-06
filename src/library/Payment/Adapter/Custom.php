@@ -87,11 +87,14 @@ class Payment_Adapter_Custom
 
         try {
             // Get the transaction and invoice associated with the transaction
-            $tx = $this->di['db']->getExistingModelById('Transaction', $id);
-            $invoice = $this->di['db']->getExistingModelById('Invoice', $tx->invoice_id);
+            $tx = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Transaction::class)->find($id);
+            if (!$tx instanceof Box\Mod\Invoice\Entity\Transaction) {
+                throw new Exception('Transaction not found');
+            }
+            $invoice = $this->di['db']->getExistingModelById('Invoice', $tx->getInvoiceId());
 
             // Load the payment gateway and client associated with the transaction
-            $gateway = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\PayGateway::class)->find((int) $tx->gateway_id);
+            $gateway = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\PayGateway::class)->find((int) $tx->getGatewayId());
             if (!$gateway instanceof Box\Mod\Invoice\Entity\PayGateway) {
                 throw new Exception('Payment gateway not found for transaction');
             }
@@ -104,19 +107,21 @@ class Payment_Adapter_Custom
 
             // Add funds to the client's account and mark the invoice as paid
             $gatewayName = $gateway->getName() ?: $gateway->getGateway();
-            $tx_desc = $gatewayName . ' transaction No: ' . $tx->txn_id;
+            $tx_desc = $gatewayName . ' transaction No: ' . $tx->getTxnId();
             $clientService->addFunds($client, $invoiceTotal, $tx_desc, []);
             $invoiceService->markAsPaid($invoice, true, true);
 
             // Update the transaction status and details
-            $tx->status = Model_Transaction::STATUS_PROCESSED;
-            $tx->amount = $invoiceTotal;
-            $tx->note = $gatewayName . ' transaction No: ' . $tx->txn_id;
-            $tx->currency = $invoice->currency;
-            $tx->updated_at = date('Y-m-d H:i:s');
+            $tx->setStatus(Box\Mod\Invoice\Entity\Transaction::STATUS_PROCESSED);
+            $tx->setAmount((string) $invoiceTotal);
+            $tx->setNote($gatewayName . ' transaction No: ' . $tx->getTxnId());
+            $tx->setCurrency($invoice->currency);
+            $tx->setUpdatedAt(new DateTime());
 
             // Store the updated transaction and use its return to indicate a success or failure.
-            return $this->di['db']->store($tx);
+            $this->di['em']->flush();
+
+            return true;
         } catch (Exception) {
             return false;
         }
