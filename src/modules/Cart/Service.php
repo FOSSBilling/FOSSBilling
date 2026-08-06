@@ -974,11 +974,13 @@ class Service implements InjectionAwareInterface
                         if ($ca['total'] > 0 && $product->getSetup() == \Box\Mod\Product\Service::SETUP_AFTER_PAYMENT && $isPaid) {
                             $orderService->activateOrder($order);
                         }
-                    } catch (\Exception $e) {
+                    } catch (\Throwable $e) {
+                        // An escaped failure here would roll back the whole
+                        // wrapInTransaction() below, including every order
+                        // already created for this cart - not just this one.
                         $this->di['logger']->error('Order activation failed after checkout: %s', $e->getMessage());
-                        $status = 'error';
                         $notes = "Order could not be activated after checkout due to error: {$e->getMessage()}.";
-                        $orderService->orderStatusAdd($order, $status, $notes);
+                        $orderService->orderStatusAdd($order, Order::STATUS_FAILED_SETUP, $notes);
                     }
                 }
 
