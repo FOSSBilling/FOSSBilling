@@ -16,7 +16,9 @@ declare(strict_types=1);
 namespace Box\Mod\Invoice\Api;
 
 use Box\Mod\Invoice\Entity\PayGateway;
+use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Tax;
+use Box\Mod\Invoice\Entity\Transaction;
 use FOSSBilling\InformationException;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
@@ -416,10 +418,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_transactions');
 
-        $model = $this->getDi()['db']->getExistingModelById('Transaction', $data['id'], 'Transaction not found');
+        $model = $this->getDi()['em']->getRepository(Transaction::class)->find((int) $data['id']);
+        if (!$model instanceof Transaction) {
+            throw new \FOSSBilling\Exception('Transaction not found');
+        }
 
         $output = null;
-        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminTransactionProcess', 'params' => ['id' => $model->id]]);
+        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminTransactionProcess', 'params' => ['id' => $model->getId()]]);
 
         $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
 
@@ -447,7 +452,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_transactions');
 
-        $model = $this->getDi()['db']->getExistingModelById('Transaction', $data['id'], 'Transaction not found');
+        $model = $this->getDi()['em']->getRepository(Transaction::class)->find((int) $data['id']);
+        if (!$model instanceof Transaction) {
+            throw new \FOSSBilling\Exception('Transaction not found');
+        }
 
         $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
 
@@ -486,7 +494,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_transactions');
 
-        $model = $this->getDi()['db']->getExistingModelById('Transaction', $data['id'], 'Transaction not found');
+        $model = $this->getDi()['em']->getRepository(Transaction::class)->find((int) $data['id']);
+        if (!$model instanceof Transaction) {
+            throw new \FOSSBilling\Exception('Transaction not found');
+        }
 
         $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
 
@@ -503,7 +514,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_transactions');
 
-        $model = $this->getDi()['db']->getExistingModelById('Transaction', $data['id'], 'Transaction not found');
+        $model = $this->getDi()['em']->getRepository(Transaction::class)->find((int) $data['id']);
+        if (!$model instanceof Transaction) {
+            throw new \FOSSBilling\Exception('Transaction not found');
+        }
 
         $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
 
@@ -793,9 +807,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         [$sql, $params] = $subscriptionService->getSearchQuery($data);
         $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
+        $subscriptionRepository = $this->getDi()['em']->getRepository(Subscription::class);
         if (isset($pager['list']) && is_array($pager['list'])) {
             foreach ($pager['list'] as $key => $item) {
-                $subscription = $this->getDi()['db']->getExistingModelById('Subscription', $item['id'], 'Subscription not found');
+                $subscription = $subscriptionRepository->find((int) $item['id']);
+                if (!$subscription instanceof Subscription) {
+                    throw new \FOSSBilling\Exception('Subscription not found');
+                }
                 $pager['list'][$key] = $subscriptionService->toApiArray($subscription);
             }
         }
@@ -858,7 +876,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_subscriptions');
 
-        $model = $this->getDi()['db']->getExistingModelById('Subscription', $data['id'], 'Subscription not found');
+        $model = $this->getDi()['em']->getRepository(Subscription::class)->find((int) $data['id']);
+        if (!$model instanceof Subscription) {
+            throw new \FOSSBilling\Exception('Subscription not found');
+        }
         $subscriptionService = $this->getDi()['mod_service']('Invoice', 'Subscription');
 
         return $subscriptionService->update($model, $data);
@@ -882,16 +903,17 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             ];
             $this->getDi()['validator']->checkRequiredParamsForArray($required, $data);
         }
+        $subscriptionRepository = $this->getDi()['em']->getRepository(Subscription::class);
         $model = null;
         if (isset($data['id'])) {
-            $model = $this->getDi()['db']->load('Subscription', $data['id']);
+            $model = $subscriptionRepository->find((int) $data['id']);
         }
 
         if (!$model && isset($data['sid'])) {
-            $model = $this->getDi()['db']->findOne('Subscription', 'sid = ?', [$data['sid']]);
+            $model = $subscriptionRepository->findOneBy(['sid' => $data['sid']]);
         }
 
-        if (!$model instanceof \Model_Subscription) {
+        if (!$model instanceof Subscription) {
             throw new \FOSSBilling\Exception('Subscription not found');
         }
 
@@ -912,7 +934,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_subscriptions');
 
-        $model = $this->getDi()['db']->getExistingModelById('Subscription', $data['id'], 'Subscription not found');
+        $model = $this->getDi()['em']->getRepository(Subscription::class)->find((int) $data['id']);
+        if (!$model instanceof Subscription) {
+            throw new \FOSSBilling\Exception('Subscription not found');
+        }
         $subscriptionService = $this->getDi()['mod_service']('Invoice', 'Subscription');
 
         return $subscriptionService->delete($model);
