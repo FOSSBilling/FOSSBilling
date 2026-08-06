@@ -759,6 +759,25 @@ test('toApiArray includes custom fields beyond the original cap of 10', function
     expect($result['custom_1'])->toBeNull();
 });
 
+test('toApiArray reads the client group through the repository for legacy client models', function (): void {
+    $service = new Box\Mod\Client\Service();
+    $legacyClient = new Model_Client();
+    $legacyClient->loadBean(new Tests\Helpers\DummyBean());
+    $legacyClient->client_group_id = 1;
+
+    $clientGroup = createEntity(Box\Mod\Client\Entity\ClientGroup::class, ['id' => 1, 'title' => 'Group Title']);
+
+    $di = container();
+    $di['em']->getRepository(Box\Mod\Client\Entity\Client::class)->shouldReceive('find')->byDefault()->andReturnNull();
+    $di['em']->getRepository(Box\Mod\Client\Entity\ClientGroup::class)->shouldReceive('find')->byDefault()->andReturn($clientGroup);
+
+    $service->setDi($di);
+
+    $result = $service->toApiArray($legacyClient, true, createEntity(Box\Mod\Staff\Entity\Admin::class));
+    expect($result['group'])->toBe('Group Title');
+    expect($result['group_id'])->toBe(1);
+});
+
 dataset('isClientTaxableProvider', [
     [
         false,

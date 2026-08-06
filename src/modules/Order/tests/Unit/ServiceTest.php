@@ -780,6 +780,62 @@ test('saveStatusChange records history', function (): void {
     expect($result)->toBeNull();
 });
 
+test('saveStatusChange records history for legacy order models', function (): void {
+    $persisted = [];
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->once()->andReturnUsing(function ($entity) use (&$persisted): void {
+        $persisted[] = $entity;
+    });
+    $emMock->shouldReceive('flush')->once();
+    $emMock->shouldIgnoreMissing();
+
+    $di = container();
+    $di['em'] = $emMock;
+
+    $svc = new Service();
+    $svc->setDi($di);
+
+    $order = orderServiceCreateLegacyOrderModel(7);
+    $order->status = Order::STATUS_ACTIVE;
+
+    $svc->saveStatusChange($order, 'notes here');
+
+    expect($persisted)->toHaveCount(1);
+    $status = $persisted[0];
+    expect($status)->toBeInstanceOf(Box\Mod\Order\Entity\OrderStatus::class);
+    expect($status->getClientOrderId())->toBe(7);
+    expect($status->getStatus())->toBe(Order::STATUS_ACTIVE);
+    expect($status->getNotes())->toBe('notes here');
+});
+
+test('orderStatusAdd records status history for legacy order models', function (): void {
+    $persisted = [];
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->once()->andReturnUsing(function ($entity) use (&$persisted): void {
+        $persisted[] = $entity;
+    });
+    $emMock->shouldReceive('flush')->once();
+    $emMock->shouldIgnoreMissing();
+
+    $di = container();
+    $di['em'] = $emMock;
+
+    $svc = new Service();
+    $svc->setDi($di);
+
+    $order = orderServiceCreateLegacyOrderModel(7);
+
+    $result = $svc->orderStatusAdd($order, Order::STATUS_ACTIVE, 'notes here');
+
+    expect($result)->toBeTrue();
+    expect($persisted)->toHaveCount(1);
+    $status = $persisted[0];
+    expect($status)->toBeInstanceOf(Box\Mod\Order\Entity\OrderStatus::class);
+    expect($status->getClientOrderId())->toBe(7);
+    expect($status->getStatus())->toBe(Order::STATUS_ACTIVE);
+    expect($status->getNotes())->toBe('notes here');
+});
+
 test('getSoonExpiringActiveOrders executes query', function (): void {
     $order = createEntity(Order::class);
 
@@ -1014,6 +1070,51 @@ test('toApiArray returns expected keys', function (): void {
     expect($result)->toHaveKey('plugin');
     expect($result['product_suspension_grace_days'])->toBeNull();
     expect($result)->toHaveKey('client');
+});
+
+test('toApiArray reads meta through the repository for legacy order models', function (): void {
+    $clientService = Mockery::mock(Box\Mod\Client\Service::class);
+    $clientService->shouldReceive('toApiArray')->atLeast()->once()->andReturn([]);
+
+    $supportService = Mockery::mock(Box\Mod\Support\Service::class);
+    $supportTicketRepo = Mockery::mock(Box\Mod\Support\Repository\SupportTicketRepository::class);
+    $supportTicketRepo->shouldReceive('countActiveTicketsForOrder')->atLeast()->once()->andReturn(1);
+    $supportService->shouldReceive('getSupportTicketRepository')->atLeast()->once()->andReturn($supportTicketRepo);
+
+    $dbMock = Mockery::mock(Box_Database::class);
+    $dbMock->shouldReceive('findOne')->with('Client', Mockery::any(), Mockery::any())->atLeast()->once()->andReturn(new Model_Client());
+    $dbMock->shouldNotReceive('find')->with('ClientOrderMeta', Mockery::any());
+
+    $orderMetaRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderMetaRepository::class);
+    $orderMetaRepoMock->shouldReceive('getPairsForOrder')->with(7)->atLeast()->once()->andReturn(['key' => 'value']);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Box\Mod\Order\Entity\OrderMeta::class)->atLeast()->once()->andReturn($orderMetaRepoMock);
+    $emMock->shouldIgnoreMissing();
+
+    $di = container();
+    $di['mod_service'] = $di->protect(function ($serviceName) use ($clientService, $supportService) {
+        if ($serviceName == 'client') {
+            return $clientService;
+        }
+        if ($serviceName == 'support') {
+            return $supportService;
+        }
+    });
+    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
+
+    $svc = new Service();
+    $svc->setDi($di);
+
+    $order = orderServiceCreateLegacyOrderModel(7);
+    $order->config = '{}';
+    $order->price = 10;
+    $order->quantity = 1;
+    $order->client_id = 1;
+
+    $result = $svc->toApiArray($order, false);
+
+    expect($result['meta'])->toBe(['key' => 'value']);
 });
 
 dataset('searchQueryData', fn (): array => [
@@ -2723,6 +2824,92 @@ test('updateOrderMeta stores new meta entries', function (): void {
     $result = $svc->updateOrderMeta($clientOrder, $meta);
 
     expect($result)->toEqual(2);
+});
+
+test('updateOrderMeta stores new meta entries for legacy order models', function (): void {
+    $meta = ['key' => 'value'];
+
+    $metaRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderMetaRepository::class)->shouldIgnoreMissing();
+    $metaRepoMock->shouldReceive('findOneByOrderIdAndName')->with(7, 'key')->once()->andReturn(null);
+
+    $persisted = [];
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Box\Mod\Order\Entity\OrderMeta::class)->andReturn($metaRepoMock);
+    $emMock->shouldReceive('persist')->once()->andReturnUsing(function ($entity) use (&$persisted): void {
+        $persisted[] = $entity;
+    });
+    $emMock->shouldReceive('flush')->once();
+    $emMock->shouldIgnoreMissing();
+
+    $di = container();
+    $di['em'] = $emMock;
+
+    $svc = new Service();
+    $svc->setDi($di);
+
+    $order = orderServiceCreateLegacyOrderModel(7);
+
+    $result = $svc->updateOrderMeta($order, $meta);
+
+    expect($result)->toEqual(2);
+    expect($persisted)->toHaveCount(1);
+    $metaEntity = $persisted[0];
+    expect($metaEntity)->toBeInstanceOf(Box\Mod\Order\Entity\OrderMeta::class);
+    expect($metaEntity->getClientOrderId())->toBe(7);
+    expect($metaEntity->getName())->toBe('key');
+    expect($metaEntity->getValue())->toBe('value');
+});
+
+test('updateOrderMeta updates existing meta for legacy order models', function (): void {
+    $existing = new Box\Mod\Order\Entity\OrderMeta();
+    $existing->setClientOrderId(7);
+    $existing->setName('key');
+    $existing->setValue('old value');
+
+    $metaRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderMetaRepository::class)->shouldIgnoreMissing();
+    $metaRepoMock->shouldReceive('findOneByOrderIdAndName')->with(7, 'key')->once()->andReturn($existing);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Box\Mod\Order\Entity\OrderMeta::class)->andReturn($metaRepoMock);
+    $emMock->shouldReceive('persist')->once()->andReturnUsing(function ($entity) use ($existing): void {
+        expect($entity)->toBe($existing);
+    });
+    $emMock->shouldReceive('flush')->once();
+    $emMock->shouldIgnoreMissing();
+
+    $di = container();
+    $di['em'] = $emMock;
+
+    $svc = new Service();
+    $svc->setDi($di);
+
+    $order = orderServiceCreateLegacyOrderModel(7);
+
+    $result = $svc->updateOrderMeta($order, ['key' => 'new value']);
+
+    expect($result)->toEqual(2);
+    expect($existing->getValue())->toBe('new value');
+});
+
+test('updateOrderMeta clears existing meta for legacy order models', function (): void {
+    $metaRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderMetaRepository::class)->shouldIgnoreMissing();
+    $metaRepoMock->shouldReceive('deleteByOrderId')->once()->with(7)->andReturn(1);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Box\Mod\Order\Entity\OrderMeta::class)->andReturn($metaRepoMock);
+    $emMock->shouldIgnoreMissing();
+
+    $di = container();
+    $di['em'] = $emMock;
+
+    $svc = new Service();
+    $svc->setDi($di);
+
+    $order = orderServiceCreateLegacyOrderModel(7);
+
+    $result = $svc->updateOrderMeta($order, []);
+
+    expect($result)->toEqual(1);
 });
 
 test('updateOrderConfig succeeds when no form id is set', function (): void {

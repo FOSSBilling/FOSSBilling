@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Widgets;
 
+use Box\Mod\Extension\Entity\Extension;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Interfaces\WidgetProviderInterface;
 use Symfony\Contracts\Cache\ItemInterface;
@@ -208,9 +209,9 @@ class Service implements InjectionAwareInterface
 
         if (isset($params['id'])) {
             $di = $event->getDi();
-            $ext = $di['db']->load('extension', $params['id']);
+            $ext = $di['em']->getRepository(Extension::class)->find((int) $params['id']);
 
-            if (is_object($ext) && isset($ext->type) && $ext->type === 'mod') {
+            if ($ext !== null && $ext->getType() === Extension::TYPE_MOD) {
                 $di['mod_service']('Widgets')->invalidateCache();
             }
         }
