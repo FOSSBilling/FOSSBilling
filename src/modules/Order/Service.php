@@ -565,13 +565,12 @@ class Service implements InjectionAwareInterface
         $orderStatus = $this->orderStatus($order);
 
         if ($order instanceof \Model_ClientOrder) {
-            $os = $this->di['db']->dispense('ClientOrderStatus');
-            $os->client_order_id = $orderId;
-            $os->status = $orderStatus;
-            $os->notes = $notes;
-            $os->created_at = date('Y-m-d H:i:s');
-            $os->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($os);
+            $os = new OrderStatus();
+            $os->setClientOrderId($orderId);
+            $os->setStatus($orderStatus);
+            $os->setNotes($notes);
+            $this->di['em']->persist($os);
+            $this->di['em']->flush();
 
             return;
         }
@@ -689,14 +688,7 @@ class Service implements InjectionAwareInterface
         $data['config'] = json_decode($this->orderConfig($model) ?? '', true) ?? [];
         $data['total'] = $this->getTotal($model);
         $data['discount'] ??= 0;
-        if ($model instanceof Order) {
-            $data['meta'] = $this->getOrderMetaRepository()->getPairsForOrder($modelId);
-        } else {
-            $data['meta'] = [];
-            foreach ($this->di['db']->find('ClientOrderMeta', 'client_order_id = ?', [$modelId]) as $metaRow) {
-                $data['meta'][$metaRow->name] = $metaRow->value;
-            }
-        }
+        $data['meta'] = $this->getOrderMetaRepository()->getPairsForOrder($modelId);
         $data['active_tickets'] = $supportService->getSupportTicketRepository()->countActiveTicketsForOrder($modelId);
         $client = $model instanceof Order
             ? $this->di['em']->getRepository(ClientEntity::class)->find($modelClientId)
@@ -1458,44 +1450,23 @@ class Service implements InjectionAwareInterface
         $orderId = $this->orderId($order);
 
         if (empty($meta)) {
-            if ($order instanceof Order) {
-                $this->getOrderMetaRepository()->deleteByOrderId($orderId);
-            } else {
-                $this->di['db']->exec('DELETE FROM client_order_meta WHERE client_order_id = :id', [':id' => $orderId]);
-            }
+            $this->getOrderMetaRepository()->deleteByOrderId($orderId);
 
             return 1;
         }
         foreach ($meta as $k => $v) {
-            $mm = $order instanceof Order
-                ? $this->getOrderMetaRepository()->findOneByOrderIdAndName($orderId, $k)
-                : $this->di['db']->findOne('ClientOrderMeta', 'client_order_id = :id AND name = :name', [':id' => $orderId, ':name' => $k]);
+            $mm = $this->getOrderMetaRepository()->findOneByOrderIdAndName($orderId, $k);
             if (!$mm instanceof OrderMeta) {
-                if ($order instanceof Order) {
-                    $mm = new OrderMeta();
-                    $mm->setClientOrderId($orderId);
-                    $mm->setName($k);
-                    $mm->setCreatedAt(new \DateTime());
-                } else {
-                    $mm = $this->di['db']->dispense('ClientOrderMeta');
-                    $mm->client_order_id = $orderId;
-                    $mm->name = $k;
-                    $mm->created_at = date('Y-m-d H:i:s');
-                }
+                $mm = new OrderMeta();
+                $mm->setClientOrderId($orderId);
+                $mm->setName($k);
+                $mm->setCreatedAt(new \DateTime());
             }
-            if ($mm instanceof OrderMeta) {
-                $mm->setValue($v);
-                $mm->setUpdatedAt(new \DateTime());
-                $this->di['em']->persist($mm);
-            } else {
-                $mm->value = $v;
-                $mm->updated_at = date('Y-m-d H:i:s');
-                $this->di['db']->store($mm);
-            }
+            $mm->setValue($v);
+            $mm->setUpdatedAt(new \DateTime());
+            $this->di['em']->persist($mm);
         }
-        if ($order instanceof Order) {
-            $this->di['em']->flush();
-        }
+        $this->di['em']->flush();
 
         return 2;
     }
@@ -2266,13 +2237,12 @@ class Service implements InjectionAwareInterface
         $orderId = $this->orderId($order);
 
         if ($order instanceof \Model_ClientOrder) {
-            $bean = $this->di['db']->dispense('ClientOrderStatus');
-            $bean->client_order_id = $orderId;
-            $bean->status = $status;
-            $bean->notes = $notes;
-            $bean->created_at = date('Y-m-d H:i:s');
-            $bean->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($bean);
+            $bean = new OrderStatus();
+            $bean->setClientOrderId($orderId);
+            $bean->setStatus($status);
+            $bean->setNotes($notes);
+            $this->di['em']->persist($bean);
+            $this->di['em']->flush();
 
             return true;
         }
