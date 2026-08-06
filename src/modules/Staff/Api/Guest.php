@@ -79,7 +79,9 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             $validator->passwordsMatch($data);
             $validator->isPasswordStrong($data['password']);
 
-            $reset = $this->getDi()['em']->getRepository(AdminPasswordReset::class)->findOneByHash($data['code']);
+            $reset = is_string($data['code'])
+                ? $this->getDi()['em']->getRepository(AdminPasswordReset::class)->findOneByHash($data['code'])
+                : null;
             if (!$reset instanceof AdminPasswordReset) {
                 $this->getDi()['logger']->setChannel('security')->info('Staff password reset confirmation failed from IP %s: reset token not found', $this->getIp());
 

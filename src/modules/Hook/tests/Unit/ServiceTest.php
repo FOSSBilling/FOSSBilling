@@ -53,7 +53,7 @@ test('handles on after admin activate extension', function (): void {
     $expectation2 = $eventMock->shouldReceive('setReturnValue');
     $expectation2->atLeast()->once();
 
-    $extension = createEntity(Box\Mod\Extension\Entity\Extension::class, ['id' => 1, 'type' => 'mod']);
+    $extension = createEntity(Box\Mod\Extension\Entity\Extension::class, ['id' => 1, 'type' => 'mod', 'name' => 'activity']);
 
     $extensionRepository = Mockery::mock(Box\Mod\Extension\Repository\ExtensionRepository::class);
     /** @var Mockery\Expectation $expectation3 */
@@ -65,6 +65,7 @@ test('handles on after admin activate extension', function (): void {
     /** @var Mockery\Expectation $expectation4 */
     $expectation4 = $hookService->shouldReceive('batchConnect');
     $expectation4->atLeast()->once();
+    $expectation4->with('activity');
 
     $di = container();
     $di['em']->shouldReceive('getRepository')->with(Box\Mod\Extension\Entity\Extension::class)->andReturn($extensionRepository);

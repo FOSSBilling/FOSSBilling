@@ -10,6 +10,7 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Transaction;
@@ -521,7 +522,15 @@ test('debitTransaction records a client balance credit', function (): void {
     $db->shouldReceive('load')->once()->with('Client', 20)->andReturn($client);
 
     $em = Mockery::mock(EntityManagerInterface::class);
-    $em->shouldReceive('persist')->once();
+    $em->shouldReceive('persist')->once()->with(
+        Mockery::on(function (ClientBalance $balance): bool {
+            return $balance->getClientId() === 20
+                && $balance->getType() === 'transaction'
+                && $balance->getRelId() === '7'
+                && $balance->getDescription() === 'Invoice #5 payment received from transaction #7'
+                && $balance->getAmount() === '25.00';
+        })
+    );
     $em->shouldReceive('flush')->once();
 
     $service = transactionService(em: $em);

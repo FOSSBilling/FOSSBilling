@@ -123,7 +123,7 @@ test('updatePassword invalidates existing sessions', function (): void {
     $admin->status = Model_Admin::STATUS_ACTIVE;
 
     $passwordResetRepository = Mockery::mock(Box\Mod\Staff\Repository\AdminPasswordResetRepository::class);
-    $passwordResetRepository->shouldReceive('findOneByHash')->atLeast()->once()->andReturn($passwordReset);
+    $passwordResetRepository->shouldReceive('findOneByHash')->once()->with('hashedString')->andReturn($passwordReset);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getExistingModelById')->atLeast()->once()->andReturn($admin);
@@ -144,7 +144,7 @@ test('updatePassword invalidates existing sessions', function (): void {
     $di = container();
     $di['db'] = $dbMock;
     $di['em']->shouldReceive('getRepository')->with(Box\Mod\Staff\Entity\AdminPasswordReset::class)->andReturn($passwordResetRepository);
-    $di['em']->shouldReceive('remove')->atLeast()->once();
+    $di['em']->shouldReceive('remove')->once()->with($passwordReset);
     $di['em']->shouldReceive('flush')->atLeast()->once();
     $di['events_manager'] = $eventMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
