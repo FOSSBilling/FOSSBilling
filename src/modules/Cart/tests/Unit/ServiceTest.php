@@ -1024,7 +1024,10 @@ test('createFromCart does not roll back order creation when synchronous activati
         'total' => 0,
         'discount' => 0,
     ]);
-    $orderService->shouldReceive('activateOrder')->once()->andThrow(new FOSSBilling\Exception('Simulated provisioning failure'));
+    // An \Error (not an \Exception) to prove the catch was widened to
+    // \Throwable - a narrower catch (\Exception) would miss this and let it
+    // escape wrapInTransaction(), rolling back the whole checkout.
+    $orderService->shouldReceive('activateOrder')->once()->andThrow(new Error('Simulated provisioning failure'));
 
     $dbMock = Mockery::mock(Box_Database::class)->shouldIgnoreMissing();
     $dbMock->shouldReceive('getExistingModelById')->atLeast()->once()->andReturn(cartServiceCreateLegacyClient());
