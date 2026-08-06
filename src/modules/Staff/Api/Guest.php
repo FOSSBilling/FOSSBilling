@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Staff\Api;
 
+use Box\Mod\Staff\Entity\AdminPasswordReset;
 use FOSSBilling\Security\RandomizedTimeFloor;
 use FOSSBilling\Validation\Api\RequiredParams;
 
@@ -78,20 +79,20 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             $validator->passwordsMatch($data);
             $validator->isPasswordStrong($data['password']);
 
-            $reset = $this->getDi()['db']->findOne('AdminPasswordReset', 'hash = ?', [$data['code']]);
-            if (!$reset instanceof \Model_AdminPasswordReset) {
+            $reset = $this->getDi()['em']->getRepository(AdminPasswordReset::class)->findOneByHash($data['code']);
+            if (!$reset instanceof AdminPasswordReset) {
                 $this->getDi()['logger']->setChannel('security')->info('Staff password reset confirmation failed from IP %s: reset token not found', $this->getIp());
 
                 throw new \FOSSBilling\InformationException('The link has expired or you have already confirmed the password reset.');
             }
 
-            if (strtotime($reset->created_at) - time() + 900 < 0) {
-                $this->getDi()['logger']->setChannel('security')->info('Staff password reset confirmation failed for admin #%s from IP %s: reset token expired', $reset->admin_id, $this->getIp());
+            if (strtotime((string) $reset->getCreatedAt()?->format('Y-m-d H:i:s')) - time() + 900 < 0) {
+                $this->getDi()['logger']->setChannel('security')->info('Staff password reset confirmation failed for admin #%s from IP %s: reset token expired', $reset->getAdminId(), $this->getIp());
 
                 throw new \FOSSBilling\InformationException('The link has expired or you have already confirmed the password reset.');
             }
 
-            $admin = $this->getDi()['db']->getExistingModelById('Admin', $reset->admin_id, 'Admin not found');
+            $admin = $this->getDi()['db']->getExistingModelById('Admin', $reset->getAdminId(), 'Admin not found');
 
             if ($admin->status !== \Model_Admin::STATUS_ACTIVE || $admin->isCron()) {
                 $this->getDi()['logger']->setChannel('security')->info('Staff password reset confirmation failed for admin #%s from IP %s: account status %s, system name %s', $admin->id, $this->getIp(), $admin->status, $admin->system_name);
@@ -116,7 +117,8 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             $emailService = $this->getDi()['mod_service']('email');
             $emailService->sendTemplate($email);
 
-            $this->getDi()['db']->trash($reset);
+            $this->getDi()['em']->remove($reset);
+            $this->getDi()['em']->flush();
         } finally {
             RandomizedTimeFloor::apply($startedAt, 300, 450);
         }
@@ -172,13 +174,12 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
             $hash = hash('sha256', random_bytes(32));
 
-            $reset = $this->getDi()['db']->dispense('AdminPasswordReset');
-            $reset->admin_id = $c->id;
-            $reset->ip = $this->ip;
-            $reset->hash = $hash;
-            $reset->created_at = date('Y-m-d H:i:s');
-            $reset->updated_at = date('Y-m-d H:i:s');
-            $this->getDi()['db']->store($reset);
+            $reset = new AdminPasswordReset();
+            $reset->setAdminId((int) $c->id);
+            $reset->setIp($this->ip);
+            $reset->setHash($hash);
+            $this->getDi()['em']->persist($reset);
+            $this->getDi()['em']->flush();
 
             // send email
             $email = [];
