@@ -1933,17 +1933,31 @@ class Service implements InjectionAwareInterface
         return $value !== null ? (string) $value : null;
     }
 
-    public function getProductDiscount(Product $product, Promo $promo, ?array $config = null)
+    public function isPromoApplicableToProduct(Promo $promo, Product $product, ?array $config = null): bool
     {
         if (!$this->isPromoLinkedToProduct($promo, $product)) {
-            return 0;
+            return false;
         }
 
         if (isset($config['period'])) {
             $periods = $this->getPeriods($promo);
             if (!empty($periods) && !in_array($config['period'], $periods)) {
-                return 0;
+                return false;
             }
+        }
+
+        return true;
+    }
+
+    public function isPromoApplicableToProductById(int $productId, Promo $promo, ?array $config = null): bool
+    {
+        return $this->isPromoApplicableToProduct($promo, $this->findProductById($productId), $config);
+    }
+
+    public function getProductDiscount(Product $product, Promo $promo, ?array $config = null)
+    {
+        if (!$this->isPromoApplicableToProduct($promo, $product, $config)) {
+            return 0;
         }
 
         $line = $this->getProductOrderLineConfig($product, $config);
@@ -1977,15 +1991,8 @@ class Service implements InjectionAwareInterface
 
     public function getRenewalProductDiscount(Product $product, Promo $promo, ?array $config = null): float
     {
-        if (!$this->isPromoLinkedToProduct($promo, $product)) {
+        if (!$this->isPromoApplicableToProduct($promo, $product, $config)) {
             return 0;
-        }
-
-        if (isset($config['period'])) {
-            $periods = $this->getPeriods($promo);
-            if (!empty($periods) && !in_array($config['period'], $periods)) {
-                return 0;
-            }
         }
 
         $line = $this->getProductRenewalLineConfig($product, $config);

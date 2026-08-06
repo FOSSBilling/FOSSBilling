@@ -1125,7 +1125,13 @@ class Service implements InjectionAwareInterface
             // Promo discount should override related item discount
             $discount_price = $this->getItemPromoDiscount($cartProduct, $promo);
 
-            if ($promo->isFreeSetup()) {
+            $promoApplies = $this->getProductService()->isPromoApplicableToProductById(
+                (int) $this->cartProductProductId($cartProduct),
+                $promo,
+                $this->getItemConfig($cartProduct),
+            );
+
+            if ($promo->isFreeSetup() && $promoApplies) {
                 $discount_setup = $setup;
             }
         }
