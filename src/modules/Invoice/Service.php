@@ -14,6 +14,7 @@ namespace Box\Mod\Invoice;
 use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Invoice\Entity\InvoiceItem;
 use Box\Mod\Invoice\Entity\PayGateway;
+use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Repository\InvoiceItemRepository;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -807,20 +808,23 @@ class Service implements InjectionAwareInterface
                 ],
                 'txn_id' => $transactionId,
             ]);
-            $transaction = $this->di['db']->getExistingModelById('Transaction', $newtx, 'Transaction not found');
-            if ((int) $transaction->invoice_id !== (int) $invoice->id) {
+            $transaction = $this->di['em']->getRepository(Transaction::class)->find((int) $newtx);
+            if ($transaction === null) {
+                throw new InformationException('Transaction not found');
+            }
+            if ((int) $transaction->getInvoiceId() !== (int) $invoice->id) {
                 throw new InformationException('Transaction ID is already associated with another invoice.');
             }
 
             $result = $this->markAsPaid($invoice, false, $execute);
             if ($result) {
-                $transaction->amount = $invoiceTotal;
-                $transaction->currency = $invoice->currency;
-                $transaction->status = \Model_Transaction::STATUS_PROCESSED;
+                $transaction->setAmount((string) $invoiceTotal);
+                $transaction->setCurrency($invoice->currency);
+                $transaction->setStatus(Transaction::STATUS_PROCESSED);
                 $gatewayTitle = $payGateway->getName() ?: $payGateway->getGateway();
-                $transaction->note = sprintf('%s transaction No: %s', $gatewayTitle, $transactionId);
-                $transaction->updated_at = date('Y-m-d H:i:s');
-                $this->di['db']->store($transaction);
+                $transaction->setNote(sprintf('%s transaction No: %s', $gatewayTitle, $transactionId));
+                $transaction->setUpdatedAt(new \DateTime());
+                $this->di['em']->flush();
             }
 
             return $result;
@@ -2454,16 +2458,16 @@ class Service implements InjectionAwareInterface
         $orderService = $this->di['mod_service']('Order');
 
         try {
-            $subscription = $this->di['db']->findOne('Subscription', 'sid = :sid', ['sid' => $subscriptionSid]);
-            if (!$subscription instanceof \Model_Subscription) {
+            $subscription = $this->di['em']->getRepository(Entity\Subscription::class)->findOneBy(['sid' => $subscriptionSid]);
+            if (!$subscription instanceof Entity\Subscription) {
                 return null;
             }
 
-            if ($subscription->rel_type !== 'invoice') {
+            if ($subscription->getRelType() !== 'invoice') {
                 return null;
             }
 
-            $originalOrderId = $this->getOrderIdFromInvoice((int) $subscription->rel_id);
+            $originalOrderId = $this->getOrderIdFromInvoice((int) $subscription->getRelId());
             if ($originalOrderId === null) {
                 return null;
             }
