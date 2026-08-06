@@ -40,7 +40,7 @@
         <select name="period" id="period-selector">
         {% for code,prices in pricing.recurrent %}
             {% if prices.enabled %}
-            <option value="{{code}}"{% if request.period == code %} selected="selected"{% endif %}>{{ periods[code] }}</option>
+            <option value="{{code}}"{% if request.period == code %} selected="selected"{% endif %}>{{ prices.title }}</option>
             {% endif %}
         {% endfor %}
         </select>

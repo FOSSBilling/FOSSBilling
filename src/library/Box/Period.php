@@ -44,11 +44,14 @@ class Box_Period
 
     public function __construct(string $code)
     {
-        if (strlen($code) != 2) {
-            throw new FOSSBilling\Exception('Invalid period code. Period definition must be 2 chars length');
+        // A period code is a quantity followed by a single unit letter (e.g. "1M", "45D",
+        // "24M"). Quantities are not limited to a single digit, so the code as a whole is
+        // not a fixed length; getUnits() below enforces the actual allowed ranges.
+        if (!preg_match('/^(\d+)([A-Za-z])$/', $code, $matches)) {
+            throw new FOSSBilling\Exception('Invalid period code. Period definition must be a quantity followed by a unit letter');
         }
 
-        [$qty, $unit] = str_split($code);
+        [, $qty, $unit] = $matches;
 
         $units = $this->getUnits();
         $qty = (int) $qty;

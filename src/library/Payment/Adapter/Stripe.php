@@ -1347,19 +1347,23 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     {
         $amount = $this->getAmountInCents($invoice);
         $currency = strtolower($invoice->currency);
-        $interval = $this->convertPeriodToStripe(
+        $recurring = $this->getStripeRecurringParams(
             $this->getSubscriptionPeriodForInvoice($invoice)
         );
 
+        // Stripe's price list filter only supports 'interval' (not 'interval_count') under
+        // 'recurring', so the match below must also compare interval_count explicitly -
+        // otherwise a monthly price could be reused for a quarterly/yearly one with the
+        // same unit_amount.
         $prices = $this->stripe->prices->all([
             'product' => $product->id,
-            'recurring' => ['interval' => $interval],
+            'recurring' => ['interval' => $recurring['interval']],
             'currency' => $currency,
             'limit' => 100,
         ]);
 
         foreach ($prices->data as $existingPrice) {
-            if ($existingPrice->unit_amount === $amount) {
+            if ($existingPrice->unit_amount === $amount && ($existingPrice->recurring->interval_count ?? null) === $recurring['interval_count']) {
                 return $existingPrice;
             }
         }
@@ -1368,7 +1372,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             'product' => $product->id,
             'unit_amount' => $amount,
             'currency' => $currency,
-            'recurring' => ['interval' => $interval],
+            'recurring' => $recurring,
         ]);
     }
 
@@ -1380,15 +1384,47 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         return $period ?? '1M';
     }
 
-    private function convertPeriodToStripe(string $period): string
+    /**
+     * Converts a Box_Period code (e.g. "1M", "3Y", "45D") into Stripe's recurring price
+     * parameters. Stripe caps how large interval_count can be per unit, so periods that
+     * exceed those caps (Box_Period already allows up to 5 years) are rejected outright
+     * rather than silently mis-billed.
+     *
+     * @see https://docs.stripe.com/api/prices/create#create_price-recurring-interval_count
+     *
+     * @return array{interval: string, interval_count: int}
+     */
+    private function getStripeRecurringParams(string $periodCode): array
     {
-        $unit = preg_replace('/[^A-Za-z]/', '', $period);
+        $period = new Box_Period($periodCode);
+        $interval = $this->convertPeriodToStripe($period);
+        $intervalCount = $period->getQty();
 
-        return match (strtoupper((string) $unit)) {
-            'D' => 'day',
-            'W' => 'week',
-            'M' => 'month',
-            'Y' => 'year',
+        $maxIntervalCount = match ($interval) {
+            'day' => 1095,
+            'week' => 156,
+            'month' => 36,
+            'year' => 3,
+            default => 1,
+        };
+
+        if ($intervalCount > $maxIntervalCount) {
+            throw new Payment_Exception('The billing period ":period" is not supported by the Stripe payment gateway. The maximum supported interval is :max :interval(s)', [':period' => $periodCode, ':max' => $maxIntervalCount, ':interval' => $interval]);
+        }
+
+        return [
+            'interval' => $interval,
+            'interval_count' => $intervalCount,
+        ];
+    }
+
+    private function convertPeriodToStripe(Box_Period $period): string
+    {
+        return match ($period->getUnit()) {
+            Box_Period::UNIT_DAY => 'day',
+            Box_Period::UNIT_WEEK => 'week',
+            Box_Period::UNIT_MONTH => 'month',
+            Box_Period::UNIT_YEAR => 'year',
             default => 'month',
         };
     }
