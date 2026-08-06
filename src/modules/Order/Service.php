@@ -1295,51 +1295,61 @@ class Service implements InjectionAwareInterface
             }
         }
 
+        // The provisioning call and the order status update that records its
+        // outcome are treated as one unit: if anything here fails after the
+        // service has already been provisioned (e.g. while computing the new
+        // expiry date), the order must still end up in failed_setup instead
+        // of being left in pending_setup. Otherwise a retry would call
+        // _callOnService() again against a service that already exists on
+        // the remote server.
         try {
             $result = $this->_callOnService($order, Order::ACTION_ACTIVATE);
-        } catch (\Exception $e) {
+
+            $period = $this->orderPeriod($order);
+            $expiresAt = $order instanceof Order ? $order->getExpiresAt() : $order->expires_at;
+            if (!empty($period)) {
+                $from_time = ($expiresAt === null) ? time() : ($order instanceof Order ? ($expiresAt->getTimestamp() ?? time()) : strtotime((string) $expiresAt));
+
+                $periodObj = $this->di['period']($period);
+                $newExpires = date('Y-m-d H:i:s', $periodObj->getExpirationTime($from_time));
+                if ($order instanceof Order) {
+                    $order->setExpiresAt(new \DateTime($newExpires));
+                } else {
+                    $order->expires_at = $newExpires;
+                }
+            }
+
+            if ($order instanceof Order) {
+                $order->setStatus(Order::STATUS_ACTIVE);
+                $order->setActivatedAt(new \DateTime());
+                $order->setSuspendedAt(null);
+                $order->setCanceledAt(null);
+                $order->setUpdatedAt(new \DateTime());
+            } else {
+                $order->status = Order::STATUS_ACTIVE;
+                $order->activated_at = date('Y-m-d H:i:s');
+                $order->suspended_at = null;
+                $order->canceled_at = null;
+                $order->updated_at = date('Y-m-d H:i:s');
+            }
+
+            $this->persistOrder($order);
+        } catch (\Throwable $e) {
+            // Caught broadly (not just \Exception): an \Error or \TypeError
+            // here means the service was already provisioned remotely, so
+            // the order must still be recorded as failed_setup rather than
+            // left in pending_setup for a retry to re-provision it.
             if ($order instanceof Order) {
                 $order->setStatus(Order::STATUS_FAILED_SETUP);
-                $this->persistOrder($order);
             } else {
                 $order->status = Order::STATUS_FAILED_SETUP;
-                $this->persistOrder($order);
             }
+            $this->persistOrder($order);
 
             $this->saveStatusChange($order, $e->getMessage());
 
             throw $e;
         }
-
-        $period = $this->orderPeriod($order);
-        $expiresAt = $order instanceof Order ? $order->getExpiresAt() : $order->expires_at;
-        if (!empty($period)) {
-            $from_time = ($expiresAt === null) ? time() : ($order instanceof Order ? ($expiresAt->getTimestamp() ?? time()) : strtotime((string) $expiresAt));
-
-            $periodObj = $this->di['period']($period);
-            $newExpires = date('Y-m-d H:i:s', $periodObj->getExpirationTime($from_time));
-            if ($order instanceof Order) {
-                $order->setExpiresAt(new \DateTime($newExpires));
-            } else {
-                $order->expires_at = $newExpires;
-            }
-        }
-
-        if ($order instanceof Order) {
-            $order->setStatus(Order::STATUS_ACTIVE);
-            $order->setActivatedAt(new \DateTime());
-            $order->setSuspendedAt(null);
-            $order->setCanceledAt(null);
-            $order->setUpdatedAt(new \DateTime());
-        } else {
-            $order->status = Order::STATUS_ACTIVE;
-            $order->activated_at = date('Y-m-d H:i:s');
-            $order->suspended_at = null;
-            $order->canceled_at = null;
-            $order->updated_at = date('Y-m-d H:i:s');
-        }
-
-        $this->persistOrder($order);
 
         if ($this->orderProductId($order)) {
             $productService = $this->di['mod_service']('product');
