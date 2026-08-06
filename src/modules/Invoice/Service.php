@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice;
 
+use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Invoice\Entity\InvoiceItem;
 use Box\Mod\Invoice\Entity\PayGateway;
@@ -1084,18 +1085,17 @@ class Service implements InjectionAwareInterface
                 return true;
             }
 
-            $balanceTransaction = $this->di['db']->dispense('ClientBalance');
-            $balanceTransaction->client_id = $client->id;
-            $balanceTransaction->type = 'invoice';
-            $balanceTransaction->rel_id = $invoice->id;
+            $balanceTransaction = new ClientBalance();
+            $balanceTransaction->setClientId((int) $client->id);
+            $balanceTransaction->setType('invoice');
+            $balanceTransaction->setRelId((string) $invoice->id);
 
             $invoice_identifier = $invoice->nr ?: $invoice->id;
-            $balanceTransaction->description = "Payment for invoice #{$invoice_identifier} using account credit.";
+            $balanceTransaction->setDescription("Payment for invoice #{$invoice_identifier} using account credit.");
 
-            $balanceTransaction->amount = -$required;
-            $balanceTransaction->created_at = date('Y-m-d H:i:s');
-            $balanceTransaction->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($balanceTransaction);
+            $balanceTransaction->setAmount((string) (-$required));
+            $this->di['em']->persist($balanceTransaction);
+            $this->di['em']->flush();
 
             $this->markAsPaid($invoice, false, true);
 

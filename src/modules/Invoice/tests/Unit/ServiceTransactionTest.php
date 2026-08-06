@@ -501,3 +501,31 @@ test('_unsubscribe looks up the subscription by sid and delegates to the subscri
 
     expect($tx->getStatus())->toBe(Transaction::STATUS_PROCESSED);
 });
+
+test('debitTransaction records a client balance credit', function (): void {
+    $proforma = new Model_Invoice();
+    $proforma->loadBean(new Tests\Helpers\DummyBean());
+    $proforma->id = 5;
+    $proforma->client_id = 20;
+    $proforma->currency = 'USD';
+
+    $client = new Model_Client();
+    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client->id = 20;
+    $client->currency = 'USD';
+
+    $tx = createEntity(Transaction::class, ['id' => 7, 'invoice_id' => 5, 'currency' => 'USD', 'amount' => '25.00']);
+
+    $db = Mockery::mock(Box_Database::class);
+    $db->shouldReceive('load')->once()->with('Invoice', 5)->andReturn($proforma);
+    $db->shouldReceive('load')->once()->with('Client', 20)->andReturn($client);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('persist')->once();
+    $em->shouldReceive('flush')->once();
+
+    $service = transactionService(em: $em);
+    $service->getDi()['db'] = $db;
+
+    $service->debitTransaction($tx);
+});
