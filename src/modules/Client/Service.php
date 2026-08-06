@@ -619,7 +619,7 @@ class Service implements InjectionAwareInterface
                 $details[$field] = $client->{$field};
             }
 
-            $group = $this->di['db']->load('ClientGroup', $client->client_group_id);
+            $group = $this->clientGroupRepository->find((int) $client->client_group_id);
             $details += [
                 'aid' => $client->aid,
                 'group_id' => $client->client_group_id,
@@ -628,7 +628,7 @@ class Service implements InjectionAwareInterface
                 'status' => $client->status,
                 'tax_exempt' => $client->tax_exempt,
                 'ip' => $client->ip,
-                'group' => $group ? $group->title : null,
+                'group' => $group instanceof ClientGroup ? $group->getTitle() : null,
                 'created_at' => $client->created_at,
                 'updated_at' => $client->updated_at,
             ];
