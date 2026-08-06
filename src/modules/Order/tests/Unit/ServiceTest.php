@@ -1813,7 +1813,16 @@ test('createFromOrder marks the order failed_setup when provisioning succeeds bu
         ->once()
         ->with($order, 'Simulated post-provisioning failure');
 
+    $orderRepoMock = Mockery::mock(OrderRepository::class)->shouldIgnoreMissing();
+    $orderRepoMock->shouldReceive('find')->with(1)->andReturn($order);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
+    $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
+    $emMock->shouldReceive('persist')->once()->with($order);
+    $emMock->shouldReceive('flush')->once();
+
     $di = container();
+    $di['em'] = $emMock;
     $di['period'] = $di->protect(function (): never {
         throw new FOSSBilling\Exception('Simulated post-provisioning failure');
     });
@@ -1822,7 +1831,11 @@ test('createFromOrder marks the order failed_setup when provisioning succeeds bu
     expect(fn (): mixed => $serviceMock->createFromOrder($order))
         ->toThrow(FOSSBilling\Exception::class, 'Simulated post-provisioning failure');
 
-    expect($order->getStatus())->toBe(Order::STATUS_FAILED_SETUP);
+    // Confirm persistOrder() actually stored the failure - not just that the
+    // in-memory $order object was mutated - by reloading it through the
+    // repository.
+    $reloadedOrder = $di['em']->getRepository(Order::class)->find(1);
+    expect($reloadedOrder->getStatus())->toBe(Order::STATUS_FAILED_SETUP);
 });
 
 test('createFromOrder marks the order failed_setup when activation bookkeeping raises a TypeError', function (): void {
@@ -1848,7 +1861,16 @@ test('createFromOrder marks the order failed_setup when activation bookkeeping r
         ->once()
         ->with($order, 'Simulated TypeError after provisioning');
 
+    $orderRepoMock = Mockery::mock(OrderRepository::class)->shouldIgnoreMissing();
+    $orderRepoMock->shouldReceive('find')->with(1)->andReturn($order);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
+    $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
+    $emMock->shouldReceive('persist')->once()->with($order);
+    $emMock->shouldReceive('flush')->once();
+
     $di = container();
+    $di['em'] = $emMock;
     $di['period'] = $di->protect(function (): never {
         throw new TypeError('Simulated TypeError after provisioning');
     });
@@ -1857,7 +1879,11 @@ test('createFromOrder marks the order failed_setup when activation bookkeeping r
     expect(fn (): mixed => $serviceMock->createFromOrder($order))
         ->toThrow(TypeError::class, 'Simulated TypeError after provisioning');
 
-    expect($order->getStatus())->toBe(Order::STATUS_FAILED_SETUP);
+    // Confirm persistOrder() actually stored the failure - not just that the
+    // in-memory $order object was mutated - by reloading it through the
+    // repository.
+    $reloadedOrder = $di['em']->getRepository(Order::class)->find(1);
+    expect($reloadedOrder->getStatus())->toBe(Order::STATUS_FAILED_SETUP);
 });
 
 test('activateOrder throws for non-pending order', function (): void {
