@@ -1754,6 +1754,77 @@ test('getMasterOrderForClient returns master order', function (): void {
     expect($result)->toBeInstanceOf(Order::class);
 });
 
+test('createFromOrder activates the order after successful provisioning', function (): void {
+    $order = createEntity(Order::class, [
+        'id' => 1,
+        'period' => '1Y',
+        'productId' => 7,
+        'quantity' => 2,
+        'serviceType' => 'hosting',
+    ]);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn(new stdClass());
+    $serviceMock->shouldReceive('_callOnService')
+        ->once()
+        ->with($order, Order::ACTION_ACTIVATE)
+        ->andReturn(['username' => 'created']);
+    $serviceMock->shouldReceive('saveStatusChange')->once()->with($order, 'Order activated');
+
+    $periodMock = Mockery::mock(Box_Period::class);
+    $periodMock->shouldReceive('getExpirationTime')->once()->andReturn(strtotime('2027-01-01 00:00:00'));
+
+    $productServiceMock = Mockery::mock();
+    $productServiceMock->shouldReceive('reduceStock')->once()->with(7, 2);
+
+    $di = container();
+    $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $productServiceMock);
+
+    $serviceMock->setDi($di);
+
+    $result = $serviceMock->createFromOrder($order);
+
+    expect($result)->toBe(['username' => 'created'])
+        ->and($order->getStatus())->toBe(Order::STATUS_ACTIVE);
+});
+
+test('createFromOrder marks the order failed_setup when provisioning succeeds but activation bookkeeping fails', function (): void {
+    // Regression test: the remote account is created successfully by
+    // _callOnService(), but computing the new expiry date afterwards throws.
+    // The order must be recorded as failed_setup instead of being left in
+    // pending_setup - otherwise a retry would call _callOnService() again
+    // against a service that already exists on the remote server.
+    $order = createEntity(Order::class, [
+        'id' => 1,
+        'period' => '1Y',
+        'serviceType' => 'hosting',
+    ]);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn(new stdClass());
+    $serviceMock->shouldReceive('_callOnService')
+        ->once()
+        ->with($order, Order::ACTION_ACTIVATE)
+        ->andReturn(['username' => 'created-before-the-failure']);
+    $serviceMock->shouldReceive('saveStatusChange')
+        ->once()
+        ->with($order, 'Simulated post-provisioning failure');
+
+    $di = container();
+    $di['period'] = $di->protect(function (): never {
+        throw new FOSSBilling\Exception('Simulated post-provisioning failure');
+    });
+    $serviceMock->setDi($di);
+
+    expect(fn (): mixed => $serviceMock->createFromOrder($order))
+        ->toThrow(FOSSBilling\Exception::class, 'Simulated post-provisioning failure');
+
+    expect($order->getStatus())->toBe(Order::STATUS_FAILED_SETUP);
+});
+
 test('activateOrder throws for non-pending order', function (): void {
     $clientOrderModel = createEntity(Order::class);
     $clientOrderModel->status = Order::STATUS_CANCELED;
