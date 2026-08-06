@@ -14,6 +14,7 @@ use Box\Mod\Client\Entity\Client;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Product\Entity\ProductCategory;
 use Box\Mod\Product\Entity\ProductPayment;
+use Box\Mod\Product\Entity\ProductPaymentPeriod;
 use Box\Mod\Product\Entity\Promo;
 use Box\Mod\Product\Entity\PromoRedemption;
 use Box\Mod\Product\Repository\ProductCategoryRepository;
@@ -61,6 +62,15 @@ function productTestCreateProductPaymentEntity(int $id): ProductPayment
     $productPayment = new ProductPayment();
     $reflection = new ReflectionProperty($productPayment, 'id');
     $reflection->setValue($productPayment, $id);
+
+    return $productPayment;
+}
+
+function productTestAddPeriod(ProductPayment $productPayment, string $code, float $price, float $setup, bool $enabled = true): ProductPayment
+{
+    $period = new ProductPaymentPeriod();
+    $period->setCode($code)->setPrice($price)->setSetupPrice($setup)->setEnabled($enabled);
+    $productPayment->addPeriod($period);
 
     return $productPayment;
 }
@@ -467,8 +477,8 @@ test('get product order line config uses product payment pricing for recurring p
         ->setProductPaymentId(15);
 
     $productPayment = productTestCreateProductPaymentEntity(15)
-        ->setType(ProductPayment::RECURRENT)
-        ->setPeriodPricing('a', 20.0, 5.0, true);
+        ->setType(ProductPayment::RECURRENT);
+    productTestAddPeriod($productPayment, '1Y', 20.0, 5.0, true);
 
     $paymentRepo = Mockery::mock(ProductPaymentRepository::class);
     $paymentRepo->shouldReceive('find')->twice()->with(15)->andReturn($productPayment);
@@ -489,8 +499,8 @@ test('get product renewal line config uses generic pricing implementation', func
         ->setProductPaymentId(15);
 
     $productPayment = productTestCreateProductPaymentEntity(15)
-        ->setType(ProductPayment::RECURRENT)
-        ->setPeriodPricing('a', 20.0, 5.0, true);
+        ->setType(ProductPayment::RECURRENT);
+    productTestAddPeriod($productPayment, '1Y', 20.0, 5.0, true);
 
     $paymentRepo = Mockery::mock(ProductPaymentRepository::class);
     $paymentRepo->shouldReceive('find')->twice()->with(15)->andReturn($productPayment);
@@ -747,12 +757,10 @@ test('update product', function (): void {
         'pricing' => [
             'type' => ProductPayment::RECURRENT,
             ProductPayment::RECURRENT => [
-                [
-                    '1W' => [
-                        'setup' => '',
-                        'price' => '',
-                        'enabled' => true,
-                    ],
+                '1W' => [
+                    'setup' => '',
+                    'price' => '',
+                    'enabled' => true,
                 ],
             ],
         ],
@@ -2090,17 +2098,156 @@ test('get starting price', function (): void {
 
     $minPrice = 1;
 
-    $productPaymentModel->setPeriodPricing('w', 2, 0, true);
-    $productPaymentModel->setPeriodPricing('m', 4, 0, true);
-    $productPaymentModel->setPeriodPricing('q', 8, 0, true);
-    $productPaymentModel->setPeriodPricing('b', $minPrice, 0, true);
-    $productPaymentModel->setPeriodPricing('a', 10, 0, true);
-    $productPaymentModel->setPeriodPricing('bia', 12, 0, true);
-    $productPaymentModel->setPeriodPricing('tria', 14, 0, true);
+    productTestAddPeriod($productPaymentModel, '1W', 2, 0, true);
+    productTestAddPeriod($productPaymentModel, '1M', 4, 0, true);
+    productTestAddPeriod($productPaymentModel, '3M', 8, 0, true);
+    productTestAddPeriod($productPaymentModel, '6M', $minPrice, 0, true);
+    productTestAddPeriod($productPaymentModel, '1Y', 10, 0, true);
+    productTestAddPeriod($productPaymentModel, '2Y', 12, 0, true);
+    productTestAddPeriod($productPaymentModel, '3Y', 14, 0, true);
 
     $result = $service->getStartingPrice($productPaymentModel);
     expect($result)->toBeNumeric();
     expect($result)->toEqual($minPrice);
+});
+
+test('to product payment api array includes custom periods with a computed title', function (): void {
+    $service = new Service();
+    $productPaymentModel = productTestCreateProductPaymentEntity(1)
+        ->setType(ProductPayment::RECURRENT);
+
+    productTestAddPeriod($productPaymentModel, '45D', 7.5, 1, true);
+    productTestAddPeriod($productPaymentModel, '4Y', 100, 0, false);
+
+    $result = $service->toProductPaymentApiArray($productPaymentModel);
+
+    expect($result[ProductPayment::RECURRENT])->toHaveKeys(['45D', '4Y']);
+    expect($result[ProductPayment::RECURRENT]['45D'])->toEqual([
+        'price' => 7.5,
+        'setup' => 1.0,
+        'enabled' => true,
+        // The test bootstrap's __pluralTrans stub always substitutes into the singular
+        // form, so this deliberately does not assert "days"/"years" pluralization.
+        'title' => 'Every 45 day',
+    ]);
+    expect($result[ProductPayment::RECURRENT]['4Y']['enabled'])->toBeFalse();
+    expect($result[ProductPayment::RECURRENT]['4Y']['title'])->toBe('Every 4 year');
+});
+
+test('get product price resolves a custom period by exact code', function (): void {
+    $service = new Service();
+    $product = productTestCreateProductEntity(9)
+        ->setType(Service::CUSTOM)
+        ->setProductPaymentId(15);
+
+    $productPayment = productTestCreateProductPaymentEntity(15)
+        ->setType(ProductPayment::RECURRENT);
+    productTestAddPeriod($productPayment, '45D', 7.5, 1, true);
+
+    $paymentRepo = Mockery::mock(ProductPaymentRepository::class);
+    $paymentRepo->shouldReceive('find')->once()->with(15)->andReturn($productPayment);
+
+    $di = container();
+    $di['em'] = productTestCreateProductPaymentEntityManager($paymentRepo);
+    $service->setDi($di);
+
+    expect($service->getProductPrice($product, ['period' => '45D']))->toBe(7.5);
+});
+
+test('get product price rejects a period that is not configured for the product', function (): void {
+    $service = new Service();
+    $product = productTestCreateProductEntity(9)
+        ->setType(Service::CUSTOM)
+        ->setProductPaymentId(15);
+
+    $productPayment = productTestCreateProductPaymentEntity(15)
+        ->setType(ProductPayment::RECURRENT);
+    productTestAddPeriod($productPayment, '1M', 5, 0, true);
+
+    $paymentRepo = Mockery::mock(ProductPaymentRepository::class);
+    $paymentRepo->shouldReceive('find')->once()->with(15)->andReturn($productPayment);
+
+    $di = container();
+    $di['em'] = productTestCreateProductPaymentEntityManager($paymentRepo);
+    $service->setDi($di);
+
+    expect(fn (): float|int|string => $service->getProductPrice($product, ['period' => '3Y']))
+        ->toThrow(FOSSBilling\InformationException::class, 'Selected billing period is not available for this product');
+});
+
+test('update product accepts a custom recurring period and drops periods no longer submitted', function (): void {
+    $modelProduct = productTestCreateProductEntity(1)->setProductPaymentId(1);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getPaymentTypes')->atLeast()->once()->andReturn([
+        'free' => 'Free',
+        'once' => 'One time',
+        'recurrent' => 'Recurrent',
+    ]);
+
+    $productPayment = productTestCreateProductPaymentEntity(1)
+        ->setType(ProductPayment::RECURRENT);
+    productTestAddPeriod($productPayment, '1M', 5, 0, true);
+    productTestAddPeriod($productPayment, '1Y', 40, 0, true);
+
+    $paymentRepo = Mockery::mock(ProductPaymentRepository::class);
+    $paymentRepo->shouldReceive('find')->once()->with(1)->andReturn($productPayment);
+
+    $di = container();
+    $di['em'] = productTestCreateProductPaymentEntityManager($paymentRepo);
+    $di['logger'] = new Box_Log();
+    $serviceMock->setDi($di);
+
+    $data = [
+        'pricing' => [
+            'type' => ProductPayment::RECURRENT,
+            'recurrent' => [
+                // '1M' is intentionally omitted, so it should be removed.
+                '1Y' => ['price' => 45, 'setup' => 0, 'enabled' => true],
+                '18M' => ['price' => 60, 'setup' => 5, 'enabled' => true],
+            ],
+        ],
+    ];
+
+    $result = $serviceMock->updateProduct($modelProduct, $data);
+
+    expect($result)->toBeTrue();
+    expect($productPayment->getPeriod('1M'))->toBeNull();
+    expect($productPayment->getPeriod('1Y')->getPrice())->toBe(45.0);
+    expect($productPayment->getPeriod('18M')->getPrice())->toBe(60.0);
+});
+
+test('update product rejects an invalid custom period code', function (): void {
+    $modelProduct = productTestCreateProductEntity(1)->setProductPaymentId(1);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getPaymentTypes')->atLeast()->once()->andReturn([
+        'free' => 'Free',
+        'once' => 'One time',
+        'recurrent' => 'Recurrent',
+    ]);
+
+    $productPayment = productTestCreateProductPaymentEntity(1)->setType(ProductPayment::RECURRENT);
+
+    $paymentRepo = Mockery::mock(ProductPaymentRepository::class);
+    $paymentRepo->shouldReceive('find')->once()->with(1)->andReturn($productPayment);
+
+    $di = container();
+    $di['em'] = productTestCreateProductPaymentEntityManager($paymentRepo);
+    $di['logger'] = new Box_Log();
+    $serviceMock->setDi($di);
+
+    $data = [
+        'pricing' => [
+            'type' => ProductPayment::RECURRENT,
+            'recurrent' => [
+                '10Y' => ['price' => 5, 'setup' => 0, 'enabled' => true],
+            ],
+        ],
+    ];
+
+    expect(fn () => $serviceMock->updateProduct($modelProduct, $data))
+        ->toThrow(FOSSBilling\InformationException::class, 'Invalid billing period 10Y');
 });
 
 test('can upgrade to returns true', function (): void {

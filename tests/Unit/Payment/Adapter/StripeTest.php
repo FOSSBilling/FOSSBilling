@@ -159,6 +159,39 @@ function buildEntityManagerMocks(): array
     return ['em' => $em, 'txRepo' => $txRepo, 'subRepo' => $subRepo];
 }
 
+describe('getStripeRecurringParams', function (): void {
+    test('carries the period quantity through as interval_count', function (): void {
+        $result = invokePrivateMethod($this->adapter, 'getStripeRecurringParams', ['3M']);
+
+        expect($result)->toBe(['interval' => 'month', 'interval_count' => 3]);
+    });
+
+    test('maps a yearly period to interval_count 1', function (): void {
+        $result = invokePrivateMethod($this->adapter, 'getStripeRecurringParams', ['1Y']);
+
+        expect($result)->toBe(['interval' => 'year', 'interval_count' => 1]);
+    });
+
+    test('maps a biennial period to a 2-year interval_count', function (): void {
+        $result = invokePrivateMethod($this->adapter, 'getStripeRecurringParams', ['2Y']);
+
+        expect($result)->toBe(['interval' => 'year', 'interval_count' => 2]);
+    });
+
+    test('maps a custom day-based period', function (): void {
+        $result = invokePrivateMethod($this->adapter, 'getStripeRecurringParams', ['45D']);
+
+        expect($result)->toBe(['interval' => 'day', 'interval_count' => 45]);
+    });
+
+    test('rejects a period whose interval_count exceeds Stripe\'s 3-year cap', function (): void {
+        // Box_Period allows up to 5Y, but Stripe's own recurring interval_count cap for
+        // "year" is 3, so this must fail loudly instead of silently mis-billing.
+        expect(fn (): mixed => invokePrivateMethod($this->adapter, 'getStripeRecurringParams', ['5Y']))
+            ->toThrow(Payment_Exception::class);
+    });
+});
+
 describe('isStripeWebhook', function (): void {
     test('identifies customer.subscription.created webhook', function (): void {
         $data = ['http_raw_post_data' => json_encode(['type' => 'customer.subscription.created'])];
