@@ -1742,7 +1742,11 @@ class Service implements InjectionAwareInterface
     private function getEnabledProductPaymentPeriod(ProductPayment $pp, string $code): ProductPaymentPeriod
     {
         // Validate the code shape/range up front so a malformed period gives a clear error.
-        $code = (new \Box_Period($code))->getCode();
+        try {
+            $code = (new \Box_Period($code))->getCode();
+        } catch (\FOSSBilling\Exception) {
+            throw new \FOSSBilling\InformationException('Selected billing period is not available for this product');
+        }
 
         $period = $pp->getPeriod($code);
         if (!$period instanceof ProductPaymentPeriod || !$period->isEnabled()) {

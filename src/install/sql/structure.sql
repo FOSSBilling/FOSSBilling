@@ -886,8 +886,7 @@ CREATE TABLE `product_payment_period` (
   `enabled` tinyint(1) NOT NULL DEFAULT '1',
   `sort_order` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `product_payment_period_unique` (`product_payment_id`,`code`),
-  KEY `product_payment_id_idx` (`product_payment_id`)
+  UNIQUE KEY `product_payment_period_unique` (`product_payment_id`,`code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

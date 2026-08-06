@@ -14,8 +14,9 @@
     '5Y': 'Every 5 Years'|trans
 } %}
 {# Products with no configured periods yet (new products, or ones never saved as recurrent) #}
-{# still show these defaults so the form behaves the same as before periods were customizable. #}
-{# Configured periods are merged on top, overriding the defaults and adding any custom ones. #}
+{# show these defaults so the form behaves the same as before periods were customizable. #}
+{# Once a product has its own periods configured, those are used as-is - a period the #}
+{# admin deliberately removed must not reappear just because it's one of the defaults. #}
 {% set default_periods = {
     '1W': { price: 0, setup: 0, enabled: true, title: preset_periods['1W'] },
     '1M': { price: 0, setup: 0, enabled: true, title: preset_periods['1M'] },
@@ -25,7 +26,8 @@
     '2Y': { price: 0, setup: 0, enabled: true, title: preset_periods['2Y'] },
     '3Y': { price: 0, setup: 0, enabled: true, title: preset_periods['3Y'] }
 } %}
-{% set recurrent_periods = default_periods|merge(product.pricing.recurrent|default({})) %}
+{% set configured_periods = product.pricing.recurrent|default({}) %}
+{% set recurrent_periods = configured_periods is empty ? default_periods : configured_periods %}
 
 <div class="d-flex flex-column gap-1 mb-4">
     <h6 class="card-title mb-0">{{ 'Billing Model'|trans }}</h6>

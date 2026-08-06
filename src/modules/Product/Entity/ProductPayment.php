@@ -42,6 +42,7 @@ class ProductPayment
      * @var Collection<int, ProductPaymentPeriod>
      */
     #[ORM\OneToMany(mappedBy: 'productPayment', targetEntity: ProductPaymentPeriod::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[ORM\OrderBy(['sortOrder' => 'ASC', 'id' => 'ASC'])]
     private Collection $periods;
 
     public function __construct()

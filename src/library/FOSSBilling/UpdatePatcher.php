@@ -2639,8 +2639,7 @@ class UpdatePatcher implements InjectionAwareInterface
                     `enabled` tinyint(1) NOT NULL DEFAULT \'1\',
                     `sort_order` int(11) NOT NULL DEFAULT \'0\',
                     PRIMARY KEY (`id`),
-                    UNIQUE KEY `product_payment_period_unique` (`product_payment_id`,`code`),
-                    KEY `product_payment_id_idx` (`product_payment_id`)
+                    UNIQUE KEY `product_payment_period_unique` (`product_payment_id`,`code`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;'
             );
         }
@@ -2669,9 +2668,12 @@ class UpdatePatcher implements InjectionAwareInterface
         foreach ($rows as $row) {
             $sortOrder = 0;
             foreach ($legacyPeriods as $prefix => $code) {
+                // ON DUPLICATE KEY UPDATE makes this safe to rerun if a prior attempt at
+                // this patch inserted some rows before failing partway through.
                 $this->executeSql(
                     'INSERT INTO `product_payment_period` (`product_payment_id`, `code`, `price`, `setup_price`, `enabled`, `sort_order`)
-                     VALUES (:product_payment_id, :code, :price, :setup_price, :enabled, :sort_order)',
+                     VALUES (:product_payment_id, :code, :price, :setup_price, :enabled, :sort_order)
+                     ON DUPLICATE KEY UPDATE `price` = VALUES(`price`), `setup_price` = VALUES(`setup_price`), `enabled` = VALUES(`enabled`), `sort_order` = VALUES(`sort_order`)',
                     [
                         'product_payment_id' => $row['id'],
                         'code' => $code,

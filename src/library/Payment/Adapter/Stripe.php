@@ -1351,15 +1351,19 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             $this->getSubscriptionPeriodForInvoice($invoice)
         );
 
+        // Stripe's price list filter only supports 'interval' (not 'interval_count') under
+        // 'recurring', so the match below must also compare interval_count explicitly -
+        // otherwise a monthly price could be reused for a quarterly/yearly one with the
+        // same unit_amount.
         $prices = $this->stripe->prices->all([
             'product' => $product->id,
-            'recurring' => $recurring,
+            'recurring' => ['interval' => $recurring['interval']],
             'currency' => $currency,
             'limit' => 100,
         ]);
 
         foreach ($prices->data as $existingPrice) {
-            if ($existingPrice->unit_amount === $amount) {
+            if ($existingPrice->unit_amount === $amount && ($existingPrice->recurring->interval_count ?? null) === $recurring['interval_count']) {
                 return $existingPrice;
             }
         }
