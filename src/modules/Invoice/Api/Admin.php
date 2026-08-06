@@ -423,7 +423,6 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             throw new \FOSSBilling\Exception('Transaction not found');
         }
 
-        $output = null;
         $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminTransactionProcess', 'params' => ['id' => $model->getId()]]);
 
         $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
@@ -803,22 +802,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('invoice', 'manage_subscriptions');
 
         $subscriptionService = $this->getDi()['mod_service']('Invoice', 'Subscription');
+        $qb = $subscriptionService->getSubscriptionRepository()->getSearchQueryBuilder($data);
+        $identity = $this->getIdentity();
 
-        [$sql, $params] = $subscriptionService->getSearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
-
-        $subscriptionRepository = $this->getDi()['em']->getRepository(Subscription::class);
-        if (isset($pager['list']) && is_array($pager['list'])) {
-            foreach ($pager['list'] as $key => $item) {
-                $subscription = $subscriptionRepository->find((int) $item['id']);
-                if (!$subscription instanceof Subscription) {
-                    throw new \FOSSBilling\Exception('Subscription not found');
-                }
-                $pager['list'][$key] = $subscriptionService->toApiArray($subscription);
-            }
-        }
-
-        return $pager;
+        return $this->getDi()['pager']->paginateMappedQuery($qb, PaginationOptions::fromArray($data), static fn ($entity): array => $subscriptionService->toApiArray($entity, false, $identity));
     }
 
     /**

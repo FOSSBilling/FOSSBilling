@@ -110,7 +110,7 @@ test('cancels a subscription at the gateway when canceled status is saved', func
     $gatewayModel = createEntity(PayGateway::class, ['id' => 2]);
 
     $subscriptionModel = createEntity(Subscription::class, ['id' => 5, 'payGatewayId' => 2]);
-    $subscriptionModel->sid = 'sub_old';
+    $subscriptionModel->setSid('sub_old');
 
     $adapter = new class {
         public ?string $canceledSubscriptionId = null;
@@ -153,7 +153,7 @@ test('does not call the gateway when canceling a subscription without a sid', fu
     });
 
     $subscriptionModel = createEntity(Subscription::class, ['id' => 1]);
-    $subscriptionModel->sid = null;
+    $subscriptionModel->setSid(null);
 
     expect($service->update($subscriptionModel, ['status' => 'canceled']))->toBeTrue()
         ->and($subscriptionModel->status)->toBe('canceled');
@@ -163,7 +163,7 @@ test('schedules a subscription cancellation at the gateway', function (): void {
     $gateway = createEntity(PayGateway::class, ['id' => 2]);
 
     $subscription = createEntity(Subscription::class, ['id' => 3, 'payGatewayId' => 2]);
-    $subscription->sid = 'sub_123';
+    $subscription->setSid('sub_123');
 
     $adapter = new class {
         public ?string $scheduledSubscriptionId = null;
@@ -190,7 +190,7 @@ test('schedules a subscription cancellation at the gateway', function (): void {
     $service->scheduleCancellation($subscription);
 
     expect($adapter->scheduledSubscriptionId)->toBe('sub_123')
-        ->and($subscription->status)->toBe(ServiceSubscription::STATUS_PENDING_CANCELLATION);
+        ->and($subscription->getStatus())->toBe(ServiceSubscription::STATUS_PENDING_CANCELLATION);
 });
 
 test('updates subscription status from a gateway without calling the adapter', function (): void {
@@ -238,9 +238,9 @@ test('cancels subscriptions linked to an order', function (): void {
 
 test('finalizes a scheduled cancellation by canceling its order and service', function (): void {
     $subscription = createEntity(Subscription::class, ['id' => 7]);
-    $subscription->status = ServiceSubscription::STATUS_PENDING_CANCELLATION;
-    $subscription->rel_type = 'invoice';
-    $subscription->rel_id = 25;
+    $subscription->setStatus(ServiceSubscription::STATUS_PENDING_CANCELLATION);
+    $subscription->setRelType('invoice');
+    $subscription->setRelId(25);
 
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
@@ -281,7 +281,7 @@ test('finalizes a scheduled cancellation by canceling its order and service', fu
     $service->setDi($di);
 
     expect($service->finalizeCancellationFromGateway(7))->toBeTrue()
-        ->and($subscription->status)->toBe('canceled');
+        ->and($subscription->getStatus())->toBe('canceled');
 });
 
 test('reports end-of-period cancellation support for active gateway subscriptions', function (): void {
@@ -290,7 +290,7 @@ test('reports end-of-period cancellation support for active gateway subscription
     $order->id = 10;
 
     $subscription = createEntity(Subscription::class, ['id' => 7, 'payGatewayId' => 2]);
-    $subscription->sid = 'sub_123';
+    $subscription->setSid('sub_123');
 
     $gateway = createEntity(PayGateway::class, ['id' => 2]);
     $adapter = new class {

@@ -1292,10 +1292,10 @@ test('admin mark as paid with custom gateway records transaction and marks invoi
     ]);
 
     expect($result)->toBeTrue()
-        ->and($transactionModel->amount)->toBe('42.5')
-        ->and($transactionModel->currency)->toBe('USD')
-        ->and($transactionModel->status)->toBe(Transaction::STATUS_PROCESSED)
-        ->and($transactionModel->note)->toBe('Manual payment transaction No: manual-reference-1');
+        ->and($transactionModel->getAmount())->toBe('42.5')
+        ->and($transactionModel->getCurrency())->toBe('USD')
+        ->and($transactionModel->getStatus())->toBe(Transaction::STATUS_PROCESSED)
+        ->and($transactionModel->getNote())->toBe('Manual payment transaction No: manual-reference-1');
 });
 
 test('admin mark as paid with custom gateway rejects transaction linked to another invoice', function (): void {

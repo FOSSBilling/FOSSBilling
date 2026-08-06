@@ -25,16 +25,19 @@ class ServiceTransaction implements InjectionAwareInterface
 
     protected ?\Pimple\Container $di = null;
     private ?bool $transactionIpnHashColumnExists = null;
-    private TransactionRepository $transactionRepository;
+    private ?TransactionRepository $transactionRepository = null;
 
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
-        $this->transactionRepository = $di['em']->getRepository(Transaction::class);
     }
 
     public function getTransactionRepository(): TransactionRepository
     {
+        if ($this->transactionRepository === null) {
+            $this->transactionRepository = $this->di['em']->getRepository(Transaction::class);
+        }
+
         return $this->transactionRepository;
     }
 
@@ -49,7 +52,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $received = $this->getReceived();
         foreach ($received as $transaction) {
             $txId = $transaction['id'] ?? null;
-            $model = $this->transactionRepository->find((int) $txId);
+            $model = $this->getTransactionRepository()->find((int) $txId);
             if ($model === null) {
                 continue;
             }
@@ -88,7 +91,7 @@ class ServiceTransaction implements InjectionAwareInterface
     {
         $id = $this->create($ipn);
 
-        $tx = $this->transactionRepository->find((int) $id);
+        $tx = $this->getTransactionRepository()->find((int) $id);
         if ($tx === null) {
             return $id;
         }
@@ -116,7 +119,7 @@ class ServiceTransaction implements InjectionAwareInterface
      */
     public function processAndCatchErrors(int $id): void
     {
-        $tx = $this->transactionRepository->find($id);
+        $tx = $this->getTransactionRepository()->find($id);
         if ($tx === null) {
             return;
         }
@@ -172,7 +175,7 @@ class ServiceTransaction implements InjectionAwareInterface
             ?? ($data['post']['payment_intent'] ?? null)
             ?? ($data['get']['payment_intent'] ?? null);
         if ($txnIdCandidate && !empty($data['gateway_id'])) {
-            $existing = $this->transactionRepository->findOneByTxnIdAndGatewayId((string) $txnIdCandidate, (int) $data['gateway_id']);
+            $existing = $this->getTransactionRepository()->findOneByTxnIdAndGatewayId((string) $txnIdCandidate, (int) $data['gateway_id']);
             if ($existing !== null && $existing->getStatus() === Transaction::STATUS_PROCESSED) {
                 $this->di['logger']->info('Duplicate transaction ignored, returning existing processed transaction #%s', $existing->getId());
 
@@ -193,7 +196,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $ipn_hash = $this->ipnHash($ipn);
         $supportsIpnHash = $this->supportsTransactionIpnHash();
         if ($supportsIpnHash && !empty($data['gateway_id']) && !empty($ipn_hash)) {
-            $existingByHash = $this->transactionRepository->findOneByGatewayIdAndIpnHash((int) $data['gateway_id'], (string) $ipn_hash);
+            $existingByHash = $this->getTransactionRepository()->findOneByGatewayIdAndIpnHash((int) $data['gateway_id'], (string) $ipn_hash);
             if ($existingByHash !== null) {
                 $this->di['logger']->info('Duplicate transaction detected by IPN hash, returning existing transaction #%s', $existingByHash->getId());
 
@@ -210,7 +213,7 @@ class ServiceTransaction implements InjectionAwareInterface
         }
         $transaction->setStatus(Transaction::STATUS_RECEIVED);
         $transaction->setIp($this->di['request']->getClientIp());
-        $transaction->setIpn(json_encode($ipn));
+        $transaction->setIpn(json_encode($ipn) ?: null);
         $transaction->setNote($data['note'] ?? null);
         $this->di['em']->persist($transaction);
         $this->di['em']->flush();
@@ -553,8 +556,13 @@ class ServiceTransaction implements InjectionAwareInterface
      */
     private function markTransactionError(int $id, \Throwable $e): void
     {
-        $tx = $this->transactionRepository->find($id);
-        if ($tx === null || $tx->getStatus() === Transaction::STATUS_PROCESSED) {
+        $tx = $this->getTransactionRepository()->find($id);
+        if ($tx === null) {
+            return;
+        }
+
+        $this->di['em']->refresh($tx);
+        if ($tx->getStatus() === Transaction::STATUS_PROCESSED) {
             return;
         }
 
@@ -578,7 +586,7 @@ class ServiceTransaction implements InjectionAwareInterface
      */
     public function processTransaction($id)
     {
-        $tx = $this->transactionRepository->find((int) $id);
+        $tx = $this->getTransactionRepository()->find((int) $id);
         if ($tx === null) {
             throw new \FOSSBilling\Exception('Transaction :id not found.', ['id' => $id], 404);
         }
@@ -605,7 +613,7 @@ class ServiceTransaction implements InjectionAwareInterface
 
     public function process(Transaction $tx): Transaction
     {
-        $transaction = $this->transactionRepository->find((int) $tx->getId());
+        $transaction = $this->getTransactionRepository()->find((int) $tx->getId());
         if ($transaction === null) {
             return $tx;
         }
@@ -719,7 +727,7 @@ class ServiceTransaction implements InjectionAwareInterface
             return false;
         }
 
-        $res = $this->transactionRepository->findOneProcessedByTxnId((string) $tx->getTxnId());
+        $res = $this->getTransactionRepository()->findOneProcessedByTxnId((string) $tx->getTxnId());
 
         // Return true when a processed transaction with the same txn_id exists.
         return $res !== null;
@@ -907,8 +915,8 @@ class ServiceTransaction implements InjectionAwareInterface
             return $tx;
         }
 
-        $serviceSubscription = $this->di['mod_service']('Subscription');
-        $model = $this->di['em']->getRepository(Subscription::class)->find((int) $tx->getSId());
+        $serviceSubscription = $this->di['mod_service']('Invoice', 'Subscription');
+        $model = $this->di['em']->getRepository(Subscription::class)->findOneBySid((string) $tx->getSId());
         if (!$model instanceof Subscription) {
             throw new \FOSSBilling\Exception('Subscription #:id was not found. Could not unsubscribe', [':id' => $tx->getSId()]);
         }
@@ -946,6 +954,9 @@ class ServiceTransaction implements InjectionAwareInterface
     public function debitTransaction(Transaction $tx): void
     {
         $proforma = $this->di['db']->load('Invoice', $tx->getInvoiceId());
+        if (!$proforma instanceof \Model_Invoice) {
+            throw new \FOSSBilling\Exception('Invoice #:id not found', [':id' => $tx->getInvoiceId()], 703);
+        }
         $client = $this->di['db']->load('Client', $proforma->client_id);
 
         if ($client->currency != $proforma->currency) {

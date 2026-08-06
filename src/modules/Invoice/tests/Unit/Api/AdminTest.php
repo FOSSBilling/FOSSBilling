@@ -1022,18 +1022,21 @@ test('deletes a gateway', function (): void {
 
 test('gets subscription list', function (): void {
     $api = apiEndpoint(new Admin());
-    $subscriptionService = Mockery::mock(ServiceSubscription::class);
-    $subscriptionService->shouldReceive('getSearchQuery')
+
+    $subscriptionQueryBuilder = Mockery::mock(Doctrine\ORM\QueryBuilder::class);
+    $subscriptionRepository = Mockery::mock(SubscriptionRepository::class);
+    $subscriptionRepository->shouldReceive('getSearchQueryBuilder')
         ->atLeast()->once()
-        ->andReturn(['SqlString', []]);
+        ->andReturn($subscriptionQueryBuilder);
+
+    $subscriptionService = Mockery::mock(ServiceSubscription::class);
+    $subscriptionService->shouldReceive('getSubscriptionRepository')->andReturn($subscriptionRepository);
+    $subscriptionService->shouldReceive('toApiArray')->andReturn([]);
 
     $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
-    $paginatorMock->shouldReceive('getDefaultPerPage')
-        ->byDefault()
-        ->andReturn(25);
-    $paginatorMock->shouldReceive('getPaginatedResultSet')
+    $paginatorMock->shouldReceive('paginateMappedQuery')
         ->atLeast()->once()
-        ->andReturn([]);
+        ->andReturn(['list' => [], 'total' => 0, 'pages' => 0, 'page' => 1, 'per_page' => 20]);
 
     $di = container();
     $di['pager'] = $paginatorMock;

@@ -11,9 +11,12 @@
 declare(strict_types=1);
 
 use Box\Mod\Invoice\Entity\PayGateway;
+use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Repository\PayGatewayRepository;
+use Box\Mod\Invoice\Repository\SubscriptionRepository;
 use Box\Mod\Invoice\Repository\TransactionRepository;
+use Box\Mod\Invoice\ServiceSubscription;
 use Box\Mod\Invoice\ServiceTransaction;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -242,6 +245,7 @@ test('createAndProcess marks transaction as error when processing throws', funct
     $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo);
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn(Mockery::mock(PayGatewayRepository::class));
     $em->shouldReceive('flush')->once();
+    $em->shouldReceive('refresh')->with($transactionModel)->once();
 
     $di = container();
     $di['em'] = $em;
@@ -306,6 +310,7 @@ test('preProcessTransaction marks error on a generic exception', function (): vo
     $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo);
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn(Mockery::mock(PayGatewayRepository::class));
     $em->shouldReceive('flush')->once();
+    $em->shouldReceive('refresh')->with($transactionModel)->once();
 
     $eventsMock = Mockery::mock('\Box_EventManager');
     $eventsMock->shouldNotReceive('fire');
@@ -370,6 +375,7 @@ test('markTransactionError does not clobber an already processed transaction', f
     $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo);
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn(Mockery::mock(PayGatewayRepository::class));
     $em->shouldNotReceive('flush');
+    $em->shouldReceive('refresh')->with($transactionModel)->once();
 
     $di = container();
     $di['em'] = $em;
@@ -382,4 +388,100 @@ test('markTransactionError does not clobber an already processed transaction', f
     $method->invoke($service, 3, new RuntimeException('late error'));
 
     expect($transactionModel->getStatus())->toBe(Transaction::STATUS_PROCESSED);
+});
+
+test('_subscribe creates and persists a subscription from an approved transaction', function (): void {
+    $tx = createEntity(Transaction::class, ['id' => 1, 'gatewayId' => 5]);
+    $tx->setStatus(Transaction::STATUS_APPROVED);
+    $tx->setInvoiceId(10);
+    $tx->setSId('sub_gateway_1');
+    $tx->setAmount('29.99');
+    $tx->setCurrency('USD');
+    $tx->setTxnId('txn_001');
+
+    $transactionRepo = Mockery::mock(TransactionRepository::class);
+    $transactionRepo->shouldReceive('findOneProcessedByTxnId')->andReturnNull();
+
+    $invoice = new Model_Invoice();
+    $invoice->loadBean(new Tests\Helpers\DummyBean());
+    $invoice->id = 10;
+    $invoice->client_id = 7;
+    $invoice->currency = 'USD';
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('load')->with('Invoice', 10)->andReturn($invoice);
+
+    $subscriptionService = Mockery::mock(ServiceSubscription::class);
+    $subscriptionService->shouldReceive('getSubscriptionPeriod')->with($invoice)->andReturn('1M');
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn(Mockery::mock(PayGatewayRepository::class));
+    $em->shouldReceive('persist')->once();
+    $em->shouldReceive('flush')->atLeast()->once();
+
+    $eventsMock = Mockery::mock('\Box_EventManager');
+    $eventsMock->shouldReceive('fire');
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['em'] = $em;
+    $di['events_manager'] = $eventsMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(fn ($module, $sub = '') => $subscriptionService);
+
+    $service = new ServiceTransaction();
+    $service->setDi($di);
+
+    $refl = new ReflectionClass($service);
+    $method = $refl->getMethod('_subscribe');
+    $method->invoke($service, $tx);
+
+    expect($tx->getStatus())->toBe(Transaction::STATUS_PROCESSED);
+});
+
+test('_unsubscribe looks up the subscription by sid and delegates to the subscription service', function (): void {
+    $tx = createEntity(Transaction::class, ['id' => 1, 'gatewayId' => 5]);
+    $tx->setStatus(Transaction::STATUS_APPROVED);
+    $tx->setSId('sub_gateway_1');
+    $tx->setTxnId('txn_001');
+
+    $transactionRepo = Mockery::mock(TransactionRepository::class);
+    $transactionRepo->shouldReceive('findOneProcessedByTxnId')->andReturnNull();
+
+    $subscription = createEntity(Subscription::class, ['id' => 12]);
+    $subscriptionRepo = Mockery::mock(SubscriptionRepository::class);
+    $subscriptionRepo->shouldReceive('findOneBySid')
+        ->once()
+        ->with('sub_gateway_1')
+        ->andReturn($subscription);
+
+    $subscriptionService = Mockery::mock(ServiceSubscription::class);
+    $subscriptionService->shouldReceive('unsubscribe')
+        ->once()
+        ->with(Mockery::on(fn ($arg): bool => $arg instanceof Subscription && $arg->getId() === 12));
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn(Mockery::mock(PayGatewayRepository::class));
+    $em->shouldReceive('getRepository')->with(Subscription::class)->andReturn($subscriptionRepo);
+    $em->shouldReceive('flush')->atLeast()->once();
+
+    $eventsMock = Mockery::mock('\Box_EventManager');
+    $eventsMock->shouldReceive('fire');
+
+    $di = container();
+    $di['em'] = $em;
+    $di['events_manager'] = $eventsMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(fn ($module, $sub = '') => $subscriptionService);
+
+    $service = new ServiceTransaction();
+    $service->setDi($di);
+
+    $refl = new ReflectionClass($service);
+    $method = $refl->getMethod('_unsubscribe');
+    $method->invoke($service, $tx);
+
+    expect($tx->getStatus())->toBe(Transaction::STATUS_PROCESSED);
 });
