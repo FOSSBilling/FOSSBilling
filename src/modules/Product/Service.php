@@ -1088,10 +1088,10 @@ class Service implements InjectionAwareInterface
      *   config: array
      * }
      */
-    public function getCartProductViewData(CartProduct|\Model_CartProduct $item): array
+    public function getCartProductViewData(CartProduct $item): array
     {
-        $productId = $item instanceof CartProduct ? $item->getProductId() : $item->product_id;
-        $configValue = $item instanceof CartProduct ? $item->getConfig() : $item->config;
+        $productId = $item->getProductId();
+        $configValue = $item->getConfig();
         $product = $this->findProductById((int) $productId);
         $config = json_decode($configValue ?? '', true) ?? [];
         $line = $this->getProductOrderLineConfig($product, $config);
