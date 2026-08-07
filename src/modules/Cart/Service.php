@@ -54,87 +54,10 @@ class Service implements InjectionAwareInterface
         return $this->di['em']->getRepository(CartProduct::class);
     }
 
-    private function cartId(Cart|\Model_Cart $cart): ?int
+    private function persistCart(Cart $cart): void
     {
-        return $cart instanceof Cart ? $cart->getId() : $cart->id;
-    }
-
-    private function cartCurrencyId(Cart|\Model_Cart $cart): ?int
-    {
-        return $cart instanceof Cart ? $cart->getCurrencyId() : $cart->currency_id;
-    }
-
-    private function cartPromoId(Cart|\Model_Cart $cart): ?int
-    {
-        return $cart instanceof Cart ? $cart->getPromoId() : $cart->promo_id;
-    }
-
-    private function setCartCurrencyId(Cart|\Model_Cart $cart, ?int $currencyId): void
-    {
-        if ($cart instanceof Cart) {
-            $cart->setCurrencyId($currencyId);
-        } else {
-            $cart->currency_id = $currencyId;
-        }
-    }
-
-    private function setCartPromoId(Cart|\Model_Cart $cart, ?int $promoId): void
-    {
-        if ($cart instanceof Cart) {
-            $cart->setPromoId($promoId);
-        } else {
-            $cart->promo_id = $promoId;
-        }
-    }
-
-    private function setCartSessionId(Cart|\Model_Cart $cart, ?string $sessionId): void
-    {
-        if ($cart instanceof Cart) {
-            $cart->setSessionId($sessionId);
-        } else {
-            $cart->session_id = $sessionId;
-        }
-    }
-
-    private function setCartUpdatedAtNow(Cart|\Model_Cart $cart): void
-    {
-        if ($cart instanceof Cart) {
-            $cart->setUpdatedAt(new \DateTime());
-        } else {
-            $cart->updated_at = date('Y-m-d H:i:s');
-        }
-    }
-
-    private function cartProductId(CartProduct|\Model_CartProduct $cp): ?int
-    {
-        return $cp instanceof CartProduct ? $cp->getId() : $cp->id;
-    }
-
-    private function cartProductCartId(CartProduct|\Model_CartProduct $cp): ?int
-    {
-        return $cp instanceof CartProduct ? $cp->getCartId() : $cp->cart_id;
-    }
-
-    private function cartProductProductId(CartProduct|\Model_CartProduct $cp): mixed
-    {
-        return $cp instanceof CartProduct ? $cp->getProductId() : $cp->product_id;
-    }
-
-    private function cartProductConfig(CartProduct|\Model_CartProduct $cp): ?string
-    {
-        return $cp instanceof CartProduct ? $cp->getConfig() : $cp->config;
-    }
-
-    private function persistCart(Cart|\Model_Cart $cart): void
-    {
-        if ($cart instanceof Cart) {
-            $this->di['em']->persist($cart);
-            $this->di['em']->flush();
-
-            return;
-        }
-
-        $this->di['db']->store($cart);
+        $this->di['em']->persist($cart);
+        $this->di['em']->flush();
     }
 
     private function getLegacyClient(Client|\Model_Client $client): \Model_Client
@@ -174,28 +97,18 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @return list<CartProduct|\Model_CartProduct>
+     * @return list<CartProduct>
      */
-    private function findCartProducts(Cart|\Model_Cart $cart): array
+    private function findCartProducts(Cart $cart): array
     {
-        if ($cart instanceof Cart) {
-            return $this->getCartProductRepository()->findByCartId((int) $this->cartId($cart));
-        }
-
-        return $this->di['db']->find('CartProduct', 'cart_id = ?', [(int) $this->cartId($cart)]);
+        return $this->getCartProductRepository()->findByCartId((int) $cart->getId());
     }
 
-    private function findCartProduct(Cart|\Model_Cart $cart, int $id): CartProduct|\Model_CartProduct|null
+    private function findCartProduct(Cart $cart, int $id): ?CartProduct
     {
-        if ($cart instanceof Cart) {
-            $product = $this->getCartProductRepository()->findOneByCartAndId((int) $this->cartId($cart), $id);
+        $product = $this->getCartProductRepository()->findOneByCartAndId((int) $cart->getId(), $id);
 
-            return $product instanceof CartProduct ? $product : null;
-        }
-
-        $product = $this->di['db']->findOne('CartProduct', 'cart_id = ? AND id = ?', [(int) $this->cartId($cart), $id]);
-
-        return $product instanceof \Model_CartProduct ? $product : null;
+        return $product instanceof CartProduct ? $product : null;
     }
 
     public function getModulePermissions(): array
@@ -218,7 +131,7 @@ class Service implements InjectionAwareInterface
     public function transferFromOtherSession(string $sessionID): bool
     {
         $cart = $this->getSessionCart($sessionID);
-        $this->setCartSessionId($cart, $this->di['session']->getId());
+        $cart->setSessionId($this->di['session']->getId());
         $this->persistCart($cart);
 
         return true;
@@ -270,9 +183,9 @@ class Service implements InjectionAwareInterface
         return $cart;
     }
 
-    public function addItem(Cart|\Model_Cart $cart, Product $product, array $data): bool
+    public function addItem(Cart $cart, Product $product, array $data): bool
     {
-        $event_params = [...$data, 'cart_id' => $this->cartId($cart), 'product_id' => $this->getProductId($product)];
+        $event_params = [...$data, 'cart_id' => $cart->getId(), 'product_id' => $this->getProductId($product)];
         $this->di['events_manager']->fire(['event' => 'onBeforeProductAddedToCart', 'params' => $event_params]);
 
         $productService = $this->getProductService()->getProductModuleService($product);
@@ -311,7 +224,7 @@ class Service implements InjectionAwareInterface
         if (!empty($domainsBeingAdded)) {
             $existingItems = $this->findCartProducts($cart);
             foreach ($existingItems as $item) {
-                $itemConfig = json_decode((string) $this->cartProductConfig($item), true);
+                $itemConfig = json_decode((string) $item->getConfig(), true);
                 if (!is_array($itemConfig)) {
                     continue;
                 }
@@ -396,31 +309,23 @@ class Service implements InjectionAwareInterface
         return $this->getProductService()->isProductPeriodEnabled($model, (string) $period);
     }
 
-    protected function addProduct(Cart|\Model_Cart $cart, Product $product, array $data): bool
+    protected function addProduct(Cart $cart, Product $product, array $data): bool
     {
-        if ($cart instanceof Cart) {
-            $item = new CartProduct();
-            $item->setCartId($this->cartId($cart));
-            $item->setProductId($this->getProductId($product));
-            $item->setConfig(json_encode($data));
-            $this->di['em']->persist($item);
-            $this->di['em']->flush();
-        } else {
-            $item = $this->di['db']->dispense('CartProduct');
-            $item->cart_id = $this->cartId($cart);
-            $item->product_id = $this->getProductId($product);
-            $item->config = json_encode($data);
-            $this->di['db']->store($item);
-        }
+        $item = new CartProduct();
+        $item->setCartId($cart->getId());
+        $item->setProductId($this->getProductId($product));
+        $item->setConfig(json_encode($data));
+        $this->di['em']->persist($item);
+        $this->di['em']->flush();
 
         return true;
     }
 
-    protected function getReservedQuantityInCart(Cart|\Model_Cart $cart, int $productId): int
+    protected function getReservedQuantityInCart(Cart $cart, int $productId): int
     {
         $reservedQty = 0;
         foreach ($this->getCartProducts($cart) as $cartProduct) {
-            if ((int) $this->cartProductProductId($cartProduct) !== $productId) {
+            if ((int) $cartProduct->getProductId() !== $productId) {
                 continue;
             }
 
@@ -459,90 +364,78 @@ class Service implements InjectionAwareInterface
         return null;
     }
 
-    public function removeProduct(Cart|\Model_Cart $cart, $id, $removeAddons = true): bool
+    public function removeProduct(Cart $cart, $id, $removeAddons = true): bool
     {
         $cartProduct = $this->findCartProduct($cart, (int) $id);
-        if (!$cartProduct instanceof CartProduct && !$cartProduct instanceof \Model_CartProduct) {
+        if (!$cartProduct instanceof CartProduct) {
             throw new \FOSSBilling\Exception('Product not found');
         }
 
         if ($removeAddons) {
-            $config_main = json_decode($this->cartProductConfig($cartProduct) ?? '', true);
+            $config_main = json_decode($cartProduct->getConfig() ?? '', true);
             $domain_name = $config_main['domain_name'] ?? '';
             $allCartProducts = $this->findCartProducts($cart);
             foreach ($allCartProducts as $cProduct) {
-                $config = json_decode($this->cartProductConfig($cProduct) ?? '', true);
-                if (isset($config['parent_id']) && $config['parent_id'] == $this->cartProductProductId($cartProduct)) {
+                $config = json_decode($cProduct->getConfig() ?? '', true);
+                if (isset($config['parent_id']) && $config['parent_id'] == $cartProduct->getProductId()) {
                     $domain_name_addon = $config['domain_name'] ?? '';
                     if ($domain_name && $domain_name != $domain_name_addon) {
                         continue;
                     }
-                    if ($cProduct instanceof CartProduct) {
-                        $this->di['em']->remove($cProduct);
-                    } else {
-                        $this->di['db']->trash($cProduct);
-                    }
+                    $this->di['em']->remove($cProduct);
                     $this->di['logger']->info('Removed product addon from shopping cart');
                 }
             }
         }
 
-        if ($cartProduct instanceof CartProduct) {
-            $this->di['em']->remove($cartProduct);
-            $this->di['em']->flush();
-        } else {
-            $this->di['db']->trash($cartProduct);
-        }
+        $this->di['em']->remove($cartProduct);
+        $this->di['em']->flush();
 
         $this->di['logger']->info('Removed product from shopping cart');
 
         return true;
     }
 
-    public function changeCartCurrency(Cart|\Model_Cart $cart, Currency $currency): bool
+    public function changeCartCurrency(Cart $cart, Currency $currency): bool
     {
-        $this->setCartCurrencyId($cart, $currency->getId());
+        $cart->setCurrencyId($currency->getId());
         $this->persistCart($cart);
 
-        $this->di['logger']->info('Changed shopping cart #%s currency to %s', $this->cartId($cart), $currency->getCode());
+        $this->di['logger']->info('Changed shopping cart #%s currency to %s', $cart->getId(), $currency->getCode());
 
         return true;
     }
 
-    public function resetCart(Cart|\Model_Cart $cart): bool
+    public function resetCart(Cart $cart): bool
     {
         $cartProducts = $this->findCartProducts($cart);
         foreach ($cartProducts as $cartProduct) {
-            if ($cartProduct instanceof CartProduct) {
-                $this->di['em']->remove($cartProduct);
-            } else {
-                $this->di['db']->trash($cartProduct);
-            }
+            $this->di['em']->remove($cartProduct);
         }
-        $this->setCartPromoId($cart, null);
-        $this->setCartUpdatedAtNow($cart);
+        $cart->setPromoId(null);
+        $cart->setUpdatedAt(new \DateTime());
         $this->persistCart($cart);
 
         return true;
     }
 
-    public function removePromo(Cart|\Model_Cart $cart): bool
+    public function removePromo(Cart $cart): bool
     {
-        $this->setCartPromoId($cart, null);
-        $this->setCartUpdatedAtNow($cart);
+        $cart->setPromoId(null);
+        $cart->setUpdatedAt(new \DateTime());
         $this->persistCart($cart);
 
-        $this->di['logger']->info('Removed promo code from shopping cart #%s', $this->cartId($cart));
+        $this->di['logger']->info('Removed promo code from shopping cart #%s', $cart->getId());
 
         return true;
     }
 
-    public function applyPromo(Cart|\Model_Cart $cart, Promo $promo): bool
+    public function applyPromo(Cart $cart, Promo $promo): bool
     {
         $promoId = $promo->getId();
         $promoCode = $promo->getCode();
 
-        if ($this->cartPromoId($cart) == $promoId) {
+        if ($cart->getPromoId() == $promoId) {
             return true;
         }
 
@@ -550,7 +443,7 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Add products to your cart before applying promo code');
         }
 
-        $this->setCartPromoId($cart, $promoId);
+        $cart->setPromoId($promoId);
         $this->persistCart($cart);
 
         $this->di['logger']->info('Applied promo code %s to shopping cart', $promoCode);
@@ -558,43 +451,35 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    protected function isEmptyCart(Cart|\Model_Cart $cart): bool
+    protected function isEmptyCart(Cart $cart): bool
     {
         $cartProducts = $this->findCartProducts($cart);
 
         return \FOSSBilling\Tools::safeCount($cartProducts) == 0;
     }
 
-    public function rm(Cart|\Model_Cart $cart): bool
+    public function rm(Cart $cart): bool
     {
         $cartProducts = $this->findCartProducts($cart);
 
         foreach ($cartProducts as $cartProduct) {
-            if ($cartProduct instanceof CartProduct) {
-                $this->di['em']->remove($cartProduct);
-            } else {
-                $this->di['db']->trash($cartProduct);
-            }
+            $this->di['em']->remove($cartProduct);
         }
 
-        if ($cart instanceof Cart) {
-            $this->di['em']->remove($cart);
-            $this->di['em']->flush();
-        } else {
-            $this->di['db']->trash($cart);
-        }
+        $this->di['em']->remove($cart);
+        $this->di['em']->flush();
 
         return true;
     }
 
-    public function toApiArray(Cart|\Model_Cart $model, $deep = false, $identity = null): array
+    public function toApiArray(Cart $model, $deep = false, $identity = null): array
     {
         $products = $this->getCartProducts($model);
 
         $currencyService = $this->di['mod_service']('currency');
         /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
         $currencyRepository = $currencyService->getCurrencyRepository();
-        $currency = $currencyRepository->find($this->cartCurrencyId($model));
+        $currency = $currencyRepository->find($model->getCurrencyId());
         if (!$currency instanceof Currency) {
             $currency = $currencyRepository->findDefault();
         }
@@ -614,7 +499,7 @@ class Service implements InjectionAwareInterface
             $items[] = $p;
         }
 
-        $promoId = $this->cartPromoId($model);
+        $promoId = $model->getPromoId();
         if ($promoId) {
             $promo = $this->getProductService()->findPromoById($promoId);
             $promocode = $promo->getCode();
@@ -686,14 +571,14 @@ class Service implements InjectionAwareInterface
         return $this->getProductService()->clientHasActivePromoApplication($client, $promo);
     }
 
-    public function getCartProducts(Cart|\Model_Cart $model): array
+    public function getCartProducts(Cart $model): array
     {
         return $this->findCartProducts($model);
     }
 
-    public function checkoutCart(Cart|\Model_Cart $cart, Client|\Model_Client $client, $gateway_id = null): array
+    public function checkoutCart(Cart $cart, Client|\Model_Client $client, $gateway_id = null): array
     {
-        $promoId = $this->cartPromoId($cart);
+        $promoId = $cart->getPromoId();
         if ($promoId) {
             $promo = $this->getProductService()->findPromoById($promoId);
             if (!$this->isClientAbleToUsePromo($client, $promo)) {
@@ -711,7 +596,7 @@ class Service implements InjectionAwareInterface
                 'params' => [
                     'ip' => $this->di['request']->getClientIp(),
                     'client_id' => $this->clientId($client),
-                    'cart_id' => $this->cartId($cart),
+                    'cart_id' => $cart->getId(),
                 ],
             ]
         );
@@ -762,7 +647,7 @@ class Service implements InjectionAwareInterface
         $currencyService = $this->di['mod_service']('currency');
         /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
         $currencyRepository = $currencyService->getCurrencyRepository();
-        $currency = $currencyRepository->find($this->cartCurrencyId($cart));
+        $currency = $currencyRepository->find($cart->getCurrencyId());
         if (!$currency instanceof Currency) {
             $currency = $currencyRepository->findDefault();
             if (!$currency instanceof Currency) {
@@ -773,7 +658,7 @@ class Service implements InjectionAwareInterface
 
         $clientService = $this->di['mod_service']('client');
         $taxed = $clientService->isClientTaxable($client);
-        $promoId = $this->cartPromoId($cart);
+        $promoId = $cart->getPromoId();
         $promoProductService = $promoId ? $this->getProductService() : null;
         $promo = $promoId ? $promoProductService?->findPromoById($promoId) : null;
 
@@ -845,7 +730,7 @@ class Service implements InjectionAwareInterface
                     $order->setProductId($item['product_id']);
                     $order->setFormId($item['form_id']);
 
-                    $order->setGroupId((string) $this->cartId($cart));
+                    $order->setGroupId((string) $cart->getId());
                     $order->setGroupMaster($i == 0);
                     $order->setInvoiceOption('issue-invoice');
                     $order->setTitle($item['title']);
@@ -1018,8 +903,8 @@ class Service implements InjectionAwareInterface
      * If relation exists then count discount for this.
      */
     protected function getRelatedItemsDiscount(
-        Cart|\Model_Cart $cart,
-        CartProduct|\Model_CartProduct $model,
+        Cart $cart,
+        CartProduct $model,
         ?array $cartProducts = null,
     ): float {
         $config = $this->getItemConfig($model);
@@ -1028,27 +913,27 @@ class Service implements InjectionAwareInterface
         $products = $cartProducts ?? $this->getCartProducts($cart);
         foreach ($products as $p) {
             $item = [
-                'id' => $this->cartProductId($p),
-                'cart_id' => $this->cartProductCartId($p),
-                'product_id' => $this->cartProductProductId($p),
+                'id' => $p->getId(),
+                'cart_id' => $p->getCartId(),
+                'product_id' => $p->getProductId(),
                 'config' => $this->getItemConfig($p),
             ];
             $list[] = $item;
         }
 
-        return $this->getProductService()->getRelatedProductDiscountByProductId((int) $this->cartProductProductId($model), $list, $config);
+        return $this->getProductService()->getRelatedProductDiscountByProductId((int) $model->getProductId(), $list, $config);
     }
 
-    protected function getItemPromoDiscount(CartProduct|\Model_CartProduct $model, Promo $promo)
+    protected function getItemPromoDiscount(CartProduct $model, Promo $promo)
     {
         $config = $this->getItemConfig($model);
 
-        return $this->getProductService()->getProductDiscountById((int) $this->cartProductProductId($model), $promo, $config);
+        return $this->getProductService()->getProductDiscountById((int) $model->getProductId(), $promo, $config);
     }
 
-    public function getItemConfig(CartProduct|\Model_CartProduct $model): array
+    public function getItemConfig(CartProduct $model): array
     {
-        return json_decode($this->cartProductConfig($model) ?? '', true) ?? [];
+        return json_decode($model->getConfig() ?? '', true) ?? [];
     }
 
     private function getProductService(): \Box\Mod\Product\Service
@@ -1067,8 +952,8 @@ class Service implements InjectionAwareInterface
     }
 
     public function cartProductToApiArray(
-        CartProduct|\Model_CartProduct $model,
-        Cart|\Model_Cart|null $cart = null,
+        CartProduct $model,
+        ?Cart $cart = null,
         ?array $cartProducts = null,
     ): array {
         $productView = $this->getProductService()->getCartProductViewData($model);
@@ -1088,7 +973,7 @@ class Service implements InjectionAwareInterface
         }
 
         return array_merge($config, [
-            'id' => $this->cartProductId($model),
+            'id' => $model->getId(),
             'product_id' => $productView['product_id'],
             'form_id' => $productView['form_id'],
             'title' => $productView['title'],
@@ -1105,28 +990,26 @@ class Service implements InjectionAwareInterface
     }
 
     public function getProductDiscount(
-        CartProduct|\Model_CartProduct $cartProduct,
+        CartProduct $cartProduct,
         $setup,
-        Cart|\Model_Cart|null $cart = null,
+        ?Cart $cart = null,
         ?array $cartProducts = null,
     ): array {
         if ($cart === null) {
-            $cart = $cartProduct instanceof CartProduct
-                ? $this->getCartRepository()->find((int) $this->cartProductCartId($cartProduct))
-                : $this->di['db']->findOne('Cart', 'id = ?', [(int) $this->cartProductCartId($cartProduct)]);
+            $cart = $this->getCartRepository()->find((int) $cartProduct->getCartId());
         }
-        if (!$cart instanceof Cart && !$cart instanceof \Model_Cart) {
+        if (!$cart instanceof Cart) {
             throw new \FOSSBilling\Exception('Cart not found');
         }
         $discount_price = $this->getRelatedItemsDiscount($cart, $cartProduct, $cartProducts);
         $discount_setup = 0;
-        if ($this->cartPromoId($cart)) {
-            $promo = $this->getProductService()->findPromoById((int) $this->cartPromoId($cart));
+        if ($cart->getPromoId()) {
+            $promo = $this->getProductService()->findPromoById((int) $cart->getPromoId());
             // Promo discount should override related item discount
             $discount_price = $this->getItemPromoDiscount($cartProduct, $promo);
 
             $promoApplies = $this->getProductService()->isPromoApplicableToProductById(
-                (int) $this->cartProductProductId($cartProduct),
+                (int) $cartProduct->getProductId(),
                 $promo,
                 $this->getItemConfig($cartProduct),
             );
