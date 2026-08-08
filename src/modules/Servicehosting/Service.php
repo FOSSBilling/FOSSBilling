@@ -19,12 +19,10 @@ use Box\Mod\Servicehosting\Repository\ServiceHostingHpRepository;
 use Box\Mod\Servicehosting\Repository\ServiceHostingRepository;
 use Box\Mod\Servicehosting\Repository\ServiceHostingServerRepository;
 use FOSSBilling\Exception;
+use FOSSBilling\Extension\ExtensionType;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Tools;
-use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\Filesystem\Path;
-use Symfony\Component\Finder\Finder;
 
 class Service implements InjectionAwareInterface
 {
@@ -33,19 +31,10 @@ class Service implements InjectionAwareInterface
     public const string CREDENTIAL_KEEP_SENTINEL = '__KEEP__';
 
     protected ?\Pimple\Container $di = null;
-    private Filesystem $filesystem;
-
-    public function __construct()
-    {
-        $this->filesystem = new Filesystem();
-    }
 
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
-        if (isset($di['filesystem'])) {
-            $this->filesystem = $di['filesystem'];
-        }
     }
 
     public function getDi(): ?\Pimple\Container
@@ -512,7 +501,7 @@ class Service implements InjectionAwareInterface
         $server = $this->getExistingServer((int) $model->getServiceHostingServerId(), 'Server not found');
         $client = $this->di['db']->getExistingModelById('Client', $model->getClientId(), 'Client not found');
 
-        $server_client = new \Server_Client();
+        $server_client = new \FOSSBilling\Extension\Contract\Server\Client();
         $server_client
             ->setEmail($client->email)
             ->setFirstName($client->first_name)
@@ -527,7 +516,7 @@ class Service implements InjectionAwareInterface
             ->setTelephone($client->phone);
 
         $package = $this->getServerPackage($hp);
-        $server_account = new \Server_Account();
+        $server_account = new \FOSSBilling\Extension\Contract\Server\Account();
         $server_account
             ->setClient($server_client)
             ->setPackage($package)
@@ -810,49 +799,31 @@ class Service implements InjectionAwareInterface
 
     private function _getServerManagers(): array
     {
-        $files = [];
-
-        $finder = new Finder();
-        $finder->files()->in(Path::join(PATH_LIBRARY, 'Server', 'Manager'))->name('*.php');
-        $finder->sortByName();
-
-        foreach ($finder as $file) {
-            $files[] = $file->getFilenameWithoutExtension();
-        }
-
-        return $files;
+        return $this->di['extension_locator']->listInstalled(ExtensionType::Manager);
     }
 
     public function getServerManagerConfig($manager)
     {
-        // Only ever load files belonging to a known server manager. $manager
-        // ultimately comes from admin-supplied input (server_create/server_update),
-        // so without this whitelist check a path-traversal value could reach
-        // require_once below.
-        if (!in_array($manager, $this->_getServerManagers(), true)) {
+        $classname = $this->resolveServerManagerClass($manager);
+        if ($classname === null || !is_callable($classname . '::getForm')) {
             return [];
         }
 
-        $filename = Path::join(PATH_LIBRARY, 'Server', 'Manager', "{$manager}.php");
-        if (!$this->filesystem->exists($filename)) {
-            return [];
-        }
+        return call_user_func([$classname, 'getForm']);
+    }
 
-        $classname = 'Server_Manager_' . $manager;
-        if (!class_exists($classname)) {
-            try {
-                require_once $filename;
-            } catch (\Throwable) {
-                return [];
-            }
+    /**
+     * Resolves the class for an installed server manager, or null when the
+     * manager is unknown. $manager is admin-supplied (server_create and
+     * server_update), so it is never used to build a path directly.
+     */
+    private function resolveServerManagerClass(string $manager): ?string
+    {
+        try {
+            return $this->di['extension_locator']->resolveClass(ExtensionType::Manager, $manager);
+        } catch (InformationException) {
+            return null;
         }
-
-        $method = 'getForm';
-        if (!is_callable($classname . '::' . $method)) {
-            return [];
-        }
-
-        return call_user_func([$classname, $method]);
     }
 
     /**
@@ -867,24 +838,9 @@ class Service implements InjectionAwareInterface
     {
         $secrets = ['password', 'accesshash'];
 
-        // Same whitelist requirement as getServerManagerConfig() — $manager is
-        // admin-supplied and must not be usable to require_once an arbitrary file.
-        if (!in_array($manager, $this->_getServerManagers(), true)) {
+        $classname = $this->resolveServerManagerClass($manager);
+        if ($classname === null) {
             return array_values(array_unique($secrets));
-        }
-
-        $filename = Path::join(PATH_LIBRARY, 'Server', 'Manager', "{$manager}.php");
-        if (!$this->filesystem->exists($filename)) {
-            return array_values(array_unique($secrets));
-        }
-
-        $classname = 'Server_Manager_' . $manager;
-        if (!class_exists($classname)) {
-            try {
-                require_once $filename;
-            } catch (\Throwable) {
-                return array_values(array_unique($secrets));
-            }
         }
 
         if (is_callable($classname . '::getSecretFields')) {
@@ -1093,7 +1049,7 @@ class Service implements InjectionAwareInterface
 
         $manager = $this->di['server_manager']($model->getManager(), $config);
 
-        if (!$manager instanceof \Server_Manager) {
+        if (!$manager instanceof \FOSSBilling\Extension\Contract\Server\Manager) {
             throw new Exception('Server manager :adapter is invalid.', [':adapter' => $model->getManager()]);
         }
 
@@ -1101,7 +1057,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @throws \Server_Exception
+     * @throws \FOSSBilling\Extension\Contract\Server\Exception
      * @throws Exception
      */
     public function testConnection(ServiceHostingServer $model)
@@ -1238,14 +1194,14 @@ class Service implements InjectionAwareInterface
         return $newId;
     }
 
-    public function getServerPackage(ServiceHostingHp $model): \Server_Package
+    public function getServerPackage(ServiceHostingHp $model): \FOSSBilling\Extension\Contract\Server\Package
     {
         $config = json_decode($model->getConfig() ?? '', true);
         if (!is_array($config)) {
             $config = [];
         }
 
-        $p = new \Server_Package();
+        $p = new \FOSSBilling\Extension\Contract\Server\Package();
         $p->setCustomValues($config)
             ->setMaxFtp($model->getMaxFtp())
             ->setMaxSql($model->getMaxSql())
@@ -1268,8 +1224,7 @@ class Service implements InjectionAwareInterface
         $manager = $this->getServerManager($model);
 
         $order_service = $this->di['mod_service']('order');
-        $log = $order_service->getLogger($order);
-        $manager->setLog($log);
+        $manager->setLog(new \FOSSBilling\PsrLogAdapter($order_service->getLogger($order)));
 
         return $manager;
     }

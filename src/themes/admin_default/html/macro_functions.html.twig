@@ -15,6 +15,28 @@
     {{ result ? 'true' : 'false' }}
 {% endmacro %}
 
+{#
+ # Same computation as compute_field_required, but for the flat settings
+ # field-object shape (manifest `settings`: {name, type, ..., required_when})
+ # rather than the registrar/manager positional [type, {...}] tuple.
+ #}
+{% macro compute_settings_field_required(field, context) %}
+    {% set result = false %}
+    {% if field.required_when is defined and field.required_when is iterable %}
+        {% set result = true %}
+        {% for cond_key, cond_value in field.required_when %}
+            {% if attribute(context, cond_key) is null or attribute(context, cond_key) != cond_value %}
+                {% set result = false %}
+            {% endif %}
+        {% endfor %}
+    {% elseif field.required is defined %}
+        {% set result = field.required != 'false' %}
+    {% else %}
+        {% set result = false %}
+    {% endif %}
+    {{ result ? 'true' : 'false' }}
+{% endmacro %}
+
 {% macro build_form(elements, values, context) %}
     {% set ctx = context|default({}) %}
     <div class="row g-3">

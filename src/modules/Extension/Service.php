@@ -16,6 +16,9 @@ use Box\Mod\Extension\Entity\ExtensionMeta;
 use Box\Mod\Extension\Repository\ExtensionMetaRepository;
 use Box\Mod\Extension\Repository\ExtensionRepository;
 use FOSSBilling\Config;
+use FOSSBilling\Extension\Contract\HasLifecycle;
+use FOSSBilling\Extension\ExtensionType;
+use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
@@ -378,7 +381,7 @@ class Service implements InjectionAwareInterface
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
 
-        throw new \FOSSBilling\InformationException('Visit the extension directory for more information on updating this extension.', null, 252);
+        throw new InformationException('Visit the extension directory for more information on updating this extension.', null, 252);
     }
 
     /**
@@ -397,19 +400,25 @@ class Service implements InjectionAwareInterface
             'has_settings' => false,
         ];
 
-        switch ($ext->getType()) {
-            case \FOSSBilling\ExtensionManager::TYPE_MOD:
-                $mod = $this->di['mod']($ext->getName());
-                $manifest = $mod->getManifest();
-                $this->installModule($ext);
-                $ext->setVersion($manifest['version'] !== null ? (string) $manifest['version'] : null);
-                $result['redirect'] = $mod->hasAdminController();
-                $result['has_settings'] = $mod->hasSettingsPage();
+        $extensionType = ExtensionType::tryFrom((string) $ext->getType());
 
-                break;
+        if ($extensionType instanceof ExtensionType) {
+            $this->installExtensionDependencies($extensionType, (string) $ext->getName());
 
-            default:
-                break;
+            // Only modules recorded a version on activation before this;
+            // gateways, registrars and managers never did, which is why an
+            // upgrade hook was not even possible for them.
+            $manifest = $this->di['extension_locator']->manifest($extensionType, (string) $ext->getName());
+            $ext->setVersion($manifest->version);
+
+            $this->dispatchLifecycle($extensionType, (string) $ext->getName(), static fn (HasLifecycle $instance) => $instance->activated());
+        } elseif ($ext->getType() === \FOSSBilling\ExtensionManager::TYPE_MOD) {
+            $mod = $this->di['mod']($ext->getName());
+            $manifest = $mod->getManifest();
+            $this->installModule($ext);
+            $ext->setVersion($manifest['version'] !== null ? (string) $manifest['version'] : null);
+            $result['redirect'] = $mod->hasAdminController();
+            $result['has_settings'] = $mod->hasSettingsPage();
         }
 
         $ext->setStatus(Extension::STATUS_INSTALLED);
@@ -421,11 +430,16 @@ class Service implements InjectionAwareInterface
     /**
      * Deactivate an extension.
      *
-     * @throws \FOSSBilling\InformationException
+     * @throws InformationException
      */
     public function deactivate(Extension $ext): bool
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
+
+        $extensionType = ExtensionType::tryFrom((string) $ext->getType());
+        if ($extensionType instanceof ExtensionType) {
+            $this->dispatchLifecycle($extensionType, (string) $ext->getName(), static fn (HasLifecycle $instance) => $instance->deactivated());
+        }
 
         switch ($ext->getType()) {
             case \FOSSBilling\ExtensionManager::TYPE_HOOK:
@@ -440,7 +454,7 @@ class Service implements InjectionAwareInterface
             case \FOSSBilling\ExtensionManager::TYPE_MOD:
                 $mod = $ext->getName();
                 if ($this->isCoreModule($mod)) {
-                    throw new \FOSSBilling\InformationException('Core modules are an integral part of the FOSSBilling system and cannot be deactivated.');
+                    throw new InformationException('Core modules are an integral part of the FOSSBilling system and cannot be deactivated.');
                 }
 
                 break;
@@ -468,11 +482,11 @@ class Service implements InjectionAwareInterface
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'uninstall_extensions');
 
         if ($this->isCoreModule($id)) {
-            throw new \FOSSBilling\InformationException('Core modules are an integral part of the FOSSBilling system and cannot be uninstalled.');
+            throw new InformationException('Core modules are an integral part of the FOSSBilling system and cannot be uninstalled.');
         }
 
         if ($this->isExtensionActive($type, $id)) {
-            throw new \FOSSBilling\InformationException('Cannot uninstall an active module. Please deactivate it first.');
+            throw new InformationException('Cannot uninstall an active module. Please deactivate it first.');
         }
 
         // Determine the path based on extension type
@@ -517,7 +531,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!$this->di['extension_manager']->isExtensionCompatible($id)) {
-            throw new \FOSSBilling\InformationException('This extension is not compatible with your version of FOSSBilling. Please update FOSSBilling to the latest version and try again.');
+            throw new InformationException('This extension is not compatible with your version of FOSSBilling. Please update FOSSBilling to the latest version and try again.');
         }
 
         $extractedPath = Path::join(PATH_CACHE, md5(uniqid()));
@@ -558,7 +572,7 @@ class Service implements InjectionAwareInterface
         $destination = $this->getExtensionPath($type, $id, true);
 
         if ($this->filesystem->exists($destination)) {
-            throw new \FOSSBilling\InformationException('Extension :id seems to be already installed.', [':id' => $id], 436);
+            throw new InformationException('Extension :id seems to be already installed.', [':id' => $id], 436);
         }
 
         try {
@@ -588,12 +602,12 @@ class Service implements InjectionAwareInterface
         $mod = $this->di['mod']($ext->getName());
 
         if ($mod->isCore()) {
-            throw new \FOSSBilling\InformationException('FOSSBilling core modules cannot be installed or removed');
+            throw new InformationException('FOSSBilling core modules cannot be installed or removed');
         }
 
         $info = $mod->getManifest();
         if (isset($info['minimum_fossbilling_version']) && \FOSSBilling\Version::compareVersion($info['minimum_fossbilling_version']) > 0) {
-            throw new \FOSSBilling\InformationException('Module cannot be installed. It requires at least :min version of FOSSBilling. You are using :v', [':min' => $info['minimum_fossbilling_version'], ':v' => \FOSSBilling\Version::VERSION]);
+            throw new InformationException('Module cannot be installed. It requires at least :min version of FOSSBilling. You are using :v', [':min' => $info['minimum_fossbilling_version'], ':v' => \FOSSBilling\Version::VERSION]);
         }
 
         // Allow install module even if no installer exists
@@ -704,27 +718,117 @@ class Service implements InjectionAwareInterface
     /**
      * Get the filesystem path for an extension based on its type and ID.
      *
-     * @param string $type                  Extension type
-     * @param string $id                    Extension ID
-     * @param bool   $includeMessagesSubdir Whether to include LC_MESSAGES subdirectory for translations (used during installation)
+     * @param string $type Extension type
+     * @param string $id   Extension ID
      *
      * @return string The filesystem path for the extension
      *
-     * @throws \FOSSBilling\InformationException If the extension type is not supported
+     * @throws InformationException If the extension type is not supported
      */
+    /**
+     * Call an extension-level HasLifecycle hook, if the extension implements
+     * one — without instantiating it if it doesn't.
+     *
+     * These are extension-level events (activate()/deactivate() are existing
+     * call sites that stood empty for gateways, registrars and managers, per
+     * §3.7 of the gateway API design), so the instance is constructed with no
+     * settings — there is no configured instance to hand it yet. An extension
+     * whose constructor requires arguments is skipped with a log entry rather
+     * than guessed at.
+     */
+    private function dispatchLifecycle(ExtensionType $type, string $id, \Closure $call): void
+    {
+        try {
+            $class = $this->di['extension_locator']->resolveClass($type, $id);
+        } catch (InformationException) {
+            return;
+        }
+
+        $reflection = new \ReflectionClass($class);
+        if (!$reflection->implementsInterface(HasLifecycle::class)) {
+            return;
+        }
+
+        $constructor = $reflection->getConstructor();
+        if ($constructor !== null && $constructor->getNumberOfRequiredParameters() > 0) {
+            $this->di['logger']->warning('The %s extension "%s" implements HasLifecycle but its constructor requires arguments; skipping the lifecycle hook.', $type->value, $id);
+
+            return;
+        }
+
+        $call($reflection->newInstance());
+    }
+
+    /**
+     * Install an extension's own Composer dependencies, if it declares any.
+     *
+     * Extensions carry their dependencies rather than core carrying them, so an
+     * install only downloads a gateway's SDK once that gateway is switched on.
+     */
+    private function installExtensionDependencies(ExtensionType $type, string $id): void
+    {
+        $installer = $this->di['extension_dependencies'];
+        $directory = $type->pathFor($id);
+
+        if (!$installer->hasDependencies($directory) || $installer->isInstalled($directory)) {
+            return;
+        }
+
+        $this->di['logger']->info('Installing dependencies for the %s extension "%s"', $type->value, $id);
+        $installer->install($directory);
+
+        $this->warnAboutDependencyConflicts($type, $id, $directory);
+    }
+
+    /**
+     * Log any package this extension shares with another at a different version.
+     *
+     * A PHP process holds one version of a class, so whichever extension loads
+     * first decides which version everybody gets. Nothing here can fix that,
+     * but leaving it undiagnosed turns it into a bug report about the wrong
+     * extension entirely.
+     */
+    private function warnAboutDependencyConflicts(ExtensionType $type, string $id, string $directory): void
+    {
+        $others = [];
+        foreach (ExtensionType::cases() as $otherType) {
+            foreach ($this->di['extension_locator']->listInstalled($otherType) as $otherId) {
+                if ($otherType === $type && $otherId === $id) {
+                    continue;
+                }
+
+                $others[$otherType->value . '/' . $otherId] = $otherType->pathFor($otherId);
+            }
+        }
+
+        foreach ($this->di['extension_dependencies']->findConflicts($directory, $others) as $package => $conflict) {
+            foreach ($conflict['conflicts'] as $otherLabel => $otherVersion) {
+                $this->di['logger']->warning(
+                    'The %s extension "%s" requires %s %s, but %s already provides %s. Only one version can be loaded.',
+                    $type->value,
+                    $id,
+                    $package,
+                    $conflict['version'],
+                    $otherLabel,
+                    $otherVersion
+                );
+            }
+        }
+    }
+
     public function getExtensionPath(string $type, string $id, bool $includeMessagesSubdir = false): string
     {
         $this->assertValidExtensionIdentifier($id);
 
         $basePath = $this->getExtensionBasePath($type);
-        $path = match ($type) {
-            \FOSSBilling\ExtensionManager::TYPE_MOD,
-            \FOSSBilling\ExtensionManager::TYPE_PG => Path::join($basePath, ucfirst($id)),
-            \FOSSBilling\ExtensionManager::TYPE_THEME => Path::join($basePath, $id),
-            \FOSSBilling\ExtensionManager::TYPE_TRANSLATION => $includeMessagesSubdir
+        $path = match (true) {
+            $type === \FOSSBilling\ExtensionManager::TYPE_MOD,
+            ExtensionType::tryFrom($type) instanceof ExtensionType => Path::join($basePath, ucfirst($id)),
+            $type === \FOSSBilling\ExtensionManager::TYPE_THEME => Path::join($basePath, $id),
+            $type === \FOSSBilling\ExtensionManager::TYPE_TRANSLATION => $includeMessagesSubdir
                 ? Path::join($basePath, $id, 'LC_MESSAGES')
                 : Path::join($basePath, $id),
-            default => throw new \FOSSBilling\InformationException('Extension type (:type) is not supported for automatic path determination.', [':type' => $type]),
+            default => throw new InformationException('Extension type (:type) is not supported for automatic path determination.', [':type' => $type]),
         };
 
         $this->assertPathWithinBasePath($path, $basePath);
@@ -734,19 +838,23 @@ class Service implements InjectionAwareInterface
 
     private function getExtensionBasePath(string $type): string
     {
+        $extensionType = ExtensionType::tryFrom($type);
+        if ($extensionType instanceof ExtensionType) {
+            return $extensionType->directory();
+        }
+
         return match ($type) {
             \FOSSBilling\ExtensionManager::TYPE_MOD => PATH_MODS,
             \FOSSBilling\ExtensionManager::TYPE_THEME => PATH_THEMES,
             \FOSSBilling\ExtensionManager::TYPE_TRANSLATION => PATH_LANGS,
-            \FOSSBilling\ExtensionManager::TYPE_PG => Path::join(PATH_LIBRARY, 'Payment', 'Adapter'),
-            default => throw new \FOSSBilling\InformationException('Extension type (:type) is not supported for automatic path determination.', [':type' => $type]),
+            default => throw new InformationException('Extension type (:type) is not supported for automatic path determination.', [':type' => $type]),
         };
     }
 
     private function assertValidExtensionIdentifier(string $id): void
     {
         if (preg_match('/\A[A-Za-z0-9_-]+\z/', $id) !== 1) {
-            throw new \FOSSBilling\InformationException('Extension ID contains invalid characters.');
+            throw new InformationException('Extension ID contains invalid characters.');
         }
     }
 
@@ -756,7 +864,7 @@ class Service implements InjectionAwareInterface
         $canonicalPath = Path::canonicalize($path);
 
         if (!Path::isBasePath($canonicalBasePath, $canonicalPath)) {
-            throw new \FOSSBilling\InformationException('Extension path resolved outside the expected extension directory.');
+            throw new InformationException('Extension path resolved outside the expected extension directory.');
         }
     }
 
@@ -840,14 +948,14 @@ class Service implements InjectionAwareInterface
 
         // First check if any access is allowed to the module for this person
         if (!$staff_service->hasPermission(null, $permission_module)) {
-            throw new \FOSSBilling\InformationException('You do not have permission to access the :mod: module', [':mod:' => $permission_module], 403);
+            throw new InformationException('You do not have permission to access the :mod: module', [':mod:' => $permission_module], 403);
         }
 
         $module_permissions = $this->getSpecificModulePermissions($permission_module);
 
         // If they have access, let's see if that module has a permission specifically for managing settings and check if they have that permission.
         if (!array_key_exists('manage_settings', $module_permissions) || !$staff_service->hasPermission(null, $permission_module, 'manage_settings')) {
-            throw new \FOSSBilling\InformationException('You do not have permission to perform this action', [], 403);
+            throw new InformationException('You do not have permission to perform this action', [], 403);
         }
     }
 }

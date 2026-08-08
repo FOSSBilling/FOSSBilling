@@ -203,16 +203,16 @@ test('action activate creates the account when it has not been provisioned yet',
     $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
-    $serverManagerMock = Mockery::mock('\Server_Manager_Custom');
+    $serverManagerMock = Mockery::mock('\FOSSBilling\Extension\Manager\Custom\Custom');
     $serverManagerMock->shouldReceive('getPasswordLength')->atLeast()->once()->andReturn(12);
     $serverManagerMock->shouldReceive('generateUsername')->atLeast()->once()->with('example.com')->andReturn('example');
 
-    $adapterMock = Mockery::mock('\Server_Manager_Custom');
+    $adapterMock = Mockery::mock('\FOSSBilling\Extension\Manager\Custom\Custom');
     $adapterMock->shouldReceive('createAccount')->once();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('getServerManager')->atLeast()->once()->andReturn($serverManagerMock);
-    $serviceMock->shouldReceive('_getAM')->once()->andReturn([$adapterMock, new Server_Account()]);
+    $serviceMock->shouldReceive('_getAM')->once()->andReturn([$adapterMock, new FOSSBilling\Extension\Contract\Server\Account()]);
     $serviceMock->setDi($di);
 
     $result = $serviceMock->action_activate($orderModel);
@@ -250,7 +250,7 @@ test('action activate does not recreate an account that was already provisioned'
     $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
-    $serverManagerMock = Mockery::mock('\Server_Manager_Custom');
+    $serverManagerMock = Mockery::mock('\FOSSBilling\Extension\Manager\Custom\Custom');
     $serverManagerMock->shouldReceive('getPasswordLength')->atLeast()->once()->andReturn(12);
     $serverManagerMock->shouldNotReceive('generateUsername');
 
@@ -318,11 +318,11 @@ test('action suspend', function (): void {
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serverManagerMock = Mockery::mock('\Server_Manager_Custom');
+    $serverManagerMock = Mockery::mock('\FOSSBilling\Extension\Manager\Custom\Custom');
     $serverManagerMock->shouldReceive('suspendAccount')->once()->with(Mockery::on(
-        fn (Server_Account $account): bool => $account->getNote() === 'Non-payment'
+        fn (FOSSBilling\Extension\Contract\Server\Account $account): bool => $account->getNote() === 'Non-payment'
     ));
-    $AMresultArray = [$serverManagerMock, new Server_Account()];
+    $AMresultArray = [$serverManagerMock, new FOSSBilling\Extension\Contract\Server\Account()];
     $serviceMock->shouldReceive('_getAM')->atLeast()->once()->andReturn($AMresultArray);
 
     $serviceMock->setDi($di);
@@ -366,9 +366,9 @@ test('action unsuspend', function (): void {
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serverManagerMock = Mockery::mock('\Server_Manager_Custom');
+    $serverManagerMock = Mockery::mock('\FOSSBilling\Extension\Manager\Custom\Custom');
     $serverManagerMock->shouldReceive('unsuspendAccount')->atLeast()->once();
-    $AMresultArray = [$serverManagerMock, new Server_Account()];
+    $AMresultArray = [$serverManagerMock, new FOSSBilling\Extension\Contract\Server\Account()];
     $serviceMock->shouldReceive('_getAM')->atLeast()->once()->andReturn($AMresultArray);
 
     $serviceMock->setDi($di);
@@ -412,9 +412,9 @@ test('action cancel', function (): void {
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serverManagerMock = Mockery::mock('\Server_Manager_Custom');
+    $serverManagerMock = Mockery::mock('\FOSSBilling\Extension\Manager\Custom\Custom');
     $serverManagerMock->shouldReceive('cancelAccount')->atLeast()->once();
-    $AMresultArray = [$serverManagerMock, new Server_Account()];
+    $AMresultArray = [$serverManagerMock, new FOSSBilling\Extension\Contract\Server\Account()];
     $serviceMock->shouldReceive('_getAM')->atLeast()->once()->andReturn($AMresultArray);
 
     $serviceMock->setDi($di);
@@ -485,11 +485,11 @@ test('change account plan', function (): void {
     $di['logger'] = new Box_Log();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serverManagerMock = Mockery::mock('\Server_Manager_Custom');
+    $serverManagerMock = Mockery::mock('\FOSSBilling\Extension\Manager\Custom\Custom');
     $serverManagerMock->shouldReceive('changeAccountPackage')->atLeast()->once();
-    $AMresultArray = [$serverManagerMock, new Server_Account()];
+    $AMresultArray = [$serverManagerMock, new FOSSBilling\Extension\Contract\Server\Account()];
     $serviceMock->shouldReceive('_getAM')->atLeast()->once()->andReturn($AMresultArray);
-    $serviceMock->shouldReceive('getServerPackage')->atLeast()->once()->andReturn(new Server_Package());
+    $serviceMock->shouldReceive('getServerPackage')->atLeast()->once()->andReturn(new FOSSBilling\Extension\Contract\Server\Package());
 
     $serviceMock->setDi($di);
     $result = $serviceMock->changeAccountPlan($orderModel, $model, $modelHp);
@@ -510,10 +510,10 @@ test('change account username', function (): void {
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
 
-    $serverManagerMock = Mockery::mock('\Server_Manager_Custom');
+    $serverManagerMock = Mockery::mock('\FOSSBilling\Extension\Manager\Custom\Custom');
     $serverManagerMock->shouldReceive('changeAccountUsername')->atLeast()->once();
 
-    $AMresultArray = [$serverManagerMock, new Server_Account()];
+    $AMresultArray = [$serverManagerMock, new FOSSBilling\Extension\Contract\Server\Account()];
     $serviceMock->shouldReceive('_getAM')->atLeast()->once()->andReturn($AMresultArray);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
@@ -556,10 +556,10 @@ test('change account ip', function (): void {
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
 
-    $serverManagerMock = Mockery::mock('\Server_Manager_Custom');
+    $serverManagerMock = Mockery::mock('\FOSSBilling\Extension\Manager\Custom\Custom');
     $serverManagerMock->shouldReceive('changeAccountIp')->atLeast()->once();
 
-    $AMresultArray = [$serverManagerMock, new Server_Account()];
+    $AMresultArray = [$serverManagerMock, new FOSSBilling\Extension\Contract\Server\Account()];
     $serviceMock->shouldReceive('_getAM')->atLeast()->once()->andReturn($AMresultArray);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
@@ -603,10 +603,10 @@ test('change account domain', function (): void {
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
 
-    $serverManagerMock = Mockery::mock('\Server_Manager_Custom');
+    $serverManagerMock = Mockery::mock('\FOSSBilling\Extension\Manager\Custom\Custom');
     $serverManagerMock->shouldReceive('changeAccountDomain')->atLeast()->once();
 
-    $AMresultArray = [$serverManagerMock, new Server_Account()];
+    $AMresultArray = [$serverManagerMock, new FOSSBilling\Extension\Contract\Server\Account()];
     $serviceMock->shouldReceive('_getAM')->atLeast()->once()->andReturn($AMresultArray);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
@@ -650,10 +650,10 @@ test('change account password', function (): void {
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
 
-    $serverManagerMock = Mockery::mock('\Server_Manager_Custom');
+    $serverManagerMock = Mockery::mock('\FOSSBilling\Extension\Manager\Custom\Custom');
     $serverManagerMock->shouldReceive('changeAccountPassword')->atLeast()->once();
 
-    $AMresultArray = [$serverManagerMock, new Server_Account()];
+    $AMresultArray = [$serverManagerMock, new FOSSBilling\Extension\Contract\Server\Account()];
     $serviceMock->shouldReceive('_getAM')->atLeast()->once()->andReturn($AMresultArray);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
@@ -691,15 +691,15 @@ test('sync', function (): void {
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
 
-    $accountObj = new Server_Account();
+    $accountObj = new FOSSBilling\Extension\Contract\Server\Account();
     $accountObj->setUsername('testUser1');
     $accountObj->setIp('1.1.1.1');
 
-    $accountObj2 = new Server_Account();
+    $accountObj2 = new FOSSBilling\Extension\Contract\Server\Account();
     $accountObj2->setUsername('testUser2');
     $accountObj2->setIp('2.2.2.2');
 
-    $serverManagerMock = Mockery::mock('\Server_Manager_Custom');
+    $serverManagerMock = Mockery::mock('\FOSSBilling\Extension\Manager\Custom\Custom');
     $serverManagerMock->shouldReceive('synchronizeAccount')->atLeast()->once()->andReturn($accountObj2);
 
     $AMresultArray = [$serverManagerMock, $accountObj];
@@ -747,7 +747,7 @@ test('to api array', function (): void {
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getServiceOrder')->atLeast()->once();
 
-    $serverManagerCustomMock = Mockery::mock('\Server_Manager_Custom')->shouldIgnoreMissing();
+    $serverManagerCustomMock = Mockery::mock('\FOSSBilling\Extension\Manager\Custom\Custom')->shouldIgnoreMissing();
 
     $di = container();
     $di['em'] = $emMock;
@@ -784,12 +784,14 @@ test('update', function (): void {
 
 test('get server managers', function (): void {
     $service = new Service();
+    $service->setDi(container());
     $result = $service->getServerManagers();
     expect($result)->toBeArray();
 });
 
 test('get server manager config', function (): void {
     $service = new Service();
+    $service->setDi(container());
     $manager = 'Custom';
 
     $expected = [
@@ -937,14 +939,14 @@ test('get server manager', function (): void {
     $hostingServerModel = new ServiceHostingServer();
     $hostingServerModel->setManager('Custom');
 
-    $serverManagerCustom = Mockery::mock('\Server_Manager_Custom')->shouldIgnoreMissing();
+    $serverManagerCustom = Mockery::mock('\FOSSBilling\Extension\Manager\Custom\Custom')->shouldIgnoreMissing();
 
     $di = container();
     $di['server_manager'] = $di->protect(fn ($manager, $config) => $serverManagerCustom);
     $service->setDi($di);
 
     $result = $service->getServerManager($hostingServerModel);
-    expect($result)->toBeInstanceOf('\Server_Manager_Custom');
+    expect($result)->toBeInstanceOf('\FOSSBilling\Extension\Manager\Custom\Custom');
 });
 
 test('get server manager manager not defined', function (): void {
@@ -969,7 +971,7 @@ test('get server manager server manager invalid', function (): void {
 });
 
 test('test connection', function (): void {
-    $serverManagerMock = Mockery::mock('\Server_Manager_Custom');
+    $serverManagerMock = Mockery::mock('\FOSSBilling\Extension\Manager\Custom\Custom');
     $serverManagerMock->shouldReceive('testConnection')->atLeast()->once()->andReturn(true);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -1138,7 +1140,7 @@ test('get server package', function (): void {
 
     $service->setDi($di);
     $result = $service->getServerPackage($model);
-    expect($result)->toBeInstanceOf('\Server_Package');
+    expect($result)->toBeInstanceOf('\FOSSBilling\Extension\Contract\Server\Package');
 });
 
 test('get server manager with log', function (): void {
@@ -1148,7 +1150,7 @@ test('get server manager with log', function (): void {
     $clientOrderModel = new Model_ClientOrder();
     $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
 
-    $serverManagerMock = Mockery::mock('\Server_Manager_Custom')->shouldIgnoreMissing();
+    $serverManagerMock = Mockery::mock('\FOSSBilling\Extension\Manager\Custom\Custom')->shouldIgnoreMissing();
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('getServerManager')->atLeast()->once()->andReturn($serverManagerMock);
 
@@ -1160,14 +1162,14 @@ test('get server manager with log', function (): void {
 
     $serviceMock->setDi($di);
     $result = $serviceMock->getServerManagerWithLog($hostingServerModel, $clientOrderModel);
-    expect($result)->toBeInstanceOf('\Server_Manager_Custom');
+    expect($result)->toBeInstanceOf('\FOSSBilling\Extension\Manager\Custom\Custom');
 });
 
 test('get manager urls', function (): void {
     $hostingServerModel = new ServiceHostingServer();
     $hostingServerModel->setManager('Custom');
 
-    $serverManagerMock = Mockery::mock('\Server_Manager_Custom');
+    $serverManagerMock = Mockery::mock('\FOSSBilling\Extension\Manager\Custom\Custom');
     $serverManagerMock->shouldReceive('getLoginUrl')->atLeast()->once()->andReturn('/login');
     $serverManagerMock->shouldReceive('getResellerLoginUrl')->atLeast()->once()->andReturn('/admin/login');
 

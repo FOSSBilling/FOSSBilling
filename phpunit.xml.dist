@@ -12,13 +12,16 @@
     testdoxSummary="true"
     displayDetailsOnTestsThatTriggerDeprecations="false"
     displayDetailsOnTestsThatTriggerWarnings="false"
-    defaultTestSuite="Unit,Modules">
+    defaultTestSuite="Unit,Modules,Extensions">
   <testsuites>
     <testsuite name="Unit">
       <directory>tests/Unit</directory>
     </testsuite>
     <testsuite name="Modules">
       <directory>src/modules/*/tests/Unit</directory>
+    </testsuite>
+    <testsuite name="Extensions">
+      <directory>src/extensions/*/*/tests/Unit</directory>
     </testsuite>
     <testsuite name="E2E">
       <directory>tests/E2E</directory>

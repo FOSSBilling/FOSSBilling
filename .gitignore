@@ -12,6 +12,9 @@
 !/src/data/cache/.gitkeep
 /src/public/assets
 /src/vendor/*
+/src/extensions/*/*/vendor/*
+/src/extensions/*/*/composer-effective.json
+/src/extensions/*/*/composer-effective.lock
 build
 
 # Needed for some workflows

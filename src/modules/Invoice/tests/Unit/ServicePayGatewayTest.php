@@ -18,6 +18,18 @@ use Doctrine\ORM\EntityManagerInterface;
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
 
+/**
+ * A stand-in for a gateway still on the legacy path (PayPalEmail, Stripe):
+ * it does not implement Gateway, so ServicePayGateway::getPaymentAdapter()
+ * must smuggle the return/cancel/notify URLs into its settings array.
+ */
+class ServicePayGatewayTestLegacyAdapter
+{
+    public function __construct(public array $config)
+    {
+    }
+}
+
 function payGatewayService(?PayGatewayRepository $repo = null, ?EntityManagerInterface $em = null): ServicePayGateway
 {
     $service = new ServicePayGateway();
@@ -130,9 +142,6 @@ test('converts to api array', function (): void {
     ]);
 
     $serviceMock = Mockery::mock(ServicePayGateway::class)->makePartial();
-    $serviceMock->shouldReceive('getAdapterConfig')
-        ->atLeast()->once()
-        ->andReturn([]);
     $serviceMock->shouldReceive('getAcceptedCurrencies')->andReturn([]);
     $serviceMock->shouldReceive('getFormElements')->andReturn([]);
     $serviceMock->shouldReceive('getDescription')->andReturn(null);
@@ -149,8 +158,11 @@ test('converts to api array', function (): void {
     expect($result['allow_recurrent'])->toBeFalse();
     expect($result['enabled'])->toBeTrue();
     expect($result['test_mode'])->toBeFalse();
-    expect($result['supports_one_time_payments'])->toBeFalse();
-    expect($result['supports_subscriptions'])->toBeFalse();
+    // Implementing Gateway is itself the claim of one-time-payment support,
+    // so this is always true now. The real Custom gateway implements
+    // SupportsSubscriptions, so this is true too.
+    expect($result['supports_one_time_payments'])->toBeTrue();
+    expect($result['supports_subscriptions'])->toBeTrue();
     expect($result['callback'])->toBe(SYSTEM_URL . 'ipn.php?gateway_id=1');
 });
 
@@ -259,7 +271,7 @@ test('checks if can perform single payment', function (): void {
     expect($service->canPerformSinglePayment($payGateway))->toBeFalse();
 });
 
-test('gets payment adapter', function (): void {
+test('gets payment adapter for a Gateway-typed adapter without smuggling URLs into its settings', function (): void {
     $payGateway = createEntity(PayGateway::class, [
         'id' => 1,
         'gateway' => 'Custom',
@@ -268,21 +280,20 @@ test('gets payment adapter', function (): void {
     ]);
     $invoiceModel = new Model_Invoice();
     $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
-    $expected = 'Payment_Adapter_Custom';
+    $expected = 'FOSSBilling\\Extension\\Gateway\\Custom\\Custom';
 
     $serviceMock = Mockery::mock(ServicePayGateway::class)->makePartial();
     $serviceMock->shouldReceive('getAdapterClassName')
         ->atLeast()->once()
         ->andReturn($expected);
 
+    // Custom implements Gateway, so it receives merchant settings only —
+    // no return/cancel/notify URLs, hence no calls into url/tools.
     $urlMock = Mockery::mock('\Box_Url');
-    $urlMock->shouldReceive('link')
-        ->atLeast()->once();
+    $urlMock->shouldNotReceive('link');
 
     $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('url')
-        ->atLeast()->once()
-        ->andReturn('http://example.com/');
+    $toolsMock->shouldNotReceive('url');
 
     $service = payGatewayService();
     $service->getDi()['url'] = $urlMock;
@@ -294,6 +305,45 @@ test('gets payment adapter', function (): void {
     ];
     $result = $serviceMock->getPaymentAdapter($payGateway, $invoiceModel, $optional);
     expect($result)->toBeInstanceOf($expected);
+});
+
+test('gets payment adapter for a legacy adapter, smuggling return/cancel/notify URLs into its settings', function (): void {
+    $payGateway = createEntity(PayGateway::class, [
+        'id' => 1,
+        'gateway' => 'Legacy',
+        'config' => null,
+        'testMode' => false,
+    ]);
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceModel->hash = 'hashString';
+
+    $serviceMock = Mockery::mock(ServicePayGateway::class)->makePartial();
+    $serviceMock->shouldReceive('getAdapterClassName')
+        ->atLeast()->once()
+        ->andReturn(ServicePayGatewayTestLegacyAdapter::class);
+
+    $urlMock = Mockery::mock('\Box_Url');
+    $urlMock->shouldReceive('link')
+        ->atLeast()->once()
+        ->andReturn('http://example.com/invoice/hashString');
+
+    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
+    $toolsMock->shouldReceive('url')
+        ->atLeast()->once()
+        ->andReturn('http://example.com/');
+
+    $service = payGatewayService();
+    $service->getDi()['url'] = $urlMock;
+    $service->getDi()['tools'] = $toolsMock;
+    $serviceMock->setDi($service->getDi());
+
+    $result = $serviceMock->getPaymentAdapter($payGateway, $invoiceModel);
+    expect($result)->toBeInstanceOf(ServicePayGatewayTestLegacyAdapter::class)
+        ->and($result->config['return_url'])->not->toBeEmpty()
+        ->and($result->config['cancel_url'])->not->toBeEmpty()
+        ->and($result->config['notify_url'])->not->toBeEmpty()
+        ->and($result->config['redirect_url'])->not->toBeEmpty();
 });
 
 test('throws exception when payment gateway adapter class is missing', function (): void {
@@ -311,14 +361,13 @@ test('throws exception when payment gateway adapter class is missing', function 
         ->atLeast()->once()
         ->andReturn('');
 
+    // The class doesn't exist, so getPaymentAdapter() throws before it
+    // would ever need to build return/cancel/notify URLs.
     $urlMock = Mockery::mock('\Box_Url');
-    $urlMock->shouldReceive('link')
-        ->atLeast()->once();
+    $urlMock->shouldNotReceive('link');
 
     $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('url')
-        ->atLeast()->once()
-        ->andReturn('http://example.com/');
+    $toolsMock->shouldNotReceive('url');
 
     $service = payGatewayService();
     $service->getDi()['url'] = $urlMock;
@@ -331,7 +380,7 @@ test('throws exception when payment gateway adapter class is missing', function 
 
 test('gets adapter config', function (): void {
     $payGateway = createEntity(PayGateway::class, ['gateway' => 'Custom']);
-    $expected = '\Payment_Adapter_Custom';
+    $expected = 'FOSSBilling\\Extension\\Gateway\\Custom\\Custom';
 
     $filesystemMock = Mockery::mock(Symfony\Component\Filesystem\Filesystem::class);
     $filesystemMock->shouldReceive('exists')
@@ -352,7 +401,7 @@ test('gets adapter config', function (): void {
 
 test('throws exception when adapter class does not exist', function (): void {
     $payGateway = createEntity(PayGateway::class, ['gateway' => 'Custom']);
-    $expected = 'Payment_Adapter_ClassDoesNotExists';
+    $expected = 'FOSSBilling\\Extension\\Gateway\\ClassDoesNotExist\\ClassDoesNotExist';
 
     $filesystemMock = Mockery::mock(Symfony\Component\Filesystem\Filesystem::class);
     $filesystemMock->shouldReceive('exists')
@@ -382,7 +431,7 @@ test('throws exception when adapter does not exist', function (): void {
     $serviceMock = Mockery::mock(ServicePayGateway::class, [$filesystemMock])->makePartial();
     $serviceMock->shouldReceive('getAdapterClassName')
         ->atLeast()->once()
-        ->andReturn('Payment_Adapter_Unknown');
+        ->andReturn('FOSSBilling\\Extension\\Gateway\\Unknown\\Unknown');
 
     $service = payGatewayService();
     $serviceMock->setDi($service->getDi());
@@ -396,7 +445,7 @@ test('gets adapter class name', function (): void {
     $service->setDi(payGatewayService()->getDi());
     $payGateway = createEntity(PayGateway::class, ['gateway' => 'Custom']);
 
-    $expected = 'Payment_Adapter_Custom';
+    $expected = 'FOSSBilling\\Extension\\Gateway\\Custom\\Custom';
 
     $result = $service->getAdapterClassName($payGateway);
     expect($result)->toBeString()->toBe($expected);

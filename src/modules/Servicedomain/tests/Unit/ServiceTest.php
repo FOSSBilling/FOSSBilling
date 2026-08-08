@@ -369,7 +369,7 @@ test('activates action', function (string $action, string $registerDomainCalled,
         ->atLeast()->once()
         ->andReturn($domainModel);
 
-    $registrarAdapterMock = Mockery::mock('Registrar_Adapter_Custom');
+    $registrarAdapterMock = Mockery::mock('\FOSSBilling\Extension\Registrar\Custom\Custom');
     $registrarAdapterMock->shouldReceive('registerDomain')
         ->{$registerDomainCalled}();
     $registrarAdapterMock->shouldReceive('transferDomain')
@@ -378,7 +378,7 @@ test('activates action', function (string $action, string $registerDomainCalled,
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('_getD')
         ->atLeast()->once()
-        ->andReturn([new Registrar_Domain(), $registrarAdapterMock]);
+        ->andReturn([new FOSSBilling\Extension\Contract\Registrar\Domain(), $registrarAdapterMock]);
     $serviceMock->shouldReceive('syncWhois')
         ->atLeast()->once()
         ->andReturn(null);
@@ -427,14 +427,14 @@ test('renews action', function (): void {
         ->atLeast()->once()
         ->andReturn($domainModel);
 
-    $registrarAdapterMock = Mockery::mock('Registrar_Adapter_Custom');
+    $registrarAdapterMock = Mockery::mock('\FOSSBilling\Extension\Registrar\Custom\Custom');
     $registrarAdapterMock->shouldReceive('renewDomain')
         ->atLeast()->once();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('_getD')
         ->atLeast()->once()
-        ->andReturn([new Registrar_Domain(), $registrarAdapterMock]);
+        ->andReturn([new FOSSBilling\Extension\Contract\Registrar\Domain(), $registrarAdapterMock]);
     $serviceMock->shouldReceive('syncWhois')
         ->atLeast()->once();
 
@@ -498,14 +498,14 @@ test('cancels action', function (): void {
         ->atLeast()->once()
         ->andReturn($domainModel);
 
-    $registrarAdapterMock = Mockery::mock('Registrar_Adapter_Custom');
+    $registrarAdapterMock = Mockery::mock('\FOSSBilling\Extension\Registrar\Custom\Custom');
     $registrarAdapterMock->shouldReceive('deleteDomain')
         ->atLeast()->once();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('_getD')
         ->atLeast()->once()
-        ->andReturn([new Registrar_Domain(), $registrarAdapterMock]);
+        ->andReturn([new FOSSBilling\Extension\Contract\Registrar\Domain(), $registrarAdapterMock]);
 
     $di = container();
     $di['mod_service'] = $di->protect(fn ($name) => $orderServiceMock);
@@ -566,14 +566,14 @@ test('deletes action', function (): void {
         ->atLeast()->once()
         ->andReturn($domainModel);
 
-    $registrarAdapterMock = Mockery::mock('Registrar_Adapter_Custom');
+    $registrarAdapterMock = Mockery::mock('\FOSSBilling\Extension\Registrar\Custom\Custom');
     $registrarAdapterMock->shouldReceive('deleteDomain')
         ->atLeast()->once();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('_getD')
         ->atLeast()->once()
-        ->andReturn([new Registrar_Domain(), $registrarAdapterMock]);
+        ->andReturn([new FOSSBilling\Extension\Contract\Registrar\Domain(), $registrarAdapterMock]);
 
     $di = container();
     $di['mod_service'] = $di->protect(fn ($name) => $orderServiceMock);
@@ -589,14 +589,14 @@ test('deletes action', function (): void {
 
 test('updates nameservers', function (): void {
     $service = new Service();
-    $registrarAdapterMock = Mockery::mock('Registrar_Adapter_Custom');
+    $registrarAdapterMock = Mockery::mock('\FOSSBilling\Extension\Registrar\Custom\Custom');
     $registrarAdapterMock->shouldReceive('modifyNs')
         ->atLeast()->once();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('_getD')
         ->atLeast()->once()
-        ->andReturn([new Registrar_Domain(), $registrarAdapterMock]);
+        ->andReturn([new FOSSBilling\Extension\Contract\Registrar\Domain(), $registrarAdapterMock]);
 
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -628,14 +628,14 @@ test('throws exception when updating nameservers with missing ns1 or ns2', funct
 
 test('updates contacts', function (): void {
     $service = new Service();
-    $registrarAdapterMock = Mockery::mock('Registrar_Adapter_Custom');
+    $registrarAdapterMock = Mockery::mock('\FOSSBilling\Extension\Registrar\Custom\Custom');
     $registrarAdapterMock->shouldReceive('modifyContact')
         ->atLeast()->once();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('_getD')
         ->atLeast()->once()
-        ->andReturn([new Registrar_Domain(), $registrarAdapterMock]);
+        ->andReturn([new FOSSBilling\Extension\Contract\Registrar\Domain(), $registrarAdapterMock]);
 
     $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')
@@ -672,7 +672,7 @@ test('gets transfer code', function (): void {
     $service = new Service();
     $epp = 'EPPCODE';
 
-    $registrarAdapterMock = Mockery::mock('Registrar_Adapter_Custom');
+    $registrarAdapterMock = Mockery::mock('\FOSSBilling\Extension\Registrar\Custom\Custom');
     $registrarAdapterMock->shouldReceive('getEpp')
         ->atLeast()->once()
         ->andReturn($epp);
@@ -680,7 +680,7 @@ test('gets transfer code', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('_getD')
         ->atLeast()->once()
-        ->andReturn([new Registrar_Domain(), $registrarAdapterMock]);
+        ->andReturn([new FOSSBilling\Extension\Contract\Registrar\Domain(), $registrarAdapterMock]);
 
     $serviceDomainModel = new ServiceDomain();
     $result = $serviceMock->getTransferCode($serviceDomainModel);
@@ -691,14 +691,14 @@ test('gets transfer code', function (): void {
 
 test('locks domain', function (): void {
     $service = new Service();
-    $registrarAdapterMock = Mockery::mock('Registrar_Adapter_Custom');
+    $registrarAdapterMock = Mockery::mock('\FOSSBilling\Extension\Registrar\Custom\Custom');
     $registrarAdapterMock->shouldReceive('lock')
         ->atLeast()->once();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('_getD')
         ->atLeast()->once()
-        ->andReturn([new Registrar_Domain(), $registrarAdapterMock]);
+        ->andReturn([new FOSSBilling\Extension\Contract\Registrar\Domain(), $registrarAdapterMock]);
 
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -712,14 +712,14 @@ test('locks domain', function (): void {
 
 test('unlocks domain', function (): void {
     $service = new Service();
-    $registrarAdapterMock = Mockery::mock('Registrar_Adapter_Custom');
+    $registrarAdapterMock = Mockery::mock('\FOSSBilling\Extension\Registrar\Custom\Custom');
     $registrarAdapterMock->shouldReceive('unlock')
         ->atLeast()->once();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('_getD')
         ->atLeast()->once()
-        ->andReturn([new Registrar_Domain(), $registrarAdapterMock]);
+        ->andReturn([new FOSSBilling\Extension\Contract\Registrar\Domain(), $registrarAdapterMock]);
 
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -733,14 +733,14 @@ test('unlocks domain', function (): void {
 
 test('enables privacy protection', function (): void {
     $service = new Service();
-    $registrarAdapterMock = Mockery::mock('Registrar_Adapter_Custom');
+    $registrarAdapterMock = Mockery::mock('\FOSSBilling\Extension\Registrar\Custom\Custom');
     $registrarAdapterMock->shouldReceive('enablePrivacyProtection')
         ->atLeast()->once();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('_getD')
         ->atLeast()->once()
-        ->andReturn([new Registrar_Domain(), $registrarAdapterMock]);
+        ->andReturn([new FOSSBilling\Extension\Contract\Registrar\Domain(), $registrarAdapterMock]);
 
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -754,14 +754,14 @@ test('enables privacy protection', function (): void {
 
 test('disables privacy protection', function (): void {
     $service = new Service();
-    $registrarAdapterMock = Mockery::mock('Registrar_Adapter_Custom');
+    $registrarAdapterMock = Mockery::mock('\FOSSBilling\Extension\Registrar\Custom\Custom');
     $registrarAdapterMock->shouldReceive('disablePrivacyProtection')
         ->atLeast()->once();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('_getD')
         ->atLeast()->once()
-        ->andReturn([new Registrar_Domain(), $registrarAdapterMock]);
+        ->andReturn([new FOSSBilling\Extension\Contract\Registrar\Domain(), $registrarAdapterMock]);
 
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -775,7 +775,7 @@ test('disables privacy protection', function (): void {
 
 test('checks if domain can be transferred', function (): void {
     $service = new Service();
-    $registrarAdapterMock = Mockery::mock('Registrar_Adapter_Custom');
+    $registrarAdapterMock = Mockery::mock('\FOSSBilling\Extension\Registrar\Custom\Custom');
     $registrarAdapterMock->shouldReceive('isDomaincanBeTransferred')
         ->atLeast()->once()
         ->andReturn(true);
@@ -837,7 +837,7 @@ test('throws registrar not found when checking transfer without registrar', func
 
 test('checks if domain is available', function (): void {
     $service = new Service();
-    $registrarAdapterMock = Mockery::mock('Registrar_Adapter_Custom');
+    $registrarAdapterMock = Mockery::mock('\FOSSBilling\Extension\Registrar\Custom\Custom');
     $registrarAdapterMock->shouldReceive('isDomainAvailable')
         ->atLeast()->once()
         ->andReturn(true);
@@ -930,8 +930,8 @@ test('syncs expiration date', function (): void {
 });
 
 test('syncWhois stores null dates when registrar dates are unavailable', function (): void {
-    $whois = new Registrar_Domain();
-    $contact = new Registrar_Domain_Contact();
+    $whois = new FOSSBilling\Extension\Contract\Registrar\Domain();
+    $contact = new FOSSBilling\Extension\Contract\Registrar\Domain\Contact();
     $contact->setName('Test User')
         ->setEmail('test@example.com')
         ->setCompany('Example')
@@ -945,7 +945,7 @@ test('syncWhois stores null dates when registrar dates are unavailable', functio
         ->setTel('5551234567');
     $whois->setContactRegistrar($contact);
 
-    $adapter = Mockery::mock(Registrar_Adapter_Custom::class);
+    $adapter = Mockery::mock(FOSSBilling\Extension\Registrar\Custom\Custom::class);
     $adapter->shouldReceive('getDomainDetails')
         ->once()
         ->andReturn($whois);
@@ -953,7 +953,7 @@ test('syncWhois stores null dates when registrar dates are unavailable', functio
     $service = Mockery::mock(ServicedomainServiceSyncProbe::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $service->shouldReceive('_getD')
         ->once()
-        ->andReturn([new Registrar_Domain(), $adapter]);
+        ->andReturn([new FOSSBilling\Extension\Contract\Registrar\Domain(), $adapter]);
 
     $model = new ServiceDomain();
 
@@ -1594,6 +1594,7 @@ test('gets registrar configuration', function (): void {
 
 test('gets registrar adapter config', function (): void {
     $service = new Service();
+    $service->setDi(container());
     $model = new TldRegistrar();
     $model->setRegistrar('Custom');
 
@@ -1603,6 +1604,7 @@ test('gets registrar adapter config', function (): void {
 
 test('throws exception when getting registrar adapter config for non-existing registrar', function (): void {
     $service = new Service();
+    $service->setDi(container());
     $model = new TldRegistrar();
     $model->setRegistrar('NonExisting');
 
@@ -1620,7 +1622,7 @@ test('gets registrar adapter', function (): void {
 
     $result = $service->registrarGetRegistrarAdapter($model);
 
-    expect($result)->toBeInstanceOf('Registrar_Adapter_' . $model->getRegistrar());
+    expect($result)->toBeInstanceOf(sprintf('FOSSBilling\\Extension\\Registrar\\%1$s\\%1$s', $model->getRegistrar()));
 });
 
 test('validates required registrar fields even when the adapter constructor does not', function (): void {

@@ -1,0 +1,5 @@
+{
+  "require": {
+    "plesk/api-php-lib": "^1.0.20"
+  }
+}

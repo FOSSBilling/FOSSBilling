@@ -1,0 +1,8 @@
+{
+  "id": "Resellbiz",
+  "type": "registrar",
+  "name": "Resell.biz",
+  "description": "Registers and manages domains through the Resell.biz API.",
+  "version": "1.0.0",
+  "api": 1
+}

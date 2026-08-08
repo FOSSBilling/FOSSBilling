@@ -19,6 +19,39 @@ test('downloadable file migration follows the client balance gateway repair', fu
         ->and($patches[93][1])->toBe('patch93');
 });
 
+test('client balance gateway removal patch follows the extensions directory migration patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 99);
+
+    expect($patches)->toHaveKey(100)
+        ->and($patches[100][1])->toBe('patch100');
+});
+
+test('client balance gateway removal patch deletes the gateway row and its files', function (): void {
+    $statement = Mockery::mock(PDOStatement::class);
+    $statement->expects('execute')
+        ->with(['gateway' => 'ClientBalance'])
+        ->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')
+        ->with('DELETE FROM pay_gateway WHERE gateway = :gateway')
+        ->andReturn($statement);
+
+    $extensionPath = Path::join(PATH_EXTENSIONS, 'gateways', 'ClientBalance');
+
+    $filesystem = Mockery::mock(Filesystem::class);
+    $filesystem->expects('exists')->with($extensionPath)->andReturnTrue();
+    $filesystem->expects('remove')->with($extensionPath);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+    $di['filesystem'] = $filesystem;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch100'))->invoke($patcher);
+});
+
 test('manual currency rate patch follows the currency formatting patch', function (): void {
     $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 93);
 

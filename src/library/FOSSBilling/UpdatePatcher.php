@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace FOSSBilling;
 
 use Box\Mod\Extension\Entity\Extension;
+use FOSSBilling\Extension\ExtensionType;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -508,6 +509,8 @@ class UpdatePatcher implements InjectionAwareInterface
             96 => 'patch96',
             97 => 'patch97',
             98 => 'patch98',
+            99 => 'patch99',
+            100 => 'patch100',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2882,5 +2885,45 @@ class UpdatePatcher implements InjectionAwareInterface
                 $oldGatewayAssetsPath => 'unlink',
             ]);
         }
+    }
+
+    private function patch99(): void
+    {
+        // Payment gateways, domain registrars and server managers moved out of
+        // src/library into src/extensions. An update only overlays new files, so
+        // the originals have to be removed here or the old classes would linger
+        // on the disk alongside the relocated ones.
+        $this->executeFileActions([
+            Path::join(PATH_LIBRARY, 'Payment') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Registrar') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Server') => 'unlink',
+        ]);
+
+        // The same move settled on a single vocabulary for extension types.
+        // Installs that added a gateway or registrar through the extension
+        // directory hold the superseded names against those rows.
+        $renamedTypes = [
+            'payment-gateway' => ExtensionType::Gateway->value,
+            'domain-registrar' => ExtensionType::Registrar->value,
+            'server-manager' => ExtensionType::Manager->value,
+            'pg' => ExtensionType::Gateway->value,
+        ];
+
+        foreach ($renamedTypes as $old => $new) {
+            $this->executeSql('UPDATE `extension` SET `type` = ? WHERE `type` = ?', [$new, $old]);
+        }
+    }
+
+    private function patch100(): void
+    {
+        // Paying from account credit is now a core client API call
+        // (client/invoice/pay_with_credit) rather than a gateway. Installs that
+        // had the ClientBalance gateway installed hold a row for it that no
+        // longer resolves to anything on disk.
+        $this->executeSql('DELETE FROM pay_gateway WHERE gateway = :gateway', ['gateway' => 'ClientBalance']);
+
+        $this->executeFileActions([
+            Path::join(PATH_EXTENSIONS, 'gateways', 'ClientBalance') => 'unlink',
+        ]);
     }
 }

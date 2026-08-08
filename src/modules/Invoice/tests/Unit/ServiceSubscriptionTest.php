@@ -20,6 +20,8 @@ use Box\Mod\Invoice\ServiceSubscription;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManagerInterface;
+use FOSSBilling\Extension\Contract\Payment\CancelsSubscriptions;
+use FOSSBilling\Extension\Contract\Payment\CancelsSubscriptionsAtPeriodEnd;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
@@ -112,7 +114,7 @@ test('cancels a subscription at the gateway when canceled status is saved', func
     $subscriptionModel = createEntity(Subscription::class, ['id' => 5, 'payGatewayId' => 2]);
     $subscriptionModel->setSid('sub_old');
 
-    $adapter = new class {
+    $adapter = new class implements CancelsSubscriptions {
         public ?string $canceledSubscriptionId = null;
 
         public function cancelSubscription(string $subscriptionId): void
@@ -142,6 +144,37 @@ test('cancels a subscription at the gateway when canceled status is saved', func
         ->and($adapter->canceledSubscriptionId)->toBe('sub_new');
 });
 
+test('surfaces an error instead of silently succeeding when the gateway cannot cancel remotely', function (): void {
+    $gatewayModel = createEntity(PayGateway::class, ['id' => 2]);
+
+    $subscriptionModel = createEntity(Subscription::class, ['id' => 5, 'payGatewayId' => 2, 'status' => 'active']);
+    $subscriptionModel->setSid('sub_old');
+
+    // A gateway that takes subscriptions but cannot cancel them remotely —
+    // e.g. Custom or PayPalEmail (see the gateway API design's §3.2 table).
+    $adapter = new class {
+    };
+
+    $payGatewayService = Mockery::mock(ServicePayGateway::class);
+    $payGatewayService->shouldReceive('getPaymentAdapter')
+        ->once()
+        ->with($gatewayModel)
+        ->andReturn($adapter);
+
+    $pgRepo = Mockery::mock(PayGatewayRepository::class);
+    $pgRepo->shouldReceive('find')->once()->with(2)->andReturn($gatewayModel);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+
+    $service = subscriptionService(payGatewayRepo: $pgRepo, em: $em);
+    $service->getDi()['logger'] = new Tests\Helpers\TestLogger();
+    $service->getDi()['mod_service'] = $service->getDi()->protect(fn () => $payGatewayService);
+
+    expect(fn () => $service->update($subscriptionModel, ['status' => 'canceled']))
+        ->toThrow(FOSSBilling\InformationException::class)
+        ->and($subscriptionModel->status)->toBe('active');
+});
+
 test('does not call the gateway when canceling a subscription without a sid', function (): void {
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->shouldReceive('flush')->once();
@@ -165,7 +198,7 @@ test('schedules a subscription cancellation at the gateway', function (): void {
     $subscription = createEntity(Subscription::class, ['id' => 3, 'payGatewayId' => 2]);
     $subscription->setSid('sub_123');
 
-    $adapter = new class {
+    $adapter = new class implements CancelsSubscriptionsAtPeriodEnd {
         public ?string $scheduledSubscriptionId = null;
 
         public function cancelSubscriptionAtPeriodEnd(string $subscriptionId): void
@@ -293,7 +326,7 @@ test('reports end-of-period cancellation support for active gateway subscription
     $subscription->setSid('sub_123');
 
     $gateway = createEntity(PayGateway::class, ['id' => 2]);
-    $adapter = new class {
+    $adapter = new class implements CancelsSubscriptionsAtPeriodEnd {
         public function cancelSubscriptionAtPeriodEnd(string $subscriptionId): void
         {
         }

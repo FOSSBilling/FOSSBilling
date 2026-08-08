@@ -139,4 +139,25 @@ class Client extends \FOSSBilling\Api\AbstractApi
 
         return $service->getTaxRateForClient($this->getIdentity());
     }
+
+    /**
+     * Pay an invoice using the signed-in client's account balance.
+     *
+     * @return bool
+     *
+     * @throws \FOSSBilling\Exception
+     */
+    #[RequiredParams(['hash' => 'Invoice hash was not passed'])]
+    public function pay_with_credit($data)
+    {
+        $identity = $this->getIdentity();
+        $model = $this->getDi()['db']->findOne('Invoice', 'hash = :hash AND client_id = :client_id', ['hash' => $data['hash'], 'client_id' => $identity->id]);
+        if (!$model) {
+            throw new \FOSSBilling\InformationException('Invoice was not found');
+        }
+
+        $this->getService()->payInvoiceFromClientBalance($model);
+
+        return true;
+    }
 }

@@ -1,0 +1,5 @@
+{
+  "require": {
+    "io-developer/php-whois": "^4.1.10"
+  }
+}

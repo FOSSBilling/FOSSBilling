@@ -19,9 +19,6 @@ class ExtensionManager implements InjectionAwareInterface
 
     final public const string TYPE_MOD = 'mod';
     final public const string TYPE_THEME = 'theme';
-    final public const string TYPE_PG = 'payment-gateway';
-    final public const string TYPE_SM = 'server-manager';
-    final public const string TYPE_DR = 'domain-registrar';
     final public const string TYPE_HOOK = 'hook';
     final public const string TYPE_TRANSLATION = 'translation';
 

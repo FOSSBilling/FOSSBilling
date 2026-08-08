@@ -29,6 +29,9 @@ function container(): Container
     $di['validator'] = fn (): \FOSSBilling\Validate => new \FOSSBilling\Validate();
     $di['tools'] = fn (): \FOSSBilling\Tools => new \FOSSBilling\Tools();
     $di['filesystem'] = fn (): \Symfony\Component\Filesystem\Filesystem => new \Symfony\Component\Filesystem\Filesystem();
+    $di['extension_locator'] = fn (): \FOSSBilling\Extension\ExtensionLocator => new \FOSSBilling\Extension\ExtensionLocator($di['filesystem']);
+    $di['extension_dependencies'] = fn (): \FOSSBilling\Extension\DependencyInstaller => new \FOSSBilling\Extension\DependencyInstaller($di['filesystem']);
+    $di['extension_logger'] = fn (): \Psr\Log\LoggerInterface => new \Psr\Log\NullLogger();
     $di['logger'] = fn (): \Psr\Log\LoggerInterface => new class extends AbstractLogger {
         public array $calls = [];
 
