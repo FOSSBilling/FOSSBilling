@@ -321,7 +321,7 @@ class Service implements InjectionAwareInterface
             if (!$order instanceof Order) {
                 throw new \FOSSBilling\Exception('Order not found');
             }
-            $identity = $di['loggedin_admin'];
+            $identity = $di['loggedin_admin'] ?? null;
             $service = $orderService->getOrderServiceData($order, $identity);
             $orderArr = $orderService->toApiArray($order, true, $identity);
 
@@ -350,7 +350,7 @@ class Service implements InjectionAwareInterface
             if (!$order instanceof Order) {
                 throw new \FOSSBilling\Exception('Order not found');
             }
-            $identity = $di['loggedin_admin'];
+            $identity = $di['loggedin_admin'] ?? null;
             $s = $service->getOrderServiceData($order, $identity);
             $orderArr = $service->toApiArray($order, true, $identity);
 
@@ -379,7 +379,7 @@ class Service implements InjectionAwareInterface
             if (!$order instanceof Order) {
                 throw new \FOSSBilling\Exception('Order not found');
             }
-            $identity = $di['loggedin_admin'];
+            $identity = $di['loggedin_admin'] ?? null;
             $s = $service->getOrderServiceData($order, $identity);
             $orderArr = $service->toApiArray($order, true, $identity);
 
@@ -408,7 +408,7 @@ class Service implements InjectionAwareInterface
             if (!$order instanceof Order) {
                 throw new \FOSSBilling\Exception('Order not found');
             }
-            $identity = $di['loggedin_admin'];
+            $identity = $di['loggedin_admin'] ?? null;
             $orderArr = $service->toApiArray($order, true, $identity);
 
             $email = [];
@@ -435,7 +435,7 @@ class Service implements InjectionAwareInterface
             if (!$order instanceof Order) {
                 throw new \FOSSBilling\Exception('Order not found');
             }
-            $identity = $di['loggedin_admin'];
+            $identity = $di['loggedin_admin'] ?? null;
             $s = $service->getOrderServiceData($order, $identity);
             $orderArr = $service->toApiArray($order, true, $identity);
 

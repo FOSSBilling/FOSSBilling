@@ -167,7 +167,15 @@
             </div>
             <div class="card-body border-top">
                 <h4 class="card-title mb-2">{{ 'Add Funds Settings'|trans }}</h4>
-                <p class="text-secondary mb-3">{{ 'Set optional minimum and maximum invoice amounts for client add-funds requests.'|trans }}</p>
+                <p class="text-secondary mb-3">{{ 'Control whether clients can request to add funds to their account balance, and set optional minimum and maximum invoice amounts for those requests.'|trans }}</p>
+                <div class="mb-3">
+                    <input type="hidden" name="funds_enabled" value="0">
+                    <label class="form-check form-switch form-switch-2">
+                        <input class="form-check-input" type="checkbox" name="funds_enabled" value="1" {% if params.funds_enabled|default('1') != '0' %}checked{% endif %}>
+                        <span class="form-check-label">{{ 'Enable Add Funds Feature'|trans }}</span>
+                    </label>
+                    <small class="form-hint">{{ 'When disabled, clients cannot add funds and the Wallet link is hidden from client menus.'|trans }}</small>
+                </div>
                 <div class="row g-3">
                     <div class="col-lg-6">
                         <label class="form-label" for="funds_min_amount">{{ 'Minimum Amount for Add Funds Invoice'|trans }}</label>

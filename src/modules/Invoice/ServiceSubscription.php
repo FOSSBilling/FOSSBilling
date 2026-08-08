@@ -40,7 +40,7 @@ class ServiceSubscription implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function create(\Model_Client $client, PayGateway $pg, array $data)
+    public function create(\Model_Client $client, PayGateway $pg, array $data): int
     {
         $model = new Subscription();
         $model->setClientId($client->id ? (int) $client->id : null);

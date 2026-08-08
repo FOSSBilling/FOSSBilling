@@ -96,6 +96,12 @@
                                     <use href="#eye" />
                                 </svg>
                             </a>
+                            <a class="btn btn-icon" href="{{ 'product/promo_duplicate'|api_url(query: { 'id': promo.id }) }}" title="{{ 'Duplicate'|trans }}"
+                                {{ fb_api_link({redirect: 'product/promos'|url}) }}>
+                                <svg class="icon">
+                                    <use href="#copy" />
+                                </svg>
+                            </a>
                             {% if promo.can_be_deleted %}
                                 <a class="btn btn-icon" href="{{ 'product/promo_delete'|api_url(query: { 'id': promo.id }) }}"
                                     {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'product/promos'|url}) }}>

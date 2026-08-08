@@ -54,7 +54,7 @@
     </li>
 {% endif %}
 
-{% if settings.side_menu_payments %}
+{% if settings.side_menu_payments and guest.invoice_funds_enabled %}
     <li class="nav-item">
         <a class="nav-link d-flex align-items-center gap-2{% if current_active_menu == 'payments' %} active{% endif %}" href="{{ 'client/balance'|url }}"{% if current_active_menu == 'payments' %} aria-current="page"{% endif %}>
             <svg class="icon"><use href="#wallet" /></svg>

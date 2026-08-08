@@ -126,7 +126,97 @@
     </div>
 </div>
 
-<div class="card">
+<div class="card mt-4" id="promo-redemptions">
+    <div class="card-header">
+        <div>
+            <h3 class="card-title">{{ 'Redemption History'|trans }}</h3>
+            <p class="card-subtitle">{{ 'The individual clients, orders, and invoices where this promotion has been applied.'|trans }}</p>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        {% set redemption_pagination_url = "product/promo/#{promo.id}" %}
+        {% set redemptions = admin.product_promo_redemption_get_list({ 'per_page': 10, 'page': request.page }|merge(request)|merge({ 'promo_id': promo.id })) %}
+        <div class="table-responsive">
+            <table class="table card-table table-vcenter table-striped text-nowrap">
+                <thead>
+                    <tr>
+                        <th>{{ 'Client'|trans }}</th>
+                        <th>{{ 'Order'|trans }}</th>
+                        <th>{{ 'Invoice'|trans }}</th>
+                        <th>{{ 'Phase'|trans }}</th>
+                        <th>{{ 'Status'|trans }}</th>
+                        <th>{{ 'Discount'|trans }}</th>
+                        <th>{{ 'Redeemed At'|trans }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for redemption in redemptions.list %}
+                    <tr>
+                        <td>
+                            {% if redemption.client %}
+                                <a href='{{ "client/manage/#{redemption.client.id}"|url }}'>{{ redemption.client.first_name }} {{ redemption.client.last_name }}</a>
+                                <div class="text-secondary small">{{ redemption.client.email }}</div>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if redemption.order %}
+                                <a href='{{ "order/manage/#{redemption.order.id}"|url }}'>{{ redemption.order.title|default("Order ##{redemption.order.id}") }}</a>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if redemption.invoice %}
+                                <a href='{{ "invoice/manage/#{redemption.invoice.id}"|url }}'>{{ redemption.invoice.serie_nr|default("##{redemption.invoice.id}") }}</a>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if redemption.phase == 'renewal' %}
+                                <span class="badge text-bg-info">{{ 'Renewal'|trans }}</span>
+                            {% else %}
+                                <span class="badge text-bg-primary">{{ 'Checkout'|trans }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if redemption.status == 'committed' %}
+                                <span class="badge text-bg-success">{{ 'Committed'|trans }}</span>
+                            {% elseif redemption.status == 'reserved' %}
+                                <span class="badge text-bg-warning">{{ 'Reserved'|trans }}</span>
+                            {% else %}
+                                <span class="badge text-bg-secondary">{{ 'Released'|trans }}</span>
+                                {% if redemption.release_reason %}
+                                    <div class="text-secondary small">{{ redemption.release_reason }}</div>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if redemption.discount_amount is not null %}
+                                {{ redemption.discount_amount|format_currency(redemption.currency) }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>{{ redemption.created_at|format_date }}</td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td class="text-muted" colspan="7">{{ 'No clients have redeemed this promotion yet.'|trans }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer d-flex align-items-center">
+            {{ include('partial_pagination.html.twig', { 'list': redemptions, 'url': redemption_pagination_url, 'hash': '#promo-redemptions', 'split_footer_controls': true }) }}
+        </div>
+    </div>
+</div>
+
+<div class="card mt-4">
     <form method="post" action="{{ 'product/promo_update'|api_url }}" {{ fb_api_form({redirect: 'product/promos'|url}) }}>
         {% embed 'partial_admin_form_card.html.twig' with {
             title: 'Manage Promotion'|trans,

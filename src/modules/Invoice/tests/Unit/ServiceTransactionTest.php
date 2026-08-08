@@ -91,7 +91,7 @@ test('throws exception when creating transaction with missing invoice id', funct
         'skip_validation' => false,
     ];
 
-    expect(fn () => $service->create($data))
+    expect(fn (): ?int => $service->create($data))
         ->toThrow(FOSSBilling\Exception::class, 'Transaction invoice ID is missing');
 });
 
@@ -108,7 +108,7 @@ test('throws exception when creating transaction with missing gateway id', funct
         'invoice_id' => 2,
     ];
 
-    expect(fn () => $service->create($data))
+    expect(fn (): ?int => $service->create($data))
         ->toThrow(FOSSBilling\Exception::class, 'Payment gateway ID is missing');
 });
 
@@ -530,13 +530,11 @@ test('debitTransaction records a client balance credit', function (): void {
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
     $em->shouldReceive('persist')->once()->with(
-        Mockery::on(function (ClientBalance $balance): bool {
-            return $balance->getClientId() === 20
-                && $balance->getType() === 'transaction'
-                && $balance->getRelId() === '7'
-                && $balance->getDescription() === 'Invoice #5 payment received from transaction #7'
-                && $balance->getAmount() === '25.00';
-        })
+        Mockery::on(fn (ClientBalance $balance): bool => $balance->getClientId() === 20
+            && $balance->getType() === 'transaction'
+            && $balance->getRelId() === '7'
+            && $balance->getDescription() === 'Invoice #5 payment received from transaction #7'
+            && $balance->getAmount() === '25.00')
     );
     $em->shouldReceive('flush')->once();
 

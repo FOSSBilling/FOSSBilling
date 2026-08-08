@@ -237,7 +237,18 @@
                     const yearLabel = "{{ ' Year @ '|trans }}";
                     const yearsLabel = "{{ ' Years @ '|trans }}";
 
-                    for (let i = 1; i <= 5; i++) {
+                    // Use the TLD's explicit period list when configured; otherwise fall
+                    // back to a range starting at its minimum registration period.
+                    let allowedYears = Array.isArray(result.periods) && result.periods.length ? result.periods : null;
+                    if (!allowedYears) {
+                        const minYears = Number(result.min_years) > 0 ? Number(result.min_years) : 1;
+                        allowedYears = [];
+                        for (let i = minYears; i < minYears + 5; i++) {
+                            allowedYears.push(i);
+                        }
+                    }
+
+                    allowedYears.forEach(function (i) {
                         const totalPrice = (i === 1) ? regPrice : regPrice + (i - 1) * renewPrice;
                         const priceFormatted = formatCurrency(
                             totalPrice,
@@ -249,7 +260,7 @@
                         yearsSelect.append(
                             new Option(i + (i === 1 ? yearLabel : yearsLabel) + priceFormatted, i)
                         );
-                    }
+                    });
 
                     configNext.style.display = '';
                     configNext.disabled = false;
