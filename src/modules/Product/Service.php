@@ -376,7 +376,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @return array<mixed, array<'active'|'allow_register'|'allow_transfer'|'min_years'|'price_registration'|'price_renew'|'price_transfer'|'registrar'|'tld', mixed>>
+     * @return array<mixed, array<'active'|'allow_register'|'allow_transfer'|'min_years'|'periods'|'price_registration'|'price_renew'|'price_transfer'|'registrar'|'tld', mixed>>
      */
     public function getDomainPricingArray(): array
     {
@@ -1189,6 +1189,35 @@ class Service implements InjectionAwareInterface
         $promoId = (int) $promo->getId();
 
         $this->di['logger']->info('Created new promotion code %s', $promo->getCode());
+
+        return $promoId;
+    }
+
+    public function duplicatePromo(Promo $model): int
+    {
+        $promo = new Promo();
+        $promo
+            ->setCode($this->generateUniquePromoCode($model->getCode()))
+            ->setDescription($model->getDescription())
+            ->setType($model->getType())
+            ->setValue($model->getValue())
+            ->setActive(false)
+            ->setFreeSetup($model->isFreeSetup())
+            ->setOncePerClient($model->isOncePerClient())
+            ->setRecurring($model->isRecurring())
+            ->setUsed(0)
+            ->setMaxUses($model->getMaxUses())
+            ->setProducts($model->getProducts())
+            ->setPeriods($model->getPeriods())
+            ->setClientGroups($model->getClientGroups())
+            ->setStartAt($model->getStartAt() !== null ? clone $model->getStartAt() : null)
+            ->setEndAt($model->getEndAt() !== null ? clone $model->getEndAt() : null);
+
+        $this->di['em']->persist($promo);
+        $this->di['em']->flush();
+        $promoId = (int) $promo->getId();
+
+        $this->di['logger']->info('Duplicated promotion code %s into new promotion code %s', $model->getCode(), $promo->getCode());
 
         return $promoId;
     }
@@ -2431,6 +2460,20 @@ class Service implements InjectionAwareInterface
     private function decodePromoSelection(?string $selection): array
     {
         return json_decode($selection ?? '', true) ?? [];
+    }
+
+    private function generateUniquePromoCode(?string $code): string
+    {
+        $baseCode = trim((string) $code) !== '' ? (string) $code : 'PROMO';
+
+        $attempt = 1;
+        do {
+            $suffix = $attempt === 1 ? '-COPY' : sprintf('-COPY-%d', $attempt);
+            $candidate = substr($baseCode, 0, 100 - strlen($suffix)) . $suffix;
+            ++$attempt;
+        } while ($this->getPromoRepository()->findOneBy(['code' => $candidate]) instanceof Promo);
+
+        return $candidate;
     }
 
     private function normalizePromoDateTime(mixed $value): ?string

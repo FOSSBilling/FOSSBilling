@@ -178,7 +178,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             if ($years === false || $years < 1) {
                 throw new \FOSSBilling\InformationException('Domain registration period must be a positive integer');
             }
-            if ($years < $tld->getMinYears()) {
+
+            $allowedPeriods = $tld->getPeriodsArray();
+            if ($allowedPeriods !== null) {
+                if (!in_array($years, $allowedPeriods, true)) {
+                    throw new \FOSSBilling\Exception(':tld can only be registered for :periods years', [':tld' => $tld->getTld(), ':periods' => implode(', ', $allowedPeriods)]);
+                }
+            } elseif ($years < ($tld->getMinYears() ?? 1)) {
                 throw new \FOSSBilling\Exception(':tld can be registered for at least :years years', [':tld' => $tld->getTld(), ':years' => $tld->getMinYears()]);
             }
 
@@ -784,6 +790,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->setPriceRenew((string) $data['price_renew']);
         $model->setPriceTransfer((string) $data['price_transfer']);
         $model->setMinYears(isset($data['min_years']) ? (int) $data['min_years'] : 1);
+        $model->setPeriods(array_key_exists('periods', $data) ? $data['periods'] : null);
         $model->setAllowRegister(isset($data['allow_register']) ? (bool) $data['allow_register'] : true);
         $model->setAllowTransfer(isset($data['allow_transfer']) ? (bool) $data['allow_transfer'] : true);
         $model->setActive(isset($data['active']) ? (bool) $data['active'] : true);
@@ -811,6 +818,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->setPriceRenew(isset($data['price_renew']) ? (string) $data['price_renew'] : $model->getPriceRenew());
         $model->setPriceTransfer(isset($data['price_transfer']) ? (string) $data['price_transfer'] : $model->getPriceTransfer());
         $model->setMinYears(isset($data['min_years']) ? (int) $data['min_years'] : $model->getMinYears());
+        $model->setPeriods(array_key_exists('periods', $data) ? $data['periods'] : $model->getPeriods());
         $model->setAllowRegister(array_key_exists('allow_register', $data) ? (bool) $data['allow_register'] : $model->isAllowRegister());
         $model->setAllowTransfer(array_key_exists('allow_transfer', $data) ? (bool) $data['allow_transfer'] : $model->isAllowTransfer());
         $model->setActive(array_key_exists('active', $data) ? (bool) $data['active'] : $model->isActive());
@@ -848,7 +856,42 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $data['min_years'] = $minimumYears;
         }
 
+        if (array_key_exists('periods', $data)) {
+            $data['periods'] = $this->normalizePeriods($data['periods']);
+        }
+
         return $data;
+    }
+
+    /**
+     * Normalize a raw comma-separated "periods" string into a sorted, deduplicated
+     * comma-separated string of positive integers, or null when empty.
+     */
+    private function normalizePeriods(?string $periods): ?string
+    {
+        if ($periods === null || trim($periods) === '') {
+            return null;
+        }
+
+        $years = array_filter(array_map('trim', explode(',', $periods)), fn ($year): bool => $year !== '');
+
+        $normalized = [];
+        foreach ($years as $year) {
+            $value = filter_var($year, FILTER_VALIDATE_INT);
+            if ($value === false || $value < 1) {
+                throw new \FOSSBilling\InformationException('Registration periods must be a comma-separated list of positive integers');
+            }
+            $normalized[] = $value;
+        }
+
+        if ($normalized === []) {
+            return null;
+        }
+
+        $normalized = array_unique($normalized);
+        sort($normalized);
+
+        return implode(',', $normalized);
     }
 
     public function tldGetSearchQuery($data): QueryBuilder
@@ -925,6 +968,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'allow_register' => $model->isAllowRegister(),
             'allow_transfer' => $model->isAllowTransfer(),
             'min_years' => $model->getMinYears(),
+            'periods' => $model->getPeriodsArray(),
         ];
 
         if ($identity instanceof \Model_Admin) {
