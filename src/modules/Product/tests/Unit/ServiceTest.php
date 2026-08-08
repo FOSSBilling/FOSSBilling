@@ -1041,6 +1041,121 @@ test('create promo', function (): void {
     expect($result)->toEqual(1);
 });
 
+test('duplicate promo', function (): void {
+    $service = new Service();
+
+    $promoEntity = productTestCreatePromoEntity(1)
+        ->setCode('PROMO')
+        ->setDescription('desc')
+        ->setType('percentage')
+        ->setValue(50)
+        ->setActive(true)
+        ->setFreeSetup(true)
+        ->setOncePerClient(true)
+        ->setRecurring(true)
+        ->setUsed(5)
+        ->setMaxUses(10)
+        ->setProducts('[1]')
+        ->setPeriods('["1M"]')
+        ->setClientGroups('[2]')
+        ->setStartAt(new DateTime('2012-01-01'))
+        ->setEndAt(new DateTime('2012-01-02'));
+
+    $promoRepo = Mockery::mock(PromoRepository::class);
+    $promoRepo->shouldReceive('findOneBy')->once()->with(['code' => 'PROMO-COPY'])->andReturn(null);
+
+    $emMock = new class($promoRepo) {
+        public ?Promo $captured = null;
+
+        public function __construct(private object $promoRepo)
+        {
+        }
+
+        public function getRepository(string $class): object
+        {
+            return $this->promoRepo;
+        }
+
+        public function persist(object $entity): void
+        {
+            $reflection = new ReflectionProperty($entity, 'id');
+            $reflection->setValue($entity, 2);
+            $this->captured = $entity;
+        }
+
+        public function flush(): void
+        {
+        }
+    };
+
+    $di = container();
+    $di['logger'] = new Box_Log();
+    $di['em'] = $emMock;
+
+    $service->setDi($di);
+    $result = $service->duplicatePromo($promoEntity);
+
+    expect($result)->toBeInt();
+    expect($result)->toEqual(2);
+    expect($emMock->captured)->not->toBeNull();
+    expect($emMock->captured->getCode())->toBe('PROMO-COPY');
+    expect($emMock->captured->getDescription())->toBe('desc');
+    expect($emMock->captured->isActive())->toBeFalse();
+    expect($emMock->captured->getUsed())->toBe(0);
+    expect($emMock->captured->getMaxUses())->toBe(10);
+    expect($emMock->captured->isFreeSetup())->toBeTrue();
+    expect($emMock->captured->isOncePerClient())->toBeTrue();
+    expect($emMock->captured->isRecurring())->toBeTrue();
+    expect($emMock->captured->getProducts())->toBe('[1]');
+    expect($emMock->captured->getPeriods())->toBe('["1M"]');
+    expect($emMock->captured->getClientGroups())->toBe('[2]');
+});
+
+test('duplicate promo generates alternate code when copy code already exists', function (): void {
+    $service = new Service();
+
+    $promoEntity = productTestCreatePromoEntity(1)->setCode('PROMO');
+    $existingCopy = productTestCreatePromoEntity(2)->setCode('PROMO-COPY');
+
+    $promoRepo = Mockery::mock(PromoRepository::class);
+    $promoRepo->shouldReceive('findOneBy')->once()->with(['code' => 'PROMO-COPY'])->andReturn($existingCopy);
+    $promoRepo->shouldReceive('findOneBy')->once()->with(['code' => 'PROMO-COPY-2'])->andReturn(null);
+
+    $emMock = new class($promoRepo) {
+        public ?Promo $captured = null;
+
+        public function __construct(private object $promoRepo)
+        {
+        }
+
+        public function getRepository(string $class): object
+        {
+            return $this->promoRepo;
+        }
+
+        public function persist(object $entity): void
+        {
+            $reflection = new ReflectionProperty($entity, 'id');
+            $reflection->setValue($entity, 3);
+            $this->captured = $entity;
+        }
+
+        public function flush(): void
+        {
+        }
+    };
+
+    $di = container();
+    $di['logger'] = new Box_Log();
+    $di['em'] = $emMock;
+
+    $service->setDi($di);
+    $result = $service->duplicatePromo($promoEntity);
+
+    expect($result)->toEqual(3);
+    expect($emMock->captured->getCode())->toBe('PROMO-COPY-2');
+});
+
 test('to promo api array', function (): void {
     $service = new Service();
     $model = productTestCreatePromoEntity(1)
