@@ -1716,10 +1716,21 @@ class Service implements InjectionAwareInterface
         ];
     }
 
+    public function isFundsEnabled(): bool
+    {
+        $systemService = $this->di['mod_service']('system');
+
+        return (bool) $systemService->getParamValue('funds_enabled', true);
+    }
+
     public function generateFundsInvoice(\Model_Client $client, $amount)
     {
         if (!$client->currency) {
             throw new InformationException('You must have at least one active order before you can add funds so you cannot proceed at the current time!');
+        }
+
+        if (!$this->isFundsEnabled()) {
+            throw new InformationException('Adding funds to the account balance is currently disabled', null, 980);
         }
 
         $systemService = $this->di['mod_service']('system');
