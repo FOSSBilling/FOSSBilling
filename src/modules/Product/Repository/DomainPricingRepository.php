@@ -20,7 +20,7 @@ class DomainPricingRepository
     }
 
     /**
-     * @return array<mixed, array<'active'|'allow_register'|'allow_transfer'|'min_years'|'price_registration'|'price_renew'|'price_transfer'|'registrar'|'tld', mixed>>
+     * @return array<mixed, array<'active'|'allow_register'|'allow_transfer'|'min_years'|'periods'|'price_registration'|'price_renew'|'price_transfer'|'registrar'|'tld', mixed>>
      */
     public function getActivePricingByTld(): array
     {
@@ -45,6 +45,7 @@ class DomainPricingRepository
                 'allow_register' => $tld['allow_register'],
                 'allow_transfer' => $tld['allow_transfer'],
                 'min_years' => $tld['min_years'],
+                'periods' => $tld['periods'] !== null && $tld['periods'] !== '' ? array_map('intval', explode(',', (string) $tld['periods'])) : null,
                 'registrar' => [
                     'id' => $tld['tld_registrar_id'],
                     'title' => $tld['name'],
