@@ -280,6 +280,49 @@ test('onAfterAdminOrderSuspend fires template', function (): void {
     $serviceMock->onAfterAdminOrderSuspend($eventMock);
 });
 
+test('onAfterAdminOrderSuspend fires template without an admin session', function (): void {
+    $params = ['id' => 1];
+
+    $eventMock = Mockery::mock(Box_Event::class);
+    $eventMock->shouldReceive('getParameters')->once()->andReturn($params);
+
+    $order = createEntity(Order::class, ['id' => 1]);
+    $orderArr = [
+        'id' => 1,
+        'client' => ['id' => 1],
+        'service_type' => 'domain',
+    ];
+
+    $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
+    $emailServiceMock->shouldReceive('sendTemplate')->once()->with([
+        'to_client' => 1,
+        'code' => 'mod_servicedomain_suspended',
+        'service' => [],
+        'order' => $orderArr,
+    ])->andReturn(true);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('getOrderServiceData')->once()->with($order, null)->andReturn([]);
+    $serviceMock->shouldReceive('toApiArray')->once()->with($order, true, null)->andReturn($orderArr);
+
+    $di = container();
+    $di['em']->getRepository(Order::class)->shouldReceive('find')->once()->with(1)->andReturn($order);
+    $di['mod_service'] = $di->protect(function ($serviceName) use ($emailServiceMock, $serviceMock) {
+        if ($serviceName == 'email') {
+            return $emailServiceMock;
+        }
+        if ($serviceName == 'order') {
+            return $serviceMock;
+        }
+    });
+
+    $serviceMock->setDi($di);
+    $eventMock->shouldReceive('getDi')->once()->andReturn($di);
+
+    $serviceMock->onAfterAdminOrderSuspend($eventMock);
+});
+
 test('onAfterAdminOrderSuspend logs exceptions', function (): void {
     $params = ['id' => 1];
 
