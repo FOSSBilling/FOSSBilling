@@ -163,3 +163,8 @@ RUN set -eux; \
   php -r '$config = require "./src/config-sample.php"; file_put_contents("./src/config.php", "<?php\nreturn " . var_export($config, true) . ";\n");'; \
   mkdir -p ./src/data/cache ./src/data/log ./src/data/uploads; \
   chown -R www-data:www-data ./src/data ./src/config.php
+
+# Extensions vendor their dependencies when an administrator activates them, so
+# a freshly built tree has none. Static analysis and the test suite both read
+# the bundled extensions, so prepare them here rather than at analysis time.
+RUN php ./src/install-extension-dependencies.php
