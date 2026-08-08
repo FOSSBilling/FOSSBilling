@@ -508,6 +508,7 @@ class UpdatePatcher implements InjectionAwareInterface
             96 => 'patch96',
             97 => 'patch97',
             98 => 'patch98',
+            99 => 'patch99',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2881,6 +2882,16 @@ class UpdatePatcher implements InjectionAwareInterface
             $this->executeFileActions([
                 $oldGatewayAssetsPath => 'unlink',
             ]);
+        }
+    }
+
+    private function patch99(): void
+    {
+        // Lets admins restrict a TLD's registration period to an explicit set of years
+        // (e.g. "1,2,5,10") instead of any integer at or above min_years.
+        // @see https://github.com/FOSSBilling/FOSSBilling/issues/2075
+        if (!$this->tableHasColumn('tld', 'periods')) {
+            $this->executeSql('ALTER TABLE `tld` ADD COLUMN `periods` VARCHAR(255) DEFAULT NULL AFTER `min_years`');
         }
     }
 }
