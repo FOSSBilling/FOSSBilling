@@ -192,11 +192,12 @@ function productTestCreateDomainPricingDbalConnection(): Connection
         allow_register INTEGER,
         allow_transfer INTEGER,
         active INTEGER,
-        min_years INTEGER
+        min_years INTEGER,
+        periods TEXT
     )');
     $connection->executeStatement("INSERT INTO tld_registrar (id, name) VALUES (1, 'Registrar A')");
-    $connection->executeStatement("INSERT INTO tld (id, tld_registrar_id, tld, price_registration, price_renew, price_transfer, allow_register, allow_transfer, active, min_years) VALUES (1, 1, '.com', 10.00, 12.00, 14.00, 1, 1, 1, 1)");
-    $connection->executeStatement("INSERT INTO tld (id, tld_registrar_id, tld, price_registration, price_renew, price_transfer, allow_register, allow_transfer, active, min_years) VALUES (2, 1, '.net', 11.00, 13.00, 15.00, 1, 1, 0, 1)");
+    $connection->executeStatement("INSERT INTO tld (id, tld_registrar_id, tld, price_registration, price_renew, price_transfer, allow_register, allow_transfer, active, min_years, periods) VALUES (1, 1, '.com', 10.00, 12.00, 14.00, 1, 1, 1, 1, '1,2,5')");
+    $connection->executeStatement("INSERT INTO tld (id, tld_registrar_id, tld, price_registration, price_renew, price_transfer, allow_register, allow_transfer, active, min_years, periods) VALUES (2, 1, '.net', 11.00, 13.00, 15.00, 1, 1, 0, 1, NULL)");
 
     return $connection;
 }
@@ -574,6 +575,7 @@ test('get domain pricing array returns active tlds', function (): void {
     expect($result)->not->toHaveKey('.net');
     expect($result['.com']['price_registration'])->toEqual(10.0);
     expect($result['.com']['registrar']['title'])->toBe('Registrar A');
+    expect($result['.com']['periods'])->toBe([1, 2, 5]);
 });
 
 test('get product pricing array uses domain pricing implementation', function (): void {
