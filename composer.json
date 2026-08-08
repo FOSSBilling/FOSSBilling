@@ -104,6 +104,9 @@
         ]
     },
     "config": {
+        "platform": {
+            "php": "8.3"
+        },
         "sort-packages": true,
         "allow-plugins": {
             "phpstan/extension-installer": true,
