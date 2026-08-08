@@ -406,10 +406,9 @@ test('_subscribe creates and persists a subscription from an approved transactio
     $transactionRepo->shouldReceive('findOneProcessedByTxnId')->andReturnNull();
 
     $invoice = createEntity(Invoice::class);
-
-    $invoice->id = 10;
-    $invoice->client_id = 7;
-    $invoice->currency = 'USD';
+    $invoice->setId(10);
+    $invoice->setClientId(7);
+    $invoice->setCurrency('USD');
 
     $dbMock = Mockery::mock('\Box_Database');
 

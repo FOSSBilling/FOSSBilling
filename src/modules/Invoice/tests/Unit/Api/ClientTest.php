@@ -59,7 +59,6 @@ test('gets an invoice', function (): void {
 test('throws exception when invoice is not found', function (): void {
     $api = apiEndpoint(new Client());
     $dbMock = Mockery::mock('\Box_Database');
-    $model = createEntity(Invoice::class);
 
     $dbMock->shouldReceive('findOne')
         ->atLeast()->once()

@@ -129,6 +129,9 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     public function getHtml(FOSSBilling\Api\Proxy $api_admin, int $invoice_id, bool $subscription): string
     {
         $invoiceModel = $this->di['em']->getRepository(Invoice::class)->find($invoice_id);
+        if (!$invoiceModel instanceof Invoice) {
+            throw new FOSSBilling\Exception('Invoice not found');
+        }
 
         if ($subscription) {
             return $this->_generateSubscriptionForm($invoiceModel);
@@ -255,6 +258,10 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         }
         if (isset($data['get']['invoice_id']) && $data['get']['invoice_id']) {
             $invoice = $this->di['em']->getRepository(Invoice::class)->find((int) $data['get']['invoice_id']);
+            if (!$invoice instanceof Invoice) {
+                return null;
+            }
+
             $tx->setInvoiceId((int) $invoice->getId());
 
             return $invoice;
@@ -822,8 +829,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         if ($isInitialPayment && $invoiceId) {
             $invoiceModel = $this->di['em']->getRepository(Invoice::class)->find((int) $invoiceId);
 
-            if (!$invoiceService->isInvoiceTypeDeposit($invoiceModel)) {
-                if (!$invoiceModel->approved) {
+            if ($invoiceModel instanceof Invoice && !$invoiceService->isInvoiceTypeDeposit($invoiceModel)) {
+                if (!$invoiceModel->isApproved()) {
                     $invoiceService->approveInvoice($invoiceModel, ['use_credits' => false]);
                 }
                 $invoiceService->payInvoiceWithCredits($invoiceModel);

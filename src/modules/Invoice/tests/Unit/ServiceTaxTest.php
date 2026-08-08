@@ -148,7 +148,7 @@ test('returns zero tax when invoice tax rate is zero', function (): void {
 
     $invoiceModel = createEntity(Invoice::class);
 
-    $invoiceModel->taxrate = 0;
+    $invoiceModel->setTaxrate(0);
 
     expect($service->getTax($invoiceModel))->toBeInt()->toBe(0);
 });
@@ -156,7 +156,7 @@ test('returns zero tax when invoice tax rate is zero', function (): void {
 test('gets tax for an invoice', function (): void {
     $invoiceModel = createEntity(Invoice::class);
 
-    $invoiceModel->taxrate = 15;
+    $invoiceModel->setTaxrate(15);
 
     $invoiceItem = createEntity(InvoiceItem::class, ['quantity' => 1]);
 

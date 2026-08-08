@@ -1600,7 +1600,7 @@ class Service implements InjectionAwareInterface
             return;
         }
 
-        $committedAt = !empty($invoice->paid_at) ? new \DateTime((string) $invoice->paid_at) : new \DateTime();
+        $committedAt = $invoice->getPaidAt() ?? new \DateTime();
         foreach ($redemptions as $redemption) {
             if (!$redemption instanceof PromoRedemption) {
                 continue;

@@ -681,12 +681,18 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
 
         $originalInvoice->id = 77;
         $originalInvoice->status = Invoice::STATUS_UNPAID;
+        $originalInvoice->currency = 'USD';
 
+        // Distinguished from $originalInvoice by its currency, so the
+        // identity-based matchers below prove the adapter uses this second
+        // fixture (from the $isInitialPayment lookup) rather than a stale
+        // reference to the first lookup result.
         $invoiceModel = createEntity(Invoice::class);
 
         $invoiceModel->id = 77;
         $invoiceModel->status = Invoice::STATUS_UNPAID;
         $invoiceModel->approved = 0;
+        $invoiceModel->currency = 'EUR';
 
         $dbMock = Mockery::mock('\Box_Database');
 

@@ -47,6 +47,7 @@ function invoiceItemEmAndRepo(): array
 {
     $repo = Mockery::mock(InvoiceItemRepository::class);
     $em = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $em->shouldReceive('wrapInTransaction')->andReturnUsing(fn (callable $callback): mixed => $callback());
     $em->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($repo);
 
     return [$em, $repo];
@@ -324,7 +325,7 @@ test('ensure valid hash regenerates a missing hash', function (): void {
 
     $di = container();
     $di['em']->shouldReceive('persist')->once()->with($invoiceModel);
-    $di['em']->shouldReceive('flush')->once();
+    $di['em']->shouldReceive('flush')->once()->with($invoiceModel);
     $di['mod_service'] = $di->protect(function ($serviceName) use ($systemService) {
         if ($serviceName === 'system') {
             return $systemService;
@@ -356,7 +357,7 @@ test('ensure valid hash regenerates a legacy format hash', function (): void {
 
     $di = container();
     $di['em']->shouldReceive('persist')->once()->with($invoiceModel);
-    $di['em']->shouldReceive('flush')->once();
+    $di['em']->shouldReceive('flush')->once()->with($invoiceModel);
     $di['mod_service'] = $di->protect(function ($serviceName) use ($systemService) {
         if ($serviceName === 'system') {
             return $systemService;

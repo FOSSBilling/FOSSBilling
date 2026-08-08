@@ -536,9 +536,9 @@ class Invoice
         return $this->taxrate;
     }
 
-    public function setTaxrate(?string $taxrate): void
+    public function setTaxrate(string|int|float|null $taxrate): void
     {
-        $this->taxrate = $taxrate;
+        $this->taxrate = is_int($taxrate) || is_float($taxrate) ? (string) $taxrate : $taxrate;
     }
 
     public function getDueAt(): ?\DateTime

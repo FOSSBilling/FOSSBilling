@@ -454,7 +454,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                 \Box\Mod\Product\Entity\PromoRedemption::PHASE_RENEWAL,
                 $promoAdjustment['discount_amount'],
                 $promoAdjustment['currency'],
-                $proforma->created_at ?? date('Y-m-d H:i:s'),
+                $proforma->getCreatedAt()?->format('Y-m-d H:i:s') ?? date('Y-m-d H:i:s'),
                 \Box\Mod\Product\Entity\PromoRedemption::STATUS_RESERVED,
             );
         }

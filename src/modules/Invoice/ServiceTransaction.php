@@ -870,6 +870,9 @@ class ServiceTransaction implements InjectionAwareInterface
         $this->_validateApprovedTransaction($tx);
 
         $invoice = $this->di['em']->getRepository(Invoice::class)->find($tx->getInvoiceId());
+        if (!$invoice instanceof Invoice) {
+            throw new \FOSSBilling\Exception('Invoice #:id not found', [':id' => $tx->getInvoiceId()], 703);
+        }
         $note = sprintf('Transaction %s refund', $tx->getId());
 
         $invoiceService = $this->di['mod_service']('Invoice');
@@ -893,18 +896,21 @@ class ServiceTransaction implements InjectionAwareInterface
         }
 
         $invoice = $this->di['em']->getRepository(Invoice::class)->find($tx->getInvoiceId());
+        if (!$invoice instanceof Invoice) {
+            throw new \FOSSBilling\Exception('Invoice #:id not found', [':id' => $tx->getInvoiceId()], 703);
+        }
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
         $period = $subscriptionService->getSubscriptionPeriod($invoice);
 
         $s = new Subscription();
-        $s->setClientId($invoice->client_id ? (int) $invoice->client_id : null);
+        $s->setClientId($invoice->getClientId() !== null ? (int) $invoice->getClientId() : null);
         $s->setPayGatewayId($tx->getGatewayId());
         $s->setSid($tx->getSId());
         $s->setPeriod($period);
         $s->setRelType('invoice');
-        $s->setRelId($invoice->id ? (int) $invoice->id : null);
+        $s->setRelId($invoice->getId() !== null ? (int) $invoice->getId() : null);
         $s->setAmount($tx->getAmount());
-        $s->setCurrency($invoice->currency);
+        $s->setCurrency($invoice->getCurrency());
         $s->setStatus('active');
         $this->di['em']->persist($s);
         $this->di['em']->flush();
@@ -944,6 +950,9 @@ class ServiceTransaction implements InjectionAwareInterface
         }
 
         $invoice = $this->di['em']->getRepository(Invoice::class)->find($tx->getInvoiceId());
+        if (!$invoice instanceof Invoice) {
+            throw new \FOSSBilling\Exception('Invoice #:id not found', [':id' => $tx->getInvoiceId()], 703);
+        }
 
         // check that payment currency is correct
         if ($invoice->getCurrency() != $tx->getCurrency()) {

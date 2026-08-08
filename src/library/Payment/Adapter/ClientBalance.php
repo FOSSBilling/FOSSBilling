@@ -61,6 +61,9 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
     public function getHtml($api_admin, $invoice_id, $subscription): string
     {
         $invoiceModel = $this->di['em']->getRepository(Invoice::class)->find($invoice_id);
+        if (!$invoiceModel instanceof Invoice) {
+            throw new Payment_Exception('Invoice not found');
+        }
 
         if (!$this->enoughInBalanceToCoverInvoice($invoiceModel)) {
             return __trans('Your account balance is insufficient to cover this invoice.');
@@ -149,6 +152,10 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
         }
 
         $invoiceModel = $this->di['em']->getRepository(Invoice::class)->find($invoice_id);
+        if (!$invoiceModel instanceof Invoice) {
+            throw new Payment_Exception('Invoice not found');
+        }
+
         $invoiceService = $this->di['mod_service']('Invoice');
         if ($invoiceService->isInvoiceTypeDeposit($invoiceModel)) {
             throw new Payment_Exception('You may not pay a deposit invoice with this payment gateway.', null, 302);

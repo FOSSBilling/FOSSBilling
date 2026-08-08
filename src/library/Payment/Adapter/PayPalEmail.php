@@ -60,6 +60,10 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
     public function getHtml($api_admin, $invoice_id, $subscription): string
     {
         $invoiceModel = $this->di['em']->getRepository(Invoice::class)->find($invoice_id);
+        if (!$invoiceModel instanceof Invoice) {
+            throw new Payment_Exception('Invoice not found');
+        }
+
         $invoiceService = $this->di['mod_service']('Invoice');
         $invoice = $invoiceService->toApiArray($invoiceModel, true);
 

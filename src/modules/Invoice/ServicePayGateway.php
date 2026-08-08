@@ -429,10 +429,7 @@ class ServicePayGateway implements InjectionAwareInterface
         return $config['description'] ?? null;
     }
 
-    /**
-     * @param Invoice $model
-     */
-    public function getCallbackUrl(PayGateway $pg, $model = null): string
+    public function getCallbackUrl(PayGateway $pg, ?Invoice $model = null): string
     {
         $p = [
             'gateway_id' => $pg->getId(),
@@ -444,10 +441,7 @@ class ServicePayGateway implements InjectionAwareInterface
         return SYSTEM_URL . 'ipn.php?' . http_build_query($p);
     }
 
-    /**
-     * @param Invoice $model
-     */
-    private function getReturnUrl(PayGateway $pg, $model = null): string
+    private function getReturnUrl(PayGateway $pg, ?Invoice $model = null): string
     {
         if ($model instanceof Invoice) {
             return $this->di['url']->link("/invoice/{$model->getHash()}", ['status' => 'ok', 'restore_token' => Tools::createSessionRestoreToken(session_id())]);
@@ -456,10 +450,7 @@ class ServicePayGateway implements InjectionAwareInterface
         return $this->di['url']->link('/invoice', ['status' => 'ok', 'restore_token' => Tools::createSessionRestoreToken(session_id())]);
     }
 
-    /**
-     * @param Invoice $model
-     */
-    private function getCancelUrl(PayGateway $pg, $model = null): string
+    private function getCancelUrl(PayGateway $pg, ?Invoice $model = null): string
     {
         if ($model instanceof Invoice) {
             return $this->di['url']->link("/invoice/{$model->getHash()}", ['status' => 'cancel', 'restore_token' => Tools::createSessionRestoreToken(session_id())]);
@@ -468,10 +459,7 @@ class ServicePayGateway implements InjectionAwareInterface
         return $this->di['url']->link('/invoice', ['status' => 'cancel', 'restore_token' => Tools::createSessionRestoreToken(session_id())]);
     }
 
-    /**
-     * @param Invoice $model
-     */
-    private function getCallbackRedirect(PayGateway $pg, $model = null): string
+    private function getCallbackRedirect(PayGateway $pg, ?Invoice $model = null): string
     {
         $p = [
             'gateway_id' => $pg->getId(),

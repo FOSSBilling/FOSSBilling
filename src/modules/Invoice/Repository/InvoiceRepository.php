@@ -52,13 +52,16 @@ class InvoiceRepository extends EntityRepository
      */
     public function findUnpaidApprovedNotRemindedBefore(int $cutoffTimestamp): array
     {
+        $cutoff = new \DateTime();
+        $cutoff->setTimestamp($cutoffTimestamp);
+
         return $this->createQueryBuilder('i')
             ->andWhere('i.status = :status')
             ->andWhere('i.approved = true')
             ->andWhere('i.remindedAt IS NULL')
             ->andWhere('i.createdAt < :cutoff')
             ->setParameter('status', Invoice::STATUS_UNPAID)
-            ->setParameter('cutoff', new \DateTime('@' . $cutoffTimestamp))
+            ->setParameter('cutoff', $cutoff)
             ->getQuery()
             ->getResult();
     }
@@ -73,9 +76,10 @@ class InvoiceRepository extends EntityRepository
     {
         return $this->createQueryBuilder('i')
             ->andWhere('i.status = :status')
-            ->andWhere('i.id IN (SELECT ii.invoiceId FROM ' . InvoiceItem::class . ' ii WHERE ii.relId = :relId)')
+            ->andWhere('i.id IN (SELECT ii.invoiceId FROM ' . InvoiceItem::class . ' ii WHERE ii.relId = :relId AND ii.type = :type)')
             ->setParameter('status', Invoice::STATUS_PAID)
             ->setParameter('relId', (string) $relId)
+            ->setParameter('type', InvoiceItem::TYPE_ORDER)
             ->getQuery()
             ->getResult();
     }
