@@ -126,6 +126,19 @@ test('throws exception when payment gateway id is missing', function (): void {
         ->toThrow(FOSSBilling\InformationException::class, 'Payment method not found. Missing param gateway_id');
 });
 
+test('gets whether add funds is enabled', function (): void {
+    $api = apiEndpoint(new Guest());
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('isFundsEnabled')
+        ->atLeast()->once()
+        ->andReturn(false);
+
+    $api->setService($serviceMock);
+
+    $result = $api->funds_enabled();
+    expect($result)->toBeFalse();
+});
+
 test('generates PDF', function (): void {
     $api = apiEndpoint(new Guest());
     $data = [
