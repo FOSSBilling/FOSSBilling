@@ -52,6 +52,20 @@ if (!function_exists('__pluralTrans')) {
 require_once __DIR__ . '/../src/load.php';
 require_once __DIR__ . '/../src/vendor/autoload.php';
 
+// Extensions vendor their own dependencies when an administrator activates
+// them, so a checkout has none until something asks. The suite exercises the
+// bundled extensions directly, so make sure they are prepared. Already-prepared
+// extensions are skipped, which is the case on every run but the first.
+$extensionFailures = FOSSBilling\Extension\DependencyBootstrap::create()->installMissing();
+if ($extensionFailures !== []) {
+    fwrite(STDERR, "Could not prepare extension dependencies:\n");
+    foreach ($extensionFailures as $extension => $reason) {
+        fwrite(STDERR, "  {$extension}: {$reason}\n");
+    }
+
+    exit(1);
+}
+
 // Load test helpers
 require_once __DIR__ . '/Helpers/Container.php';
 require_once __DIR__ . '/Helpers/Factories.php';

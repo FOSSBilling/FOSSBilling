@@ -19,26 +19,16 @@ use Box\Mod\Servicedomain\Repository\DomainRepository;
 use Box\Mod\Servicedomain\Repository\TldRegistrarRepository;
 use Box\Mod\Servicedomain\Repository\TldRepository;
 use Doctrine\ORM\QueryBuilder;
-use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\Filesystem\Path;
-use Symfony\Component\Finder\Finder;
+use FOSSBilling\Extension\Contract\Registrar\AdapterAbstract;
+use FOSSBilling\Extension\ExtensionType;
 
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
-    private Filesystem $filesystem;
-
-    public function __construct()
-    {
-        $this->filesystem = new Filesystem();
-    }
 
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
-        if (isset($di['filesystem'])) {
-            $this->filesystem = $di['filesystem'];
-        }
     }
 
     public function getDi(): ?\Pimple\Container
@@ -547,7 +537,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         // @adapterAction
-        $domain = new \Registrar_Domain();
+        $domain = new \FOSSBilling\Extension\Contract\Registrar\Domain();
         $domain->setTld($model->getTld());
         $domain->setSld($sld);
 
@@ -576,7 +566,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         // @adapterAction
-        $domain = new \Registrar_Domain();
+        $domain = new \FOSSBilling\Extension\Contract\Registrar\Domain();
         $domain->setTld($model->getTld());
         $domain->setSld($sld);
 
@@ -670,7 +660,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $adapter = $this->registrarGetRegistrarAdapter($tldRegistrar);
         }
 
-        $d = new \Registrar_Domain();
+        $d = new \FOSSBilling\Extension\Contract\Registrar\Domain();
 
         $d->setLocked($model->isLocked());
         $d->setNs1($model->getNs1());
@@ -697,7 +687,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $company_number = !empty($client->company_number) ? $client->company_number : '';
         $document_nr = (string) ($this->di['mod_service']('client')->resolveDocumentNumber($client) ?? '');
 
-        $contact = new \Registrar_Domain_Contact();
+        $contact = new \FOSSBilling\Extension\Contract\Registrar\Domain\Contact();
         $contact
             ->setEmail($email)
             ->setUsername($email)
@@ -1047,10 +1037,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $adapters = [];
 
-        $finder = new Finder();
-        $finder->files()->in(Path::join(PATH_LIBRARY, 'Registrar', 'Adapter'))->name('*.php')->depth('== 0');
-        foreach ($finder as $file) {
-            $adapter = $file->getFilenameWithoutExtension();
+        foreach ($this->di['extension_locator']->listInstalled(ExtensionType::Registrar) as $adapter) {
             if (!in_array($adapter, $existing, true)) {
                 $adapters[] = $adapter;
             }
@@ -1083,21 +1070,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     private function registrarGetRegistrarAdapterClassName(TldRegistrar $model): string
     {
-        $file = Path::join(PATH_LIBRARY, 'Registrar', 'Adapter', "{$model->getRegistrar()}.php");
-        if (!$this->filesystem->exists($file)) {
-            throw new \FOSSBilling\InformationException('Domain registrar :adapter was not found', [':adapter' => $model->getRegistrar()]);
-        }
-
-        $class = sprintf('Registrar_Adapter_%s', $model->getRegistrar());
-        if (!class_exists($class)) {
-            require_once $file;
-        }
-
-        if (!class_exists($class)) {
-            throw new \FOSSBilling\InformationException('Registrar :adapter was not found', [':adapter' => $class]);
-        }
-
-        return $class;
+        return $this->di['extension_locator']->resolveClass(ExtensionType::Registrar, (string) $model->getRegistrar());
     }
 
     public function registrarGetRegistrarAdapter(TldRegistrar $r, ?\Model_ClientOrder $order = null)
@@ -1105,15 +1078,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $config = $this->registrarGetConfiguration($r);
         $class = $this->registrarGetRegistrarAdapterClassName($r);
         $registrar = new $class($config);
-        if (!$registrar instanceof \Registrar_AdapterAbstract) {
-            throw new \FOSSBilling\Exception('Registrar adapter :adapter should extend Registrar_AdapterAbstract', [':adapter' => $class]);
+        if (!$registrar instanceof AdapterAbstract) {
+            throw new \FOSSBilling\Exception('Registrar adapter :adapter should extend :contract', [':adapter' => $class, ':contract' => AdapterAbstract::class]);
         }
 
-        $registrar->setLog($this->di['logger']);
-
-        if ($order) {
-            $registrar->setOrder($order);
-        }
+        // The order is not handed to the adapter, but scoping the logger to it
+        // keeps registrar activity attributable to the order it came from.
+        $registrar->setLog(
+            $order instanceof \Model_ClientOrder
+                ? new \FOSSBilling\PsrLogAdapter($this->di['mod_service']('order')->getLogger($order))
+                : $this->di['extension_logger']
+        );
 
         if ($r->isTestMode()) {
             $registrar->enableTestMode();

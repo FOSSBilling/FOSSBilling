@@ -185,6 +185,7 @@ function preInit(): void
     define('PATH_LIBRARY', Path::join(PATH_ROOT, 'library'));
     define('PATH_THEMES', Path::join(PATH_ROOT, 'themes'));
     define('PATH_MODS', Path::join(PATH_ROOT, 'modules'));
+    define('PATH_EXTENSIONS', Path::join(PATH_ROOT, 'extensions'));
     define('PATH_LANGS', Path::join(PATH_ROOT, 'locale'));
     $pathUploads = Path::join(PATH_ROOT, 'data', 'uploads');
     if (getenv('APP_ENV') === 'test') {
@@ -209,6 +210,12 @@ function preInit(): void
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'RouteMatcher.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Config.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Tools.php');
+
+    // Register the autoloader for extensions installed under PATH_EXTENSIONS.
+    // Composer cannot see these, as they may be installed after composer ran.
+    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Extension', 'ExtensionType.php');
+    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Extension', 'Autoloader.php');
+    FOSSBilling\Extension\Autoloader::register();
 }
 
 /*

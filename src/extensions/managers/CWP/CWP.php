@@ -1,0 +1,427 @@
+<?php
+
+declare(strict_types=1);
+/**
+ * Copyright 2022-2025 FOSSBilling
+ * SPDX-License-Identifier: Apache-2.0.
+ *
+ * @copyright FOSSBilling (https://www.fossbilling.org)
+ * @license   http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
+ */
+
+namespace FOSSBilling\Extension\Manager\CWP;
+
+/**
+ * CWP API.
+ *
+ * @see https://docs.control-webpanel.com/docs/developer-tools/api-manager
+ */
+class CWP extends \FOSSBilling\Extension\Contract\Server\Manager
+{
+    /**
+     * Returns the form configuration for the CWP server manager.
+     *
+     * @return array returns an array with the label and form configuration for the CWP server manager
+     */
+    public static function getForm(): array
+    {
+        return [
+            'label' => 'CWP',
+            'form' => [
+                'credentials' => [
+                    'fields' => [
+                        [
+                            'name' => 'accesshash',
+                            'type' => 'text',
+                            'label' => __trans('API Key'),
+                            'placeholder' => __trans('API key you generated from within CWP.'),
+                            'required' => true,
+                            'secret' => true,
+                        ],
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Initializes the server manager.
+     * Checks if the required parameters (IP, host, access hash, port) are set.
+     *
+     * @throws \FOSSBilling\Extension\Contract\Server\Exception if any of the required parameters are not set
+     */
+    public function init(): void
+    {
+        if (empty($this->_config['ip'])) {
+            throw new \FOSSBilling\Extension\Contract\Server\Exception('The ":server_manager" server manager is not fully configured. Please configure the :missing', [':server_manager' => 'CWP', ':missing' => 'IP address'], 2001);
+        }
+
+        if (empty($this->_config['host'])) {
+            throw new \FOSSBilling\Extension\Contract\Server\Exception('The ":server_manager" server manager is not fully configured. Please configure the :missing', [':server_manager' => 'CWP', ':missing' => 'Hostname'], 2001);
+        }
+
+        if (empty($this->_config['accesshash'])) {
+            throw new \FOSSBilling\Extension\Contract\Server\Exception('The ":server_manager" server manager is not fully configured. Please configure the :missing', [':server_manager' => 'CWP', ':missing' => 'API Key / Access Hash'], 2001);
+        }
+        $this->_config['accesshash'] = trim((string) $this->_config['accesshash']);
+
+        $this->_config['port'] = \FOSSBilling\Tools::normalizePort($this->_config['port'] ?? null, 2304);
+    }
+
+    /**
+     * Returns the login URL for the CWP server manager.
+     *
+     * @param \FOSSBilling\Extension\Contract\Server\Account|null $account the account for which the login URL is generated
+     *
+     * @return string returns the login URL as a string
+     */
+    public function getLoginUrl(?\FOSSBilling\Extension\Contract\Server\Account $account): string
+    {
+        $host = $this->_config['host'];
+
+        return 'https://' . $host . ':2083';
+    }
+
+    /**
+     * Returns the reseller login URL for the CWP server manager.
+     *
+     * @param \FOSSBilling\Extension\Contract\Server\Account|null $account the account for which the reseller login URL is generated
+     *
+     * @return string returns the reseller login URL as a string
+     */
+    public function getResellerLoginUrl(?\FOSSBilling\Extension\Contract\Server\Account $account): string
+    {
+        $host = $this->_config['host'];
+
+        return 'https://' . $host . ':2031';
+    }
+
+    /**
+     * Tests the connection to the CWP server.
+     * Makes a request to the server and checks if the response is successful.
+     *
+     * @return bool returns true if the connection test is successful
+     *
+     * @throws \FOSSBilling\Extension\Contract\Server\Exception if the connection test fails
+     */
+    public function testConnection(): bool
+    {
+        $data = [
+            'action' => 'list',
+        ];
+
+        if ($this->request('account', $data)) {
+            return true;
+        }
+
+        throw new \FOSSBilling\Extension\Contract\Server\Exception('Failed to connect to the :type: server. Please verify your credentials and configuration', [':type:' => 'CWP']);
+    }
+
+    /**
+     * Synchronizes the account with the server.
+     *
+     * @param \FOSSBilling\Extension\Contract\Server\Account $account the account to be synchronized
+     *
+     * @return \FOSSBilling\Extension\Contract\Server\Account returns the synchronized account
+     */
+    public function synchronizeAccount(\FOSSBilling\Extension\Contract\Server\Account $account): \FOSSBilling\Extension\Contract\Server\Account
+    {
+        $this->getLog()->info('Synchronizing account with server ' . $account->getUsername());
+
+        $data = [
+            'action' => 'list',
+            'user' => $account->getUsername(),
+        ];
+
+        $new = clone $account;
+        $acc = $this->request('accountdetail', $data);
+
+        if ($acc['account_info']['state'] == 'suspended') {
+            $new->setSuspended(true);
+        } else {
+            $new->setSuspended(false);
+        }
+
+        $new->setPackage($acc['account_info']['package_name']);
+        $new->setReseller(\FOSSBilling\Tools::normalizeBoolean($acc['account_info']['reseller'] ?? false));
+
+        return $new;
+    }
+
+    /**
+     * Creates a new account on the CWP server.
+     *
+     * @param \FOSSBilling\Extension\Contract\Server\Account $account the account to be created
+     *
+     * @return bool returns true if the account is successfully created
+     *
+     * @throws \FOSSBilling\Extension\Contract\Server\Exception if the account creation fails
+     */
+    public function createAccount(\FOSSBilling\Extension\Contract\Server\Account $account): bool
+    {
+        $this->getLog()->info('Creating account ' . $account->getUsername());
+
+        $client = $account->getClient();
+        $package = $account->getPackage()->getName();
+
+        $ip = $this->_config['ip'];
+
+        $data = [
+            'action' => 'add',
+            'domain' => $account->getDomain(),
+            'user' => $account->getUsername(),
+            'pass' => base64_encode((string) $account->getPassword()),
+            'email' => $client->getEmail(),
+            'package' => $package,
+            'server_ips' => $ip,
+            'encodepass' => true,
+        ];
+
+        if ($account->getReseller()) {
+            $data['reseller'] = 1;
+        }
+
+        if (!$this->request('account', $data)) {
+            $placeholders = [':action:' => __trans('create account'), ':type:' => 'CWP'];
+
+            throw new \FOSSBilling\Extension\Contract\Server\Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
+        }
+
+        return true;
+    }
+
+    /**
+     * Suspends an account on the CWP server.
+     *
+     * @param \FOSSBilling\Extension\Contract\Server\Account $account the account to be suspended
+     *
+     * @return bool returns true if the account is successfully suspended
+     *
+     * @throws \FOSSBilling\Extension\Contract\Server\Exception if the account suspension fails
+     */
+    public function suspendAccount(\FOSSBilling\Extension\Contract\Server\Account $account): bool
+    {
+        $this->getLog()->info('Suspending account ' . $account->getUsername());
+
+        $data = [
+            'action' => 'susp',
+            'user' => $account->getUsername(),
+        ];
+
+        if (!$this->request('account', $data)) {
+            $placeholders = ['action' => __trans('suspend account'), 'type' => 'CWP'];
+
+            throw new \FOSSBilling\Extension\Contract\Server\Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
+        }
+
+        return true;
+    }
+
+    /**
+     * Unsuspends an account on the CWP server.
+     *
+     * @param \FOSSBilling\Extension\Contract\Server\Account $account the account to be unsuspended
+     *
+     * @return bool returns true if the account is successfully unsuspended
+     *
+     * @throws \FOSSBilling\Extension\Contract\Server\Exception if the account unsuspension fails
+     */
+    public function unsuspendAccount(\FOSSBilling\Extension\Contract\Server\Account $account): bool
+    {
+        $this->getLog()->info('Un-suspending account ' . $account->getUsername());
+
+        $data = [
+            'action' => 'unsp',
+            'user' => $account->getUsername(),
+        ];
+
+        if (!$this->request('account', $data)) {
+            $placeholders = [':action:' => __trans('unsuspend account'), ':type:' => 'CWP'];
+
+            throw new \FOSSBilling\Extension\Contract\Server\Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
+        }
+
+        return true;
+    }
+
+    /**
+     * Cancels an account on the CWP server.
+     *
+     * @param \FOSSBilling\Extension\Contract\Server\Account $account the account to be cancelled
+     *
+     * @return bool returns true if the account is successfully cancelled
+     *
+     * @throws \FOSSBilling\Extension\Contract\Server\Exception if the account cancellation fails
+     */
+    public function cancelAccount(\FOSSBilling\Extension\Contract\Server\Account $account): bool
+    {
+        $this->getLog()->info('Canceling account ' . $account->getUsername());
+
+        $client = $account->getClient();
+
+        $data = [
+            'action' => 'del',
+            'user' => $account->getUsername(),
+            'email' => $client->getEmail(),
+        ];
+
+        if (!$this->request('account', $data)) {
+            $placeholders = [':action:' => __trans('cancel account'), ':type:' => 'CWP'];
+
+            throw new \FOSSBilling\Extension\Contract\Server\Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
+        }
+
+        return true;
+    }
+
+    /**
+     * Changes the package of an account on the CWP server.
+     *
+     * @param \FOSSBilling\Extension\Contract\Server\Account $account the account for which the package is to be changed
+     * @param \FOSSBilling\Extension\Contract\Server\Package $package the new package
+     *
+     * @return bool returns true if the package is successfully changed
+     *
+     * @throws \FOSSBilling\Extension\Contract\Server\Exception if the package change fails
+     */
+    public function changeAccountPackage(\FOSSBilling\Extension\Contract\Server\Account $account, \FOSSBilling\Extension\Contract\Server\Package $package): bool
+    {
+        $this->getLog()->info('Changing package on account ' . $account->getUsername());
+
+        $data = [
+            'action' => 'upd',
+            'user' => $account->getUsername(),
+            'package' => $account->getPackage()->getName(),
+        ];
+
+        if (!$this->request('changepack', $data)) {
+            $placeholders = [':action:' => __trans('change account package'), ':type:' => 'CWP'];
+
+            throw new \FOSSBilling\Extension\Contract\Server\Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
+        }
+
+        return true;
+    }
+
+    /**
+     * Changes the password of an account on the CWP server.
+     *
+     * @param \FOSSBilling\Extension\Contract\Server\Account $account     the account for which the password is to be changed
+     * @param string                                         $newPassword the new password
+     *
+     * @return bool returns true if the password is successfully changed
+     *
+     * @throws \FOSSBilling\Extension\Contract\Server\Exception if the password change fails
+     */
+    public function changeAccountPassword(\FOSSBilling\Extension\Contract\Server\Account $account, string $newPassword): bool
+    {
+        $this->getLog()->info('Changing password on account ' . $account->getUsername());
+
+        $data = [
+            'action' => 'udp',
+            'user' => $account->getUsername(),
+            'pass' => $newPassword,
+        ];
+
+        if (!$this->request('changepass', $data)) {
+            $placeholders = [':action:' => __trans('change account password'), ':type:' => 'CWP'];
+
+            throw new \FOSSBilling\Extension\Contract\Server\Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
+        }
+
+        return true;
+    }
+
+    /**
+     * Throws an exception because CWP does not support username changes.
+     *
+     * @param \FOSSBilling\Extension\Contract\Server\Account $account     the account for which the username is to be changed
+     * @param string                                         $newUsername the new username
+     *
+     * @throws \FOSSBilling\Extension\Contract\Server\Exception always throws an exception because CWP does not support username changes
+     */
+    public function changeAccountUsername(\FOSSBilling\Extension\Contract\Server\Account $account, string $newUsername): never
+    {
+        throw new \FOSSBilling\Extension\Contract\Server\Exception(':type: does not support :action:', [':type:' => 'CWP', ':action:' => __trans('username changes')]);
+    }
+
+    /**
+     * Throws an exception because CWP does not support changing the account domain.
+     *
+     * @param \FOSSBilling\Extension\Contract\Server\Account $account   the account for which the domain is to be changed
+     * @param string                                         $newDomain the new domain
+     *
+     * @throws \FOSSBilling\Extension\Contract\Server\Exception always throws an exception because CWP does not support changing the account domain
+     */
+    public function changeAccountDomain(\FOSSBilling\Extension\Contract\Server\Account $account, string $newDomain): never
+    {
+        throw new \FOSSBilling\Extension\Contract\Server\Exception(':type: does not support :action:', [':type:' => 'CWP', ':action:' => __trans('changing the account domain')]);
+    }
+
+    /**
+     * Throws an exception because CWP does not support changing the account IP.
+     *
+     * @param \FOSSBilling\Extension\Contract\Server\Account $account the account for which the IP is to be changed
+     * @param string                                         $newIp   the new IP
+     *
+     * @throws \FOSSBilling\Extension\Contract\Server\Exception always throws an exception because CWP does not support changing the account IP
+     */
+    public function changeAccountIp(\FOSSBilling\Extension\Contract\Server\Account $account, string $newIp): never
+    {
+        throw new \FOSSBilling\Extension\Contract\Server\Exception(':type: does not support :action:', [':type:' => 'CWP', ':action:' => __trans('changing the account IP')]);
+    }
+
+    /**
+     * Makes an API request to the CWP server.
+     *
+     * @param string $func the function to be called on the server
+     * @param array  $data the data to be sent with the request
+     *
+     * @return mixed returns the response from the server
+     */
+    private function request(string $func, array $data): mixed
+    {
+        $verifyTls = \FOSSBilling\Tools::normalizeBoolean($this->_config['config']['tls_verify'] ?? true, true);
+
+        // Add the access hash to the data array
+        $data['key'] = $this->_config['accesshash'];
+
+        // Get the host and port from the config
+        $host = $this->_config['host'];
+        $port = $this->_config['port'];
+
+        // Construct the URL for the request
+        $url = 'https://' . $host . ':' . $port . '/v1/' . $func;
+
+        // Get the HTTP client with TLS verification options from server configuration
+        $client = $this->getHttpClient()->withOptions([
+            'verify_peer' => $verifyTls,
+            'verify_host' => $verifyTls,
+        ]);
+
+        // Make the request and convert the response to an array
+        $request = $client->request('POST', $url, [
+            'body' => $data,
+        ]);
+        $response = $request->toArray();
+
+        // Get the status, result, and message from the response, with default values if they are not set
+        $status = $response['status'] ?? 'Error';
+        $result = $response['result'] ?? null;
+        $msg = $response['msg'] ?? 'CWP did not return a message in it\'s response.';
+
+        // If the status is not 'OK', log an error message and return false
+        if ($status !== 'OK') {
+            error_log('CWP Server manager error. Status: ' . $status . '. Message: ' . $msg);
+
+            return false;
+        }
+
+        // If the function called is 'accountdetail', return the result from the response
+        if ($func == 'accountdetail') {
+            return $result;
+        }
+
+        return true;
+    }
+}

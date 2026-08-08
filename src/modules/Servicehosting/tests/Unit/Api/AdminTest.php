@@ -449,7 +449,7 @@ test('testServerUpdate', function (): void {
     $serviceMock
     ->shouldReceive('getServerManager')
     ->atLeast()->once()
-    ->andReturn(new Server_Manager_Custom([]));
+    ->andReturn(new FOSSBilling\Extension\Manager\Custom\Custom([]));
 
     $serverModel = new ServiceHostingServer();
     $serverRepo = Mockery::mock(ServiceHostingServerRepository::class);
@@ -479,7 +479,7 @@ test('testServerUpdateSurfacesServerManagerErrorsAsInformationException', functi
     $serviceMock
     ->shouldReceive('getServerManager')
     ->atLeast()->once()
-    ->andThrow(new Server_Exception('Server manager is not fully configured.'));
+    ->andThrow(new FOSSBilling\Extension\Contract\Server\Exception('Server manager is not fully configured.'));
 
     $serverModel = new ServiceHostingServer();
     $serverRepo = Mockery::mock(ServiceHostingServerRepository::class);

@@ -1,0 +1,14 @@
+{
+  "id": "Custom",
+  "type": "gateway",
+  "name": "Custom gateway",
+  "description": "A manually configured gateway for payment methods FOSSBilling has no integration for.",
+  "version": "1.0.0",
+  "api": 1,
+  "logo": { "file": "custom.png", "width": "50px", "height": "50px" },
+  "embeddable": true,
+  "settings": [
+    { "name": "single", "type": "textarea", "label": "Enter Your Text for Single Payment Information", "required": false },
+    { "name": "recurrent", "type": "textarea", "label": "Enter Your Text for Subscription Information", "required": false }
+  ]
+}

@@ -1652,6 +1652,115 @@ test('pays an invoice with credits and records a balance transaction', function 
     expect($service->tryPayWithCredits($invoice))->toBeTrue();
 });
 
+test('refuses to pay a deposit invoice with account credit', function (): void {
+    $invoice = new Model_Invoice();
+    $invoice->loadBean(new Tests\Helpers\DummyBean());
+    $invoice->id = 10;
+    $invoice->client_id = 20;
+
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('isInvoiceTypeDeposit')->once()->with($invoice)->andReturn(true);
+    $service->shouldNotReceive('tryPayWithCredits');
+    $service->shouldNotReceive('doBatchPayWithCredits');
+
+    $di = container();
+    $service->setDi($di);
+
+    expect(fn () => $service->payInvoiceFromClientBalance($invoice))
+        ->toThrow(FOSSBilling\InformationException::class, 'You may not pay a deposit invoice with account credit.');
+});
+
+test('refuses to pay from account credit when the balance is insufficient', function (): void {
+    $invoice = new Model_Invoice();
+    $invoice->loadBean(new Tests\Helpers\DummyBean());
+    $invoice->id = 10;
+    $invoice->client_id = 20;
+
+    $client = new Model_Client();
+    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client->id = 20;
+
+    $balanceService = Mockery::mock(Box\Mod\Client\ServiceBalance::class);
+    $balanceService->shouldReceive('getClientBalance')->once()->with($client)->andReturn(10.0);
+
+    $db = Mockery::mock(Box_Database::class);
+    $db->shouldReceive('load')->once()->with('Client', 20)->andReturn($client);
+
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('isInvoiceTypeDeposit')->once()->with($invoice)->andReturn(false);
+    $service->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(50.0);
+    $service->shouldNotReceive('tryPayWithCredits');
+    $service->shouldNotReceive('doBatchPayWithCredits');
+
+    $di = container();
+    $di['db'] = $db;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $balanceService);
+    $service->setDi($di);
+
+    expect(fn () => $service->payInvoiceFromClientBalance($invoice))
+        ->toThrow(FOSSBilling\InformationException::class, 'Your account balance is insufficient to cover this invoice.');
+});
+
+test('pays an invoice with account credit and sweeps the remaining balance across other invoices', function (): void {
+    $invoice = new Model_Invoice();
+    $invoice->loadBean(new Tests\Helpers\DummyBean());
+    $invoice->id = 10;
+    $invoice->client_id = 20;
+
+    $client = new Model_Client();
+    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client->id = 20;
+
+    $balanceService = Mockery::mock(Box\Mod\Client\ServiceBalance::class);
+    $balanceService->shouldReceive('getClientBalance')->once()->with($client)->andReturn(100.0);
+
+    $db = Mockery::mock(Box_Database::class);
+    $db->shouldReceive('load')->once()->with('Client', 20)->andReturn($client);
+
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('isInvoiceTypeDeposit')->once()->with($invoice)->andReturn(false);
+    $service->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(50.0);
+    $service->shouldReceive('tryPayWithCredits')->once()->with($invoice)->andReturn(true);
+    $service->shouldReceive('doBatchPayWithCredits')->once()->with(['client_id' => 20])->andReturn(true);
+
+    $di = container();
+    $di['db'] = $db;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $balanceService);
+    $service->setDi($di);
+
+    $service->payInvoiceFromClientBalance($invoice);
+});
+
+test('pays an invoice with account credit when the balance exactly matches the total', function (): void {
+    $invoice = new Model_Invoice();
+    $invoice->loadBean(new Tests\Helpers\DummyBean());
+    $invoice->id = 10;
+    $invoice->client_id = 20;
+
+    $client = new Model_Client();
+    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client->id = 20;
+
+    $balanceService = Mockery::mock(Box\Mod\Client\ServiceBalance::class);
+    $balanceService->shouldReceive('getClientBalance')->once()->with($client)->andReturn(50.0);
+
+    $db = Mockery::mock(Box_Database::class);
+    $db->shouldReceive('load')->once()->with('Client', 20)->andReturn($client);
+
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('isInvoiceTypeDeposit')->once()->with($invoice)->andReturn(false);
+    $service->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(50.0);
+    $service->shouldReceive('tryPayWithCredits')->once()->with($invoice)->andReturn(true);
+    $service->shouldReceive('doBatchPayWithCredits')->once()->with(['client_id' => 20])->andReturn(true);
+
+    $di = container();
+    $di['db'] = $db;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $balanceService);
+    $service->setDi($di);
+
+    $service->payInvoiceFromClientBalance($invoice);
+});
+
 test('gets total', function (): void {
     $service = new Service();
     $invoiceModel = new Model_Invoice();
@@ -2822,12 +2931,8 @@ test('throws exception when processing invoice with gateway not enabled', functi
         ->toThrow(FOSSBilling\Exception::class, 'Payment method not enabled');
 });
 
-test('processes an invoice', function (): void {
-    $service = new Service();
+test('processes an invoice through a Gateway-typed adapter', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('getPaymentInvoice')
-        ->atLeast()->once()
-        ->andReturn(new Payment_Invoice());
 
     $data = [
         'hash' => 'hashString',
@@ -2836,6 +2941,11 @@ test('processes an invoice', function (): void {
 
     $invoiceModel = new Model_Invoice();
     $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $serviceMock->shouldReceive('toApiArray')
+        ->atLeast()->once()
+        ->with($invoiceModel)
+        ->andReturn(['total' => 10.0, 'subtotal' => 10.0, 'tax' => 0.0, 'lines' => []]);
 
     $payGatewayModel = createEntity(PayGateway::class, ['id' => 2, 'enabled' => true]);
 
@@ -2853,28 +2963,24 @@ test('processes an invoice', function (): void {
         ->atLeast()->once()
         ->andReturn(true);
 
+    $adapterMock = Mockery::mock(FOSSBilling\Extension\Contract\Payment\Gateway::class);
+    $adapterMock->shouldReceive('checkout')
+        ->atLeast()->once()
+        ->andReturn(FOSSBilling\Extension\Contract\Payment\Checkout::html('<form>pay</form>'));
+
     $payGatewayService = Mockery::mock(ServicePayGateway::class);
     $payGatewayService->shouldReceive('canPerformRecurrentPayment')
         ->atLeast()->once()
         ->andReturn(true);
-
-    $adapterMock = Mockery::mock('\Payment_Adapter_Dummy');
-    $adapterMock->shouldReceive('getConfig')
-        ->atLeast()->once()
-        ->andReturn([]);
-    $adapterMock->shouldReceive('recurrentPayment')
-        ->atLeast()->once()
-        ->andReturn(['type' => 'html', 'result' => 'test']);
-    $adapterMock->shouldReceive('getType')
-        ->atLeast()->once()
-        ->andReturn('html');
-    $adapterMock->shouldReceive('getServiceURL')
-        ->atLeast()->once()
-        ->andReturn('http://example.com/payment');
-
     $payGatewayService->shouldReceive('getPaymentAdapter')
         ->atLeast()->once()
         ->andReturn($adapterMock);
+    $payGatewayService->shouldReceive('getCheckoutUrls')
+        ->atLeast()->once()
+        ->andReturn(new FOSSBilling\Extension\Contract\Payment\CheckoutUrls('https://example.com/ok', 'https://example.com/cancel', 'https://example.com/ipn.php'));
+    $payGatewayService->shouldReceive('getAdapterConfig')
+        ->atLeast()->once()
+        ->andReturn(['embeddable' => true]);
 
     $di = container();
     $di['db'] = $dbMock;
@@ -2887,21 +2993,22 @@ test('processes an invoice', function (): void {
             return $subscribeService;
         }
     });
-    $di['api_admin'] = new FOSSBilling\Api\Proxy(new Model_Admin());
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $serviceMock->setDi($di);
     $result = $serviceMock->processInvoice($data);
 
-    expect($result)->toBeArray();
-    expect($result)->toHaveKey('type');
-    expect($result)->toHaveKey('service_url');
-    expect($result)->toHaveKey('subscription');
-    expect($result)->toHaveKey('result');
+    expect($result)->toBe([
+        'iframe' => true,
+        'type' => 'html',
+        'service_url' => '',
+        'subscription' => true,
+        'result' => '<form>pay</form>',
+    ]);
 });
 
 test('paypal email html generation does not require admin api invoice access', function (): void {
-    $adapter = new Payment_Adapter_PayPalEmail([
+    $adapter = new FOSSBilling\Extension\Gateway\PayPalEmail\PayPalEmail([
         'email' => 'payments@example.com',
         'test_mode' => false,
         'auto_redirect' => false,

@@ -13,12 +13,17 @@ namespace Box\Mod\Invoice;
 
 use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Repository\PayGatewayRepository;
+use FOSSBilling\Extension\Contract\Payment\CheckoutUrls;
+use FOSSBilling\Extension\Contract\Payment\ContextAware;
+use FOSSBilling\Extension\Contract\Payment\Gateway;
+use FOSSBilling\Extension\Contract\Payment\SupportsSubscriptions;
+use FOSSBilling\Extension\Contract\Payment\ValidatesSettings;
+use FOSSBilling\Extension\ExtensionType;
+use FOSSBilling\Extension\Manifest;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
-use Symfony\Component\Finder\Exception\DirectoryNotFoundException;
-use Symfony\Component\Finder\Finder;
 
 class ServicePayGateway implements InjectionAwareInterface
 {
@@ -80,34 +85,11 @@ class ServicePayGateway implements InjectionAwareInterface
             $exists[$row['gateway']] = $row['name'];
         }
 
-        $finder = new Finder();
-        $finder->files()
-            ->in(Path::join(PATH_LIBRARY, 'Payment', 'Adapter'))
-            ->name('*.php')
-            ->depth('== 0');
-
         $adapters = [];
-        foreach ($finder as $file) {
-            $adapter = $file->getFilenameWithoutExtension();
+        foreach ($this->di['extension_locator']->listInstalled(ExtensionType::Gateway) as $adapter) {
             if (!array_key_exists($adapter, $exists)) {
                 $adapters[] = $adapter;
             }
-        }
-
-        try {
-            $subFinder = new Finder();
-            $subFinder->files()
-                ->in(Path::join(PATH_LIBRARY, 'Payment', 'Adapter', '*'))
-                ->name('*.php')
-                ->depth('== 0');
-            foreach ($subFinder as $file) {
-                $adapter = $file->getFilenameWithoutExtension();
-                if (!array_key_exists($adapter, $exists)) {
-                    $adapters[] = $adapter;
-                }
-            }
-        } catch (DirectoryNotFoundException) {
-            // If the subdirectory does not exist, ignore the exception.
         }
 
         return $adapters;
@@ -213,27 +195,72 @@ class ServicePayGateway implements InjectionAwareInterface
     }
 
     /**
-     * Verify that the gateway configuration would be accepted by the adapter
-     * by attempting to instantiate it. This is used to enforce that the
-     * required keys for the currently selected test mode are present before
-     * persisting an "enabled" gateway update.
+     * Validate that a gateway's settings would be accepted, before persisting
+     * an "enabled" update: the manifest's `settings` schema is checked first
+     * (required fields for the chosen enabled/test-mode combination), then
+     * the adapter's own ValidatesSettings capability, if it implements one,
+     * gets a chance to enforce cross-field rules the schema can't express.
+     *
+     * This replaces the old `new $class($config)` inside a try/catch, which
+     * offered no useful error beyond whatever the constructor happened to
+     * throw.
      */
     private function validateGatewayConfig(PayGateway $model, array $config, bool $testMode): void
     {
-        $adapterConfig = $config;
-        $adapterConfig['test_mode'] = $testMode;
+        $class = $this->getAdapterClassName($model);
+        if (!class_exists($class)) {
+            return;
+        }
 
         try {
-            $class = $this->getAdapterClassName($model);
-            if (!class_exists($class)) {
-                return;
+            $manifest = $this->manifestFor($model);
+            $this->validateSettingsAgainstSchema($manifest->settings, $config, $testMode);
+
+            $instance = new $class($config);
+            if ($instance instanceof ValidatesSettings) {
+                $instance->validateSettings($config);
             }
-            new $class($adapterConfig);
-        } catch (\Payment_Exception $e) {
+        } catch (\FOSSBilling\Extension\Contract\Payment\Exception $e) {
             throw new \FOSSBilling\Exception($e->getMessage(), null, 819);
         } catch (\Throwable $e) {
             throw new \FOSSBilling\Exception('Payment gateway configuration error: ' . $e->getMessage(), null, 819);
         }
+    }
+
+    /**
+     * @param list<array<string, mixed>> $fields
+     */
+    private function validateSettingsAgainstSchema(array $fields, array $config, bool $testMode): void
+    {
+        $context = ['enabled' => true, 'test_mode' => $testMode];
+
+        foreach ($fields as $field) {
+            $name = (string) $field['name'];
+            $value = $config[$name] ?? null;
+
+            if ($this->isSettingsFieldRequired($field, $context) && ($value === null || $value === '')) {
+                throw new \FOSSBilling\Exception('Payment gateway configuration error: :field is required', [':field' => $field['label'] ?? $name]);
+            }
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $field
+     * @param array<string, bool>  $context
+     */
+    private function isSettingsFieldRequired(array $field, array $context): bool
+    {
+        if (isset($field['required_when']) && is_array($field['required_when'])) {
+            foreach ($field['required_when'] as $key => $expected) {
+                if (($context[$key] ?? null) !== $expected) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        return (bool) ($field['required'] ?? false);
     }
 
     public function delete(PayGateway $model): bool
@@ -260,12 +287,11 @@ class ServicePayGateway implements InjectionAwareInterface
                 $result[$gtw->getId()] = $gtw->getName();
             } else {
                 $gateway = $this->toApiArray($gtw);
-                $adapter = $this->getPaymentAdapter($gtw);
-                $config = $adapter->getConfig();
+                $config = $this->getAdapterConfig($gtw);
 
                 if (!empty($config['logo'])) {
                     $gateway['logo'] = $config['logo'];
-                    $gateway['logo']['logo'] = $this->resolveGatewayLogo($config['logo']);
+                    $gateway['logo']['logo'] = $this->resolveGatewayLogo((string) $gtw->getGateway(), $config['logo']);
                 }
 
                 $result[] = $gateway;
@@ -275,15 +301,15 @@ class ServicePayGateway implements InjectionAwareInterface
         return $result;
     }
 
-    public function resolveGatewayLogo(array $logoConfig): string
+    public function resolveGatewayLogo(string $gateway, array $logoConfig): string
     {
-        $filename = $logoConfig['logo'] ?? 'default.png';
+        $filename = $logoConfig['file'] ?? 'default.png';
 
-        $libraryPath = Path::join(PATH_LIBRARY, 'Payment', 'Adapter', $filename);
+        $extensionPath = Path::join(ExtensionType::Gateway->pathFor($gateway), $filename);
         $publicPath = Path::join(PATH_ROOT, 'public', 'gateways', $filename);
 
-        if ($this->filesystem->exists($libraryPath)) {
-            return $this->di['tools']->url("/library/Payment/Adapter/{$filename}");
+        if ($this->filesystem->exists($extensionPath)) {
+            return $this->di['tools']->url(sprintf('/extensions/%s/%s/%s', ExtensionType::Gateway->value, $gateway, $filename));
         }
 
         if ($this->filesystem->exists($publicPath)) {
@@ -306,10 +332,56 @@ class ServicePayGateway implements InjectionAwareInterface
     public function getPaymentAdapter(PayGateway $pg, ?\Model_Invoice $model = null, $optional = []): object
     {
         $config = json_decode($pg->getConfig() ?? '', true) ?? [];
+        $config['test_mode'] = $pg->isTestMode();
+        $config['gateway_id'] = (int) $pg->getId();
+
+        $class = $this->getAdapterClassName($pg);
+
+        if (!class_exists($class)) {
+            throw new \FOSSBilling\Exception('Payment gateway :adapter was not found.', [':adapter' => $class]);
+        }
+
+        // PayPalEmail and Stripe still take their return/cancel/notify URLs
+        // smuggled into the settings array their constructor receives,
+        // rather than receiving them per-checkout via CheckoutRequest::$urls.
+        // Delete this branch once both are migrated onto Gateway.
+        if (!is_a($class, Gateway::class, true)) {
+            $config = array_merge($config, $this->legacyUrlConfig($pg, $model, $optional));
+        }
+
+        $adapter = new $class($config);
+
+        // Gateways built against the payment contract get the narrow context.
+        // Those still using the container get it until they are migrated.
+        if ($adapter instanceof ContextAware) {
+            $adapter->setContext(new PaymentContext($this->di));
+        } elseif (method_exists($adapter, 'setDi')) {
+            $adapter->setDi($this->di);
+        }
+
+        return $adapter;
+    }
+
+    /**
+     * The return/cancel/callback URLs a Gateway-typed adapter receives via
+     * CheckoutRequest::$urls for a specific checkout.
+     */
+    public function getCheckoutUrls(PayGateway $pg, \Model_Invoice $model): CheckoutUrls
+    {
+        return new CheckoutUrls(
+            return: $this->getReturnUrl($pg, $model),
+            cancel: $this->getCancelUrl($pg, $model),
+            callback: $this->getCallbackRedirect($pg, $model),
+        );
+    }
+
+    /**
+     * @return mixed[]
+     */
+    private function legacyUrlConfig(PayGateway $pg, ?\Model_Invoice $model, array $optional): array
+    {
         $defaults = [];
-        $defaults['auto_redirect'] = false;
-        $defaults['gateway_id'] = (int) $pg->getId();
-        $defaults['test_mode'] = $pg->isTestMode();
+        $defaults['auto_redirect'] = $optional['auto_redirect'] ?? false;
         $defaults['return_url'] = $this->getReturnUrl($pg, $model);
         $defaults['cancel_url'] = $this->getCancelUrl($pg, $model);
         $defaults['notify_url'] = $this->getCallbackUrl($pg, $model);
@@ -320,39 +392,25 @@ class ServicePayGateway implements InjectionAwareInterface
             $defaults['thankyou_url'] = $this->di['url']->link("/invoice/thank-you/{$model->hash}", ['restore_token' => Tools::createSessionRestoreToken(session_id())]);
             $defaults['invoice_url'] = $this->di['tools']->url("/invoice/{$model->hash}");
         }
-
-        if (isset($optional['auto_redirect'])) {
-            $defaults['auto_redirect'] = $optional['auto_redirect'];
-        }
         $defaults['logo'] = null;
 
-        $config = array_merge($config, $defaults);
-
-        $class = $this->getAdapterClassName($pg);
-
-        if (!class_exists($class)) {
-            throw new \FOSSBilling\Exception('Payment gateway :adapter was not found.', [':adapter' => $class]);
-        }
-
-        $adapter = new $class($config);
-
-        if (method_exists($adapter, 'setDi')) {
-            $adapter->setDi($this->di);
-        }
-
-        return $adapter;
+        return $defaults;
     }
 
+    /**
+     * Whether this gateway can take a recurring payment and, separately, can
+     * take a one-time payment. `supports_one_time_payments` no longer gates
+     * anything — implementing Gateway (or, on the legacy path, `getHtml()`)
+     * is itself the claim that one-time payments work. `supports_subscriptions`
+     * is `instanceof SupportsSubscriptions`, checked against the class
+     * without constructing it, so listing gateways never has to run one.
+     */
     private function _getAllowTuple(PayGateway $model): array
     {
-        $adapter_config = $this->getAdapterConfig($model);
-        $single = $adapter_config['supports_one_time_payments'] ?? false;
-        $recurrent = $adapter_config['supports_subscriptions'] ?? false;
+        $class = $this->getAdapterClassName($model);
+        $recurrent = class_exists($class) && is_a($class, SupportsSubscriptions::class, true);
 
-        return [
-            $single,
-            $recurrent,
-        ];
+        return [true, $recurrent];
     }
 
     public function getAdapterConfig(PayGateway $pg): array
@@ -363,14 +421,19 @@ class ServicePayGateway implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Payment gateway :adapter was not found', [':adapter' => $pg->getGateway()]);
         }
 
-        if (!method_exists($class, 'getConfig')) {
-            error_log("Payment $class gateway does not have getConfig method");
+        $manifest = $this->manifestFor($pg);
 
-            return [];
-        }
+        return [
+            'description' => $manifest->description,
+            'form' => $manifest->settings,
+            'logo' => $manifest->logo,
+            'embeddable' => $manifest->embeddable,
+        ];
+    }
 
-        // @phpstan-ignore argument.type
-        return call_user_func([$class, 'getConfig']);
+    private function manifestFor(PayGateway $pg): Manifest
+    {
+        return $this->di['extension_locator']->manifest(ExtensionType::Gateway, (string) $pg->getGateway());
     }
 
     public function getAdapterClassName(PayGateway $pg): string
@@ -379,20 +442,8 @@ class ServicePayGateway implements InjectionAwareInterface
         if ($gateway === null || $gateway === '') {
             throw new \FOSSBilling\Exception('Payment gateway :adapter was not found', [':adapter' => '']);
         }
-        $class = "Payment_Adapter_{$gateway}";
 
-        if (!class_exists($class)) {
-            $nestedFile = Path::join(PATH_LIBRARY, 'Payment', 'Adapter', $gateway, "{$gateway}.php");
-            $flatFile = Path::join(PATH_LIBRARY, 'Payment', 'Adapter', "{$gateway}.php");
-
-            if ($this->filesystem->exists($nestedFile)) {
-                require_once $nestedFile;
-            } elseif ($this->filesystem->exists($flatFile)) {
-                require_once $flatFile;
-            }
-        }
-
-        return $class;
+        return $this->di['extension_locator']->resolveClass(ExtensionType::Gateway, $gateway);
     }
 
     public function getAcceptedCurrencies(PayGateway $model): array

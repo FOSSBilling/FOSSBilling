@@ -1,0 +1,8 @@
+{
+  "id": "Netearthone",
+  "type": "registrar",
+  "name": "NetEarthOne",
+  "description": "Registers and manages domains through the NetEarthOne API.",
+  "version": "1.0.0",
+  "api": 1
+}

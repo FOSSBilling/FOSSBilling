@@ -255,3 +255,50 @@ test('gets tax rate for client', function (): void {
     $result = $api->get_tax_rate();
     expect($result)->toBe($taxRate);
 });
+
+test('throws exception when the invoice being paid with credit does not belong to the signed-in client', function (): void {
+    $api = apiEndpoint(new Client());
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('findOne')
+        ->atLeast()->once()
+        ->andReturn(null);
+
+    $di = container();
+    $di['db'] = $dbMock;
+
+    $api->setDi($di);
+    $identity = new Model_Client();
+    $identity->loadBean(new Tests\Helpers\DummyBean());
+    $api->setIdentity($identity);
+
+    $data['hash'] = md5('1');
+    expect(fn () => $api->pay_with_credit($data))
+        ->toThrow(FOSSBilling\InformationException::class, 'Invoice was not found');
+});
+
+test('pays an invoice with account credit', function (): void {
+    $api = apiEndpoint(new Client());
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('payInvoiceFromClientBalance')
+        ->once();
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $model = new Model_Invoice();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $dbMock->shouldReceive('findOne')
+        ->atLeast()->once()
+        ->andReturn($model);
+
+    $di = container();
+    $di['db'] = $dbMock;
+
+    $api->setDi($di);
+    $api->setService($serviceMock);
+    $identity = new Model_Client();
+    $identity->loadBean(new Tests\Helpers\DummyBean());
+    $api->setIdentity($identity);
+
+    $data['hash'] = md5('1');
+    $result = $api->pay_with_credit($data);
+    expect($result)->toBeTrue();
+});

@@ -320,7 +320,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         try {
             $this->getService()->getServerManager($model);
-        } catch (\Server_Exception|\FOSSBilling\Exception $e) {
+        } catch (\FOSSBilling\Extension\Contract\Server\Exception|\FOSSBilling\Exception $e) {
             throw new \FOSSBilling\InformationException($e->getMessage(), [], $e->getCode() ?: 719);
         }
     }

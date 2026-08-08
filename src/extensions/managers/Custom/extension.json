@@ -1,0 +1,8 @@
+{
+  "id": "Custom",
+  "type": "manager",
+  "name": "Custom manager",
+  "description": "A manager that records accounts without contacting a control panel.",
+  "version": "1.0.0",
+  "api": 1
+}

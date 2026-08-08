@@ -1,0 +1,5 @@
+{
+  "require": {
+    "stripe/stripe-php": "^21.0.0"
+  }
+}

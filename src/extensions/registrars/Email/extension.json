@@ -1,0 +1,8 @@
+{
+  "id": "Email",
+  "type": "registrar",
+  "name": "Email registrar",
+  "description": "Sends domain requests to an address for an operator to action by hand.",
+  "version": "1.0.0",
+  "api": 1
+}

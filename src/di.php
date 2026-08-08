@@ -22,7 +22,6 @@ use FOSSBilling\Version;
 use RedBeanPHP\Facade;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -612,26 +611,34 @@ $di['update_readiness'] = new FOSSBilling\UpdateReadinessCheck(
 );
 
 /*
+ * Locates the extensions installed under PATH_EXTENSIONS.
+ */
+$di['extension_locator'] = fn (): FOSSBilling\Extension\ExtensionLocator => new FOSSBilling\Extension\ExtensionLocator($di['filesystem']);
+
+/*
+ * Installs an extension's own Composer dependencies into its bundle.
+ */
+$di['extension_dependencies'] = fn (): FOSSBilling\Extension\DependencyInstaller => new FOSSBilling\Extension\DependencyInstaller($di['filesystem']);
+
+/*
+ * The logger handed to extensions. PSR-3, so that the extension API does not
+ * expose Box_Log, while the writers configured on it still receive everything.
+ */
+$di['extension_logger'] = fn (): Psr\Log\LoggerInterface => new FOSSBilling\PsrLogAdapter($di['logger']);
+
+/*
  * Creates a new server manager object and returns it.
  *
  * @param string $manager The name of the server manager to create.
  * @param array $config The configuration options for the server manager.
  *
- * @return \Server_Manager The new server manager object that was just created.
+ * @return \FOSSBilling\Extension\Contract\Server\Manager The new server manager object that was just created.
  */
 $di['server_manager'] = $di->protect(function ($manager, $config) use ($di) {
-    $managerName = ucfirst((string) $manager);
-    $class = sprintf('Server_Manager_%s', $managerName);
-
-    if (!class_exists($class)) {
-        $file = Path::join(PATH_LIBRARY, 'Server', 'Manager', $managerName . '.php');
-        if ($di['filesystem']->exists($file)) {
-            require_once $file;
-        }
-    }
+    $class = $di['extension_locator']->resolveClass(FOSSBilling\Extension\ExtensionType::Manager, ucfirst((string) $manager));
 
     $s = new $class($config);
-    $s->setLog($di['logger']);
+    $s->setLog($di['extension_logger']);
 
     return $s;
 });

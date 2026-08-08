@@ -21,6 +21,13 @@
     <div class="row mb-3">
         <div class="col-md-12">
             {% if invoice.status == 'unpaid' %}
+                {% set is_deposit_invoice = false %}
+                {% for line in invoice.lines %}
+                    {% if line.type == 'deposit' %}
+                        {% set is_deposit_invoice = true %}
+                    {% endif %}
+                {% endfor %}
+                {% set enough_in_balance = (client and not is_deposit_invoice) ? (client.client_balance_get_total >= invoice.total) : false %}
                 <div class="card">
                 <div class="card-body">
                     <h5 class="mb-1">{{ 'Payment methods'|trans }}</h5>
@@ -44,6 +51,13 @@
                         </div>
                         <input type="hidden" name="gateway_id" id="gateway_id">
                     </form>
+                    {% if enough_in_balance %}
+                        <form class="mt-3" method="post" action="{{ 'invoice/pay_with_credit'|api_url(role: 'client') }}"
+                            {{ fb_api_form({ redirect: ("invoice/#{invoice.hash}")|url }) }}>
+                            <input type="hidden" name="hash" value="{{ invoice.hash }}"/>
+                            <button type="submit" class="btn btn-outline-primary btn-sm">{{ 'Pay with account credit'|trans }}</button>
+                        </form>
+                    {% endif %}
                 </div>
             </div>
             {% endif %}

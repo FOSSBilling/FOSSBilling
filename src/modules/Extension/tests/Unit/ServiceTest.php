@@ -15,6 +15,7 @@ use Box\Mod\Extension\Entity\ExtensionMeta;
 use Box\Mod\Extension\Repository\ExtensionMetaRepository;
 use Box\Mod\Extension\Repository\ExtensionRepository;
 use Box\Mod\Extension\Service;
+use FOSSBilling\Extension\ExtensionType;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\setEntityId;
@@ -391,6 +392,38 @@ test('activate activates an extension', function (): void {
     expect($result['has_settings'])->toBeTrue();
 });
 
+test('activate persists the manifest version for a gateway extension and does not crash when it has no lifecycle hook', function (): void {
+    $service = new Service();
+    $ext = extensionCreateEntity(1, 'gateway', 'Custom', 'deactivated', null);
+
+    $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffService->shouldReceive('checkPermissionsAndThrowException')->atLeast()->once();
+
+    $dependencyInstaller = Mockery::mock();
+    $dependencyInstaller->shouldReceive('hasDependencies')->andReturn(false);
+
+    // ExtensionLocator is final, so it is exercised for real against the
+    // bundled Custom gateway on disk rather than mocked — Custom does not
+    // implement HasLifecycle, which is exactly the "skip gracefully" path
+    // this test is for.
+    $extensionLocator = new FOSSBilling\Extension\ExtensionLocator(new Symfony\Component\Filesystem\Filesystem());
+    $expectedVersion = $extensionLocator->manifest(ExtensionType::Gateway, 'Custom')->version;
+
+    $em = extensionBuildEm();
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $staffService);
+    $di['extension_dependencies'] = $dependencyInstaller;
+    $di['extension_locator'] = $extensionLocator;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $service->setDi($di);
+    $service->activate($ext);
+
+    expect($ext->getVersion())->toBe($expectedVersion);
+});
+
 test('deactivate deactivates an extension', function (): void {
     $service = new Service();
     $ext = extensionCreateEntity(1, 'mod', 'extensionTest', 'installed');
@@ -572,7 +605,7 @@ test('getExtensionPath rejects unsafe extension IDs', function (string $type, st
     [FOSSBilling\ExtensionManager::TYPE_MOD, '..'],
     [FOSSBilling\ExtensionManager::TYPE_THEME, '../admin_default'],
     [FOSSBilling\ExtensionManager::TYPE_TRANSLATION, '/tmp/language'],
-    [FOSSBilling\ExtensionManager::TYPE_PG, 'Paypal/../../Adapter'],
+    [ExtensionType::Gateway->value, 'Paypal/../../Adapter'],
 ]);
 
 test('downloadAndExtract throws exception when download URL is missing', function (): void {

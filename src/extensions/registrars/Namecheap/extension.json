@@ -1,0 +1,8 @@
+{
+  "id": "Namecheap",
+  "type": "registrar",
+  "name": "Namecheap",
+  "description": "Registers and manages domains through the Namecheap API.",
+  "version": "1.0.0",
+  "api": 1
+}

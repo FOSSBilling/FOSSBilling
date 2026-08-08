@@ -1,0 +1,8 @@
+{
+  "id": "Hestia",
+  "type": "manager",
+  "name": "Hestia Control Panel",
+  "description": "Provisions hosting accounts on Hestia Control Panel servers.",
+  "version": "1.0.0",
+  "api": 1
+}

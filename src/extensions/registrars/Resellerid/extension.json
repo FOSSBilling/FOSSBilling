@@ -1,0 +1,8 @@
+{
+  "id": "Resellerid",
+  "type": "registrar",
+  "name": "ResellerID",
+  "description": "Registers and manages domains through the ResellerID API.",
+  "version": "1.0.0",
+  "api": 1
+}

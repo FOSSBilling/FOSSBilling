@@ -391,17 +391,18 @@ test('markTransactionError does not clobber an already processed transaction', f
     expect($transactionModel->getStatus())->toBe(Transaction::STATUS_PROCESSED);
 });
 
-test('_subscribe creates and persists a subscription from an approved transaction', function (): void {
+test('settleSubscriptionStarted creates and persists a subscription from a PaymentEvent', function (): void {
     $tx = createEntity(Transaction::class, ['id' => 1, 'gatewayId' => 5]);
-    $tx->setStatus(Transaction::STATUS_APPROVED);
     $tx->setInvoiceId(10);
-    $tx->setSId('sub_gateway_1');
-    $tx->setAmount('29.99');
-    $tx->setCurrency('USD');
-    $tx->setTxnId('txn_001');
 
-    $transactionRepo = Mockery::mock(TransactionRepository::class);
-    $transactionRepo->shouldReceive('findOneProcessedByTxnId')->andReturnNull();
+    $event = new FOSSBilling\Extension\Contract\Payment\PaymentEvent(
+        kind: FOSSBilling\Extension\Contract\Payment\EventKind::SubscriptionStarted,
+        reference: 'evt_001',
+        amount: 29.99,
+        currency: 'USD',
+        invoiceId: 10,
+        subscriptionReference: 'sub_gateway_1',
+    );
 
     $invoice = new Model_Invoice();
     $invoice->loadBean(new Tests\Helpers\DummyBean());
@@ -415,9 +416,11 @@ test('_subscribe creates and persists a subscription from an approved transactio
     $subscriptionService = Mockery::mock(ServiceSubscription::class);
     $subscriptionService->shouldReceive('getSubscriptionPeriod')->with($invoice)->andReturn('1M');
 
+    $subscriptionRepo = Mockery::mock(SubscriptionRepository::class);
+    $subscriptionRepo->shouldReceive('findOneBy')->with(['sid' => 'sub_gateway_1'])->andReturnNull();
+
     $em = Mockery::mock(EntityManagerInterface::class);
-    $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo);
-    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn(Mockery::mock(PayGatewayRepository::class));
+    $em->shouldReceive('getRepository')->with(Subscription::class)->andReturn($subscriptionRepo);
 
     $capturedSubscription = null;
     $em->shouldReceive('persist')->once()->withArgs(function (object $entity) use (&$capturedSubscription): bool {
@@ -427,24 +430,18 @@ test('_subscribe creates and persists a subscription from an approved transactio
     });
     $em->shouldReceive('flush')->atLeast()->once();
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
-    $eventsMock->shouldReceive('fire');
-
     $di = container();
     $di['db'] = $dbMock;
     $di['em'] = $em;
-    $di['events_manager'] = $eventsMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(fn ($module, $sub = '') => $subscriptionService);
 
     $service = new ServiceTransaction();
     $service->setDi($di);
 
     $refl = new ReflectionClass($service);
-    $method = $refl->getMethod('_subscribe');
-    $method->invoke($service, $tx);
+    $method = $refl->getMethod('settleSubscriptionStarted');
+    $method->invoke($service, $tx, 5, $event);
 
-    expect($tx->getStatus())->toBe(Transaction::STATUS_PROCESSED);
     expect($capturedSubscription)->toBeInstanceOf(Subscription::class)
         ->and($capturedSubscription->getSid())->toBe('sub_gateway_1')
         ->and($capturedSubscription->getClientId())->toBe(7)
@@ -457,14 +454,14 @@ test('_subscribe creates and persists a subscription from an approved transactio
         ->and($capturedSubscription->getStatus())->toBe('active');
 });
 
-test('_unsubscribe looks up the subscription by sid and delegates to the subscription service', function (): void {
-    $tx = createEntity(Transaction::class, ['id' => 1, 'gatewayId' => 5]);
-    $tx->setStatus(Transaction::STATUS_APPROVED);
-    $tx->setSId('sub_gateway_1');
-    $tx->setTxnId('txn_001');
-
-    $transactionRepo = Mockery::mock(TransactionRepository::class);
-    $transactionRepo->shouldReceive('findOneProcessedByTxnId')->andReturnNull();
+test('settleSubscriptionCancelled looks up the subscription by sid and delegates to the subscription service', function (): void {
+    $event = new FOSSBilling\Extension\Contract\Payment\PaymentEvent(
+        kind: FOSSBilling\Extension\Contract\Payment\EventKind::SubscriptionCancelled,
+        reference: 'evt_002',
+        amount: 0,
+        currency: 'USD',
+        subscriptionReference: 'sub_gateway_1',
+    );
 
     $subscription = createEntity(Subscription::class, ['id' => 12]);
     $subscriptionRepo = Mockery::mock(SubscriptionRepository::class);
@@ -479,28 +476,18 @@ test('_unsubscribe looks up the subscription by sid and delegates to the subscri
         ->with(Mockery::on(fn ($arg): bool => $arg instanceof Subscription && $arg->getId() === 12));
 
     $em = Mockery::mock(EntityManagerInterface::class);
-    $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo);
-    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn(Mockery::mock(PayGatewayRepository::class));
     $em->shouldReceive('getRepository')->with(Subscription::class)->andReturn($subscriptionRepo);
-    $em->shouldReceive('flush')->atLeast()->once();
-
-    $eventsMock = Mockery::mock('\Box_EventManager');
-    $eventsMock->shouldReceive('fire');
 
     $di = container();
     $di['em'] = $em;
-    $di['events_manager'] = $eventsMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(fn ($module, $sub = '') => $subscriptionService);
 
     $service = new ServiceTransaction();
     $service->setDi($di);
 
     $refl = new ReflectionClass($service);
-    $method = $refl->getMethod('_unsubscribe');
-    $method->invoke($service, $tx);
-
-    expect($tx->getStatus())->toBe(Transaction::STATUS_PROCESSED);
+    $method = $refl->getMethod('settleSubscriptionCancelled');
+    $method->invoke($service, $event);
 });
 
 test('debitTransaction records a client balance credit', function (): void {
@@ -535,4 +522,99 @@ test('debitTransaction records a client balance credit', function (): void {
     $service->getDi()['db'] = $db;
 
     $service->debitTransaction($tx);
+});
+
+test('processTransaction dispatches to a HandlesWebhooks adapter via instanceof, not method_exists', function (): void {
+    $tx = createEntity(Transaction::class, ['id' => 1, 'gatewayId' => 5]);
+    $tx->setIpn(json_encode(['get' => [], 'post' => [], 'http_raw_post_data' => '{}', 'server' => []]));
+
+    $gateway = createEntity(PayGateway::class, ['id' => 5]);
+
+    $transactionRepo = Mockery::mock(TransactionRepository::class);
+    $transactionRepo->shouldReceive('find')->once()->with(1)->andReturn($tx);
+
+    $pgRepo = Mockery::mock(PayGatewayRepository::class);
+    $pgRepo->shouldReceive('find')->once()->with(5)->andReturn($gateway);
+
+    $adapter = new class implements FOSSBilling\Extension\Contract\Payment\HandlesWebhooks {
+        public function handleWebhook(FOSSBilling\Extension\Contract\Payment\WebhookRequest $request): FOSSBilling\Extension\Contract\Payment\WebhookResult
+        {
+            return FOSSBilling\Extension\Contract\Payment\WebhookResult::ignore('ok');
+        }
+    };
+
+    $payGatewayService = Mockery::mock(ServicePayGateway::class);
+    $payGatewayService->shouldReceive('getPaymentAdapter')->once()->andReturn($adapter);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($pgRepo);
+    $em->shouldReceive('flush');
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(fn ($module, $sub = '') => $payGatewayService);
+
+    $service = new ServiceTransaction();
+    $service->setDi($di);
+
+    $result = $service->processTransaction(1);
+
+    expect($result)->toBe('ok')
+        ->and($tx->getStatus())->toBe(Transaction::STATUS_PROCESSED);
+});
+
+test('settlePaymentEvent skips an event whose (gateway, reference) pair was already processed', function (): void {
+    $tx = createEntity(Transaction::class, ['id' => 1, 'gatewayId' => 5]);
+
+    $existing = createEntity(Transaction::class, ['id' => 99]);
+    $existing->setStatus(Transaction::STATUS_PROCESSED);
+
+    $event = new FOSSBilling\Extension\Contract\Payment\PaymentEvent(
+        kind: FOSSBilling\Extension\Contract\Payment\EventKind::Captured,
+        reference: 'evt_dupe',
+        amount: 5.0,
+        currency: 'USD',
+        invoiceId: 3,
+    );
+
+    $transactionRepo = Mockery::mock(TransactionRepository::class);
+    $transactionRepo->shouldReceive('findOneByTxnIdAndGatewayId')->once()->with('evt_dupe', 5)->andReturn($existing);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn(Mockery::mock(PayGatewayRepository::class));
+
+    $di = container();
+    $di['em'] = $em;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $service = new ServiceTransaction();
+    $service->setDi($di);
+
+    $refl = new ReflectionClass($service);
+    $method = $refl->getMethod('settlePaymentEvent');
+    $method->invoke($service, $tx, 5, $event);
+
+    // Neither the reference nor the amount were applied to $tx: settlement
+    // never ran because the dedupe check short-circuited first.
+    expect($tx->getTxnId())->toBeNull();
+});
+
+test('headersFromServerArray turns HTTP_ server keys into header names', function (): void {
+    $service = new ServiceTransaction();
+
+    $refl = new ReflectionClass($service);
+    $method = $refl->getMethod('headersFromServerArray');
+
+    $headers = $method->invoke($service, [
+        'HTTP_STRIPE_SIGNATURE' => 't=123,v1=abc',
+        'HTTP_X_FORWARDED_FOR' => '127.0.0.1',
+        'REQUEST_METHOD' => 'POST',
+    ]);
+
+    expect($headers)->toBe([
+        'Stripe-Signature' => 't=123,v1=abc',
+        'X-Forwarded-For' => '127.0.0.1',
+    ]);
 });

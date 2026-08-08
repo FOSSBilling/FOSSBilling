@@ -1,0 +1,8 @@
+{
+  "id": "PayPalEmail",
+  "type": "gateway",
+  "name": "PayPal",
+  "description": "Accepts PayPal payments addressed to a PayPal account email.",
+  "version": "1.0.0",
+  "api": 1
+}

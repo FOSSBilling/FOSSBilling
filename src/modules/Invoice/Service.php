@@ -20,6 +20,12 @@ use Box\Mod\Invoice\Repository\InvoiceItemRepository;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use FOSSBilling\Environment;
+use FOSSBilling\Extension\Contract\Payment\Checkout\Form;
+use FOSSBilling\Extension\Contract\Payment\Checkout\Html;
+use FOSSBilling\Extension\Contract\Payment\Checkout\Redirect;
+use FOSSBilling\Extension\Contract\Payment\CheckoutRequest;
+use FOSSBilling\Extension\Contract\Payment\Gateway;
+use FOSSBilling\Extension\Contract\Payment\InvoiceView;
 use FOSSBilling\Http\ResponseFactory;
 use FOSSBilling\i18n;
 use FOSSBilling\InformationException;
@@ -1438,6 +1444,25 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
+    public function payInvoiceFromClientBalance(\Model_Invoice $invoice): void
+    {
+        if ($this->isInvoiceTypeDeposit($invoice)) {
+            throw new InformationException('You may not pay a deposit invoice with account credit.');
+        }
+
+        $client = $this->di['db']->load('Client', $invoice->client_id);
+        $balance = $this->di['mod_service']('Client', 'Balance')->getClientBalance($client);
+        $required = $this->getTotalWithTax($invoice);
+        $epsilon = 0.01;
+
+        if ($balance - $required < -$epsilon) {
+            throw new InformationException('Your account balance is insufficient to cover this invoice.');
+        }
+
+        $this->tryPayWithCredits($invoice);
+        $this->doBatchPayWithCredits(['client_id' => $invoice->client_id]);
+    }
+
     /**
      * @param int $due_days
      *
@@ -1774,45 +1799,94 @@ class Service implements InjectionAwareInterface
         }
 
         $adapter = $payGatewayService->getPaymentAdapter($gtw, $invoice, $data);
+
+        if ($adapter instanceof Gateway) {
+            $this->di['logger']->info('Went to pay for invoice #%s via %s', $invoice->id, $gtw->getGateway());
+
+            $checkout = $adapter->checkout(new CheckoutRequest(
+                invoice: $this->buildInvoiceView($invoice),
+                subscription: $subscribe,
+                urls: $payGatewayService->getCheckoutUrls($gtw, $invoice),
+                testMode: $gtw->isTestMode(),
+            ));
+
+            return match (true) {
+                $checkout instanceof Html => [
+                    'iframe' => (bool) ($payGatewayService->getAdapterConfig($gtw)['embeddable'] ?? false),
+                    'type' => 'html',
+                    'service_url' => '',
+                    'subscription' => $subscribe,
+                    'result' => $checkout->html,
+                ],
+                $checkout instanceof Redirect => [
+                    'iframe' => false,
+                    'type' => 'redirect',
+                    'service_url' => $checkout->url,
+                    'subscription' => $subscribe,
+                    'result' => $checkout->url,
+                ],
+                $checkout instanceof Form => [
+                    'iframe' => false,
+                    'type' => 'form',
+                    'service_url' => $checkout->action,
+                    'subscription' => $subscribe,
+                    'result' => ['action' => $checkout->action, 'fields' => $checkout->fields, 'method' => $checkout->method],
+                ],
+                default => throw new \FOSSBilling\Exception('Payment gateway :id returned an unknown Checkout type', [':id' => $gtw->getGateway()]),
+            };
+        }
+
+        // PayPalEmail and Stripe still return raw HTML from getHtml() rather
+        // than implementing Gateway. Delete this branch once both are migrated.
         if (method_exists($adapter, 'setDi')) {
             $adapter->setDi($this->di);
         }
 
         if (method_exists($adapter, 'setLog')) {
-            $adapter->setLog($this->di['logger']);
+            $adapter->setLog($this->di['extension_logger']);
         }
 
-        $pgc = $adapter->getConfig();
-
-        // @since v2.9.15
-        if (method_exists($adapter, 'getHtml')) {
-            $html = $adapter->getHtml($this->di['api_system'], (int) $invoice->id, $subscribe);
-
-            return [
-                'iframe' => isset($pgc['can_load_in_iframe']) && (bool) $pgc['can_load_in_iframe'],
-                'type' => 'html',
-                'service_url' => '',
-                'subscription' => $subscribe,
-                'result' => $html,
-            ];
-        }
-
-        $i = clone $invoice;
-        $mpi = $this->getPaymentInvoice($i, $subscribe);
-        $r = ($subscribe) ? $adapter->recurrentPayment($mpi) : $adapter->singlePayment($mpi);
+        $html = $adapter->getHtml($this->di['api_system'], (int) $invoice->id, $subscribe);
         $this->di['logger']->info('Went to pay for invoice #%s via %s', $invoice->id, $gtw->getGateway());
 
-        // @bug https://github.com/boxbilling/boxbilling/issues/108
-        if ($adapter->getType() != 'html') {
-            $r = (array) $r;
-        }
-
         return [
-            'type' => $adapter->getType(),
-            'service_url' => $adapter->getServiceURL(),
+            'iframe' => (bool) ($payGatewayService->getAdapterConfig($gtw)['embeddable'] ?? false),
+            'type' => 'html',
+            'service_url' => '',
             'subscription' => $subscribe,
-            'result' => $r,
+            'result' => $html,
         ];
+    }
+
+    /**
+     * Builds the read-only invoice a gateway sees. `total`/`subtotal`/`tax`/
+     * `lines` are reused from toApiArray() rather than recomputed, so a
+     * Custom-style adapter rendering a merchant template can reference
+     * `{{ invoice.total }}` etc. the same way its old getHtml() could when
+     * it was handed the full API array.
+     */
+    private function buildInvoiceView(\Model_Invoice $invoice): InvoiceView
+    {
+        $api = $this->toApiArray($invoice);
+
+        return new InvoiceView(
+            id: (int) $invoice->id,
+            clientId: (int) $invoice->client_id,
+            gatewayId: $invoice->gateway_id !== null ? (int) $invoice->gateway_id : null,
+            currency: (string) $invoice->currency,
+            hash: (string) $invoice->hash,
+            approved: (bool) $invoice->approved,
+            status: $invoice->status !== null ? (string) $invoice->status : null,
+            serie: $invoice->serie !== null ? (string) $invoice->serie : null,
+            nr: $invoice->nr !== null ? (int) $invoice->nr : null,
+            buyerEmail: $invoice->buyer_email !== null ? (string) $invoice->buyer_email : null,
+            buyerFirstName: $invoice->buyer_first_name !== null ? (string) $invoice->buyer_first_name : null,
+            buyerLastName: $invoice->buyer_last_name !== null ? (string) $invoice->buyer_last_name : null,
+            total: (float) ($api['total'] ?? 0),
+            subtotal: (float) ($api['subtotal'] ?? 0),
+            tax: (float) ($api['tax'] ?? 0),
+            lines: is_array($api['lines'] ?? null) ? $api['lines'] : [],
+        );
     }
 
     public function generatePDF($hash, $identity): Response
@@ -2018,86 +2092,6 @@ class Service implements InjectionAwareInterface
         $systemService = $this->di['mod_service']('system');
 
         return (bool) $systemService->getParamValue('invoice_auto_approval', true);
-    }
-
-    /**
-     * @param bool $subscribe
-     */
-    public function getPaymentInvoice(\Model_Invoice $invoice, $subscribe = false): \Payment_Invoice
-    {
-        $proforma = $this->toApiArray($invoice);
-        $client = $this->getBuyer($invoice);
-
-        $buyer = new \Payment_Invoice_Buyer();
-        $buyer
-            ->setEmail($client['email'])
-            ->setFirstName($client['first_name'])
-            ->setLastName($client['last_name'])
-            ->setCompany($client['company'])
-            ->setAddress($client['address'])
-            ->setCity($client['city'])
-            ->setState($client['state'])
-            ->setZip($client['zip'])
-            ->setPhone($client['phone'])
-            ->setPhoneCountryCode($client['phone_cc'])
-            ->setCountry($client['country']);
-
-        $first_title = null;
-        $items = [];
-        foreach ($proforma['lines'] as $item) {
-            $pi = new \Payment_Invoice_Item();
-            $pi
-                ->setId($item['id'])
-                ->setTitle($item['title'])
-                ->setDescription($item['title'])
-                ->setPrice($item['price'])
-                ->setTax($item['tax'])
-                ->setQuantity($item['quantity']);
-            $items[] = $pi;
-            if (is_null($first_title) && Tools::safeCount($proforma['lines']) == 1) {
-                $first_title = $item['title'];
-            }
-        }
-
-        $invoice_number_padding = $this->di['mod_service']('system')->getParamValue('invoice_number_padding');
-        $invoice_number_padding = $invoice_number_padding !== null && $invoice_number_padding !== '' ? $invoice_number_padding : 5;
-
-        $params = [
-            ':id' => sprintf('%0' . $invoice_number_padding . 's', $proforma['nr']),
-            ':serie' => $proforma['serie'],
-            ':title' => $first_title,
-        ];
-        if ($first_title) {
-            $title = __trans('Payment for invoice :serie:id [:title]', $params);
-        } else {
-            $title = __trans('Payment for invoice :serie:id', $params);
-        }
-
-        $mpi = new \Payment_Invoice();
-        $mpi->setId($invoice->id);
-        $mpi->setNumber($proforma['nr']);
-        $mpi->setBuyer($buyer);
-        $mpi->setCurrency($proforma['currency']);
-        $mpi->setTitle($title);
-        $mpi->setItems($items);
-
-        $subscribeService = $this->di['mod_service']('Invoice', 'Subscription');
-        // can subscribe only if proforma has one item with defined period
-        if ($subscribe && $subscribeService->isSubscribable($invoice->id)) {
-            $subitem = $invoice->InvoiceItem->getFirst();
-            $period = $this->di['period']($subitem->period);
-
-            $bs = new \Payment_Invoice_Subscription();
-            $bs->setId($proforma['id']);
-            $bs->setAmount($mpi->getTotalWithTax());
-            $bs->setCycle($period->getQty());
-            $bs->setUnit($period->getUnit());
-
-            $mpi->setSubscription($bs);
-            $mpi->setTitle('Subscription for ' . $subitem->title);
-        }
-
-        return $mpi;
     }
 
     public function getBuyer(\Model_Invoice $invoice): array

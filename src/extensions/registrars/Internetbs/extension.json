@@ -1,0 +1,8 @@
+{
+  "id": "Internetbs",
+  "type": "registrar",
+  "name": "Internet.bs",
+  "description": "Registers and manages domains through the Internet.bs API.",
+  "version": "1.0.0",
+  "api": 1
+}

@@ -1,0 +1,8 @@
+{
+  "id": "Plesk",
+  "type": "manager",
+  "name": "Plesk",
+  "description": "Provisions hosting accounts on Plesk servers.",
+  "version": "1.0.0",
+  "api": 1
+}

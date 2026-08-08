@@ -14,6 +14,8 @@ namespace Box\Mod\Invoice;
 use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Repository\SubscriptionRepository;
+use FOSSBilling\Extension\Contract\Payment\CancelsSubscriptions;
+use FOSSBilling\Extension\Contract\Payment\CancelsSubscriptionsAtPeriodEnd;
 use FOSSBilling\InjectionAwareInterface;
 
 class ServiceSubscription implements InjectionAwareInterface
@@ -248,7 +250,7 @@ class ServiceSubscription implements InjectionAwareInterface
         }
 
         $adapter = $this->getGatewayAdapter($model);
-        if (!method_exists($adapter, 'cancelSubscriptionAtPeriodEnd')) {
+        if (!$adapter instanceof CancelsSubscriptionsAtPeriodEnd) {
             throw new \FOSSBilling\InformationException('The payment gateway does not support cancellation at the end of the billing period.');
         }
 
@@ -256,6 +258,15 @@ class ServiceSubscription implements InjectionAwareInterface
         $this->persistUpdate($model, ['status' => self::STATUS_PENDING_CANCELLATION]);
     }
 
+    /**
+     * Cancel a subscription at the provider, immediately.
+     *
+     * Previously this silently no-opped when the adapter had no
+     * cancelSubscription method: the subscription was marked canceled
+     * locally while the provider kept billing the customer. Now it throws,
+     * the way scheduleCancellation() already did, so the admin is told the
+     * gateway cannot cancel remotely rather than being told it succeeded.
+     */
     private function cancelAtGateway(Subscription $model, ?string $subscriptionId = null): void
     {
         $subscriptionId = trim($subscriptionId ?? (string) $model->getSid());
@@ -265,9 +276,11 @@ class ServiceSubscription implements InjectionAwareInterface
 
         $adapter = $this->getGatewayAdapter($model);
 
-        if (method_exists($adapter, 'cancelSubscription')) {
-            $adapter->cancelSubscription($subscriptionId);
+        if (!$adapter instanceof CancelsSubscriptions) {
+            throw new \FOSSBilling\InformationException('The payment gateway does not support cancelling this subscription remotely. It must be cancelled directly with the provider, or the local record removed without notifying the provider.');
         }
+
+        $adapter->cancelSubscription($subscriptionId);
     }
 
     private function getGatewayAdapter(Subscription $model): object
@@ -359,7 +372,7 @@ class ServiceSubscription implements InjectionAwareInterface
                 return false;
             }
 
-            if (!method_exists($adapter, 'cancelSubscriptionAtPeriodEnd')) {
+            if (!$adapter instanceof CancelsSubscriptionsAtPeriodEnd) {
                 return false;
             }
         }

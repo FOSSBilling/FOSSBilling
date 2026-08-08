@@ -1,0 +1,852 @@
+<?php
+
+declare(strict_types=1);
+/**
+ * Copyright 2022-2025 FOSSBilling
+ * SPDX-License-Identifier: Apache-2.0.
+ *
+ * @copyright FOSSBilling (https://www.fossbilling.org)
+ * @license   http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
+ */
+
+namespace FOSSBilling\Extension\Manager\Directadmin;
+
+use Random\RandomException;
+use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
+
+/**
+ * This class is responsible for managing the DirectAdmin server.
+ * It extends the \FOSSBilling\Extension\Contract\Server\Manager class.
+ */
+class Directadmin extends \FOSSBilling\Extension\Contract\Server\Manager
+{
+    /**
+     * Returns the form configuration for the DirectAdmin server manager.
+     * The form includes fields for username and password.
+     *
+     * @return array the form configuration
+     */
+    public static function getForm(): array
+    {
+        return [
+            'label' => 'DirectAdmin',
+            'form' => [
+                'credentials' => [
+                    'fields' => [
+                        [
+                            'name' => 'username',
+                            'type' => 'text',
+                            'label' => 'Username',
+                            'placeholder' => 'Username used to connect to the server',
+                            'required' => true,
+                            'secret' => true,
+                        ],
+                        [
+                            'name' => 'password',
+                            'type' => 'text',
+                            'label' => 'Password / Login Key',
+                            'placeholder' => 'Password or login key used to connect to the server',
+                            'required' => true,
+                            'secret' => true,
+                        ],
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Initialize the server manager.
+     * Checks if the host, username, and password are set in the configuration.
+     * Throws an exception if any of these are not set.
+     *
+     * @throws \FOSSBilling\Extension\Contract\Server\Exception
+     */
+    public function init(): void
+    {
+        // Check if host is set in the configuration
+        if (empty($this->_config['host'])) {
+            throw new \FOSSBilling\Extension\Contract\Server\Exception('The ":server_manager" server manager is not fully configured. Please configure the :missing', [':server_manager' => 'DirectAdmin', ':missing' => 'hostname'], 2001);
+        }
+
+        // Check if username is set in the configuration
+        if (empty($this->_config['username'])) {
+            throw new \FOSSBilling\Extension\Contract\Server\Exception('The ":server_manager" server manager is not fully configured. Please configure the :missing', [':server_manager' => 'DirectAdmin', ':missing' => 'username'], 2001);
+        }
+
+        // Check if password is set in the configuration
+        if (empty($this->_config['password'])) {
+            throw new \FOSSBilling\Extension\Contract\Server\Exception('The ":server_manager" server manager is not fully configured. Please configure the :missing', [':server_manager' => 'DirectAdmin', ':missing' => 'password'], 2001);
+        }
+    }
+
+    /**
+     * Cancels an account on the DirectAdmin server.
+     * This method sends a request to the server to delete the account.
+     *
+     * Some DirectAdmin servers return an error for this request even though the
+     * deletion already succeeded, so on failure we double check whether the
+     * account still exists before giving up.
+     *
+     * @param \FOSSBilling\Extension\Contract\Server\Account $account the account to be cancelled
+     *
+     * @return bool returns true if the account is successfully cancelled
+     *
+     * @throws \FOSSBilling\Extension\Contract\Server\Exception if there is an error while sending the request to the server and the account still exists
+     */
+    public function cancelAccount(\FOSSBilling\Extension\Contract\Server\Account $account): bool
+    {
+        $fields = [
+            'confirmed' => 'Confirm',
+            'delete' => 'yes',
+            'select0' => $account->getUsername(),
+        ];
+
+        try {
+            $this->request('API_SELECT_USERS', $fields);
+        } catch (\FOSSBilling\Extension\Contract\Server\Exception $e) {
+            if ($this->accountExists($account)) {
+                throw $e;
+            }
+
+            $this->getLog()->info("Deletion of {$account->getUsername()} reported an error, but the account no longer exists on the server.");
+        }
+
+        return true;
+    }
+
+    /**
+     * Checks whether an account still exists on the DirectAdmin server.
+     * If the check itself fails, the account is assumed to still exist so a
+     * transport, authentication, or permission error is never mistaken for a
+     * successful deletion.
+     *
+     * @param \FOSSBilling\Extension\Contract\Server\Account $account the account to check
+     *
+     * @return bool true if the account still exists, false otherwise
+     */
+    private function accountExists(\FOSSBilling\Extension\Contract\Server\Account $account): bool
+    {
+        try {
+            $users = $this->request('API_SHOW_USERS');
+        } catch (\FOSSBilling\Extension\Contract\Server\Exception) {
+            return true;
+        }
+
+        return in_array($account->getUsername(), $users['list'] ?? [], true);
+    }
+
+    /**
+     * Returns the port number for the DirectAdmin server.
+     * If the port is set in the configuration, verify that it's a valid port number (1 - 65535).
+     * If a valid port is not set in the configuration, it defaults to 2222.
+     *
+     * @return int the port number
+     */
+    public function getPort(): int
+    {
+        return \FOSSBilling\Tools::normalizePort($this->_config['port'] ?? null, 2222);
+    }
+
+    /**
+     * Changes the domain of an account on the DirectAdmin server.
+     * This method is not supported and will always throw an exception.
+     *
+     * @param \FOSSBilling\Extension\Contract\Server\Account $account   the account for which the domain is to be changed
+     * @param string                                         $newDomain the new domain
+     *
+     * @throws \FOSSBilling\Extension\Contract\Server\Exception always throws an exception indicating that the method is not supported
+     */
+    public function changeAccountDomain(\FOSSBilling\Extension\Contract\Server\Account $account, string $newDomain): never
+    {
+        throw new \FOSSBilling\Extension\Contract\Server\Exception(':type: does not support :action:', [':type:' => 'DirectAdmin', ':action:' => __trans('changing the account domain')]);
+    }
+
+    /**
+     * Changes the IP of an account on the DirectAdmin server.
+     * This method is not supported and will always throw an exception.
+     *
+     * @param \FOSSBilling\Extension\Contract\Server\Account $account the account for which the IP is to be changed
+     * @param string                                         $newIp   the new IP
+     *
+     * @throws \FOSSBilling\Extension\Contract\Server\Exception always throws an exception indicating that the method is not supported
+     */
+    public function changeAccountIp(\FOSSBilling\Extension\Contract\Server\Account $account, string $newIp): never
+    {
+        throw new \FOSSBilling\Extension\Contract\Server\Exception(':type: does not support :action:', [':type:' => 'DirectAdmin', ':action:' => __trans('changing the account IP')]);
+    }
+
+    /**
+     * Changes the package of an account on the DirectAdmin server.
+     * This method sends a request to the server to change the package of the account.
+     *
+     * @param \FOSSBilling\Extension\Contract\Server\Account $account the account for which the package is to be changed
+     * @param \FOSSBilling\Extension\Contract\Server\Package $package the new package
+     *
+     * @return bool returns true if the package is successfully changed
+     *
+     * @throws \FOSSBilling\Extension\Contract\Server\Exception if there is an error while sending the request to the server
+     */
+    public function changeAccountPackage(\FOSSBilling\Extension\Contract\Server\Account $account, \FOSSBilling\Extension\Contract\Server\Package $package): bool
+    {
+        $fields = [
+            'user' => $account->getUsername(),
+            'package' => $account->getPackage()->getName(),
+        ];
+
+        // Match the package name with a server package, if it exists. Otherwise, use custom values.
+        $packageName = $package->getCustomValue('package') ?: $package->getName();
+        $serverPackages = $this->getUserPackages();
+        if (in_array($packageName, $serverPackages)) {
+            $this->getLog()->info("Using DirectAdmin package name: {$packageName}.");
+
+            $fields['action'] = 'package';
+            $fields['package'] = $packageName;
+        } else {
+            $this->getLog()->info("Using custom package values: {$packageName} does not exist on the server.");
+
+            $fields['action'] = 'customize';
+            $fields = array_merge($fields, $this->getCustomPackageFields($package));
+        }
+
+        $this->request('API_MODIFY_USER', $fields);
+
+        return true;
+    }
+
+    /**
+     * Changes the password of an account on the DirectAdmin server.
+     * This method sends a request to the server to change the password of the account.
+     *
+     * @param \FOSSBilling\Extension\Contract\Server\Account $account     the account for which the password is to be changed
+     * @param string                                         $newPassword the new password
+     *
+     * @return bool returns true if the password is successfully changed
+     *
+     * @throws \FOSSBilling\Extension\Contract\Server\Exception if there is an error while sending the request to the server
+     */
+    public function changeAccountPassword(\FOSSBilling\Extension\Contract\Server\Account $account, string $newPassword): bool
+    {
+        $fields = [
+            'username' => $account->getUsername(),
+            'passwd' => $newPassword,
+            'passwd2' => $newPassword,
+        ];
+
+        $this->request('API_USER_PASSWD', $fields);
+
+        return true;
+    }
+
+    /**
+     * Changes the username of an account on the DirectAdmin server.
+     * This method is not supported and will always throw an exception.
+     *
+     * @param \FOSSBilling\Extension\Contract\Server\Account $account     the account for which the username is to be changed
+     * @param string                                         $newUsername the new username
+     *
+     * @throws \FOSSBilling\Extension\Contract\Server\Exception always throws an exception indicating that the method is not supported
+     */
+    public function changeAccountUsername(\FOSSBilling\Extension\Contract\Server\Account $account, string $newUsername): never
+    {
+        throw new \FOSSBilling\Extension\Contract\Server\Exception(':type: does not support :action:', [':type:' => 'DirectAdmin', ':action:' => __trans('username changes')]);
+    }
+
+    /**
+     * Creates a new account on the DirectAdmin server.
+     * This method sends a request to the server with the account details.
+     * If the account is a reseller account, additional fields are included in the request.
+     *
+     * @param \FOSSBilling\Extension\Contract\Server\Account $account the server account
+     *
+     * @return bool true if the account is created successfully, false otherwise
+     *
+     * @throws \FOSSBilling\Extension\Contract\Server\Exception
+     */
+    public function createAccount(\FOSSBilling\Extension\Contract\Server\Account $account): bool
+    {
+        $ips = $this->getIps();
+        if (empty($ips)) {
+            throw new \FOSSBilling\Extension\Contract\Server\Exception('There are no available IPs on this server.');
+        }
+
+        $ip = $ips[array_rand($ips)];
+        $package = $account->getPackage();
+        $client = $account->getClient();
+
+        $fields = [
+            'action' => 'create',
+            'add' => 'Submit',
+            'username' => $account->getUsername(),
+            'email' => $client->getEmail(),
+            'passwd' => $account->getPassword(),
+            'passwd2' => $account->getPassword(),
+            'domain' => $account->getDomain(),
+            'ip' => $ip,
+            'notify' => 'no',
+        ];
+
+        // Match the package name with a server package, if it exists. Otherwise, use custom values.
+        $packageName = $package->getCustomValue('package') ?: $package->getName();
+        $serverPackages = $this->getUserPackages();
+        if (in_array($packageName, $serverPackages)) {
+            $this->getLog()->info("Using DirectAdmin package name: {$packageName}.");
+            $fields['package'] = $packageName;
+        } else {
+            $this->getLog()->info("Using custom package values: {$packageName} does not exist on the server.");
+
+            $fields = array_merge($fields, $this->getCustomPackageFields($package));
+        }
+
+        $command = 'API_ACCOUNT_USER';
+
+        if ($account->getReseller()) {
+            $command = 'ACCOUNT_RESELLER';
+
+            $fields['ip'] = 'shared'; // Workaround: use shared IP for reseller accounts until support for dedicated IPs is added.
+        }
+
+        try {
+            $results = $this->request($command, $fields);
+        } catch (\Exception $e) {
+            if (strtolower($e->getMessage()) == strtolower(sprintf('Server Manager DirectAdmin Error: "%s" ', 'That domain already exists'))) {
+                return true;
+            }
+
+            throw new \FOSSBilling\Extension\Contract\Server\Exception($e->getMessage());
+        }
+
+        if (str_contains(implode('', $results), 'Unable to assign the Reseller ANY ips')) {
+            throw new \FOSSBilling\Extension\Contract\Server\Exception('Unable to assign the Reseller ANY IPs. Make sure to have free, unassigned IPs.');
+        }
+
+        if (str_contains(implode('', $results), 'Error Creating User')) {
+            throw new \FOSSBilling\Extension\Contract\Server\Exception('Error creating user');
+        }
+
+        return true;
+    }
+
+    /**
+     * Returns the login URL for a reseller account on the DirectAdmin server.
+     * This method simply calls the getLoginUrl method, as the URL is the same for reseller accounts.
+     *
+     * @param \FOSSBilling\Extension\Contract\Server\Account|null $account The server account. This parameter is not used in this method.
+     *
+     * @return string the login URL
+     *
+     * @throws \FOSSBilling\Extension\Contract\Server\Exception
+     */
+    public function getResellerLoginUrl(?\FOSSBilling\Extension\Contract\Server\Account $account = null): string
+    {
+        return $this->getLoginUrl();
+    }
+
+    /**
+     * Returns the login URL for the DirectAdmin server.
+     * The URL includes the host and port from the configuration.
+     * If the 'secure' configuration option is set, the URL uses the 'https' protocol.
+     * Otherwise, it uses the 'http' protocol.
+     *
+     * @param \FOSSBilling\Extension\Contract\Server\Account|null $account The server account. This parameter is not used in this method.
+     *
+     * @return string the login URL
+     *
+     * @throws \FOSSBilling\Extension\Contract\Server\Exception
+     */
+    public function getLoginUrl(?\FOSSBilling\Extension\Contract\Server\Account $account = null): string
+    {
+        $protocol = $this->_config['secure'] ? 'https://' : 'http://';
+
+        if (!$account) {
+            return $protocol . $this->_config['host'] . ':' . $this->getPort();
+        }
+
+        $fields = [
+            'action' => 'create',
+            'expiry' => '30m', // when the URL expires, so does the user session
+            'login_keys_notify_on_creation' => 0,
+            'redirect-url' => $protocol . $this->_config['host'] . ':' . $this->getPort(),
+            'type' => 'one_time_url',
+        ];
+
+        $result = $this->request('API_LOGIN_KEYS', $fields, true, $account->getUsername());
+
+        return $result['details'];
+    }
+
+    /**
+     * Generates a username for a new account on the DirectAdmin server.
+     * The username is based on the domain name, but is sanitized to be alphanumeric and start with a letter.
+     * The username is also limited to 10 characters to avoid collisions.
+     *
+     * @param string $domain the domain name
+     *
+     * @return string the generated username
+     *
+     * @throws RandomException
+     */
+    #[\Override]
+    public function generateUsername(string $domain): string
+    {
+        $prefix = $this->_config['config']['userprefix'] ?? '';
+
+        // Username must be alphanumeric.
+        $username = preg_replace('/[^A-Za-z0-9]/', '', $prefix . $domain);
+
+        // Username must start with a-z.
+        $username = is_numeric(substr((string) $username, 0, 1)) ? substr_replace($username, chr(random_int(97, 122)), 0, 1) : $username;
+
+        // Username must be at most 10 characters long, and sufficiently random to avoid collisions.
+        $username = substr((string) $username, 0, 7);
+
+        $random_number = random_int(0, 99);
+
+        return $username . $random_number;
+    }
+
+    /**
+     * Tests the connection to the DirectAdmin server.
+     * This method sends a request to the server and checks if the response is an array.
+     *
+     * @return bool true if the connection is successful, false otherwise
+     *
+     * @throws \FOSSBilling\Extension\Contract\Server\Exception
+     */
+    public function testConnection(): bool
+    {
+        // Makes login test connection. As we don't currently force JSON, DirectAdmin will return HTML on a failed attempt, which causes the request to throw an error.
+        $this->request('API_LOGIN_TEST');
+
+        return true;
+    }
+
+    /**
+     * Synchronizes the server account with the DirectAdmin server.
+     * This method currently does nothing and simply returns the account as is.
+     *
+     * @param \FOSSBilling\Extension\Contract\Server\Account $account the server account
+     *
+     * @return \FOSSBilling\Extension\Contract\Server\Account the same server account
+     *
+     * @throws \FOSSBilling\Extension\Contract\Server\Exception
+     */
+    public function synchronizeAccount(\FOSSBilling\Extension\Contract\Server\Account $account): \FOSSBilling\Extension\Contract\Server\Account
+    {
+        throw new \FOSSBilling\Extension\Contract\Server\Exception(':type: does not support :action:', [':type:' => 'DirectAdmin', ':action:' => __trans('synchronizing the account')]);
+    }
+
+    /**
+     * Suspends an account on the DirectAdmin server.
+     * This method sends a request to the server to suspend the account.
+     *
+     * @param \FOSSBilling\Extension\Contract\Server\Account $account the account to be suspended
+     *
+     * @return bool returns true if the account is already suspended or is successfully suspended
+     *
+     * @throws \FOSSBilling\Extension\Contract\Server\Exception if there is an error while sending the request to the server
+     */
+    public function suspendAccount(\FOSSBilling\Extension\Contract\Server\Account $account): bool
+    {
+        $info = $this->getAccountInfo($account);
+        if ($info['suspended'] == 'yes') {
+            return true;
+        }
+
+        $fields = [
+            'location' => 'USER_SHOW',
+            'suspend' => 'Suspend',
+            'select0' => $account->getUsername(),
+        ];
+        $note = $account->getNote();
+        if ($note !== null && $note !== '') {
+            $fields['reason'] = strcasecmp($note, 'Non-payment') === 0 ? 'billing' : 'other';
+            $fields['details'] = $note;
+        }
+
+        $this->request('API_SELECT_USERS', $fields);
+
+        return true;
+    }
+
+    /**
+     * Unsuspends an account on the DirectAdmin server.
+     * This method sends a request to the server to unsuspend the account.
+     *
+     * @param \FOSSBilling\Extension\Contract\Server\Account $account the account to be unsuspended
+     *
+     * @return bool returns true if the account is successfully unsuspended
+     *
+     * @throws \FOSSBilling\Extension\Contract\Server\Exception if the account is not suspended or there is an error while sending the request to the server
+     */
+    public function unsuspendAccount(\FOSSBilling\Extension\Contract\Server\Account $account): bool
+    {
+        $info = $this->getAccountInfo($account);
+        if ($info['suspended'] == 'no') {
+            throw new \FOSSBilling\Extension\Contract\Server\Exception('Server Manager DirectAdmin Error: "Account is not suspended"');
+        }
+
+        $fields = [
+            'location' => 'USER_SHOW',
+            'suspend' => 'Unsuspend',
+            'select0' => $account->getUsername(),
+        ];
+
+        $this->request('API_SELECT_USERS', $fields);
+
+        return true;
+    }
+
+    /**
+     * Modifies an existing account on the DirectAdmin server.
+     * This method sends a request to the server with the updated account details.
+     * If certain account parameters are set to 'unlimited', the corresponding fields are set to 'ON'.
+     *
+     * @param \FOSSBilling\Extension\Contract\Server\Account $account the server account to be modified
+     *
+     * @return bool returns true if the account is modified successfully
+     *
+     * @throws \FOSSBilling\Extension\Contract\Server\Exception if there is an error while sending the request to the server
+     */
+    public function modifyAccount(\FOSSBilling\Extension\Contract\Server\Account $account): bool
+    {
+        // Get the package associated with the account
+        $package = $account->getPackage();
+
+        // Prepare the fields for the request
+        $fields = [
+            'aftp' => $package->getHasAnonymousFtp() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will be able to have anonymous ftp accounts.
+            'action' => 'customize',
+            'bandwidth' => $package->getBandwidth(), // Bandwidth quota in MB
+            'catchall' => $package->getHasCatchAll() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to enable and customize a catch-all email (*@domain.com).
+            'cgi' => $package->getHasCgi() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to run cgi scripts in their cgi-bin.
+            'cron' => $package->getHasCron() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to create cronjobs.
+            'dnscontrol' => 'ON', // ON or OFF. If ON, the User will be able to modify his/her dns records.
+            'domainptr' => $package->getMaxParkedDomains(), // Domain pointer quota
+            'ftp' => $package->getMaxFtp(), // FTP account quota
+            'mysql' => $package->getMaxSql(), // MySQL database quota
+            'nemailf' => $package->getMaxEmailForwarders(), // Email forwarder quota
+            'nemailml' => $package->getMaxEmailLists(), // Mailing list quota
+            'nemailr' => $package->getMaxEmailAutoresponders(), // Autoresponder quota
+            'nemails' => $package->getMaxPop(), // Email account quota
+            'nsubdomains' => $package->getMaxSubdomains(), // Subdomain quota
+            'ns1' => $account->getNs1(),
+            'ns2' => $account->getNs2(),
+            'php' => $package->getHasPhp() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to run php scripts.
+            'quota' => $package->getQuota(), // Disk space quota in MB
+            'spam' => $package->getHasSpamFilter() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to run scan email with SpamAssassin.
+            'ssh' => $package->getHasShell() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have an ssh account.
+            'ssl' => $package->getHasSsl() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to access their websites through secure https://.
+            'sysinfo' => 'ON', // ON or OFF. If ON, the User will have access to a page that shows the system information.
+            'user' => $account->getUsername(),
+            'vdomains' => $package->getMaxDomains(), // Domain quota
+        ];
+
+        // Check if certain parameters are set to 'unlimited' and set the corresponding fields to 'ON'
+        if ($package->getBandwidth() == 'unlimited') {
+            $fields['ubandwidth'] = 'ON'; // ON or OFF. If ON, bandwidth is ignored and no limit is set
+        }
+
+        if ($package->getQuota() == 'unlimited') {
+            $fields['uquota'] = 'ON'; // ON or OFF. If ON, quota is ignored and no limit is set
+        }
+
+        if ($package->getMaxDomains() == 'unlimited') {
+            $fields['uvdomains'] = 'ON'; // ON or OFF. If ON, vdomains is ignored and no limit is set
+        }
+
+        if ($package->getMaxSubdomains() == 'unlimited') {
+            $fields['unsubdomains'] = 'ON'; // ON or OFF. If ON, nsubdomains is ignored and no limit is set
+        }
+
+        if ($package->getMaxPop() == 'unlimited') {
+            $fields['unemails'] = 'ON'; // ON or OFF Unlimited option for nemails
+        }
+
+        if ($package->getMaxEmailForwarders() == 'unlimited') {
+            $fields['unemailf'] = 'ON'; // ON or OFF Unlimited option for nemailf
+        }
+
+        if ($package->getMaxEmailLists() == 'unlimited') {
+            $fields['unemailml'] = 'ON'; // ON or OFF Unlimited option for nemailml
+        }
+
+        if ($package->getMaxEmailAutoresponders() == 'unlimited') {
+            $fields['unemailr'] = 'ON'; // ON or OFF Unlimited option for nemailr
+        }
+
+        if ($package->getMaxSql() == 'unlimited') {
+            $fields['umysql'] = 'ON'; // ON or OFF Unlimited option for mysql
+        }
+
+        if ($package->getMaxParkedDomains() == 'unlimited') {
+            $fields['udomainptr'] = 'ON'; // ON or OFF Unlimited option for domainptr
+        }
+
+        if ($package->getMaxFtp() == 'unlimited') {
+            $fields['uftp'] = 'ON'; // ON or OFF Unlimited option for ftp
+        }
+
+        // Send the request to the server
+        $this->request('API_MODIFY_USER', $fields);
+
+        return true;
+    }
+
+    /**
+     * Sends a request to the DirectAdmin server.
+     *
+     * @param string $command the command to be executed on the server
+     * @param array  $fields  the fields to be included in the request
+     * @param bool   $post    Whether the request should be a POST request. If false, a GET request is sent.
+     *
+     * @return array the response from the server, parsed into an array
+     *
+     * @throws \FOSSBilling\Extension\Contract\Server\Exception if there is an error while sending the request or if the server returns an error
+     */
+    private function request(string $command, array $fields = [], bool $post = true, string $asUser = ''): array
+    {
+        $verifyTls = \FOSSBilling\Tools::normalizeBoolean($this->_config['config']['tls_verify'] ?? true, true);
+
+        // Get the host from the configuration
+        $host = $this->_config['host'];
+
+        // Determine the protocol based on the 'secure' configuration option
+        $protocol = $this->_config['secure'] ? 'https://' : 'http://';
+
+        // Build the field string for the request
+        $field_string = http_build_query($fields);
+
+        // Support login-as for non-admin functions
+        $username = $this->_config['username'];
+        if ($asUser) {
+            $username .= '|' . $asUser;
+        }
+
+        // Get the HTTP client with the basic authentication and timeout options set
+        $httpClient = $this->getHttpClient()->withOptions([
+            'auth_basic' => [$username, $this->_config['password']],
+            'timeout' => 60,
+            'verify_host' => $verifyTls,
+            'verify_peer' => $verifyTls,
+        ]);
+
+        // Construct the URL for the request
+        $url = $protocol . $host . ':' . $this->getPort() . '/CMD_' . $command . '?' . $field_string;
+
+        // Log the URL for debugging purposes
+        $this->getLog()->debug($url);
+
+        try {
+            // If it's a POST request, include the fields in the request body
+            if ($post) {
+                $request = $httpClient->request('POST', $url, [
+                    'body' => $fields,
+                ]);
+            } else {
+                // Otherwise, send a GET request
+                $request = $httpClient->request('GET', $url);
+            }
+
+            $data = $request->getContent();
+        } catch (TransportExceptionInterface|HttpExceptionInterface $error) {
+            // If there is an error while sending the request, throw an exception
+            $exception = new \FOSSBilling\Extension\Contract\Server\Exception('HttpClientException: :error', [':error' => $error->getMessage()]);
+            $this->getLog()->error($exception->getMessage());
+
+            throw $exception;
+        }
+
+        // Check if the response data contains HTML, as some endpoints return HTML if the request fails (such as auth requests)
+        if (str_contains($data, '<!doctype html>') || str_contains($data, 'DirectAdmin Login')) {
+            throw new \FOSSBilling\Extension\Contract\Server\Exception('Failed to connect to the :type: server. Please verify your credentials and configuration', [':type:' => 'DirectAdmin']);
+        }
+
+        // Check if the response data contains an error message indicating that the request cannot be executed
+        if (str_contains($data, "The request you've made cannot be executed because it does not exist in your authority level")) {
+            throw new \FOSSBilling\Extension\Contract\Server\Exception('Server Manager DirectAdmin Error: "The request you have made cannot be executed because it does not exist in your authority level"');
+        }
+
+        // Parse the response data into an array
+        $response = $this->parseResponse($data);
+
+        // If the response contains an error, log the error and throw an exception
+        if (isset($response['error']) && $response['error'] == 1) {
+            $placeholders = [':action:' => $command, ':type:' => 'DirectAdmin'];
+            $this->getLog()->error('Failed to ' . $command . ' on the DirectAdmin server: ' . $response['text'] . ': ' . $response['details']);
+
+            throw new \FOSSBilling\Extension\Contract\Server\Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
+        }
+
+        // Return the parsed response data, or an empty array if the response is empty
+        return empty($response) ? [] : $response;
+    }
+
+    /**
+     * Parses the response data from the DirectAdmin server.
+     * It first logs the raw response data for debugging purposes.
+     * Then it replaces certain HTML entities in the data with their corresponding characters.
+     * After that, it parses the data into an array using PHP's parse_str function.
+     * Finally, it logs the parsed response data and returns it.
+     *
+     * @param string $data the raw response data from the DirectAdmin server
+     *
+     * @return array the parsed response data
+     */
+    private function parseResponse(string $data): array
+    {
+        // Log the raw response data for debugging purposes
+        $this->getLog()->debug('Raw Response: ' . $data);
+
+        // Replace certain HTML entities in the data with their corresponding characters.
+        // The fully-terminated entity is replaced first so the legacy unterminated
+        // form (missing the trailing semicolon) doesn't leave a stray ";" behind.
+        $data = str_replace(['&#39;', '&#39'], "'", $data);
+        $data = preg_replace('|(\&\#\d+)|', '$1;', $data);
+        $data = html_entity_decode((string) $data);
+
+        // Parse the data into an array
+        parse_str($data, $response);
+
+        // Log the parsed response data for debugging purposes
+        $this->getLog()->debug('Parsed Response: ' . print_r($response, true));
+
+        // Return the parsed response data
+        return $response;
+    }
+
+    /**
+     * Retrieves the list of IPs from the DirectAdmin server.
+     *
+     * @return array the list of IPs
+     *
+     * @throws \FOSSBilling\Extension\Contract\Server\Exception if there is an error while sending the request to the server
+     */
+    private function getIps(): array
+    {
+        $results = $this->request('API_SHOW_RESELLER_IPS');
+
+        return $results['list'] ?? [];
+    }
+
+    /**
+     * Builds the custom package fields array for DirectAdmin API requests.
+     *
+     * @param \FOSSBilling\Extension\Contract\Server\Package $package the package to extract custom fields from
+     *
+     * @return array the custom package fields including unlimited flags
+     */
+    private function getCustomPackageFields(\FOSSBilling\Extension\Contract\Server\Package $package): array
+    {
+        $fields = [
+            'aftp' => $package->getCustomValue('aftp') ? 'ON' : 'OFF',
+            'bandwidth' => $package->getBandwidth(),
+            'catchall' => $package->getCustomValue('catchall') ? 'ON' : 'OFF',
+            'cgi' => $package->getCustomValue('cgi') ? 'ON' : 'OFF',
+            'cron' => $package->getCustomValue('cron') ? 'ON' : 'OFF',
+            'dnscontrol' => $package->getCustomValue('dnscontrol') ? 'ON' : 'OFF',
+            'domainptr' => $package->getMaxParkedDomains(),
+            'ftp' => $package->getMaxFtp(),
+            'login_keys' => $package->getCustomValue('login_keys') ? 'ON' : 'OFF',
+            'mysql' => $package->getMaxSql(),
+            'nemailf' => $package->getMaxEmailForwarders(),
+            'nemailml' => $package->getMaxEmailLists(),
+            'nemailr' => $package->getMaxEmailAutoresponders(),
+            'nemails' => $package->getMaxPop(),
+            'nsubdomains' => $package->getMaxSubdomains(),
+            'php' => $package->getCustomValue('php') ? 'ON' : 'OFF',
+            'quota' => $package->getQuota(),
+            'spam' => $package->getCustomValue('spam') ? 'ON' : 'OFF',
+            'ssh' => $package->getCustomValue('ssh') ? 'ON' : 'OFF',
+            'ssl' => $package->getCustomValue('ssl') ? 'ON' : 'OFF',
+            'suspend_at_limit' => $package->getCustomValue('suspend_at_limit') ? 'ON' : 'OFF',
+            'sysinfo' => $package->getCustomValue('sysinfo') ? 'ON' : 'OFF',
+            'vdomains' => $package->getMaxDomains(),
+        ];
+
+        if ($package->getBandwidth() == 'unlimited') {
+            $fields['ubandwidth'] = 'ON';
+        }
+
+        if ($package->getQuota() == 'unlimited') {
+            $fields['uquota'] = 'ON';
+        }
+
+        if ($package->getMaxDomains() == 'unlimited') {
+            $fields['uvdomains'] = 'ON';
+        }
+
+        if ($package->getMaxSubdomains() == 'unlimited') {
+            $fields['unsubdomains'] = 'ON';
+        }
+
+        if ($package->getMaxParkedDomains() == 'unlimited') {
+            $fields['udomainptr'] = 'ON';
+        }
+
+        if ($package->getMaxPop() == 'unlimited') {
+            $fields['unemails'] = 'ON';
+        }
+
+        if ($package->getMaxSql() == 'unlimited') {
+            $fields['umysql'] = 'ON';
+        }
+
+        if ($package->getMaxFtp() == 'unlimited') {
+            $fields['uftp'] = 'ON';
+        }
+
+        if ($fields['nemailf'] == 'unlimited') {
+            $fields['unemailf'] = 'ON';
+        }
+
+        if ($fields['nemailml'] == 'unlimited') {
+            $fields['unemailml'] = 'ON';
+        }
+
+        if ($fields['nemailr'] == 'unlimited') {
+            $fields['unemailr'] = 'ON';
+        }
+
+        return $fields;
+    }
+
+    /**
+     * Retrieves the information of an account from the DirectAdmin server.
+     *
+     * @param \FOSSBilling\Extension\Contract\Server\Account $account the account for which the information is to be retrieved
+     *
+     * @return array the account information
+     *
+     * @throws \FOSSBilling\Extension\Contract\Server\Exception if there is an error while sending the request to the server
+     */
+    private function getAccountInfo(\FOSSBilling\Extension\Contract\Server\Account $account): array
+    {
+        $fields = [
+            'action' => 'create',
+            'add' => 'Submit',
+            'user' => $account->getUsername(),
+        ];
+
+        return $this->request('API_SHOW_USER_CONFIG', $fields);
+    }
+
+    /**
+     * Retrieves the list of user packages on the DirectAdmin server.
+     *
+     * @return array the list of user packages available on the DirectAdmin server
+     *
+     * @throws \FOSSBilling\Extension\Contract\Server\Exception if there is an error while sending the request to the server
+     */
+    private function getUserPackages(): array
+    {
+        $results = $this->request('API_PACKAGES_USER');
+
+        if (isset($results['error']) && $results['error'] == 1) {
+            throw new \FOSSBilling\Extension\Contract\Server\Exception('Failed to retrieve user packages: ' . $results['text'] . ': ' . $results['details']);
+        }
+
+        return $results['list'] ?? [];
+    }
+}
