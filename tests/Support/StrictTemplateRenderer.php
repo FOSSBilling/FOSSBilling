@@ -482,6 +482,16 @@ final class StrictTemplateRenderer
         if (str_contains($message, 'must be of type float') || str_contains($message, 'must be of type int')) {
             return 'test-infra';
         }
+        if (str_contains($message, 'Unsupported operand types') && str_contains($message, PermissiveStub::class)) {
+            // Templates that do arithmetic directly on two attribute lookups
+            // (e.g. `order.total - order.discount`) hit this when both sides
+            // resolve to PermissiveStub instead of a real number. PHP objects
+            // don't support arithmetic operators, so this is a stub
+            // limitation, not a template bug. The class-name check keeps a
+            // genuine "Unsupported operand types" bug elsewhere in a
+            // template (unrelated to the stub) classified as real-bug.
+            return 'test-infra';
+        }
         if (str_contains($message, 'NumberFormatter::formatCurrency')) {
             return 'test-infra';
         }
