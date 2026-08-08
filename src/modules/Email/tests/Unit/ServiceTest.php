@@ -1610,3 +1610,32 @@ test('loggedAttachmentToArray converts a logged attachment into a mail-ready arr
         'mime' => 'application/pdf',
     ]);
 });
+
+test('parseBccAddresses returns validated addresses and logs invalid ones', function (): void {
+    $service = new Box\Mod\Email\Service();
+
+    $di = container();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    $ref = new ReflectionMethod($service, 'parseBccAddresses');
+    $result = $ref->invoke($service, ' billing@example.com ,not-an-email, accounts@example.com,');
+
+    expect($result)->toBe(['billing@example.com', 'accounts@example.com']);
+
+    $logMessages = array_map(static fn (array $call): string => $call['params'][0], $di['logger']->calls);
+    expect($logMessages)->toContain('Skipping invalid Bcc address: not-an-email');
+});
+
+test('parseBccAddresses returns an empty array for a blank setting', function (): void {
+    $service = new Box\Mod\Email\Service();
+
+    $di = container();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    $ref = new ReflectionMethod($service, 'parseBccAddresses');
+    $result = $ref->invoke($service, '  ,  ');
+
+    expect($result)->toBe([]);
+});
