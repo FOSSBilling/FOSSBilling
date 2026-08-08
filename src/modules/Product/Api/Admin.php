@@ -480,6 +480,24 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
+     * Duplicate an existing promo code.
+     *
+     * @return int - ID of the new promo code
+     *
+     * @throws \FOSSBilling\Exception
+     */
+    #[RequiredParams(['id' => 'Promo ID was not passed'])]
+    public function promo_duplicate($data)
+    {
+        $this->checkPermissions('product', 'manage_promos');
+
+        $service = $this->getService();
+        $model = $service->findPromoById((int) $data['id']);
+
+        return $service->duplicatePromo($model);
+    }
+
+    /**
      * Get promo redemption history.
      *
      * @return array
