@@ -1071,7 +1071,7 @@ test('duplicate promo', function (): void {
     $emMock = new class($promoRepo) {
         public ?Promo $captured = null;
 
-        public function __construct(private object $promoRepo)
+        public function __construct(private readonly object $promoRepo)
         {
         }
 
@@ -1128,7 +1128,7 @@ test('duplicate promo generates alternate code when copy code already exists', f
     $emMock = new class($promoRepo) {
         public ?Promo $captured = null;
 
-        public function __construct(private object $promoRepo)
+        public function __construct(private readonly object $promoRepo)
         {
         }
 
