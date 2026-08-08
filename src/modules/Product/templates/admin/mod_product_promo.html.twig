@@ -135,7 +135,7 @@
     </div>
     <div class="card-body p-0">
         {% set redemption_pagination_url = "product/promo/#{promo.id}" %}
-        {% set redemptions = admin.product_promo_redemption_get_list({ 'promo_id': promo.id, 'per_page': 10, 'page': request.page }|merge(request)) %}
+        {% set redemptions = admin.product_promo_redemption_get_list({ 'per_page': 10, 'page': request.page }|merge(request)|merge({ 'promo_id': promo.id })) %}
         <div class="table-responsive">
             <table class="table card-table table-vcenter table-striped text-nowrap">
                 <thead>
