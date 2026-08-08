@@ -79,7 +79,7 @@ class Payment_Adapter_Custom
      *
      * @return bool returns true if the transaction was processed successfully, false otherwise
      */
-    public function processTransaction(FOSSBilling\Api\Proxy $api_admin, int $id, array $data, int $gateway_id)
+    public function processTransaction(FOSSBilling\Api\Proxy $api_admin, int $id, array $data, int $gateway_id): bool
     {
         if (!$this->isIpnValid($data)) {
             throw new Payment_Exception('Custom payment gateway callbacks must be confirmed by an administrator.');

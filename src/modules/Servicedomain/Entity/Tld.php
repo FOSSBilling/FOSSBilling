@@ -210,7 +210,7 @@ class Tld implements TimestampInterface
             return null;
         }
 
-        $years = array_unique(array_map('intval', explode(',', $this->periods)));
+        $years = array_unique(array_map(intval(...), explode(',', $this->periods)));
         sort($years);
 
         return $years;

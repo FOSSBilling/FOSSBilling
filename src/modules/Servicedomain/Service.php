@@ -873,7 +873,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             return null;
         }
 
-        $years = array_filter(array_map('trim', explode(',', $periods)), fn ($year): bool => $year !== '');
+        $years = array_filter(array_map(trim(...), explode(',', $periods)), fn ($year): bool => $year !== '');
 
         $normalized = [];
         foreach ($years as $year) {

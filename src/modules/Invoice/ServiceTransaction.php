@@ -135,7 +135,7 @@ class ServiceTransaction implements InjectionAwareInterface
         }
     }
 
-    public function create(array $data)
+    public function create(array $data): ?int
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminTransactionCreate', 'params' => $data]);
 
@@ -197,7 +197,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $ipn_hash = $this->ipnHash($ipn);
         $supportsIpnHash = $this->supportsTransactionIpnHash();
         if ($supportsIpnHash && !empty($data['gateway_id']) && !empty($ipn_hash)) {
-            $existingByHash = $this->getTransactionRepository()->findOneByGatewayIdAndIpnHash((int) $data['gateway_id'], (string) $ipn_hash);
+            $existingByHash = $this->getTransactionRepository()->findOneByGatewayIdAndIpnHash((int) $data['gateway_id'], $ipn_hash);
             if ($existingByHash !== null) {
                 $this->di['logger']->info('Duplicate transaction detected by IPN hash, returning existing transaction #%s', $existingByHash->getId());
 
@@ -728,7 +728,7 @@ class ServiceTransaction implements InjectionAwareInterface
             return false;
         }
 
-        $res = $this->getTransactionRepository()->findOneProcessedByTxnId((string) $tx->getTxnId());
+        $res = $this->getTransactionRepository()->findOneProcessedByTxnId($tx->getTxnId());
 
         // Return true when a processed transaction with the same txn_id exists.
         return $res !== null;

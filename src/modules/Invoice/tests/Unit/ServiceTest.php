@@ -1639,13 +1639,11 @@ test('pays an invoice with credits and records a balance transaction', function 
     $di = container();
     $di['db'] = $db;
     $di['em']->shouldReceive('persist')->once()->with(
-        Mockery::on(function (ClientBalance $balance): bool {
-            return $balance->getClientId() === 20
-                && $balance->getType() === 'invoice'
-                && $balance->getRelId() === '10'
-                && $balance->getDescription() === 'Payment for invoice #2024-001 using account credit.'
-                && $balance->getAmount() === '-50';
-        })
+        Mockery::on(fn (ClientBalance $balance): bool => $balance->getClientId() === 20
+            && $balance->getType() === 'invoice'
+            && $balance->getRelId() === '10'
+            && $balance->getDescription() === 'Payment for invoice #2024-001 using account credit.'
+            && $balance->getAmount() === '-50')
     );
     $di['em']->shouldReceive('flush')->once();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $balanceService);
