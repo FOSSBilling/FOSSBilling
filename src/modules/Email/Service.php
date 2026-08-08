@@ -36,6 +36,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     protected QueuedEmailRepository $queuedEmailRepository;
     private Filesystem $filesystem;
 
+    /**
+     * Cache of the parsed "Bcc" setting for the lifetime of this instance, so an invalid
+     * configured address is logged once per batch run rather than once per queued email.
+     *
+     * @var string[]|null
+     */
+    private ?array $validatedBccAddresses = null;
+
     public function __construct()
     {
         $this->filesystem = new Filesystem();
@@ -1267,7 +1275,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             }
 
             if (!empty($settings['bcc_email'])) {
-                $bccAddresses = $this->parseBccAddresses((string) $settings['bcc_email']);
+                $this->validatedBccAddresses ??= $this->parseBccAddresses((string) $settings['bcc_email']);
+                $bccAddresses = $this->validatedBccAddresses;
                 if ($bccAddresses !== []) {
                     $mail->addBcc($bccAddresses);
                 }

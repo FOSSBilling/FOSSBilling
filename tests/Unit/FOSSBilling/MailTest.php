@@ -53,3 +53,35 @@ test('attach can be called multiple times to add several attachments', function 
 
     expect(mailGetUnderlyingEmail($mail)->getAttachments())->toHaveCount(2);
 });
+
+test('addBcc accepts a single address string', function (): void {
+    $mail = new Mail(
+        ['email' => 'sender@example.com'],
+        ['email' => 'receiver@example.com'],
+        'Subject',
+        '<p>Body</p>',
+        'sendmail'
+    );
+
+    $mail->addBcc('billing@example.com');
+
+    $bcc = mailGetUnderlyingEmail($mail)->getBcc();
+    expect(array_map(static fn (Symfony\Component\Mime\Address $address): string => $address->getAddress(), $bcc))
+        ->toBe(['billing@example.com']);
+});
+
+test('addBcc accepts an array of address strings', function (): void {
+    $mail = new Mail(
+        ['email' => 'sender@example.com'],
+        ['email' => 'receiver@example.com'],
+        'Subject',
+        '<p>Body</p>',
+        'sendmail'
+    );
+
+    $mail->addBcc(['billing@example.com', 'accounts@example.com']);
+
+    $bcc = mailGetUnderlyingEmail($mail)->getBcc();
+    expect(array_map(static fn (Symfony\Component\Mime\Address $address): string => $address->getAddress(), $bcc))
+        ->toBe(['billing@example.com', 'accounts@example.com']);
+});
