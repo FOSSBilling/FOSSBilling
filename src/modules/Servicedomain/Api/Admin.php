@@ -239,6 +239,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Add new top level domain.
      *
+     * @optional int $min_years - minimum registration period, in years
+     * @optional string $periods - comma-separated list of the exact registration periods
+     *                             (in years) allowed for this TLD, e.g. "1,2,3,5,10". When
+     *                             omitted, any period from min_years upwards is allowed.
+     *
      * @return bool
      *
      * @throws \FOSSBilling\Exception
@@ -268,6 +273,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional float $price_registration - registration price
      * @optional float $price_renew - renewal price
      * @optional float $price_transfer - transfer price
+     * @optional int $min_years - minimum registration period, in years
+     * @optional string $periods - comma-separated list of the exact registration periods
+     *                             (in years) allowed for this TLD, e.g. "1,2,3,5,10". Pass
+     *                             an empty string to clear it and allow any period from
+     *                             min_years upwards again.
      *
      * @return bool
      *

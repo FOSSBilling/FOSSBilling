@@ -57,6 +57,11 @@
                         <label class="form-label">{{ 'Minimum Years of Registration'|trans }}</label>
                         <input class="form-control" type="number" min="1" step="1" name="min_years" value="{{ tld.min_years }}" required>
                     </div>
+                    <div class="col-lg-6">
+                        <label class="form-label">{{ 'Allowed Registration Periods (years)'|trans }}</label>
+                        <input class="form-control" type="text" name="periods" value="{{ tld.periods ? tld.periods|join(',') : '' }}" placeholder="{{ '1,2,3,5,10'|trans }}">
+                        <div class="form-hint">{{ 'Comma-separated list of exact registration periods, in years. Leave blank to allow any period from the minimum above upwards.'|trans }}</div>
+                    </div>
                     <div class="col-lg-2">
                         <label class="form-label d-block">{{ 'Allow Registration'|trans }}</label>
                         <div class="d-flex flex-wrap gap-3">

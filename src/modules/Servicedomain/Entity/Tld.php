@@ -57,6 +57,14 @@ class Tld implements TimestampInterface
     #[ORM\Column(name: 'min_years', type: Types::SMALLINT, nullable: true)]
     private ?int $minYears = null;
 
+    /**
+     * Comma-separated list of the exact registration periods (in years) this TLD may be
+     * ordered for, e.g. "1,2,3,5,10". Null means any period from min_years upwards is
+     * allowed, matching the legacy behavior.
+     */
+    #[ORM\Column(name: 'periods', type: Types::STRING, length: 255, nullable: true)]
+    private ?string $periods = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -175,5 +183,36 @@ class Tld implements TimestampInterface
         $this->minYears = $minYears;
 
         return $this;
+    }
+
+    public function getPeriods(): ?string
+    {
+        return $this->periods;
+    }
+
+    public function setPeriods(?string $periods): self
+    {
+        $this->periods = $periods;
+
+        return $this;
+    }
+
+    /**
+     * The allowed registration periods (in years), sorted ascending, or null when
+     * this TLD has no explicit period list and any period from min_years upwards
+     * is allowed.
+     *
+     * @return int[]|null
+     */
+    public function getPeriodsArray(): ?array
+    {
+        if ($this->periods === null || trim($this->periods) === '') {
+            return null;
+        }
+
+        $years = array_unique(array_map('intval', explode(',', $this->periods)));
+        sort($years);
+
+        return $years;
     }
 }
