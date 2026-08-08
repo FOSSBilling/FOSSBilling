@@ -56,8 +56,10 @@ function checkInstaller(): void
     }
 
     // If the config file exists and not install.php, but the install folder does, perform some cleanup.
+    // This delete is irreversible, so it requires an explicit APP_ENV=prod rather than the ambiguous default above.
     // @phpstan-ignore booleanNot.alwaysTrue (DEBUG is a runtime constant)
-    if ($filesystem->exists(PATH_CONFIG) && $filesystem->exists(Path::normalize('install')) && !DEBUG) {
+    if (Environment::isExplicitlyProduction() && $filesystem->exists(PATH_CONFIG) && $filesystem->exists(Path::normalize('install')) && !DEBUG) {
+        error_log('Removing the install directory now that installation is complete.');
         $filesystem->remove('install');
     }
 }
