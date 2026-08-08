@@ -67,7 +67,7 @@ class Mail
      */
     public function addTo(string|array $toAddresses): void
     {
-        $this->email->addTo($toAddresses);
+        $this->email->addTo(...(array) $toAddresses);
     }
 
     /**
@@ -77,7 +77,7 @@ class Mail
      */
     public function addCc(string|array $ccAddresses): void
     {
-        $this->email->addCc($ccAddresses);
+        $this->email->addCc(...(array) $ccAddresses);
     }
 
     /**
@@ -87,7 +87,7 @@ class Mail
      */
     public function addBcc(string|array $bccAddresses): void
     {
-        $this->email->addBcc($bccAddresses);
+        $this->email->addBcc(...(array) $bccAddresses);
     }
 
     /**
@@ -97,7 +97,7 @@ class Mail
      */
     public function addReplyTo(string|array $replyToAddresses): void
     {
-        $this->email->addReplyTo($replyToAddresses);
+        $this->email->addReplyTo(...(array) $replyToAddresses);
     }
 
     /**

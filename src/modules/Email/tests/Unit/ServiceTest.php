@@ -1736,3 +1736,84 @@ test('loggedAttachmentToArray converts a logged attachment into a mail-ready arr
         'mime' => 'application/pdf',
     ]);
 });
+
+test('parseBccAddresses returns validated addresses and logs invalid ones', function (): void {
+    $service = new Box\Mod\Email\Service();
+
+    $di = container();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    $ref = new ReflectionMethod($service, 'parseBccAddresses');
+    $result = $ref->invoke($service, ' billing@example.com ,not-an-email, accounts@example.com,');
+
+    expect($result)->toBe(['billing@example.com', 'accounts@example.com']);
+
+    $logMessages = array_map(static fn (array $call): string => $call['params'][0], $di['logger']->calls);
+    expect($logMessages)->toContain('Skipping invalid Bcc address: not-an-email');
+});
+
+test('parseBccAddresses returns an empty array for a blank setting', function (): void {
+    $service = new Box\Mod\Email\Service();
+
+    $di = container();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    $ref = new ReflectionMethod($service, 'parseBccAddresses');
+    $result = $ref->invoke($service, '  ,  ');
+
+    expect($result)->toBe([]);
+});
+
+test('_sendFromQueue only logs an invalid Bcc address once per service instance', function (): void {
+    $service = new Box\Mod\Email\Service();
+
+    $buildQueue = static function (int $id): Box\Mod\Email\Entity\QueuedEmail {
+        $queue = new Box\Mod\Email\Entity\QueuedEmail();
+        \Tests\Helpers\setEntityId($queue, $id);
+        $queue->setSubject('subject');
+        $queue->setSender('sender@example.com');
+        $queue->setRecipient('receiver@example.com');
+        $queue->setContent('content');
+
+        return $queue;
+    };
+
+    $em = emailBuildEm();
+    $em->shouldReceive('flush')->atLeast()->once();
+
+    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock->shouldReceive('getConfig')
+        ->atLeast()->once()
+        ->andReturn([
+            'mailer' => 'sendmail',
+            'bcc_email' => 'billing@example.com,not-an-email',
+        ]);
+
+    $extension = Mockery::mock(Box\Mod\Extension\Service::class);
+    $extension->shouldReceive('isExtensionActive')->atLeast()->once()->andReturn(false);
+
+    $di = container();
+    $di['em'] = $em;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(function ($name) use ($extension) {
+        if ($name == 'extension') {
+            return $extension;
+        }
+    });
+    $di['mod'] = $di->protect(fn () => $modMock);
+
+    $service->setDi($di);
+
+    $ref = new ReflectionMethod($service, '_sendFromQueue');
+    $ref->invoke($service, $buildQueue(1));
+    $ref->invoke($service, $buildQueue(2));
+
+    $bccWarnings = array_filter(
+        $di['logger']->calls,
+        static fn (array $call): bool => $call['method'] === 'warning' && str_contains((string) $call['params'][0], 'Skipping invalid Bcc address')
+    );
+
+    expect($bccWarnings)->toHaveCount(1);
+});
