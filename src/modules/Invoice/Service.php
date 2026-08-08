@@ -1261,6 +1261,7 @@ class Service implements InjectionAwareInterface
                 $new->setBuyerState($invoice->getBuyerState());
                 $new->setBuyerCountry($invoice->getBuyerCountry());
                 $new->setBuyerPhone($invoice->getBuyerPhone());
+                $new->setBuyerPhoneCc($invoice->getBuyerPhoneCc());
                 $new->setBuyerEmail($invoice->getBuyerEmail());
                 $new->setBuyerZip($invoice->getBuyerZip());
                 $new->setText1($invoice->getText1());
