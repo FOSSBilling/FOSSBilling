@@ -96,6 +96,14 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
+     * Get whether the client add funds feature is enabled, or not.
+     */
+    public function funds_enabled(): bool
+    {
+        return $this->getService()->isFundsEnabled();
+    }
+
+    /**
      * Generates PDF for given invoice.
      *
      * @throws \FOSSBilling\Exception
