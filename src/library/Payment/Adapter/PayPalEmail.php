@@ -184,11 +184,13 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
 
                     if ($originalAlreadyPaid) {
                         $renewalInvoice = $invoiceService->generateRenewalInvoiceForSubscriptionPayment($ipn['subscr_id'], $client_id);
-                        if ($renewalInvoice instanceof Invoice) {
-                            $api_admin->invoice_transaction_update(['id' => $id, 'invoice_id' => $renewalInvoice->getId()]);
-                            $tx['invoice_id'] = $renewalInvoice->getId();
-                            $invoiceDbModel = $renewalInvoice;
+                        if (!$renewalInvoice instanceof Invoice || $renewalInvoice->getId() === null) {
+                            throw new Payment_Exception('Unable to generate a renewal invoice for subscription payment');
                         }
+
+                        $api_admin->invoice_transaction_update(['id' => $id, 'invoice_id' => $renewalInvoice->getId()]);
+                        $tx['invoice_id'] = $renewalInvoice->getId();
+                        $invoiceDbModel = $renewalInvoice;
                     }
                 }
 
