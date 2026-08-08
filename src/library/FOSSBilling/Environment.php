@@ -32,10 +32,22 @@ class Environment
 
     /**
      * Check if the current environment is a production environment.
+     *
+     * An unset or unrecognized APP_ENV also resolves to production here. Don't use this
+     * alone to gate irreversible actions -- see isExplicitlyProduction().
      */
     public static function isProduction(): bool
     {
         return self::getCurrentEnvironment() === self::PRODUCTION;
+    }
+
+    /**
+     * Check whether APP_ENV was explicitly set to "prod". Unlike isProduction(), this is
+     * false when APP_ENV is unset or unrecognized. Use this to guard destructive actions.
+     */
+    public static function isExplicitlyProduction(): bool
+    {
+        return getenv(self::ENV_KEY) === self::PRODUCTION;
     }
 
     /**
