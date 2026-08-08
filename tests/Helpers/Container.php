@@ -251,6 +251,15 @@ function container(): Container
         $subscriptionRepository->shouldReceive('findOneBy')->byDefault()->andReturn(null);
         $subscriptionRepository->shouldReceive('findOneBySid')->byDefault()->andReturn(null);
 
+        $invoiceRepository = \Mockery::mock(\Box\Mod\Invoice\Repository\InvoiceRepository::class)->shouldIgnoreMissing();
+        $invoiceRepository->shouldReceive('find')->byDefault()->andReturn(null);
+        $invoiceRepository->shouldReceive('findByHash')->byDefault()->andReturn(null);
+        $invoiceRepository->shouldReceive('findLatestWithNr')->byDefault()->andReturn(null);
+        $invoiceRepository->shouldReceive('findPaid')->byDefault()->andReturn([]);
+        $invoiceRepository->shouldReceive('findByClientId')->byDefault()->andReturn([]);
+        $invoiceRepository->shouldReceive('findUnpaidApprovedNotRemindedBefore')->byDefault()->andReturn([]);
+        $invoiceRepository->shouldReceive('findPaidByRelId')->byDefault()->andReturn([]);
+
         $em = \Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
         $em->shouldReceive('getRepository')->byDefault()->andReturnUsing(static fn (string $class): object => match ($class) {
             \Box\Mod\Client\Entity\Client::class => $clientRepository,
@@ -275,6 +284,7 @@ function container(): Container
             \Box\Mod\Invoice\Entity\PayGateway::class => $payGatewayRepository,
             \Box\Mod\Invoice\Entity\Transaction::class => $transactionRepository,
             \Box\Mod\Invoice\Entity\Subscription::class => $subscriptionRepository,
+            \Box\Mod\Invoice\Entity\Invoice::class => $invoiceRepository,
             \Box\Mod\Extension\Entity\Extension::class => \Mockery::mock(\Box\Mod\Extension\Repository\ExtensionRepository::class)->shouldIgnoreMissing(),
             default => $extensionMetaRepository,
         });

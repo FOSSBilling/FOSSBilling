@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Invoice;
 
 use Box\Mod\Client\Entity\ClientBalance;
+use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Transaction;
@@ -162,7 +163,10 @@ class ServiceTransaction implements InjectionAwareInterface
             if (!isset($data['gateway_id'])) {
                 throw new \FOSSBilling\InformationException('Payment gateway ID is missing');
             }
-            $this->di['db']->getExistingModelById('Invoice', $data['invoice_id'], 'Invoice was not found');
+            $invoice = $this->di['em']->getRepository(Invoice::class)->find($data['invoice_id']);
+            if ($invoice === null) {
+                throw new \FOSSBilling\InformationException('Invoice was not found');
+            }
             if ($this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']) === null) {
                 throw new \FOSSBilling\Exception('Gateway was not found');
             }
@@ -772,8 +776,8 @@ class ServiceTransaction implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Transaction :id is not associated with an invoice.', [':id' => $tx->getId()], 702);
         }
 
-        $invoice = $this->di['db']->load('Invoice', $tx->getInvoiceId());
-        if (!$invoice instanceof \Model_Invoice) {
+        $invoice = $this->di['em']->getRepository(Invoice::class)->find($tx->getInvoiceId());
+        if (!$invoice instanceof Invoice) {
             throw new \FOSSBilling\Exception('Invoice #:id not found', [':id' => $tx->getInvoiceId()], 703);
         }
 
@@ -845,8 +849,8 @@ class ServiceTransaction implements InjectionAwareInterface
         if ($tx->getInvoiceId()) {
             try {
                 $invoiceService = $this->di['mod_service']('Invoice');
-                $invoice = $this->di['db']->load('Invoice', $tx->getInvoiceId());
-                if ($invoice instanceof \Model_Invoice) {
+                $invoice = $this->di['em']->getRepository(Invoice::class)->find($tx->getInvoiceId());
+                if ($invoice instanceof Invoice) {
                     $invoiceService->tryPayWithCredits($invoice);
                 }
             } catch (\Exception $e) {
@@ -865,7 +869,7 @@ class ServiceTransaction implements InjectionAwareInterface
 
         $this->_validateApprovedTransaction($tx);
 
-        $invoice = $this->di['db']->load('Invoice', $tx->getInvoiceId());
+        $invoice = $this->di['em']->getRepository(Invoice::class)->find($tx->getInvoiceId());
         $note = sprintf('Transaction %s refund', $tx->getId());
 
         $invoiceService = $this->di['mod_service']('Invoice');
@@ -888,7 +892,7 @@ class ServiceTransaction implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Cannot create subscription. Subscription ID from payment gateway was not received');
         }
 
-        $invoice = $this->di['db']->load('Invoice', $tx->getInvoiceId());
+        $invoice = $this->di['em']->getRepository(Invoice::class)->find($tx->getInvoiceId());
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
         $period = $subscriptionService->getSubscriptionPeriod($invoice);
 
@@ -939,11 +943,11 @@ class ServiceTransaction implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Transaction :id is not associated with an invoice.', [':id' => $tx->getId()], 7022);
         }
 
-        $invoice = $this->di['db']->load('Invoice', $tx->getInvoiceId());
+        $invoice = $this->di['em']->getRepository(Invoice::class)->find($tx->getInvoiceId());
 
         // check that payment currency is correct
-        if ($invoice->currency != $tx->getCurrency()) {
-            throw new \FOSSBilling\Exception('Transaction currency :code does not match required currency :required', [':code' => $tx->getCurrency(), ':required' => $invoice->currency], 709);
+        if ($invoice->getCurrency() != $tx->getCurrency()) {
+            throw new \FOSSBilling\Exception('Transaction currency :code does not match required currency :required', [':code' => $tx->getCurrency(), ':required' => $invoice->getCurrency()], 709);
         }
 
         // check that payment status is completed if
@@ -954,13 +958,13 @@ class ServiceTransaction implements InjectionAwareInterface
 
     public function debitTransaction(Transaction $tx): void
     {
-        $proforma = $this->di['db']->load('Invoice', $tx->getInvoiceId());
-        if (!$proforma instanceof \Model_Invoice) {
+        $proforma = $this->di['em']->getRepository(Invoice::class)->find($tx->getInvoiceId());
+        if (!$proforma instanceof Invoice) {
             throw new \FOSSBilling\Exception('Invoice #:id not found', [':id' => $tx->getInvoiceId()], 703);
         }
-        $client = $this->di['db']->load('Client', $proforma->client_id);
+        $client = $this->di['db']->load('Client', $proforma->getClientId());
 
-        if ($client->currency != $proforma->currency) {
+        if ($client->currency != $proforma->getCurrency()) {
             throw new \FOSSBilling\Exception('Client currency does not match invoice currency');
         }
 
@@ -973,7 +977,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $credit->setClientId((int) $client->id);
         $credit->setType('transaction');
         $credit->setRelId((string) $tx->getId());
-        $credit->setDescription('Invoice #' . $proforma->id . ' payment received from transaction #' . $tx->getId());
+        $credit->setDescription('Invoice #' . $proforma->getId() . ' payment received from transaction #' . $tx->getId());
         $credit->setAmount($tx->getAmount());
         $this->di['em']->persist($credit);
         $this->di['em']->flush();

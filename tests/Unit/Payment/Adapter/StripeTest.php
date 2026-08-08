@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Repository\TransactionRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -130,12 +131,13 @@ function buildTransaction(): Transaction
 }
 
 /**
- * @return array{em: Mockery\MockInterface, txRepo: Mockery\MockInterface, subRepo: Mockery\MockInterface}
+ * @return array{em: Mockery\MockInterface, txRepo: Mockery\MockInterface, subRepo: Mockery\MockInterface, invoiceRepo: Mockery\MockInterface}
  */
 function buildEntityManagerMocks(): array
 {
     $txRepo = Mockery::mock(TransactionRepository::class);
     $subRepo = Mockery::mock(Box\Mod\Invoice\Repository\SubscriptionRepository::class);
+    $invoiceRepo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
 
     $txRepo->shouldReceive('find')->byDefault()->andReturn(null);
     $txRepo->shouldReceive('findOneBy')->byDefault()->andReturn(null);
@@ -146,17 +148,21 @@ function buildEntityManagerMocks(): array
     $subRepo->shouldReceive('findOneBy')->byDefault()->andReturn(null);
     $subRepo->shouldReceive('findOneBySid')->byDefault()->andReturn(null);
 
+    $invoiceRepo->shouldReceive('find')->byDefault()->andReturn(null);
+    $invoiceRepo->shouldReceive('findByHash')->byDefault()->andReturn(null);
+
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->shouldReceive('getRepository')->byDefault()->andReturnUsing(static fn (string $class): object => match ($class) {
         Transaction::class => $txRepo,
         Box\Mod\Invoice\Entity\Subscription::class => $subRepo,
-        default => Mockery::mock()->shouldIgnoreMissing(),
+        Invoice::class => $invoiceRepo,
+        default => Mockery::mock(Doctrine\ORM\EntityRepository::class)->shouldIgnoreMissing(),
     });
     $em->shouldReceive('flush')->byDefault();
     $em->shouldReceive('persist')->byDefault();
     $em->shouldReceive('remove')->byDefault();
 
-    return ['em' => $em, 'txRepo' => $txRepo, 'subRepo' => $subRepo];
+    return ['em' => $em, 'txRepo' => $txRepo, 'subRepo' => $subRepo, 'invoiceRepo' => $invoiceRepo];
 }
 
 describe('getStripeRecurringParams', function (): void {
@@ -282,8 +288,8 @@ describe('handleSubscriptionCreated', function (): void {
         $event = new stdClass();
         $event->data = (object) ['object' => $stripeSubscription];
 
-        $invoiceModel = new Model_Invoice();
-        $invoiceModel->loadBean(new DummyBean());
+        $invoiceModel = createEntity(Invoice::class);
+
         $invoiceModel->id = 5;
         $invoiceModel->client_id = 10;
         $invoiceModel->currency = 'USD';
@@ -301,9 +307,6 @@ describe('handleSubscriptionCreated', function (): void {
             ->andReturn(1);
 
         $dbMock = Mockery::mock('\Box_Database');
-        $dbMock->shouldReceive('getExistingModelById')
-            ->with('Invoice', 5)
-            ->andReturn($invoiceModel);
         $dbMock->shouldReceive('getCell')->andReturn('1M');
         $dbMock->shouldReceive('getAll')->andReturn([['title' => 'Test Product']]);
 
@@ -313,7 +316,8 @@ describe('handleSubscriptionCreated', function (): void {
         $subscriptionService = Mockery::mock();
         $subscriptionService->shouldReceive('getSubscriptionPeriod')->andReturn('1M');
 
-        ['em' => $em, 'subRepo' => $subRepo] = buildEntityManagerMocks();
+        ['em' => $em, 'subRepo' => $subRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
+        $invoiceRepo->shouldReceive('find')->with(5)->andReturn($invoiceModel);
         $subRepo->shouldReceive('findOneBy')
             ->once()
             ->with(['sid' => 'sub_123'])
@@ -673,25 +677,18 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
         $stripeMock->subscriptions = $subscriptionsMock;
         setPrivateProperty($this->adapter, 'stripe', $stripeMock);
 
-        $originalInvoice = new Model_Invoice();
-        $originalInvoice->loadBean(new DummyBean());
-        $originalInvoice->id = 77;
-        $originalInvoice->status = Model_Invoice::STATUS_UNPAID;
+        $originalInvoice = createEntity(Invoice::class);
 
-        $invoiceModel = new Model_Invoice();
-        $invoiceModel->loadBean(new DummyBean());
+        $originalInvoice->id = 77;
+        $originalInvoice->status = Invoice::STATUS_UNPAID;
+
+        $invoiceModel = createEntity(Invoice::class);
+
         $invoiceModel->id = 77;
-        $invoiceModel->status = Model_Invoice::STATUS_UNPAID;
+        $invoiceModel->status = Invoice::STATUS_UNPAID;
         $invoiceModel->approved = 0;
 
         $dbMock = Mockery::mock('\Box_Database');
-        // findOne for the already-paid guard and the billing_reason fallback.
-        $dbMock->shouldReceive('findOne')
-            ->with('Invoice', 'id = :id', [':id' => 77])
-            ->andReturn($originalInvoice);
-        $dbMock->shouldReceive('getExistingModelById')
-            ->with('Invoice', 77)
-            ->andReturn($invoiceModel);
 
         $transactionService = Mockery::mock();
         $transactionService->shouldReceive('claimForProcessing')
@@ -711,7 +708,10 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
         $apiAdmin = Mockery::mock();
         $apiAdmin->shouldReceive('client_balance_add_funds')->once();
 
-        ['em' => $em, 'txRepo' => $txRepo] = buildEntityManagerMocks();
+        ['em' => $em, 'txRepo' => $txRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
+        $invoiceRepo->shouldReceive('find')
+            ->with(77)
+            ->andReturn($originalInvoice, $invoiceModel);
         // Duplicate-event check — no prior transaction processed this Stripe invoice.
         $txRepo->shouldReceive('findProcessingOrProcessedByTxnId')
             ->once()
@@ -902,10 +902,10 @@ describe('handleInvoicePaymentSucceeded with invoice_payment event (API 2026-06-
         $stripeMock->subscriptions = $subscriptionsMock;
         setPrivateProperty($this->adapter, 'stripe', $stripeMock);
 
-        $invoiceModel = new Model_Invoice();
-        $invoiceModel->loadBean(new DummyBean());
+        $invoiceModel = createEntity(Invoice::class);
+
         $invoiceModel->id = 42;
-        $invoiceModel->status = Model_Invoice::STATUS_UNPAID;
+        $invoiceModel->status = Invoice::STATUS_UNPAID;
         $invoiceModel->approved = 0;
 
         $dbMock = Mockery::mock('\Box_Database');
@@ -1022,8 +1022,8 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
         $event = new stdClass();
         $event->data = (object) ['object' => $paymentIntent];
 
-        $invoiceModel = new Model_Invoice();
-        $invoiceModel->loadBean(new DummyBean());
+        $invoiceModel = createEntity(Invoice::class);
+
         $invoiceModel->id = 15;
         $invoiceModel->approved = 1;
         $invoiceModel->client_id = 7;
@@ -1031,14 +1031,6 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
         $dbMock = Mockery::mock('\Box_Database');
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
         expectPaymentIntentLock($dbalMock, 'pi_new', 1);
-        // applyOneTimePayment reloads the invoice — returning null keeps the
-        // already-resolved $invoiceModel in place (its status is not PAID).
-        $dbMock->shouldReceive('findOne')
-            ->with('Invoice', 'id = :id', Mockery::any())
-            ->andReturn(null);
-        $dbMock->shouldReceive('getExistingModelById')
-            ->with('Invoice', 15)
-            ->andReturn($invoiceModel);
         $clientModel = new Model_Client();
         $clientModel->loadBean(new DummyBean());
         $clientModel->id = 7;
@@ -1059,7 +1051,10 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
         $clientService = Mockery::mock();
         $clientService->shouldReceive('addFunds')->once();
 
-        ['em' => $em, 'txRepo' => $txRepo] = buildEntityManagerMocks();
+        ['em' => $em, 'txRepo' => $txRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
+        $invoiceRepo->shouldReceive('find')
+            ->with(15)
+            ->andReturn($invoiceModel, null);
         $txRepo->shouldReceive('findProcessingOrProcessedByTxnId')
             ->once()
             ->with('pi_new', 1, 201)
@@ -1235,8 +1230,8 @@ describe('handleSetupIntentSucceededWebhook', function (): void {
         $event = new stdClass();
         $event->data = (object) ['object' => $setupIntent];
 
-        $invoiceModel = new Model_Invoice();
-        $invoiceModel->loadBean(new DummyBean());
+        $invoiceModel = createEntity(Invoice::class);
+
         $invoiceModel->id = 25;
         $invoiceModel->currency = 'USD';
         $invoiceModel->buyer_email = 'test@example.com';
@@ -1244,12 +1239,7 @@ describe('handleSetupIntentSucceededWebhook', function (): void {
         $invoiceModel->buyer_last_name = 'User';
 
         $dbMock = Mockery::mock('\Box_Database');
-        $dbMock->shouldReceive('findOne')
-            ->andReturn(null);
         $dbMock->shouldReceive('store')->andReturn($tx->id);
-        $dbMock->shouldReceive('getExistingModelById')
-            ->with('Invoice', 25)
-            ->andReturn($invoiceModel);
         $dbMock->shouldReceive('getCell')->andReturn('1M');
         $dbMock->shouldReceive('getAll')->andReturn([['title' => 'Test Product']]);
 
@@ -1280,6 +1270,10 @@ describe('handleSetupIntentSucceededWebhook', function (): void {
         setPrivateProperty($this->adapter, 'stripe', $stripeMock);
 
         $di = container();
+        $invoiceRepo = $di['em']->getRepository(Invoice::class);
+        $invoiceRepo->shouldReceive('find')
+            ->with(25)
+            ->andReturn($invoiceModel);
         $di['db'] = $dbMock;
         $this->adapter->setDi($di);
 
@@ -1470,8 +1464,7 @@ describe('Stripe webhook gateway ownership', function (): void {
         $stripeMock->paymentIntents = $paymentIntentsMock;
         setPrivateProperty($adapter, 'stripe', $stripeMock);
 
-        $invoice = new Model_Invoice();
-        $invoice->loadBean(new DummyBean());
+        $invoice = createEntity(Invoice::class);
         $invoice->id = 15;
         $invoice->client_id = 7;
         $invoice->currency = 'USD';
@@ -1608,10 +1601,9 @@ describe('applyOneTimePayment already-paid guard', function (): void {
         $tx->id = 600;
         $tx->amount = '50.00';
 
-        $invoice = new Model_Invoice();
-        $invoice->loadBean(new DummyBean());
+        $invoice = createEntity(Invoice::class);
         $invoice->id = 42;
-        $invoice->status = Model_Invoice::STATUS_PAID;
+        $invoice->status = Invoice::STATUS_PAID;
 
         $addFundsCalled = false;
 

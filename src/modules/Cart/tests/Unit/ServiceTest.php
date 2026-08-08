@@ -19,6 +19,7 @@ use Box\Mod\Client\Entity\Client;
 use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Currency\Repository\CurrencyRepository;
 use Box\Mod\Currency\Service as CurrencyService;
+use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Product\Entity\Promo;
@@ -675,8 +676,8 @@ test('checkoutCart returns array with expected keys', function (): void {
     $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
-    $invoice = new Model_Invoice();
-    $invoice->loadBean(new Tests\Helpers\DummyBean());
+    $invoice = createEntity(Invoice::class);
+
     $invoice->hash = sha1('str');
 
     $promo = new Promo();

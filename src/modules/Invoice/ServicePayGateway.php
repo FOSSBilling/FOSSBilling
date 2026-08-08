@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice;
 
+use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Repository\PayGatewayRepository;
 use FOSSBilling\InjectionAwareInterface;
@@ -303,7 +304,7 @@ class ServicePayGateway implements InjectionAwareInterface
         return $model->isAllowSingle();
     }
 
-    public function getPaymentAdapter(PayGateway $pg, ?\Model_Invoice $model = null, $optional = []): object
+    public function getPaymentAdapter(PayGateway $pg, ?Invoice $model = null, $optional = []): object
     {
         $config = json_decode($pg->getConfig() ?? '', true) ?? [];
         $defaults = [];
@@ -316,9 +317,9 @@ class ServicePayGateway implements InjectionAwareInterface
         $defaults['redirect_url'] = $this->getCallbackRedirect($pg, $model);
         $defaults['continue_shopping_url'] = $this->di['tools']->url('/order');
         $defaults['single_page'] = true;
-        if ($model instanceof \Model_Invoice) {
-            $defaults['thankyou_url'] = $this->di['url']->link("/invoice/thank-you/{$model->hash}", ['restore_token' => Tools::createSessionRestoreToken(session_id())]);
-            $defaults['invoice_url'] = $this->di['tools']->url("/invoice/{$model->hash}");
+        if ($model instanceof Invoice) {
+            $defaults['thankyou_url'] = $this->di['url']->link("/invoice/thank-you/{$model->getHash()}", ['restore_token' => Tools::createSessionRestoreToken(session_id())]);
+            $defaults['invoice_url'] = $this->di['tools']->url("/invoice/{$model->getHash()}");
         }
 
         if (isset($optional['auto_redirect'])) {
@@ -429,46 +430,46 @@ class ServicePayGateway implements InjectionAwareInterface
     }
 
     /**
-     * @param \Model_Invoice $model
+     * @param Invoice $model
      */
     public function getCallbackUrl(PayGateway $pg, $model = null): string
     {
         $p = [
             'gateway_id' => $pg->getId(),
         ];
-        if ($model instanceof \Model_Invoice) {
-            $p['invoice_id'] = $model->id;
+        if ($model instanceof Invoice) {
+            $p['invoice_id'] = $model->getId();
         }
 
         return SYSTEM_URL . 'ipn.php?' . http_build_query($p);
     }
 
     /**
-     * @param \Model_Invoice $model
+     * @param Invoice $model
      */
     private function getReturnUrl(PayGateway $pg, $model = null): string
     {
-        if ($model instanceof \Model_Invoice) {
-            return $this->di['url']->link("/invoice/{$model->hash}", ['status' => 'ok', 'restore_token' => Tools::createSessionRestoreToken(session_id())]);
+        if ($model instanceof Invoice) {
+            return $this->di['url']->link("/invoice/{$model->getHash()}", ['status' => 'ok', 'restore_token' => Tools::createSessionRestoreToken(session_id())]);
         }
 
         return $this->di['url']->link('/invoice', ['status' => 'ok', 'restore_token' => Tools::createSessionRestoreToken(session_id())]);
     }
 
     /**
-     * @param \Model_Invoice $model
+     * @param Invoice $model
      */
     private function getCancelUrl(PayGateway $pg, $model = null): string
     {
-        if ($model instanceof \Model_Invoice) {
-            return $this->di['url']->link("/invoice/{$model->hash}", ['status' => 'cancel', 'restore_token' => Tools::createSessionRestoreToken(session_id())]);
+        if ($model instanceof Invoice) {
+            return $this->di['url']->link("/invoice/{$model->getHash()}", ['status' => 'cancel', 'restore_token' => Tools::createSessionRestoreToken(session_id())]);
         }
 
         return $this->di['url']->link('/invoice', ['status' => 'cancel', 'restore_token' => Tools::createSessionRestoreToken(session_id())]);
     }
 
     /**
-     * @param \Model_Invoice $model
+     * @param Invoice $model
      */
     private function getCallbackRedirect(PayGateway $pg, $model = null): string
     {
@@ -476,9 +477,9 @@ class ServicePayGateway implements InjectionAwareInterface
             'gateway_id' => $pg->getId(),
         ];
 
-        if ($model instanceof \Model_Invoice) {
-            $p['invoice_id'] = $model->id;
-            $p['invoice_hash'] = $model->hash;
+        if ($model instanceof Invoice) {
+            $p['invoice_id'] = $model->getId();
+            $p['invoice_hash'] = $model->getHash();
             $p['redirect'] = 1;
         }
 

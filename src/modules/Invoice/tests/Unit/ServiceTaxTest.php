@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use Box\Mod\Client\Service as ClientService;
+use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\InvoiceItem;
 use Box\Mod\Invoice\Entity\Tax;
 use Box\Mod\Invoice\Repository\InvoiceItemRepository;
@@ -145,16 +146,16 @@ test('returns zero tax when invoice tax rate is zero', function (): void {
     $taxRepo = Mockery::mock(TaxRepository::class);
     $service = taxService($taxRepo);
 
-    $invoiceModel = new Model_Invoice();
-    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceModel = createEntity(Invoice::class);
+
     $invoiceModel->taxrate = 0;
 
     expect($service->getTax($invoiceModel))->toBeInt()->toBe(0);
 });
 
 test('gets tax for an invoice', function (): void {
-    $invoiceModel = new Model_Invoice();
-    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceModel = createEntity(Invoice::class);
+
     $invoiceModel->taxrate = 15;
 
     $invoiceItem = createEntity(InvoiceItem::class, ['quantity' => 1]);
