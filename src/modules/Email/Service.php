@@ -36,6 +36,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     protected QueuedEmailRepository $queuedEmailRepository;
     private Filesystem $filesystem;
 
+    /**
+     * Cache of the parsed "Bcc" setting for the lifetime of this instance, so an invalid
+     * configured address is logged once per batch run rather than once per queued email.
+     *
+     * @var string[]|null
+     */
+    private ?array $validatedBccAddresses = null;
+
     public function __construct()
     {
         $this->filesystem = new Filesystem();
@@ -1202,6 +1210,28 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         ];
     }
 
+    /**
+     * @return string[]
+     */
+    private function parseBccAddresses(string $value): array
+    {
+        $addresses = [];
+        foreach (explode(',', $value) as $address) {
+            $address = trim($address);
+            if ($address === '') {
+                continue;
+            }
+
+            if (filter_var($address, FILTER_VALIDATE_EMAIL)) {
+                $addresses[] = $address;
+            } else {
+                $this->di['logger']->setChannel('email')->warning('Skipping invalid Bcc address: ' . $address);
+            }
+        }
+
+        return $addresses;
+    }
+
     private function _sendFromQueue(QueuedEmail $queue, bool $throw_exceptions = false): bool
     {
         $extensionService = $this->di['mod_service']('extension');
@@ -1241,6 +1271,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                     $mail->addReplyTo($settings['reply_to']);
                 } else {
                     $this->di['logger']->setChannel('email')->warning('Skipping invalid Reply-To address: ' . $settings['reply_to']);
+                }
+            }
+
+            if (!empty($settings['bcc_email'])) {
+                $this->validatedBccAddresses ??= $this->parseBccAddresses((string) $settings['bcc_email']);
+                $bccAddresses = $this->validatedBccAddresses;
+                if ($bccAddresses !== []) {
+                    $mail->addBcc($bccAddresses);
                 }
             }
 
