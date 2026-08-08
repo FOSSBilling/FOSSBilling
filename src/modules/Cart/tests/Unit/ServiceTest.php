@@ -344,6 +344,42 @@ test('removeProduct throws exception when cart product not found', function (): 
     expect(fn (): bool => $service->removeProduct($cart, 1))->toThrow(FOSSBilling\Exception::class);
 });
 
+test('removeProduct removes matching addons', function (): void {
+    $cartId = 10;
+    $cart = new Cart();
+    $cartReflection = new ReflectionProperty($cart, 'id');
+    $cartReflection->setValue($cart, $cartId);
+
+    $mainProductId = 7;
+    $main = new CartProduct();
+    $main->setProductId($mainProductId);
+    $main->setConfig(json_encode(['domain_name' => 'example.com']));
+
+    $addon = new CartProduct();
+    $addon->setConfig(json_encode(['parent_id' => $mainProductId, 'domain_name' => 'example.com']));
+
+    $unrelated = new CartProduct();
+    $unrelated->setConfig(json_encode(['parent_id' => 999, 'domain_name' => 'other.com']));
+
+    $cartProductRepo = Mockery::mock(CartProductRepository::class);
+    $cartProductRepo->shouldReceive('findOneByCartAndId')->once()->with($cartId, 1)->andReturn($main);
+    $cartProductRepo->shouldReceive('findByCartId')->once()->with($cartId)->andReturn([$addon, $unrelated]);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(CartProduct::class)->andReturn($cartProductRepo);
+    $emMock->shouldReceive('remove')->once()->with($addon);
+    $emMock->shouldReceive('remove')->once()->with($main);
+    $emMock->shouldReceive('flush')->once();
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service = new Service();
+    $service->setDi($di);
+
+    expect($service->removeProduct($cart, 1))->toBeTrue();
+});
+
 test('changeCartCurrency returns true', function (): void {
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('persist')->atLeast()->once();

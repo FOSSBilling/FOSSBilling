@@ -23,7 +23,9 @@ test('client balance gateway removal patch follows the extensions directory migr
     $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 99);
 
     expect($patches)->toHaveKey(100)
-        ->and($patches[100][1])->toBe('patch100');
+        ->and($patches[100][1])->toBe('patch100')
+        ->and($patches)->toHaveKey(101)
+        ->and($patches[101][1])->toBe('patch101');
 });
 
 test('client balance gateway removal patch deletes the gateway row and its files', function (): void {
@@ -49,7 +51,7 @@ test('client balance gateway removal patch deletes the gateway row and its files
 
     $patcher = new UpdatePatcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch100'))->invoke($patcher);
+    (new ReflectionMethod($patcher, 'patch101'))->invoke($patcher);
 });
 
 test('manual currency rate patch follows the currency formatting patch', function (): void {

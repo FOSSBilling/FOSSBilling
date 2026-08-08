@@ -65,7 +65,7 @@ test('marks item as paid', function (): void {
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()
         ->once()
-        ->andReturnUsing(fn (string $model) => $model === 'Client' ? $clientModel : $invoiceModel);
+        ->andReturnUsing(fn (string $model): Model_Client|\Model_Invoice => $model === 'Client' ? $clientModel : $invoiceModel);
     $dbMock->shouldReceive('load')
         ->atLeast()
         ->once()
@@ -348,7 +348,7 @@ test('credits invoice item', function (): void {
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
-        ->andReturnUsing(fn (string $model) => $model === 'Client' ? $clientModel : $invoiceModel);
+        ->andReturnUsing(fn (string $model): Model_Client|\Model_Invoice => $model === 'Client' ? $clientModel : $invoiceModel);
 
     $em = Mockery::mock(EntityManagerInterface::class);
     $repo = Mockery::mock(InvoiceItemRepository::class);

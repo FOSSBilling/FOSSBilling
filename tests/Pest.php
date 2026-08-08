@@ -100,6 +100,27 @@ function apiEndpoint(FOSSBilling\Api\AbstractApi $api): FOSSBilling\Api\Abstract
     return $api;
 }
 
+/**
+ * Runs $callback with APP_ENV set to $value (or unset entirely when $value is null),
+ * restoring the previous value afterward regardless of outcome.
+ */
+function withAppEnv(?string $value, callable $callback): mixed
+{
+    $previous = getenv('APP_ENV');
+
+    if ($value === null) {
+        putenv('APP_ENV');
+    } else {
+        putenv('APP_ENV=' . $value);
+    }
+
+    try {
+        return $callback();
+    } finally {
+        putenv($previous === false ? 'APP_ENV' : 'APP_ENV=' . $previous);
+    }
+}
+
 // Define TestLogger class after autoloader is registered
 // This must be done here because it extends Box_Log which is loaded via the autoloader
 // Using eval() to defer class definition until runtime when Box_Log is available

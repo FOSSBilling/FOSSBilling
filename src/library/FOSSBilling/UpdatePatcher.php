@@ -511,6 +511,7 @@ class UpdatePatcher implements InjectionAwareInterface
             98 => 'patch98',
             99 => 'patch99',
             100 => 'patch100',
+            101 => 'patch101',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2889,6 +2890,16 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch99(): void
     {
+        // Lets admins restrict a TLD's registration period to an explicit set of years
+        // (e.g. "1,2,5,10") instead of any integer at or above min_years.
+        // @see https://github.com/FOSSBilling/FOSSBilling/issues/2075
+        if (!$this->tableHasColumn('tld', 'periods')) {
+            $this->executeSql('ALTER TABLE `tld` ADD COLUMN `periods` VARCHAR(255) DEFAULT NULL AFTER `min_years`');
+        }
+    }
+
+    private function patch100(): void
+    {
         // Payment gateways, domain registrars and server managers moved out of
         // src/library into src/extensions. An update only overlays new files, so
         // the originals have to be removed here or the old classes would linger
@@ -2914,7 +2925,7 @@ class UpdatePatcher implements InjectionAwareInterface
         }
     }
 
-    private function patch100(): void
+    private function patch101(): void
     {
         // Paying from account credit is now a core client API call
         // (client/invoice/pay_with_credit) rather than a gateway. Installs that

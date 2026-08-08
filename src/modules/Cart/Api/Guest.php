@@ -11,7 +11,6 @@ declare(strict_types=1);
 
 namespace Box\Mod\Cart\Api;
 
-use Box\Mod\Cart\Entity\Cart;
 use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Product\Entity\Promo;
 use FOSSBilling\Validation\Api\RequiredParams;
@@ -77,7 +76,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $currencyService = $this->getDi()['mod_service']('currency');
         /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
         $currencyRepository = $currencyService->getCurrencyRepository();
-        $currency = $currencyRepository->find($cart instanceof Cart ? $cart->getCurrencyId() : $cart->currency_id);
+        $currency = $currencyRepository->find($cart->getCurrencyId());
         if (!$currency instanceof Currency) {
             $currency = $currencyRepository->findDefault();
             if (!$currency instanceof Currency) {

@@ -1639,13 +1639,11 @@ test('pays an invoice with credits and records a balance transaction', function 
     $di = container();
     $di['db'] = $db;
     $di['em']->shouldReceive('persist')->once()->with(
-        Mockery::on(function (ClientBalance $balance): bool {
-            return $balance->getClientId() === 20
-                && $balance->getType() === 'invoice'
-                && $balance->getRelId() === '10'
-                && $balance->getDescription() === 'Payment for invoice #2024-001 using account credit.'
-                && $balance->getAmount() === '-50';
-        })
+        Mockery::on(fn (ClientBalance $balance): bool => $balance->getClientId() === 20
+            && $balance->getType() === 'invoice'
+            && $balance->getRelId() === '10'
+            && $balance->getDescription() === 'Payment for invoice #2024-001 using account credit.'
+            && $balance->getAmount() === '-50')
     );
     $di['em']->shouldReceive('flush')->once();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $balanceService);
@@ -2700,6 +2698,27 @@ test('throws exception when generating funds invoice without active order', func
         ->toThrow(FOSSBilling\Exception::class, 'You must have at least one active order before you can add funds so you cannot proceed at the current time!');
 });
 
+test('throws exception when generating funds invoice while the feature is disabled', function (): void {
+    $service = new Service();
+    $clientModel = new Model_Client();
+    $clientModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientModel->currency = 'EUR';
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')
+        ->once()
+        ->with('funds_enabled', true)
+        ->andReturn('0');
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemService);
+
+    $service->setDi($di);
+
+    expect(fn () => $service->generateFundsInvoice($clientModel, 10))
+        ->toThrow(FOSSBilling\Exception::class, 'Adding funds to the account balance is currently disabled');
+});
+
 test('throws exception when generating funds invoice below minimum amount', function (): void {
     $service = new Service();
     $clientModel = new Model_Client();
@@ -2710,12 +2729,9 @@ test('throws exception when generating funds invoice below minimum amount', func
     $minAmount = 10;
     $maxAmount = 50;
     $systemService = Mockery::mock(SystemService::class);
-    $paramCallCount = 0;
-    $systemService->shouldReceive('getParamValue')
-        ->atLeast()->once()
-        ->andReturnUsing(function () use (&$paramCallCount, $minAmount, $maxAmount) {
-            return ++$paramCallCount === 1 ? $minAmount : $maxAmount;
-        });
+    $systemService->shouldReceive('getParamValue')->with('funds_enabled', true)->andReturn(true);
+    $systemService->shouldReceive('getParamValue')->with('funds_min_amount', null)->andReturn($minAmount);
+    $systemService->shouldReceive('getParamValue')->with('funds_max_amount', null)->andReturn($maxAmount);
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemService);
@@ -2736,12 +2752,9 @@ test('throws exception when generating funds invoice above maximum amount', func
     $minAmount = 10;
     $maxAmount = 50;
     $systemService = Mockery::mock(SystemService::class);
-    $paramCallCount = 0;
-    $systemService->shouldReceive('getParamValue')
-        ->atLeast()->once()
-        ->andReturnUsing(function () use (&$paramCallCount, $minAmount, $maxAmount) {
-            return ++$paramCallCount === 1 ? $minAmount : $maxAmount;
-        });
+    $systemService->shouldReceive('getParamValue')->with('funds_enabled', true)->andReturn(true);
+    $systemService->shouldReceive('getParamValue')->with('funds_min_amount', null)->andReturn($minAmount);
+    $systemService->shouldReceive('getParamValue')->with('funds_max_amount', null)->andReturn($maxAmount);
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemService);
@@ -2770,20 +2783,10 @@ test('generates funds invoice', function (): void {
     $maxAmount = 50;
 
     $systemService = Mockery::mock(SystemService::class);
-    $paramCallCount = 0;
-    $systemService->shouldReceive('getParamValue')
-        ->atLeast()->once()
-        ->andReturnUsing(function () use (&$paramCallCount, $minAmount, $maxAmount) {
-            ++$paramCallCount;
-            if ($paramCallCount === 1) {
-                return $minAmount;
-            }
-            if ($paramCallCount === 2) {
-                return $maxAmount;
-            }
-
-            return true;
-        });
+    $systemService->shouldReceive('getParamValue')->with('funds_enabled', true)->andReturn(true);
+    $systemService->shouldReceive('getParamValue')->with('funds_min_amount', null)->andReturn($minAmount);
+    $systemService->shouldReceive('getParamValue')->with('funds_max_amount', null)->andReturn($maxAmount);
+    $systemService->shouldReceive('getParamValue')->with('invoice_auto_approval', true)->andReturn(true);
 
     $itemInvoiceServiceMock = Mockery::mock(ServiceInvoiceItem::class);
     $itemInvoiceServiceMock->shouldReceive('generateForAddFunds')
@@ -2811,6 +2814,40 @@ test('generates funds invoice', function (): void {
 
     $result = $serviceMock->generateFundsInvoice($clientModel, $fundsAmount);
     expect($result)->toBeInstanceOf(Model_Invoice::class);
+});
+
+test('isFundsEnabled defaults to true when the setting was never saved', function (): void {
+    $service = new Service();
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')
+        ->once()
+        ->with('funds_enabled', true)
+        ->andReturn(true);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemService);
+
+    $service->setDi($di);
+
+    expect($service->isFundsEnabled())->toBeTrue();
+});
+
+test('isFundsEnabled returns false when explicitly disabled', function (): void {
+    $service = new Service();
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')
+        ->once()
+        ->with('funds_enabled', true)
+        ->andReturn('0');
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemService);
+
+    $service->setDi($di);
+
+    expect($service->isFundsEnabled())->toBeFalse();
 });
 
 test('throws exception when processing invoice not found', function (): void {
