@@ -587,9 +587,16 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $adapter->isDomainAvailable($domain);
     }
 
-    public function syncExpirationDate($model): void
+    public function syncExpirationDate(ServiceDomain $model): void
     {
-        // @todo
+        // @adapterAction
+        [$domain, $adapter] = $this->_getD($model);
+
+        $whois = $adapter->getDomainDetails($domain);
+
+        $model->setExpiresAt($this->formatRegistrarTimestamp($whois->getExpirationTime()));
+
+        $this->di['em']->flush();
     }
 
     public function toApiArray(ServiceDomain $model, $deep = false, $identity = null): array
