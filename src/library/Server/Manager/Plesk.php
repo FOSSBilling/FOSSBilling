@@ -404,7 +404,7 @@ class Server_Manager_Plesk extends Server_Manager
 
     /**
      * Creates an array of properties for a subscription.
-     * The properties include the domain name, owner login, hosting type, IP address, FTP login, FTP password, PHP, SSL, CGI, limits, and permissions.
+     * The properties include the domain name, owner login, hosting type, IP address, the hosting plan name, FTP login, FTP password, PHP, SSL, CGI, limits, and permissions.
      *
      * For the 'add' action, the properties are sent as the direct children of the <add> node, per the
      * webspace add operation's schema. For the 'set' action, Plesk requires the <set> node to contain only
@@ -570,6 +570,10 @@ class Server_Manager_Plesk extends Server_Manager
                     ],
                 ],
             ],
+            // 'plan-name' must come after 'permissions' in both the add and set schemas -- Plesk's
+            // XML-RPC API validates requests against an XSD sequence, so element order matters and
+            // plesk/api-php-lib serializes this array's key order verbatim into the XML it sends.
+            'plan-name' => $package->getName(),
         ];
 
         if ($action === 'set') {
