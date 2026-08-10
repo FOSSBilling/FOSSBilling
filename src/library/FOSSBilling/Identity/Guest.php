@@ -11,7 +11,6 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Identity;
 
-class Guest
+final class Guest
 {
-    public ?int $id = null;
 }

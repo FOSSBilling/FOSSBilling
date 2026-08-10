@@ -154,13 +154,17 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         return $this->resolveAdminEntity($this->getIdentity());
     }
 
-    private function resolveAdminEntity(AdminEntity|\Model_Admin|\Model_Client|\FOSSBilling\Identity\Guest $identity): AdminEntity
+    private function resolveAdminEntity(object $identity): AdminEntity
     {
         if ($identity instanceof AdminEntity) {
             return $identity;
         }
 
-        $adminId = (int) ($identity->id ?? 0);
+        if (!$identity instanceof \Model_Admin) {
+            throw new InformationException('Admin identity not found');
+        }
+
+        $adminId = (int) $identity->id;
         $admin = $this->getDi()['em']->getRepository(AdminEntity::class)->find($adminId);
         if (!$admin instanceof AdminEntity) {
             throw new InformationException('Admin not found');
