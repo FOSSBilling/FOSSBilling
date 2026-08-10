@@ -832,6 +832,7 @@ test('createFromCart with promo entity uses product promo service', function ():
 
     $productService = Mockery::mock(ProductService::class);
     $productService->shouldReceive('findPromoById')->once()->with(7)->andReturn($promo);
+    $productService->shouldReceive('reserveStockForOrder')->once()->with(Mockery::type(Order::class));
     $productService->shouldReceive('reservePromoForOrder')->once()->with($promo, Mockery::type(Order::class));
     $productService->shouldReceive('createCheckoutPromoRedemptions')->once()->with(
         $promo,
@@ -942,16 +943,21 @@ test('createFromCart compensates promo usage on transaction failure', function (
 
     $productService = Mockery::mock(ProductService::class);
     $productService->shouldReceive('findPromoById')->once()->with(7)->andReturn($promo);
+    $productService->shouldReceive('reserveStockForOrder')->once()->with(Mockery::type(Order::class));
     $productService->shouldReceive('reservePromoForOrder')->once()->with($promo, Mockery::type(Order::class));
 
     // Simulate Doctrine-side failure during redemption creation.
     $productService->shouldReceive('createCheckoutPromoRedemptions')
         ->andThrow(new RuntimeException('Doctrine flush failed'));
 
-    // The compensating method must be invoked.
+    // The compensating method must be invoked for both promo usage and the stock reservation
+    // taken earlier in the same loop iteration.
     $productService->shouldReceive('compensateCheckoutPromoFailure')
         ->once()
         ->with($promo, Mockery::any(), Mockery::any());
+    $productService->shouldReceive('releaseReservedStockForOrder')
+        ->once()
+        ->with(Mockery::type(Order::class), 'checkout_failed');
 
     $product = new Product();
     $productIdReflection = new ReflectionProperty($product, 'id');
@@ -1099,6 +1105,7 @@ test('createFromCart does not roll back order creation when synchronous activati
 
     $productService = Mockery::mock(ProductService::class);
     $productService->shouldReceive('findProductById')->twice()->with(5)->andReturn($product);
+    $productService->shouldReceive('reserveStockForOrder')->once()->with(Mockery::type(Order::class));
 
     $di = container();
     $di['db'] = $dbMock;

@@ -1626,6 +1626,7 @@ test('createOrder creates order', function (): void {
     $productServiceMock = Mockery::mock(Box\Mod\Servicecustom\Service::class);
     $pricingServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
     $pricingServiceMock->shouldReceive('getProductOrderLineConfig')->never();
+    $pricingServiceMock->shouldReceive('reserveStockForOrder')->once();
 
     $persistedEntities = [];
     $nextOrderId = 1;
@@ -1722,6 +1723,7 @@ test('createOrder sets form id from product', function (): void {
     $productServiceMock = Mockery::mock(Box\Mod\Servicecustom\Service::class);
     $pricingServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
     $pricingServiceMock->shouldReceive('getProductOrderLineConfig')->never();
+    $pricingServiceMock->shouldReceive('reserveStockForOrder')->once();
 
     $persistedEntities = [];
     $nextOrderId = 1;
@@ -1817,6 +1819,7 @@ test('createOrder returns success when invoice follow up fails', function (): vo
     $productServiceMock = Mockery::mock(Box\Mod\Servicecustom\Service::class);
     $pricingServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
     $pricingServiceMock->shouldReceive('getProductOrderLineConfig')->never();
+    $pricingServiceMock->shouldReceive('reserveStockForOrder')->once();
 
     $invoiceModel = orderServiceCreateInvoiceModel(10);
 
@@ -1960,6 +1963,7 @@ test('createOrder uses product pricing service for domain orders', function (): 
             'quantity' => 2,
             'setup_price' => 0.0,
         ]);
+    $pricingServiceMock->shouldReceive('reserveStockForOrder')->once();
 
     $persistedEntities = [];
     $nextOrderId = 1;
@@ -2077,12 +2081,14 @@ test('createFromOrder activates the order after successful provisioning', functi
     $periodMock = Mockery::mock(Box_Period::class);
     $periodMock->shouldReceive('getExpirationTime')->once()->andReturn(strtotime('2027-01-01 00:00:00'));
 
-    $productServiceMock = Mockery::mock();
-    $productServiceMock->shouldReceive('reduceStock')->once()->with(7, 2);
-
+    // Stock is reserved atomically at order-creation time (see
+    // Product\Service::reserveStockForOrder()), not here at activation, so createFromOrder()
+    // must not touch the product service at all.
     $di = container();
     $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $productServiceMock);
+    $di['mod_service'] = $di->protect(function (): never {
+        throw new LogicException('createFromOrder() must not reach into any module service for stock handling');
+    });
 
     $serviceMock->setDi($di);
 
@@ -2641,6 +2647,9 @@ test('cancelFromOrder cancels linked subscriptions', function (): void {
     $productService->shouldReceive('releaseReservedPromoRedemptionsForOrder')
         ->once()
         ->with($clientOrderModel, 'order_canceled');
+    $productService->shouldReceive('releaseReservedStockForOrder')
+        ->once()
+        ->with($clientOrderModel, 'order_canceled');
 
     $connectionMock = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connectionMock->shouldReceive('executeStatement')
@@ -2883,6 +2892,9 @@ test('rmByClient removes all client orders', function (): void {
 
     $productServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
     $productServiceMock->shouldReceive('releaseReservedPromoRedemptionsForOrder')
+        ->once()
+        ->with($orderModel, 'client_deleted');
+    $productServiceMock->shouldReceive('releaseReservedStockForOrder')
         ->once()
         ->with($orderModel, 'client_deleted');
 
@@ -3340,6 +3352,7 @@ test('createOrder generates an invoice for a zero-price order with issue-invoice
     $productServiceMock = Mockery::mock(Box\Mod\Servicecustom\Service::class);
     $pricingServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
     $pricingServiceMock->shouldReceive('getProductOrderLineConfig')->never();
+    $pricingServiceMock->shouldReceive('reserveStockForOrder')->once();
 
     $invoiceModel = orderServiceCreateInvoiceModel(10);
 
@@ -3457,6 +3470,7 @@ test('createOrder does not roll back when invoice generation fails for a negativ
     $pricingServiceMock->shouldReceive('getProductOrderLineConfig')
         ->atLeast()->once()
         ->andReturn(['price' => -5.0, 'quantity' => 1]);
+    $pricingServiceMock->shouldReceive('reserveStockForOrder')->once();
 
     $invoiceServiceMock = Mockery::mock();
     $invoiceServiceMock->shouldReceive('generateForOrder')

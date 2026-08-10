@@ -17,6 +17,14 @@ class OrderRepository extends EntityRepository
         return $this->findBy(['clientId' => $clientId]);
     }
 
+    /**
+     * @return Order[]
+     */
+    public function findByUnpaidInvoiceId(int $invoiceId): array
+    {
+        return $this->findBy(['unpaidInvoiceId' => $invoiceId]);
+    }
+
     public function findForClientById(int $clientId, int $orderId): ?Order
     {
         $order = $this->findOneBy(['id' => $orderId, 'clientId' => $clientId]);

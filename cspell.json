@@ -59,7 +59,8 @@
         "initialises",
         "WORKTREE",
         "previewable",
-        "falsey"
+        "falsey",
+        "unindexed"
     ],
 
     "ignoreWords": [
