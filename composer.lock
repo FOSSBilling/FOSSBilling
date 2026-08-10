@@ -3708,16 +3708,16 @@
         },
         {
             "name": "stripe/stripe-php",
-            "version": "v21.1.1",
+            "version": "v21.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/stripe/stripe-php.git",
-                "reference": "5f68d5a285d206a757ebbd9bf0e037759a61c379"
+                "reference": "edf8118f0b96d69f06f372da9168d613d1aed072"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/5f68d5a285d206a757ebbd9bf0e037759a61c379",
-                "reference": "5f68d5a285d206a757ebbd9bf0e037759a61c379",
+                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/edf8118f0b96d69f06f372da9168d613d1aed072",
+                "reference": "edf8118f0b96d69f06f372da9168d613d1aed072",
                 "shasum": ""
             },
             "require": {
@@ -3739,7 +3739,8 @@
             },
             "autoload": {
                 "files": [
-                    "lib/version_check.php"
+                    "lib/version_check.php",
+                    "lib/agent_plugin_hint.php"
                 ],
                 "psr-4": {
                     "Stripe\\": "lib/"
@@ -3764,9 +3765,9 @@
             ],
             "support": {
                 "issues": "https://github.com/stripe/stripe-php/issues",
-                "source": "https://github.com/stripe/stripe-php/tree/v21.1.1"
+                "source": "https://github.com/stripe/stripe-php/tree/v21.2.0"
             },
-            "time": "2026-07-30T18:43:28+00:00"
+            "time": "2026-08-10T22:11:35+00:00"
         },
         {
             "name": "symfony/cache",
