@@ -337,7 +337,7 @@ test('creates action', function (): void {
     $client = createEntity(Box\Mod\Client\Entity\Client::class, [
         'first_name' => 'first_name',
         'last_name' => 'last_name',
-        'email' => 'email',
+        'email' => 'client@example.com',
         'company' => 'company',
         'address_1' => 'address_1',
         'address_2' => 'address_2',

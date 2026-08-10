@@ -136,12 +136,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $query = $this->di['dbal']->createQueryBuilder();
         $query
-            ->select('DISTINCT c.id')
+            ->select('DISTINCT c.id, c.email')
             ->from('client', 'c')
             ->leftJoin('c', 'client_order', 'co', 'co.client_id = c.id')
             ->orderBy('c.id', 'DESC');
         $query
-            ->andWhere('c.email IS NOT NULL AND c.email != :empty_email')
+            ->andWhere('c.email IS NOT NULL AND TRIM(c.email) != :empty_email')
             ->setParameter('empty_email', '', ParameterType::STRING);
 
         $this->appendInCondition($query, 'c.status', 'client_status', $filter[self::FILTER_CLIENT_STATUS] ?? [], ArrayParameterType::STRING);
@@ -149,7 +149,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->appendInCondition($query, 'co.product_id', 'has_order', $filter[self::FILTER_HAS_ORDER] ?? [], ArrayParameterType::INTEGER);
         $this->appendInCondition($query, 'co.status', 'has_order_with_status', $filter[self::FILTER_HAS_ORDER_WITH_STATUS] ?? [], ArrayParameterType::STRING);
 
-        return $query->executeQuery()->fetchAllAssociative();
+        $rows = $query->executeQuery()->fetchAllAssociative();
+
+        $validator = $this->di['validator'];
+
+        return array_values(array_map(
+            static fn (array $row): array => ['id' => (int) $row['id']],
+            array_filter(
+                $rows,
+                static fn (array $row): bool => $validator->isEmailValid(trim((string) $row['email']))
+            )
+        ));
     }
 
     public function normalizeFilter(mixed $filter, bool $strict = false): array
@@ -231,18 +241,18 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function sendMessage(MassmailerMessage $model, int $client_id, bool $sendNow = false): bool
     {
-        [$ps, $pc] = $this->getParsed($model, $client_id);
-
         $clientService = $this->di['mod_service']('client');
-
         $client = $clientService->get(['id' => $client_id]);
 
-        if (empty($client->getEmail())) {
+        $email = trim((string) $client->getEmail());
+        if (!$this->di['validator']->isEmailValid($email)) {
             throw new InformationException('Client does not have a valid email address');
         }
 
+        [$ps, $pc] = $this->getParsed($model, $client_id);
+
         $data = [
-            'to' => $client->getEmail(),
+            'to' => $email,
             'to_name' => $client->getFirstName() . ' ' . $client->getLastName(),
             'from' => $model->getFromEmail(),
             'from_name' => $model->getFromName(),
