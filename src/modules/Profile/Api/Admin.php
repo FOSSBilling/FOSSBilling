@@ -154,7 +154,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         return $this->resolveAdminEntity($this->getIdentity());
     }
 
-    private function resolveAdminEntity(AdminEntity|\Model_Admin|\Model_Client|\Model_Guest $identity): AdminEntity
+    private function resolveAdminEntity(AdminEntity|\Model_Admin|\Model_Client|\FOSSBilling\Identity\Guest $identity): AdminEntity
     {
         if ($identity instanceof AdminEntity) {
             return $identity;

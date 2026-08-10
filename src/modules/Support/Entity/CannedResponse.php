@@ -43,7 +43,7 @@ class CannedResponse implements ApiArrayInterface, TimestampInterface
     #[ORM\Column(name: 'updated_at', type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTime $updatedAt = null;
 
-    public function toApiArray(\Model_Admin|\Model_Client|\Model_Guest|null $identity = null): array
+    public function toApiArray(\Model_Admin|\Model_Client|\FOSSBilling\Identity\Guest|null $identity = null): array
     {
         return [
             'id' => $this->id,

@@ -320,7 +320,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->getSupportTicketRepository()->hasPendingTaskForClient((int) $client->id, $rel_id, $rel_type, $rel_task);
     }
 
-    public function closeTicket(SupportTicket $ticket, \Model_Admin|\Model_Client|\Model_Guest $identity): bool
+    public function closeTicket(SupportTicket $ticket, \Model_Admin|\Model_Client|\FOSSBilling\Identity\Guest $identity): bool
     {
         $ticket->close();
         $this->di['em']->flush();
@@ -957,7 +957,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     /**
      * @param \Model_Admin $identity
      */
-    public function ticketReply(SupportTicket $ticket, \Model_Admin|\Model_Client|\Model_Guest $identity, string $content): int
+    public function ticketReply(SupportTicket $ticket, \Model_Admin|\Model_Client|\FOSSBilling\Identity\Guest $identity, string $content): int
     {
         $em = $this->di['em'];
         $msg = new SupportTicketMessage();

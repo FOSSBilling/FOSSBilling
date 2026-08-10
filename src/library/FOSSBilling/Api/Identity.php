@@ -22,7 +22,13 @@ final readonly class Identity
 
     public static function typeFromObject(object $identity): string
     {
-        return str_replace('model_', '', strtolower($identity::class));
+        $shortName = (new \ReflectionClass($identity))->getShortName();
+
+        if (str_starts_with($shortName, 'Model_')) {
+            $shortName = substr($shortName, strlen('Model_'));
+        }
+
+        return strtolower($shortName);
     }
 
     public function getIdentity(): object

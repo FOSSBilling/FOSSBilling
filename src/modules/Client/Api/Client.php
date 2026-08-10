@@ -74,7 +74,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
         return $this->getService()->sendEmailConfirmationForClient($client);
     }
 
-    private function getClientEntity(ClientEntity|\Model_Admin|\Model_Client|\Model_Guest $identity): ClientEntity
+    private function getClientEntity(ClientEntity|\Model_Admin|\Model_Client|\FOSSBilling\Identity\Guest $identity): ClientEntity
     {
         if ($identity instanceof ClientEntity) {
             return $identity;
