@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace Tests\Helpers;
 
+use Box\Mod\Staff\Entity\Admin;
+
 /**
  * Create a mock model with the given properties.
  * This replaces the old DummyBean pattern.
@@ -93,8 +95,8 @@ function admin(array $attributes = []): object
         'id' => random_int(1, 10000),
         'email' => 'admin' . uniqid() . '@example.com',
         'name' => 'Admin User',
-        'status' => \Model_Admin::STATUS_ACTIVE,
+        'status' => Admin::STATUS_ACTIVE,
     ];
 
-    return model(\Model_Admin::class, array_merge($defaults, $attributes));
+    return createEntity(Admin::class, array_merge($defaults, $attributes));
 }

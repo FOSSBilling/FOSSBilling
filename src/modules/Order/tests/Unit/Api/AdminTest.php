@@ -584,8 +584,7 @@ test('gets order service', function (): void {
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getOrderServiceData')->atLeast()->once()->andReturn([]);
 
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean(['id' => 1]));
+    $admin = \Tests\Helpers\admin(['id' => 1]);
 
     $apiMock->setService($serviceMock);
     $apiMock->setIdentity($admin);

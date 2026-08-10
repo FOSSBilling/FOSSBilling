@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Staff\Api;
 
+use Box\Mod\Staff\Entity\Admin;
 use Box\Mod\Staff\Entity\AdminPasswordReset;
 use FOSSBilling\Security\RandomizedTimeFloor;
 use FOSSBilling\Validation\Api\RequiredParams;
@@ -94,27 +95,31 @@ class Guest extends \FOSSBilling\Api\AbstractApi
                 throw new \FOSSBilling\InformationException('The link has expired or you have already confirmed the password reset.');
             }
 
-            $admin = $this->getDi()['db']->getExistingModelById('Admin', $reset->getAdminId(), 'Admin not found');
+            $admin = $this->getDi()['em']->getRepository(Admin::class)->find($reset->getAdminId());
+            if (!$admin instanceof Admin) {
+                throw new \FOSSBilling\InformationException('Admin not found');
+            }
 
-            if ($admin->status !== \Model_Admin::STATUS_ACTIVE || $admin->isCron()) {
-                $this->getDi()['logger']->setChannel('security')->info('Staff password reset confirmation failed for admin #%s from IP %s: account status %s, system name %s', $admin->id, $this->getIp(), $admin->status, $admin->system_name);
+            if ($admin->getStatus() !== Admin::STATUS_ACTIVE || $admin->isCron()) {
+                $this->getDi()['logger']->setChannel('security')->info('Staff password reset confirmation failed for admin #%s from IP %s: account status %s, system name %s', $admin->getId(), $this->getIp(), $admin->getStatus(), $admin->getSystemName());
 
                 throw new \FOSSBilling\InformationException('The link has expired or you have already confirmed the password reset.');
             }
 
-            $admin->pass = $this->getDi()['password']->hashIt($data['password']);
-            $this->getDi()['db']->store($admin);
+            $admin->setPass($this->getDi()['password']->hashIt($data['password']));
+            $this->getDi()['em']->persist($admin);
+            $this->getDi()['em']->flush();
 
             $profileService = $this->getDi()['mod_service']('profile');
-            $profileService->invalidateSessions('admin', (int) $admin->id);
+            $profileService->invalidateSessions('admin', (int) $admin->getId());
 
-            $this->getDi()['logger']->setChannel('security')->info('Staff password reset completed for admin #%s from IP %s', $admin->id, $this->getIp());
+            $this->getDi()['logger']->setChannel('security')->info('Staff password reset completed for admin #%s from IP %s', $admin->getId(), $this->getIp());
 
-            $this->getDi()['events_manager']->fire(['event' => 'onAfterPasswordResetStaff', 'params' => ['id' => $admin->id]]);
+            $this->getDi()['events_manager']->fire(['event' => 'onAfterPasswordResetStaff', 'params' => ['id' => $admin->getId()]]);
 
             // send email
             $email = [];
-            $email['to_admin'] = $admin->id;
+            $email['to_admin'] = $admin->getId();
             $email['code'] = 'mod_staff_password_reset_approve';
             $emailService = $this->getDi()['mod_service']('email');
             $emailService->sendTemplate($email);
@@ -160,16 +165,16 @@ class Guest extends \FOSSBilling\Api\AbstractApi
                 return true;
             }
 
-            $c = $this->getDi()['db']->findOne('Admin', 'email = ?', [$data['email']]);
+            $c = $this->getDi()['em']->getRepository(Admin::class)->findOneBy(['email' => $data['email']]);
 
-            if (!$c instanceof \Model_Admin) {
+            if (!$c instanceof Admin) {
                 $this->getDi()['logger']->setChannel('security')->info('Staff password reset requested for unknown email %s from IP %s', $data['email'], $this->getIp());
 
                 return true;
             }
 
-            if ($c->status !== \Model_Admin::STATUS_ACTIVE || $c->isCron()) {
-                $this->getDi()['logger']->setChannel('security')->info('Staff password reset requested for ineligible admin #%s from IP %s: email %s, account status %s, system name %s', $c->id, $this->getIp(), $data['email'], $c->status, $c->system_name);
+            if ($c->getStatus() !== Admin::STATUS_ACTIVE || $c->isCron()) {
+                $this->getDi()['logger']->setChannel('security')->info('Staff password reset requested for ineligible admin #%s from IP %s: email %s, account status %s, system name %s', $c->getId(), $this->getIp(), $data['email'], $c->getStatus(), $c->getSystemName());
 
                 return true;
             }
@@ -177,7 +182,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             $hash = hash('sha256', random_bytes(32));
 
             $reset = new AdminPasswordReset();
-            $reset->setAdminId((int) $c->id);
+            $reset->setAdminId((int) $c->getId());
             $reset->setIp($this->ip);
             $reset->setHash($hash);
             $this->getDi()['em']->persist($reset);
@@ -185,13 +190,13 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
             // send email
             $email = [];
-            $email['to_admin'] = $c->id;
+            $email['to_admin'] = $c->getId();
             $email['code'] = 'mod_staff_password_reset_request';
             $email['hash'] = $hash;
             $emailService = $this->getDi()['mod_service']('email');
             $emailService->sendTemplate($email);
 
-            $this->getDi()['logger']->setChannel('security')->info('Staff password reset email queued for admin #%s from IP %s: email %s', $c->id, $this->getIp(), $data['email']);
+            $this->getDi()['logger']->setChannel('security')->info('Staff password reset email queued for admin #%s from IP %s: email %s', $c->getId(), $this->getIp(), $data['email']);
 
             return true;
         } finally {

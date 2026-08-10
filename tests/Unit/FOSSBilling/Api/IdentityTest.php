@@ -22,8 +22,7 @@ test('resolves the typed guest identity to the guest role', function (): void {
 });
 
 test('resolves the admin identity to the admin role', function (): void {
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin = \Tests\Helpers\admin();
 
     expect(Identity::typeFromObject($admin))->toBe('admin');
 });

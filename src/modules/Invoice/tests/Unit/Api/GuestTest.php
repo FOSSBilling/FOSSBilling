@@ -48,7 +48,7 @@ test('gets an invoice', function (): void {
 
     $api->setDi($di);
     $api->setService($serviceMock);
-    $api->setIdentity(new Model_Admin());
+    $api->setIdentity(\Tests\Helpers\admin());
 
     $data['hash'] = md5('1');
     $result = $api->get($data);
@@ -68,7 +68,7 @@ test('throws exception when invoice is not found', function (): void {
     $di['db'] = $dbMock;
 
     $api->setDi($di);
-    $api->setIdentity(new Model_Admin());
+    $api->setIdentity(\Tests\Helpers\admin());
 
     $data['hash'] = md5('1');
     expect(fn () => $api->get($data))

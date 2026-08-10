@@ -550,7 +550,7 @@ test('to api array', function (): void {
     $service = new Service();
     $serviceLicenseModel = new ServiceLicense();
 
-    $result = $service->toApiArray($serviceLicenseModel, false, new Model_Admin());
+    $result = $service->toApiArray($serviceLicenseModel, false, \Tests\Helpers\admin());
     expect($result)->toBeArray();
     expect($result)->toHaveKey('license_key');
     expect($result)->toHaveKey('validate_ip');

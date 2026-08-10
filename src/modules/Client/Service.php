@@ -559,7 +559,7 @@ class Service implements InjectionAwareInterface
             return $identity->getId();
         }
 
-        if ($identity instanceof \Model_Client || $identity instanceof \Model_Admin) {
+        if ($identity instanceof \Model_Client) {
             return (int) $identity->id;
         }
 
@@ -568,7 +568,7 @@ class Service implements InjectionAwareInterface
 
     private function isAdminIdentity(mixed $identity): bool
     {
-        return $identity instanceof Admin || $identity instanceof \Model_Admin;
+        return $identity instanceof Admin;
     }
 
     private function isClientIdentity(mixed $identity): bool

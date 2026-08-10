@@ -39,7 +39,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
 
         $order = $this->getDi()['em']->getRepository(\Box\Mod\Order\Entity\Order::class)->findOneBy([
             'id' => $data['order_id'],
-            'clientId' => $client->id,
+            'clientId' => $client->getId(),
         ]);
 
         if (!$order instanceof \Box\Mod\Order\Entity\Order) {

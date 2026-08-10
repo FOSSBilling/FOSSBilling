@@ -634,7 +634,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             ],
         ];
 
-        if ($identity instanceof \Model_Admin) {
+        if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
             $data['transfer_code'] = $model->getTransferCode();
 
             $tldRegistrarId = $model->getTldRegistrarId();
@@ -987,7 +987,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'periods' => $model->getPeriodsArray(),
         ];
 
-        if ($identity instanceof \Model_Admin) {
+        if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
             $tldRegistrarId = $model->getTldRegistrarId();
             $tldRegistrar = $tldRegistrarId !== null ? $this->getTldRegistrarRepository()->find($tldRegistrarId) : null;
 

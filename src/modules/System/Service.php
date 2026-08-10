@@ -522,7 +522,7 @@ class Service
 
     public function templateExists($file, $identity = null): bool
     {
-        if ($identity instanceof \Model_Admin) {
+        if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
             $client = false;
         } else {
             $client = true;

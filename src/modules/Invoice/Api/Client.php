@@ -28,7 +28,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
      */
     public function get_list($data)
     {
-        $data['client_id'] = $this->getIdentity()->id;
+        $data['client_id'] = $this->getIdentity()->getId();
         $data['approved'] = true;
 
         [$sql, $params] = $this->getService()->getSearchQuery($data);
@@ -53,7 +53,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
     public function get($data)
     {
         $identity = $this->getIdentity();
-        $model = $this->getDi()['db']->findOne('Invoice', 'hash = :hash AND client_id = :client_id', ['hash' => $data['hash'], 'client_id' => $identity->id]);
+        $model = $this->getDi()['db']->findOne('Invoice', 'hash = :hash AND client_id = :client_id', ['hash' => $data['hash'], 'client_id' => $identity->getId()]);
         if (!$model) {
             throw new \FOSSBilling\InformationException('Invoice was not found');
         }
@@ -73,7 +73,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['order_id' => 'Order ID (order_id) was not passed'])]
     public function renewal_invoice($data)
     {
-        $model = $this->getDi()['em']->getRepository(Order::class)->findOneBy(['clientId' => $this->getIdentity()->id, 'id' => $data['order_id']]);
+        $model = $this->getDi()['em']->getRepository(Order::class)->findOneBy(['clientId' => $this->getIdentity()->getId(), 'id' => $data['order_id']]);
         if (!$model instanceof Order) {
             throw new \FOSSBilling\InformationException('Order not found');
         }
@@ -120,7 +120,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
      */
     public function transaction_get_list($data)
     {
-        $data['client_id'] = $this->getIdentity()->id;
+        $data['client_id'] = $this->getIdentity()->getId();
         $data['status'] = 'processed';
         $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
         [$sql, $params] = $transactionService->getSearchQuery($data);

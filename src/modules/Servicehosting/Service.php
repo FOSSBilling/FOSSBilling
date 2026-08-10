@@ -589,7 +589,7 @@ class Service implements InjectionAwareInterface
             'reseller_cpanel_url' => $whm_url,
         ];
 
-        if ($identity instanceof \Model_Admin) {
+        if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
             $result['id'] = $model->getId();
             $result['active'] = $model->isActive();
             $result['secure'] = $model->isSecure();
@@ -627,7 +627,7 @@ class Service implements InjectionAwareInterface
             'reseller' => $model->isReseller(),
         ];
 
-        if ($identity instanceof \Model_Admin) {
+        if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
             $result['ip'] = $model->getIp();
             $result['username'] = $model->getUsername();
             $result['created_at'] = $this->formatDateTime($model->getCreatedAt());
@@ -706,7 +706,7 @@ class Service implements InjectionAwareInterface
             'reseller' => $account['reseller'],
         ];
 
-        if ($identity instanceof \Model_Admin) {
+        if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
             $result['ip'] = $account['ip'];
             $result['username'] = $account['username'];
             $result['created_at'] = $account['created_at'];
@@ -1065,7 +1065,7 @@ class Service implements InjectionAwareInterface
         }
 
         if ($audit && $incoming !== $existing) {
-            $adminId = $this->di['loggedin_admin']->id ?? 'unknown';
+            $adminId = $this->di['loggedin_admin']->getId() ?? 'unknown';
             $this->di['logger']->info('Rotated %s for hosting server %s by admin %s', $field, (string) $serverId, (string) $adminId);
         }
 

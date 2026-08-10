@@ -36,7 +36,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
         }
 
         $identity = $this->getIdentity();
-        $model = $this->getService()->getServiceCustomByOrderId($data['order_id'], $identity->id);
+        $model = $this->getService()->getServiceCustomByOrderId($data['order_id'], $identity->getId());
 
         return $this->getService()->customCall($model, $data['method'], $data);
     }
