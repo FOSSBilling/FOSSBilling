@@ -286,7 +286,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     {
         $charge = $this->stripe->paymentIntents->retrieve($data['get']['payment_intent'], []);
 
-        $this->withPaymentIntentLock(
+        $this->withStripeObjectLock(
             $charge->id,
             (int) $tx->getGatewayId(),
             fn () => $this->processPaymentIntentUnderLock($tx, $invoice, $charge)
@@ -758,6 +758,16 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             return false;
         }
 
+        // Those events can arrive concurrently, so the dedup below has to be held under a lock.
+        return $this->withStripeObjectLock(
+            $stripeInvoice->id,
+            $gateway_id,
+            fn (): bool => $this->handleInvoicePaymentSucceededUnderLock($api_admin, $tx, $stripeInvoice, $subscriptionId)
+        );
+    }
+
+    private function handleInvoicePaymentSucceededUnderLock($api_admin, Transaction $tx, object $stripeInvoice, string $subscriptionId): bool
+    {
         // Dedup: Stripe sends both invoice.payment_succeeded and invoice.paid for
         // the same payment. Use the Stripe invoice ID as the shared natural key so
         // whichever event arrives second sees the first is already processing/done.
@@ -893,7 +903,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     {
         $paymentIntent = $event->data->object;
 
-        return $this->withPaymentIntentLock(
+        return $this->withStripeObjectLock(
             $paymentIntent->id,
             $gateway_id,
             fn (): bool => $this->handlePaymentIntentSucceededWebhookUnderLock($tx, $paymentIntent, $gateway_id)
@@ -954,9 +964,9 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    private function withPaymentIntentLock(string $paymentIntentId, int $gatewayId, callable $callback): mixed
+    private function withStripeObjectLock(string $objectId, int $gatewayId, callable $callback): mixed
     {
-        $lockName = 'fb:stripe:' . substr(hash('sha256', $gatewayId . ':' . $paymentIntentId), 0, 54);
+        $lockName = 'fb:stripe:' . substr(hash('sha256', $gatewayId . ':' . $objectId), 0, 54);
         $waitStartedAt = hrtime(true);
         $acquired = (int) $this->di['dbal']->fetchOne(
             'SELECT GET_LOCK(:lock_name, 10)',
@@ -965,11 +975,11 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
         if ($acquired !== 1) {
             $waitDurationMs = (hrtime(true) - $waitStartedAt) / 1_000_000;
-            $this->di['logger']->warning(
-                'Timed out after %.1f ms waiting for Stripe PaymentIntent lock %s',
+            $this->di['logger']->warning(sprintf(
+                'Timed out after %.1f ms waiting for Stripe object lock %s',
                 $waitDurationMs,
                 $lockName
-            );
+            ));
 
             throw new FOSSBilling\Exception('Timed out waiting to process this Stripe payment');
         }

@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicehosting;
 
+use Box\Mod\Order\Entity\Order;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Servicehosting\Entity\ServiceHosting;
 use Box\Mod\Servicehosting\Entity\ServiceHostingHp;
@@ -134,7 +135,7 @@ class Service implements InjectionAwareInterface
             ':service_type' => \Box\Mod\Product\Service::HOSTING,
             ':sld' => $sld,
             ':tld' => $tld,
-            ':canceled_status' => \Model_ClientOrder::STATUS_CANCELED,
+            ':canceled_status' => Order::STATUS_CANCELED,
         ]);
 
         if ($count > 0) {
@@ -147,7 +148,7 @@ class Service implements InjectionAwareInterface
      *
      * @todo
      */
-    public function action_create(\Model_ClientOrder $order): ServiceHosting
+    public function action_create(Order $order): ServiceHosting
     {
         $orderService = $this->di['mod_service']('order');
         $c = $orderService->getConfig($order);
@@ -157,7 +158,7 @@ class Service implements InjectionAwareInterface
         $hp = $this->getExistingHp((int) $c['hosting_plan_id'], 'Hosting plan from order configuration was not found');
 
         $model = new ServiceHosting();
-        $model->setClientId((int) $order->client_id);
+        $model->setClientId((int) $order->getClientId());
         $model->setServiceHostingServerId($server->getId());
         $model->setServiceHostingHpId($hp->getId());
         $model->setSld($c['sld']);
@@ -174,7 +175,7 @@ class Service implements InjectionAwareInterface
     /**
      * @throws Exception
      */
-    public function action_activate(\Model_ClientOrder $order): array
+    public function action_activate(Order $order): array
     {
         // Retrieve the service associated with the order
         $model = $this->_getOrderService($order);
@@ -239,7 +240,7 @@ class Service implements InjectionAwareInterface
      *
      * @todo
      */
-    public function action_renew(\Model_ClientOrder $order): bool
+    public function action_renew(Order $order): bool
     {
         // Ensures the order has an active hosting service before renewal.
         $this->_getOrderService($order);
@@ -250,7 +251,7 @@ class Service implements InjectionAwareInterface
     /**
      * @throws Exception
      */
-    public function action_suspend(\Model_ClientOrder $order, ?string $reason = null): bool
+    public function action_suspend(Order $order, ?string $reason = null): bool
     {
         $model = $this->_getOrderService($order);
         [$adapter, $account] = $this->_getAM($model);
@@ -265,7 +266,7 @@ class Service implements InjectionAwareInterface
     /**
      * @throws Exception
      */
-    public function action_unsuspend(\Model_ClientOrder $order): bool
+    public function action_unsuspend(Order $order): bool
     {
         $model = $this->_getOrderService($order);
         [$adapter, $account] = $this->_getAM($model);
@@ -279,7 +280,7 @@ class Service implements InjectionAwareInterface
     /**
      * @throws Exception
      */
-    public function action_cancel(\Model_ClientOrder $order): bool
+    public function action_cancel(Order $order): bool
     {
         $model = $this->_getOrderService($order);
         [$adapter, $account] = $this->_getAM($model);
@@ -293,7 +294,7 @@ class Service implements InjectionAwareInterface
     /**
      * @throws Exception
      */
-    public function action_uncancel(\Model_ClientOrder $order): bool
+    public function action_uncancel(Order $order): bool
     {
         $this->action_create($order);
         $model = $this->_getOrderService($order);
@@ -318,13 +319,13 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function action_delete(\Model_ClientOrder $order): void
+    public function action_delete(Order $order): void
     {
         $orderService = $this->di['mod_service']('order');
         $service = $orderService->getOrderService($order);
         if ($service instanceof ServiceHosting) {
             // cancel if not canceled
-            if ($order->status != \Model_ClientOrder::STATUS_CANCELED) {
+            if ($order->getStatus() != Order::STATUS_CANCELED) {
                 $this->action_cancel($order);
             }
             $this->di['em']->remove($service);
@@ -332,7 +333,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function changeAccountPlan(\Model_ClientOrder $order, ServiceHosting $model, ServiceHostingHp $hp): bool
+    public function changeAccountPlan(Order $order, ServiceHosting $model, ServiceHostingHp $hp): bool
     {
         $model->setServiceHostingHpId($hp->getId());
         if ($this->_performOnService($order)) {
@@ -347,7 +348,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function changeAccountUsername(\Model_ClientOrder $order, ServiceHosting $model, $data): bool
+    public function changeAccountUsername(Order $order, ServiceHosting $model, $data): bool
     {
         if (!isset($data['username']) || empty($data['username'])) {
             throw new InformationException('Account username is missing or is invalid');
@@ -368,7 +369,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function changeAccountIp(\Model_ClientOrder $order, ServiceHosting $model, $data): bool
+    public function changeAccountIp(Order $order, ServiceHosting $model, $data): bool
     {
         if (!isset($data['ip']) || empty($data['ip'])) {
             throw new InformationException('Account IP address is missing or is invalid');
@@ -388,7 +389,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function changeAccountDomain(\Model_ClientOrder $order, ServiceHosting $model, $data): bool
+    public function changeAccountDomain(Order $order, ServiceHosting $model, $data): bool
     {
         if (
             !isset($data['tld']) || empty($data['tld'])
@@ -413,7 +414,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function changeAccountPassword(\Model_ClientOrder $order, ServiceHosting $model, $data): bool
+    public function changeAccountPassword(Order $order, ServiceHosting $model, $data): bool
     {
         if (
             !isset($data['password']) || !isset($data['password_confirm'])
@@ -436,7 +437,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function sync(\Model_ClientOrder $order, ServiceHosting $model): bool
+    public function sync(Order $order, ServiceHosting $model): bool
     {
         [$adapter, $account] = $this->_getAM($model);
         $updated = $adapter->synchronizeAccount($account);
@@ -459,7 +460,7 @@ class Service implements InjectionAwareInterface
     {
         $orderService = $this->di['mod_service']('order');
         $o = $orderService->getServiceOrder($model);
-        if ($o instanceof \Model_ClientOrder) {
+        if ($o instanceof Order) {
             $c = $orderService->getConfig($o);
             if (isset($c['domain']) && isset($c['domain']['action'])) {
                 $action = $c['domain']['action'];
@@ -472,21 +473,22 @@ class Service implements InjectionAwareInterface
         return null;
     }
 
-    private function _performOnService(\Model_ClientOrder $order): bool
+    private function _performOnService(Order $order): bool
     {
         // If the order matches any of the following status, we should prevent actions such as PW resets or username changes from being performed
         $badStatus = [
-            \Model_ClientOrder::STATUS_FAILED_SETUP,
-            \Model_ClientOrder::STATUS_PENDING_SETUP,
-            \Model_ClientOrder::STATUS_SUSPENDED,
-            \Model_ClientOrder::STATUS_CANCELED,
+            Order::STATUS_FAILED_SETUP,
+            Order::STATUS_PENDING_SETUP,
+            Order::STATUS_SUSPENDED,
+            Order::STATUS_CANCELED,
         ];
 
-        if (in_array($order->status, $badStatus)) {
+        if (in_array($order->getStatus(), $badStatus)) {
             return false;
         }
 
-        if ($order->expires_at !== null && strtotime((string) $order->expires_at) <= time()) {
+        $expiresAt = $order->getExpiresAt();
+        if ($expiresAt !== null && $expiresAt->getTimestamp() <= time()) {
             return false;
         }
 
@@ -543,7 +545,7 @@ class Service implements InjectionAwareInterface
 
         $orderService = $this->di['mod_service']('order');
         $order = $orderService->getServiceOrder($model);
-        if ($order instanceof \Model_ClientOrder) {
+        if ($order instanceof Order) {
             $adapter = $this->getServerManagerWithLog($server, $order);
         } else {
             $adapter = $this->getServerManager($server);
@@ -1263,7 +1265,7 @@ class Service implements InjectionAwareInterface
     /**
      * @throws Exception
      */
-    public function getServerManagerWithLog(ServiceHostingServer $model, \Model_ClientOrder $order)
+    public function getServerManagerWithLog(ServiceHostingServer $model, Order $order)
     {
         $manager = $this->getServerManager($model);
 
@@ -1477,12 +1479,12 @@ class Service implements InjectionAwareInterface
         };
     }
 
-    private function _getOrderService(\Model_ClientOrder $order): ServiceHosting
+    private function _getOrderService(Order $order): ServiceHosting
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
         if (!$model instanceof ServiceHosting) {
-            throw new Exception('Order :id has no active service', [':id' => $order->id]);
+            throw new Exception('Order :id has no active service', [':id' => $order->getId()]);
         }
 
         return $model;

@@ -19,6 +19,7 @@ use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Repository\InvoiceItemRepository;
 use Box\Mod\Invoice\Repository\InvoiceRepository;
+use Box\Mod\Order\Entity\Order;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use FOSSBilling\Environment;
@@ -506,10 +507,10 @@ class Service implements InjectionAwareInterface
                 $orderIdPlaceholders[] = $placeholder;
                 $orderIdParams['order_id_' . $idx] = $id;
             }
-            $orders = $this->di['db']->find('ClientOrder', 'id IN (' . implode(',', $orderIdPlaceholders) . ')', $orderIdParams);
+            $orders = $this->di['em']->getRepository(Order::class)->findBy(['id' => $orderIds]);
 
             // Batch load related products
-            $rawProductIds = array_map(static fn ($order): int => isset($order->product_id) ? (int) $order->product_id : 0, $orders);
+            $rawProductIds = array_map(static fn (Order $order): int => $order->getProductId() !== null ? (int) $order->getProductId() : 0, $orders);
             $nonEmptyProductIds = array_filter($rawProductIds);
             $productIds = array_unique($nonEmptyProductIds);
 
@@ -520,12 +521,13 @@ class Service implements InjectionAwareInterface
             $productsById = !empty($productIds) ? $productService->getProductSnapshotMap($productIds) : [];
 
             foreach ($orders as $order) {
-                $productId = isset($order->product_id) ? (int) $order->product_id : 0;
+                $productId = $order->getProductId() !== null ? (int) $order->getProductId() : 0;
                 $product = $productsById[$productId] ?? null;
+                $expiresAt = $order->getExpiresAt();
                 $orderData = [
-                    'id' => $order->id,
-                    'title' => $order->title,
-                    'expires_at' => $order->expires_at,
+                    'id' => $order->getId(),
+                    'title' => $order->getTitle(),
+                    'expires_at' => $expiresAt?->format('Y-m-d H:i:s'),
                 ];
 
                 if ($product) {
@@ -790,7 +792,7 @@ class Service implements InjectionAwareInterface
         return $email;
     }
 
-    public function markAsPaid(Invoice $invoice, $charge = true, $execute = false): bool
+    public function markAsPaid(Invoice $invoice, $charge = true, $execute = false, bool $deferEvents = false): bool
     {
         if ($invoice->getStatus() == Invoice::STATUS_PAID) {
             return true;
@@ -828,7 +830,11 @@ class Service implements InjectionAwareInterface
             $productService->commitReservedPromoRedemptionsForInvoice($invoice);
         });
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoicePaymentReceived', 'params' => ['id' => $invoice->getId()]]);
+        // Listeners render PDFs and send email, so a caller holding row locks defers this until
+        // after it has committed rather than holding them for the duration of an SMTP send.
+        if (!$deferEvents) {
+            $this->firePaymentReceivedEvent($invoice);
+        }
 
         if ($execute) {
             foreach ($invoiceItems as $item) {
@@ -925,32 +931,38 @@ class Service implements InjectionAwareInterface
     /**
      * Finds all paid invoices associated with a given client order.
      *
-     * @param \Model_ClientOrder $order the client order for which to find paid invoices
+     * @param Order $order the client order for which to find paid invoices
      *
      * @return array An array of paid invoices. Each element in the array represents an invoice record
      *               as returned by the database, typically as an associative array or an object.
      */
-    public function findPaidInvoicesForOrder(\Model_ClientOrder $order): array
+    public function findPaidInvoicesForOrder(Order $order): array
     {
-        return $this->getInvoiceRepository()->findPaidByRelId($order->id);
+        return $this->getInvoiceRepository()->findPaidByRelId($order->getId());
     }
 
     public function getNextInvoiceNumber()
     {
         $systemService = $this->di['mod_service']('system');
-        $next_nr = $systemService->getParamValue('invoice_starting_number');
 
-        if (empty($next_nr)) {
+        // Claimed and advanced in one locked step, otherwise two concurrent approvals take the
+        // same number and issue two invoices sharing an invoice number.
+        $next_nr = $systemService->reserveNextNumericParamValue('invoice_starting_number');
+
+        if ($next_nr === null) {
             // In theory this code should never need to be called, but is provided as a fallback
             $r = $this->getInvoiceRepository()->findLatestWithNr();
-            if ($r instanceof Invoice && is_numeric($r->getNr())) {
-                $next_nr = intval($r->getNr()) + 1;
-            } else {
+            if (!$r instanceof Invoice || !is_numeric($r->getNr())) {
+                throw new \FOSSBilling\Exception('Unable to determine the next invoice number');
+            }
+
+            // Seeding the counter and reserving from it has to be one locked step too, otherwise
+            // two callers deriving the same seed both write it and both reserve the same number.
+            $next_nr = $systemService->reserveNextNumericParamValue('invoice_starting_number', intval($r->getNr()) + 1);
+            if ($next_nr === null) {
                 throw new \FOSSBilling\Exception('Unable to determine the next invoice number');
             }
         }
-
-        $systemService->setParamValue('invoice_starting_number', intval($next_nr) + 1);
 
         return $next_nr;
     }
@@ -1131,48 +1143,88 @@ class Service implements InjectionAwareInterface
             return false;
         }
 
-        $client = $this->di['db']->load('Client', $invoice->getClientId());
-        $cbrepo = $this->di['mod_service']('Client', 'Balance');
-        $balance = $cbrepo->getClientBalance($client);
-        $required = $this->getTotalWithTax($invoice);
-        $epsilon = 0.01;
-        $difference = $balance - $required;
+        $paid = $this->di['em']->wrapInTransaction(function () use ($invoice): bool {
+            $clientId = (int) $invoice->getClientId();
+            $cbrepo = $this->di['mod_service']('Client', 'Balance');
 
-        if ($difference >= -$epsilon) {
+            // Locks the balance for the rest of this transaction, so a concurrent request cannot
+            // spend the same credit.
+            $balance = $cbrepo->getClientBalanceForUpdate($clientId);
+
+            // Another request could have paid this invoice while we waited for the lock. A locking
+            // read, as a plain one can be served from a snapshot predating that request's commit.
+            if ($this->getInvoiceRepository()->lockAndGetStatus((int) $invoice->getId()) === Invoice::STATUS_PAID) {
+                return false;
+            }
+
+            $required = $this->getTotalWithTax($invoice);
+            $epsilon = 0.01;
+            $difference = $balance - $required;
+
+            if ($difference < -$epsilon) {
+                // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
+                if (DEBUG) {
+                    $this->di['logger']->setChannel('billing')->info("Invoice {$invoice->getId()} could not be paid with credits. Money in balance {$balance} Required: {$required}.");
+                }
+
+                return false;
+            }
+
             // @phpstan-ignore if.alwaysFalse
             if (DEBUG) {
                 $this->di['logger']->setChannel('billing')->info("Setting invoice {$invoice->getId()} as paid with credits for the amount of {$required}.");
             }
 
-            if ($required <= $epsilon) {
-                // Nothing was actually charged against the client's balance, so don't record a $0 credit transaction.
-                $this->markAsPaid($invoice, false, true);
+            if ($required > $epsilon) {
+                // Nothing at or below the epsilon is actually charged against the client's balance,
+                // so don't record a $0 credit transaction.
+                $balanceTransaction = new ClientBalance();
+                $balanceTransaction->setClientId($clientId);
+                $balanceTransaction->setType('invoice');
+                $balanceTransaction->setRelId((string) $invoice->getId());
 
-                return true;
+                $invoice_identifier = $invoice->getNr() ?: $invoice->getId();
+                $balanceTransaction->setDescription("Payment for invoice #{$invoice_identifier} using account credit.");
+
+                $balanceTransaction->setAmount((string) (-$required));
+                $this->di['em']->persist($balanceTransaction);
+                $this->di['em']->flush();
             }
 
-            $balanceTransaction = new ClientBalance();
-            $balanceTransaction->setClientId((int) $client->id);
-            $balanceTransaction->setType('invoice');
-            $balanceTransaction->setRelId((string) $invoice->getId());
-
-            $invoice_identifier = $invoice->getNr() ?: $invoice->getId();
-            $balanceTransaction->setDescription("Payment for invoice #{$invoice_identifier} using account credit.");
-
-            $balanceTransaction->setAmount((string) (-$required));
-            $this->di['em']->persist($balanceTransaction);
-            $this->di['em']->flush();
-
-            $this->markAsPaid($invoice, false, true);
+            // Events and tasks run after the commit below, so neither notifications nor
+            // provisioning are held under the balance lock.
+            $this->markAsPaid($invoice, false, false, true);
 
             return true;
-        }
-        // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
-        if (DEBUG) {
-            $this->di['logger']->setChannel('billing')->info("Invoice {$invoice->getId()} could not be paid with credits. Money in balance {$balance} Required: {$required}.");
+        });
+
+        if ($paid) {
+            $this->firePaymentReceivedEvent($invoice);
+            $this->executeInvoiceItemTasks($invoice);
         }
 
-        return false;
+        return $paid;
+    }
+
+    private function firePaymentReceivedEvent(Invoice $invoice): void
+    {
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoicePaymentReceived', 'params' => ['id' => $invoice->getId()]]);
+    }
+
+    /**
+     * The task execution markAsPaid() performs with $execute, for callers that must run it after
+     * their transaction commits.
+     */
+    private function executeInvoiceItemTasks(Invoice $invoice): void
+    {
+        $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
+        foreach ($this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId()) as $item) {
+            try {
+                $invoiceItemService->executeTask($item);
+            } catch (\Exception $e) {
+                $this->di['logger']->warning($e->getMessage());
+            }
+        }
     }
 
     public function getTotalWithTax(Invoice $invoice): float
@@ -1482,15 +1534,15 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function renewInvoice(\Model_ClientOrder $model, array $data)
+    public function renewInvoice(Order $model, array $data)
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminGenerateRenewalInvoice', 'params' => ['order_id' => $model->id]]);
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminGenerateRenewalInvoice', 'params' => ['order_id' => $model->getId()]]);
 
         $due_days = isset($data['due_days']) ? (int) $data['due_days'] : null;
         $invoice = $this->generateForOrder($model, $due_days);
         $this->approveInvoice($invoice, ['id' => $invoice->getId(), 'use_credits' => true]);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminGenerateRenewalInvoice', 'params' => ['order_id' => $model->id, 'id' => $invoice->getId()]]);
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminGenerateRenewalInvoice', 'params' => ['order_id' => $model->getId(), 'id' => $invoice->getId()]]);
 
         $this->di['logger']->info("Generated renewal invoice #{$invoice->getId()}.");
 
@@ -1530,11 +1582,11 @@ class Service implements InjectionAwareInterface
     /**
      * @param int $due_days
      */
-    public function generateForOrder(\Model_ClientOrder $order, $due_days = null): Invoice
+    public function generateForOrder(Order $order, $due_days = null): Invoice
     {
         // check if we do have invoice prepared already
-        if ($order->unpaid_invoice_id !== null) {
-            $p = $this->getInvoiceRepository()->find($order->unpaid_invoice_id);
+        if ($order->getUnpaidInvoiceId() !== null) {
+            $p = $this->getInvoiceRepository()->find($order->getUnpaidInvoiceId());
             if ($p instanceof Invoice && $p->getStatus() === Invoice::STATUS_UNPAID) {
                 return $p;
             }
@@ -1543,30 +1595,30 @@ class Service implements InjectionAwareInterface
             $orderService->unsetUnpaidInvoice($order);
         }
 
-        $price = $order->price;
+        $price = $order->getPrice();
         $line = [
-            'price' => $order->price,
-            'quantity' => $order->quantity,
+            'price' => $order->getPrice(),
+            'quantity' => $order->getQuantity(),
         ];
 
         // Domain renewal pricing is resolved from the registrar/config rather than
         // the order, since it legitimately changes between registration and renewal.
         // Other products keep the order's own price so admin-edited prices are respected.
-        if (in_array($order->status, [
-            \Model_ClientOrder::STATUS_ACTIVE,
-            \Model_ClientOrder::STATUS_FAILED_RENEW,
-            \Model_ClientOrder::STATUS_SUSPENDED,
+        if (in_array($order->getStatus(), [
+            Order::STATUS_ACTIVE,
+            Order::STATUS_FAILED_RENEW,
+            Order::STATUS_SUSPENDED,
         ], true)) {
             $productService = $this->di['mod_service']('Product');
-            $product = $productService->findProductById((int) $order->product_id);
+            $product = $productService->findProductById((int) $order->getProductId());
 
             if ($productService instanceof \Box\Mod\Product\Service && $product->getType() === \Box\Mod\Product\Service::DOMAIN) {
-                $config = json_decode($order->config ?? '', true) ?? [];
+                $config = json_decode($order->getConfig() ?? '', true) ?? [];
                 $currencyService = $this->di['mod_service']('Currency');
                 $currencyRepository = $currencyService->getCurrencyRepository();
-                $rate = $currencyRepository->getRateByCode($order->currency);
+                $rate = $currencyRepository->getRateByCode($order->getCurrency());
                 if ($rate === null) {
-                    throw new \FOSSBilling\Exception("Currency rate for '{$order->currency}' is not configured");
+                    throw new \FOSSBilling\Exception("Currency rate for '{$order->getCurrency()}' is not configured");
                 }
 
                 $renewalLine = $productService->getProductRenewalLineConfig($product, $config);
@@ -1582,13 +1634,13 @@ class Service implements InjectionAwareInterface
             throw new InformationException('Invoices are not generated for negative amount orders.');
         }
 
-        $client = $this->di['db']->getExistingModelById('Client', $order->client_id, 'Client not found');
+        $client = $this->di['db']->getExistingModelById('Client', $order->getClientId(), 'Client not found');
 
         // generate proforma after validating the resolved renewal amount
         $proforma = new Invoice();
         $proforma->setClientId($client->id !== null ? (int) $client->id : null);
         $proforma->setStatus(Invoice::STATUS_UNPAID);
-        $proforma->setCurrency($order->currency);
+        $proforma->setCurrency($order->getCurrency());
         $proforma->setApproved(false);
         $this->di['em']->persist($proforma);
         $this->di['em']->flush();
@@ -1603,10 +1655,13 @@ class Service implements InjectionAwareInterface
             $proforma->setDueAt(new \DateTime('+' . $due_days . ' days'));
             $this->di['em']->persist($proforma);
             $this->di['em']->flush();
-        } elseif ($order->expires_at) {
-            $proforma->setDueAt(new \DateTime($order->expires_at));
-            $this->di['em']->persist($proforma);
-            $this->di['em']->flush();
+        } else {
+            $expiresAt = $order->getExpiresAt();
+            if ($expiresAt !== null) {
+                $proforma->setDueAt($expiresAt);
+                $this->di['em']->persist($proforma);
+                $this->di['em']->flush();
+            }
         }
 
         return $proforma;
@@ -1623,7 +1678,10 @@ class Service implements InjectionAwareInterface
 
         foreach ($orders as $order) {
             try {
-                $model = $this->di['db']->getExistingModelById('ClientOrder', $order['id'] ?? null);
+                $model = $this->di['em']->getRepository(Order::class)->find($order['id'] ?? 0);
+                if (!$model instanceof Order) {
+                    continue;
+                }
                 $invoice = $this->generateForOrder($model);
                 $this->approveInvoice($invoice, ['id' => $invoice->getId(), 'use_credits' => true]);
             } catch (\Exception $e) {
@@ -2575,8 +2633,8 @@ class Service implements InjectionAwareInterface
                 return null;
             }
 
-            $originalOrder = $this->di['db']->load('ClientOrder', $originalOrderId);
-            if (!$originalOrder instanceof \Model_ClientOrder) {
+            $originalOrder = $this->di['em']->getRepository(Order::class)->find($originalOrderId);
+            if (!$originalOrder instanceof Order) {
                 return null;
             }
 
@@ -2585,7 +2643,7 @@ class Service implements InjectionAwareInterface
             // products like domain registrations where multiple orders share
             // the same product — it would find an unrelated order and generate
             // a renewal invoice for the wrong service.
-            if ($originalOrder->status !== \Model_ClientOrder::STATUS_ACTIVE) {
+            if ($originalOrder->getStatus() !== Order::STATUS_ACTIVE) {
                 return null;
             }
 

@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicehosting\Api;
 
+use Box\Mod\Order\Entity\Order;
 use Box\Mod\Servicehosting\Entity\ServiceHosting;
 use Box\Mod\Servicehosting\Entity\ServiceHostingHp;
 use Box\Mod\Servicehosting\Entity\ServiceHostingServer;
@@ -463,7 +464,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         ];
         $this->getDi()['validator']->checkRequiredParamsForArray($required, $data);
 
-        $order = $this->getDi()['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
+        $order = $this->getDi()['em']->getRepository(Order::class)->find($data['order_id']);
+        if (!$order instanceof Order) {
+            throw new \FOSSBilling\Exception('Order not found');
+        }
         $orderService = $this->getDi()['mod_service']('order');
         $s = $orderService->getOrderService($order);
         if (!$s instanceof ServiceHosting) {

@@ -10,12 +10,14 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Order\Entity\Order;
 use Box\Mod\Order\Service as OrderService;
 use Box\Mod\Servicedomain\Api\Client;
 use Box\Mod\Servicedomain\Entity\ServiceDomain;
 use Box\Mod\Servicedomain\Service;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 test('updates nameservers', function (): void {
     $clientApi = apiEndpoint(new Client());
@@ -197,9 +199,7 @@ test('gets service', function (): void {
     $clientApi->setService($serviceMock);
 
     $orderServiceMock = Mockery::mock(OrderService::class);
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->status = Model_ClientOrder::STATUS_ACTIVE;
+    $order = createEntity(Order::class, ['status' => Order::STATUS_ACTIVE]);
     $orderServiceMock->shouldReceive('findForClientById')
         ->atLeast()->once()
         ->andReturn($order);
@@ -292,7 +292,7 @@ test('throws exception when getting service order not activated', function (): v
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('findForClientById')
         ->atLeast()->once()
-        ->andReturn(new Model_ClientOrder());
+        ->andReturn(createEntity(Order::class));
     $orderServiceMock->shouldReceive('assertOrderUsable')
         ->atLeast()->once();
     $orderServiceMock->shouldReceive('getOrderService')
@@ -319,10 +319,10 @@ test('throws exception when getting service for expired order', function (): voi
     $serviceMock->shouldReceive('lock')->never();
     $clientApi->setService($serviceMock);
 
-    $expiredOrder = new Model_ClientOrder();
-    $expiredOrder->loadBean(new Tests\Helpers\DummyBean());
-    $expiredOrder->status = Model_ClientOrder::STATUS_ACTIVE;
-    $expiredOrder->expires_at = date('Y-m-d H:i:s', time() - 3600);
+    $expiredOrder = createEntity(Order::class, [
+        'status' => Order::STATUS_ACTIVE,
+        'expires_at' => date('Y-m-d H:i:s', time() - 3600),
+    ]);
 
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('findForClientById')

@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 use Box\Mod\Client\Service as ClientService;
 use Box\Mod\Email\Service as EmailService;
+use Box\Mod\Order\Entity\Order;
 use Box\Mod\Support\Entity\CannedResponse;
 use Box\Mod\Support\Entity\CannedResponseCategory;
 use Box\Mod\Support\Entity\Helpdesk;
@@ -34,6 +35,7 @@ use Box\Mod\Support\Service;
 use Doctrine\ORM\EntityManagerInterface;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 use function Tests\Helpers\setEntityId;
 
 function supportClientFixture(): Model_Client
@@ -599,8 +601,7 @@ test('gets active tickets count for order', function (): void {
     $di['em'] = $emMock;
     $service->setDi($di);
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order = createEntity(Order::class);
 
     $result = $service->getSupportTicketRepository()->countActiveTicketsForOrder((int) $order->id);
     expect($result)->toBeInt();

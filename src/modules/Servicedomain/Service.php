@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicedomain;
 
+use Box\Mod\Order\Entity\Order;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Servicedomain\Entity\ServiceDomain;
 use Box\Mod\Servicedomain\Entity\Tld;
@@ -206,7 +207,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         };
     }
 
-    public function action_create(\Model_ClientOrder $order): ServiceDomain
+    public function action_create(Order $order): ServiceDomain
     {
         $orderService = $this->di['mod_service']('order');
         $c = $orderService->getConfig($order);
@@ -226,7 +227,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $tldModel = $this->tldFindOneByTld($tld);
 
         $model = new ServiceDomain();
-        $model->setClientId((int) $order->client_id);
+        $model->setClientId((int) $order->getClientId());
         $model->setTldRegistrarId($tldModel instanceof Tld ? $tldModel->getTldRegistrarId() : null);
         $model->setSld($sld);
         $model->setTld($tld);
@@ -260,7 +261,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $model;
     }
 
-    public function action_activate(\Model_ClientOrder $order): ServiceDomain
+    public function action_activate(Order $order): ServiceDomain
     {
         $model = $this->_getOrderService($order);
 
@@ -287,7 +288,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $model;
     }
 
-    public function action_renew(\Model_ClientOrder $order): bool
+    public function action_renew(Order $order): bool
     {
         $model = $this->_getOrderService($order);
         // @adapterAction
@@ -302,7 +303,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     /**
      * @todo
      */
-    public function action_suspend(\Model_ClientOrder $order): bool
+    public function action_suspend(Order $order): bool
     {
         return true;
     }
@@ -310,12 +311,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     /**
      * @todo
      */
-    public function action_unsuspend(\Model_ClientOrder $order): bool
+    public function action_unsuspend(Order $order): bool
     {
         return true;
     }
 
-    public function action_cancel(\Model_ClientOrder $order): bool
+    public function action_cancel(Order $order): bool
     {
         $model = $this->_getOrderService($order);
         // @adapterAction
@@ -325,20 +326,20 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function action_uncancel(\Model_ClientOrder $order): bool
+    public function action_uncancel(Order $order): bool
     {
         $this->action_activate($order);
 
         return true;
     }
 
-    public function action_delete(\Model_ClientOrder $order): void
+    public function action_delete(Order $order): void
     {
         $service = $this->_getOrderService($order, false);
 
         if ($service instanceof ServiceDomain) {
             // cancel if not canceled
-            if ($order->status != \Model_ClientOrder::STATUS_CANCELED) {
+            if ($order->getStatus() != Order::STATUS_CANCELED) {
                 $this->action_cancel($order);
             }
             $this->di['em']->remove($service);
@@ -346,7 +347,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
     }
 
-    public function syncWhois(ServiceDomain $model, \Model_ClientOrder $order): void
+    public function syncWhois(ServiceDomain $model, Order $order): void
     {
         // @adapterAction
         [$domain, $adapter] = $this->_getD($model);
@@ -664,7 +665,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $tldRegistrar = $this->getExistingRegistrar($model->getTldRegistrarId());
 
-        if ($order instanceof \Model_ClientOrder) {
+        if ($order instanceof Order) {
             $adapter = $this->registrarGetRegistrarAdapter($tldRegistrar, $order);
         } else {
             $adapter = $this->registrarGetRegistrarAdapter($tldRegistrar);
@@ -1100,7 +1101,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $class;
     }
 
-    public function registrarGetRegistrarAdapter(TldRegistrar $r, ?\Model_ClientOrder $order = null)
+    public function registrarGetRegistrarAdapter(TldRegistrar $r, ?Order $order = null)
     {
         $config = $this->registrarGetConfiguration($r);
         $class = $this->registrarGetRegistrarAdapterClassName($r);
@@ -1299,7 +1300,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $registrar;
     }
 
-    private function _getOrderService(\Model_ClientOrder $order, bool $required = true): ?ServiceDomain
+    private function _getOrderService(Order $order, bool $required = true): ?ServiceDomain
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);

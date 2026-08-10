@@ -59,8 +59,7 @@ test('get license plugins', function (): void {
 
 test('action create', function (): void {
     $service = new Service();
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel = createEntity(Order::class);
 
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([]);
@@ -81,8 +80,7 @@ test('action create', function (): void {
 
 test('action activate', function (): void {
     $service = new Service();
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel = createEntity(Order::class);
 
     $serviceLicenseModel = new ServiceLicense();
     $serviceLicenseModel->setPlugin('Simple');
@@ -110,8 +108,7 @@ test('action activate', function (): void {
 
 test('action activate license collision', function (): void {
     $service = new Service();
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel = createEntity(Order::class);
 
     $serviceLicenseModel = new ServiceLicense();
     $serviceLicenseModel->setPlugin('Simple');
@@ -141,8 +138,7 @@ test('action activate license collision', function (): void {
 
 test('action activate license collision max iterations exception', function (): void {
     $service = new Service();
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel = createEntity(Order::class);
 
     $serviceLicenseModel = new ServiceLicense();
     $serviceLicenseModel->setPlugin('Simple');
@@ -170,8 +166,7 @@ test('action activate license collision max iterations exception', function (): 
 
 test('action activate plugin not found', function (): void {
     $service = new Service();
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel = createEntity(Order::class);
 
     $serviceLicenseModel = new ServiceLicense();
     $serviceLicenseModel->setPlugin('TestPlugin');
@@ -192,8 +187,7 @@ test('action activate plugin not found', function (): void {
 
 test('action activate order activation exception', function (): void {
     $service = new Service();
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel = createEntity(Order::class);
 
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([]);
@@ -210,8 +204,7 @@ test('action activate order activation exception', function (): void {
 
 test('action delete', function (): void {
     $service = new Service();
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel = createEntity(Order::class);
 
     $serviceLicenseModel = new ServiceLicense();
 

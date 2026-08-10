@@ -27,6 +27,8 @@ use Box\Mod\Invoice\ServicePayGateway;
 use Box\Mod\Invoice\ServiceSubscription;
 use Box\Mod\Invoice\ServiceTax;
 use Box\Mod\Invoice\ServiceTransaction;
+use Box\Mod\Order\Entity\Order;
+use Box\Mod\Order\Repository\OrderRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
 use function Tests\Helpers\container;
@@ -401,17 +403,13 @@ test('creates renewal invoice', function (): void {
         ->atLeast()->once()
         ->andReturn($newInvoiceId);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_ClientOrder();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-
-    $model->price = 10;
-    $dbMock->shouldReceive('getExistingModelById')
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('find')
         ->atLeast()->once()
-        ->andReturn($model);
+        ->andReturn(createEntity(Order::class, ['price' => 10]));
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
 
     $api->setDi($di);
     $api->setService($serviceMock);
@@ -431,18 +429,13 @@ test('creates renewal invoice for free order', function (): void {
         ->atLeast()->once()
         ->andReturn($newInvoiceId);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_ClientOrder();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-
-    $model->id = 1;
-    $model->price = 0;
-    $dbMock->shouldReceive('getExistingModelById')
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('find')
         ->atLeast()->once()
-        ->andReturn($model);
+        ->andReturn(createEntity(Order::class, ['id' => 1, 'price' => 0]));
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
 
     $api->setDi($di);
     $api->setService($serviceMock);

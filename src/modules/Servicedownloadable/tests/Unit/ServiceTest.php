@@ -10,6 +10,7 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Order\Entity\Order;
 use Box\Mod\Order\Service as OrderService;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Servicedownloadable\Entity\ServiceDownloadable;
@@ -20,6 +21,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 function serviceDownloadableCreateProductEntity(?int $id = null, ?string $config = null): Product
 {
@@ -37,7 +39,7 @@ function serviceDownloadableCreateProductEntity(?int $id = null, ?string $config
 
 test('action delete', function (): void {
     $service = new Service();
-    $clientOrderModel = new Model_ClientOrder();
+    $clientOrderModel = createEntity(Order::class);
 
     $orderServiceMock = Mockery::mock(OrderService::class);
     $downloadable = new ServiceDownloadable();
@@ -108,27 +110,27 @@ test('save product config with existing config', function (): void {
 
 test('creates a downloadable service with all snapshotted files', function (): void {
     $service = new Service();
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->id = 10;
-    $order->client_id = 20;
-    $order->config = json_encode([
-        'files' => [
-            [
-                'id' => str_repeat('a', 32),
-                'filename' => 'installer.zip',
-                'stored_filename' => str_repeat('b', 64),
-                'label' => 'Installer',
-                'description' => 'Application files',
+    $order = createEntity(Order::class, [
+        'id' => 10,
+        'client_id' => 20,
+        'config' => json_encode([
+            'files' => [
+                [
+                    'id' => str_repeat('a', 32),
+                    'filename' => 'installer.zip',
+                    'stored_filename' => str_repeat('b', 64),
+                    'label' => 'Installer',
+                    'description' => 'Application files',
+                ],
+                [
+                    'id' => str_repeat('c', 32),
+                    'filename' => 'manual.pdf',
+                    'stored_filename' => str_repeat('d', 64),
+                    'label' => 'Manual',
+                    'description' => null,
+                ],
             ],
-            [
-                'id' => str_repeat('c', 32),
-                'filename' => 'manual.pdf',
-                'stored_filename' => str_repeat('d', 64),
-                'label' => 'Manual',
-                'description' => null,
-            ],
-        ],
+        ]),
     ]);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
@@ -153,14 +155,14 @@ test('removes an order file and its config in one Doctrine transaction', functio
     $downloadable = new ServiceDownloadable();
     $downloadable->addFile($file);
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->id = 10;
-    $order->config = json_encode(['files' => [[
-        'id' => str_repeat('a', 32),
-        'filename' => 'file.zip',
-        'stored_filename' => str_repeat('b', 64),
-    ]]]);
+    $order = createEntity(Order::class, [
+        'id' => 10,
+        'config' => json_encode(['files' => [[
+            'id' => str_repeat('a', 32),
+            'filename' => 'file.zip',
+            'stored_filename' => str_repeat('b', 64),
+        ]]]),
+    ]);
 
     $connection = Mockery::mock(Connection::class);
     $connection->shouldReceive('update')
