@@ -954,9 +954,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $result;
     }
 
-    /**
-     * @param \Model_Admin $identity
-     */
     public function ticketReply(SupportTicket $ticket, \Model_Admin|\Model_Client|\FOSSBilling\Identity\Guest $identity, string $content): int
     {
         $em = $this->di['em'];
