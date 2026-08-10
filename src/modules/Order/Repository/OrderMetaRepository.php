@@ -37,4 +37,12 @@ class OrderMetaRepository extends EntityRepository
             ['order_id' => $orderId]
         );
     }
+
+    public function deleteByOrderIdAndName(int $orderId, string $name): int
+    {
+        return $this->getEntityManager()->getConnection()->executeStatement(
+            'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND name = :name',
+            ['order_id' => $orderId, 'name' => $name]
+        );
+    }
 }

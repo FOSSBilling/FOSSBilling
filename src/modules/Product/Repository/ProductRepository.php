@@ -224,6 +224,14 @@ class ProductRepository extends EntityRepository
         );
     }
 
+    public function incrementStock(int $productId, int $quantity, \DateTimeInterface $updatedAt): int
+    {
+        return $this->getEntityManager()->getConnection()->executeStatement(
+            'UPDATE product SET quantity_in_stock = quantity_in_stock + ?, updated_at = ? WHERE id = ?',
+            [$quantity, $updatedAt->format('Y-m-d H:i:s'), $productId]
+        );
+    }
+
     public function findEnabledAddonById(int $id): ?Product
     {
         return $this->findOneBy([
