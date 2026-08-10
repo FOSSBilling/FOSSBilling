@@ -47,8 +47,15 @@ test('createSubscriptionProps wraps the set action in filter and values, as Ples
 
     expect($props)->toHaveKey('set')
         ->and(array_keys($props['set']))->toBe(['filter', 'values'])
-        ->and($props['set']['filter'])->toBe(['owner-login' => 'example'])
         ->and(array_keys($props['set']['values']))->toBe(['gen_setup', 'hosting', 'limits', 'permissions']);
+});
+
+test('createSubscriptionProps filters the set action by domain name, not owner-login', function (): void {
+    $props = invokePleskCreateSubscriptionProps($this->manager, $this->account, 'set');
+
+    // 'owner-login' would match every webspace this customer owns, applying $values to all of
+    // them; 'name' (the domain) scopes the update to this one subscription.
+    expect($props['set']['filter'])->toBe(['name' => 'example.com']);
 });
 
 test('createSubscriptionProps omits htype from gen_setup for the set action', function (): void {

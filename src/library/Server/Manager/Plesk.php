@@ -293,12 +293,17 @@ class Server_Manager_Plesk extends Server_Manager
     {
         $this->getLog()->info('Updating domain for account ' . $account->getUsername());
 
+        // Filtering by 'owner-login' would match every webspace owned by this customer, renaming
+        // all of them; 'name' (like deleteSubscription() already uses) scopes this to the one
+        // subscription being changed. Capture it before setDomain() overwrites it below.
+        $currentDomain = $account->getDomain();
+
         $account->setDomain($newDomain);
 
         $params = [
             'set' => [
                 'filter' => [
-                    'owner-login' => $account->getUsername(),
+                    'name' => $currentDomain,
                 ],
                 'values' => [
                     'gen_setup' => [
@@ -568,11 +573,13 @@ class Server_Manager_Plesk extends Server_Manager
         if ($action === 'set') {
             // The 'set' operation requires <filter> (which subscription to update) and <values>
             // (the settings to apply) as the only direct children of <set> -- unlike 'add', the
-            // settings can't be placed directly under the action node.
+            // settings can't be placed directly under the action node. Filtering by 'owner-login'
+            // would match every webspace this customer owns and apply $values to all of them; 'name'
+            // (like deleteSubscription() already uses) scopes the update to this one subscription.
             return [
                 'set' => [
                     'filter' => [
-                        'owner-login' => $account->getUsername(),
+                        'name' => $account->getDomain(),
                     ],
                     'values' => $values,
                 ],

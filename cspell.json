@@ -538,7 +538,9 @@
         "whsec",
         "IDNA",
         "Namingo",
-        "htype"
+        "htype",
+        "webspace",
+        "webspaces"
     ],
     "ignorePaths": [
         "node_modules/**",
