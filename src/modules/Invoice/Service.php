@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice;
 
+use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Invoice\Entity\Invoice;
@@ -460,12 +461,12 @@ class Service implements InjectionAwareInterface
         /**
          * Generates error when this function is called by cron.
          */
-        $client = isset($row['client_id']) ? $this->di['db']->load('Client', $row['client_id']) : null;
+        $client = isset($row['client_id']) ? $this->di['em']->getRepository(Client::class)->find($row['client_id']) : null;
         $clientService = $this->di['mod_service']('client');
-        if ($client instanceof \Model_Client) {
+        if ($client instanceof Client) {
             $result['client'] = $clientService->toApiArray($client);
             if ($includeClientBillingEmail) {
-                $result['client']['billing_email'] = $client->billing_email;
+                $result['client']['billing_email'] = $client->getBillingEmail();
             }
         } else {
             $result['client'] = null;
@@ -981,9 +982,9 @@ class Service implements InjectionAwareInterface
         $this->di['em']->flush();
     }
 
-    public function prepareInvoice(\Model_Client $client, array $data)
+    public function prepareInvoice(Client $client, array $data)
     {
-        if (!$client->currency) {
+        if (!$client->getCurrency()) {
             $currencyService = $this->di['mod_service']('currency');
             /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
             $currencyRepository = $currencyService->getCurrencyRepository();
@@ -994,17 +995,18 @@ class Service implements InjectionAwareInterface
             }
 
             $currencyCode = $currency->getCode();
-            $client->currency = $currencyCode;
-            $this->di['db']->store($client);
+            $client->setCurrency($currencyCode);
+            $this->di['em']->persist($client);
+            $this->di['em']->flush();
             if (isset($this->di['logger'])) {
-                $this->di['logger']->info('Client #%s currency was not defined. Set default currency %s.', $client->id, $currencyCode);
+                $this->di['logger']->info('Client #%s currency was not defined. Set default currency %s.', $client->getId(), $currencyCode);
             }
         }
 
         $model = new Invoice();
-        $model->setClientId($client->id !== null ? (int) $client->id : null);
+        $model->setClientId($client->getId() !== null ? (int) $client->getId() : null);
         $model->setStatus(Invoice::STATUS_UNPAID);
-        $model->setCurrency($client->currency);
+        $model->setCurrency($client->getCurrency());
         $model->setApproved(false);
 
         $model->setGatewayId(isset($data['gateway_id']) ? (int) $data['gateway_id'] : $model->getGatewayId());
@@ -1041,10 +1043,16 @@ class Service implements InjectionAwareInterface
     {
         $clientService = $this->di['mod_service']('Client');
         $systemService = $this->di['mod_service']('system');
-        $client = $this->di['db']->load('Client', $model->getClientId());
+        $client = $this->di['em']->getRepository(Client::class)->find($model->getClientId());
         $seller = $systemService->getCompany();
 
-        $buyer = $clientService->toApiArray($client);
+        $buyer = $client instanceof Client
+            ? $clientService->toApiArray($client)
+            : array_fill_keys([
+                'first_name', 'last_name', 'company', 'company_vat', 'company_number',
+                'address_1', 'address_2', 'city', 'state', 'country',
+                'phone_cc', 'phone', 'email', 'postcode',
+            ], null);
 
         $model->setSellerCompany($seller['name']);
         $model->setSellerCompanyVat($seller['vat_number']);
@@ -1635,11 +1643,12 @@ class Service implements InjectionAwareInterface
             throw new InformationException('Invoices are not generated for negative amount orders.');
         }
 
-        $client = $this->di['db']->getExistingModelById('Client', $order->getClientId(), 'Client not found');
+        $client = $this->di['em']->getRepository(Client::class)->find($order->getClientId())
+            ?? throw new InformationException('Client not found');
 
         // generate proforma after validating the resolved renewal amount
         $proforma = new Invoice();
-        $proforma->setClientId($client->id !== null ? (int) $client->id : null);
+        $proforma->setClientId($client->getId() !== null ? (int) $client->getId() : null);
         $proforma->setStatus(Invoice::STATUS_UNPAID);
         $proforma->setCurrency($order->getCurrency());
         $proforma->setApproved(false);
@@ -1849,9 +1858,9 @@ class Service implements InjectionAwareInterface
         return (bool) $systemService->getParamValue('funds_enabled', true);
     }
 
-    public function generateFundsInvoice(\Model_Client $client, $amount)
+    public function generateFundsInvoice(Client $client, $amount)
     {
-        if (!$client->currency) {
+        if (!$client->getCurrency()) {
             throw new InformationException('You must have at least one active order before you can add funds so you cannot proceed at the current time!');
         }
 
@@ -1873,9 +1882,9 @@ class Service implements InjectionAwareInterface
         }
 
         $proforma = new Invoice();
-        $proforma->setClientId($client->id !== null ? (int) $client->id : null);
+        $proforma->setClientId($client->getId() !== null ? (int) $client->getId() : null);
         $proforma->setStatus(Invoice::STATUS_UNPAID);
-        $proforma->setCurrency($client->currency);
+        $proforma->setCurrency($client->getCurrency());
         $proforma->setApproved($this->_isAutoApproved());
         $this->di['em']->persist($proforma);
         $this->di['em']->flush();
@@ -2016,8 +2025,9 @@ class Service implements InjectionAwareInterface
         if ($invoiceModel->getCurrency() !== null) {
             $currencyCode = $invoiceModel->getCurrency();
         } else {
-            $client = $this->di['db']->getExistingModelById('Client', $invoiceModel->getClientId(), 'Client not found');
-            $currencyCode = $client->currency;
+            $client = $this->di['em']->getRepository(Client::class)->find($invoiceModel->getClientId())
+                ?? throw new InformationException('Client not found');
+            $currencyCode = $client->getCurrency();
         }
 
         $CSS = $this->getPdfCss();
@@ -2271,9 +2281,9 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public function rmByClient(\Model_Client $client): void
+    public function rmByClient(Client $client): void
     {
-        $invoices = $this->getInvoiceRepository()->findByClientId((int) $client->id);
+        $invoices = $this->getInvoiceRepository()->findByClientId((int) $client->getId());
         foreach ($invoices as $invoice) {
             $this->rmInvoice($invoice);
         }
@@ -2320,7 +2330,7 @@ class Service implements InjectionAwareInterface
         if ($this->di['auth']->isClientLoggedIn()) {
             $client = $this->di['loggedin_client'];
         }
-        $isOwner = $client !== null && (int) $invoiceClientId === (int) $client->id;
+        $isOwner = $client !== null && (int) $invoiceClientId === (int) $client->getId();
 
         if (!$isOwner && $this->isHashExpired($invoice)) {
             throw new InformationException('This invoice link has expired', [], 403);

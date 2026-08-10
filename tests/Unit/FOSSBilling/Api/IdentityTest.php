@@ -28,10 +28,7 @@ test('resolves the admin identity to the admin role', function (): void {
 });
 
 test('resolves the client identity to the client role', function (): void {
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-
-    expect(Identity::typeFromObject($client))->toBe('client');
+    expect(Identity::typeFromObject(new ClientEntity()))->toBe('client');
 });
 
 test('resolves Doctrine identities and their proxies to their roles', function (): void {

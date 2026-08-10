@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Api\Controller;
 
+use Box\Mod\Client\Entity\Client as ClientEntity;
 use Box\Mod\Staff\Entity\Admin;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
@@ -269,11 +270,11 @@ class Client implements InjectionAwareInterface
 
         switch ($routeRole) {
             case 'client':
-                $model = $this->di['db']->findOne('Client', 'api_token = ? AND status = ?', [$password, \Model_Client::ACTIVE]);
-                if (!$model instanceof \Model_Client) {
+                $model = $this->di['em']->getRepository(ClientEntity::class)->findOneBy(['apiToken' => $password, 'status' => ClientEntity::ACTIVE]);
+                if (!$model instanceof ClientEntity) {
                     throw new \FOSSBilling\InformationException('Authentication Failed', null, 204);
                 }
-                $this->di['session']->set('client_id', $model->id);
+                $this->di['session']->set('client_id', $model->getId());
 
                 break;
 

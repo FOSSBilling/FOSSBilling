@@ -9,6 +9,7 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
+use Box\Mod\Client\Entity\Client;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Transaction;
@@ -354,8 +355,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         if ($charge->status == 'succeeded' && $tx->getStatus() === Transaction::STATUS_PROCESSING) {
             $clientService = $this->di['mod_service']('client');
             $client = $invoice
-                ? $this->di['db']->getExistingModelById('Client', $invoice->getClientId())
-                : $this->getClientFromTransaction($tx, $charge);
+                ? $this->di['em']->getRepository(Client::class)->find($invoice->getClientId())
+                    ?? throw new FOSSBilling\InformationException('Client not found') : $this->getClientFromTransaction($tx, $charge);
 
             if ($invoice) {
                 $expected = $invoiceService->getTotalWithTax($invoice);
@@ -382,7 +383,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             } elseif ($tx->getInvoiceId() && $invoice && $invoiceService->isInvoiceTypeDeposit($invoice)) {
                 $invoiceService->markAsPaid($invoice);
             } elseif (!$tx->getInvoiceId()) {
-                $invoiceService->doBatchPayWithCredits(['client_id' => $client->id]);
+                $invoiceService->doBatchPayWithCredits(['client_id' => (int) $client->getId()]);
             }
         }
 
@@ -1162,8 +1163,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
         $clientService = $this->di['mod_service']('client');
         $client = $invoice
-            ? $this->di['db']->getExistingModelById('Client', $invoice->getClientId())
-            : $this->getClientFromTransaction($tx, $charge);
+            ? $this->di['em']->getRepository(Client::class)->find($invoice->getClientId())
+                ?? throw new FOSSBilling\InformationException('Client not found') : $this->getClientFromTransaction($tx, $charge);
 
         if ($invoice) {
             $expected = $invoiceService->getTotalWithTax($invoice);
@@ -1197,7 +1198,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         } elseif ($tx->getInvoiceId() && $invoice && $invoiceService->isInvoiceTypeDeposit($invoice)) {
             $invoiceService->markAsPaid($invoice);
         } elseif (!$tx->getInvoiceId()) {
-            $invoiceService->doBatchPayWithCredits(['client_id' => $client->id]);
+            $invoiceService->doBatchPayWithCredits(['client_id' => (int) $client->getId()]);
         }
 
         $tx->setStatus(Transaction::STATUS_PROCESSED);
@@ -1431,13 +1432,14 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         };
     }
 
-    private function getClientFromTransaction(Transaction $tx, Stripe\PaymentIntent $charge): Model_Client
+    private function getClientFromTransaction(Transaction $tx, Stripe\PaymentIntent $charge): Client
     {
         $clientId = (int) ($charge->metadata->client_id ?? 0);
 
         if ($clientId > 0) {
             try {
-                return $this->di['db']->getExistingModelById('Client', $clientId);
+                return $this->di['em']->getRepository(Client::class)->find($clientId)
+                    ?? throw new FOSSBilling\InformationException('Client not found');
             } catch (FOSSBilling\Exception $e) {
                 throw new Payment_Exception('Unable to load client for transaction: :msg', [':msg' => $e->getMessage()]);
             }

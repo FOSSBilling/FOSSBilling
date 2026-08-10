@@ -55,7 +55,7 @@ $di['logger'] = function () use ($di) {
         $log->setEventItem('admin_id', $admin->getId());
     } elseif ($di['auth']->isClientLoggedIn()) {
         $client = $di['loggedin_client'];
-        $log->setEventItem('client_id', $client->id);
+        $log->setEventItem('client_id', $client->getId());
     }
 
     $monolog = new FOSSBilling\Monolog();
@@ -338,7 +338,7 @@ $di['is_client_logged'] = function () use ($di) {
 $di['is_client_email_validated'] = $di->protect(function ($model) use ($di) {
     $config = $di['mod_config']('client');
     if (isset($config['require_email_confirmation']) && (bool) $config['require_email_confirmation']) {
-        return (bool) $model->email_approved;
+        return (bool) $model->getEmailApproved();
     }
 
     return true;
@@ -369,7 +369,7 @@ $di['is_admin_logged'] = function () use ($di) {
  *
  * @param void
  *
- * @return \Model_Client The existing logged-in client model object.
+ * @return \Box\Mod\Client\Entity\Client The existing logged-in client entity.
  */
 $di['loggedin_client'] = function () use ($di) {
     $di['is_client_logged'];
@@ -378,8 +378,8 @@ $di['loggedin_client'] = function () use ($di) {
     $client_id = $session->get('client_id');
 
     try {
-        $client = $di['db']->getExistingModelById('Client', $client_id);
-        if ($client->status !== Model_Client::ACTIVE) {
+        $client = $di['em']->getRepository(Box\Mod\Client\Entity\Client::class)->find($client_id);
+        if (!$client instanceof Box\Mod\Client\Entity\Client || $client->getStatus() !== Box\Mod\Client\Entity\Client::ACTIVE) {
             throw new Exception('Client account is not active');
         }
 

@@ -43,8 +43,7 @@ test('throws exception when sending file with order not found', function (): voi
         'file_id' => 2,
     ];
 
-    $modelClient = new Model_Client();
-    $modelClient->loadBean(new Tests\Helpers\DummyBean());
+    $modelClient = createEntity(Box\Mod\Client\Entity\Client::class);
 
     $orderRepoMock = Mockery::mock(OrderRepository::class);
     $orderRepoMock->shouldReceive('findOneBy')->once()->andReturn(null);
@@ -66,8 +65,7 @@ test('throws exception when sending file with order not activated', function ():
         'file_id' => 2,
     ];
 
-    $modelClient = new Model_Client();
-    $modelClient->loadBean(new Tests\Helpers\DummyBean());
+    $modelClient = createEntity(Box\Mod\Client\Entity\Client::class);
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
     $orderServiceMock->shouldReceive('assertOrderUsable')->once();
@@ -91,8 +89,7 @@ test('throws exception when sending file with order not activated', function ():
 
 test('does not send a file from outside the order service', function (): void {
     $api = apiEndpoint(new Box\Mod\Servicedownloadable\Api\Client());
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client = createEntity(Box\Mod\Client\Entity\Client::class);
 
     $order = createEntity(Order::class, ['status' => 'active']);
 
@@ -119,8 +116,7 @@ test('sends file', function (): void {
         'file_id' => 2,
     ];
 
-    $modelClient = new Model_Client();
-    $modelClient->loadBean(new Tests\Helpers\DummyBean());
+    $modelClient = createEntity(Box\Mod\Client\Entity\Client::class);
 
     $serviceMock = Mockery::mock(Box\Mod\Servicedownloadable\Service::class);
     $response = new Response('download');
@@ -167,8 +163,7 @@ test('throws exception when sending file for expired order', function (): void {
         'file_id' => 2,
     ];
 
-    $modelClient = new Model_Client();
-    $modelClient->loadBean(new Tests\Helpers\DummyBean());
+    $modelClient = createEntity(Box\Mod\Client\Entity\Client::class);
 
     $expiredOrder = createEntity(Order::class, [
         'status' => 'active',

@@ -883,7 +883,7 @@ test('finds order for client by id', function (): void {
     $service = new Service();
     $service->setDi($di);
 
-    expect($service->findEntityForClientById($client, 10))->toBe($entityOrder)
+    expect($service->findForClientById($client, 10))->toBe($entityOrder)
         ->and($service->findForClientById($client, 10))->toBe($entityOrder);
 });
 

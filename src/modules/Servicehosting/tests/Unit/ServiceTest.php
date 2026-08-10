@@ -1269,8 +1269,7 @@ test('to hosting server api array masks secrets for an admin', function (): void
 test('to hosting server api array does not leak secrets to non-admin callers', function (): void {
     $service = new Service();
 
-    $identity = new Model_Client();
-    $identity->loadBean(new Tests\Helpers\DummyBean());
+    $identity = createEntity(Box\Mod\Client\Entity\Client::class);
 
     $hostingServerModel = new ServiceHostingServer();
     $hostingServerModel->setId(1);

@@ -1353,7 +1353,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function isPromoAvailableForClientGroup(Promo $promo, Client|\Model_Client|null $client = null): bool
+    public function isPromoAvailableForClientGroup(Promo $promo, ?Client $client = null): bool
     {
         $promoData = $this->getPromoSourceArray($promo);
         $clientGroups = $this->decodePromoSelection($promoData['client_groups'] ?? null);
@@ -1374,7 +1374,7 @@ class Service implements InjectionAwareInterface
             return false;
         }
 
-        $clientGroupId = $client instanceof Client ? $client->getClientGroupId() : $client->client_group_id;
+        $clientGroupId = $client->getClientGroupId();
         if (!$clientGroupId) {
             return false;
         }
@@ -1382,7 +1382,7 @@ class Service implements InjectionAwareInterface
         return in_array($clientGroupId, $clientGroups);
     }
 
-    public function canClientUsePromo(Client|\Model_Client $client, Promo $promo): bool
+    public function canClientUsePromo(Client $client, Promo $promo): bool
     {
         if (!$this->promoCanBeApplied($promo)) {
             return false;
@@ -1438,7 +1438,7 @@ class Service implements InjectionAwareInterface
      */
     public function createCheckoutPromoRedemptions(
         Promo $promo,
-        Client|\Model_Client $client,
+        Client $client,
         array $orders,
         ?Invoice $invoice,
         string $status,
@@ -1646,7 +1646,7 @@ class Service implements InjectionAwareInterface
 
     public function createPromoRedemption(
         Promo $promo,
-        Client|\Model_Client $client,
+        Client $client,
         ?Order $order,
         ?Invoice $invoice,
         string $phase,
@@ -1662,13 +1662,13 @@ class Service implements InjectionAwareInterface
         return (int) $redemption->getId();
     }
 
-    public function clientHasActivePromoApplication(Client|\Model_Client $client, Promo $promo): bool
+    public function clientHasActivePromoApplication(Client $client, Promo $promo): bool
     {
         $promoId = (int) ($this->getPromoSourceArray($promo)['id'] ?? 0);
 
-        $clientId = $client instanceof Client ? $client->getId() : $client->id;
+        $clientId = (int) $client->getId();
 
-        return $this->getPromoRedemptionRepository()->clientHasActiveCheckoutApplication($promoId, (int) $clientId);
+        return $this->getPromoRedemptionRepository()->clientHasActiveCheckoutApplication($promoId, $clientId);
     }
 
     public function commitReservedPromoRedemptionsForInvoice(Invoice $invoice): void
@@ -2181,7 +2181,7 @@ class Service implements InjectionAwareInterface
 
     private function newPromoRedemption(
         Promo $promo,
-        Client|\Model_Client $client,
+        Client $client,
         ?Order $order,
         ?Invoice $invoice,
         string $phase,
@@ -2194,7 +2194,7 @@ class Service implements InjectionAwareInterface
         $timestamp = $createdAt ?? date('Y-m-d H:i:s');
         $dateTime = new \DateTime($timestamp);
         $redemption = new PromoRedemption();
-        $clientId = $client instanceof Client ? $client->getId() : $client->id;
+        $clientId = (int) $client->getId();
         $orderId = $order?->getId();
         $redemption
             ->setPromoId($promoId)

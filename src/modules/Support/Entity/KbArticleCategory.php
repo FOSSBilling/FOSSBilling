@@ -56,7 +56,7 @@ class KbArticleCategory implements ApiArrayInterface, TimestampInterface
         $this->articles = new ArrayCollection();
     }
 
-    public function toApiArray(\Model_Client|\Box\Mod\Staff\Entity\Admin|\FOSSBilling\Identity\Guest|null $identity = null, ?string $query = null, bool $includeArticleViews = true): array
+    public function toApiArray(\Box\Mod\Client\Entity\Client|\Box\Mod\Staff\Entity\Admin|\FOSSBilling\Identity\Guest|null $identity = null, ?string $query = null, bool $includeArticleViews = true): array
     {
         $data = [
             'id' => $this->id,

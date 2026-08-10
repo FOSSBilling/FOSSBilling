@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice;
 
+use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\PayGateway;
@@ -971,9 +972,9 @@ class ServiceTransaction implements InjectionAwareInterface
         if (!$proforma instanceof Invoice) {
             throw new \FOSSBilling\Exception('Invoice #:id not found', [':id' => $tx->getInvoiceId()], 703);
         }
-        $client = $this->di['db']->load('Client', $proforma->getClientId());
+        $client = $this->di['em']->getRepository(Client::class)->find($proforma->getClientId());
 
-        if ($client->currency != $proforma->getCurrency()) {
+        if ($client instanceof Client && $client->getCurrency() != $proforma->getCurrency()) {
             throw new \FOSSBilling\Exception('Client currency does not match invoice currency');
         }
 
@@ -983,7 +984,7 @@ class ServiceTransaction implements InjectionAwareInterface
         }
 
         $credit = new ClientBalance();
-        $credit->setClientId((int) $client->id);
+        $credit->setClientId($client instanceof Client ? (int) $client->getId() : null);
         $credit->setType('transaction');
         $credit->setRelId((string) $tx->getId());
         $credit->setDescription('Invoice #' . $proforma->getId() . ' payment received from transaction #' . $tx->getId());

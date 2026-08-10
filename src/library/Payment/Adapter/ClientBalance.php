@@ -9,6 +9,7 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
+use Box\Mod\Client\Entity\Client;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\PayGateway;
 
@@ -45,7 +46,7 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
 
     public function enoughInBalanceToCoverInvoice(Invoice $invoice): bool
     {
-        $clientModel = $this->di['db']->load('Client', $invoice->getClientId());
+        $clientModel = $this->di['em']->getRepository(Client::class)->find($invoice->getClientId());
         $clientBalanceService = $this->di['mod_service']('Client', 'Balance');
         $sumInBalance = $clientBalanceService->getClientBalance($clientModel);
 

@@ -59,8 +59,7 @@ test('marks item as paid', function (): void {
 
     $invoiceModel = createEntity(Invoice::class);
 
-    $clientModel = new Model_Client();
-    $clientModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientModel = createEntity(Box\Mod\Client\Entity\Client::class);
     $clientOrder = createEntity(Order::class);
 
     $orderRepoMock = Mockery::mock(OrderRepository::class);
@@ -92,6 +91,9 @@ test('marks item as paid', function (): void {
     $invoiceRepo->shouldReceive('find')->andReturn($invoiceModel);
     $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
     $em->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
+    $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepo->shouldReceive('find')->byDefault()->andReturn($clientModel);
+    $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepo);
 
     $di = container();
     $di['em'] = $em;
@@ -342,13 +344,7 @@ test('credits invoice item', function (): void {
     $item = createEntity(InvoiceItem::class, []);
     $invoiceModel = createEntity(Invoice::class);
 
-    $clientModel = new Model_Client();
-    $clientModel->loadBean(new Tests\Helpers\DummyBean());
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturnUsing(fn (string $model): Model_Client|Invoice => $model === 'Client' ? $clientModel : $invoiceModel);
+    $clientModel = createEntity(Box\Mod\Client\Entity\Client::class);
 
     $em = Mockery::mock(EntityManagerInterface::class);
     $repo = Mockery::mock(InvoiceItemRepository::class);
@@ -356,6 +352,9 @@ test('credits invoice item', function (): void {
     $invoiceRepo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
     $invoiceRepo->shouldReceive('find')->andReturn($invoiceModel);
     $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+    $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepo->shouldReceive('find')->atLeast()->once()->andReturn($clientModel);
+    $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepo);
     $em->shouldReceive('persist')->atLeast()->once();
     $em->shouldReceive('flush')->atLeast()->once();
 
@@ -365,7 +364,6 @@ test('credits invoice item', function (): void {
 
     $di = container();
     $di['em'] = $em;
-    $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $invoiceServiceMock);
 
     $serviceMock->setDi($di);

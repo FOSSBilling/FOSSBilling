@@ -49,8 +49,7 @@ test('gets an invoice', function (): void {
 
     $api->setDi($di);
     $api->setService($serviceMock);
-    $identity = new Model_Client();
-    $identity->loadBean(new Tests\Helpers\DummyBean());
+    $identity = createEntity(Box\Mod\Client\Entity\Client::class);
     $api->setIdentity($identity);
 
     $data['hash'] = md5('1');
@@ -70,8 +69,7 @@ test('throws exception when invoice is not found', function (): void {
     $di['db'] = $dbMock;
 
     $api->setDi($di);
-    $identity = new Model_Client();
-    $identity->loadBean(new Tests\Helpers\DummyBean());
+    $identity = createEntity(Box\Mod\Client\Entity\Client::class);
     $api->setIdentity($identity);
 
     $data['hash'] = md5('1');
@@ -181,8 +179,7 @@ test('creates funds invoice', function (): void {
 
     $api->setDi($di);
     $api->setService($serviceMock);
-    $identity = new Model_Client();
-    $identity->loadBean(new Tests\Helpers\DummyBean());
+    $identity = createEntity(Box\Mod\Client\Entity\Client::class);
     $api->setIdentity($identity);
 
     $data['amount'] = 10;
@@ -216,8 +213,7 @@ test('gets transaction list', function (): void {
 
     $api->setDi($di);
 
-    $identity = new Model_Client();
-    $identity->loadBean(new Tests\Helpers\DummyBean());
+    $identity = createEntity(Box\Mod\Client\Entity\Client::class);
     $api->setIdentity($identity);
     $result = $api->transaction_get_list([]);
     expect($result['list'])->toBe([['id' => 1, 'gateway' => 'Stripe']]);
@@ -225,8 +221,7 @@ test('gets transaction list', function (): void {
 
 test('gets tax rate for client', function (): void {
     $api = apiEndpoint(new Client());
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client = createEntity(Box\Mod\Client\Entity\Client::class);
 
     $taxRate = 20;
 

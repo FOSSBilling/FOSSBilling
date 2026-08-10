@@ -213,7 +213,7 @@ test('gets service', function (): void {
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
     $clientApi->setDi($di);
 
-    $clientApi->setIdentity(new Model_Client());
+    $clientApi->setIdentity(new Box\Mod\Client\Entity\Client());
 
     $data = [
         'order_id' => 1,
@@ -242,7 +242,7 @@ test('throws exception when getting service without order_id', function (): void
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
     $clientApi->setDi($di);
 
-    $clientApi->setIdentity(new Model_Client());
+    $clientApi->setIdentity(new Box\Mod\Client\Entity\Client());
 
     $data = [];
 
@@ -270,7 +270,7 @@ test('throws exception when getting service order not found', function (): void 
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
     $clientApi->setDi($di);
 
-    $clientApi->setIdentity(new Model_Client());
+    $clientApi->setIdentity(new Box\Mod\Client\Entity\Client());
 
     $data = [
         'order_id' => 1,
@@ -303,7 +303,7 @@ test('throws exception when getting service order not activated', function (): v
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
     $clientApi->setDi($di);
 
-    $clientApi->setIdentity(new Model_Client());
+    $clientApi->setIdentity(new Box\Mod\Client\Entity\Client());
 
     $data = [
         'order_id' => 1,
@@ -338,7 +338,7 @@ test('throws exception when getting service for expired order', function (): voi
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
     $clientApi->setDi($di);
 
-    $clientApi->setIdentity(new Model_Client());
+    $clientApi->setIdentity(new Box\Mod\Client\Entity\Client());
 
     $data = [
         'order_id' => 1,

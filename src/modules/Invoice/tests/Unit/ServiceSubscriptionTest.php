@@ -80,9 +80,7 @@ test('creates a subscription', function (): void {
         'gateway_id' => 2,
     ];
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->id = 1;
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
     $pg = createEntity(PayGateway::class, ['id' => 2]);
 
     $result = $service->create($client, $pg, $data);
@@ -333,13 +331,12 @@ test('finds a subscription ID by gateway SID without throwing for missing record
 test('converts to api array', function (): void {
     $subscriptionModel = createEntity(Subscription::class, ['id' => 1, 'clientId' => 5, 'payGatewayId' => 1]);
 
-    $clientModel = new Model_Client();
-    $clientModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientModel = createEntity(Box\Mod\Client\Entity\Client::class);
 
     $gatewayModel = createEntity(PayGateway::class, ['id' => 1]);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('load')
+    $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepo->shouldReceive('find')
         ->atLeast()->once()
         ->andReturn($clientModel);
 
@@ -356,7 +353,10 @@ test('converts to api array', function (): void {
         ->atLeast()->once()
         ->andReturn([]);
 
-    $service = subscriptionService(payGatewayRepo: $pgRepo);
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepo);
+
+    $service = subscriptionService(payGatewayRepo: $pgRepo, em: $em);
     $service->getDi()['mod_service'] = $service->getDi()->protect(function ($serviceName, $sub = '') use ($clientServiceMock, $payGatewayService) {
         if ($serviceName == 'Client') {
             return $clientServiceMock;
@@ -365,7 +365,6 @@ test('converts to api array', function (): void {
             return $payGatewayService;
         }
     });
-    $service->getDi()['db'] = $dbMock;
 
     $result = $service->toApiArray($subscriptionModel);
     expect($result)->toBeArray();

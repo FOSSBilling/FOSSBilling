@@ -306,7 +306,7 @@ Order our services at {{ "order"|url }}
             return 'Unknown';
         }
 
-        return $client->email;
+        return $client->getEmail();
     }
 
     private function _getTestClientId(): int

@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice;
 
+use Box\Mod\Client\Entity\Client;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
@@ -41,10 +42,10 @@ class ServiceSubscription implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function create(\Model_Client $client, PayGateway $pg, array $data): int
+    public function create(Client $client, PayGateway $pg, array $data): int
     {
         $model = new Subscription();
-        $model->setClientId($client->id ? (int) $client->id : null);
+        $model->setClientId($client->getId() ? (int) $client->getId() : null);
         $model->setPayGatewayId($pg->getId());
 
         $model->setSid($data['sid'] ?? null);
@@ -112,8 +113,8 @@ class ServiceSubscription implements InjectionAwareInterface
             'created_at' => $model->getCreatedAt()?->format('Y-m-d H:i:s'),
             'updated_at' => $model->getUpdatedAt()?->format('Y-m-d H:i:s'),
         ];
-        $client = $this->di['db']->load('Client', $model->getClientId());
-        if ($client instanceof \Model_Client) {
+        $client = $this->di['em']->getRepository(Client::class)->find($model->getClientId());
+        if ($client instanceof Client) {
             $clientService = $this->di['mod_service']('Client');
             $result['client'] = $clientService->toApiArray($client, false, $identity);
         } else {

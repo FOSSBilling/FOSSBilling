@@ -142,9 +142,7 @@ test('testGetService', function (): void {
 
     $api->setDi($di);
 
-    $clientModel = new Model_Client();
-    $clientModel->loadBean(new Tests\Helpers\DummyBean());
-    $clientModel->id = 1;
+    $clientModel = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
     $api->setIdentity($clientModel);
     $result = $api->_getService($data);
     expect($result)->toBeArray();
@@ -180,9 +178,7 @@ test('testGetServiceOrderNotActivated', function (): void {
 
     $api->setDi($di);
 
-    $clientModel = new Model_Client();
-    $clientModel->loadBean(new Tests\Helpers\DummyBean());
-    $clientModel->id = 1;
+    $clientModel = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
     $api->setIdentity($clientModel);
 
     $this->expectException(FOSSBilling\InformationException::class);
@@ -207,9 +203,7 @@ test('testGetServiceOrderNotFound', function (): void {
 
     $api->setDi($di);
 
-    $clientModel = new Model_Client();
-    $clientModel->loadBean(new Tests\Helpers\DummyBean());
-    $clientModel->id = 1;
+    $clientModel = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
     $api->setIdentity($clientModel);
 
     $this->expectException(FOSSBilling\InformationException::class);
@@ -253,9 +247,7 @@ test('testGetServiceThrowsForExpiredOrder', function (): void {
 
     $api->setDi($di);
 
-    $clientModel = new Model_Client();
-    $clientModel->loadBean(new Tests\Helpers\DummyBean());
-    $clientModel->id = 1;
+    $clientModel = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
     $api->setIdentity($clientModel);
 
     expect(fn () => $api->_getService($data))

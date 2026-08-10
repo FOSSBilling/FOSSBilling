@@ -178,11 +178,14 @@ test('try token login requires active client token', function (): void {
     $apiToken = 'inactive-client-token';
     $_SERVER['HTTP_AUTHORIZATION'] = 'Basic ' . base64_encode('client:' . $apiToken);
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('findOne')->with('Client', 'api_token = ? AND status = ?', [$apiToken, Model_Client::ACTIVE])->once()->andReturn(null);
+    $clientRepository = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepository->shouldReceive('findOneBy')->with(['apiToken' => $apiToken, 'status' => Box\Mod\Client\Entity\Client::ACTIVE])->once()->andReturn(null);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->once()->andReturn($clientRepository);
 
     $di = new Pimple\Container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
     $di['request'] = Request::create('/', 'GET', [], [], [], $_SERVER);
     $controller->setDi($di);
 

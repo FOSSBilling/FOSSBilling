@@ -29,9 +29,9 @@ class ClientTestRateLimiterDouble
 
 class ClientTestDefaultApiDouble
 {
-    public function getIdentity(): Model_Client
+    public function getIdentity(): Box\Mod\Client\Entity\Client
     {
-        return new Model_Client();
+        return new Box\Mod\Client\Entity\Client();
     }
 }
 

@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicehosting;
 
+use Box\Mod\Client\Entity\Client;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Servicehosting\Entity\ServiceHosting;
@@ -512,21 +513,22 @@ class Service implements InjectionAwareInterface
         }
 
         $server = $this->getExistingServer((int) $model->getServiceHostingServerId(), 'Server not found');
-        $client = $this->di['db']->getExistingModelById('Client', $model->getClientId(), 'Client not found');
+        $client = $this->di['em']->getRepository(Client::class)->find($model->getClientId())
+            ?? throw new Exception('Client not found');
 
         $server_client = new \Server_Client();
         $server_client
-            ->setEmail($client->email)
-            ->setFirstName($client->first_name)
-            ->setLastName($client->last_name)
+            ->setEmail($client->getEmail())
+            ->setFirstName($client->getFirstName())
+            ->setLastName($client->getLastName())
             ->setFullName($client->getFullName())
-            ->setCompany($client->company)
-            ->setStreet($client->address_1)
-            ->setZip($client->postcode)
-            ->setCity($client->city)
-            ->setState($client->state)
-            ->setCountry($client->country)
-            ->setTelephone($client->phone);
+            ->setCompany($client->getCompany())
+            ->setStreet($client->getAddress1())
+            ->setZip($client->getPostcode())
+            ->setCity($client->getCity())
+            ->setState($client->getState())
+            ->setCountry($client->getCountry())
+            ->setTelephone($client->getPhone());
 
         $package = $this->getServerPackage($hp);
         $server_account = new \Server_Account();
