@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicedownloadable;
 
+use Box\Mod\Order\Entity\Order;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Servicedownloadable\Entity\ServiceDownloadable;
 use Box\Mod\Servicedownloadable\Entity\ServiceDownloadableFile;
@@ -184,15 +185,15 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function action_create(\Model_ClientOrder $order): ServiceDownloadable
+    public function action_create(Order $order): ServiceDownloadable
     {
-        $config = json_decode($order->config ?? '', true);
+        $config = json_decode($order->getConfig() ?? '', true);
         if (!is_array($config)) {
-            throw new \FOSSBilling\Exception(sprintf('Order #%s config is missing', $order->id));
+            throw new \FOSSBilling\Exception(sprintf('Order #%s config is missing', $order->getId()));
         }
         $this->validateOrderData($config);
 
-        $service = (new ServiceDownloadable())->setClientId((int) $order->client_id);
+        $service = (new ServiceDownloadable())->setClientId((int) $order->getClientId());
         foreach ($config[self::FILES_CONFIG_KEY] as $position => $file) {
             $service->addFile($this->createServiceFile($file, $position));
         }
@@ -203,7 +204,7 @@ class Service implements InjectionAwareInterface
         return $service;
     }
 
-    public function action_activate(\Model_ClientOrder $order): bool
+    public function action_activate(Order $order): bool
     {
         return true;
     }
@@ -211,7 +212,7 @@ class Service implements InjectionAwareInterface
     /**
      * @todo
      */
-    public function action_renew(\Model_ClientOrder $order): bool
+    public function action_renew(Order $order): bool
     {
         return true;
     }
@@ -219,7 +220,7 @@ class Service implements InjectionAwareInterface
     /**
      * @todo
      */
-    public function action_suspend(\Model_ClientOrder $order): bool
+    public function action_suspend(Order $order): bool
     {
         return true;
     }
@@ -227,7 +228,7 @@ class Service implements InjectionAwareInterface
     /**
      * @todo
      */
-    public function action_unsuspend(\Model_ClientOrder $order): bool
+    public function action_unsuspend(Order $order): bool
     {
         return true;
     }
@@ -235,7 +236,7 @@ class Service implements InjectionAwareInterface
     /**
      * @todo
      */
-    public function action_cancel(\Model_ClientOrder $order): bool
+    public function action_cancel(Order $order): bool
     {
         return true;
     }
@@ -243,7 +244,7 @@ class Service implements InjectionAwareInterface
     /**
      * @todo
      */
-    public function action_uncancel(\Model_ClientOrder $order): bool
+    public function action_uncancel(Order $order): bool
     {
         return true;
     }
@@ -251,7 +252,7 @@ class Service implements InjectionAwareInterface
     /**
      * @todo
      */
-    public function action_delete(\Model_ClientOrder $order): void
+    public function action_delete(Order $order): void
     {
         $orderService = $this->di['mod_service']('order');
         $service = $orderService->getOrderService($order);
@@ -419,14 +420,14 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function uploadOrderFile(ServiceDownloadable $service, \Model_ClientOrder $order, array $data = []): bool
+    public function uploadOrderFile(ServiceDownloadable $service, Order $order, array $data = []): bool
     {
         $file = $this->getUploadedFile();
         $definition = $this->createUploadedFileDefinition($file, $data);
         $this->di['em']->wrapInTransaction(function () use ($service, $order, $definition): void {
             $service->addFile($this->createServiceFile($definition, $service->getFiles()->count()));
 
-            $config = json_decode($order->config ?? '', true) ?: [];
+            $config = json_decode($order->getConfig() ?? '', true) ?: [];
             $config[self::FILES_CONFIG_KEY] ??= [];
             $config[self::FILES_CONFIG_KEY][] = $definition;
             $this->saveOrderConfig($order, $config);
@@ -435,7 +436,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function removeOrderFile(ServiceDownloadable $service, \Model_ClientOrder $order, int $fileId): bool
+    public function removeOrderFile(ServiceDownloadable $service, Order $order, int $fileId): bool
     {
         $file = $service->findFileById($fileId);
         if (!$file instanceof ServiceDownloadableFile) {
@@ -446,7 +447,7 @@ class Service implements InjectionAwareInterface
         $fileKey = $file->getFileKey();
         $this->di['em']->wrapInTransaction(function () use ($service, $order, $file, $fileKey): void {
             $service->removeFile($file);
-            $config = json_decode($order->config ?? '', true) ?: [];
+            $config = json_decode($order->getConfig() ?? '', true) ?: [];
             $config[self::FILES_CONFIG_KEY] = array_values(array_filter(
                 $config[self::FILES_CONFIG_KEY] ?? [],
                 static fn (array $definition): bool => ($definition['id'] ?? null) !== $fileKey,
@@ -674,8 +675,8 @@ class Service implements InjectionAwareInterface
 
     private function addFileToExistingOrders(Product $product, array $definition): void
     {
-        $this->forEachProductOrder($product, function (\Model_ClientOrder $order, ?ServiceDownloadable $service) use ($definition): void {
-            $config = json_decode($order->config ?? '', true) ?: [];
+        $this->forEachProductOrder($product, function (Order $order, ?ServiceDownloadable $service) use ($definition): void {
+            $config = json_decode($order->getConfig() ?? '', true) ?: [];
             $config[self::FILES_CONFIG_KEY] ??= [];
             $config[self::FILES_CONFIG_KEY][] = $definition;
             $this->saveOrderConfig($order, $config);
@@ -685,8 +686,8 @@ class Service implements InjectionAwareInterface
 
     private function updateFileInExistingOrders(Product $product, array $definition): void
     {
-        $this->forEachProductOrder($product, function (\Model_ClientOrder $order, ?ServiceDownloadable $service) use ($definition): void {
-            $config = json_decode($order->config ?? '', true) ?: [];
+        $this->forEachProductOrder($product, function (Order $order, ?ServiceDownloadable $service) use ($definition): void {
+            $config = json_decode($order->getConfig() ?? '', true) ?: [];
             foreach ($config[self::FILES_CONFIG_KEY] ?? [] as $index => $file) {
                 if (($file['id'] ?? null) === $definition['id']) {
                     $config[self::FILES_CONFIG_KEY][$index] = $definition;
@@ -705,8 +706,8 @@ class Service implements InjectionAwareInterface
 
     private function removeFileFromExistingOrders(Product $product, string $fileKey): void
     {
-        $this->forEachProductOrder($product, function (\Model_ClientOrder $order, ?ServiceDownloadable $service) use ($fileKey): void {
-            $config = json_decode($order->config ?? '', true) ?: [];
+        $this->forEachProductOrder($product, function (Order $order, ?ServiceDownloadable $service) use ($fileKey): void {
+            $config = json_decode($order->getConfig() ?? '', true) ?: [];
             $config[self::FILES_CONFIG_KEY] = array_values(array_filter(
                 $config[self::FILES_CONFIG_KEY] ?? [],
                 static fn (array $file): bool => ($file['id'] ?? null) !== $fileKey,
@@ -725,20 +726,25 @@ class Service implements InjectionAwareInterface
         $productService = $this->di['mod_service']('product');
         $orderService = $this->di['mod_service']('order');
         foreach ($productService->getOrdersForProduct($product) as $orderData) {
-            $order = $this->di['db']->getExistingModelById('ClientOrder', $orderData['id']);
+            $order = $this->di['em']->getRepository(Order::class)->find($orderData['id']);
+            if (!$order instanceof Order) {
+                continue;
+            }
             $service = $orderService->getOrderService($order);
             $callback($order, $service instanceof ServiceDownloadable ? $service : null);
         }
     }
 
-    private function saveOrderConfig(\Model_ClientOrder $order, array $config): void
+    private function saveOrderConfig(Order $order, array $config): void
     {
-        $order->config = json_encode($config, JSON_THROW_ON_ERROR);
-        $order->updated_at = date('Y-m-d H:i:s');
+        $configValue = json_encode($config, JSON_THROW_ON_ERROR);
+        $updatedAt = date('Y-m-d H:i:s');
+        $order->setConfig($configValue);
+        $order->setUpdatedAt(new \DateTime($updatedAt));
         $this->di['em']->getConnection()->update('client_order', [
-            'config' => $order->config,
-            'updated_at' => $order->updated_at,
-        ], ['id' => $order->id]);
+            'config' => $configValue,
+            'updated_at' => $updatedAt,
+        ], ['id' => $order->getId()]);
     }
 
     private function getFileRepository(): ServiceDownloadableFileRepository

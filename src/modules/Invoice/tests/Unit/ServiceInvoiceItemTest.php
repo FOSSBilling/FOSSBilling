@@ -15,6 +15,8 @@ use Box\Mod\Invoice\Entity\InvoiceItem;
 use Box\Mod\Invoice\Repository\InvoiceItemRepository;
 use Box\Mod\Invoice\Service as InvoiceService;
 use Box\Mod\Invoice\ServiceInvoiceItem;
+use Box\Mod\Order\Entity\Order;
+use Box\Mod\Order\Repository\OrderRepository;
 use Box\Mod\Order\Service as OrderService;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -59,15 +61,10 @@ test('marks item as paid', function (): void {
 
     $clientModel = new Model_Client();
     $clientModel->loadBean(new Tests\Helpers\DummyBean());
-    $clientOrder = new Model_ClientOrder();
-    $clientOrder->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrder = createEntity(Order::class);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()
-        ->once()
-        ->andReturnUsing(fn (string $model): Model_Client|Invoice => $model === 'Client' ? $clientModel : $invoiceModel);
-    $dbMock->shouldReceive('load')
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('find')
         ->atLeast()
         ->once()
         ->andReturn($clientOrder);
@@ -94,10 +91,10 @@ test('marks item as paid', function (): void {
     $invoiceRepo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
     $invoiceRepo->shouldReceive('find')->andReturn($invoiceModel);
     $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+    $em->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
 
     $di = container();
     $di['em'] = $em;
-    $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn (string $module): Mockery\MockInterface => $module === 'Order' ? $orderServiceMock : $invoiceServiceMock);
     $serviceMock->setDi($di);
 
@@ -132,15 +129,14 @@ test('records failure when executing task for order type with client order not f
     $em->shouldReceive('flush')->once();
     $repo = Mockery::mock(InvoiceItemRepository::class);
     $em->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($repo);
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('load')
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('find')
         ->atLeast()->once()
         ->andReturn(null);
+    $em->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
 
     $di = container();
     $di['em'] = $em;
-    $di['db'] = $dbMock;
     $serviceMock->setDi($di);
 
     $serviceMock->executeTask($item);

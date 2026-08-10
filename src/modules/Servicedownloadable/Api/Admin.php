@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicedownloadable\Api;
 
+use Box\Mod\Order\Entity\Order;
 use Box\Mod\Servicedownloadable\Entity\ServiceDownloadable;
 use Box\Mod\Servicedownloadable\Entity\ServiceDownloadableFile;
 use FOSSBilling\Validation\Api\RequiredParams;
@@ -58,7 +59,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('servicedownloadable', 'manage');
 
-        $order = $this->getDi()['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
+        $order = $this->getDi()['em']->getRepository(Order::class)->find($data['order_id']);
+        if (!$order instanceof Order) {
+            throw new \FOSSBilling\Exception('Order not found');
+        }
 
         $orderService = $this->getDi()['mod_service']('order');
         $serviceDownloadable = $orderService->getOrderService($order);
@@ -93,7 +97,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     public function order_file_delete($data): bool
     {
         $this->checkPermissions('servicedownloadable', 'manage');
-        $order = $this->getDi()['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
+        $order = $this->getDi()['em']->getRepository(Order::class)->find($data['order_id']);
+        if (!$order instanceof Order) {
+            throw new \FOSSBilling\Exception('Order not found');
+        }
         $service = $this->getDi()['mod_service']('order')->getOrderService($order);
         if (!$service instanceof ServiceDownloadable) {
             throw new \FOSSBilling\Exception('Order is not activated');
@@ -143,7 +150,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     public function send_order_file($data): Response
     {
         $this->checkPermissions('servicedownloadable', 'manage');
-        $order = $this->getDi()['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
+        $order = $this->getDi()['em']->getRepository(Order::class)->find($data['order_id']);
+        if (!$order instanceof Order) {
+            throw new \FOSSBilling\Exception('Order not found');
+        }
         $service = $this->getDi()['mod_service']('order')->getOrderService($order);
         if (!$service instanceof ServiceDownloadable) {
             throw new \FOSSBilling\Exception('Order is not activated');

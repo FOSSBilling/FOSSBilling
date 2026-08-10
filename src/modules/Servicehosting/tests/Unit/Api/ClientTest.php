@@ -10,12 +10,15 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Order\Entity\Order;
+use Box\Mod\Order\Repository\OrderRepository;
 use Box\Mod\Order\Service as OrderService;
 use Box\Mod\Servicehosting\Api\Client;
 use Box\Mod\Servicehosting\Entity\ServiceHosting;
 use Box\Mod\Servicehosting\Service;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 afterEach(function (): void {
     Mockery::close();
@@ -31,7 +34,7 @@ test('testGetDi', function (): void {
 
 test('testChangeUsername', function (): void {
     $api = apiEndpoint(new Client());
-    $getServiceReturnValue = [new Model_ClientOrder(), new ServiceHosting()];
+    $getServiceReturnValue = [createEntity(Order::class), new ServiceHosting()];
     $apiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial());
 
     $apiMock
@@ -54,7 +57,7 @@ test('testChangeUsername', function (): void {
 
 test('testChangeDomain', function (): void {
     $api = apiEndpoint(new Client());
-    $getServiceReturnValue = [new Model_ClientOrder(), new ServiceHosting()];
+    $getServiceReturnValue = [createEntity(Order::class), new ServiceHosting()];
     $apiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial());
 
     $apiMock
@@ -77,7 +80,7 @@ test('testChangeDomain', function (): void {
 
 test('testChangePassword', function (): void {
     $api = apiEndpoint(new Client());
-    $getServiceReturnValue = [new Model_ClientOrder(), new ServiceHosting()];
+    $getServiceReturnValue = [createEntity(Order::class), new ServiceHosting()];
     $apiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial());
 
     $apiMock
@@ -117,14 +120,11 @@ test('testGetService', function (): void {
         'order_id' => 1,
     ];
 
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
-    $clientOrderModel->status = Model_ClientOrder::STATUS_ACTIVE;
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('findOne')
-    ->atLeast()->once()
-    ->andReturn($clientOrderModel);
+    $clientOrderModel = createEntity(Order::class, ['status' => Order::STATUS_ACTIVE]);
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('findOneBy')
+        ->atLeast()->once()
+        ->andReturn($clientOrderModel);
 
     $model = new ServiceHosting();
     $orderServiceMock = Mockery::mock(OrderService::class);
@@ -137,8 +137,8 @@ test('testGetService', function (): void {
     ->andReturn($model);
 
     $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
-    $di['db'] = $dbMock;
 
     $api->setDi($di);
 
@@ -148,7 +148,7 @@ test('testGetService', function (): void {
     $api->setIdentity($clientModel);
     $result = $api->_getService($data);
     expect($result)->toBeArray();
-    expect($result[0])->toBeInstanceOf('\Model_ClientOrder');
+    expect($result[0])->toBeInstanceOf(Order::class);
     expect($result[1])->toBeInstanceOf(ServiceHosting::class);
 });
 
@@ -158,14 +158,11 @@ test('testGetServiceOrderNotActivated', function (): void {
         'order_id' => 1,
     ];
 
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
-    $clientOrderModel->status = Model_ClientOrder::STATUS_ACTIVE;
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('findOne')
-    ->atLeast()->once()
-    ->andReturn($clientOrderModel);
+    $clientOrderModel = createEntity(Order::class, ['status' => Order::STATUS_ACTIVE]);
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('findOneBy')
+        ->atLeast()->once()
+        ->andReturn($clientOrderModel);
 
     $model = null;
     $orderServiceMock = Mockery::mock(OrderService::class);
@@ -178,8 +175,8 @@ test('testGetServiceOrderNotActivated', function (): void {
     ->andReturn($model);
 
     $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
-    $di['db'] = $dbMock;
 
     $api->setDi($di);
 
@@ -200,14 +197,13 @@ test('testGetServiceOrderNotFound', function (): void {
     ];
 
     $clientOrderModel = null;
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('findOne')
-    ->atLeast()->once()
-    ->andReturn($clientOrderModel);
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('findOneBy')
+        ->atLeast()->once()
+        ->andReturn($clientOrderModel);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
 
     $api->setDi($di);
 
@@ -236,13 +232,13 @@ test('testGetServiceThrowsForExpiredOrder', function (): void {
         'order_id' => 1,
     ];
 
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
-    $clientOrderModel->status = Model_ClientOrder::STATUS_ACTIVE;
-    $clientOrderModel->expires_at = date('Y-m-d H:i:s', time() - 3600);
+    $clientOrderModel = createEntity(Order::class, [
+        'status' => Order::STATUS_ACTIVE,
+        'expires_at' => date('Y-m-d H:i:s', time() - 3600),
+    ]);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')->atLeast()->once()->andReturn($clientOrderModel);
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('findOneBy')->atLeast()->once()->andReturn($clientOrderModel);
 
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('assertOrderUsable')
@@ -252,8 +248,8 @@ test('testGetServiceThrowsForExpiredOrder', function (): void {
     $orderServiceMock->shouldReceive('getOrderService')->never();
 
     $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
-    $di['db'] = $dbMock;
 
     $api->setDi($di);
 

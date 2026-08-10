@@ -15,6 +15,8 @@ use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Service;
 use Box\Mod\Invoice\ServiceTax;
 use Box\Mod\Invoice\ServiceTransaction;
+use Box\Mod\Order\Entity\Order;
+use Box\Mod\Order\Repository\OrderRepository;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
@@ -90,16 +92,13 @@ test('creates renewal invoice', function (): void {
         ->andReturn($model);
     $serviceMock->shouldReceive('approveInvoice');
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $clientOrder = new Model_ClientOrder();
-    $clientOrder->loadBean(new Tests\Helpers\DummyBean());
-    $clientOrder->price = 10;
-    $dbMock->shouldReceive('findOne')
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('findOneBy')
         ->atLeast()->once()
-        ->andReturn($clientOrder);
+        ->andReturn(createEntity(Order::class, ['price' => 10]));
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $api->setDi($di);
@@ -126,18 +125,13 @@ test('creates renewal invoice for free order', function (): void {
         ->andReturn($model);
     $serviceMock->shouldReceive('approveInvoice');
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $clientOrder = new Model_ClientOrder();
-    $clientOrder->loadBean(new Tests\Helpers\DummyBean());
-    $clientOrder->id = 1;
-    $clientOrder->price = 0;
-
-    $dbMock->shouldReceive('findOne')
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('findOneBy')
         ->atLeast()->once()
-        ->andReturn($clientOrder);
+        ->andReturn(createEntity(Order::class, ['id' => 1, 'price' => 0]));
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $api->setDi($di);
@@ -153,17 +147,13 @@ test('creates renewal invoice for free order', function (): void {
 
 test('throws exception when creating renewal invoice for order not found', function (): void {
     $api = apiEndpoint(new Client());
-    $dbMock = Mockery::mock('\Box_Database');
-    $clientOrder = new Model_ClientOrder();
-    $clientOrder->loadBean(new Tests\Helpers\DummyBean());
-    $clientOrder->price = 10;
-
-    $dbMock->shouldReceive('findOne')
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('findOneBy')
         ->atLeast()->once()
         ->andReturn(null);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
 
     $api->setDi($di);
     $identity = new Model_Admin();

@@ -61,13 +61,13 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @param \Model_ClientOrder $order with client_id and config properties
+     * @param Order $order with client_id and config properties
      */
-    public function action_create(\Model_ClientOrder $order): ServiceApiKey
+    public function action_create(Order $order): ServiceApiKey
     {
         $model = new ServiceApiKey();
-        $model->setClientId((int) $order->client_id);
-        $model->setConfig($order->config);
+        $model->setClientId((int) $order->getClientId());
+        $model->setConfig($order->getConfig());
 
         $this->di['em']->persist($model);
         $this->di['em']->flush();
@@ -75,10 +75,10 @@ class Service implements InjectionAwareInterface
         return $model;
     }
 
-    public function action_activate(\Model_ClientOrder $order): bool
+    public function action_activate(Order $order): bool
     {
         $model = $this->_getService($order);
-        $config = json_decode($order->config ?? '', true);
+        $config = json_decode($order->getConfig() ?? '', true);
         $model->setApiKey($this->generateKey($config));
 
         $this->di['em']->flush();
@@ -86,31 +86,31 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function action_suspend(\Model_ClientOrder $order): bool
+    public function action_suspend(Order $order): bool
     {
         $this->_getService($order);
 
         return true;
     }
 
-    public function action_unsuspend(\Model_ClientOrder $order): bool
+    public function action_unsuspend(Order $order): bool
     {
         $this->_getService($order);
 
         return true;
     }
 
-    public function action_cancel(\Model_ClientOrder $order): bool
+    public function action_cancel(Order $order): bool
     {
         return $this->action_suspend($order);
     }
 
-    public function action_uncancel(\Model_ClientOrder $order): bool
+    public function action_uncancel(Order $order): bool
     {
         return $this->action_unsuspend($order);
     }
 
-    public function action_delete(\Model_ClientOrder $order): void
+    public function action_delete(Order $order): void
     {
         $model = $this->_getService($order, false);
         if ($model instanceof ServiceApiKey) {
@@ -347,7 +347,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    private function _getService(\Model_ClientOrder $order, bool $required = true): ?ServiceApiKey
+    private function _getService(Order $order, bool $required = true): ?ServiceApiKey
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);

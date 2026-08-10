@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicehosting\Api;
 
+use Box\Mod\Order\Entity\Order;
 use Box\Mod\Servicehosting\Entity\ServiceHosting;
 
 /**
@@ -84,15 +85,15 @@ class Client extends \FOSSBilling\Api\AbstractApi
             throw new \FOSSBilling\Exception('Order ID is required');
         }
         $identity = $this->getIdentity();
-        $order = $this->getDi()['db']->findOne('ClientOrder', 'id = ? and client_id = ?', [$data['order_id'], $identity->id]);
-        if (!$order instanceof \Model_ClientOrder) {
+        $order = $this->getDi()['em']->getRepository(Order::class)->findOneBy(['id' => $data['order_id'], 'clientId' => $identity->id]);
+        if (!$order instanceof Order) {
             throw new \FOSSBilling\InformationException('Order not found');
         }
 
         $orderService = $this->getDi()['mod_service']('order');
         $orderService->assertOrderUsable($order);
         $s = $orderService->getOrderService($order);
-        if (!$s instanceof ServiceHosting || $order->status !== \Model_ClientOrder::STATUS_ACTIVE) {
+        if (!$s instanceof ServiceHosting || $order->getStatus() !== Order::STATUS_ACTIVE) {
             throw new \FOSSBilling\InformationException('Order is not activated');
         }
 

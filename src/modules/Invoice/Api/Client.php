@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice\Api;
 
+use Box\Mod\Order\Entity\Order;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
@@ -72,8 +73,8 @@ class Client extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['order_id' => 'Order ID (order_id) was not passed'])]
     public function renewal_invoice($data)
     {
-        $model = $this->getDi()['db']->findOne('ClientOrder', 'client_id = ? and id = ?', [$this->getIdentity()->id, $data['order_id']]);
-        if (!$model instanceof \Model_ClientOrder) {
+        $model = $this->getDi()['em']->getRepository(Order::class)->findOneBy(['clientId' => $this->getIdentity()->id, 'id' => $data['order_id']]);
+        if (!$model instanceof Order) {
             throw new \FOSSBilling\InformationException('Order not found');
         }
         $service = $this->getService();

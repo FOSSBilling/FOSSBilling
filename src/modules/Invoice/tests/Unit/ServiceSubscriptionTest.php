@@ -18,6 +18,8 @@ use Box\Mod\Invoice\Repository\PayGatewayRepository;
 use Box\Mod\Invoice\Repository\SubscriptionRepository;
 use Box\Mod\Invoice\ServicePayGateway;
 use Box\Mod\Invoice\ServiceSubscription;
+use Box\Mod\Order\Entity\Order;
+use Box\Mod\Order\Repository\OrderRepository;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManagerInterface;
@@ -217,9 +219,7 @@ test('updates subscription status from a gateway without calling the adapter', f
 test('cancels subscriptions linked to an order', function (): void {
     $subscriptionModel = createEntity(Subscription::class, ['id' => 7]);
 
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
-    $orderModel->id = 10;
+    $orderModel = createEntity(Order::class, ['id' => 10]);
 
     $subRepo = Mockery::mock(SubscriptionRepository::class);
     $subRepo->shouldReceive('find')->once()->with(7)->andReturn($subscriptionModel);
@@ -243,9 +243,7 @@ test('finalizes a scheduled cancellation by canceling its order and service', fu
     $subscription->setRelType('invoice');
     $subscription->setRelId(25);
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->status = Model_ClientOrder::STATUS_ACTIVE;
+    $order = createEntity(Order::class, ['status' => Order::STATUS_ACTIVE]);
 
     $dbal = createSubscriptionDbal();
     $dbal->insert('client_order_meta', [
@@ -254,8 +252,8 @@ test('finalizes a scheduled cancellation by canceling its order and service', fu
         'value' => '1',
     ]);
 
-    $db = Mockery::mock(Box_Database::class);
-    $db->shouldReceive('getExistingModelById')->once()->with('ClientOrder', 10, 'Order not found')->andReturn($order);
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('find')->once()->with(10)->andReturn($order);
 
     $subRepo = Mockery::mock(SubscriptionRepository::class);
     $subRepo->shouldReceive('find')->once()->with(7)->andReturn($subscription);
@@ -272,8 +270,8 @@ test('finalizes a scheduled cancellation by canceling its order and service', fu
     $di = container();
     $em->shouldReceive('getRepository')->with(Subscription::class)->andReturn($subRepo);
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn(Mockery::mock(PayGatewayRepository::class));
+    $em->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
     $di['em'] = $em;
-    $di['db'] = $db;
     $di['dbal'] = $dbal;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(fn () => $orderService);
@@ -286,9 +284,7 @@ test('finalizes a scheduled cancellation by canceling its order and service', fu
 });
 
 test('reports end-of-period cancellation support for active gateway subscriptions', function (): void {
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->id = 10;
+    $order = createEntity(Order::class, ['id' => 10]);
 
     $subscription = createEntity(Subscription::class, ['id' => 7, 'payGatewayId' => 2]);
     $subscription->setSid('sub_123');
