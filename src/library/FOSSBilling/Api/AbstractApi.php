@@ -31,7 +31,10 @@ class AbstractApi implements InjectionAwareInterface
     // TODO: Find a way to correctly set the type. Maybe a module's service should extend a "Service" class?
     protected $service;
 
-    protected object $identity;
+    /**
+     * @var \Model_Admin|\Model_Client|\FOSSBilling\Identity\Guest
+     */
+    protected $identity;
 
     protected ?Container $di = null;
 
@@ -66,12 +69,18 @@ class AbstractApi implements InjectionAwareInterface
         return $this->mod;
     }
 
-    public function setIdentity(object $identity): void
+    /**
+     * @param \Model_Admin|\Model_Client|\FOSSBilling\Identity\Guest $identity
+     */
+    public function setIdentity($identity): void
     {
         $this->identity = $identity;
     }
 
-    public function getIdentity(): object
+    /**
+     * @return \Model_Admin|\Model_Client|\FOSSBilling\Identity\Guest
+     */
+    public function getIdentity()
     {
         return $this->identity;
     }
