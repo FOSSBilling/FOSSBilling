@@ -38,7 +38,7 @@ test('createSubscriptionProps sends the settings directly under <add>, in schema
 test('createSubscriptionProps includes htype in gen_setup for the add action', function (): void {
     $props = invokePleskCreateSubscriptionProps($this->manager, $this->account, 'add');
 
-    expect($props['add']['gen_setup'])->toHaveKey('htype')
+    expect(array_keys($props['add']['gen_setup']))->toBe(['name', 'owner-login', 'htype', 'ip_address'])
         ->and($props['add']['gen_setup']['htype'])->toBe('vrt_hst');
 });
 
