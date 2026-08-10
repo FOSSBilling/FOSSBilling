@@ -34,9 +34,17 @@ class ServiceBalance implements InjectionAwareInterface
         return $this->clientTotal($c);
     }
 
-    public function getClientBalanceForUpdate(Client|\Model_Client $c): float
+    /**
+     * Must be called within a transaction, held until the deduction has been written. The lock is
+     * released when the transaction ends, and the balance is unprotected from that point on.
+     */
+    public function getClientBalanceForUpdate(Client|\Model_Client|int $c): float
     {
-        $clientId = $c instanceof Client ? $c->getId() : $c->id;
+        $clientId = match (true) {
+            $c instanceof Client => $c->getId(),
+            $c instanceof \Model_Client => $c->id,
+            default => $c,
+        };
 
         return $this->clientBalanceRepository->getClientBalanceSumForUpdate((int) $clientId);
     }

@@ -790,7 +790,7 @@ class Service implements InjectionAwareInterface
         return $email;
     }
 
-    public function markAsPaid(Invoice $invoice, $charge = true, $execute = false): bool
+    public function markAsPaid(Invoice $invoice, $charge = true, $execute = false, bool $deferEvents = false): bool
     {
         if ($invoice->getStatus() == Invoice::STATUS_PAID) {
             return true;
@@ -828,7 +828,11 @@ class Service implements InjectionAwareInterface
             $productService->commitReservedPromoRedemptionsForInvoice($invoice);
         });
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoicePaymentReceived', 'params' => ['id' => $invoice->getId()]]);
+        // Listeners render PDFs and send email, so a caller holding row locks defers this until
+        // after it has committed rather than holding them for the duration of an SMTP send.
+        if (!$deferEvents) {
+            $this->firePaymentReceivedEvent($invoice);
+        }
 
         if ($execute) {
             foreach ($invoiceItems as $item) {
@@ -1135,12 +1139,12 @@ class Service implements InjectionAwareInterface
         }
 
         $paid = $this->di['em']->wrapInTransaction(function () use ($invoice): bool {
-            $client = $this->di['db']->load('Client', $invoice->getClientId());
+            $clientId = (int) $invoice->getClientId();
             $cbrepo = $this->di['mod_service']('Client', 'Balance');
 
             // Locks the balance for the rest of this transaction, so a concurrent request cannot
             // spend the same credit.
-            $balance = $cbrepo->getClientBalanceForUpdate($client);
+            $balance = $cbrepo->getClientBalanceForUpdate($clientId);
 
             // Another request could have paid this invoice while we waited for the lock. A locking
             // read, as a plain one can be served from a snapshot predating that request's commit.
@@ -1170,7 +1174,7 @@ class Service implements InjectionAwareInterface
                 // Nothing at or below the epsilon is actually charged against the client's balance,
                 // so don't record a $0 credit transaction.
                 $balanceTransaction = new ClientBalance();
-                $balanceTransaction->setClientId((int) $client->id);
+                $balanceTransaction->setClientId($clientId);
                 $balanceTransaction->setType('invoice');
                 $balanceTransaction->setRelId((string) $invoice->getId());
 
@@ -1182,17 +1186,24 @@ class Service implements InjectionAwareInterface
                 $this->di['em']->flush();
             }
 
-            // Tasks run after the commit below, so provisioning is not held under the balance lock.
-            $this->markAsPaid($invoice, false, false);
+            // Events and tasks run after the commit below, so neither notifications nor
+            // provisioning are held under the balance lock.
+            $this->markAsPaid($invoice, false, false, true);
 
             return true;
         });
 
         if ($paid) {
+            $this->firePaymentReceivedEvent($invoice);
             $this->executeInvoiceItemTasks($invoice);
         }
 
         return $paid;
+    }
+
+    private function firePaymentReceivedEvent(Invoice $invoice): void
+    {
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoicePaymentReceived', 'params' => ['id' => $invoice->getId()]]);
     }
 
     /**

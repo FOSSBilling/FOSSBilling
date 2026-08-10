@@ -366,3 +366,21 @@ test('reserveNextNumericParamValue returns null when the counter is missing or n
 
     expect($service->reserveNextNumericParamValue('invoice_starting_number'))->toBeNull();
 });
+
+test('reserveNextNumericParamValue rejects non-integer counter values', function (): void {
+    $service = new Service();
+
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('transactional')
+        ->once()
+        ->andReturnUsing(fn (callable $callback): mixed => $callback($dbalMock));
+    // Truncating this to 5 and writing 6 would silently skip a number.
+    $dbalMock->shouldReceive('fetchOne')->once()->andReturn('5.5');
+    $dbalMock->shouldNotReceive('executeStatement');
+
+    $di = container();
+    $di['dbal'] = $dbalMock;
+    $service->setDi($di);
+
+    expect($service->reserveNextNumericParamValue('invoice_starting_number'))->toBeNull();
+});

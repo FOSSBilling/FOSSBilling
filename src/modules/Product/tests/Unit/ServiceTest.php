@@ -440,6 +440,25 @@ test('reduce stock decrements atomically rather than writing back a read value',
     expect($product->getQuantityInStock())->toBe(3);
 });
 
+test('reduce stock ignores non-positive quantities rather than inflating stock', function (): void {
+    $service = new Service();
+    $product = productTestCreateProductEntity(1)
+        ->setStockControl(true)
+        ->setQuantityInStock(5);
+
+    $productRepo = Mockery::mock(ProductRepository::class);
+    // Subtracting a negative would increase stock, so the decrement must not be reached.
+    $productRepo->shouldNotReceive('decrementStockIfAvailable');
+
+    $di = container();
+    $di['em'] = productTestCreateEntityManagerWithRepositories($productRepo);
+    $service->setDi($di);
+
+    expect($service->reduceStock($product, -5))->toBeTrue();
+    expect($service->reduceStock($product, 0))->toBeTrue();
+    expect($product->getQuantityInStock())->toBe(5);
+});
+
 test('reduce stock throws when the atomic decrement finds insufficient stock', function (): void {
     $service = new Service();
     $product = productTestCreateProductEntity(1)

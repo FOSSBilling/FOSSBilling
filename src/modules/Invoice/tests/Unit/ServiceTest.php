@@ -1486,21 +1486,16 @@ test('pays a zero-total invoice without recording a balance transaction', functi
     $invoice->approved = 1;
     $invoice->status = Invoice::STATUS_UNPAID;
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->id = 20;
-
     $balanceService = Mockery::mock(Box\Mod\Client\ServiceBalance::class);
-    $balanceService->shouldReceive('getClientBalanceForUpdate')->once()->with($client)->andReturn(0.0);
+    $balanceService->shouldReceive('getClientBalanceForUpdate')->once()->with(20)->andReturn(0.0);
 
     $db = Mockery::mock(Box_Database::class);
-    $db->shouldReceive('load')->once()->with('Client', 20)->andReturn($client);
     $db->shouldNotReceive('dispense');
     $db->shouldNotReceive('store');
 
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(0.0);
-    $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false)->andReturn(true);
+    $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false, true)->andReturn(true);
 
     $di = container();
     $di['db'] = $db;
@@ -1519,21 +1514,16 @@ test('pays an invoice with credits and records a balance transaction', function 
     $invoice->approved = 1;
     $invoice->status = Invoice::STATUS_UNPAID;
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->id = 20;
-
     $balanceService = Mockery::mock(Box\Mod\Client\ServiceBalance::class);
-    $balanceService->shouldReceive('getClientBalanceForUpdate')->once()->with($client)->andReturn(100.0);
+    $balanceService->shouldReceive('getClientBalanceForUpdate')->once()->with(20)->andReturn(100.0);
 
     $db = Mockery::mock(Box_Database::class);
-    $db->shouldReceive('load')->once()->with('Client', 20)->andReturn($client);
     $db->shouldNotReceive('dispense');
     $db->shouldNotReceive('store');
 
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(50.0);
-    $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false)->andReturn(true);
+    $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false, true)->andReturn(true);
 
     $di = container();
     $di['db'] = $db;
@@ -1558,27 +1548,22 @@ test('reads the balance under lock and does so before re-checking the invoice', 
     $invoice->approved = 1;
     $invoice->status = Invoice::STATUS_UNPAID;
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->id = 20;
-
     $balanceService = Mockery::mock(Box\Mod\Client\ServiceBalance::class);
     // The unlocked read must not be used on a path that deducts from the balance.
     $balanceService->shouldNotReceive('getClientBalance');
-    $balanceService->shouldReceive('getClientBalanceForUpdate')->once()->with($client)->ordered()->andReturn(100.0);
+    $balanceService->shouldReceive('getClientBalanceForUpdate')->once()->with(20)->globally()->ordered()->andReturn(100.0);
 
     $db = Mockery::mock(Box_Database::class);
-    $db->shouldReceive('load')->once()->with('Client', 20)->andReturn($client);
 
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(50.0);
-    $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false)->andReturn(true);
+    $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false, true)->andReturn(true);
 
     $di = container();
     $di['db'] = $db;
     // Ordered: the status re-check is only meaningful once the balance lock is held.
     $di['em']->getRepository(Invoice::class)->shouldReceive('lockAndGetStatus')->with(10)
-        ->ordered()->andReturn(Invoice::STATUS_UNPAID);
+        ->globally()->ordered()->andReturn(Invoice::STATUS_UNPAID);
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $balanceService);
     $service->setDi($di);
 
@@ -1592,15 +1577,10 @@ test('does not deduct credits when the invoice was paid concurrently before the 
     $invoice->approved = 1;
     $invoice->status = Invoice::STATUS_UNPAID;
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->id = 20;
-
     $balanceService = Mockery::mock(Box\Mod\Client\ServiceBalance::class);
-    $balanceService->shouldReceive('getClientBalanceForUpdate')->once()->with($client)->andReturn(100.0);
+    $balanceService->shouldReceive('getClientBalanceForUpdate')->once()->with(20)->andReturn(100.0);
 
     $db = Mockery::mock(Box_Database::class);
-    $db->shouldReceive('load')->once()->with('Client', 20)->andReturn($client);
 
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldNotReceive('markAsPaid');
@@ -1624,16 +1604,11 @@ test('does not deduct credits when the locked balance is insufficient', function
     $invoice->approved = 1;
     $invoice->status = Invoice::STATUS_UNPAID;
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->id = 20;
-
     $balanceService = Mockery::mock(Box\Mod\Client\ServiceBalance::class);
     // Another request spent the credit first, so the locked read sees the reduced balance.
-    $balanceService->shouldReceive('getClientBalanceForUpdate')->once()->with($client)->andReturn(10.0);
+    $balanceService->shouldReceive('getClientBalanceForUpdate')->once()->with(20)->andReturn(10.0);
 
     $db = Mockery::mock(Box_Database::class);
-    $db->shouldReceive('load')->once()->with('Client', 20)->andReturn($client);
 
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(50.0);

@@ -985,6 +985,10 @@ class Service implements InjectionAwareInterface
         }
 
         $quantity = (int) $qty;
+        if ($quantity <= 0) {
+            // Subtracting a non-positive quantity would leave stock unchanged or inflate it.
+            return true;
+        }
 
         // A single statement, otherwise concurrent orders both read the same quantity and each
         // subtract from it, overselling the product. Zero rows means stock ran out meanwhile.

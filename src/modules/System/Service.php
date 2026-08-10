@@ -749,7 +749,7 @@ class Service
                 ['param' => $param]
             );
 
-            if ($current === false || !is_numeric($current)) {
+            if ($current === false || filter_var($current, FILTER_VALIDATE_INT) === false) {
                 return null;
             }
 
