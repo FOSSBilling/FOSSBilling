@@ -10,6 +10,7 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Order\Entity\Order;
 use Box\Mod\Order\Service as OrderService;
 use Box\Mod\Servicehosting\Entity\ServiceHosting;
 use Box\Mod\Servicehosting\Entity\ServiceHostingHp;
@@ -21,6 +22,7 @@ use Box\Mod\Servicehosting\Service;
 use Doctrine\ORM\EntityManagerInterface;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 use function Tests\Helpers\moduleService;
 
 afterEach(function (): void {
@@ -132,9 +134,7 @@ test('validate order data', function (string $field, string $exceptionMessage, i
 
 test('action create', function (): void {
     $service = new Service();
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
-    $orderModel->client_id = 5;
+    $orderModel = createEntity(Order::class, ['client_id' => 5]);
     $confArr = [
         'server_id' => 1,
         'hosting_plan_id' => 2,
@@ -180,8 +180,7 @@ test('action create', function (): void {
 });
 
 test('action activate creates the account when it has not been provisioned yet', function (): void {
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
+    $orderModel = createEntity(Order::class);
 
     $model = new ServiceHosting();
     $model->setServiceHostingServerId(1);
@@ -226,8 +225,7 @@ test('action activate does not recreate an account that was already provisioned'
     // account on the server (its username was persisted), retrying must not
     // call createAccount() again - the account already exists remotely and
     // doing so only fails with a duplicate-account server error.
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
+    $orderModel = createEntity(Order::class);
 
     $model = new ServiceHosting();
     $model->setServiceHostingServerId(1);
@@ -266,8 +264,7 @@ test('action activate does not recreate an account that was already provisioned'
 
 test('action renew', function (): void {
     $service = new Service();
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
+    $orderModel = createEntity(Order::class);
 
     $hostingServiceModel = new ServiceHosting();
 
@@ -284,9 +281,7 @@ test('action renew', function (): void {
 
 test('action renew order without active service', function (): void {
     $service = new Service();
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
-    $orderModel->id = 1;
+    $orderModel = createEntity(Order::class, ['id' => 1]);
 
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturnNull();
@@ -301,8 +296,7 @@ test('action renew order without active service', function (): void {
 
 test('action suspend', function (): void {
     $service = new Service();
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
+    $orderModel = createEntity(Order::class);
 
     $model = new ServiceHosting();
 
@@ -332,9 +326,7 @@ test('action suspend', function (): void {
 
 test('action suspend order without active service', function (): void {
     $service = new Service();
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
-    $orderModel->id = 1;
+    $orderModel = createEntity(Order::class, ['id' => 1]);
 
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturnNull();
@@ -349,8 +341,7 @@ test('action suspend order without active service', function (): void {
 
 test('action unsuspend', function (): void {
     $service = new Service();
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
+    $orderModel = createEntity(Order::class);
 
     $model = new ServiceHosting();
 
@@ -378,9 +369,7 @@ test('action unsuspend', function (): void {
 
 test('action unsuspend order without active service', function (): void {
     $service = new Service();
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
-    $orderModel->id = 1;
+    $orderModel = createEntity(Order::class, ['id' => 1]);
 
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturnNull();
@@ -395,8 +384,7 @@ test('action unsuspend order without active service', function (): void {
 
 test('action cancel', function (): void {
     $service = new Service();
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
+    $orderModel = createEntity(Order::class);
 
     $model = new ServiceHosting();
 
@@ -424,9 +412,7 @@ test('action cancel', function (): void {
 
 test('action cancel order without active service', function (): void {
     $service = new Service();
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
-    $orderModel->id = 1;
+    $orderModel = createEntity(Order::class, ['id' => 1]);
 
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturnNull();
@@ -441,9 +427,7 @@ test('action cancel order without active service', function (): void {
 
 test('action delete', function (): void {
     $service = new Service();
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
-    $orderModel->status = 'active';
+    $orderModel = createEntity(Order::class, ['status' => Order::STATUS_ACTIVE]);
 
     $model = new ServiceHosting();
 
@@ -468,9 +452,7 @@ test('action delete', function (): void {
 
 test('change account plan', function (): void {
     $service = new Service();
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
-    $orderModel->status = Model_ClientOrder::STATUS_ACTIVE;
+    $orderModel = createEntity(Order::class, ['status' => Order::STATUS_ACTIVE]);
 
     $model = new ServiceHosting();
     $modelHp = new ServiceHostingHp();
@@ -502,9 +484,7 @@ test('change account username', function (): void {
         'username' => 'u123456',
     ];
 
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
-    $orderModel->status = Model_ClientOrder::STATUS_ACTIVE;
+    $orderModel = createEntity(Order::class, ['status' => Order::STATUS_ACTIVE]);
 
     $model = new ServiceHosting();
 
@@ -532,8 +512,7 @@ test('change account username', function (): void {
 
 test('change account username missing username', function (): void {
     $service = new Service();
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
+    $orderModel = createEntity(Order::class);
 
     $model = new ServiceHosting();
     $data = [];
@@ -548,9 +527,7 @@ test('change account ip', function (): void {
         'ip' => '1.1.1.1',
     ];
 
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
-    $orderModel->status = Model_ClientOrder::STATUS_ACTIVE;
+    $orderModel = createEntity(Order::class, ['status' => Order::STATUS_ACTIVE]);
 
     $model = new ServiceHosting();
 
@@ -579,8 +556,7 @@ test('change account ip', function (): void {
 test('change account ip missing ip', function (): void {
     $service = new Service();
     $data = [];
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
+    $orderModel = createEntity(Order::class);
 
     $model = new ServiceHosting();
 
@@ -595,9 +571,7 @@ test('change account domain', function (): void {
         'sld' => 'testingSld',
     ];
 
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
-    $orderModel->status = Model_ClientOrder::STATUS_ACTIVE;
+    $orderModel = createEntity(Order::class, ['status' => Order::STATUS_ACTIVE]);
 
     $model = new ServiceHosting();
 
@@ -626,8 +600,7 @@ test('change account domain', function (): void {
 test('change account domain missing params', function (): void {
     $service = new Service();
     $data = [];
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
+    $orderModel = createEntity(Order::class);
 
     $model = new ServiceHosting();
 
@@ -642,9 +615,7 @@ test('change account password', function (): void {
         'password_confirm' => 'topsecret',
     ];
 
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
-    $orderModel->status = Model_ClientOrder::STATUS_ACTIVE;
+    $orderModel = createEntity(Order::class, ['status' => Order::STATUS_ACTIVE]);
 
     $model = new ServiceHosting();
 
@@ -673,8 +644,7 @@ test('change account password', function (): void {
 test('change account password missing params', function (): void {
     $service = new Service();
     $data = [];
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
+    $orderModel = createEntity(Order::class);
 
     $model = new ServiceHosting();
 
@@ -684,8 +654,7 @@ test('change account password missing params', function (): void {
 
 test('sync', function (): void {
     $service = new Service();
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
+    $orderModel = createEntity(Order::class);
 
     $model = new ServiceHosting();
 
@@ -1145,8 +1114,7 @@ test('get server manager with log', function (): void {
     $hostingServerModel = new ServiceHostingServer();
     $hostingServerModel->setManager('Custom');
 
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel = createEntity(Order::class);
 
     $serverManagerMock = Mockery::mock('\Server_Manager_Custom')->shouldIgnoreMissing();
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -1399,10 +1367,10 @@ test('_performOnService rejects expired active order', function (): void {
 
     $reflection = new ReflectionMethod($service, '_performOnService');
 
-    $expiredOrder = new Model_ClientOrder();
-    $expiredOrder->loadBean(new Tests\Helpers\DummyBean());
-    $expiredOrder->status = Model_ClientOrder::STATUS_ACTIVE;
-    $expiredOrder->expires_at = date('Y-m-d H:i:s', time() - 3600);
+    $expiredOrder = createEntity(Order::class, [
+        'status' => Order::STATUS_ACTIVE,
+        'expires_at' => date('Y-m-d H:i:s', time() - 3600),
+    ]);
 
     expect($reflection->invoke($service, $expiredOrder))->toBeFalse();
 });
@@ -1412,9 +1380,9 @@ test('_performOnService rejects suspended order', function (): void {
 
     $reflection = new ReflectionMethod($service, '_performOnService');
 
-    $suspendedOrder = new Model_ClientOrder();
-    $suspendedOrder->loadBean(new Tests\Helpers\DummyBean());
-    $suspendedOrder->status = Model_ClientOrder::STATUS_SUSPENDED;
+    $suspendedOrder = createEntity(Order::class, [
+        'status' => Order::STATUS_SUSPENDED,
+    ]);
 
     expect($reflection->invoke($service, $suspendedOrder))->toBeFalse();
 });
@@ -1424,10 +1392,10 @@ test('_performOnService accepts active order with future expires_at', function (
 
     $reflection = new ReflectionMethod($service, '_performOnService');
 
-    $activeOrder = new Model_ClientOrder();
-    $activeOrder->loadBean(new Tests\Helpers\DummyBean());
-    $activeOrder->status = Model_ClientOrder::STATUS_ACTIVE;
-    $activeOrder->expires_at = date('Y-m-d H:i:s', time() + 86400);
+    $activeOrder = createEntity(Order::class, [
+        'status' => Order::STATUS_ACTIVE,
+        'expires_at' => date('Y-m-d H:i:s', time() + 86400),
+    ]);
 
     expect($reflection->invoke($service, $activeOrder))->toBeTrue();
 });
@@ -1437,10 +1405,10 @@ test('_performOnService accepts one-time active order with null expires_at', fun
 
     $reflection = new ReflectionMethod($service, '_performOnService');
 
-    $oneTimeOrder = new Model_ClientOrder();
-    $oneTimeOrder->loadBean(new Tests\Helpers\DummyBean());
-    $oneTimeOrder->status = Model_ClientOrder::STATUS_ACTIVE;
-    $oneTimeOrder->expires_at = null;
+    $oneTimeOrder = createEntity(Order::class, [
+        'status' => Order::STATUS_ACTIVE,
+        'expires_at' => null,
+    ]);
 
     expect($reflection->invoke($service, $oneTimeOrder))->toBeTrue();
 });

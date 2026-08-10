@@ -1315,20 +1315,14 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function reservePromoForOrder(Promo $promo, Order|\Model_ClientOrder $order): void
+    public function reservePromoForOrder(Promo $promo, Order $order): void
     {
         $this->usePromo($promo);
         $promoData = $this->getPromoSourceArray($promo);
 
-        if ($order instanceof Order) {
-            $order->setPromoRecurring(!empty($promoData['recurring']));
-            $order->setPromoUsed(1);
-            $this->di['em']->persist($order);
-        } else {
-            $order->promo_recurring = (int) !empty($promoData['recurring']);
-            $order->promo_used = 1;
-            $this->di['db']->store($order);
-        }
+        $order->setPromoRecurring(!empty($promoData['recurring']));
+        $order->setPromoUsed(1);
+        $this->di['em']->persist($order);
     }
 
     public function getPromoDiscountTitle(Promo $promo, string $currency): string
@@ -1350,7 +1344,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @param list<Order|\Model_ClientOrder> $orders
+     * @param list<Order> $orders
      */
     public function createCheckoutPromoRedemptions(
         Promo $promo,
@@ -1364,11 +1358,9 @@ class Service implements InjectionAwareInterface
         }
 
         foreach ($orders as $order) {
-            $discount = $order instanceof Order ? $order->getDiscount() : (float) $order->discount;
-            $currency = $order instanceof Order ? $order->getCurrency() : $order->currency;
-            $createdAt = $order instanceof Order
-                ? $order->getCreatedAt()?->format('Y-m-d H:i:s')
-                : $order->created_at;
+            $discount = $order->getDiscount();
+            $currency = $order->getCurrency();
+            $createdAt = $order->getCreatedAt()?->format('Y-m-d H:i:s');
 
             $redemption = $this->newPromoRedemption(
                 $promo,
@@ -1442,17 +1434,17 @@ class Service implements InjectionAwareInterface
      *     currency: string
      * }|null
      */
-    public function getRenewalPromoAdjustment(Order|\Model_ClientOrder $order, float $price, float $quantity): ?array
+    public function getRenewalPromoAdjustment(Order $order, float $price, float $quantity): ?array
     {
-        $promoRecurring = $order instanceof Order ? $order->isPromoRecurring() : (bool) $order->promo_recurring;
-        $promoId = $order instanceof Order ? $order->getPromoId() : $order->promo_id;
+        $promoRecurring = $order->isPromoRecurring();
+        $promoId = $order->getPromoId();
         if (!$promoRecurring || !$promoId) {
             return null;
         }
 
-        $productId = $order instanceof Order ? $order->getProductId() : $order->product_id;
-        $discountAmount = (float) ($order instanceof Order ? $order->getDiscount() : $order->discount);
-        $currency = (string) ($order instanceof Order ? $order->getCurrency() : $order->currency);
+        $productId = $order->getProductId();
+        $discountAmount = (float) ($order->getDiscount() ?? 0);
+        $currency = (string) ($order->getCurrency() ?? '');
         $product = $this->findProductById((int) $productId);
 
         if ($product->getType() !== self::DOMAIN) {
@@ -1466,7 +1458,7 @@ class Service implements InjectionAwareInterface
         }
 
         if ($product->getType() === self::DOMAIN) {
-            $configValue = $order instanceof Order ? $order->getConfig() : $order->config;
+            $configValue = $order->getConfig();
             $config = json_decode($configValue ?? '', true) ?? [];
             $discountAmount = $this->getRenewalProductDiscount($product, $promo, $config);
 
@@ -1565,7 +1557,7 @@ class Service implements InjectionAwareInterface
     public function createPromoRedemption(
         Promo $promo,
         Client|\Model_Client $client,
-        Order|\Model_ClientOrder|null $order,
+        ?Order $order,
         ?Invoice $invoice,
         string $phase,
         ?float $discountAmount,
@@ -1626,9 +1618,9 @@ class Service implements InjectionAwareInterface
         $this->releasePromoRedemptions($redemptions, $reason);
     }
 
-    public function releaseReservedPromoRedemptionsForOrder(Order|\Model_ClientOrder $order, string $reason): void
+    public function releaseReservedPromoRedemptionsForOrder(Order $order, string $reason): void
     {
-        $orderId = $order instanceof Order ? $order->getId() : $order->id;
+        $orderId = $order->getId();
         $redemptions = $this->getPromoRedemptionRepository()->findBy([
             'clientOrderId' => (int) $orderId,
             'status' => PromoRedemption::STATUS_RESERVED,
@@ -2100,7 +2092,7 @@ class Service implements InjectionAwareInterface
     private function newPromoRedemption(
         Promo $promo,
         Client|\Model_Client $client,
-        Order|\Model_ClientOrder|null $order,
+        ?Order $order,
         ?Invoice $invoice,
         string $phase,
         ?float $discountAmount,
@@ -2113,7 +2105,7 @@ class Service implements InjectionAwareInterface
         $dateTime = new \DateTime($timestamp);
         $redemption = new PromoRedemption();
         $clientId = $client instanceof Client ? $client->getId() : $client->id;
-        $orderId = $order instanceof Order ? $order->getId() : $order?->id;
+        $orderId = $order?->getId();
         $redemption
             ->setPromoId($promoId)
             ->setClientId((int) $clientId)

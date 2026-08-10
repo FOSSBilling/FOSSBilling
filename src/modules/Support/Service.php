@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Support;
 
+use Box\Mod\Order\Entity\Order;
 use Box\Mod\Support\Entity\CannedResponse;
 use Box\Mod\Support\Entity\CannedResponseCategory;
 use Box\Mod\Support\Entity\Helpdesk;
@@ -370,7 +371,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $clientId = $model->getClientId();
             if ($clientId !== null && $this->fetchClientSummary($clientId) !== null) {
                 $order = $this->di['mod_service']('order')->findByClientIdAndOrderId($clientId, (int) $model->getRelId());
-                if ($order instanceof \Model_ClientOrder) {
+                if ($order instanceof Order) {
                     $result['order'] = $this->di['mod_service']('order')->toApiArray($order, false);
                 }
             }
@@ -1135,13 +1136,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         if ($rel_id !== null && $rel_type === SupportTicket::REL_TYPE_ORDER) {
             $orderService = $this->di['mod_service']('order');
             $order = $orderService->findForClientById($client, $rel_id);
-            if (!$order instanceof \Model_ClientOrder) {
+            if (!$order instanceof Order) {
                 throw new \FOSSBilling\Exception('You do not have permission to reference this order.');
             }
         }
 
         if ($rel_task === SupportTicket::REL_TASK_UPGRADE) {
-            if (!$order instanceof \Model_ClientOrder) {
+            if (!$order instanceof Order) {
                 throw new \FOSSBilling\Exception('You must provide both an order ID and a new product ID in order to request an upgrade.');
             }
 
@@ -1150,7 +1151,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             }
 
             $productService = $this->di['mod_service']('product');
-            $productService->assertUpgradeAllowedByIds((int) $order->product_id, (int) $rel_new_value);
+            $productService->assertUpgradeAllowedByIds((int) $order->getProductId(), (int) $rel_new_value);
         }
 
         if ($rel_id && $rel_type && $rel_task && $this->checkIfTaskAlreadyExists($client, $rel_id, $rel_type, $rel_task)) {

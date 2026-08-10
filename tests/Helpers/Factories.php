@@ -41,12 +41,12 @@ function order(array $attributes = []): object
         'id' => random_int(1, 10000),
         'client_id' => random_int(1, 10000),
         'product_id' => random_int(1, 10000),
-        'status' => \Model_ClientOrder::STATUS_ACTIVE,
+        'status' => \Box\Mod\Order\Entity\Order::STATUS_ACTIVE,
         'created_at' => date('Y-m-d H:i:s'),
         'updated_at' => date('Y-m-d H:i:s'),
     ];
 
-    return model(\Model_ClientOrder::class, array_merge($defaults, $attributes));
+    return createEntity(\Box\Mod\Order\Entity\Order::class, array_merge($defaults, $attributes));
 }
 
 /**

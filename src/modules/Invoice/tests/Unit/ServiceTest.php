@@ -30,6 +30,8 @@ use Box\Mod\Invoice\ServiceInvoiceItem;
 use Box\Mod\Invoice\ServicePayGateway;
 use Box\Mod\Invoice\ServiceSubscription;
 use Box\Mod\Invoice\ServiceTax;
+use Box\Mod\Order\Entity\Order;
+use Box\Mod\Order\Repository\OrderRepository;
 use Box\Mod\Order\Service as OrderService;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Product\Service as ProductService;
@@ -1772,8 +1774,7 @@ test('renews an invoice', function (): void {
 
     $invoiceModel->id = $newId;
 
-    $clientOrder = new Model_ClientOrder();
-    $clientOrder->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrder = createEntity(Order::class);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('approveInvoice')
@@ -1835,9 +1836,7 @@ test('pays invoice with credits', function (): void {
 
 test('returns existing invoice when generating for order with unpaid invoice', function (): void {
     $service = new Service();
-    $clientOrder = new Model_ClientOrder();
-    $clientOrder->loadBean(new Tests\Helpers\DummyBean());
-    $clientOrder->unpaid_invoice_id = 2;
+    $clientOrder = createEntity(Order::class, ['unpaidInvoiceId' => 2]);
 
     $invoiceModel = createEntity(Invoice::class);
 
@@ -1859,11 +1858,11 @@ test('clears stale paid invoice reference when generating for order', function (
     $serviceMock->shouldReceive('setInvoiceDefaults')
         ->once();
 
-    $clientOrder = new Model_ClientOrder();
-    $clientOrder->loadBean(new Tests\Helpers\DummyBean());
-    $clientOrder->unpaid_invoice_id = 2;
-    $clientOrder->price = 10;
-    $clientOrder->quantity = 1;
+    $clientOrder = createEntity(Order::class, [
+        'unpaidInvoiceId' => 2,
+        'price' => 10,
+        'quantity' => 1,
+    ]);
 
     $paidInvoice = createEntity(Invoice::class);
 
@@ -1922,10 +1921,7 @@ test('generates invoice for order', function (): void {
     $serviceMock->shouldReceive('setInvoiceDefaults')
         ->once();
 
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
-    $orderModel->price = 10;
-    $orderModel->promo_recurring = true;
+    $orderModel = createEntity(Order::class, ['price' => 10, 'promoRecurring' => true]);
 
     $clientModel = new Model_Client();
     $clientModel->loadBean(new Tests\Helpers\DummyBean());
@@ -1957,13 +1953,13 @@ test('generates invoice for active order using the order price, not the product 
     $serviceMock->shouldReceive('setInvoiceDefaults')
         ->once();
 
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
-    $orderModel->status = Model_ClientOrder::STATUS_ACTIVE;
-    $orderModel->product_id = 5;
-    $orderModel->currency = 'USD';
-    $orderModel->price = 25;
-    $orderModel->quantity = 1;
+    $orderModel = createEntity(Order::class, [
+        'status' => Order::STATUS_ACTIVE,
+        'productId' => 5,
+        'currency' => 'USD',
+        'price' => 25,
+        'quantity' => 1,
+    ]);
 
     $clientModel = new Model_Client();
     $clientModel->loadBean(new Tests\Helpers\DummyBean());
@@ -1988,7 +1984,7 @@ test('generates invoice for active order using the order price, not the product 
 
     $invoiceItemServiceMock = Mockery::mock(ServiceInvoiceItem::class);
     $invoiceItemServiceMock->shouldReceive('generateFromOrder')
-        ->with(Mockery::type(Invoice::class), $orderModel, InvoiceItem::TASK_RENEW, 25, Mockery::on(fn ($line): bool => $line['price'] === 25 && $line['quantity'] === 1))
+        ->with(Mockery::type(Invoice::class), $orderModel, InvoiceItem::TASK_RENEW, 25, Mockery::on(fn ($line): bool => $line['price'] == 25 && $line['quantity'] === 1))
         ->once();
 
     $di = container();
@@ -2013,11 +2009,11 @@ test('generates invoice for zero amount order', function (): void {
     $serviceMock->shouldReceive('setInvoiceDefaults')
         ->once();
 
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
-    $orderModel->price = 0;
-    $orderModel->quantity = 1;
-    $orderModel->currency = 'USD';
+    $orderModel = createEntity(Order::class, [
+        'price' => 0,
+        'quantity' => 1,
+        'currency' => 'USD',
+    ]);
 
     $clientModel = new Model_Client();
     $clientModel->loadBean(new Tests\Helpers\DummyBean());
@@ -2046,10 +2042,7 @@ test('generates invoice for zero amount order', function (): void {
 
 test('throws exception when generating invoice for negative amount order', function (): void {
     $service = new Service();
-    $clientOrder = new Model_ClientOrder();
-    $clientOrder->loadBean(new Tests\Helpers\DummyBean());
-    $clientOrder->price = -1;
-    $clientOrder->quantity = 1;
+    $clientOrder = createEntity(Order::class, ['price' => -1, 'quantity' => 1]);
 
     expect(fn () => $service->generateForOrder($clientOrder))
         ->toThrow(FOSSBilling\Exception::class, 'Invoices are not generated for negative amount orders.');
@@ -2072,8 +2065,7 @@ test('returns true when no expiring orders found', function (): void {
 
 test('generates invoices for expiring orders', function (): void {
     $service = new Service();
-    $clientOrder = new Model_ClientOrder();
-    $clientOrder->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrder = createEntity(Order::class);
 
     $invoiceModel = createEntity(Invoice::class);
 
@@ -2090,17 +2082,17 @@ test('generates invoices for expiring orders', function (): void {
     $orderService = Mockery::mock(OrderService::class);
     $orderService->shouldReceive('getSoonExpiringActiveOrders')
         ->atLeast()->once()
-        ->andReturn([[]]);
+        ->andReturn([['id' => 1]]);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('find')
         ->atLeast()->once()
         ->andReturn($clientOrder);
 
     $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderService);
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['db'] = $dbMock;
 
     $serviceMock->setDi($di);
     $result = $serviceMock->generateInvoicesForExpiringOrders();
@@ -3022,13 +3014,11 @@ test('generateRenewalInvoiceForSubscriptionPayment returns null when original or
 
     $invoiceItem = createEntity(InvoiceItem::class, ['rel_id' => 82]);
 
-    $originalOrder = new Model_ClientOrder();
-    $originalOrder->loadBean(new Tests\Helpers\DummyBean());
-    $originalOrder->status = Model_ClientOrder::STATUS_PENDING_SETUP;
+    $originalOrder = createEntity(Order::class, ['status' => Order::STATUS_PENDING_SETUP]);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('load')
-        ->with('ClientOrder', 82)
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('find')
+        ->with(82)
         ->andReturn($originalOrder);
 
     [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
@@ -3038,9 +3028,9 @@ test('generateRenewalInvoiceForSubscriptionPayment returns null when original or
     $subscriptionRepo = Mockery::mock(SubscriptionRepository::class);
     $subscriptionRepo->shouldReceive('findOneBy')->once()->andReturn($subscription);
     $em->shouldReceive('getRepository')->with(Subscription::class)->andReturn($subscriptionRepo);
+    $em->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['em'] = $em;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
@@ -3054,18 +3044,18 @@ test('generateRenewalInvoiceForSubscriptionPayment uses the original order and n
 
     $invoiceItem = createEntity(InvoiceItem::class, ['rel_id' => 82]);
 
-    $originalOrder = new Model_ClientOrder();
-    $originalOrder->loadBean(new Tests\Helpers\DummyBean());
-    $originalOrder->status = Model_ClientOrder::STATUS_ACTIVE;
-    $originalOrder->product_id = 1;
+    $originalOrder = createEntity(Order::class, [
+        'status' => Order::STATUS_ACTIVE,
+        'productId' => 1,
+    ]);
 
     $renewalInvoice = createEntity(Invoice::class);
 
     $renewalInvoice->id = 99;
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('load')
-        ->with('ClientOrder', 82)
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('find')
+        ->with(82)
         ->andReturn($originalOrder);
 
     [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
@@ -3075,6 +3065,7 @@ test('generateRenewalInvoiceForSubscriptionPayment uses the original order and n
     $subscriptionRepo = Mockery::mock(SubscriptionRepository::class);
     $subscriptionRepo->shouldReceive('findOneBy')->once()->andReturn($subscription);
     $em->shouldReceive('getRepository')->with(Subscription::class)->andReturn($subscriptionRepo);
+    $em->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('generateForOrder')
@@ -3085,7 +3076,6 @@ test('generateRenewalInvoiceForSubscriptionPayment uses the original order and n
         ->once();
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['em'] = $em;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $serviceMock->setDi($di);

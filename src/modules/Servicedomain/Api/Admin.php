@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicedomain\Api;
 
+use Box\Mod\Order\Entity\Order;
 use Box\Mod\Servicedomain\Entity\ServiceDomain;
 use Box\Mod\Servicedomain\Entity\Tld;
 use Box\Mod\Servicedomain\Entity\TldRegistrar;
@@ -436,7 +437,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $orderId = $data['order_id'];
 
-        $order = $this->getDi()['db']->getExistingModelById('ClientOrder', $orderId, 'Order not found');
+        $order = $this->getDi()['em']->getRepository(Order::class)->find($orderId);
+        if (!$order instanceof Order) {
+            throw new \FOSSBilling\Exception('Order not found');
+        }
 
         $orderService = $this->getDi()['mod_service']('order');
         $s = $orderService->getOrderService($order);

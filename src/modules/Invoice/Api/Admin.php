@@ -19,6 +19,7 @@ use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Tax;
 use Box\Mod\Invoice\Entity\Transaction;
+use Box\Mod\Order\Entity\Order;
 use FOSSBilling\InformationException;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
@@ -276,7 +277,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_invoices');
 
-        $model = $this->getDi()['db']->getExistingModelById('ClientOrder', $data['id'], 'Order not found');
+        $model = $this->getDi()['em']->getRepository(Order::class)->find($data['id']);
+        if (!$model instanceof Order) {
+            throw new \FOSSBilling\Exception('Order not found');
+        }
 
         return $this->getService()->renewInvoice($model, $data);
     }

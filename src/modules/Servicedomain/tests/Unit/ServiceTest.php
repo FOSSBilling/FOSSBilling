@@ -10,6 +10,7 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Order\Entity\Order;
 use Box\Mod\Order\Service as OrderService;
 use Box\Mod\Servicedomain\Entity\ServiceDomain;
 use Box\Mod\Servicedomain\Entity\Tld;
@@ -23,10 +24,11 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 class ServicedomainServiceSyncProbe extends Service
 {
-    public function syncWhoisPublic(ServiceDomain $model, Model_ClientOrder $order): void
+    public function syncWhoisPublic(ServiceDomain $model, Order $order): void
     {
         $this->syncWhois($model, $order);
     }
@@ -364,9 +366,7 @@ test('creates action', function (): void {
 
     $serviceMock->setDi($di);
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->client_id = 1;
+    $order = createEntity(Order::class, ['client_id' => 1]);
 
     $result = $serviceMock->action_create($order);
     expect($result)->toBeInstanceOf(ServiceDomain::class);
@@ -409,9 +409,7 @@ test('throws exception when creating action with missing nameservers', function 
     });
     $serviceMock->setDi($di);
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->client_id = 1;
+    $order = createEntity(Order::class, ['client_id' => 1]);
 
     expect(fn () => $serviceMock->action_create($order))
         ->toThrow(FOSSBilling\Exception::class);
@@ -447,9 +445,7 @@ test('activates action', function (string $action, string $registerDomainCalled,
     $di['mod_service'] = $di->protect(fn ($name) => $orderServiceMock);
     $serviceMock->setDi($di);
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->client_id = 1;
+    $order = createEntity(Order::class, ['client_id' => 1]);
     $result = $serviceMock->action_activate($order);
     expect($result)->toBeInstanceOf(ServiceDomain::class);
 })->with([
@@ -468,9 +464,7 @@ test('throws exception when activating without order service', function (): void
     $di['mod_service'] = $di->protect(fn ($name) => $orderServiceMock);
     $service->setDi($di);
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->client_id = 1;
+    $order = createEntity(Order::class, ['client_id' => 1]);
 
     expect(fn (): ServiceDomain => $service->action_activate($order))
         ->toThrow(FOSSBilling\Exception::class);
@@ -502,9 +496,7 @@ test('renews action', function (): void {
     $di['mod_service'] = $di->protect(fn ($name) => $orderServiceMock);
     $serviceMock->setDi($di);
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->client_id = 1;
+    $order = createEntity(Order::class, ['client_id' => 1]);
     $result = $serviceMock->action_renew($order);
 
     expect($result)->toBeTrue();
@@ -521,10 +513,7 @@ test('throws exception when renewing without order service', function (): void {
     $di['mod_service'] = $di->protect(fn ($name) => $orderServiceMock);
     $service->setDi($di);
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->id = 1;
-    $order->client_id = 1;
+    $order = createEntity(Order::class, ['id' => 1, 'client_id' => 1]);
 
     expect(fn (): bool => $service->action_renew($order))
         ->toThrow(FOSSBilling\Exception::class);
@@ -532,16 +521,14 @@ test('throws exception when renewing without order service', function (): void {
 
 test('suspends action', function (): void {
     $service = new Service();
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order = createEntity(Order::class);
     $result = $service->action_suspend($order);
     expect($result)->toBeTrue();
 });
 
 test('unsuspends action', function (): void {
     $service = new Service();
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order = createEntity(Order::class);
     $result = $service->action_unsuspend($order);
     expect($result)->toBeTrue();
 });
@@ -571,9 +558,7 @@ test('cancels action', function (): void {
     $di['mod_service'] = $di->protect(fn ($name) => $orderServiceMock);
     $serviceMock->setDi($di);
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->client_id = 1;
+    $order = createEntity(Order::class, ['client_id' => 1]);
     $result = $serviceMock->action_cancel($order);
 
     expect($result)->toBeTrue();
@@ -590,10 +575,7 @@ test('throws exception when canceling without order service', function (): void 
     $di['mod_service'] = $di->protect(fn ($name) => $orderServiceMock);
     $service->setDi($di);
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->id = 1;
-    $order->client_id = 1;
+    $order = createEntity(Order::class, ['id' => 1, 'client_id' => 1]);
 
     expect(fn (): bool => $service->action_cancel($order))
         ->toThrow(FOSSBilling\Exception::class);
@@ -606,9 +588,7 @@ test('uncancels action', function (): void {
         ->atLeast()->once()
         ->andReturn(new ServiceDomain());
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->client_id = 1;
+    $order = createEntity(Order::class, ['client_id' => 1]);
     $result = $serviceMock->action_uncancel($order);
 
     expect($result)->toBeTrue();
@@ -639,9 +619,7 @@ test('deletes action', function (): void {
     $di['mod_service'] = $di->protect(fn ($name) => $orderServiceMock);
     $serviceMock->setDi($di);
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->status = Model_ClientOrder::STATUS_ACTIVE;
+    $order = createEntity(Order::class, ['status' => Order::STATUS_ACTIVE]);
     $result = $serviceMock->action_delete($order);
 
     expect($result)->toBeNull();
@@ -1017,8 +995,7 @@ test('syncWhois stores null dates when registrar dates are unavailable', functio
 
     $model = new ServiceDomain();
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
+    $order = createEntity(Order::class);
 
     $di = container();
     $service->setDi($di);

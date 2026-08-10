@@ -104,137 +104,15 @@ class Service implements InjectionAwareInterface
         return $this->orderStatusRepository;
     }
 
-    private function orderId(Order|\Model_ClientOrder $order): int
+    private function orderId(Order $order): int
     {
-        return (int) ($order instanceof Order ? $order->getId() : $order->id);
+        return (int) $order->getId();
     }
 
-    private function orderClientId(Order|\Model_ClientOrder $order): ?int
+    private function persistOrder(Order $order): void
     {
-        return $order instanceof Order ? $order->getClientId() : (int) $order->client_id;
-    }
-
-    private function orderProductId(Order|\Model_ClientOrder $order): ?int
-    {
-        return $order instanceof Order ? $order->getProductId() : (int) $order->product_id;
-    }
-
-    private function orderFormId(Order|\Model_ClientOrder $order): ?int
-    {
-        return $order instanceof Order ? $order->getFormId() : (int) $order->form_id;
-    }
-
-    private function orderPromoId(Order|\Model_ClientOrder $order): ?int
-    {
-        return $order instanceof Order ? $order->getPromoId() : (int) $order->promo_id;
-    }
-
-    private function orderGroupId(Order|\Model_ClientOrder $order): ?string
-    {
-        return $order instanceof Order ? $order->getGroupId() : (string) $order->group_id;
-    }
-
-    private function orderIsGroupMaster(Order|\Model_ClientOrder $order): bool
-    {
-        return $order instanceof Order ? $order->isGroupMaster() : (bool) $order->group_master;
-    }
-
-    private function orderServiceId(Order|\Model_ClientOrder $order): ?int
-    {
-        return $order instanceof Order ? $order->getServiceId() : (int) $order->service_id;
-    }
-
-    private function orderServiceType(Order|\Model_ClientOrder $order): ?string
-    {
-        return $order instanceof Order ? $order->getServiceType() : $order->service_type;
-    }
-
-    private function orderPeriod(Order|\Model_ClientOrder $order): ?string
-    {
-        return $order instanceof Order ? $order->getPeriod() : $order->period;
-    }
-
-    private function orderQuantity(Order|\Model_ClientOrder $order): int
-    {
-        return (int) ($order instanceof Order ? $order->getQuantity() : $order->quantity);
-    }
-
-    private function orderPrice(Order|\Model_ClientOrder $order): ?float
-    {
-        return $order instanceof Order ? $order->getPrice() : (float) $order->price;
-    }
-
-    private function orderDiscount(Order|\Model_ClientOrder $order): ?float
-    {
-        return $order instanceof Order ? $order->getDiscount() : (float) $order->discount;
-    }
-
-    private function orderStatus(Order|\Model_ClientOrder $order): ?string
-    {
-        return $order instanceof Order ? $order->getStatus() : $order->status;
-    }
-
-    private function orderCurrency(Order|\Model_ClientOrder $order): ?string
-    {
-        return $order instanceof Order ? $order->getCurrency() : $order->currency;
-    }
-
-    private function orderTitle(Order|\Model_ClientOrder $order): ?string
-    {
-        return $order instanceof Order ? $order->getTitle() : $order->title;
-    }
-
-    private function orderInvoiceOption(Order|\Model_ClientOrder $order): ?string
-    {
-        return $order instanceof Order ? $order->getInvoiceOption() : $order->invoice_option;
-    }
-
-    private function orderConfig(Order|\Model_ClientOrder $order): ?string
-    {
-        return $order instanceof Order ? $order->getConfig() : $order->config;
-    }
-
-    private function orderSuspensionGraceDays(Order|\Model_ClientOrder $order): ?int
-    {
-        $graceDays = $order instanceof Order ? $order->getSuspensionGraceDays() : $order->suspension_grace_days;
-
-        return $graceDays === null ? null : (int) $graceDays;
-    }
-
-    private function orderNotes(Order|\Model_ClientOrder $order): ?string
-    {
-        return $order instanceof Order ? $order->getNotes() : $order->notes;
-    }
-
-    private function orderReason(Order|\Model_ClientOrder $order): ?string
-    {
-        return $order instanceof Order ? $order->getReason() : $order->reason;
-    }
-
-    private function persistOrder(Order|\Model_ClientOrder $order): void
-    {
-        if ($order instanceof Order) {
-            $this->di['em']->persist($order);
-            $this->di['em']->flush();
-
-            return;
-        }
-
-        $this->di['db']->store($order);
-    }
-
-    public function getLegacyOrder(Order|\Model_ClientOrder $order): \Model_ClientOrder
-    {
-        if ($order instanceof \Model_ClientOrder) {
-            return $order;
-        }
-
-        $legacyOrder = $this->di['db']->getExistingModelById('ClientOrder', $this->orderId($order));
-        if (!$legacyOrder instanceof \Model_ClientOrder) {
-            throw new \FOSSBilling\Exception('Order compatibility model not found');
-        }
-
-        return $legacyOrder;
+        $this->di['em']->persist($order);
+        $this->di['em']->flush();
     }
 
     public function getModulePermissions(): array
@@ -452,10 +330,10 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function getOrderService(Order|\Model_ClientOrder $order)
+    public function getOrderService(Order $order)
     {
-        $serviceId = $this->orderServiceId($order);
-        $serviceType = $this->orderServiceType($order);
+        $serviceId = $order->getServiceId();
+        $serviceType = $order->getServiceType();
 
         if ($serviceId !== null) {
             if (in_array($serviceType, self::BUILT_IN_SERVICE_TYPES, true)) {
@@ -477,17 +355,17 @@ class Service implements InjectionAwareInterface
         return null;
     }
 
-    protected function _getServiceClassName(Order|\Model_ClientOrder $order): string
+    protected function _getServiceClassName(Order $order): string
     {
-        $serviceType = $this->orderServiceType($order);
+        $serviceType = $order->getServiceType();
         $s = $this->di['tools']->to_camel_case($serviceType, true);
 
         return 'Service' . ucfirst((string) $s);
     }
 
-    protected function _getServiceEntityClass(Order|\Model_ClientOrder $order): ?string
+    protected function _getServiceEntityClass(Order $order): ?string
     {
-        $serviceType = $this->orderServiceType($order);
+        $serviceType = $order->getServiceType();
 
         return match ($serviceType) {
             \Box\Mod\Product\Service::DOWNLOADABLE => \Box\Mod\Servicedownloadable\Entity\ServiceDownloadable::class,
@@ -527,15 +405,12 @@ class Service implements InjectionAwareInterface
         $type = $this->di['tools']->from_camel_case($serviceTypeName);
         $serviceId = method_exists($service, 'getId') ? $service->getId() : $service->id;
 
-        return $this->di['db']->findOne('ClientOrder', 'service_type = :service_type AND service_id = :service_id', [
-            ':service_type' => $type,
-            ':service_id' => $serviceId,
-        ]);
+        return $this->getOrderRepository()->findOneByServiceTypeAndServiceId($type, (int) $serviceId);
     }
 
-    public function getConfig(Order|\Model_ClientOrder $model): array
+    public function getConfig(Order $model): array
     {
-        return json_decode($this->orderConfig($model) ?? '', true) ?? [];
+        return json_decode($model->getConfig() ?? '', true) ?? [];
     }
 
     public function productHasOrders(Product $product): bool
@@ -545,14 +420,13 @@ class Service implements InjectionAwareInterface
         return $order instanceof Order;
     }
 
-    public function getLogger(Order|\Model_ClientOrder $order)
+    public function getLogger(Order $order)
     {
         $orderId = $this->orderId($order);
-        $orderStatus = $this->orderStatus($order);
 
         $log = $this->di['logger'];
         $log->setEventItem('client_order_id', $orderId);
-        $log->setEventItem('status', $orderStatus);
+        $log->setEventItem('status', $order->getStatus());
 
         return $log;
     }
@@ -560,25 +434,13 @@ class Service implements InjectionAwareInterface
     /**
      * @param string $notes
      */
-    public function saveStatusChange(Order|\Model_ClientOrder $order, $notes = null): void
+    public function saveStatusChange(Order $order, $notes = null): void
     {
         $orderId = $this->orderId($order);
-        $orderStatus = $this->orderStatus($order);
-
-        if ($order instanceof \Model_ClientOrder) {
-            $os = new OrderStatus();
-            $os->setClientOrderId($orderId);
-            $os->setStatus($orderStatus);
-            $os->setNotes($notes);
-            $this->di['em']->persist($os);
-            $this->di['em']->flush();
-
-            return;
-        }
 
         $os = new OrderStatus();
         $os->setClientOrderId($orderId);
-        $os->setStatus($orderStatus);
+        $os->setStatus($order->getStatus());
         $os->setNotes($notes);
         $this->di['em']->persist($os);
         $this->di['em']->flush();
@@ -643,57 +505,55 @@ class Service implements InjectionAwareInterface
         return [$query, $bindings];
     }
 
-    public function toApiArray(Order|\Model_ClientOrder $model, $deep = true, $identity = null): array
+    public function toApiArray(Order $model, $deep = true, $identity = null): array
     {
         $clientService = $this->di['mod_service']('client');
         $supportService = $this->di['mod_service']('support');
         $modelId = $this->orderId($model);
-        $modelClientId = $this->orderClientId($model);
+        $modelClientId = $model->getClientId();
 
         $data = [
             'id' => $modelId,
             'client_id' => $modelClientId,
-            'product_id' => $this->orderProductId($model),
-            'form_id' => $this->orderFormId($model),
-            'promo_id' => $this->orderPromoId($model),
-            'promo_recurring' => $model instanceof Order ? $model->isPromoRecurring() : (bool) $model->promo_recurring,
-            'promo_used' => $model instanceof Order ? $model->getPromoUsed() : (int) $model->promo_used,
-            'group_id' => $this->orderGroupId($model),
-            'group_master' => $this->orderIsGroupMaster($model),
-            'invoice_option' => $this->orderInvoiceOption($model),
-            'title' => $this->orderTitle($model),
-            'currency' => $this->orderCurrency($model),
-            'unpaid_invoice_id' => $model instanceof Order ? $model->getUnpaidInvoiceId() : (int) $model->unpaid_invoice_id,
-            'service_id' => $this->orderServiceId($model),
-            'service_type' => $this->orderServiceType($model),
-            'period' => $this->orderPeriod($model),
-            'quantity' => $this->orderQuantity($model),
-            'unit' => $model instanceof Order ? $model->getUnit() : $model->unit,
-            'price' => $this->orderPrice($model),
-            'discount' => $this->orderDiscount($model),
-            'status' => $this->orderStatus($model),
-            'reason' => $this->orderReason($model),
-            'notes' => $this->orderNotes($model),
-            'config' => $this->orderConfig($model),
-            'suspension_grace_days' => $this->orderSuspensionGraceDays($model),
-            'referred_by' => $model instanceof Order ? $model->getReferredBy() : $model->referred_by,
-            'expires_at' => $model instanceof Order ? $model->getExpiresAt()?->format('Y-m-d H:i:s') : $model->expires_at,
-            'activated_at' => $model instanceof Order ? $model->getActivatedAt()?->format('Y-m-d H:i:s') : $model->activated_at,
-            'suspended_at' => $model instanceof Order ? $model->getSuspendedAt()?->format('Y-m-d H:i:s') : $model->suspended_at,
-            'unsuspended_at' => $model instanceof Order ? $model->getUnsuspendedAt()?->format('Y-m-d H:i:s') : $model->unsuspended_at,
-            'canceled_at' => $model instanceof Order ? $model->getCanceledAt()?->format('Y-m-d H:i:s') : $model->canceled_at,
-            'created_at' => $model instanceof Order ? $model->getCreatedAt()?->format('Y-m-d H:i:s') : $model->created_at,
-            'updated_at' => $model instanceof Order ? $model->getUpdatedAt()?->format('Y-m-d H:i:s') : $model->updated_at,
+            'product_id' => $model->getProductId(),
+            'form_id' => $model->getFormId(),
+            'promo_id' => $model->getPromoId(),
+            'promo_recurring' => $model->isPromoRecurring(),
+            'promo_used' => $model->getPromoUsed(),
+            'group_id' => $model->getGroupId(),
+            'group_master' => $model->isGroupMaster(),
+            'invoice_option' => $model->getInvoiceOption(),
+            'title' => $model->getTitle(),
+            'currency' => $model->getCurrency(),
+            'unpaid_invoice_id' => $model->getUnpaidInvoiceId(),
+            'service_id' => $model->getServiceId(),
+            'service_type' => $model->getServiceType(),
+            'period' => $model->getPeriod(),
+            'quantity' => $model->getQuantity(),
+            'unit' => $model->getUnit(),
+            'price' => $model->getPrice(),
+            'discount' => $model->getDiscount(),
+            'status' => $model->getStatus(),
+            'reason' => $model->getReason(),
+            'notes' => $model->getNotes(),
+            'config' => $model->getConfig(),
+            'suspension_grace_days' => $model->getSuspensionGraceDays(),
+            'referred_by' => $model->getReferredBy(),
+            'expires_at' => $model->getExpiresAt()?->format('Y-m-d H:i:s'),
+            'activated_at' => $model->getActivatedAt()?->format('Y-m-d H:i:s'),
+            'suspended_at' => $model->getSuspendedAt()?->format('Y-m-d H:i:s'),
+            'unsuspended_at' => $model->getUnsuspendedAt()?->format('Y-m-d H:i:s'),
+            'canceled_at' => $model->getCanceledAt()?->format('Y-m-d H:i:s'),
+            'created_at' => $model->getCreatedAt()?->format('Y-m-d H:i:s'),
+            'updated_at' => $model->getUpdatedAt()?->format('Y-m-d H:i:s'),
         ];
 
-        $data['config'] = json_decode($this->orderConfig($model) ?? '', true) ?? [];
+        $data['config'] = json_decode($model->getConfig() ?? '', true) ?? [];
         $data['total'] = $this->getTotal($model);
         $data['discount'] ??= 0;
         $data['meta'] = $this->getOrderMetaRepository()->getPairsForOrder($modelId);
         $data['active_tickets'] = $supportService->getSupportTicketRepository()->countActiveTicketsForOrder($modelId);
-        $client = $model instanceof Order
-            ? $this->di['em']->getRepository(ClientEntity::class)->find($modelClientId)
-            : $this->di['db']->findOne('Client', 'id = ?', [$modelClientId]);
+        $client = $this->di['em']->getRepository(ClientEntity::class)->find($modelClientId);
         if (!$client instanceof ClientEntity && !$client instanceof \Model_Client) {
             throw new InformationException('Client not found');
         }
@@ -702,7 +562,7 @@ class Service implements InjectionAwareInterface
         if ($identity instanceof Admin) {
             $data['config'] = $this->getConfig($model);
             $productService = $this->di['mod_service']('product');
-            $productId = $this->orderProductId($model);
+            $productId = $model->getProductId();
             $hasProduct = $productId !== null && $productId > 0;
             $data['plugin'] = $hasProduct ? $productService->getProductPluginById($productId) : null;
             $product = $hasProduct ? $productService->getProductRepository()->find($productId) : null;
@@ -1003,7 +863,7 @@ class Service implements InjectionAwareInterface
 
         if (!empty($group_id)) {
             $parent_order = $this->getMasterOrderForClient($client, $group_id);
-            if (!$parent_order instanceof Order && !$parent_order instanceof \Model_ClientOrder) {
+            if (!$parent_order instanceof Order) {
                 throw new \FOSSBilling\Exception('Parent order :group_id was not found', [':group_id' => $group_id]);
             }
         }
@@ -1051,7 +911,7 @@ class Service implements InjectionAwareInterface
             $order->setClientId($client instanceof ClientEntity ? $client->getId() : (int) $client->id);
             $order->setProductId($this->getProductId($product));
             $order->setFormId($this->getProductFormId($product));
-            $parentGroupId = $parent_order ? $this->orderGroupId($parent_order) : null;
+            $parentGroupId = $parent_order ? $parent_order->getGroupId() : null;
             $order->setGroupId($parentGroupId ?? uniqid());
             $order->setGroupMaster(!$parent_order);
             $order->setTitle($generatedOrderTitle ?? $data['title'] ?? $this->getProductTitle($product));
@@ -1123,7 +983,7 @@ class Service implements InjectionAwareInterface
                 $invoiceService = $this->di['mod_service']('invoice');
 
                 try {
-                    $invoice = $invoiceService->generateForOrder($this->getLegacyOrder($order));
+                    $invoice = $invoiceService->generateForOrder($order);
                 } catch (InformationException $e) {
                     $this->di['logger']->warning($e->getMessage());
                 }
@@ -1173,23 +1033,11 @@ class Service implements InjectionAwareInterface
         return $id;
     }
 
-    public function getMasterOrderForClient(ClientEntity|\Model_Client $client, $group_id): Order|\Model_ClientOrder|null
+    public function getMasterOrderForClient(ClientEntity|\Model_Client $client, $group_id): ?Order
     {
-        $clientId = $client instanceof ClientEntity ? $client->getId() : $client->id;
-        if ($client instanceof \Model_Client) {
-            $order = $this->di['db']->findOne('ClientOrder', 'group_id = :group_id AND group_master = 1 AND client_id = :client_id', [
-                ':group_id' => $group_id,
-                ':client_id' => $clientId,
-            ]);
+        $clientId = $client instanceof ClientEntity ? $client->getId() : (int) $client->id;
 
-            return $order instanceof \Model_ClientOrder ? $order : null;
-        }
-
-        return $this->getOrderRepository()->findOneBy([
-            'groupId' => $group_id,
-            'groupMaster' => true,
-            'clientId' => $clientId,
-        ]);
+        return $this->getOrderRepository()->findMasterByGroupAndClient((string) $group_id, (int) $clientId);
     }
 
     /**
@@ -1197,9 +1045,9 @@ class Service implements InjectionAwareInterface
      *
      * @see https://github.com/boxbilling/boxbilling/issues/54
      */
-    public function activateOrderAddons(Order|\Model_ClientOrder $order): bool
+    public function activateOrderAddons(Order $order): bool
     {
-        $isGroupMaster = $this->orderIsGroupMaster($order);
+        $isGroupMaster = $order->isGroupMaster();
         if (!$isGroupMaster) {
             return false;
         }
@@ -1220,20 +1068,16 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function activateOrder(Order|\Model_ClientOrder $order, $data = []): bool
+    public function activateOrder(Order $order, $data = []): bool
     {
         $orderId = $this->orderId($order);
-        if ($order instanceof Order) {
-            $order = $this->getOrderRepository()->find($orderId);
-        } else {
-            $order = $this->di['db']->load('ClientOrder', $orderId);
-        }
-        if (!$order instanceof Order && !$order instanceof \Model_ClientOrder) {
+        $order = $this->getOrderRepository()->find($orderId);
+        if (!$order instanceof Order) {
             throw new \FOSSBilling\Exception('Order :id not found', [':id' => $orderId]);
         }
         $force = !empty($data['force']);
 
-        $orderStatus = $this->orderStatus($order);
+        $orderStatus = $order->getStatus();
         if ($orderStatus === Order::STATUS_ACTIVE && !$force) {
             return true;
         }
@@ -1261,10 +1105,10 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function createFromOrder(Order|\Model_ClientOrder $order)
+    public function createFromOrder(Order $order)
     {
         $orderId = $this->orderId($order);
-        $serviceType = $this->orderServiceType($order);
+        $serviceType = $order->getServiceType();
 
         $service = $this->getOrderService($order);
         if (!is_object($service)) {
@@ -1277,13 +1121,8 @@ class Service implements InjectionAwareInterface
                 }
 
                 $serviceId = method_exists($service, 'getId') ? $service->getId() : $service->id;
-                if ($order instanceof Order) {
-                    $order->setServiceId((int) $serviceId);
-                    $order->setUpdatedAt(new \DateTime());
-                } else {
-                    $order->service_id = $serviceId;
-                    $order->updated_at = date('Y-m-d H:i:s');
-                }
+                $order->setServiceId((int) $serviceId);
+                $order->setUpdatedAt(new \DateTime());
                 $this->persistOrder($order);
             }
         }
@@ -1298,33 +1137,21 @@ class Service implements InjectionAwareInterface
         try {
             $result = $this->_callOnService($order, Order::ACTION_ACTIVATE);
 
-            $period = $this->orderPeriod($order);
-            $expiresAt = $order instanceof Order ? $order->getExpiresAt() : $order->expires_at;
+            $period = $order->getPeriod();
+            $expiresAt = $order->getExpiresAt();
             if (!empty($period)) {
-                $from_time = ($expiresAt === null) ? time() : ($order instanceof Order ? ($expiresAt->getTimestamp() ?? time()) : strtotime((string) $expiresAt));
+                $from_time = $expiresAt === null ? time() : $expiresAt->getTimestamp();
 
                 $periodObj = $this->di['period']($period);
                 $newExpires = date('Y-m-d H:i:s', $periodObj->getExpirationTime($from_time));
-                if ($order instanceof Order) {
-                    $order->setExpiresAt(new \DateTime($newExpires));
-                } else {
-                    $order->expires_at = $newExpires;
-                }
+                $order->setExpiresAt(new \DateTime($newExpires));
             }
 
-            if ($order instanceof Order) {
-                $order->setStatus(Order::STATUS_ACTIVE);
-                $order->setActivatedAt(new \DateTime());
-                $order->setSuspendedAt(null);
-                $order->setCanceledAt(null);
-                $order->setUpdatedAt(new \DateTime());
-            } else {
-                $order->status = Order::STATUS_ACTIVE;
-                $order->activated_at = date('Y-m-d H:i:s');
-                $order->suspended_at = null;
-                $order->canceled_at = null;
-                $order->updated_at = date('Y-m-d H:i:s');
-            }
+            $order->setStatus(Order::STATUS_ACTIVE);
+            $order->setActivatedAt(new \DateTime());
+            $order->setSuspendedAt(null);
+            $order->setCanceledAt(null);
+            $order->setUpdatedAt(new \DateTime());
 
             $this->persistOrder($order);
         } catch (\Throwable $e) {
@@ -1332,11 +1159,7 @@ class Service implements InjectionAwareInterface
             // here means the service was already provisioned remotely, so
             // the order must still be recorded as failed_setup rather than
             // left in pending_setup for a retry to re-provision it.
-            if ($order instanceof Order) {
-                $order->setStatus(Order::STATUS_FAILED_SETUP);
-            } else {
-                $order->status = Order::STATUS_FAILED_SETUP;
-            }
+            $order->setStatus(Order::STATUS_FAILED_SETUP);
             $this->persistOrder($order);
 
             $this->saveStatusChange($order, $e->getMessage());
@@ -1344,9 +1167,9 @@ class Service implements InjectionAwareInterface
             throw $e;
         }
 
-        if ($this->orderProductId($order)) {
+        if ($order->getProductId()) {
             $productService = $this->di['mod_service']('product');
-            $productService->reduceStock((int) $this->orderProductId($order), $this->orderQuantity($order));
+            $productService->reduceStock((int) $order->getProductId(), (int) ($order->getQuantity() ?? 1));
         } else {
             $this->di['logger']->info("Order without product ID detected Order #{$orderId}.");
         }
@@ -1356,31 +1179,18 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    public function getOrderAddonsList(Order|\Model_ClientOrder $order): array
+    public function getOrderAddonsList(Order $order): array
     {
-        $groupId = $this->orderGroupId($order);
-        $clientId = $this->orderClientId($order);
+        $groupId = $order->getGroupId();
+        $clientId = $order->getClientId();
 
-        if (!$order instanceof Order) {
-            return $this->di['db']->find('ClientOrder', 'group_id = :group_id AND client_id = :client_id AND id != :id AND (group_master = 0 OR group_master IS NULL)', [
-                ':group_id' => $groupId,
-                ':client_id' => $clientId,
-                ':id' => $this->orderId($order),
-            ]);
-        }
-
-        $addons = $this->getOrderRepository()->findBy([
-            'groupId' => $groupId,
-            'clientId' => $clientId,
-        ]);
-
-        return array_values(array_filter($addons, fn (Order $addon): bool => $addon->getId() !== $order->getId() && !$addon->isGroupMaster()));
+        return $this->getOrderRepository()->findAddonsExcluding((int) $groupId, (int) $clientId, $this->orderId($order));
     }
 
-    protected function _callOnService(Order|\Model_ClientOrder $order, $action, mixed ...$arguments)
+    protected function _callOnService(Order $order, $action, mixed ...$arguments)
     {
-        $serviceType = $this->orderServiceType($order);
-        $serviceId = $this->orderServiceId($order);
+        $serviceType = $order->getServiceType();
+        $serviceId = $order->getServiceId();
         $orderId = $this->orderId($order);
 
         $repo = $this->di['mod_service']('service' . $serviceType);
@@ -1391,17 +1201,16 @@ class Service implements InjectionAwareInterface
                 throw new \FOSSBilling\Exception('Service ' . $serviceType . ' do not support ' . $m);
             }
 
-            return $repo->$m($order instanceof Order ? $this->getLegacyOrder($order) : $order, ...$arguments);
+            return $repo->$m($order, ...$arguments);
         }
 
-        $o = $this->getLegacyOrder($order);
         $service = null;
         $sdbname = 'service_' . $serviceType;
         if ($serviceId) {
             $service = $this->di['db']->load($sdbname, $serviceId);
         }
         if (method_exists($repo, $action) && is_callable([$repo, $action])) {
-            return $repo->$action($o, $service);
+            return $repo->$action($order, $service);
         }
 
         $this->di['logger']->info("Service {$serviceType} does not support action {$action}.");
@@ -1416,25 +1225,17 @@ class Service implements InjectionAwareInterface
         return $productService->reduceStock($product, $qty);
     }
 
-    public function updatePeriod(Order|\Model_ClientOrder $order, $period): int
+    public function updatePeriod(Order $order, $period): int
     {
         if (!empty($period)) {
             $periodObj = $this->di['period']($period);
-            if ($order instanceof Order) {
-                $order->setPeriod($periodObj->getCode());
-            } else {
-                $order->period = $periodObj->getCode();
-            }
+            $order->setPeriod($periodObj->getCode());
 
             return 1;
         }
 
         if (!is_null($period)) {
-            if ($order instanceof Order) {
-                $order->setPeriod(null);
-            } else {
-                $order->period = null;
-            }
+            $order->setPeriod(null);
 
             return 2;
         }
@@ -1442,7 +1243,7 @@ class Service implements InjectionAwareInterface
         return 0;
     }
 
-    public function updateOrderMeta(Order|\Model_ClientOrder $order, $meta): int
+    public function updateOrderMeta(Order $order, $meta): int
     {
         if (!is_array($meta)) {
             return 0;
@@ -1472,7 +1273,7 @@ class Service implements InjectionAwareInterface
         return 2;
     }
 
-    public function updateOrder(Order|\Model_ClientOrder $order, array $data): bool
+    public function updateOrder(Order $order, array $data): bool
     {
         $orderId = $this->orderId($order);
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderUpdate', 'params' => $data]);
@@ -1481,72 +1282,43 @@ class Service implements InjectionAwareInterface
         $created_at = $data['created_at'] ?? '';
         if (!empty($created_at)) {
             $createdAtDate = date('Y-m-d H:i:s', strtotime((string) $created_at));
-            if ($order instanceof Order) {
-                $order->setCreatedAt(new \DateTime($createdAtDate));
-            } else {
-                $order->created_at = $createdAtDate;
-            }
+            $order->setCreatedAt(new \DateTime($createdAtDate));
         }
 
         $activated_at = $data['activated_at'] ?? null;
         if (!empty($activated_at)) {
             $activatedAtDate = date('Y-m-d H:i:s', strtotime((string) $activated_at));
-            if ($order instanceof Order) {
-                $order->setActivatedAt(new \DateTime($activatedAtDate));
-            } else {
-                $order->activated_at = $activatedAtDate;
-            }
+            $order->setActivatedAt(new \DateTime($activatedAtDate));
         }
 
         $expires_at = $data['expires_at'] ?? null;
         if (!empty($expires_at)) {
             $expiresAtDate = date('Y-m-d H:i:s', strtotime((string) $expires_at));
-            if ($order instanceof Order) {
-                $order->setExpiresAt(new \DateTime($expiresAtDate));
-            } else {
-                $order->expires_at = $expiresAtDate;
-            }
+            $order->setExpiresAt(new \DateTime($expiresAtDate));
         }
         if (empty($expires_at) && !is_null($expires_at)) {
-            if ($order instanceof Order) {
-                $order->setExpiresAt(null);
-            } else {
-                $order->expires_at = null;
-            }
+            $order->setExpiresAt(null);
         }
 
-        $invoiceOption = $data['invoice_option'] ?? $this->orderInvoiceOption($order);
-        if ($order instanceof Order) {
-            $order->setInvoiceOption($invoiceOption);
-            $order->setTitle($data['title'] ?? $this->orderTitle($order));
-        } else {
-            $order->invoice_option = $invoiceOption;
-            $order->title = $data['title'] ?? $this->orderTitle($order);
-        }
+        $invoiceOption = $data['invoice_option'] ?? $order->getInvoiceOption();
+        $order->setInvoiceOption($invoiceOption);
+        $order->setTitle($data['title'] ?? $order->getTitle());
 
         if (isset($data['price'])) {
             $price = PriceValidator::validateAmount($data['price']);
-            if ($order instanceof Order) {
-                $order->setPrice($price);
-            } else {
-                $order->price = $price;
-            }
+            $order->setPrice($price);
         }
 
-        $currentStatus = $this->orderStatus($order);
+        $currentStatus = $order->getStatus();
         if (isset($data['status']) && $data['status'] !== $currentStatus) {
             if (!in_array($data['status'], Order::getValidStatuses(), true)) {
                 throw new InformationException('Invalid order status: :status', [':status' => $data['status']]);
             }
-            if ($order instanceof Order) {
-                $order->setStatus($data['status']);
-            } else {
-                $order->status = $data['status'];
-            }
+            $order->setStatus($data['status']);
         }
 
-        $notes = $data['notes'] ?? $this->orderNotes($order);
-        $reason = $data['reason'] ?? $this->orderReason($order);
+        $notes = $data['notes'] ?? $order->getNotes();
+        $reason = $data['reason'] ?? $order->getReason();
         if (array_key_exists('suspension_grace_days', $data)) {
             $graceDays = $data['suspension_grace_days'] === '' || $data['suspension_grace_days'] === null
                 ? null
@@ -1554,29 +1326,15 @@ class Service implements InjectionAwareInterface
                     $data['suspension_grace_days'],
                     'Suspension grace days must be a non-negative integer or empty to inherit the product setting.',
                 );
-            if ($order instanceof Order) {
-                $order->setSuspensionGraceDays($graceDays);
-            } else {
-                $order->suspension_grace_days = $graceDays;
-            }
+            $order->setSuspensionGraceDays($graceDays);
         }
-        if ($order instanceof Order) {
-            $order->setNotes($notes);
-            $order->setReason($reason);
-        } else {
-            $order->notes = $notes;
-            $order->reason = $reason;
-        }
+        $order->setNotes($notes);
+        $order->setReason($reason);
 
         $this->updateOrderMeta($order, $data['meta'] ?? null);
 
-        if ($order instanceof Order) {
-            $order->setUpdatedAt(new \DateTime());
-            $this->persistOrder($order);
-        } else {
-            $order->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($order);
-        }
+        $order->setUpdatedAt(new \DateTime());
+        $this->persistOrder($order);
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderUpdate', 'params' => ['id' => $orderId]]);
 
@@ -1585,15 +1343,15 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function renewOrder(Order|\Model_ClientOrder $order): bool
+    public function renewOrder(Order $order): bool
     {
         $orderId = $this->orderId($order);
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderRenew', 'params' => ['id' => $orderId]]);
 
         $this->renewFromOrder($order);
 
-        $isGroupMaster = $this->orderIsGroupMaster($order);
-        $orderStatus = $this->orderStatus($order);
+        $isGroupMaster = $order->isGroupMaster();
+        $orderStatus = $order->getStatus();
         if ($isGroupMaster && $orderStatus == Order::STATUS_PENDING_SETUP) {
             $list = $this->getOrderAddonsList($order);
             foreach ($list as $addon) {
@@ -1611,18 +1369,14 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function renewFromOrder(Order|\Model_ClientOrder $order): void
+    public function renewFromOrder(Order $order): void
     {
         $orderId = $this->orderId($order);
 
         try {
             $result = $this->_callOnService($order, Order::ACTION_RENEW);
         } catch (\Exception $e) {
-            if ($order instanceof Order) {
-                $order->setStatus(Order::STATUS_FAILED_RENEW);
-            } else {
-                $order->status = Order::STATUS_FAILED_RENEW;
-            }
+            $order->setStatus(Order::STATUS_FAILED_RENEW);
             $this->persistOrder($order);
 
             $this->saveStatusChange($order, $e->getMessage());
@@ -1630,10 +1384,10 @@ class Service implements InjectionAwareInterface
             throw $e;
         }
 
-        $period = $this->orderPeriod($order);
-        $expiresAt = $order instanceof Order ? $order->getExpiresAt() : $order->expires_at;
+        $period = $order->getPeriod();
+        $expiresAt = $order->getExpiresAt();
         if (!empty($period)) {
-            $from_time = ($expiresAt === null) ? time() : ($order instanceof Order ? $expiresAt->getTimestamp() : strtotime((string) $expiresAt));
+            $from_time = $expiresAt === null ? time() : $expiresAt->getTimestamp();
 
             $config = $this->di['mod_config']('order');
             $logic = $config['order_renewal_logic'] ?? '';
@@ -1641,7 +1395,7 @@ class Service implements InjectionAwareInterface
             if ($logic == 'from_today') {
                 $from_time = time();
             } elseif ($logic == 'from_greater') {
-                $expiresTimestamp = $expiresAt === null ? time() : ($order instanceof Order ? $expiresAt->getTimestamp() : strtotime((string) $expiresAt));
+                $expiresTimestamp = $expiresAt === null ? time() : $expiresAt->getTimestamp();
                 if ($expiresTimestamp > time()) {
                     $from_time = $expiresTimestamp;
                 } else {
@@ -1650,35 +1404,23 @@ class Service implements InjectionAwareInterface
             }
             $periodObj = $this->di['period']($period);
             $newExpires = date('Y-m-d H:i:s', $periodObj->getExpirationTime($from_time));
-            if ($order instanceof Order) {
-                $order->setExpiresAt(new \DateTime($newExpires));
-            } else {
-                $order->expires_at = $newExpires;
-            }
+            $order->setExpiresAt(new \DateTime($newExpires));
         }
 
-        if ($order instanceof Order) {
-            $order->setStatus(Order::STATUS_ACTIVE);
-            $order->setSuspendedAt(null);
-            $order->setUnsuspendedAt(null);
-            $order->setCanceledAt(null);
-            $order->setUpdatedAt(new \DateTime());
-        } else {
-            $order->status = Order::STATUS_ACTIVE;
-            $order->suspended_at = null;
-            $order->unsuspended_at = null;
-            $order->canceled_at = null;
-            $order->updated_at = date('Y-m-d H:i:s');
-        }
+        $order->setStatus(Order::STATUS_ACTIVE);
+        $order->setSuspendedAt(null);
+        $order->setUnsuspendedAt(null);
+        $order->setCanceledAt(null);
+        $order->setUpdatedAt(new \DateTime());
         $this->persistOrder($order);
 
         $this->saveStatusChange($order, 'Order renewed');
     }
 
-    public function suspendFromOrder(Order|\Model_ClientOrder $order, $reason = null, $skipEvent = false): bool
+    public function suspendFromOrder(Order $order, $reason = null, $skipEvent = false): bool
     {
         $orderId = $this->orderId($order);
-        $orderStatus = $this->orderStatus($order);
+        $orderStatus = $order->getStatus();
 
         if (!$skipEvent) {
             $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderSuspend', 'params' => ['id' => $orderId]]);
@@ -1688,20 +1430,13 @@ class Service implements InjectionAwareInterface
             throw new InformationException('Only active orders can be suspended');
         }
 
-        $arguments = $this->orderServiceType($order) === \Box\Mod\Product\Service::HOSTING ? [$reason] : [];
+        $arguments = $order->getServiceType() === \Box\Mod\Product\Service::HOSTING ? [$reason] : [];
         $this->_callOnService($order, Order::ACTION_SUSPEND, ...$arguments);
 
-        if ($order instanceof Order) {
-            $order->setStatus(Order::STATUS_SUSPENDED);
-            $order->setReason($reason);
-            $order->setSuspendedAt(new \DateTime());
-            $order->setUpdatedAt(new \DateTime());
-        } else {
-            $order->status = Order::STATUS_SUSPENDED;
-            $order->reason = $reason;
-            $order->suspended_at = date('Y-m-d H:i:s');
-            $order->updated_at = date('Y-m-d H:i:s');
-        }
+        $order->setStatus(Order::STATUS_SUSPENDED);
+        $order->setReason($reason);
+        $order->setSuspendedAt(new \DateTime());
+        $order->setUpdatedAt(new \DateTime());
         $this->persistOrder($order);
 
         $note = ($reason === null) ? 'Order suspended' : 'Order suspended for ' . $reason;
@@ -1716,26 +1451,18 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function unsuspendFromOrder(Order|\Model_ClientOrder $order): bool
+    public function unsuspendFromOrder(Order $order): bool
     {
         $orderId = $this->orderId($order);
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderUnsuspend', 'params' => ['id' => $orderId]]);
 
         $this->_callOnService($order, Order::ACTION_UNSUSPEND);
 
-        if ($order instanceof Order) {
-            $order->setStatus(Order::STATUS_ACTIVE);
-            $order->setReason(null);
-            $order->setSuspendedAt(null);
-            $order->setUnsuspendedAt(new \DateTime());
-            $order->setUpdatedAt(new \DateTime());
-        } else {
-            $order->status = Order::STATUS_ACTIVE;
-            $order->reason = null;
-            $order->suspended_at = null;
-            $order->unsuspended_at = date('Y-m-d H:i:s');
-            $order->updated_at = date('Y-m-d H:i:s');
-        }
+        $order->setStatus(Order::STATUS_ACTIVE);
+        $order->setReason(null);
+        $order->setSuspendedAt(null);
+        $order->setUnsuspendedAt(new \DateTime());
+        $order->setUpdatedAt(new \DateTime());
         $this->persistOrder($order);
 
         $this->saveStatusChange($order, 'Order unsuspended');
@@ -1747,14 +1474,14 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function cancelFromOrder(Order|\Model_ClientOrder $order, $reason = null, $skipEvent = false): bool
+    public function cancelFromOrder(Order $order, $reason = null, $skipEvent = false): bool
     {
         $orderId = $this->orderId($order);
         $this->assertOrderCanBeCanceled($order);
         $this->beginCancellation($order, $skipEvent);
 
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
-        $subscriptionService->cancelForOrder($order instanceof Order ? $this->getLegacyOrder($order) : $order);
+        $subscriptionService->cancelForOrder($order);
 
         $this->completeCancellation($order, $reason, $skipEvent);
 
@@ -1773,29 +1500,23 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function scheduleCancellationFromOrder(Order|\Model_ClientOrder $order, $reason = null): bool
+    public function scheduleCancellationFromOrder(Order $order, $reason = null): bool
     {
         $orderId = $this->orderId($order);
         $this->assertOrderCanBeCanceled($order);
 
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
-        $legacyOrder = $order instanceof Order ? $this->getLegacyOrder($order) : $order;
-        if (!$subscriptionService->canCancelAtPeriodEndForOrder($legacyOrder)) {
+        if (!$subscriptionService->canCancelAtPeriodEndForOrder($order)) {
             throw new InformationException('No active gateway subscription that supports cancellation at period end is linked to this order.');
         }
 
-        if ($subscriptionService->scheduleCancellationForOrder($legacyOrder) === 0) {
+        if ($subscriptionService->scheduleCancellationForOrder($order) === 0) {
             throw new InformationException('No active gateway subscription is linked to this order.');
         }
         $this->updateOrderMeta($order, [self::META_CANCEL_AT_PERIOD_END => '1']);
 
-        if ($order instanceof Order) {
-            $order->setReason($reason);
-            $order->setUpdatedAt(new \DateTime());
-        } else {
-            $order->reason = $reason;
-            $order->updated_at = date('Y-m-d H:i:s');
-        }
+        $order->setReason($reason);
+        $order->setUpdatedAt(new \DateTime());
         $this->persistOrder($order);
         $this->saveStatusChange($order, 'Cancellation scheduled at the end of the current billing period');
         $this->di['logger']->info('Scheduled cancellation for order #%s at the end of the current billing period', $orderId);
@@ -1803,7 +1524,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function finalizeCancellationFromGateway(Order|\Model_ClientOrder $order, $reason = null): bool
+    public function finalizeCancellationFromGateway(Order $order, $reason = null): bool
     {
         $this->assertOrderCanBeCanceled($order);
         $this->beginCancellation($order, false);
@@ -1813,9 +1534,9 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    private function assertOrderCanBeCanceled(Order|\Model_ClientOrder $order): void
+    private function assertOrderCanBeCanceled(Order $order): void
     {
-        $status = $this->orderStatus($order);
+        $status = $order->getStatus();
         if (!in_array($status, [Order::STATUS_CANCELED, Order::STATUS_PENDING_SETUP, Order::STATUS_FAILED_SETUP], true)) {
             return;
         }
@@ -1823,7 +1544,7 @@ class Service implements InjectionAwareInterface
         throw new \FOSSBilling\Exception('Cannot cancel ' . $status . ' order');
     }
 
-    private function beginCancellation(Order|\Model_ClientOrder $order, bool $skipEvent): void
+    private function beginCancellation(Order $order, bool $skipEvent): void
     {
         $orderId = $this->orderId($order);
         if (!$skipEvent) {
@@ -1833,25 +1554,16 @@ class Service implements InjectionAwareInterface
         $this->_callOnService($order, Order::ACTION_CANCEL);
     }
 
-    private function completeCancellation(Order|\Model_ClientOrder $order, $reason, bool $skipEvent): void
+    private function completeCancellation(Order $order, $reason, bool $skipEvent): void
     {
         $orderId = $this->orderId($order);
 
-        if ($order instanceof Order) {
-            $order->setStatus(Order::STATUS_CANCELED);
-            $order->setReason($reason);
-            $order->setCanceledAt(new \DateTime());
-            $order->setExpiresAt(null);
-            $order->setSuspendedAt(null);
-            $order->setUpdatedAt(new \DateTime());
-        } else {
-            $order->status = Order::STATUS_CANCELED;
-            $order->reason = $reason;
-            $order->canceled_at = date('Y-m-d H:i:s');
-            $order->expires_at = null;
-            $order->suspended_at = null;
-            $order->updated_at = date('Y-m-d H:i:s');
-        }
+        $order->setStatus(Order::STATUS_CANCELED);
+        $order->setReason($reason);
+        $order->setCanceledAt(new \DateTime());
+        $order->setExpiresAt(null);
+        $order->setSuspendedAt(null);
+        $order->setUpdatedAt(new \DateTime());
         $this->persistOrder($order);
         $this->di['dbal']->executeStatement(
             'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND name = :name',
@@ -1859,7 +1571,7 @@ class Service implements InjectionAwareInterface
         );
     }
 
-    public function uncancelFromOrder(Order|\Model_ClientOrder $order): bool
+    public function uncancelFromOrder(Order $order): bool
     {
         $orderId = $this->orderId($order);
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderUncancel', 'params' => ['id' => $orderId]]);
@@ -1867,30 +1579,20 @@ class Service implements InjectionAwareInterface
         $this->_callOnService($order, Order::ACTION_UNCANCEL);
 
         $expiresAt = null;
-        $period = $this->orderPeriod($order);
+        $period = $order->getPeriod();
         if ($period) {
             $periodObj = $this->di['period']($period);
             $expiresAt = $periodObj->getExpirationTime(time());
             $expiresAt = date('Y-m-d H:i:s', $expiresAt);
         }
 
-        if ($order instanceof Order) {
-            $order->setStatus(Order::STATUS_ACTIVE);
-            $order->setReason(null);
-            $order->setActivatedAt(new \DateTime());
-            $order->setExpiresAt($expiresAt ? new \DateTime($expiresAt) : null);
-            $order->setSuspendedAt(null);
-            $order->setCanceledAt(null);
-            $order->setUpdatedAt(new \DateTime());
-        } else {
-            $order->status = Order::STATUS_ACTIVE;
-            $order->reason = null;
-            $order->activated_at = date('Y-m-d H:i:s');
-            $order->expires_at = $expiresAt;
-            $order->suspended_at = null;
-            $order->canceled_at = null;
-            $order->updated_at = date('Y-m-d H:i:s');
-        }
+        $order->setStatus(Order::STATUS_ACTIVE);
+        $order->setReason(null);
+        $order->setActivatedAt(new \DateTime());
+        $order->setExpiresAt($expiresAt ? new \DateTime($expiresAt) : null);
+        $order->setSuspendedAt(null);
+        $order->setCanceledAt(null);
+        $order->setUpdatedAt(new \DateTime());
         $this->persistOrder($order);
 
         $this->saveStatusChange($order, 'Activated canceled order');
@@ -1902,7 +1604,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function rmInvoiceItemByOrder(Order|\Model_ClientOrder $order): void
+    public function rmInvoiceItemByOrder(Order $order): void
     {
         $this->di['dbal']->executeStatement(
             'DELETE FROM invoice_item WHERE rel_id = :rel_id AND status = :status',
@@ -1913,53 +1615,37 @@ class Service implements InjectionAwareInterface
         );
     }
 
-    public function rmClientOrderStatusByOrder(Order|\Model_ClientOrder $order): void
+    public function rmClientOrderStatusByOrder(Order $order): void
     {
         $orderId = $this->orderId($order);
-        if ($order instanceof Order) {
-            $this->getOrderStatusRepository()->rmByOrderId($orderId);
-
-            return;
-        }
-
-        $this->di['dbal']->executeStatement('DELETE FROM client_order_status WHERE client_order_id = :id', ['id' => $orderId]);
+        $this->getOrderStatusRepository()->rmByOrderId($orderId);
     }
 
-    public function rmOrder(Order|\Model_ClientOrder $model): void
+    public function rmOrder(Order $model): void
     {
-        $isGroupMaster = $this->orderIsGroupMaster($model);
+        $isGroupMaster = $model->isGroupMaster();
 
         if ($isGroupMaster) {
             $list = $this->getOrderAddonsList($model);
             foreach ($list as $addon) {
-                if ($addon instanceof Order) {
-                    $addon->setGroupMaster(true);
-                    $addon->setGroupId('0');
-                    $this->di['em']->persist($addon);
-                } else {
-                    $addon->group_master = 1;
-                    $addon->group_id = 0;
-                    $this->di['db']->store($addon);
-                }
+                $addon->setGroupMaster(true);
+                $addon->setGroupId('0');
+                $this->di['em']->persist($addon);
             }
-            if ($list !== [] && $list[0] instanceof Order) {
+            if ($list !== []) {
                 $this->di['em']->flush();
             }
         }
-        if ($model instanceof Order) {
-            $this->di['em']->remove($model);
-            $this->di['em']->flush();
-        } else {
-            $this->di['db']->trash($model);
-        }
+        $this->di['em']->remove($model);
+        $this->di['em']->flush();
     }
 
-    public function deleteFromOrder(Order|\Model_ClientOrder $order, bool $forceDelete = false): bool
+    public function deleteFromOrder(Order $order, bool $forceDelete = false): bool
     {
         $orderId = $this->orderId($order);
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderDelete', 'params' => ['id' => $orderId]]);
 
-        $orderStatus = $this->orderStatus($order);
+        $orderStatus = $order->getStatus();
         if ($orderStatus == Order::STATUS_PENDING_SETUP) {
             $this->rmInvoiceItemByOrder($order);
         }
@@ -2139,9 +1825,9 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function updateOrderConfig(Order|\Model_ClientOrder $order, array $config): bool
+    public function updateOrderConfig(Order $order, array $config): bool
     {
-        $formId = $this->orderFormId($order);
+        $formId = $order->getFormId();
         $orderId = $this->orderId($order);
 
         if ($formId) {
@@ -2150,20 +1836,14 @@ class Service implements InjectionAwareInterface
             $this->validateConfigAgainstForm($config, $form);
         }
 
-        $oldConfig = $this->orderConfig($order);
+        $oldConfig = $order->getConfig();
 
-        if ($order instanceof Order) {
-            $order->setConfig(json_encode($config));
-            $order->setUpdatedAt(new \DateTime());
-            $this->di['em']->persist($order);
-            $this->di['em']->flush();
-        } else {
-            $order->config = json_encode($config);
-            $order->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($order);
-        }
+        $order->setConfig(json_encode($config));
+        $order->setUpdatedAt(new \DateTime());
+        $this->di['em']->persist($order);
+        $this->di['em']->flush();
 
-        $this->di['logger']->info(sprintf("Order #%s config changes:\n%s\n%s", $orderId, $oldConfig, $this->orderConfig($order)));
+        $this->di['logger']->info(sprintf("Order #%s config changes:\n%s\n%s", $orderId, $oldConfig, $order->getConfig()));
 
         return true;
     }
@@ -2229,24 +1909,13 @@ class Service implements InjectionAwareInterface
         return [$query, $bindings];
     }
 
-    public function orderStatusAdd(Order|\Model_ClientOrder $order, $status, $notes = null): bool
+    public function orderStatusAdd(Order $order, $status, $notes = null): bool
     {
         if (!in_array($status, Order::getValidStatuses(), true)) {
             throw new InformationException('Invalid order status: :status', [':status' => $status]);
         }
 
         $orderId = $this->orderId($order);
-
-        if ($order instanceof \Model_ClientOrder) {
-            $bean = new OrderStatus();
-            $bean->setClientOrderId($orderId);
-            $bean->setStatus($status);
-            $bean->setNotes($notes);
-            $this->di['em']->persist($bean);
-            $this->di['em']->flush();
-
-            return true;
-        }
 
         $bean = new OrderStatus();
         $bean->setClientOrderId($orderId);
@@ -2275,18 +1944,11 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function findForClientById(ClientEntity|\Model_Client $client, $id): Order|\Model_ClientOrder|null
+    public function findForClientById(ClientEntity|\Model_Client $client, $id): ?Order
     {
-        $clientId = $client instanceof ClientEntity ? $client->getId() : $client->id;
-        if ($client instanceof \Model_Client) {
-            $order = $this->di['db']->findOne('ClientOrder', 'id = :id AND client_id = :client_id', [':id' => (int) $id, ':client_id' => $clientId]);
+        $clientId = $client instanceof ClientEntity ? $client->getId() : (int) $client->id;
 
-            return $order instanceof \Model_ClientOrder ? $order : null;
-        }
-
-        $order = $this->getOrderRepository()->findForClientById((int) $clientId, (int) $id);
-
-        return $order instanceof Order ? $this->getLegacyOrder($order) : null;
+        return $this->getOrderRepository()->findForClientById((int) $clientId, (int) $id);
     }
 
     public function findEntityForClientById(ClientEntity $client, int $id): ?Order
@@ -2294,17 +1956,15 @@ class Service implements InjectionAwareInterface
         return $this->getOrderRepository()->findForClientById((int) $client->getId(), $id);
     }
 
-    public function findByClientIdAndOrderId(int $clientId, int $orderId): Order|\Model_ClientOrder|null
+    public function findByClientIdAndOrderId(int $clientId, int $orderId): ?Order
     {
-        $order = $this->di['db']->findOne('ClientOrder', 'id = :id AND client_id = :client_id', [':id' => $orderId, ':client_id' => $clientId]);
-
-        return $order instanceof \Model_ClientOrder ? $order : null;
+        return $this->getOrderRepository()->findForClientById($clientId, $orderId);
     }
 
-    public function getOrderServiceData(Order|\Model_ClientOrder $order, $identity = null)
+    public function getOrderServiceData(Order $order, $identity = null)
     {
         $orderId = $this->orderId($order);
-        $serviceType = $this->orderServiceType($order);
+        $serviceType = $order->getServiceType();
         $service = $this->getOrderService($order);
         if (!is_object($service)) {
             $this->di['logger']->info("Order #{$orderId} has no active service.");
@@ -2321,11 +1981,9 @@ class Service implements InjectionAwareInterface
         return $srepo->toApiArray($service, true, $identity);
     }
 
-    public function getTotal(Order|\Model_ClientOrder $model): float
+    public function getTotal(Order $model): float
     {
-        $quantity = $model instanceof Order ? $model->getQuantity() : $model->quantity;
-
-        return $this->calculateTotal($this->orderPrice($model) ?? 0, $quantity ?? 1);
+        return $this->calculateTotal($model->getPrice() ?? 0, $model->getQuantity() ?? 1);
     }
 
     private function calculateTotal($price, $quantity): float
@@ -2333,59 +1991,34 @@ class Service implements InjectionAwareInterface
         return (float) $price * (int) $quantity;
     }
 
-    public function setUnpaidInvoice(Order|\Model_ClientOrder $order, Invoice $proforma): void
+    public function setUnpaidInvoice(Order $order, Invoice $proforma): void
     {
-        if ($order instanceof Order) {
-            $order->setUnpaidInvoiceId((int) $proforma->getId());
-            $order->setUpdatedAt(new \DateTime());
-        } else {
-            $order->unpaid_invoice_id = (int) $proforma->getId();
-            $order->updated_at = date('Y-m-d H:i:s');
-        }
+        $order->setUnpaidInvoiceId((int) $proforma->getId());
+        $order->setUpdatedAt(new \DateTime());
         $this->persistOrder($order);
     }
 
-    public function unsetUnpaidInvoice(Order|\Model_ClientOrder $order): void
+    public function unsetUnpaidInvoice(Order $order): void
     {
-        if ($order instanceof Order) {
-            $order->setUnpaidInvoiceId(null);
-            $order->setUpdatedAt(new \DateTime());
-        } else {
-            $order->unpaid_invoice_id = null;
-            $order->updated_at = date('Y-m-d H:i:s');
-        }
+        $order->setUnpaidInvoiceId(null);
+        $order->setUpdatedAt(new \DateTime());
         $this->persistOrder($order);
     }
 
-    public function getRelatedOrderIdByType(Order|\Model_ClientOrder $order, $type)
+    public function getRelatedOrderIdByType(Order $order, $type)
     {
-        $groupId = $this->orderGroupId($order);
+        $groupId = $order->getGroupId();
 
-        if (!$order instanceof Order) {
-            $legacyOrder = $this->di['db']->findOne('ClientOrder', 'group_id = :group_id AND service_type = :service_type', [
-                ':group_id' => $groupId,
-                ':service_type' => $type,
-            ]);
+        $o = $this->getOrderRepository()->findOneByGroupIdAndServiceType((string) $groupId, (string) $type);
 
-            return $legacyOrder instanceof \Model_ClientOrder ? $legacyOrder->id : null;
-        }
-
-        $o = $this->getOrderRepository()->findOneBy(['groupId' => $groupId, 'serviceType' => $type]);
-
-        if ($o instanceof Order) {
-            return $o->getId();
-        }
-
-        return null;
+        return $o instanceof Order ? $o->getId() : null;
     }
 
     public function rmByClient(ClientEntity|\Model_Client $client): void
     {
         $productService = $this->di['mod_service']('Product');
-        $clientId = $client instanceof ClientEntity ? $client->getId() : $client->id;
-        $orders = $client instanceof ClientEntity
-            ? $this->getOrderRepository()->findByClientId((int) $clientId)
-            : $this->di['db']->find('ClientOrder', 'client_id = ?', [(int) $clientId]);
+        $clientId = $client instanceof ClientEntity ? $client->getId() : (int) $client->id;
+        $orders = $this->getOrderRepository()->findByClientId((int) $clientId);
         foreach ($orders as $order) {
             $productService->releaseReservedPromoRedemptionsForOrder($order, 'client_deleted');
         }

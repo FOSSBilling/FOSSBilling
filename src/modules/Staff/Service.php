@@ -246,7 +246,10 @@ class Service implements InjectionAwareInterface
         $params = $event->getParameters();
 
         try {
-            $orderModel = $di['db']->load('ClientOrder', $params['id']);
+            $orderModel = $di['em']->getRepository(\Box\Mod\Order\Entity\Order::class)->find($params['id']);
+            if (!$orderModel instanceof \Box\Mod\Order\Entity\Order) {
+                return;
+            }
             $orderTicketService = $di['mod_service']('order');
             $order = $orderTicketService->toApiArray($orderModel, true);
 

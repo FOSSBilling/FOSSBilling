@@ -91,14 +91,14 @@ class Service implements InjectionAwareInterface
         return $files;
     }
 
-    public function action_create(\Model_ClientOrder $order): ServiceLicense
+    public function action_create(Order $order): ServiceLicense
     {
         $orderService = $this->di['mod_service']('order');
         $c = $orderService->getConfig($order);
         $this->validateOrderData($c);
 
         $model = new ServiceLicense();
-        $model->setClientId((int) $order->client_id);
+        $model->setClientId((int) $order->getClientId());
         $model->setValidateIp((bool) ($c['validate_ip'] ?? false));
         $model->setValidateHost((bool) ($c['validate_host'] ?? false));
         $model->setValidatePath((bool) ($c['validate_path'] ?? false));
@@ -111,7 +111,7 @@ class Service implements InjectionAwareInterface
         return $model;
     }
 
-    public function action_activate(\Model_ClientOrder $order): bool
+    public function action_activate(Order $order): bool
     {
         $orderService = $this->di['mod_service']('order');
         $c = $orderService->getConfig($order);
@@ -149,7 +149,7 @@ class Service implements InjectionAwareInterface
     /**
      * @todo
      */
-    public function action_renew(\Model_ClientOrder $order): bool
+    public function action_renew(Order $order): bool
     {
         return true;
     }
@@ -157,7 +157,7 @@ class Service implements InjectionAwareInterface
     /**
      * @todo
      */
-    public function action_suspend(\Model_ClientOrder $order): bool
+    public function action_suspend(Order $order): bool
     {
         return true;
     }
@@ -165,7 +165,7 @@ class Service implements InjectionAwareInterface
     /**
      * @todo
      */
-    public function action_unsuspend(\Model_ClientOrder $order): bool
+    public function action_unsuspend(Order $order): bool
     {
         return true;
     }
@@ -173,7 +173,7 @@ class Service implements InjectionAwareInterface
     /**
      * @todo
      */
-    public function action_cancel(\Model_ClientOrder $order): bool
+    public function action_cancel(Order $order): bool
     {
         return true;
     }
@@ -181,12 +181,12 @@ class Service implements InjectionAwareInterface
     /**
      * @todo
      */
-    public function action_uncancel(\Model_ClientOrder $order): bool
+    public function action_uncancel(Order $order): bool
     {
         return true;
     }
 
-    public function action_delete(\Model_ClientOrder $order): void
+    public function action_delete(Order $order): void
     {
         $model = $this->_getOrderService($order, false);
         if ($model instanceof ServiceLicense) {
@@ -488,7 +488,7 @@ class Service implements InjectionAwareInterface
         return $server->process($data);
     }
 
-    private function _getOrderService(\Model_ClientOrder $order, bool $required = true): ?ServiceLicense
+    private function _getOrderService(Order $order, bool $required = true): ?ServiceLicense
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);

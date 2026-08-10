@@ -128,7 +128,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $this->getDi()['validator']->checkRequiredParamsForArray($required, $data);
 
         $order = $this->findOrderForIdentity($this->getIdentity(), (int) $data['id']);
-        if (!$order instanceof Order && !$order instanceof \Model_ClientOrder) {
+        if (!$order instanceof Order) {
             throw new \FOSSBilling\InformationException('Order not found');
         }
 
@@ -148,7 +148,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
         return (int) $identity->id;
     }
 
-    private function findOrderForIdentity(ClientEntity|\Model_Admin|\Model_Client|\Model_Guest $identity, int $id): Order|\Model_ClientOrder|null
+    private function findOrderForIdentity(ClientEntity|\Model_Admin|\Model_Client|\Model_Guest $identity, int $id): ?Order
     {
         if ($identity instanceof ClientEntity) {
             return $this->getService()->findEntityForClientById($identity, $id);

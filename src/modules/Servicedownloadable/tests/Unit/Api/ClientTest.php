@@ -10,11 +10,14 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Order\Entity\Order;
+use Box\Mod\Order\Repository\OrderRepository;
 use Box\Mod\Servicedownloadable\Entity\ServiceDownloadable;
 use Box\Mod\Servicedownloadable\Entity\ServiceDownloadableFile;
 use Symfony\Component\HttpFoundation\Response;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 use function Tests\Helpers\moduleService;
 
 test('gets dependency injection container', function (): void {
@@ -43,11 +46,11 @@ test('throws exception when sending file with order not found', function (): voi
     $modelClient = new Model_Client();
     $modelClient->loadBean(new Tests\Helpers\DummyBean());
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')->once();
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('findOneBy')->once()->andReturn(null);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
 
     $api->setIdentity($modelClient);
     $api->setDi($di);
@@ -70,13 +73,13 @@ test('throws exception when sending file with order not activated', function ():
     $orderServiceMock->shouldReceive('assertOrderUsable')->once();
     $orderServiceMock->shouldReceive('getOrderService')->once();
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('findOneBy')
         ->once()
-        ->andReturn(new Model_ClientOrder());
+        ->andReturn(createEntity(Order::class));
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
     $di['mod_service'] = $di->protect(moduleService(['order' => $orderServiceMock]));
 
     $api->setDi($di);
@@ -91,18 +94,16 @@ test('does not send a file from outside the order service', function (): void {
     $client = new Model_Client();
     $client->loadBean(new Tests\Helpers\DummyBean());
 
-    $order = new Model_ClientOrder();
-    $order->loadBean(new Tests\Helpers\DummyBean());
-    $order->status = 'active';
+    $order = createEntity(Order::class, ['status' => 'active']);
 
-    $db = Mockery::mock('\Box_Database');
-    $db->shouldReceive('findOne')->once()->andReturn($order);
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('findOneBy')->once()->andReturn($order);
     $orderService = Mockery::mock(Box\Mod\Order\Service::class);
     $orderService->shouldReceive('assertOrderUsable')->once()->with($order);
     $orderService->shouldReceive('getOrderService')->once()->with($order)->andReturn(new ServiceDownloadable());
 
     $di = container();
-    $di['db'] = $db;
+    $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
     $di['mod_service'] = $di->protect(moduleService(['order' => $orderService]));
     $api->setDi($di);
     $api->setIdentity($client);
@@ -140,17 +141,15 @@ test('sends file', function (): void {
         ->once()
         ->andReturn($downloadable);
 
-    $mockOrder = new Model_ClientOrder();
-    $mockOrder->loadBean(new Tests\Helpers\DummyBean());
-    $mockOrder->status = 'active';
+    $mockOrder = createEntity(Order::class, ['status' => 'active']);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('findOneBy')
         ->once()
         ->andReturn($mockOrder);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
     $di['mod_service'] = $di->protect(moduleService(['order' => $orderServiceMock]));
 
     $api->setDi($di);
@@ -171,13 +170,13 @@ test('throws exception when sending file for expired order', function (): void {
     $modelClient = new Model_Client();
     $modelClient->loadBean(new Tests\Helpers\DummyBean());
 
-    $expiredOrder = new Model_ClientOrder();
-    $expiredOrder->loadBean(new Tests\Helpers\DummyBean());
-    $expiredOrder->status = 'active';
-    $expiredOrder->expires_at = date('Y-m-d H:i:s', time() - 3600);
+    $expiredOrder = createEntity(Order::class, [
+        'status' => 'active',
+        'expires_at' => date('Y-m-d H:i:s', time() - 3600),
+    ]);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('findOneBy')
         ->atLeast()
         ->once()
         ->andReturn($expiredOrder);
@@ -190,7 +189,7 @@ test('throws exception when sending file for expired order', function (): void {
     $orderServiceMock->shouldReceive('getOrderService')->never();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
     $di['mod_service'] = $di->protect(moduleService(['order' => $orderServiceMock]));
 
     $api->setDi($di);
