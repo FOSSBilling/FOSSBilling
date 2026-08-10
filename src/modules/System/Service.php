@@ -13,6 +13,8 @@ namespace Box\Mod\System;
 
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Exception\DeadlockException;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\GeoIP\Reader;
@@ -735,7 +737,8 @@ class Service
      * numeric and no $seed was given to repair it with.
      *
      * A $seed is only used if the setting is still missing or invalid once the lock is held, so
-     * concurrent callers seeding the same value cannot both reserve it.
+     * concurrent callers seeding the same value cannot both reserve it. If they collide on
+     * creating the row, the loser reserves from the winner's row instead.
      *
      * Not subject to canUpdateParam(): this reserves an internal counter rather than applying a
      * user-driven settings change, and must work in client and cron contexts.
@@ -746,6 +749,19 @@ class Service
             throw new \FOSSBilling\Exception('Parameter key is missing.');
         }
 
+        try {
+            return $this->reserveNumericParamValue($param, $seed);
+        } catch (UniqueConstraintViolationException|DeadlockException) {
+            // Two callers seeding a counter that does not exist yet both pass the locking read:
+            // InnoDB gap locks are shared, so neither blocks the other, and they collide on the
+            // insert instead. The loser's transaction is rolled back, so reserve from the row the
+            // winner committed rather than failing the caller.
+            return $this->reserveNumericParamValue($param, $seed);
+        }
+    }
+
+    private function reserveNumericParamValue(string $param, ?int $seed): ?int
+    {
         return $this->di['dbal']->transactional(function (Connection $connection) use ($param, $seed): ?int {
             $now = date('Y-m-d H:i:s');
             $current = $connection->fetchOne(

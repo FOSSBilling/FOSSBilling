@@ -431,3 +431,38 @@ test('reserveNextNumericParamValue ignores the seed when the counter became vali
 
     expect($service->reserveNextNumericParamValue('invoice_starting_number', 101))->toBe(102);
 });
+
+test('reserveNextNumericParamValue reserves from the winning row when seeding collides', function (): void {
+    $service = new Service();
+
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('transactional')
+        ->twice()
+        ->andReturnUsing(fn (callable $callback): mixed => $callback($dbalMock));
+
+    // First attempt: the row is missing, so we seed it, but another caller inserts it first.
+    // Second attempt: that caller's row is now visible, so reserve from it rather than failing.
+    $dbalMock->shouldReceive('fetchOne')->once()->ordered()->andReturn(false);
+    $dbalMock->shouldReceive('executeStatement')
+        ->once()
+        ->ordered()
+        ->with(Mockery::pattern('/^INSERT INTO setting/'), Mockery::any())
+        ->andThrow(Mockery::mock(Doctrine\DBAL\Exception\UniqueConstraintViolationException::class));
+    // The winner seeded the row with 102, having itself reserved 101.
+    $dbalMock->shouldReceive('fetchOne')->once()->ordered()->andReturn('102');
+    $dbalMock->shouldReceive('executeStatement')
+        ->once()
+        ->ordered()
+        ->with(
+            Mockery::pattern('/^UPDATE setting/'),
+            Mockery::on(fn (array $params): bool => $params['value'] === '103')
+        )
+        ->andReturn(1);
+
+    $di = container();
+    $di['dbal'] = $dbalMock;
+    $service->setDi($di);
+
+    // Must not be 101: that is the number the winner reserved.
+    expect($service->reserveNextNumericParamValue('invoice_starting_number', 101))->toBe(102);
+});
