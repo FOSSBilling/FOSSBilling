@@ -147,6 +147,11 @@ function productTestCreateEntityManagerWithRepositories(
         {
             ++$this->flushCalls;
         }
+
+        public function refresh(object $entity): void
+        {
+            // Stock is decremented with a direct UPDATE, so nothing to re-read in the stub.
+        }
     };
 }
 
@@ -408,20 +413,71 @@ test('get selected addons for cart returns prepared addon items', function (): v
     expect($result[0]['config']['parent_id'])->toBe(10);
 });
 
-test('reduce stock updates doctrine product state', function (): void {
+test('reduce stock decrements atomically rather than writing back a read value', function (): void {
     $service = new Service();
     $product = productTestCreateProductEntity(1)
         ->setStockControl(true)
         ->setQuantityInStock(5);
 
+    $productRepo = Mockery::mock(ProductRepository::class);
+    $productRepo->shouldReceive('decrementStockIfAvailable')
+        ->once()
+        ->with(1, 2, Mockery::type(DateTimeInterface::class))
+        ->andReturnUsing(function () use ($product): int {
+            // Stand in for the UPDATE ... WHERE quantity_in_stock >= ? applying to the row.
+            $product->setQuantityInStock(3);
+
+            return 1;
+        });
+
     $di = container();
-    $di['em'] = productTestCreateEntityManagerWithRepositories();
+    $di['em'] = productTestCreateEntityManagerWithRepositories($productRepo);
     $service->setDi($di);
 
     $result = $service->reduceStock($product, 2);
 
     expect($result)->toBeTrue();
     expect($product->getQuantityInStock())->toBe(3);
+});
+
+test('reduce stock ignores non-positive quantities rather than inflating stock', function (): void {
+    $service = new Service();
+    $product = productTestCreateProductEntity(1)
+        ->setStockControl(true)
+        ->setQuantityInStock(5);
+
+    $productRepo = Mockery::mock(ProductRepository::class);
+    // Subtracting a negative would increase stock, so the decrement must not be reached.
+    $productRepo->shouldNotReceive('decrementStockIfAvailable');
+
+    $di = container();
+    $di['em'] = productTestCreateEntityManagerWithRepositories($productRepo);
+    $service->setDi($di);
+
+    expect($service->reduceStock($product, -5))->toBeTrue();
+    expect($service->reduceStock($product, 0))->toBeTrue();
+    expect($product->getQuantityInStock())->toBe(5);
+});
+
+test('reduce stock throws when the atomic decrement finds insufficient stock', function (): void {
+    $service = new Service();
+    $product = productTestCreateProductEntity(1)
+        ->setStockControl(true)
+        ->setQuantityInStock(1);
+
+    $productRepo = Mockery::mock(ProductRepository::class);
+    // Zero rows updated: another order took the remaining stock first.
+    $productRepo->shouldReceive('decrementStockIfAvailable')
+        ->once()
+        ->with(1, 2, Mockery::type(DateTimeInterface::class))
+        ->andReturn(0);
+
+    $di = container();
+    $di['em'] = productTestCreateEntityManagerWithRepositories($productRepo);
+    $service->setDi($di);
+
+    expect(fn (): bool => $service->reduceStock($product, 2))
+        ->toThrow(FOSSBilling\InformationException::class);
 });
 
 test('is stock available uses doctrine product state', function (): void {

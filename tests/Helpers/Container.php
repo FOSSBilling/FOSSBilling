@@ -260,6 +260,10 @@ function container(): Container
         $invoiceRepository->shouldReceive('findUnpaidApprovedNotRemindedBefore')->byDefault()->andReturn([]);
         $invoiceRepository->shouldReceive('findPaidByRelId')->byDefault()->andReturn([]);
 
+        $invoiceItemRepository = \Mockery::mock(\Box\Mod\Invoice\Repository\InvoiceItemRepository::class)->shouldIgnoreMissing();
+        $invoiceItemRepository->shouldReceive('find')->byDefault()->andReturn(null);
+        $invoiceItemRepository->shouldReceive('findByInvoiceId')->byDefault()->andReturn([]);
+
         $em = \Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
         $em->shouldReceive('wrapInTransaction')->byDefault()->andReturnUsing(static fn (callable $callback): mixed => $callback());
         $em->shouldReceive('getRepository')->byDefault()->andReturnUsing(static fn (string $class): object => match ($class) {
@@ -286,6 +290,7 @@ function container(): Container
             \Box\Mod\Invoice\Entity\Transaction::class => $transactionRepository,
             \Box\Mod\Invoice\Entity\Subscription::class => $subscriptionRepository,
             \Box\Mod\Invoice\Entity\Invoice::class => $invoiceRepository,
+            \Box\Mod\Invoice\Entity\InvoiceItem::class => $invoiceItemRepository,
             \Box\Mod\Extension\Entity\Extension::class => \Mockery::mock(\Box\Mod\Extension\Repository\ExtensionRepository::class)->shouldIgnoreMissing(),
             default => $extensionMetaRepository,
         });
