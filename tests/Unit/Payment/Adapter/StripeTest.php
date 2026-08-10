@@ -96,9 +96,9 @@ function setPrivateProperty(object $obj, string $property, mixed $value): void
     $prop->setValue($obj, $value);
 }
 
-function expectPaymentIntentLock(Mockery\MockInterface $dbalMock, string $paymentIntentId, int $gatewayId): void
+function expectStripeObjectLock(Mockery\MockInterface $dbalMock, string $objectId, int $gatewayId): void
 {
-    $lockName = 'fb:stripe:' . substr(hash('sha256', $gatewayId . ':' . $paymentIntentId), 0, 54);
+    $lockName = 'fb:stripe:' . substr(hash('sha256', $gatewayId . ':' . $objectId), 0, 54);
     $dbalMock->shouldReceive('fetchOne')
         ->once()
         ->with('SELECT GET_LOCK(:lock_name, 10)', ['lock_name' => $lockName])
@@ -620,7 +620,10 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
         // flush() happens when the invoice link is persisted.
         $em->shouldReceive('flush')->atLeast()->once();
 
+        $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+        expectStripeObjectLock($dbalMock, 'in_123', 1);
         $di = container();
+        $di['dbal'] = $dbalMock;
         $di['db'] = $dbMock;
         $di['em'] = $em;
         $di['mod_service'] = $di->protect(function ($module, $service = null) use ($transactionService) {
@@ -724,7 +727,10 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
             ->with('in_456', null, 50)
             ->andReturn(null);
 
+        $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+        expectStripeObjectLock($dbalMock, 'in_456', 1);
         $di = container();
+        $di['dbal'] = $dbalMock;
         $di['db'] = $dbMock;
         $di['em'] = $em;
         $di['mod_service'] = $di->protect(fn ($module, $service = null) => match ($service) {
@@ -945,7 +951,10 @@ describe('handleInvoicePaymentSucceeded with invoice_payment event (API 2026-06-
             ->with('in_1TnBdC', null, 101)
             ->andReturn(null);
 
+        $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+        expectStripeObjectLock($dbalMock, 'in_1TnBdC', 4);
         $di = container();
+        $di['dbal'] = $dbalMock;
         $di['db'] = $dbMock;
         $di['em'] = $em;
         $di['mod_service'] = $di->protect(fn ($module, $service = null) => match ($service) {
@@ -989,7 +998,7 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
         $existingTx->invoice_id = 10;
 
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
-        expectPaymentIntentLock($dbalMock, 'pi_existing', 1);
+        expectStripeObjectLock($dbalMock, 'pi_existing', 1);
 
         ['em' => $em, 'txRepo' => $txRepo] = buildEntityManagerMocks();
         $txRepo->shouldReceive('findProcessingOrProcessedByTxnId')
@@ -1036,7 +1045,7 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
 
         $dbMock = Mockery::mock('\Box_Database');
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
-        expectPaymentIntentLock($dbalMock, 'pi_new', 1);
+        expectStripeObjectLock($dbalMock, 'pi_new', 1);
         $clientModel = new Model_Client();
         $clientModel->loadBean(new DummyBean());
         $clientModel->id = 7;
@@ -1116,7 +1125,7 @@ describe('processPaymentIntent', function (): void {
         setPrivateProperty($this->adapter, 'stripe', $stripeMock);
 
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
-        expectPaymentIntentLock($dbalMock, 'pi_webhook_first', 4);
+        expectStripeObjectLock($dbalMock, 'pi_webhook_first', 4);
 
         ['em' => $em, 'txRepo' => $txRepo] = buildEntityManagerMocks();
         $txRepo->shouldReceive('findActiveByTxnIdAndGatewayId')
@@ -1141,22 +1150,22 @@ describe('processPaymentIntent', function (): void {
     });
 });
 
-test('releases the PaymentIntent lock when processing fails', function (): void {
+test('releases the Stripe object lock when processing fails', function (): void {
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
-    expectPaymentIntentLock($dbalMock, 'pi_failure', 2);
+    expectStripeObjectLock($dbalMock, 'pi_failure', 2);
 
     $di = container();
     $di['dbal'] = $dbalMock;
     $this->adapter->setDi($di);
 
-    expect(fn (): mixed => invokePrivateMethod($this->adapter, 'withPaymentIntentLock', [
+    expect(fn (): mixed => invokePrivateMethod($this->adapter, 'withStripeObjectLock', [
         'pi_failure',
         2,
         fn () => throw new RuntimeException('Processing failed'),
     ]))->toThrow(RuntimeException::class, 'Processing failed');
 });
 
-test('logs PaymentIntent lock timeouts with lock context', function (): void {
+test('logs Stripe object lock timeouts with lock context', function (): void {
     $lockName = 'fb:stripe:' . substr(hash('sha256', '2:pi_timeout'), 0, 54);
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
     $dbalMock->shouldReceive('fetchOne')
@@ -1170,7 +1179,7 @@ test('logs PaymentIntent lock timeouts with lock context', function (): void {
     $di['logger'] = $logger;
     $this->adapter->setDi($di);
 
-    expect(fn (): mixed => invokePrivateMethod($this->adapter, 'withPaymentIntentLock', [
+    expect(fn (): mixed => invokePrivateMethod($this->adapter, 'withStripeObjectLock', [
         'pi_timeout',
         2,
         fn (): null => null,
@@ -1178,7 +1187,7 @@ test('logs PaymentIntent lock timeouts with lock context', function (): void {
         ->and($logger->calls)->toHaveCount(1)
         ->and($logger->calls[0]['method'])->toBe('warning')
         ->and($logger->calls[0]['params'][0])->toContain('Timed out after')
-        ->and($logger->calls[0]['params'][2])->toBe($lockName);
+        ->and($logger->calls[0]['params'][0])->toContain($lockName);
 });
 
 describe('handleSetupIntentSucceededWebhook', function (): void {
