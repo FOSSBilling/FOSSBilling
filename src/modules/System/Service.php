@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\System;
 
 use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\DBAL\Connection;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\GeoIP\Reader;
@@ -726,6 +727,43 @@ class Service
         } catch (\Exception $e) {
             error_log($e->getMessage());
         }
+    }
+
+    /**
+     * Claims a numeric counter setting's current value and advances it, under a row lock so two
+     * concurrent callers are never handed the same number. Returns null if it is missing or not
+     * numeric.
+     *
+     * Not subject to canUpdateParam(): this reserves an internal counter rather than applying a
+     * user-driven settings change, and must work in client and cron contexts.
+     */
+    public function reserveNextNumericParamValue(string $param): ?int
+    {
+        if (empty($param)) {
+            throw new \FOSSBilling\Exception('Parameter key is missing.');
+        }
+
+        return $this->di['dbal']->transactional(function (Connection $connection) use ($param): ?int {
+            $current = $connection->fetchOne(
+                'SELECT value FROM setting WHERE param = :param FOR UPDATE',
+                ['param' => $param]
+            );
+
+            if ($current === false || !is_numeric($current)) {
+                return null;
+            }
+
+            $connection->executeStatement(
+                'UPDATE setting SET value = :value, updated_at = :updated_at WHERE param = :param',
+                [
+                    'value' => (string) (intval($current) + 1),
+                    'updated_at' => date('Y-m-d H:i:s'),
+                    'param' => $param,
+                ]
+            );
+
+            return intval($current);
+        });
     }
 
     private function canUpdateParam(string $param): bool

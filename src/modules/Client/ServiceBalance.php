@@ -34,6 +34,13 @@ class ServiceBalance implements InjectionAwareInterface
         return $this->clientTotal($c);
     }
 
+    public function getClientBalanceForUpdate(Client|\Model_Client $c): float
+    {
+        $clientId = $c instanceof Client ? $c->getId() : $c->id;
+
+        return $this->clientBalanceRepository->getClientBalanceSumForUpdate((int) $clientId);
+    }
+
     public function clientTotal(Client|\Model_Client $c): float
     {
         $clientId = $c instanceof Client ? $c->getId() : $c->id;

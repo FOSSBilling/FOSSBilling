@@ -938,9 +938,12 @@ class Service implements InjectionAwareInterface
     public function getNextInvoiceNumber()
     {
         $systemService = $this->di['mod_service']('system');
-        $next_nr = $systemService->getParamValue('invoice_starting_number');
 
-        if (empty($next_nr)) {
+        // Claimed and advanced in one locked step, otherwise two concurrent approvals take the
+        // same number and issue two invoices sharing an invoice number.
+        $next_nr = $systemService->reserveNextNumericParamValue('invoice_starting_number');
+
+        if ($next_nr === null) {
             // In theory this code should never need to be called, but is provided as a fallback
             $r = $this->getInvoiceRepository()->findLatestWithNr();
             if ($r instanceof Invoice && is_numeric($r->getNr())) {
@@ -948,9 +951,9 @@ class Service implements InjectionAwareInterface
             } else {
                 throw new \FOSSBilling\Exception('Unable to determine the next invoice number');
             }
-        }
 
-        $systemService->setParamValue('invoice_starting_number', intval($next_nr) + 1);
+            $systemService->setParamValue('invoice_starting_number', $next_nr + 1);
+        }
 
         return $next_nr;
     }
@@ -1131,48 +1134,81 @@ class Service implements InjectionAwareInterface
             return false;
         }
 
-        $client = $this->di['db']->load('Client', $invoice->getClientId());
-        $cbrepo = $this->di['mod_service']('Client', 'Balance');
-        $balance = $cbrepo->getClientBalance($client);
-        $required = $this->getTotalWithTax($invoice);
-        $epsilon = 0.01;
-        $difference = $balance - $required;
+        $paid = $this->di['em']->wrapInTransaction(function () use ($invoice): bool {
+            $client = $this->di['db']->load('Client', $invoice->getClientId());
+            $cbrepo = $this->di['mod_service']('Client', 'Balance');
 
-        if ($difference >= -$epsilon) {
+            // Locks the balance for the rest of this transaction, so a concurrent request cannot
+            // spend the same credit.
+            $balance = $cbrepo->getClientBalanceForUpdate($client);
+
+            // Another request could have paid this invoice while we waited for the lock. A locking
+            // read, as a plain one can be served from a snapshot predating that request's commit.
+            if ($this->getInvoiceRepository()->lockAndGetStatus((int) $invoice->getId()) === Invoice::STATUS_PAID) {
+                return false;
+            }
+
+            $required = $this->getTotalWithTax($invoice);
+            $epsilon = 0.01;
+            $difference = $balance - $required;
+
+            if ($difference < -$epsilon) {
+                // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
+                if (DEBUG) {
+                    $this->di['logger']->setChannel('billing')->info("Invoice {$invoice->getId()} could not be paid with credits. Money in balance {$balance} Required: {$required}.");
+                }
+
+                return false;
+            }
+
             // @phpstan-ignore if.alwaysFalse
             if (DEBUG) {
                 $this->di['logger']->setChannel('billing')->info("Setting invoice {$invoice->getId()} as paid with credits for the amount of {$required}.");
             }
 
-            if ($required <= $epsilon) {
-                // Nothing was actually charged against the client's balance, so don't record a $0 credit transaction.
-                $this->markAsPaid($invoice, false, true);
+            if ($required > $epsilon) {
+                // Nothing at or below the epsilon is actually charged against the client's balance,
+                // so don't record a $0 credit transaction.
+                $balanceTransaction = new ClientBalance();
+                $balanceTransaction->setClientId((int) $client->id);
+                $balanceTransaction->setType('invoice');
+                $balanceTransaction->setRelId((string) $invoice->getId());
 
-                return true;
+                $invoice_identifier = $invoice->getNr() ?: $invoice->getId();
+                $balanceTransaction->setDescription("Payment for invoice #{$invoice_identifier} using account credit.");
+
+                $balanceTransaction->setAmount((string) (-$required));
+                $this->di['em']->persist($balanceTransaction);
+                $this->di['em']->flush();
             }
 
-            $balanceTransaction = new ClientBalance();
-            $balanceTransaction->setClientId((int) $client->id);
-            $balanceTransaction->setType('invoice');
-            $balanceTransaction->setRelId((string) $invoice->getId());
-
-            $invoice_identifier = $invoice->getNr() ?: $invoice->getId();
-            $balanceTransaction->setDescription("Payment for invoice #{$invoice_identifier} using account credit.");
-
-            $balanceTransaction->setAmount((string) (-$required));
-            $this->di['em']->persist($balanceTransaction);
-            $this->di['em']->flush();
-
-            $this->markAsPaid($invoice, false, true);
+            // Tasks run after the commit below, so provisioning is not held under the balance lock.
+            $this->markAsPaid($invoice, false, false);
 
             return true;
-        }
-        // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
-        if (DEBUG) {
-            $this->di['logger']->setChannel('billing')->info("Invoice {$invoice->getId()} could not be paid with credits. Money in balance {$balance} Required: {$required}.");
+        });
+
+        if ($paid) {
+            $this->executeInvoiceItemTasks($invoice);
         }
 
-        return false;
+        return $paid;
+    }
+
+    /**
+     * The task execution markAsPaid() performs with $execute, for callers that must run it after
+     * their transaction commits.
+     */
+    private function executeInvoiceItemTasks(Invoice $invoice): void
+    {
+        $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
+        foreach ($this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId()) as $item) {
+            try {
+                $invoiceItemService->executeTask($item);
+            } catch (\Exception $e) {
+                $this->di['logger']->warning($e->getMessage());
+            }
+        }
     }
 
     public function getTotalWithTax(Invoice $invoice): float

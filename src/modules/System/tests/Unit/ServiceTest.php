@@ -322,3 +322,47 @@ test('clearPendingMessages clears pending messages', function (): void {
     $result = $service->clearPendingMessages();
     expect($result)->toBeTrue();
 });
+
+test('reserveNextNumericParamValue claims the current value and advances the counter under lock', function (): void {
+    $service = new Service();
+
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('transactional')
+        ->once()
+        ->andReturnUsing(fn (callable $callback): mixed => $callback($dbalMock));
+    // The read must take the row lock, otherwise two callers can be handed the same number.
+    $dbalMock->shouldReceive('fetchOne')
+        ->once()
+        ->with('SELECT value FROM setting WHERE param = :param FOR UPDATE', ['param' => 'invoice_starting_number'])
+        ->andReturn('7');
+    $dbalMock->shouldReceive('executeStatement')
+        ->once()
+        ->with(
+            'UPDATE setting SET value = :value, updated_at = :updated_at WHERE param = :param',
+            Mockery::on(fn (array $params): bool => $params['value'] === '8' && $params['param'] === 'invoice_starting_number')
+        )
+        ->andReturn(1);
+
+    $di = container();
+    $di['dbal'] = $dbalMock;
+    $service->setDi($di);
+
+    expect($service->reserveNextNumericParamValue('invoice_starting_number'))->toBe(7);
+});
+
+test('reserveNextNumericParamValue returns null when the counter is missing or not numeric', function (): void {
+    $service = new Service();
+
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('transactional')
+        ->once()
+        ->andReturnUsing(fn (callable $callback): mixed => $callback($dbalMock));
+    $dbalMock->shouldReceive('fetchOne')->once()->andReturn(false);
+    $dbalMock->shouldNotReceive('executeStatement');
+
+    $di = container();
+    $di['dbal'] = $dbalMock;
+    $service->setDi($di);
+
+    expect($service->reserveNextNumericParamValue('invoice_starting_number'))->toBeNull();
+});

@@ -985,15 +985,21 @@ class Service implements InjectionAwareInterface
         }
 
         $quantity = (int) $qty;
-        $available = $resolvedProduct->getQuantityInStock();
-        if ($available < $quantity) {
+
+        // A single statement, otherwise concurrent orders both read the same quantity and each
+        // subtract from it, overselling the product. Zero rows means stock ran out meanwhile.
+        $updated = $this->getProductRepository()->decrementStockIfAvailable(
+            (int) $resolvedProduct->getId(),
+            $quantity,
+            new \DateTime()
+        );
+
+        if ($updated === 0) {
             throw new \FOSSBilling\InformationException('Product :id is out of stock.', [':id' => $resolvedProduct->getId()], 831);
         }
 
-        $resolvedProduct->setQuantityInStock($available - $quantity);
-        $resolvedProduct->setUpdatedAt(new \DateTime());
-
-        $this->di['em']->flush();
+        // The statement above bypassed the entity, so bring the in-memory copy back in line.
+        $this->di['em']->refresh($resolvedProduct);
 
         return true;
     }

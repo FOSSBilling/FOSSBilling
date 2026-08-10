@@ -28,6 +28,16 @@ class InvoiceRepository extends EntityRepository
         return $invoice instanceof Invoice ? $invoice : null;
     }
 
+    public function lockAndGetStatus(int $invoiceId): ?string
+    {
+        $status = $this->getEntityManager()->getConnection()->fetchOne(
+            'SELECT status FROM invoice WHERE id = :id FOR UPDATE',
+            ['id' => $invoiceId],
+        );
+
+        return $status === false ? null : (string) $status;
+    }
+
     /**
      * @return Invoice[]
      */
