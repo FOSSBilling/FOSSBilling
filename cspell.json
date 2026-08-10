@@ -534,7 +534,12 @@
         "docstrings",
         "tablesort",
         "Brien",
-        "whsec"
+        "whsec",
+        "IDNA",
+        "Namingo",
+        "htype",
+        "webspace",
+        "webspaces"
     ],
     "ignorePaths": [
         "node_modules/**",
