@@ -287,9 +287,17 @@ test('stock reservation backfill patch reserves stock for a pending order and de
         ['order_id' => 5, 'product_id' => 1, 'quantity' => 2],
     ]);
 
-    $selectStock = Mockery::mock(PDOStatement::class);
-    $selectStock->expects('execute')->with(['id' => 1])->andReturnTrue();
-    $selectStock->expects('fetchColumn')->andReturn(10);
+    $decrementStock = Mockery::mock(PDOStatement::class);
+    $decrementStock->expects('execute')->with(Mockery::on(function (array $params): bool {
+        expect($params[0])->toBe(5)
+            ->and($params[1])->toBe(2)
+            ->and($params[2])->toBeString()
+            ->and($params[3])->toBe(1)
+            ->and($params[4])->toBe(2);
+
+        return true;
+    }))->andReturnTrue();
+    $decrementStock->expects('rowCount')->andReturn(1);
 
     $insertMeta = Mockery::mock(PDOStatement::class);
     $insertMeta->expects('execute')->with(Mockery::on(function (array $params): bool {
@@ -300,27 +308,18 @@ test('stock reservation backfill patch reserves stock for a pending order and de
         return true;
     }))->andReturnTrue();
 
-    $updateStock = Mockery::mock(PDOStatement::class);
-    $updateStock->expects('execute')->with(Mockery::on(function (array $params): bool {
-        expect($params['id'])->toBe(1)
-            ->and($params['remaining'])->toBe(8);
-
-        return true;
-    }))->andReturnTrue();
-
     $pdo = Mockery::mock(PDO::class);
-    $pdo->expects('beginTransaction')->andReturnTrue();
-    $pdo->expects('commit')->andReturnTrue();
+    $pdo->expects('beginTransaction')->once()->andReturnTrue();
+    $pdo->expects('commit')->once()->andReturnTrue();
     $pdo->expects('prepare')
-        ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'NOT EXISTS')))
+        ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'NOT EXISTS') && !str_contains($sql, 'UPDATE')))
         ->andReturn($selectOrders);
-    $pdo->expects('prepare')->with('SELECT quantity_in_stock FROM product WHERE id = :id')->andReturn($selectStock);
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'UPDATE product p')))
+        ->andReturn($decrementStock);
     $pdo->expects('prepare')
         ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'INSERT INTO client_order_meta')))
         ->andReturn($insertMeta);
-    $pdo->expects('prepare')
-        ->with('UPDATE product SET quantity_in_stock = :remaining, updated_at = :updated_at WHERE id = :id')
-        ->andReturn($updateStock);
 
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
@@ -332,27 +331,20 @@ test('stock reservation backfill patch reserves stock for a pending order and de
 
 test('stock reservation backfill patch skips orders with a non-positive quantity', function (): void {
     // Matches Product\Service::reserveStockForOrder(): a zero/negative quantity is never
-    // reserved, not rounded up to one unit.
+    // reserved, not rounded up to one unit. Skipped before a transaction is even opened.
     $selectOrders = Mockery::mock(PDOStatement::class);
     $selectOrders->expects('execute')->with([])->andReturnTrue();
     $selectOrders->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
         ['order_id' => 5, 'product_id' => 1, 'quantity' => 0],
     ]);
 
-    $selectStock = Mockery::mock(PDOStatement::class);
-    $selectStock->expects('execute')->with(['id' => 1])->andReturnTrue();
-    $selectStock->expects('fetchColumn')->andReturn(10);
-
     $pdo = Mockery::mock(PDO::class);
-    $pdo->expects('beginTransaction')->andReturnTrue();
-    $pdo->expects('commit')->andReturnTrue();
+    $pdo->shouldNotReceive('beginTransaction');
     $pdo->expects('prepare')
-        ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'NOT EXISTS')))
+        ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'NOT EXISTS') && !str_contains($sql, 'UPDATE')))
         ->andReturn($selectOrders);
-    $pdo->expects('prepare')->with('SELECT quantity_in_stock FROM product WHERE id = :id')->andReturn($selectStock);
+    $pdo->shouldNotReceive('prepare')->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'UPDATE product p')));
     $pdo->shouldNotReceive('prepare')->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'INSERT INTO client_order_meta')));
-    // Nothing was reserved, so the product's stock is never rewritten either.
-    $pdo->shouldNotReceive('prepare')->with('UPDATE product SET quantity_in_stock = :remaining, updated_at = :updated_at WHERE id = :id');
 
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
@@ -369,17 +361,19 @@ test('stock reservation backfill patch rolls back if a statement fails partway t
         ['order_id' => 5, 'product_id' => 1, 'quantity' => 2],
     ]);
 
-    $selectStock = Mockery::mock(PDOStatement::class);
-    $selectStock->expects('execute')->with(['id' => 1])->andThrow(new PDOException('gone away'));
+    $decrementStock = Mockery::mock(PDOStatement::class);
+    $decrementStock->expects('execute')->andThrow(new PDOException('gone away'));
 
     $pdo = Mockery::mock(PDO::class);
-    $pdo->expects('beginTransaction')->andReturnTrue();
-    $pdo->expects('rollBack')->andReturnTrue();
+    $pdo->expects('beginTransaction')->once()->andReturnTrue();
+    $pdo->expects('rollBack')->once()->andReturnTrue();
     $pdo->shouldNotReceive('commit');
     $pdo->expects('prepare')
-        ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'NOT EXISTS')))
+        ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'NOT EXISTS') && !str_contains($sql, 'UPDATE')))
         ->andReturn($selectOrders);
-    $pdo->expects('prepare')->with('SELECT quantity_in_stock FROM product WHERE id = :id')->andReturn($selectStock);
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'UPDATE product p')))
+        ->andReturn($decrementStock);
 
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
@@ -393,7 +387,8 @@ test('stock reservation backfill patch rolls back if a statement fails partway t
 
 test('stock reservation backfill patch stops once a product is already oversold', function (): void {
     // Two pending orders for the same product, but only one unit left: the older order (lower
-    // id) is granted the reservation, the newer one is left exactly as it was pre-patch.
+    // id) is granted the reservation via a guarded decrement; the newer one's decrement affects
+    // zero rows once stock is gone, so it's rolled back and left exactly as it was pre-patch.
     $selectOrders = Mockery::mock(PDOStatement::class);
     $selectOrders->expects('execute')->with([])->andReturnTrue();
     $selectOrders->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
@@ -401,39 +396,44 @@ test('stock reservation backfill patch stops once a product is already oversold'
         ['order_id' => 6, 'product_id' => 1, 'quantity' => 1],
     ]);
 
-    $selectStock = Mockery::mock(PDOStatement::class);
-    $selectStock->expects('execute')->with(['id' => 1])->andReturnTrue();
-    $selectStock->expects('fetchColumn')->andReturn(1);
+    $firstDecrement = Mockery::mock(PDOStatement::class);
+    $firstDecrement->expects('execute')->with(Mockery::on(function (array $params): bool {
+        expect($params[0])->toBe(5)->and($params[3])->toBe(1);
+
+        return true;
+    }))->andReturnTrue();
+    $firstDecrement->expects('rowCount')->andReturn(1);
+
+    $secondDecrement = Mockery::mock(PDOStatement::class);
+    $secondDecrement->expects('execute')->with(Mockery::on(function (array $params): bool {
+        expect($params[0])->toBe(6)->and($params[3])->toBe(1);
+
+        return true;
+    }))->andReturnTrue();
+    $secondDecrement->expects('rowCount')->andReturn(0);
 
     $insertMeta = Mockery::mock(PDOStatement::class);
     $insertMeta->expects('execute')->with(Mockery::on(function (array $params): bool {
-        // Only order 5 may be reserved; order 6 must never reach this statement.
+        // Only order 5 may be reserved; order 6's decrement never succeeded.
         expect($params['order_id'])->toBe(5);
 
         return true;
     }))->andReturnTrue();
 
-    $updateStock = Mockery::mock(PDOStatement::class);
-    $updateStock->expects('execute')->with(Mockery::on(function (array $params): bool {
-        expect($params['id'])->toBe(1)
-            ->and($params['remaining'])->toBe(0);
-
-        return true;
-    }))->andReturnTrue();
-
     $pdo = Mockery::mock(PDO::class);
-    $pdo->expects('beginTransaction')->andReturnTrue();
-    $pdo->expects('commit')->andReturnTrue();
+    $pdo->expects('beginTransaction')->twice()->andReturnTrue();
+    $pdo->expects('commit')->once()->andReturnTrue();
+    $pdo->expects('rollBack')->once()->andReturnTrue();
     $pdo->expects('prepare')
-        ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'NOT EXISTS')))
+        ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'NOT EXISTS') && !str_contains($sql, 'UPDATE')))
         ->andReturn($selectOrders);
-    $pdo->expects('prepare')->with('SELECT quantity_in_stock FROM product WHERE id = :id')->andReturn($selectStock);
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'UPDATE product p')))
+        ->twice()
+        ->andReturn($firstDecrement, $secondDecrement);
     $pdo->expects('prepare')
         ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'INSERT INTO client_order_meta')))
         ->andReturn($insertMeta);
-    $pdo->expects('prepare')
-        ->with('UPDATE product SET quantity_in_stock = :remaining, updated_at = :updated_at WHERE id = :id')
-        ->andReturn($updateStock);
 
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;

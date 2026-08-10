@@ -2923,35 +2923,58 @@ class UpdatePatcher implements InjectionAwareInterface
             return;
         }
 
-        // Stock updates are batched per product after all its orders are processed, so without
-        // a transaction a partial failure could leave meta rows claiming a reservation whose
-        // stock was never actually deducted.
+        // manual_update() (the only caller of this) applies patches without enabling
+        // maintenance mode, so checkout can be reserving stock for other orders on the same
+        // products the whole time this runs. Each order below is therefore reserved with the
+        // same guarded, relative decrement real-time checkout uses (see
+        // ProductRepository::decrementStockIfAvailable()) instead of computing a batch of
+        // "remaining" values up front and overwriting quantity_in_stock with them - an
+        // absolute write like that would silently erase whatever a concurrent checkout had
+        // just decremented. The decrement's WHERE clause also re-checks the order's status and
+        // reservation state at the moment of the attempt rather than trusting the snapshot
+        // read above, so an order canceled or already reserved by then is skipped instead of
+        // double-reserved.
+        $now = date('Y-m-d H:i:s');
         $pdo = $this->getPdo();
-        $pdo->beginTransaction();
 
-        try {
-            $now = date('Y-m-d H:i:s');
-            $remainingByProduct = [];
-            $touchedProducts = [];
+        foreach ($orders as $order) {
+            // Matches Product\Service::reserveStockForOrder(): a non-positive quantity is never
+            // reserved, not rounded up to one.
+            $quantity = (int) ($order['quantity'] ?? 1);
+            if ($quantity <= 0) {
+                continue;
+            }
 
-            foreach ($orders as $order) {
-                $productId = (int) $order['product_id'];
-                if (!array_key_exists($productId, $remainingByProduct)) {
-                    $remainingByProduct[$productId] = (int) $this->fetchOne(
-                        'SELECT quantity_in_stock FROM product WHERE id = :id',
-                        ['id' => $productId]
-                    );
-                }
+            $pdo->beginTransaction();
 
-                // Matches Product\Service::reserveStockForOrder(): a non-positive quantity is
-                // never reserved, not rounded up to one.
-                $quantity = (int) ($order['quantity'] ?? 1);
-                if ($quantity <= 0 || $remainingByProduct[$productId] < $quantity) {
+            try {
+                $decrement = $pdo->prepare(
+                    "UPDATE product p
+                     INNER JOIN client_order co ON co.id = ?
+                     SET p.quantity_in_stock = p.quantity_in_stock - ?, p.updated_at = ?
+                     WHERE p.id = ?
+                       AND p.quantity_in_stock >= ?
+                       AND co.status IN ('pending_setup', 'failed_setup')
+                       AND NOT EXISTS (
+                           SELECT 1 FROM client_order_meta m
+                           WHERE m.client_order_id = co.id AND m.name = 'stock_reserved_qty'
+                       )"
+                );
+                $decrement->execute([
+                    $order['order_id'],
+                    $quantity,
+                    $now,
+                    $order['product_id'],
+                    $quantity,
+                ]);
+
+                if ($decrement->rowCount() === 0) {
+                    // Either out of stock, or the order stopped qualifying since the candidate
+                    // list above was read - leave it unreserved, same as pre-patch behavior.
+                    $pdo->rollBack();
+
                     continue;
                 }
-
-                $remainingByProduct[$productId] -= $quantity;
-                $touchedProducts[$productId] = true;
 
                 $this->executeSql(
                     'INSERT INTO client_order_meta (client_order_id, name, value, created_at, updated_at)
@@ -2964,23 +2987,13 @@ class UpdatePatcher implements InjectionAwareInterface
                         'updated_at' => $now,
                     ]
                 );
+
+                $pdo->commit();
+            } catch (\Throwable $e) {
+                $pdo->rollBack();
+
+                throw $e;
             }
-
-            // Only products with an actual reservation applied need writing back - a product
-            // whose stock was merely read to check availability must not have its updated_at
-            // touched for nothing.
-            foreach (array_keys($touchedProducts) as $productId) {
-                $this->executeSql(
-                    'UPDATE product SET quantity_in_stock = :remaining, updated_at = :updated_at WHERE id = :id',
-                    ['remaining' => $remainingByProduct[$productId], 'updated_at' => $now, 'id' => $productId]
-                );
-            }
-
-            $pdo->commit();
-        } catch (\Throwable $e) {
-            $pdo->rollBack();
-
-            throw $e;
         }
     }
 
