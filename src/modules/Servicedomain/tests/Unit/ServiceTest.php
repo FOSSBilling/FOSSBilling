@@ -983,7 +983,7 @@ test('syncs expiration date from the registrar', function (): void {
     expect($model->getExpiresAt()?->format('Y-m-d H:i:s'))->toBe('2030-06-15 00:00:00');
 });
 
-test('syncs a null expiration date when the registrar has none', function (): void {
+test('preserves the existing expiration date when the registrar has none', function (): void {
     $whois = new Registrar_Domain();
 
     $adapter = Mockery::mock(Registrar_Adapter_Custom::class);
@@ -997,13 +997,14 @@ test('syncs a null expiration date when the registrar has none', function (): vo
         ->andReturn([new Registrar_Domain(), $adapter]);
 
     $model = new ServiceDomain();
+    $model->setExpiresAt(new DateTime('2030-06-15 00:00:00', new DateTimeZone('UTC')));
 
     $di = container();
     $service->setDi($di);
 
     $service->syncExpirationDate($model);
 
-    expect($model->getExpiresAt())->toBeNull();
+    expect($model->getExpiresAt()?->format('Y-m-d H:i:s'))->toBe('2030-06-15 00:00:00');
 });
 
 test('syncWhois stores null dates when registrar dates are unavailable', function (): void {
