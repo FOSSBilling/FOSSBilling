@@ -17,6 +17,7 @@ use Box\Mod\Cart\Repository\CartProductRepository;
 use Box\Mod\Cart\Repository\CartRepository;
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Currency\Entity\Currency;
+use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Product\Entity\Promo;
@@ -626,11 +627,11 @@ class Service implements InjectionAwareInterface
         ];
 
         // invoice may not be created if total is 0
-        $isInvoiceUnpaid = $invoice instanceof \Model_Invoice
-            && $invoice->status === \Model_Invoice::STATUS_UNPAID;
+        $isInvoiceUnpaid = $invoice instanceof Invoice
+            && $invoice->getStatus() === Invoice::STATUS_UNPAID;
 
         if ($isInvoiceUnpaid) {
-            $result['invoice_hash'] = $invoice->hash;
+            $result['invoice_hash'] = $invoice->getHash();
         }
 
         return $result;
@@ -808,13 +809,13 @@ class Service implements InjectionAwareInterface
                     $balanceAmount = $clientBalanceService->getClientBalance($legacyClient);
                     $useCredits = $balanceAmount >= $ca['total'];
 
-                    $invoiceService->approveInvoice($invoiceModel, ['id' => $invoiceModel->id, 'use_credits' => $useCredits]);
+                    $invoiceService->approveInvoice($invoiceModel, ['id' => $invoiceModel->getId(), 'use_credits' => $useCredits]);
 
-                    $isUnpaid = $invoiceModel instanceof \Model_Invoice
-                        && $invoiceModel->status === \Model_Invoice::STATUS_UNPAID;
+                    $isUnpaid = $invoiceModel instanceof Invoice
+                        && $invoiceModel->getStatus() === Invoice::STATUS_UNPAID;
 
                     if ($isUnpaid) {
-                        $invoiceId = $invoiceModel->id;
+                        $invoiceId = $invoiceModel->getId();
                         foreach ($orders as $order) {
                             $order->setUnpaidInvoiceId($invoiceId);
                             $this->di['em']->persist($order);
@@ -824,11 +825,11 @@ class Service implements InjectionAwareInterface
                 }
 
                 if ($promo instanceof Promo && $promoProductService !== null) {
-                    $redemptionStatus = $invoiceModel instanceof \Model_Invoice
-                        && $invoiceModel->status === \Model_Invoice::STATUS_UNPAID
+                    $redemptionStatus = $invoiceModel instanceof Invoice
+                        && $invoiceModel->getStatus() === Invoice::STATUS_UNPAID
                         ? \Box\Mod\Product\Entity\PromoRedemption::STATUS_RESERVED
                         : \Box\Mod\Product\Entity\PromoRedemption::STATUS_COMMITTED;
-                    $checkoutInvoice = $invoiceModel instanceof \Model_Invoice ? $invoiceModel : null;
+                    $checkoutInvoice = $invoiceModel instanceof Invoice ? $invoiceModel : null;
 
                     $promoProductService->createCheckoutPromoRedemptions($promo, $client, $orders, $checkoutInvoice, $redemptionStatus);
                 }
@@ -850,8 +851,8 @@ class Service implements InjectionAwareInterface
                             $orderService->activateOrder($order);
                         }
 
-                        $isPaid = $invoiceModel instanceof \Model_Invoice
-                            && $invoiceModel->status === \Model_Invoice::STATUS_PAID;
+                        $isPaid = $invoiceModel instanceof Invoice
+                            && $invoiceModel->getStatus() === Invoice::STATUS_PAID;
 
                         if ($ca['total'] > 0 && $product->getSetup() == \Box\Mod\Product\Service::SETUP_AFTER_PAYMENT && $isPaid) {
                             $orderService->activateOrder($order);

@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use Box\Mod\Client\Service as ClientService;
+use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Repository\PayGatewayRepository;
@@ -491,8 +492,7 @@ test('gets subscription period', function (): void {
     $di['db'] = $dbMock;
     $serviceMock->setDi($di);
 
-    $invoiceModel = new Model_Invoice();
-    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceModel = createEntity(Invoice::class);
 
     $result = $serviceMock->getSubscriptionPeriod($invoiceModel);
     expect($result)->toBeString()->toBe($period);

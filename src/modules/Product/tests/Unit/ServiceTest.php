@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use Box\Mod\Client\Entity\Client;
+use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Product\Entity\ProductCategory;
 use Box\Mod\Product\Entity\ProductPayment;
@@ -80,10 +81,10 @@ function productTestCreateTldModel(array $properties = []): Tld
     return createEntity(Tld::class, $properties);
 }
 
-function productTestCreateInvoiceModel(int $id): Model_Invoice
+function productTestCreateInvoiceModel(int $id): Invoice
 {
-    $invoice = new Model_Invoice();
-    $invoice->loadBean(new Tests\Helpers\DummyBean());
+    $invoice = createEntity(Invoice::class);
+
     $invoice->id = $id;
 
     return $invoice;

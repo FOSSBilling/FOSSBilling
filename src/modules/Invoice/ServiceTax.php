@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice;
 
+use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\Tax;
 use Box\Mod\Invoice\Repository\TaxRepository;
 use FOSSBilling\InjectionAwareInterface;
@@ -72,14 +73,14 @@ class ServiceTax implements InjectionAwareInterface
         return 0;
     }
 
-    public function getTax(\Model_Invoice $invoice)
+    public function getTax(Invoice $invoice)
     {
-        if ($invoice->taxrate <= 0) {
+        if ($invoice->getTaxrate() <= 0) {
             return 0;
         }
 
         $tax = 0;
-        $invoiceItems = $this->di['em']->getRepository(Entity\InvoiceItem::class)->findByInvoiceId((int) $invoice->id);
+        $invoiceItems = $this->di['em']->getRepository(Entity\InvoiceItem::class)->findByInvoiceId((int) $invoice->getId());
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
         foreach ($invoiceItems as $item) {
             $tax += $invoiceItemService->getTax($item) * ($item->getQuantity() ?? 1);

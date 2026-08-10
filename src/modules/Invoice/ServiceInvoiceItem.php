@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Invoice;
 
 use Box\Mod\Client\Entity\ClientBalance;
+use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\InvoiceItem;
 use Box\Mod\Invoice\Repository\InvoiceItemRepository;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
@@ -46,7 +47,10 @@ class ServiceInvoiceItem implements InjectionAwareInterface
     public function markAsPaid(InvoiceItem $item, $charge = true): void
     {
         if ($charge && !$item->getCharged()) {
-            $invoice = $this->di['db']->getExistingModelById('Invoice', $item->getInvoiceId(), 'Invoice not found');
+            $invoice = $this->di['em']->getRepository(Invoice::class)->find($item->getInvoiceId());
+            if ($invoice === null) {
+                throw new \FOSSBilling\Exception('Invoice not found');
+            }
             $total = $this->getTotalWithTax($item);
             $em = $this->di['em'];
 
@@ -177,7 +181,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         }
     }
 
-    public function addNew(\Model_Invoice $proforma, array $data): int
+    public function addNew(Invoice $proforma, array $data): int
     {
         $title = $data['title'] ?? '';
         if (empty($title)) {
@@ -190,7 +194,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         }
 
         $pi = new InvoiceItem();
-        $pi->setInvoiceId((int) $proforma->id);
+        $pi->setInvoiceId((int) $proforma->getId());
         $pi->setType($data['type'] ?? InvoiceItem::TYPE_CUSTOM);
         $pi->setRelId($data['rel_id'] ?? null);
         $pi->setTask($data['task'] ?? InvoiceItem::TASK_VOID);
@@ -267,10 +271,10 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         return true;
     }
 
-    public function generateForAddFunds(\Model_Invoice $proforma, $amount): void
+    public function generateForAddFunds(Invoice $proforma, $amount): void
     {
         $pi = new InvoiceItem();
-        $pi->setInvoiceId((int) $proforma->id);
+        $pi->setInvoiceId((int) $proforma->getId());
         $pi->setType(InvoiceItem::TYPE_DEPOSIT);
         $pi->setRelId(null);
         $pi->setTask(InvoiceItem::TASK_VOID);
@@ -288,7 +292,10 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
     public function creditInvoiceItem(InvoiceItem $item): void
     {
-        $invoice = $this->di['db']->getExistingModelById('Invoice', $item->getInvoiceId(), 'Invoice not found');
+        $invoice = $this->di['em']->getRepository(Invoice::class)->find($item->getInvoiceId());
+        if ($invoice === null) {
+            throw new \FOSSBilling\Exception('Invoice not found');
+        }
         $total = $this->getTotalWithTax($item);
         $this->persistCredit($item, $invoice, $total);
 
@@ -312,14 +319,14 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $this->di['em'] = EntityManagerFactory::create();
     }
 
-    private function persistCredit(InvoiceItem $item, \Model_Invoice $invoice, float $total): ClientBalance
+    private function persistCredit(InvoiceItem $item, Invoice $invoice, float $total): ClientBalance
     {
-        $client = $this->di['db']->getExistingModelById('Client', $invoice->client_id, 'Client not found');
+        $client = $this->di['db']->getExistingModelById('Client', $invoice->getClientId(), 'Client not found');
 
         $credit = new ClientBalance();
         $credit->setClientId((int) $client->id);
         $credit->setType('invoice');
-        $credit->setRelId((string) $invoice->id);
+        $credit->setRelId((string) $invoice->getId());
         $credit->setInvoiceItemId($item->getId());
         $credit->setDescription($item->getTitle());
         $credit->setAmount((string) (-$total));
@@ -328,10 +335,10 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         return $credit;
     }
 
-    private function addChargeNote(InvoiceItem $item, \Model_Invoice $invoice, float $total): void
+    private function addChargeNote(InvoiceItem $item, Invoice $invoice, float $total): void
     {
         $invoiceService = $this->di['mod_service']('Invoice');
-        $invoiceService->addNote($invoice, sprintf('Charged clients balance with %s %s for %s', $total, $invoice->currency, $item->getTitle()));
+        $invoiceService->addNote($invoice, sprintf('Charged clients balance with %s %s for %s', $total, $invoice->getCurrency(), $item->getTitle()));
     }
 
     public function getTotalWithTax(InvoiceItem $item): float
@@ -394,7 +401,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         return $item;
     }
 
-    public function generateFromOrder(\Model_Invoice $proforma, \Model_ClientOrder $order, $task, $price, array $line = []): void
+    public function generateFromOrder(Invoice $proforma, \Model_ClientOrder $order, $task, $price, array $line = []): void
     {
         $corderService = $this->di['mod_service']('Order');
 
@@ -409,7 +416,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         }
 
         $pi = new InvoiceItem();
-        $pi->setInvoiceId((int) $proforma->id);
+        $pi->setInvoiceId((int) $proforma->getId());
         $pi->setType(InvoiceItem::TYPE_ORDER);
         $pi->setRelId((string) $order->id);
         $pi->setTask($task);
@@ -447,7 +454,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                 \Box\Mod\Product\Entity\PromoRedemption::PHASE_RENEWAL,
                 $promoAdjustment['discount_amount'],
                 $promoAdjustment['currency'],
-                $proforma->created_at ?? date('Y-m-d H:i:s'),
+                $proforma->getCreatedAt()?->format('Y-m-d H:i:s') ?? date('Y-m-d H:i:s'),
                 \Box\Mod\Product\Entity\PromoRedemption::STATUS_RESERVED,
             );
         }
@@ -468,7 +475,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $bindings = [
             ':status_executed' => InvoiceItem::STATUS_EXECUTED,
             ':status_failed' => InvoiceItem::STATUS_FAILED,
-            ':invoice_status' => \Model_Invoice::STATUS_PAID,
+            ':invoice_status' => Invoice::STATUS_PAID,
             ':cutoff_time' => date('Y-m-d H:i:s', strtotime('-10 minutes')),
         ];
 
