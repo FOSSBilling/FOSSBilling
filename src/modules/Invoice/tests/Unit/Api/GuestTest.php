@@ -11,10 +11,12 @@
 declare(strict_types=1);
 
 use Box\Mod\Invoice\Api\Guest;
+use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Service;
 use Box\Mod\Invoice\ServicePayGateway;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 use function Tests\Helpers\moduleService;
 
 test('gets dependency injection container', function (): void {
@@ -35,8 +37,8 @@ test('gets an invoice', function (): void {
         ->andReturn([]);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_Invoice();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(Invoice::class);
+
     $dbMock->shouldReceive('findOne')
         ->atLeast()->once()
         ->andReturn($model);
@@ -56,8 +58,8 @@ test('gets an invoice', function (): void {
 test('throws exception when invoice is not found', function (): void {
     $api = apiEndpoint(new Guest());
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_Invoice();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(Invoice::class);
+
     $dbMock->shouldReceive('findOne')
         ->atLeast()->once()
         ->andReturn(null);

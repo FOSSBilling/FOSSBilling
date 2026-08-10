@@ -10,6 +10,7 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Order\Repository\OrderRepository;
 use Box\Mod\Order\Service;
@@ -33,10 +34,10 @@ function orderServiceCreateProductEntity(?int $id = null, ?string $type = null):
     return $product;
 }
 
-function orderServiceCreateInvoiceModel(int $id): Model_Invoice
+function orderServiceCreateInvoiceModel(int $id): Invoice
 {
-    $invoice = new Model_Invoice();
-    $invoice->loadBean(new Tests\Helpers\DummyBean());
+    $invoice = createEntity(Invoice::class);
+
     $invoice->id = $id;
 
     return $invoice;
@@ -1112,11 +1113,11 @@ test('getSoonExpiringActiveOrdersQuery builds expected SQL and bindings', functi
 
     $expectedBindings = [
         'client_id' => $randId,
-        'unpaid_invoice_status' => Model_Invoice::STATUS_UNPAID,
+        'unpaid_invoice_status' => Invoice::STATUS_UNPAID,
         'pending_item_type' => Box\Mod\Invoice\Entity\InvoiceItem::TYPE_ORDER,
         'pending_item_task' => Box\Mod\Invoice\Entity\InvoiceItem::TASK_RENEW,
         'pending_item_status' => Box\Mod\Invoice\Entity\InvoiceItem::STATUS_EXECUTED,
-        'pending_invoice_status' => Model_Invoice::STATUS_PAID,
+        'pending_invoice_status' => Invoice::STATUS_PAID,
         'status' => Order::STATUS_ACTIVE,
         'invoice_option' => 'issue-invoice',
         'days_until_expiration' => $randId,

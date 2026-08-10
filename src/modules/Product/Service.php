@@ -13,6 +13,7 @@ namespace Box\Mod\Product;
 
 use Box\Mod\Cart\Entity\CartProduct;
 use Box\Mod\Client\Entity\Client;
+use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Product\Entity\ProductCategory;
@@ -1355,7 +1356,7 @@ class Service implements InjectionAwareInterface
         Promo $promo,
         Client|\Model_Client $client,
         array $orders,
-        ?\Model_Invoice $invoice,
+        ?Invoice $invoice,
         string $status,
     ): void {
         if ($orders === []) {
@@ -1565,7 +1566,7 @@ class Service implements InjectionAwareInterface
         Promo $promo,
         Client|\Model_Client $client,
         Order|\Model_ClientOrder|null $order,
-        ?\Model_Invoice $invoice,
+        ?Invoice $invoice,
         string $phase,
         ?float $discountAmount,
         ?string $currency,
@@ -1588,10 +1589,10 @@ class Service implements InjectionAwareInterface
         return $this->getPromoRedemptionRepository()->clientHasActiveCheckoutApplication($promoId, (int) $clientId);
     }
 
-    public function commitReservedPromoRedemptionsForInvoice(\Model_Invoice $invoice): void
+    public function commitReservedPromoRedemptionsForInvoice(Invoice $invoice): void
     {
         $redemptions = $this->getPromoRedemptionRepository()->findBy([
-            'invoiceId' => (int) $invoice->id,
+            'invoiceId' => (int) $invoice->getId(),
             'status' => PromoRedemption::STATUS_RESERVED,
         ]);
 
@@ -1599,7 +1600,7 @@ class Service implements InjectionAwareInterface
             return;
         }
 
-        $committedAt = !empty($invoice->paid_at) ? new \DateTime((string) $invoice->paid_at) : new \DateTime();
+        $committedAt = $invoice->getPaidAt() ?? new \DateTime();
         foreach ($redemptions as $redemption) {
             if (!$redemption instanceof PromoRedemption) {
                 continue;
@@ -1615,10 +1616,10 @@ class Service implements InjectionAwareInterface
         $this->di['em']->flush();
     }
 
-    public function releaseReservedPromoRedemptionsForInvoice(\Model_Invoice $invoice, string $reason): void
+    public function releaseReservedPromoRedemptionsForInvoice(Invoice $invoice, string $reason): void
     {
         $redemptions = $this->getPromoRedemptionRepository()->findBy([
-            'invoiceId' => (int) $invoice->id,
+            'invoiceId' => (int) $invoice->getId(),
             'status' => PromoRedemption::STATUS_RESERVED,
         ]);
 
@@ -2100,7 +2101,7 @@ class Service implements InjectionAwareInterface
         Promo $promo,
         Client|\Model_Client $client,
         Order|\Model_ClientOrder|null $order,
-        ?\Model_Invoice $invoice,
+        ?Invoice $invoice,
         string $phase,
         ?float $discountAmount,
         ?string $currency,
@@ -2117,7 +2118,7 @@ class Service implements InjectionAwareInterface
             ->setPromoId($promoId)
             ->setClientId((int) $clientId)
             ->setClientOrderId($orderId !== null ? (int) $orderId : null)
-            ->setInvoiceId($invoice !== null ? (int) $invoice->id : null)
+            ->setInvoiceId($invoice !== null ? (int) $invoice->getId() : null)
             ->setPhase($phase)
             ->setStatus($status)
             ->setDiscountAmount($discountAmount)

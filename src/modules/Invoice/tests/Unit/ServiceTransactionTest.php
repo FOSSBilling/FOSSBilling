@@ -11,9 +11,11 @@
 declare(strict_types=1);
 
 use Box\Mod\Client\Entity\ClientBalance;
+use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Transaction;
+use Box\Mod\Invoice\Repository\InvoiceRepository;
 use Box\Mod\Invoice\Repository\PayGatewayRepository;
 use Box\Mod\Invoice\Repository\SubscriptionRepository;
 use Box\Mod\Invoice\Repository\TransactionRepository;
@@ -403,14 +405,12 @@ test('_subscribe creates and persists a subscription from an approved transactio
     $transactionRepo = Mockery::mock(TransactionRepository::class);
     $transactionRepo->shouldReceive('findOneProcessedByTxnId')->andReturnNull();
 
-    $invoice = new Model_Invoice();
-    $invoice->loadBean(new Tests\Helpers\DummyBean());
-    $invoice->id = 10;
-    $invoice->client_id = 7;
-    $invoice->currency = 'USD';
+    $invoice = createEntity(Invoice::class);
+    $invoice->setId(10);
+    $invoice->setClientId(7);
+    $invoice->setCurrency('USD');
 
     $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('load')->with('Invoice', 10)->andReturn($invoice);
 
     $subscriptionService = Mockery::mock(ServiceSubscription::class);
     $subscriptionService->shouldReceive('getSubscriptionPeriod')->with($invoice)->andReturn('1M');
@@ -418,6 +418,9 @@ test('_subscribe creates and persists a subscription from an approved transactio
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo);
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn(Mockery::mock(PayGatewayRepository::class));
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('find')->with(10)->andReturn($invoice);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
 
     $capturedSubscription = null;
     $em->shouldReceive('persist')->once()->withArgs(function (object $entity) use (&$capturedSubscription): bool {
@@ -504,8 +507,8 @@ test('_unsubscribe looks up the subscription by sid and delegates to the subscri
 });
 
 test('debitTransaction records a client balance credit', function (): void {
-    $proforma = new Model_Invoice();
-    $proforma->loadBean(new Tests\Helpers\DummyBean());
+    $proforma = createEntity(Invoice::class);
+
     $proforma->id = 5;
     $proforma->client_id = 20;
     $proforma->currency = 'USD';
@@ -518,10 +521,13 @@ test('debitTransaction records a client balance credit', function (): void {
     $tx = createEntity(Transaction::class, ['id' => 7, 'invoice_id' => 5, 'currency' => 'USD', 'amount' => '25.00']);
 
     $db = Mockery::mock(Box_Database::class);
-    $db->shouldReceive('load')->once()->with('Invoice', 5)->andReturn($proforma);
     $db->shouldReceive('load')->once()->with('Client', 20)->andReturn($client);
 
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('find')->once()->with(5)->andReturn($proforma);
+
     $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
     $em->shouldReceive('persist')->once()->with(
         Mockery::on(fn (ClientBalance $balance): bool => $balance->getClientId() === 20
             && $balance->getType() === 'transaction'

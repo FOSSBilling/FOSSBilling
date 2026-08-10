@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice;
 
+use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Repository\SubscriptionRepository;
@@ -222,9 +223,9 @@ class ServiceSubscription implements InjectionAwareInterface
         return $this->getSubscriptionPeriodByInvoiceId((int) $invoice_id) !== null;
     }
 
-    public function getSubscriptionPeriod(\Model_Invoice $invoice): ?string
+    public function getSubscriptionPeriod(Invoice $invoice): ?string
     {
-        return $this->getSubscriptionPeriodByInvoiceId((int) $invoice->id);
+        return $this->getSubscriptionPeriodByInvoiceId((int) $invoice->getId());
     }
 
     public function unsubscribe(Subscription $model): void
