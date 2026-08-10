@@ -401,8 +401,16 @@ class Server_Manager_Plesk extends Server_Manager
      * Creates an array of properties for a subscription.
      * The properties include the domain name, owner login, hosting type, IP address, FTP login, FTP password, PHP, SSL, CGI, limits, and permissions.
      *
+     * For the 'add' action, the properties are sent as the direct children of the <add> node, per the
+     * webspace add operation's schema. For the 'set' action, Plesk requires the <set> node to contain only
+     * a <filter> (identifying which subscription to update) and a <values> node wrapping the actual
+     * settings; its gen_setup element also does not accept 'htype', which only applies at creation time.
+     *
+     * @see https://docs.plesk.com/en-US/obsidian/api-rpc/reference/managing-subscriptions-webspaces/creating-a-subscription-webspace.33892/
+     * @see https://docs.plesk.com/en-US/obsidian/api-rpc/reference/managing-subscriptions-webspaces/setting-subscription-parameters.33907/
+     *
      * @param Server_Account $account the account for which the properties should be created
-     * @param string         $action  the action to be performed on the subscription
+     * @param string         $action  the action to be performed on the subscription ('add' or 'set')
      *
      * @return array the array of subscription properties
      */
@@ -422,134 +430,157 @@ class Server_Manager_Plesk extends Server_Manager
             $quota = intval($package->getQuota()) * 1024 * 1024;
         }
 
-        return [
-            $action => [
-                'gen_setup' => [
-                    'name' => $account->getDomain(),
-                    'owner-login' => $account->getUsername(),
-                    'htype' => 'vrt_hst',
+        $genSetup = [
+            'name' => $account->getDomain(),
+            'owner-login' => $account->getUsername(),
+        ];
+
+        if ($action === 'add') {
+            // 'htype' is only valid on subscription creation; the update schema (SetGenSetupType) doesn't have it.
+            $genSetup['htype'] = 'vrt_hst';
+        }
+
+        $genSetup['ip_address'] = $account->getIp();
+
+        $values = [
+            'gen_setup' => $genSetup,
+            'hosting' => [
+                'vrt_hst' => [
+                    'property' => [
+                        [
+                            'name' => 'ftp_login',
+                            'value' => $account->getUsername(),
+                        ],
+                        [
+                            'name' => 'ftp_password',
+                            'value' => $account->getPassword(),
+                        ],
+                        [
+                            'name' => 'php',
+                            'value' => 'true',
+                        ],
+                        [
+                            'name' => 'ssl',
+                            'value' => 'true',
+                        ],
+                        [
+                            'name' => 'cgi',
+                            'value' => 'true',
+                        ],
+                    ],
                     'ip_address' => $account->getIp(),
                 ],
-                'hosting' => [
-                    'vrt_hst' => [
-                        'property' => [
-                            [
-                                'name' => 'ftp_login',
-                                'value' => $account->getUsername(),
-                            ],
-                            [
-                                'name' => 'ftp_password',
-                                'value' => $account->getPassword(),
-                            ],
-                            [
-                                'name' => 'php',
-                                'value' => 'true',
-                            ],
-                            [
-                                'name' => 'ssl',
-                                'value' => 'true',
-                            ],
-                            [
-                                'name' => 'cgi',
-                                'value' => 'true',
-                            ],
-                        ],
-                        'ip_address' => $account->getIp(),
+            ],
+            'limits' => [
+                'limit' => [
+                    [
+                        'name' => 'max_db',
+                        'value' => $package->getMaxSql() ?: 0,
                     ],
-                ],
-                'limits' => [
-                    'limit' => [
-                        [
-                            'name' => 'max_db',
-                            'value' => $package->getMaxSql() ?: 0,
-                        ],
-                        [
-                            'name' => 'max_maillists',
-                            'value' => $package->getMaxEmailLists() ?: 0,
-                        ],
-                        [
-                            'name' => 'max_box',
-                            'value' => $package->getMaxPop() ?: 0,
-                        ],
-                        [
-                            'name' => 'max_traffic',
-                            'value' => $bandwidth,
-                        ],
-                        [
-                            'name' => 'disk_space',
-                            'value' => $quota,
-                        ],
-                        [
-                            'name' => 'max_subdom',
-                            'value' => $package->getMaxSubdomains() ?: 0,
-                        ],
-                        [
-                            'name' => 'max_subftp_users',
-                            'value' => $package->getMaxFtp() ?: 0,
-                        ],
-                        [
-                            'name' => 'max_site',
-                            'value' => $package->getMaxDomains() ?: 0,
-                        ],
+                    [
+                        'name' => 'max_maillists',
+                        'value' => $package->getMaxEmailLists() ?: 0,
                     ],
-                ],
-                'permissions' => [
-                    'permission' => [
-                        [
-                            'name' => 'manage_subdomains',
-                            'value' => $package->getMaxSubdomains() ? 'true' : 'false',
-                        ],
-                        [
-                            'name' => 'manage_dns',
-                            'value' => 'true',
-                        ],
-                        [
-                            'name' => 'manage_crontab',
-                            'value' => $package->getHasCron() ? 'true' : 'false',
-                        ],
-                        [
-                            'name' => 'manage_anonftp',
-                            'value' => $package->getHasAnonymousFtp() ? 'true' : 'false',
-                        ],
-                        [
-                            'name' => 'manage_sh_access',
-                            'value' => $package->getHasShell() ? 'true' : 'false',
-                        ],
-                        [
-                            'name' => 'manage_maillists',
-                            'value' => $package->getMaxEmailLists() ? 'true' : 'false',
-                        ],
-                        [
-                            'name' => 'create_domains',
-                            'value' => 'true',
-                        ],
-                        [
-                            'name' => 'manage_phosting',
-                            'value' => 'true',
-                        ],
-                        [
-                            'name' => 'manage_quota',
-                            'value' => $account->getReseller() ? 'true' : 'false',
-                        ],
-                        [
-                            'name' => 'manage_not_chroot_shell',
-                            'value' => $package->getHasShell() ? 'true' : 'false',
-                        ],
-                        [
-                            'name' => 'manage_domain_aliases',
-                            'value' => 'true',
-                        ],
-                        [
-                            'name' => 'manage_subftp',
-                            'value' => $package->getMaxFtp() ? 'true' : 'false',
-                        ],
-                        [
-                            'name' => 'manage_spamfilter',
-                            'value' => $package->getHasSpamFilter() ? 'true' : 'false',
-                        ],
+                    [
+                        'name' => 'max_box',
+                        'value' => $package->getMaxPop() ?: 0,
+                    ],
+                    [
+                        'name' => 'max_traffic',
+                        'value' => $bandwidth,
+                    ],
+                    [
+                        'name' => 'disk_space',
+                        'value' => $quota,
+                    ],
+                    [
+                        'name' => 'max_subdom',
+                        'value' => $package->getMaxSubdomains() ?: 0,
+                    ],
+                    [
+                        'name' => 'max_subftp_users',
+                        'value' => $package->getMaxFtp() ?: 0,
+                    ],
+                    [
+                        'name' => 'max_site',
+                        'value' => $package->getMaxDomains() ?: 0,
                     ],
                 ],
             ],
+            'permissions' => [
+                'permission' => [
+                    [
+                        'name' => 'manage_subdomains',
+                        'value' => $package->getMaxSubdomains() ? 'true' : 'false',
+                    ],
+                    [
+                        'name' => 'manage_dns',
+                        'value' => 'true',
+                    ],
+                    [
+                        'name' => 'manage_crontab',
+                        'value' => $package->getHasCron() ? 'true' : 'false',
+                    ],
+                    [
+                        'name' => 'manage_anonftp',
+                        'value' => $package->getHasAnonymousFtp() ? 'true' : 'false',
+                    ],
+                    [
+                        'name' => 'manage_sh_access',
+                        'value' => $package->getHasShell() ? 'true' : 'false',
+                    ],
+                    [
+                        'name' => 'manage_maillists',
+                        'value' => $package->getMaxEmailLists() ? 'true' : 'false',
+                    ],
+                    [
+                        'name' => 'create_domains',
+                        'value' => 'true',
+                    ],
+                    [
+                        'name' => 'manage_phosting',
+                        'value' => 'true',
+                    ],
+                    [
+                        'name' => 'manage_quota',
+                        'value' => $account->getReseller() ? 'true' : 'false',
+                    ],
+                    [
+                        'name' => 'manage_not_chroot_shell',
+                        'value' => $package->getHasShell() ? 'true' : 'false',
+                    ],
+                    [
+                        'name' => 'manage_domain_aliases',
+                        'value' => 'true',
+                    ],
+                    [
+                        'name' => 'manage_subftp',
+                        'value' => $package->getMaxFtp() ? 'true' : 'false',
+                    ],
+                    [
+                        'name' => 'manage_spamfilter',
+                        'value' => $package->getHasSpamFilter() ? 'true' : 'false',
+                    ],
+                ],
+            ],
+        ];
+
+        if ($action === 'set') {
+            // The 'set' operation requires <filter> (which subscription to update) and <values>
+            // (the settings to apply) as the only direct children of <set> -- unlike 'add', the
+            // settings can't be placed directly under the action node.
+            return [
+                'set' => [
+                    'filter' => [
+                        'owner-login' => $account->getUsername(),
+                    ],
+                    'values' => $values,
+                ],
+            ];
+        }
+
+        return [
+            $action => $values,
         ];
     }
 
