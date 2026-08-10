@@ -10,6 +10,7 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Repository\PayGatewayRepository;
 use Box\Mod\Invoice\ServicePayGateway;
@@ -266,8 +267,8 @@ test('gets payment adapter', function (): void {
         'config' => null,
         'testMode' => false,
     ]);
-    $invoiceModel = new Model_Invoice();
-    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceModel = createEntity(Invoice::class);
+
     $expected = 'Payment_Adapter_Custom';
 
     $serviceMock = Mockery::mock(ServicePayGateway::class)->makePartial();
@@ -303,8 +304,7 @@ test('throws exception when payment gateway adapter class is missing', function 
         'config' => null,
         'testMode' => false,
     ]);
-    $invoiceModel = new Model_Invoice();
-    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceModel = createEntity(Invoice::class);
 
     $serviceMock = Mockery::mock(ServicePayGateway::class)->makePartial();
     $serviceMock->shouldReceive('getAdapterClassName')

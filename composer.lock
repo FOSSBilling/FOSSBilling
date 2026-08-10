@@ -83,20 +83,20 @@
         },
         {
             "name": "dicebear/core",
-            "version": "v10.4.0",
+            "version": "v10.5.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/dicebear/dicebear-php.git",
-                "reference": "250facce1605abba366652fbc9a9413a0ca62691"
+                "reference": "d417c7ff9327f8449eec77eab9baf40b094c7b1a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/dicebear/dicebear-php/zipball/250facce1605abba366652fbc9a9413a0ca62691",
-                "reference": "250facce1605abba366652fbc9a9413a0ca62691",
+                "url": "https://api.github.com/repos/dicebear/dicebear-php/zipball/d417c7ff9327f8449eec77eab9baf40b094c7b1a",
+                "reference": "d417c7ff9327f8449eec77eab9baf40b094c7b1a",
                 "shasum": ""
             },
             "require": {
-                "dicebear/schema": "^1.3.0",
+                "dicebear/schema": "^1.4.0",
                 "ext-mbstring": "*",
                 "opis/json-schema": "^2.6",
                 "php": ">=8.2"
@@ -123,22 +123,22 @@
                 "svg"
             ],
             "support": {
-                "source": "https://github.com/dicebear/dicebear-php/tree/v10.4.0"
+                "source": "https://github.com/dicebear/dicebear-php/tree/v10.5.0"
             },
-            "time": "2026-07-31T15:01:08+00:00"
+            "time": "2026-08-09T18:53:05+00:00"
         },
         {
             "name": "dicebear/schema",
-            "version": "v1.3.0",
+            "version": "v1.4.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/dicebear/schema.git",
-                "reference": "988d2706542881987de9b77698529e05efabebc3"
+                "reference": "936e94b9bc00daf5f9b2f06f61972131ad0ca486"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/dicebear/schema/zipball/988d2706542881987de9b77698529e05efabebc3",
-                "reference": "988d2706542881987de9b77698529e05efabebc3",
+                "url": "https://api.github.com/repos/dicebear/schema/zipball/936e94b9bc00daf5f9b2f06f61972131ad0ca486",
+                "reference": "936e94b9bc00daf5f9b2f06f61972131ad0ca486",
                 "shasum": ""
             },
             "type": "library",
@@ -158,20 +158,20 @@
                 "issues": "https://github.com/dicebear/schema/issues",
                 "source": "https://github.com/dicebear/schema"
             },
-            "time": "2026-06-19T19:42:23+00:00"
+            "time": "2026-08-09T15:43:22+00:00"
         },
         {
             "name": "dicebear/styles",
-            "version": "v10.3.0",
+            "version": "v10.4.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/dicebear/styles.git",
-                "reference": "20835e65cdfaa5a540a3697fb0bb68197caff3a3"
+                "reference": "f91f9ce0a6bccdcdf5d3738a4746a3d00e111f34"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/dicebear/styles/zipball/20835e65cdfaa5a540a3697fb0bb68197caff3a3",
-                "reference": "20835e65cdfaa5a540a3697fb0bb68197caff3a3",
+                "url": "https://api.github.com/repos/dicebear/styles/zipball/f91f9ce0a6bccdcdf5d3738a4746a3d00e111f34",
+                "reference": "f91f9ce0a6bccdcdf5d3738a4746a3d00e111f34",
                 "shasum": ""
             },
             "type": "library",
@@ -179,9 +179,9 @@
             "description": "Official DiceBear avatar styles.",
             "support": {
                 "issues": "https://github.com/dicebear/styles/issues",
-                "source": "https://github.com/dicebear/styles/tree/v10.3.0"
+                "source": "https://github.com/dicebear/styles/tree/v10.4.0"
             },
-            "time": "2026-08-01T12:39:46+00:00"
+            "time": "2026-08-09T13:24:27+00:00"
         },
         {
             "name": "doctrine/collections",
@@ -1518,16 +1518,16 @@
         },
         {
             "name": "league/commonmark",
-            "version": "2.9.0",
+            "version": "2.9.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/thephpleague/commonmark.git",
-                "reference": "5703d83ba3da3b2e356a5fedc848ed6d8ffb6529"
+                "reference": "73cb188c785abfa7a7bec73487148202968274c6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/thephpleague/commonmark/zipball/5703d83ba3da3b2e356a5fedc848ed6d8ffb6529",
-                "reference": "5703d83ba3da3b2e356a5fedc848ed6d8ffb6529",
+                "url": "https://api.github.com/repos/thephpleague/commonmark/zipball/73cb188c785abfa7a7bec73487148202968274c6",
+                "reference": "73cb188c785abfa7a7bec73487148202968274c6",
                 "shasum": ""
             },
             "require": {
@@ -1621,7 +1621,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-08-03T13:42:31+00:00"
+            "time": "2026-08-09T14:10:38+00:00"
         },
         {
             "name": "league/config",
@@ -5006,16 +5006,16 @@
         },
         {
             "name": "symfony/mime",
-            "version": "v7.4.15",
+            "version": "v7.4.16",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/mime.git",
-                "reference": "0c1daf58bc931628df0bea26840d1fc8b9a3d34b"
+                "reference": "20094b76a7106dbe978d31cd3bd7aa1ed248d0e5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/mime/zipball/0c1daf58bc931628df0bea26840d1fc8b9a3d34b",
-                "reference": "0c1daf58bc931628df0bea26840d1fc8b9a3d34b",
+                "url": "https://api.github.com/repos/symfony/mime/zipball/20094b76a7106dbe978d31cd3bd7aa1ed248d0e5",
+                "reference": "20094b76a7106dbe978d31cd3bd7aa1ed248d0e5",
                 "shasum": ""
             },
             "require": {
@@ -5071,7 +5071,7 @@
                 "mime-type"
             ],
             "support": {
-                "source": "https://github.com/symfony/mime/tree/v7.4.15"
+                "source": "https://github.com/symfony/mime/tree/v7.4.16"
             },
             "funding": [
                 {
@@ -5091,7 +5091,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-07-29T07:59:49+00:00"
+            "time": "2026-08-07T14:56:57+00:00"
         },
         {
             "name": "symfony/options-resolver",
@@ -6514,16 +6514,16 @@
         },
         {
             "name": "symfony/var-exporter",
-            "version": "v7.4.14",
+            "version": "v7.4.16",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/var-exporter.git",
-                "reference": "0118811b1d59f323bf131250b3fb919febfece28"
+                "reference": "ca31404415670aa3834809005b529df1b84f0790"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/var-exporter/zipball/0118811b1d59f323bf131250b3fb919febfece28",
-                "reference": "0118811b1d59f323bf131250b3fb919febfece28",
+                "url": "https://api.github.com/repos/symfony/var-exporter/zipball/ca31404415670aa3834809005b529df1b84f0790",
+                "reference": "ca31404415670aa3834809005b529df1b84f0790",
                 "shasum": ""
             },
             "require": {
@@ -6571,7 +6571,7 @@
                 "serialize"
             ],
             "support": {
-                "source": "https://github.com/symfony/var-exporter/tree/v7.4.14"
+                "source": "https://github.com/symfony/var-exporter/tree/v7.4.16"
             },
             "funding": [
                 {
@@ -6591,7 +6591,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-06-27T08:41:53+00:00"
+            "time": "2026-07-30T12:37:26+00:00"
         },
         {
             "name": "thecodingmachine/safe",

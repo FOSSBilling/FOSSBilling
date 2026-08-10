@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use Box\Mod\Invoice\Api\Admin;
+use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\InvoiceItem;
 use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
@@ -108,8 +109,8 @@ test('gets an invoice', function (): void {
         ->andReturn([]);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_Invoice();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(Invoice::class);
+
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -143,8 +144,8 @@ test('marks invoice as paid', function (): void {
         ->byDefault()
         ->andReturn(['code' => 'PayPal', 'enabled' => 1]);
 
-    $invoiceModel = new Model_Invoice();
-    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceModel = createEntity(Invoice::class);
+
     $invoiceModel->gateway_id = '1';
 
     $gatewayModel = createEntity(PayGateway::class, ['id' => 1]);
@@ -180,8 +181,8 @@ test('prepares an invoice', function (): void {
     ];
     $newInvoiceId = 1;
 
-    $invoiceModel = new Model_Invoice();
-    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceModel = createEntity(Invoice::class);
+
     $invoiceModel->id = $newInvoiceId;
 
     $serviceMock = Mockery::mock(Service::class);
@@ -191,7 +192,7 @@ test('prepares an invoice', function (): void {
 
     $dbMock = Mockery::mock('\Box_Database');
     $model = new Model_Client();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -218,8 +219,8 @@ test('approves an invoice', function (): void {
         ->andReturn(true);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_Invoice();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(Invoice::class);
+
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -246,8 +247,8 @@ test('refunds an invoice', function (): void {
         ->andReturn($newNegativeInvoiceId);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_Invoice();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(Invoice::class);
+
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -274,8 +275,8 @@ test('updates an invoice', function (): void {
         ->andReturn(true);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_Invoice();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(Invoice::class);
+
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -301,8 +302,7 @@ test('updates an invoice before approving it', function (): void {
             'price' => '10.00',
         ],
     ];
-    $model = new Model_Invoice();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(Invoice::class);
 
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('updateInvoice')
@@ -374,8 +374,8 @@ test('deletes an invoice', function (): void {
         ->andReturn(true);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_Invoice();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(Invoice::class);
+
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -404,6 +404,7 @@ test('creates renewal invoice', function (): void {
     $dbMock = Mockery::mock('\Box_Database');
     $model = new Model_ClientOrder();
     $model->loadBean(new Tests\Helpers\DummyBean());
+
     $model->price = 10;
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
@@ -433,6 +434,7 @@ test('creates renewal invoice for free order', function (): void {
     $dbMock = Mockery::mock('\Box_Database');
     $model = new Model_ClientOrder();
     $model->loadBean(new Tests\Helpers\DummyBean());
+
     $model->id = 1;
     $model->price = 0;
     $dbMock->shouldReceive('getExistingModelById')
@@ -474,8 +476,8 @@ test('pays invoice with credits', function (): void {
         ->andReturn(true);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_Invoice();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(Invoice::class);
+
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
@@ -554,8 +556,8 @@ test('sends reminder for an invoice', function (): void {
         ->andReturn(true);
 
     $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_Invoice();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(Invoice::class);
+
     $dbMock->shouldReceive('getExistingModelById')
         ->atLeast()->once()
         ->andReturn($model);
