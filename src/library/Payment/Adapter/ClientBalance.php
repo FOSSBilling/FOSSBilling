@@ -111,7 +111,7 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
             throw new Payment_Exception('Invoice not found');
         }
 
-        if ((int) $invoiceModel->getClientId() !== (int) $this->di['loggedin_client']->id) {
+        if ((int) $invoiceModel->getClientId() !== (int) $this->di['loggedin_client']->getId()) {
             throw new Payment_Exception('You are not authorized to pay this invoice with client balance.');
         }
 

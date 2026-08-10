@@ -14,6 +14,7 @@ namespace Box\Mod\Massmailer;
 use Box\Mod\Massmailer\Entity\MassmailerMessage;
 use Box\Mod\Massmailer\Repository\MassmailerMessageRepository;
 use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\DBAL\ParameterType;
 use FOSSBilling\Enums\ClientOrderStatusEnum;
 use FOSSBilling\Enums\ClientStatusEnum;
 use FOSSBilling\Environment;
@@ -139,6 +140,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             ->from('client', 'c')
             ->leftJoin('c', 'client_order', 'co', 'co.client_id = c.id')
             ->orderBy('c.id', 'DESC');
+        $query
+            ->andWhere('c.email IS NOT NULL AND c.email != :empty_email')
+            ->setParameter('empty_email', '', ParameterType::STRING);
 
         $this->appendInCondition($query, 'c.status', 'client_status', $filter[self::FILTER_CLIENT_STATUS] ?? [], ArrayParameterType::STRING);
         $this->appendInCondition($query, 'c.client_group_id', 'client_groups', $filter[self::FILTER_CLIENT_GROUPS] ?? [], ArrayParameterType::INTEGER);
@@ -232,6 +236,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $clientService = $this->di['mod_service']('client');
 
         $client = $clientService->get(['id' => $client_id]);
+
+        if (empty($client->getEmail())) {
+            throw new InformationException('Client does not have a valid email address');
+        }
 
         $data = [
             'to' => $client->getEmail(),

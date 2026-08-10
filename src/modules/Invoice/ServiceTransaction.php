@@ -973,8 +973,11 @@ class ServiceTransaction implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Invoice #:id not found', [':id' => $tx->getInvoiceId()], 703);
         }
         $client = $this->di['em']->getRepository(Client::class)->find($proforma->getClientId());
+        if (!$client instanceof Client) {
+            throw new \FOSSBilling\Exception('Client #:id not found', [':id' => $proforma->getClientId()]);
+        }
 
-        if ($client instanceof Client && $client->getCurrency() != $proforma->getCurrency()) {
+        if ($client->getCurrency() != $proforma->getCurrency()) {
             throw new \FOSSBilling\Exception('Client currency does not match invoice currency');
         }
 
@@ -984,7 +987,7 @@ class ServiceTransaction implements InjectionAwareInterface
         }
 
         $credit = new ClientBalance();
-        $credit->setClientId($client instanceof Client ? (int) $client->getId() : null);
+        $credit->setClientId((int) $client->getId());
         $credit->setType('transaction');
         $credit->setRelId((string) $tx->getId());
         $credit->setDescription('Invoice #' . $proforma->getId() . ' payment received from transaction #' . $tx->getId());

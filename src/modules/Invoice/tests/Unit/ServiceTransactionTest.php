@@ -539,3 +539,28 @@ test('debitTransaction records a client balance credit', function (): void {
 
     $service->debitTransaction($tx);
 });
+
+test('debitTransaction rejects a transaction without a client', function (): void {
+    $proforma = createEntity(Invoice::class);
+
+    $proforma->id = 5;
+    $proforma->client_id = 20;
+    $proforma->currency = 'USD';
+
+    $tx = createEntity(Transaction::class, ['id' => 7, 'invoice_id' => 5, 'currency' => 'USD', 'amount' => '25.00']);
+
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('find')->once()->with(5)->andReturn($proforma);
+
+    $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepo->shouldReceive('find')->once()->with(20)->andReturn(null);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+    $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepo);
+
+    $service = transactionService(em: $em);
+
+    expect(fn () => $service->debitTransaction($tx))
+        ->toThrow(FOSSBilling\Exception::class, 'Client #20 not found');
+});
