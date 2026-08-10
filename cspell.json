@@ -537,7 +537,10 @@
         "Brien",
         "whsec",
         "IDNA",
-        "Namingo"
+        "Namingo",
+        "htype",
+        "webspace",
+        "webspaces"
     ],
     "ignorePaths": [
         "node_modules/**",
