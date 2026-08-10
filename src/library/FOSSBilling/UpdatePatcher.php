@@ -2914,7 +2914,7 @@ class UpdatePatcher implements InjectionAwareInterface
                    SELECT 1 FROM client_order_meta m
                    WHERE m.client_order_id = co.id AND m.name = 'stock_reserved_qty'
                )
-             ORDER BY co.product_id ASC, co.id ASC"
+             ORDER BY co.product_id ASC, co.created_at ASC, co.id ASC"
         );
         // The NOT EXISTS above excludes already-backfilled orders, so this is safe to rerun
         // after a partial failure.

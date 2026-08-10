@@ -280,6 +280,27 @@ test('stock reservation backfill patch is a no-op when there is nothing to backf
     (new ReflectionMethod($patcher, 'patch100'))->invoke($patcher);
 });
 
+test('stock reservation backfill patch orders candidates by creation time, not id', function (): void {
+    // An order's id doesn't necessarily reflect when it was created (e.g. an imported or
+    // manually restored order), so "oldest first" has to mean created_at, with id only as a
+    // deterministic tie-breaker for orders created at the same instant.
+    $selectOrders = Mockery::mock(PDOStatement::class);
+    $selectOrders->expects('execute')->with([])->andReturnTrue();
+    $selectOrders->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([]);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'ORDER BY co.product_id ASC, co.created_at ASC, co.id ASC')))
+        ->andReturn($selectOrders);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch100'))->invoke($patcher);
+});
+
 test('stock reservation backfill patch reserves stock for a pending order and decrements it', function (): void {
     $selectOrders = Mockery::mock(PDOStatement::class);
     $selectOrders->expects('execute')->with([])->andReturnTrue();
@@ -386,19 +407,21 @@ test('stock reservation backfill patch rolls back if a statement fails partway t
 });
 
 test('stock reservation backfill patch stops once a product is already oversold', function (): void {
-    // Two pending orders for the same product, but only one unit left: the older order (lower
-    // id) is granted the reservation via a guarded decrement; the newer one's decrement affects
-    // zero rows once stock is gone, so it's rolled back and left exactly as it was pre-patch.
+    // Two pending orders for the same product, but only one unit left. Order 6 has the higher
+    // id but was actually created first (e.g. an imported order) - the ORDER BY created_at
+    // clause means it's the one processed first and granted the reservation via a guarded
+    // decrement; order 5's decrement affects zero rows once stock is gone, so it's rolled back
+    // and left exactly as it was pre-patch.
     $selectOrders = Mockery::mock(PDOStatement::class);
     $selectOrders->expects('execute')->with([])->andReturnTrue();
     $selectOrders->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
-        ['order_id' => 5, 'product_id' => 1, 'quantity' => 1],
         ['order_id' => 6, 'product_id' => 1, 'quantity' => 1],
+        ['order_id' => 5, 'product_id' => 1, 'quantity' => 1],
     ]);
 
     $firstDecrement = Mockery::mock(PDOStatement::class);
     $firstDecrement->expects('execute')->with(Mockery::on(function (array $params): bool {
-        expect($params[0])->toBe(5)->and($params[3])->toBe(1);
+        expect($params[0])->toBe(6)->and($params[3])->toBe(1);
 
         return true;
     }))->andReturnTrue();
@@ -406,7 +429,7 @@ test('stock reservation backfill patch stops once a product is already oversold'
 
     $secondDecrement = Mockery::mock(PDOStatement::class);
     $secondDecrement->expects('execute')->with(Mockery::on(function (array $params): bool {
-        expect($params[0])->toBe(6)->and($params[3])->toBe(1);
+        expect($params[0])->toBe(5)->and($params[3])->toBe(1);
 
         return true;
     }))->andReturnTrue();
@@ -414,8 +437,8 @@ test('stock reservation backfill patch stops once a product is already oversold'
 
     $insertMeta = Mockery::mock(PDOStatement::class);
     $insertMeta->expects('execute')->with(Mockery::on(function (array $params): bool {
-        // Only order 5 may be reserved; order 6's decrement never succeeded.
-        expect($params['order_id'])->toBe(5);
+        // Only order 6 may be reserved; order 5's decrement never succeeded.
+        expect($params['order_id'])->toBe(6);
 
         return true;
     }))->andReturnTrue();
