@@ -55,14 +55,14 @@ class OrderRepository extends EntityRepository
     /**
      * @return Order[]
      */
-    public function findAddonsExcluding(int $groupId, int $clientId, int $excludeOrderId): array
+    public function findAddonsExcluding(string $groupId, int $clientId, int $excludeOrderId): array
     {
         return $this->createQueryBuilder('o')
             ->where('o.groupId = :groupId')
             ->andWhere('o.clientId = :clientId')
             ->andWhere('o.id != :excludeId')
-            ->andWhere('o.groupMaster IS NULL OR o.groupMaster = false')
-            ->setParameter('groupId', (string) $groupId)
+            ->andWhere('(o.groupMaster IS NULL OR o.groupMaster = false)')
+            ->setParameter('groupId', $groupId)
             ->setParameter('clientId', $clientId)
             ->setParameter('excludeId', $excludeOrderId)
             ->getQuery()

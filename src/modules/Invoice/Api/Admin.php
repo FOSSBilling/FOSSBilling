@@ -277,7 +277,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_invoices');
 
-        $model = $this->getDi()['em']->getRepository(Order::class)->find($data['id']);
+        $model = $this->getDi()['em']->getRepository(Order::class)->find((int) $data['id']);
         if (!$model instanceof Order) {
             throw new \FOSSBilling\Exception('Order not found');
         }

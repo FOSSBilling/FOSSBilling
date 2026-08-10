@@ -536,7 +536,6 @@ class Service implements InjectionAwareInterface
             'status' => $model->getStatus(),
             'reason' => $model->getReason(),
             'notes' => $model->getNotes(),
-            'config' => $model->getConfig(),
             'suspension_grace_days' => $model->getSuspensionGraceDays(),
             'referred_by' => $model->getReferredBy(),
             'expires_at' => $model->getExpiresAt()?->format('Y-m-d H:i:s'),
@@ -1184,7 +1183,7 @@ class Service implements InjectionAwareInterface
         $groupId = $order->getGroupId();
         $clientId = $order->getClientId();
 
-        return $this->getOrderRepository()->findAddonsExcluding((int) $groupId, (int) $clientId, $this->orderId($order));
+        return $this->getOrderRepository()->findAddonsExcluding((string) $groupId, (int) $clientId, $this->orderId($order));
     }
 
     protected function _callOnService(Order $order, $action, mixed ...$arguments)
@@ -1371,10 +1370,8 @@ class Service implements InjectionAwareInterface
 
     public function renewFromOrder(Order $order): void
     {
-        $orderId = $this->orderId($order);
-
         try {
-            $result = $this->_callOnService($order, Order::ACTION_RENEW);
+            $this->_callOnService($order, Order::ACTION_RENEW);
         } catch (\Exception $e) {
             $order->setStatus(Order::STATUS_FAILED_RENEW);
             $this->persistOrder($order);
@@ -2021,6 +2018,8 @@ class Service implements InjectionAwareInterface
         $orders = $this->getOrderRepository()->findByClientId((int) $clientId);
         foreach ($orders as $order) {
             $productService->releaseReservedPromoRedemptionsForOrder($order, 'client_deleted');
+            $this->getOrderMetaRepository()->deleteByOrderId($this->orderId($order));
+            $this->getOrderStatusRepository()->rmByOrderId($this->orderId($order));
         }
 
         $query = $this->di['dbal']->createQueryBuilder();

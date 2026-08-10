@@ -2358,14 +2358,14 @@ test('activateOrderAddons activates addons', function (): void {
 });
 
 test('getOrderAddonsList returns addons', function (): void {
-    $modelClientOrder = createEntity(Order::class);
+    $modelClientOrder = createEntity(Order::class, ['id' => 7, 'clientId' => 5, 'groupId' => '68a3f1c2d4e5a']);
 
     $orderEntity = new Order();
     $idProp = new ReflectionProperty($orderEntity, 'id');
     $idProp->setValue($orderEntity, 1);
 
     $orderRepoMock = Mockery::mock(OrderRepository::class)->shouldIgnoreMissing();
-    $orderRepoMock->shouldReceive('findAddonsExcluding')->atLeast()->once()->andReturn([$orderEntity]);
+    $orderRepoMock->shouldReceive('findAddonsExcluding')->with('68a3f1c2d4e5a', 5, 7)->atLeast()->once()->andReturn([$orderEntity]);
 
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
@@ -2785,7 +2785,7 @@ test('cancelFromOrder remains retryable when subscription cancellation fails', f
 test('rmByClient removes all client orders', function (): void {
     $clientModel = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 100]);
 
-    $orderModel = createEntity(Order::class);
+    $orderModel = createEntity(Order::class, ['id' => 1]);
 
     $queryBuilderMock = new class {
         private bool $deleteCalled = false;
@@ -2869,8 +2869,16 @@ test('rmByClient removes all client orders', function (): void {
     $orderRepoMock = Mockery::mock(OrderRepository::class)->shouldIgnoreMissing();
     $orderRepoMock->shouldReceive('findByClientId')->once()->with(100)->andReturn([$orderModel]);
 
+    $metaRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderMetaRepository::class)->shouldIgnoreMissing();
+    $metaRepoMock->shouldReceive('deleteByOrderId')->once()->with(1);
+
+    $statusRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderStatusRepository::class)->shouldIgnoreMissing();
+    $statusRepoMock->shouldReceive('rmByOrderId')->once()->with(1);
+
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
+    $emMock->shouldReceive('getRepository')->with(Box\Mod\Order\Entity\OrderMeta::class)->andReturn($metaRepoMock);
+    $emMock->shouldReceive('getRepository')->with(Box\Mod\Order\Entity\OrderStatus::class)->andReturn($statusRepoMock);
     $emMock->shouldIgnoreMissing();
 
     $productServiceMock = Mockery::mock(Box\Mod\Product\Service::class);

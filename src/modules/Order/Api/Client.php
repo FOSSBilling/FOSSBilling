@@ -83,7 +83,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
     public function service($data)
     {
         $order = $this->_getOrder($data);
-        $status = $order instanceof Order ? $order->getStatus() : $order->status;
+        $status = $order->getStatus();
 
         if ($status !== Order::STATUS_ACTIVE) {
             throw new \FOSSBilling\InformationException('Order is not active');
@@ -101,7 +101,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
     {
         $model = $this->_getOrder($data);
         $productService = $this->di['mod_service']('product');
-        $productId = $model instanceof Order ? $model->getProductId() : $model->product_id;
+        $productId = $model->getProductId();
 
         return $productService->getUpgradablePairsByProductId((int) $productId);
     }
@@ -112,7 +112,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
     public function delete($data)
     {
         $model = $this->_getOrder($data);
-        $status = $model instanceof Order ? $model->getStatus() : $model->status;
+        $status = $model->getStatus();
         if (!in_array($status, [Order::STATUS_PENDING_SETUP, Order::STATUS_FAILED_SETUP])) {
             throw new \FOSSBilling\InformationException('Only pending and failed setup orders can be deleted.');
         }
