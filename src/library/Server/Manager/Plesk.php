@@ -571,11 +571,9 @@ class Server_Manager_Plesk extends Server_Manager
         ];
 
         if ($action === 'set') {
-            // The 'set' operation requires <filter> (which subscription to update) and <values>
-            // (the settings to apply) as the only direct children of <set> -- unlike 'add', the
-            // settings can't be placed directly under the action node. Filtering by 'owner-login'
-            // would match every webspace this customer owns and apply $values to all of them; 'name'
-            // (like deleteSubscription() already uses) scopes the update to this one subscription.
+            // Filtering by 'owner-login' would match every webspace this customer owns, applying
+            // $values to all of them; 'name' (like deleteSubscription() already uses) scopes the
+            // update to this one subscription.
             return [
                 'set' => [
                     'filter' => [
