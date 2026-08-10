@@ -477,8 +477,19 @@ class Service implements InjectionAwareInterface
         $cron->setName('System Cron Job');
         $cron->setSignature('');
         $cron->setStatus(Admin::STATUS_ACTIVE);
-        $this->di['em']->persist($cron);
-        $this->di['em']->flush();
+
+        try {
+            $this->di['em']->persist($cron);
+            $this->di['em']->flush();
+        } catch (UniqueConstraintViolationException) {
+            $this->di['em']->clear();
+            $cron = $this->getAdminRepository()->findOneBy(['systemName' => Admin::SYSTEM_CRON]);
+            if ($cron instanceof Admin) {
+                return $cron;
+            }
+
+            throw new \FOSSBilling\Exception('The cron administrator account could not be created');
+        }
 
         return $cron;
     }
@@ -512,7 +523,10 @@ class Service implements InjectionAwareInterface
         $this->checkPermissionsAndThrowException('staff', 'create_and_edit_staff');
 
         $previousStatus = $model->getStatus();
-        $newStatus = $data['status'] ?? $model->getStatus();
+        $newStatus = strtolower((string) ($data['status'] ?? $model->getStatus()));
+        if (!in_array($newStatus, [Admin::STATUS_ACTIVE, Admin::STATUS_INACTIVE], true)) {
+            $newStatus = Admin::STATUS_ACTIVE;
+        }
 
         if ((int) $this->di['loggedin_admin']->getId() === (int) $model->getId() && $previousStatus === Admin::STATUS_ACTIVE && $newStatus !== Admin::STATUS_ACTIVE) {
             throw new \FOSSBilling\InformationException('You cannot deactivate your own staff account');
@@ -534,8 +548,13 @@ class Service implements InjectionAwareInterface
         if (array_key_exists('timezone', $data)) {
             $model->setTimezone(i18n::validateTimezone($data['timezone']));
         }
-        $this->di['em']->persist($model);
-        $this->di['em']->flush();
+
+        try {
+            $this->di['em']->persist($model);
+            $this->di['em']->flush();
+        } catch (UniqueConstraintViolationException) {
+            throw new \FOSSBilling\InformationException('Staff member with email :email is already registered.', [':email' => $model->getEmail()], 788954);
+        }
 
         if ($model->getStatus() !== Admin::STATUS_ACTIVE && $previousStatus === Admin::STATUS_ACTIVE) {
             $profileService = $this->di['mod_service']('profile');
@@ -564,9 +583,11 @@ class Service implements InjectionAwareInterface
 
         $id = $model->getId();
         $name = $model->getName();
-        $this->adminGroupMemberRepository->deleteMembershipsForAdmin((int) $id);
-        $this->di['em']->remove($model);
-        $this->di['em']->flush();
+        $this->di['em']->wrapInTransaction(function () use ($model, $id): void {
+            $this->adminGroupMemberRepository->deleteMembershipsForAdmin((int) $id);
+            $this->di['em']->remove($model);
+            $this->di['em']->flush();
+        });
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffDelete', 'params' => ['id' => $id]]);
 
@@ -624,16 +645,17 @@ class Service implements InjectionAwareInterface
         $model->setTimezone(i18n::validateTimezone($data['timezone'] ?? null));
 
         try {
-            $this->di['em']->persist($model);
-            $this->di['em']->flush();
+            $this->di['em']->wrapInTransaction(function () use ($model, $group): void {
+                $this->di['em']->persist($model);
+                $this->di['em']->flush();
+                $this->di['em']->persist(new AdminGroupMember((int) $model->getId(), $group));
+                $this->di['em']->flush();
+            });
         } catch (UniqueConstraintViolationException) {
             throw new \FOSSBilling\InformationException('Staff member with email :email is already registered.', [':email' => $data['email']], 788954);
         }
 
         $newId = (int) $model->getId();
-
-        $this->di['em']->persist(new AdminGroupMember($newId, $group));
-        $this->di['em']->flush();
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffCreate', 'params' => ['id' => $newId]]);
 

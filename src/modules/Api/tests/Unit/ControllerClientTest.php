@@ -135,7 +135,7 @@ test('try token login rejects cron admin token', function (): void {
     $_SERVER['HTTP_AUTHORIZATION'] = 'Basic ' . base64_encode('admin:' . $cronToken);
 
     $adminRepository = Mockery::mock(AdminRepository::class);
-    $adminRepository->shouldReceive('findOneBy')->with(['apiToken' => $cronToken, 'status' => Admin::STATUS_ACTIVE])->once()->andReturn(null);
+    $adminRepository->shouldReceive('findOneBy')->with(['apiToken' => $cronToken, 'status' => Admin::STATUS_ACTIVE])->once()->andReturn(buildAdminModel(1, $cronToken, Admin::SYSTEM_CRON));
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')->with(Admin::class)->once()->andReturn($adminRepository);

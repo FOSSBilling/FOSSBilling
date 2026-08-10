@@ -126,6 +126,11 @@ function staffEntityManager(object $groupRepository, ?object $groupMemberReposit
             $this->removed[] = $entity;
         }
 
+        public function wrapInTransaction(callable $callback): mixed
+        {
+            return $callback();
+        }
+
         public function flush(): void
         {
         }
@@ -1303,6 +1308,7 @@ test('create throws exception for duplicate email', function (): void {
     $emMock = Mockery::mock(EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')->with(AdminGroup::class)->andReturn($groupRepository);
     $emMock->shouldReceive('getRepository')->with(AdminGroupMember::class)->andReturn(Mockery::mock(AdminGroupMemberRepository::class));
+    $emMock->shouldReceive('wrapInTransaction')->once()->andReturnUsing(static fn (callable $callback): mixed => $callback());
     $emMock->shouldReceive('persist')->atLeast()->once()->andThrow(new Doctrine\DBAL\Exception\UniqueConstraintViolationException(
         new class extends RuntimeException implements Doctrine\DBAL\Driver\Exception {
             public function getSQLState(): ?string
