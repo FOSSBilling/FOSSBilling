@@ -62,7 +62,7 @@ class Helpdesk implements ApiArrayInterface, TimestampInterface
         $this->tickets = new ArrayCollection();
     }
 
-    public function toApiArray(\Model_Admin|\Model_Client|\Model_Guest|null $identity = null): array
+    public function toApiArray(\Model_Admin|\Model_Client|\FOSSBilling\Identity\Guest|null $identity = null): array
     {
         if ($identity instanceof \Model_Admin) {
             return [
