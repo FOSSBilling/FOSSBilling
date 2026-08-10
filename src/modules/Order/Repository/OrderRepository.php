@@ -31,6 +31,44 @@ class OrderRepository extends EntityRepository
         return $order instanceof Order ? $order : null;
     }
 
+    public function findOneByServiceTypeAndServiceId(string $serviceType, int $serviceId): ?Order
+    {
+        $order = $this->findOneBy(['serviceType' => $serviceType, 'serviceId' => $serviceId]);
+
+        return $order instanceof Order ? $order : null;
+    }
+
+    public function findMasterByGroupAndClient(string $groupId, int $clientId): ?Order
+    {
+        $order = $this->findOneBy(['groupId' => $groupId, 'groupMaster' => true, 'clientId' => $clientId]);
+
+        return $order instanceof Order ? $order : null;
+    }
+
+    public function findOneByGroupIdAndServiceType(string $groupId, string $serviceType): ?Order
+    {
+        $order = $this->findOneBy(['groupId' => $groupId, 'serviceType' => $serviceType]);
+
+        return $order instanceof Order ? $order : null;
+    }
+
+    /**
+     * @return Order[]
+     */
+    public function findAddonsExcluding(string $groupId, int $clientId, int $excludeOrderId): array
+    {
+        return $this->createQueryBuilder('o')
+            ->where('o.groupId = :groupId')
+            ->andWhere('o.clientId = :clientId')
+            ->andWhere('o.id != :excludeId')
+            ->andWhere('(o.groupMaster IS NULL OR o.groupMaster = false)')
+            ->setParameter('groupId', $groupId)
+            ->setParameter('clientId', $clientId)
+            ->setParameter('excludeId', $excludeOrderId)
+            ->getQuery()
+            ->getResult();
+    }
+
     /**
      * @return Order[]
      */

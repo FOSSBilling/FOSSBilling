@@ -416,11 +416,7 @@ test('checks whether an order supports cancellation at period end', function ():
     $api->shouldReceive('_getOrder')->once()->andReturn($order);
 
     $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
-    $legacyOrder = new Model_ClientOrder();
-    $legacyOrder->loadBean(new Tests\Helpers\DummyBean(['id' => 1]));
-    $service = Mockery::mock(Service::class);
-    $service->shouldReceive('getLegacyOrder')->once()->with($order)->andReturn($legacyOrder);
-    $subscriptionService->shouldReceive('canCancelAtPeriodEndForOrder')->once()->with($legacyOrder)->andReturn(true);
+    $subscriptionService->shouldReceive('canCancelAtPeriodEndForOrder')->once()->with($order)->andReturn(true);
 
     $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
     $staffService->shouldReceive('checkPermissionsAndThrowException')->once()->andReturn(true);
@@ -428,7 +424,7 @@ test('checks whether an order supports cancellation at period end', function ():
     $di = container();
     $di['mod_service'] = $di->protect(fn (string $module) => strtolower($module) === 'staff' ? $staffService : $subscriptionService);
     $api->setDi($di);
-    $api->setService($service);
+    $api->setService(Mockery::mock(Service::class));
 
     expect($api->can_cancel_at_period_end(['id' => 1]))->toBeTrue();
 });

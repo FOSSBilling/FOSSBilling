@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicedownloadable\Api;
 
+use Box\Mod\Order\Entity\Order;
 use Box\Mod\Servicedownloadable\Entity\ServiceDownloadable;
 use Box\Mod\Servicedownloadable\Entity\ServiceDownloadableFile;
 use FOSSBilling\Validation\Api\RequiredParams;
@@ -33,15 +34,15 @@ class Client extends \FOSSBilling\Api\AbstractApi
         }
 
         $identity = $this->getIdentity();
-        $order = $this->getDi()['db']->findOne('ClientOrder', 'id = :id AND client_id = :client_id', [':id' => $data['order_id'], ':client_id' => $identity->id]);
-        if (!$order instanceof \Model_ClientOrder) {
+        $order = $this->getDi()['em']->getRepository(Order::class)->findOneBy(['id' => $data['order_id'], 'clientId' => $identity->id]);
+        if (!$order instanceof Order) {
             throw new \FOSSBilling\InformationException('Order not found');
         }
 
         $orderService = $this->getDi()['mod_service']('order');
         $orderService->assertOrderUsable($order);
         $s = $orderService->getOrderService($order);
-        if (!$s instanceof ServiceDownloadable || $order->status !== 'active') {
+        if (!$s instanceof ServiceDownloadable || $order->getStatus() !== 'active') {
             throw new \FOSSBilling\Exception('Order is not activated');
         }
 

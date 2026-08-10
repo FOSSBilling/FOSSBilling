@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicecustom;
 
+use Box\Mod\Order\Entity\Order;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Servicecustom\Entity\ServiceCustom;
 use FOSSBilling\Environment;
@@ -88,18 +89,18 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
     }
 
-    public function action_create(\Model_ClientOrder $order): ServiceCustom
+    public function action_create(Order $order): ServiceCustom
     {
-        $product = $this->di['mod_service']('product')->findProductById((int) $order->product_id);
+        $product = $this->di['mod_service']('product')->findProductById((int) $order->getProductId());
         if (!$product instanceof Product) {
             throw new \FOSSBilling\InformationException('Product not found');
         }
 
         $model = new ServiceCustom();
-        $model->setClientId((int) $order->client_id);
+        $model->setClientId((int) $order->getClientId());
         $model->setPlugin($product->getPlugin());
         $model->setPluginConfig($product->getPluginConfig());
-        $model->setConfig($order->config);
+        $model->setConfig($order->getConfig());
 
         $this->di['em']->persist($model);
         $this->di['em']->flush();
@@ -107,7 +108,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $model;
     }
 
-    public function action_activate(\Model_ClientOrder $order): bool
+    public function action_activate(Order $order): bool
     {
         $model = $this->_getOrderService($order);
         $this->callOnAdapter($model, 'activate');
@@ -115,7 +116,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function action_renew(\Model_ClientOrder $order): bool
+    public function action_renew(Order $order): bool
     {
         $model = $this->_getOrderService($order);
         $this->callOnAdapter($model, 'renew');
@@ -125,7 +126,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function action_suspend(\Model_ClientOrder $order): bool
+    public function action_suspend(Order $order): bool
     {
         $model = $this->_getOrderService($order);
 
@@ -136,7 +137,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function action_unsuspend(\Model_ClientOrder $order): bool
+    public function action_unsuspend(Order $order): bool
     {
         $model = $this->_getOrderService($order);
 
@@ -147,7 +148,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function action_cancel(\Model_ClientOrder $order): bool
+    public function action_cancel(Order $order): bool
     {
         $model = $this->_getOrderService($order);
 
@@ -158,7 +159,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function action_uncancel(\Model_ClientOrder $order): bool
+    public function action_uncancel(Order $order): bool
     {
         $model = $this->_getOrderService($order);
 
@@ -169,7 +170,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function action_delete(\Model_ClientOrder $order): bool
+    public function action_delete(Order $order): bool
     {
         try {
             $model = $this->_getOrderService($order);
@@ -240,18 +241,21 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $orderService = $this->di['mod_service']('order');
 
         if ($clientId !== null) {
-            $order = $this->di['db']->findOne('ClientOrder', 'id = ? AND client_id = ?', [$orderId, $clientId]);
-            if (!$order instanceof \Model_ClientOrder) {
+            $order = $this->di['em']->getRepository(Order::class)->findOneBy(['id' => $orderId, 'clientId' => $clientId]);
+            if (!$order instanceof Order) {
                 throw new \FOSSBilling\InformationException('Order not found');
             }
 
             $orderService->assertOrderUsable($order);
 
-            if ($order->status !== \Model_ClientOrder::STATUS_ACTIVE) {
+            if ($order->getStatus() !== Order::STATUS_ACTIVE) {
                 throw new \FOSSBilling\InformationException('Order is not activated');
             }
         } else {
-            $order = $this->di['db']->getExistingModelById('ClientOrder', $orderId, 'Order not found');
+            $order = $this->di['em']->getRepository(Order::class)->find($orderId);
+            if (!$order instanceof Order) {
+                throw new \FOSSBilling\InformationException('Order not found');
+            }
         }
 
         $s = $orderService->getOrderService($order);
@@ -300,12 +304,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $adapter->$method($data, $order_data, $params);
     }
 
-    private function _getOrderService(\Model_ClientOrder $order): ServiceCustom
+    private function _getOrderService(Order $order): ServiceCustom
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
         if (!$model instanceof ServiceCustom) {
-            throw new \FOSSBilling\Exception('Order :id has no active service', [':id' => $order->id]);
+            throw new \FOSSBilling\Exception('Order :id has no active service', [':id' => $order->getId()]);
         }
 
         return $model;

@@ -29,6 +29,25 @@ class InvoiceRepository extends EntityRepository
     }
 
     /**
+     * Must be called within a transaction, held for as long as the status is acted on.
+     */
+    public function lockAndGetStatus(int $invoiceId): ?string
+    {
+        $connection = $this->getEntityManager()->getConnection();
+
+        if (!$connection->isTransactionActive()) {
+            throw new \FOSSBilling\Exception('Invoice status cannot be locked outside of a transaction.');
+        }
+
+        $status = $connection->fetchOne(
+            'SELECT status FROM invoice WHERE id = :id FOR UPDATE',
+            ['id' => $invoiceId],
+        );
+
+        return $status === false ? null : (string) $status;
+    }
+
+    /**
      * @return Invoice[]
      */
     public function findPaid(): array

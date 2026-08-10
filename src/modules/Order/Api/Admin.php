@@ -256,7 +256,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $order = $this->_getOrder($data);
         $subscriptionService = $this->getDi()['mod_service']('Invoice', 'Subscription');
 
-        return $subscriptionService->canCancelAtPeriodEndForOrder($this->getService()->getLegacyOrder($order));
+        return $subscriptionService->canCancelAtPeriodEndForOrder($order);
     }
 
     /**
