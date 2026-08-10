@@ -57,7 +57,7 @@ function createApiDispatcherDi(bool $extensionActive = true, bool $moduleHasServ
     };
 
     $staffService ??= new class {
-        public function hasPermission(Model_Admin $identity, string $mod): bool
+        public function hasPermission(Box\Mod\Staff\Entity\Admin $identity, string $mod): bool
         {
             return true;
         }
@@ -148,9 +148,7 @@ test('api proxy requires the dispatcher service instead of creating one itself',
 });
 
 test('skips admin module permission check for allowed update finalization calls', function (): void {
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->id = 1;
+    $admin = \Tests\Helpers\admin(['id' => 1]);
 
     $staffService = Mockery::mock();
     $staffService->shouldReceive('hasPermission')->never();

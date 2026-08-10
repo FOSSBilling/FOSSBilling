@@ -122,7 +122,7 @@ test('gets an invoice', function (): void {
 
     $api->setDi($di);
     $api->setService($serviceMock);
-    $api->setIdentity(new Model_Admin());
+    $api->setIdentity(\Tests\Helpers\admin());
 
     $data['id'] = 1;
     $result = $api->get($data);
@@ -1367,7 +1367,7 @@ test('gets a tax', function (): void {
 
     $api->setDi($di);
     $api->setService($taxService);
-    $api->setIdentity(new Model_Admin());
+    $api->setIdentity(\Tests\Helpers\admin());
 
     $data['id'] = 1;
     $result = $api->tax_get($data);
@@ -1393,7 +1393,7 @@ test('updates a tax', function (): void {
 
     $api->setDi($di);
     $api->setService($taxService);
-    $api->setIdentity(new Model_Admin());
+    $api->setIdentity(\Tests\Helpers\admin());
 
     $data['id'] = 1;
     $result = $api->tax_update($data);

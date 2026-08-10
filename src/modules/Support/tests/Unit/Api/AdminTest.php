@@ -188,7 +188,7 @@ test('ticket message update', function (): void {
     $api->setDi($di);
 
     $api->setService($serviceMock);
-    $api->setIdentity(new Model_Admin());
+    $api->setIdentity(\Tests\Helpers\admin());
 
     $data = [
         'id' => 1,
@@ -258,7 +258,7 @@ test('ticket reply', function (): void {
     $api->setDi($di);
 
     $api->setService($serviceMock);
-    $api->setIdentity(new Model_Admin());
+    $api->setIdentity(\Tests\Helpers\admin());
 
     $data = [
         'id' => 1,
@@ -284,7 +284,7 @@ test('ticket close', function (): void {
     $api->setDi($di);
 
     $api->setService($serviceMock);
-    $api->setIdentity(new Model_Admin());
+    $api->setIdentity(\Tests\Helpers\admin());
 
     $data = [
         'id' => 1,
@@ -339,7 +339,7 @@ test('ticket create', function (): void {
     $api->setDi($di);
 
     $api->setService($serviceMock);
-    $api->setIdentity(new Model_Admin());
+    $api->setIdentity(\Tests\Helpers\admin());
 
     $data = [
         'client_id' => 1,
@@ -504,7 +504,7 @@ test('helpdesk get', function (): void {
     $api->setDi($di);
 
     $api->setService($serviceMock);
-    $api->setIdentity(new Model_Admin());
+    $api->setIdentity(\Tests\Helpers\admin());
 
     $data = [
         'id' => 1,
@@ -531,7 +531,7 @@ test('helpdesk update', function (): void {
     $api->setDi($di);
 
     $api->setService($serviceMock);
-    $api->setIdentity(new Model_Admin());
+    $api->setIdentity(\Tests\Helpers\admin());
 
     $data = [
         'id' => 1,
@@ -551,7 +551,7 @@ test('helpdesk create', function (): void {
     $api->setDi($di);
 
     $api->setService($serviceMock);
-    $api->setIdentity(new Model_Admin());
+    $api->setIdentity(\Tests\Helpers\admin());
 
     $data = [
         'id' => 1,
@@ -578,7 +578,7 @@ test('helpdesk delete', function (): void {
     $api->setDi($di);
 
     $api->setService($serviceMock);
-    $api->setIdentity(new Model_Admin());
+    $api->setIdentity(\Tests\Helpers\admin());
 
     $data = [
         'id' => 'General',
@@ -660,7 +660,7 @@ test('canned get', function (): void {
     $api->setDi($di);
 
     $api->setService($serviceMock);
-    $api->setIdentity(new Model_Admin());
+    $api->setIdentity(\Tests\Helpers\admin());
 
     $data = [
         'id' => 1,
@@ -687,7 +687,7 @@ test('canned delete', function (): void {
     $api->setDi($di);
 
     $api->setService($serviceMock);
-    $api->setIdentity(new Model_Admin());
+    $api->setIdentity(\Tests\Helpers\admin());
 
     $data = [
         'id' => 1,
@@ -707,7 +707,7 @@ test('canned create', function (): void {
     $api->setDi($di);
 
     $api->setService($serviceMock);
-    $api->setIdentity(new Model_Admin());
+    $api->setIdentity(\Tests\Helpers\admin());
 
     $data = [
         'title' => 'Title',
@@ -736,7 +736,7 @@ test('canned update', function (): void {
     $api->setDi($di);
 
     $api->setService($serviceMock);
-    $api->setIdentity(new Model_Admin());
+    $api->setIdentity(\Tests\Helpers\admin());
 
     $data = [
         'id' => 'Title',
@@ -762,7 +762,7 @@ test('canned category pairs', function (): void {
     $api->setDi($di);
     $api->setService($serviceMock);
 
-    $api->setIdentity(new Model_Admin());
+    $api->setIdentity(\Tests\Helpers\admin());
 
     $data = [
         'id' => 'Title',
@@ -787,7 +787,7 @@ test('canned category get', function (): void {
     $api->setDi($di);
 
     $api->setService($serviceMock);
-    $api->setIdentity(new Model_Admin());
+    $api->setIdentity(\Tests\Helpers\admin());
 
     $data = [
         'id' => 1,
@@ -816,7 +816,7 @@ test('canned category update', function (): void {
     $api->setDi($di);
 
     $api->setService($serviceMock);
-    $api->setIdentity(new Model_Admin());
+    $api->setIdentity(\Tests\Helpers\admin());
 
     $data = [
         'id' => 1,
@@ -844,7 +844,7 @@ test('canned category delete', function (): void {
     $api->setDi($di);
 
     $api->setService($serviceMock);
-    $api->setIdentity(new Model_Admin());
+    $api->setIdentity(\Tests\Helpers\admin());
 
     $data = [
         'id' => 1,
@@ -885,7 +885,7 @@ test('note create', function (): void {
     $api->setDi($di);
 
     $api->setService($serviceMock);
-    $api->setIdentity(new Model_Admin());
+    $api->setIdentity(\Tests\Helpers\admin());
 
     $data = [
         'ticket_id' => 1,
@@ -908,7 +908,7 @@ test('note delete', function (): void {
     $api->setDi($di);
 
     $api->setService($serviceMock);
-    $api->setIdentity(new Model_Admin());
+    $api->setIdentity(\Tests\Helpers\admin());
 
     $data = [
         'id' => 1,
@@ -1008,10 +1008,7 @@ test('kb article get', function (): void {
         ->with(1)
         ->andReturn(adminSupportKbArticleFixture());
 
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-
-    $admin->id = 5;
+    $admin = \Tests\Helpers\admin(['id' => 5]);
 
     $di = container();
     $di['loggedin_admin'] = $admin;

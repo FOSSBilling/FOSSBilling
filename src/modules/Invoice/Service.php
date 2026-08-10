@@ -458,7 +458,6 @@ class Service implements InjectionAwareInterface
         ];
 
         /**
-         * Removed if($identity instanceof \Model_Admin) {}
          * Generates error when this function is called by cron.
          */
         $client = isset($row['client_id']) ? $this->di['db']->load('Client', $row['client_id']) : null;

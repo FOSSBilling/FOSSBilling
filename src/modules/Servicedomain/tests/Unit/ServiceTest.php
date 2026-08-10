@@ -1046,7 +1046,7 @@ test('syncWhois stores null dates when registrar dates are unavailable', functio
         ->and($model->getRegisteredAt())->toBeNull();
 });
 
-test('converts to api array', function (?Model_Admin $identity, string $dbLoadCalled): void {
+test('converts to api array', function (?Box\Mod\Staff\Entity\Admin $identity, string $dbLoadCalled): void {
     $service = new Service();
     $model = new ServiceDomain();
 
@@ -1148,7 +1148,7 @@ test('converts to api array', function (?Model_Admin $identity, string $dbLoadCa
     expect($contact['phone_cc'])->toBe($model->getContactPhoneCc());
     expect($contact['phone'])->toBe($model->getContactPhone());
 
-    if ($identity instanceof Model_Admin) {
+    if ($identity instanceof Box\Mod\Staff\Entity\Admin) {
         expect($result)->toHaveKey('transfer_code');
         expect($result)->toHaveKey('registrar');
         expect($result['transfer_code'])->toBe($model->getTransferCode());
@@ -1156,8 +1156,7 @@ test('converts to api array', function (?Model_Admin $identity, string $dbLoadCa
     }
 })->with([
     [function () {
-        $model = new Model_Admin();
-        $model->loadBean(new Tests\Helpers\DummyBean());
+        $model = \Tests\Helpers\admin();
 
         return $model;
     }, 'atLeast'],
@@ -1173,7 +1172,7 @@ test('converts admin domain to api array without a registrar', function (): void
     $di['em'] = $emMock;
     $service->setDi($di);
 
-    $result = $service->toApiArray(new ServiceDomain(), false, new Model_Admin());
+    $result = $service->toApiArray(new ServiceDomain(), false, \Tests\Helpers\admin());
 
     expect($result['registrar'])->toBeNull();
 });
@@ -1483,7 +1482,7 @@ test('converts tld to api array', function (): void {
     $model->setPeriods('5,2,2,10');
     $model->setTldRegistrarId(1);
 
-    $result = $service->tldToApiArray($model, new Model_Admin());
+    $result = $service->tldToApiArray($model, \Tests\Helpers\admin());
     expect($result)->toBeArray();
 
     expect($result)->toHaveKey('tld');
@@ -1525,7 +1524,7 @@ test('converts admin tld to api array without a registrar', function (): void {
     $di['em'] = $emMock;
     $service->setDi($di);
 
-    $result = $service->tldToApiArray(new Tld(), new Model_Admin());
+    $result = $service->tldToApiArray(new Tld(), \Tests\Helpers\admin());
 
     expect($result['registrar'])->toBe([
         'id' => null,

@@ -29,7 +29,7 @@ final readonly class Identity
         return match (true) {
             $identity instanceof Guest => 'guest',
             $identity instanceof Client, $identity instanceof \Model_Client => 'client',
-            $identity instanceof Admin, $identity instanceof \Model_Admin => 'admin',
+            $identity instanceof Admin => 'admin',
             default => throw new \InvalidArgumentException(sprintf('Unsupported API identity: %s', $identity::class)),
         };
     }

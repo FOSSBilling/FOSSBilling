@@ -47,7 +47,7 @@ class SupportTicketMessageHistory implements ApiArrayInterface, TimestampInterfa
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $content = null;
 
-    public function toApiArray(\Model_Admin|\Model_Client|\FOSSBilling\Identity\Guest|null $identity = null): array
+    public function toApiArray(\Model_Client|\Box\Mod\Staff\Entity\Admin|\FOSSBilling\Identity\Guest|null $identity = null): array
     {
         return [
             'id' => $this->id,

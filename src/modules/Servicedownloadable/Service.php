@@ -281,7 +281,7 @@ class Service implements InjectionAwareInterface
                 'description' => $file->getDescription(),
             ];
 
-            if ($identity instanceof \Model_Admin) {
+            if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
                 $item['path'] = $this->getStoredFilePath($file->getStoredFilename());
                 $item['downloads'] = $file->getDownloads();
             }

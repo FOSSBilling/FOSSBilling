@@ -41,8 +41,8 @@ class Box_Authorization
             return false;
         }
 
-        $adminModel = $this->di['db']->load('Admin', $admin['id']);
-        if (!$adminModel || $adminModel->status !== Model_Admin::STATUS_ACTIVE || $adminModel->isCron()) {
+        $adminModel = $this->di['em']->getRepository(Box\Mod\Staff\Entity\Admin::class)->find($admin['id']);
+        if (!$adminModel instanceof Box\Mod\Staff\Entity\Admin || $adminModel->getStatus() !== Box\Mod\Staff\Entity\Admin::STATUS_ACTIVE || $adminModel->isCron()) {
             $this->session->delete('admin');
 
             return false;

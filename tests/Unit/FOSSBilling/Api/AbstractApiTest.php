@@ -26,7 +26,7 @@ test('does not resolve the test container implicitly', function (): void {
 });
 
 test('checkPermissions forwards identity to Staff service', function (): void {
-    $identity = new Model_Admin();
+    $identity = \Tests\Helpers\admin();
 
     $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
     $staffService->shouldReceive('checkPermissionsAndThrowException')
@@ -47,7 +47,7 @@ test('checkPermissions forwards identity to Staff service', function (): void {
 });
 
 test('checkPermissions forwards constraint to Staff service', function (): void {
-    $identity = new Model_Admin();
+    $identity = \Tests\Helpers\admin();
 
     $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
     $staffService->shouldReceive('checkPermissionsAndThrowException')

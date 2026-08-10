@@ -141,7 +141,7 @@ test('converts to api array', function (): void {
     $service = payGatewayService();
     $serviceMock->setDi($service->getDi());
 
-    $result = $serviceMock->toApiArray($payGateway, false, new Model_Admin());
+    $result = $serviceMock->toApiArray($payGateway, false, \Tests\Helpers\admin());
     expect($result)->toBeArray();
     expect($result['id'])->toBe(1);
     expect($result['code'])->toBe('Custom');

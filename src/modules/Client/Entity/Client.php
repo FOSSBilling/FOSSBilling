@@ -924,7 +924,7 @@ class Client implements ApiArrayInterface
             'timezone' => $this->timezone,
         ];
 
-        $isAdmin = $identity instanceof \Model_Admin || $identity instanceof \Box\Mod\Staff\Entity\Admin;
+        $isAdmin = $identity instanceof \Box\Mod\Staff\Entity\Admin;
         if (!$isAdmin) {
             return $details;
         }

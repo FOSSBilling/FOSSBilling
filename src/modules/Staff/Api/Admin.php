@@ -17,6 +17,7 @@ namespace Box\Mod\Staff\Api;
 
 use Box\Mod\Activity\Entity\ActivityAdminHistory;
 use Box\Mod\Activity\Repository\ActivityAdminHistoryRepository;
+use Box\Mod\Staff\Entity\Admin as AdminEntity;
 use Box\Mod\Staff\Entity\AdminGroup;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
@@ -36,8 +37,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
-            $staff = $this->getDi()['db']->getExistingModelById('Admin', $item['id'] ?? 0, 'Admin is not found');
-            $pager['list'][$key] = $this->getService()->toModel_AdminApiArray($staff);
+            $staff = $this->getDi()['em']->getRepository(AdminEntity::class)->find($item['id'] ?? 0);
+            if (!$staff instanceof AdminEntity) {
+                throw new \FOSSBilling\Exception('Admin is not found');
+            }
+            $pager['list'][$key] = $this->getService()->toApiArray($staff);
         }
 
         return $pager;
@@ -69,9 +73,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('staff', 'view');
 
-        $model = $this->getDi()['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
+        $model = $this->getAdminById((int) $data['id']);
 
-        return $this->getService()->toModel_AdminApiArray($model);
+        return $this->getService()->toApiArray($model);
     }
 
     /**
@@ -98,7 +102,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'ID was not passed'])]
     public function update($data)
     {
-        $model = $this->getDi()['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
+        $model = $this->getAdminById((int) $data['id']);
         $this->checkPermissions('staff', 'create_and_edit_staff');
 
         if (isset($data['email'])) {
@@ -118,7 +122,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'ID was not passed'])]
     public function delete($data)
     {
-        $model = $this->getDi()['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
+        $model = $this->getAdminById((int) $data['id']);
         $this->checkPermissions('staff', 'delete_staff');
 
         return $this->getService()->delete($model);
@@ -142,7 +146,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $this->getDi()['validator']->isPasswordStrong($data['password']);
 
-        $model = $this->getDi()['db']->getExistingModelById('Admin', $data['id'], 'Staff member not found');
+        $model = $this->getAdminById((int) $data['id']);
         $this->checkPermissions('staff', 'reset_staff_password');
 
         return $this->getService()->changePassword($model, $data['password']);
@@ -185,9 +189,14 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         return $group;
     }
 
-    private function getAdminById(int $id): \Model_Admin
+    private function getAdminById(int $id): AdminEntity
     {
-        return $this->getDi()['db']->getExistingModelById('Admin', $id, 'Staff member not found');
+        $admin = $this->getDi()['em']->getRepository(AdminEntity::class)->find($id);
+        if (!$admin instanceof AdminEntity) {
+            throw new \FOSSBilling\Exception('Staff member not found');
+        }
+
+        return $admin;
     }
 
     /**
@@ -328,7 +337,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $group = $this->getAdminGroupById((int) $data['group_id']);
 
         return array_map(
-            fn (int $adminId): array => $this->getService()->toModel_AdminApiArray($this->getAdminById($adminId)),
+            fn (int $adminId): array => $this->getService()->toApiArray($this->getAdminById($adminId)),
             $this->getService()->getAdminGroupMemberRepository()->getMemberIdsInGroup((int) $group->getId()),
         );
     }
@@ -345,7 +354,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         return array_map(
             static fn (AdminGroup $group): array => $group->toApiArray(),
-            $this->getService()->getAdminGroupMemberRepository()->findGroupsForAdmin((int) $admin->id),
+            $this->getService()->getAdminGroupMemberRepository()->findGroupsForAdmin((int) $admin->getId()),
         );
     }
 

@@ -103,8 +103,7 @@ test('creates renewal invoice', function (): void {
 
     $api->setDi($di);
     $api->setService($serviceMock);
-    $identity = new Model_Admin();
-    $identity->loadBean(new Tests\Helpers\DummyBean());
+    $identity = \Tests\Helpers\admin();
     $api->setIdentity($identity);
 
     $data['order_id'] = 1;
@@ -136,8 +135,7 @@ test('creates renewal invoice for free order', function (): void {
 
     $api->setDi($di);
     $api->setService($serviceMock);
-    $identity = new Model_Admin();
-    $identity->loadBean(new Tests\Helpers\DummyBean());
+    $identity = \Tests\Helpers\admin();
     $api->setIdentity($identity);
 
     $data['order_id'] = 1;
@@ -156,8 +154,7 @@ test('throws exception when creating renewal invoice for order not found', funct
     $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
 
     $api->setDi($di);
-    $identity = new Model_Admin();
-    $identity->loadBean(new Tests\Helpers\DummyBean());
+    $identity = \Tests\Helpers\admin();
     $api->setIdentity($identity);
 
     $data['order_id'] = 1;

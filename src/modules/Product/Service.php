@@ -192,7 +192,7 @@ class Service implements InjectionAwareInterface
         $config = json_decode($model->getConfig() ?? '', true) ?? [];
         $pricing = $this->getProductPricingArray($model);
         $starting_from = $this->getStartingFromPrice($model);
-        $isAdmin = $identity instanceof Admin || $identity instanceof \Model_Admin;
+        $isAdmin = $identity instanceof Admin;
         $addons = $this->getAddonsApiArray($model, $isAdmin);
 
         $result = [

@@ -144,10 +144,7 @@ test('is allowed', function (): void {
 test('update finalization status allows super administrator while pending', function (): void {
     $api = apiEndpoint(new Box\Mod\System\Api\Admin());
 
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->id = 1;
-    $admin->role = 'staff';
+    $admin = \Tests\Helpers\admin(['id' => 1, 'role' => 'staff']);
     $api->setIdentity($admin);
 
     $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
@@ -168,9 +165,7 @@ test('update finalization status allows super administrator while pending', func
 test('update finalization status falls back to legacy admin while pending', function (): void {
     $api = apiEndpoint(new Box\Mod\System\Api\Admin());
 
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->id = 1;
+    $admin = \Tests\Helpers\admin(['id' => 1]);
     $api->setIdentity($admin);
 
     $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
@@ -196,9 +191,7 @@ test('update finalization status falls back to legacy admin while pending', func
 test('update finalization status rejects legacy non-admin while pending', function (): void {
     $api = apiEndpoint(new Box\Mod\System\Api\Admin());
 
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->id = 1;
+    $admin = \Tests\Helpers\admin(['id' => 1]);
     $api->setIdentity($admin);
 
     $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
@@ -224,9 +217,7 @@ test('update finalization status rejects legacy non-admin while pending', functi
 test('update finalization status does not mask unrelated errors from isSuperAdministrator while pending', function (): void {
     $api = apiEndpoint(new Box\Mod\System\Api\Admin());
 
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->id = 1;
+    $admin = \Tests\Helpers\admin(['id' => 1]);
     $api->setIdentity($admin);
 
     $staffService = Mockery::mock(Box\Mod\Staff\Service::class);

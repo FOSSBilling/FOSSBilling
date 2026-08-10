@@ -269,7 +269,7 @@ test('handles after admin open ticket event', function (): void {
             return $serviceMock;
         }
     });
-    $di['loggedin_admin'] = new Model_Admin();
+    $di['loggedin_admin'] = \Tests\Helpers\admin();
     $serviceMock->setDi($di);
 
     $eventMock = Mockery::mock('\Box_Event');
@@ -316,7 +316,7 @@ test('handles after admin close ticket event', function (): void {
             return $serviceMock;
         }
     });
-    $di['loggedin_admin'] = new Model_Admin();
+    $di['loggedin_admin'] = \Tests\Helpers\admin();
     $serviceMock->setDi($di);
 
     $eventMock = Mockery::mock('\Box_Event');
@@ -363,7 +363,7 @@ test('handles after admin reply ticket event', function (): void {
             return $serviceMock;
         }
     });
-    $di['loggedin_admin'] = new Model_Admin();
+    $di['loggedin_admin'] = \Tests\Helpers\admin();
     $serviceMock->setDi($di);
 
     $eventMock = Mockery::mock('\Box_Event');
@@ -652,7 +652,7 @@ test('checks if task already exists returns false', function (): void {
 });
 
 dataset('closeTicketIdentities', [
-    [new Model_Admin()],
+    [\Tests\Helpers\admin()],
     [new Model_Client()],
 ]);
 
@@ -872,7 +872,7 @@ test('converts ticket to api array', function (): void {
     $ticket->setSupportHelpdesk($helpdesk);
     $ticket->setClientId(1);
 
-    $result = $serviceMock->toApiArray($ticket, true, new Model_Admin());
+    $result = $serviceMock->toApiArray($ticket, true, \Tests\Helpers\admin());
     expect($result)->toBeArray();
     expect($result)->toHaveKey('replies');
     expect($result)->toHaveKey('helpdesk');
@@ -956,7 +956,7 @@ test('converts ticket to api array with rel details', function (): void {
     $ticket->setRelId(1);
     $ticket->setRelType('Type');
 
-    $result = $serviceMock->toApiArray($ticket, true, new Model_Admin());
+    $result = $serviceMock->toApiArray($ticket, true, \Tests\Helpers\admin());
     expect($result)->toBeArray();
     expect($result)->toHaveKey('replies');
     expect($result)->toHaveKey('helpdesk');
@@ -1308,7 +1308,7 @@ dataset('kbArticleToApiArrayProvider', function () {
                 'kb_article_category_id' => $model->getKbArticleCategoryId(),
             ],
             true,
-            new Model_Admin(),
+            \Tests\Helpers\admin(),
         ],
         'views disabled' => [
             $model,
@@ -1332,7 +1332,7 @@ dataset('kbArticleToApiArrayProvider', function () {
     ];
 });
 
-test('kb to api array', function (KbArticle $model, array $expected, bool $includeContent, ?Model_Admin $identity, bool $includeViews = true): void {
+test('kb to api array', function (KbArticle $model, array $expected, bool $includeContent, ?Box\Mod\Staff\Entity\Admin $identity, bool $includeViews = true): void {
     $result = $model->toApiArray($identity, $includeContent, $includeViews);
     expect($result)->toEqual($expected);
 })->with('kbArticleToApiArrayProvider');
@@ -1728,11 +1728,11 @@ test('public find one by hash not found exception', function (): void {
 });
 
 dataset('closeTicketProvider', fn (): array => [
-    'with admin' => [new Model_Admin()],
+    'with admin' => [\Tests\Helpers\admin()],
     'with guest' => [new FOSSBilling\Identity\Guest()],
 ]);
 
-test('public close ticket', function (Model_Admin|FOSSBilling\Identity\Guest $identity): void {
+test('public close ticket', function (Box\Mod\Staff\Entity\Admin|FOSSBilling\Identity\Guest $identity): void {
     $service = new Service();
     $emMock = Mockery::mock(EntityManagerInterface::class);
     supportWireKbRepositories($emMock);
@@ -1860,9 +1860,7 @@ test('ticket message update', function (): void {
     $message->setAdminId(1);
     $message->setContent('Original content');
 
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->id = 7;
+    $admin = \Tests\Helpers\admin(['id' => 7]);
 
     $result = $service->ticketMessageUpdate($message, 'Edited content', $admin);
     expect($result)->toBeTrue();
@@ -1887,9 +1885,7 @@ test('ticket message update rejects editing a client-authored message', function
     $message->setClientId(1);
     $message->setContent('Client wrote this');
 
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->id = 7;
+    $admin = \Tests\Helpers\admin(['id' => 7]);
 
     $service->ticketMessageUpdate($message, 'Tampered content', $admin);
 })->throws(FOSSBilling\InformationException::class);
@@ -1911,9 +1907,7 @@ test('ticket message update skips creating history when content is unchanged', f
     $message->setAdminId(1);
     $message->setContent('Same content');
 
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->id = 7;
+    $admin = \Tests\Helpers\admin(['id' => 7]);
 
     $result = $service->ticketMessageUpdate($message, 'Same content', $admin);
     expect($result)->toBeTrue();
@@ -1947,9 +1941,7 @@ test('gets message history', function (): void {
 });
 
 dataset('ticketReplyProvider', function () {
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->id = 1;
+    $admin = \Tests\Helpers\admin(['id' => 1]);
 
     $client = new Model_Client();
     $client->loadBean(new Tests\Helpers\DummyBean());
@@ -1961,7 +1953,7 @@ dataset('ticketReplyProvider', function () {
     ];
 });
 
-test('ticket reply', function (Model_Admin|Model_Client $identity): void {
+test('ticket reply', function (Box\Mod\Staff\Entity\Admin|Model_Client $identity): void {
     $service = new Service();
     $message = new SupportTicketMessage();
     setEntityId($message, 1);
@@ -2035,9 +2027,7 @@ test('ticket create for admin', function (): void {
 
     $helpdesk = helpdeskFixture();
 
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->id = 1;
+    $admin = \Tests\Helpers\admin(['id' => 1]);
 
     $data = [
         'subject' => 'Subject',
@@ -2086,7 +2076,7 @@ test('ticket create for client', function (): void {
     $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
     $staffServiceMock->shouldReceive('getCronAdmin')
         ->atLeast()->once()
-        ->andReturn(new Model_Admin());
+        ->andReturn(\Tests\Helpers\admin());
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('ticketReply')
@@ -2270,9 +2260,7 @@ test('message to api array', function (): void {
 });
 
 dataset('messageCreateForTicketProvider', function () {
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->id = 1;
+    $admin = \Tests\Helpers\admin(['id' => 1]);
 
     $client = new Model_Client();
     $client->loadBean(new Tests\Helpers\DummyBean());
@@ -2284,7 +2272,7 @@ dataset('messageCreateForTicketProvider', function () {
     ];
 });
 
-test('message create for ticket', function (Model_Admin|Model_Client $identity): void {
+test('message create for ticket', function (Box\Mod\Staff\Entity\Admin|Model_Client $identity): void {
     $service = new Service();
     $randId = 1;
     $supportTicketMessage = new SupportTicketMessage();
@@ -2402,8 +2390,7 @@ test('note create', function (): void {
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin = \Tests\Helpers\admin();
 
     $ticket = new SupportTicket();
     setEntityId($ticket, 1);

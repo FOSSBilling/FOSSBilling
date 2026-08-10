@@ -149,7 +149,7 @@ class ServicePayGateway implements InjectionAwareInterface
             'accepted_currencies' => $this->getAcceptedCurrencies($model),
         ];
 
-        if ($identity instanceof \Model_Admin) {
+        if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
             $result['supports_one_time_payments'] = $single;
             $result['supports_subscriptions'] = $recurrent;
             $result['config'] = json_decode($model->getConfig() ?? '', true) ?? [];

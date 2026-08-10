@@ -10,6 +10,11 @@ declare(strict_types=1);
  */
 class Model_Client extends RedBeanPHP\SimpleModel
 {
+    public function getId(): int
+    {
+        return (int) $this->id;
+    }
+
     final public const string ACTIVE = 'active';
     final public const string SUSPENDED = 'suspended';
     final public const string CANCELED = 'canceled';

@@ -56,7 +56,7 @@ test('batch enriches hosting accounts with orders and clients', function (): voi
     $orderService = Mockery::mock(OrderService::class);
     $orderService->shouldReceive('getBatchForApi')
         ->once()
-        ->with([50], Mockery::type(Model_Admin::class))
+        ->with([50], Mockery::type(Box\Mod\Staff\Entity\Admin::class))
         ->andReturn([[
             'id' => 50,
             'service_id' => 10,
@@ -69,8 +69,7 @@ test('batch enriches hosting accounts with orders and clients', function (): voi
     $di['mod_service'] = $di->protect(moduleService(['order' => $orderService]));
     $service->setDi($di);
 
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin = \Tests\Helpers\admin();
     $result = $service->getAccountsBatchForApi([$account], $admin);
 
     expect($result[0])
@@ -725,7 +724,7 @@ test('to api array', function (): void {
 
     $service->setDi($di);
 
-    $result = $service->toApiArray($model, false, new Model_Admin());
+    $result = $service->toApiArray($model, false, \Tests\Helpers\admin());
     expect($result)->toBeArray();
 });
 
@@ -890,7 +889,7 @@ test('update server', function (): void {
     $di = container();
     $di['em'] = $emMock;
     $di['logger'] = new Box_Log();
-    $di['loggedin_admin'] = (object) ['id' => 7];
+    $di['loggedin_admin'] = \Tests\Helpers\admin(['id' => 7]);
 
     $service->setDi($di);
 
@@ -1241,8 +1240,7 @@ test('get server manager secret fields', function (string $manager, array $expec
 test('to hosting server api array masks secrets for an admin', function (): void {
     $service = new Service();
 
-    $identity = new Model_Admin();
-    $identity->loadBean(new Tests\Helpers\DummyBean());
+    $identity = \Tests\Helpers\admin();
 
     $hostingServerModel = new ServiceHostingServer();
     $hostingServerModel->setId(1);
@@ -1318,7 +1316,7 @@ test('updateServer keeps the existing secret when the incoming value is blank', 
     $di = container();
     $di['em'] = $emMock;
     $di['logger'] = new Box_Log();
-    $di['loggedin_admin'] = (object) ['id' => 7];
+    $di['loggedin_admin'] = \Tests\Helpers\admin(['id' => 7]);
     $service->setDi($di);
 
     $result = $service->updateServer($hostingServerModel, $data);
@@ -1353,7 +1351,7 @@ test('updateServer replaces the stored secret when a new value is submitted', fu
     $di = container();
     $di['em'] = $emMock;
     $di['logger'] = new Box_Log();
-    $di['loggedin_admin'] = (object) ['id' => 7];
+    $di['loggedin_admin'] = \Tests\Helpers\admin(['id' => 7]);
     $service->setDi($di);
 
     $result = $service->updateServer($hostingServerModel, $data);
