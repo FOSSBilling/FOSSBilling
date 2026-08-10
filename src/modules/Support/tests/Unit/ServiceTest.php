@@ -1729,10 +1729,10 @@ test('public find one by hash not found exception', function (): void {
 
 dataset('closeTicketProvider', fn (): array => [
     'with admin' => [new Model_Admin()],
-    'with guest' => [new Model_Guest()],
+    'with guest' => [new FOSSBilling\Identity\Guest()],
 ]);
 
-test('public close ticket', function (Model_Admin|Model_Guest $identity): void {
+test('public close ticket', function (Model_Admin|FOSSBilling\Identity\Guest $identity): void {
     $service = new Service();
     $emMock = Mockery::mock(EntityManagerInterface::class);
     supportWireKbRepositories($emMock);
@@ -1804,7 +1804,7 @@ test('guest ticket reply', function (): void {
     setEntityId($ticket, 1);
     $ticket->setAccessHash('test-hash-123');
 
-    $result = $service->ticketReply($ticket, new Model_Guest(), 'Content');
+    $result = $service->ticketReply($ticket, new FOSSBilling\Identity\Guest(), 'Content');
     expect($result)->toBeInt();
 });
 

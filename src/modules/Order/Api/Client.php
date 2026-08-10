@@ -135,7 +135,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
         return $order;
     }
 
-    private function getClientId(ClientEntity|\Model_Admin|\Model_Client|\Model_Guest $identity): int
+    private function getClientId(object $identity): int
     {
         if ($identity instanceof ClientEntity) {
             return (int) $identity->getId();
@@ -148,7 +148,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
         return (int) $identity->id;
     }
 
-    private function findOrderForIdentity(ClientEntity|\Model_Admin|\Model_Client|\Model_Guest $identity, int $id): ?Order
+    private function findOrderForIdentity(object $identity, int $id): ?Order
     {
         if ($identity instanceof ClientEntity) {
             return $this->getService()->findEntityForClientById($identity, $id);

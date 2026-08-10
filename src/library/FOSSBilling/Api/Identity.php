@@ -11,6 +11,10 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Api;
 
+use Box\Mod\Client\Entity\Client;
+use Box\Mod\Staff\Entity\Admin;
+use FOSSBilling\Identity\Guest;
+
 final readonly class Identity
 {
     private string $type;
@@ -22,7 +26,12 @@ final readonly class Identity
 
     public static function typeFromObject(object $identity): string
     {
-        return str_replace('model_', '', strtolower($identity::class));
+        return match (true) {
+            $identity instanceof Guest => 'guest',
+            $identity instanceof Client, $identity instanceof \Model_Client => 'client',
+            $identity instanceof Admin, $identity instanceof \Model_Admin => 'admin',
+            default => throw new \InvalidArgumentException(sprintf('Unsupported API identity: %s', $identity::class)),
+        };
     }
 
     public function getIdentity(): object

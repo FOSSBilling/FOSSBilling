@@ -84,7 +84,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
         $message = \FOSSBilling\Tools::sanitizeMarkdownContent($message);
 
-        return $this->getService()->ticketReply($guestTicket, new \Model_Guest(), $message);
+        return $this->getService()->ticketReply($guestTicket, new \FOSSBilling\Identity\Guest(), $message);
     }
 
     /**

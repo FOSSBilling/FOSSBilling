@@ -111,7 +111,7 @@ class SupportTicket implements ApiArrayInterface, TimestampInterface
         $this->notes = new ArrayCollection();
     }
 
-    public function toApiArray(\Model_Admin|\Model_Client|\Model_Guest|null $identity = null): array
+    public function toApiArray(\Model_Admin|\Model_Client|\FOSSBilling\Identity\Guest|null $identity = null): array
     {
         $data = [
             'id' => $this->id,
