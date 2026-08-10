@@ -594,7 +594,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $whois = $adapter->getDomainDetails($domain);
 
-        $model->setExpiresAt($this->formatRegistrarTimestamp($whois->getExpirationTime()));
+        $expiresAt = $this->formatRegistrarTimestamp($whois->getExpirationTime());
+        if ($expiresAt !== null) {
+          $model->setExpiresAt($expiresAt);
+          $this->di['em']->flush();
+        }
 
         $this->di['em']->flush();
     }
