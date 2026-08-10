@@ -509,6 +509,7 @@ class UpdatePatcher implements InjectionAwareInterface
             97 => 'patch97',
             98 => 'patch98',
             99 => 'patch99',
+            100 => 'patch100',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2892,6 +2893,72 @@ class UpdatePatcher implements InjectionAwareInterface
         // @see https://github.com/FOSSBilling/FOSSBilling/issues/2075
         if (!$this->tableHasColumn('tld', 'periods')) {
             $this->executeSql('ALTER TABLE `tld` ADD COLUMN `periods` VARCHAR(255) DEFAULT NULL AFTER `min_years`');
+        }
+    }
+
+    private function patch100(): void
+    {
+        // Backfills stock reservations for orders that pre-date this version, since activation
+        // no longer decrements stock itself (see Product\Service::reserveStockForOrder()).
+        // Reservations are granted oldest-order-first per product and stop once stock runs out,
+        // so an already-oversold product keeps as many orders "covered" as it has stock for.
+        // @see https://github.com/FOSSBilling/FOSSBilling/issues/4130
+        $orders = $this->fetchAll(
+            "SELECT co.id AS order_id, co.product_id, co.quantity
+             FROM client_order co
+             INNER JOIN product p ON p.id = co.product_id
+             WHERE co.status IN ('pending_setup', 'failed_setup')
+               AND p.stock_control = 1
+               AND NOT EXISTS (
+                   SELECT 1 FROM client_order_meta m
+                   WHERE m.client_order_id = co.id AND m.name = 'stock_reserved_qty'
+               )
+             ORDER BY co.product_id ASC, co.id ASC"
+        );
+        // The NOT EXISTS above excludes already-backfilled orders, so this is safe to rerun
+        // after a partial failure.
+
+        if ($orders === []) {
+            return;
+        }
+
+        $now = date('Y-m-d H:i:s');
+        $remainingByProduct = [];
+
+        foreach ($orders as $order) {
+            $productId = (int) $order['product_id'];
+            if (!array_key_exists($productId, $remainingByProduct)) {
+                $remainingByProduct[$productId] = (int) $this->fetchOne(
+                    'SELECT quantity_in_stock FROM product WHERE id = :id',
+                    ['id' => $productId]
+                );
+            }
+
+            $quantity = max(1, (int) ($order['quantity'] ?? 1));
+            if ($remainingByProduct[$productId] < $quantity) {
+                continue;
+            }
+
+            $remainingByProduct[$productId] -= $quantity;
+
+            $this->executeSql(
+                'INSERT INTO client_order_meta (client_order_id, name, value, created_at, updated_at)
+                 VALUES (:order_id, :name, :value, :created_at, :updated_at)',
+                [
+                    'order_id' => $order['order_id'],
+                    'name' => 'stock_reserved_qty',
+                    'value' => (string) $quantity,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]
+            );
+        }
+
+        foreach ($remainingByProduct as $productId => $remaining) {
+            $this->executeSql(
+                'UPDATE product SET quantity_in_stock = :remaining, updated_at = :updated_at WHERE id = :id',
+                ['remaining' => $remaining, 'updated_at' => $now, 'id' => $productId]
+            );
         }
     }
 }

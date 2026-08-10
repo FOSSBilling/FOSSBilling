@@ -1487,6 +1487,7 @@ class Service implements InjectionAwareInterface
         if ($previousStatus === Invoice::STATUS_UNPAID && $model->getStatus() === Invoice::STATUS_CANCELED) {
             $productService = $this->di['mod_service']('Product');
             $productService->releaseReservedPromoRedemptionsForInvoice($model, 'invoice_canceled');
+            $productService->releaseReservedStockForInvoice($model, 'invoice_canceled');
         }
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceUpdate', 'params' => $this->toApiArray($model)]);
@@ -1500,6 +1501,7 @@ class Service implements InjectionAwareInterface
     {
         $productService = $this->di['mod_service']('Product');
         $productService->releaseReservedPromoRedemptionsForInvoice($model, 'invoice_deleted');
+        $productService->releaseReservedStockForInvoice($model, 'invoice_deleted');
 
         // remove related invoice from orders
         $sql = '

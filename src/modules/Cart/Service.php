@@ -665,6 +665,7 @@ class Service implements InjectionAwareInterface
 
         $reservedOrderIds = [];
         $reservedCount = 0;
+        $stockReservedOrders = [];
 
         if (!$this->clientCurrency($client)) {
             $this->setClientCurrency($client, $currencyCode);
@@ -680,7 +681,7 @@ class Service implements InjectionAwareInterface
         }
 
         try {
-            return $this->di['em']->wrapInTransaction(function () use ($ca, $cart, $client, $legacyClient, $currency, $currencyCode, $gateway_id, $taxed, $promo, $promoProductService, $promoId, &$reservedOrderIds, &$reservedCount) {
+            return $this->di['em']->wrapInTransaction(function () use ($ca, $cart, $client, $legacyClient, $currency, $currencyCode, $gateway_id, $taxed, $promo, $promoProductService, $promoId, &$reservedOrderIds, &$reservedCount, &$stockReservedOrders) {
                 if ($this->clientCurrency($client) != $currencyCode) {
                     throw new \FOSSBilling\InformationException('Selected currency :selected does not match your profile currency :code. Please change cart currency to continue.', [':selected' => $currencyCode, ':code' => $this->clientCurrency($client)]);
                 }
@@ -749,6 +750,10 @@ class Service implements InjectionAwareInterface
                     $this->di['em']->flush();
 
                     $orders[] = $order;
+
+                    // Reserve stock at order creation time instead of leaving it unclaimed until activation.
+                    $this->getProductService()->reserveStockForOrder($order);
+                    $stockReservedOrders[] = $order;
 
                     // Reserve promo capacity at order creation time.
                     if ($promo instanceof Promo && $promoProductService !== null) {
@@ -881,6 +886,17 @@ class Service implements InjectionAwareInterface
                     $this->di['logger']->error('Failed to compensate promo checkout failure', [
                         'exception' => $compensationError->getMessage(),
                         'promo_id' => $promo->getId(),
+                    ]);
+                }
+            }
+
+            foreach ($stockReservedOrders as $stockReservedOrder) {
+                try {
+                    $this->getProductService()->releaseReservedStockForOrder($stockReservedOrder, 'checkout_failed');
+                } catch (\Throwable $compensationError) {
+                    $this->di['logger']->error('Failed to compensate stock checkout failure', [
+                        'exception' => $compensationError->getMessage(),
+                        'order_id' => $stockReservedOrder->getId(),
                     ]);
                 }
             }

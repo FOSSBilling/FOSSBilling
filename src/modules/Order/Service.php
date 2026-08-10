@@ -52,6 +52,8 @@ class Service implements InjectionAwareInterface
     public const META_CANCEL_AT_PERIOD_END = 'cancel_at_period_end';
     private const string META_SUSPENSION_WARNING_FOR = 'suspension_warning_for';
 
+    public const META_STOCK_RESERVED_QTY = 'stock_reserved_qty';
+
     private const array BUILT_IN_SERVICE_TYPES = [
         \Box\Mod\Product\Service::CUSTOM,
         \Box\Mod\Product\Service::LICENSE,
@@ -962,6 +964,9 @@ class Service implements InjectionAwareInterface
             $this->di['em']->flush();
             $orderId = $order->getId();
 
+            // Reserve stock now rather than at activation - this path bypasses the cart, but has the same race.
+            $this->di['mod_service']('Product')->reserveStockForOrder($order);
+
             if (isset($data['meta']) && is_array($data['meta'])) {
                 foreach ($data['meta'] as $k => $v) {
                     $mm = $this->getOrderMetaRepository()->findOneByOrderIdAndName($orderId, $k);
@@ -1166,13 +1171,12 @@ class Service implements InjectionAwareInterface
             throw $e;
         }
 
-        if ($order->getProductId()) {
-            $productService = $this->di['mod_service']('product');
-            $productService->reduceStock((int) $order->getProductId(), (int) ($order->getQuantity() ?? 1));
-        } else {
+        if (!$order->getProductId()) {
             $this->di['logger']->info("Order without product ID detected Order #{$orderId}.");
         }
 
+        // Stock was already reserved atomically at order-creation time (see
+        // Product\Service::reserveStockForOrder()), so it must not be decremented again here.
         $this->saveStatusChange($order, 'Order activated');
 
         return $result;
@@ -1484,6 +1488,7 @@ class Service implements InjectionAwareInterface
 
         $productService = $this->di['mod_service']('Product');
         $productService->releaseReservedPromoRedemptionsForOrder($order, 'order_canceled');
+        $productService->releaseReservedStockForOrder($order, 'order_canceled');
 
         $note = ($reason === null) ? 'Order canceled' : 'Canceled order for ' . $reason;
         $this->saveStatusChange($order, $note);
@@ -1658,6 +1663,7 @@ class Service implements InjectionAwareInterface
 
         $productService = $this->di['mod_service']('Product');
         $productService->releaseReservedPromoRedemptionsForOrder($order, 'order_deleted');
+        $productService->releaseReservedStockForOrder($order, 'order_deleted');
         $this->rmClientOrderStatusByOrder($order);
         $this->rmOrder($order);
 
@@ -2018,6 +2024,7 @@ class Service implements InjectionAwareInterface
         $orders = $this->getOrderRepository()->findByClientId((int) $clientId);
         foreach ($orders as $order) {
             $productService->releaseReservedPromoRedemptionsForOrder($order, 'client_deleted');
+            $productService->releaseReservedStockForOrder($order, 'client_deleted');
             $this->getOrderMetaRepository()->deleteByOrderId($this->orderId($order));
             $this->getOrderStatusRepository()->rmByOrderId($this->orderId($order));
         }

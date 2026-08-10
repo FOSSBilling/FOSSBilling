@@ -1008,6 +1008,80 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
+    public function reserveStockForOrder(Order $order): void
+    {
+        $productId = (int) $order->getProductId();
+        if ($productId <= 0) {
+            return;
+        }
+
+        $resolvedProduct = $this->findProductById($productId);
+        $quantity = (int) ($order->getQuantity() ?? 1);
+        if (!$resolvedProduct->isStockControl() || $quantity <= 0) {
+            return;
+        }
+
+        $this->reduceStock($resolvedProduct, $quantity);
+
+        $orderService = $this->di['mod_service']('Order');
+        $orderService->updateOrderMeta($order, [
+            \Box\Mod\Order\Service::META_STOCK_RESERVED_QTY => (string) $quantity,
+        ]);
+    }
+
+    // Activation leaves the reservation meta untouched, so cancelling an order that already
+    // went active does not restock it here - only never-activated reservations get released.
+    public function releaseReservedStockForOrder(Order $order, string $reason): void
+    {
+        $orderId = (int) $order->getId();
+        if ($orderId <= 0) {
+            return;
+        }
+
+        $orderService = $this->di['mod_service']('Order');
+        $metaRepository = $orderService->getOrderMetaRepository();
+        $meta = $metaRepository->findOneByOrderIdAndName($orderId, \Box\Mod\Order\Service::META_STOCK_RESERVED_QTY);
+        if ($meta === null) {
+            return;
+        }
+
+        $quantity = (int) $meta->getValue();
+
+        $deleted = $metaRepository->deleteByOrderIdAndName($orderId, \Box\Mod\Order\Service::META_STOCK_RESERVED_QTY);
+        if ($deleted === 0 || $quantity <= 0) {
+            // A concurrent release already claimed this reservation.
+            return;
+        }
+
+        $productId = (int) $order->getProductId();
+        if ($productId <= 0) {
+            return;
+        }
+
+        $this->getProductRepository()->incrementStock($productId, $quantity, new \DateTime());
+
+        $resolvedProduct = $this->getProductRepository()->find($productId);
+        if ($resolvedProduct instanceof Product) {
+            // The statement above bypassed the entity, so bring the in-memory copy back in line.
+            $this->di['em']->refresh($resolvedProduct);
+        }
+
+        $this->di['logger']->info('Released stock reservation for order #%s (%s)', $orderId, $reason);
+    }
+
+    public function releaseReservedStockForInvoice(Invoice $invoice, string $reason): void
+    {
+        $invoiceId = (int) $invoice->getId();
+        if ($invoiceId <= 0) {
+            return;
+        }
+
+        $orderService = $this->di['mod_service']('Order');
+        foreach ($orderService->getOrderRepository()->findByUnpaidInvoiceId($invoiceId) as $order) {
+            $this->releaseReservedStockForOrder($order, $reason);
+        }
+    }
+
     private function getPeriods(Promo $model): array
     {
         return $this->decodePromoSelection($this->getPromoSourceArray($model)['periods'] ?? null);
