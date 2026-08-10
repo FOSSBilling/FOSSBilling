@@ -510,6 +510,7 @@ class UpdatePatcher implements InjectionAwareInterface
             98 => 'patch98',
             99 => 'patch99',
             100 => 'patch100',
+            101 => 'patch101',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2922,43 +2923,73 @@ class UpdatePatcher implements InjectionAwareInterface
             return;
         }
 
-        $now = date('Y-m-d H:i:s');
-        $remainingByProduct = [];
+        // Stock updates are batched per product after all its orders are processed, so without
+        // a transaction a partial failure could leave meta rows claiming a reservation whose
+        // stock was never actually deducted.
+        $pdo = $this->getPdo();
+        $pdo->beginTransaction();
 
-        foreach ($orders as $order) {
-            $productId = (int) $order['product_id'];
-            if (!array_key_exists($productId, $remainingByProduct)) {
-                $remainingByProduct[$productId] = (int) $this->fetchOne(
-                    'SELECT quantity_in_stock FROM product WHERE id = :id',
-                    ['id' => $productId]
+        try {
+            $now = date('Y-m-d H:i:s');
+            $remainingByProduct = [];
+            $touchedProducts = [];
+
+            foreach ($orders as $order) {
+                $productId = (int) $order['product_id'];
+                if (!array_key_exists($productId, $remainingByProduct)) {
+                    $remainingByProduct[$productId] = (int) $this->fetchOne(
+                        'SELECT quantity_in_stock FROM product WHERE id = :id',
+                        ['id' => $productId]
+                    );
+                }
+
+                // Matches Product\Service::reserveStockForOrder(): a non-positive quantity is
+                // never reserved, not rounded up to one.
+                $quantity = (int) ($order['quantity'] ?? 1);
+                if ($quantity <= 0 || $remainingByProduct[$productId] < $quantity) {
+                    continue;
+                }
+
+                $remainingByProduct[$productId] -= $quantity;
+                $touchedProducts[$productId] = true;
+
+                $this->executeSql(
+                    'INSERT INTO client_order_meta (client_order_id, name, value, created_at, updated_at)
+                     VALUES (:order_id, :name, :value, :created_at, :updated_at)',
+                    [
+                        'order_id' => $order['order_id'],
+                        'name' => 'stock_reserved_qty',
+                        'value' => (string) $quantity,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ]
                 );
             }
 
-            $quantity = max(1, (int) ($order['quantity'] ?? 1));
-            if ($remainingByProduct[$productId] < $quantity) {
-                continue;
+            // Only products with an actual reservation applied need writing back - a product
+            // whose stock was merely read to check availability must not have its updated_at
+            // touched for nothing.
+            foreach (array_keys($touchedProducts) as $productId) {
+                $this->executeSql(
+                    'UPDATE product SET quantity_in_stock = :remaining, updated_at = :updated_at WHERE id = :id',
+                    ['remaining' => $remainingByProduct[$productId], 'updated_at' => $now, 'id' => $productId]
+                );
             }
 
-            $remainingByProduct[$productId] -= $quantity;
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
 
-            $this->executeSql(
-                'INSERT INTO client_order_meta (client_order_id, name, value, created_at, updated_at)
-                 VALUES (:order_id, :name, :value, :created_at, :updated_at)',
-                [
-                    'order_id' => $order['order_id'],
-                    'name' => 'stock_reserved_qty',
-                    'value' => (string) $quantity,
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ]
-            );
+            throw $e;
         }
+    }
 
-        foreach ($remainingByProduct as $productId => $remaining) {
-            $this->executeSql(
-                'UPDATE product SET quantity_in_stock = :remaining, updated_at = :updated_at WHERE id = :id',
-                ['remaining' => $remaining, 'updated_at' => $now, 'id' => $productId]
-            );
+    private function patch101(): void
+    {
+        // findByUnpaidInvoiceId() (invoice cancellation/deletion) filters client_order by this
+        // column, previously unindexed.
+        if (!$this->tableHasIndex('client_order', 'client_order_unpaid_invoice_id_idx')) {
+            $this->executeSql('ALTER TABLE `client_order` ADD INDEX `client_order_unpaid_invoice_id_idx` (`unpaid_invoice_id`)');
         }
     }
 }

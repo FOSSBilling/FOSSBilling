@@ -26,6 +26,13 @@ test('stock reservation backfill patch follows the TLD periods patch', function 
         ->and($patches[100][1])->toBe('patch100');
 });
 
+test('unpaid invoice id index patch follows the stock reservation backfill patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 100);
+
+    expect($patches)->toHaveKey(101)
+        ->and($patches[101][1])->toBe('patch101');
+});
+
 test('manual currency rate patch follows the currency formatting patch', function (): void {
     $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 93);
 
@@ -107,6 +114,13 @@ test('fresh installs index order suspension candidates', function (): void {
     $structure = $filesystem->readFile(Path::join(PATH_ROOT, 'install', 'sql', 'structure.sql'));
 
     expect($structure)->toContain('KEY `client_order_status_expires_at_idx` (`status`, `expires_at`)');
+});
+
+test('fresh installs index unpaid invoice lookups', function (): void {
+    $filesystem = new Filesystem();
+    $structure = $filesystem->readFile(Path::join(PATH_ROOT, 'install', 'sql', 'structure.sql'));
+
+    expect($structure)->toContain('KEY `client_order_unpaid_invoice_id_idx` (`unpaid_invoice_id`)');
 });
 
 test('fresh installs constrain client balance to one credit per invoice item', function (): void {
@@ -295,6 +309,8 @@ test('stock reservation backfill patch reserves stock for a pending order and de
     }))->andReturnTrue();
 
     $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('beginTransaction')->andReturnTrue();
+    $pdo->expects('commit')->andReturnTrue();
     $pdo->expects('prepare')
         ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'NOT EXISTS')))
         ->andReturn($selectOrders);
@@ -312,6 +328,67 @@ test('stock reservation backfill patch reserves stock for a pending order and de
     $patcher = new UpdatePatcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch100'))->invoke($patcher);
+});
+
+test('stock reservation backfill patch skips orders with a non-positive quantity', function (): void {
+    // Matches Product\Service::reserveStockForOrder(): a zero/negative quantity is never
+    // reserved, not rounded up to one unit.
+    $selectOrders = Mockery::mock(PDOStatement::class);
+    $selectOrders->expects('execute')->with([])->andReturnTrue();
+    $selectOrders->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['order_id' => 5, 'product_id' => 1, 'quantity' => 0],
+    ]);
+
+    $selectStock = Mockery::mock(PDOStatement::class);
+    $selectStock->expects('execute')->with(['id' => 1])->andReturnTrue();
+    $selectStock->expects('fetchColumn')->andReturn(10);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('beginTransaction')->andReturnTrue();
+    $pdo->expects('commit')->andReturnTrue();
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'NOT EXISTS')))
+        ->andReturn($selectOrders);
+    $pdo->expects('prepare')->with('SELECT quantity_in_stock FROM product WHERE id = :id')->andReturn($selectStock);
+    $pdo->shouldNotReceive('prepare')->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'INSERT INTO client_order_meta')));
+    // Nothing was reserved, so the product's stock is never rewritten either.
+    $pdo->shouldNotReceive('prepare')->with('UPDATE product SET quantity_in_stock = :remaining, updated_at = :updated_at WHERE id = :id');
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch100'))->invoke($patcher);
+});
+
+test('stock reservation backfill patch rolls back if a statement fails partway through', function (): void {
+    $selectOrders = Mockery::mock(PDOStatement::class);
+    $selectOrders->expects('execute')->with([])->andReturnTrue();
+    $selectOrders->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['order_id' => 5, 'product_id' => 1, 'quantity' => 2],
+    ]);
+
+    $selectStock = Mockery::mock(PDOStatement::class);
+    $selectStock->expects('execute')->with(['id' => 1])->andThrow(new PDOException('gone away'));
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('beginTransaction')->andReturnTrue();
+    $pdo->expects('rollBack')->andReturnTrue();
+    $pdo->shouldNotReceive('commit');
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'NOT EXISTS')))
+        ->andReturn($selectOrders);
+    $pdo->expects('prepare')->with('SELECT quantity_in_stock FROM product WHERE id = :id')->andReturn($selectStock);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+
+    expect(fn () => (new ReflectionMethod($patcher, 'patch100'))->invoke($patcher))
+        ->toThrow(PDOException::class, 'gone away');
 });
 
 test('stock reservation backfill patch stops once a product is already oversold', function (): void {
@@ -345,6 +422,8 @@ test('stock reservation backfill patch stops once a product is already oversold'
     }))->andReturnTrue();
 
     $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('beginTransaction')->andReturnTrue();
+    $pdo->expects('commit')->andReturnTrue();
     $pdo->expects('prepare')
         ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'NOT EXISTS')))
         ->andReturn($selectOrders);
@@ -362,4 +441,45 @@ test('stock reservation backfill patch stops once a product is already oversold'
     $patcher = new UpdatePatcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch100'))->invoke($patcher);
+});
+
+test('unpaid invoice id index patch adds the index for existing installs', function (): void {
+    $indexes = Mockery::mock(PDOStatement::class);
+    $indexes->expects('execute')->with([])->andReturnTrue();
+    $indexes->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([]);
+
+    $addIndex = Mockery::mock(PDOStatement::class);
+    $addIndex->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW INDEX FROM `client_order`')->andReturn($indexes);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `client_order` ADD INDEX `client_order_unpaid_invoice_id_idx` (`unpaid_invoice_id`)')
+        ->andReturn($addIndex);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch101'))->invoke($patcher);
+});
+
+test('unpaid invoice id index patch is a no-op when the index already exists', function (): void {
+    $indexes = Mockery::mock(PDOStatement::class);
+    $indexes->expects('execute')->with([])->andReturnTrue();
+    $indexes->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Key_name' => 'client_order_unpaid_invoice_id_idx'],
+    ]);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW INDEX FROM `client_order`')->andReturn($indexes);
+    $pdo->shouldNotReceive('prepare')->with('ALTER TABLE `client_order` ADD INDEX `client_order_unpaid_invoice_id_idx` (`unpaid_invoice_id`)');
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch101'))->invoke($patcher);
 });

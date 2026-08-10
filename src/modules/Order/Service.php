@@ -964,9 +964,6 @@ class Service implements InjectionAwareInterface
             $this->di['em']->flush();
             $orderId = $order->getId();
 
-            // Reserve stock now rather than at activation - this path bypasses the cart, but has the same race.
-            $this->di['mod_service']('Product')->reserveStockForOrder($order);
-
             if (isset($data['meta']) && is_array($data['meta'])) {
                 foreach ($data['meta'] as $k => $v) {
                     $mm = $this->getOrderMetaRepository()->findOneByOrderIdAndName($orderId, $k);
@@ -982,6 +979,11 @@ class Service implements InjectionAwareInterface
                 }
                 $this->di['em']->flush();
             }
+
+            // Reserve stock now rather than at activation - this path bypasses the cart, but has
+            // the same race. Done after the caller-supplied meta above so it can't be overwritten
+            // by a caller passing their own "stock_reserved_qty" meta entry.
+            $this->di['mod_service']('Product')->reserveStockForOrder($order);
 
             if ($invoiceOption == 'issue-invoice') {
                 $invoiceService = $this->di['mod_service']('invoice');

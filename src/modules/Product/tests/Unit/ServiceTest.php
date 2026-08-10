@@ -152,6 +152,11 @@ function productTestCreateEntityManagerWithRepositories(
         {
             // Stock is decremented with a direct UPDATE, so nothing to re-read in the stub.
         }
+
+        public function wrapInTransaction(callable $callback): mixed
+        {
+            return $callback();
+        }
     };
 }
 
