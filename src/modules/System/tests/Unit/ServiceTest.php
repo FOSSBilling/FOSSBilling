@@ -384,3 +384,50 @@ test('reserveNextNumericParamValue rejects non-integer counter values', function
 
     expect($service->reserveNextNumericParamValue('invoice_starting_number'))->toBeNull();
 });
+
+test('reserveNextNumericParamValue seeds a missing counter and reserves from it', function (): void {
+    $service = new Service();
+
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('transactional')
+        ->once()
+        ->andReturnUsing(fn (callable $callback): mixed => $callback($dbalMock));
+    $dbalMock->shouldReceive('fetchOne')->once()->andReturn(false);
+    $dbalMock->shouldReceive('executeStatement')
+        ->once()
+        ->with(
+            Mockery::pattern('/^INSERT INTO setting/'),
+            Mockery::on(fn (array $params): bool => $params['value'] === '102' && $params['param'] === 'invoice_starting_number')
+        )
+        ->andReturn(1);
+
+    $di = container();
+    $di['dbal'] = $dbalMock;
+    $service->setDi($di);
+
+    expect($service->reserveNextNumericParamValue('invoice_starting_number', 101))->toBe(101);
+});
+
+test('reserveNextNumericParamValue ignores the seed when the counter became valid under the lock', function (): void {
+    $service = new Service();
+
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('transactional')
+        ->once()
+        ->andReturnUsing(fn (callable $callback): mixed => $callback($dbalMock));
+    // A concurrent caller seeded the counter while we waited for the lock.
+    $dbalMock->shouldReceive('fetchOne')->once()->andReturn('102');
+    $dbalMock->shouldReceive('executeStatement')
+        ->once()
+        ->with(
+            Mockery::pattern('/^UPDATE setting/'),
+            Mockery::on(fn (array $params): bool => $params['value'] === '103')
+        )
+        ->andReturn(1);
+
+    $di = container();
+    $di['dbal'] = $dbalMock;
+    $service->setDi($di);
+
+    expect($service->reserveNextNumericParamValue('invoice_starting_number', 101))->toBe(102);
+});

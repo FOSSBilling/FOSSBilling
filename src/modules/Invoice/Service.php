@@ -950,13 +950,16 @@ class Service implements InjectionAwareInterface
         if ($next_nr === null) {
             // In theory this code should never need to be called, but is provided as a fallback
             $r = $this->getInvoiceRepository()->findLatestWithNr();
-            if ($r instanceof Invoice && is_numeric($r->getNr())) {
-                $next_nr = intval($r->getNr()) + 1;
-            } else {
+            if (!$r instanceof Invoice || !is_numeric($r->getNr())) {
                 throw new \FOSSBilling\Exception('Unable to determine the next invoice number');
             }
 
-            $systemService->setParamValue('invoice_starting_number', $next_nr + 1);
+            // Seeding the counter and reserving from it has to be one locked step too, otherwise
+            // two callers deriving the same seed both write it and both reserve the same number.
+            $next_nr = $systemService->reserveNextNumericParamValue('invoice_starting_number', intval($r->getNr()) + 1);
+            if ($next_nr === null) {
+                throw new \FOSSBilling\Exception('Unable to determine the next invoice number');
+            }
         }
 
         return $next_nr;
