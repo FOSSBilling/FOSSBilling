@@ -334,23 +334,23 @@ test('creates action', function (): void {
         ->andReturn($tldModel);
     $serviceMock->shouldReceive('validateOrderData');
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->first_name = 'first_name';
-    $client->last_name = 'last_name';
-    $client->email = 'email';
-    $client->company = 'company';
-    $client->address_1 = 'address_1';
-    $client->address_2 = 'address_2';
-    $client->country = 'country';
-    $client->city = 'city';
-    $client->state = 'state';
-    $client->postcode = 'postcode';
-    $client->phone_cc = 'phone_cc';
-    $client->phone = 'phone';
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, [
+        'first_name' => 'first_name',
+        'last_name' => 'last_name',
+        'email' => 'client@example.com',
+        'company' => 'company',
+        'address_1' => 'address_1',
+        'address_2' => 'address_2',
+        'country' => 'country',
+        'city' => 'city',
+        'state' => 'state',
+        'postcode' => 'postcode',
+        'phone_cc' => 'phone_cc',
+        'phone' => 'phone',
+    ]);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')
+    $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepo->shouldReceive('find')
         ->atLeast()->once()
         ->andReturn($client);
 
@@ -362,7 +362,7 @@ test('creates action', function (): void {
 
         return $systemServiceMock;
     });
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepo);
 
     $serviceMock->setDi($di);
 

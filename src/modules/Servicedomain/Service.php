@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicedomain;
 
+use Box\Mod\Client\Entity\Client;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Servicedomain\Entity\ServiceDomain;
@@ -240,20 +241,21 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->setNs3(!empty($c['ns3']) ? $c['ns3'] : $ns['nameserver_3']);
         $model->setNs4(!empty($c['ns4']) ? $c['ns4'] : $ns['nameserver_4']);
 
-        $client = $this->di['db']->getExistingModelById('Client', $model->getClientId(), 'Client not found');
+        $client = $this->di['em']->getRepository(Client::class)->find($model->getClientId())
+            ?? throw new \FOSSBilling\Exception('Client not found');
 
-        $model->setContactFirstName($client->first_name);
-        $model->setContactLastName($client->last_name);
-        $model->setContactEmail($client->email);
-        $model->setContactCompany($client->company);
-        $model->setContactAddress1($client->address_1);
-        $model->setContactAddress2($client->address_2);
-        $model->setContactCountry($client->country);
-        $model->setContactCity($client->city);
-        $model->setContactState($client->state);
-        $model->setContactPostcode($client->postcode);
-        $model->setContactPhoneCc($client->phone_cc);
-        $model->setContactPhone($client->phone);
+        $model->setContactFirstName($client->getFirstName());
+        $model->setContactLastName($client->getLastName());
+        $model->setContactEmail($client->getEmail());
+        $model->setContactCompany($client->getCompany());
+        $model->setContactAddress1($client->getAddress1());
+        $model->setContactAddress2($client->getAddress2());
+        $model->setContactCountry($client->getCountry());
+        $model->setContactCity($client->getCity());
+        $model->setContactState($client->getState());
+        $model->setContactPostcode($client->getPostcode());
+        $model->setContactPhoneCc($client->getPhoneCc());
+        $model->setContactPhone($client->getPhone());
 
         $this->di['em']->persist($model);
         $this->di['em']->flush();
@@ -690,22 +692,23 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $d->setNs4($model->getNs4());
 
         // merge info with current profile
-        $client = $this->di['db']->load('Client', $model->getClientId());
+        $client = $this->di['em']->getRepository(Client::class)->find($model->getClientId())
+            ?? throw new \FOSSBilling\Exception('Client not found');
 
-        $email = empty($model->getContactEmail()) ? $client->email : $model->getContactEmail();
-        $first_name = empty($model->getContactFirstName()) ? $client->first_name : $model->getContactFirstName();
-        $last_name = empty($model->getContactLastName()) ? $client->last_name : $model->getContactLastName();
-        $city = empty($model->getContactCity()) ? $client->city : $model->getContactCity();
-        $zip = empty($model->getContactPostcode()) ? $client->postcode : $model->getContactPostcode();
-        $country = empty($model->getContactCountry()) ? $client->country : $model->getContactCountry();
-        $state = empty($model->getContactState()) ? $client->state : $model->getContactState();
-        $phone = empty($model->getContactPhone()) ? $client->phone : $model->getContactPhone();
-        $phone_cc = empty($model->getContactPhoneCc()) ? $client->phone_cc : $model->getContactPhoneCc();
-        $company = empty($model->getContactCompany()) ? $client->company : $model->getContactCompany();
-        $address1 = empty($model->getContactAddress1()) ? $client->address_1 : $model->getContactAddress1();
-        $address2 = empty($model->getContactAddress2()) ? $client->address_2 : $model->getContactAddress2();
-        $birthday = !empty($client->birthday) ? $client->birthday : '';
-        $company_number = !empty($client->company_number) ? $client->company_number : '';
+        $email = empty($model->getContactEmail()) ? $client->getEmail() : $model->getContactEmail();
+        $first_name = empty($model->getContactFirstName()) ? $client->getFirstName() : $model->getContactFirstName();
+        $last_name = empty($model->getContactLastName()) ? $client->getLastName() : $model->getContactLastName();
+        $city = empty($model->getContactCity()) ? $client->getCity() : $model->getContactCity();
+        $zip = empty($model->getContactPostcode()) ? $client->getPostcode() : $model->getContactPostcode();
+        $country = empty($model->getContactCountry()) ? $client->getCountry() : $model->getContactCountry();
+        $state = empty($model->getContactState()) ? $client->getState() : $model->getContactState();
+        $phone = empty($model->getContactPhone()) ? $client->getPhone() : $model->getContactPhone();
+        $phone_cc = empty($model->getContactPhoneCc()) ? $client->getPhoneCc() : $model->getContactPhoneCc();
+        $company = empty($model->getContactCompany()) ? $client->getCompany() : $model->getContactCompany();
+        $address1 = empty($model->getContactAddress1()) ? $client->getAddress1() : $model->getContactAddress1();
+        $address2 = empty($model->getContactAddress2()) ? $client->getAddress2() : $model->getContactAddress2();
+        $birthday = !empty($client->getBirthday()) ? $client->getBirthday()->format('Y-m-d') : '';
+        $company_number = !empty($client->getCompanyNumber()) ? $client->getCompanyNumber() : '';
         $document_nr = (string) ($this->di['mod_service']('client')->resolveDocumentNumber($client) ?? '');
 
         $contact = new \Registrar_Domain_Contact();

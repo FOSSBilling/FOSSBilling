@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice\Api;
 
+use Box\Mod\Client\Entity\Client;
 use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Tax;
@@ -108,11 +109,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_invoices');
 
-        $client = $this->getDi()['db']->getExistingModelById('Client', $data['client_id'], 'Client not found');
+        $client = $this->getDi()['em']->getRepository(Client::class)->find((int) $data['client_id']) ?? throw new \FOSSBilling\Exception('Client not found');
 
         $invoice = $this->getService()->prepareInvoice($client, $data);
 
-        return $invoice->id;
+        return $invoice->getId();
     }
 
     /**
@@ -835,13 +836,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('invoice', 'manage_subscriptions');
 
-        $client = $this->getDi()['db']->getExistingModelById('Client', $data['client_id'], 'Client not found');
+        $client = $this->getDi()['em']->getRepository(Client::class)->find((int) $data['client_id']) ?? throw new \FOSSBilling\Exception('Client not found');
         $payGateway = $this->getDi()['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']);
         if (!$payGateway instanceof PayGateway) {
             throw new \FOSSBilling\Exception('Payment gateway not found');
         }
 
-        if (strtoupper((string) $client->currency) !== strtoupper((string) $data['currency'])) {
+        if (strtoupper((string) $client->getCurrency()) !== strtoupper((string) $data['currency'])) {
             throw new InformationException('Client currency must match subscription currency. Check if clients currency is defined.');
         }
         $subscriptionService = $this->getDi()['mod_service']('Invoice', 'Subscription');

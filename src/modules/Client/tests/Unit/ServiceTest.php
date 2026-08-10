@@ -633,16 +633,12 @@ test('getClientBalance returns numeric', function (): void {
 test('remove wraps client cleanup and flush in one transaction', function (): void {
     $service = new Box\Mod\Client\Service();
     $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
-    $legacyClient = Mockery::mock(Model_Client::class);
     $reset = createEntity(Box\Mod\Client\Entity\ClientPasswordReset::class, ['client_id' => 1]);
 
-    $db = container()['db'];
-    $db->shouldReceive('getExistingModelById')->once()->with('Client', 1)->andReturn($legacyClient);
-
     $services = [];
-    foreach (['order', 'invoice', 'support', 'email'] as $module) {
+    foreach (['order', 'invoice', 'support', 'email', 'activity'] as $module) {
         $moduleService = Mockery::mock();
-        $moduleService->shouldReceive('rmByClient')->once()->with($legacyClient);
+        $moduleService->shouldReceive('rmByClient')->once()->with($client);
         $services[$module] = $moduleService;
     }
 
@@ -650,12 +646,7 @@ test('remove wraps client cleanup and flush in one transaction', function (): vo
     $balanceService->shouldReceive('rmByClient')->once()->with($client);
     $services['client:balance'] = $balanceService;
 
-    $activityService = Mockery::mock();
-    $activityService->shouldReceive('rmByClient')->once()->with($client);
-    $services['activity'] = $activityService;
-
     $di = container();
-    $di['db'] = $db;
     $di['mod_service'] = $di->protect(moduleService($services));
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
@@ -688,17 +679,12 @@ test('remove wraps client cleanup and flush in one transaction', function (): vo
 test('remove rolls back and rethrows cleanup failures', function (): void {
     $service = new Box\Mod\Client\Service();
     $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
-    $legacyClient = Mockery::mock(Model_Client::class);
     $exception = new RuntimeException('cleanup failed');
 
-    $db = container()['db'];
-    $db->shouldReceive('getExistingModelById')->once()->with('Client', 1)->andReturn($legacyClient);
-
     $orderService = Mockery::mock();
-    $orderService->shouldReceive('rmByClient')->once()->with($legacyClient)->andThrow($exception);
+    $orderService->shouldReceive('rmByClient')->once()->with($client)->andThrow($exception);
 
     $di = container();
-    $di['db'] = $db;
     $di['mod_service'] = $di->protect(moduleService(['order' => $orderService]));
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
@@ -757,25 +743,6 @@ test('toApiArray includes custom fields beyond the original cap of 10', function
     $result = $service->toApiArray($model, true, createEntity(Box\Mod\Staff\Entity\Admin::class));
     expect($result)->toBeArray();
     expect($result['custom_1'])->toBeNull();
-});
-
-test('toApiArray reads the client group through the repository for legacy client models', function (): void {
-    $service = new Box\Mod\Client\Service();
-    $legacyClient = new Model_Client();
-    $legacyClient->loadBean(new Tests\Helpers\DummyBean());
-    $legacyClient->client_group_id = 1;
-
-    $clientGroup = createEntity(Box\Mod\Client\Entity\ClientGroup::class, ['id' => 1, 'title' => 'Group Title']);
-
-    $di = container();
-    $di['em']->getRepository(Box\Mod\Client\Entity\Client::class)->shouldReceive('find')->byDefault()->andReturnNull();
-    $di['em']->getRepository(Box\Mod\Client\Entity\ClientGroup::class)->shouldReceive('find')->byDefault()->andReturn($clientGroup);
-
-    $service->setDi($di);
-
-    $result = $service->toApiArray($legacyClient, true, createEntity(Box\Mod\Staff\Entity\Admin::class));
-    expect($result['group'])->toBe('Group Title');
-    expect($result['group_id'])->toBe(1);
 });
 
 dataset('isClientTaxableProvider', [

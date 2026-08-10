@@ -181,7 +181,7 @@ class Service implements InjectionAwareInterface
             $client = $this->di['loggedin_client'];
         }
 
-        if (!is_null($client) && $client->id !== $model->getClientId()) {
+        if (!is_null($client) && $client->getId() !== $model->getClientId()) {
             throw new \FOSSBilling\Exception('API key does not exist');
         }
 

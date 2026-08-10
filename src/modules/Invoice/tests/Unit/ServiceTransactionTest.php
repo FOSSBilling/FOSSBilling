@@ -513,21 +513,19 @@ test('debitTransaction records a client balance credit', function (): void {
     $proforma->client_id = 20;
     $proforma->currency = 'USD';
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->id = 20;
-    $client->currency = 'USD';
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 20, 'currency' => 'USD']);
 
     $tx = createEntity(Transaction::class, ['id' => 7, 'invoice_id' => 5, 'currency' => 'USD', 'amount' => '25.00']);
-
-    $db = Mockery::mock(Box_Database::class);
-    $db->shouldReceive('load')->once()->with('Client', 20)->andReturn($client);
 
     $invoiceRepo = Mockery::mock(InvoiceRepository::class);
     $invoiceRepo->shouldReceive('find')->once()->with(5)->andReturn($proforma);
 
+    $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepo->shouldReceive('find')->once()->with(20)->andReturn($client);
+
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+    $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepo);
     $em->shouldReceive('persist')->once()->with(
         Mockery::on(fn (ClientBalance $balance): bool => $balance->getClientId() === 20
             && $balance->getType() === 'transaction'
@@ -538,7 +536,31 @@ test('debitTransaction records a client balance credit', function (): void {
     $em->shouldReceive('flush')->once();
 
     $service = transactionService(em: $em);
-    $service->getDi()['db'] = $db;
 
     $service->debitTransaction($tx);
+});
+
+test('debitTransaction rejects a transaction without a client', function (): void {
+    $proforma = createEntity(Invoice::class);
+
+    $proforma->id = 5;
+    $proforma->client_id = 20;
+    $proforma->currency = 'USD';
+
+    $tx = createEntity(Transaction::class, ['id' => 7, 'invoice_id' => 5, 'currency' => 'USD', 'amount' => '25.00']);
+
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('find')->once()->with(5)->andReturn($proforma);
+
+    $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepo->shouldReceive('find')->once()->with(20)->andReturn(null);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+    $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepo);
+
+    $service = transactionService(em: $em);
+
+    expect(fn () => $service->debitTransaction($tx))
+        ->toThrow(FOSSBilling\Exception::class, 'Client #20 not found');
 });

@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice;
 
+use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\InvoiceItem;
@@ -322,10 +323,11 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
     private function persistCredit(InvoiceItem $item, Invoice $invoice, float $total): ClientBalance
     {
-        $client = $this->di['db']->getExistingModelById('Client', $invoice->getClientId(), 'Client not found');
+        $client = $this->di['em']->getRepository(Client::class)->find($invoice->getClientId())
+            ?? throw new \FOSSBilling\Exception('Client not found');
 
         $credit = new ClientBalance();
-        $credit->setClientId((int) $client->id);
+        $credit->setClientId((int) $client->getId());
         $credit->setType('invoice');
         $credit->setRelId((string) $invoice->getId());
         $credit->setInvoiceItemId($item->getId());
@@ -407,7 +409,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $corderService = $this->di['mod_service']('Order');
 
         $clientService = $this->di['mod_service']('client');
-        $client = $this->di['db']->load('Client', $order->getClientId());
+        $client = $this->di['em']->getRepository(Client::class)->find($order->getClientId());
         $taxed = $clientService->isClientTaxable($client);
         $quantity = $line['quantity'] ?? $order->getQuantity();
         $unit = $line['unit'] ?? $order->getUnit();

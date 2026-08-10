@@ -555,7 +555,7 @@ class Service implements InjectionAwareInterface
         $data['meta'] = $this->getOrderMetaRepository()->getPairsForOrder($modelId);
         $data['active_tickets'] = $supportService->getSupportTicketRepository()->countActiveTicketsForOrder($modelId);
         $client = $this->di['em']->getRepository(ClientEntity::class)->find($modelClientId);
-        if (!$client instanceof ClientEntity && !$client instanceof \Model_Client) {
+        if (!$client instanceof ClientEntity) {
             throw new InformationException('Client not found');
         }
         $data['client'] = $clientService->toApiArray($client, false);
@@ -821,7 +821,7 @@ class Service implements InjectionAwareInterface
         return [$query, $bindings];
     }
 
-    public function createOrder(ClientEntity|\Model_Client $client, Product $product, array $data)
+    public function createOrder(ClientEntity $client, Product $product, array $data)
     {
         $quantity = PriceValidator::validateQuantity($data['quantity'] ?? 1);
         $price = isset($data['price']) ? PriceValidator::validateAmount($data['price']) : null;
@@ -832,7 +832,7 @@ class Service implements InjectionAwareInterface
 
         if (isset($data['currency']) && !empty($data['currency'])) {
             $currency = $currencyRepository->findOneByCode($data['currency']);
-        } elseif ($clientCurrency = $client instanceof ClientEntity ? $client->getCurrency() : $client->currency) {
+        } elseif ($clientCurrency = $client->getCurrency()) {
             $currency = $currencyRepository->findOneByCode($clientCurrency);
         } else {
             $currency = $currencyRepository->findDefault();
@@ -909,7 +909,7 @@ class Service implements InjectionAwareInterface
             &$invoice
         ) {
             $order = new Order();
-            $order->setClientId($client instanceof ClientEntity ? $client->getId() : (int) $client->id);
+            $order->setClientId($client->getId());
             $order->setProductId($this->getProductId($product));
             $order->setFormId($this->getProductFormId($product));
             $parentGroupId = $parent_order ? $parent_order->getGroupId() : null;
@@ -1039,11 +1039,9 @@ class Service implements InjectionAwareInterface
         return $id;
     }
 
-    public function getMasterOrderForClient(ClientEntity|\Model_Client $client, $group_id): ?Order
+    public function getMasterOrderForClient(ClientEntity $client, $group_id): ?Order
     {
-        $clientId = $client instanceof ClientEntity ? $client->getId() : (int) $client->id;
-
-        return $this->getOrderRepository()->findMasterByGroupAndClient((string) $group_id, (int) $clientId);
+        return $this->getOrderRepository()->findMasterByGroupAndClient((string) $group_id, (int) $client->getId());
     }
 
     /**
@@ -1949,16 +1947,9 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function findForClientById(ClientEntity|\Model_Client $client, $id): ?Order
+    public function findForClientById(ClientEntity $client, $id): ?Order
     {
-        $clientId = $client instanceof ClientEntity ? $client->getId() : (int) $client->id;
-
-        return $this->getOrderRepository()->findForClientById((int) $clientId, (int) $id);
-    }
-
-    public function findEntityForClientById(ClientEntity $client, int $id): ?Order
-    {
-        return $this->getOrderRepository()->findForClientById((int) $client->getId(), $id);
+        return $this->getOrderRepository()->findForClientById((int) $client->getId(), (int) $id);
     }
 
     public function findByClientIdAndOrderId(int $clientId, int $orderId): ?Order
@@ -2019,11 +2010,11 @@ class Service implements InjectionAwareInterface
         return $o instanceof Order ? $o->getId() : null;
     }
 
-    public function rmByClient(ClientEntity|\Model_Client $client): void
+    public function rmByClient(ClientEntity $client): void
     {
         $productService = $this->di['mod_service']('Product');
-        $clientId = $client instanceof ClientEntity ? $client->getId() : (int) $client->id;
-        $orders = $this->getOrderRepository()->findByClientId((int) $clientId);
+        $clientId = (int) $client->getId();
+        $orders = $this->getOrderRepository()->findByClientId($clientId);
         foreach ($orders as $order) {
             $productService->releaseReservedPromoRedemptionsForOrder($order, 'client_deleted');
             $productService->releaseReservedStockForOrder($order, 'client_deleted');

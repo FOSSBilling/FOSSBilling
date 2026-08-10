@@ -192,7 +192,7 @@ class Admin implements ApiArrayInterface
         return $this->status === self::STATUS_ACTIVE;
     }
 
-    public function toApiArray(\Model_Client|\FOSSBilling\Identity\Guest|null $identity = null): array
+    public function toApiArray(\Box\Mod\Client\Entity\Client|\FOSSBilling\Identity\Guest|null $identity = null): array
     {
         return [
             'id' => $this->id,

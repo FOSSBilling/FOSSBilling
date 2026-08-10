@@ -70,8 +70,8 @@ class TwigFactory
         $auth = $this->di['auth'] ?? null;
         if ($auth instanceof \Box_Authorization) {
             if ($auth->isClientLoggedIn()) {
-                $client = $this->di['db']->load('Client', $this->di['session']->get('client_id'));
-                $clientTimezone = $client->timezone ?? null;
+                $client = $this->di['em']->getRepository(\Box\Mod\Client\Entity\Client::class)->find($this->di['session']->get('client_id'));
+                $clientTimezone = $client?->getTimezone();
             } elseif ($auth->isAdminLoggedIn()) {
                 $admin = $this->di['session']->get('admin');
                 if (is_array($admin) && !empty($admin['id'])) {

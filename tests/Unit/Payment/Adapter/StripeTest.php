@@ -8,7 +8,6 @@ use Box\Mod\Invoice\Repository\TransactionRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Payment_Adapter_Stripe;
 use Stripe\StripeClient;
-use Tests\Helpers\DummyBean;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
@@ -1046,12 +1045,7 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
         $dbMock = Mockery::mock('\Box_Database');
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
         expectStripeObjectLock($dbalMock, 'pi_new', 1);
-        $clientModel = new Model_Client();
-        $clientModel->loadBean(new DummyBean());
-        $clientModel->id = 7;
-        $dbMock->shouldReceive('getExistingModelById')
-            ->with('Client', 7)
-            ->andReturn($clientModel);
+        $clientModel = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]);
 
         $transactionService = Mockery::mock();
         $transactionService->shouldReceive('claimForProcessing')
@@ -1067,6 +1061,9 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
         $clientService->shouldReceive('addFunds')->once();
 
         ['em' => $em, 'txRepo' => $txRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
+        $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+        $clientRepo->shouldReceive('find')->with(7)->andReturn($clientModel);
+        $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepo);
         $invoiceRepo->shouldReceive('find')
             ->with(15)
             ->andReturn($invoiceModel, null);
@@ -1076,7 +1073,6 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
             ->andReturn(null);
 
         $di = container();
-        $di['db'] = $dbMock;
         $di['dbal'] = $dbalMock;
         $di['em'] = $em;
         $di['mod_service'] = $di->protect(fn ($module, $service = null) => match (true) {

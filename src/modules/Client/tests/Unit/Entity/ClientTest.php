@@ -98,3 +98,21 @@ test('does not expose admin-only client fields without an admin identity', funct
     expect($result)->not->toHaveKey('group_id');
     expect($result)->not->toHaveKey('billing_email');
 });
+
+test('setEmail rejects invalid email addresses', function (?string $email): void {
+    $client = new Client();
+
+    expect(fn () => $client->setEmail($email))->toThrow(InvalidArgumentException::class);
+})->with([
+    'null' => [null],
+    'empty' => [''],
+    'whitespace only' => ['   '],
+    'zero' => ['0'],
+    'malformed' => ['not-an-email'],
+]);
+
+test('setEmail trims and accepts a valid email address', function (): void {
+    $client = new Client();
+
+    expect($client->setEmail('  ada@example.com  ')->getEmail())->toBe('ada@example.com');
+});

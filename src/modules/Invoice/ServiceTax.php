@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice;
 
+use Box\Mod\Client\Entity\Client;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\Tax;
 use Box\Mod\Invoice\Repository\TaxRepository;
@@ -38,14 +39,14 @@ class ServiceTax implements InjectionAwareInterface
         return $this->taxRepository;
     }
 
-    public function getTaxRateForClient(\Model_Client $model, &$title = null)
+    public function getTaxRateForClient(?Client $model, &$title = null)
     {
         $clientService = $this->di['mod_service']('client');
         if (!$clientService->isClientTaxable($model)) {
             return 0;
         }
 
-        $tax = $this->taxRepository->findOneByStateAndCountry($model->state, $model->country);
+        $tax = $this->taxRepository->findOneByStateAndCountry($model?->getState(), $model?->getCountry());
         // find rate which matches clients country and state
 
         if ($tax instanceof Tax) {
@@ -55,7 +56,7 @@ class ServiceTax implements InjectionAwareInterface
         }
 
         // find rate which matches clients country
-        $tax = $this->taxRepository->findOneByCountry($model->country);
+        $tax = $this->taxRepository->findOneByCountry($model?->getCountry());
         if ($tax instanceof Tax) {
             $title = $tax->getName();
 

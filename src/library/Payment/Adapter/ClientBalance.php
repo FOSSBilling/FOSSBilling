@@ -9,6 +9,7 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
+use Box\Mod\Client\Entity\Client;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\PayGateway;
 
@@ -45,7 +46,7 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
 
     public function enoughInBalanceToCoverInvoice(Invoice $invoice): bool
     {
-        $clientModel = $this->di['db']->load('Client', $invoice->getClientId());
+        $clientModel = $this->di['em']->getRepository(Client::class)->find($invoice->getClientId());
         $clientBalanceService = $this->di['mod_service']('Client', 'Balance');
         $sumInBalance = $clientBalanceService->getClientBalance($clientModel);
 
@@ -110,7 +111,7 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
             throw new Payment_Exception('Invoice not found');
         }
 
-        if ((int) $invoiceModel->getClientId() !== (int) $this->di['loggedin_client']->id) {
+        if ((int) $invoiceModel->getClientId() !== (int) $this->di['loggedin_client']->getId()) {
             throw new Payment_Exception('You are not authorized to pay this invoice with client balance.');
         }
 

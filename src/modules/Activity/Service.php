@@ -262,9 +262,9 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public function rmByClient(\Model_Client|Client $client): void
+    public function rmByClient(Client $client): void
     {
-        $clientId = $client instanceof Client ? $client->getId() : $client->id;
+        $clientId = $client->getId();
         if ($clientId === null) {
             return;
         }

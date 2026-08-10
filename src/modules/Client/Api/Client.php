@@ -76,19 +76,10 @@ class Client extends \FOSSBilling\Api\AbstractApi
 
     private function getClientEntity(object $identity): ClientEntity
     {
-        if ($identity instanceof ClientEntity) {
-            return $identity;
-        }
-
-        if (!$identity instanceof \Model_Client) {
+        if (!$identity instanceof ClientEntity) {
             throw new InformationException('Client identity not found');
         }
 
-        $client = $this->getDi()['em']->getRepository(ClientEntity::class)->find((int) $identity->id);
-        if (!$client instanceof ClientEntity) {
-            throw new InformationException('Client not found');
-        }
-
-        return $client;
+        return $identity;
     }
 }

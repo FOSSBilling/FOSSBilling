@@ -32,7 +32,7 @@ class AbstractApi implements InjectionAwareInterface
     protected $service;
 
     /**
-     * @var \Model_Client|\Box\Mod\Staff\Entity\Admin|\FOSSBilling\Identity\Guest
+     * @var \Box\Mod\Client\Entity\Client|\Box\Mod\Staff\Entity\Admin|\FOSSBilling\Identity\Guest
      */
     protected $identity;
 
@@ -70,7 +70,7 @@ class AbstractApi implements InjectionAwareInterface
     }
 
     /**
-     * @param \Model_Client|\Box\Mod\Staff\Entity\Admin|\FOSSBilling\Identity\Guest $identity
+     * @param \Box\Mod\Client\Entity\Client|\Box\Mod\Staff\Entity\Admin|\FOSSBilling\Identity\Guest $identity
      */
     public function setIdentity($identity): void
     {
@@ -78,7 +78,7 @@ class AbstractApi implements InjectionAwareInterface
     }
 
     /**
-     * @return \Model_Client|\Box\Mod\Staff\Entity\Admin|\FOSSBilling\Identity\Guest
+     * @return \Box\Mod\Client\Entity\Client|\Box\Mod\Staff\Entity\Admin|\FOSSBilling\Identity\Guest
      */
     public function getIdentity()
     {

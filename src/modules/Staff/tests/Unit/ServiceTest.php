@@ -23,6 +23,7 @@ use Box\Mod\Support\Repository\HelpdeskRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 class StaffPdoMock extends PDO
 {
@@ -356,7 +357,7 @@ test('onAfterClientReplyTicket sends email notification', function (): void {
     $ticketModel = (new Box\Mod\Support\Entity\SupportTicket())
         ->setClientId($clientId)
         ->setPriority(25);
-    $clientModel = Mockery::mock(Model_Client::class);
+    $clientModel = createEntity(Box\Mod\Client\Entity\Client::class);
     $clientDetails = [
         'id' => $clientId,
         'email' => 'client@example.com',
@@ -702,7 +703,7 @@ test('onAfterClientReplyTicket handles guest email exception', function (): void
 test('onAfterClientSignUp sends sanitized client details in the email variables', function (): void {
     $eventMock = Mockery::mock('\Box_Event');
     $clientId = 42;
-    $client = Mockery::mock(Model_Client::class);
+    $client = createEntity(Box\Mod\Client\Entity\Client::class);
     $clientDetails = [
         'id' => $clientId,
         'email' => 'new-client@example.com',
@@ -750,7 +751,7 @@ test('onAfterClientSignUp sends sanitized client details in the email variables'
 test('onAfterClientSignUp handles email exception', function (): void {
     $eventMock = Mockery::mock('\Box_Event');
     $clientId = 42;
-    $client = Mockery::mock(Model_Client::class);
+    $client = createEntity(Box\Mod\Client\Entity\Client::class);
 
     $clientMock = Mockery::mock(Box\Mod\Client\Service::class);
     $clientMock->shouldReceive('get')->once()

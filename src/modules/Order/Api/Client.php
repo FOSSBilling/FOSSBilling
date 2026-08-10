@@ -137,24 +137,16 @@ class Client extends \FOSSBilling\Api\AbstractApi
 
     private function getClientId(object $identity): int
     {
-        if ($identity instanceof ClientEntity) {
-            return (int) $identity->getId();
-        }
-
-        if (!$identity instanceof \Model_Client) {
+        if (!$identity instanceof ClientEntity) {
             throw new \FOSSBilling\InformationException('Client identity not found');
         }
 
-        return (int) $identity->id;
+        return (int) $identity->getId();
     }
 
     private function findOrderForIdentity(object $identity, int $id): ?Order
     {
-        if ($identity instanceof ClientEntity) {
-            return $this->getService()->findEntityForClientById($identity, $id);
-        }
-
-        if (!$identity instanceof \Model_Client) {
+        if (!$identity instanceof ClientEntity) {
             throw new \FOSSBilling\InformationException('Client identity not found');
         }
 

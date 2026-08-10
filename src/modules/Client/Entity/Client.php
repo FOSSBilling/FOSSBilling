@@ -270,6 +270,15 @@ class Client implements ApiArrayInterface
 
     public function setEmail(?string $email): self
     {
+        if ($email === null) {
+            throw new \InvalidArgumentException('Email address cannot be null');
+        }
+
+        $email = trim($email);
+        if ($email === '' || filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+            throw new \InvalidArgumentException('Invalid email address');
+        }
+
         $this->email = $email;
 
         return $this;

@@ -78,12 +78,12 @@ function client(array $attributes = []): object
         'email' => 'test' . uniqid() . '@example.com',
         'first_name' => 'Test',
         'last_name' => 'User',
-        'status' => \Model_Client::ACTIVE,
+        'status' => \Box\Mod\Client\Entity\Client::ACTIVE,
         'created_at' => date('Y-m-d H:i:s'),
         'updated_at' => date('Y-m-d H:i:s'),
     ];
 
-    return model(\Model_Client::class, array_merge($defaults, $attributes));
+    return createEntity(\Box\Mod\Client\Entity\Client::class, array_merge($defaults, $attributes));
 }
 
 /**
