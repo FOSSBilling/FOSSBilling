@@ -123,7 +123,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $session->set('client_id', $client->getId());
         $this->getDi()['logger']->info('Logged in as client #%s', $client->getId());
 
-        if (!empty($data['strip_admin_identity'])) {
+        if (Tools::normalizeBoolean($data['strip_admin_identity'] ?? false)) {
             $session->destroy('admin');
         }
 
