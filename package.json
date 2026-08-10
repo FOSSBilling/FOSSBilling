@@ -49,5 +49,9 @@
   "engines": {
     "node": ">=24",
     "npm": ">=11"
+  },
+  "allowScripts": {
+    "@parcel/watcher": true,
+    "esbuild": true
   }
 }
