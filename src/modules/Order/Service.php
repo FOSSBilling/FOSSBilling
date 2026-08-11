@@ -344,13 +344,12 @@ class Service implements InjectionAwareInterface
                     return $this->di['em']->getRepository($entityClass)->find($serviceId);
                 }
 
-                return $this->di['db']->load($this->_getServiceClassName($order), $serviceId);
+                return null;
             }
 
-            return $this->di['db']->findOne(
-                'service_' . $serviceType,
-                'id = :id',
-                [':id' => $serviceId]
+            return $this->di['em']->getConnection()->fetchAssociative(
+                'SELECT * FROM service_' . $serviceType . ' WHERE id = :id',
+                ['id' => $serviceId]
             );
         }
 
@@ -1210,7 +1209,10 @@ class Service implements InjectionAwareInterface
         $service = null;
         $sdbname = 'service_' . $serviceType;
         if ($serviceId) {
-            $service = $this->di['db']->load($sdbname, $serviceId);
+            $service = $this->di['em']->getConnection()->fetchAssociative(
+                'SELECT * FROM ' . $sdbname . ' WHERE id = :id',
+                ['id' => $serviceId]
+            );
         }
         if (method_exists($repo, $action) && is_callable([$repo, $action])) {
             return $repo->$action($order, $service);

@@ -10,30 +10,15 @@
 
 declare(strict_types=1);
 
+use Doctrine\DBAL\Connection;
 use FOSSBilling\Http\CsvResponseFactory;
 
-if (!function_exists('csvTestBean')) {
-    function csvTestBean(array $columns): object
-    {
-        return new readonly class($columns) {
-            public function __construct(private array $columns)
-            {
-            }
-
-            public function export(): array
-            {
-                return $this->columns;
-            }
-        };
-    }
-}
-
 test('CSV factory strips pass, salt, api_token, hash, and config from numeric-array headers', function (): void {
-    $database = Mockery::mock(Box_Database::class);
-    $database->shouldReceive('findAll')
-        ->with('client')
+    $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')
+        ->with('SELECT * FROM `client`', [])
         ->andReturn([
-            csvTestBean([
+            [
                 'id' => 1,
                 'email' => 'client@example.com',
                 'pass' => 'leaked-hash',
@@ -42,10 +27,10 @@ test('CSV factory strips pass, salt, api_token, hash, and config from numeric-ar
                 'hash' => 'leaked-invoice-hash',
                 'config' => '{"password":"leaked-config"}',
                 'status' => 'active',
-            ]),
+            ],
         ]);
 
-    $factory = new CsvResponseFactory($database);
+    $factory = new CsvResponseFactory($connection);
     $response = $factory->create('client', 'clients.csv', ['id', 'email', 'pass', 'salt', 'api_token', 'hash', 'config', 'status']);
     $content = $response->getContent();
 
@@ -65,20 +50,20 @@ test('CSV factory strips pass, salt, api_token, hash, and config from numeric-ar
 });
 
 test('CSV factory does not leak all columns when every requested header is sensitive', function (): void {
-    $database = Mockery::mock(Box_Database::class);
-    $database->shouldReceive('findAll')
-        ->with('client')
+    $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')
+        ->with('SELECT * FROM `client`', [])
         ->andReturn([
-            csvTestBean([
+            [
                 'id' => 1,
                 'email' => 'client@example.com',
                 'pass' => 'leaked-hash',
                 'salt' => 'leaked-salt',
                 'api_token' => 'leaked-token',
-            ]),
+            ],
         ]);
 
-    $factory = new CsvResponseFactory($database);
+    $factory = new CsvResponseFactory($connection);
     $response = $factory->create('client', 'clients.csv', ['pass', 'salt', 'api_token']);
     $content = $response->getContent();
 
@@ -89,21 +74,21 @@ test('CSV factory does not leak all columns when every requested header is sensi
 });
 
 test('CSV factory exports all non-sensitive columns when no headers are specified', function (): void {
-    $database = Mockery::mock(Box_Database::class);
-    $database->shouldReceive('findAll')
-        ->with('client')
+    $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')
+        ->with('SELECT * FROM `client`', [])
         ->andReturn([
-            csvTestBean([
+            [
                 'id' => 1,
                 'email' => 'client@example.com',
                 'pass' => 'leaked-hash',
                 'salt' => 'leaked-salt',
                 'api_token' => 'leaked-token',
                 'status' => 'active',
-            ]),
+            ],
         ]);
 
-    $factory = new CsvResponseFactory($database);
+    $factory = new CsvResponseFactory($connection);
     $response = $factory->create('client', 'clients.csv');
     $content = $response->getContent();
 

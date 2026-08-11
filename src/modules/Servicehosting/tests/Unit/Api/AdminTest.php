@@ -285,12 +285,9 @@ test('testAccountGetList', function (): void {
     ->andReturn(['list' => [['id' => 1]]]);
 
     $di = container();
-    $dbStub = Mockery::mock('Box_Database');
-    $dbStub->shouldNotReceive('dispense');
-    $dbStub->shouldNotReceive('findOne');
+    $di['em']->shouldReceive('getConnection')->never();
     $di['mod_service'] = $di->protect(moduleService());
     $di['pager'] = $pagerMock;
-    $di['db'] = $dbStub;
 
     $api->setDi($di);
     $api->setService($serviceMock);
@@ -325,8 +322,6 @@ test('testServerGetList', function (): void {
     $di = container();
     $di['pager'] = $pagerMock;
     $di['em'] = serviceHostingAdminEmWith([ServiceHostingServer::class => $serverRepo]);
-    $dbStub = Mockery::mock('Box_Database');
-    $di['db'] = $dbStub;
 
     $api->setDi($di);
     $api->setService($serviceMock);

@@ -56,7 +56,7 @@ class Payment_Adapter_Custom
      */
     public function getHtml(FOSSBilling\Api\Proxy $api_admin, int $invoice_id, bool $subscription): string
     {
-        $invoiceModel = $this->di['db']->load('Invoice', $invoice_id);
+        $invoiceModel = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Invoice::class)->find($invoice_id);
         $invoiceService = $this->di['mod_service']('Invoice');
         $invoice = $invoiceService->toApiArray($invoiceModel, true);
 
@@ -91,7 +91,8 @@ class Payment_Adapter_Custom
             if (!$tx instanceof Box\Mod\Invoice\Entity\Transaction) {
                 throw new Exception('Transaction not found');
             }
-            $invoice = $this->di['db']->getExistingModelById('Invoice', $tx->getInvoiceId());
+            $invoice = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Invoice::class)->find($tx->getInvoiceId())
+                ?? throw new FOSSBilling\InformationException('Invoice not found');
 
             // Load the payment gateway and client associated with the transaction
             $gateway = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\PayGateway::class)->find((int) $tx->getGatewayId());
@@ -99,7 +100,7 @@ class Payment_Adapter_Custom
                 throw new Exception('Payment gateway not found for transaction');
             }
             $clientService = $this->di['mod_service']('Client');
-            $client = $clientService->get(['id' => $invoice->client_id]);
+            $client = $clientService->get(['id' => $invoice->getClientId()]);
 
             // Calculate the total amount of the invoice
             $invoiceService = $this->di['mod_service']('Invoice');
@@ -115,10 +116,11 @@ class Payment_Adapter_Custom
             $tx->setStatus(Box\Mod\Invoice\Entity\Transaction::STATUS_PROCESSED);
             $tx->setAmount((string) $invoiceTotal);
             $tx->setNote($gatewayName . ' transaction No: ' . $tx->getTxnId());
-            $tx->setCurrency($invoice->currency);
+            $tx->setCurrency($invoice->getCurrency());
             $tx->setUpdatedAt(new DateTime());
 
             // Store the updated transaction and use its return to indicate a success or failure.
+            $this->di['em']->persist($tx);
             $this->di['em']->flush();
 
             return true;

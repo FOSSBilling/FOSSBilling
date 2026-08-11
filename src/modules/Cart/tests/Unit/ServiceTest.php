@@ -60,9 +60,6 @@ test('gets dependency injection container', function (): void {
     $service = new Service();
 
     $di = container();
-    $db = Mockery::mock(Box_Database::class)->shouldIgnoreMissing();
-
-    $di['db'] = $db;
     $service->setDi($di);
     $result = $service->getDi();
     expect($result)->toEqual($di);
@@ -674,8 +671,6 @@ test('checkoutCart returns array with expected keys', function (): void {
 
     $promo = new Promo();
 
-    $dbMock = Mockery::mock(Box_Database::class)->shouldIgnoreMissing();
-
     $client = createEntity(Client::class);
 
     $productService = Mockery::mock(ProductService::class);
@@ -683,7 +678,6 @@ test('checkoutCart returns array with expected keys', function (): void {
 
     $di = container();
     $di['events_manager'] = $eventMock;
-    $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['request'] = new Request();
     $di['mod_service'] = $di->protect(fn () => $productService);
@@ -706,8 +700,6 @@ test('checkoutCart throws exception when client is not able to use promo', funct
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('isClientAbleToUsePromo')->atLeast()->once()->andReturn(false);
-
-    $dbMock = Mockery::mock(Box_Database::class)->shouldIgnoreMissing();
     $promo = new Promo();
     $productService = Mockery::mock(ProductService::class);
     $productService->shouldReceive('findPromoById')->once()->with(1)->andReturn($promo);
@@ -715,7 +707,6 @@ test('checkoutCart throws exception when client is not able to use promo', funct
     $client = createEntity(Client::class);
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(fn () => $productService);
     $serviceMock->setDi($di);
@@ -1583,8 +1574,6 @@ test('toApiArray returns expected structure', function (): void {
         ->andReturn($cartProductApiArray);
 
     $currencyService = Mockery::mock(CurrencyService::class)->shouldIgnoreMissing();
-
-    $dbMock = Mockery::mock(Box_Database::class)->shouldIgnoreMissing();
     $currencyModel = Mockery::mock(Currency::class)->shouldIgnoreMissing();
     $currencyModel->shouldReceive('toApiArray')->andReturn([]);
 
@@ -1594,7 +1583,6 @@ test('toApiArray returns expected structure', function (): void {
     $currencyService->shouldReceive('getCurrencyRepository')->atLeast()->once()->andReturn($currencyRepositoryMock);
 
     $di = new Pimple\Container();
-    $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn () => $currencyService);
 
     $serviceMock->setDi($di);

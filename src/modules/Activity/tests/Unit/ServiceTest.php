@@ -38,9 +38,6 @@ test('dependency injection', function (): void {
     $service = new Box\Mod\Activity\Service();
 
     $di = container();
-    $dbMock = Mockery::mock('Box_Database');
-
-    $di['db'] = $dbMock;
     $service->setDi($di);
     $result = $service->getDi();
     expect($result)->toEqual($di);

@@ -802,10 +802,11 @@ test('getOrderService returns core service', function (): void {
 test('getOrderService returns non-core service', function (): void {
     $serviceData = ['id' => 1, 'product_id' => 5];
 
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAssociative')->once()->with('SELECT * FROM service_external WHERE id = :id', ['id' => 1])->andReturn($serviceData);
+
     $di = container();
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('findOne')->once()->with('service_external', 'id = :id', [':id' => 1])->andReturn($serviceData);
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
 
     $svc = new Service();
     $svc->setDi($di);
@@ -821,12 +822,8 @@ test('getOrderService returns non-core service', function (): void {
 });
 
 test('getOrderService returns null when service id is not set', function (): void {
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldReceive('getExistingModelById')->never();
-    $dbMock->shouldReceive('findOne')->never();
-
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->never();
 
     $svc = new Service();
     $svc->setDi($di);
@@ -1224,9 +1221,6 @@ test('toApiArray returns expected keys', function (): void {
     $supportTicketRepo->shouldReceive('countActiveTicketsForOrder')->atLeast()->once()->andReturn(1);
     $supportService->shouldReceive('getSupportTicketRepository')->atLeast()->once()->andReturn($supportTicketRepo);
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldNotReceive('toArray');
-
     $clientEntity = new Box\Mod\Client\Entity\Client();
 
     $clientRepoMock = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
@@ -1257,7 +1251,6 @@ test('toApiArray returns expected keys', function (): void {
             return $productService;
         }
     });
-    $di['db'] = $dbMock;
     $di['em'] = $emMock;
 
     $svc = new Service();
@@ -2746,12 +2739,11 @@ test('cancelFromOrder does not cancel subscriptions when service cancellation fa
     $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
     $subscriptionService->shouldNotReceive('cancelForOrder');
 
-    $dbMock = Mockery::mock(Box_Database::class);
-    $dbMock->shouldNotReceive('store');
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
+    $emMock->shouldNotReceive('flush');
 
     $di = container();
-    $di['db'] = $dbMock;
-    $di['em'] = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
+    $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn () => $subscriptionService);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();

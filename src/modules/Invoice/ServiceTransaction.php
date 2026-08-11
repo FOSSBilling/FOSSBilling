@@ -425,7 +425,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $sql = 'SELECT status, count(id) as counter
             FROM transaction
             GROUP BY status';
-        $rows = $this->di['db']->getAll($sql);
+        $rows = $this->di['em']->getConnection()->fetchAllAssociative($sql);
         $data = [];
         foreach ($rows as $row) {
             $data[$row['status']] = $row['counter'];
@@ -493,7 +493,7 @@ class ServiceTransaction implements InjectionAwareInterface
                     OR (m.status = :processing_status AND (m.updated_at IS NULL OR m.updated_at <= :processing_retry_after))
                 ORDER BY m.id DESC';
 
-        return $this->di['db']->getAll($sql, [
+        return $this->di['em']->getConnection()->fetchAllAssociative($sql, [
             'received_status' => Transaction::STATUS_RECEIVED,
             'processing_status' => Transaction::STATUS_PROCESSING,
             'processing_retry_after' => $this->getProcessingRecoveryThreshold(),
@@ -521,7 +521,7 @@ class ServiceTransaction implements InjectionAwareInterface
      */
     public function claimForProcessing(int $id): bool
     {
-        $affectedRows = $this->di['db']->exec(
+        $affectedRows = $this->di['em']->getConnection()->executeStatement(
             'UPDATE transaction SET status = ?, updated_at = ? WHERE id = ? AND (status IN (?, ?) OR (status = ? AND (updated_at IS NULL OR updated_at <= ?)))',
             [
                 Transaction::STATUS_PROCESSING,

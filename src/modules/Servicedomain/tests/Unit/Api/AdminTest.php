@@ -825,10 +825,6 @@ test('throws exception when getting service without order_id', function (): void
 
     $adminApi->setService($serviceMock);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('load')
-        ->never();
-
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getOrderService')
         ->never();
@@ -837,7 +833,7 @@ test('throws exception when getting service without order_id', function (): void
         ->never();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->never();
     $di['mod_service'] = $di->protect(fn (string $name = ''): Mockery\MockInterface => strtolower($name) === 'staff' ? $staffServiceMock : $orderServiceMock);
     $di['validator'] = new FOSSBilling\Validate();
 

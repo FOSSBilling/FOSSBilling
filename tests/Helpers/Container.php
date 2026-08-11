@@ -54,17 +54,6 @@ function container(): Container
 
         return $session;
     };
-    $di['db'] = static function (): object {
-        $db = \Mockery::mock(\Box_Database::class)->shouldIgnoreMissing();
-        $db->shouldReceive('find')->byDefault()->andReturn([]);
-        $db->shouldReceive('getAll')->byDefault()->andReturn([]);
-        $db->shouldReceive('getAssoc')->byDefault()->andReturn([]);
-        $db->shouldReceive('toArray')->byDefault()->andReturn([]);
-        $db->shouldReceive('exec')->byDefault()->andReturn(1);
-        $db->shouldReceive('transaction')->byDefault()->andReturnUsing(static fn (callable $callback): mixed => $callback());
-
-        return $db;
-    };
     $di['dbal'] = static function (): object {
         $dbal = \Mockery::mock(\Doctrine\DBAL\Connection::class)->shouldIgnoreMissing();
         $result = \Mockery::mock(\Doctrine\DBAL\Result::class)->shouldIgnoreMissing();
@@ -158,7 +147,7 @@ function container(): Container
     };
     $di['mod_config'] = $di->protect(fn (string $name): array => []);
     $di['cookie_queue'] = fn (): \FOSSBilling\Http\CookieQueue => new \FOSSBilling\Http\CookieQueue();
-    $di['em'] = static function (): object {
+    $di['em'] = static function () use ($di): object {
         $adminGroupRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminGroupRepository::class)->shouldIgnoreMissing();
         $adminGroupMemberRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminGroupMemberRepository::class)->shouldIgnoreMissing();
 
@@ -266,6 +255,7 @@ function container(): Container
 
         $em = \Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
         $em->shouldReceive('wrapInTransaction')->byDefault()->andReturnUsing(static fn (callable $callback): mixed => $callback());
+        $em->shouldReceive('getConnection')->byDefault()->andReturn($di['dbal']);
         $em->shouldReceive('getRepository')->byDefault()->andReturnUsing(static fn (string $class): object => match ($class) {
             \Box\Mod\Client\Entity\Client::class => $clientRepository,
             \Box\Mod\Client\Entity\ClientBalance::class => $clientBalanceRepository,

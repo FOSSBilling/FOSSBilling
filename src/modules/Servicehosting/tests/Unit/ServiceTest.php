@@ -45,13 +45,13 @@ test('batch enriches hosting accounts with orders and clients', function (): voi
         'updated_at' => '2026-07-19 10:01:00',
     ];
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')
         ->once()
         ->with(Mockery::pattern('/FROM client_order/'), ['hosting', 10])
         ->andReturn([['id' => 50, 'service_id' => 10]]);
-    $dbMock->shouldNotReceive('findOne');
-    $dbMock->shouldNotReceive('dispense');
+    $connection->shouldNotReceive('fetchAssociative');
+    $connection->shouldNotReceive('fetchOne');
 
     $orderService = Mockery::mock(OrderService::class);
     $orderService->shouldReceive('getBatchForApi')
@@ -65,7 +65,7 @@ test('batch enriches hosting accounts with orders and clients', function (): voi
         ]]);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $di['mod_service'] = $di->protect(moduleService(['order' => $orderService]));
     $service->setDi($di);
 
@@ -85,11 +85,11 @@ test('batch enriches hosting accounts with orders and clients', function (): voi
 
 test('batch returns hosting accounts without orders', function (): void {
     $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')->once()->andReturn([]);
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')->once()->andReturn([]);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $service->setDi($di);
 
     $result = $service->getAccountsBatchForApi([[
@@ -786,11 +786,11 @@ test('get server pairs', function (): void {
         ],
     ];
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')->atLeast()->once()->andReturn($queryResult);
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')->atLeast()->once()->andReturn($queryResult);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $service->setDi($di);
 
     $result = $service->getServerPairs();
@@ -966,11 +966,11 @@ test('get hp pairs', function (): void {
         ],
     ];
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')->atLeast()->once()->andReturn($queryResult);
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')->atLeast()->once()->andReturn($queryResult);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $service->setDi($di);
 
     $result = $service->getHpPairs();

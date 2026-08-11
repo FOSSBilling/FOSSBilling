@@ -103,11 +103,11 @@ class Pagination implements InjectionAwareInterface
         }
 
         $paginatedQuery = $query . sprintf(' LIMIT %u, %u', $offset, $pagination->perPage);
-        $result = $this->di['db']->getAll($paginatedQuery, $params);
+        $result = $this->di['em']->getConnection()->fetchAllAssociative($paginatedQuery, $params);
 
         $query = rtrim($query, " ;\n\r\t");
         $countQuery = 'SELECT COUNT(1) FROM (' . $query . ') AS sub';
-        $total = (int) $this->di['db']->getCell($countQuery, $params);
+        $total = (int) $this->di['em']->getConnection()->fetchOne($countQuery, $params);
 
         return $this->buildPaginatedResponse($pagination->page, $pagination->perPage, $total, $result);
     }

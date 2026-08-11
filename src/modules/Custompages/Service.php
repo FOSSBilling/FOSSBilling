@@ -51,7 +51,7 @@ class Service
                 `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
                 PRIMARY KEY (`id`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8';
-        $this->di['db']->exec($sql);
+        $this->di['em']->getConnection()->executeStatement($sql);
 
         return true;
     }
@@ -66,17 +66,17 @@ class Service
         $sql = 'SELECT * FROM custom_pages WHERE 1';
         if ($id !== null && $id !== '') {
             $sql .= ' AND id = :id';
-            $filter[':id'] = (int) $id;
+            $filter['id'] = (int) $id;
         }
 
         if ($slug !== null && $slug !== '') {
             $sql .= ' AND slug LIKE :slug';
-            $filter[':slug'] = '%' . $slug . '%';
+            $filter['slug'] = '%' . $slug . '%';
         }
 
         if ($search) {
             $sql .= ' AND (title LIKE :q OR slug LIKE :q OR description LIKE :q OR keywords LIKE :q OR content LIKE :q)';
-            $filter[':q'] = "%$search%";
+            $filter['q'] = "%$search%";
         }
         $sql .= ' ORDER BY id DESC';
 

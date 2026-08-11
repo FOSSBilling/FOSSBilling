@@ -682,9 +682,9 @@ class Service implements InjectionAwareInterface
             // reminder being sent twice when this event is dispatched more than once for the
             // same invoice (overlapping cron runs, the once-daily batch and the pending-reminder
             // fallback both firing it, etc).
-            $claimed = (bool) $di['db']->exec(
+            $claimed = (bool) $di['em']->getConnection()->executeStatement(
                 "UPDATE invoice SET reminded_at = NOW(), updated_at = NOW() WHERE id = :id AND status = 'unpaid' AND approved = 1 AND due_at > NOW() AND (reminded_at IS NULL OR DATE(reminded_at) < CURDATE())",
-                [':id' => $params['id'] ?? 0]
+                ['id' => $params['id'] ?? 0]
             );
             if (!$claimed) {
                 return;
@@ -700,7 +700,7 @@ class Service implements InjectionAwareInterface
                 // catches its own failures internally, so any exception reaching here means the
                 // email was never queued. Release the claim so a later cron run retries it instead
                 // of the reminder being silently lost for the day.
-                $di['db']->exec('UPDATE invoice SET reminded_at = NULL WHERE id = :id', [':id' => $params['id'] ?? 0]);
+                $di['em']->getConnection()->executeStatement('UPDATE invoice SET reminded_at = NULL WHERE id = :id', ['id' => $params['id'] ?? 0]);
             }
             $di['logger']->setChannel('email')->error('Failed to send invoice reminder email', ['id' => $params['id'] ?? null, 'exception' => $exc->getMessage()]);
         }
@@ -715,7 +715,7 @@ class Service implements InjectionAwareInterface
             // removing old invoices
             $days = (int) $remove_after_days;
             $sql = 'DELETE FROM invoice WHERE status = :status AND DATEDIFF(NOW(), due_at) > :days';
-            $di['db']->exec($sql, [':days' => $days, ':status' => Invoice::STATUS_UNPAID]);
+            $di['em']->getConnection()->executeStatement($sql, ['days' => $days, 'status' => Invoice::STATUS_UNPAID]);
         }
     }
 
@@ -736,9 +736,9 @@ class Service implements InjectionAwareInterface
             // same invoice (overlapping cron runs, the once-daily batch and the pending-reminder
             // fallback both firing it, etc). The claim UPDATE already persists reminded_at and
             // updated_at, so there's no need to store the loaded model again once sent below.
-            $claimed = (bool) $di['db']->exec(
+            $claimed = (bool) $di['em']->getConnection()->executeStatement(
                 "UPDATE invoice SET reminded_at = NOW(), updated_at = NOW() WHERE id = :id AND status = 'unpaid' AND approved = 1 AND ((due_at < NOW()) OR (ABS(DATEDIFF(due_at, NOW())) = 0)) AND (reminded_at IS NULL OR DATE(reminded_at) < CURDATE())",
-                [':id' => $params['id'] ?? 0]
+                ['id' => $params['id'] ?? 0]
             );
             if (!$claimed) {
                 return;
@@ -772,7 +772,7 @@ class Service implements InjectionAwareInterface
                 // Nothing past sendTemplate() can throw, so reaching here with a claim already
                 // made means the email was never confirmed queued. Release the claim so a later
                 // cron run retries this invoice instead of losing the reminder.
-                $di['db']->exec('UPDATE invoice SET reminded_at = NULL WHERE id = :id', [':id' => $params['id'] ?? 0]);
+                $di['em']->getConnection()->executeStatement('UPDATE invoice SET reminded_at = NULL WHERE id = :id', ['id' => $params['id'] ?? 0]);
             }
             $di['logger']->setChannel('email')->error('Failed to send overdue invoice email', ['id' => $params['id'] ?? null, 'exception' => $exc->getMessage()]);
         }
@@ -1515,7 +1515,7 @@ class Service implements InjectionAwareInterface
             UPDATE client_order
             SET unpaid_invoice_id = NULL
             WHERE unpaid_invoice_id = :id';
-        $this->di['db']->exec($sql, ['id' => $model->getId()]);
+        $this->di['em']->getConnection()->executeStatement($sql, ['id' => $model->getId()]);
 
         $invoiceItems = $this->getInvoiceItemRepository()->findByInvoiceId((int) $model->getId());
         $entityManager = $this->di['em'];
@@ -1798,13 +1798,13 @@ class Service implements InjectionAwareInterface
         $beforeDueReminderIntervals = $this->parseInvoiceReminderIntervals($ss->getParamValue('invoice_reminder_before_due_days', ''));
         $afterDueReminderIntervals = $this->parseInvoiceReminderIntervals($ss->getParamValue('invoice_reminder_after_due_days', '5'));
 
-        $beforeDueList = $this->di['db']->getAll("SELECT id, DATEDIFF(due_at, NOW()) as days_left FROM invoice WHERE status = 'unpaid' AND approved = 1 AND due_at > NOW()");
+        $beforeDueList = $this->di['em']->getConnection()->fetchAllAssociative("SELECT id, DATEDIFF(due_at, NOW()) as days_left FROM invoice WHERE status = 'unpaid' AND approved = 1 AND due_at > NOW()");
         foreach ($beforeDueList as $params) {
             $params['reminder_intervals'] = $beforeDueReminderIntervals;
             $this->di['events_manager']->fire(['event' => 'onEventBeforeInvoiceIsDue', 'params' => $params]);
         }
 
-        $afterDueList = $this->di['db']->getAll("SELECT id, ABS(DATEDIFF(due_at, NOW())) as days_passed FROM invoice WHERE status = 'unpaid' AND approved = 1 AND ((due_at < NOW()) OR (ABS(DATEDIFF(due_at, NOW())) = 0))");
+        $afterDueList = $this->di['em']->getConnection()->fetchAllAssociative("SELECT id, ABS(DATEDIFF(due_at, NOW())) as days_passed FROM invoice WHERE status = 'unpaid' AND approved = 1 AND ((due_at < NOW()) OR (ABS(DATEDIFF(due_at, NOW())) = 0))");
         foreach ($afterDueList as $params) {
             $params['reminder_intervals'] = $afterDueReminderIntervals;
             $this->di['events_manager']->fire(['event' => 'onEventAfterInvoiceIsDue', 'params' => $params]);
@@ -1836,7 +1836,7 @@ class Service implements InjectionAwareInterface
         $sql = 'SELECT status, count(id) as counter
                  FROM invoice
                  group by status';
-        $rows = $this->di['db']->getAll($sql);
+        $rows = $this->di['em']->getConnection()->fetchAllAssociative($sql);
         $data = [];
         foreach ($rows as $row) {
             $data[$row['status']] = $row['counter'];
@@ -2111,7 +2111,7 @@ class Service implements InjectionAwareInterface
         $sql .= ' GROUP BY m.id, cl.id
                  ORDER BY m.id DESC';
 
-        return $this->di['db']->getAll($sql, $params);
+        return $this->di['em']->getConnection()->fetchAllAssociative($sql, $params);
     }
 
     /**

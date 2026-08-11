@@ -191,7 +191,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
     public function getInvoiceTitle(Invoice $invoice): string
     {
-        $invoiceItems = $this->di['db']->getAll('SELECT title FROM invoice_item WHERE invoice_id = :invoice_id', [':invoice_id' => $invoice->getId()]);
+        $invoiceItems = $this->di['em']->getConnection()->fetchAllAssociative('SELECT title FROM invoice_item WHERE invoice_id = :invoice_id', ['invoice_id' => $invoice->getId()]);
 
         $params = [
             ':id' => sprintf('%05s', $invoice->getNr()),
@@ -1320,9 +1320,9 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
     private function getOrCreateProduct(Invoice $invoice): Stripe\Product
     {
-        $invoiceItems = $this->di['db']->getAll(
+        $invoiceItems = $this->di['em']->getConnection()->fetchAllAssociative(
             'SELECT title FROM invoice_item WHERE invoice_id = :invoice_id',
-            [':invoice_id' => $invoice->getId()]
+            ['invoice_id' => $invoice->getId()]
         );
 
         if (empty($invoiceItems)) {

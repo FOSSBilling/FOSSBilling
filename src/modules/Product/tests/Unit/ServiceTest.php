@@ -1162,8 +1162,6 @@ test('create addon', function (): void {
     $service = new Service();
     $newProductId = 1;
 
-    $dbMock = Mockery::mock('\Box_Database')->shouldIgnoreMissing();
-
     $toolMock = Mockery::mock(FOSSBilling\Tools::class);
     $toolMock->shouldReceive('slug')->atLeast()->once()->andReturn('title');
 
@@ -1171,7 +1169,6 @@ test('create addon', function (): void {
     $productRepo->shouldReceive('findOneBy')->once()->with(['slug' => 'title'])->andReturn(null);
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['em'] = productTestCreateEntityManagerWithRepositories($productRepo, null, productTestCreateProductEntity($newProductId), productTestCreateProductPaymentEntity(1));
     $di['logger'] = new Box_Log();
     $di['tools'] = $toolMock;
@@ -2116,7 +2113,6 @@ test('delete promo', function (): void {
     };
 
     $di = container();
-    $di['db'] = Mockery::mock('\Box_Database')->shouldIgnoreMissing();
     $di['logger'] = new Box_Log();
     $di['em'] = $emMock;
 
@@ -2148,7 +2144,6 @@ test('delete promo blocks deletion when redemption history exists', function ():
     };
 
     $di = container();
-    $di['db'] = Mockery::mock('\Box_Database')->shouldIgnoreMissing();
     $di['em'] = $emMock;
 
     $service->setDi($di);
