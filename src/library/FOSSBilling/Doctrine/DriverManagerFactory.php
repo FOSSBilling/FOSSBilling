@@ -114,8 +114,15 @@ class DriverManagerFactory
 
         // Set server default charset for newly created tables. Connection charset is handled by DBAL via DSN.
         $connection->executeStatement('SET character_set_server = utf8');
-        $connection->executeStatement('SET SESSION interactive_timeout = 28800');
-        $connection->executeStatement('SET SESSION wait_timeout = 28800');
+
+        // Only override session timeouts when explicitly configured, otherwise preserve server defaults.
+        if (isset($dbConfig['interactive_timeout'])) {
+            $connection->executeStatement('SET SESSION interactive_timeout = ' . (int) $dbConfig['interactive_timeout']);
+        }
+
+        if (isset($dbConfig['wait_timeout'])) {
+            $connection->executeStatement('SET SESSION wait_timeout = ' . (int) $dbConfig['wait_timeout']);
+        }
 
         // Get the timezone offset in the PDO format
         $datetime = new \DateTime('now');
