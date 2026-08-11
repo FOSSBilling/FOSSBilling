@@ -90,7 +90,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return true;
     }
 
-    public function createAndProcess($ipn)
+    public function createAndProcess($ipn): ?int
     {
         $id = $this->create($ipn);
 
@@ -904,12 +904,12 @@ class ServiceTransaction implements InjectionAwareInterface
         $period = $subscriptionService->getSubscriptionPeriod($invoice);
 
         $s = new Subscription();
-        $s->setClientId($invoice->getClientId() !== null ? (int) $invoice->getClientId() : null);
+        $s->setClientId($invoice->getClientId() ?? null);
         $s->setPayGatewayId($tx->getGatewayId());
         $s->setSid($tx->getSId());
         $s->setPeriod($period);
         $s->setRelType('invoice');
-        $s->setRelId($invoice->getId() !== null ? (int) $invoice->getId() : null);
+        $s->setRelId($invoice->getId() ?? null);
         $s->setAmount($tx->getAmount());
         $s->setCurrency($invoice->getCurrency());
         $s->setStatus('active');

@@ -2003,7 +2003,7 @@ class Service implements InjectionAwareInterface
         $this->persistOrder($order);
     }
 
-    public function getRelatedOrderIdByType(Order $order, $type)
+    public function getRelatedOrderIdByType(Order $order, $type): ?int
     {
         $groupId = $order->getGroupId();
 
