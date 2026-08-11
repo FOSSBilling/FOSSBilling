@@ -13,6 +13,7 @@ namespace Box\Mod\Custompages;
 
 use Box\Mod\Custompages\Entity\CustomPage;
 use Box\Mod\Custompages\Repository\CustomPageRepository;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use FOSSBilling\PaginationOptions;
 
 class Service
@@ -58,7 +59,8 @@ class Service
                 `content` text NOT NULL,
                 `slug` varchar(255) NOT NULL,
                 `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-                PRIMARY KEY (`id`)
+                PRIMARY KEY (`id`),
+                UNIQUE KEY `uniq_custom_pages_slug` (`slug`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8';
         $this->di['em']->getConnection()->executeStatement($sql);
 
@@ -104,22 +106,35 @@ class Service
 
     public function createPage($title, $description, $keywords, $content): int
     {
-        $slug = $this->generateUniqueSlug($title);
+        // generateUniqueSlug() picks a free candidate, but a concurrent request can
+        // claim the same slug between the check and the flush. The unique index on
+        // custom_pages.slug turns that race into a catchable constraint violation,
+        // which we resolve by clearing the EM and retrying with a fresh candidate.
+        $page = null;
+        for ($attempt = 0; $attempt < 5; ++$attempt) {
+            $slug = $this->generateUniqueSlug($title);
 
-        $page = new CustomPage();
-        $page->setTitle($title)
-            ->setDescription($description ?? '')
-            ->setKeywords($keywords ?? '')
-            ->setContent($content)
-            ->setSlug($slug);
+            $page = new CustomPage();
+            $page->setTitle($title)
+                ->setDescription($description ?? '')
+                ->setKeywords($keywords ?? '')
+                ->setContent($content)
+                ->setSlug($slug);
 
-        $this->di['em']->persist($page);
-        $this->di['em']->flush();
+            try {
+                $this->di['em']->persist($page);
+                $this->di['em']->flush();
 
-        $id = $page->getId() ?? 0;
-        $this->di['logger']->info('Created new custom page #%s', $id);
+                $id = $page->getId() ?? 0;
+                $this->di['logger']->info('Created new custom page #%s', $id);
 
-        return $id;
+                return $id;
+            } catch (UniqueConstraintViolationException) {
+                $this->di['em']->clear();
+            }
+        }
+
+        throw new \FOSSBilling\Exception('Unable to generate a unique slug for the custom page.');
     }
 
     public function updatePage($id, $title, $description, $keywords, $content, $slug): int
@@ -141,7 +156,13 @@ class Service
             ->setContent($content)
             ->setSlug($slug);
 
-        $this->di['em']->flush();
+        try {
+            $this->di['em']->flush();
+        } catch (UniqueConstraintViolationException) {
+            // A concurrent request claimed this slug between the app-level check
+            // and the flush. Surface it as the same uniqueness error as above.
+            throw new \FOSSBilling\Exception('You need to set unique slug.', null, 9999);
+        }
         $this->di['logger']->info('Updated custom page #%s', $id);
 
         return (int) $id;

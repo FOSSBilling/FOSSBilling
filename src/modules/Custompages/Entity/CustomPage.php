@@ -17,6 +17,7 @@ use FOSSBilling\Interfaces\ApiArrayInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Custompages\Repository\CustomPageRepository::class)]
 #[ORM\Table(name: 'custom_pages')]
+#[ORM\UniqueConstraint(name: 'uniq_custom_pages_slug', columns: ['slug'])]
 #[ORM\HasLifecycleCallbacks]
 class CustomPage implements ApiArrayInterface
 {

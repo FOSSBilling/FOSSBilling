@@ -133,6 +133,11 @@ function container(): Container
         {
             return ['list' => [], 'total' => 0, 'pages' => 0, 'page' => 1, 'per_page' => 20];
         }
+
+        public function paginateDoctrineQuery(\Doctrine\ORM\QueryBuilder $qb, \FOSSBilling\PaginationOptions $pagination, mixed ...$apiArrayArgs): array
+        {
+            return ['list' => [], 'total' => 0, 'pages' => 0, 'page' => 1, 'per_page' => 20];
+        }
     };
     $di['rate_limiter'] = fn (): object => new class {
         public function consume(string $policyName, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult

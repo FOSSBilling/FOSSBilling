@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Box\Mod\Custompages\Entity\CustomPage;
 use Box\Mod\Custompages\Service;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use FOSSBilling\Pagination;
@@ -282,4 +283,89 @@ test('delete page by array delegates to bulk delete', function (): void {
     $service = buildCustompagesService($repo);
 
     $service->deletePage(['1', '2', '3']);
+});
+
+test('create page retries on a concurrent slug conflict and succeeds on the next candidate', function (): void {
+    // Attempt 1: 'about' looks free, but a concurrent flush claims it (constraint violation).
+    // Attempt 2: generateUniqueSlug now sees 'about' taken and moves on to 'about-1'.
+    $existing = Tests\Helpers\createEntity(CustomPage::class, ['id' => 9, 'slug' => 'about']);
+
+    $repo = Mockery::mock(Box\Mod\Custompages\Repository\CustomPageRepository::class);
+    $repo->shouldReceive('findOneBySlug')->andReturn(null, $existing, null);
+
+    $captured = null;
+    $flushCount = 0;
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->allows('getRepository')->with(CustomPage::class)->andReturn($repo);
+    $em->shouldReceive('persist')->twice()->andReturnUsing(function (CustomPage $page) use (&$captured): void {
+        $captured = $page;
+    });
+    $em->shouldReceive('clear')->once();
+    $em->shouldReceive('flush')->andReturnUsing(function () use (&$flushCount, &$captured) {
+        ++$flushCount;
+        if ($flushCount === 1) {
+            throw Mockery::mock(UniqueConstraintViolationException::class);
+        }
+        Tests\Helpers\accessPrivate($captured, 'id', 7);
+    });
+
+    $di = new Pimple\Container();
+    $di['em'] = $em;
+    $di['logger'] = Mockery::mock()->shouldIgnoreMissing();
+    $di['tools'] = Mockery::mock(FOSSBilling\Tools::class);
+    $di['tools']->allows('slug')->with('About')->andReturn('about');
+
+    $service = new Service();
+    $service->setDi($di);
+
+    expect($service->createPage('About', '', '', 'content'))->toBe(7);
+    expect($captured->getSlug())->toBe('about-1');
+});
+
+test('create page gives up after repeated slug conflicts', function (): void {
+    $repo = Mockery::mock(Box\Mod\Custompages\Repository\CustomPageRepository::class);
+    $repo->shouldReceive('findOneBySlug')->andReturn(null);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->allows('getRepository')->with(CustomPage::class)->andReturn($repo);
+    $em->shouldReceive('persist');
+    $em->shouldReceive('flush')->andThrow(Mockery::mock(UniqueConstraintViolationException::class));
+    $em->shouldReceive('clear');
+
+    $di = new Pimple\Container();
+    $di['em'] = $em;
+    $di['logger'] = Mockery::mock()->shouldIgnoreMissing();
+    $di['tools'] = Mockery::mock(FOSSBilling\Tools::class);
+    $di['tools']->allows('slug')->with('Title')->andReturn('title');
+
+    $service = new Service();
+    $service->setDi($di);
+
+    expect(fn () => $service->createPage('Title', '', '', 'content'))
+        ->toThrow(FOSSBilling\Exception::class, 'Unable to generate a unique slug');
+});
+
+test('update page surfaces a concurrent constraint violation as the uniqueness error', function (): void {
+    $page = Tests\Helpers\createEntity(CustomPage::class, ['id' => 5, 'title' => 'Old', 'description' => '', 'keywords' => '', 'content' => 'old', 'slug' => 'old']);
+
+    $repo = Mockery::mock(Box\Mod\Custompages\Repository\CustomPageRepository::class);
+    $repo->expects('find')->with(5)->andReturn($page);
+    // App-level check passes (no conflict visible yet), but the DB rejects the concurrent slug.
+    $repo->expects('findOneBySlugExcludingId')->with('new', 5)->andReturn(null);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->allows('getRepository')->with(CustomPage::class)->andReturn($repo);
+    $em->expects('flush')->once()->andThrow(Mockery::mock(UniqueConstraintViolationException::class));
+
+    $di = new Pimple\Container();
+    $di['em'] = $em;
+    $di['logger'] = Mockery::mock()->shouldIgnoreMissing();
+    $di['tools'] = Mockery::mock(FOSSBilling\Tools::class);
+    $di['tools']->allows('slug')->with('New Slug')->andReturn('new');
+
+    $service = new Service();
+    $service->setDi($di);
+
+    expect(fn () => $service->updatePage(5, 'New', '', '', 'content', 'New Slug'))
+        ->toThrow(fn (FOSSBilling\Exception $e) => $e->getCode() === 9999);
 });

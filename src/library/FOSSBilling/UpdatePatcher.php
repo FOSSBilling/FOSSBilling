@@ -511,6 +511,7 @@ class UpdatePatcher implements InjectionAwareInterface
             99 => 'patch99',
             100 => 'patch100',
             101 => 'patch101',
+            102 => 'patch102',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -3003,6 +3004,46 @@ class UpdatePatcher implements InjectionAwareInterface
         // column, previously unindexed.
         if (!$this->tableHasIndex('client_order', 'client_order_unpaid_invoice_id_idx')) {
             $this->executeSql('ALTER TABLE `client_order` ADD INDEX `client_order_unpaid_invoice_id_idx` (`unpaid_invoice_id`)');
+        }
+    }
+
+    private function patch102(): void
+    {
+        // Enforce unique slugs on custom_pages at the DB level (matches the CustomPage
+        // entity UniqueConstraint and the module installer). The Custompages module may
+        // not be installed on every instance, so skip cleanly when the table is absent.
+        if (!$this->tableExists('custom_pages')) {
+            return;
+        }
+
+        // Reconcile any duplicate slugs before adding the unique index: keep the
+        // lowest-id row for each duplicated slug and suffix the rest with their own id.
+        $duplicates = $this->fetchAll(
+            'SELECT c.id, c.slug FROM custom_pages c
+             INNER JOIN (
+                 SELECT slug FROM custom_pages GROUP BY slug HAVING COUNT(*) > 1
+             ) d ON d.slug = c.slug
+             ORDER BY c.slug ASC, c.id ASC'
+        );
+
+        $kept = [];
+        foreach ($duplicates as $row) {
+            $slug = $row['slug'];
+            $id = (int) $row['id'];
+            if (!isset($kept[$slug])) {
+                $kept[$slug] = $id;
+
+                continue;
+            }
+
+            $this->executeSql(
+                'UPDATE custom_pages SET slug = :slug WHERE id = :id',
+                ['slug' => $slug . '-' . $id, 'id' => $id]
+            );
+        }
+
+        if (!$this->tableHasIndex('custom_pages', 'uniq_custom_pages_slug')) {
+            $this->executeSql('ALTER TABLE `custom_pages` ADD UNIQUE INDEX `uniq_custom_pages_slug` (`slug`)');
         }
     }
 }
