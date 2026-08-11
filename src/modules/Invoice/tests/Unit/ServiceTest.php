@@ -2965,7 +2965,6 @@ test('generateRenewalInvoiceForSubscriptionPayment returns null when subscriptio
     $service = new Service();
 
     $di = container();
-    $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
