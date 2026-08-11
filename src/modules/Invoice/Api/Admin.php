@@ -51,7 +51,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         }
 
         foreach ($pager['list'] as $key => $item) {
-            $invoice = $service->getInvoiceRepository()->find((int) $item['id']);
+            $invoice = $service->getInvoiceRepository()->find((int) $item['id'])
+                ?? throw new InformationException('Invoice not found');
             $pager['list'][$key] = $service->toApiArray($invoice, true, $this->getIdentity());
         }
 

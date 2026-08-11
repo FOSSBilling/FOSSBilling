@@ -85,7 +85,6 @@ $di['crypt'] = function () use ($di) {
  */
 $di['pdo'] = function () {
     $debugConfig = Config::getProperty('debug_and_monitoring', []);
-    $dbConfig = DriverManagerFactory::getDatabaseConfig();
     $driverOptions = [
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     ];
@@ -96,18 +95,6 @@ $di['pdo'] = function () {
 
     if (isset($debugConfig['debug']) && $debugConfig['debug']) {
         $pdo->setAttribute(PDO::ATTR_STATEMENT_CLASS, ['Box_DbLoggedPDOStatement']);
-    }
-
-    if ($dbConfig['driver'] === 'pdo_mysql') {
-        // Set server default charset for newly created tables. Connection charset is handled by DBAL via DSN.
-        $pdo->exec('SET character_set_server = utf8');
-        $pdo->exec('SET SESSION interactive_timeout = 28800');
-        $pdo->exec('SET SESSION wait_timeout = 28800');
-
-        // Get the timezone offset in the PDO format
-        $datetime = new DateTime('now');
-        $offset = $datetime->format('P');
-        $pdo->exec("SET time_zone = '{$offset}'");
     }
 
     return new DebugBar\DataCollector\PDO\TraceablePDO($pdo);

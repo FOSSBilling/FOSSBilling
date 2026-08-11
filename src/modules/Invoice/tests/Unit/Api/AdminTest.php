@@ -18,6 +18,7 @@ use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Tax;
 use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Repository\InvoiceItemRepository;
+use Box\Mod\Invoice\Repository\InvoiceRepository;
 use Box\Mod\Invoice\Repository\PayGatewayRepository;
 use Box\Mod\Invoice\Repository\SubscriptionRepository;
 use Box\Mod\Invoice\Repository\TaxRepository;

@@ -38,20 +38,21 @@ test('gets an invoice', function (): void {
         ->andReturn([]);
 
     $model = createEntity(Invoice::class);
+    $identity = createEntity(Box\Mod\Client\Entity\Client::class);
+    $data['hash'] = md5('1');
 
     $di = container();
     $invoiceRepo = $di['em']->getRepository(Invoice::class);
     $invoiceRepo->shouldReceive('findOneBy')
         ->atLeast()->once()
+        ->with(['hash' => $data['hash'], 'clientId' => $identity->getId()])
         ->andReturn($model);
     $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($invoiceRepo);
 
     $api->setDi($di);
     $api->setService($serviceMock);
-    $identity = createEntity(Box\Mod\Client\Entity\Client::class);
     $api->setIdentity($identity);
 
-    $data['hash'] = md5('1');
     $result = $api->get($data);
     expect($result)->toBeArray();
 });

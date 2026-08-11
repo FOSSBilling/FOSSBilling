@@ -57,6 +57,9 @@ class Payment_Adapter_Custom
     public function getHtml(FOSSBilling\Api\Proxy $api_admin, int $invoice_id, bool $subscription): string
     {
         $invoiceModel = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Invoice::class)->find($invoice_id);
+        if (!$invoiceModel instanceof Box\Mod\Invoice\Entity\Invoice) {
+            throw new Payment_Exception('Invoice not found');
+        }
         $invoiceService = $this->di['mod_service']('Invoice');
         $invoice = $invoiceService->toApiArray($invoiceModel, true);
 
