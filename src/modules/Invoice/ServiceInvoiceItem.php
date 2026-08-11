@@ -234,7 +234,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             return 0;
         }
 
-        $rate = $this->di['db']->getCell('SELECT taxrate FROM invoice WHERE id = :id', ['id' => $item->getInvoiceId()]);
+        $rate = $this->di['em']->getConnection()->fetchOne('SELECT taxrate FROM invoice WHERE id = :id', ['id' => $item->getInvoiceId()]);
         if ($rate <= 0) {
             return 0;
         }
@@ -476,12 +476,12 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                 WHERE invoice_item.status NOT IN (:status_executed, :status_failed) and invoice.status = :invoice_status
                 AND (invoice.paid_at IS NULL OR invoice.paid_at <= :cutoff_time)';
         $bindings = [
-            ':status_executed' => InvoiceItem::STATUS_EXECUTED,
-            ':status_failed' => InvoiceItem::STATUS_FAILED,
-            ':invoice_status' => Invoice::STATUS_PAID,
-            ':cutoff_time' => date('Y-m-d H:i:s', strtotime('-10 minutes')),
+            'status_executed' => InvoiceItem::STATUS_EXECUTED,
+            'status_failed' => InvoiceItem::STATUS_FAILED,
+            'invoice_status' => Invoice::STATUS_PAID,
+            'cutoff_time' => date('Y-m-d H:i:s', strtotime('-10 minutes')),
         ];
 
-        return $this->di['db']->getAll($sql, $bindings);
+        return $this->di['em']->getConnection()->fetchAllAssociative($sql, $bindings);
     }
 }

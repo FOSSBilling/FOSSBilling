@@ -254,13 +254,13 @@ test('gets tax', function (): void {
     $price = 12;
     $item = createEntity(InvoiceItem::class, ['invoice_id' => 2, 'taxed' => true, 'price' => $price]);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getCell')
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchOne')
         ->atLeast()->once()
         ->andReturn($rate);
 
     $service = invoiceItemService();
-    $service->getDi()['db'] = $dbMock;
+    $service->getDi()['em']->shouldReceive('getConnection')->andReturn($connection);
 
     $result = $service->getTax($item);
     $expected = round($price * $rate / 100, 2);
@@ -418,16 +418,16 @@ test('returns zero when invoice item type is not order', function (): void {
 test('gets all not execute paid items excluding executed and failed', function (): void {
     $service = invoiceItemService();
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')
         ->withArgs(fn (string $sql, array $bindings): bool => str_contains($sql, 'NOT IN (:status_executed, :status_failed)')
-            && $bindings[':status_executed'] === InvoiceItem::STATUS_EXECUTED
-            && $bindings[':status_failed'] === InvoiceItem::STATUS_FAILED)
+            && $bindings['status_executed'] === InvoiceItem::STATUS_EXECUTED
+            && $bindings['status_failed'] === InvoiceItem::STATUS_FAILED)
         ->atLeast()
         ->once()
         ->andReturn([]);
 
-    $service->getDi()['db'] = $dbMock;
+    $service->getDi()['em']->shouldReceive('getConnection')->andReturn($connection);
 
     $result = $service->getAllNotExecutePaidItems();
     expect($result)->toBeArray();

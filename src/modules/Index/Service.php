@@ -67,7 +67,7 @@ class Service implements InjectionAwareInterface
                  WHERE client_id = :client_id
                  GROUP BY status';
 
-        $results = $this->di['db']->getAll($sql, $data);
+        $results = $this->di['em']->getConnection()->fetchAllAssociative($sql, $data);
 
         $counts = [
             'total' => 0,
@@ -96,7 +96,7 @@ class Service implements InjectionAwareInterface
                  ORDER BY st.updated_at DESC
                  LIMIT 5';
 
-        $rows = $this->di['db']->getAll($sql, $data);
+        $rows = $this->di['em']->getConnection()->fetchAllAssociative($sql, $data);
 
         $ids = array_column($rows, 'id');
 
@@ -117,7 +117,7 @@ class Service implements InjectionAwareInterface
                  AND approved = 1
                  GROUP BY status';
 
-        $results = $this->di['db']->getAll($sql, $data);
+        $results = $this->di['em']->getConnection()->fetchAllAssociative($sql, $data);
 
         $counts = [
             'total' => 0,
@@ -145,7 +145,7 @@ class Service implements InjectionAwareInterface
                  AND group_master = 1
                  GROUP BY status';
 
-        $results = $this->di['db']->getAll($sql, $data);
+        $results = $this->di['em']->getConnection()->fetchAllAssociative($sql, $data);
 
         $counts = [
             'total' => 0,
@@ -177,7 +177,7 @@ class Service implements InjectionAwareInterface
                         AND unpaid_invoice_id IS NULL
                         AND DATEDIFF(expires_at, NOW()) <= :days";
 
-        $expiringResult = $this->di['db']->getCell($expiringSql, [
+        $expiringResult = $this->di['em']->getConnection()->fetchOne($expiringSql, [
             'client_id' => $data['client_id'],
             'days' => $daysUntilExpiration,
         ]);
@@ -196,7 +196,7 @@ class Service implements InjectionAwareInterface
                  ORDER BY co.updated_at DESC
                  LIMIT 5';
 
-        $rows = $this->di['db']->getAll($sql, $data);
+        $rows = $this->di['em']->getConnection()->fetchAllAssociative($sql, $data);
 
         $ids = array_column($rows, 'id');
 

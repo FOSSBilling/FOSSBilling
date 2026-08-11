@@ -683,10 +683,8 @@ test('auto closes a ticket', function (): void {
 
 test('checks if ticket can be reopened when not closed', function (): void {
     $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 

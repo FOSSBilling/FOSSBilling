@@ -162,6 +162,13 @@ return [
          * Database Port.
          */
         'port' => getenv('DB_PORT') ?: '3306',
+
+        /*
+         * Optional session timeouts (seconds) applied to database connections.
+         * When unset, the MySQL server defaults are preserved.
+         */
+        // 'interactive_timeout' => 28800,
+        // 'wait_timeout' => 28800,
     ],
 
     'twig' => [
@@ -186,13 +193,13 @@ return [
     'rate_limiter' => [
         'enabled' => true,
 
-        /**
+        /*
          * Any IP address within this list will not be put through the rate-limiter system.
          * This is useful if you have an application with a static IP address that needs to make frequent API requests to FOSSBilling.
          */
         'whitelist_ips' => [],
 
-        /**
+        /*
          * Override individual rate limiter policies here.
          * Defaults are defined in FOSSBilling\Security\RateLimiter::getDefaultConfig().
          */

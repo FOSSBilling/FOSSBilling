@@ -52,13 +52,13 @@ test('gets pairs', function (): void {
         ],
     ];
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')
         ->atLeast()->once()
         ->andReturn($queryResult);
 
     $service = payGatewayService();
-    $service->getDi()['db'] = $dbMock;
+    $service->getDi()['em']->shouldReceive('getConnection')->andReturn($connection);
 
     $result = $service->getPairs();
     expect($result)->toBeArray();
@@ -66,13 +66,13 @@ test('gets pairs', function (): void {
 });
 
 test('gets available gateways', function (): void {
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')
         ->atLeast()->once()
         ->andReturn([]);
 
     $service = payGatewayService();
-    $service->getDi()['db'] = $dbMock;
+    $service->getDi()['em']->shouldReceive('getConnection')->andReturn($connection);
 
     $result = $service->getAvailable();
     expect($result)->toBeArray();

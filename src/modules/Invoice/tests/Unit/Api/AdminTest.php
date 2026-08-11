@@ -18,6 +18,7 @@ use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Tax;
 use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Repository\InvoiceItemRepository;
+use Box\Mod\Invoice\Repository\InvoiceRepository;
 use Box\Mod\Invoice\Repository\PayGatewayRepository;
 use Box\Mod\Invoice\Repository\SubscriptionRepository;
 use Box\Mod\Invoice\Repository\TaxRepository;
@@ -62,6 +63,7 @@ test('gets invoice list', function (): void {
     $di['pager'] = $paginatorMock;
 
     $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
     $api->setService($serviceMock);
     $result = $api->get_list([]);
     expect($result)->toBeArray();
@@ -88,14 +90,12 @@ test('gets invoice summaries without loading invoice models', function (): void 
         ->once()
         ->andReturn(['list' => [['id' => 1]]]);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldNotReceive('getExistingModelById');
-
     $di = container();
+    $di['em']->getRepository(Invoice::class)->shouldNotReceive('find');
     $di['pager'] = $paginatorMock;
-    $di['db'] = $dbMock;
 
     $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
     $api->setService($serviceMock);
 
     $result = $api->get_list(['summary' => 1]);
@@ -110,17 +110,13 @@ test('gets an invoice', function (): void {
         ->atLeast()->once()
         ->andReturn([]);
 
-    $dbMock = Mockery::mock('\Box_Database');
     $model = createEntity(Invoice::class);
 
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn($model);
-
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->atLeast()->once()->andReturn($model);
 
     $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
     $api->setService($serviceMock);
     $api->setIdentity(\Tests\Helpers\admin());
 
@@ -150,26 +146,14 @@ test('marks invoice as paid', function (): void {
 
     $invoiceModel->gateway_id = '1';
 
-    $gatewayModel = createEntity(PayGateway::class, ['id' => 1]);
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturnUsing(function ($type) use ($invoiceModel, $gatewayModel) {
-            if ($type === 'PayGateway') {
-                return $gatewayModel;
-            }
-
-            return $invoiceModel;
-        });
-
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->atLeast()->once()->andReturn($invoiceModel);
     $di['mod_service'] = $di->protect(moduleService([
         'invoice' => $serviceMock,
         'invoice:paygateway' => $gatewayServiceMock,
     ]));
     $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
     $api->setService($serviceMock);
 
     $result = $api->mark_as_paid($data);
@@ -195,13 +179,16 @@ test('prepares an invoice', function (): void {
     $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
     $clientRepo->shouldReceive('find')->atLeast()->once()->andReturn(createEntity(Box\Mod\Client\Entity\Client::class));
 
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepo);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
 
     $di = container();
     $di['em'] = $em;
 
     $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($invoiceRepo);
     $api->setService($serviceMock);
 
     $result = $api->prepare($data);
@@ -219,17 +206,13 @@ test('approves an invoice', function (): void {
         ->atLeast()->once()
         ->andReturn(true);
 
-    $dbMock = Mockery::mock('\Box_Database');
     $model = createEntity(Invoice::class);
 
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn($model);
-
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->atLeast()->once()->andReturn($model);
 
     $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
     $api->setService($serviceMock);
 
     $result = $api->approve($data);
@@ -247,17 +230,13 @@ test('refunds an invoice', function (): void {
         ->atLeast()->once()
         ->andReturn($newNegativeInvoiceId);
 
-    $dbMock = Mockery::mock('\Box_Database');
     $model = createEntity(Invoice::class);
 
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn($model);
-
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->atLeast()->once()->andReturn($model);
 
     $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
     $api->setService($serviceMock);
 
     $result = $api->refund($data);
@@ -275,17 +254,13 @@ test('updates an invoice', function (): void {
         ->atLeast()->once()
         ->andReturn(true);
 
-    $dbMock = Mockery::mock('\Box_Database');
     $model = createEntity(Invoice::class);
 
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn($model);
-
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->atLeast()->once()->andReturn($model);
 
     $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
     $api->setService($serviceMock);
 
     $result = $api->update($data);
@@ -317,15 +292,11 @@ test('updates an invoice before approving it', function (): void {
         ->with($model, $data)
         ->andReturn(true);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')
-        ->once()
-        ->andReturn($model);
-
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->once()->andReturn($model);
 
     $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
     $api->setService($serviceMock);
 
     $result = $api->update($data);
@@ -374,17 +345,13 @@ test('deletes an invoice', function (): void {
         ->atLeast()->once()
         ->andReturn(true);
 
-    $dbMock = Mockery::mock('\Box_Database');
     $model = createEntity(Invoice::class);
 
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn($model);
-
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->atLeast()->once()->andReturn($model);
 
     $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
     $api->setService($serviceMock);
 
     $result = $api->delete($data);
@@ -411,6 +378,7 @@ test('creates renewal invoice', function (): void {
     $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
 
     $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
     $api->setService($serviceMock);
 
     $result = $api->renewal_invoice($data);
@@ -437,6 +405,7 @@ test('creates renewal invoice for free order', function (): void {
     $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
 
     $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
     $api->setService($serviceMock);
 
     $result = $api->renewal_invoice($data);
@@ -467,17 +436,13 @@ test('pays invoice with credits', function (): void {
         ->atLeast()->once()
         ->andReturn(true);
 
-    $dbMock = Mockery::mock('\Box_Database');
     $model = createEntity(Invoice::class);
 
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn($model);
-
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->atLeast()->once()->andReturn($model);
 
     $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
     $api->setService($serviceMock);
 
     $result = $api->pay_with_credits($data);
@@ -547,17 +512,13 @@ test('sends reminder for an invoice', function (): void {
         ->atLeast()->once()
         ->andReturn(true);
 
-    $dbMock = Mockery::mock('\Box_Database');
     $model = createEntity(Invoice::class);
 
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()->once()
-        ->andReturn($model);
-
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->atLeast()->once()->andReturn($model);
 
     $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
     $api->setService($serviceMock);
 
     $result = $api->send_reminder($data);
@@ -741,12 +702,9 @@ test('gets transaction list', function (): void {
         ->atLeast()->once()
         ->andReturn(['list' => [['id' => 1]]]);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldNotReceive('getExistingModelById');
-
     $di = container();
+    $di['em']->getRepository(Invoice::class)->shouldNotReceive('find');
     $di['pager'] = $paginatorMock;
-    $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(moduleService(['invoice:transaction' => $transactionService]));
 
     $api->setDi($di);

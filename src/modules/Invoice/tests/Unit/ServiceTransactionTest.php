@@ -225,13 +225,13 @@ test('gets search query with various parameters', function (array $data, array $
 
 test('counts transactions', function (): void {
     $queryResult = [['status' => Transaction::STATUS_RECEIVED, 'counter' => 1]];
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')
         ->atLeast()->once()
         ->andReturn($queryResult);
 
     $service = transactionService();
-    $service->getDi()['db'] = $dbMock;
+    $service->getDi()['em']->shouldReceive('getConnection')->andReturn($connection);
 
     $result = $service->counter();
     expect($result)->toBeArray();
@@ -345,8 +345,8 @@ test('preProcessTransaction marks error on a generic exception', function (): vo
 
 test('claimForProcessing includes error status in claim query', function (): void {
     $execArgs = [];
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('exec')
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('executeStatement')
         ->withArgs(function (string $sql, array $bindings) use (&$execArgs): bool {
             $execArgs = ['sql' => $sql, 'bindings' => $bindings];
 
@@ -356,7 +356,7 @@ test('claimForProcessing includes error status in claim query', function (): voi
         ->andReturn(1);
 
     $service = transactionService();
-    $service->getDi()['db'] = $dbMock;
+    $service->getDi()['em']->shouldReceive('getConnection')->andReturn($connection);
 
     $result = $service->claimForProcessing(7);
 
@@ -410,8 +410,6 @@ test('_subscribe creates and persists a subscription from an approved transactio
     $invoice->setClientId(7);
     $invoice->setCurrency('USD');
 
-    $dbMock = Mockery::mock('\Box_Database');
-
     $subscriptionService = Mockery::mock(ServiceSubscription::class);
     $subscriptionService->shouldReceive('getSubscriptionPeriod')->with($invoice)->andReturn('1M');
 
@@ -434,7 +432,6 @@ test('_subscribe creates and persists a subscription from an approved transactio
     $eventsMock->shouldReceive('fire');
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['em'] = $em;
     $di['events_manager'] = $eventsMock;
     $di['logger'] = new Tests\Helpers\TestLogger();

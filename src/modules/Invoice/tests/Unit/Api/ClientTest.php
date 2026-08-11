@@ -37,38 +37,35 @@ test('gets an invoice', function (): void {
         ->atLeast()->once()
         ->andReturn([]);
 
-    $dbMock = Mockery::mock('\Box_Database');
     $model = createEntity(Invoice::class);
-
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn($model);
+    $identity = createEntity(Box\Mod\Client\Entity\Client::class);
+    $data['hash'] = md5('1');
 
     $di = container();
-    $di['db'] = $dbMock;
+    $invoiceRepo = $di['em']->getRepository(Invoice::class);
+    $invoiceRepo->shouldReceive('findOneBy')
+        ->atLeast()->once()
+        ->with(['hash' => $data['hash'], 'clientId' => $identity->getId()])
+        ->andReturn($model);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($invoiceRepo);
 
     $api->setDi($di);
     $api->setService($serviceMock);
-    $identity = createEntity(Box\Mod\Client\Entity\Client::class);
     $api->setIdentity($identity);
 
-    $data['hash'] = md5('1');
     $result = $api->get($data);
     expect($result)->toBeArray();
 });
 
 test('throws exception when invoice is not found', function (): void {
     $api = apiEndpoint(new Client());
-    $dbMock = Mockery::mock('\Box_Database');
-
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn(null);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
 
     $api->setDi($di);
+    $api->setService($serviceMock);
     $identity = createEntity(Box\Mod\Client\Entity\Client::class);
     $api->setIdentity($identity);
 
@@ -203,12 +200,8 @@ test('gets transaction list', function (): void {
         ->atLeast()->once()
         ->andReturn(['list' => [['id' => 1]]]);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldNotReceive('getExistingModelById');
-
     $di = container();
     $di['pager'] = $paginatorMock;
-    $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(moduleService(['invoice:transaction' => $transactionService]));
 
     $api->setDi($di);

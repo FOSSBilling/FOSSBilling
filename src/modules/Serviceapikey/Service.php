@@ -248,7 +248,7 @@ class Service implements InjectionAwareInterface
             `updated_at` datetime,
             PRIMARY KEY (`id`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;';
-        $this->di['db']->exec($sql);
+        $this->di['em']->getConnection()->executeStatement($sql);
 
         return true;
     }
@@ -258,7 +258,7 @@ class Service implements InjectionAwareInterface
      */
     public function uninstall(): bool
     {
-        $this->di['db']->exec('DROP TABLE IF EXISTS `service_apikey`');
+        $this->di['em']->getConnection()->executeStatement('DROP TABLE IF EXISTS `service_apikey`');
 
         return true;
     }

@@ -105,14 +105,14 @@ test('runCrons isolates failures in core batch tasks', function (string $failedT
         ->once()
         ->with('last_cron_exec', Mockery::type('string'), true);
 
-    $db = Mockery::mock('\\Box_Database');
-    $db->shouldReceive('exec')->once()->andReturn(0);
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('executeStatement')->once()->andReturn(0);
 
     $api = new CronServiceApiDouble();
     $api->throwOn = $failedTask;
     $di = container();
     $di['api_system'] = $api;
-    $di['db'] = $db;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $di['events_manager'] = $eventsManager;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemService);

@@ -35,7 +35,8 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
-            $invoice = $this->getDi()['db']->getExistingModelById('Invoice', $item['id'], 'Invoice not found');
+            $invoice = $this->getService()->getInvoiceRepository()->find((int) $item['id'])
+                ?? throw new \FOSSBilling\InformationException('Invoice not found');
             $pager['list'][$key] = $this->getService()->toApiArray($invoice);
         }
 
@@ -53,7 +54,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
     public function get($data)
     {
         $identity = $this->getIdentity();
-        $model = $this->getDi()['db']->findOne('Invoice', 'hash = :hash AND client_id = :client_id', ['hash' => $data['hash'], 'client_id' => $identity->getId()]);
+        $model = $this->getService()->getInvoiceRepository()->findOneBy(['hash' => $data['hash'], 'clientId' => $identity->getId()]);
         if (!$model) {
             throw new \FOSSBilling\InformationException('Invoice was not found');
         }

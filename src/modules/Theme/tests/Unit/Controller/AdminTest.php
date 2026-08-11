@@ -136,7 +136,6 @@ test('getTheme renders theme preset', function (): void {
         ->once()
         ->andReturn($themeServiceMock);
 
-    $di['db'] = $this->createStub('Box_Database');
     $di['is_admin_logged'] = true;
     $di['mod'] = $di->protect(fn () => $modMock);
     $controller->setDi($di);

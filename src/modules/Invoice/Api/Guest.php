@@ -37,7 +37,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $this->getDi()['rate_limiter']->consumeOrThrow('invoice_get_ip', (string) $this->getIp());
         $this->getDi()['rate_limiter']->consumeOrThrow('invoice_get_hash', (string) $data['hash']);
 
-        $model = $this->getDi()['db']->findOne('Invoice', 'hash = :hash', ['hash' => $data['hash']]);
+        $model = $this->getService()->getInvoiceRepository()->findByHash((string) $data['hash']);
         if (!$model) {
             throw new \FOSSBilling\InformationException('Invoice was not found');
         }

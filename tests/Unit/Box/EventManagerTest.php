@@ -18,15 +18,12 @@ test('empty fire', function (): void {
 });
 
 test('fire', function (): void {
-    $dbMock = Mockery::mock('Box_Database');
-    /** @var Mockery\Expectation $expectation */
-    $expectation = $dbMock->shouldReceive('getAll');
-    $expectation->atLeast()->once();
-    $expectation->andReturn([]);
-
     $di = container();
     $di['logger'] = new Box_Log();
-    $di['db'] = $dbMock;
+
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')->atLeast()->once()->andReturn([]);
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
 
     $manager = new Box_EventManager();
     $manager->setDi($di);

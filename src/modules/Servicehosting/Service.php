@@ -132,11 +132,11 @@ class Service implements InjectionAwareInterface
                 AND LOWER(sh.tld) = LOWER(:tld)
                 AND co.status != :canceled_status';
 
-        $count = (int) $this->di['db']->getCell($query, [
-            ':service_type' => \Box\Mod\Product\Service::HOSTING,
-            ':sld' => $sld,
-            ':tld' => $tld,
-            ':canceled_status' => Order::STATUS_CANCELED,
+        $count = (int) $this->di['em']->getConnection()->fetchOne($query, [
+            'service_type' => \Box\Mod\Product\Service::HOSTING,
+            'sld' => $sld,
+            'tld' => $tld,
+            'canceled_status' => Order::STATUS_CANCELED,
         ]);
 
         if ($count > 0) {
@@ -656,7 +656,7 @@ class Service implements InjectionAwareInterface
         $orderIdsByServiceId = [];
         if (!empty($serviceIds)) {
             $placeholders = implode(',', array_fill(0, count($serviceIds), '?'));
-            $orderRows = $this->di['db']->getAll(
+            $orderRows = $this->di['em']->getConnection()->fetchAllAssociative(
                 "SELECT id, service_id FROM client_order WHERE service_type = ? AND service_id IN ($placeholders) ORDER BY id ASC",
                 array_merge(['hosting'], $serviceIds),
             );
@@ -917,7 +917,7 @@ class Service implements InjectionAwareInterface
         $sql = 'SELECT id, name
                 FROM service_hosting_server
                 ORDER BY id ASC';
-        $rows = $this->di['db']->getAll($sql);
+        $rows = $this->di['em']->getConnection()->fetchAllAssociative($sql);
 
         $result = [];
         foreach ($rows as $record) {
@@ -1119,7 +1119,7 @@ class Service implements InjectionAwareInterface
     {
         $sql = 'SELECT id, name
                 FROM service_hosting_hp';
-        $rows = $this->di['db']->getAll($sql);
+        $rows = $this->di['em']->getConnection()->fetchAllAssociative($sql);
         $result = [];
         foreach ($rows as $record) {
             $result[$record['id']] = $record['name'];

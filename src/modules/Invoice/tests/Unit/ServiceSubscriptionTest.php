@@ -410,42 +410,42 @@ test('gets search query with various parameters', function (array $data, string 
         [], 'FROM subscription', [],
     ],
     [
-        ['status' => 'active'], 'AND status = :status', [':status' => 'active'],
+        ['status' => 'active'], 'AND status = :status', ['status' => 'active'],
     ],
     [
-        ['invoice_id' => '1'], 'AND invoice_id = :invoice_id', [':invoice_id' => '1'],
+        ['invoice_id' => '1'], 'AND invoice_id = :invoice_id', ['invoice_id' => '1'],
     ],
     [
-        ['gateway_id' => '2'], 'AND gateway_id = :gateway_id', [':gateway_id' => '2'],
+        ['gateway_id' => '2'], 'AND gateway_id = :gateway_id', ['gateway_id' => '2'],
     ],
     [
-        ['client_id' => '3'], 'AND client_id  = :client_id', [':client_id' => '3'],
+        ['client_id' => '3'], 'AND client_id  = :client_id', ['client_id' => '3'],
     ],
     [
-        ['currency' => 'EUR'], 'AND currency =  :currency', [':currency' => 'EUR'],
+        ['currency' => 'EUR'], 'AND currency =  :currency', ['currency' => 'EUR'],
     ],
     [
-        ['date_from' => '1234567'], 'AND UNIX_TIMESTAMP(created_at) >= :date_from', [':date_from' => '1234567'],
+        ['date_from' => '1234567'], 'AND UNIX_TIMESTAMP(created_at) >= :date_from', ['date_from' => '1234567'],
     ],
     [
-        ['date_to' => '1234567'], 'AND UNIX_TIMESTAMP(created_at) <= :date_to', [':date_to' => '1234567'],
+        ['date_to' => '1234567'], 'AND UNIX_TIMESTAMP(created_at) <= :date_to', ['date_to' => '1234567'],
     ],
     [
-        ['id' => '10'], 'AND id = :id', [':id' => '10'],
+        ['id' => '10'], 'AND id = :id', ['id' => '10'],
     ],
     [
-        ['sid' => '10'], 'AND sid = :sid', [':sid' => '10'],
+        ['sid' => '10'], 'AND sid = :sid', ['sid' => '10'],
     ],
 ]);
 
 test('returns false when invoice is not subscribable', function (): void {
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')
+    $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')
         ->atLeast()->once()
         ->andReturn([]);
 
     $service = subscriptionService();
-    $service->getDi()['db'] = $dbMock;
+    $service->getDi()['em']->shouldReceive('getConnection')->andReturn($connection);
 
     $invoice_id = 2;
     $result = $service->isSubscribable($invoice_id);
@@ -453,17 +453,16 @@ test('returns false when invoice is not subscribable', function (): void {
 });
 
 test('checks if invoice is subscribable', function (): void {
-    $dbMock = Mockery::mock('\Box_Database');
-
     $getAllResults = [
         ['period' => '1W', 'price' => 10, 'quantity' => 1],
     ];
-    $dbMock->shouldReceive('getAll')
+    $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')
         ->atLeast()->once()
         ->andReturn($getAllResults);
 
     $service = subscriptionService();
-    $service->getDi()['db'] = $dbMock;
+    $service->getDi()['em']->shouldReceive('getConnection')->andReturn($connection);
 
     $invoice_id = 2;
     $result = $service->isSubscribable($invoice_id);
@@ -474,8 +473,8 @@ test('gets subscription period', function (): void {
     $serviceMock = Mockery::mock(ServiceSubscription::class)->makePartial()->shouldAllowMockingProtectedMethods();
 
     $period = '1W';
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')
+    $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')
         ->atLeast()->once()
         ->andReturn([['period' => $period, 'price' => 10, 'quantity' => 1]]);
 
@@ -483,8 +482,8 @@ test('gets subscription period', function (): void {
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->shouldReceive('getRepository')->with(Subscription::class)->andReturn(Mockery::mock(SubscriptionRepository::class));
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn(Mockery::mock(PayGatewayRepository::class));
+    $em->shouldReceive('getConnection')->andReturn($connection);
     $di['em'] = $em;
-    $di['db'] = $dbMock;
     $serviceMock->setDi($di);
 
     $invoiceModel = createEntity(Invoice::class);

@@ -16,7 +16,6 @@ test('di returns dependency injection container', function (): void {
     $service = new Box\Mod\Currency\Service();
 
     $di = container();
-    $db = Mockery::mock('Box_Database');
 
     $repositoryStub = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class)->shouldIgnoreMissing();
 
@@ -25,7 +24,6 @@ test('di returns dependency injection container', function (): void {
         ->atLeast()->once()
         ->andReturn($repositoryStub);
 
-    $di['db'] = $db;
     $di['em'] = $emMock;
     $service->setDi($di);
     $result = $service->getDi();

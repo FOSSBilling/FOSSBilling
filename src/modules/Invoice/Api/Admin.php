@@ -51,7 +51,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         }
 
         foreach ($pager['list'] as $key => $item) {
-            $invoice = $this->getDi()['db']->getExistingModelById('Invoice', $item['id'], 'Invoice not found');
+            $invoice = $service->getInvoiceRepository()->find((int) $item['id'])
+                ?? throw new InformationException('Invoice not found');
             $pager['list'][$key] = $service->toApiArray($invoice, true, $this->getIdentity());
         }
 
@@ -1050,7 +1051,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Invoice ID was not passed'])]
     private function _getInvoice($data)
     {
-        return $this->getDi()['db']->getExistingModelById('Invoice', $data['id'], 'Invoice was not found');
+        return $this->getService()->getInvoiceRepository()->find((int) $data['id'])
+            ?? throw new InformationException('Invoice was not found');
     }
 
     /**

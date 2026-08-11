@@ -329,17 +329,17 @@ class Service implements InjectionAwareInterface
             return true;
         }
 
-        $count = (int) $this->di['db']->getCell(
+        $count = (int) $this->di['em']->getConnection()->fetchOne(
             'SELECT COUNT(*) FROM product WHERE config LIKE :pattern',
-            [':pattern' => '%' . $storedFilename . '%']
+            ['pattern' => '%' . $storedFilename . '%']
         );
         if ($count > 0) {
             return true;
         }
 
-        $count = (int) $this->di['db']->getCell(
+        $count = (int) $this->di['em']->getConnection()->fetchOne(
             'SELECT COUNT(*) FROM client_order WHERE config LIKE :pattern',
-            [':pattern' => '%' . $storedFilename . '%']
+            ['pattern' => '%' . $storedFilename . '%']
         );
 
         return $count > 0;

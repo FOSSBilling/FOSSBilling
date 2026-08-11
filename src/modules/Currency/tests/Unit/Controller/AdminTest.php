@@ -18,9 +18,6 @@ test('dependency injection container is properly set and retrieved', function ()
     $controller = new Admin();
 
     $di = container();
-    $dbMock = Mockery::mock('Box_Database');
-
-    $di['db'] = $dbMock;
     $controller->setDi($di);
     $result = $controller->getDi();
     expect($result)->toEqual($di);

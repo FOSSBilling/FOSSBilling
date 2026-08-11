@@ -15,9 +15,6 @@ use function Tests\Helpers\container;
 test('getDi returns dependency injection container', function (): void {
     $controller = new Box\Mod\Activity\Controller\Admin();
     $di = container();
-    $dbMock = Mockery::mock('Box_Database');
-
-    $di['db'] = $dbMock;
     $controller->setDi($di);
     $result = $controller->getDi();
     expect($result)->toEqual($di);

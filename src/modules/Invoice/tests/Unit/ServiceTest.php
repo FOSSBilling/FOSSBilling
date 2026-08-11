@@ -208,7 +208,6 @@ test('converts to api array', function (): void {
         ->andReturn('1W');
     $invoiceItemServiceMock = Mockery::mock(ServiceInvoiceItem::class);
 
-    $dbMock = Mockery::mock('\Box_Database');
     [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
     $invoiceItemRepo->shouldReceive('findByInvoiceId')
         ->atLeast()->once()
@@ -219,7 +218,6 @@ test('converts to api array', function (): void {
     $periodMock->shouldReceive('getQty');
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['em'] = $em;
     $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($systemService, $subscriptionServiceMock, $invoiceItemServiceMock) {
         $service = null;
@@ -256,9 +254,7 @@ test('converts an aggregated invoice row to an api summary', function (): void {
         ->andReturn('5');
 
     $di = container();
-    $di['db'] = static function (): never {
-        throw new RuntimeException('Summary conversion must not access the database');
-    };
+    $di['em']->shouldReceive('getConnection')->never();
     $di['mod_service'] = $di->protect(moduleService(['system' => $systemService]));
     $service->setDi($di);
 
@@ -304,11 +300,8 @@ test('ensure valid hash is a no-op for modern hashes', function (): void {
 
     $invoiceModel->hash = 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4';
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldNotReceive('store');
-
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldNotReceive('flush');
 
     $service->setDi($di);
     $service->ensureValidHash($invoiceModel);
@@ -400,7 +393,6 @@ test('to api array self-heals invoice with missing hash', function (): void {
         ->andReturn('1W');
     $invoiceItemServiceMock = Mockery::mock(ServiceInvoiceItem::class);
 
-    $dbMock = Mockery::mock('\Box_Database');
     [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
     $invoiceItemRepo->shouldReceive('findByInvoiceId')
         ->atLeast()->once()
@@ -415,7 +407,6 @@ test('to api array self-heals invoice with missing hash', function (): void {
     $periodMock->shouldReceive('getQty');
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['em'] = $em;
     $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($systemService, $subscriptionServiceMock, $invoiceItemServiceMock) {
         $service = null;
@@ -559,13 +550,13 @@ test('handles after admin cron run event', function (): void {
         ->atLeast()->once()
         ->andReturn($remove_after_days);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('exec')
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('executeStatement')
         ->atLeast()->once();
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemServiceMock);
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
 
     $service->setDi($di);
     $eventMock->shouldReceive('getDi')
@@ -620,14 +611,14 @@ test('handles event after invoice is due', function (): void {
 
     $invoiceModel = createEntity(Invoice::class);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('exec')
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('executeStatement')
         ->once()
-        ->with(Mockery::type('string'), [':id' => 1])
+        ->with(Mockery::type('string'), ['id' => 1])
         ->andReturn(1);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $di['em']->getRepository(Invoice::class)->shouldReceive('find')
         ->atLeast()->once()
         ->andReturn($invoiceModel);
@@ -671,13 +662,11 @@ test('skips overdue invoice reminder when the invoice was already claimed', func
         ->with('invoice_reminder_after_due_days', '5')
         ->andReturn('1, 5, 7');
 
-    $dbMock = Mockery::mock('\\Box_Database');
-    $dbMock->shouldReceive('exec')
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('executeStatement')
         ->once()
-        ->with(Mockery::type('string'), [':id' => 1])
+        ->with(Mockery::type('string'), ['id' => 1])
         ->andReturn(0);
-    $dbMock->shouldReceive('load')
-        ->never();
 
     $di = container();
     $di['mod_service'] = $di->protect(function ($serviceName) use ($emailService, $serviceMock, $systemService) {
@@ -691,7 +680,7 @@ test('skips overdue invoice reminder when the invoice was already claimed', func
             return $systemService;
         }
     });
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $serviceMock->setDi($di);
@@ -735,19 +724,19 @@ test('releases the claim when sending the overdue invoice email fails', function
 
     $invoiceModel = createEntity(Invoice::class);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('exec')
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('executeStatement')
         ->once()
-        ->with(Mockery::type('string'), [':id' => 1])
+        ->with(Mockery::type('string'), ['id' => 1])
         ->andReturn(1);
-    $dbMock->shouldReceive('exec')
+    $connection->shouldReceive('executeStatement')
         ->once()
-        ->with('UPDATE invoice SET reminded_at = NULL WHERE id = :id', [':id' => 1]);
+        ->with('UPDATE invoice SET reminded_at = NULL WHERE id = :id', ['id' => 1]);
 
     $logger = new Tests\Helpers\TestLogger();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $di['em']->getRepository(Invoice::class)->shouldReceive('find')
         ->atLeast()->once()
         ->andReturn($invoiceModel);
@@ -797,19 +786,19 @@ test('releases the overdue reminder claim when invoice client data is unavailabl
 
     $invoiceModel = createEntity(Invoice::class);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('exec')
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('executeStatement')
         ->once()
-        ->with(Mockery::type('string'), [':id' => 1])
+        ->with(Mockery::type('string'), ['id' => 1])
         ->andReturn(1);
-    $dbMock->shouldReceive('exec')
+    $connection->shouldReceive('executeStatement')
         ->once()
-        ->with('UPDATE invoice SET reminded_at = NULL WHERE id = :id', [':id' => 1]);
+        ->with('UPDATE invoice SET reminded_at = NULL WHERE id = :id', ['id' => 1]);
 
     $logger = new Tests\Helpers\TestLogger();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $di['em']->getRepository(Invoice::class)->shouldReceive('find')
         ->once()
         ->andReturn($invoiceModel);
@@ -854,14 +843,14 @@ test('handles event before invoice is due', function (): void {
 
     $invoiceModel = createEntity(Invoice::class);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('exec')
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('executeStatement')
         ->once()
-        ->with(Mockery::type('string'), [':id' => 1])
+        ->with(Mockery::type('string'), ['id' => 1])
         ->andReturn(1);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $di['em']->getRepository(Invoice::class)->shouldReceive('find')
         ->once()
         ->andReturn($invoiceModel);
@@ -902,19 +891,19 @@ test('releases the claim when sending the before-due invoice reminder fails', fu
 
     $invoiceModel = createEntity(Invoice::class);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('exec')
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('executeStatement')
         ->once()
-        ->with(Mockery::type('string'), [':id' => 1])
+        ->with(Mockery::type('string'), ['id' => 1])
         ->andReturn(1);
-    $dbMock->shouldReceive('exec')
+    $connection->shouldReceive('executeStatement')
         ->once()
-        ->with('UPDATE invoice SET reminded_at = NULL WHERE id = :id', [':id' => 1]);
+        ->with('UPDATE invoice SET reminded_at = NULL WHERE id = :id', ['id' => 1]);
 
     $logger = new Tests\Helpers\TestLogger();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $di['em']->getRepository(Invoice::class)->shouldReceive('find')
         ->once()
         ->andReturn($invoiceModel);
@@ -954,13 +943,11 @@ test('skips before due invoice reminder when the invoice was already claimed', f
         ->with('invoice_reminder_before_due_days', '')
         ->andReturn('14, 7, 1');
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('exec')
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('executeStatement')
         ->once()
-        ->with(Mockery::type('string'), [':id' => 1])
+        ->with(Mockery::type('string'), ['id' => 1])
         ->andReturn(0);
-    $dbMock->shouldReceive('load')
-        ->never();
 
     $di = container();
     $di['mod_service'] = $di->protect(function ($serviceName) use ($serviceMock, $systemService) {
@@ -971,7 +958,7 @@ test('skips before due invoice reminder when the invoice was already claimed', f
             return $systemService;
         }
     });
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $serviceMock->setDi($di);
@@ -998,10 +985,6 @@ test('skips before due invoice reminder when interval does not match', function 
         ->with('invoice_reminder_before_due_days', '')
         ->andReturn('14, 7, 1');
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('load')
-        ->never();
-
     $di = container();
     $di['mod_service'] = $di->protect(function ($serviceName) use ($serviceMock, $systemService) {
         if ($serviceName == 'invoice') {
@@ -1011,7 +994,7 @@ test('skips before due invoice reminder when interval does not match', function 
             return $systemService;
         }
     });
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->never();
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $serviceMock->setDi($di);
@@ -1038,10 +1021,6 @@ test('skips before due invoice reminder when intervals are blank', function (): 
         ->with('invoice_reminder_before_due_days', '')
         ->andReturn('');
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('load')
-        ->never();
-
     $di = container();
     $di['mod_service'] = $di->protect(function ($serviceName) use ($serviceMock, $systemService) {
         if ($serviceName == 'invoice') {
@@ -1051,7 +1030,7 @@ test('skips before due invoice reminder when intervals are blank', function (): 
             return $systemService;
         }
     });
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->never();
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $serviceMock->setDi($di);
@@ -1098,7 +1077,6 @@ test('marks invoice as paid', function (): void {
     $eventManagerMock->shouldReceive('fire')
         ->atLeast()->once();
 
-    $dbMock = Mockery::mock('\Box_Database');
     [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
     $invoiceItemRepo->shouldReceive('findByInvoiceId')
         ->atLeast()->once()
@@ -1124,7 +1102,6 @@ test('marks invoice as paid', function (): void {
             return $productServiceMock;
         }
     });
-    $di['db'] = $dbMock;
     $di['em'] = $em;
     $di['events_manager'] = $eventManagerMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -1261,7 +1238,6 @@ test('counts income', function (): void {
         ->atLeast()->once()
         ->andReturn(0.0);
 
-    $dbMock = Mockery::mock('\Box_Database');
     [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
     $invoiceItemRepo->shouldReceive('findByInvoiceId')
         ->atLeast()->once()
@@ -1272,7 +1248,6 @@ test('counts income', function (): void {
         ->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['em'] = $em;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $currencyService);
 
@@ -1430,12 +1405,9 @@ test('approves an invoice', function (): void {
     $eventManagerMock->shouldReceive('fire')
         ->atLeast()->once();
 
-    $dbMock = Mockery::mock('\Box_Database');
-
     $di = container();
     $di['em']->shouldReceive('persist')->atLeast()->once();
     $di['em']->shouldReceive('flush')->atLeast()->once();
-    $di['db'] = $dbMock;
     $di['events_manager'] = $eventManagerMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
@@ -1476,16 +1448,12 @@ test('pays a zero-total invoice without recording a balance transaction', functi
     $balanceService = Mockery::mock(Box\Mod\Client\ServiceBalance::class);
     $balanceService->shouldReceive('getClientBalanceForUpdate')->once()->with(20)->andReturn(0.0);
 
-    $db = Mockery::mock(Box_Database::class);
-    $db->shouldNotReceive('dispense');
-    $db->shouldNotReceive('store');
-
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(0.0);
     $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false, true)->andReturn(true);
 
     $di = container();
-    $di['db'] = $db;
+    $di['em']->shouldNotReceive('flush');
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $balanceService);
     $service->setDi($di);
 
@@ -1504,16 +1472,11 @@ test('pays an invoice with credits and records a balance transaction', function 
     $balanceService = Mockery::mock(Box\Mod\Client\ServiceBalance::class);
     $balanceService->shouldReceive('getClientBalanceForUpdate')->once()->with(20)->andReturn(100.0);
 
-    $db = Mockery::mock(Box_Database::class);
-    $db->shouldNotReceive('dispense');
-    $db->shouldNotReceive('store');
-
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(50.0);
     $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false, true)->andReturn(true);
 
     $di = container();
-    $di['db'] = $db;
     $di['em']->shouldReceive('persist')->once()->with(
         Mockery::on(fn (ClientBalance $balance): bool => $balance->getClientId() === 20
             && $balance->getType() === 'invoice'
@@ -1540,14 +1503,11 @@ test('reads the balance under lock and does so before re-checking the invoice', 
     $balanceService->shouldNotReceive('getClientBalance');
     $balanceService->shouldReceive('getClientBalanceForUpdate')->once()->with(20)->globally()->ordered()->andReturn(100.0);
 
-    $db = Mockery::mock(Box_Database::class);
-
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(50.0);
     $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false, true)->andReturn(true);
 
     $di = container();
-    $di['db'] = $db;
     // Ordered: the status re-check is only meaningful once the balance lock is held.
     $di['em']->getRepository(Invoice::class)->shouldReceive('lockAndGetStatus')->with(10)
         ->globally()->ordered()->andReturn(Invoice::STATUS_UNPAID);
@@ -1567,13 +1527,10 @@ test('does not deduct credits when the invoice was paid concurrently before the 
     $balanceService = Mockery::mock(Box\Mod\Client\ServiceBalance::class);
     $balanceService->shouldReceive('getClientBalanceForUpdate')->once()->with(20)->andReturn(100.0);
 
-    $db = Mockery::mock(Box_Database::class);
-
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldNotReceive('markAsPaid');
 
     $di = container();
-    $di['db'] = $db;
     // Stand in for another request having paid this invoice while we waited on the lock.
     $di['em']->getRepository(Invoice::class)->shouldReceive('lockAndGetStatus')->with(10)
         ->andReturn(Invoice::STATUS_PAID);
@@ -1595,14 +1552,11 @@ test('does not deduct credits when the locked balance is insufficient', function
     // Another request spent the credit first, so the locked read sees the reduced balance.
     $balanceService->shouldReceive('getClientBalanceForUpdate')->once()->with(20)->andReturn(10.0);
 
-    $db = Mockery::mock(Box_Database::class);
-
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(50.0);
     $service->shouldNotReceive('markAsPaid');
 
     $di = container();
-    $di['db'] = $db;
     $di['em']->getRepository(Invoice::class)->shouldReceive('lockAndGetStatus')->with(10)
         ->andReturn(Invoice::STATUS_UNPAID);
     $di['em']->shouldNotReceive('persist');
@@ -1618,7 +1572,6 @@ test('gets total', function (): void {
 
     $invoiceItemModel = createEntity(InvoiceItem::class, []);
 
-    $dbMock = Mockery::mock('\Box_Database');
     [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
     $invoiceItemRepo->shouldReceive('findByInvoiceId')
         ->atLeast()->once()
@@ -1631,7 +1584,6 @@ test('gets total', function (): void {
         ->andReturn($itemTotal);
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['em'] = $em;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $itemInvoiceServiceMock);
 
@@ -1690,10 +1642,7 @@ test('refunds invoice with negative invoice logic', function (): void {
     $em->shouldReceive('flush')
         ->atLeast()->once();
 
-    $dbMock = Mockery::mock('\Box_Database');
-
     $di = container();
-    $di['db'] = $dbMock;
     $di['em'] = $em;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemService);
     $di['events_manager'] = $eventManagerMock;
@@ -1753,7 +1702,6 @@ test('updates an invoice', function (): void {
     $itemInvoiceServiceMock->shouldReceive('update')
         ->atLeast()->once();
 
-    $dbMock = Mockery::mock('\Box_Database');
     [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
     $invoiceItemRepo->shouldReceive('find')
         ->atLeast()->once()
@@ -1764,7 +1712,6 @@ test('updates an invoice', function (): void {
         ->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['em'] = $em;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $itemInvoiceServiceMock);
     $di['events_manager'] = $eventManagerMock;
@@ -1787,8 +1734,8 @@ test('removes an invoice', function (): void {
 
     $invoiceItemModel = createEntity(InvoiceItem::class, []);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('exec')
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('executeStatement')
         ->atLeast()->once();
     [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
     $invoiceItemRepo->shouldReceive('findByInvoiceId')
@@ -1800,8 +1747,8 @@ test('removes an invoice', function (): void {
         ->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['em'] = $em;
+    $em->shouldReceive('getConnection')->andReturn($connection);
 
     $service->setDi($di);
 
@@ -2300,8 +2247,8 @@ test('fires due events via the pending reminder fallback when the primary batch 
         ->with('invoice_reminder_after_due_days', '5')
         ->andReturn('5');
 
-    $dbMock = Mockery::mock('\\Box_Database');
-    $dbMock->shouldReceive('getAll')
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')
         ->twice()
         ->andReturn([['id' => 2, 'days_left' => 7]], []);
 
@@ -2314,10 +2261,10 @@ test('fires due events via the pending reminder fallback when the primary batch 
         ->with(['event' => 'onEventBeforeInvoiceIsDue', 'params' => ['id' => 2, 'days_left' => 7, 'reminder_intervals' => [7]]]);
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['events_manager'] = $eventManagerMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemService);
     $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
 
     $service->setDi($di);
 
@@ -2344,8 +2291,8 @@ test('guards the primary reminder batch throttle while the fallback still dispat
         ->once()
         ->with('invoice_overdue_invoked', Mockery::type('string'));
 
-    $dbMock = Mockery::mock('\\Box_Database');
-    $dbMock->shouldReceive('getAll')
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')
         ->times(4)
         ->andReturn([['id' => 1, 'days_left' => 7]], [], [], []);
 
@@ -2358,10 +2305,10 @@ test('guards the primary reminder batch throttle while the fallback still dispat
         ->with(['event' => 'onEventBeforeInvoiceIsDue', 'params' => ['id' => 1, 'days_left' => 7, 'reminder_intervals' => [7]]]);
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['events_manager'] = $eventManagerMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemService);
     $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
 
     $service = new Service();
     $service->setDi($di);
@@ -2388,8 +2335,8 @@ test('invokes due event in batch', function (): void {
     $systemService->shouldReceive('setParamValue')
         ->atLeast()->once();
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')
         ->atLeast()->once()
         ->andReturn([['id' => 1]]);
 
@@ -2398,10 +2345,12 @@ test('invokes due event in batch', function (): void {
         ->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['events_manager'] = $eventManagerMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemService);
     $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
+
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
 
     $service->setDi($di);
 
@@ -2452,13 +2401,13 @@ test('counts invoices', function (): void {
         ['status' => Invoice::STATUS_PAID,
             'counter' => 2],
     ];
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')
         ->atLeast()->once()
         ->andReturn($sqlResult);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
 
     $service->setDi($di);
     $result = $service->counter();
@@ -2826,7 +2775,6 @@ test('finds all unpaid invoices', function (): void {
     $service = new Service();
     $invoiceModel = createEntity(Invoice::class);
 
-    $dbMock = Mockery::mock('\Box_Database');
     $getAllResult = [
         [
             'id' => 1,
@@ -2835,12 +2783,13 @@ test('finds all unpaid invoices', function (): void {
             'nr' => '00',
         ],
     ];
-    $dbMock->shouldReceive('getAll')
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')
         ->atLeast()->once()
         ->andReturn($getAllResult);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $service->setDi($di);
 
     $result = $service->findAllUnpaid();
@@ -3015,13 +2964,7 @@ test('validatePaymentAmount does not warn for minor overpayment within tolerance
 test('generateRenewalInvoiceForSubscriptionPayment returns null when subscription not found', function (): void {
     $service = new Service();
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')
-        ->with('Subscription', 'sid = :sid', Mockery::any())
-        ->andReturn(null);
-
     $di = container();
-    $di['db'] = $dbMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
@@ -3120,7 +3063,6 @@ test('markAsPaid transitions a deposit invoice to paid status', function (): voi
 
     $depositItem = createEntity(InvoiceItem::class, ['id' => 96, 'type' => InvoiceItem::TYPE_DEPOSIT, 'task' => 'void']);
 
-    $dbMock = Mockery::mock('\Box_Database');
     [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
     $invoiceItemRepo->shouldReceive('findByInvoiceId')
         ->andReturn([$depositItem]);
@@ -3155,7 +3097,6 @@ test('markAsPaid transitions a deposit invoice to paid status', function (): voi
         ->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['em'] = $em;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $productService = Mockery::mock(ProductService::class)->shouldIgnoreMissing();

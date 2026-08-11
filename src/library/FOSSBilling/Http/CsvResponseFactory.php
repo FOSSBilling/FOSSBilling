@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Http;
 
+use Doctrine\DBAL\Connection;
 use League\Csv\EscapeFormula;
 use League\Csv\Writer;
 use Symfony\Component\HttpFoundation\HeaderUtils;
@@ -23,7 +24,7 @@ final readonly class CsvResponseFactory
      */
     private const array SENSITIVE_COLUMNS = ['pass', 'salt', 'api_token', 'hash', 'config'];
 
-    public function __construct(private \Box_Database $database)
+    public function __construct(private Connection $connection)
     {
     }
 
@@ -35,13 +36,13 @@ final readonly class CsvResponseFactory
             $headers = array_values(array_diff($headers, self::SENSITIVE_COLUMNS));
         }
 
+        $sql = 'SELECT * FROM `' . $table . '`';
+        $params = [];
         if ($limit > 0) {
-            $beans = $this->database->findAll($table, 'LIMIT :limit', [':limit' => $limit]);
-        } else {
-            $beans = $this->database->findAll($table);
+            $sql .= ' LIMIT :limit';
+            $params['limit'] = $limit;
         }
-
-        $rows = array_map(static fn ($bean) => $bean->export(), $beans);
+        $rows = $this->connection->fetchAllAssociative($sql, $params);
 
         if ($headers) {
             $rows = array_map(static fn (array $row): array => array_intersect_key($row, array_flip($headers)), $rows);
