@@ -1518,16 +1518,16 @@
         },
         {
             "name": "league/commonmark",
-            "version": "2.9.1",
+            "version": "2.9.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/thephpleague/commonmark.git",
-                "reference": "73cb188c785abfa7a7bec73487148202968274c6"
+                "reference": "72e9a87efcf41a8e83be3ed0866b69d77565cb12"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/thephpleague/commonmark/zipball/73cb188c785abfa7a7bec73487148202968274c6",
-                "reference": "73cb188c785abfa7a7bec73487148202968274c6",
+                "url": "https://api.github.com/repos/thephpleague/commonmark/zipball/72e9a87efcf41a8e83be3ed0866b69d77565cb12",
+                "reference": "72e9a87efcf41a8e83be3ed0866b69d77565cb12",
                 "shasum": ""
             },
             "require": {
@@ -1621,7 +1621,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-08-09T14:10:38+00:00"
+            "time": "2026-08-11T00:58:45+00:00"
         },
         {
             "name": "league/config",
