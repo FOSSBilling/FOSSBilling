@@ -402,7 +402,7 @@ test('stock reservation backfill patch rolls back if a statement fails partway t
     $patcher = new UpdatePatcher();
     $patcher->setDi($di);
 
-    expect(fn () => (new ReflectionMethod($patcher, 'patch100'))->invoke($patcher))
+    expect(fn (): mixed => (new ReflectionMethod($patcher, 'patch100'))->invoke($patcher))
         ->toThrow(PDOException::class, 'gone away');
 });
 

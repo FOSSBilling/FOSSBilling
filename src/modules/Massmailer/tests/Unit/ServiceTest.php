@@ -65,14 +65,12 @@ function createSendMessageDi(Box\Mod\Client\Entity\Client $client): Pimple\Conta
     $emailService = Mockery::mock(Box\Mod\Email\Service::class);
     $emailService->shouldReceive('sendMail')->zeroOrMoreTimes();
 
-    $di['mod_service'] = $di->protect(function (string $service) use ($clientService, $systemService, $extensionService, $emailService): object {
-        return match ($service) {
-            'client' => $clientService,
-            'system' => $systemService,
-            'extension' => $extensionService,
-            'email' => $emailService,
-            default => throw new RuntimeException("Unexpected service: $service"),
-        };
+    $di['mod_service'] = $di->protect(fn (string $service): object => match ($service) {
+        'client' => $clientService,
+        'system' => $systemService,
+        'extension' => $extensionService,
+        'email' => $emailService,
+        default => throw new RuntimeException("Unexpected service: $service"),
     });
 
     return $di;

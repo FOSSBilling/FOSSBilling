@@ -2022,7 +2022,7 @@ test('throws exception when generating invoice for negative amount order', funct
     $service = new Service();
     $clientOrder = createEntity(Order::class, ['price' => -1, 'quantity' => 1]);
 
-    expect(fn () => $service->generateForOrder($clientOrder))
+    expect(fn (): Invoice => $service->generateForOrder($clientOrder))
         ->toThrow(FOSSBilling\Exception::class, 'Invoices are not generated for negative amount orders.');
 });
 

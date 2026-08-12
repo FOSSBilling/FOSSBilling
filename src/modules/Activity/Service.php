@@ -271,10 +271,10 @@ class Service implements InjectionAwareInterface
 
         /** @var ActivityClientHistoryRepository $clientHistoryRepository */
         $clientHistoryRepository = $this->di['em']->getRepository(ActivityClientHistory::class);
-        $clientHistoryRepository->deleteByClientId((int) $clientId);
+        $clientHistoryRepository->deleteByClientId($clientId);
 
         /** @var ActivitySystemRepository $activitySystemRepository */
         $activitySystemRepository = $this->di['em']->getRepository(ActivitySystem::class);
-        $activitySystemRepository->deleteByClientId((int) $clientId);
+        $activitySystemRepository->deleteByClientId($clientId);
     }
 }

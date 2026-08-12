@@ -102,7 +102,7 @@ test('does not expose admin-only client fields without an admin identity', funct
 test('setEmail rejects invalid email addresses', function (?string $email): void {
     $client = new Client();
 
-    expect(fn () => $client->setEmail($email))->toThrow(InvalidArgumentException::class);
+    expect(fn (): Client => $client->setEmail($email))->toThrow(InvalidArgumentException::class);
 })->with([
     'null' => [null],
     'empty' => [''],
