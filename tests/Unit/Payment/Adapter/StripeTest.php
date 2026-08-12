@@ -1036,7 +1036,10 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
 
         $invoiceService = Mockery::mock();
         $invoiceService->shouldReceive('getTotalWithTax')->andReturn(29.99);
-        $invoiceService->shouldReceive('validatePaymentAmount')->andReturn(null);
+        $invoiceService->shouldReceive('validatePaymentAmount')
+            ->once()
+            ->with(Mockery::on(fn (mixed $amount): bool => is_float($amount) && $amount === 29.99), 29.99)
+            ->andReturn(null);
         $invoiceService->shouldReceive('isInvoiceTypeDeposit')->andReturn(false);
         $invoiceService->shouldReceive('payInvoiceWithCredits')->andReturn(true);
 
@@ -1079,6 +1082,60 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
 });
 
 describe('processPaymentIntent', function (): void {
+    test('validates a redirect payment amount as a float', function (): void {
+        $tx = buildTransaction();
+        $tx->id = 402;
+        $tx->gateway_id = 4;
+        $tx->invoice_id = 15;
+
+        $invoice = createEntity(Invoice::class, [
+            'id' => 15,
+            'client_id' => 7,
+            'approved' => true,
+        ]);
+        $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]);
+        $charge = (object) [
+            'id' => 'pi_redirect',
+            'status' => 'succeeded',
+            'amount' => 2999,
+            'currency' => 'usd',
+        ];
+
+        $invoiceService = Mockery::mock();
+        $invoiceService->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(29.99);
+        $invoiceService->shouldReceive('validatePaymentAmount')
+            ->once()
+            ->with(Mockery::on(fn (mixed $amount): bool => is_float($amount) && $amount === 29.99), 29.99)
+            ->andReturn(null);
+        $invoiceService->shouldReceive('isInvoiceTypeDeposit')->once()->with($invoice)->andReturn(false);
+        $invoiceService->shouldReceive('payInvoiceWithCredits')->once()->with($invoice)->andReturn(true);
+
+        $transactionService = Mockery::mock();
+        $transactionService->shouldReceive('claimForProcessing')->once()->with(402)->andReturn(true);
+
+        $clientService = Mockery::mock();
+        $clientService->shouldReceive('addFunds')->once();
+
+        ['em' => $em, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
+        $invoiceRepo->shouldReceive('find')->with(15)->andReturn($invoice);
+        $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+        $clientRepo->shouldReceive('find')->once()->with(7)->andReturn($client);
+        $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepo);
+
+        $di = container();
+        $di['em'] = $em;
+        $di['mod_service'] = $di->protect(fn ($module, $service = null) => match (true) {
+            $service === 'Transaction' => $transactionService,
+            $module === 'client' => $clientService,
+            default => $invoiceService,
+        });
+        $this->adapter->setDi($di);
+
+        invokePrivateMethod($this->adapter, 'processPaymentIntentUnderLock', [$tx, $invoice, $charge]);
+
+        expect($tx->status)->toBe(Transaction::STATUS_PROCESSED);
+    });
+
     test('deletes the redirect transaction when the webhook already recorded the PaymentIntent', function (): void {
         $tx = buildTransaction();
         $tx->id = 401;
