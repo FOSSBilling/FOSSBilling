@@ -369,3 +369,63 @@ test('update page surfaces a concurrent constraint violation as the uniqueness e
     expect(fn () => $service->updatePage(5, 'New', '', '', 'content', 'New Slug'))
         ->toThrow(fn (FOSSBilling\Exception $e) => $e->getCode() === 9999);
 });
+
+test('create page truncates a long title slug to fit varchar 255', function (): void {
+    $longSlug = str_repeat('a', 260);
+
+    $repo = Mockery::mock(Box\Mod\Custompages\Repository\CustomPageRepository::class);
+    $repo->expects('findOneBySlug')->with(str_repeat('a', 255))->andReturn(null);
+
+    $captured = null;
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->allows('getRepository')->with(CustomPage::class)->andReturn($repo);
+    $em->expects('persist')->once()->andReturnUsing(function (CustomPage $page) use (&$captured): void {
+        $captured = $page;
+    });
+    $em->expects('flush')->once();
+
+    $di = new Pimple\Container();
+    $di['em'] = $em;
+    $di['logger'] = Mockery::mock()->shouldIgnoreMissing();
+    $di['tools'] = Mockery::mock(FOSSBilling\Tools::class);
+    $di['tools']->allows('slug')->with('Long Title')->andReturn($longSlug);
+
+    $service = new Service();
+    $service->setDi($di);
+
+    $service->createPage('Long Title', '', '', 'content');
+
+    expect(strlen($captured->getSlug()))->toBe(255);
+});
+
+test('create page reserves room for the suffix when truncating a conflicting long slug', function (): void {
+    // A 254-char slug that already exists; the suffixed candidate must truncate the base
+    // to leave room for "-1", yielding a 255-char slug (253 a's + "-1").
+    $base = str_repeat('a', 254);
+    $existing = Tests\Helpers\createEntity(CustomPage::class, ['id' => 1, 'slug' => $base]);
+
+    $repo = Mockery::mock(Box\Mod\Custompages\Repository\CustomPageRepository::class);
+    $repo->shouldReceive('findOneBySlug')->andReturn($existing, null);
+
+    $captured = null;
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->allows('getRepository')->with(CustomPage::class)->andReturn($repo);
+    $em->expects('persist')->once()->andReturnUsing(function (CustomPage $page) use (&$captured): void {
+        $captured = $page;
+    });
+    $em->expects('flush')->once();
+
+    $di = new Pimple\Container();
+    $di['em'] = $em;
+    $di['logger'] = Mockery::mock()->shouldIgnoreMissing();
+    $di['tools'] = Mockery::mock(FOSSBilling\Tools::class);
+    $di['tools']->allows('slug')->with('Long Title')->andReturn($base);
+
+    $service = new Service();
+    $service->setDi($di);
+
+    $service->createPage('Long Title', '', '', 'content');
+
+    expect($captured->getSlug())->toBe(str_repeat('a', 253) . '-1');
+    expect(strlen($captured->getSlug()))->toBe(255);
+});

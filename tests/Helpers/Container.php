@@ -136,7 +136,7 @@ function container(): Container
 
         public function paginateDoctrineQuery(\Doctrine\ORM\QueryBuilder $qb, \FOSSBilling\PaginationOptions $pagination, mixed ...$apiArrayArgs): array
         {
-            return ['list' => [], 'total' => 0, 'pages' => 0, 'page' => 1, 'per_page' => 20];
+            return ['list' => [], 'total' => 0, 'pages' => 0, 'page' => $pagination->page, 'per_page' => $pagination->perPage];
         }
     };
     $di['rate_limiter'] = fn (): object => new class {

@@ -173,16 +173,36 @@ class Service
      * suffix until no existing page uses it.
      *
      * Preserves the legacy behavior of re-slugging the title on each iteration
-     * (`<slug>-1`, `<slug>-2`, ...).
+     * (`<slug>-1`, `<slug>-2`, ...). Candidates are truncated so they never
+     * exceed the custom_pages.slug VARCHAR(255) column, reserving room for the
+     * hyphen and suffix before appending it.
      */
     private function generateUniqueSlug(string $title): string
     {
-        $slug = $this->di['tools']->slug($title);
+        $slug = $this->fitSlug($this->di['tools']->slug($title), null);
         $i = 0;
         while ($this->pageRepository->findOneBySlug($slug) instanceof CustomPage) {
-            $slug = $this->di['tools']->slug($title) . '-' . ++$i;
+            $slug = $this->fitSlug($this->di['tools']->slug($title), ++$i);
         }
 
         return $slug;
+    }
+
+    /**
+     * Truncate a slug (optionally suffixed) to fit the VARCHAR(255) column,
+     * reserving room for "-$suffix" when a suffix is requested.
+     */
+    private function fitSlug(string $base, ?int $suffix): string
+    {
+        if ($suffix === null) {
+            return strlen($base) <= 255 ? $base : substr($base, 0, 255);
+        }
+
+        $suffixStr = '-' . $suffix;
+        if (strlen($base) + strlen($suffixStr) <= 255) {
+            return $base . $suffixStr;
+        }
+
+        return substr($base, 0, 255 - strlen($suffixStr)) . $suffixStr;
     }
 }

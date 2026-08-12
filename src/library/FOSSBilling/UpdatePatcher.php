@@ -3017,7 +3017,9 @@ class UpdatePatcher implements InjectionAwareInterface
         }
 
         // Reconcile any duplicate slugs before adding the unique index: keep the
-        // lowest-id row for each duplicated slug and suffix the rest with their own id.
+        // lowest-id row for each duplicated slug and rename the rest to an unused
+        // suffixed variant (probed against the database so existing rows such as a
+        // pre-existing "foo-2" are never collided with).
         $duplicates = $this->fetchAll(
             'SELECT c.id, c.slug FROM custom_pages c
              INNER JOIN (
@@ -3036,14 +3038,48 @@ class UpdatePatcher implements InjectionAwareInterface
                 continue;
             }
 
+            $newSlug = $this->allocateUniqueCustomPageSlug($slug);
             $this->executeSql(
                 'UPDATE custom_pages SET slug = :slug WHERE id = :id',
-                ['slug' => $slug . '-' . $id, 'id' => $id]
+                ['slug' => $newSlug, 'id' => $id]
             );
         }
 
         if (!$this->tableHasIndex('custom_pages', 'uniq_custom_pages_slug')) {
             $this->executeSql('ALTER TABLE `custom_pages` ADD UNIQUE INDEX `uniq_custom_pages_slug` (`slug`)');
         }
+    }
+
+    /**
+     * Find a database-collision-free slug derived from $base for reconciliation.
+     *
+     * Probes incrementing suffixes (-2, -3, ...) using database equality until an
+     * unused value is found, truncating the base so the result never exceeds the
+     * custom_pages.slug VARCHAR(255) column.
+     */
+    private function allocateUniqueCustomPageSlug(string $base): string
+    {
+        $suffix = 2;
+        while (true) {
+            $candidate = $this->fitCustomPageSlug($base, $suffix);
+            $owner = $this->fetchOne(
+                'SELECT id FROM custom_pages WHERE slug = :slug LIMIT 1',
+                ['slug' => $candidate]
+            );
+            if ($owner === false) {
+                return $candidate;
+            }
+            ++$suffix;
+        }
+    }
+
+    private function fitCustomPageSlug(string $base, int $suffix): string
+    {
+        $suffixStr = '-' . $suffix;
+        if (strlen($base) + strlen($suffixStr) <= 255) {
+            return $base . $suffixStr;
+        }
+
+        return substr($base, 0, 255 - strlen($suffixStr)) . $suffixStr;
     }
 }
