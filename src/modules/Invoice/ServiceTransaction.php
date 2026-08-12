@@ -102,13 +102,7 @@ class ServiceTransaction implements InjectionAwareInterface
             return $id;
         }
 
-        try {
-            $this->processTransaction($id);
-        } catch (\Throwable $e) {
-            $this->markTransactionError($id, $e);
-
-            throw $e;
-        }
+        $this->processTransactionWithErrorHandling((int) $id);
 
         return $id;
     }
@@ -134,6 +128,17 @@ class ServiceTransaction implements InjectionAwareInterface
             $this->processTransaction($id);
         } catch (\Throwable $e) {
             $this->markTransactionError($id, $e);
+        }
+    }
+
+    private function processTransactionWithErrorHandling(int $id): mixed
+    {
+        try {
+            return $this->processTransaction($id);
+        } catch (\Throwable $e) {
+            $this->markTransactionError($id, $e);
+
+            throw $e;
         }
     }
 
@@ -452,13 +457,7 @@ class ServiceTransaction implements InjectionAwareInterface
 
     public function preProcessTransaction(Transaction $model)
     {
-        try {
-            $output = $this->processTransaction($model->getId());
-        } catch (\Throwable $e) {
-            $this->markTransactionError((int) $model->getId(), $e);
-
-            throw $e;
-        }
+        $output = $this->processTransactionWithErrorHandling((int) $model->getId());
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminTransactionProcess', 'params' => ['id' => $model->getId()]]);
         $this->di['logger']->info('Processed transaction #%s', $model->getId());
