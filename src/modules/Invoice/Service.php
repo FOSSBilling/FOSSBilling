@@ -510,7 +510,7 @@ class Service implements InjectionAwareInterface
             $orders = $this->di['em']->getRepository(Order::class)->findBy(['id' => $orderIds]);
 
             // Batch load related products
-            $rawProductIds = array_map(static fn (Order $order): int => $order->getProductId() !== null ? (int) $order->getProductId() : 0, $orders);
+            $rawProductIds = array_map(static fn (Order $order): int => $order->getProductId() ?? 0, $orders);
             $nonEmptyProductIds = array_filter($rawProductIds);
             $productIds = array_unique($nonEmptyProductIds);
 
@@ -909,7 +909,7 @@ class Service implements InjectionAwareInterface
 
     public function validateAdminMarkAsPaidRequest(array $data, ?Invoice $invoice = null): PayGateway
     {
-        $gatewayId = isset($data['gateway_id']) && !empty($data['gateway_id']) ? (int) $data['gateway_id'] : (int) ($invoice?->getGatewayId() ?? 0);
+        $gatewayId = isset($data['gateway_id']) && !empty($data['gateway_id']) ? (int) $data['gateway_id'] : $invoice?->getGatewayId() ?? 0;
         if ($gatewayId <= 0) {
             throw new InformationException('Payment gateway is required when marking an invoice as paid.');
         }
@@ -982,7 +982,7 @@ class Service implements InjectionAwareInterface
         $this->di['em']->flush();
     }
 
-    public function prepareInvoice(Client $client, array $data)
+    public function prepareInvoice(Client $client, array $data): Invoice
     {
         if (!$client->getCurrency()) {
             $currencyService = $this->di['mod_service']('currency');
@@ -1004,7 +1004,7 @@ class Service implements InjectionAwareInterface
         }
 
         $model = new Invoice();
-        $model->setClientId($client->getId() !== null ? (int) $client->getId() : null);
+        $model->setClientId($client->getId() ?? null);
         $model->setStatus(Invoice::STATUS_UNPAID);
         $model->setCurrency($client->getCurrency());
         $model->setApproved(false);
@@ -1543,7 +1543,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function renewInvoice(Order $model, array $data)
+    public function renewInvoice(Order $model, array $data): ?int
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminGenerateRenewalInvoice', 'params' => ['order_id' => $model->getId()]]);
 
@@ -1858,7 +1858,7 @@ class Service implements InjectionAwareInterface
         return (bool) $systemService->getParamValue('funds_enabled', true);
     }
 
-    public function generateFundsInvoice(Client $client, $amount)
+    public function generateFundsInvoice(Client $client, $amount): Invoice
     {
         if (!$client->getCurrency()) {
             throw new InformationException('You must have at least one active order before you can add funds so you cannot proceed at the current time!');
@@ -1882,7 +1882,7 @@ class Service implements InjectionAwareInterface
         }
 
         $proforma = new Invoice();
-        $proforma->setClientId($client->getId() !== null ? (int) $client->getId() : null);
+        $proforma->setClientId($client->getId() ?? null);
         $proforma->setStatus(Invoice::STATUS_UNPAID);
         $proforma->setCurrency($client->getCurrency());
         $proforma->setApproved($this->_isAutoApproved());

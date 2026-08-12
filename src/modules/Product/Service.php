@@ -1016,7 +1016,7 @@ class Service implements InjectionAwareInterface
         }
 
         $resolvedProduct = $this->findProductById($productId);
-        $quantity = (int) ($order->getQuantity() ?? 1);
+        $quantity = $order->getQuantity() ?? 1;
         if (!$resolvedProduct->isStockControl() || $quantity <= 0) {
             return;
         }
@@ -1534,7 +1534,7 @@ class Service implements InjectionAwareInterface
 
         $productId = $order->getProductId();
         $discountAmount = (float) ($order->getDiscount() ?? 0);
-        $currency = (string) ($order->getCurrency() ?? '');
+        $currency = $order->getCurrency() ?? '';
         $product = $this->findProductById((int) $productId);
 
         if ($product->getType() !== self::DOMAIN) {
@@ -2198,8 +2198,8 @@ class Service implements InjectionAwareInterface
         $orderId = $order?->getId();
         $redemption
             ->setPromoId($promoId)
-            ->setClientId((int) $clientId)
-            ->setClientOrderId($orderId !== null ? (int) $orderId : null)
+            ->setClientId($clientId)
+            ->setClientOrderId($orderId ?? null)
             ->setInvoiceId($invoice !== null ? (int) $invoice->getId() : null)
             ->setPhase($phase)
             ->setStatus($status)

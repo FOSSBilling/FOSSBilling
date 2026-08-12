@@ -115,7 +115,7 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
             throw new Payment_Exception('You are not authorized to pay this invoice with client balance.');
         }
 
-        if ((int) ($invoiceModel->getGatewayId() ?? 0) !== (int) $gateway_id) {
+        if ($invoiceModel->getGatewayId() ?? (int) $gateway_id !== 0) {
             throw new Payment_Exception('Invoice is not configured to use this payment gateway.');
         }
 
