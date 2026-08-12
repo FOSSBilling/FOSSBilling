@@ -40,23 +40,25 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('invoice', 'view');
 
         $service = $this->getService();
-        [$sql, $params] = $service->getSearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $qb = $service->getInvoiceRepository()->getSearchQueryBuilder($data);
         if (!empty($data['summary'])) {
-            foreach ($pager['list'] as $key => $item) {
-                $pager['list'][$key] = $service->toApiSummaryArray($item);
-            }
+            $pager = $this->getDi()['pager']->paginateMappedQuery($qb, PaginationOptions::fromArray($data), static fn ($invoice) => $invoice);
+            $totals = $service->getInvoiceRepository()->getInvoiceTotals(array_map(static fn ($invoice): int => (int) $invoice->getId(), $pager['list']));
+            $pager['list'] = array_map(
+                static fn ($invoice): array => $service->toApiSummaryFromEntity($invoice, $totals[$invoice->getId()] ?? []),
+                $pager['list'],
+            );
 
             return $pager;
         }
 
-        foreach ($pager['list'] as $key => $item) {
-            $invoice = $service->getInvoiceRepository()->find((int) $item['id'])
-                ?? throw new InformationException('Invoice not found');
-            $pager['list'][$key] = $service->toApiArray($invoice, true, $this->getIdentity());
-        }
+        $identity = $this->getIdentity();
 
-        return $pager;
+        return $this->getDi()['pager']->paginateMappedQuery(
+            $qb,
+            PaginationOptions::fromArray($data),
+            static fn ($invoice): array => $service->toApiArray($invoice, true, $identity),
+        );
     }
 
     /**
@@ -541,15 +543,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('invoice', 'manage_transactions');
 
         $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
-        [$sql, $params] = $transactionService->getSearchQuery($data);
+        $qb = $transactionService->getTransactionRepository()->getSearchQueryBuilder($data);
 
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
-
-        foreach ($pager['list'] as $key => $item) {
-            $pager['list'][$key] = $transactionService->searchResultToApiArray($item);
-        }
-
-        return $pager;
+        return $this->getDi()['pager']->paginateMappedQuery(
+            $qb,
+            PaginationOptions::fromArray($data),
+            static fn ($row): array => $transactionService->transactionResultToApiArray($row[0], $row['gateway'] ?? null),
+        );
     }
 
     /**

@@ -63,130 +63,6 @@ test('gets dependency injection container', function (): void {
     expect($getDi)->toBe($di);
 });
 
-test('gets search query with various parameters', function (array $data, string $expectedStr, array $expectedParams): void {
-    $service = new Service();
-    $di = container();
-
-    $service->setDi($di);
-    $result = $service->getSearchQuery($data);
-    expect($result[0])->toBeString();
-    expect($result[1])->toBeArray();
-
-    expect(str_contains((string) $result[0], $expectedStr))->toBeTrue($result[0]);
-    expect($result[1])->toMatchArray($expectedParams);
-})->with([
-    [[], 'FROM invoice p', []],
-    [
-        ['order_id' => '1'],
-        'AND pi.type = :item_type AND pi.rel_id = :order_id',
-        [
-            'item_type' => InvoiceItem::TYPE_ORDER,
-            'order_id' => 1,
-        ],
-    ],
-    [
-        ['id' => 1],
-        'AND p.id = :id',
-        [
-            'id' => 1,
-        ],
-    ],
-    [
-        ['nr' => 1],
-        'AND (p.id = :id_nr OR p.nr = :id_nr)',
-        [
-            'id_nr' => 1,
-        ],
-    ],
-    [
-        ['approved' => true],
-        'AND p.approved = :approved',
-        [
-            'approved' => 1,
-        ],
-    ],
-    [
-        ['status' => 'unpaid'],
-        'AND p.status = :status',
-        [
-            'status' => 'unpaid',
-        ],
-    ],
-    [
-        ['currency' => 'usd'],
-        'AND p.currency = :currency',
-        [
-            'currency' => 'usd',
-        ],
-    ],
-    [
-        ['client_id' => 1],
-        'AND p.client_id = :client_id',
-        [
-            'client_id' => 1,
-        ],
-    ],
-    [
-        ['client' => 'John'],
-        'AND (cl.first_name LIKE :client_search OR cl.last_name LIKE :client_search OR cl.id = :client OR cl.email = :client)',
-        [
-            'client_search' => 'John%',
-            'client' => 'John',
-        ],
-    ],
-    [
-        ['created_at' => '2012-11-23 12:34:56'],
-        "AND DATE_FORMAT(p.created_at, '%Y-%m-%d') = :created_at",
-        [
-            'created_at' => '2012-11-23',
-        ],
-    ],
-    [
-        ['date_from' => '2012-11-23 12:34:56'],
-        'AND UNIX_TIMESTAMP(p.created_at) >= :date_from',
-        [
-            'date_from' => 1353674096,
-        ],
-    ],
-    [
-        ['date_to' => '2012-11-23 12:34:56'],
-        'AND UNIX_TIMESTAMP(p.created_at) <= :date_to',
-        [
-            'date_to' => 1353674096,
-        ],
-    ],
-    [
-        ['paid_at' => '2012-11-23 12:34:56'],
-        "AND DATE_FORMAT(p.paid_at, '%Y-%m-%d') = :paid_at",
-        [
-            'paid_at' => '2012-11-23',
-        ],
-    ],
-    [
-        ['search' => 'trend'],
-        'AND (p.id = :search_numeric_id OR p.nr LIKE :search_like OR p.id LIKE :search OR pi.title LIKE :search_like)',
-        [
-            'search' => 'trend',
-            'search_like' => '%trend%',
-            'search_numeric_id' => 0,
-        ],
-    ],
-]);
-
-test('adds aggregated totals only to summary searches', function (): void {
-    $service = new Service();
-    $service->setDi(container());
-
-    [$fullQuery] = $service->getSearchQuery([]);
-    [$summaryQuery] = $service->getSearchQuery(['summary' => 1, 'order_id' => 42]);
-
-    expect($fullQuery)->not->toContain('list_subtotal')
-        ->and($summaryQuery)
-        ->toContain('invoice_totals.invoice_id = p.id')
-        ->toContain('list_subtotal')
-        ->toContain('pi.rel_id = :order_id');
-});
-
 test('converts to api array', function (): void {
     $service = new Service();
     $invoiceModel = createEntity(Invoice::class);
@@ -244,7 +120,7 @@ test('converts to api array', function (): void {
     expect($result['buyer']['phone_cc'])->toBe('');
 });
 
-test('converts an aggregated invoice row to an api summary', function (): void {
+test('converts an invoice entity to an api summary', function (): void {
     $service = new Service();
 
     $systemService = Mockery::mock(SystemService::class);
@@ -258,24 +134,26 @@ test('converts an aggregated invoice row to an api summary', function (): void {
     $di['mod_service'] = $di->protect(moduleService(['system' => $systemService]));
     $service->setDi($di);
 
-    $result = $service->toApiSummaryArray([
+    $invoice = createEntity(Invoice::class, [
         'id' => 42,
         'serie' => 'INV-',
         'nr' => '42',
         'client_id' => 7,
         'currency' => 'USD',
         'taxrate' => '20',
-        'list_subtotal' => '25.00',
-        'list_taxable_subtotal' => '10.00',
         'status' => 'unpaid',
         'due_at' => '2026-08-01 00:00:00',
-        'paid_at' => null,
         'created_at' => '2026-07-19 00:00:00',
         'updated_at' => '2026-07-19 00:00:00',
         'buyer_first_name' => 'Ada',
         'buyer_last_name' => 'Lovelace',
         'buyer_email' => 'ada@example.com',
         'approved' => 1,
+    ]);
+
+    $result = $service->toApiSummaryFromEntity($invoice, [
+        'subtotal' => 25.0,
+        'taxable_subtotal' => 10.0,
     ]);
 
     expect($result)
@@ -286,12 +164,43 @@ test('converts an aggregated invoice row to an api summary', function (): void {
             'subtotal' => 25.0,
             'tax' => 2.0,
             'total' => 27.0,
+            'approved' => true,
+            'paid_at' => null,
             'buyer' => [
                 'first_name' => 'Ada',
                 'last_name' => 'Lovelace',
                 'email' => 'ada@example.com',
             ],
         ]);
+});
+
+test('defaults missing totals to zero in the api summary', function (): void {
+    $service = new Service();
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')
+        ->once()
+        ->with('invoice_number_padding')
+        ->andReturn('5');
+
+    $di = container();
+    $di['mod_service'] = $di->protect(moduleService(['system' => $systemService]));
+    $service->setDi($di);
+
+    $invoice = createEntity(Invoice::class, [
+        'id' => 43,
+        'serie' => 'INV-',
+        'nr' => null,
+        'taxrate' => '20',
+        'status' => 'unpaid',
+    ]);
+
+    $result = $service->toApiSummaryFromEntity($invoice, []);
+
+    expect($result['subtotal'])->toBe(0.0)
+        ->and($result['tax'])->toBe(0)
+        ->and($result['total'])->toBe(0.0)
+        ->and($result['serie_nr'])->toBe('INV-00043');
 });
 
 test('ensure valid hash is a no-op for modern hashes', function (): void {

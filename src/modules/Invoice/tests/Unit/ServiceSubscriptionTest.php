@@ -394,50 +394,6 @@ test('deletes a subscription', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('gets search query with various parameters', function (array $data, string $expectedSqlPart, array $expectedParams): void {
-    $service = subscriptionService();
-
-    $result = $service->getSearchQuery($data);
-
-    expect($result)->toBeArray();
-    expect($result[0])->toBeString();
-    expect($result[1])->toBeArray();
-
-    expect($result[1])->toBe($expectedParams);
-    expect(str_contains((string) $result[0], $expectedSqlPart))->toBeTrue();
-})->with([
-    [
-        [], 'FROM subscription', [],
-    ],
-    [
-        ['status' => 'active'], 'AND status = :status', ['status' => 'active'],
-    ],
-    [
-        ['invoice_id' => '1'], 'AND invoice_id = :invoice_id', ['invoice_id' => '1'],
-    ],
-    [
-        ['gateway_id' => '2'], 'AND gateway_id = :gateway_id', ['gateway_id' => '2'],
-    ],
-    [
-        ['client_id' => '3'], 'AND client_id  = :client_id', ['client_id' => '3'],
-    ],
-    [
-        ['currency' => 'EUR'], 'AND currency =  :currency', ['currency' => 'EUR'],
-    ],
-    [
-        ['date_from' => '1234567'], 'AND UNIX_TIMESTAMP(created_at) >= :date_from', ['date_from' => '1234567'],
-    ],
-    [
-        ['date_to' => '1234567'], 'AND UNIX_TIMESTAMP(created_at) <= :date_to', ['date_to' => '1234567'],
-    ],
-    [
-        ['id' => '10'], 'AND id = :id', ['id' => '10'],
-    ],
-    [
-        ['sid' => '10'], 'AND sid = :sid', ['sid' => '10'],
-    ],
-]);
-
 test('returns false when invoice is not subscribable', function (): void {
     $connection = Mockery::mock(Connection::class);
     $connection->shouldReceive('fetchAllAssociative')

@@ -304,120 +304,33 @@ class ServiceTransaction implements InjectionAwareInterface
     }
 
     /**
-     * Convert a transaction search result without loading its model and gateway again.
+     * Convert a transaction list result into the API shape without loading the
+     * transaction's gateway again.
+     *
+     * The gateway name is provided by the list query itself (a LEFT JOIN to
+     * `pay_gateway`), avoiding the per-row lookup that `toApiArray()` performs.
      */
-    public function searchResultToApiArray(array $row): array
+    public function transactionResultToApiArray(Transaction $transaction, ?string $gateway): array
     {
         return [
-            'id' => $row['id'],
-            'invoice_id' => $row['invoice_id'],
-            'txn_id' => $row['txn_id'],
-            'txn_status' => $row['txn_status'],
-            'gateway_id' => $row['gateway_id'],
-            'gateway' => $row['gateway'] ?? null,
-            'amount' => (float) ($row['amount'] ?? 0),
-            'currency' => $row['currency'],
-            'type' => $row['type'],
-            'status' => $row['status'],
-            'ip' => $row['ip'],
-            'validate_ipn' => $row['validate_ipn'],
-            'error' => $row['error'],
-            'error_code' => $row['error_code'],
-            'note' => $row['note'],
-            'created_at' => $row['created_at'],
-            'updated_at' => $row['updated_at'],
+            'id' => $transaction->getId(),
+            'invoice_id' => $transaction->getInvoiceId(),
+            'txn_id' => $transaction->getTxnId(),
+            'txn_status' => $transaction->getTxnStatus(),
+            'gateway_id' => $transaction->getGatewayId(),
+            'gateway' => $gateway,
+            'amount' => (float) ($transaction->getAmount() ?? 0),
+            'currency' => $transaction->getCurrency(),
+            'type' => $transaction->getType(),
+            'status' => $transaction->getStatus(),
+            'ip' => $transaction->getIp(),
+            'validate_ipn' => $transaction->isValidateIpn(),
+            'error' => $transaction->getError(),
+            'error_code' => $transaction->getErrorCode(),
+            'note' => $transaction->getNote(),
+            'created_at' => $transaction->getCreatedAt()?->format('Y-m-d H:i:s'),
+            'updated_at' => $transaction->getUpdatedAt()?->format('Y-m-d H:i:s'),
         ];
-    }
-
-    public function getSearchQuery(array $data): array
-    {
-        $sql = 'SELECT m.*, pg.name AS gateway
-                FROM transaction as m
-                LEFT JOIN invoice as i on m.invoice_id = i.id
-                LEFT JOIN pay_gateway as pg on m.gateway_id = pg.id
-                WHERE 1 ';
-
-        $id = $data['id'] ?? null;
-        $search = $data['search'] ?? null;
-        $invoice_hash = $data['invoice_hash'] ?? null;
-        $invoice_id = $data['invoice_id'] ?? null;
-        $gateway_id = $data['gateway_id'] ?? null;
-        $client_id = $data['client_id'] ?? null;
-        $status = $data['status'] ?? null;
-        $currency = $data['currency'] ?? null;
-        $type = $data['type'] ?? null;
-        $txn_id = $data['txn_id'] ?? null;
-
-        $date_from = $data['date_from'] ?? null;
-        $date_to = $data['date_to'] ?? null;
-
-        $params = [];
-        if ($id) {
-            $sql .= ' AND m.id = :id';
-            $params['id'] = $id;
-        }
-
-        if ($status) {
-            $sql .= ' AND m.status = :status';
-            $params['status'] = $status;
-        }
-
-        if ($invoice_hash) {
-            $sql .= ' AND i.hash = :hash';
-            $params['hash'] = $invoice_hash;
-        }
-
-        if ($invoice_id) {
-            $sql .= ' AND m.invoice_id = :invoice_id';
-            $params['invoice_id'] = $invoice_id;
-        }
-
-        if ($gateway_id) {
-            $sql .= ' AND m.gateway_id = :gateway_id';
-            $params['gateway_id'] = $gateway_id;
-        }
-
-        if ($client_id) {
-            $sql .= ' AND i.client_id = :client_id';
-            $params['client_id'] = $client_id;
-        }
-
-        if ($currency) {
-            $sql .= ' AND m.currency = :currency';
-            $params['currency'] = $currency;
-        }
-
-        if ($type) {
-            $sql .= ' AND m.type = :type';
-            $params['type'] = $type;
-        }
-
-        if ($txn_id) {
-            $sql .= ' AND m.txn_id = :txn_id';
-            $params['txn_id'] = $txn_id;
-        }
-
-        if ($date_from) {
-            $sql .= ' AND UNIX_TIMESTAMP(m.created_at) >= :date_from';
-            $params['date_from'] = strtotime((string) $date_from);
-        }
-
-        if ($date_to) {
-            $sql .= ' AND UNIX_TIMESTAMP(m.created_at) <= :date_to';
-            $params['date_to'] = strtotime((string) $date_to);
-        }
-
-        if ($search) {
-            $sql .= ' AND (m.note LIKE :note OR m.invoice_id LIKE :search_invoice_id OR m.txn_id LIKE :search_txn_id OR m.ipn LIKE :ipn)';
-            $params['note'] = "%$search%";
-            $params['search_invoice_id'] = "%$search%";
-            $params['search_txn_id'] = "%$search%";
-            $params['ipn'] = "%$search%";
-        }
-
-        $sql .= ' ORDER BY m.id DESC';
-
-        return [$sql, $params];
     }
 
     public function counter(): array

@@ -144,22 +144,21 @@ test('converts to api array', function (): void {
         ->and($result['amount'])->toBe(0.0);
 });
 
-test('converts a transaction search result without database access', function (): void {
+test('converts a transaction result without database access', function (): void {
     $service = transactionService();
 
-    $result = $service->searchResultToApiArray([
+    $transaction = createEntity(Transaction::class, [
         'id' => 12,
         'invoice_id' => 34,
         'txn_id' => 'txn_123',
         'txn_status' => 'complete',
         'gateway_id' => 2,
-        'gateway' => 'Stripe',
         'amount' => '19.95',
         'currency' => 'USD',
         'type' => 'payment',
         'status' => 'processed',
         'ip' => '192.0.2.1',
-        'validate_ipn' => 1,
+        'validate_ipn' => true,
         'error' => null,
         'error_code' => null,
         'note' => 'Test payment',
@@ -167,61 +166,18 @@ test('converts a transaction search result without database access', function ()
         'updated_at' => '2026-07-19 10:01:00',
     ]);
 
+    $result = $service->transactionResultToApiArray($transaction, 'Stripe');
+
     expect($result)->toMatchArray([
         'id' => 12,
         'gateway' => 'Stripe',
         'amount' => 19.95,
         'status' => 'processed',
+        'validate_ipn' => true,
+        'created_at' => '2026-07-19 10:00:00',
+        'updated_at' => '2026-07-19 10:01:00',
     ]);
 });
-
-test('gets search query with various parameters', function (array $data, array $expectedParams, string $expectedStringPart): void {
-    $service = transactionService();
-
-    $result = $service->getSearchQuery($data);
-    expect($result[0])->toBeString();
-    expect($result[1])->toBeArray();
-
-    expect(str_contains((string) $result[0], $expectedStringPart))->toBeTrue();
-    expect($result[1])->toBe($expectedParams);
-})->with([
-    [
-        [], [], 'LEFT JOIN pay_gateway as pg on m.gateway_id = pg.id',
-    ],
-    [
-        ['search' => 'keyword'], ['note' => '%keyword%', 'search_invoice_id' => '%keyword%', 'search_txn_id' => '%keyword%', 'ipn' => '%keyword%'], 'AND (m.note LIKE :note OR m.invoice_id LIKE :search_invoice_id OR m.txn_id LIKE :search_txn_id OR m.ipn LIKE :ipn)',
-    ],
-    [
-        ['invoice_hash' => 'hashString'], ['hash' => 'hashString'], 'AND i.hash = :hash',
-    ],
-    [
-        ['invoice_id' => '1'], ['invoice_id' => '1'], 'AND m.invoice_id = :invoice_id',
-    ],
-    [
-        ['gateway_id' => '2'], ['gateway_id' => '2'], 'AND m.gateway_id = :gateway_id',
-    ],
-    [
-        ['client_id' => '3'], ['client_id' => '3'], 'AND i.client_id = :client_id',
-    ],
-    [
-        ['status' => 'active'], ['status' => 'active'], 'AND m.status = :status',
-    ],
-    [
-        ['currency' => 'Eur'], ['currency' => 'Eur'], 'AND m.currency = :currency',
-    ],
-    [
-        ['type' => 'payment'], ['type' => 'payment'], 'AND m.type = :type',
-    ],
-    [
-        ['txn_id' => 'longTxn_id'], ['txn_id' => 'longTxn_id'], 'AND m.txn_id = :txn_id',
-    ],
-    [
-        ['date_from' => '2012-12-12'], ['date_from' => strtotime('2012-12-12 00:00:00 UTC')], 'AND UNIX_TIMESTAMP(m.created_at) >= :date_from',
-    ],
-    [
-        ['date_to' => '2012-12-12'], ['date_to' => strtotime('2012-12-12 00:00:00 UTC')], 'AND UNIX_TIMESTAMP(m.created_at) <= :date_to',
-    ],
-]);
 
 test('counts transactions', function (): void {
     $queryResult = [['status' => Transaction::STATUS_RECEIVED, 'counter' => 1]];

@@ -31,16 +31,14 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $data['client_id'] = $this->getIdentity()->getId();
         $data['approved'] = true;
 
-        [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $service = $this->getService();
+        $qb = $service->getInvoiceRepository()->getSearchQueryBuilder($data);
 
-        foreach ($pager['list'] as $key => $item) {
-            $invoice = $this->getService()->getInvoiceRepository()->find((int) $item['id'])
-                ?? throw new \FOSSBilling\InformationException('Invoice not found');
-            $pager['list'][$key] = $this->getService()->toApiArray($invoice);
-        }
-
-        return $pager;
+        return $this->getDi()['pager']->paginateMappedQuery(
+            $qb,
+            PaginationOptions::fromArray($data),
+            static fn ($invoice): array => $service->toApiArray($invoice),
+        );
     }
 
     /**
@@ -124,15 +122,13 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $data['client_id'] = $this->getIdentity()->getId();
         $data['status'] = 'processed';
         $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
-        [$sql, $params] = $transactionService->getSearchQuery($data);
+        $qb = $transactionService->getTransactionRepository()->getSearchQueryBuilder($data);
 
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
-
-        foreach ($pager['list'] as $key => $item) {
-            $pager['list'][$key] = $transactionService->searchResultToApiArray($item);
-        }
-
-        return $pager;
+        return $this->getDi()['pager']->paginateMappedQuery(
+            $qb,
+            PaginationOptions::fromArray($data),
+            static fn ($row): array => $transactionService->transactionResultToApiArray($row[0], $row['gateway'] ?? null),
+        );
     }
 
     public function get_tax_rate()
