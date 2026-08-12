@@ -156,7 +156,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
                 return true;
             }
 
-            $this->checkPasswordResetCaptcha($data);
+            $this->checkCaptchaIfEnabled($data);
 
             $emailLimit = $this->getDi()['rate_limiter']->consume('staff_password_reset_email', (string) $data['email']);
             if ($emailLimit->isLimited()) {
@@ -202,15 +202,5 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         } finally {
             RandomizedTimeFloor::apply($startedAt);
         }
-    }
-
-    private function checkPasswordResetCaptcha(array $data): void
-    {
-        $extensionService = $this->getDi()['mod_service']('extension');
-        if (!$extensionService->isExtensionActive('mod', 'antispam')) {
-            return;
-        }
-
-        $this->getDi()['mod_service']('Antispam')->checkCaptcha($data);
     }
 }

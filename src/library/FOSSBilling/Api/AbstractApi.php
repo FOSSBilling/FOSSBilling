@@ -118,4 +118,14 @@ class AbstractApi implements InjectionAwareInterface
     {
         $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException($module, $key, $constraint, $this->identity);
     }
+
+    protected function checkCaptchaIfEnabled(array $data): void
+    {
+        $extensionService = $this->getDi()['mod_service']('extension');
+        if (!$extensionService->isExtensionActive('mod', 'antispam')) {
+            return;
+        }
+
+        $this->getDi()['mod_service']('Antispam')->checkCaptcha($data);
+    }
 }
