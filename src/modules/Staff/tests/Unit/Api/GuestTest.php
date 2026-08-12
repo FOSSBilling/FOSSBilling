@@ -43,6 +43,14 @@ test('login without password', function (): void {
     expect(fn () => $guestApi->login(['email' => 'email@domain.com']))->toThrow(FOSSBilling\Exception::class);
 });
 
+test('password reset requires an email', function (): void {
+    $dispatcher = new FOSSBilling\Api\Dispatcher();
+    $guestApi = new Box\Mod\Staff\Api\Guest();
+
+    expect(fn () => $dispatcher->validateRequiredParams($guestApi, 'passwordreset', []))
+        ->toThrow(FOSSBilling\InformationException::class, 'Email required');
+});
+
 test('successful login', function (): void {
     $api = apiEndpoint(new Box\Mod\Staff\Api\Guest());
     $modMock = Mockery::mock('\\' . FOSSBilling\Module::class);

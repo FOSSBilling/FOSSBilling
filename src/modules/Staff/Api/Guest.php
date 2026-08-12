@@ -131,6 +131,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         }
     }
 
+    #[RequiredParams(['email' => 'Email required'])]
     public function passwordreset(array $data): bool
     {
         $config = $this->getMod()->getConfig();
@@ -142,11 +143,6 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
         try {
             $this->getDi()['events_manager']->fire(['event' => 'onBeforePasswordResetStaff']);
-            $required = [
-                'email' => 'Email required',
-            ];
-            $validator = $this->getDi()['validator'];
-            $validator->checkRequiredParamsForArray($required, $data);
             $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
 
             $ipLimit = $this->getDi()['rate_limiter']->consume('staff_password_reset_ip', (string) $this->getIp());
