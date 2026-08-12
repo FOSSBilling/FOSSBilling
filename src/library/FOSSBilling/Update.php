@@ -17,11 +17,14 @@ use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 
 class Update implements InjectionAwareInterface
 {
+    private const GITHUB_RELEASES_API_URL = 'https://api.github.com/repos/FOSSBilling/FOSSBilling/releases';
+
     protected ?\Pimple\Container $di = null;
     private array $allowedDownloadPrefixes = [
         'https://github.com/FOSSBilling/FOSSBilling/releases/',
@@ -165,8 +168,113 @@ class Update implements InjectionAwareInterface
                 'next_check' => date('Y-m-d H:i:s', time() + 3600),
                 'branch' => $branch,
                 'minimum_php_version' => $releaseInfo['minimum_php_version'],
+                'sha256' => $releaseInfo['sha256'] ?? $releaseInfo['digest'] ?? null,
+                'github_release_id' => $releaseInfo['github_release_id'] ?? null,
             ];
         });
+    }
+
+    /**
+     * Resolve the SHA-256 digest for the exact release archive being downloaded.
+     */
+    private function getReleaseArchiveDigest(array $releaseInfo): string
+    {
+        $metadataDigest = $releaseInfo['sha256'] ?? null;
+        if ($metadataDigest !== null) {
+            return $this->normalizeSha256Digest($metadataDigest);
+        }
+
+        $releaseId = $releaseInfo['github_release_id'] ?? null;
+        if (is_int($releaseId) || (is_string($releaseId) && ctype_digit($releaseId))) {
+            $releaseUrl = self::GITHUB_RELEASES_API_URL . '/' . $releaseId;
+        } else {
+            $version = $releaseInfo['version'] ?? null;
+            if (!is_string($version) || $version === '') {
+                throw new InformationException('The release metadata did not identify a GitHub release. Update canceled for security reasons.');
+            }
+
+            $releaseUrl = self::GITHUB_RELEASES_API_URL . '/tags/' . rawurlencode($version);
+        }
+
+        try {
+            $httpClient = $this->di['http_client']->withOptions([
+                'timeout' => 30,
+                'max_duration' => 120,
+            ]);
+            $response = $httpClient->request('GET', $releaseUrl, [
+                'headers' => [
+                    'Accept' => 'application/vnd.github+json',
+                    'X-GitHub-Api-Version' => '2022-11-28',
+                ],
+            ]);
+            $release = $response->toArray();
+        } catch (TransportExceptionInterface|HttpExceptionInterface|DecodingExceptionInterface $e) {
+            error_log($e->getMessage());
+
+            throw new Exception('Failed to retrieve the update archive digest. Update canceled for security reasons.');
+        }
+
+        $downloadUrl = $releaseInfo['download_url'] ?? null;
+        if (!is_string($downloadUrl) || !is_array($release['assets'] ?? null)) {
+            throw new InformationException('The release metadata did not identify an update archive. Update canceled for security reasons.');
+        }
+
+        foreach ($release['assets'] as $asset) {
+            if (!is_array($asset)) {
+                continue;
+            }
+
+            if (($asset['browser_download_url'] ?? null) !== $downloadUrl && ($asset['url'] ?? null) !== $downloadUrl) {
+                continue;
+            }
+
+            return $this->normalizeSha256Digest($asset['digest'] ?? null);
+        }
+
+        throw new InformationException('The release did not provide a SHA-256 digest for the update archive. Update canceled for security reasons.');
+    }
+
+    private function normalizeSha256Digest(mixed $digest): string
+    {
+        if (!is_string($digest)) {
+            throw new InformationException('The release provided an invalid SHA-256 digest. Update canceled for security reasons.');
+        }
+
+        $digest = trim($digest);
+        if (str_starts_with(strtolower($digest), 'sha256:')) {
+            $digest = substr($digest, 7);
+        }
+
+        if (preg_match('/\A[0-9a-fA-F]{64}\z/', $digest) !== 1) {
+            throw new InformationException('The release provided an invalid SHA-256 digest. Update canceled for security reasons.');
+        }
+
+        return strtolower($digest);
+    }
+
+    private function validateDownloadedArchive(string $archiveFile, array $releaseInfo): void
+    {
+        try {
+            $expectedDigest = $this->getReleaseArchiveDigest($releaseInfo);
+            $actualDigest = hash_file('sha256', $archiveFile);
+
+            if ($actualDigest === false || !hash_equals($expectedDigest, $actualDigest)) {
+                throw new InformationException('The downloaded update archive failed integrity verification. Update canceled for security reasons.');
+            }
+        } catch (Exception $e) {
+            $this->removeDownloadedArchive($archiveFile);
+
+            throw $e;
+        }
+    }
+
+    private function removeDownloadedArchive(string $archiveFile): void
+    {
+        try {
+            $this->filesystem->remove($archiveFile);
+        } catch (IOException $e) {
+            error_log($e->getMessage());
+        }
     }
 
     /**
@@ -275,7 +383,12 @@ class Update implements InjectionAwareInterface
                 'timeout' => 30,
                 'max_duration' => 120,
             ]);
-            $response = $httpClient->request('GET', $releaseInfo['download_url']);
+            $downloadOptions = [];
+            if (str_starts_with((string) $releaseInfo['download_url'], 'https://api.github.com/repos/FOSSBilling/FOSSBilling/releases/assets/')) {
+                $downloadOptions['headers'] = ['Accept' => 'application/octet-stream'];
+            }
+
+            $response = $httpClient->request('GET', $releaseInfo['download_url'], $downloadOptions);
 
             $fileHandler = fopen($archiveFile, 'w');
             foreach ($httpClient->stream($response) as $chunk) {
@@ -288,7 +401,7 @@ class Update implements InjectionAwareInterface
             throw new Exception('Failed to download the update archive. Further details are available in the error log.');
         }
 
-        // @TODO - Validate downloaded file hash.
+        $this->validateDownloadedArchive($archiveFile, $releaseInfo);
 
         $finalization->createPendingState(Version::VERSION, $latestVersionNum, [
             'branch' => $updateBranch,
