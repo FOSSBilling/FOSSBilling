@@ -76,3 +76,233 @@ test('legacy email patch restores untouched 0.7.2 defaults without replacing cus
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch90'))->invoke($patcher);
 });
+
+test('custom pages slug unique patch follows the client balance gateway repair', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 91);
+
+    expect($patches)->toHaveKey(92)
+        ->and($patches[92][1])->toBe('patch92');
+});
+
+test('custom pages slug unique patch is a no-op when the table does not exist', function (): void {
+    $tableExists = Mockery::mock(PDOStatement::class);
+    $tableExists->expects('execute')->with(['table' => 'custom_pages'])->andReturnTrue();
+    $tableExists->expects('fetchColumn')->andReturn(false);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')
+        ->with('SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table LIMIT 1')
+        ->andReturn($tableExists);
+    $pdo->shouldNotReceive('prepare')->with('ALTER TABLE `custom_pages` ADD UNIQUE INDEX `uniq_custom_pages_slug` (`slug`)');
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch92'))->invoke($patcher);
+});
+
+test('custom pages slug unique patch reconciles duplicates then adds the index', function (): void {
+    $tableExists = Mockery::mock(PDOStatement::class);
+    $tableExists->expects('execute')->with(['table' => 'custom_pages'])->andReturnTrue();
+    $tableExists->expects('fetchColumn')->andReturn('1');
+
+    $duplicates = Mockery::mock(PDOStatement::class);
+    $duplicates->expects('execute')->with([])->andReturnTrue();
+    $duplicates->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['id' => 1, 'slug' => 'about'],
+        ['id' => 2, 'slug' => 'about'],
+    ]);
+
+    // The first suffixed candidate ("about-2") is free, so a single probe resolves it.
+    $probe = Mockery::mock(PDOStatement::class);
+    $probe->expects('execute')->with(['slug' => 'about-2'])->andReturnTrue();
+    $probe->expects('fetchColumn')->andReturn(false);
+
+    $update2 = Mockery::mock(PDOStatement::class);
+    $update2->expects('execute')->with(['slug' => 'about-2', 'id' => 2])->andReturnTrue();
+
+    $indexes = Mockery::mock(PDOStatement::class);
+    $indexes->expects('execute')->with([])->andReturnTrue();
+    $indexes->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([]);
+
+    $addIndex = Mockery::mock(PDOStatement::class);
+    $addIndex->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')
+        ->with('SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table LIMIT 1')
+        ->andReturn($tableExists);
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'SELECT c.id, c.slug')))
+        ->andReturn($duplicates);
+    $pdo->expects('prepare')
+        ->with('SELECT id FROM custom_pages WHERE slug = :slug LIMIT 1')
+        ->andReturn($probe);
+    $pdo->expects('prepare')
+        ->with('UPDATE custom_pages SET slug = :slug WHERE id = :id')
+        ->andReturn($update2);
+    $pdo->expects('prepare')->with('SHOW INDEX FROM `custom_pages`')->andReturn($indexes);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `custom_pages` ADD UNIQUE INDEX `uniq_custom_pages_slug` (`slug`)')
+        ->andReturn($addIndex);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch92'))->invoke($patcher);
+});
+
+test('custom pages slug unique patch skips an occupied suffix before renaming', function (): void {
+    $tableExists = Mockery::mock(PDOStatement::class);
+    $tableExists->expects('execute')->with(['table' => 'custom_pages'])->andReturnTrue();
+    $tableExists->expects('fetchColumn')->andReturn('1');
+
+    $duplicates = Mockery::mock(PDOStatement::class);
+    $duplicates->expects('execute')->with([])->andReturnTrue();
+    $duplicates->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['id' => 1, 'slug' => 'about'],
+        ['id' => 2, 'slug' => 'about'],
+    ]);
+
+    // "about-2" is already owned by a non-duplicate row (id 4), so reconciliation
+    // must probe it as taken and move on to "about-3".
+    $probeTaken = Mockery::mock(PDOStatement::class);
+    $probeTaken->expects('execute')->with(['slug' => 'about-2'])->andReturnTrue();
+    $probeTaken->expects('fetchColumn')->andReturn('4');
+
+    $probeFree = Mockery::mock(PDOStatement::class);
+    $probeFree->expects('execute')->with(['slug' => 'about-3'])->andReturnTrue();
+    $probeFree->expects('fetchColumn')->andReturn(false);
+
+    $update = Mockery::mock(PDOStatement::class);
+    $update->expects('execute')->with(['slug' => 'about-3', 'id' => 2])->andReturnTrue();
+
+    $indexes = Mockery::mock(PDOStatement::class);
+    $indexes->expects('execute')->with([])->andReturnTrue();
+    $indexes->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([]);
+
+    $addIndex = Mockery::mock(PDOStatement::class);
+    $addIndex->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')
+        ->with('SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table LIMIT 1')
+        ->andReturn($tableExists);
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'SELECT c.id, c.slug')))
+        ->andReturn($duplicates);
+    $pdo->expects('prepare')
+        ->with('SELECT id FROM custom_pages WHERE slug = :slug LIMIT 1')
+        ->twice()
+        ->andReturn($probeTaken, $probeFree);
+    $pdo->expects('prepare')
+        ->with('UPDATE custom_pages SET slug = :slug WHERE id = :id')
+        ->andReturn($update);
+    $pdo->expects('prepare')->with('SHOW INDEX FROM `custom_pages`')->andReturn($indexes);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `custom_pages` ADD UNIQUE INDEX `uniq_custom_pages_slug` (`slug`)')
+        ->andReturn($addIndex);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch92'))->invoke($patcher);
+});
+
+test('custom pages slug unique patch truncates long duplicate slugs to fit varchar 255', function (): void {
+    $longSlug = str_repeat('a', 255);
+
+    $tableExists = Mockery::mock(PDOStatement::class);
+    $tableExists->expects('execute')->with(['table' => 'custom_pages'])->andReturnTrue();
+    $tableExists->expects('fetchColumn')->andReturn('1');
+
+    $duplicates = Mockery::mock(PDOStatement::class);
+    $duplicates->expects('execute')->with([])->andReturnTrue();
+    $duplicates->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['id' => 1, 'slug' => $longSlug],
+        ['id' => 2, 'slug' => $longSlug],
+    ]);
+
+    // Candidate is the base truncated to leave room for "-2": 253 a's + "-2" = 255 chars.
+    $expectedSlug = str_repeat('a', 253) . '-2';
+
+    $probe = Mockery::mock(PDOStatement::class);
+    $probe->expects('execute')->with(['slug' => $expectedSlug])->andReturnTrue();
+    $probe->expects('fetchColumn')->andReturn(false);
+
+    $update = Mockery::mock(PDOStatement::class);
+    $update->expects('execute')->with(['slug' => $expectedSlug, 'id' => 2])->andReturnTrue();
+
+    $indexes = Mockery::mock(PDOStatement::class);
+    $indexes->expects('execute')->with([])->andReturnTrue();
+    $indexes->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([]);
+
+    $addIndex = Mockery::mock(PDOStatement::class);
+    $addIndex->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')
+        ->with('SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table LIMIT 1')
+        ->andReturn($tableExists);
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'SELECT c.id, c.slug')))
+        ->andReturn($duplicates);
+    $pdo->expects('prepare')
+        ->with('SELECT id FROM custom_pages WHERE slug = :slug LIMIT 1')
+        ->andReturn($probe);
+    $pdo->expects('prepare')
+        ->with('UPDATE custom_pages SET slug = :slug WHERE id = :id')
+        ->andReturn($update);
+    $pdo->expects('prepare')->with('SHOW INDEX FROM `custom_pages`')->andReturn($indexes);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `custom_pages` ADD UNIQUE INDEX `uniq_custom_pages_slug` (`slug`)')
+        ->andReturn($addIndex);
+
+    expect(strlen($expectedSlug))->toBe(255);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch92'))->invoke($patcher);
+});
+
+test('custom pages slug unique patch is a no-op when the index already exists', function (): void {
+    $tableExists = Mockery::mock(PDOStatement::class);
+    $tableExists->expects('execute')->with(['table' => 'custom_pages'])->andReturnTrue();
+    $tableExists->expects('fetchColumn')->andReturn('1');
+
+    $duplicates = Mockery::mock(PDOStatement::class);
+    $duplicates->expects('execute')->with([])->andReturnTrue();
+    $duplicates->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([]);
+
+    $indexes = Mockery::mock(PDOStatement::class);
+    $indexes->expects('execute')->with([])->andReturnTrue();
+    $indexes->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Key_name' => 'uniq_custom_pages_slug'],
+    ]);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')
+        ->with('SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table LIMIT 1')
+        ->andReturn($tableExists);
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'SELECT c.id, c.slug')))
+        ->andReturn($duplicates);
+    $pdo->expects('prepare')->with('SHOW INDEX FROM `custom_pages`')->andReturn($indexes);
+    $pdo->shouldNotReceive('prepare')->with('ALTER TABLE `custom_pages` ADD UNIQUE INDEX `uniq_custom_pages_slug` (`slug`)');
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch92'))->invoke($patcher);
+});

@@ -144,6 +144,11 @@ function container(): Container
         {
             return ['list' => [], 'total' => 0, 'pages' => 0, 'page' => 1, 'per_page' => 20];
         }
+
+        public function paginateDoctrineQuery(\Doctrine\ORM\QueryBuilder $qb, \FOSSBilling\PaginationOptions $pagination, mixed ...$apiArrayArgs): array
+        {
+            return ['list' => [], 'total' => 0, 'pages' => 0, 'page' => $pagination->page, 'per_page' => $pagination->perPage];
+        }
     };
     $di['rate_limiter'] = fn (): object => new class {
         public function consume(string $policyName, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult
@@ -236,6 +241,17 @@ function container(): Container
         $supportTicketNoteRepository = \Mockery::mock(\Box\Mod\Support\Repository\SupportTicketNoteRepository::class)->shouldIgnoreMissing();
         $supportTicketMessageHistoryRepository = \Mockery::mock(\Box\Mod\Support\Repository\SupportTicketMessageHistoryRepository::class)->shouldIgnoreMissing();
 
+        $customPageRepository = \Mockery::mock(\Box\Mod\Custompages\Repository\CustomPageRepository::class)->shouldIgnoreMissing();
+        $customPageRepository->shouldReceive('find')->byDefault()->andReturn(null);
+        $customPageRepository->shouldReceive('findOneBySlug')->byDefault()->andReturn(null);
+        $customPageRepository->shouldReceive('findOneBySlugExcludingId')->byDefault()->andReturn(null);
+        $customPageRepository->shouldReceive('deleteByIds')->byDefault()->andReturn(0);
+        $customPageQueryBuilder = \Mockery::mock(\Doctrine\ORM\QueryBuilder::class)->shouldIgnoreMissing();
+        foreach (['andWhere', 'orWhere', 'setParameter', 'orderBy', 'setFirstResult', 'setMaxResults', 'where'] as $method) {
+            $customPageQueryBuilder->shouldReceive($method)->byDefault()->andReturn($customPageQueryBuilder);
+        }
+        $customPageRepository->shouldReceive('getSearchQueryBuilder')->byDefault()->andReturn($customPageQueryBuilder);
+
         $em = \Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
         $em->shouldReceive('getRepository')->byDefault()->andReturnUsing(static fn (string $class): object => match ($class) {
             \Box\Mod\Client\Entity\Client::class => $clientRepository,
@@ -257,6 +273,7 @@ function container(): Container
             \Box\Mod\Support\Entity\SupportTicketMessage::class => $supportTicketMessageRepository,
             \Box\Mod\Support\Entity\SupportTicketNote::class => $supportTicketNoteRepository,
             \Box\Mod\Support\Entity\SupportTicketMessageHistory::class => $supportTicketMessageHistoryRepository,
+            \Box\Mod\Custompages\Entity\CustomPage::class => $customPageRepository,
             \Box\Mod\Extension\Entity\Extension::class => \Mockery::mock(\Box\Mod\Extension\Repository\ExtensionRepository::class)->shouldIgnoreMissing(),
             default => $extensionMetaRepository,
         });
