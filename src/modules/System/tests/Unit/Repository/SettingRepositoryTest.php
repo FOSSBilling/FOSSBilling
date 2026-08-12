@@ -46,3 +46,14 @@ test('returns null when a setting is missing or not public', function (): void {
 
     expect($repository->findOnePublicByParam('hidden_param'))->toBeNull();
 });
+
+test('finds settings by a list of parameters', function (): void {
+    $settings = [new Setting(), new Setting()];
+    $repository = Mockery::mock(SettingRepository::class)->makePartial();
+    $repository->shouldReceive('findBy')
+        ->once()
+        ->with(['param' => ['company_name', 'company_email']])
+        ->andReturn($settings);
+
+    expect($repository->findByParams(['company_name', 'company_email']))->toBe($settings);
+});

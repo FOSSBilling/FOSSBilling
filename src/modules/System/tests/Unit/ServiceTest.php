@@ -136,6 +136,43 @@ test('setParamValue recovers from a concurrent duplicate insert', function (): v
     expect($winningSetting->getValue())->toBe('ours');
 });
 
+test('setParamValue rethrows the conflict when the concurrent setting cannot be reloaded', function (): void {
+    $initialRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $initialRepository->shouldReceive('findOneByParam')->once()->with('new_param')->andReturn(null);
+
+    $driverException = new class extends Exception implements Doctrine\DBAL\Driver\Exception {
+        public function getSQLState(): ?string
+        {
+            return '23000';
+        }
+    };
+    $duplicateKeyException = new Doctrine\DBAL\Exception\UniqueConstraintViolationException($driverException, null);
+
+    $initialEntityManager = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $initialEntityManager->shouldReceive('getRepository')->once()->with(Box\Mod\System\Entity\Setting::class)->andReturn($initialRepository);
+    $initialEntityManager->shouldReceive('persist')->once();
+    $initialEntityManager->shouldReceive('flush')->once()->andThrow($duplicateKeyException);
+
+    $winningRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $winningRepository->shouldReceive('findOneByParam')->once()->with('new_param')->andReturn(null);
+
+    $winningEntityManager = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $winningEntityManager->shouldReceive('getRepository')->once()->with(Box\Mod\System\Entity\Setting::class)->andReturn($winningRepository);
+
+    $di = container();
+    $di['em'] = $initialEntityManager;
+
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldAllowMockingProtectedMethods();
+    $service->shouldReceive('resetEntityManager')->once()->andReturnUsing(function () use ($di, $winningEntityManager): void {
+        unset($di['em']);
+        $di['em'] = $winningEntityManager;
+    });
+    $service->setDi($di);
+
+    expect(fn () => $service->setParamValue('new_param', 'ours'))->toThrow($duplicateKeyException);
+});
+
 test('setParamValue skips the update when the staff member lacks permission', function (): void {
     $service = new Service();
 

@@ -130,6 +130,7 @@ class Service
     public function setParamValue($param, $value, $createIfNotExists = true): bool
     {
         $param = (string) $param;
+        $value = $value === null ? null : (string) $value;
 
         // Skip this param if the user isn't permitted to update it.
         if (!$this->canUpdateParam($param)) {
@@ -138,7 +139,7 @@ class Service
 
         $setting = $this->settingRepository->findOneByParam($param);
         if ($setting !== null) {
-            $setting->setValue($value === null ? null : (string) $value);
+            $setting->setValue($value);
             $this->di['em']->flush();
 
             return true;
@@ -150,7 +151,7 @@ class Service
 
         $setting = new Setting();
         $setting->setParam($param);
-        $setting->setValue($value === null ? null : (string) $value);
+        $setting->setValue($value);
 
         try {
             $this->di['em']->persist($setting);
@@ -166,7 +167,7 @@ class Service
                 throw $e;
             }
 
-            $setting->setValue($value === null ? null : (string) $value);
+            $setting->setValue($value);
             $this->di['em']->flush();
         }
 
