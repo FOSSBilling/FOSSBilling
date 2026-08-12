@@ -11,12 +11,106 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice\Repository;
 
+use Box\Mod\Invoice\Entity\Invoice;
+use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Transaction;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
 
 class TransactionRepository extends EntityRepository
 {
+    /**
+     * Build a QueryBuilder for transaction searches/listings.
+     *
+     * Mirrors the legacy `Box\Mod\Invoice\ServiceTransaction::getSearchQuery`
+     * filters and returns the Transaction entity together with the gateway
+     * name, so the caller can use `paginateMappedQuery` and skip the per-row
+     * gateway lookup that `ServiceTransaction::toApiArray` would perform.
+     * Each result row hydrates as `[0 => Transaction, 'gateway' => string|null]`.
+     *
+     * @param array $data optional filters: id, search, invoice_hash, invoice_id,
+     *                    gateway_id, client_id, status, currency, type, txn_id,
+     *                    date_from, date_to
+     */
+    public function getSearchQueryBuilder(array $data = []): QueryBuilder
+    {
+        $qb = $this->createQueryBuilder('t')
+            ->addSelect('pg.name AS gateway')
+            ->leftJoin(PayGateway::class, 'pg', 'WITH', 'pg.id = t.gatewayId');
+
+        $id = $data['id'] ?? null;
+        if ($id) {
+            $qb->andWhere('t.id = :id')->setParameter('id', (int) $id);
+        }
+
+        $status = $data['status'] ?? null;
+        if ($status) {
+            $qb->andWhere('t.status = :status')->setParameter('status', $status);
+        }
+
+        $invoiceHash = $data['invoice_hash'] ?? null;
+        if ($invoiceHash) {
+            $qb->andWhere('t.invoiceId IN (SELECT i.id FROM ' . Invoice::class . ' i WHERE i.hash = :hash)')
+                ->setParameter('hash', $invoiceHash);
+        }
+
+        $invoiceId = $data['invoice_id'] ?? null;
+        if ($invoiceId) {
+            $qb->andWhere('t.invoiceId = :invoice_id')->setParameter('invoice_id', (int) $invoiceId);
+        }
+
+        $gatewayId = $data['gateway_id'] ?? null;
+        if ($gatewayId) {
+            $qb->andWhere('t.gatewayId = :gateway_id')->setParameter('gateway_id', (int) $gatewayId);
+        }
+
+        $clientId = $data['client_id'] ?? null;
+        if ($clientId) {
+            $qb->andWhere('t.invoiceId IN (SELECT i.id FROM ' . Invoice::class . ' i WHERE i.clientId = :client_id)')
+                ->setParameter('client_id', (int) $clientId);
+        }
+
+        $currency = $data['currency'] ?? null;
+        if ($currency) {
+            $qb->andWhere('t.currency = :currency')->setParameter('currency', $currency);
+        }
+
+        $type = $data['type'] ?? null;
+        if ($type) {
+            $qb->andWhere('t.type = :type')->setParameter('type', $type);
+        }
+
+        $txnId = $data['txn_id'] ?? null;
+        if ($txnId) {
+            $qb->andWhere('t.txnId = :txn_id')->setParameter('txn_id', $txnId);
+        }
+
+        $dateFrom = $data['date_from'] ?? null;
+        if ($dateFrom) {
+            $qb->andWhere('t.createdAt >= :date_from')
+                ->setParameter('date_from', date('Y-m-d H:i:s', (int) strtotime((string) $dateFrom)));
+        }
+
+        $dateTo = $data['date_to'] ?? null;
+        if ($dateTo) {
+            $qb->andWhere('t.createdAt <= :date_to')
+                ->setParameter('date_to', date('Y-m-d H:i:s', (int) strtotime((string) $dateTo . ' 23:59:59')));
+        }
+
+        $search = $data['search'] ?? null;
+        if ($search) {
+            $qb->andWhere('t.note LIKE :note OR t.invoiceId LIKE :search_invoice_id OR t.txnId LIKE :search_txn_id OR t.ipn LIKE :ipn')
+                ->setParameter('note', "%$search%")
+                ->setParameter('search_invoice_id', "%$search%")
+                ->setParameter('search_txn_id', "%$search%")
+                ->setParameter('ipn', "%$search%");
+        }
+
+        $qb->orderBy('t.id', 'DESC');
+
+        return $qb;
+    }
+
     /**
      * Find a transaction by gateway transaction id and gateway id.
      * Mirrors the legacy `findOne('Transaction', 'txn_id = ? AND gateway_id = ?', ...)`.

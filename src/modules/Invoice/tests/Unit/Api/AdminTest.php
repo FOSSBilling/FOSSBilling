@@ -46,56 +46,72 @@ test('gets dependency injection container', function (): void {
 
 test('gets invoice list', function (): void {
     $api = apiEndpoint(new Admin());
+    $identity = \Tests\Helpers\admin();
+
     $serviceMock = Mockery::mock(Service::class);
-    $serviceMock->shouldReceive('getSearchQuery')
-        ->atLeast()->once()
-        ->andReturn(['SqlString', []]);
+    $serviceMock->shouldReceive('toApiArray')
+        ->once()
+        ->with(Mockery::on(fn ($inv): bool => $inv instanceof Invoice), true, $identity)
+        ->andReturn(['id' => 1]);
+
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('getSearchQueryBuilder')
+        ->once()
+        ->with([])
+        ->andReturn(Mockery::mock(Doctrine\ORM\QueryBuilder::class));
 
     $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
-    $paginatorMock->shouldReceive('getDefaultPerPage')
-        ->byDefault()
-        ->andReturn(25);
-    $paginatorMock->shouldReceive('getPaginatedResultSet')
-        ->atLeast()->once()
-        ->andReturn(['list' => []]);
+    $paginatorMock->shouldReceive('paginateMappedQuery')
+        ->once()
+        ->andReturnUsing(function ($qb, $pagination, $mapper) {
+            return ['list' => [$mapper(createEntity(Invoice::class))]];
+        });
 
     $di = container();
     $di['pager'] = $paginatorMock;
 
     $api->setDi($di);
-    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($invoiceRepo);
     $api->setService($serviceMock);
+    $api->setIdentity($identity);
+
     $result = $api->get_list([]);
-    expect($result)->toBeArray();
+    expect($result)->toBeArray()->and($result['list'])->toBe([['id' => 1]]);
 });
 
 test('gets invoice summaries without loading invoice models', function (): void {
     $api = apiEndpoint(new Admin());
     $summary = ['id' => 1, 'total' => 10.0];
+    $invoice = createEntity(Invoice::class, ['id' => 1]);
 
     $serviceMock = Mockery::mock(Service::class);
-    $serviceMock->shouldReceive('getSearchQuery')
+    $serviceMock->shouldReceive('toApiSummaryFromEntity')
         ->once()
-        ->andReturn(['SqlString', []]);
-    $serviceMock->shouldReceive('toApiSummaryArray')
-        ->once()
-        ->with(['id' => 1])
+        ->with(Mockery::on(fn ($inv): bool => $inv instanceof Invoice), ['subtotal' => 25.0, 'taxable_subtotal' => 0.0])
         ->andReturn($summary);
 
-    $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
-    $paginatorMock->shouldReceive('getDefaultPerPage')
-        ->byDefault()
-        ->andReturn(25);
-    $paginatorMock->shouldReceive('getPaginatedResultSet')
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('getSearchQueryBuilder')
         ->once()
-        ->andReturn(['list' => [['id' => 1]]]);
+        ->with(['summary' => 1])
+        ->andReturn(Mockery::mock(Doctrine\ORM\QueryBuilder::class));
+    $invoiceRepo->shouldReceive('getInvoiceTotals')
+        ->once()
+        ->with([1])
+        ->andReturn([1 => ['subtotal' => 25.0, 'taxable_subtotal' => 0.0]]);
+
+    $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
+    $paginatorMock->shouldReceive('paginateMappedQuery')
+        ->once()
+        ->andReturnUsing(function ($qb, $pagination, $mapper) use ($invoice) {
+            return ['list' => [$mapper($invoice)]];
+        });
 
     $di = container();
-    $di['em']->getRepository(Invoice::class)->shouldNotReceive('find');
     $di['pager'] = $paginatorMock;
 
     $api->setDi($di);
-    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($invoiceRepo);
     $api->setService($serviceMock);
 
     $result = $api->get_list(['summary' => 1]);
@@ -686,28 +702,31 @@ test('gets a transaction', function (): void {
 test('gets transaction list', function (): void {
     $api = apiEndpoint(new Admin());
     $transactionService = Mockery::mock(ServiceTransaction::class);
-    $transactionService->shouldReceive('getSearchQuery')
-        ->atLeast()->once()
-        ->andReturn(['SqlString', []]);
-    $transactionService->shouldReceive('searchResultToApiArray')
+    $transactionService->shouldReceive('transactionResultToApiArray')
         ->once()
-        ->with(['id' => 1])
+        ->with(Mockery::on(fn ($t): bool => $t instanceof Transaction), 'Stripe')
         ->andReturn(['id' => 1, 'gateway' => 'Stripe']);
 
+    $transactionRepo = Mockery::mock(TransactionRepository::class);
+    $transactionRepo->shouldReceive('getSearchQueryBuilder')
+        ->once()
+        ->with([])
+        ->andReturn(Mockery::mock(Doctrine\ORM\QueryBuilder::class));
+
     $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
-    $paginatorMock->shouldReceive('getDefaultPerPage')
-        ->byDefault()
-        ->andReturn(25);
-    $paginatorMock->shouldReceive('getPaginatedResultSet')
-        ->atLeast()->once()
-        ->andReturn(['list' => [['id' => 1]]]);
+    $paginatorMock->shouldReceive('paginateMappedQuery')
+        ->once()
+        ->andReturnUsing(function ($qb, $pagination, $mapper) {
+            return ['list' => [$mapper([0 => createEntity(Transaction::class, ['id' => 1]), 'gateway' => 'Stripe'])]];
+        });
 
     $di = container();
-    $di['em']->getRepository(Invoice::class)->shouldNotReceive('find');
     $di['pager'] = $paginatorMock;
     $di['mod_service'] = $di->protect(moduleService(['invoice:transaction' => $transactionService]));
 
     $api->setDi($di);
+    $transactionService->shouldReceive('getTransactionRepository')->andReturn($transactionRepo);
+
     $result = $api->transaction_get_list([]);
     expect($result['list'])->toBe([['id' => 1, 'gateway' => 'Stripe']]);
 });

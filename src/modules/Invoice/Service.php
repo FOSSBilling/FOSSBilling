@@ -147,150 +147,47 @@ class Service implements InjectionAwareInterface
         $this->filesystem = new Filesystem();
     }
 
-    public function getSearchQuery($data): array
-    {
-        $select = 'p.*';
-        if (!empty($data['summary'])) {
-            $select .= ',
-                (SELECT COALESCE(SUM(COALESCE(invoice_totals.price, 0) * COALESCE(invoice_totals.quantity, 1)), 0)
-                    FROM invoice_item invoice_totals WHERE invoice_totals.invoice_id = p.id) AS list_subtotal,
-                (SELECT COALESCE(SUM(CASE WHEN invoice_taxable.taxed = 1 THEN COALESCE(invoice_taxable.price, 0) * COALESCE(invoice_taxable.quantity, 1) ELSE 0 END), 0)
-                    FROM invoice_item invoice_taxable WHERE invoice_taxable.invoice_id = p.id) AS list_taxable_subtotal';
-        }
-
-        $sql = 'SELECT ' . $select . '
-            FROM invoice p
-            LEFT JOIN invoice_item pi ON (p.id = pi.invoice_id)
-            LEFT JOIN client cl ON (cl.id = p.client_id)
-            WHERE 1 ';
-
-        $params = [];
-
-        $search = $data['search'] ?? null;
-        $order_id = $data['order_id'] ?? null;
-        $id = $data['id'] ?? null;
-        $id_nr = $data['nr'] ?? null;
-        $client_id = $data['client_id'] ?? null;
-        $client = $data['client'] ?? null;
-        $created_at = $data['created_at'] ?? null;
-        $date_from = $data['date_from'] ?? null;
-        $date_to = $data['date_to'] ?? null;
-        $paid_at = $data['paid_at'] ?? null;
-        $status = $data['status'] ?? null;
-        $approved = $data['approved'] ?? null;
-        $currency = $data['currency'] ?? null;
-
-        if ($order_id) {
-            $sql .= ' AND pi.type = :item_type AND pi.rel_id = :order_id';
-            $params['item_type'] = InvoiceItem::TYPE_ORDER;
-            $params['order_id'] = $order_id;
-        }
-
-        if ($id) {
-            $sql .= ' AND p.id = :id';
-            $params['id'] = $id;
-        }
-
-        if ($id_nr) {
-            $sql .= ' AND (p.id = :id_nr OR p.nr = :id_nr)';
-            $params['id_nr'] = $id_nr;
-        }
-
-        if ($approved) {
-            $sql .= ' AND p.approved = :approved';
-            $params['approved'] = (int) $approved;
-        }
-
-        if ($status) {
-            $sql .= ' AND p.status = :status';
-            $params['status'] = $status;
-        }
-
-        if ($currency) {
-            $sql .= ' AND p.currency = :currency';
-            $params['currency'] = $currency;
-        }
-
-        if ($client_id) {
-            $sql .= ' AND p.client_id = :client_id';
-            $params['client_id'] = $client_id;
-        }
-
-        if ($client) {
-            $sql .= ' AND (cl.first_name LIKE :client_search OR cl.last_name LIKE :client_search OR cl.id = :client OR cl.email = :client)';
-            $params['client_search'] = $client . '%';
-            $params['client'] = $client;
-        }
-
-        if ($created_at) {
-            $sql .= " AND DATE_FORMAT(p.created_at, '%Y-%m-%d') = :created_at";
-            $params['created_at'] = date('Y-m-d', (int) strtotime((string) $created_at));
-        }
-
-        if ($date_from) {
-            $sql .= ' AND UNIX_TIMESTAMP(p.created_at) >= :date_from';
-            $params['date_from'] = strtotime((string) $date_from);
-        }
-
-        if ($date_to) {
-            $sql .= ' AND UNIX_TIMESTAMP(p.created_at) <= :date_to';
-            $params['date_to'] = strtotime((string) $date_to);
-        }
-
-        if ($paid_at) {
-            $sql .= " AND DATE_FORMAT(p.paid_at, '%Y-%m-%d') = :paid_at";
-            $params['paid_at'] = date('Y-m-d', (int) strtotime((string) $paid_at));
-        }
-
-        if ($search) {
-            $sql .= ' AND (p.id = :search_numeric_id OR p.nr LIKE :search_like OR p.id LIKE :search OR pi.title LIKE :search_like)';
-            $params['search_numeric_id'] = (int) preg_replace('/[^0-9]/', '', (string) $search);
-            $params['search_like'] = '%' . $search . '%';
-            $params['search'] = $search;
-        }
-
-        $sql .= ' GROUP BY p.id ORDER BY p.id DESC';
-
-        return [$sql, $params];
-    }
-
     /**
-     * Convert an aggregated invoice search result into the fields needed by list views.
+     * Convert an invoice entity into the fields needed by list views.
      *
      * Unlike toApiArray(), this does not load invoice items, orders, products, the client,
      * company details, or subscription information for every invoice in the result set.
+     * The totals come from a grouped aggregate query (`getInvoiceTotals`) rather than
+     * per-invoice loading; keys are absent for invoices without items.
+     *
+     * @param array{subtotal?: float, taxable_subtotal?: float} $totals
      */
-    public function toApiSummaryArray(array $row): array
+    public function toApiSummaryFromEntity(Invoice $invoice, array $totals): array
     {
-        $subtotal = (float) ($row['list_subtotal'] ?? 0);
-        $taxableSubtotal = (float) ($row['list_taxable_subtotal'] ?? 0);
-        $taxRate = (float) ($row['taxrate'] ?? 0);
+        $subtotal = (float) ($totals['subtotal'] ?? 0);
+        $taxableSubtotal = (float) ($totals['taxable_subtotal'] ?? 0);
+        $taxRate = (float) ($invoice->getTaxrate() ?? 0);
         $tax = $taxRate > 0 && $taxableSubtotal !== 0.0 ? round($taxableSubtotal * $taxRate / 100, 2) : 0;
-        $invoiceNumber = is_numeric($row['nr'] ?? null) ? (int) $row['nr'] : (int) $row['id'];
-        $clientId = $row['client_id'] ?? null;
+        $invoiceNumber = is_numeric($invoice->getNr() ?? null) ? (int) $invoice->getNr() : (int) $invoice->getId();
+        $clientId = $invoice->getClientId();
 
         return [
-            'id' => $row['id'],
-            'serie' => $row['serie'],
-            'nr' => $row['nr'],
-            'serie_nr' => $row['serie'] . sprintf('%0' . $this->getInvoiceNumberPadding() . 's', $invoiceNumber),
+            'id' => $invoice->getId(),
+            'serie' => $invoice->getSerie(),
+            'nr' => $invoice->getNr(),
+            'serie_nr' => $invoice->getSerie() . sprintf('%0' . $this->getInvoiceNumberPadding() . 's', $invoiceNumber),
             'client_id' => $clientId,
             'client' => $clientId === null ? null : ['id' => $clientId],
-            'currency' => $row['currency'],
+            'currency' => $invoice->getCurrency(),
             'tax' => $tax,
             'subtotal' => $subtotal,
             'total' => $subtotal + $tax,
-            'status' => $row['status'],
-            'due_at' => $row['due_at'],
-            'paid_at' => $row['paid_at'] ?? null,
-            'created_at' => $row['created_at'],
-            'updated_at' => $row['updated_at'],
+            'status' => $invoice->getStatus(),
+            'due_at' => $invoice->getDueAt()?->format('Y-m-d H:i:s'),
+            'paid_at' => $invoice->getPaidAt()?->format('Y-m-d H:i:s'),
+            'created_at' => $invoice->getCreatedAt()?->format('Y-m-d H:i:s'),
+            'updated_at' => $invoice->getUpdatedAt()?->format('Y-m-d H:i:s'),
             'buyer' => [
-                'first_name' => $row['buyer_first_name'],
-                'last_name' => $row['buyer_last_name'],
-                'email' => $row['buyer_email'],
+                'first_name' => $invoice->getBuyerFirstName(),
+                'last_name' => $invoice->getBuyerLastName(),
+                'email' => $invoice->getBuyerEmail(),
             ],
-            'approved' => (bool) ($row['approved'] ?? false),
+            'approved' => $invoice->isApproved(),
         ];
     }
 
