@@ -397,13 +397,6 @@ class Service implements InjectionAwareInterface
 
         if (!empty($orderIds)) {
             // Batch load orders
-            $orderIdPlaceholders = [];
-            $orderIdParams = [];
-            foreach ($orderIds as $idx => $id) {
-                $placeholder = ':order_id_' . $idx;
-                $orderIdPlaceholders[] = $placeholder;
-                $orderIdParams['order_id_' . $idx] = $id;
-            }
             $orders = $this->di['em']->getRepository(Order::class)->findBy(['id' => $orderIds]);
 
             // Batch load related products

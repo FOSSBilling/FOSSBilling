@@ -721,42 +721,4 @@ class Server_Manager_Whm extends Server_Manager
     {
         return $this->_config['username'] . '_' . $package->getName();
     }
-
-    /**
-     * Modifies the package of an account on the WHM server.
-     *
-     * @param Server_Account $a the account for which to modify the package
-     * @param Server_Package $p the new package
-     *
-     * @return true if the package was successfully modified
-     *
-     * @throws Server_Exception if an error occurs during the request
-     */
-    private function modifyAccountPackage(Server_Account $a, Server_Package $p): bool
-    {
-        // Log the modification
-        $this->getLog()->info('Modifying account ' . $a->getUsername());
-
-        // Prepare the parameters for the API request
-        $varHash = [
-            'user' => $a->getUsername(),
-            'domain' => $a->getDomain(),
-            'HASCGI' => $p->getHasCgi(),
-            'CPTHEME' => $p->getTheme(),
-            'LANG' => $p->getLanguage(),
-            'MAXPOP' => $p->getMaxPop(),
-            'MAXFTP' => $p->getMaxFtp(),
-            'MAXLST' => $p->getMaxEmailLists(),
-            'MAXSUB' => $p->getMaxSubdomains(),
-            'MAXPARK' => $p->getMaxParkedDomains(),
-            'MAXADDON' => $p->getMaxAddons(),
-            'MAXSQL' => $p->getMaxSql(),
-            'shell' => $p->getHasShell(),
-        ];
-
-        // Send a request to the WHM server to modify the account's package
-        $this->request('modifyacct', $varHash);
-
-        return true;
-    }
 }
