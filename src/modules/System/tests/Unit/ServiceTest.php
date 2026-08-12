@@ -60,7 +60,7 @@ test('setParamValue updates an existing setting', function (): void {
 
     $di = container();
     $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
-    $di['em']->shouldReceive('flush')->once()->with($setting);
+    $di['em']->shouldReceive('flush')->once();
     $service->setDi($di);
 
     expect($service->setParamValue('last_cron_exec', $timestamp))->toBeTrue();
@@ -75,8 +75,8 @@ test('setParamValue persists a new setting when missing', function (): void {
 
     $di = container();
     $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
-    $di['em']->shouldReceive('persist')->once()->with(Mockery::type(Box\Mod\System\Entity\Setting::class));
-    $di['em']->shouldReceive('flush')->once()->with(Mockery::type(Box\Mod\System\Entity\Setting::class));
+    $di['em']->shouldReceive('persist')->once();
+    $di['em']->shouldReceive('flush')->once();
     $service->setDi($di);
 
     expect($service->setParamValue('new_param', 'value'))->toBeTrue();
@@ -96,20 +96,44 @@ test('setParamValue does not create a setting when createIfNotExists is false', 
     expect($service->setParamValue('new_param', 'value', false))->toBeTrue();
 });
 
-test('setParamValue tolerates a concurrent duplicate insert', function (): void {
-    $service = new Service();
+test('setParamValue recovers from a concurrent duplicate insert', function (): void {
+    $initialRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $initialRepository->shouldReceive('findOneByParam')->once()->with('new_param')->andReturn(null);
 
-    $settingRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
-    $settingRepository->shouldReceive('findOneByParam')->once()->with('new_param')->andReturn(null);
+    $driverException = new class extends Exception implements Doctrine\DBAL\Driver\Exception {
+        public function getSQLState(): ?string
+        {
+            return '23000';
+        }
+    };
+    $duplicateKeyException = new Doctrine\DBAL\Exception\UniqueConstraintViolationException($driverException, null);
+
+    $initialEntityManager = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $initialEntityManager->shouldReceive('getRepository')->once()->with(Box\Mod\System\Entity\Setting::class)->andReturn($initialRepository);
+    $initialEntityManager->shouldReceive('persist')->once();
+    $initialEntityManager->shouldReceive('flush')->once()->andThrow($duplicateKeyException);
+
+    $winningSetting = Tests\Helpers\createEntity(Box\Mod\System\Entity\Setting::class, ['param' => 'new_param', 'value' => 'winner']);
+    $winningRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $winningRepository->shouldReceive('findOneByParam')->once()->with('new_param')->andReturn($winningSetting);
+
+    $winningEntityManager = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $winningEntityManager->shouldReceive('getRepository')->once()->with(Box\Mod\System\Entity\Setting::class)->andReturn($winningRepository);
+    $winningEntityManager->shouldReceive('flush')->once();
 
     $di = container();
-    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
-    $di['em']->shouldReceive('persist')->once();
-    $di['em']->shouldReceive('flush')->once()->andThrow(Mockery::mock(Doctrine\DBAL\Exception\UniqueConstraintViolationException::class));
-    $di['em']->shouldReceive('clear')->once();
+    $di['em'] = $initialEntityManager;
+
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldAllowMockingProtectedMethods();
+    $service->shouldReceive('resetEntityManager')->once()->andReturnUsing(function () use ($di, $winningEntityManager): void {
+        unset($di['em']);
+        $di['em'] = $winningEntityManager;
+    });
     $service->setDi($di);
 
-    expect($service->setParamValue('new_param', 'value'))->toBeTrue();
+    expect($service->setParamValue('new_param', 'ours'))->toBeTrue();
+    expect($winningSetting->getValue())->toBe('ours');
 });
 
 test('setParamValue skips the update when the staff member lacks permission', function (): void {

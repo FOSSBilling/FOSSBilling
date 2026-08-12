@@ -17,6 +17,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\DeadlockException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use FOSSBilling\Config;
+use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\Environment;
 use FOSSBilling\GeoIP\Reader;
 use FOSSBilling\Sanitizer\BrowserHtmlSanitizer;
@@ -48,6 +49,12 @@ class Service
         if (isset($di['filesystem'])) {
             $this->filesystem = $di['filesystem'];
         }
+    }
+
+    protected function resetEntityManager(): void
+    {
+        unset($this->di['em']);
+        $this->di['em'] = EntityManagerFactory::create();
     }
 
     public function getModulePermissions(): array
@@ -132,7 +139,7 @@ class Service
         $setting = $this->settingRepository->findOneByParam($param);
         if ($setting !== null) {
             $setting->setValue($value === null ? null : (string) $value);
-            $this->di['em']->flush($setting);
+            $this->di['em']->flush();
 
             return true;
         }
@@ -147,10 +154,20 @@ class Service
 
         try {
             $this->di['em']->persist($setting);
-            $this->di['em']->flush($setting);
-        } catch (UniqueConstraintViolationException) {
-            // A concurrent caller created the setting while we were deciding; the row now exists.
-            $this->di['em']->clear();
+            $this->di['em']->flush();
+        } catch (UniqueConstraintViolationException $e) {
+            // A failed flush closes the EntityManager. Reset it so the rest of the request
+            // can keep writing, then apply the value to the row the concurrent caller
+            // committed — mirroring the counter's collision retry below.
+            $this->resetEntityManager();
+            $this->settingRepository = $this->di['em']->getRepository(Setting::class);
+            $setting = $this->settingRepository->findOneByParam($param);
+            if ($setting === null) {
+                throw $e;
+            }
+
+            $setting->setValue($value === null ? null : (string) $value);
+            $this->di['em']->flush();
         }
 
         return true;
