@@ -23,6 +23,133 @@ test('getParamValue throws exception when key parameter is missing', function ()
     $service->getParamValue($param);
 });
 
+test('getParamValue returns the stored value', function (): void {
+    $service = new Service();
+    $setting = Tests\Helpers\createEntity(Box\Mod\System\Entity\Setting::class, ['param' => 'company_name', 'value' => 'Inc. Test']);
+
+    $settingRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $settingRepository->shouldReceive('findOneByParam')->once()->with('company_name')->andReturn($setting);
+
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
+    $service->setDi($di);
+
+    expect($service->getParamValue('company_name'))->toBe('Inc. Test');
+});
+
+test('getParamValue returns the default when the parameter is missing', function (): void {
+    $service = new Service();
+
+    $settingRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $settingRepository->shouldReceive('findOneByParam')->once()->with('missing')->andReturn(null);
+
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
+    $service->setDi($di);
+
+    expect($service->getParamValue('missing', 'fallback'))->toBe('fallback');
+});
+
+test('setParamValue updates an existing setting', function (): void {
+    $service = new Service();
+    $timestamp = time();
+    $setting = Tests\Helpers\createEntity(Box\Mod\System\Entity\Setting::class, ['param' => 'last_cron_exec', 'value' => 'old']);
+
+    $settingRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $settingRepository->shouldReceive('findOneByParam')->once()->with('last_cron_exec')->andReturn($setting);
+
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
+    $di['em']->shouldReceive('flush')->once();
+    $service->setDi($di);
+
+    expect($service->setParamValue('last_cron_exec', $timestamp))->toBeTrue();
+    expect($setting->getValue())->toBe((string) $timestamp);
+});
+
+test('setParamValue persists a new setting when missing', function (): void {
+    $service = new Service();
+
+    $settingRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $settingRepository->shouldReceive('findOneByParam')->once()->with('new_param')->andReturn(null);
+
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
+    $di['em']->shouldReceive('persist')->once();
+    $di['em']->shouldReceive('flush')->once();
+    $service->setDi($di);
+
+    expect($service->setParamValue('new_param', 'value'))->toBeTrue();
+});
+
+test('setParamValue does not create a setting when createIfNotExists is false', function (): void {
+    $service = new Service();
+
+    $settingRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $settingRepository->shouldReceive('findOneByParam')->once()->with('new_param')->andReturn(null);
+
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
+    $di['em']->shouldReceive('persist')->never();
+    $service->setDi($di);
+
+    expect($service->setParamValue('new_param', 'value', false))->toBeTrue();
+});
+
+test('setParamValue propagates a concurrent duplicate insert', function (): void {
+    $settingRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $settingRepository->shouldReceive('findOneByParam')->once()->with('new_param')->andReturn(null);
+
+    $driverException = new class extends Exception implements Doctrine\DBAL\Driver\Exception {
+        public function getSQLState(): ?string
+        {
+            return '23000';
+        }
+    };
+    $duplicateKeyException = new Doctrine\DBAL\Exception\UniqueConstraintViolationException($driverException, null);
+
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
+    $di['em']->shouldReceive('persist')->once();
+    $di['em']->shouldReceive('flush')->once()->andThrow($duplicateKeyException);
+    $service = new Service();
+    $service->setDi($di);
+
+    expect(fn () => $service->setParamValue('new_param', 'ours'))->toThrow($duplicateKeyException);
+});
+
+test('setParamValue skips the update when the staff member lacks permission', function (): void {
+    $service = new Service();
+
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffServiceMock->shouldReceive('hasPermission')->once()->with(null, 'system', 'manage_company_details')->andReturn(false);
+
+    $settingRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $settingRepository->shouldReceive('findOneByParam')->never();
+
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
+    $di['mod_service'] = $di->protect(fn (): object => $staffServiceMock);
+    $service->setDi($di);
+
+    expect($service->setParamValue('company_name', 'Inc.'))->toBeTrue();
+});
+
+test('paramExists checks for a stored setting', function (): void {
+    $service = new Service();
+
+    $settingRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $settingRepository->shouldReceive('findOneByParam')->with('existing')->andReturn(Tests\Helpers\createEntity(Box\Mod\System\Entity\Setting::class, ['param' => 'existing', 'value' => 'x']));
+    $settingRepository->shouldReceive('findOneByParam')->with('missing')->andReturn(null);
+
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
+    $service->setDi($di);
+
+    expect($service->paramExists('existing'))->toBeTrue();
+    expect($service->paramExists('missing'))->toBeFalse();
+});
+
 test('getCompany returns company information', function (): void {
     $service = new Service();
     $expected = [
@@ -49,34 +176,17 @@ test('getCompany returns company information', function (): void {
         'vat_number' => null,
     ];
 
-    $multParamsResults = [
-        [
-            'param' => 'company_name',
-            'value' => 'Inc. Test',
-        ],
-        [
-            'param' => 'company_email',
-            'value' => 'work@example.eu',
-        ],
+    $settings = [
+        Tests\Helpers\createEntity(Box\Mod\System\Entity\Setting::class, ['param' => 'company_name', 'value' => 'Inc. Test']),
+        Tests\Helpers\createEntity(Box\Mod\System\Entity\Setting::class, ['param' => 'company_email', 'value' => 'work@example.eu']),
     ];
-    $resultMock = Mockery::mock(Doctrine\DBAL\Result::class);
-    $resultMock->shouldReceive('fetchAllAssociative')
-        ->once()
-        ->andReturn($multParamsResults);
-
-    $queryBuilderMock = Mockery::mock(Doctrine\DBAL\Query\QueryBuilder::class);
-    $queryBuilderMock->shouldReceive('select')->once()->with('param', 'value')->andReturnSelf();
-    $queryBuilderMock->shouldReceive('from')->once()->with('setting')->andReturnSelf();
-    $queryBuilderMock->shouldReceive('where')->once()->with('param IN (:params)')->andReturnSelf();
-    $queryBuilderMock->shouldReceive('setParameter')->once()->andReturnSelf();
-    $queryBuilderMock->shouldReceive('executeQuery')->once()->andReturn($resultMock);
-
-    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
-    $dbalMock->shouldReceive('createQueryBuilder')->once()->andReturn($queryBuilderMock);
+    $settingRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $settingRepository->shouldReceive('findByParams')->once()
+        ->with(Mockery::on(static fn (array $params): bool => in_array('company_name', $params, true) && in_array('company_email', $params, true)))
+        ->andReturn($settings);
 
     $di = container();
-    $di['dbal'] = $dbalMock;
-
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
     $service->setDi($di);
 
     $result = $service->getCompany();
@@ -90,24 +200,15 @@ test('getParams returns system parameters', function (): void {
         'company_name' => 'Inc. Test',
         'company_email' => 'work@example.eu',
     ];
-    $multParamsResults = [
-        [
-            'param' => 'company_name',
-            'value' => 'Inc. Test',
-        ],
-        [
-            'param' => 'company_email',
-            'value' => 'work@example.eu',
-        ],
+    $settings = [
+        Tests\Helpers\createEntity(Box\Mod\System\Entity\Setting::class, ['param' => 'company_name', 'value' => 'Inc. Test']),
+        Tests\Helpers\createEntity(Box\Mod\System\Entity\Setting::class, ['param' => 'company_email', 'value' => 'work@example.eu']),
     ];
-    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
-    $dbalMock->shouldReceive('fetchAllAssociative')->once()
-        ->with(Mockery::on(static fn (string $query): bool => preg_replace('/\s+/', ' ', trim($query)) === 'SELECT param, value FROM setting'))
-        ->andReturn($multParamsResults);
+    $settingRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $settingRepository->shouldReceive('findAll')->once()->andReturn($settings);
 
     $di = container();
-    $di['dbal'] = $dbalMock;
-
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
     $service->setDi($di);
 
     $result = $service->getParams([]);
@@ -121,22 +222,56 @@ test('getNameservers returns setting pairs', function (): void {
         'nameserver_1' => 'ns1.example.test',
         'nameserver_2' => 'ns2.example.test',
     ];
-    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
-    $dbalMock->shouldReceive('fetchAllKeyValue')->once()
-        ->with("SELECT param, value FROM setting WHERE param IN ('nameserver_1', 'nameserver_2', 'nameserver_3', 'nameserver_4')")
-        ->andReturn($expected);
+    $settings = [
+        Tests\Helpers\createEntity(Box\Mod\System\Entity\Setting::class, ['param' => 'nameserver_1', 'value' => 'ns1.example.test']),
+        Tests\Helpers\createEntity(Box\Mod\System\Entity\Setting::class, ['param' => 'nameserver_2', 'value' => 'ns2.example.test']),
+    ];
+    $settingRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $settingRepository->shouldReceive('findByParams')->once()
+        ->with(['nameserver_1', 'nameserver_2', 'nameserver_3', 'nameserver_4'])
+        ->andReturn($settings);
 
     $di = container();
-    $di['dbal'] = $dbalMock;
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
     $service->setDi($di);
 
     expect($service->getNameservers())->toBe($expected);
 });
 
-test('updateParams updates system parameters', function (): void {
+test('getPublicParamValue returns the value of a public setting', function (): void {
+    $service = new Service();
+    $setting = Tests\Helpers\createEntity(Box\Mod\System\Entity\Setting::class, ['param' => 'company_name', 'value' => 'Inc. Test', 'public' => true]);
+
+    $settingRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $settingRepository->shouldReceive('findOnePublicByParam')->once()->with('company_name')->andReturn($setting);
+
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
+    $service->setDi($di);
+
+    expect($service->getPublicParamValue('company_name'))->toBe('Inc. Test');
+});
+
+test('getPublicParamValue throws when the parameter is missing or not public', function (): void {
+    $service = new Service();
+
+    $settingRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $settingRepository->shouldReceive('findOnePublicByParam')->once()->with('company_name')->andReturn(null);
+
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
+    $service->setDi($di);
+
+    $this->expectException(FOSSBilling\Exception::class);
+    $this->expectExceptionMessage('Parameter company_name does not exist');
+    $service->getPublicParamValue('company_name');
+});
+
+test('updateParams updates system parameters in a single flush', function (): void {
     $service = new Service();
     $data = [
-        'company_name' => 'newValue',
+        'company_name' => 'Inc. Test',
+        'company_email' => 'work@example.eu',
     ];
 
     $eventMock = Mockery::mock('\Box_EventManager');
@@ -144,18 +279,27 @@ test('updateParams updates system parameters', function (): void {
 
     $logStub = $this->createStub('\Box_Log');
 
-    $systemServiceMock = Mockery::mock(Service::class)->makePartial();
-    $systemServiceMock->shouldReceive('setParamValue')->atLeast()->once()
-        ->andReturn(true);
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffServiceMock->shouldReceive('hasPermission')->andReturn(true);
+
+    $companyName = Tests\Helpers\createEntity(Box\Mod\System\Entity\Setting::class, ['param' => 'company_name', 'value' => 'Old Name']);
+    $settingRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $settingRepository->shouldReceive('findOneByParam')->with('company_name')->andReturn($companyName);
+    $settingRepository->shouldReceive('findOneByParam')->with('company_email')->andReturn(null);
 
     $di = container();
     $di['events_manager'] = $eventMock;
     $di['logger'] = $logStub;
+    $di['mod_service'] = $di->protect(fn (): object => $staffServiceMock);
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
+    $di['em']->shouldReceive('persist')->once();
+    $di['em']->shouldReceive('flush')->once();
+    $service->setDi($di);
 
-    $systemServiceMock->setDi($di);
-    $result = $systemServiceMock->updateParams($data);
+    $result = $service->updateParams($data);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
+    expect($companyName->getValue())->toBe('Inc. Test');
 });
 
 test('getMessages returns system messages', function (): void {
@@ -176,21 +320,9 @@ test('getMessages returns system messages', function (): void {
     $urlMock = Mockery::mock(Box\Url::class);
     $urlMock->allows()->adminLink(Mockery::any())->andReturn('http://example.com');
 
-    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
-    $queryBuilderMock = Mockery::mock(Doctrine\DBAL\Query\QueryBuilder::class);
-    $resultMock = Mockery::mock(Doctrine\DBAL\Result::class);
-    $dbalMock->allows()->createQueryBuilder()->andReturn($queryBuilderMock);
-    $queryBuilderMock->allows()->select(Mockery::any())->andReturnSelf();
-    $queryBuilderMock->allows()->from(Mockery::any())->andReturnSelf();
-    $queryBuilderMock->allows()->where(Mockery::any())->andReturnSelf();
-    $queryBuilderMock->allows()->setParameter(Mockery::any(), Mockery::any())->andReturnSelf();
-    $queryBuilderMock->allows()->executeQuery()->andReturn($resultMock);
-    $resultMock->allows()->fetchOne()->andReturn(false);
-
     $di = container();
     $di['updater'] = $updaterMock;
     $di['url'] = $urlMock;
-    $di['dbal'] = $dbalMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemServiceMock);
 
     $systemServiceMock->setDi($di);

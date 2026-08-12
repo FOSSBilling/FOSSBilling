@@ -269,6 +269,12 @@ function container(): Container
         }
         $customPageRepository->shouldReceive('getSearchQueryBuilder')->byDefault()->andReturn($customPageQueryBuilder);
 
+        $settingRepository = \Mockery::mock(\Box\Mod\System\Repository\SettingRepository::class)->shouldIgnoreMissing();
+        $settingRepository->shouldReceive('findOneByParam')->byDefault()->andReturn(null);
+        $settingRepository->shouldReceive('findOnePublicByParam')->byDefault()->andReturn(null);
+        $settingRepository->shouldReceive('findByParams')->byDefault()->andReturn([]);
+        $settingRepository->shouldReceive('findAll')->byDefault()->andReturn([]);
+
         $em = \Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
         $em->shouldReceive('wrapInTransaction')->byDefault()->andReturnUsing(static fn (callable $callback): mixed => $callback());
         $em->shouldReceive('getConnection')->byDefault()->andReturn($di['dbal']);
@@ -298,6 +304,7 @@ function container(): Container
             \Box\Mod\Invoice\Entity\Invoice::class => $invoiceRepository,
             \Box\Mod\Invoice\Entity\InvoiceItem::class => $invoiceItemRepository,
             \Box\Mod\Custompages\Entity\CustomPage::class => $customPageRepository,
+            \Box\Mod\System\Entity\Setting::class => $settingRepository,
             \Box\Mod\Extension\Entity\Extension::class => \Mockery::mock(\Box\Mod\Extension\Repository\ExtensionRepository::class)->shouldIgnoreMissing(),
             default => $extensionMetaRepository,
         });
