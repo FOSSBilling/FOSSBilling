@@ -60,7 +60,8 @@
         "WORKTREE",
         "previewable",
         "falsey",
-        "unindexed"
+        "unindexed",
+        "catchable"
     ],
 
     "ignoreWords": [

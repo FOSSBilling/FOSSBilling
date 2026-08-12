@@ -511,6 +511,7 @@ class UpdatePatcher implements InjectionAwareInterface
             99 => 'patch99',
             100 => 'patch100',
             101 => 'patch101',
+            102 => 'patch102',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -3004,5 +3005,81 @@ class UpdatePatcher implements InjectionAwareInterface
         if (!$this->tableHasIndex('client_order', 'client_order_unpaid_invoice_id_idx')) {
             $this->executeSql('ALTER TABLE `client_order` ADD INDEX `client_order_unpaid_invoice_id_idx` (`unpaid_invoice_id`)');
         }
+    }
+
+    private function patch102(): void
+    {
+        // Enforce unique slugs on custom_pages at the DB level (matches the CustomPage
+        // entity UniqueConstraint and the module installer). The Custompages module may
+        // not be installed on every instance, so skip cleanly when the table is absent.
+        if (!$this->tableExists('custom_pages')) {
+            return;
+        }
+
+        // Reconcile any duplicate slugs before adding the unique index: keep the
+        // lowest-id row for each duplicated slug and rename the rest to an unused
+        // suffixed variant (probed against the database so existing rows such as a
+        // pre-existing "foo-2" are never collided with).
+        $duplicates = $this->fetchAll(
+            'SELECT c.id, c.slug FROM custom_pages c
+             INNER JOIN (
+                 SELECT slug FROM custom_pages GROUP BY slug HAVING COUNT(*) > 1
+             ) d ON d.slug = c.slug
+             ORDER BY c.slug ASC, c.id ASC'
+        );
+
+        $kept = [];
+        foreach ($duplicates as $row) {
+            $slug = $row['slug'];
+            $id = (int) $row['id'];
+            if (!isset($kept[$slug])) {
+                $kept[$slug] = $id;
+
+                continue;
+            }
+
+            $newSlug = $this->allocateUniqueCustomPageSlug($slug);
+            $this->executeSql(
+                'UPDATE custom_pages SET slug = :slug WHERE id = :id',
+                ['slug' => $newSlug, 'id' => $id]
+            );
+        }
+
+        if (!$this->tableHasIndex('custom_pages', 'uniq_custom_pages_slug')) {
+            $this->executeSql('ALTER TABLE `custom_pages` ADD UNIQUE INDEX `uniq_custom_pages_slug` (`slug`)');
+        }
+    }
+
+    /**
+     * Find a database-collision-free slug derived from $base for reconciliation.
+     *
+     * Probes incrementing suffixes (-2, -3, ...) using database equality until an
+     * unused value is found, truncating the base so the result never exceeds the
+     * custom_pages.slug VARCHAR(255) column.
+     */
+    private function allocateUniqueCustomPageSlug(string $base): string
+    {
+        $suffix = 2;
+        while (true) {
+            $candidate = $this->fitCustomPageSlug($base, $suffix);
+            $owner = $this->fetchOne(
+                'SELECT id FROM custom_pages WHERE slug = :slug LIMIT 1',
+                ['slug' => $candidate]
+            );
+            if ($owner === false) {
+                return $candidate;
+            }
+            ++$suffix;
+        }
+    }
+
+    private function fitCustomPageSlug(string $base, int $suffix): string
+    {
+        $suffixStr = '-' . $suffix;
+        if (strlen($base) + strlen($suffixStr) <= 255) {
+            return $base . $suffixStr;
+        }
+
+        return substr($base, 0, 255 - strlen($suffixStr)) . $suffixStr;
     }
 }
