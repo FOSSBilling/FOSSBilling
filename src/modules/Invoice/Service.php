@@ -23,6 +23,7 @@ use Box\Mod\Invoice\Repository\InvoiceRepository;
 use Box\Mod\Order\Entity\Order;
 use Dompdf\Dompdf;
 use Dompdf\Options;
+use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\Environment;
 use FOSSBilling\Http\ResponseFactory;
 use FOSSBilling\i18n;
@@ -98,6 +99,14 @@ class Service implements InjectionAwareInterface
         }
 
         return $this->invoiceRepository;
+    }
+
+    protected function resetEntityManager(): void
+    {
+        unset($this->di['em']);
+        $this->di['em'] = EntityManagerFactory::create();
+        $this->invoiceItemRepository = null;
+        $this->invoiceRepository = null;
     }
 
     public function getModulePermissions(): array
@@ -1629,9 +1638,12 @@ class Service implements InjectionAwareInterface
                 $this->di['logger']->error($e->getMessage());
 
                 // A failed ORM flush closes the EntityManager and clear() can't reopen
-                // it; stop the batch instead of looping with a dead EM. Otherwise clear
-                // the identity map between iterations.
+                // it. Replace it with a fresh instance so the rest of the cron run can
+                // keep writing, then stop the batch. Otherwise clear the identity map
+                // between iterations.
                 if (!$this->di['em']->isOpen()) {
+                    $this->resetEntityManager();
+
                     break;
                 }
                 $this->di['em']->clear();

@@ -2060,8 +2060,11 @@ test('handles exception during batch paid invoice activation', function (): void
     expect($result)->toBeBool()->toBeTrue();
 });
 
-test('stops the batch when the EntityManager closes after a failure', function (): void {
-    $service = new Service();
+test('resets the EntityManager when it closes mid-batch so later consumers keep working', function (): void {
+    // A flush failure inside executeTask closes the ORM EntityManager. The batch must
+    // stop, and the closed manager must be replaced so the rest of the cron run can
+    // keep writing (a later consumer reads from the replacement, not the dead EM).
+    $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $invoiceItemModel = createEntity(InvoiceItem::class, []);
 
     $itemInvoiceServiceMock = Mockery::mock(ServiceInvoiceItem::class);
@@ -2090,13 +2093,23 @@ test('stops the batch when the EntityManager closes after a failure', function (
     $em->shouldReceive('isOpen')->once()->andReturn(false);
     $em->shouldNotReceive('clear');
 
+    $replacementEm = Mockery::mock(EntityManagerInterface::class);
+    $replacementEm->shouldReceive('isOpen')->andReturn(true);
+
     $di = container();
     $di['em'] = $em;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $itemInvoiceServiceMock);
     $di['logger'] = new Tests\Helpers\TestLogger();
-
+    $service->shouldReceive('resetEntityManager')->once()->andReturnUsing(function () use ($di, $replacementEm): void {
+        unset($di['em']);
+        $di['em'] = $replacementEm;
+    });
     $service->setDi($di);
+
     expect($service->doBatchPaidInvoiceActivation())->toBeTrue();
+    // The closed manager is gone; later cron consumers see the open replacement.
+    expect($di['em'])->toBe($replacementEm);
+    expect($di['em']->isOpen())->toBeTrue();
 });
 
 test('skips invoice items already finalized by another process during batch activation', function (): void {
