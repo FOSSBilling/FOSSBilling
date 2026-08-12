@@ -198,7 +198,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $pi = new InvoiceItem();
         $pi->setInvoiceId((int) $proforma->getId());
         $pi->setType($data['type'] ?? InvoiceItem::TYPE_CUSTOM);
-        $pi->setRelId($data['rel_id'] ?? null);
+        $pi->setRelId(isset($data['rel_id']) ? (string) $data['rel_id'] : null);
         $pi->setTask($data['task'] ?? InvoiceItem::TASK_VOID);
         $pi->setStatus($data['status'] ?? InvoiceItem::STATUS_PENDING_PAYMENT);
         $pi->setTitle($data['title']);
@@ -444,7 +444,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                 'price' => $promoAdjustment['discount_amount'] * -1,
                 'quantity' => 1,
                 'unit' => 'discount',
-                'rel_id' => $order->getId(),
+                'rel_id' => (string) $order->getId(),
                 'taxed' => $taxed,
             ];
 
