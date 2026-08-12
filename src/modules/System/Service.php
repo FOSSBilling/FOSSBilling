@@ -17,7 +17,6 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\DeadlockException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use FOSSBilling\Config;
-use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\Environment;
 use FOSSBilling\GeoIP\Reader;
 use FOSSBilling\Sanitizer\BrowserHtmlSanitizer;
@@ -49,12 +48,6 @@ class Service
         if (isset($di['filesystem'])) {
             $this->filesystem = $di['filesystem'];
         }
-    }
-
-    protected function resetEntityManager(): void
-    {
-        unset($this->di['em']);
-        $this->di['em'] = EntityManagerFactory::create();
     }
 
     public function getModulePermissions(): array
@@ -129,49 +122,40 @@ class Service
 
     public function setParamValue($param, $value, $createIfNotExists = true): bool
     {
-        $param = (string) $param;
+        $this->writeParamValue((string) $param, $value, $createIfNotExists);
+        $this->di['em']->flush();
+
+        return true;
+    }
+
+    /**
+     * Stage a setting write without flushing; the caller controls when the batch is flushed.
+     * A failed flush closes the EntityManager, so the constraint conflict is never swallowed here.
+     */
+    private function writeParamValue(string $param, $value, bool $createIfNotExists): void
+    {
         $value = $value === null ? null : (string) $value;
 
         // Skip this param if the user isn't permitted to update it.
         if (!$this->canUpdateParam($param)) {
-            return true;
+            return;
         }
 
         $setting = $this->settingRepository->findOneByParam($param);
         if ($setting !== null) {
             $setting->setValue($value);
-            $this->di['em']->flush();
 
-            return true;
+            return;
         }
 
         if (!$createIfNotExists) {
-            return true;
+            return;
         }
 
         $setting = new Setting();
         $setting->setParam($param);
         $setting->setValue($value);
-
-        try {
-            $this->di['em']->persist($setting);
-            $this->di['em']->flush();
-        } catch (UniqueConstraintViolationException $e) {
-            // A failed flush closes the EntityManager. Reset it so the rest of the request
-            // can keep writing, then apply the value to the row the concurrent caller
-            // committed — mirroring the counter's collision retry below.
-            $this->resetEntityManager();
-            $this->settingRepository = $this->di['em']->getRepository(Setting::class);
-            $setting = $this->settingRepository->findOneByParam($param);
-            if ($setting === null) {
-                throw $e;
-            }
-
-            $setting->setValue($value);
-            $this->di['em']->flush();
-        }
-
-        return true;
+        $this->di['em']->persist($setting);
     }
 
     public function paramExists($param): bool
@@ -292,8 +276,11 @@ class Service
         }
 
         foreach ($data as $key => $val) {
-            $this->setParamValue($key, $val, true);
+            $this->writeParamValue((string) $key, $val, true);
         }
+
+        // Flush the batch once; a unique-constraint collision surfaces to the caller.
+        $this->di['em']->flush();
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminSettingsUpdate']);
 

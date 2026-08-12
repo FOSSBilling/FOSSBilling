@@ -96,9 +96,9 @@ test('setParamValue does not create a setting when createIfNotExists is false', 
     expect($service->setParamValue('new_param', 'value', false))->toBeTrue();
 });
 
-test('setParamValue recovers from a concurrent duplicate insert', function (): void {
-    $initialRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
-    $initialRepository->shouldReceive('findOneByParam')->once()->with('new_param')->andReturn(null);
+test('setParamValue propagates a concurrent duplicate insert', function (): void {
+    $settingRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $settingRepository->shouldReceive('findOneByParam')->once()->with('new_param')->andReturn(null);
 
     $driverException = new class extends Exception implements Doctrine\DBAL\Driver\Exception {
         public function getSQLState(): ?string
@@ -108,66 +108,11 @@ test('setParamValue recovers from a concurrent duplicate insert', function (): v
     };
     $duplicateKeyException = new Doctrine\DBAL\Exception\UniqueConstraintViolationException($driverException, null);
 
-    $initialEntityManager = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
-    $initialEntityManager->shouldReceive('getRepository')->once()->with(Box\Mod\System\Entity\Setting::class)->andReturn($initialRepository);
-    $initialEntityManager->shouldReceive('persist')->once();
-    $initialEntityManager->shouldReceive('flush')->once()->andThrow($duplicateKeyException);
-
-    $winningSetting = Tests\Helpers\createEntity(Box\Mod\System\Entity\Setting::class, ['param' => 'new_param', 'value' => 'winner']);
-    $winningRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
-    $winningRepository->shouldReceive('findOneByParam')->once()->with('new_param')->andReturn($winningSetting);
-
-    $winningEntityManager = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
-    $winningEntityManager->shouldReceive('getRepository')->once()->with(Box\Mod\System\Entity\Setting::class)->andReturn($winningRepository);
-    $winningEntityManager->shouldReceive('flush')->once();
-
     $di = container();
-    $di['em'] = $initialEntityManager;
-
-    $service = Mockery::mock(Service::class)->makePartial();
-    $service->shouldAllowMockingProtectedMethods();
-    $service->shouldReceive('resetEntityManager')->once()->andReturnUsing(function () use ($di, $winningEntityManager): void {
-        unset($di['em']);
-        $di['em'] = $winningEntityManager;
-    });
-    $service->setDi($di);
-
-    expect($service->setParamValue('new_param', 'ours'))->toBeTrue();
-    expect($winningSetting->getValue())->toBe('ours');
-});
-
-test('setParamValue rethrows the conflict when the concurrent setting cannot be reloaded', function (): void {
-    $initialRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
-    $initialRepository->shouldReceive('findOneByParam')->once()->with('new_param')->andReturn(null);
-
-    $driverException = new class extends Exception implements Doctrine\DBAL\Driver\Exception {
-        public function getSQLState(): ?string
-        {
-            return '23000';
-        }
-    };
-    $duplicateKeyException = new Doctrine\DBAL\Exception\UniqueConstraintViolationException($driverException, null);
-
-    $initialEntityManager = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
-    $initialEntityManager->shouldReceive('getRepository')->once()->with(Box\Mod\System\Entity\Setting::class)->andReturn($initialRepository);
-    $initialEntityManager->shouldReceive('persist')->once();
-    $initialEntityManager->shouldReceive('flush')->once()->andThrow($duplicateKeyException);
-
-    $winningRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
-    $winningRepository->shouldReceive('findOneByParam')->once()->with('new_param')->andReturn(null);
-
-    $winningEntityManager = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
-    $winningEntityManager->shouldReceive('getRepository')->once()->with(Box\Mod\System\Entity\Setting::class)->andReturn($winningRepository);
-
-    $di = container();
-    $di['em'] = $initialEntityManager;
-
-    $service = Mockery::mock(Service::class)->makePartial();
-    $service->shouldAllowMockingProtectedMethods();
-    $service->shouldReceive('resetEntityManager')->once()->andReturnUsing(function () use ($di, $winningEntityManager): void {
-        unset($di['em']);
-        $di['em'] = $winningEntityManager;
-    });
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
+    $di['em']->shouldReceive('persist')->once();
+    $di['em']->shouldReceive('flush')->once()->andThrow($duplicateKeyException);
+    $service = new Service();
     $service->setDi($di);
 
     expect(fn () => $service->setParamValue('new_param', 'ours'))->toThrow($duplicateKeyException);
@@ -322,10 +267,11 @@ test('getPublicParamValue throws when the parameter is missing or not public', f
     $service->getPublicParamValue('company_name');
 });
 
-test('updateParams updates system parameters', function (): void {
+test('updateParams updates system parameters in a single flush', function (): void {
     $service = new Service();
     $data = [
-        'company_name' => 'newValue',
+        'company_name' => 'Inc. Test',
+        'company_email' => 'work@example.eu',
     ];
 
     $eventMock = Mockery::mock('\Box_EventManager');
@@ -333,18 +279,27 @@ test('updateParams updates system parameters', function (): void {
 
     $logStub = $this->createStub('\Box_Log');
 
-    $systemServiceMock = Mockery::mock(Service::class)->makePartial();
-    $systemServiceMock->shouldReceive('setParamValue')->atLeast()->once()
-        ->andReturn(true);
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffServiceMock->shouldReceive('hasPermission')->andReturn(true);
+
+    $companyName = Tests\Helpers\createEntity(Box\Mod\System\Entity\Setting::class, ['param' => 'company_name', 'value' => 'Old Name']);
+    $settingRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $settingRepository->shouldReceive('findOneByParam')->with('company_name')->andReturn($companyName);
+    $settingRepository->shouldReceive('findOneByParam')->with('company_email')->andReturn(null);
 
     $di = container();
     $di['events_manager'] = $eventMock;
     $di['logger'] = $logStub;
+    $di['mod_service'] = $di->protect(fn (): object => $staffServiceMock);
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
+    $di['em']->shouldReceive('persist')->once();
+    $di['em']->shouldReceive('flush')->once();
+    $service->setDi($di);
 
-    $systemServiceMock->setDi($di);
-    $result = $systemServiceMock->updateParams($data);
+    $result = $service->updateParams($data);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
+    expect($companyName->getValue())->toBe('Inc. Test');
 });
 
 test('getMessages returns system messages', function (): void {
