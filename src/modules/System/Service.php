@@ -50,11 +50,6 @@ class Service
         }
     }
 
-    public function getSettingRepository(): SettingRepository
-    {
-        return $this->settingRepository;
-    }
-
     public function getModulePermissions(): array
     {
         return [
@@ -261,7 +256,7 @@ class Service
     public function getParams($data): array
     {
         $result = [];
-        foreach ($this->settingRepository->findAllSettings() as $setting) {
+        foreach ($this->settingRepository->findAll() as $setting) {
             $result[(string) $setting->getParam()] = $setting->getValue();
         }
 

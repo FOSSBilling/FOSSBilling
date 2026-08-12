@@ -199,7 +199,7 @@ test('getParams returns system parameters', function (): void {
         Tests\Helpers\createEntity(Box\Mod\System\Entity\Setting::class, ['param' => 'company_email', 'value' => 'work@example.eu']),
     ];
     $settingRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
-    $settingRepository->shouldReceive('findAllSettings')->once()->andReturn($settings);
+    $settingRepository->shouldReceive('findAll')->once()->andReturn($settings);
 
     $di = container();
     $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);

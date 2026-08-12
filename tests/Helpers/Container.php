@@ -273,7 +273,7 @@ function container(): Container
         $settingRepository->shouldReceive('findOneByParam')->byDefault()->andReturn(null);
         $settingRepository->shouldReceive('findOnePublicByParam')->byDefault()->andReturn(null);
         $settingRepository->shouldReceive('findByParams')->byDefault()->andReturn([]);
-        $settingRepository->shouldReceive('findAllSettings')->byDefault()->andReturn([]);
+        $settingRepository->shouldReceive('findAll')->byDefault()->andReturn([]);
 
         $em = \Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
         $em->shouldReceive('wrapInTransaction')->byDefault()->andReturnUsing(static fn (callable $callback): mixed => $callback());
