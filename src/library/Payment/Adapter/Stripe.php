@@ -357,7 +357,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 $expected = $invoiceService->getTotalWithTax($invoice);
 
                 try {
-                    $invoiceService->validatePaymentAmount($tx->amount, $expected);
+                    $invoiceService->validatePaymentAmount((float) $tx->amount, $expected);
                 } catch (FOSSBilling\Exception $e) {
                     $tx->status = Model_Transaction::STATUS_ERROR;
                     $tx->error = $e->getMessage();
@@ -1167,7 +1167,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             $expected = $invoiceService->getTotalWithTax($invoice);
 
             try {
-                $invoiceService->validatePaymentAmount($tx->amount, $expected);
+                $invoiceService->validatePaymentAmount((float) $tx->amount, $expected);
             } catch (FOSSBilling\Exception $e) {
                 $tx->status = Model_Transaction::STATUS_ERROR;
                 $tx->error = $e->getMessage();
