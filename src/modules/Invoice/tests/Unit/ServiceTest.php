@@ -22,6 +22,7 @@ use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Repository\InvoiceItemRepository;
+use Box\Mod\Invoice\Repository\InvoiceRepository;
 use Box\Mod\Invoice\Repository\PayGatewayRepository;
 use Box\Mod\Invoice\Repository\SubscriptionRepository;
 use Box\Mod\Invoice\Repository\TransactionRepository;
@@ -2110,6 +2111,42 @@ test('resets the EntityManager when it closes mid-batch so later consumers keep 
     // The closed manager is gone; later cron consumers see the open replacement.
     expect($di['em'])->toBe($replacementEm);
     expect($di['em']->isOpen())->toBeTrue();
+});
+
+test('resetEntityManager invalidates both cached repositories so they re-resolve from the replacement', function (): void {
+    // Exercises the real resetEntityManager() body (only the factory seam is mocked),
+    // verifying that both lazily-cached repositories are dropped and re-resolve from
+    // the replacement EntityManager rather than the closed one.
+    $initialItemRepo = Mockery::mock(InvoiceItemRepository::class);
+    $initialInvoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $initialEm = Mockery::mock(EntityManagerInterface::class);
+    $initialEm->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($initialItemRepo);
+    $initialEm->shouldReceive('getRepository')->with(Invoice::class)->andReturn($initialInvoiceRepo);
+
+    $replacementItemRepo = Mockery::mock(InvoiceItemRepository::class);
+    $replacementInvoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $replacementEm = Mockery::mock(EntityManagerInterface::class);
+    $replacementEm->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($replacementItemRepo);
+    $replacementEm->shouldReceive('getRepository')->with(Invoice::class)->andReturn($replacementInvoiceRepo);
+
+    $di = container();
+    $di['em'] = $initialEm;
+
+    $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $service->shouldReceive('createEntityManager')->once()->andReturn($replacementEm);
+    $service->setDi($di);
+
+    // Prime both caches from the initial EM.
+    expect($service->getInvoiceItemRepository())->toBe($initialItemRepo);
+    expect($service->getInvoiceRepository())->toBe($initialInvoiceRepo);
+
+    // Trigger the real reset flow; only the factory seam is intercepted.
+    (new ReflectionMethod(Service::class, 'resetEntityManager'))->invoke($service);
+
+    // Both repositories now come from the replacement EntityManager.
+    expect($service->getInvoiceItemRepository())->toBe($replacementItemRepo);
+    expect($service->getInvoiceRepository())->toBe($replacementInvoiceRepo);
+    expect($di['em'])->toBe($replacementEm);
 });
 
 test('skips invoice items already finalized by another process during batch activation', function (): void {

@@ -21,6 +21,7 @@ use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Repository\InvoiceItemRepository;
 use Box\Mod\Invoice\Repository\InvoiceRepository;
 use Box\Mod\Order\Entity\Order;
+use Doctrine\ORM\EntityManagerInterface;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use FOSSBilling\Doctrine\EntityManagerFactory;
@@ -104,9 +105,14 @@ class Service implements InjectionAwareInterface
     protected function resetEntityManager(): void
     {
         unset($this->di['em']);
-        $this->di['em'] = EntityManagerFactory::create();
+        $this->di['em'] = $this->createEntityManager();
         $this->invoiceItemRepository = null;
         $this->invoiceRepository = null;
+    }
+
+    protected function createEntityManager(): EntityManagerInterface
+    {
+        return EntityManagerFactory::create();
     }
 
     public function getModulePermissions(): array
