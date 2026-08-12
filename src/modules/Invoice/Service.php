@@ -1626,9 +1626,15 @@ class Service implements InjectionAwareInterface
                     $invoiceItemService->executeTask($model);
                 });
             } catch (\Exception $e) {
-                // Clear the identity map so subsequent iterations work with fresh, database-consistent entities.
-                $this->di['em']->clear();
                 $this->di['logger']->error($e->getMessage());
+
+                // A failed ORM flush closes the EntityManager and clear() can't reopen
+                // it; stop the batch instead of looping with a dead EM. Otherwise clear
+                // the identity map between iterations.
+                if (!$this->di['em']->isOpen()) {
+                    break;
+                }
+                $this->di['em']->clear();
             }
         }
         $this->di['logger']->info('Executed action to activate paid invoices.');

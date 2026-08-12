@@ -2046,6 +2046,8 @@ test('handles exception during batch paid invoice activation', function (): void
         ->with('SELECT status FROM invoice_item WHERE id = :id FOR UPDATE', ['id' => 1])
         ->andReturn(InvoiceItem::STATUS_PENDING_SETUP);
     $em->shouldReceive('getConnection')->andReturn($connection);
+    // The exception did not close the EM, so recovery continues: clear and proceed.
+    $em->shouldReceive('isOpen')->once()->andReturn(true);
     $em->shouldReceive('clear')->once();
 
     $di = container();
@@ -2056,6 +2058,45 @@ test('handles exception during batch paid invoice activation', function (): void
     $service->setDi($di);
     $result = $service->doBatchPaidInvoiceActivation();
     expect($result)->toBeBool()->toBeTrue();
+});
+
+test('stops the batch when the EntityManager closes after a failure', function (): void {
+    $service = new Service();
+    $invoiceItemModel = createEntity(InvoiceItem::class, []);
+
+    $itemInvoiceServiceMock = Mockery::mock(ServiceInvoiceItem::class);
+    $itemInvoiceServiceMock->shouldReceive('getAllNotExecutePaidItems')
+        ->once()
+        ->andReturn([['id' => 1], ['id' => 2]]);
+    // Only the first item is attempted; the batch breaks before the second.
+    $itemInvoiceServiceMock->shouldReceive('executeTask')
+        ->once()
+        ->with($invoiceItemModel)
+        ->andThrow(new Exception('flush failure closed the EM'));
+
+    [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
+    $invoiceItemRepo->shouldReceive('find')
+        ->once()
+        ->andReturn($invoiceItemModel);
+
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('transactional')
+        ->once()
+        ->andReturnUsing(fn (callable $func) => $func($connection));
+    $connection->shouldReceive('fetchOne')
+        ->with('SELECT status FROM invoice_item WHERE id = :id FOR UPDATE', ['id' => 1])
+        ->andReturn(InvoiceItem::STATUS_PENDING_SETUP);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $em->shouldReceive('isOpen')->once()->andReturn(false);
+    $em->shouldNotReceive('clear');
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $itemInvoiceServiceMock);
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $service->setDi($di);
+    expect($service->doBatchPaidInvoiceActivation())->toBeTrue();
 });
 
 test('skips invoice items already finalized by another process during batch activation', function (): void {
