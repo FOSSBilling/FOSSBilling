@@ -62,12 +62,26 @@ test('getSearchQueryBuilder filters by client_id, status, currency and approved'
         ->and($query->getParameter('approved')->getValue())->toBeTrue();
 });
 
-test('getSearchQueryBuilder casts approved flag to bool', function (): void {
+test('getSearchQueryBuilder normalizes the approved filter via Tools::normalizeBoolean', function (): void {
     $repository = invoiceEntityManager()->getRepository(Invoice::class);
 
-    foreach ([1, '1', true, 'on'] as $truthy) {
+    foreach ([1, '1', true, 'on', 'true'] as $truthy) {
         $qb = $repository->getSearchQueryBuilder(['approved' => $truthy]);
         expect($qb->getParameter('approved')->getValue())->toBeTrue();
+    }
+
+    foreach (['false', 'off', '0', 0, false] as $falsey) {
+        $qb = $repository->getSearchQueryBuilder(['approved' => $falsey]);
+        expect($qb->getParameter('approved')->getValue())->toBeFalse();
+    }
+});
+
+test('getSearchQueryBuilder skips the approved filter when unset or empty', function (): void {
+    $repository = invoiceEntityManager()->getRepository(Invoice::class);
+
+    foreach ([null, ''] as $empty) {
+        $qb = $repository->getSearchQueryBuilder(['approved' => $empty]);
+        expect($qb->getDQL())->not->toContain('i.approved');
     }
 });
 

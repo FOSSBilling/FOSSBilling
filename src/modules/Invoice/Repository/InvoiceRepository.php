@@ -16,6 +16,7 @@ use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\InvoiceItem;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\Tools;
 
 class InvoiceRepository extends EntityRepository
 {
@@ -64,8 +65,8 @@ class InvoiceRepository extends EntityRepository
         }
 
         $approved = $data['approved'] ?? null;
-        if ($approved) {
-            $qb->andWhere('i.approved = :approved')->setParameter('approved', (bool) $approved);
+        if ($approved !== null && $approved !== '') {
+            $qb->andWhere('i.approved = :approved')->setParameter('approved', Tools::normalizeBoolean($approved));
         }
 
         $status = $data['status'] ?? null;
