@@ -727,13 +727,7 @@ class Service implements InjectionAwareInterface
         }
 
         if ($execute) {
-            foreach ($invoiceItems as $item) {
-                try {
-                    $invoiceItemService->executeTask($item);
-                } catch (\Exception $e) {
-                    $this->di['logger']->warning($e->getMessage());
-                }
-            }
+            $this->executeInvoiceItemTasks($invoiceItems, $invoiceItemService);
         }
 
         $this->di['logger']->info("Marked invoice {$invoice->getId()} as paid.");
@@ -1097,7 +1091,10 @@ class Service implements InjectionAwareInterface
 
         if ($paid) {
             $this->firePaymentReceivedEvent($invoice);
-            $this->executeInvoiceItemTasks($invoice);
+            $this->executeInvoiceItemTasks(
+                $this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId()),
+                $this->di['mod_service']('Invoice', 'InvoiceItem')
+            );
         }
 
         return $paid;
@@ -1109,13 +1106,14 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * The task execution markAsPaid() performs with $execute, for callers that must run it after
-     * their transaction commits.
+     * Execute invoice-item tasks after the payment transaction has committed.
+     *
+     * @param InvoiceItem[]      $invoiceItems
+     * @param ServiceInvoiceItem $invoiceItemService
      */
-    private function executeInvoiceItemTasks(Invoice $invoice): void
+    private function executeInvoiceItemTasks(array $invoiceItems, $invoiceItemService): void
     {
-        $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
-        foreach ($this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId()) as $item) {
+        foreach ($invoiceItems as $item) {
             try {
                 $invoiceItemService->executeTask($item);
             } catch (\Exception $e) {
