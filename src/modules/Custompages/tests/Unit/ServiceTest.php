@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Box\Mod\Custompages\Entity\CustomPage;
 use Box\Mod\Custompages\Service;
+use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
@@ -113,22 +114,26 @@ test('get page rejects unknown column type', function (): void {
     expect(fn () => $service->getPage(1, 'title'))->toThrow(FOSSBilling\Exception::class);
 });
 
-test('create page generates unique slug and persists entity', function (): void {
+test('create page generates unique slug and inserts via dbal', function (): void {
     $repo = Mockery::mock(Box\Mod\Custompages\Repository\CustomPageRepository::class);
     $repo->expects('findOneBySlug')->with('about-us')->andReturn(null);
 
     $captured = null;
-    $em = Mockery::mock(EntityManagerInterface::class);
-    $em->allows('getRepository')->with(CustomPage::class)->andReturn($repo);
-    $em->expects('persist')->once()->andReturnUsing(function (CustomPage $page) use (&$captured): void {
-        $captured = $page;
+    $connection = Mockery::mock(Connection::class);
+    $connection->expects('insert')->once()->andReturnUsing(function (string $table, array $data) use (&$captured): int {
+        expect($table)->toBe('custom_pages');
+        $captured = $data;
+
+        return 1;
     });
-    $em->expects('flush')->once()->andReturnUsing(function () use (&$captured): void {
-        Tests\Helpers\accessPrivate($captured, 'id', 42);
-    });
+    $connection->expects('lastInsertId')->once()->andReturn(42);
 
     $logger = Mockery::mock();
     $logger->expects('info')->with('Created new custom page #%s', 42)->once();
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->allows('getRepository')->with(CustomPage::class)->andReturn($repo);
+    $em->allows('getConnection')->andReturn($connection);
 
     $di = new Pimple\Container();
     $di['em'] = $em;
@@ -142,12 +147,11 @@ test('create page generates unique slug and persists entity', function (): void 
     $id = $service->createPage('About Us', null, null, 'page body');
 
     expect($id)->toBe(42);
-    expect($captured)->toBeInstanceOf(CustomPage::class);
-    expect($captured->getTitle())->toBe('About Us');
-    expect($captured->getDescription())->toBe('');
-    expect($captured->getKeywords())->toBe('');
-    expect($captured->getContent())->toBe('page body');
-    expect($captured->getSlug())->toBe('about-us');
+    expect($captured['title'])->toBe('About Us');
+    expect($captured['description'])->toBe('');
+    expect($captured['keywords'])->toBe('');
+    expect($captured['content'])->toBe('page body');
+    expect($captured['slug'])->toBe('about-us');
 });
 
 test('create page appends incrementing suffix until slug is unique', function (): void {
@@ -159,12 +163,17 @@ test('create page appends incrementing suffix until slug is unique', function ()
     $repo->expects('findOneBySlug')->with('page-2')->andReturn(null);
 
     $captured = null;
+    $connection = Mockery::mock(Connection::class);
+    $connection->expects('insert')->once()->andReturnUsing(function (string $table, array $data) use (&$captured): int {
+        $captured = $data;
+
+        return 1;
+    });
+    $connection->allows('lastInsertId')->andReturn(3);
+
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->allows('getRepository')->with(CustomPage::class)->andReturn($repo);
-    $em->expects('persist')->once()->andReturnUsing(function (CustomPage $page) use (&$captured): void {
-        $captured = $page;
-    });
-    $em->allows('flush');
+    $em->allows('getConnection')->andReturn($connection);
 
     $di = new Pimple\Container();
     $di['em'] = $em;
@@ -177,8 +186,7 @@ test('create page appends incrementing suffix until slug is unique', function ()
 
     $service->createPage('Page', '', '', 'content');
 
-    expect($captured)->toBeInstanceOf(CustomPage::class);
-    expect($captured->getSlug())->toBe('page-2');
+    expect($captured['slug'])->toBe('page-2');
 });
 
 test('update page throws when page not found', function (): void {
@@ -286,28 +294,33 @@ test('delete page by array delegates to bulk delete', function (): void {
 });
 
 test('create page retries on a concurrent slug conflict and succeeds on the next candidate', function (): void {
-    // Attempt 1: 'about' looks free, but a concurrent flush claims it (constraint violation).
+    // Attempt 1: 'about' looks free, but a concurrent insert claims it (constraint violation).
     // Attempt 2: generateUniqueSlug now sees 'about' taken and moves on to 'about-1'.
     $existing = Tests\Helpers\createEntity(CustomPage::class, ['id' => 9, 'slug' => 'about']);
 
     $repo = Mockery::mock(Box\Mod\Custompages\Repository\CustomPageRepository::class);
     $repo->shouldReceive('findOneBySlug')->andReturn(null, $existing, null);
 
+    $insertCount = 0;
     $captured = null;
-    $flushCount = 0;
-    $em = Mockery::mock(EntityManagerInterface::class);
-    $em->allows('getRepository')->with(CustomPage::class)->andReturn($repo);
-    $em->shouldReceive('persist')->twice()->andReturnUsing(function (CustomPage $page) use (&$captured): void {
-        $captured = $page;
-    });
-    $em->shouldReceive('clear')->once();
-    $em->shouldReceive('flush')->andReturnUsing(function () use (&$flushCount, &$captured) {
-        ++$flushCount;
-        if ($flushCount === 1) {
+    $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('insert')->andReturnUsing(function (string $table, array $data) use (&$insertCount, &$captured): int {
+        ++$insertCount;
+        $captured = $data;
+        if ($insertCount === 1) {
             throw Mockery::mock(UniqueConstraintViolationException::class);
         }
-        Tests\Helpers\accessPrivate($captured, 'id', 7);
+
+        return 1;
     });
+    $connection->expects('lastInsertId')->once()->andReturn(7);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->allows('getRepository')->with(CustomPage::class)->andReturn($repo);
+    $em->allows('getConnection')->andReturn($connection);
+    $em->shouldNotReceive('persist');
+    $em->shouldNotReceive('flush');
+    $em->shouldNotReceive('clear');
 
     $di = new Pimple\Container();
     $di['em'] = $em;
@@ -319,18 +332,23 @@ test('create page retries on a concurrent slug conflict and succeeds on the next
     $service->setDi($di);
 
     expect($service->createPage('About', '', '', 'content'))->toBe(7);
-    expect($captured->getSlug())->toBe('about-1');
+    expect($captured['slug'])->toBe('about-1');
 });
 
 test('create page gives up after repeated slug conflicts', function (): void {
     $repo = Mockery::mock(Box\Mod\Custompages\Repository\CustomPageRepository::class);
     $repo->shouldReceive('findOneBySlug')->andReturn(null);
 
+    $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('insert')->andThrow(Mockery::mock(UniqueConstraintViolationException::class));
+    $connection->shouldNotReceive('lastInsertId');
+
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->allows('getRepository')->with(CustomPage::class)->andReturn($repo);
-    $em->shouldReceive('persist');
-    $em->shouldReceive('flush')->andThrow(Mockery::mock(UniqueConstraintViolationException::class));
-    $em->shouldReceive('clear');
+    $em->allows('getConnection')->andReturn($connection);
+    $em->shouldNotReceive('persist');
+    $em->shouldNotReceive('flush');
+    $em->shouldNotReceive('clear');
 
     $di = new Pimple\Container();
     $di['em'] = $em;
@@ -377,12 +395,17 @@ test('create page truncates a long title slug to fit varchar 255', function (): 
     $repo->expects('findOneBySlug')->with(str_repeat('a', 255))->andReturn(null);
 
     $captured = null;
+    $connection = Mockery::mock(Connection::class);
+    $connection->expects('insert')->once()->andReturnUsing(function (string $table, array $data) use (&$captured): int {
+        $captured = $data;
+
+        return 1;
+    });
+    $connection->allows('lastInsertId')->andReturn(1);
+
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->allows('getRepository')->with(CustomPage::class)->andReturn($repo);
-    $em->expects('persist')->once()->andReturnUsing(function (CustomPage $page) use (&$captured): void {
-        $captured = $page;
-    });
-    $em->expects('flush')->once();
+    $em->allows('getConnection')->andReturn($connection);
 
     $di = new Pimple\Container();
     $di['em'] = $em;
@@ -395,7 +418,7 @@ test('create page truncates a long title slug to fit varchar 255', function (): 
 
     $service->createPage('Long Title', '', '', 'content');
 
-    expect(strlen($captured->getSlug()))->toBe(255);
+    expect(strlen($captured['slug']))->toBe(255);
 });
 
 test('create page reserves room for the suffix when truncating a conflicting long slug', function (): void {
@@ -408,12 +431,17 @@ test('create page reserves room for the suffix when truncating a conflicting lon
     $repo->shouldReceive('findOneBySlug')->andReturn($existing, null);
 
     $captured = null;
+    $connection = Mockery::mock(Connection::class);
+    $connection->expects('insert')->once()->andReturnUsing(function (string $table, array $data) use (&$captured): int {
+        $captured = $data;
+
+        return 1;
+    });
+    $connection->allows('lastInsertId')->andReturn(1);
+
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->allows('getRepository')->with(CustomPage::class)->andReturn($repo);
-    $em->expects('persist')->once()->andReturnUsing(function (CustomPage $page) use (&$captured): void {
-        $captured = $page;
-    });
-    $em->expects('flush')->once();
+    $em->allows('getConnection')->andReturn($connection);
 
     $di = new Pimple\Container();
     $di['em'] = $em;
@@ -426,6 +454,6 @@ test('create page reserves room for the suffix when truncating a conflicting lon
 
     $service->createPage('Long Title', '', '', 'content');
 
-    expect($captured->getSlug())->toBe(str_repeat('a', 253) . '-1');
-    expect(strlen($captured->getSlug()))->toBe(255);
+    expect($captured['slug'])->toBe(str_repeat('a', 253) . '-1');
+    expect(strlen($captured['slug']))->toBe(255);
 });

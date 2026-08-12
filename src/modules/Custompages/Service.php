@@ -107,30 +107,28 @@ class Service
     public function createPage($title, $description, $keywords, $content): int
     {
         // generateUniqueSlug() picks a free candidate, but a concurrent request can
-        // claim the same slug between the check and the flush. The unique index on
-        // custom_pages.slug turns that race into a catchable constraint violation,
-        // which we resolve by clearing the EM and retrying with a fresh candidate.
-        $page = null;
+        // claim the same slug before the insert. Insert via the DBAL connection (not
+        // an ORM flush) so a constraint violation doesn't close the EntityManager and
+        // break the retry loop on the next iteration.
+        $connection = $this->di['em']->getConnection();
         for ($attempt = 0; $attempt < 5; ++$attempt) {
             $slug = $this->generateUniqueSlug($title);
 
-            $page = new CustomPage();
-            $page->setTitle($title)
-                ->setDescription($description ?? '')
-                ->setKeywords($keywords ?? '')
-                ->setContent($content)
-                ->setSlug($slug);
-
             try {
-                $this->di['em']->persist($page);
-                $this->di['em']->flush();
+                $connection->insert('custom_pages', [
+                    'title' => $title,
+                    'description' => $description ?? '',
+                    'keywords' => $keywords ?? '',
+                    'content' => $content,
+                    'slug' => $slug,
+                ]);
 
-                $id = $page->getId() ?? 0;
+                $id = (int) $connection->lastInsertId();
                 $this->di['logger']->info('Created new custom page #%s', $id);
 
                 return $id;
             } catch (UniqueConstraintViolationException) {
-                $this->di['em']->clear();
+                // Slug lost the race; loop and try the next candidate.
             }
         }
 
