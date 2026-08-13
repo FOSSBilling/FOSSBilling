@@ -189,147 +189,62 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterAdminOrderRenew(\Box_Event $event): void
+    private static function sendOrderLifecycleEmail(\Box_Event $event, string $templateSuffix, string $logAction, bool $includeService = true): void
     {
         $params = $event->getParameters();
-        $order_id = $params['id'];
+        $orderId = $params['id'];
         $di = $event->getDi();
         $orderService = $di['mod_service']('order');
 
         try {
-            $order = $di['em']->getRepository(Order::class)->find($order_id);
+            $order = $di['em']->getRepository(Order::class)->find($orderId);
             if (!$order instanceof Order) {
                 throw new \FOSSBilling\Exception('Order not found');
             }
+
             $identity = $di['loggedin_admin'] ?? null;
-            $service = $orderService->getOrderServiceData($order, $identity);
+            $service = $includeService ? $orderService->getOrderServiceData($order, $identity) : null;
             $orderArr = $orderService->toApiArray($order, true, $identity);
 
-            $email = [];
-            $email['to_client'] = $orderArr['client']['id'];
-            $email['code'] = sprintf('mod_service%s_renewed', $orderArr['service_type']);
-            $email['service'] = $service;
+            $email = [
+                'to_client' => $orderArr['client']['id'],
+                'code' => sprintf('mod_service%s_%s', $orderArr['service_type'], $templateSuffix),
+            ];
+            if ($includeService) {
+                $email['service'] = $service;
+            }
             $email['order'] = $orderArr;
 
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->setChannel('email')->error('Failed to send order renewal email', ['exception' => $exc->getMessage()]);
+            $di['logger']->setChannel('email')->error(sprintf('Failed to send order %s email', $logAction), ['exception' => $exc->getMessage()]);
         }
+    }
+
+    public static function onAfterAdminOrderRenew(\Box_Event $event): void
+    {
+        self::sendOrderLifecycleEmail($event, 'renewed', 'renewal');
     }
 
     public static function onAfterAdminOrderSuspend(\Box_Event $event): void
     {
-        $params = $event->getParameters();
-        $order_id = $params['id'];
-        $di = $event->getDi();
-        $service = $di['mod_service']('order');
-
-        try {
-            $order = $di['em']->getRepository(Order::class)->find($order_id);
-            if (!$order instanceof Order) {
-                throw new \FOSSBilling\Exception('Order not found');
-            }
-            $identity = $di['loggedin_admin'] ?? null;
-            $s = $service->getOrderServiceData($order, $identity);
-            $orderArr = $service->toApiArray($order, true, $identity);
-
-            $email = [];
-            $email['to_client'] = $orderArr['client']['id'];
-            $email['code'] = sprintf('mod_service%s_suspended', $orderArr['service_type']);
-            $email['service'] = $s;
-            $email['order'] = $orderArr;
-
-            $emailService = $di['mod_service']('email');
-            $emailService->sendTemplate($email);
-        } catch (\Exception $exc) {
-            $di['logger']->setChannel('email')->error('Failed to send order suspension email', ['exception' => $exc->getMessage()]);
-        }
+        self::sendOrderLifecycleEmail($event, 'suspended', 'suspension');
     }
 
     public static function onAfterAdminOrderUnsuspend(\Box_Event $event): void
     {
-        $params = $event->getParameters();
-        $order_id = $params['id'];
-        $di = $event->getDi();
-        $service = $di['mod_service']('order');
-
-        try {
-            $order = $di['em']->getRepository(Order::class)->find($order_id);
-            if (!$order instanceof Order) {
-                throw new \FOSSBilling\Exception('Order not found');
-            }
-            $identity = $di['loggedin_admin'] ?? null;
-            $s = $service->getOrderServiceData($order, $identity);
-            $orderArr = $service->toApiArray($order, true, $identity);
-
-            $email = [];
-            $email['to_client'] = $orderArr['client']['id'];
-            $email['code'] = sprintf('mod_service%s_unsuspended', $orderArr['service_type']);
-            $email['service'] = $s;
-            $email['order'] = $orderArr;
-
-            $emailService = $di['mod_service']('email');
-            $emailService->sendTemplate($email);
-        } catch (\Exception $exc) {
-            $di['logger']->setChannel('email')->error('Failed to send order unsuspension email', ['exception' => $exc->getMessage()]);
-        }
+        self::sendOrderLifecycleEmail($event, 'unsuspended', 'unsuspension');
     }
 
     public static function onAfterAdminOrderCancel(\Box_Event $event): void
     {
-        $params = $event->getParameters();
-        $order_id = $params['id'];
-        $di = $event->getDi();
-        $service = $di['mod_service']('order');
-
-        try {
-            $order = $di['em']->getRepository(Order::class)->find($order_id);
-            if (!$order instanceof Order) {
-                throw new \FOSSBilling\Exception('Order not found');
-            }
-            $identity = $di['loggedin_admin'] ?? null;
-            $orderArr = $service->toApiArray($order, true, $identity);
-
-            $email = [];
-            $email['to_client'] = $orderArr['client']['id'];
-            $email['code'] = sprintf('mod_service%s_canceled', $orderArr['service_type']);
-            $email['order'] = $orderArr;
-
-            $emailService = $di['mod_service']('email');
-            $emailService->sendTemplate($email);
-        } catch (\Exception $exc) {
-            $di['logger']->setChannel('email')->error('Failed to send order cancellation email', ['exception' => $exc->getMessage()]);
-        }
+        self::sendOrderLifecycleEmail($event, 'canceled', 'cancellation', false);
     }
 
     public static function onAfterAdminOrderUncancel(\Box_Event $event): void
     {
-        $params = $event->getParameters();
-        $order_id = $params['id'];
-        $di = $event->getDi();
-        $service = $di['mod_service']('order');
-
-        try {
-            $order = $di['em']->getRepository(Order::class)->find($order_id);
-            if (!$order instanceof Order) {
-                throw new \FOSSBilling\Exception('Order not found');
-            }
-            $identity = $di['loggedin_admin'] ?? null;
-            $s = $service->getOrderServiceData($order, $identity);
-            $orderArr = $service->toApiArray($order, true, $identity);
-
-            $email = [];
-            $email['to_client'] = $orderArr['client']['id'];
-            $email['code'] = sprintf('mod_service%s_renewed', $orderArr['service_type']);
-            $email['order'] = $orderArr;
-            $email['service'] = $s;
-
-            $emailService = $di['mod_service']('email');
-            $emailService->sendTemplate($email);
-        } catch (\Exception $exc) {
-            $di['logger']->setChannel('email')->error('Failed to send order uncancel email', ['exception' => $exc->getMessage()]);
-        }
+        self::sendOrderLifecycleEmail($event, 'renewed', 'uncancel');
     }
 
     public function getOrderService(Order $order)
