@@ -197,6 +197,14 @@ class UpdatePatcher implements InjectionAwareInterface
         return $this->di['pdo'];
     }
 
+    private function prepareAndExecute(string $sql, array $params = []): \PDOStatement
+    {
+        $statement = $this->getPdo()->prepare($sql);
+        $statement->execute($params);
+
+        return $statement;
+    }
+
     /**
      * Execute the given SQL statement.
      *
@@ -205,8 +213,7 @@ class UpdatePatcher implements InjectionAwareInterface
     private function executeSql(string $sql, array $params = []): void
     {
         try {
-            $statement = $this->getPdo()->prepare($sql);
-            $statement->execute($params);
+            $this->prepareAndExecute($sql, $params);
         } catch (\Exception $e) {
             // Log the error and then throw a user-friendly exception to prevent further patches from being applied.
             error_log($e->getMessage());
@@ -217,34 +224,22 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function fetchAll(string $sql, array $params = []): array
     {
-        $statement = $this->getPdo()->prepare($sql);
-        $statement->execute($params);
-
-        return $statement->fetchAll(\PDO::FETCH_ASSOC);
+        return $this->prepareAndExecute($sql, $params)->fetchAll(\PDO::FETCH_ASSOC);
     }
 
     private function fetchOne(string $sql, array $params = []): mixed
     {
-        $statement = $this->getPdo()->prepare($sql);
-        $statement->execute($params);
-
-        return $statement->fetchColumn();
+        return $this->prepareAndExecute($sql, $params)->fetchColumn();
     }
 
     private function fetchFirstColumn(string $sql, array $params = []): array
     {
-        $statement = $this->getPdo()->prepare($sql);
-        $statement->execute($params);
-
-        return $statement->fetchAll(\PDO::FETCH_COLUMN);
+        return $this->prepareAndExecute($sql, $params)->fetchAll(\PDO::FETCH_COLUMN);
     }
 
     private function fetchKeyValue(string $sql, array $params = []): array
     {
-        $statement = $this->getPdo()->prepare($sql);
-        $statement->execute($params);
-
-        return $statement->fetchAll(\PDO::FETCH_KEY_PAIR);
+        return $this->prepareAndExecute($sql, $params)->fetchAll(\PDO::FETCH_KEY_PAIR);
     }
 
     private function updateTable(string $table, array $data, array $criteria): void
