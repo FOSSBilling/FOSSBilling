@@ -125,6 +125,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         if (Tools::normalizeBoolean($data['strip_admin_identity'] ?? false)) {
             $session->destroy('admin');
+            $this->getDi()['logger']->info('Stripped admin identity from session after logging in as client #%s', $client->getId());
         }
 
         return $result;
