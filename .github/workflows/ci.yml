@@ -208,7 +208,9 @@ jobs:
           rm -f ./src/provenance.json
 
       - name: 'Create Downloadable Preview'
-        run: zip -qr ../FOSSBilling-preview.zip .
+        run: |
+          zip -qr ../FOSSBilling-preview.zip .
+          echo "FOSSBILLING_PREVIEW_DIGEST=sha256:$(sha256sum ../FOSSBilling-preview.zip | awk '{print $1}')" >> "$GITHUB_ENV"
         working-directory: ./src/
 
       - name: 'Move Downloadable Preview for Upload'
@@ -221,6 +223,7 @@ jobs:
         run: |
           aws s3 sync "${SOURCE_DIR}" "s3://${AWS_S3_BUCKET}/" \
             --endpoint-url "${AWS_S3_ENDPOINT}" \
+            --metadata="digest=${{ env.FOSSBILLING_PREVIEW_DIGEST }},commit-sha=${{ github.sha }}" \
             --acl public-read \
             --follow-symlinks \
             --no-progress
