@@ -542,7 +542,8 @@
         "Namingo",
         "htype",
         "webspace",
-        "webspaces"
+        "webspaces",
+        "serviceexternal"
     ],
     "ignorePaths": [
         "node_modules/**",
