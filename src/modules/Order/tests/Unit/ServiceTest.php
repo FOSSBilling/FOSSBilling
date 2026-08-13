@@ -856,7 +856,7 @@ test('_callOnService dispatches to a third-party module with the DBAL row array'
     $module = new class {
         public array $calls = [];
 
-        public function activate($order, $service)
+        public function activate($order, $service): string
         {
             $this->calls[] = [$order, $service];
 
@@ -866,11 +866,9 @@ test('_callOnService dispatches to a third-party module with the DBAL row array'
 
     $di = container();
     $di['em'] = $em;
-    $di['mod_service'] = $di->protect(function (string $name) use ($module) {
-        return match ($name) {
-            'serviceexternal' => $module,
-            default => throw new LogicException('Unexpected service: ' . $name),
-        };
+    $di['mod_service'] = $di->protect(fn (string $name) => match ($name) {
+        'serviceexternal' => $module,
+        default => throw new LogicException('Unexpected service: ' . $name),
     });
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -895,7 +893,7 @@ test('_callOnService dispatches to a third-party module with null when no servic
     $module = new class {
         public array $calls = [];
 
-        public function activate($order, $service)
+        public function activate($order, $service): bool
         {
             $this->calls[] = [$order, $service];
 
@@ -905,11 +903,9 @@ test('_callOnService dispatches to a third-party module with null when no servic
 
     $di = container();
     $di['em'] = $em;
-    $di['mod_service'] = $di->protect(function (string $name) use ($module) {
-        return match ($name) {
-            'serviceexternal' => $module,
-            default => throw new LogicException('Unexpected service: ' . $name),
-        };
+    $di['mod_service'] = $di->protect(fn (string $name) => match ($name) {
+        'serviceexternal' => $module,
+        default => throw new LogicException('Unexpected service: ' . $name),
     });
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -941,7 +937,7 @@ test('_callOnService dispatches to a third-party module with false when the serv
     $module = new class {
         public array $calls = [];
 
-        public function activate($order, $service)
+        public function activate($order, $service): bool
         {
             $this->calls[] = [$order, $service];
 
@@ -951,11 +947,9 @@ test('_callOnService dispatches to a third-party module with false when the serv
 
     $di = container();
     $di['em'] = $em;
-    $di['mod_service'] = $di->protect(function (string $name) use ($module) {
-        return match ($name) {
-            'serviceexternal' => $module,
-            default => throw new LogicException('Unexpected service: ' . $name),
-        };
+    $di['mod_service'] = $di->protect(fn (string $name) => match ($name) {
+        'serviceexternal' => $module,
+        default => throw new LogicException('Unexpected service: ' . $name),
     });
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -1015,7 +1009,7 @@ test('getOrderServiceData returns module data for a built-in service type', func
     $module = new class {
         public array $calls = [];
 
-        public function toApiArray($service, $deep, $identity)
+        public function toApiArray($service, $deep, $identity): array
         {
             $this->calls[] = [$service, $deep, $identity];
 
@@ -1025,11 +1019,9 @@ test('getOrderServiceData returns module data for a built-in service type', func
 
     $di = container();
     $di['em'] = $em;
-    $di['mod_service'] = $di->protect(function (string $name) use ($module) {
-        return match ($name) {
-            'servicecustom' => $module,
-            default => throw new LogicException('Unexpected service: ' . $name),
-        };
+    $di['mod_service'] = $di->protect(fn (string $name) => match ($name) {
+        'servicecustom' => $module,
+        default => throw new LogicException('Unexpected service: ' . $name),
     });
 
     $svc = new Service();
