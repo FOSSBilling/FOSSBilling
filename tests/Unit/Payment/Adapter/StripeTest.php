@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Box\Mod\Invoice\Entity\Invoice;
+use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Repository\TransactionRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -354,7 +355,7 @@ describe('handleSubscriptionCreated', function (): void {
             ->and($capturedSubscriptionData)->not->toBeNull()
             ->and($capturedSubscriptionData['currency'])->toBe('USD')
             ->and($capturedSubscriptionData['sid'])->toBe('sub_123')
-            ->and($tx->invoice_id)->toBe(5);
+            ->and($tx->getInvoice()?->getId())->toBe(5);
     });
 
     test('returns false when metadata is missing', function (): void {
@@ -609,11 +610,12 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
         $transactionService->shouldReceive('claimForProcessing')
             ->andReturn(false);
 
-        ['em' => $em, 'txRepo' => $txRepo] = buildEntityManagerMocks();
+        ['em' => $em, 'txRepo' => $txRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
         $txRepo->shouldReceive('findProcessingOrProcessedByTxnId')
             ->once()
             ->with('in_123', null, 42)
             ->andReturn(null);
+        $invoiceRepo->shouldReceive('find')->atLeast()->once()->with(99)->andReturn(createEntity(Invoice::class, ['id' => 99]));
         // flush() happens when the invoice link is persisted.
         $em->shouldReceive('flush')->atLeast()->once();
 
@@ -644,7 +646,7 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
 
         // Even though claimForProcessing returned false (causing early return),
         // the invoice_id should have been persisted via em->flush().
-        expect($tx->invoice_id)->toBe(99);
+        expect($tx->getInvoice()?->getId())->toBe(99);
     });
 
     test('falls back to treating unpaid original invoice as initial payment', function (): void {
@@ -741,7 +743,7 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
         ]);
 
         // The unpaid original invoice should be approved and paid via the fallback
-        expect($tx->invoice_id)->toBe(77);
+        expect($tx->getInvoice()?->getId())->toBe(77);
     });
 });
 
@@ -954,7 +956,7 @@ describe('handleInvoicePaymentSucceeded with invoice_payment event (API 2026-06-
             4,
         ]);
 
-        expect($tx->invoice_id)->toBe(42);
+        expect($tx->getInvoice()?->getId())->toBe(42);
     });
 });
 
@@ -978,7 +980,7 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
         $existingTx = buildTransaction();
         $existingTx->id = 199;
         $existingTx->status = Transaction::STATUS_PROCESSED;
-        $existingTx->invoice_id = 10;
+        $existingTx->invoice = createEntity(Invoice::class, ['id' => 10]);
 
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
         expectStripeObjectLock($dbalMock, 'pi_existing', 1);
@@ -1001,7 +1003,7 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
             1,
         ]);
 
-        expect($tx->invoice_id)->toBe(10)
+        expect($tx->getInvoice()?->getId())->toBe(10)
             ->and($tx->txn_id)->toBe('pi_existing');
     });
 
@@ -1076,23 +1078,24 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
             1,
         ]);
 
-        expect($tx->invoice_id)->toBe(15)
+        expect($tx->getInvoice()?->getId())->toBe(15)
             ->and($tx->status)->toBe(Transaction::STATUS_PROCESSED);
     });
 });
 
 describe('processPaymentIntent', function (): void {
     test('validates a redirect payment amount as a float', function (): void {
-        $tx = buildTransaction();
-        $tx->id = 402;
-        $tx->gateway_id = 4;
-        $tx->invoice_id = 15;
-
         $invoice = createEntity(Invoice::class, [
             'id' => 15,
             'client_id' => 7,
             'approved' => true,
         ]);
+
+        $tx = buildTransaction();
+        $tx->id = 402;
+        $tx->gateway = createEntity(PayGateway::class, ['id' => 4]);
+        $tx->invoice = $invoice;
+
         $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]);
         $charge = (object) [
             'id' => 'pi_redirect',
@@ -1139,7 +1142,7 @@ describe('processPaymentIntent', function (): void {
     test('deletes the redirect transaction when the webhook already recorded the PaymentIntent', function (): void {
         $tx = buildTransaction();
         $tx->id = 401;
-        $tx->gateway_id = 4;
+        $tx->gateway = createEntity(PayGateway::class, ['id' => 4]);
 
         $existingTx = buildTransaction();
 
@@ -1244,7 +1247,7 @@ describe('handleSetupIntentSucceededWebhook', function (): void {
         $existingTx = buildTransaction();
         $existingTx->id = 299;
         $existingTx->status = Transaction::STATUS_PROCESSED;
-        $existingTx->invoice_id = 20;
+        $existingTx->invoice = createEntity(Invoice::class, ['id' => 20]);
 
         ['em' => $em, 'txRepo' => $txRepo] = buildEntityManagerMocks();
         $txRepo->shouldReceive('findProcessingOrProcessedByTxnId')
@@ -1263,7 +1266,7 @@ describe('handleSetupIntentSucceededWebhook', function (): void {
             1,
         ]);
 
-        expect($tx->invoice_id)->toBe(20);
+        expect($tx->getInvoice()?->getId())->toBe(20);
     });
 
     test('creates subscription when not already handled', function (): void {
@@ -1332,7 +1335,7 @@ describe('handleSetupIntentSucceededWebhook', function (): void {
             1,
         ]);
 
-        expect($tx->invoice_id)->toBe(25)
+        expect($tx->getInvoice()?->getId())->toBe(25)
             ->and($tx->s_id)->toBe('sub_new_123');
     });
 });

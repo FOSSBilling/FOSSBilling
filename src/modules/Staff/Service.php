@@ -654,7 +654,7 @@ class Service implements InjectionAwareInterface
             $this->di['em']->wrapInTransaction(function () use ($model, $group): void {
                 $this->di['em']->persist($model);
                 $this->di['em']->flush();
-                $this->di['em']->persist(new AdminGroupMember((int) $model->getId(), $group));
+                $this->di['em']->persist(new AdminGroupMember($model, $group));
                 $this->di['em']->flush();
             });
         } catch (UniqueConstraintViolationException) {
@@ -797,7 +797,7 @@ class Service implements InjectionAwareInterface
             return true;
         }
 
-        $this->di['em']->persist(new AdminGroupMember($adminId, $group));
+        $this->di['em']->persist(new AdminGroupMember($admin, $group));
         $this->di['em']->flush();
         $this->permissionCache = [];
 

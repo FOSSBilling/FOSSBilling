@@ -173,8 +173,8 @@ test('action create', function (): void {
     $result = $service->action_create($orderModel);
 
     expect($result)->toBeInstanceOf(ServiceHosting::class);
-    expect($result->getServiceHostingServerId())->toBe($confArr['server_id']);
-    expect($result->getServiceHostingHpId())->toBe($confArr['hosting_plan_id']);
+    expect($result->getServiceHostingServer()?->getId())->toBe($confArr['server_id']);
+    expect($result->getServiceHostingHp()?->getId())->toBe($confArr['hosting_plan_id']);
     expect($result->getSld())->toBe($confArr['sld']);
     expect($result->getTld())->toBe($confArr['tld']);
 });
@@ -183,7 +183,7 @@ test('action activate creates the account when it has not been provisioned yet',
     $orderModel = createEntity(Order::class);
 
     $model = new ServiceHosting();
-    $model->setServiceHostingServerId(1);
+    $model->setServiceHostingServer(new ServiceHostingServer());
     $model->setSld('example');
     $model->setTld('.com');
 
@@ -228,7 +228,7 @@ test('action activate does not recreate an account that was already provisioned'
     $orderModel = createEntity(Order::class);
 
     $model = new ServiceHosting();
-    $model->setServiceHostingServerId(1);
+    $model->setServiceHostingServer(new ServiceHostingServer());
     $model->setSld('example');
     $model->setTld('.com');
     $model->setUsername('example');
@@ -690,15 +690,16 @@ test('sync', function (): void {
 
 test('to api array', function (): void {
     $service = new Service();
-    $model = new ServiceHosting();
-    $model->setServiceHostingServerId(1);
-    $model->setServiceHostingHpId(2);
 
     $hostingServer = new ServiceHostingServer();
     setEntityId($hostingServer, 1);
     $hostingServer->setManager('Custom');
     $hostingHp = new ServiceHostingHp();
     setEntityId($hostingHp, 2);
+
+    $model = new ServiceHosting();
+    $model->setServiceHostingServer($hostingServer);
+    $model->setServiceHostingHp($hostingHp);
 
     $serverRepo = Mockery::mock(ServiceHostingServerRepository::class);
     $serverRepo->shouldReceive('find')->atLeast()->once()->andReturn($hostingServer);

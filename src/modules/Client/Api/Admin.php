@@ -393,16 +393,16 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         if ($groupField !== null) {
             $groupValue = $data[$groupField];
             if (empty($groupValue)) {
-                $client->setClientGroupId(null);
+                $client->setClientGroup(null);
             } else {
                 $groupId = filter_var($groupValue, FILTER_VALIDATE_INT);
                 if ($groupId === false || $groupId <= 0) {
                     throw new InformationException('Invalid client group ID: :id', [':id' => $groupValue]);
                 }
 
-                $this->getDi()['em']->getRepository(ClientGroup::class)->find($groupId)
+                $group = $this->getDi()['em']->getRepository(ClientGroup::class)->find($groupId)
                     ?? throw new InformationException('Client group not found');
-                $client->setClientGroupId($groupId);
+                $client->setClientGroup($group);
             }
         }
 
@@ -668,7 +668,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getDi()['em']->getRepository(ClientGroup::class)->find($data['id']) ?? throw new InformationException('Group not found');
 
-        $clients = $this->getDi()['em']->getRepository(Client::class)->findBy(['clientGroupId' => $data['id']]);
+        $clients = $this->getDi()['em']->getRepository(Client::class)->findBy(['clientGroup' => $model]);
 
         if (Tools::safeCount($clients) > 0) {
             throw new InformationException('Group has clients assigned. Please reassign them first.');

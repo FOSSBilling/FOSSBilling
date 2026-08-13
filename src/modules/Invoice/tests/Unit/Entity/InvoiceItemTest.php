@@ -10,6 +10,7 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\InvoiceItem;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManager;
@@ -27,11 +28,10 @@ test('maps invoice_item table without changing columns', function (): void {
 
     expect($meta->getTableName())->toBe('invoice_item')
         ->and($meta->getColumnNames())->toBe([
-            'id', 'invoice_id', 'type', 'rel_id', 'task', 'status', 'title',
+            'id', 'type', 'rel_id', 'task', 'status', 'title',
             'period', 'quantity', 'unit', 'price', 'charged', 'taxed', 'attempts',
             'created_at', 'updated_at',
         ])
-        ->and($meta->getFieldMapping('invoiceId')->nullable)->toBeTrue()
         ->and($meta->getFieldMapping('relId')->type)->toBe('text')
         ->and($meta->getFieldMapping('price')->type)->toBe('decimal')
         ->and($meta->getFieldMapping('price')->precision)->toBe(18)
@@ -56,8 +56,10 @@ test('invoice item exposes the legacy type, task and status constants', function
 
 test('invoice item getters and setters round-trip values', function (): void {
     $entity = new InvoiceItem();
+    $invoice = new Invoice();
+    setEntityId($invoice, 42);
 
-    $entity->setInvoiceId(42);
+    $entity->setInvoice($invoice);
     $entity->setType(InvoiceItem::TYPE_ORDER);
     $entity->setRelId('77');
     $entity->setTask(InvoiceItem::TASK_RENEW);
@@ -71,7 +73,7 @@ test('invoice item getters and setters round-trip values', function (): void {
     $entity->setTaxed(false);
     $entity->setAttempts(3);
 
-    expect($entity->getInvoiceId())->toBe(42)
+    expect($entity->getInvoice())->toBe($invoice)
         ->and($entity->getType())->toBe(InvoiceItem::TYPE_ORDER)
         ->and($entity->getRelId())->toBe('77')
         ->and($entity->getTask())->toBe(InvoiceItem::TASK_RENEW)
@@ -90,7 +92,9 @@ test('invoice item getters and setters round-trip values', function (): void {
 test('invoice item toApiArray matches the legacy toArray keys', function (): void {
     $entity = new InvoiceItem();
     setEntityId($entity, 5);
-    $entity->setInvoiceId(9);
+    $invoice = new Invoice();
+    setEntityId($invoice, 9);
+    $entity->setInvoice($invoice);
     $entity->setType(InvoiceItem::TYPE_CUSTOM);
     $entity->setRelId('1');
     $entity->setTask(InvoiceItem::TASK_VOID);

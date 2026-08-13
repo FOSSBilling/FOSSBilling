@@ -697,21 +697,14 @@ test('remove rolls back and rethrows cleanup failures', function (): void {
 
 test('toApiArray returns array', function (): void {
     $service = new Box\Mod\Client\Service();
+    $clientGroup = createEntity(Box\Mod\Client\Entity\ClientGroup::class, ['id' => 1, 'title' => 'Group Title']);
     $model = createEntity(Box\Mod\Client\Entity\Client::class, [
-        'client_group_id' => 1,
+        'clientGroup' => $clientGroup,
         'custom_1' => 'custom field',
         'billing_email' => 'billing@example.com',
     ]);
 
-    $clientGroup = createEntity(Box\Mod\Client\Entity\ClientGroup::class, ['id' => 1, 'title' => 'Group Title']);
-
     $di = container();
-    $clientGroupRepository = Mockery::mock(Box\Mod\Client\Repository\ClientGroupRepository::class);
-    $clientGroupRepository->shouldReceive('find')->with(1)->andReturn($clientGroup);
-    $di['em']->shouldReceive('getRepository')
-        ->with(Box\Mod\Client\Entity\ClientGroup::class)
-        ->andReturn($clientGroupRepository);
-
     $service->setDi($di);
 
     $result = $service->toApiArray($model, true, createEntity(Box\Mod\Staff\Entity\Admin::class));
@@ -827,10 +820,11 @@ test('deleteGroup returns true', function (): void {
 test('deleteGroup throws exception when group has clients', function (): void {
     $service = new Box\Mod\Client\Service();
     $clientEntity = new Box\Mod\Client\Entity\Client();
+    $model = createEntity(Box\Mod\Client\Entity\ClientGroup::class, ['id' => 1]);
 
     $clientRepoMock = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
     $clientRepoMock->shouldReceive('findOneBy')
-        ->with(['clientGroupId' => 1])
+        ->with(['clientGroup' => $model])
         ->andReturn($clientEntity);
 
     $di = container();
@@ -840,8 +834,6 @@ test('deleteGroup throws exception when group has clients', function (): void {
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service->setDi($di);
-
-    $model = createEntity(Box\Mod\Client\Entity\ClientGroup::class, ['id' => 1]);
 
     $service->deleteGroup($model);
 })->throws(FOSSBilling\Exception::class, 'Cannot remove groups with clients');

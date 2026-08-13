@@ -104,7 +104,7 @@ test('getSearchQueryBuilder uses InvoiceItem subquery for order_id filter', func
         ->getQuery();
 
     $dql = $query->getDQL();
-    expect($dql)->toContain('SELECT ii.invoiceId FROM ' . InvoiceItem::class . ' ii WHERE ii.relId = :order_id AND ii.type = :item_type');
+    expect($dql)->toContain('SELECT IDENTITY(ii.invoice) FROM ' . InvoiceItem::class . ' ii WHERE ii.relId = :order_id AND ii.type = :item_type');
 
     expect($query->getParameter('order_id')->getValue())->toBe(42)
         ->and($query->getParameter('item_type')->getValue())->toBe(InvoiceItem::TYPE_ORDER);
@@ -170,7 +170,7 @@ test('getSearchQueryBuilder applies search filter with id, nr, title subquery an
     expect($dql)->toContain('i.id = :search_numeric_id')
         ->and($dql)->toContain('i.nr LIKE :search_like')
         ->and($dql)->toContain('i.id LIKE :search')
-        ->and($dql)->toContain('SELECT ii.invoiceId FROM ' . InvoiceItem::class . ' ii WHERE ii.title LIKE :search_like');
+        ->and($dql)->toContain('SELECT IDENTITY(ii.invoice) FROM ' . InvoiceItem::class . ' ii WHERE ii.title LIKE :search_like');
 
     expect($query->getParameter('search_numeric_id')->getValue())->toBe(42)
         ->and($query->getParameter('search_like')->getValue())->toBe('%Hosting 42%')
@@ -205,7 +205,7 @@ test('getInvoiceTotals aggregates subtotal and taxable subtotal per invoice', fu
         ['price' => 3.0, 'quantity' => 4, 'taxed' => true],
     ] as $item) {
         $invoiceItem = new InvoiceItem();
-        $invoiceItem->setInvoiceId(1);
+        $invoiceItem->setInvoice($invoice);
         $invoiceItem->setPrice($item['price']);
         $invoiceItem->setQuantity($item['quantity']);
         $invoiceItem->setTaxed($item['taxed']);

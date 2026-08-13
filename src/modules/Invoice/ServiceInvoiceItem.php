@@ -48,7 +48,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
     public function markAsPaid(InvoiceItem $item, $charge = true): void
     {
         if ($charge && !$item->getCharged()) {
-            $invoice = $this->di['em']->getRepository(Invoice::class)->find($item->getInvoiceId());
+            $invoice = $item->getInvoice();
             if ($invoice === null) {
                 throw new \FOSSBilling\Exception('Invoice not found');
             }
@@ -195,7 +195,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         }
 
         $pi = new InvoiceItem();
-        $pi->setInvoiceId((int) $proforma->getId());
+        $pi->setInvoice($proforma);
         $pi->setType($data['type'] ?? InvoiceItem::TYPE_CUSTOM);
         $pi->setRelId(isset($data['rel_id']) ? (string) $data['rel_id'] : null);
         $pi->setTask($data['task'] ?? InvoiceItem::TASK_VOID);
@@ -233,7 +233,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             return 0;
         }
 
-        $rate = $this->di['em']->getConnection()->fetchOne('SELECT taxrate FROM invoice WHERE id = :id', ['id' => $item->getInvoiceId()]);
+        $rate = $this->di['em']->getConnection()->fetchOne('SELECT taxrate FROM invoice WHERE id = :id', ['id' => $item->getInvoice()?->getId()]);
         if ($rate <= 0) {
             return 0;
         }
@@ -275,7 +275,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
     public function generateForAddFunds(Invoice $proforma, $amount): void
     {
         $pi = new InvoiceItem();
-        $pi->setInvoiceId((int) $proforma->getId());
+        $pi->setInvoice($proforma);
         $pi->setType(InvoiceItem::TYPE_DEPOSIT);
         $pi->setRelId(null);
         $pi->setTask(InvoiceItem::TASK_VOID);
@@ -293,7 +293,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
     public function creditInvoiceItem(InvoiceItem $item): void
     {
-        $invoice = $this->di['em']->getRepository(Invoice::class)->find($item->getInvoiceId());
+        $invoice = $item->getInvoice();
         if ($invoice === null) {
             throw new \FOSSBilling\Exception('Invoice not found');
         }
@@ -412,7 +412,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         }
 
         $pi = new InvoiceItem();
-        $pi->setInvoiceId((int) $proforma->getId());
+        $pi->setInvoice($proforma);
         $pi->setType(InvoiceItem::TYPE_ORDER);
         $pi->setRelId((string) $order->getId());
         $pi->setTask($task);

@@ -115,15 +115,12 @@ test('updatePassword invalidates existing sessions', function (): void {
     $modMock = Mockery::mock('\\' . FOSSBilling\Module::class);
     $modMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([]);
 
-    $passwordReset = createEntity(Box\Mod\Staff\Entity\AdminPasswordReset::class, ['id' => 1, 'admin_id' => 1, 'created_at' => new DateTime('-300 seconds')]);
-
     $admin = \Tests\Helpers\admin(['id' => 1, 'status' => Box\Mod\Staff\Entity\Admin::STATUS_ACTIVE]);
+
+    $passwordReset = createEntity(Box\Mod\Staff\Entity\AdminPasswordReset::class, ['id' => 1, 'admin' => $admin, 'created_at' => new DateTime('-300 seconds')]);
 
     $passwordResetRepository = Mockery::mock(Box\Mod\Staff\Repository\AdminPasswordResetRepository::class);
     $passwordResetRepository->shouldReceive('findOneByHash')->once()->with('hashedString')->andReturn($passwordReset);
-
-    $adminRepository = Mockery::mock(Box\Mod\Staff\Repository\AdminRepository::class);
-    $adminRepository->shouldReceive('find')->atLeast()->once()->andReturn($admin);
 
     $eventMock = Mockery::mock('\Box_EventManager');
     $eventMock->shouldReceive('fire')->times(2);
@@ -138,7 +135,6 @@ test('updatePassword invalidates existing sessions', function (): void {
     $profileServiceMock->shouldReceive('invalidateSessions')->atLeast()->once();
 
     $di = container();
-    $di['em']->shouldReceive('getRepository')->with(Box\Mod\Staff\Entity\Admin::class)->andReturn($adminRepository);
     $di['em']->shouldReceive('getRepository')->with(Box\Mod\Staff\Entity\AdminPasswordReset::class)->andReturn($passwordResetRepository);
     $di['em']->shouldReceive('persist')->once()->with($admin);
     $di['em']->shouldReceive('remove')->once()->with($passwordReset);

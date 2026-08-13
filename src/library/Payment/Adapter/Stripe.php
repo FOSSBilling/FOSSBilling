@@ -254,8 +254,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
     private function resolveInvoice(Transaction $tx, array $data): ?Invoice
     {
-        if ($tx->getInvoiceId()) {
-            return $this->di['em']->getRepository(Invoice::class)->find($tx->getInvoiceId());
+        if ($tx->getInvoice()) {
+            return $tx->getInvoice();
         }
         if (isset($data['get']['invoice_id']) && $data['get']['invoice_id']) {
             $invoice = $this->di['em']->getRepository(Invoice::class)->find((int) $data['get']['invoice_id']);
@@ -263,7 +263,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 return null;
             }
 
-            $tx->setInvoiceId((int) $invoice->getId());
+            $tx->setInvoice($invoice);
 
             return $invoice;
         }
@@ -289,7 +289,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
         $this->withStripeObjectLock(
             $charge->id,
-            (int) $tx->getGatewayId(),
+            (int) $tx->getGateway()?->getId(),
             fn () => $this->processPaymentIntentUnderLock($tx, $invoice, $charge)
         );
     }
@@ -307,7 +307,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         // Stripe may deliver the webhook before redirecting the customer.
         // Keep that transaction instead of recording the PaymentIntent twice.
         $transactionRepository = $this->di['em']->getRepository(Transaction::class);
-        $existing = $transactionRepository->findActiveByTxnIdAndGatewayId($charge->id, (int) $tx->getGatewayId(), (int) $tx->getId());
+        $existing = $transactionRepository->findActiveByTxnIdAndGatewayId($charge->id, (int) $tx->getGateway()?->getId(), (int) $tx->getId());
         if ($existing instanceof Transaction) {
             $this->di['em']->remove($tx);
             $this->di['em']->flush();
@@ -375,14 +375,14 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
             $clientService->addFunds($client, $bd['amount'], $bd['description'], $bd);
 
-            if ($tx->getInvoiceId() && $invoice && !$invoiceService->isInvoiceTypeDeposit($invoice)) {
+            if ($tx->getInvoice() && $invoice && !$invoiceService->isInvoiceTypeDeposit($invoice)) {
                 if (!$invoice->isApproved()) {
                     $invoiceService->approveInvoice($invoice, ['use_credits' => false]);
                 }
                 $invoiceService->payInvoiceWithCredits($invoice);
-            } elseif ($tx->getInvoiceId() && $invoice && $invoiceService->isInvoiceTypeDeposit($invoice)) {
+            } elseif ($tx->getInvoice() && $invoice && $invoiceService->isInvoiceTypeDeposit($invoice)) {
                 $invoiceService->markAsPaid($invoice);
-            } elseif (!$tx->getInvoiceId()) {
+            } elseif (!$tx->getInvoice()) {
                 $invoiceService->doBatchPayWithCredits(['client_id' => (int) $client->getId()]);
             }
         }
@@ -699,13 +699,13 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             return false;
         }
 
-        $tx->setInvoiceId((int) $invoiceId);
+        $invoice = $this->di['em']->getRepository(Invoice::class)->find((int) $invoiceId);
+        $tx->setInvoice($invoice);
 
         // Subscription record is now created inline by processSetupIntent and
         // handleSetupIntentSucceededWebhook. This handler only serves as a
         // fallback if those flows didn't run (e.g. subscription created outside
         // FOSSBilling). Use the shared helper to avoid duplication.
-        $invoice = $this->di['em']->getRepository(Invoice::class)->find((int) $invoiceId);
         $this->createOrUpdateSubscription($api_admin, $invoice, $stripeSubscription, $gateway_id);
 
         return false;
@@ -790,7 +790,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         // Link the transaction to the invoice as early as possible so the
         // association survives any early return or failure further below.
         if ($invoiceId) {
-            $tx->setInvoiceId((int) $invoiceId);
+            $tx->setInvoice($this->di['em']->getRepository(Invoice::class)->find((int) $invoiceId));
             $this->di['em']->flush();
         }
 
@@ -853,7 +853,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             );
 
             if ($renewalInvoice instanceof Invoice) {
-                $tx->setInvoiceId((int) $renewalInvoice->getId());
+                $tx->setInvoice($renewalInvoice);
                 if (!$invoiceService->isInvoiceTypeDeposit($renewalInvoice)) {
                     $invoiceService->payInvoiceWithCredits($renewalInvoice);
                 }
@@ -927,7 +927,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $existing = $this->di['em']->getRepository(Transaction::class)
             ->findProcessingOrProcessedByTxnId($paymentIntent->id, $gateway_id, (int) $tx->getId());
         if ($existing instanceof Transaction) {
-            $tx->setInvoiceId($existing->getInvoiceId());
+            $tx->setInvoice($existing->getInvoice());
 
             return false;
         }
@@ -946,7 +946,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         }
 
         if ($invoiceId) {
-            $tx->setInvoiceId((int) $invoiceId);
+            $tx->setInvoice($this->di['em']->getRepository(Invoice::class)->find((int) $invoiceId));
         }
 
         // Persist the PaymentIntent ID while the lock is held so a redirect
@@ -957,7 +957,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             return false;
         }
 
-        $invoice = $invoiceId ? $this->di['em']->getRepository(Invoice::class)->find((int) $invoiceId) : null;
+        $invoice = $tx->getInvoice();
 
         // Delegate to the shared payment processing logic
         $this->applyOneTimePayment($tx, $invoice, $paymentIntent);
@@ -1029,7 +1029,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $existing = $this->di['em']->getRepository(Transaction::class)
             ->findProcessingOrProcessedByTxnId($setupIntent->id);
         if ($existing instanceof Transaction) {
-            $tx->setInvoiceId($existing->getInvoiceId());
+            $tx->setInvoice($existing->getInvoice());
 
             return false;
         }
@@ -1039,10 +1039,10 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             return false;
         }
 
-        $tx->setInvoiceId((int) $invoiceId);
+        $invoice = $this->di['em']->getRepository(Invoice::class)->find((int) $invoiceId);
+        $tx->setInvoice($invoice);
         $this->di['em']->flush();
 
-        $invoice = $this->di['em']->getRepository(Invoice::class)->find((int) $invoiceId);
         $customer = $this->getOrCreateCustomer($invoice);
 
         // createStripeSubscription uses an idempotency key based on the
@@ -1190,14 +1190,14 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
         $clientService->addFunds($client, $bd['amount'], $bd['description'], $bd);
 
-        if ($tx->getInvoiceId() && $invoice && !$invoiceService->isInvoiceTypeDeposit($invoice)) {
+        if ($tx->getInvoice() && $invoice && !$invoiceService->isInvoiceTypeDeposit($invoice)) {
             if (!$invoice->isApproved()) {
                 $invoiceService->approveInvoice($invoice, ['use_credits' => false]);
             }
             $invoiceService->payInvoiceWithCredits($invoice);
-        } elseif ($tx->getInvoiceId() && $invoice && $invoiceService->isInvoiceTypeDeposit($invoice)) {
+        } elseif ($tx->getInvoice() && $invoice && $invoiceService->isInvoiceTypeDeposit($invoice)) {
             $invoiceService->markAsPaid($invoice);
-        } elseif (!$tx->getInvoiceId()) {
+        } elseif (!$tx->getInvoice()) {
             $invoiceService->doBatchPayWithCredits(['client_id' => (int) $client->getId()]);
         }
 

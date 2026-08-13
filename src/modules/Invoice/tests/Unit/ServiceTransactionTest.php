@@ -57,8 +57,9 @@ test('updates a transaction', function (): void {
 
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->shouldReceive('flush')->atLeast()->once();
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn(Mockery::mock(InvoiceRepository::class)->shouldIgnoreMissing());
 
-    $service = transactionService(em: $em);
+    $service = transactionService(payGatewayRepo: Mockery::mock(PayGatewayRepository::class)->shouldIgnoreMissing(), em: $em);
     $service->getDi()['events_manager'] = $eventsMock;
     $service->getDi()['logger'] = new Tests\Helpers\TestLogger();
 
@@ -131,12 +132,9 @@ test('converts to api array', function (): void {
     $payGatewayModel = createEntity(PayGateway::class, ['id' => 1]);
     $payGatewayModel->setName('Stripe');
 
-    $payGatewayRepo = Mockery::mock(PayGatewayRepository::class);
-    $payGatewayRepo->shouldReceive('find')->atLeast()->once()->andReturn($payGatewayModel);
+    $service = transactionService();
 
-    $service = transactionService(payGatewayRepo: $payGatewayRepo);
-
-    $transactionModel = createEntity(Transaction::class, ['id' => 5, 'gatewayId' => 1]);
+    $transactionModel = createEntity(Transaction::class, ['id' => 5, 'gateway' => $payGatewayModel]);
 
     $result = $service->toApiArray($transactionModel, false);
     expect($result)->toBeArray();
@@ -351,9 +349,14 @@ test('markTransactionError does not clobber an already processed transaction', f
 });
 
 test('_subscribe creates and persists a subscription from an approved transaction', function (): void {
-    $tx = createEntity(Transaction::class, ['id' => 1, 'gatewayId' => 5]);
+    $gateway = createEntity(PayGateway::class, ['id' => 5]);
+    $invoice = createEntity(Invoice::class);
+    setEntityId($invoice, 10);
+    $invoice->setClientId(7);
+    $invoice->setCurrency('USD');
+
+    $tx = createEntity(Transaction::class, ['id' => 1, 'gateway' => $gateway, 'invoice' => $invoice]);
     $tx->setStatus(Transaction::STATUS_APPROVED);
-    $tx->setInvoiceId(10);
     $tx->setSId('sub_gateway_1');
     $tx->setAmount('29.99');
     $tx->setCurrency('USD');
@@ -362,20 +365,11 @@ test('_subscribe creates and persists a subscription from an approved transactio
     $transactionRepo = Mockery::mock(TransactionRepository::class);
     $transactionRepo->shouldReceive('findOneProcessedByTxnId')->andReturnNull();
 
-    $invoice = createEntity(Invoice::class);
-    setEntityId($invoice, 10);
-    $invoice->setClientId(7);
-    $invoice->setCurrency('USD');
-
     $subscriptionService = Mockery::mock(ServiceSubscription::class);
     $subscriptionService->shouldReceive('getSubscriptionPeriod')->with($invoice)->andReturn('1M');
 
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo);
-    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn(Mockery::mock(PayGatewayRepository::class));
-    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
-    $invoiceRepo->shouldReceive('find')->with(10)->andReturn($invoice);
-    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
 
     $capturedSubscription = null;
     $em->shouldReceive('persist')->once()->withArgs(function (object $entity) use (&$capturedSubscription): bool {
@@ -405,7 +399,7 @@ test('_subscribe creates and persists a subscription from an approved transactio
     expect($capturedSubscription)->toBeInstanceOf(Subscription::class)
         ->and($capturedSubscription->getSid())->toBe('sub_gateway_1')
         ->and($capturedSubscription->getClientId())->toBe(7)
-        ->and($capturedSubscription->getPayGatewayId())->toBe(5)
+        ->and($capturedSubscription->getPayGateway())->toBe($gateway)
         ->and($capturedSubscription->getRelType())->toBe('invoice')
         ->and($capturedSubscription->getRelId())->toBe(10)
         ->and($capturedSubscription->getAmount())->toBe('29.99')
@@ -469,16 +463,12 @@ test('debitTransaction records a client balance credit', function (): void {
 
     $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 20, 'currency' => 'USD']);
 
-    $tx = createEntity(Transaction::class, ['id' => 7, 'invoice_id' => 5, 'currency' => 'USD', 'amount' => '25.00']);
-
-    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
-    $invoiceRepo->shouldReceive('find')->once()->with(5)->andReturn($proforma);
+    $tx = createEntity(Transaction::class, ['id' => 7, 'invoice' => $proforma, 'currency' => 'USD', 'amount' => '25.00']);
 
     $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
     $clientRepo->shouldReceive('find')->once()->with(20)->andReturn($client);
 
     $em = Mockery::mock(EntityManagerInterface::class);
-    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
     $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepo);
     $em->shouldReceive('persist')->once()->with(
         Mockery::on(fn (ClientBalance $balance): bool => $balance->getClientId() === 20
@@ -501,16 +491,12 @@ test('debitTransaction rejects a transaction without a client', function (): voi
     $proforma->client_id = 20;
     $proforma->currency = 'USD';
 
-    $tx = createEntity(Transaction::class, ['id' => 7, 'invoice_id' => 5, 'currency' => 'USD', 'amount' => '25.00']);
-
-    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
-    $invoiceRepo->shouldReceive('find')->once()->with(5)->andReturn($proforma);
+    $tx = createEntity(Transaction::class, ['id' => 7, 'invoice' => $proforma, 'currency' => 'USD', 'amount' => '25.00']);
 
     $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
     $clientRepo->shouldReceive('find')->once()->with(20)->andReturn(null);
 
     $em = Mockery::mock(EntityManagerInterface::class);
-    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
     $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepo);
 
     $service = transactionService(em: $em);

@@ -30,8 +30,9 @@ class AdminGroupMember implements ApiArrayInterface
     private ?int $id = null;
 
     public function __construct(
-        #[ORM\Column(name: 'admin_id', type: Types::INTEGER)]
-        private int $adminId,
+        #[ORM\ManyToOne(targetEntity: Admin::class)]
+        #[ORM\JoinColumn(name: 'admin_id', referencedColumnName: 'id', nullable: false)]
+        private Admin $admin,
         #[ORM\ManyToOne(targetEntity: AdminGroup::class)]
         #[ORM\JoinColumn(name: 'admin_group_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
         private AdminGroup $adminGroup,
@@ -42,7 +43,7 @@ class AdminGroupMember implements ApiArrayInterface
     {
         return [
             'id' => $this->getId(),
-            'admin_id' => $this->getAdminId(),
+            'admin_id' => $this->getAdmin()->getId(),
             'admin_group_id' => $this->getAdminGroup()->getId(),
             'created_at' => $this->getCreatedAt()?->format('Y-m-d H:i:s'),
         ];
@@ -53,14 +54,14 @@ class AdminGroupMember implements ApiArrayInterface
         return $this->id;
     }
 
-    public function getAdminId(): int
+    public function getAdmin(): Admin
     {
-        return $this->adminId;
+        return $this->admin;
     }
 
-    public function setAdminId(int $adminId): self
+    public function setAdmin(Admin $admin): self
     {
-        $this->adminId = $adminId;
+        $this->admin = $admin;
 
         return $this;
     }

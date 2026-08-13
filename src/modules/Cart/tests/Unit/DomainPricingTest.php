@@ -13,7 +13,6 @@ declare(strict_types=1);
 use Box\Mod\Cart\Entity\Cart;
 use Box\Mod\Cart\Entity\CartProduct;
 use Box\Mod\Cart\Repository\CartProductRepository;
-use Box\Mod\Cart\Repository\CartRepository;
 use Box\Mod\Cart\Service;
 use Box\Mod\Product\Service as ProductService;
 
@@ -29,7 +28,7 @@ test('cartProductToApiArray uses resolved initial domain term pricing', function
 
     $cartProduct = createEntity(CartProduct::class);
     $cartProduct->id = 10;
-    $cartProduct->cart_id = 20;
+    $cartProduct->cart = $cart;
     $cartProduct->product_id = 1;
     $cartProduct->config = json_encode([
         'action' => 'register',
@@ -39,14 +38,10 @@ test('cartProductToApiArray uses resolved initial domain term pricing', function
         'period' => '2Y',
     ]);
 
-    $cartRepo = Mockery::mock(CartRepository::class);
-    $cartRepo->shouldReceive('find')->once()->with(20)->andReturn($cart);
-
     $cartProductRepo = Mockery::mock(CartProductRepository::class);
     $cartProductRepo->shouldReceive('findByCartId')->once()->with(20)->andReturn([]);
 
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
-    $emMock->shouldReceive('getRepository')->with(Cart::class)->andReturn($cartRepo);
     $emMock->shouldReceive('getRepository')->with(CartProduct::class)->andReturn($cartProductRepo);
 
     $productService = Mockery::mock(ProductService::class);

@@ -268,7 +268,7 @@ test('update returns true', function (): void {
 
 test('update validates and assigns client_group_id through the group repository', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
-    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1, 'client_group_id' => 3]);
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
     $group = createEntity(Box\Mod\Client\Entity\ClientGroup::class, ['id' => 7]);
 
     $clientRepository = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
@@ -288,12 +288,12 @@ test('update validates and assigns client_group_id through the group repository'
     $adminClient->setDi($di);
 
     expect($adminClient->update(['id' => 1, 'client_group_id' => '7']))->toBeTrue()
-        ->and($client->getClientGroupId())->toBe(7);
+        ->and($client->getClientGroup())->toBe($group);
 });
 
 test('update clears client_group_id when the alias is empty', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
-    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1, 'client_group_id' => 3]);
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
 
     $clientRepository = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
     $clientRepository->shouldReceive('find')->once()->with(1)->andReturn($client);
@@ -309,7 +309,7 @@ test('update clears client_group_id when the alias is empty', function (): void 
     $adminClient->setDi($di);
 
     expect($adminClient->update(['id' => 1, 'client_group_id' => '']))->toBeTrue()
-        ->and($client->getClientGroupId())->toBeNull();
+        ->and($client->getClientGroup())->toBeNull();
 });
 
 test('update rejects a non-integer client_group_id alias', function (): void {

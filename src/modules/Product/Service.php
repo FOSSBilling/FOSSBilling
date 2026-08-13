@@ -171,7 +171,7 @@ class Service implements InjectionAwareInterface
 
         $result = [
             'id' => $model->getId(),
-            'product_category_id' => $model->getProductCategoryId(),
+            'product_category_id' => $model->getProductCategory()?->getId(),
             'type' => $model->getType(),
             'title' => $model->getTitle(),
             'slug' => $model->getSlug(),
@@ -203,8 +203,8 @@ class Service implements InjectionAwareInterface
             $result['status'] = $model->getStatus();
             $result['hidden'] = $model->isHidden();
             $result['setup'] = $model->getSetup();
-            if ($model->getProductCategoryId()) {
-                $productCategory = $this->findProductCategoryById((int) $model->getProductCategoryId());
+            $productCategory = $model->getProductCategory();
+            if ($productCategory instanceof ProductCategory) {
                 $result['category'] = [
                     'id' => $productCategory->getId(),
                     'title' => $productCategory->getTitle(),
@@ -364,9 +364,8 @@ class Service implements InjectionAwareInterface
             return $this->getDomainPricingArray();
         }
 
-        if ($product->getProductPaymentId()) {
-            $productPayment = $this->getProductPaymentById((int) $product->getProductPaymentId());
-
+        $productPayment = $product->getProductPayment();
+        if ($productPayment instanceof ProductPayment) {
             return $this->toProductPaymentApiArray($productPayment);
         }
 
@@ -422,14 +421,13 @@ class Service implements InjectionAwareInterface
         $priority = $this->getProductRepository()->getMaxPriority();
 
         $productPayment = $this->createDefaultProductPayment();
-        $paymentId = (int) $productPayment->getId();
 
         $slug = $this->generateUniqueProductSlug($title);
 
         $model = new Product();
         $model
-            ->setProductPaymentId($paymentId)
-            ->setProductCategoryId($categoryId !== null ? (int) $categoryId : null)
+            ->setProductPayment($productPayment)
+            ->setProductCategory($categoryId !== null ? $this->findProductCategoryById((int) $categoryId) : null)
             ->setStatus('disabled')
             ->setTitle($title)
             ->setSlug($slug)
@@ -462,7 +460,7 @@ class Service implements InjectionAwareInterface
             if (!isset($data['pricing']['type']) || !array_key_exists($data['pricing']['type'], $types)) {
                 throw new \FOSSBilling\InformationException('Pricing type is required');
             }
-            $productPayment = $this->getProductPaymentById((int) $model->getProductPaymentId());
+            $productPayment = $this->requireProductPayment($model->getProductPayment());
             $this->applyPricingToProductPayment($productPayment, $data['pricing']);
             $this->di['em']->flush();
         }
@@ -474,9 +472,12 @@ class Service implements InjectionAwareInterface
         }
 
         $form_id = $data['form_id'] ?? $model->getFormId();
-        $productCategoryId = $data['product_category_id'] ?? $model->getProductCategoryId();
 
-        $model->setProductCategoryId(empty($productCategoryId) ? null : (int) $productCategoryId);
+        if (array_key_exists('product_category_id', $data)) {
+            $categoryId = $data['product_category_id'];
+            $model->setProductCategory(empty($categoryId) ? null : $this->findProductCategoryById((int) $categoryId));
+        }
+
         $model->setFormId(empty($form_id) ? null : (int) $form_id);
         $model->setIconUrl($data['icon_url'] ?? $model->getIconUrl());
         $model->setStatus((string) ($data['status'] ?? $model->getStatus()));
@@ -577,14 +578,13 @@ class Service implements InjectionAwareInterface
     public function createAddon($title, $description = null, $setup = null, $status = null, $iconUrl = null): ?int
     {
         $productPayment = $this->createDefaultProductPayment();
-        $paymentId = (int) $productPayment->getId();
 
         $slug = $this->generateUniqueProductSlug($title);
 
         $model = new Product();
         $model
-            ->setProductPaymentId($paymentId)
-            ->setProductCategoryId(null)
+            ->setProductPayment($productPayment)
+            ->setProductCategory(null)
             ->setStatus($status ?? 'disabled')
             ->setTitle($title)
             ->setSlug($slug)
@@ -747,10 +747,9 @@ class Service implements InjectionAwareInterface
             return $this->getStartingDomainPrice();
         }
 
-        if ($model->getProductPaymentId()) {
-            $productPaymentModel = $this->getProductPaymentById((int) $model->getProductPaymentId());
-
-            return $this->getStartingPrice($productPaymentModel);
+        $productPayment = $model->getProductPayment();
+        if ($productPayment instanceof ProductPayment) {
+            return $this->getStartingPrice($productPayment);
         }
 
         return null;
@@ -1196,7 +1195,7 @@ class Service implements InjectionAwareInterface
 
     public function toAddonArray(Product $model, $deep = true, bool $isAdmin = false): array
     {
-        $productPayment = $this->getProductPaymentById((int) $model->getProductPaymentId());
+        $productPayment = $this->requireProductPayment($model->getProductPayment());
         $pricing = $this->toProductPaymentApiArray($productPayment);
         $config = json_decode($model->getConfig() ?? '', true) ?? [];
 
@@ -1348,8 +1347,8 @@ class Service implements InjectionAwareInterface
             return false;
         }
 
-        $clientGroupId = $client->getClientGroupId();
-        if (!$clientGroupId) {
+        $clientGroupId = $client->getClientGroup()?->getId();
+        if ($clientGroupId === null) {
             return false;
         }
 
@@ -1735,7 +1734,7 @@ class Service implements InjectionAwareInterface
             return 0.0;
         }
 
-        $pp = $this->getProductPaymentById((int) $product->getProductPaymentId());
+        $pp = $this->requireProductPayment($product->getProductPayment());
 
         if ($pp->getType() == ProductPayment::FREE) {
             return 0.0;
@@ -1758,7 +1757,7 @@ class Service implements InjectionAwareInterface
             return $this->getDomainProductPrice($config ?? []);
         }
 
-        $pp = $this->getProductPaymentById((int) $product->getProductPaymentId());
+        $pp = $this->requireProductPayment($product->getProductPayment());
 
         if ($pp->getType() == ProductPayment::FREE) {
             return 0.0;
@@ -1796,9 +1795,8 @@ class Service implements InjectionAwareInterface
         return $period;
     }
 
-    private function getProductPaymentById(int $id): ProductPayment
+    private function requireProductPayment(?ProductPayment $productPayment): ProductPayment
     {
-        $productPayment = $this->getProductPaymentRepository()->find($id);
         if (!$productPayment instanceof ProductPayment) {
             throw new \FOSSBilling\InformationException('Product payment not found');
         }
@@ -1938,8 +1936,8 @@ class Service implements InjectionAwareInterface
     {
         return [
             'id' => $product->getId(),
-            'product_category_id' => $product->getProductCategoryId(),
-            'product_payment_id' => $product->getProductPaymentId(),
+            'product_category_id' => $product->getProductCategory()?->getId(),
+            'product_payment_id' => $product->getProductPayment()?->getId(),
             'form_id' => $product->getFormId(),
             'title' => $product->getTitle(),
             'description' => $product->getDescription(),
@@ -2083,8 +2081,9 @@ class Service implements InjectionAwareInterface
                 ->setReleasedAt(clone $releasedAt)
                 ->setReleaseReason($reason);
 
-            if ($redemption->getPhase() === PromoRedemption::PHASE_CHECKOUT && $redemption->getPromoId() !== null) {
-                $promoId = (int) $redemption->getPromoId();
+            $promo = $redemption->getPromo();
+            if ($redemption->getPhase() === PromoRedemption::PHASE_CHECKOUT && $promo !== null) {
+                $promoId = (int) $promo->getId();
                 $checkoutReleaseCounts[$promoId] = ($checkoutReleaseCounts[$promoId] ?? 0) + 1;
             }
         }
@@ -2107,14 +2106,13 @@ class Service implements InjectionAwareInterface
         ?string $createdAt,
         string $status,
     ): PromoRedemption {
-        $promoId = (int) ($this->getPromoSourceArray($promo)['id'] ?? 0);
         $timestamp = $createdAt ?? date('Y-m-d H:i:s');
         $dateTime = new \DateTime($timestamp);
         $redemption = new PromoRedemption();
         $clientId = (int) $client->getId();
         $orderId = $order?->getId();
         $redemption
-            ->setPromoId($promoId)
+            ->setPromo($promo)
             ->setClientId($clientId)
             ->setClientOrderId($orderId ?? null)
             ->setInvoiceId($invoice !== null ? (int) $invoice->getId() : null)

@@ -46,7 +46,8 @@ test('gets dependency injection container', function (): void {
 });
 
 test('marks item as paid', function (): void {
-    $item = createEntity(InvoiceItem::class, []);
+    $invoiceModel = createEntity(Invoice::class);
+    $item = createEntity(InvoiceItem::class, ['invoice' => $invoiceModel]);
 
     $serviceMock = Mockery::mock(ServiceInvoiceItem::class)->makePartial();
     $serviceMock->shouldReceive('getTotalWithTax')
@@ -57,8 +58,6 @@ test('marks item as paid', function (): void {
         ->atLeast()
         ->once()
         ->andReturn(1);
-
-    $invoiceModel = createEntity(Invoice::class);
 
     $clientModel = createEntity(Box\Mod\Client\Entity\Client::class);
     $clientOrder = createEntity(Order::class);
@@ -88,9 +87,6 @@ test('marks item as paid', function (): void {
         ->once();
     $repo = Mockery::mock(InvoiceItemRepository::class);
     $em->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($repo);
-    $invoiceRepo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
-    $invoiceRepo->shouldReceive('find')->andReturn($invoiceModel);
-    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
     $em->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
     $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
     $clientRepo->shouldReceive('find')->byDefault()->andReturn($clientModel);
@@ -444,17 +440,14 @@ test('credits invoice item', function (): void {
         ->atLeast()->once()
         ->andReturn(11.2);
 
-    $item = createEntity(InvoiceItem::class, []);
     $invoiceModel = createEntity(Invoice::class);
+    $item = createEntity(InvoiceItem::class, ['invoice' => $invoiceModel]);
 
     $clientModel = createEntity(Box\Mod\Client\Entity\Client::class);
 
     $em = Mockery::mock(EntityManagerInterface::class);
     $repo = Mockery::mock(InvoiceItemRepository::class);
     $em->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($repo);
-    $invoiceRepo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
-    $invoiceRepo->shouldReceive('find')->andReturn($invoiceModel);
-    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
     $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
     $clientRepo->shouldReceive('find')->atLeast()->once()->andReturn($clientModel);
     $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepo);

@@ -13,15 +13,19 @@ namespace Box\Mod\Staff\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use FOSSBilling\Doctrine\TimestampTrait;
 use FOSSBilling\Interfaces\ApiArrayInterface;
+use FOSSBilling\Interfaces\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Staff\Repository\AdminRepository::class)]
 #[ORM\Table(name: 'admin')]
 #[ORM\UniqueConstraint(name: 'email', columns: ['email'])]
 #[ORM\UniqueConstraint(name: 'system_name', columns: ['system_name'])]
 #[ORM\HasLifecycleCallbacks]
-class Admin implements ApiArrayInterface
+class Admin implements ApiArrayInterface, TimestampInterface
 {
+    use TimestampTrait;
+
     public const string SYSTEM_CRON = 'cron';
     public const string STATUS_ACTIVE = 'active';
     public const string STATUS_INACTIVE = 'inactive';
@@ -55,12 +59,6 @@ class Admin implements ApiArrayInterface
 
     #[ORM\Column(type: Types::STRING, length: 64, nullable: true)]
     private ?string $timezone = null;
-
-    #[ORM\Column(name: 'created_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $createdAt = null;
-
-    #[ORM\Column(name: 'updated_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $updatedAt = null;
 
     public function getId(): ?int
     {
@@ -167,16 +165,6 @@ class Admin implements ApiArrayInterface
         return $this;
     }
 
-    public function getCreatedAt(): ?\DateTime
-    {
-        return $this->createdAt;
-    }
-
-    public function getUpdatedAt(): ?\DateTime
-    {
-        return $this->updatedAt;
-    }
-
     public function getFullName(): string
     {
         return $this->name ?? '';
@@ -206,19 +194,5 @@ class Admin implements ApiArrayInterface
             'created_at' => $this->createdAt?->format('Y-m-d H:i:s'),
             'updated_at' => $this->updatedAt?->format('Y-m-d H:i:s'),
         ];
-    }
-
-    #[ORM\PrePersist]
-    public function onPrePersist(): void
-    {
-        $now = new \DateTime();
-        $this->createdAt ??= $now;
-        $this->updatedAt ??= $now;
-    }
-
-    #[ORM\PreUpdate]
-    public function onPreUpdate(): void
-    {
-        $this->updatedAt = new \DateTime();
     }
 }

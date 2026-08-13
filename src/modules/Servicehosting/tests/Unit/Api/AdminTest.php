@@ -393,10 +393,11 @@ test('testServerDelete', function (): void {
     ->andReturn(true);
 
     $serverRepo = Mockery::mock(ServiceHostingServerRepository::class);
-    $serverRepo->shouldReceive('find')->atLeast()->once()->andReturn(new ServiceHostingServer());
+    $serverEntity = new ServiceHostingServer();
+    $serverRepo->shouldReceive('find')->atLeast()->once()->andReturn($serverEntity);
 
     $serviceHostingRepo = Mockery::mock(ServiceHostingRepository::class);
-    $serviceHostingRepo->shouldReceive('count')->once()->with(['serviceHostingServerId' => 1])->andReturn(0);
+    $serviceHostingRepo->shouldReceive('count')->once()->with(['serviceHostingServer' => $serverEntity])->andReturn(0);
 
     $emMock = serviceHostingAdminEmWith([
         ServiceHostingServer::class => $serverRepo,
@@ -415,10 +416,11 @@ test('testServerDelete', function (): void {
     $data['id'] = 2;
 
     $serverRepo2 = Mockery::mock(ServiceHostingServerRepository::class);
-    $serverRepo2->shouldReceive('find')->atLeast()->once()->andReturn(new ServiceHostingServer());
+    $serverEntity2 = new ServiceHostingServer();
+    $serverRepo2->shouldReceive('find')->atLeast()->once()->andReturn($serverEntity2);
 
     $serviceHostingRepo2 = Mockery::mock(ServiceHostingRepository::class);
-    $serviceHostingRepo2->shouldReceive('count')->once()->with(['serviceHostingServerId' => 2])->andReturn(1);
+    $serviceHostingRepo2->shouldReceive('count')->once()->with(['serviceHostingServer' => $serverEntity2])->andReturn(1);
 
     $emMock2 = serviceHostingAdminEmWith([
         ServiceHostingServer::class => $serverRepo2,
@@ -579,10 +581,11 @@ test('testHpDelete', function (): void {
     ->andReturn(true);
 
     $hpRepo = Mockery::mock(ServiceHostingHpRepository::class);
-    $hpRepo->shouldReceive('find')->atLeast()->once()->andReturn(new ServiceHostingHp());
+    $hpEntity = new ServiceHostingHp();
+    $hpRepo->shouldReceive('find')->atLeast()->once()->andReturn($hpEntity);
 
     $serviceHostingRepo = Mockery::mock(ServiceHostingRepository::class);
-    $serviceHostingRepo->shouldReceive('count')->once()->with(['serviceHostingHpId' => 1])->andReturn(0);
+    $serviceHostingRepo->shouldReceive('count')->once()->with(['serviceHostingHp' => $hpEntity])->andReturn(0);
 
     $emMock = serviceHostingAdminEmWith([
         ServiceHostingHp::class => $hpRepo,

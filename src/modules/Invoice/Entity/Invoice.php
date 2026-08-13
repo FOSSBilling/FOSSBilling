@@ -136,8 +136,9 @@ class Invoice implements TimestampInterface
     #[ORM\Column(name: 'buyer_email', type: Types::STRING, length: 255, nullable: true)]
     private ?string $buyerEmail = null;
 
-    #[ORM\Column(name: 'gateway_id', type: Types::INTEGER, nullable: true)]
-    private ?int $gatewayId = null;
+    #[ORM\ManyToOne(targetEntity: PayGateway::class)]
+    #[ORM\JoinColumn(name: 'gateway_id', referencedColumnName: 'id', nullable: true)]
+    private ?PayGateway $gateway = null;
 
     #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
     private bool $approved = false;
@@ -561,14 +562,14 @@ class Invoice implements TimestampInterface
         return $this;
     }
 
-    public function getGatewayId(): ?int
+    public function getGateway(): ?PayGateway
     {
-        return $this->gatewayId;
+        return $this->gateway;
     }
 
-    public function setGatewayId(?int $gatewayId): self
+    public function setGateway(?PayGateway $gateway): self
     {
-        $this->gatewayId = $gatewayId;
+        $this->gateway = $gateway;
 
         return $this;
     }

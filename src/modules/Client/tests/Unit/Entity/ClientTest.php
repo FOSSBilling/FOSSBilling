@@ -23,7 +23,7 @@ test('maps client tables without changing their columns', function (): void {
 
     expect($client->getTableName())->toBe('client')
         ->and($client->getColumnNames())->toBe([
-            'id', 'aid', 'client_group_id', 'role', 'auth_type', 'email', 'pass', 'salt',
+            'id', 'aid', 'role', 'auth_type', 'email', 'pass', 'salt',
             'status', 'email_approved', 'tax_exempt', 'type', 'first_name', 'last_name',
             'gender', 'birthday', 'phone_cc', 'phone', 'company', 'company_vat',
             'company_number', 'address_1', 'address_2', 'city', 'state', 'postcode',
@@ -60,7 +60,7 @@ test('converts an admin client list entity to the legacy API shape', function ()
         'first_name' => 'Ada',
         'last_name' => 'Lovelace',
         'billing_email' => 'billing@example.com',
-        'client_group_id' => 3,
+        'clientGroup' => \Tests\Helpers\createEntity(ClientGroup::class, ['id' => 3]),
         'status' => 'active',
         'tax_exempt' => 0,
         'custom_15' => 'VIP',

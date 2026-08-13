@@ -256,7 +256,7 @@ class Service implements InjectionAwareInterface
             'buyer_phone' => $invoice->getBuyerPhone(),
             'buyer_phone_cc' => $invoice->getBuyerPhoneCc(),
             'buyer_email' => $invoice->getBuyerEmail(),
-            'gateway_id' => $invoice->getGatewayId(),
+            'gateway_id' => $invoice->getGateway()?->getId(),
             'approved' => $invoice->isApproved(),
             'taxname' => $invoice->getTaxname(),
             'taxrate' => $invoice->getTaxrate(),
@@ -775,8 +775,8 @@ class Service implements InjectionAwareInterface
         $payGateway = $this->validateAdminMarkAsPaidRequest($data, $invoice);
         $transactionId = isset($data['transactionId']) ? trim((string) $data['transactionId']) : null;
 
-        if ((int) $payGateway->getId() !== (int) $invoice->getGatewayId()) {
-            $invoice->setGatewayId((int) $payGateway->getId());
+        if ((int) $invoice->getGateway()?->getId() !== (int) $payGateway->getId()) {
+            $invoice->setGateway($payGateway);
             $this->di['em']->persist($invoice);
             $this->di['em']->flush();
         }
@@ -786,7 +786,7 @@ class Service implements InjectionAwareInterface
             $invoiceTotal = $this->getTotalWithTax($invoice);
             $newtx = $transactionService->create([
                 'invoice_id' => $invoice->getId(),
-                'gateway_id' => $invoice->getGatewayId(),
+                'gateway_id' => $invoice->getGateway()?->getId(),
                 'currency' => $invoice->getCurrency(),
                 'status' => 'received',
                 'source' => 'admin',
@@ -800,7 +800,7 @@ class Service implements InjectionAwareInterface
             if ($transaction === null) {
                 throw new InformationException('Transaction not found');
             }
-            if ((int) $transaction->getInvoiceId() !== (int) $invoice->getId()) {
+            if ((int) $transaction->getInvoice()?->getId() !== (int) $invoice->getId()) {
                 throw new InformationException('Transaction ID is already associated with another invoice.');
             }
 
@@ -823,7 +823,7 @@ class Service implements InjectionAwareInterface
 
     public function validateAdminMarkAsPaidRequest(array $data, ?Invoice $invoice = null): PayGateway
     {
-        $gatewayId = isset($data['gateway_id']) && !empty($data['gateway_id']) ? (int) $data['gateway_id'] : $invoice?->getGatewayId() ?? 0;
+        $gatewayId = isset($data['gateway_id']) && !empty($data['gateway_id']) ? (int) $data['gateway_id'] : (int) ($invoice?->getGateway()?->getId() ?? 0);
         if ($gatewayId <= 0) {
             throw new InformationException('Payment gateway is required when marking an invoice as paid.');
         }
@@ -923,7 +923,9 @@ class Service implements InjectionAwareInterface
         $model->setCurrency($client->getCurrency());
         $model->setApproved(false);
 
-        $model->setGatewayId(isset($data['gateway_id']) ? (int) $data['gateway_id'] : $model->getGatewayId());
+        if (isset($data['gateway_id'])) {
+            $model->setGateway($this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']));
+        }
         $model->setText1($data['text_1'] ?? $model->getText1());
         $model->setText2($data['text_2'] ?? $model->getText2());
         $this->di['em']->persist($model);
@@ -1248,7 +1250,7 @@ class Service implements InjectionAwareInterface
                 $entityManager = $this->di['em'];
                 foreach ($invoiceItems as $item) {
                     $pi = new InvoiceItem();
-                    $pi->setInvoiceId((int) $new->getId());
+                    $pi->setInvoice($new);
                     $pi->setType($item->getType());
                     $pi->setRelId($item->getRelId());
                     $pi->setTask($item->getTask());
@@ -1325,9 +1327,9 @@ class Service implements InjectionAwareInterface
             if (!$gateway->isEnabled()) {
                 throw new InformationException('Payment gateway is not enabled');
             }
-            $model->setGatewayId(intval($data['gateway_id']));
+            $model->setGateway($gateway);
         } elseif (array_key_exists('gateway_id', $data) && $data['gateway_id'] === null) {
-            $model->setGatewayId(null);
+            $model->setGateway(null);
         }
         $model->setText1($data['text_1'] ?? $model->getText1());
         $model->setText2($data['text_2'] ?? $model->getText2());

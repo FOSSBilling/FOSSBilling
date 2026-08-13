@@ -1033,13 +1033,6 @@ test('admin mark as paid with custom gateway records transaction and marks invoi
         ->with(Mockery::type(Invoice::class))
         ->andReturn(42.50);
 
-    $invoiceModel = createEntity(Invoice::class);
-
-    $invoiceModel->id = 10;
-    $invoiceModel->gateway_id = 5;
-    $invoiceModel->currency = 'USD';
-    $invoiceModel->status = Invoice::STATUS_UNPAID;
-
     $gatewayModel = createEntity(PayGateway::class, [
         'id' => 5,
         'gateway' => 'Custom',
@@ -1047,7 +1040,13 @@ test('admin mark as paid with custom gateway records transaction and marks invoi
         'name' => 'Manual payment',
     ]);
 
-    $transactionModel = createEntity(Transaction::class, ['id' => 20, 'invoiceId' => 10]);
+    $invoiceModel = createEntity(Invoice::class);
+    $invoiceModel->id = 10;
+    $invoiceModel->gateway = $gatewayModel;
+    $invoiceModel->currency = 'USD';
+    $invoiceModel->status = Invoice::STATUS_UNPAID;
+
+    $transactionModel = createEntity(Transaction::class, ['id' => 20, 'invoice' => $invoiceModel]);
 
     $transactionServiceMock = Mockery::mock(Box\Mod\Invoice\ServiceTransaction::class);
     $transactionServiceMock->shouldReceive('create')
@@ -1096,20 +1095,22 @@ test('admin mark as paid with custom gateway rejects transaction linked to anoth
         ->with(Mockery::type(Invoice::class))
         ->andReturn(42.50);
 
-    $invoiceModel = createEntity(Invoice::class);
-
-    $invoiceModel->id = 10;
-    $invoiceModel->gateway_id = 5;
-    $invoiceModel->currency = 'USD';
-    $invoiceModel->status = Invoice::STATUS_UNPAID;
-
     $gatewayModel = createEntity(PayGateway::class, [
         'id' => 5,
         'gateway' => 'Custom',
         'enabled' => true,
     ]);
 
-    $transactionModel = createEntity(Transaction::class, ['id' => 20, 'invoiceId' => 99]);
+    $invoiceModel = createEntity(Invoice::class);
+    $invoiceModel->id = 10;
+    $invoiceModel->gateway = $gatewayModel;
+    $invoiceModel->currency = 'USD';
+    $invoiceModel->status = Invoice::STATUS_UNPAID;
+
+    $otherInvoice = createEntity(Invoice::class);
+    $otherInvoice->id = 99;
+
+    $transactionModel = createEntity(Transaction::class, ['id' => 20, 'invoice' => $otherInvoice]);
 
     $transactionServiceMock = Mockery::mock(Box\Mod\Invoice\ServiceTransaction::class);
     $transactionServiceMock->shouldReceive('create')

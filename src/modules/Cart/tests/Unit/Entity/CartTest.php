@@ -22,7 +22,7 @@ test('maps the existing cart tables without changing their columns', function ()
         ->and($cart->getFieldMapping('sessionId')['nullable'])->toBeTrue()
         ->and($cart->table['uniqueConstraints']['session_id_idx']['columns'])->toBe(['session_id'])
         ->and($cartProduct->getTableName())->toBe('cart_product')
-        ->and($cartProduct->getColumnNames())->toBe(['id', 'cart_id', 'product_id', 'config'])
+        ->and($cartProduct->getColumnNames())->toBe(['id', 'product_id', 'config'])
         ->and($cartProduct->getFieldMapping('config')['nullable'])->toBeTrue();
 });
 

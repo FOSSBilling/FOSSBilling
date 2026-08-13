@@ -1207,7 +1207,7 @@ test('saveStatusChange persists status with order details', function (): void {
     expect($persisted)->toHaveCount(1);
     $status = $persisted[0];
     expect($status)->toBeInstanceOf(Box\Mod\Order\Entity\OrderStatus::class);
-    expect($status->getClientOrderId())->toBe(7);
+    expect($status->getOrder())->toBe($order);
     expect($status->getStatus())->toBe(Order::STATUS_ACTIVE);
     expect($status->getNotes())->toBe('notes here');
 });
@@ -1239,7 +1239,7 @@ test('orderStatusAdd records status history', function (): void {
     expect($persisted)->toHaveCount(1);
     $status = $persisted[0];
     expect($status)->toBeInstanceOf(Box\Mod\Order\Entity\OrderStatus::class);
-    expect($status->getClientOrderId())->toBe(7);
+    expect($status->getOrder())->toBe($order);
     expect($status->getStatus())->toBe(Order::STATUS_ACTIVE);
     expect($status->getNotes())->toBe('notes here');
 });
@@ -3258,14 +3258,13 @@ test('updateOrderMeta persists new meta entries with order details', function ()
     expect($persisted)->toHaveCount(1);
     $metaEntity = $persisted[0];
     expect($metaEntity)->toBeInstanceOf(Box\Mod\Order\Entity\OrderMeta::class);
-    expect($metaEntity->getClientOrderId())->toBe(7);
+    expect($metaEntity->getOrder())->toBe($order);
     expect($metaEntity->getName())->toBe('key');
     expect($metaEntity->getValue())->toBe('value');
 });
 
 test('updateOrderMeta updates existing meta', function (): void {
     $existing = new Box\Mod\Order\Entity\OrderMeta();
-    $existing->setClientOrderId(7);
     $existing->setName('key');
     $existing->setValue('old value');
 

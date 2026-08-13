@@ -34,8 +34,9 @@ class Subscription implements TimestampInterface
     #[ORM\Column(name: 'client_id', type: Types::BIGINT, nullable: true)]
     private ?int $clientId = null;
 
-    #[ORM\Column(name: 'pay_gateway_id', type: Types::BIGINT, nullable: true)]
-    private ?int $payGatewayId = null;
+    #[ORM\ManyToOne(targetEntity: PayGateway::class)]
+    #[ORM\JoinColumn(name: 'pay_gateway_id', referencedColumnName: 'id', nullable: true)]
+    private ?PayGateway $payGateway = null;
 
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     private ?string $sid = null;
@@ -75,14 +76,14 @@ class Subscription implements TimestampInterface
         return $this;
     }
 
-    public function getPayGatewayId(): ?int
+    public function getPayGateway(): ?PayGateway
     {
-        return $this->payGatewayId;
+        return $this->payGateway;
     }
 
-    public function setPayGatewayId(?int $payGatewayId): self
+    public function setPayGateway(?PayGateway $payGateway): self
     {
-        $this->payGatewayId = $payGatewayId;
+        $this->payGateway = $payGateway;
 
         return $this;
     }

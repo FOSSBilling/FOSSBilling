@@ -49,8 +49,9 @@ class Client implements ApiArrayInterface, TimestampInterface
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     private ?string $aid = null;
 
-    #[ORM\Column(name: 'client_group_id', type: Types::INTEGER, nullable: true)]
-    private ?int $clientGroupId = null;
+    #[ORM\ManyToOne(targetEntity: ClientGroup::class)]
+    #[ORM\JoinColumn(name: 'client_group_id', referencedColumnName: 'id', nullable: true)]
+    private ?ClientGroup $clientGroup = null;
 
     #[ORM\Column(type: Types::STRING, length: 30, options: ['default' => 'client'])]
     private string $role = 'client';
@@ -225,14 +226,14 @@ class Client implements ApiArrayInterface, TimestampInterface
         return $this;
     }
 
-    public function getClientGroupId(): ?int
+    public function getClientGroup(): ?ClientGroup
     {
-        return $this->clientGroupId;
+        return $this->clientGroup;
     }
 
-    public function setClientGroupId(?int $clientGroupId): self
+    public function setClientGroup(?ClientGroup $clientGroup): self
     {
-        $this->clientGroupId = $clientGroupId;
+        $this->clientGroup = $clientGroup;
 
         return $this;
     }
@@ -918,7 +919,7 @@ class Client implements ApiArrayInterface, TimestampInterface
 
         $details += [
             'aid' => $this->aid,
-            'group_id' => $this->clientGroupId,
+            'group_id' => $this->clientGroup?->getId(),
             'role' => $this->role ?? 'client', /* @phpstan-ignore nullCoalesce.property (Doctrine's newInstanceWithoutConstructor skips default init) */
             'auth_type' => $this->authType,
             'status' => $this->status ?? self::ACTIVE,

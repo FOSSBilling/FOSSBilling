@@ -495,15 +495,13 @@ class Service implements InjectionAwareInterface
         if ($isAdmin) {
             $details['group'] = null;
 
-            if ($client->getClientGroupId()) {
-                $group = $this->clientGroupRepository->find($client->getClientGroupId());
-                if ($group instanceof ClientGroup) {
-                    $details['group'] = $group->getTitle();
-                    $details['client_group'] = [
-                        'id' => $group->getId(),
-                        'title' => $group->getTitle(),
-                    ];
-                }
+            $group = $client->getClientGroup();
+            if ($group instanceof ClientGroup) {
+                $details['group'] = $group->getTitle();
+                $details['client_group'] = [
+                    'id' => $group->getId(),
+                    'title' => $group->getTitle(),
+                ];
             }
 
             if ($includeSensitive) {
@@ -580,7 +578,7 @@ class Service implements InjectionAwareInterface
 
     public function deleteGroup(ClientGroup $model): bool
     {
-        $client = $this->clientRepository->findOneBy(['clientGroupId' => $model->getId()]);
+        $client = $this->clientRepository->findOneBy(['clientGroup' => $model]);
         if ($client) {
             throw new \FOSSBilling\Exception('Cannot remove groups with clients');
         }
@@ -622,7 +620,7 @@ class Service implements InjectionAwareInterface
 
         $client->setAid($data['aid'] ?? null);
         $client->setLastName($data['last_name'] ?? null);
-        $client->setClientGroupId(!empty($data['group_id']) ? (int) $data['group_id'] : null);
+        $client->setClientGroup(!empty($data['group_id']) ? $this->clientGroupRepository->find((int) $data['group_id']) : null);
         $client->setStatus($data['status'] ?? Client::ACTIVE);
         $client->setGender($data['gender'] ?? null);
         $birthday = $data['birthday'] ?? null;

@@ -45,7 +45,7 @@ class SubscriptionRepository extends EntityRepository
 
         $gatewayId = $data['gateway_id'] ?? null;
         if ($gatewayId) {
-            $qb->andWhere('s.payGatewayId = :gateway_id')->setParameter('gateway_id', (int) $gatewayId);
+            $qb->andWhere('IDENTITY(s.payGateway) = :gateway_id')->setParameter('gateway_id', (int) $gatewayId);
         }
 
         $clientId = $data['client_id'] ?? null;

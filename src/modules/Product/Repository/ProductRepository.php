@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Product\Repository;
 
 use Box\Mod\Product\Entity\Product;
+use Box\Mod\Product\Entity\ProductCategory;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
 
@@ -142,7 +143,7 @@ class ProductRepository extends EntityRepository
     {
         $count = $this->createQueryBuilder('p')
             ->select('COUNT(p.id)')
-            ->where('p.productCategoryId = :categoryId')
+            ->where('IDENTITY(p.productCategory) = :categoryId')
             ->setParameter('categoryId', $categoryId)
             ->getQuery()
             ->getSingleScalarResult();
@@ -159,7 +160,7 @@ class ProductRepository extends EntityRepository
             'isAddon' => false,
             'status' => 'enabled',
             'hidden' => false,
-            'productCategoryId' => $categoryId,
+            'productCategory' => $this->getEntityManager()->getReference(ProductCategory::class, $categoryId),
         ], [
             'priority' => 'ASC',
         ]);

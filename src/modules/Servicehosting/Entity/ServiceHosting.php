@@ -35,11 +35,13 @@ class ServiceHosting implements TimestampInterface
     #[ORM\Column(name: 'client_id', type: Types::INTEGER, nullable: true)]
     private ?int $clientId = null;
 
-    #[ORM\Column(name: 'service_hosting_server_id', type: Types::INTEGER, nullable: true)]
-    private ?int $serviceHostingServerId = null;
+    #[ORM\ManyToOne(targetEntity: ServiceHostingServer::class)]
+    #[ORM\JoinColumn(name: 'service_hosting_server_id', referencedColumnName: 'id', nullable: true)]
+    private ?ServiceHostingServer $serviceHostingServer = null;
 
-    #[ORM\Column(name: 'service_hosting_hp_id', type: Types::INTEGER, nullable: true)]
-    private ?int $serviceHostingHpId = null;
+    #[ORM\ManyToOne(targetEntity: ServiceHostingHp::class)]
+    #[ORM\JoinColumn(name: 'service_hosting_hp_id', referencedColumnName: 'id', nullable: true)]
+    private ?ServiceHostingHp $serviceHostingHp = null;
 
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     private ?string $sld = null;
@@ -76,26 +78,26 @@ class ServiceHosting implements TimestampInterface
         return $this;
     }
 
-    public function getServiceHostingServerId(): ?int
+    public function getServiceHostingServer(): ?ServiceHostingServer
     {
-        return $this->serviceHostingServerId;
+        return $this->serviceHostingServer;
     }
 
-    public function setServiceHostingServerId(?int $serviceHostingServerId): self
+    public function setServiceHostingServer(?ServiceHostingServer $serviceHostingServer): self
     {
-        $this->serviceHostingServerId = $serviceHostingServerId;
+        $this->serviceHostingServer = $serviceHostingServer;
 
         return $this;
     }
 
-    public function getServiceHostingHpId(): ?int
+    public function getServiceHostingHp(): ?ServiceHostingHp
     {
-        return $this->serviceHostingHpId;
+        return $this->serviceHostingHp;
     }
 
-    public function setServiceHostingHpId(?int $serviceHostingHpId): self
+    public function setServiceHostingHp(?ServiceHostingHp $serviceHostingHp): self
     {
-        $this->serviceHostingHpId = $serviceHostingHpId;
+        $this->serviceHostingHp = $serviceHostingHp;
 
         return $this;
     }
