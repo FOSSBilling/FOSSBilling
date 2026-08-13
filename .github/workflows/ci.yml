@@ -208,19 +208,24 @@ jobs:
           rm -f ./src/provenance.json
 
       - name: 'Create Downloadable Preview'
-        run: zip -qr ../FOSSBilling-preview.zip .
+        run: |
+          GITHUB_SHORT_SHA="$(echo "${GITHUB_SHA}" | cut -c1-7)"
+          echo "GITHUB_SHORT_SHA=${GITHUB_SHORT_SHA}" >> "$GITHUB_ENV"
+          zip -qr ../FOSSBilling-preview-${GITHUB_SHORT_SHA}.zip .
+          echo "FOSSBILLING_PREVIEW_DIGEST=sha256:$(sha256sum ../FOSSBilling-preview-${GITHUB_SHORT_SHA}.zip | awk '{print $1}')" >> "$GITHUB_ENV"
         working-directory: ./src/
 
       - name: 'Move Downloadable Preview for Upload'
         run: |
           mkdir ./dist
-          mv ./FOSSBilling-preview.zip ./dist
+          cp ./FOSSBilling-preview-${GITHUB_SHORT_SHA}.zip ./dist/FOSSBilling-preview.zip
 
       - name: 'Upload Downloadable Preview to S3'
         if: ${{ github.ref == 'refs/heads/main' }}
         run: |
           aws s3 sync "${SOURCE_DIR}" "s3://${AWS_S3_BUCKET}/" \
             --endpoint-url "${AWS_S3_ENDPOINT}" \
+            --metadata="digest=${{ env.FOSSBILLING_PREVIEW_DIGEST }},commit-sha=${{ github.sha }}" \
             --acl public-read \
             --follow-symlinks \
             --no-progress
@@ -236,6 +241,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           if-no-files-found: 'error'
-          name: 'FOSSBilling Preview'
-          path: './src/*'
+          name: 'FOSSBilling-preview-${{ env.GITHUB_SHORT_SHA }}.zip'
+          path: './FOSSBilling-preview-${{ env.GITHUB_SHORT_SHA }}.zip'
+          archive: false
           retention-days: 14
