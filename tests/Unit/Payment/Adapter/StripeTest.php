@@ -195,7 +195,7 @@ describe('getStripeRecurringParams', function (): void {
     });
 
     test('rejects a period whose interval_count exceeds Stripe\'s 3-year cap', function (): void {
-        // Box_Period allows up to 5Y, but Stripe's own recurring interval_count cap for
+        // Billing periods allow up to 5Y, but Stripe's own recurring interval_count cap for
         // "year" is 3, so this must fail loudly instead of silently mis-billing.
         expect(fn (): mixed => invokePrivateMethod($this->adapter, 'getStripeRecurringParams', ['5Y']))
             ->toThrow(Payment_Exception::class);

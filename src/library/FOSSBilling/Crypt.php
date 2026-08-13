@@ -9,11 +9,13 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-use FOSSBilling\Config;
+namespace FOSSBilling;
 
-class Box_Crypt implements FOSSBilling\InjectionAwareInterface
+use Pimple\Container;
+
+class Crypt implements InjectionAwareInterface
 {
-    protected ?Pimple\Container $di = null;
+    protected ?Container $di = null;
 
     final public const string METHOD = 'aes-256-cbc';
     final public const string CURRENT_FORMAT_PREFIX = 'v2:';
@@ -21,16 +23,16 @@ class Box_Crypt implements FOSSBilling\InjectionAwareInterface
     public function __construct()
     {
         if (!extension_loaded('openssl')) {
-            throw new FOSSBilling\Exception('The PHP OpenSSL extension must be enabled on your server');
+            throw new Exception('The PHP OpenSSL extension must be enabled on your server');
         }
     }
 
-    public function setDi(Pimple\Container $di): void
+    public function setDi(Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi(): ?Pimple\Container
+    public function getDi(): ?Container
     {
         return $this->di;
     }
@@ -40,9 +42,9 @@ class Box_Crypt implements FOSSBilling\InjectionAwareInterface
         return self::CURRENT_FORMAT_PREFIX . $this->encryptWithKey($text, $this->getCurrentKey($pass));
     }
 
-    public function decrypt(?string $text, ?string $pass = null)
+    public function decrypt(?string $text, ?string $pass = null): string|false
     {
-        if (is_null($text)) {
+        if ($text === null) {
             return false;
         }
 
@@ -62,8 +64,8 @@ class Box_Crypt implements FOSSBilling\InjectionAwareInterface
 
     private function encryptWithKey(string $text, string $key): string
     {
-        $ivsize = openssl_cipher_iv_length(self::METHOD);
-        $iv = openssl_random_pseudo_bytes($ivsize);
+        $ivSize = openssl_cipher_iv_length(self::METHOD);
+        $iv = random_bytes($ivSize);
 
         $ciphertext = openssl_encrypt(
             $text,
@@ -72,6 +74,10 @@ class Box_Crypt implements FOSSBilling\InjectionAwareInterface
             OPENSSL_RAW_DATA,
             $iv
         );
+
+        if ($ciphertext === false) {
+            throw new \RuntimeException('Unable to encrypt data.');
+        }
 
         return base64_encode($iv . $ciphertext);
     }
@@ -83,9 +89,13 @@ class Box_Crypt implements FOSSBilling\InjectionAwareInterface
             return false;
         }
 
-        $ivsize = openssl_cipher_iv_length(self::METHOD);
-        $iv = mb_substr($decoded, 0, $ivsize, '8bit');
-        $ciphertext = mb_substr($decoded, $ivsize, null, '8bit');
+        $ivSize = openssl_cipher_iv_length(self::METHOD);
+        if (strlen($decoded) <= $ivSize) {
+            return false;
+        }
+
+        $iv = substr($decoded, 0, $ivSize);
+        $ciphertext = substr($decoded, $ivSize);
 
         $result = openssl_decrypt(
             $ciphertext,
@@ -133,6 +143,6 @@ class Box_Crypt implements FOSSBilling\InjectionAwareInterface
             return false;
         }
 
-        return !preg_match('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', $text);
+        return preg_match('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', $text) !== 1;
     }
 }

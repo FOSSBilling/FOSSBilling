@@ -42,11 +42,11 @@ function appClientWithRender(callable $render, bool $clientLoggedIn = false): Bo
             return $this;
         }
 
-        public function error(string|\Stringable $message, array $context = []): void
+        public function error(string|Stringable $message, array $context = []): void
         {
         }
 
-        public function info(string|\Stringable $message, array $context = []): void
+        public function info(string|Stringable $message, array $context = []): void
         {
         }
     };
@@ -60,7 +60,7 @@ function appClientWithRender(callable $render, bool $clientLoggedIn = false): Bo
     $di['mod_service'] = $di->protect(static fn (): object => $extensionService);
     $di['auth'] = Mockery::mock(Box_Authorization::class)
         ->shouldReceive('isClientLoggedIn')->andReturn($clientLoggedIn)->getMock();
-    $di['url'] = Mockery::mock(Box_Url::class)
+    $di['url'] = Mockery::mock(FOSSBilling\Url::class)
         ->shouldReceive('link')->andReturnArg(0)->getMock();
     $app->setDi($di);
     $app->setUrl('/test');

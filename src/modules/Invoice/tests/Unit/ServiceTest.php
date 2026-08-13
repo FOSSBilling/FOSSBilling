@@ -89,7 +89,7 @@ test('converts to api array', function (): void {
         ->atLeast()->once()
         ->andReturn([$invoiceItemModel]);
 
-    $periodMock = Mockery::mock('\Box_Period');
+    $periodMock = Mockery::mock(FOSSBilling\Period::class);
     $periodMock->shouldReceive('getUnit');
     $periodMock->shouldReceive('getQty');
 
@@ -311,7 +311,7 @@ test('to api array self-heals invoice with missing hash', function (): void {
     $em->shouldReceive('flush')
         ->atLeast()->once();
 
-    $periodMock = Mockery::mock('\Box_Period');
+    $periodMock = Mockery::mock(FOSSBilling\Period::class);
     $periodMock->shouldReceive('getUnit');
     $periodMock->shouldReceive('getQty');
 

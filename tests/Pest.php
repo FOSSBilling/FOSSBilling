@@ -33,7 +33,7 @@ if (!defined('DEBUG')) {
     define('DEBUG', false);
 }
 
-// Pre-declare translation functions to prevent Box_Translate from trying to redefine them
+// Pre-declare translation functions before the application bootstrap loads them.
 // These stubs will be used if the full translation system isn't initialized
 if (!function_exists('__trans')) {
     function __trans(string $msgid, ?array $values = null): string

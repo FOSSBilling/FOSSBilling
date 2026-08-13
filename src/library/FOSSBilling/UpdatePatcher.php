@@ -356,7 +356,7 @@ class UpdatePatcher implements InjectionAwareInterface
 
         $rows = $this->fetchAll("SELECT {$idColumn} AS id, {$valueColumn} AS encrypted_value FROM {$quotedTable} WHERE {$where}", $params);
 
-        /** @var \Box_Crypt $crypt */
+        /** @var Crypt $crypt */
         $crypt = $this->di['crypt'];
         $salt = Config::getProperty('info.salt');
 
@@ -364,7 +364,7 @@ class UpdatePatcher implements InjectionAwareInterface
 
         foreach ($rows as $row) {
             $encryptedValue = $row['encrypted_value'] ?? null;
-            if (!is_string($encryptedValue) || $encryptedValue === '' || str_starts_with($encryptedValue, \Box_Crypt::CURRENT_FORMAT_PREFIX)) {
+            if (!is_string($encryptedValue) || $encryptedValue === '' || str_starts_with($encryptedValue, Crypt::CURRENT_FORMAT_PREFIX)) {
                 continue;
             }
 
@@ -2647,7 +2647,7 @@ class UpdatePatcher implements InjectionAwareInterface
             return;
         }
 
-        // Legacy DB column prefix => Box_Period code.
+        // Legacy DB column prefix => billing period code.
         $legacyPeriods = [
             'w' => '1W',
             'm' => '1M',

@@ -1,7 +1,7 @@
 {% if product.type != 'domain' %}
 {% set currency_code = admin.currency_get_default.code %}
 
-{# Canonical labels for Box_Period's built-in preset periods, kept in sync with Box_Period::getPredefined(). #}
+{# Canonical labels for the built-in preset billing periods, kept in sync with Period::getPredefined(). #}
 {% set preset_periods = {
     '1W': 'Every Week'|trans,
     '1M': 'Every Month'|trans,

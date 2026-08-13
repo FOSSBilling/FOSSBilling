@@ -186,6 +186,7 @@ function preInit(): void
 
     // Define global paths.
     define('PATH_LIBRARY', Path::join(PATH_ROOT, 'library'));
+    require Path::join(PATH_LIBRARY, 'TranslationFunctions.php');
     define('PATH_THEMES', Path::join(PATH_ROOT, 'themes'));
     define('PATH_MODS', Path::join(PATH_ROOT, 'modules'));
     define('PATH_LANGS', Path::join(PATH_ROOT, 'locale'));

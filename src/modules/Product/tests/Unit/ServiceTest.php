@@ -800,7 +800,7 @@ test('get related product discount uses domain pricing implementation', function
     $tldService = productTestCreateDomainTldServiceMock($tld);
 
     $di = container();
-    $di['period'] = $di->protect(fn (string $period): Box_Period => new Box_Period($period));
+    $di['period'] = $di->protect(fn (string $period): FOSSBilling\Period => new FOSSBilling\Period($period));
     $di['mod_service'] = $di->protect(function (string $serviceName, ?string $sub = null) use ($tldService) {
         if ($serviceName === 'servicedomain' && $sub === 'Tld') {
             return $tldService;
@@ -891,7 +891,7 @@ test('get product order line config uses domain pricing implementation', functio
     $tldService = productTestCreateDomainTldServiceMock($tld);
 
     $di = container();
-    $di['period'] = $di->protect(fn (string $period): Box_Period => new Box_Period($period));
+    $di['period'] = $di->protect(fn (string $period): FOSSBilling\Period => new FOSSBilling\Period($period));
     $di['mod_service'] = $di->protect(function (string $serviceName, ?string $sub = null) use ($tldService) {
         if ($serviceName === 'servicedomain' && $sub === 'Tld') {
             return $tldService;
@@ -925,7 +925,7 @@ test('get product renewal line config uses domain pricing implementation', funct
     $tldService = productTestCreateDomainTldServiceMock($tld);
 
     $di = container();
-    $di['period'] = $di->protect(fn (string $period): Box_Period => new Box_Period($period));
+    $di['period'] = $di->protect(fn (string $period): FOSSBilling\Period => new FOSSBilling\Period($period));
     $di['mod_service'] = $di->protect(function (string $serviceName, ?string $sub = null) use ($tldService) {
         if ($serviceName === 'servicedomain' && $sub === 'Tld') {
             return $tldService;

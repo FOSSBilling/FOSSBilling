@@ -172,7 +172,7 @@ test('setVars encrypts and sets variables', function (): void {
     $service = new Box\Mod\Email\Service();
 
     $di = container();
-    $cryptMock = Mockery::mock('\Box_Crypt');
+    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
     $cryptMock->shouldReceive('encrypt')
         ->atLeast()->once()
         ->andReturn('encrypted-vars');
@@ -197,7 +197,7 @@ test('getVars decrypts and returns variables', function (): void {
     $service = new Box\Mod\Email\Service();
 
     $di = container();
-    $cryptMock = Mockery::mock('\Box_Crypt');
+    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
     $cryptMock->shouldReceive('decrypt')
         ->atLeast()->once()
         ->andReturn('{"param1":"value1"}');
@@ -262,7 +262,7 @@ test('getVars supplies preview variables for support and staff templates before 
 test('getVars merges stored examples over preview defaults', function (): void {
     $service = new Box\Mod\Email\Service();
 
-    $cryptMock = Mockery::mock('\Box_Crypt');
+    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
     $cryptMock->shouldReceive('decrypt')->once()->andReturn('{"ticket":{"subject":"Stored subject"}}');
 
     $di = container();
@@ -296,7 +296,7 @@ test('sendTemplate returns false when template does not exist', function (): voi
     $em->shouldReceive('persist')->atLeast()->once();
     $em->shouldReceive('flush')->atLeast()->once();
 
-    $cryptMock = Mockery::mock('\Box_Crypt');
+    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
     $cryptMock->shouldReceive('encrypt')
         ->atLeast()->once();
 
@@ -360,7 +360,7 @@ test('sendTemplate sends email when template exists', function (): void {
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->byDefault();
     $di['validator'] = $validatorMock;
 
-    $cryptMock = Mockery::mock('\Box_Crypt');
+    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
     $cryptMock->shouldReceive('encrypt')
         ->atLeast()->once();
 
@@ -441,7 +441,7 @@ test('sendTemplate forwards the attachment to the queue and strips it from the s
     $di['validator'] = $validatorMock;
 
     $encryptedVars = null;
-    $cryptMock = Mockery::mock('\Box_Crypt');
+    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
     $cryptMock->shouldReceive('encrypt')
         ->atLeast()->once()
         ->with(Mockery::on(function ($json) use (&$encryptedVars): bool {
@@ -586,7 +586,7 @@ test('sendTemplate handles to_staff and to_client options', function (array $dat
 
     $twigStub = Mockery::mock(Twig\Environment::class);
 
-    $cryptMock = Mockery::mock('\Box_Crypt');
+    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
     $cryptMock->shouldReceive('encrypt')
         ->atLeast()->once();
 
@@ -657,7 +657,7 @@ test('sendTemplate does not send to staff when template has no assigned groups',
         'from_email' => 'test@test.com',
     ]);
 
-    $cryptMock = Mockery::mock('\Box_Crypt');
+    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
     $cryptMock->shouldReceive('encrypt')->atLeast()->once();
 
     $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
@@ -1011,7 +1011,7 @@ test('updateTemplate updates template', function (array $data, string $templateR
 
     $loggerStub = new Tests\Helpers\TestLogger();
 
-    $cryptMock = Mockery::mock('\Box_Crypt');
+    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
     $cryptMock->shouldReceive('decrypt')
         ->never();
     $configMock = ['salt' => md5(random_bytes(13))];
@@ -1436,7 +1436,7 @@ test('validateAllTemplates renders templates with stored vars to enforce sandbox
         ->once()
         ->andReturn([$template]);
 
-    $cryptMock = Mockery::mock('\Box_Crypt');
+    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
     $cryptMock->shouldReceive('decrypt')
         ->once()
         ->with('encrypted-vars', Mockery::type('string'))

@@ -8,7 +8,10 @@ declare(strict_types=1);
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-class Box_Period
+
+namespace FOSSBilling;
+
+class Period
 {
     final public const string UNIT_DAY = 'D';
     final public const string UNIT_WEEK = 'W';
@@ -25,18 +28,11 @@ class Box_Period
     final public const string PERIOD_QUADRENNIAL = '4Y';
     final public const string PERIOD_QUINQUENNIAL = '5Y';
 
-    /**
-     * Predefined periods.
-     */
-    protected $_multiplier = [
-        self::PERIOD_MONTH => 1,
-        self::PERIOD_QUARTER => 3,
-        self::PERIOD_BIANNUAL => 6,
-        self::PERIOD_ANNUAL => 12,
-        self::PERIOD_BIENNIAL => 24,
-        self::PERIOD_TRIENNIAL => 36,
-        self::PERIOD_QUADRENNIAL => 48,
-        self::PERIOD_QUINQUENNIAL => 60,
+    private const array UNIT_RANGES = [
+        self::UNIT_DAY => [1, 90],
+        self::UNIT_WEEK => [1, 52],
+        self::UNIT_MONTH => [1, 24],
+        self::UNIT_YEAR => [1, 5],
     ];
 
     private readonly string $unit;
@@ -46,46 +42,29 @@ class Box_Period
     {
         // A period code is a quantity followed by a single unit letter (e.g. "1M", "45D",
         // "24M"). Quantities are not limited to a single digit, so the code as a whole is
-        // not a fixed length; getUnits() below enforces the actual allowed ranges.
+        // not a fixed length; UNIT_RANGES enforces the actual allowed ranges.
         if (!preg_match('/^(\d+)([A-Za-z])$/', $code, $matches)) {
-            throw new FOSSBilling\Exception('Invalid period code. Period definition must be a quantity followed by a unit letter');
+            throw new Exception('Invalid period code. Period definition must be a quantity followed by a unit letter');
         }
 
         [, $qty, $unit] = $matches;
-
-        $units = $this->getUnits();
         $qty = (int) $qty;
         $unit = strtoupper($unit);
-        if (!array_key_exists($unit, $units)) {
-            throw new FOSSBilling\Exception('Period Error. Unit :unit is not defined', [':unit' => $unit]);
+        $range = self::UNIT_RANGES[$unit] ?? null;
+
+        if ($range === null) {
+            throw new Exception('Period Error. Unit :unit is not defined', [':unit' => $unit]);
         }
 
-        if ($qty < $units[$unit][0] || $qty > $units[$unit][1]) {
-            $d = [
-                ':qty' => $qty,
-                ':unit' => $unit,
-                ':from' => $units[$unit][0],
-                ':to' => $units[$unit][1],
-            ];
-
-            throw new FOSSBilling\Exception('Invalid period quantity :qty for unit :unit. Allowed range is from :from to :to', $d);
+        if ($qty < $range[0] || $qty > $range[1]) {
+            throw new Exception('Invalid period quantity :qty for unit :unit. Allowed range is from :from to :to', [':qty' => $qty, ':unit' => $unit, ':from' => $range[0], ':to' => $range[1]]);
         }
 
         $this->unit = $unit;
         $this->qty = $qty;
     }
 
-    private function getUnits(): array
-    {
-        return [
-            self::UNIT_DAY => [1, 90],
-            self::UNIT_WEEK => [1, 52],
-            self::UNIT_MONTH => [1, 24],
-            self::UNIT_YEAR => [1, 5],
-        ];
-    }
-
-    public static function getPredefined($simple = true): array
+    public static function getPredefined(bool $simple = true): array
     {
         $periods = [
             self::PERIOD_WEEK => ['rec_qty' => 1, 'title' => __trans('Every Week'), 'code' => self::PERIOD_WEEK, 'rec_unit' => self::UNIT_WEEK],
@@ -99,15 +78,16 @@ class Box_Period
             self::PERIOD_QUINQUENNIAL => ['rec_qty' => 5, 'title' => __trans('Every 5 Years'), 'code' => self::PERIOD_QUINQUENNIAL, 'rec_unit' => self::UNIT_YEAR],
         ];
 
-        if ($simple) {
-            $new = [];
-            foreach ($periods as $pp) {
-                $new[$pp['code']] = $pp['title'];
-            }
-            $periods = $new;
+        if (!$simple) {
+            return $periods;
         }
 
-        return $periods;
+        $simplePeriods = [];
+        foreach ($periods as $period) {
+            $simplePeriods[$period['code']] = $period['title'];
+        }
+
+        return $simplePeriods;
     }
 
     public function getUnit(): string
@@ -127,51 +107,46 @@ class Box_Period
 
     public function getTitle(): string
     {
-        $qty = $this->qty;
-        $placeholders = [':number' => $qty];
+        $placeholders = [':number' => $this->qty];
 
         return match ($this->unit) {
-            self::UNIT_DAY => __pluralTrans('Every :number day', 'Every :number days', $qty, $placeholders),
-            self::UNIT_WEEK => __pluralTrans('Every :number week', 'Every :number weeks', $qty, $placeholders),
-            self::UNIT_MONTH => __pluralTrans('Every :number month', 'Every :number months', $qty, $placeholders),
-            self::UNIT_YEAR => __pluralTrans('Every :number year', 'Every :number years', $qty, $placeholders),
-            default => throw new FOSSBilling\Exception('Unit not defined'),
+            self::UNIT_DAY => __pluralTrans('Every :number day', 'Every :number days', $this->qty, $placeholders),
+            self::UNIT_WEEK => __pluralTrans('Every :number week', 'Every :number weeks', $this->qty, $placeholders),
+            self::UNIT_MONTH => __pluralTrans('Every :number month', 'Every :number months', $this->qty, $placeholders),
+            self::UNIT_YEAR => __pluralTrans('Every :number year', 'Every :number years', $this->qty, $placeholders),
+            default => throw new Exception('Unit not defined'),
         };
     }
 
-    public function getDays()
+    public function getDays(): float|int
     {
         return $this->getMonths() * 30;
     }
 
     /**
-     * How many months $this->unit consists of.
-     *
-     * @return int
+     * How many months the period consists of.
      */
-    public function getMonths()
+    public function getMonths(): float|int
     {
         return match ($this->unit) {
             self::UNIT_DAY => $this->qty / 30,
             self::UNIT_WEEK => $this->qty / 4,
             self::UNIT_MONTH => $this->qty,
             self::UNIT_YEAR => $this->qty * 12,
-            default => throw new FOSSBilling\Exception('Unable to get the number of months for :unit', [':unit' => $this->unit]),
+            default => throw new Exception('Unable to get the number of months for :unit', [':unit' => $this->unit]),
         };
     }
 
     public function getExpirationTime(?int $now = null): int|false
     {
-        if ($now === null) {
-            $now = time();
-        }
+        $now ??= time();
 
         $shift = match ($this->unit) {
             self::UNIT_DAY => 'days',
             self::UNIT_WEEK => 'weeks',
             self::UNIT_MONTH => 'months',
             self::UNIT_YEAR => 'years',
-            default => throw new FOSSBilling\Exception('Unit not defined'),
+            default => throw new Exception('Unit not defined'),
         };
 
         return strtotime("+$this->qty $shift", $now);

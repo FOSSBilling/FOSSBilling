@@ -19,6 +19,7 @@ use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\GeoIP\Reader;
+use FOSSBilling\Period;
 use FOSSBilling\Sanitizer\BrowserHtmlSanitizer;
 use FOSSBilling\SentryHelper;
 use FOSSBilling\Twig\SandboxedStringRenderer;
@@ -624,12 +625,12 @@ class Service
             return '-';
         }
 
-        $p = \Box_Period::getPredefined();
+        $p = Period::getPredefined();
         if (isset($p[$code])) {
             return $p[$code];
         }
 
-        $p = new \Box_Period($code);
+        $p = new Period($code);
 
         return $p->getTitle();
     }

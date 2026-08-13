@@ -72,10 +72,10 @@ $di['logger'] = function () use ($di) {
  *
  * @param void
  *
- * @return \Box_Crypt
+ * @return FOSSBilling\Crypt
  */
 $di['crypt'] = function () use ($di) {
-    $crypt = new Box_Crypt();
+    $crypt = new FOSSBilling\Crypt();
     $crypt->setDi($di);
 
     return $crypt;
@@ -135,10 +135,10 @@ $di['pager'] = function () use ($di) {
  *
  * @param void
  *
- * @return Box_Url
+ * @return FOSSBilling\Url
  */
 $di['url'] = function () use ($di) {
-    $url = new Box_Url();
+    $url = new FOSSBilling\Url();
     $url->setDi($di);
     $url->setBaseUri(SYSTEM_URL);
 
@@ -588,13 +588,13 @@ $di['server_manager'] = $di->protect(function ($manager, $config) use ($di) {
 });
 
 /*
- * Creates a new Box_Period object using the provided period code and returns it.
+ * Creates a new FOSSBilling\Period object using the provided period code and returns it.
  *
  * @param string $code The two character period code to create the period object with.
  *
- * @return \Box_Period The new period object that was just created.
+ * @return FOSSBilling\Period The new period object that was just created.
  */
-$di['period'] = $di->protect(fn ($code): Box_Period => new Box_Period($code));
+$di['period'] = $di->protect(fn (string $code): FOSSBilling\Period => new FOSSBilling\Period($code));
 
 /*
  * Gets the current client area theme.
@@ -654,14 +654,14 @@ $di['geoip'] = function () use ($di) {
 $di['password'] = fn (): FOSSBilling\PasswordManager => new FOSSBilling\PasswordManager();
 
 /*
- * Creates a new Box_Translate object and sets the specified text domain, locale, and other options.
+ * Creates a new FOSSBilling\Translate object and sets the specified text domain, locale, and other options.
  *
  * @param string $textDomain The text domain to create the translation object with.
  *
- * @return \Box_Translate The new translation object that was just created.
+ * @return FOSSBilling\Translate The new translation object that was just created.
  */
 $di['translate'] = $di->protect(function ($textDomain = '') use ($di) {
-    $tr = new Box_Translate();
+    $tr = new FOSSBilling\Translate();
 
     if (!empty($textDomain)) {
         $tr->setDomain($textDomain);

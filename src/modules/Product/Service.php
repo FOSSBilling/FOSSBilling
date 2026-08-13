@@ -34,6 +34,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\ORM\QueryBuilder;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\PaginationOptions;
+use FOSSBilling\Period;
 use FOSSBilling\Validation\NonNegativeIntegerValidator;
 
 class Service implements InjectionAwareInterface
@@ -1855,7 +1856,7 @@ class Service implements InjectionAwareInterface
     {
         // Validate the code shape/range up front so a malformed period gives a clear error.
         try {
-            $code = (new \Box_Period($code))->getCode();
+            $code = (new Period($code))->getCode();
         } catch (\FOSSBilling\Exception) {
             throw new \FOSSBilling\InformationException('Selected billing period is not available for this product');
         }
@@ -1963,7 +1964,7 @@ class Service implements InjectionAwareInterface
                 }
 
                 try {
-                    $code = (new \Box_Period((string) $rawCode))->getCode();
+                    $code = (new Period((string) $rawCode))->getCode();
                 } catch (\FOSSBilling\Exception) {
                     throw new \FOSSBilling\InformationException('Invalid billing period :period', [':period' => (string) $rawCode]);
                 }

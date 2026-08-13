@@ -702,7 +702,7 @@ test('getConfig returns extension config', function (): void {
         ->once()
         ->andReturn($meta);
 
-    $cryptMock = Mockery::mock(Box_Crypt::class);
+    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
     $cryptMock->shouldReceive('decrypt')->atLeast()->once();
 
     $em = extensionBuildEm(null, $metaRepo);
@@ -764,7 +764,7 @@ test('setConfig sets extension config', function (): void {
 
     $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
 
-    $cryptMock = Mockery::mock(Box_Crypt::class);
+    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
     $cryptMock->shouldReceive('encrypt')
         ->atLeast()
         ->once()

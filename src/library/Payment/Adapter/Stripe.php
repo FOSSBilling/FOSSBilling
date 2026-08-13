@@ -13,6 +13,7 @@ use Box\Mod\Client\Entity\Client;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Transaction;
+use FOSSBilling\Period;
 use Stripe\StripeClient;
 use Symfony\Component\Intl\Currencies;
 
@@ -1384,9 +1385,9 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * Converts a Box_Period code (e.g. "1M", "3Y", "45D") into Stripe's recurring price
+     * Converts a billing period code (e.g. "1M", "3Y", "45D") into Stripe's recurring price
      * parameters. Stripe caps how large interval_count can be per unit, so periods that
-     * exceed those caps (Box_Period already allows up to 5 years) are rejected outright
+     * exceed those caps (billing periods allow up to 5 years) are rejected outright
      * rather than silently mis-billed.
      *
      * @see https://docs.stripe.com/api/prices/create#create_price-recurring-interval_count
@@ -1395,7 +1396,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
      */
     private function getStripeRecurringParams(string $periodCode): array
     {
-        $period = new Box_Period($periodCode);
+        $period = new Period($periodCode);
         $interval = $this->convertPeriodToStripe($period);
         $intervalCount = $period->getQty();
 
@@ -1417,13 +1418,13 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         ];
     }
 
-    private function convertPeriodToStripe(Box_Period $period): string
+    private function convertPeriodToStripe(Period $period): string
     {
         return match ($period->getUnit()) {
-            Box_Period::UNIT_DAY => 'day',
-            Box_Period::UNIT_WEEK => 'week',
-            Box_Period::UNIT_MONTH => 'month',
-            Box_Period::UNIT_YEAR => 'year',
+            Period::UNIT_DAY => 'day',
+            Period::UNIT_WEEK => 'week',
+            Period::UNIT_MONTH => 'month',
+            Period::UNIT_YEAR => 'year',
             default => 'month',
         };
     }

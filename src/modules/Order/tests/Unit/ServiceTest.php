@@ -1656,7 +1656,7 @@ test('createOrder creates order', function (): void {
 
     $newId = 1;
 
-    $periodMock = Mockery::mock(Box_Period::class);
+    $periodMock = Mockery::mock(FOSSBilling\Period::class);
     $periodMock->shouldReceive('getCode')->atLeast()->once()->andReturn('1Y');
 
     $di = container();
@@ -1753,7 +1753,7 @@ test('createOrder sets form id from product', function (): void {
 
     $newId = 1;
 
-    $periodMock = Mockery::mock(Box_Period::class);
+    $periodMock = Mockery::mock(FOSSBilling\Period::class);
     $periodMock->shouldReceive('getCode')->atLeast()->once()->andReturn('1Y');
 
     $di = container();
@@ -1874,7 +1874,7 @@ test('createOrder returns success when invoice follow up fails', function (): vo
 
     $newId = 1;
 
-    $periodMock = Mockery::mock(Box_Period::class);
+    $periodMock = Mockery::mock(FOSSBilling\Period::class);
     $periodMock->shouldReceive('getCode')->atLeast()->once()->andReturn('1Y');
 
     $di = container();
@@ -2068,7 +2068,7 @@ test('createFromOrder activates the order after successful provisioning', functi
         ->andReturn(['username' => 'created']);
     $serviceMock->shouldReceive('saveStatusChange')->once()->with($order, 'Order activated');
 
-    $periodMock = Mockery::mock(Box_Period::class);
+    $periodMock = Mockery::mock(FOSSBilling\Period::class);
     $periodMock->shouldReceive('getExpirationTime')->once()->andReturn(strtotime('2027-01-01 00:00:00'));
 
     // Stock is reserved atomically at order-creation time (see
@@ -2496,7 +2496,7 @@ test('renewFromOrder extends expiration', function (): void {
     $clientOrderModel->expires_at = '2026-01-01 00:00:00';
 
     $expectedExpiration = strtotime('2027-01-01 00:00:00');
-    $periodMock = Mockery::mock(Box_Period::class);
+    $periodMock = Mockery::mock(FOSSBilling\Period::class);
     $periodMock->shouldReceive('getExpirationTime')
         ->atLeast()->once()
         ->with(strtotime('2026-01-01 00:00:00'))
@@ -2524,7 +2524,7 @@ test('renewFromOrder treats a missing Doctrine expiration as now', function (): 
     $serviceMock->shouldReceive('saveStatusChange')->once()->with(Mockery::type(Order::class), 'Order renewed');
 
     $order = createEntity(Order::class, ['period' => '1Y']);
-    $periodMock = Mockery::mock(Box_Period::class);
+    $periodMock = Mockery::mock(FOSSBilling\Period::class);
     $periodMock->shouldReceive('getExpirationTime')
         ->once()
         ->with(Mockery::on(static fn (int $from): bool => abs(time() - $from) <= 1))
@@ -2555,7 +2555,7 @@ test('renewFromOrder extends free first term on first paid renewal', function ()
         ->with(Mockery::on(fn ($order): bool => $order === $clientOrderModel), Order::ACTION_RENEW);
 
     $expectedExpiration = strtotime('2027-01-01 00:00:00');
-    $periodMock = Mockery::mock(Box_Period::class);
+    $periodMock = Mockery::mock(FOSSBilling\Period::class);
     $periodMock->shouldReceive('getExpirationTime')
         ->once()
         ->with(strtotime('2026-01-01 00:00:00'))
@@ -2909,7 +2909,7 @@ test('updatePeriod sets period when given', function (): void {
     $period = '1Y';
     $di = container();
 
-    $periodMock = Mockery::mock(Box_Period::class);
+    $periodMock = Mockery::mock(FOSSBilling\Period::class);
     $periodMock->shouldReceive('getCode')->atLeast()->once();
     $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
 
@@ -2927,7 +2927,7 @@ test('updatePeriod clears period when empty string', function (): void {
     $period = '';
     $di = container();
 
-    $periodMock = Mockery::mock(Box_Period::class);
+    $periodMock = Mockery::mock(FOSSBilling\Period::class);
     $periodMock->shouldReceive('getCode')->never();
     $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
 
@@ -2945,7 +2945,7 @@ test('updatePeriod does nothing when null', function (): void {
     $period = null;
     $di = container();
 
-    $periodMock = Mockery::mock(Box_Period::class);
+    $periodMock = Mockery::mock(FOSSBilling\Period::class);
     $periodMock->shouldReceive('getCode')->never();
     $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
 
@@ -3393,7 +3393,7 @@ test('createOrder generates an invoice for a zero-price order with issue-invoice
 
     $newId = 1;
 
-    $periodMock = Mockery::mock(Box_Period::class);
+    $periodMock = Mockery::mock(FOSSBilling\Period::class);
     $periodMock->shouldReceive('getCode')->atLeast()->once()->andReturn('1Y');
 
     $di = container();
@@ -3506,7 +3506,7 @@ test('createOrder does not roll back when invoice generation fails for a negativ
 
     $newId = 1;
 
-    $periodMock = Mockery::mock(Box_Period::class);
+    $periodMock = Mockery::mock(FOSSBilling\Period::class);
     $periodMock->shouldReceive('getCode')->atLeast()->once()->andReturn('1Y');
 
     $di = container();

@@ -111,7 +111,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * Update product settings.
      *
      * @optional array $pricing - product pricing configuration. Shape: {type: "free"|"once"|"recurrent", once: {price, setup}, recurrent: {"<PERIOD_CODE>": {price, setup, enabled}, ...}}.
-     *                             Each recurrent key is a Box_Period code (quantity + unit letter, e.g. "1M", "3Y", "45D"; D 1-90, W 1-52, M 1-24, Y 1-5).
+     *                             Each recurrent key is a billing period code (quantity + unit letter, e.g. "1M", "3Y", "45D"; D 1-90, W 1-52, M 1-24, Y 1-5).
      *                             Submitting recurrent replaces the product's full set of billing periods - omitted codes are removed, at least one must remain.
      * @optional array $config - product configuration options depending on type
      * @optional array $upgrades - array of upgradable products
@@ -242,7 +242,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * Addon update.
      *
      * @optional array $pricing - product pricing configuration. Shape: {type: "free"|"once"|"recurrent", once: {price, setup}, recurrent: {"<PERIOD_CODE>": {price, setup, enabled}, ...}}.
-     *                             Each recurrent key is a Box_Period code (quantity + unit letter, e.g. "1M", "3Y", "45D"; D 1-90, W 1-52, M 1-24, Y 1-5).
+     *                             Each recurrent key is a billing period code (quantity + unit letter, e.g. "1M", "3Y", "45D"; D 1-90, W 1-52, M 1-24, Y 1-5).
      *                             Submitting recurrent replaces the product's full set of billing periods - omitted codes are removed, at least one must remain.
      * @optional array $config - product configuration options depending on type
      * @optional array $upgrades - array of upgradable products

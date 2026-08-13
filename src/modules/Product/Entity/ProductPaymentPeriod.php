@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Product\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use FOSSBilling\Period;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Product\Repository\ProductPaymentPeriodRepository::class)]
 #[ORM\Table(name: 'product_payment_period')]
@@ -121,10 +122,10 @@ class ProductPaymentPeriod
     }
 
     /**
-     * Parses this period's code (e.g. "1M", "3Y", "45D") into a Box_Period value object.
+     * Parses this period's code (e.g. "1M", "3Y", "45D") into a billing period value object.
      */
-    public function getPeriod(): \Box_Period
+    public function getPeriod(): Period
     {
-        return new \Box_Period($this->code);
+        return new Period($this->code);
     }
 }
