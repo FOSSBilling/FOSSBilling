@@ -13,14 +13,18 @@ namespace Box\Mod\Invoice\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use FOSSBilling\Doctrine\TimestampTrait;
+use FOSSBilling\Interfaces\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Invoice\Repository\SubscriptionRepository::class)]
 #[ORM\Table(name: 'subscription')]
 #[ORM\Index(name: 'client_id_idx', columns: ['client_id'])]
 #[ORM\Index(name: 'pay_gateway_id_idx', columns: ['pay_gateway_id'])]
 #[ORM\HasLifecycleCallbacks]
-class Subscription
+class Subscription implements TimestampInterface
 {
+    use TimestampTrait;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::BIGINT)]
@@ -54,12 +58,6 @@ class Subscription
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     private ?string $status = null;
 
-    #[ORM\Column(name: 'created_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $createdAt = null;
-
-    #[ORM\Column(name: 'updated_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $updatedAt = null;
-
     public function getId(): ?int
     {
         return $this->id;
@@ -70,9 +68,11 @@ class Subscription
         return $this->clientId;
     }
 
-    public function setClientId(?int $clientId): void
+    public function setClientId(?int $clientId): self
     {
         $this->clientId = $clientId;
+
+        return $this;
     }
 
     public function getPayGatewayId(): ?int
@@ -80,9 +80,11 @@ class Subscription
         return $this->payGatewayId;
     }
 
-    public function setPayGatewayId(?int $payGatewayId): void
+    public function setPayGatewayId(?int $payGatewayId): self
     {
         $this->payGatewayId = $payGatewayId;
+
+        return $this;
     }
 
     public function getSid(): ?string
@@ -90,9 +92,11 @@ class Subscription
         return $this->sid;
     }
 
-    public function setSid(?string $sid): void
+    public function setSid(?string $sid): self
     {
         $this->sid = $sid;
+
+        return $this;
     }
 
     public function getRelType(): ?string
@@ -100,9 +104,11 @@ class Subscription
         return $this->relType;
     }
 
-    public function setRelType(?string $relType): void
+    public function setRelType(?string $relType): self
     {
         $this->relType = $relType;
+
+        return $this;
     }
 
     public function getRelId(): ?int
@@ -110,9 +116,11 @@ class Subscription
         return $this->relId;
     }
 
-    public function setRelId(?int $relId): void
+    public function setRelId(?int $relId): self
     {
         $this->relId = $relId;
+
+        return $this;
     }
 
     public function getPeriod(): ?string
@@ -120,9 +128,11 @@ class Subscription
         return $this->period;
     }
 
-    public function setPeriod(?string $period): void
+    public function setPeriod(?string $period): self
     {
         $this->period = $period;
+
+        return $this;
     }
 
     public function getAmount(): ?string
@@ -130,9 +140,11 @@ class Subscription
         return $this->amount;
     }
 
-    public function setAmount(string|int|float|null $amount): void
+    public function setAmount(string|int|float|null $amount): self
     {
         $this->amount = $amount === null ? null : (string) $amount;
+
+        return $this;
     }
 
     public function getCurrency(): ?string
@@ -140,9 +152,11 @@ class Subscription
         return $this->currency;
     }
 
-    public function setCurrency(?string $currency): void
+    public function setCurrency(?string $currency): self
     {
         $this->currency = $currency;
+
+        return $this;
     }
 
     public function getStatus(): ?string
@@ -150,42 +164,10 @@ class Subscription
         return $this->status;
     }
 
-    public function setStatus(?string $status): void
+    public function setStatus(?string $status): self
     {
         $this->status = $status;
-    }
 
-    public function getCreatedAt(): ?\DateTime
-    {
-        return $this->createdAt;
-    }
-
-    public function setCreatedAt(?\DateTime $createdAt): void
-    {
-        $this->createdAt = $createdAt;
-    }
-
-    public function getUpdatedAt(): ?\DateTime
-    {
-        return $this->updatedAt;
-    }
-
-    public function setUpdatedAt(?\DateTime $updatedAt): void
-    {
-        $this->updatedAt = $updatedAt;
-    }
-
-    #[ORM\PrePersist]
-    public function onPrePersist(): void
-    {
-        $now = new \DateTime();
-        $this->createdAt ??= $now;
-        $this->updatedAt ??= $now;
-    }
-
-    #[ORM\PreUpdate]
-    public function onPreUpdate(): void
-    {
-        $this->updatedAt = new \DateTime();
+        return $this;
     }
 }

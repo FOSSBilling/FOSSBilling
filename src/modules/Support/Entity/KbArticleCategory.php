@@ -15,6 +15,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use FOSSBilling\Doctrine\TimestampTrait;
 use FOSSBilling\Interfaces\ApiArrayInterface;
 use FOSSBilling\Interfaces\TimestampInterface;
 
@@ -23,6 +24,8 @@ use FOSSBilling\Interfaces\TimestampInterface;
 #[ORM\HasLifecycleCallbacks]
 class KbArticleCategory implements ApiArrayInterface, TimestampInterface
 {
+    use TimestampTrait;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::INTEGER)]
@@ -37,12 +40,6 @@ class KbArticleCategory implements ApiArrayInterface, TimestampInterface
 
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true, unique: true)]
     private ?string $slug = null;
-
-    #[ORM\Column(name: 'created_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $createdAt = null;
-
-    #[ORM\Column(name: 'updated_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $updatedAt = null;
 
     /**
      * @var Collection<int, KbArticle>
@@ -81,20 +78,6 @@ class KbArticleCategory implements ApiArrayInterface, TimestampInterface
         }
 
         return $data;
-    }
-
-    #[ORM\PrePersist]
-    public function onPrePersist(): void
-    {
-        $now = new \DateTime();
-        $this->createdAt ??= $now;
-        $this->updatedAt = $now;
-    }
-
-    #[ORM\PreUpdate]
-    public function onPreUpdate(): void
-    {
-        $this->updatedAt = new \DateTime();
     }
 
     public function getId(): ?int
@@ -144,25 +127,5 @@ class KbArticleCategory implements ApiArrayInterface, TimestampInterface
         $this->slug = $slug;
 
         return $this;
-    }
-
-    public function getCreatedAt(): ?\DateTime
-    {
-        return $this->createdAt;
-    }
-
-    public function setCreatedAt(?\DateTime $createdAt): void
-    {
-        $this->createdAt = $createdAt;
-    }
-
-    public function getUpdatedAt(): ?\DateTime
-    {
-        return $this->updatedAt;
-    }
-
-    public function setUpdatedAt(?\DateTime $updatedAt): void
-    {
-        $this->updatedAt = $updatedAt;
     }
 }

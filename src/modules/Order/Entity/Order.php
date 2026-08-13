@@ -6,6 +6,8 @@ namespace Box\Mod\Order\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use FOSSBilling\Doctrine\TimestampTrait;
+use FOSSBilling\Interfaces\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Order\Repository\OrderRepository::class)]
 #[ORM\Table(name: 'client_order')]
@@ -15,8 +17,10 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Index(name: 'promo_id_idx', columns: ['promo_id'])]
 #[ORM\Index(name: 'client_order_status_expires_at_idx', columns: ['status', 'expires_at'])]
 #[ORM\HasLifecycleCallbacks]
-class Order
+class Order implements TimestampInterface
 {
+    use TimestampTrait;
+
     final public const string STATUS_PENDING_SETUP = 'pending_setup';
     final public const string STATUS_FAILED_SETUP = 'failed_setup';
     final public const string STATUS_FAILED_RENEW = 'failed_renew';
@@ -141,12 +145,6 @@ class Order
     #[ORM\Column(name: 'canceled_at', type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTime $canceledAt = null;
 
-    #[ORM\Column(name: 'created_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $createdAt = null;
-
-    #[ORM\Column(name: 'updated_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $updatedAt = null;
-
     public function getId(): ?int
     {
         return $this->id;
@@ -157,9 +155,11 @@ class Order
         return $this->clientId;
     }
 
-    public function setClientId(?int $clientId): void
+    public function setClientId(?int $clientId): self
     {
         $this->clientId = $clientId;
+
+        return $this;
     }
 
     public function getProductId(): ?int
@@ -167,9 +167,11 @@ class Order
         return $this->productId;
     }
 
-    public function setProductId(?int $productId): void
+    public function setProductId(?int $productId): self
     {
         $this->productId = $productId;
+
+        return $this;
     }
 
     public function getFormId(): ?int
@@ -177,9 +179,11 @@ class Order
         return $this->formId;
     }
 
-    public function setFormId(?int $formId): void
+    public function setFormId(?int $formId): self
     {
         $this->formId = $formId;
+
+        return $this;
     }
 
     public function getPromoId(): ?int
@@ -187,9 +191,11 @@ class Order
         return $this->promoId;
     }
 
-    public function setPromoId(?int $promoId): void
+    public function setPromoId(?int $promoId): self
     {
         $this->promoId = $promoId;
+
+        return $this;
     }
 
     public function isPromoRecurring(): ?bool
@@ -197,9 +203,11 @@ class Order
         return $this->promoRecurring;
     }
 
-    public function setPromoRecurring(?bool $promoRecurring): void
+    public function setPromoRecurring(?bool $promoRecurring): self
     {
         $this->promoRecurring = $promoRecurring;
+
+        return $this;
     }
 
     public function getPromoUsed(): ?int
@@ -207,9 +215,11 @@ class Order
         return $this->promoUsed;
     }
 
-    public function setPromoUsed(?int $promoUsed): void
+    public function setPromoUsed(?int $promoUsed): self
     {
         $this->promoUsed = $promoUsed;
+
+        return $this;
     }
 
     public function getGroupId(): ?string
@@ -217,9 +227,11 @@ class Order
         return $this->groupId;
     }
 
-    public function setGroupId(?string $groupId): void
+    public function setGroupId(?string $groupId): self
     {
         $this->groupId = $groupId;
+
+        return $this;
     }
 
     public function isGroupMaster(): bool
@@ -227,9 +239,11 @@ class Order
         return (bool) $this->groupMaster;
     }
 
-    public function setGroupMaster(?bool $groupMaster): void
+    public function setGroupMaster(?bool $groupMaster): self
     {
         $this->groupMaster = $groupMaster;
+
+        return $this;
     }
 
     public function getInvoiceOption(): ?string
@@ -237,9 +251,11 @@ class Order
         return $this->invoiceOption;
     }
 
-    public function setInvoiceOption(?string $invoiceOption): void
+    public function setInvoiceOption(?string $invoiceOption): self
     {
         $this->invoiceOption = $invoiceOption;
+
+        return $this;
     }
 
     public function getTitle(): ?string
@@ -247,9 +263,11 @@ class Order
         return $this->title;
     }
 
-    public function setTitle(?string $title): void
+    public function setTitle(?string $title): self
     {
         $this->title = $title;
+
+        return $this;
     }
 
     public function getCurrency(): ?string
@@ -257,9 +275,11 @@ class Order
         return $this->currency;
     }
 
-    public function setCurrency(?string $currency): void
+    public function setCurrency(?string $currency): self
     {
         $this->currency = $currency;
+
+        return $this;
     }
 
     public function getUnpaidInvoiceId(): ?int
@@ -267,9 +287,11 @@ class Order
         return $this->unpaidInvoiceId;
     }
 
-    public function setUnpaidInvoiceId(?int $unpaidInvoiceId): void
+    public function setUnpaidInvoiceId(?int $unpaidInvoiceId): self
     {
         $this->unpaidInvoiceId = $unpaidInvoiceId;
+
+        return $this;
     }
 
     public function getServiceId(): ?int
@@ -277,9 +299,11 @@ class Order
         return $this->serviceId;
     }
 
-    public function setServiceId(?int $serviceId): void
+    public function setServiceId(?int $serviceId): self
     {
         $this->serviceId = $serviceId;
+
+        return $this;
     }
 
     public function getServiceType(): ?string
@@ -287,9 +311,11 @@ class Order
         return $this->serviceType;
     }
 
-    public function setServiceType(?string $serviceType): void
+    public function setServiceType(?string $serviceType): self
     {
         $this->serviceType = $serviceType;
+
+        return $this;
     }
 
     public function getPeriod(): ?string
@@ -297,9 +323,11 @@ class Order
         return $this->period;
     }
 
-    public function setPeriod(?string $period): void
+    public function setPeriod(?string $period): self
     {
         $this->period = $period;
+
+        return $this;
     }
 
     public function getQuantity(): ?int
@@ -307,9 +335,11 @@ class Order
         return $this->quantity;
     }
 
-    public function setQuantity(?int $quantity): void
+    public function setQuantity(?int $quantity): self
     {
         $this->quantity = $quantity;
+
+        return $this;
     }
 
     public function getUnit(): ?string
@@ -317,9 +347,11 @@ class Order
         return $this->unit;
     }
 
-    public function setUnit(?string $unit): void
+    public function setUnit(?string $unit): self
     {
         $this->unit = $unit;
+
+        return $this;
     }
 
     public function getPrice(): ?string
@@ -327,9 +359,11 @@ class Order
         return $this->price;
     }
 
-    public function setPrice(string|int|float|null $price): void
+    public function setPrice(string|int|float|null $price): self
     {
         $this->price = $price === null ? null : (string) $price;
+
+        return $this;
     }
 
     public function getDiscount(): ?string
@@ -337,9 +371,11 @@ class Order
         return $this->discount;
     }
 
-    public function setDiscount(string|int|float|null $discount): void
+    public function setDiscount(string|int|float|null $discount): self
     {
         $this->discount = $discount === null ? null : (string) $discount;
+
+        return $this;
     }
 
     public function getStatus(): ?string
@@ -347,9 +383,11 @@ class Order
         return $this->status;
     }
 
-    public function setStatus(?string $status): void
+    public function setStatus(?string $status): self
     {
         $this->status = $status;
+
+        return $this;
     }
 
     public function getReason(): ?string
@@ -357,9 +395,11 @@ class Order
         return $this->reason;
     }
 
-    public function setReason(?string $reason): void
+    public function setReason(?string $reason): self
     {
         $this->reason = $reason;
+
+        return $this;
     }
 
     public function getNotes(): ?string
@@ -367,9 +407,11 @@ class Order
         return $this->notes;
     }
 
-    public function setNotes(?string $notes): void
+    public function setNotes(?string $notes): self
     {
         $this->notes = $notes;
+
+        return $this;
     }
 
     public function getConfig(): ?string
@@ -377,9 +419,11 @@ class Order
         return $this->config;
     }
 
-    public function setConfig(?string $config): void
+    public function setConfig(?string $config): self
     {
         $this->config = $config;
+
+        return $this;
     }
 
     public function getSuspensionGraceDays(): ?int
@@ -387,9 +431,11 @@ class Order
         return $this->suspensionGraceDays;
     }
 
-    public function setSuspensionGraceDays(?int $suspensionGraceDays): void
+    public function setSuspensionGraceDays(?int $suspensionGraceDays): self
     {
         $this->suspensionGraceDays = $suspensionGraceDays;
+
+        return $this;
     }
 
     public function getReferredBy(): ?string
@@ -397,9 +443,11 @@ class Order
         return $this->referredBy;
     }
 
-    public function setReferredBy(?string $referredBy): void
+    public function setReferredBy(?string $referredBy): self
     {
         $this->referredBy = $referredBy;
+
+        return $this;
     }
 
     public function getExpiresAt(): ?\DateTime
@@ -407,9 +455,11 @@ class Order
         return $this->expiresAt;
     }
 
-    public function setExpiresAt(?\DateTime $expiresAt): void
+    public function setExpiresAt(?\DateTime $expiresAt): self
     {
         $this->expiresAt = $expiresAt;
+
+        return $this;
     }
 
     public function getActivatedAt(): ?\DateTime
@@ -417,9 +467,11 @@ class Order
         return $this->activatedAt;
     }
 
-    public function setActivatedAt(?\DateTime $activatedAt): void
+    public function setActivatedAt(?\DateTime $activatedAt): self
     {
         $this->activatedAt = $activatedAt;
+
+        return $this;
     }
 
     public function getSuspendedAt(): ?\DateTime
@@ -427,9 +479,11 @@ class Order
         return $this->suspendedAt;
     }
 
-    public function setSuspendedAt(?\DateTime $suspendedAt): void
+    public function setSuspendedAt(?\DateTime $suspendedAt): self
     {
         $this->suspendedAt = $suspendedAt;
+
+        return $this;
     }
 
     public function getUnsuspendedAt(): ?\DateTime
@@ -437,9 +491,11 @@ class Order
         return $this->unsuspendedAt;
     }
 
-    public function setUnsuspendedAt(?\DateTime $unsuspendedAt): void
+    public function setUnsuspendedAt(?\DateTime $unsuspendedAt): self
     {
         $this->unsuspendedAt = $unsuspendedAt;
+
+        return $this;
     }
 
     public function getCanceledAt(): ?\DateTime
@@ -447,42 +503,10 @@ class Order
         return $this->canceledAt;
     }
 
-    public function setCanceledAt(?\DateTime $canceledAt): void
+    public function setCanceledAt(?\DateTime $canceledAt): self
     {
         $this->canceledAt = $canceledAt;
-    }
 
-    public function getCreatedAt(): ?\DateTime
-    {
-        return $this->createdAt;
-    }
-
-    public function setCreatedAt(?\DateTime $createdAt): void
-    {
-        $this->createdAt = $createdAt;
-    }
-
-    public function getUpdatedAt(): ?\DateTime
-    {
-        return $this->updatedAt;
-    }
-
-    public function setUpdatedAt(?\DateTime $updatedAt): void
-    {
-        $this->updatedAt = $updatedAt;
-    }
-
-    #[ORM\PrePersist]
-    public function onPrePersist(): void
-    {
-        $now = new \DateTime();
-        $this->createdAt ??= $now;
-        $this->updatedAt ??= $now;
-    }
-
-    #[ORM\PreUpdate]
-    public function onPreUpdate(): void
-    {
-        $this->updatedAt = new \DateTime();
+        return $this;
     }
 }

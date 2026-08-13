@@ -13,14 +13,18 @@ namespace Box\Mod\Invoice\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use FOSSBilling\Doctrine\TimestampTrait;
 use FOSSBilling\Interfaces\ApiArrayInterface;
+use FOSSBilling\Interfaces\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Invoice\Repository\InvoiceItemRepository::class)]
 #[ORM\Table(name: 'invoice_item')]
 #[ORM\Index(name: 'invoice_id_idx', columns: ['invoice_id'])]
 #[ORM\HasLifecycleCallbacks]
-class InvoiceItem implements ApiArrayInterface
+class InvoiceItem implements ApiArrayInterface, TimestampInterface
 {
+    use TimestampTrait;
+
     final public const string TYPE_DEPOSIT = 'deposit';
     final public const string TYPE_CUSTOM = 'custom';
     final public const string TYPE_ORDER = 'order';
@@ -80,12 +84,6 @@ class InvoiceItem implements ApiArrayInterface
     #[ORM\Column(type: Types::INTEGER, options: ['default' => 0])]
     private int $attempts = 0;
 
-    #[ORM\Column(name: 'created_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $createdAt = null;
-
-    #[ORM\Column(name: 'updated_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $updatedAt = null;
-
     public function getId(): ?int
     {
         return $this->id;
@@ -96,9 +94,11 @@ class InvoiceItem implements ApiArrayInterface
         return $this->invoiceId;
     }
 
-    public function setInvoiceId(?int $invoiceId): void
+    public function setInvoiceId(?int $invoiceId): self
     {
         $this->invoiceId = $invoiceId;
+
+        return $this;
     }
 
     public function getType(): ?string
@@ -106,9 +106,11 @@ class InvoiceItem implements ApiArrayInterface
         return $this->type;
     }
 
-    public function setType(?string $type): void
+    public function setType(?string $type): self
     {
         $this->type = $type;
+
+        return $this;
     }
 
     public function getRelId(): ?string
@@ -116,9 +118,11 @@ class InvoiceItem implements ApiArrayInterface
         return $this->relId;
     }
 
-    public function setRelId(?string $relId): void
+    public function setRelId(?string $relId): self
     {
         $this->relId = $relId;
+
+        return $this;
     }
 
     public function getTask(): ?string
@@ -126,9 +130,11 @@ class InvoiceItem implements ApiArrayInterface
         return $this->task;
     }
 
-    public function setTask(?string $task): void
+    public function setTask(?string $task): self
     {
         $this->task = $task;
+
+        return $this;
     }
 
     public function getStatus(): ?string
@@ -136,9 +142,11 @@ class InvoiceItem implements ApiArrayInterface
         return $this->status;
     }
 
-    public function setStatus(?string $status): void
+    public function setStatus(?string $status): self
     {
         $this->status = $status;
+
+        return $this;
     }
 
     public function getTitle(): ?string
@@ -146,9 +154,11 @@ class InvoiceItem implements ApiArrayInterface
         return $this->title;
     }
 
-    public function setTitle(?string $title): void
+    public function setTitle(?string $title): self
     {
         $this->title = $title;
+
+        return $this;
     }
 
     public function getPeriod(): ?string
@@ -156,9 +166,11 @@ class InvoiceItem implements ApiArrayInterface
         return $this->period;
     }
 
-    public function setPeriod(?string $period): void
+    public function setPeriod(?string $period): self
     {
         $this->period = $period;
+
+        return $this;
     }
 
     public function getQuantity(): ?int
@@ -166,9 +178,11 @@ class InvoiceItem implements ApiArrayInterface
         return $this->quantity;
     }
 
-    public function setQuantity(?int $quantity): void
+    public function setQuantity(?int $quantity): self
     {
         $this->quantity = $quantity;
+
+        return $this;
     }
 
     public function getUnit(): ?string
@@ -176,9 +190,11 @@ class InvoiceItem implements ApiArrayInterface
         return $this->unit;
     }
 
-    public function setUnit(?string $unit): void
+    public function setUnit(?string $unit): self
     {
         $this->unit = $unit;
+
+        return $this;
     }
 
     public function getPrice(): ?string
@@ -186,9 +202,11 @@ class InvoiceItem implements ApiArrayInterface
         return $this->price;
     }
 
-    public function setPrice(string|int|float|null $price): void
+    public function setPrice(string|int|float|null $price): self
     {
         $this->price = $price === null ? null : (string) $price;
+
+        return $this;
     }
 
     public function getCharged(): ?bool
@@ -196,9 +214,11 @@ class InvoiceItem implements ApiArrayInterface
         return $this->charged;
     }
 
-    public function setCharged(bool|int|null $charged): void
+    public function setCharged(bool|int|null $charged): self
     {
         $this->charged = $charged === null ? null : (bool) $charged;
+
+        return $this;
     }
 
     public function getTaxed(): ?bool
@@ -206,9 +226,11 @@ class InvoiceItem implements ApiArrayInterface
         return $this->taxed;
     }
 
-    public function setTaxed(bool|int|null $taxed): void
+    public function setTaxed(bool|int|null $taxed): self
     {
         $this->taxed = $taxed === null ? null : (bool) $taxed;
+
+        return $this;
     }
 
     public function getAttempts(): int
@@ -216,29 +238,11 @@ class InvoiceItem implements ApiArrayInterface
         return $this->attempts;
     }
 
-    public function setAttempts(int $attempts): void
+    public function setAttempts(int $attempts): self
     {
         $this->attempts = $attempts;
-    }
 
-    public function getCreatedAt(): ?\DateTime
-    {
-        return $this->createdAt;
-    }
-
-    public function setCreatedAt(?\DateTime $createdAt): void
-    {
-        $this->createdAt = $createdAt;
-    }
-
-    public function getUpdatedAt(): ?\DateTime
-    {
-        return $this->updatedAt;
-    }
-
-    public function setUpdatedAt(?\DateTime $updatedAt): void
-    {
-        $this->updatedAt = $updatedAt;
+        return $this;
     }
 
     public function toApiArray(): array
@@ -261,19 +265,5 @@ class InvoiceItem implements ApiArrayInterface
             'created_at' => $this->createdAt?->format('Y-m-d H:i:s'),
             'updated_at' => $this->updatedAt?->format('Y-m-d H:i:s'),
         ];
-    }
-
-    #[ORM\PrePersist]
-    public function onPrePersist(): void
-    {
-        $now = new \DateTime();
-        $this->createdAt ??= $now;
-        $this->updatedAt ??= $now;
-    }
-
-    #[ORM\PreUpdate]
-    public function onPreUpdate(): void
-    {
-        $this->updatedAt = new \DateTime();
     }
 }

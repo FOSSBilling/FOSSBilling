@@ -6,13 +6,17 @@ namespace Box\Mod\Order\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use FOSSBilling\Doctrine\TimestampTrait;
+use FOSSBilling\Interfaces\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Order\Repository\OrderMetaRepository::class)]
 #[ORM\Table(name: 'client_order_meta')]
 #[ORM\Index(name: 'client_order_id_idx', columns: ['client_order_id'])]
 #[ORM\HasLifecycleCallbacks]
-class OrderMeta
+class OrderMeta implements TimestampInterface
 {
+    use TimestampTrait;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::BIGINT)]
@@ -28,12 +32,6 @@ class OrderMeta
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $value = null;
 
-    #[ORM\Column(name: 'created_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $createdAt = null;
-
-    #[ORM\Column(name: 'updated_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $updatedAt = null;
-
     public function getId(): ?int
     {
         return $this->id;
@@ -44,9 +42,11 @@ class OrderMeta
         return $this->clientOrderId;
     }
 
-    public function setClientOrderId(?int $clientOrderId): void
+    public function setClientOrderId(?int $clientOrderId): self
     {
         $this->clientOrderId = $clientOrderId;
+
+        return $this;
     }
 
     public function getName(): ?string
@@ -54,9 +54,11 @@ class OrderMeta
         return $this->name;
     }
 
-    public function setName(?string $name): void
+    public function setName(?string $name): self
     {
         $this->name = $name;
+
+        return $this;
     }
 
     public function getValue(): ?string
@@ -64,42 +66,10 @@ class OrderMeta
         return $this->value;
     }
 
-    public function setValue(?string $value): void
+    public function setValue(?string $value): self
     {
         $this->value = $value;
-    }
 
-    public function getCreatedAt(): ?\DateTime
-    {
-        return $this->createdAt;
-    }
-
-    public function setCreatedAt(?\DateTime $createdAt): void
-    {
-        $this->createdAt = $createdAt;
-    }
-
-    public function getUpdatedAt(): ?\DateTime
-    {
-        return $this->updatedAt;
-    }
-
-    public function setUpdatedAt(?\DateTime $updatedAt): void
-    {
-        $this->updatedAt = $updatedAt;
-    }
-
-    #[ORM\PrePersist]
-    public function onPrePersist(): void
-    {
-        $now = new \DateTime();
-        $this->createdAt ??= $now;
-        $this->updatedAt ??= $now;
-    }
-
-    #[ORM\PreUpdate]
-    public function onPreUpdate(): void
-    {
-        $this->updatedAt = new \DateTime();
+        return $this;
     }
 }

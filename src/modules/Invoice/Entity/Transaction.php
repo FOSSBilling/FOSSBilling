@@ -13,14 +13,18 @@ namespace Box\Mod\Invoice\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use FOSSBilling\Doctrine\TimestampTrait;
+use FOSSBilling\Interfaces\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Invoice\Repository\TransactionRepository::class)]
 #[ORM\Table(name: '`transaction`')]
 #[ORM\Index(name: 'invoice_id_idx', columns: ['invoice_id'])]
 #[ORM\Index(name: 'transaction_ipn_hash_idx', columns: ['gateway_id', 'ipn_hash'])]
 #[ORM\HasLifecycleCallbacks]
-class Transaction
+class Transaction implements TimestampInterface
 {
+    use TimestampTrait;
+
     final public const string STATUS_RECEIVED = 'received';
     final public const string STATUS_APPROVED = 'approved';
     final public const string STATUS_PROCESSING = 'processing';
@@ -87,12 +91,6 @@ class Transaction
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $note = null;
 
-    #[ORM\Column(name: 'created_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $createdAt = null;
-
-    #[ORM\Column(name: 'updated_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $updatedAt = null;
-
     public function getId(): ?int
     {
         return $this->id;
@@ -103,9 +101,11 @@ class Transaction
         return $this->invoiceId;
     }
 
-    public function setInvoiceId(?int $invoiceId): void
+    public function setInvoiceId(?int $invoiceId): self
     {
         $this->invoiceId = $invoiceId;
+
+        return $this;
     }
 
     public function getGatewayId(): ?int
@@ -113,9 +113,11 @@ class Transaction
         return $this->gatewayId;
     }
 
-    public function setGatewayId(?int $gatewayId): void
+    public function setGatewayId(?int $gatewayId): self
     {
         $this->gatewayId = $gatewayId;
+
+        return $this;
     }
 
     public function getTxnId(): ?string
@@ -123,9 +125,11 @@ class Transaction
         return $this->txnId;
     }
 
-    public function setTxnId(?string $txnId): void
+    public function setTxnId(?string $txnId): self
     {
         $this->txnId = $txnId;
+
+        return $this;
     }
 
     public function getTxnStatus(): ?string
@@ -133,9 +137,11 @@ class Transaction
         return $this->txnStatus;
     }
 
-    public function setTxnStatus(?string $txnStatus): void
+    public function setTxnStatus(?string $txnStatus): self
     {
         $this->txnStatus = $txnStatus;
+
+        return $this;
     }
 
     public function getSId(): ?string
@@ -143,9 +149,11 @@ class Transaction
         return $this->sId;
     }
 
-    public function setSId(?string $sId): void
+    public function setSId(?string $sId): self
     {
         $this->sId = $sId;
+
+        return $this;
     }
 
     public function getSPeriod(): ?string
@@ -153,9 +161,11 @@ class Transaction
         return $this->sPeriod;
     }
 
-    public function setSPeriod(?string $sPeriod): void
+    public function setSPeriod(?string $sPeriod): self
     {
         $this->sPeriod = $sPeriod;
+
+        return $this;
     }
 
     public function getAmount(): ?string
@@ -163,9 +173,11 @@ class Transaction
         return $this->amount;
     }
 
-    public function setAmount(string|int|float|null $amount): void
+    public function setAmount(string|int|float|null $amount): self
     {
         $this->amount = $amount === null ? null : (string) $amount;
+
+        return $this;
     }
 
     public function getCurrency(): ?string
@@ -173,9 +185,11 @@ class Transaction
         return $this->currency;
     }
 
-    public function setCurrency(?string $currency): void
+    public function setCurrency(?string $currency): self
     {
         $this->currency = $currency;
+
+        return $this;
     }
 
     public function getType(): ?string
@@ -183,9 +197,11 @@ class Transaction
         return $this->type;
     }
 
-    public function setType(?string $type): void
+    public function setType(?string $type): self
     {
         $this->type = $type;
+
+        return $this;
     }
 
     public function getStatus(): string
@@ -193,9 +209,11 @@ class Transaction
         return $this->status;
     }
 
-    public function setStatus(string $status): void
+    public function setStatus(string $status): self
     {
         $this->status = $status;
+
+        return $this;
     }
 
     public function getIp(): ?string
@@ -203,9 +221,11 @@ class Transaction
         return $this->ip;
     }
 
-    public function setIp(?string $ip): void
+    public function setIp(?string $ip): self
     {
         $this->ip = $ip;
+
+        return $this;
     }
 
     public function getError(): ?string
@@ -213,9 +233,11 @@ class Transaction
         return $this->error;
     }
 
-    public function setError(?string $error): void
+    public function setError(?string $error): self
     {
         $this->error = $error;
+
+        return $this;
     }
 
     public function getErrorCode(): ?int
@@ -223,9 +245,11 @@ class Transaction
         return $this->errorCode;
     }
 
-    public function setErrorCode(?int $errorCode): void
+    public function setErrorCode(?int $errorCode): self
     {
         $this->errorCode = $errorCode;
+
+        return $this;
     }
 
     public function isValidateIpn(): bool
@@ -233,9 +257,11 @@ class Transaction
         return $this->validateIpn;
     }
 
-    public function setValidateIpn(bool $validateIpn): void
+    public function setValidateIpn(bool $validateIpn): self
     {
         $this->validateIpn = $validateIpn;
+
+        return $this;
     }
 
     public function getIpn(): ?string
@@ -243,9 +269,11 @@ class Transaction
         return $this->ipn;
     }
 
-    public function setIpn(?string $ipn): void
+    public function setIpn(?string $ipn): self
     {
         $this->ipn = $ipn;
+
+        return $this;
     }
 
     public function getIpnHash(): ?string
@@ -253,9 +281,11 @@ class Transaction
         return $this->ipnHash;
     }
 
-    public function setIpnHash(?string $ipnHash): void
+    public function setIpnHash(?string $ipnHash): self
     {
         $this->ipnHash = $ipnHash;
+
+        return $this;
     }
 
     public function getOutput(): ?string
@@ -263,9 +293,11 @@ class Transaction
         return $this->output;
     }
 
-    public function setOutput(?string $output): void
+    public function setOutput(?string $output): self
     {
         $this->output = $output;
+
+        return $this;
     }
 
     public function getNote(): ?string
@@ -273,42 +305,10 @@ class Transaction
         return $this->note;
     }
 
-    public function setNote(?string $note): void
+    public function setNote(?string $note): self
     {
         $this->note = $note;
-    }
 
-    public function getCreatedAt(): ?\DateTime
-    {
-        return $this->createdAt;
-    }
-
-    public function setCreatedAt(?\DateTime $createdAt): void
-    {
-        $this->createdAt = $createdAt;
-    }
-
-    public function getUpdatedAt(): ?\DateTime
-    {
-        return $this->updatedAt;
-    }
-
-    public function setUpdatedAt(?\DateTime $updatedAt): void
-    {
-        $this->updatedAt = $updatedAt;
-    }
-
-    #[ORM\PrePersist]
-    public function onPrePersist(): void
-    {
-        $now = new \DateTime();
-        $this->createdAt ??= $now;
-        $this->updatedAt ??= $now;
-    }
-
-    #[ORM\PreUpdate]
-    public function onPreUpdate(): void
-    {
-        $this->updatedAt = new \DateTime();
+        return $this;
     }
 }

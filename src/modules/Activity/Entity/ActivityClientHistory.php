@@ -13,6 +13,7 @@ namespace Box\Mod\Activity\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use FOSSBilling\Doctrine\CreatedAtTrait;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Activity\Repository\ActivityClientHistoryRepository::class)]
 #[ORM\Table(name: 'activity_client_history')]
@@ -20,6 +21,8 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\HasLifecycleCallbacks]
 class ActivityClientHistory
 {
+    use CreatedAtTrait;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::INTEGER)]
@@ -31,9 +34,6 @@ class ActivityClientHistory
 
     #[ORM\Column(type: Types::STRING, length: 45, nullable: true)]
     private ?string $ip = null;
-
-    #[ORM\Column(name: 'created_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $createdAt = null;
 
     public function getId(): ?int
     {
@@ -62,23 +62,5 @@ class ActivityClientHistory
         $this->ip = $ip;
 
         return $this;
-    }
-
-    public function getCreatedAt(): ?\DateTime
-    {
-        return $this->createdAt;
-    }
-
-    public function setCreatedAt(?\DateTime $createdAt): self
-    {
-        $this->createdAt = $createdAt;
-
-        return $this;
-    }
-
-    #[ORM\PrePersist]
-    public function onPrePersist(): void
-    {
-        $this->createdAt ??= new \DateTime();
     }
 }

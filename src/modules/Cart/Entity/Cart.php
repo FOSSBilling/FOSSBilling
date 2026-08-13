@@ -6,6 +6,8 @@ namespace Box\Mod\Cart\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use FOSSBilling\Doctrine\TimestampTrait;
+use FOSSBilling\Interfaces\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Cart\Repository\CartRepository::class)]
 #[ORM\Table(name: 'cart')]
@@ -13,8 +15,10 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Index(name: 'currency_id_idx', columns: ['currency_id'])]
 #[ORM\Index(name: 'promo_id_idx', columns: ['promo_id'])]
 #[ORM\HasLifecycleCallbacks]
-class Cart
+class Cart implements TimestampInterface
 {
+    use TimestampTrait;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::BIGINT)]
@@ -30,12 +34,6 @@ class Cart
     #[ORM\Column(name: 'promo_id', type: Types::BIGINT, nullable: true)]
     private ?int $promoId = null;
 
-    #[ORM\Column(name: 'created_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $createdAt = null;
-
-    #[ORM\Column(name: 'updated_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $updatedAt = null;
-
     public function getId(): ?int
     {
         return $this->id;
@@ -46,9 +44,11 @@ class Cart
         return $this->sessionId;
     }
 
-    public function setSessionId(?string $sessionId): void
+    public function setSessionId(?string $sessionId): self
     {
         $this->sessionId = $sessionId;
+
+        return $this;
     }
 
     public function getCurrencyId(): ?int
@@ -56,9 +56,11 @@ class Cart
         return $this->currencyId;
     }
 
-    public function setCurrencyId(?int $currencyId): void
+    public function setCurrencyId(?int $currencyId): self
     {
         $this->currencyId = $currencyId;
+
+        return $this;
     }
 
     public function getPromoId(): ?int
@@ -66,42 +68,10 @@ class Cart
         return $this->promoId;
     }
 
-    public function setPromoId(?int $promoId): void
+    public function setPromoId(?int $promoId): self
     {
         $this->promoId = $promoId;
-    }
 
-    public function getCreatedAt(): ?\DateTime
-    {
-        return $this->createdAt;
-    }
-
-    public function setCreatedAt(?\DateTime $createdAt): void
-    {
-        $this->createdAt = $createdAt;
-    }
-
-    public function getUpdatedAt(): ?\DateTime
-    {
-        return $this->updatedAt;
-    }
-
-    public function setUpdatedAt(?\DateTime $updatedAt): void
-    {
-        $this->updatedAt = $updatedAt;
-    }
-
-    #[ORM\PrePersist]
-    public function onPrePersist(): void
-    {
-        $now = new \DateTime();
-        $this->createdAt ??= $now;
-        $this->updatedAt ??= $now;
-    }
-
-    #[ORM\PreUpdate]
-    public function onPreUpdate(): void
-    {
-        $this->updatedAt = new \DateTime();
+        return $this;
     }
 }

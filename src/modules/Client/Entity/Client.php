@@ -13,15 +13,19 @@ namespace Box\Mod\Client\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use FOSSBilling\Doctrine\TimestampTrait;
 use FOSSBilling\Interfaces\ApiArrayInterface;
+use FOSSBilling\Interfaces\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Client\Repository\ClientRepository::class)]
 #[ORM\Table(name: 'client')]
 #[ORM\Index(name: 'alternative_id_idx', columns: ['aid'])]
 #[ORM\Index(name: 'client_group_id_idx', columns: ['client_group_id'])]
 #[ORM\HasLifecycleCallbacks]
-class Client implements ApiArrayInterface
+class Client implements ApiArrayInterface, TimestampInterface
 {
+    use TimestampTrait;
+
     final public const string ACTIVE = 'active';
     final public const string SUSPENDED = 'suspended';
     final public const string CANCELED = 'canceled';
@@ -203,12 +207,6 @@ class Client implements ApiArrayInterface
 
     #[ORM\Column(name: 'custom_20', type: Types::TEXT, nullable: true)]
     private ?string $custom20 = null;
-
-    #[ORM\Column(name: 'created_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $createdAt = null;
-
-    #[ORM\Column(name: 'updated_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $updatedAt = null;
 
     public function getId(): ?int
     {
@@ -886,30 +884,6 @@ class Client implements ApiArrayInterface
         return $this;
     }
 
-    public function getCreatedAt(): ?\DateTime
-    {
-        return $this->createdAt;
-    }
-
-    public function setCreatedAt(?\DateTime $createdAt): self
-    {
-        $this->createdAt = $createdAt;
-
-        return $this;
-    }
-
-    public function getUpdatedAt(): ?\DateTime
-    {
-        return $this->updatedAt;
-    }
-
-    public function setUpdatedAt(?\DateTime $updatedAt): self
-    {
-        $this->updatedAt = $updatedAt;
-
-        return $this;
-    }
-
     public function toApiArray(self|\Box\Mod\Staff\Entity\Admin|\FOSSBilling\Identity\Guest|null $identity = null): array
     {
         $details = [
@@ -963,19 +937,5 @@ class Client implements ApiArrayInterface
         }
 
         return $details;
-    }
-
-    #[ORM\PrePersist]
-    public function onPrePersist(): void
-    {
-        $now = new \DateTime();
-        $this->createdAt ??= $now;
-        $this->updatedAt ??= $now;
-    }
-
-    #[ORM\PreUpdate]
-    public function onPreUpdate(): void
-    {
-        $this->updatedAt = new \DateTime();
     }
 }

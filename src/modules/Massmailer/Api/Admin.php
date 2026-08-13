@@ -85,7 +85,6 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             $model->setFromEmail($data['from_email']);
         }
 
-        $model->setUpdatedAt(new \DateTime());
         $this->getDi()['em']->flush();
 
         $this->getDi()['logger']->info('Updated mail message #%s', $model->getId());
@@ -131,9 +130,7 @@ Order our services at {{ "order"|url }}
             ->setSubject($data['subject'])
             ->setContent($data['content'] ?? $default_content)
             ->setFilter(json_encode([], JSON_THROW_ON_ERROR))
-            ->setStatus(MassmailerMessage::STATUS_DRAFT)
-            ->setCreatedAt(new \DateTime())
-            ->setUpdatedAt(new \DateTime());
+            ->setStatus(MassmailerMessage::STATUS_DRAFT);
 
         $this->getDi()['em']->persist($model);
         $this->getDi()['em']->flush();
@@ -211,9 +208,7 @@ Order our services at {{ "order"|url }}
             ->setSubject(($model->getSubject() ?? '') . ' (Copy)')
             ->setContent($model->getContent())
             ->setFilter($model->getFilter())
-            ->setStatus(MassmailerMessage::STATUS_DRAFT)
-            ->setCreatedAt(new \DateTime())
-            ->setUpdatedAt(new \DateTime());
+            ->setStatus(MassmailerMessage::STATUS_DRAFT);
 
         $this->getDi()['em']->persist($copy);
         $this->getDi()['em']->flush();

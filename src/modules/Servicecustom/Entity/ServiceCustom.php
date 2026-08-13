@@ -16,7 +16,7 @@ use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Doctrine\TimestampTrait;
 use FOSSBilling\Interfaces\TimestampInterface;
 
-#[ORM\Entity(repositoryClass: \Box\Mod\Servicecustom\Repository\ServiceCustomRepository::class)]
+#[ORM\Entity]
 #[ORM\Table(name: 'service_custom')]
 #[ORM\Index(name: 'client_id_idx', columns: ['client_id'])]
 #[ORM\HasLifecycleCallbacks]

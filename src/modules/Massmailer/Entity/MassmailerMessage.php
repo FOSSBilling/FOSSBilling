@@ -13,12 +13,17 @@ declare(strict_types=1);
 namespace Box\Mod\Massmailer\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use FOSSBilling\Doctrine\TimestampTrait;
 use FOSSBilling\Interfaces\ApiArrayInterface;
+use FOSSBilling\Interfaces\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Massmailer\Repository\MassmailerMessageRepository::class)]
 #[ORM\Table(name: 'mod_massmailer')]
-class MassmailerMessage implements ApiArrayInterface
+#[ORM\HasLifecycleCallbacks]
+class MassmailerMessage implements ApiArrayInterface, TimestampInterface
 {
+    use TimestampTrait;
+
     public const STATUS_DRAFT = 'draft';
     public const STATUS_SENT = 'sent';
 
@@ -50,12 +55,6 @@ class MassmailerMessage implements ApiArrayInterface
 
     #[ORM\Column(name: 'sent_at', type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTime $sentAt = null;
-
-    #[ORM\Column(name: 'created_at', type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $createdAt = null;
-
-    #[ORM\Column(name: 'updated_at', type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $updatedAt = null;
 
     public function toApiArray(): array
     {
@@ -158,30 +157,6 @@ class MassmailerMessage implements ApiArrayInterface
     public function setSentAt(?\DateTime $sentAt): self
     {
         $this->sentAt = $sentAt;
-
-        return $this;
-    }
-
-    public function getCreatedAt(): ?\DateTime
-    {
-        return $this->createdAt;
-    }
-
-    public function setCreatedAt(?\DateTime $createdAt): self
-    {
-        $this->createdAt = $createdAt;
-
-        return $this;
-    }
-
-    public function getUpdatedAt(): ?\DateTime
-    {
-        return $this->updatedAt;
-    }
-
-    public function setUpdatedAt(?\DateTime $updatedAt): self
-    {
-        $this->updatedAt = $updatedAt;
 
         return $this;
     }

@@ -55,9 +55,11 @@ class Tax implements ApiArrayInterface, TimestampInterface
         return $this->level;
     }
 
-    public function setLevel(?int $level): void
+    public function setLevel(?int $level): self
     {
         $this->level = $level;
+
+        return $this;
     }
 
     public function getName(): ?string
@@ -65,9 +67,11 @@ class Tax implements ApiArrayInterface, TimestampInterface
         return $this->name;
     }
 
-    public function setName(?string $name): void
+    public function setName(?string $name): self
     {
         $this->name = $name;
+
+        return $this;
     }
 
     public function getCountry(): ?string
@@ -75,9 +79,11 @@ class Tax implements ApiArrayInterface, TimestampInterface
         return $this->country;
     }
 
-    public function setCountry(?string $country): void
+    public function setCountry(?string $country): self
     {
         $this->country = $country;
+
+        return $this;
     }
 
     public function getState(): ?string
@@ -85,9 +91,11 @@ class Tax implements ApiArrayInterface, TimestampInterface
         return $this->state;
     }
 
-    public function setState(?string $state): void
+    public function setState(?string $state): self
     {
         $this->state = $state;
+
+        return $this;
     }
 
     public function getTaxrate(): ?string
@@ -95,9 +103,11 @@ class Tax implements ApiArrayInterface, TimestampInterface
         return $this->taxrate;
     }
 
-    public function setTaxrate(?string $taxrate): void
+    public function setTaxrate(?string $taxrate): self
     {
         $this->taxrate = $taxrate;
+
+        return $this;
     }
 
     public function toApiArray(): array

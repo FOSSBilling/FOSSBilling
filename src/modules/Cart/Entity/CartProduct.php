@@ -38,9 +38,11 @@ class CartProduct
         return $this->cartId;
     }
 
-    public function setCartId(?int $cartId): void
+    public function setCartId(?int $cartId): self
     {
         $this->cartId = $cartId;
+
+        return $this;
     }
 
     public function getProductId(): ?int
@@ -48,9 +50,11 @@ class CartProduct
         return $this->productId;
     }
 
-    public function setProductId(?int $productId): void
+    public function setProductId(?int $productId): self
     {
         $this->productId = $productId;
+
+        return $this;
     }
 
     public function getConfig(): ?string
@@ -58,8 +62,10 @@ class CartProduct
         return $this->config;
     }
 
-    public function setConfig(?string $config): void
+    public function setConfig(?string $config): self
     {
         $this->config = $config;
+
+        return $this;
     }
 }

@@ -13,13 +13,17 @@ namespace Box\Mod\Staff\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use FOSSBilling\Doctrine\TimestampTrait;
 use FOSSBilling\Interfaces\ApiArrayInterface;
+use FOSSBilling\Interfaces\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Staff\Repository\AdminGroupRepository::class)]
 #[ORM\Table(name: 'admin_group')]
 #[ORM\HasLifecycleCallbacks]
-class AdminGroup implements ApiArrayInterface
+class AdminGroup implements ApiArrayInterface, TimestampInterface
 {
+    use TimestampTrait;
+
     public const string SYSTEM_SUPER_ADMIN = 'super_admin';
 
     #[ORM\Id]
@@ -44,12 +48,6 @@ class AdminGroup implements ApiArrayInterface
     #[ORM\Column(name: 'protected', type: Types::BOOLEAN, options: ['default' => false])]
     private bool $protected = false;
 
-    #[ORM\Column(name: 'created_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $createdAt = null;
-
-    #[ORM\Column(name: 'updated_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $updatedAt = null;
-
     public function toApiArray(): array
     {
         $pathNames = $this->getPathNames();
@@ -67,20 +65,6 @@ class AdminGroup implements ApiArrayInterface
             'created_at' => $this->getCreatedAt()?->format('Y-m-d H:i:s'),
             'updated_at' => $this->getUpdatedAt()?->format('Y-m-d H:i:s'),
         ];
-    }
-
-    #[ORM\PrePersist]
-    public function onPrePersist(): void
-    {
-        $now = new \DateTime();
-        $this->createdAt ??= $now;
-        $this->updatedAt ??= $now;
-    }
-
-    #[ORM\PreUpdate]
-    public function onPreUpdate(): void
-    {
-        $this->updatedAt = new \DateTime();
     }
 
     public function getId(): ?int
@@ -187,29 +171,5 @@ class AdminGroup implements ApiArrayInterface
     public function isSuperAdministrator(): bool
     {
         return $this->systemName === self::SYSTEM_SUPER_ADMIN;
-    }
-
-    public function getCreatedAt(): ?\DateTime
-    {
-        return $this->createdAt;
-    }
-
-    public function setCreatedAt(?\DateTime $createdAt): self
-    {
-        $this->createdAt = $createdAt;
-
-        return $this;
-    }
-
-    public function getUpdatedAt(): ?\DateTime
-    {
-        return $this->updatedAt;
-    }
-
-    public function setUpdatedAt(?\DateTime $updatedAt): self
-    {
-        $this->updatedAt = $updatedAt;
-
-        return $this;
     }
 }

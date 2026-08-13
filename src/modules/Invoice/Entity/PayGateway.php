@@ -58,9 +58,11 @@ class PayGateway
         return $this->name;
     }
 
-    public function setName(?string $name): void
+    public function setName(?string $name): self
     {
         $this->name = $name;
+
+        return $this;
     }
 
     public function getGateway(): ?string
@@ -68,9 +70,11 @@ class PayGateway
         return $this->gateway;
     }
 
-    public function setGateway(?string $gateway): void
+    public function setGateway(?string $gateway): self
     {
         $this->gateway = $gateway;
+
+        return $this;
     }
 
     public function getAcceptedCurrencies(): ?string
@@ -78,9 +82,11 @@ class PayGateway
         return $this->acceptedCurrencies;
     }
 
-    public function setAcceptedCurrencies(?string $acceptedCurrencies): void
+    public function setAcceptedCurrencies(?string $acceptedCurrencies): self
     {
         $this->acceptedCurrencies = $acceptedCurrencies;
+
+        return $this;
     }
 
     public function isEnabled(): bool
@@ -88,9 +94,11 @@ class PayGateway
         return $this->enabled;
     }
 
-    public function setEnabled(bool $enabled): void
+    public function setEnabled(bool $enabled): self
     {
         $this->enabled = $enabled;
+
+        return $this;
     }
 
     public function isAllowSingle(): bool
@@ -98,9 +106,11 @@ class PayGateway
         return $this->allowSingle;
     }
 
-    public function setAllowSingle(bool $allowSingle): void
+    public function setAllowSingle(bool $allowSingle): self
     {
         $this->allowSingle = $allowSingle;
+
+        return $this;
     }
 
     public function isAllowRecurrent(): bool
@@ -108,9 +118,11 @@ class PayGateway
         return $this->allowRecurrent;
     }
 
-    public function setAllowRecurrent(bool $allowRecurrent): void
+    public function setAllowRecurrent(bool $allowRecurrent): self
     {
         $this->allowRecurrent = $allowRecurrent;
+
+        return $this;
     }
 
     public function isTestMode(): bool
@@ -118,9 +130,11 @@ class PayGateway
         return $this->testMode;
     }
 
-    public function setTestMode(bool $testMode): void
+    public function setTestMode(bool $testMode): self
     {
         $this->testMode = $testMode;
+
+        return $this;
     }
 
     public function getConfig(): ?string
@@ -128,8 +142,10 @@ class PayGateway
         return $this->config;
     }
 
-    public function setConfig(?string $config): void
+    public function setConfig(?string $config): self
     {
         $this->config = $config;
+
+        return $this;
     }
 }
