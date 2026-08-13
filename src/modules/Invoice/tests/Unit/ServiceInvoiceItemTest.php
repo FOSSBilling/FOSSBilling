@@ -115,6 +115,61 @@ test('returns true when executing task on already executed item', function (): v
     expect($result)->toBeTrue();
 });
 
+test('recovers from a duplicate credit by reloading the item and invoice', function (): void {
+    $invoiceModel = createEntity(Invoice::class);
+    setEntityId($invoiceModel, 42);
+    $item = createEntity(InvoiceItem::class, ['invoice' => $invoiceModel]);
+    setEntityId($item, 7);
+
+    $driverException = new class extends Exception implements Doctrine\DBAL\Driver\Exception {
+        public function getSQLState(): ?string
+        {
+            return '23000';
+        }
+    };
+    $duplicateKey = new Doctrine\DBAL\Exception\UniqueConstraintViolationException($driverException, null);
+
+    $initialEm = Mockery::mock(EntityManagerInterface::class);
+    $initialEm->shouldReceive('wrapInTransaction')->once()->andThrow($duplicateKey);
+    $initialEm->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn(Mockery::mock(InvoiceItemRepository::class));
+
+    $reloadedItem = createEntity(InvoiceItem::class);
+    setEntityId($reloadedItem, 7);
+    $reloadedInvoice = createEntity(Invoice::class);
+    setEntityId($reloadedInvoice, 42);
+
+    $replacementEm = Mockery::mock(EntityManagerInterface::class);
+    $replacementEm->shouldReceive('find')->with(InvoiceItem::class, 7)->andReturn($reloadedItem);
+    $replacementEm->shouldReceive('find')->with(Invoice::class, 42)->andReturn($reloadedInvoice);
+    $replacementEm->shouldReceive('persist')->once()->with($reloadedItem);
+    $replacementEm->shouldReceive('flush')->once();
+
+    $orderRepo = Mockery::mock(OrderRepository::class);
+    $orderRepo->shouldReceive('find')->with(0)->andReturn(null);
+    $replacementEm->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepo);
+
+    $invoiceServiceMock = Mockery::mock(InvoiceService::class);
+    $invoiceServiceMock->shouldReceive('addNote')->once()->with($reloadedInvoice, Mockery::any());
+
+    $serviceMock = Mockery::mock(ServiceInvoiceItem::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('getTotalWithTax')->once()->andReturn(11.2);
+
+    $di = container();
+    $di['em'] = $initialEm;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $invoiceServiceMock);
+
+    $serviceMock->shouldReceive('resetEntityManager')->once()->andReturnUsing(function () use ($di, $replacementEm): void {
+        $di['em'] = $replacementEm;
+    });
+
+    $serviceMock->setDi($di);
+
+    $serviceMock->markAsPaid($item);
+
+    expect($reloadedItem->getCharged())->toBeTrue();
+});
+
 test('records failure when executing task for order type with client order not found', function (): void {
     $item = createEntity(InvoiceItem::class, ['type' => InvoiceItem::TYPE_ORDER, 'status' => InvoiceItem::STATUS_PENDING_SETUP]);
 

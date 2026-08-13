@@ -69,6 +69,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                 $this->di['logger']->setChannel('billing')->info(sprintf('Invoice item #%d was already credited; skipping duplicate credit.', (int) $item->getId()));
                 $this->resetEntityManager();
                 $item = $this->di['em']->find(InvoiceItem::class, $item->getId());
+                $invoice = $this->di['em']->find(Invoice::class, $invoice->getId());
                 $item->setCharged(true);
                 $item->setStatus(InvoiceItem::STATUS_PENDING_SETUP);
                 $this->di['em']->persist($item);
@@ -319,6 +320,9 @@ class ServiceInvoiceItem implements InjectionAwareInterface
     {
         unset($this->di['em']);
         $this->di['em'] = EntityManagerFactory::create();
+        /** @var InvoiceItemRepository $repository */
+        $repository = $this->di['em']->getRepository(InvoiceItem::class);
+        $this->invoiceItemRepository = $repository;
     }
 
     private function persistCredit(InvoiceItem $item, Invoice $invoice, float $total): ClientBalance
