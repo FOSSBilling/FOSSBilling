@@ -516,7 +516,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $model = $this->getDi()['em']->getRepository(ClientBalance::class)->find($data['id']) ?? throw new InformationException('Balance line not found');
 
         $id = $model->getId();
-        $client_id = $model->getClientId();
+        $client_id = $model->getClient()?->getId();
         $amount = $model->getAmount();
 
         $this->getDi()['em']->remove($model);

@@ -891,7 +891,7 @@ class ServiceTransaction implements InjectionAwareInterface
         }
 
         $credit = new ClientBalance();
-        $credit->setClientId((int) $client->getId());
+        $credit->setClient($client);
         $credit->setType('transaction');
         $credit->setRelId((string) $tx->getId());
         $credit->setDescription('Invoice #' . $proforma->getId() . ' payment received from transaction #' . $tx->getId());

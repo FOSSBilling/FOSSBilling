@@ -320,7 +320,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             ?? throw new \FOSSBilling\Exception('Client not found');
 
         $credit = new ClientBalance();
-        $credit->setClientId((int) $client->getId());
+        $credit->setClient($client);
         $credit->setType('invoice');
         $credit->setRelId((string) $invoice->getId());
         $credit->setInvoiceItemId($item->getId());

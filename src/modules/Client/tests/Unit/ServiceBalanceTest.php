@@ -25,7 +25,7 @@ test('builds a Doctrine query for balance searches', function (): void {
     $queryBuilder = Mockery::mock(Doctrine\ORM\QueryBuilder::class);
     $queryBuilder->shouldReceive('andWhere')->once()->with('m.id = :id')->andReturnSelf();
     $queryBuilder->shouldReceive('setParameter')->once()->with('id', 7)->andReturnSelf();
-    $queryBuilder->shouldReceive('andWhere')->once()->with('m.clientId = :client_id')->andReturnSelf();
+    $queryBuilder->shouldReceive('andWhere')->once()->with('IDENTITY(m.client) = :client_id')->andReturnSelf();
     $queryBuilder->shouldReceive('setParameter')->once()->with('client_id', 3)->andReturnSelf();
     $queryBuilder->shouldReceive('andWhere')->once()->with('m.createdAt >= :date_from')->andReturnSelf();
     $queryBuilder->shouldReceive('setParameter')->once()->with('date_from', Mockery::on(
@@ -59,7 +59,7 @@ test('toApiArray uses a supplied client without reloading it', function (): void
     $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 3, 'currency' => 'USD']);
     $balance = createEntity(Box\Mod\Client\Entity\ClientBalance::class, [
         'id' => 7,
-        'client_id' => 3,
+        'client' => $client,
         'amount' => '12.50',
     ]);
 

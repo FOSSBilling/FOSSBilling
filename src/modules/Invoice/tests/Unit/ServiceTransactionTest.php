@@ -471,7 +471,7 @@ test('debitTransaction records a client balance credit', function (): void {
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepo);
     $em->shouldReceive('persist')->once()->with(
-        Mockery::on(fn (ClientBalance $balance): bool => $balance->getClientId() === 20
+        Mockery::on(fn (ClientBalance $balance): bool => $balance->getClient()?->getId() === 20
             && $balance->getType() === 'transaction'
             && $balance->getRelId() === '7'
             && $balance->getDescription() === 'Invoice #5 payment received from transaction #7'

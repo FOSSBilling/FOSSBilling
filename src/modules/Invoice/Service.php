@@ -1102,7 +1102,7 @@ class Service implements InjectionAwareInterface
                 // Nothing at or below the epsilon is actually charged against the client's balance,
                 // so don't record a $0 credit transaction.
                 $balanceTransaction = new ClientBalance();
-                $balanceTransaction->setClientId($clientId);
+                $balanceTransaction->setClient($this->di['em']->getReference(Client::class, $clientId));
                 $balanceTransaction->setType('invoice');
                 $balanceTransaction->setRelId((string) $invoice->getId());
 

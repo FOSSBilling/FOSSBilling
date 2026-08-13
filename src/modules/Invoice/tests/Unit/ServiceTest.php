@@ -1388,9 +1388,12 @@ test('pays an invoice with credits and records a balance transaction', function 
     $service->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(50.0);
     $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false, true)->andReturn(true);
 
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 20]);
+
     $di = container();
+    $di['em']->shouldReceive('getReference')->with(Box\Mod\Client\Entity\Client::class, 20)->andReturn($client);
     $di['em']->shouldReceive('persist')->once()->with(
-        Mockery::on(fn (ClientBalance $balance): bool => $balance->getClientId() === 20
+        Mockery::on(fn (ClientBalance $balance): bool => $balance->getClient()?->getId() === 20
             && $balance->getType() === 'invoice'
             && $balance->getRelId() === '10'
             && $balance->getDescription() === 'Payment for invoice #2024-001 using account credit.'

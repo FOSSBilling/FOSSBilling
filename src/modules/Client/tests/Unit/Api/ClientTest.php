@@ -29,7 +29,7 @@ test('balanceGetList returns array', function (): void {
     $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
     $balance = createEntity(Box\Mod\Client\Entity\ClientBalance::class, [
         'id' => 1,
-        'client_id' => $client->getId(),
+        'client' => $client,
     ]);
     $queryBuilder = Mockery::mock(Doctrine\ORM\QueryBuilder::class);
 

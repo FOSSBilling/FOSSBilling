@@ -627,7 +627,7 @@ test('getClientBalance returns numeric', function (): void {
 test('remove wraps client cleanup and flush in one transaction', function (): void {
     $service = new Box\Mod\Client\Service();
     $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
-    $reset = createEntity(Box\Mod\Client\Entity\ClientPasswordReset::class, ['client_id' => 1]);
+    $reset = createEntity(Box\Mod\Client\Entity\ClientPasswordReset::class, ['client' => $client]);
 
     $services = [];
     foreach (['order', 'invoice', 'support', 'email', 'activity'] as $module) {
@@ -655,7 +655,7 @@ test('remove wraps client cleanup and flush in one transaction', function (): vo
     $connection->shouldReceive('createQueryBuilder')->once()->andReturn($query);
 
     $passwordRepository = Mockery::mock(Box\Mod\Client\Repository\ClientPasswordResetRepository::class);
-    $passwordRepository->shouldReceive('findBy')->once()->with(['clientId' => 1])->andReturn([$reset]);
+    $passwordRepository->shouldReceive('findBy')->once()->with(['client' => $client])->andReturn([$reset]);
 
     $em = $di['em'];
     $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\ClientPasswordReset::class)->andReturn($passwordRepository);

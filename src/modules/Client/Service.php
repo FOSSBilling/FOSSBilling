@@ -368,7 +368,7 @@ class Service implements InjectionAwareInterface
         }
 
         $credit = new ClientBalance();
-        $credit->setClientId((int) $client->getId());
+        $credit->setClient($client);
         $credit->setType($data['type'] ?? 'gift');
         $credit->setRelId(isset($data['rel_id']) ? (string) $data['rel_id'] : null);
         $credit->setDescription($description);
@@ -744,10 +744,9 @@ class Service implements InjectionAwareInterface
 
     public function createPasswordResetRequestForClient(Client $client): string
     {
-        $clientId = (int) $client->getId();
         $clientIp = $client->getIp();
 
-        $existingReset = $this->clientPasswordResetRepository->findOneBy(['clientId' => $clientId]);
+        $existingReset = $this->clientPasswordResetRepository->findOneBy(['client' => $client]);
         if ($existingReset instanceof ClientPasswordReset) {
             $this->di['em']->remove($existingReset);
             $this->di['em']->flush();
@@ -760,7 +759,7 @@ class Service implements InjectionAwareInterface
 
         $hash = hash('sha256', random_bytes(32));
         $reset = new ClientPasswordReset();
-        $reset->setClientId($clientId);
+        $reset->setClient($client);
         $reset->setIp($requestIp ?? $clientIp);
         $reset->setHash($hash);
 
@@ -834,7 +833,7 @@ class Service implements InjectionAwareInterface
             $service = $this->di['mod_service']('Activity');
             $service->rmByClient($model);
 
-            $resetRecords = $this->clientPasswordResetRepository->findBy(['clientId' => (int) $model->getId()]);
+            $resetRecords = $this->clientPasswordResetRepository->findBy(['client' => $model]);
             foreach ($resetRecords as $resetRecord) {
                 $entityManager->remove($resetRecord);
             }
@@ -994,7 +993,7 @@ class Service implements InjectionAwareInterface
             throw new InformationException('The link has expired or you have already reset your password.');
         }
 
-        $client = $reset->getClientId() !== null ? $this->clientRepository->find($reset->getClientId()) : null;
+        $client = $reset->getClient();
         if (!$client instanceof Client) {
             throw new InformationException('The link has expired or you have already reset your password.');
         }
