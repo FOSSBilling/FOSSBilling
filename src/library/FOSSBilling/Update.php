@@ -202,8 +202,13 @@ class Update implements InjectionAwareInterface
         return strtolower($digest);
     }
 
-    private function validateDownloadedArchive(string $archiveFile, array $releaseInfo): void
+    private function validateDownloadedArchive(string $archiveFile, array $releaseInfo, string $updateBranch): void
     {
+        if ($updateBranch === 'preview') {
+            // TODO: Add API-backed integrity verification for preview archives.
+            return;
+        }
+
         try {
             $expectedDigest = $this->getReleaseArchiveDigest($releaseInfo);
             $actualDigest = hash_file('sha256', $archiveFile);
@@ -351,7 +356,7 @@ class Update implements InjectionAwareInterface
             throw new Exception('Failed to download the update archive. Further details are available in the error log.');
         }
 
-        $this->validateDownloadedArchive($archiveFile, $releaseInfo);
+        $this->validateDownloadedArchive($archiveFile, $releaseInfo, $updateBranch);
 
         $finalization->createPendingState(Version::VERSION, $latestVersionNum, [
             'branch' => $updateBranch,

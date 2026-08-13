@@ -49,7 +49,7 @@ test('uses the API digest for archive verification without querying GitHub', fun
     try {
         $releaseInfo = $update->getLatestVersionInfo('release', true);
 
-        (new ReflectionMethod(Update::class, 'validateDownloadedArchive'))->invoke($update, $archive, $releaseInfo);
+        (new ReflectionMethod(Update::class, 'validateDownloadedArchive'))->invoke($update, $archive, $releaseInfo, 'release');
 
         expect($releaseInfo['digest'])->toBe($digest)
             ->and($requests)->toBe([
@@ -69,6 +69,7 @@ test('validates a downloaded archive against a SHA-256 digest', function (): voi
             new Update(),
             $archive,
             ['digest' => 'sha256:' . hash('sha256', $content)],
+            'release',
         );
 
         expect((new Filesystem())->exists($archive))->toBeTrue();
@@ -84,6 +85,7 @@ test('rejects and removes a downloaded archive with the wrong digest', function 
         new Update(),
         $archive,
         ['digest' => hash('sha256', 'different archive')],
+        'release',
     ))->toThrow(InformationException::class, 'integrity verification');
 
     expect((new Filesystem())->exists($archive))->toBeFalse();
@@ -95,8 +97,26 @@ test('rejects release metadata without an API digest', function (): void {
     expect(fn (): mixed => (new ReflectionMethod(Update::class, 'validateDownloadedArchive'))->invoke(
         new Update(),
         $archive,
-        []
+        [],
+        'release',
     ))->toThrow(InformationException::class, 'version API did not provide a SHA-256 digest');
 
     expect((new Filesystem())->exists($archive))->toBeFalse();
+});
+
+test('skips archive verification for preview updates until the API provides a digest', function (): void {
+    $archive = createUpdateTestArchive('preview archive without a digest');
+
+    try {
+        (new ReflectionMethod(Update::class, 'validateDownloadedArchive'))->invoke(
+            new Update(),
+            $archive,
+            [],
+            'preview',
+        );
+
+        expect((new Filesystem())->exists($archive))->toBeTrue();
+    } finally {
+        (new Filesystem())->remove($archive);
+    }
 });
