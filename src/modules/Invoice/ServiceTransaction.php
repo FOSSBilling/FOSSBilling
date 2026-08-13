@@ -69,13 +69,21 @@ class ServiceTransaction implements InjectionAwareInterface
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminTransactionUpdate', 'params' => ['id' => $model->getId()]]);
 
-        if (isset($data['invoice_id'])) {
-            $model->setInvoice($this->di['em']->getRepository(Invoice::class)->find((int) $data['invoice_id']));
+        if (!empty($data['invoice_id'])) {
+            $invoice = $this->di['em']->getRepository(Invoice::class)->find((int) $data['invoice_id']);
+            if (!$invoice instanceof Invoice) {
+                throw new \FOSSBilling\InformationException('Invoice not found');
+            }
+            $model->setInvoice($invoice);
         }
         $model->setTxnId(isset($data['txn_id']) ? (string) $data['txn_id'] : $model->getTxnId());
         $model->setTxnStatus($data['txn_status'] ?? $model->getTxnStatus());
-        if (isset($data['gateway_id'])) {
-            $model->setGateway($this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']));
+        if (!empty($data['gateway_id'])) {
+            $gateway = $this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']);
+            if (!$gateway instanceof PayGateway) {
+                throw new \FOSSBilling\InformationException('Payment gateway not found');
+            }
+            $model->setGateway($gateway);
         }
         $model->setAmount(isset($data['amount']) ? (string) $data['amount'] : $model->getAmount());
         $model->setCurrency($data['currency'] ?? $model->getCurrency());

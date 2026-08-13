@@ -178,10 +178,12 @@ test('getSessionCart reloads the existing cart after a concurrent insert wins', 
     $duplicateKeyException = new Doctrine\DBAL\Exception\UniqueConstraintViolationException($driverException, null);
 
     $initialEntityManager = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
-    $initialEntityManager->shouldReceive('getRepository')->twice()->with(Cart::class)->andReturn($initialRepository, $winningRepository);
+    $initialEntityManager->shouldReceive('getRepository')->once()->with(Cart::class)->andReturn($initialRepository);
     $initialEntityManager->shouldReceive('persist')->once();
     $initialEntityManager->shouldReceive('flush')->once()->andThrow($duplicateKeyException);
-    $initialEntityManager->shouldReceive('clear')->once();
+
+    $replacementEntityManager = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $replacementEntityManager->shouldReceive('getRepository')->once()->with(Cart::class)->andReturn($winningRepository);
 
     $currencyRepository = Mockery::mock(CurrencyRepository::class);
     $currencyRepository->shouldReceive('findDefault')->once()->andReturn($currency);
@@ -196,6 +198,11 @@ test('getSessionCart reloads the existing cart after a concurrent insert wins', 
     $di['em'] = $initialEntityManager;
     $di['session'] = $session;
     $di['mod_service'] = $di->protect(fn () => $currencyService);
+
+    $serviceMock->shouldReceive('resetEntityManager')->once()->andReturnUsing(function () use ($di, $replacementEntityManager): void {
+        $di['em'] = $replacementEntityManager;
+    });
+
     $serviceMock->setDi($di);
 
     expect($serviceMock->getSessionCart())->toBe($winningCart);

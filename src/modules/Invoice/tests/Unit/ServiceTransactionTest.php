@@ -57,9 +57,18 @@ test('updates a transaction', function (): void {
 
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->shouldReceive('flush')->atLeast()->once();
-    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn(Mockery::mock(InvoiceRepository::class)->shouldIgnoreMissing());
 
-    $service = transactionService(payGatewayRepo: Mockery::mock(PayGatewayRepository::class)->shouldIgnoreMissing(), em: $em);
+    $invoice = createEntity(Invoice::class, ['id' => 1]);
+    $gateway = createEntity(PayGateway::class, ['id' => 1]);
+
+    $invoiceRepository = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepository->shouldReceive('find')->with(1)->andReturn($invoice);
+    $payGatewayRepository = Mockery::mock(PayGatewayRepository::class);
+    $payGatewayRepository->shouldReceive('find')->with(1)->andReturn($gateway);
+
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepository);
+
+    $service = transactionService(payGatewayRepo: $payGatewayRepository, em: $em);
     $service->getDi()['events_manager'] = $eventsMock;
     $service->getDi()['logger'] = new Tests\Helpers\TestLogger();
 

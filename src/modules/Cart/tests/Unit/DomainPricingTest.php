@@ -28,7 +28,7 @@ test('cartProductToApiArray uses resolved initial domain term pricing', function
 
     $cartProduct = createEntity(CartProduct::class);
     $cartProduct->id = 10;
-    $cartProduct->cart = $cart;
+    $cartProduct->setCart($cart);
     $cartProduct->product_id = 1;
     $cartProduct->config = json_encode([
         'action' => 'register',

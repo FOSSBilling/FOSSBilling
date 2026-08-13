@@ -620,7 +620,15 @@ class Service implements InjectionAwareInterface
 
         $client->setAid($data['aid'] ?? null);
         $client->setLastName($data['last_name'] ?? null);
-        $client->setClientGroup(!empty($data['group_id']) ? $this->clientGroupRepository->find((int) $data['group_id']) : null);
+        if (!empty($data['group_id'])) {
+            $group = $this->clientGroupRepository->find((int) $data['group_id']);
+            if (!$group instanceof ClientGroup) {
+                throw new InformationException('Client group not found');
+            }
+            $client->setClientGroup($group);
+        } else {
+            $client->setClientGroup(null);
+        }
         $client->setStatus($data['status'] ?? Client::ACTIVE);
         $client->setGender($data['gender'] ?? null);
         $birthday = $data['birthday'] ?? null;

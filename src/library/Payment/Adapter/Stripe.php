@@ -700,6 +700,9 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         }
 
         $invoice = $this->di['em']->getRepository(Invoice::class)->find((int) $invoiceId);
+        if (!$invoice instanceof Invoice) {
+            return false;
+        }
         $tx->setInvoice($invoice);
 
         // Subscription record is now created inline by processSetupIntent and
@@ -1040,6 +1043,9 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         }
 
         $invoice = $this->di['em']->getRepository(Invoice::class)->find((int) $invoiceId);
+        if (!$invoice instanceof Invoice) {
+            return false;
+        }
         $tx->setInvoice($invoice);
         $this->di['em']->flush();
 

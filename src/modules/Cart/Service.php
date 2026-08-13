@@ -22,6 +22,7 @@ use Box\Mod\Order\Entity\Order;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Product\Entity\Promo;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
@@ -36,6 +37,12 @@ class Service implements InjectionAwareInterface
     public function getDi(): ?\Pimple\Container
     {
         return $this->di;
+    }
+
+    protected function resetEntityManager(): void
+    {
+        unset($this->di['em']);
+        $this->di['em'] = EntityManagerFactory::create();
     }
 
     public function getCartRepository(): CartRepository
@@ -131,7 +138,7 @@ class Service implements InjectionAwareInterface
             $this->di['em']->persist($cart);
             $this->di['em']->flush();
         } catch (UniqueConstraintViolationException $exception) {
-            $this->di['em']->clear();
+            $this->resetEntityManager();
             $cart = $this->getCartRepository()->findBySessionId($sessionID);
             if (!$cart instanceof Cart) {
                 throw $exception;

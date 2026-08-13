@@ -923,8 +923,12 @@ class Service implements InjectionAwareInterface
         $model->setCurrency($client->getCurrency());
         $model->setApproved(false);
 
-        if (isset($data['gateway_id'])) {
-            $model->setGateway($this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']));
+        if (!empty($data['gateway_id'])) {
+            $gateway = $this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']);
+            if (!$gateway instanceof PayGateway) {
+                throw new InformationException('Payment gateway not found');
+            }
+            $model->setGateway($gateway);
         }
         $model->setText1($data['text_1'] ?? $model->getText1());
         $model->setText2($data['text_2'] ?? $model->getText2());
