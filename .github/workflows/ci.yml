@@ -217,9 +217,7 @@ jobs:
       - name: 'Move Downloadable Preview for Upload'
         run: |
           mkdir ./dist
-          mv ./FOSSBilling-preview-${GITHUB_SHORT_SHA}.zip ./dist
-          mkdir ./dist-s3
-          cp ./dist/FOSSBilling-preview-${GITHUB_SHORT_SHA}.zip ./dist-s3/FOSSBilling-preview.zip
+          cp ./FOSSBilling-preview-${GITHUB_SHORT_SHA}.zip ./dist/FOSSBilling-preview.zip
 
       - name: 'Upload Downloadable Preview to S3'
         if: ${{ github.ref == 'refs/heads/main' }}
@@ -236,13 +234,13 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_S3_ENDPOINT: ${{ secrets.AWS_S3_ENDPOINT }}
           AWS_REGION: 'auto'
-          SOURCE_DIR: './dist-s3'
+          SOURCE_DIR: './dist'
 
       - name: 'Upload Downloadable Preview to GitHub'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           if-no-files-found: 'error'
           name: 'FOSSBilling-preview-${{ env.GITHUB_SHORT_SHA }}.zip'
-          path: './dist/FOSSBilling-preview-${{ env.GITHUB_SHORT_SHA }}.zip'
+          path: './FOSSBilling-preview-${{ env.GITHUB_SHORT_SHA }}.zip'
           archive: false
           retention-days: 14
