@@ -18,6 +18,10 @@ namespace Tests\Helpers;
  * Doctrine entities have private `id` properties; tests need to set them
  * directly to simulate a persisted row without going through the database.
  *
+ * Entities may be subclassed by the `createEntity` proxy helper, so the `id`
+ * property can live on a parent class and must be located by walking up the
+ * inheritance chain.
+ *
  * @template T of object
  *
  * @param T $entity
