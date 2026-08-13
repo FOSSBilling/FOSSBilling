@@ -211,6 +211,7 @@ jobs:
         run: |
           zip -qr ../FOSSBilling-preview.zip .
           echo "FOSSBILLING_PREVIEW_DIGEST=sha256:$(sha256sum ../FOSSBilling-preview.zip | awk '{print $1}')" >> "$GITHUB_ENV"
+          echo "GITHUB_SHORT_SHA=$(echo "${GITHUB_SHA}" | cut -c1-7)" >> "$GITHUB_ENV"
         working-directory: ./src/
 
       - name: 'Move Downloadable Preview for Upload'
@@ -239,7 +240,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           if-no-files-found: 'error'
-          name: 'FOSSBilling-preview.zip'
+          name: 'FOSSBilling-preview-${{ env.GITHUB_SHORT_SHA }}.zip'
           path: './dist/FOSSBilling-preview.zip'
           archive: false
           retention-days: 14
