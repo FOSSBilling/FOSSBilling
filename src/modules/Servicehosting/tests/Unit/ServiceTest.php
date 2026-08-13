@@ -24,6 +24,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
 use function Tests\Helpers\moduleService;
+use function Tests\Helpers\setEntityId;
 
 afterEach(function (): void {
     Mockery::close();
@@ -144,10 +145,10 @@ test('action create', function (): void {
     $orderServiceMock->shouldReceive('getConfig')->atLeast()->once()->andReturn($confArr);
 
     $hostingServerModel = new ServiceHostingServer();
-    $hostingServerModel->setId($confArr['server_id']);
+    setEntityId($hostingServerModel, $confArr['server_id']);
     $hostingServerModel->setIp('1.1.1.1');
     $hostingPlansModel = new ServiceHostingHp();
-    $hostingPlansModel->setId($confArr['hosting_plan_id']);
+    setEntityId($hostingPlansModel, $confArr['hosting_plan_id']);
 
     $serverRepo = Mockery::mock(ServiceHostingServerRepository::class);
     $serverRepo->shouldReceive('find')->atLeast()->once()->andReturn($hostingServerModel);
@@ -455,7 +456,7 @@ test('change account plan', function (): void {
 
     $model = new ServiceHosting();
     $modelHp = new ServiceHostingHp();
-    $modelHp->setId(2);
+    setEntityId($modelHp, 2);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
     $emMock->shouldReceive('flush')->atLeast()->once();
@@ -694,10 +695,10 @@ test('to api array', function (): void {
     $model->setServiceHostingHpId(2);
 
     $hostingServer = new ServiceHostingServer();
-    $hostingServer->setId(1);
+    setEntityId($hostingServer, 1);
     $hostingServer->setManager('Custom');
     $hostingHp = new ServiceHostingHp();
-    $hostingHp->setId(2);
+    setEntityId($hostingHp, 2);
 
     $serverRepo = Mockery::mock(ServiceHostingServerRepository::class);
     $serverRepo->shouldReceive('find')->atLeast()->once()->andReturn($hostingServer);
@@ -735,7 +736,7 @@ test('update', function (): void {
         'ip' => '1.1.1.1',
     ];
     $model = new ServiceHosting();
-    $model->setId(1);
+    setEntityId($model, 1);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
     $emMock->shouldReceive('flush')->atLeast()->once();
@@ -812,7 +813,7 @@ test('create server', function (): void {
     $persistedServer = null;
     $emMock = Mockery::mock(EntityManagerInterface::class);
     $emMock->shouldReceive('persist')->atLeast()->once()->andReturnUsing(function (ServiceHostingServer $server) use ($newId, &$persistedServer): void {
-        $server->setId($newId);
+        setEntityId($server, $newId);
         $persistedServer = $server;
     });
     $emMock->shouldReceive('flush')->atLeast()->once();
@@ -843,7 +844,7 @@ test('create server', function (): void {
 test('delete server', function (): void {
     $service = new Service();
     $hostingServerModel = new ServiceHostingServer();
-    $hostingServerModel->setId(1);
+    setEntityId($hostingServerModel, 1);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
     $emMock->shouldReceive('remove')->atLeast()->once();
@@ -880,7 +881,7 @@ test('update server', function (): void {
     ];
 
     $hostingServerModel = new ServiceHostingServer();
-    $hostingServerModel->setId(1);
+    setEntityId($hostingServerModel, 1);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
     $emMock->shouldReceive('flush')->atLeast()->once();
@@ -989,7 +990,7 @@ test('get hp search query', function (): void {
 test('delete hp', function (): void {
     $service = new Service();
     $model = new ServiceHostingHp();
-    $model->setId(1);
+    setEntityId($model, 1);
 
     $repo = Mockery::mock(ServiceHostingRepository::class);
     $repo->shouldReceive('findOneBy')->atLeast()->once()->andReturn(null);
@@ -1034,7 +1035,7 @@ test('update hp', function (): void {
     ];
 
     $model = new ServiceHostingHp();
-    $model->setId(1);
+    setEntityId($model, 1);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
     $emMock->shouldReceive('flush')->atLeast()->once();
@@ -1057,7 +1058,7 @@ test('create hp', function (array $data, string $expectedBandwidth, string $expe
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
     $emMock->shouldReceive('persist')->atLeast()->once()->andReturnUsing(function (ServiceHostingHp $hp) use ($newId, &$persistedHp): void {
-        $hp->setId($newId);
+        setEntityId($hp, $newId);
         $persistedHp = $hp;
     });
     $emMock->shouldReceive('flush')->atLeast()->once();
@@ -1243,7 +1244,7 @@ test('to hosting server api array masks secrets for an admin', function (): void
     $identity = \Tests\Helpers\admin();
 
     $hostingServerModel = new ServiceHostingServer();
-    $hostingServerModel->setId(1);
+    setEntityId($hostingServerModel, 1);
     $hostingServerModel->setName('Test');
     $hostingServerModel->setHostname('host.example.com');
     $hostingServerModel->setIp('127.0.0.1');
@@ -1272,7 +1273,7 @@ test('to hosting server api array does not leak secrets to non-admin callers', f
     $identity = createEntity(Box\Mod\Client\Entity\Client::class);
 
     $hostingServerModel = new ServiceHostingServer();
-    $hostingServerModel->setId(1);
+    setEntityId($hostingServerModel, 1);
     $hostingServerModel->setName('Test');
     $hostingServerModel->setIp('127.0.0.1');
     $hostingServerModel->setManager('Whm');
@@ -1301,7 +1302,7 @@ test('updateServer keeps the existing secret when the incoming value is blank', 
     ];
 
     $hostingServerModel = new ServiceHostingServer();
-    $hostingServerModel->setId(1);
+    setEntityId($hostingServerModel, 1);
     $hostingServerModel->setName('Test');
     $hostingServerModel->setIp('127.0.0.1');
     $hostingServerModel->setManager('Whm');
@@ -1336,7 +1337,7 @@ test('updateServer replaces the stored secret when a new value is submitted', fu
     ];
 
     $hostingServerModel = new ServiceHostingServer();
-    $hostingServerModel->setId(1);
+    setEntityId($hostingServerModel, 1);
     $hostingServerModel->setName('Test');
     $hostingServerModel->setIp('127.0.0.1');
     $hostingServerModel->setManager('Whm');

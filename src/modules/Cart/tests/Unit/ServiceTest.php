@@ -178,12 +178,10 @@ test('getSessionCart reloads the existing cart after a concurrent insert wins', 
     $duplicateKeyException = new Doctrine\DBAL\Exception\UniqueConstraintViolationException($driverException, null);
 
     $initialEntityManager = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
-    $initialEntityManager->shouldReceive('getRepository')->once()->with(Cart::class)->andReturn($initialRepository);
+    $initialEntityManager->shouldReceive('getRepository')->twice()->with(Cart::class)->andReturn($initialRepository, $winningRepository);
     $initialEntityManager->shouldReceive('persist')->once();
     $initialEntityManager->shouldReceive('flush')->once()->andThrow($duplicateKeyException);
-
-    $winningEntityManager = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
-    $winningEntityManager->shouldReceive('getRepository')->once()->with(Cart::class)->andReturn($winningRepository);
+    $initialEntityManager->shouldReceive('clear')->once();
 
     $currencyRepository = Mockery::mock(CurrencyRepository::class);
     $currencyRepository->shouldReceive('findDefault')->once()->andReturn($currency);
@@ -198,10 +196,6 @@ test('getSessionCart reloads the existing cart after a concurrent insert wins', 
     $di['em'] = $initialEntityManager;
     $di['session'] = $session;
     $di['mod_service'] = $di->protect(fn () => $currencyService);
-    $serviceMock->shouldReceive('resetEntityManager')->once()->andReturnUsing(function () use ($di, $winningEntityManager): void {
-        unset($di['em']);
-        $di['em'] = $winningEntityManager;
-    });
     $serviceMock->setDi($di);
 
     expect($serviceMock->getSessionCart())->toBe($winningCart);
@@ -888,7 +882,7 @@ test('createFromCart with promo entity uses product promo service', function ():
     expect(count($result[2]))->toBe(1);
 });
 
-test('createFromCart compensates promo usage on transaction failure', function (): void {
+test('createFromCart releases reserved stock on transaction failure', function (): void {
     $cart = createEntity(Cart::class);
     $cart->id = 3;
     $cart->currency_id = 2;
@@ -925,11 +919,6 @@ test('createFromCart compensates promo usage on transaction failure', function (
     $productService->shouldReceive('createCheckoutPromoRedemptions')
         ->andThrow(new RuntimeException('Doctrine flush failed'));
 
-    // The compensating method must be invoked for both promo usage and the stock reservation
-    // taken earlier in the same loop iteration.
-    $productService->shouldReceive('compensateCheckoutPromoFailure')
-        ->once()
-        ->with($promo, Mockery::any(), Mockery::any());
     $productService->shouldReceive('releaseReservedStockForOrder')
         ->once()
         ->with(Mockery::type(Order::class), 'checkout_failed');

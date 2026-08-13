@@ -81,7 +81,7 @@ class Client implements ApiArrayInterface
     #[ORM\Column(name: 'last_name', type: Types::STRING, length: 100, nullable: true)]
     private ?string $lastName = null;
 
-    #[ORM\Column(type: Types::STRING, nullable: true, columnDefinition: "ENUM('male', 'female', 'nonbinary', 'other') DEFAULT NULL")]
+    #[ORM\Column(type: Types::STRING, length: 20, nullable: true)]
     private ?string $gender = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
@@ -397,6 +397,10 @@ class Client implements ApiArrayInterface
 
     public function setGender(?string $gender): self
     {
+        if ($gender !== null && !in_array($gender, self::ALLOWED_GENDERS, true)) {
+            throw new \InvalidArgumentException('Invalid gender');
+        }
+
         $this->gender = $gender;
 
         return $this;
@@ -906,7 +910,7 @@ class Client implements ApiArrayInterface
         return $this;
     }
 
-    public function toApiArray($identity = null): array
+    public function toApiArray(self|\Box\Mod\Staff\Entity\Admin|\FOSSBilling\Identity\Guest|null $identity = null): array
     {
         $details = [
             'id' => $this->id,

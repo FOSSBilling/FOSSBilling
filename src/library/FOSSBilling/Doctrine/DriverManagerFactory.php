@@ -19,6 +19,20 @@ use FOSSBilling\Tools;
 
 class DriverManagerFactory
 {
+    private static ?Connection $sharedConnection = null;
+
+    /**
+     * Returns a single process-wide shared database connection.
+     *
+     * The EntityManager, DBAL, and PDO services all reuse this connection so
+     * that they participate in the same transaction scope. Only use a separate
+     * connection (via {@see self::getConnection()}) when isolation is required.
+     */
+    public static function getSharedConnection(): Connection
+    {
+        return self::$sharedConnection ??= self::getConnection();
+    }
+
     /**
      * List of supported database drivers for Doctrine DBAL connections.
      *

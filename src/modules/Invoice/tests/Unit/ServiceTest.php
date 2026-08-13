@@ -42,6 +42,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
 use function Tests\Helpers\moduleService;
+use function Tests\Helpers\setEntityId;
 
 /**
  * @return array{0: EntityManagerInterface, 1: InvoiceItemRepository}
@@ -1546,7 +1547,7 @@ test('refunds invoice with negative invoice logic', function (): void {
         ->atLeast()->once()
         ->andReturnUsing(function (object $entity) use ($newId): void {
             if ($entity instanceof Invoice && $entity->getId() === null) {
-                $entity->setId($newId);
+                setEntityId($entity, $newId);
             }
         });
     $em->shouldReceive('flush')
@@ -1730,8 +1731,8 @@ test('processes batch pay with credits', function (): void {
 
     $di = container();
     $invoiceRepo = $di['em']->getRepository(Invoice::class);
-    $invoiceRepo->shouldReceive('find')
-        ->andReturn($invoiceModel);
+    $invoiceRepo->shouldReceive('findBy')
+        ->andReturn([$invoiceModel]);
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $serviceMock->setDi($di);
@@ -1973,9 +1974,9 @@ test('generates invoices for expiring orders', function (): void {
         ->andReturn([['id' => 1]]);
 
     $orderRepoMock = Mockery::mock(OrderRepository::class);
-    $orderRepoMock->shouldReceive('find')
+    $orderRepoMock->shouldReceive('findBy')
         ->atLeast()->once()
-        ->andReturn($clientOrder);
+        ->andReturn([$clientOrder]);
 
     $di = container();
     $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
@@ -2122,6 +2123,7 @@ test('resetEntityManager invalidates both cached repositories so they re-resolve
     $initialEm = Mockery::mock(EntityManagerInterface::class);
     $initialEm->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($initialItemRepo);
     $initialEm->shouldReceive('getRepository')->with(Invoice::class)->andReturn($initialInvoiceRepo);
+    $initialEm->shouldReceive('getConnection')->once()->andReturn(Mockery::mock(Doctrine\DBAL\Connection::class));
 
     $replacementItemRepo = Mockery::mock(InvoiceItemRepository::class);
     $replacementInvoiceRepo = Mockery::mock(InvoiceRepository::class);
@@ -2133,7 +2135,7 @@ test('resetEntityManager invalidates both cached repositories so they re-resolve
     $di['em'] = $initialEm;
 
     $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
-    $service->shouldReceive('createEntityManager')->once()->andReturn($replacementEm);
+    $service->shouldReceive('createEntityManager')->once()->with(Mockery::type(Doctrine\DBAL\Connection::class))->andReturn($replacementEm);
     $service->setDi($di);
 
     // Prime both caches from the initial EM.

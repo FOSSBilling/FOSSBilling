@@ -17,9 +17,25 @@ namespace Tests\Helpers;
  *
  * Doctrine entities have private `id` properties; tests need to set them
  * directly to simulate a persisted row without going through the database.
+ *
+ * @template T of object
+ *
+ * @param T $entity
+ *
+ * @return T
  */
-function setEntityId(object $entity, int $id): void
+function setEntityId(object $entity, int $id): object
 {
-    $reflection = new \ReflectionProperty($entity, 'id');
-    $reflection->setValue($entity, $id);
+    $reflection = new \ReflectionClass($entity);
+    while (!$reflection->hasProperty('id')) {
+        $parent = $reflection->getParentClass();
+        if ($parent === false) {
+            throw new \ReflectionException(sprintf('Property %s::$id does not exist', $entity::class));
+        }
+        $reflection = $parent;
+    }
+
+    $reflection->getProperty('id')->setValue($entity, $id);
+
+    return $entity;
 }

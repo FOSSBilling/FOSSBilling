@@ -512,6 +512,7 @@ class UpdatePatcher implements InjectionAwareInterface
             100 => 'patch100',
             101 => 'patch101',
             102 => 'patch102',
+            103 => 'patch103',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -3047,6 +3048,47 @@ class UpdatePatcher implements InjectionAwareInterface
 
         if (!$this->tableHasIndex('custom_pages', 'uniq_custom_pages_slug')) {
             $this->executeSql('ALTER TABLE `custom_pages` ADD UNIQUE INDEX `uniq_custom_pages_slug` (`slug`)');
+        }
+    }
+
+    private function patch103(): void
+    {
+        // Money columns: replace legacy DOUBLE/VARCHAR storage with DECIMAL so
+        // monetary values are stored exactly (matches the DECIMAL entity mappings).
+        $decimalColumns = [
+            'invoice' => ['credit', 'base_income', 'base_refund', 'refund'],
+            'invoice_item' => ['price'],
+            'subscription' => ['amount'],
+            'client_order' => ['price', 'discount'],
+            'transaction' => ['amount'],
+        ];
+
+        foreach ($decimalColumns as $table => $columns) {
+            if (!$this->tableExists($table)) {
+                continue;
+            }
+
+            foreach ($columns as $column) {
+                if ($this->tableHasColumn($table, $column)) {
+                    $this->executeSql("ALTER TABLE `{$table}` MODIFY `{$column}` decimal(18,2) DEFAULT NULL");
+                }
+            }
+        }
+
+        // client.gender: replace the MySQL-only ENUM with a plain varchar. The
+        // allowed values are now validated in the Client entity.
+        if ($this->tableExists('client') && $this->tableHasColumn('client', 'gender')) {
+            $this->executeSql('ALTER TABLE `client` MODIFY `gender` varchar(20) DEFAULT NULL');
+        }
+
+        // mod_massmailer: legacy module installs created the datetime columns as
+        // varchar(35); align them with the DATETIME entity mapping and structure.sql.
+        if ($this->tableExists('mod_massmailer')) {
+            foreach (['sent_at', 'created_at', 'updated_at'] as $column) {
+                if ($this->tableHasColumn('mod_massmailer', $column)) {
+                    $this->executeSql("ALTER TABLE `mod_massmailer` MODIFY `{$column}` datetime DEFAULT NULL");
+                }
+            }
         }
     }
 

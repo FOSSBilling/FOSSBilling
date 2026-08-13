@@ -18,7 +18,6 @@ use Box\Mod\Invoice\Entity\InvoiceItem;
 use Box\Mod\Invoice\Repository\InvoiceItemRepository;
 use Box\Mod\Order\Entity\Order;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
-use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Validation\PriceValidator;
 
@@ -67,7 +66,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                 // Idempotency: the unique constraint on invoice_item_id means a prior
                 // attempt already credited this item. Mark it as charged without re-crediting.
                 $this->di['logger']->setChannel('billing')->info(sprintf('Invoice item #%d was already credited; skipping duplicate credit.', (int) $item->getId()));
-                $this->resetEntityManager();
+                $this->di['em']->clear();
                 $item = $this->di['em']->find(InvoiceItem::class, $item->getId());
                 $item->setCharged(true);
                 $item->setStatus(InvoiceItem::STATUS_PENDING_SETUP);
@@ -307,18 +306,12 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             $this->di['em']->flush();
         } catch (UniqueConstraintViolationException) {
             $this->di['logger']->setChannel('billing')->info(sprintf('Invoice item #%d was already credited; skipping duplicate credit.', (int) $item->getId()));
-            $this->resetEntityManager();
+            $this->di['em']->clear();
 
             return;
         }
 
         $this->addChargeNote($item, $invoice, $total);
-    }
-
-    protected function resetEntityManager(): void
-    {
-        unset($this->di['em']);
-        $this->di['em'] = EntityManagerFactory::create();
     }
 
     private function persistCredit(InvoiceItem $item, Invoice $invoice, float $total): ClientBalance

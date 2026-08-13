@@ -1941,14 +1941,14 @@ class Service implements InjectionAwareInterface
 
         $orderId = $this->orderId($order);
 
-        $bean = new OrderStatus();
-        $bean->setClientOrderId($orderId);
-        $bean->setStatus($status);
-        $bean->setNotes($notes);
-        $this->di['em']->persist($bean);
+        $statusEntry = new OrderStatus();
+        $statusEntry->setClientOrderId($orderId);
+        $statusEntry->setStatus($status);
+        $statusEntry->setNotes($notes);
+        $this->di['em']->persist($statusEntry);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Added order status history message to order #%s', $bean->getId());
+        $this->di['logger']->info('Added order status history message to order #%s', $statusEntry->getId());
 
         return true;
     }

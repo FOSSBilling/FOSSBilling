@@ -70,13 +70,6 @@ class Tld implements TimestampInterface
         return $this->id;
     }
 
-    public function setId(?int $id): self
-    {
-        $this->id = $id;
-
-        return $this;
-    }
-
     public function getTldRegistrarId(): ?int
     {
         return $this->tldRegistrarId;

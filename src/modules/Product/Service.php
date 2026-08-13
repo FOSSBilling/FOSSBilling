@@ -1448,7 +1448,7 @@ class Service implements InjectionAwareInterface
         }
 
         foreach ($orders as $order) {
-            $discount = $order->getDiscount();
+            $discount = $order->getDiscount() === null ? null : (float) $order->getDiscount();
             $currency = $order->getCurrency();
             $createdAt = $order->getCreatedAt()?->format('Y-m-d H:i:s');
 
@@ -1468,52 +1468,6 @@ class Service implements InjectionAwareInterface
         }
 
         $this->di['em']->flush();
-    }
-
-    /**
-     * Compensate for a failed checkout by removing orphaned promo redemption
-     * rows and decrementing the promo usage counter.
-     *
-     * Needed because RedBean's transaction (orders/invoices) operates on a
-     * separate database connection from Doctrine (promo redemptions, promo.used).
-     * When the RedBean transaction rolls back, Doctrine-side changes persist
-     * orphaned unless explicitly cleaned up.
-     *
-     * Idempotent: safe to call multiple times. Returns early if redemptions
-     * were already cleaned up by a previous invocation.
-     *
-     * @param int[] $orderIds      Order IDs from the rolled-back RedBean transaction
-     * @param int   $reservedCount Number of successful reservePromoForOrder() calls
-     */
-    public function compensateCheckoutPromoFailure(Promo $promo, array $orderIds, int $reservedCount): void
-    {
-        if ($reservedCount <= 0) {
-            return;
-        }
-
-        $promoId = (int) ($this->getPromoSourceArray($promo)['id'] ?? 0);
-        if ($promoId <= 0) {
-            return;
-        }
-
-        if ($orderIds === []) {
-            return;
-        }
-
-        $redemptions = $this->getPromoRedemptionRepository()->findBy([
-            'promoId' => $promoId,
-            'clientOrderId' => $orderIds,
-        ]);
-        if ($redemptions === []) {
-            return;
-        }
-
-        foreach ($redemptions as $redemption) {
-            $this->di['em']->remove($redemption);
-        }
-        $this->di['em']->flush();
-
-        $this->getPromoRepository()->decrementUsage($promoId, count($redemptions), new \DateTimeImmutable());
     }
 
     /**
@@ -1882,10 +1836,6 @@ class Service implements InjectionAwareInterface
     {
         if ($this->di === null) {
             throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
-        }
-
-        if (isset($this->di['dbal']) && $this->di['dbal'] instanceof Connection) {
-            return $this->di['dbal'];
         }
 
         return $this->di['em']->getConnection();

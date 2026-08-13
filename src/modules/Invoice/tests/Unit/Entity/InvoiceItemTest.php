@@ -15,6 +15,8 @@ use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMSetup;
 
+use function Tests\Helpers\setEntityId;
+
 test('maps invoice_item table without changing columns', function (): void {
     $config = ORMSetup::createAttributeMetadataConfig([dirname(__DIR__, 3) . '/Entity'], true);
     $config->setProxyDir(sys_get_temp_dir());
@@ -31,7 +33,9 @@ test('maps invoice_item table without changing columns', function (): void {
         ])
         ->and($meta->getFieldMapping('invoiceId')->nullable)->toBeTrue()
         ->and($meta->getFieldMapping('relId')->type)->toBe('text')
-        ->and($meta->getFieldMapping('price')->type)->toBe('float')
+        ->and($meta->getFieldMapping('price')->type)->toBe('decimal')
+        ->and($meta->getFieldMapping('price')->precision)->toBe(18)
+        ->and($meta->getFieldMapping('price')->scale)->toBe(2)
         ->and($meta->getFieldMapping('charged')->nullable)->toBeTrue()
         ->and($meta->getFieldMapping('taxed')->nullable)->toBeTrue();
 });
@@ -76,7 +80,7 @@ test('invoice item getters and setters round-trip values', function (): void {
         ->and($entity->getPeriod())->toBe('1M')
         ->and($entity->getQuantity())->toBe(3)
         ->and($entity->getUnit())->toBe('month')
-        ->and($entity->getPrice())->toBe(12.5)
+        ->and($entity->getPrice())->toBe('12.5')
         ->and($entity->getCharged())->toBeTrue()
         ->and($entity->getTaxed())->toBeFalse()
         ->and($entity->getAttempts())->toBe(3)
@@ -85,7 +89,7 @@ test('invoice item getters and setters round-trip values', function (): void {
 
 test('invoice item toApiArray matches the legacy toArray keys', function (): void {
     $entity = new InvoiceItem();
-    $entity->setId(5);
+    setEntityId($entity, 5);
     $entity->setInvoiceId(9);
     $entity->setType(InvoiceItem::TYPE_CUSTOM);
     $entity->setRelId('1');

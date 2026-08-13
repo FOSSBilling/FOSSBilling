@@ -67,7 +67,7 @@ class Currency implements ApiArrayInterface, TimestampInterface
         ];
     }
 
-    public function getId(): int
+    public function getId(): ?int
     {
         return $this->id;
     }

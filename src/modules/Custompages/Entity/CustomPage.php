@@ -42,7 +42,7 @@ class CustomPage implements ApiArrayInterface
     #[ORM\Column(type: Types::STRING, length: 255)]
     private string $slug;
 
-    #[ORM\Column(name: 'created_at', type: Types::DATETIME_MUTABLE)]
+    #[ORM\Column(name: 'created_at', type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTime $createdAt = null;
 
     #[ORM\PrePersist]

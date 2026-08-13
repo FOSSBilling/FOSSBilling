@@ -22,6 +22,7 @@ use Doctrine\ORM\EntityManagerInterface;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
+use function Tests\Helpers\setEntityId;
 
 function taxService(TaxRepository $taxRepository, ?EntityManagerInterface $em = null): ServiceTax
 {
@@ -194,7 +195,7 @@ test('creates a tax', function (): void {
     $em->shouldReceive('persist')
         ->once()
         ->withArgs(function (Tax $tax) use ($newId): bool {
-            $tax->setId($newId);
+            setEntityId($tax, $newId);
 
             return true;
         });

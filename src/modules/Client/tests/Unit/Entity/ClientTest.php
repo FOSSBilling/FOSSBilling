@@ -36,7 +36,7 @@ test('maps client tables without changing their columns', function (): void {
         ->and($client->getFieldMapping('email')['unique'])->toBeTrue()
         ->and($client->getFieldMapping('status')['nullable'])->toBeTrue()
         ->and($client->getFieldMapping('taxExempt')['nullable'])->toBeTrue()
-        ->and($client->getFieldMapping('gender')['columnDefinition'])->toContain('ENUM')
+        ->and($client->getFieldMapping('gender')['length'])->toBe(20)
         ->and($balance->getTableName())->toBe('client_balance')
         ->and($balance->getColumnNames())->toBe([
             'id', 'client_id', 'type', 'rel_id', 'invoice_item_id', 'amount', 'description', 'created_at', 'updated_at',

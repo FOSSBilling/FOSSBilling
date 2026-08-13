@@ -19,6 +19,7 @@ use Box\Mod\Servicecustom\Entity\ServiceCustom;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
+use function Tests\Helpers\setEntityId;
 
 function orderServiceCreateProductEntity(?int $id = null, ?string $type = null): Product
 {
@@ -1217,7 +1218,7 @@ test('orderStatusAdd records status history', function (): void {
     $emMock->shouldReceive('persist')->once()->andReturnUsing(function ($entity) use (&$persisted): void {
         $persisted[] = $entity;
         if ($entity instanceof Box\Mod\Order\Entity\OrderStatus) {
-            $entity->setId(7);
+            setEntityId($entity, 7);
         }
     });
     $emMock->shouldReceive('flush')->once();

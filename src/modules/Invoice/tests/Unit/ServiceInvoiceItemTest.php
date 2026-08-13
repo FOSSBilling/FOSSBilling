@@ -22,6 +22,7 @@ use Doctrine\ORM\EntityManagerInterface;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
+use function Tests\Helpers\setEntityId;
 
 function invoiceItemService(?InvoiceItemRepository $repo = null, ?EntityManagerInterface $em = null): ServiceInvoiceItem
 {
@@ -218,7 +219,7 @@ test('adds new item', function (): void {
     $em->shouldReceive('persist')
         ->once()
         ->withArgs(function (InvoiceItem $pi) use ($newId, &$persistedItem): bool {
-            $pi->setId($newId);
+            setEntityId($pi, $newId);
             $persistedItem = $pi;
 
             return true;

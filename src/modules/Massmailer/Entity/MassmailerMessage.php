@@ -48,14 +48,14 @@ class MassmailerMessage implements ApiArrayInterface
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 255, nullable: true)]
     private ?string $status = self::STATUS_DRAFT;
 
-    #[ORM\Column(name: 'sent_at', type: \Doctrine\DBAL\Types\Types::STRING, length: 35, nullable: true)]
-    private ?string $sentAt = null;
+    #[ORM\Column(name: 'sent_at', type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]
+    private ?\DateTime $sentAt = null;
 
-    #[ORM\Column(name: 'created_at', type: \Doctrine\DBAL\Types\Types::STRING, length: 35, nullable: true)]
-    private ?string $createdAt = null;
+    #[ORM\Column(name: 'created_at', type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]
+    private ?\DateTime $createdAt = null;
 
-    #[ORM\Column(name: 'updated_at', type: \Doctrine\DBAL\Types\Types::STRING, length: 35, nullable: true)]
-    private ?string $updatedAt = null;
+    #[ORM\Column(name: 'updated_at', type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]
+    private ?\DateTime $updatedAt = null;
 
     public function toApiArray(): array
     {
@@ -67,9 +67,9 @@ class MassmailerMessage implements ApiArrayInterface
             'content' => $this->content,
             'filter' => json_decode($this->filter ?? '', true) ?? [],
             'status' => $this->status,
-            'sent_at' => $this->sentAt,
-            'created_at' => $this->createdAt,
-            'updated_at' => $this->updatedAt,
+            'sent_at' => $this->sentAt?->format('Y-m-d H:i:s'),
+            'created_at' => $this->createdAt?->format('Y-m-d H:i:s'),
+            'updated_at' => $this->updatedAt?->format('Y-m-d H:i:s'),
         ];
     }
 
@@ -150,36 +150,36 @@ class MassmailerMessage implements ApiArrayInterface
         return $this;
     }
 
-    public function getSentAt(): ?string
+    public function getSentAt(): ?\DateTime
     {
         return $this->sentAt;
     }
 
-    public function setSentAt(?string $sentAt): self
+    public function setSentAt(?\DateTime $sentAt): self
     {
         $this->sentAt = $sentAt;
 
         return $this;
     }
 
-    public function getCreatedAt(): ?string
+    public function getCreatedAt(): ?\DateTime
     {
         return $this->createdAt;
     }
 
-    public function setCreatedAt(?string $createdAt): self
+    public function setCreatedAt(?\DateTime $createdAt): self
     {
         $this->createdAt = $createdAt;
 
         return $this;
     }
 
-    public function getUpdatedAt(): ?string
+    public function getUpdatedAt(): ?\DateTime
     {
         return $this->updatedAt;
     }
 
-    public function setUpdatedAt(?string $updatedAt): self
+    public function setUpdatedAt(?\DateTime $updatedAt): self
     {
         $this->updatedAt = $updatedAt;
 

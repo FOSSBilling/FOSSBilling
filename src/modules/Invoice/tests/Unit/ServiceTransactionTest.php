@@ -25,6 +25,7 @@ use Doctrine\ORM\EntityManagerInterface;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
+use function Tests\Helpers\setEntityId;
 
 function transactionService(?TransactionRepository $transactionRepo = null, ?PayGatewayRepository $payGatewayRepo = null, ?EntityManagerInterface $em = null): ServiceTransaction
 {
@@ -362,7 +363,7 @@ test('_subscribe creates and persists a subscription from an approved transactio
     $transactionRepo->shouldReceive('findOneProcessedByTxnId')->andReturnNull();
 
     $invoice = createEntity(Invoice::class);
-    $invoice->setId(10);
+    setEntityId($invoice, 10);
     $invoice->setClientId(7);
     $invoice->setCurrency('USD');
 
@@ -407,7 +408,7 @@ test('_subscribe creates and persists a subscription from an approved transactio
         ->and($capturedSubscription->getPayGatewayId())->toBe(5)
         ->and($capturedSubscription->getRelType())->toBe('invoice')
         ->and($capturedSubscription->getRelId())->toBe(10)
-        ->and($capturedSubscription->getAmount())->toBe(29.99)
+        ->and($capturedSubscription->getAmount())->toBe('29.99')
         ->and($capturedSubscription->getCurrency())->toBe('USD')
         ->and($capturedSubscription->getPeriod())->toBe('1M')
         ->and($capturedSubscription->getStatus())->toBe('active');

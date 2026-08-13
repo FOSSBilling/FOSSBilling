@@ -21,6 +21,7 @@ use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Repository\InvoiceItemRepository;
 use Box\Mod\Invoice\Repository\InvoiceRepository;
 use Box\Mod\Order\Entity\Order;
+use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -104,15 +105,16 @@ class Service implements InjectionAwareInterface
 
     protected function resetEntityManager(): void
     {
+        $connection = $this->di['em']->getConnection();
         unset($this->di['em']);
-        $this->di['em'] = $this->createEntityManager();
+        $this->di['em'] = $this->createEntityManager($connection);
         $this->invoiceItemRepository = null;
         $this->invoiceRepository = null;
     }
 
-    protected function createEntityManager(): EntityManagerInterface
+    protected function createEntityManager(?Connection $connection = null): EntityManagerInterface
     {
-        return EntityManagerFactory::create();
+        return EntityManagerFactory::create($connection);
     }
 
     public function getModulePermissions(): array
@@ -885,7 +887,7 @@ class Service implements InjectionAwareInterface
 
         $invoice->setBaseIncome($table->toBaseCurrency($invoice->getCurrency(), $this->getTotal($invoice)));
         if ($invoice->getRefund() !== null) {
-            $invoice->setBaseRefund($table->toBaseCurrency($invoice->getCurrency(), $invoice->getRefund()));
+            $invoice->setBaseRefund($table->toBaseCurrency($invoice->getCurrency(), (float) $invoice->getRefund()));
         } else {
             $invoice->setBaseRefund(null);
         }
@@ -1473,12 +1475,10 @@ class Service implements InjectionAwareInterface
     public function doBatchPayWithCredits(array $data): bool
     {
         $unpaid = $this->findAllUnpaid($data);
-        foreach ($unpaid as $proforma) {
+        $invoiceIds = array_map(static fn (array $proforma): int => (int) ($proforma['id'] ?? 0), $unpaid);
+        $models = $this->getInvoiceRepository()->findBy(['id' => $invoiceIds]);
+        foreach ($models as $model) {
             try {
-                $model = $this->getInvoiceRepository()->find($proforma['id'] ?? 0);
-                if ($model === null) {
-                    throw new InformationException('Invoice not found');
-                }
                 $this->tryPayWithCredits($model);
             } catch (\Exception $e) {
                 // @phpstan-ignore if.alwaysFalse
@@ -1598,12 +1598,10 @@ class Service implements InjectionAwareInterface
             return true;
         }
 
-        foreach ($orders as $order) {
+        $orderIds = array_map(static fn (array $order): int => (int) ($order['id'] ?? 0), $orders);
+        $models = $this->di['em']->getRepository(Order::class)->findBy(['id' => $orderIds]);
+        foreach ($models as $model) {
             try {
-                $model = $this->di['em']->getRepository(Order::class)->find($order['id'] ?? 0);
-                if (!$model instanceof Order) {
-                    continue;
-                }
                 $invoice = $this->generateForOrder($model);
                 $this->approveInvoice($invoice, ['id' => $invoice->getId(), 'use_credits' => true]);
             } catch (\Exception $e) {

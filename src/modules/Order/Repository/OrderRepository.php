@@ -80,23 +80,6 @@ class OrderRepository extends EntityRepository
     /**
      * @return Order[]
      */
-    public function getSoonExpiringActiveOrders(int $daysUntilExpiration): array
-    {
-        return $this->getEntityManager()->createQueryBuilder()
-            ->select('o')
-            ->from(Order::class, 'o')
-            ->where('o.status = :status')
-            ->andWhere('o.expiresAt IS NOT NULL')
-            ->andWhere('o.expiresAt <= :expiry_date')
-            ->setParameter('status', Order::STATUS_ACTIVE)
-            ->setParameter('expiry_date', new \DateTime('+' . $daysUntilExpiration . ' days'))
-            ->getQuery()
-            ->getResult();
-    }
-
-    /**
-     * @return Order[]
-     */
     public function getExpired(): array
     {
         $ids = $this->getEntityManager()->getConnection()->fetchFirstColumn(

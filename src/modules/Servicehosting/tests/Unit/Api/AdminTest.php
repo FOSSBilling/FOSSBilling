@@ -26,6 +26,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
 use function Tests\Helpers\moduleService;
+use function Tests\Helpers\setEntityId;
 
 /**
  * @param array<class-string, Mockery\MockInterface> $repositories
@@ -298,7 +299,7 @@ test('testAccountGetList', function (): void {
 
 test('testServerGetList', function (): void {
     $api = apiEndpoint(new Admin());
-    $server = (new ServiceHostingServer())->setId(1);
+    $server = setEntityId(new ServiceHostingServer(), 1);
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock
     ->shouldReceive('getServersSearchQuery')
@@ -533,7 +534,7 @@ test('testHpGetPairs', function (): void {
 
 test('testHpGetList', function (): void {
     $api = apiEndpoint(new Admin());
-    $hp = (new ServiceHostingHp())->setId(1);
+    $hp = setEntityId(new ServiceHostingHp(), 1);
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock
     ->shouldReceive('getHpSearchQuery')
