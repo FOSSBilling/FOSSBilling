@@ -2424,7 +2424,7 @@ test('throws exception when generating funds invoice without active order', func
     $service = new Service();
     $clientModel = createEntity(Box\Mod\Client\Entity\Client::class);
 
-    expect(fn () => $service->generateFundsInvoice($clientModel, 10))
+    expect(fn (): Invoice => $service->generateFundsInvoice($clientModel, 10))
         ->toThrow(FOSSBilling\Exception::class, 'You must have at least one active order before you can add funds so you cannot proceed at the current time!');
 });
 
@@ -2443,7 +2443,7 @@ test('throws exception when generating funds invoice while the feature is disabl
 
     $service->setDi($di);
 
-    expect(fn () => $service->generateFundsInvoice($clientModel, 10))
+    expect(fn (): Invoice => $service->generateFundsInvoice($clientModel, 10))
         ->toThrow(FOSSBilling\Exception::class, 'Adding funds to the account balance is currently disabled');
 });
 
@@ -2464,7 +2464,7 @@ test('throws exception when generating funds invoice below minimum amount', func
 
     $service->setDi($di);
 
-    expect(fn () => $service->generateFundsInvoice($clientModel, $fundsAmount))
+    expect(fn (): Invoice => $service->generateFundsInvoice($clientModel, $fundsAmount))
         ->toThrow(FOSSBilling\Exception::class, 'Amount must be at least ' . $minAmount);
 });
 
@@ -2485,7 +2485,7 @@ test('throws exception when generating funds invoice above maximum amount', func
 
     $service->setDi($di);
 
-    expect(fn () => $service->generateFundsInvoice($clientModel, $fundsAmount))
+    expect(fn (): Invoice => $service->generateFundsInvoice($clientModel, $fundsAmount))
         ->toThrow(FOSSBilling\Exception::class, 'Amount cannot exceed ' . $maxAmount);
 });
 

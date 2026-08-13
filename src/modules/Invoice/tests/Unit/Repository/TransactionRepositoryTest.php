@@ -172,7 +172,7 @@ test('paginateMappedQuery yields gateway-aware mixed rows', function (): void {
     $entityManager = new EntityManager(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
 
     $metadata = array_map(
-        static fn (string $class): object => $entityManager->getClassMetadata($class),
+        $entityManager->getClassMetadata(...),
         [Transaction::class, PayGateway::class],
     );
     (new SchemaTool($entityManager))->createSchema($metadata);

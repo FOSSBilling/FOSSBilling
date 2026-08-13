@@ -190,7 +190,7 @@ test('getInvoiceTotals aggregates subtotal and taxable subtotal per invoice', fu
     $entityManager = new EntityManager(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
 
     $metadata = array_map(
-        static fn (string $class): object => $entityManager->getClassMetadata($class),
+        $entityManager->getClassMetadata(...),
         [Invoice::class, InvoiceItem::class],
     );
     (new Doctrine\ORM\Tools\SchemaTool($entityManager))->createSchema($metadata);
@@ -228,7 +228,7 @@ test('getInvoiceTotals omits invoices without items', function (): void {
     $entityManager = new EntityManager(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
 
     $metadata = array_map(
-        static fn (string $class): object => $entityManager->getClassMetadata($class),
+        $entityManager->getClassMetadata(...),
         [Invoice::class, InvoiceItem::class],
     );
     (new Doctrine\ORM\Tools\SchemaTool($entityManager))->createSchema($metadata);

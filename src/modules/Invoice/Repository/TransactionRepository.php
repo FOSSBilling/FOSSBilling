@@ -94,7 +94,7 @@ class TransactionRepository extends EntityRepository
         $dateTo = $data['date_to'] ?? null;
         if ($dateTo) {
             $qb->andWhere('t.createdAt <= :date_to')
-                ->setParameter('date_to', date('Y-m-d H:i:s', (int) strtotime((string) $dateTo . ' 23:59:59')));
+                ->setParameter('date_to', date('Y-m-d H:i:s', (int) strtotime($dateTo . ' 23:59:59')));
         }
 
         $search = $data['search'] ?? null;
