@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Invoice\Entity\Invoice;
+use Box\Mod\Order\Entity\Order;
+use Box\Mod\Order\Repository\OrderRepository;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Product\Entity\ProductCategory;
 use Box\Mod\Product\Entity\ProductPayment;
@@ -25,8 +27,7 @@ use Box\Mod\Product\Repository\PromoRedemptionRepository;
 use Box\Mod\Product\Repository\PromoRepository;
 use Box\Mod\Product\Service;
 use Box\Mod\Servicedomain\Entity\Tld;
-use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\DriverManager;
+use Box\Mod\Servicedomain\Repository\TldRepository;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
@@ -185,47 +186,18 @@ function productTestCreateProductPaymentEntityManager(ProductPaymentRepository $
     };
 }
 
-function productTestCreateDomainPricingDbalConnection(): Connection
+function productTestCreateEntityManagerReturning(object $repository): object
 {
-    $connection = DriverManager::getConnection([
-        'driver' => 'pdo_sqlite',
-        'memory' => true,
-    ]);
+    return new class($repository) {
+        public function __construct(private readonly object $repository)
+        {
+        }
 
-    $connection->executeStatement('CREATE TABLE tld_registrar (id INTEGER PRIMARY KEY, name TEXT)');
-    $connection->executeStatement('CREATE TABLE tld (
-        id INTEGER PRIMARY KEY,
-        tld_registrar_id INTEGER,
-        tld TEXT,
-        price_registration NUMERIC,
-        price_renew NUMERIC,
-        price_transfer NUMERIC,
-        allow_register INTEGER,
-        allow_transfer INTEGER,
-        active INTEGER,
-        min_years INTEGER,
-        periods TEXT
-    )');
-    $connection->executeStatement("INSERT INTO tld_registrar (id, name) VALUES (1, 'Registrar A')");
-    $connection->executeStatement("INSERT INTO tld (id, tld_registrar_id, tld, price_registration, price_renew, price_transfer, allow_register, allow_transfer, active, min_years, periods) VALUES (1, 1, '.com', 10.00, 12.00, 14.00, 1, 1, 1, 1, '1,2,5')");
-    $connection->executeStatement("INSERT INTO tld (id, tld_registrar_id, tld, price_registration, price_renew, price_transfer, allow_register, allow_transfer, active, min_years, periods) VALUES (2, 1, '.net', 11.00, 13.00, 15.00, 1, 1, 0, 1, NULL)");
-    $connection->executeStatement("INSERT INTO tld (id, tld_registrar_id, tld, price_registration, price_renew, price_transfer, allow_register, allow_transfer, active, min_years, periods) VALUES (3, 1, '.org', 9.00, 11.00, 13.00, 1, 1, 1, 1, NULL)");
-
-    return $connection;
-}
-
-function productTestCreateProductOrderDbalConnection(): Connection
-{
-    $connection = DriverManager::getConnection([
-        'driver' => 'pdo_sqlite',
-        'memory' => true,
-    ]);
-
-    $connection->executeStatement('CREATE TABLE client_order (id INTEGER PRIMARY KEY, product_id INTEGER)');
-    $connection->executeStatement('INSERT INTO client_order (id, product_id) VALUES (11, 7)');
-    $connection->executeStatement('INSERT INTO client_order (id, product_id) VALUES (12, 8)');
-
-    return $connection;
+        public function getRepository(string $class): object
+        {
+            return $this->repository;
+        }
+    };
 }
 
 function productTestCreateDomainTldServiceMock(Tld $tld): Mockery\MockInterface
@@ -504,7 +476,7 @@ test('reserveStockForOrder reserves stock atomically and records the reservation
         ->setStockControl(true)
         ->setQuantityInStock(5);
 
-    $order = createEntity(Box\Mod\Order\Entity\Order::class, [
+    $order = createEntity(Order::class, [
         'id' => 99,
         'product_id' => 1,
         'quantity' => 2,
@@ -537,7 +509,7 @@ test('reserveStockForOrder does not touch stock or write reservation meta for a 
     $service = new Service();
     $product = productTestCreateProductEntity(1)->setStockControl(false);
 
-    $order = createEntity(Box\Mod\Order\Entity\Order::class, [
+    $order = createEntity(Order::class, [
         'id' => 99,
         'product_id' => 1,
         'quantity' => 2,
@@ -557,7 +529,7 @@ test('reserveStockForOrder does not touch stock or write reservation meta for a 
 
 test('reserveStockForOrder is a no-op for an order without a product', function (): void {
     $service = new Service();
-    $order = createEntity(Box\Mod\Order\Entity\Order::class, ['id' => 99]);
+    $order = createEntity(Order::class, ['id' => 99]);
 
     // Neither 'em' nor 'mod_service' is registered: if the code tried to touch either one it
     // would hit Pimple's "identifier is not defined" error rather than return quietly.
@@ -570,7 +542,7 @@ test('releaseReservedStockForOrder restores stock and clears the reservation', f
     $service = new Service();
     $product = productTestCreateProductEntity(1)->setStockControl(true)->setQuantityInStock(0);
 
-    $order = createEntity(Box\Mod\Order\Entity\Order::class, [
+    $order = createEntity(Order::class, [
         'id' => 99,
         'product_id' => 1,
     ]);
@@ -616,7 +588,7 @@ test('releaseReservedStockForOrder restores stock and clears the reservation', f
 test('releaseReservedStockForOrder is idempotent once the reservation is already released', function (): void {
     $service = new Service();
 
-    $order = createEntity(Box\Mod\Order\Entity\Order::class, [
+    $order = createEntity(Order::class, [
         'id' => 99,
         'product_id' => 1,
     ]);
@@ -650,7 +622,7 @@ test('releaseReservedStockForOrder does not double-restock when a concurrent rel
     // read the same meta row and deleted it first, in which case this call must not restock.
     $service = new Service();
 
-    $order = createEntity(Box\Mod\Order\Entity\Order::class, [
+    $order = createEntity(Order::class, [
         'id' => 99,
         'product_id' => 1,
     ]);
@@ -685,10 +657,10 @@ test('releaseReservedStockForOrder does not double-restock when a concurrent rel
 test('releaseReservedStockForInvoice releases every order still linked to the invoice', function (): void {
     $invoice = productTestCreateInvoiceModel(55);
 
-    $firstOrder = createEntity(Box\Mod\Order\Entity\Order::class, ['id' => 1]);
-    $secondOrder = createEntity(Box\Mod\Order\Entity\Order::class, ['id' => 2]);
+    $firstOrder = createEntity(Order::class, ['id' => 1]);
+    $secondOrder = createEntity(Order::class, ['id' => 2]);
 
-    $orderRepo = Mockery::mock(Box\Mod\Order\Repository\OrderRepository::class);
+    $orderRepo = Mockery::mock(OrderRepository::class);
     $orderRepo->shouldReceive('findByUnpaidInvoiceId')->once()->with(55)->andReturn([$firstOrder, $secondOrder]);
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
@@ -834,40 +806,36 @@ test('get related product discount uses domain pricing implementation', function
     expect($discount)->toBe(33.0);
 });
 
-test('get domain pricing array returns active tlds', function (): void {
+test('get domain pricing array uses the tld repository', function (): void {
     $service = new Service();
-    $connection = productTestCreateDomainPricingDbalConnection();
+    $pricing = [
+        '.com' => ['tld' => '.com', 'price_registration' => '10.00'],
+    ];
+
+    $tldRepo = Mockery::mock(TldRepository::class);
+    $tldRepo->shouldReceive('getActivePricing')->once()->andReturn($pricing);
 
     $di = container();
-    $di['dbal'] = $connection;
+    $di['em'] = productTestCreateEntityManagerReturning($tldRepo);
     $service->setDi($di);
 
-    $result = $service->getDomainPricingArray();
-
-    expect($result)->toHaveKey('.com');
-    expect($result)->not->toHaveKey('.net');
-    expect($result['.com']['price_registration'])->toEqual(10.0);
-    expect($result['.com']['registrar']['title'])->toBe('Registrar A');
-    expect($result['.com']['periods'])->toBe([1, 2, 5]);
-
-    expect($result)->toHaveKey('.org');
-    expect($result['.org']['periods'])->toBeNull();
+    expect($service->getDomainPricingArray())->toBe($pricing);
 });
 
 test('get product pricing array uses domain pricing implementation', function (): void {
     $service = new Service();
-    $connection = productTestCreateDomainPricingDbalConnection();
+    $pricing = ['.com' => ['price_registration' => '10.00']];
+
+    $tldRepo = Mockery::mock(TldRepository::class);
+    $tldRepo->shouldReceive('getActivePricing')->once()->andReturn($pricing);
 
     $product = productTestCreateProductEntity(1)->setType(Service::DOMAIN);
 
     $di = container();
-    $di['dbal'] = $connection;
+    $di['em'] = productTestCreateEntityManagerReturning($tldRepo);
     $service->setDi($di);
 
-    $result = $service->getProductPricingArray($product);
-
-    expect($result)->toHaveKey('.com');
-    expect($result['.com']['price_registration'])->toEqual(10.0);
+    expect($service->getProductPricingArray($product))->toBe($pricing);
 });
 
 test('get product unit uses domain unit', function (): void {
@@ -947,20 +915,20 @@ test('get product renewal line config uses domain pricing implementation', funct
     expect($line)->toBe(['price' => 20.0, 'quantity' => 2]);
 });
 
-test('get orders for product uses product order repository', function (): void {
+test('get orders for product returns orders via the order repository', function (): void {
     $service = new Service();
-    $connection = productTestCreateProductOrderDbalConnection();
+    $order = new Order();
+
+    $orderRepo = Mockery::mock(OrderRepository::class);
+    $orderRepo->shouldReceive('findByProductId')->once()->with(7)->andReturn([$order]);
 
     $di = container();
-    $di['dbal'] = $connection;
+    $di['em'] = productTestCreateEntityManagerReturning($orderRepo);
     $service->setDi($di);
 
     $product = productTestCreateProductEntity(7);
-    $rows = $service->getOrdersForProduct($product);
 
-    expect($rows)->toHaveCount(1);
-    expect((int) $rows[0]['id'])->toBe(11);
-    expect((int) $rows[0]['product_id'])->toBe(7);
+    expect($service->getOrdersForProduct($product))->toBe([$order]);
 });
 
 test('get payment types', function (): void {
@@ -1652,7 +1620,7 @@ test('reserve promo for order', function (): void {
     $promo = productTestCreatePromoEntity(1)
         ->setRecurring(true);
 
-    $order = createEntity(Box\Mod\Order\Entity\Order::class);
+    $order = createEntity(Order::class);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('usePromo')->once()->with($promo);
@@ -1683,14 +1651,14 @@ test('create checkout promo redemptions persists each order and flushes once', f
 
     $invoice = productTestCreateInvoiceModel(16);
 
-    $firstOrder = createEntity(Box\Mod\Order\Entity\Order::class, [
+    $firstOrder = createEntity(Order::class, [
         'id' => 11,
         'discount' => 5.0,
         'currency' => 'USD',
         'created_at' => '2026-01-01 12:00:00',
     ]);
 
-    $secondOrder = createEntity(Box\Mod\Order\Entity\Order::class, [
+    $secondOrder = createEntity(Order::class, [
         'id' => 12,
         'discount' => 7.0,
         'currency' => 'USD',
@@ -1782,7 +1750,7 @@ test('get promo discount title', function (): void {
 
 test('get renewal promo adjustment for domain order', function (): void {
     $service = new Service();
-    $order = createEntity(Box\Mod\Order\Entity\Order::class, [
+    $order = createEntity(Order::class, [
         'promo_id' => 15,
         'promo_recurring' => true,
         'product_id' => 17,
@@ -1854,7 +1822,7 @@ test('get renewal promo adjustment for domain order', function (): void {
 
 test('get renewal promo adjustment ignores missing promo for non-domain order', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $order = createEntity(Box\Mod\Order\Entity\Order::class, [
+    $order = createEntity(Order::class, [
         'promo_id' => 15,
         'promo_recurring' => true,
         'product_id' => 17,

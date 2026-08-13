@@ -39,6 +39,14 @@ class OrderRepository extends EntityRepository
         return $order instanceof Order ? $order : null;
     }
 
+    /**
+     * @return Order[]
+     */
+    public function findByProductId(int $productId): array
+    {
+        return $this->findBy(['productId' => $productId]);
+    }
+
     public function findOneByServiceTypeAndServiceId(string $serviceType, int $serviceId): ?Order
     {
         $order = $this->findOneBy(['serviceType' => $serviceType, 'serviceId' => $serviceId]);

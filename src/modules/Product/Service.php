@@ -21,16 +21,13 @@ use Box\Mod\Product\Entity\ProductPayment;
 use Box\Mod\Product\Entity\ProductPaymentPeriod;
 use Box\Mod\Product\Entity\Promo;
 use Box\Mod\Product\Entity\PromoRedemption;
-use Box\Mod\Product\Repository\DomainPricingRepository;
 use Box\Mod\Product\Repository\ProductCategoryRepository;
-use Box\Mod\Product\Repository\ProductOrderRepository;
 use Box\Mod\Product\Repository\ProductPaymentRepository;
 use Box\Mod\Product\Repository\ProductRepository;
 use Box\Mod\Product\Repository\PromoRedemptionRepository;
 use Box\Mod\Product\Repository\PromoRepository;
 use Box\Mod\Servicedomain\Entity\Tld;
 use Box\Mod\Staff\Entity\Admin;
-use Doctrine\DBAL\Connection;
 use Doctrine\ORM\QueryBuilder;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\PaginationOptions;
@@ -57,8 +54,6 @@ class Service implements InjectionAwareInterface
     protected ?ProductPaymentRepository $productPaymentRepository = null;
     protected ?PromoRepository $promoRepository = null;
     protected ?PromoRedemptionRepository $promoRedemptionRepository = null;
-    protected ?DomainPricingRepository $domainPricingRepository = null;
-    protected ?ProductOrderRepository $productOrderRepository = null;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -135,27 +130,6 @@ class Service implements InjectionAwareInterface
         return $this->productPaymentRepository;
     }
 
-    public function getDomainPricingRepository(): DomainPricingRepository
-    {
-        if ($this->domainPricingRepository === null) {
-            $this->domainPricingRepository = new DomainPricingRepository($this->getDbalConnection());
-        }
-
-        return $this->domainPricingRepository;
-    }
-
-    public function getProductOrderRepository(): ProductOrderRepository
-    {
-        if ($this->productOrderRepository === null) {
-            $this->productOrderRepository = new ProductOrderRepository($this->getDbalConnection());
-        }
-
-        return $this->productOrderRepository;
-    }
-
-    /**
-     * @return mixed[]
-     */
     public function getModulePermissions(): array
     {
         return [
@@ -381,7 +355,7 @@ class Service implements InjectionAwareInterface
      */
     public function getDomainPricingArray(): array
     {
-        return $this->getDomainPricingRepository()->getActivePricingByTld();
+        return $this->di['em']->getRepository(Tld::class)->getActivePricing();
     }
 
     public function getProductPricingArray(Product $product): array
@@ -1832,15 +1806,6 @@ class Service implements InjectionAwareInterface
         return $productPayment;
     }
 
-    private function getDbalConnection(): Connection
-    {
-        if ($this->di === null) {
-            throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
-        }
-
-        return $this->di['em']->getConnection();
-    }
-
     private function createDefaultProductPayment(): ProductPayment
     {
         $productPayment = new ProductPayment();
@@ -2089,10 +2054,12 @@ class Service implements InjectionAwareInterface
         return $this->isPromoLinkedToProduct($promo, $domainProduct);
     }
 
-    // Function to get all orders for a product
-    public function getOrdersForProduct(Product $product)
+    /**
+     * @return Order[]
+     */
+    public function getOrdersForProduct(Product $product): array
     {
-        return $this->getProductOrderRepository()->getRowsByProductId((int) $product->getId());
+        return $this->di['em']->getRepository(Order::class)->findByProductId((int) $product->getId());
     }
 
     /**
