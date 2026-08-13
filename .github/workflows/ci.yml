@@ -209,7 +209,8 @@ jobs:
 
       - name: 'Create Downloadable Preview'
         run: |
-          echo "GITHUB_SHORT_SHA=$(echo "${GITHUB_SHA}" | cut -c1-7)" >> "$GITHUB_ENV"
+          GITHUB_SHORT_SHA="$(echo "${GITHUB_SHA}" | cut -c1-7)"
+          echo "GITHUB_SHORT_SHA=${GITHUB_SHORT_SHA}" >> "$GITHUB_ENV"
           zip -qr ../FOSSBilling-preview-${GITHUB_SHORT_SHA}.zip .
           echo "FOSSBILLING_PREVIEW_DIGEST=sha256:$(sha256sum ../FOSSBilling-preview-${GITHUB_SHORT_SHA}.zip | awk '{print $1}')" >> "$GITHUB_ENV"
         working-directory: ./src/
