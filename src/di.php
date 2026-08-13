@@ -89,7 +89,7 @@ $di['crypt'] = function () use ($di) {
  * @return PDO The PDO object used for database connections
  */
 $di['pdo'] = function () {
-    $debugConfig = Config::getProperty('debug_and_monitoring', []);
+    $debug = (bool) Config::getProperty('debug_and_monitoring.debug', false);
     $driverOptions = [
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     ];
@@ -98,11 +98,7 @@ $di['pdo'] = function () {
     /** @var PDO $pdo */
     $pdo = $connection->getNativeConnection();
 
-    if (isset($debugConfig['debug']) && $debugConfig['debug']) {
-        $pdo->setAttribute(PDO::ATTR_STATEMENT_CLASS, [FOSSBilling\DbLoggedPDOStatement::class]);
-    }
-
-    return new DebugBar\DataCollector\PDO\TraceablePDO($pdo);
+    return $debug ? new DebugBar\DataCollector\PDO\TraceablePDO($pdo) : $pdo;
 };
 
 /*
