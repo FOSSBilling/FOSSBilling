@@ -720,7 +720,39 @@ test('sendTemplate sends to a specific admin via to_admin using the Admin entity
     expect($result)->toBeTrue();
     expect($persistedQueue)->not->toBeNull();
     expect($persistedQueue->getRecipient())->toBe('admin@fossbilling.org');
+    expect($persistedQueue->getClientId())->toBeNull();
+    expect($persistedQueue->getAdminId())->toBe(7);
 });
+
+test('sendTemplate throws when to_admin does not resolve to an admin', function (): void {
+    $service = new Box\Mod\Email\Service();
+
+    $di = container();
+
+    $templateRepo = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateRepository::class);
+    $templateRepo->shouldReceive('findOneByActionCode')->andReturn(emailTemplate(data: ['enabled' => true]));
+
+    $templateGroupRepo = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateGroupRepository::class);
+
+    $adminRepo = Mockery::mock(Box\Mod\Staff\Repository\AdminRepository::class);
+    $adminRepo->shouldReceive('find')->once()->with(999)->andReturn(null);
+
+    $di['em'] = emailBuildEm(null, $templateRepo, null, true, $templateGroupRepo, $adminRepo);
+
+    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock->shouldReceive('checkRequiredParamsForArray')->byDefault();
+    $di['validator'] = $validatorMock;
+
+    $service->setDi($di);
+
+    $service->sendTemplate([
+        'code' => 'mod_email_test',
+        'to_admin' => 999,
+        'default_subject' => 'SUBJECT',
+        'default_template' => 'TEMPLATE',
+        'default_description' => 'DESCRIPTION',
+    ]);
+})->throws(FOSSBilling\InformationException::class, 'Admin not found');
 
 test('sendTemplate does not send to staff when template has no assigned groups', function (): void {
     $service = new Box\Mod\Email\Service();

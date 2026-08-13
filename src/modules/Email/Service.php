@@ -305,6 +305,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                     'timezone' => $admin->getTimezone(),
                 ];
                 $vars['c'] = $this->safeStaffTemplateVars($oneStaff);
+            } else {
+                throw new \FOSSBilling\InformationException('Admin not found');
             }
         }
 
@@ -362,7 +364,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         } elseif (isset($oneStaff)) {
             $to = $oneStaff['email'];
             $to_name = $oneStaff['name'];
-            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, $oneStaff['id'], null, $send_now, $throw_exceptions, $attachment);
+            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, null, $oneStaff['id'], $send_now, $throw_exceptions, $attachment);
         } elseif (isset($customer)) {
             // Supplying both keeps the email associated with the client while allowing a
             // purpose-specific recipient, such as the client's billing address.
