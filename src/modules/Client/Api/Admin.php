@@ -104,8 +104,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *                                        rotation enabled, since the session ID returned by
      *                                        this call may already be stale by the time the
      *                                        second call uses it, leaving the session in an
-     *                                        inconsistent state (see PR description for a
-     *                                        real-world example).
+     *                                        inconsistent state.
      *
      * @return array - client details
      */
