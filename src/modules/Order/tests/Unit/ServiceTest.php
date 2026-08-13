@@ -922,6 +922,52 @@ test('_callOnService dispatches to a third-party module with null when no servic
         ->and($module->calls)->toBe([[$order, null]]);
 });
 
+test('_callOnService dispatches to a third-party module with false when the service row is stale', function (): void {
+    $order = createEntity(Order::class, [
+        'id' => 10,
+        'service_id' => 1,
+        'service_type' => 'external',
+    ]);
+
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAssociative')
+        ->once()
+        ->with('SELECT * FROM service_external WHERE id = :id', ['id' => 1])
+        ->andReturn(false);
+
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+
+    $module = new class {
+        public array $calls = [];
+
+        public function activate($order, $service)
+        {
+            $this->calls[] = [$order, $service];
+
+            return true;
+        }
+    };
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(function (string $name) use ($module) {
+        return match ($name) {
+            'serviceexternal' => $module,
+            default => throw new LogicException('Unexpected service: ' . $name),
+        };
+    });
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldAllowMockingProtectedMethods();
+    $serviceMock->setDi($di);
+
+    $result = $serviceMock->_callOnService($order, Order::ACTION_ACTIVATE);
+
+    expect($result)->toBeTrue()
+        ->and($module->calls)->toBe([[$order, false]]);
+});
+
 test('getOrderServiceData returns null for a third-party service type', function (): void {
     $order = createEntity(Order::class, [
         'id' => 10,

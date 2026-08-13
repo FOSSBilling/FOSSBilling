@@ -337,9 +337,10 @@ class Service implements InjectionAwareInterface
      *
      * Built-in service types return their Doctrine entity (or null when the
      * entity class is unknown). Third-party service types return the raw
-     * `service_<type>` row as a DBAL assoc array (or null when the order has no
-     * service yet) — the array is passed to third-party module methods as-is;
-     * extension authors must access fields via array keys.
+     * `service_<type>` row as a DBAL assoc array — or false when the order's
+     * service row no longer exists, and null when the order has no service yet.
+     * The value is passed to third-party module methods as-is; extension
+     * authors must access fields via array keys.
      */
     public function getOrderService(Order $order)
     {
@@ -1204,8 +1205,8 @@ class Service implements InjectionAwareInterface
      * Built-in service types are dispatched to `action_<action>` methods on the
      * module service with the order entity. Third-party service types are
      * dispatched to an un-prefixed `<action>` method with `$order` and the
-     * `service_<type>` row as a DBAL assoc array (or null when the order has no
-     * service yet).
+     * `service_<type>` row as a DBAL assoc array — or false when the order's
+     * service row no longer exists, and null when the order has no service yet.
      */
     protected function _callOnService(Order $order, $action, mixed ...$arguments)
     {
@@ -1981,9 +1982,10 @@ class Service implements InjectionAwareInterface
      * Returns the API representation of an order's service data.
      *
      * Only entity-backed (built-in) services reach the module's `toApiArray()`;
-     * the third-party (DBAL assoc array) path fails the `is_object()` guard and
-     * returns null (logged as "has no active service"). Extension authors that
-     * need third-party service data must read the row via `getOrderService()`.
+     * the third-party (DBAL assoc array or false) path fails the `is_object()`
+     * guard and returns null (logged as "has no active service"). Extension
+     * authors that need third-party service data must read the row via
+     * `getOrderService()`.
      */
     public function getOrderServiceData(Order $order, $identity = null)
     {
