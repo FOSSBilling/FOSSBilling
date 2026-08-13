@@ -12,7 +12,6 @@ declare(strict_types=1);
 namespace Box\Mod\Servicedomain\Repository;
 
 use Box\Mod\Servicedomain\Entity\Tld;
-use Box\Mod\Servicedomain\Entity\TldRegistrar;
 use Doctrine\ORM\EntityRepository;
 
 class TldRepository extends EntityRepository
@@ -22,7 +21,14 @@ class TldRepository extends EntityRepository
      */
     public function findAllActive(): array
     {
-        return $this->findBy(['active' => true], ['id' => 'ASC']);
+        return $this->createQueryBuilder('t')
+            ->leftJoin('t.registrar', 'tr')
+            ->addSelect('tr')
+            ->where('t.active = :active')
+            ->setParameter('active', true)
+            ->orderBy('t.id', 'ASC')
+            ->getQuery()
+            ->getResult();
     }
 
     /**
@@ -44,13 +50,6 @@ class TldRepository extends EntityRepository
      */
     public function getActivePricing(): array
     {
-        $registrarNames = [];
-        foreach ($this->getEntityManager()->getRepository(TldRegistrar::class)->findAll() as $registrar) {
-            if ($registrar->getId() !== null) {
-                $registrarNames[$registrar->getId()] = $registrar->getName();
-            }
-        }
-
         $pricing = [];
         foreach ($this->findAllActive() as $tld) {
             $tldName = $tld->getTld();
@@ -58,7 +57,7 @@ class TldRepository extends EntityRepository
                 continue;
             }
 
-            $registrarId = $tld->getTldRegistrarId();
+            $registrar = $tld->getRegistrar();
             $pricing[$tldName] = [
                 'tld' => $tldName,
                 'price_registration' => $tld->getPriceRegistration(),
@@ -70,8 +69,8 @@ class TldRepository extends EntityRepository
                 'min_years' => $tld->getMinYears(),
                 'periods' => $tld->getPeriodsArray(),
                 'registrar' => [
-                    'id' => $registrarId,
-                    'title' => $registrarId === null ? null : ($registrarNames[$registrarId] ?? null),
+                    'id' => $registrar?->getId(),
+                    'title' => $registrar?->getName(),
                 ],
             ];
         }

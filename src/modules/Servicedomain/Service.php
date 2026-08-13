@@ -229,7 +229,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $model = new ServiceDomain();
         $model->setClientId((int) $order->getClientId());
-        $model->setTldRegistrarId($tldModel instanceof Tld ? $tldModel->getTldRegistrarId() : null);
+        $model->setRegistrar($tldModel instanceof Tld ? $tldModel->getRegistrar() : null);
         $model->setSld($sld);
         $model->setTld($tld);
         $model->setPeriod($years);
@@ -554,7 +554,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $domain->setTld($model->getTld());
         $domain->setSld($sld);
 
-        $tldRegistrar = $this->getExistingRegistrar($model->getTldRegistrarId());
+        $tldRegistrar = $this->getExistingRegistrar($model->getRegistrar());
         $this->registrarValidateConfiguration($tldRegistrar);
         $adapter = $this->registrarGetRegistrarAdapter($tldRegistrar);
 
@@ -583,7 +583,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $domain->setTld($model->getTld());
         $domain->setSld($sld);
 
-        $tldRegistrar = $this->getExistingRegistrar($model->getTldRegistrarId());
+        $tldRegistrar = $this->getExistingRegistrar($model->getRegistrar());
         $this->registrarValidateConfiguration($tldRegistrar);
         $adapter = $this->registrarGetRegistrarAdapter($tldRegistrar);
 
@@ -639,9 +639,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
             $data['transfer_code'] = $model->getTransferCode();
 
-            $tldRegistrarId = $model->getTldRegistrarId();
-            $tldRegistrar = $tldRegistrarId !== null ? $this->getTldRegistrarRepository()->find($tldRegistrarId) : null;
-            $data['registrar'] = $tldRegistrar instanceof TldRegistrar ? $tldRegistrar->getName() : null;
+            $data['registrar'] = $model->getRegistrar()?->getName();
         }
 
         return $data;
@@ -675,7 +673,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $orderService = $this->di['mod_service']('order');
         $order = $orderService->getServiceOrder($model);
 
-        $tldRegistrar = $this->getExistingRegistrar($model->getTldRegistrarId());
+        $tldRegistrar = $this->getExistingRegistrar($model->getRegistrar());
 
         if ($order instanceof Order) {
             $adapter = $this->registrarGetRegistrarAdapter($tldRegistrar, $order);
@@ -799,12 +797,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $data = $this->validateTldConfiguration($data);
         $normalizedTld = $this->normalizeTld($data['tld']);
-        $registrar = $this->getExistingRegistrar((int) $data['tld_registrar_id']);
+        $registrar = $this->getExistingRegistrar($this->findRegistrarById((int) $data['tld_registrar_id']));
         $this->registrarValidateConfiguration($registrar);
 
         $model = new Tld();
         $model->setTld($normalizedTld);
-        $model->setTldRegistrarId((int) $data['tld_registrar_id']);
+        $model->setRegistrar($registrar);
         $model->setPriceRegistration((string) $data['price_registration']);
         $model->setPriceRenew((string) $data['price_renew']);
         $model->setPriceTransfer((string) $data['price_transfer']);
@@ -828,11 +826,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->setTld($this->normalizeTld((string) $model->getTld()));
 
         if (array_key_exists('tld_registrar_id', $data)) {
-            $registrar = $this->getExistingRegistrar((int) $data['tld_registrar_id']);
+            $registrar = $this->getExistingRegistrar($this->findRegistrarById((int) $data['tld_registrar_id']));
             $this->registrarValidateConfiguration($registrar);
+            $model->setRegistrar($registrar);
         }
 
-        $model->setTldRegistrarId(isset($data['tld_registrar_id']) ? (int) $data['tld_registrar_id'] : $model->getTldRegistrarId());
         $model->setPriceRegistration(isset($data['price_registration']) ? (string) $data['price_registration'] : $model->getPriceRegistration());
         $model->setPriceRenew(isset($data['price_renew']) ? (string) $data['price_renew'] : $model->getPriceRenew());
         $model->setPriceTransfer(isset($data['price_transfer']) ? (string) $data['price_transfer'] : $model->getPriceTransfer());
@@ -991,12 +989,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         ];
 
         if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
-            $tldRegistrarId = $model->getTldRegistrarId();
-            $tldRegistrar = $tldRegistrarId !== null ? $this->getTldRegistrarRepository()->find($tldRegistrarId) : null;
+            $tldRegistrar = $model->getRegistrar();
 
             $result['registrar'] = [
-                'id' => $tldRegistrarId,
-                'title' => $tldRegistrar instanceof TldRegistrar ? $tldRegistrar->getName() : null,
+                'id' => $tldRegistrar?->getId(),
+                'title' => $tldRegistrar?->getName(),
             ];
         }
 
@@ -1237,14 +1234,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function registrarRm(TldRegistrar $model): bool
     {
-        $domains = $this->getDomainRepository()->findByTldRegistrarId((int) $model->getId());
+        $domains = $this->getDomainRepository()->findBy(['registrar' => $model]);
         $count = \FOSSBilling\Tools::safeCount($domains);
 
         if ($count > 0) {
             throw new \FOSSBilling\InformationException('Registrar is used by :count: domains', [':count:' => $count], 707);
         }
 
-        $tlds = $this->getTldRepository()->findBy(['tldRegistrarId' => (int) $model->getId()]);
+        $tlds = $this->getTldRepository()->findBy(['registrar' => $model]);
         $count = \FOSSBilling\Tools::safeCount($tlds);
 
         if ($count > 0) {
@@ -1308,14 +1305,20 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $dateTime?->format('Y-m-d H:i:s');
     }
 
-    private function getExistingRegistrar(?int $id): TldRegistrar
+    private function getExistingRegistrar(?TldRegistrar $registrar): TldRegistrar
     {
-        $registrar = $id === null ? null : $this->getTldRegistrarRepository()->find($id);
         if (!$registrar instanceof TldRegistrar) {
             throw new \FOSSBilling\Exception('Registrar not found');
         }
 
         return $registrar;
+    }
+
+    private function findRegistrarById(?int $id): ?TldRegistrar
+    {
+        $registrar = $id === null ? null : $this->getTldRegistrarRepository()->find($id);
+
+        return $registrar instanceof TldRegistrar ? $registrar : null;
     }
 
     private function _getOrderService(Order $order, bool $required = true): ?ServiceDomain

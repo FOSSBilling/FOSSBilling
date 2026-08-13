@@ -303,7 +303,7 @@ test('rejects a crafted order for an inactive tld before contacting the registra
 test('creates action', function (): void {
     $service = new Service();
     $tldModel = new Tld();
-    $tldModel->setTldRegistrarId(1);
+    $tldModel->setRegistrar(new TldRegistrar());
 
     $data = [
         'action' => 'register',
@@ -377,7 +377,7 @@ test('creates action', function (): void {
 test('throws exception when creating action with missing nameservers', function (): void {
     $service = new Service();
     $tldModel = new Tld();
-    $tldModel->setTldRegistrarId(1);
+    $tldModel->setRegistrar(new TldRegistrar());
 
     $data = [
         'action' => 'register',
@@ -420,7 +420,7 @@ test('activates action', function (string $action, string $registerDomainCalled,
     $service = new Service();
 
     $domainModel = new ServiceDomain();
-    $domainModel->setTldRegistrarId(1);
+    $domainModel->setRegistrar(new TldRegistrar());
     $domainModel->setAction($action);
 
     $orderServiceMock = Mockery::mock(OrderService::class);
@@ -474,7 +474,7 @@ test('throws exception when activating without order service', function (): void
 test('renews action', function (): void {
     $service = new Service();
     $domainModel = new ServiceDomain();
-    $domainModel->setTldRegistrarId(1);
+    $domainModel->setRegistrar(new TldRegistrar());
     $domainModel->setAction('register');
 
     $orderServiceMock = Mockery::mock(OrderService::class);
@@ -538,7 +538,7 @@ test('cancels action', function (): void {
     $service = new Service();
 
     $domainModel = new ServiceDomain();
-    $domainModel->setTldRegistrarId(1);
+    $domainModel->setRegistrar(new TldRegistrar());
     $domainModel->setAction('register');
 
     $orderServiceMock = Mockery::mock(OrderService::class);
@@ -599,7 +599,7 @@ test('deletes action', function (): void {
     $service = new Service();
 
     $domainModel = new ServiceDomain();
-    $domainModel->setTldRegistrarId(1);
+    $domainModel->setRegistrar(new TldRegistrar());
     $domainModel->setAction('register');
 
     $orderServiceMock = Mockery::mock(OrderService::class);
@@ -828,21 +828,13 @@ test('checks if domain can be transferred', function (): void {
     $tldRegistrar = new TldRegistrar();
     setEntityId($tldRegistrar, 1);
 
-    $trRepo = Mockery::mock(TldRegistrarRepository::class);
-    $trRepo->shouldReceive('find')->with(1)->andReturn($tldRegistrar);
-    $trRepo->shouldIgnoreMissing();
-
-    $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
-    $emMock->shouldReceive('getRepository')->with(TldRegistrar::class)->andReturn($trRepo);
-
     $di = container();
-    $di['em'] = $emMock;
     $serviceMock->setDi($di);
 
     $tld = new Tld();
     $tld->setAllowTransfer(true);
     $tld->setTld('.com');
-    $tld->setTldRegistrarId(1);
+    $tld->setRegistrar($tldRegistrar);
 
     $result = $serviceMock->canBeTransferred($tld, 'example');
 
@@ -890,27 +882,19 @@ test('checks if domain is available', function (): void {
     $tldRegistrar = new TldRegistrar();
     setEntityId($tldRegistrar, 1);
 
-    $trRepo = Mockery::mock(TldRegistrarRepository::class);
-    $trRepo->shouldReceive('find')->with(1)->andReturn($tldRegistrar);
-    $trRepo->shouldIgnoreMissing();
-
-    $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
-    $emMock->shouldReceive('getRepository')->with(TldRegistrar::class)->andReturn($trRepo);
-
     $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
     $validatorMock->shouldReceive('isSldValid')
         ->atLeast()->once()
         ->andReturn(true);
 
     $di = container();
-    $di['em'] = $emMock;
     $di['validator'] = $validatorMock;
     $serviceMock->setDi($di);
 
     $tld = new Tld();
     $tld->setAllowRegister(true);
     $tld->setTld('.com');
-    $tld->setTldRegistrarId(1);
+    $tld->setRegistrar($tldRegistrar);
 
     $result = $serviceMock->isDomainAvailable($tld, 'example');
 
@@ -1076,21 +1060,13 @@ test('converts to api array', function (?Box\Mod\Staff\Entity\Admin $identity, s
     $model->setContactPhoneCc('phone_cc');
     $model->setContactPhone('phone');
     $model->setTransferCode('EPPCODE');
-    $model->setTldRegistrarId(1);
 
     $tldRegistrar = new TldRegistrar();
     $tldRegistrar->setName('ResellerClub');
     setEntityId($tldRegistrar, 1);
-
-    $trRepo = Mockery::mock(TldRegistrarRepository::class);
-    $trRepo->shouldReceive('find')->with(1)->andReturn($tldRegistrar);
-    $trRepo->shouldIgnoreMissing();
-
-    $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
-    $emMock->shouldReceive('getRepository')->with(TldRegistrar::class)->andReturn($trRepo);
+    $model->setRegistrar($tldRegistrar);
 
     $di = container();
-    $di['em'] = $emMock;
     $service->setDi($di);
 
     $result = $service->toApiArray($model, true, $identity);
@@ -1455,15 +1431,7 @@ test('converts tld to api array', function (): void {
     $tldRegistrar->setName('ResellerClub');
     setEntityId($tldRegistrar, 1);
 
-    $trRepo = Mockery::mock(TldRegistrarRepository::class);
-    $trRepo->shouldReceive('find')->with(1)->andReturn($tldRegistrar);
-    $trRepo->shouldIgnoreMissing();
-
-    $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
-    $emMock->shouldReceive('getRepository')->with(TldRegistrar::class)->andReturn($trRepo);
-
     $di = container();
-    $di['em'] = $emMock;
     $service->setDi($di);
 
     $model = new Tld();
@@ -1477,7 +1445,7 @@ test('converts tld to api array', function (): void {
     $model->setAllowTransfer(true);
     $model->setMinYears(2);
     $model->setPeriods('5,2,2,10');
-    $model->setTldRegistrarId(1);
+    $model->setRegistrar($tldRegistrar);
 
     $result = $service->tldToApiArray($model, \Tests\Helpers\admin());
     expect($result)->toBeArray();
@@ -1508,7 +1476,7 @@ test('converts tld to api array', function (): void {
     expect($result['min_years'])->toBe($model->getMinYears());
     expect($result['periods'])->toBe([2, 5, 10]);
 
-    expect($registrar['id'])->toBe($model->getTldRegistrarId());
+    expect($registrar['id'])->toBe($tldRegistrar->getId());
     expect($registrar['title'])->toBe($tldRegistrar->getName());
 });
 
@@ -1783,12 +1751,16 @@ test('throws exception when getting registrar adapter for non-existing registrar
 test('removes registrar', function (): void {
     $service = new Service();
 
+    $model = new TldRegistrar();
+    setEntityId($model, 1);
+    $model->setName('ResellerClub');
+
     $domainRepo = Mockery::mock(DomainRepository::class);
-    $domainRepo->shouldReceive('findByTldRegistrarId')->with(1)->andReturn([]);
+    $domainRepo->shouldReceive('findBy')->with(['registrar' => $model])->andReturn([]);
     $domainRepo->shouldIgnoreMissing();
 
     $tldRepo = Mockery::mock(TldRepository::class);
-    $tldRepo->shouldReceive('findBy')->with(['tldRegistrarId' => 1])->andReturn([]);
+    $tldRepo->shouldReceive('findBy')->with(['registrar' => $model])->andReturn([]);
     $tldRepo->shouldIgnoreMissing();
 
     $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
@@ -1800,10 +1772,6 @@ test('removes registrar', function (): void {
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
-    $model = new TldRegistrar();
-    setEntityId($model, 1);
-    $model->setName('ResellerClub');
-
     $result = $service->registrarRm($model);
 
     expect($result)->toBeTrue();
@@ -1813,8 +1781,11 @@ test('throws exception when removing registrar with domains', function (): void 
     $service = new Service();
     $serviceDomainModel = new ServiceDomain();
 
+    $model = new TldRegistrar();
+    setEntityId($model, 1);
+
     $domainRepo = Mockery::mock(DomainRepository::class);
-    $domainRepo->shouldReceive('findByTldRegistrarId')->with(1)->andReturn([$serviceDomainModel]);
+    $domainRepo->shouldReceive('findBy')->with(['registrar' => $model])->andReturn([$serviceDomainModel]);
     $domainRepo->shouldIgnoreMissing();
 
     $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
@@ -1824,9 +1795,6 @@ test('throws exception when removing registrar with domains', function (): void 
     $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
-
-    $model = new TldRegistrar();
-    setEntityId($model, 1);
 
     expect(fn (): bool => $service->registrarRm($model))
         ->toThrow(FOSSBilling\InformationException::class, 'Registrar is used by 1 domains');

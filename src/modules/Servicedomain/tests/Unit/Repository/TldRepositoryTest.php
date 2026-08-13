@@ -11,14 +11,16 @@ declare(strict_types=1);
 
 use Box\Mod\Servicedomain\Entity\Tld;
 use Box\Mod\Servicedomain\Entity\TldRegistrar;
-use Box\Mod\Servicedomain\Repository\TldRegistrarRepository;
 use Box\Mod\Servicedomain\Repository\TldRepository;
-use Doctrine\ORM\EntityManagerInterface;
 
 test('builds the legacy domain pricing array keyed by tld', function (): void {
+    $registrar = (new TldRegistrar())->setName('Registrar A');
+    $reflection = new ReflectionProperty($registrar, 'id');
+    $reflection->setValue($registrar, 1);
+
     $com = (new Tld())
         ->setTld('.com')
-        ->setTldRegistrarId(1)
+        ->setRegistrar($registrar)
         ->setPriceRegistration('10.00')
         ->setPriceRenew('12.00')
         ->setPriceTransfer('14.00')
@@ -38,20 +40,8 @@ test('builds the legacy domain pricing array keyed by tld', function (): void {
         ->setAllowTransfer(null)
         ->setMinYears(2);
 
-    $registrar = (new TldRegistrar())->setName('Registrar A');
-    $reflection = new ReflectionProperty($registrar, 'id');
-    $reflection->setValue($registrar, 1);
-
-    $registrarRepository = Mockery::mock(TldRegistrarRepository::class);
-    $registrarRepository->shouldReceive('findAll')->once()->andReturn([$registrar]);
-
-    $entityManager = Mockery::mock(EntityManagerInterface::class);
-    $entityManager->shouldReceive('getRepository')->once()->with(TldRegistrar::class)->andReturn($registrarRepository);
-
     $repository = Mockery::mock(TldRepository::class)->makePartial();
-    $repository->shouldAllowMockingProtectedMethods();
     $repository->shouldReceive('findAllActive')->once()->andReturn([$com, $org]);
-    $repository->shouldReceive('getEntityManager')->once()->andReturn($entityManager);
 
     $result = $repository->getActivePricing();
 
