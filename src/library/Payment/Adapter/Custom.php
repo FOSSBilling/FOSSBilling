@@ -94,11 +94,11 @@ class Payment_Adapter_Custom
             if (!$tx instanceof Box\Mod\Invoice\Entity\Transaction) {
                 throw new Exception('Transaction not found');
             }
-            $invoice = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Invoice::class)->find($tx->getInvoiceId())
+            $invoice = $tx->getInvoice()
                 ?? throw new FOSSBilling\InformationException('Invoice not found');
 
             // Load the payment gateway and client associated with the transaction
-            $gateway = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\PayGateway::class)->find((int) $tx->getGatewayId());
+            $gateway = $tx->getGateway();
             if (!$gateway instanceof Box\Mod\Invoice\Entity\PayGateway) {
                 throw new Exception('Payment gateway not found for transaction');
             }

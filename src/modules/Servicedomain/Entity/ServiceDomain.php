@@ -34,8 +34,9 @@ class ServiceDomain implements TimestampInterface
     #[ORM\Column(name: 'client_id', type: Types::INTEGER, nullable: true)]
     private ?int $clientId = null;
 
-    #[ORM\Column(name: 'tld_registrar_id', type: Types::INTEGER, nullable: true)]
-    private ?int $tldRegistrarId = null;
+    #[ORM\ManyToOne(targetEntity: TldRegistrar::class)]
+    #[ORM\JoinColumn(name: 'tld_registrar_id', referencedColumnName: 'id', nullable: true)]
+    private ?TldRegistrar $registrar = null;
 
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     private ?string $sld = null;
@@ -123,13 +124,6 @@ class ServiceDomain implements TimestampInterface
         return $this->id;
     }
 
-    public function setId(?int $id): self
-    {
-        $this->id = $id;
-
-        return $this;
-    }
-
     public function getClientId(): ?int
     {
         return $this->clientId;
@@ -142,14 +136,14 @@ class ServiceDomain implements TimestampInterface
         return $this;
     }
 
-    public function getTldRegistrarId(): ?int
+    public function getRegistrar(): ?TldRegistrar
     {
-        return $this->tldRegistrarId;
+        return $this->registrar;
     }
 
-    public function setTldRegistrarId(?int $tldRegistrarId): self
+    public function setRegistrar(?TldRegistrar $registrar): self
     {
-        $this->tldRegistrarId = $tldRegistrarId;
+        $this->registrar = $registrar;
 
         return $this;
     }

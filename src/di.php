@@ -77,6 +77,27 @@ $di['crypt'] = function () use ($di) {
 };
 
 /*
+ * Creates and returns a Doctrine ORM EntityManager instance.
+ *
+ * This is the anchor for the shared database connection: the PDO and DBAL
+ * services below reuse its connection so that all three participate in the
+ * same transaction scope.
+ *
+ * @param void
+ *
+ * @return EntityManager The Doctrine ORM EntityManager instance.
+ */
+$di['em'] = (fn (): EntityManager => EntityManagerFactory::create());
+
+/*
+ *
+ * @param void
+ *
+ * @return Connection The shared Doctrine DBAL connection instance.
+ */
+$di['dbal'] = (fn (): Connection => DriverManagerFactory::getSharedConnection());
+
+/*
  * Creates a new PDO object for database connections
  *
  * @param void
@@ -85,13 +106,11 @@ $di['crypt'] = function () use ($di) {
  */
 $di['pdo'] = function () {
     $debugConfig = Config::getProperty('debug_and_monitoring', []);
-    $driverOptions = [
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    ];
 
-    $connection = DriverManagerFactory::getConnection($driverOptions);
-    /** @var PDO $pdo */
-    $pdo = $connection->getNativeConnection();
+    $pdo = DriverManagerFactory::getSharedConnection()->getNativeConnection();
+    if (!$pdo instanceof PDO) {
+        throw new RuntimeException('PDO service must resolve to a PDO instance');
+    }
 
     if (isset($debugConfig['debug']) && $debugConfig['debug']) {
         $pdo->setAttribute(PDO::ATTR_STATEMENT_CLASS, ['Box_DbLoggedPDOStatement']);
@@ -99,23 +118,6 @@ $di['pdo'] = function () {
 
     return new DebugBar\DataCollector\PDO\TraceablePDO($pdo);
 };
-
-/*
- *
- * @param void
- *
- * @return Connection The Doctrine DBAL connection instance.
- */
-$di['dbal'] = (fn (): Connection => DriverManagerFactory::getConnection());
-
-/*
- * Creates and returns a Doctrine ORM EntityManager instance.
- *
- * @param void
- *
- * @return EntityManager The Doctrine ORM EntityManager instance.
- */
-$di['em'] = (fn (): EntityManager => EntityManagerFactory::create());
 
 /*
  *

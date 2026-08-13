@@ -48,7 +48,7 @@ test('competingTransactionQuery filters by txn id, gateway id, active statuses a
     $dql = $query->getDQL();
 
     expect($dql)->toContain('t.txnId = :txn_id')
-        ->and($dql)->toContain('t.gatewayId = :gateway_id')
+        ->and($dql)->toContain('IDENTITY(t.gateway) = :gateway_id')
         ->and($dql)->toContain('t.id != :exclude_id')
         ->and($dql)->toContain('t.status IN (:statuses)');
     expect($query->getParameter('txn_id')->getValue())->toBe('pi_123')
@@ -72,7 +72,7 @@ test('competingTransactionQuery omits gateway and exclude filters when not provi
 
     expect($dql)->toContain('t.txnId = :txn_id')
         ->and($dql)->toContain('t.status IN (:statuses)')
-        ->and($dql)->not->toContain('t.gatewayId')
+        ->and($dql)->not->toContain('IDENTITY(t.gateway)')
         ->and($dql)->not->toContain('t.id !=');
     expect($query->getParameter('statuses')->getValue())->toBe([
         Transaction::STATUS_PROCESSING,
@@ -95,7 +95,7 @@ test('competingTransactionQuery applies gateway and exclude filters when provide
 test('getSearchQueryBuilder orders by id descending and selects the gateway name', function (): void {
     $query = transactionSearchQuery([]);
 
-    expect($query->getDQL())->toContain('SELECT t, pg.name AS gateway FROM ' . Transaction::class . ' t LEFT JOIN ' . PayGateway::class . ' pg WITH pg.id = t.gatewayId')
+    expect($query->getDQL())->toContain('SELECT t, pg.name AS gateway FROM ' . Transaction::class . ' t LEFT JOIN t.gateway pg')
         ->and($query->getDQL())->toContain('ORDER BY t.id DESC');
 });
 
@@ -113,8 +113,8 @@ test('getSearchQueryBuilder filters by id, status, invoice_id, gateway_id, curre
     $dql = $query->getDQL();
     expect($dql)->toContain('t.id = :id')
         ->and($dql)->toContain('t.status = :status')
-        ->and($dql)->toContain('t.invoiceId = :invoice_id')
-        ->and($dql)->toContain('t.gatewayId = :gateway_id')
+        ->and($dql)->toContain('IDENTITY(t.invoice) = :invoice_id')
+        ->and($dql)->toContain('IDENTITY(t.gateway) = :gateway_id')
         ->and($dql)->toContain('t.currency = :currency')
         ->and($dql)->toContain('t.type = :type')
         ->and($dql)->toContain('t.txnId = :txn_id');
@@ -155,7 +155,7 @@ test('getSearchQueryBuilder applies the search filter on note, invoice id, txn i
 
     $dql = $query->getDQL();
     expect($dql)->toContain('t.note LIKE :note')
-        ->and($dql)->toContain('t.invoiceId LIKE :search_invoice_id')
+        ->and($dql)->toContain('IDENTITY(t.invoice) LIKE :search_invoice_id')
         ->and($dql)->toContain('t.txnId LIKE :search_txn_id')
         ->and($dql)->toContain('t.ipn LIKE :ipn');
 
@@ -182,7 +182,7 @@ test('paginateMappedQuery yields gateway-aware mixed rows', function (): void {
     $entityManager->persist($gateway);
 
     $withGateway = new Transaction();
-    $withGateway->setGatewayId(1);
+    $withGateway->setGateway($gateway);
     $withGateway->setStatus(Transaction::STATUS_RECEIVED);
     $entityManager->persist($withGateway);
 

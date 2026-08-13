@@ -13,15 +13,19 @@ namespace Box\Mod\Client\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use FOSSBilling\Doctrine\TimestampTrait;
 use FOSSBilling\Interfaces\ApiArrayInterface;
+use FOSSBilling\Interfaces\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Client\Repository\ClientRepository::class)]
 #[ORM\Table(name: 'client')]
 #[ORM\Index(name: 'alternative_id_idx', columns: ['aid'])]
 #[ORM\Index(name: 'client_group_id_idx', columns: ['client_group_id'])]
 #[ORM\HasLifecycleCallbacks]
-class Client implements ApiArrayInterface
+class Client implements ApiArrayInterface, TimestampInterface
 {
+    use TimestampTrait;
+
     final public const string ACTIVE = 'active';
     final public const string SUSPENDED = 'suspended';
     final public const string CANCELED = 'canceled';
@@ -45,8 +49,9 @@ class Client implements ApiArrayInterface
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     private ?string $aid = null;
 
-    #[ORM\Column(name: 'client_group_id', type: Types::INTEGER, nullable: true)]
-    private ?int $clientGroupId = null;
+    #[ORM\ManyToOne(targetEntity: ClientGroup::class)]
+    #[ORM\JoinColumn(name: 'client_group_id', referencedColumnName: 'id', nullable: true)]
+    private ?ClientGroup $clientGroup = null;
 
     #[ORM\Column(type: Types::STRING, length: 30, options: ['default' => 'client'])]
     private string $role = 'client';
@@ -81,7 +86,7 @@ class Client implements ApiArrayInterface
     #[ORM\Column(name: 'last_name', type: Types::STRING, length: 100, nullable: true)]
     private ?string $lastName = null;
 
-    #[ORM\Column(type: Types::STRING, nullable: true, columnDefinition: "ENUM('male', 'female', 'nonbinary', 'other') DEFAULT NULL")]
+    #[ORM\Column(type: Types::STRING, length: 20, nullable: true)]
     private ?string $gender = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
@@ -204,12 +209,6 @@ class Client implements ApiArrayInterface
     #[ORM\Column(name: 'custom_20', type: Types::TEXT, nullable: true)]
     private ?string $custom20 = null;
 
-    #[ORM\Column(name: 'created_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $createdAt = null;
-
-    #[ORM\Column(name: 'updated_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $updatedAt = null;
-
     public function getId(): ?int
     {
         return $this->id;
@@ -227,14 +226,14 @@ class Client implements ApiArrayInterface
         return $this;
     }
 
-    public function getClientGroupId(): ?int
+    public function getClientGroup(): ?ClientGroup
     {
-        return $this->clientGroupId;
+        return $this->clientGroup;
     }
 
-    public function setClientGroupId(?int $clientGroupId): self
+    public function setClientGroup(?ClientGroup $clientGroup): self
     {
-        $this->clientGroupId = $clientGroupId;
+        $this->clientGroup = $clientGroup;
 
         return $this;
     }
@@ -397,6 +396,10 @@ class Client implements ApiArrayInterface
 
     public function setGender(?string $gender): self
     {
+        if ($gender !== null && !in_array($gender, self::ALLOWED_GENDERS, true)) {
+            throw new \InvalidArgumentException('Invalid gender');
+        }
+
         $this->gender = $gender;
 
         return $this;
@@ -882,31 +885,7 @@ class Client implements ApiArrayInterface
         return $this;
     }
 
-    public function getCreatedAt(): ?\DateTime
-    {
-        return $this->createdAt;
-    }
-
-    public function setCreatedAt(?\DateTime $createdAt): self
-    {
-        $this->createdAt = $createdAt;
-
-        return $this;
-    }
-
-    public function getUpdatedAt(): ?\DateTime
-    {
-        return $this->updatedAt;
-    }
-
-    public function setUpdatedAt(?\DateTime $updatedAt): self
-    {
-        $this->updatedAt = $updatedAt;
-
-        return $this;
-    }
-
-    public function toApiArray($identity = null): array
+    public function toApiArray(self|\Box\Mod\Staff\Entity\Admin|\FOSSBilling\Identity\Guest|null $identity = null): array
     {
         $details = [
             'id' => $this->id,
@@ -940,7 +919,7 @@ class Client implements ApiArrayInterface
 
         $details += [
             'aid' => $this->aid,
-            'group_id' => $this->clientGroupId,
+            'group_id' => $this->clientGroup?->getId(),
             'role' => $this->role ?? 'client', /* @phpstan-ignore nullCoalesce.property (Doctrine's newInstanceWithoutConstructor skips default init) */
             'auth_type' => $this->authType,
             'status' => $this->status ?? self::ACTIVE,
@@ -959,19 +938,5 @@ class Client implements ApiArrayInterface
         }
 
         return $details;
-    }
-
-    #[ORM\PrePersist]
-    public function onPrePersist(): void
-    {
-        $now = new \DateTime();
-        $this->createdAt ??= $now;
-        $this->updatedAt ??= $now;
-    }
-
-    #[ORM\PreUpdate]
-    public function onPreUpdate(): void
-    {
-        $this->updatedAt = new \DateTime();
     }
 }

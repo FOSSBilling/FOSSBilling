@@ -24,6 +24,7 @@ use Box\Mod\Order\Repository\OrderRepository;
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
 use function Tests\Helpers\moduleService;
+use function Tests\Helpers\setEntityId;
 
 test('gets dependency injection container', function (): void {
     $api = apiEndpoint(new Client());
@@ -153,7 +154,7 @@ test('creates renewal invoice from a real invoice entity without accessing priva
     $generatedHash = 'generatedHashString';
 
     $model = new Invoice();
-    $model->setId(1);
+    setEntityId($model, 1);
     $model->setHash($generatedHash);
 
     $serviceMock = Mockery::mock(Service::class);
@@ -266,7 +267,7 @@ test('creates funds invoice from a real invoice entity without accessing private
     $generatedHash = 'generatedHashString';
 
     $model = new Invoice();
-    $model->setId(1);
+    setEntityId($model, 1);
     $model->setHash($generatedHash);
 
     $serviceMock = Mockery::mock(Service::class);

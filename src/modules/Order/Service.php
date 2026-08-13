@@ -447,10 +447,8 @@ class Service implements InjectionAwareInterface
      */
     public function saveStatusChange(Order $order, $notes = null): void
     {
-        $orderId = $this->orderId($order);
-
         $os = new OrderStatus();
-        $os->setClientOrderId($orderId);
+        $os->setOrder($order);
         $os->setStatus($order->getStatus());
         $os->setNotes($notes);
         $this->di['em']->persist($os);
@@ -978,7 +976,7 @@ class Service implements InjectionAwareInterface
                     $mm = $this->getOrderMetaRepository()->findOneByOrderIdAndName($orderId, $k);
                     if (!$mm instanceof OrderMeta) {
                         $mm = new OrderMeta();
-                        $mm->setClientOrderId($orderId);
+                        $mm->setOrder($order);
                         $mm->setName($k);
                         $mm->setCreatedAt(new \DateTime());
                     }
@@ -1284,7 +1282,7 @@ class Service implements InjectionAwareInterface
             $mm = $this->getOrderMetaRepository()->findOneByOrderIdAndName($orderId, $k);
             if (!$mm instanceof OrderMeta) {
                 $mm = new OrderMeta();
-                $mm->setClientOrderId($orderId);
+                $mm->setOrder($order);
                 $mm->setName($k);
                 $mm->setCreatedAt(new \DateTime());
             }
@@ -1939,16 +1937,14 @@ class Service implements InjectionAwareInterface
             throw new InformationException('Invalid order status: :status', [':status' => $status]);
         }
 
-        $orderId = $this->orderId($order);
-
-        $bean = new OrderStatus();
-        $bean->setClientOrderId($orderId);
-        $bean->setStatus($status);
-        $bean->setNotes($notes);
-        $this->di['em']->persist($bean);
+        $statusEntry = new OrderStatus();
+        $statusEntry->setOrder($order);
+        $statusEntry->setStatus($status);
+        $statusEntry->setNotes($notes);
+        $this->di['em']->persist($statusEntry);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Added order status history message to order #%s', $bean->getId());
+        $this->di['logger']->info('Added order status history message to order #%s', $statusEntry->getId());
 
         return true;
     }

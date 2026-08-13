@@ -281,29 +281,24 @@ test('updatePassword returns true', function (): void {
         'password_confirm' => 'NewPassword1',
     ];
 
-    $passwordReset = new Box\Mod\Client\Entity\ClientPasswordReset();
-    $rp = new ReflectionProperty($passwordReset, 'id');
-    $rp->setValue($passwordReset, 1);
-    $rp = new ReflectionProperty($passwordReset, 'clientId');
-    $rp->setValue($passwordReset, 1);
-    $rp = new ReflectionProperty($passwordReset, 'createdAt');
-    $rp->setValue($passwordReset, new DateTime('-300 seconds'));
-
-    $passwordResetRepository = Mockery::mock(Box\Mod\Client\Repository\ClientPasswordResetRepository::class);
-    $passwordResetRepository->shouldReceive('findOneByHash')->atLeast()->once()->andReturn($passwordReset);
-
     $client = new Box\Mod\Client\Entity\Client();
     $rp = new ReflectionProperty($client, 'id');
     $rp->setValue($client, 1);
     $rp = new ReflectionProperty($client, 'status');
     $rp->setValue($client, 'active');
 
-    $clientRepository = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
-    $clientRepository->shouldReceive('find')->atLeast()->once()->with(1)->andReturn($client);
+    $passwordReset = new Box\Mod\Client\Entity\ClientPasswordReset();
+    $rp = new ReflectionProperty($passwordReset, 'id');
+    $rp->setValue($passwordReset, 1);
+    $rp = new ReflectionProperty($passwordReset, 'createdAt');
+    $rp->setValue($passwordReset, new DateTime('-300 seconds'));
+    $passwordReset->setClient($client);
+
+    $passwordResetRepository = Mockery::mock(Box\Mod\Client\Repository\ClientPasswordResetRepository::class);
+    $passwordResetRepository->shouldReceive('findOneByHash')->atLeast()->once()->andReturn($passwordReset);
 
     $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
     $em->shouldReceive('getRepository')->andReturnUsing(static fn (string $class): object => match ($class) {
-        Box\Mod\Client\Entity\Client::class => $clientRepository,
         Box\Mod\Client\Entity\ClientPasswordReset::class => $passwordResetRepository,
         default => Mockery::mock()->shouldIgnoreMissing(),
     });

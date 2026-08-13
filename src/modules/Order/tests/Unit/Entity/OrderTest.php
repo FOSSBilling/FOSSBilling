@@ -31,9 +31,9 @@ test('maps the existing order tables without changing their columns', function (
         ->and($order->getFieldMapping('quantity')['nullable'])->toBeTrue()
         ->and($order->getFieldMapping('quantity')['options']['default'])->toBe(1)
         ->and($meta->getTableName())->toBe('client_order_meta')
-        ->and($meta->getColumnNames())->toBe(['id', 'client_order_id', 'name', 'value', 'created_at', 'updated_at'])
+        ->and($meta->getColumnNames())->toBe(['id', 'name', 'value', 'created_at', 'updated_at'])
         ->and($status->getTableName())->toBe('client_order_status')
-        ->and($status->getColumnNames())->toBe(['id', 'client_order_id', 'status', 'notes', 'created_at', 'updated_at']);
+        ->and($status->getColumnNames())->toBe(['id', 'status', 'notes', 'created_at', 'updated_at']);
 });
 
 test('preserves explicitly supplied order timestamps on persist', function (): void {

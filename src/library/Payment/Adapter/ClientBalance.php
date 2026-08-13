@@ -100,13 +100,10 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
 
         $tx = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Transaction::class)->find((int) $id);
 
-        if ($tx?->getInvoiceId()) {
-            $invoice_id = $tx->getInvoiceId();
-        } else {
-            $invoice_id = $data['get']['invoice_id'] ?? 0;
+        $invoiceModel = $tx?->getInvoice();
+        if (!$invoiceModel instanceof Invoice) {
+            $invoiceModel = $this->di['em']->getRepository(Invoice::class)->find((int) ($data['get']['invoice_id'] ?? 0));
         }
-
-        $invoiceModel = $this->di['em']->getRepository(Invoice::class)->find($invoice_id);
         if (!$invoiceModel instanceof Invoice) {
             throw new Payment_Exception('Invoice not found');
         }
@@ -115,7 +112,7 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
             throw new Payment_Exception('You are not authorized to pay this invoice with client balance.');
         }
 
-        if ($invoiceModel->getGatewayId() ?? (int) $gateway_id !== 0) {
+        if ((int) ($invoiceModel->getGateway()?->getId() ?? 0) !== (int) $gateway_id) {
             throw new Payment_Exception('Invoice is not configured to use this payment gateway.');
         }
 
@@ -124,9 +121,7 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
             throw new Payment_Exception('You may not pay a deposit invoice with this payment gateway.', [], 303);
         }
 
-        if ($invoice_id) {
-            $invoiceService->payInvoiceWithCredits($invoiceModel);
-        }
+        $invoiceService->payInvoiceWithCredits($invoiceModel);
         $invoiceService->doBatchPayWithCredits(['client_id' => $invoiceModel->getClientId()]);
 
         if ($tx instanceof Box\Mod\Invoice\Entity\Transaction) {

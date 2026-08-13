@@ -36,7 +36,7 @@ class TransactionRepository extends EntityRepository
     {
         $qb = $this->createQueryBuilder('t')
             ->addSelect('pg.name AS gateway')
-            ->leftJoin(PayGateway::class, 'pg', 'WITH', 'pg.id = t.gatewayId');
+            ->leftJoin('t.gateway', 'pg');
 
         $id = $data['id'] ?? null;
         if ($id) {
@@ -50,23 +50,23 @@ class TransactionRepository extends EntityRepository
 
         $invoiceHash = $data['invoice_hash'] ?? null;
         if ($invoiceHash) {
-            $qb->andWhere('t.invoiceId IN (SELECT i.id FROM ' . Invoice::class . ' i WHERE i.hash = :hash)')
+            $qb->andWhere('IDENTITY(t.invoice) IN (SELECT i.id FROM ' . Invoice::class . ' i WHERE i.hash = :hash)')
                 ->setParameter('hash', $invoiceHash);
         }
 
         $invoiceId = $data['invoice_id'] ?? null;
         if ($invoiceId) {
-            $qb->andWhere('t.invoiceId = :invoice_id')->setParameter('invoice_id', (int) $invoiceId);
+            $qb->andWhere('IDENTITY(t.invoice) = :invoice_id')->setParameter('invoice_id', (int) $invoiceId);
         }
 
         $gatewayId = $data['gateway_id'] ?? null;
         if ($gatewayId) {
-            $qb->andWhere('t.gatewayId = :gateway_id')->setParameter('gateway_id', (int) $gatewayId);
+            $qb->andWhere('IDENTITY(t.gateway) = :gateway_id')->setParameter('gateway_id', (int) $gatewayId);
         }
 
         $clientId = $data['client_id'] ?? null;
         if ($clientId) {
-            $qb->andWhere('t.invoiceId IN (SELECT i.id FROM ' . Invoice::class . ' i WHERE i.clientId = :client_id)')
+            $qb->andWhere('IDENTITY(t.invoice) IN (SELECT i.id FROM ' . Invoice::class . ' i WHERE i.clientId = :client_id)')
                 ->setParameter('client_id', (int) $clientId);
         }
 
@@ -99,7 +99,7 @@ class TransactionRepository extends EntityRepository
 
         $search = $data['search'] ?? null;
         if ($search) {
-            $qb->andWhere('t.note LIKE :note OR t.invoiceId LIKE :search_invoice_id OR t.txnId LIKE :search_txn_id OR t.ipn LIKE :ipn')
+            $qb->andWhere('t.note LIKE :note OR IDENTITY(t.invoice) LIKE :search_invoice_id OR t.txnId LIKE :search_txn_id OR t.ipn LIKE :ipn')
                 ->setParameter('note', "%$search%")
                 ->setParameter('search_invoice_id', "%$search%")
                 ->setParameter('search_txn_id', "%$search%")
@@ -117,7 +117,7 @@ class TransactionRepository extends EntityRepository
      */
     public function findOneByTxnIdAndGatewayId(string $txnId, int $gatewayId): ?Transaction
     {
-        $transaction = $this->findOneBy(['txnId' => $txnId, 'gatewayId' => $gatewayId]);
+        $transaction = $this->findOneBy(['txnId' => $txnId, 'gateway' => $this->getEntityManager()->getReference(PayGateway::class, $gatewayId)]);
 
         return $transaction instanceof Transaction ? $transaction : null;
     }
@@ -128,7 +128,7 @@ class TransactionRepository extends EntityRepository
      */
     public function findOneByGatewayIdAndIpnHash(int $gatewayId, string $ipnHash): ?Transaction
     {
-        $transaction = $this->findOneBy(['gatewayId' => $gatewayId, 'ipnHash' => $ipnHash]);
+        $transaction = $this->findOneBy(['gateway' => $this->getEntityManager()->getReference(PayGateway::class, $gatewayId), 'ipnHash' => $ipnHash]);
 
         return $transaction instanceof Transaction ? $transaction : null;
     }
@@ -190,7 +190,7 @@ class TransactionRepository extends EntityRepository
             ->setMaxResults(1);
 
         if ($gatewayId !== null) {
-            $qb->andWhere('t.gatewayId = :gateway_id')
+            $qb->andWhere('IDENTITY(t.gateway) = :gateway_id')
                 ->setParameter('gateway_id', $gatewayId);
         }
 

@@ -620,7 +620,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         /** @var \Box\Mod\Support\Repository\KbArticleRepository $repo */
         $repo = $this->getService()->getKbArticleRepository();
 
-        $qb = $repo->getSearchQueryBuilder($status, $search, $cat);
+        $qb = $repo->getSearchQueryBuilder([
+            'status' => $status,
+            'search' => $search,
+            'kb_article_category_id' => $cat,
+        ]);
 
         return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data), $this->getIdentity());
     }

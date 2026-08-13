@@ -160,8 +160,8 @@ class Service implements InjectionAwareInterface
 
         $model = new ServiceHosting();
         $model->setClientId((int) $order->getClientId());
-        $model->setServiceHostingServerId($server->getId());
-        $model->setServiceHostingHpId($hp->getId());
+        $model->setServiceHostingServer($server);
+        $model->setServiceHostingHp($hp);
         $model->setSld($c['sld']);
         $model->setTld($c['tld']);
         $model->setIp($server->getIp());
@@ -336,7 +336,7 @@ class Service implements InjectionAwareInterface
 
     public function changeAccountPlan(Order $order, ServiceHosting $model, ServiceHostingHp $hp): bool
     {
-        $model->setServiceHostingHpId($hp->getId());
+        $model->setServiceHostingHp($hp);
         if ($this->_performOnService($order)) {
             $package = $this->getServerPackage($hp);
             [$adapter, $account] = $this->_getAM($model);
@@ -501,7 +501,7 @@ class Service implements InjectionAwareInterface
      */
     private function _getServerManagerForOrder(ServiceHosting $model)
     {
-        $server = $this->getExistingServer((int) $model->getServiceHostingServerId(), 'Server not found');
+        $server = $this->getExistingServer((int) $model->getServiceHostingServer()?->getId(), 'Server not found');
 
         return $this->getServerManager($server);
     }
@@ -509,10 +509,10 @@ class Service implements InjectionAwareInterface
     public function _getAM(ServiceHosting $model, ?ServiceHostingHp $hp = null): array
     {
         if (!$hp instanceof ServiceHostingHp) {
-            $hp = $this->getExistingHp((int) $model->getServiceHostingHpId(), 'Hosting plan not found');
+            $hp = $this->getExistingHp((int) $model->getServiceHostingHp()?->getId(), 'Hosting plan not found');
         }
 
-        $server = $this->getExistingServer((int) $model->getServiceHostingServerId(), 'Server not found');
+        $server = $this->getExistingServer((int) $model->getServiceHostingServer()?->getId(), 'Server not found');
         $client = $this->di['em']->getRepository(Client::class)->find($model->getClientId())
             ?? throw new Exception('Client not found');
 
@@ -558,8 +558,8 @@ class Service implements InjectionAwareInterface
 
     public function toApiArray(ServiceHosting $model, $deep = false, $identity = null): array
     {
-        $serviceHostingServerModel = $this->getExistingServer((int) $model->getServiceHostingServerId(), 'Server not found');
-        $serviceHostingHpModel = $this->getExistingHp((int) $model->getServiceHostingHpId(), 'Hosting plan not found');
+        $serviceHostingServerModel = $this->getExistingServer((int) $model->getServiceHostingServer()?->getId(), 'Server not found');
+        $serviceHostingHpModel = $this->getExistingHp((int) $model->getServiceHostingHp()?->getId(), 'Hosting plan not found');
         $server = $this->toHostingServerApiArray($serviceHostingServerModel, $deep, $identity);
         $hp = $this->toHostingHpApiArray($serviceHostingHpModel, $deep, $identity);
 
@@ -624,8 +624,8 @@ class Service implements InjectionAwareInterface
             'sld' => $model->getSld(),
             'tld' => $model->getTld(),
             'client_id' => $model->getClientId(),
-            'server_id' => $model->getServiceHostingServerId(),
-            'plan_id' => $model->getServiceHostingHpId(),
+            'server_id' => $model->getServiceHostingServer()?->getId(),
+            'plan_id' => $model->getServiceHostingHp()?->getId(),
             'reseller' => $model->isReseller(),
         ];
 
@@ -1143,7 +1143,7 @@ class Service implements InjectionAwareInterface
     public function deleteHp(ServiceHostingHp $model): bool
     {
         $id = $model->getId();
-        $serviceHosting = $this->getServiceHostingRepository()->findOneBy(['serviceHostingHpId' => $id]);
+        $serviceHosting = $this->getServiceHostingRepository()->findOneBy(['serviceHostingHp' => $model]);
         if ($serviceHosting) {
             throw new InformationException('Cannot remove hosting plan which has active accounts');
         }

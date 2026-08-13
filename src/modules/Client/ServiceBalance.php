@@ -7,7 +7,6 @@ namespace Box\Mod\Client;
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Client\Repository\ClientBalanceRepository;
-use Box\Mod\Client\Repository\ClientRepository;
 use Doctrine\ORM\QueryBuilder;
 use FOSSBilling\InjectionAwareInterface;
 
@@ -15,13 +14,11 @@ class ServiceBalance implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
     private ClientBalanceRepository $clientBalanceRepository;
-    private ClientRepository $clientRepository;
 
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
         $this->clientBalanceRepository = $di['em']->getRepository(ClientBalance::class);
-        $this->clientRepository = $di['em']->getRepository(Client::class);
     }
 
     public function getDi(): ?\Pimple\Container
@@ -52,7 +49,7 @@ class ServiceBalance implements InjectionAwareInterface
 
     public function rmByClient(Client $client): void
     {
-        $balances = $this->clientBalanceRepository->findBy(['clientId' => (int) $client->getId()]);
+        $balances = $this->clientBalanceRepository->findBy(['client' => $client]);
         foreach ($balances as $balance) {
             $this->di['em']->remove($balance);
         }
@@ -69,8 +66,7 @@ class ServiceBalance implements InjectionAwareInterface
 
     public function toApiArray(ClientBalance $model, ?Client $client = null): array
     {
-        $clientId = $model->getClientId();
-        $client ??= $clientId !== null ? $this->clientRepository->find($clientId) : null;
+        $client ??= $model->getClient();
         if (!$client instanceof Client) {
             throw new \FOSSBilling\InformationException('Client not found');
         }
@@ -99,7 +95,7 @@ class ServiceBalance implements InjectionAwareInterface
         }
 
         if ($clientId !== null && $clientId !== '') {
-            $queryBuilder->andWhere('m.clientId = :client_id')
+            $queryBuilder->andWhere('IDENTITY(m.client) = :client_id')
                 ->setParameter('client_id', $clientId);
         }
 
@@ -174,7 +170,7 @@ class ServiceBalance implements InjectionAwareInterface
         }
 
         $credit = new ClientBalance();
-        $credit->setClientId((int) $client->getId());
+        $credit->setClient($client);
         $credit->setType($data['type'] ?? 'default');
         $credit->setRelId(isset($data['rel_id']) ? (string) $data['rel_id'] : null);
         $credit->setDescription($description);

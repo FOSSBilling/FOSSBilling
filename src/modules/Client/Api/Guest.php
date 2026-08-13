@@ -252,12 +252,12 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             }
 
             if (strtotime((string) $reset->getCreatedAt()?->format('Y-m-d H:i:s')) - time() + 900 < 0) {
-                $this->getDi()['logger']->setChannel('security')->info('Client password reset confirmation failed for client #%s from IP %s: reset token expired', $reset->getClientId(), $this->getIp());
+                $this->getDi()['logger']->setChannel('security')->info('Client password reset confirmation failed for client #%s from IP %s: reset token expired', $reset->getClient()?->getId(), $this->getIp());
 
                 throw new \FOSSBilling\InformationException('The link has expired or you have already reset your password.');
             }
 
-            $client = $reset->getClientId() !== null ? $em->getRepository(Client::class)->find($reset->getClientId()) : null;
+            $client = $reset->getClient();
             if (!$client instanceof Client) {
                 throw new \FOSSBilling\InformationException('The link has expired or you have already reset your password.');
             }

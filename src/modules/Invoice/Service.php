@@ -21,6 +21,7 @@ use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Repository\InvoiceItemRepository;
 use Box\Mod\Invoice\Repository\InvoiceRepository;
 use Box\Mod\Order\Entity\Order;
+use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -104,15 +105,16 @@ class Service implements InjectionAwareInterface
 
     protected function resetEntityManager(): void
     {
+        $connection = $this->di['em']->getConnection();
         unset($this->di['em']);
-        $this->di['em'] = $this->createEntityManager();
+        $this->di['em'] = $this->createEntityManager($connection);
         $this->invoiceItemRepository = null;
         $this->invoiceRepository = null;
     }
 
-    protected function createEntityManager(): EntityManagerInterface
+    protected function createEntityManager(?Connection $connection = null): EntityManagerInterface
     {
-        return EntityManagerFactory::create();
+        return EntityManagerFactory::create($connection);
     }
 
     public function getModulePermissions(): array
@@ -254,7 +256,7 @@ class Service implements InjectionAwareInterface
             'buyer_phone' => $invoice->getBuyerPhone(),
             'buyer_phone_cc' => $invoice->getBuyerPhoneCc(),
             'buyer_email' => $invoice->getBuyerEmail(),
-            'gateway_id' => $invoice->getGatewayId(),
+            'gateway_id' => $invoice->getGateway()?->getId(),
             'approved' => $invoice->isApproved(),
             'taxname' => $invoice->getTaxname(),
             'taxrate' => $invoice->getTaxrate(),
@@ -773,8 +775,8 @@ class Service implements InjectionAwareInterface
         $payGateway = $this->validateAdminMarkAsPaidRequest($data, $invoice);
         $transactionId = isset($data['transactionId']) ? trim((string) $data['transactionId']) : null;
 
-        if ((int) $payGateway->getId() !== (int) $invoice->getGatewayId()) {
-            $invoice->setGatewayId((int) $payGateway->getId());
+        if ((int) $invoice->getGateway()?->getId() !== (int) $payGateway->getId()) {
+            $invoice->setGateway($payGateway);
             $this->di['em']->persist($invoice);
             $this->di['em']->flush();
         }
@@ -784,7 +786,7 @@ class Service implements InjectionAwareInterface
             $invoiceTotal = $this->getTotalWithTax($invoice);
             $newtx = $transactionService->create([
                 'invoice_id' => $invoice->getId(),
-                'gateway_id' => $invoice->getGatewayId(),
+                'gateway_id' => $invoice->getGateway()?->getId(),
                 'currency' => $invoice->getCurrency(),
                 'status' => 'received',
                 'source' => 'admin',
@@ -798,7 +800,7 @@ class Service implements InjectionAwareInterface
             if ($transaction === null) {
                 throw new InformationException('Transaction not found');
             }
-            if ((int) $transaction->getInvoiceId() !== (int) $invoice->getId()) {
+            if ((int) $transaction->getInvoice()?->getId() !== (int) $invoice->getId()) {
                 throw new InformationException('Transaction ID is already associated with another invoice.');
             }
 
@@ -821,7 +823,7 @@ class Service implements InjectionAwareInterface
 
     public function validateAdminMarkAsPaidRequest(array $data, ?Invoice $invoice = null): PayGateway
     {
-        $gatewayId = isset($data['gateway_id']) && !empty($data['gateway_id']) ? (int) $data['gateway_id'] : $invoice?->getGatewayId() ?? 0;
+        $gatewayId = isset($data['gateway_id']) && !empty($data['gateway_id']) ? (int) $data['gateway_id'] : (int) ($invoice?->getGateway()?->getId() ?? 0);
         if ($gatewayId <= 0) {
             throw new InformationException('Payment gateway is required when marking an invoice as paid.');
         }
@@ -885,7 +887,7 @@ class Service implements InjectionAwareInterface
 
         $invoice->setBaseIncome($table->toBaseCurrency($invoice->getCurrency(), $this->getTotal($invoice)));
         if ($invoice->getRefund() !== null) {
-            $invoice->setBaseRefund($table->toBaseCurrency($invoice->getCurrency(), $invoice->getRefund()));
+            $invoice->setBaseRefund($table->toBaseCurrency($invoice->getCurrency(), (float) $invoice->getRefund()));
         } else {
             $invoice->setBaseRefund(null);
         }
@@ -921,7 +923,13 @@ class Service implements InjectionAwareInterface
         $model->setCurrency($client->getCurrency());
         $model->setApproved(false);
 
-        $model->setGatewayId(isset($data['gateway_id']) ? (int) $data['gateway_id'] : $model->getGatewayId());
+        if (!empty($data['gateway_id'])) {
+            $gateway = $this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']);
+            if (!$gateway instanceof PayGateway) {
+                throw new InformationException('Payment gateway not found');
+            }
+            $model->setGateway($gateway);
+        }
         $model->setText1($data['text_1'] ?? $model->getText1());
         $model->setText2($data['text_2'] ?? $model->getText2());
         $this->di['em']->persist($model);
@@ -1098,7 +1106,7 @@ class Service implements InjectionAwareInterface
                 // Nothing at or below the epsilon is actually charged against the client's balance,
                 // so don't record a $0 credit transaction.
                 $balanceTransaction = new ClientBalance();
-                $balanceTransaction->setClientId($clientId);
+                $balanceTransaction->setClient($this->di['em']->getReference(Client::class, $clientId));
                 $balanceTransaction->setType('invoice');
                 $balanceTransaction->setRelId((string) $invoice->getId());
 
@@ -1246,7 +1254,7 @@ class Service implements InjectionAwareInterface
                 $entityManager = $this->di['em'];
                 foreach ($invoiceItems as $item) {
                     $pi = new InvoiceItem();
-                    $pi->setInvoiceId((int) $new->getId());
+                    $pi->setInvoice($new);
                     $pi->setType($item->getType());
                     $pi->setRelId($item->getRelId());
                     $pi->setTask($item->getTask());
@@ -1323,9 +1331,9 @@ class Service implements InjectionAwareInterface
             if (!$gateway->isEnabled()) {
                 throw new InformationException('Payment gateway is not enabled');
             }
-            $model->setGatewayId(intval($data['gateway_id']));
+            $model->setGateway($gateway);
         } elseif (array_key_exists('gateway_id', $data) && $data['gateway_id'] === null) {
-            $model->setGatewayId(null);
+            $model->setGateway(null);
         }
         $model->setText1($data['text_1'] ?? $model->getText1());
         $model->setText2($data['text_2'] ?? $model->getText2());
@@ -1473,12 +1481,10 @@ class Service implements InjectionAwareInterface
     public function doBatchPayWithCredits(array $data): bool
     {
         $unpaid = $this->findAllUnpaid($data);
-        foreach ($unpaid as $proforma) {
+        $invoiceIds = array_map(static fn (array $proforma): int => (int) ($proforma['id'] ?? 0), $unpaid);
+        $models = $this->getInvoiceRepository()->findBy(['id' => $invoiceIds]);
+        foreach ($models as $model) {
             try {
-                $model = $this->getInvoiceRepository()->find($proforma['id'] ?? 0);
-                if ($model === null) {
-                    throw new InformationException('Invoice not found');
-                }
                 $this->tryPayWithCredits($model);
             } catch (\Exception $e) {
                 // @phpstan-ignore if.alwaysFalse
@@ -1598,12 +1604,10 @@ class Service implements InjectionAwareInterface
             return true;
         }
 
-        foreach ($orders as $order) {
+        $orderIds = array_map(static fn (array $order): int => (int) ($order['id'] ?? 0), $orders);
+        $models = $this->di['em']->getRepository(Order::class)->findBy(['id' => $orderIds]);
+        foreach ($models as $model) {
             try {
-                $model = $this->di['em']->getRepository(Order::class)->find($order['id'] ?? 0);
-                if (!$model instanceof Order) {
-                    continue;
-                }
                 $invoice = $this->generateForOrder($model);
                 $this->approveInvoice($invoice, ['id' => $invoice->getId(), 'use_credits' => true]);
             } catch (\Exception $e) {

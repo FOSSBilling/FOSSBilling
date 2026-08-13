@@ -42,6 +42,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
 use function Tests\Helpers\moduleService;
+use function Tests\Helpers\setEntityId;
 
 /**
  * @return array{0: EntityManagerInterface, 1: InvoiceItemRepository}
@@ -1032,13 +1033,6 @@ test('admin mark as paid with custom gateway records transaction and marks invoi
         ->with(Mockery::type(Invoice::class))
         ->andReturn(42.50);
 
-    $invoiceModel = createEntity(Invoice::class);
-
-    $invoiceModel->id = 10;
-    $invoiceModel->gateway_id = 5;
-    $invoiceModel->currency = 'USD';
-    $invoiceModel->status = Invoice::STATUS_UNPAID;
-
     $gatewayModel = createEntity(PayGateway::class, [
         'id' => 5,
         'gateway' => 'Custom',
@@ -1046,7 +1040,13 @@ test('admin mark as paid with custom gateway records transaction and marks invoi
         'name' => 'Manual payment',
     ]);
 
-    $transactionModel = createEntity(Transaction::class, ['id' => 20, 'invoiceId' => 10]);
+    $invoiceModel = createEntity(Invoice::class);
+    $invoiceModel->id = 10;
+    $invoiceModel->gateway = $gatewayModel;
+    $invoiceModel->currency = 'USD';
+    $invoiceModel->status = Invoice::STATUS_UNPAID;
+
+    $transactionModel = createEntity(Transaction::class, ['id' => 20, 'invoice' => $invoiceModel]);
 
     $transactionServiceMock = Mockery::mock(Box\Mod\Invoice\ServiceTransaction::class);
     $transactionServiceMock->shouldReceive('create')
@@ -1095,20 +1095,22 @@ test('admin mark as paid with custom gateway rejects transaction linked to anoth
         ->with(Mockery::type(Invoice::class))
         ->andReturn(42.50);
 
-    $invoiceModel = createEntity(Invoice::class);
-
-    $invoiceModel->id = 10;
-    $invoiceModel->gateway_id = 5;
-    $invoiceModel->currency = 'USD';
-    $invoiceModel->status = Invoice::STATUS_UNPAID;
-
     $gatewayModel = createEntity(PayGateway::class, [
         'id' => 5,
         'gateway' => 'Custom',
         'enabled' => true,
     ]);
 
-    $transactionModel = createEntity(Transaction::class, ['id' => 20, 'invoiceId' => 99]);
+    $invoiceModel = createEntity(Invoice::class);
+    $invoiceModel->id = 10;
+    $invoiceModel->gateway = $gatewayModel;
+    $invoiceModel->currency = 'USD';
+    $invoiceModel->status = Invoice::STATUS_UNPAID;
+
+    $otherInvoice = createEntity(Invoice::class);
+    $otherInvoice->id = 99;
+
+    $transactionModel = createEntity(Transaction::class, ['id' => 20, 'invoice' => $otherInvoice]);
 
     $transactionServiceMock = Mockery::mock(Box\Mod\Invoice\ServiceTransaction::class);
     $transactionServiceMock->shouldReceive('create')
@@ -1386,9 +1388,12 @@ test('pays an invoice with credits and records a balance transaction', function 
     $service->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(50.0);
     $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false, true)->andReturn(true);
 
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 20]);
+
     $di = container();
+    $di['em']->shouldReceive('getReference')->with(Box\Mod\Client\Entity\Client::class, 20)->andReturn($client);
     $di['em']->shouldReceive('persist')->once()->with(
-        Mockery::on(fn (ClientBalance $balance): bool => $balance->getClientId() === 20
+        Mockery::on(fn (ClientBalance $balance): bool => $balance->getClient()?->getId() === 20
             && $balance->getType() === 'invoice'
             && $balance->getRelId() === '10'
             && $balance->getDescription() === 'Payment for invoice #2024-001 using account credit.'
@@ -1546,7 +1551,7 @@ test('refunds invoice with negative invoice logic', function (): void {
         ->atLeast()->once()
         ->andReturnUsing(function (object $entity) use ($newId): void {
             if ($entity instanceof Invoice && $entity->getId() === null) {
-                $entity->setId($newId);
+                setEntityId($entity, $newId);
             }
         });
     $em->shouldReceive('flush')
@@ -1730,8 +1735,8 @@ test('processes batch pay with credits', function (): void {
 
     $di = container();
     $invoiceRepo = $di['em']->getRepository(Invoice::class);
-    $invoiceRepo->shouldReceive('find')
-        ->andReturn($invoiceModel);
+    $invoiceRepo->shouldReceive('findBy')
+        ->andReturn([$invoiceModel]);
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $serviceMock->setDi($di);
@@ -1973,9 +1978,9 @@ test('generates invoices for expiring orders', function (): void {
         ->andReturn([['id' => 1]]);
 
     $orderRepoMock = Mockery::mock(OrderRepository::class);
-    $orderRepoMock->shouldReceive('find')
+    $orderRepoMock->shouldReceive('findBy')
         ->atLeast()->once()
-        ->andReturn($clientOrder);
+        ->andReturn([$clientOrder]);
 
     $di = container();
     $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
@@ -2122,6 +2127,7 @@ test('resetEntityManager invalidates both cached repositories so they re-resolve
     $initialEm = Mockery::mock(EntityManagerInterface::class);
     $initialEm->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($initialItemRepo);
     $initialEm->shouldReceive('getRepository')->with(Invoice::class)->andReturn($initialInvoiceRepo);
+    $initialEm->shouldReceive('getConnection')->once()->andReturn(Mockery::mock(Doctrine\DBAL\Connection::class));
 
     $replacementItemRepo = Mockery::mock(InvoiceItemRepository::class);
     $replacementInvoiceRepo = Mockery::mock(InvoiceRepository::class);
@@ -2133,7 +2139,7 @@ test('resetEntityManager invalidates both cached repositories so they re-resolve
     $di['em'] = $initialEm;
 
     $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
-    $service->shouldReceive('createEntityManager')->once()->andReturn($replacementEm);
+    $service->shouldReceive('createEntityManager')->once()->with(Mockery::type(Doctrine\DBAL\Connection::class))->andReturn($replacementEm);
     $service->setDi($di);
 
     // Prime both caches from the initial EM.

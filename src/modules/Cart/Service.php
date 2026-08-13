@@ -277,7 +277,7 @@ class Service implements InjectionAwareInterface
     protected function addProduct(Cart $cart, Product $product, array $data): bool
     {
         $item = new CartProduct();
-        $item->setCartId($cart->getId());
+        $item->setCart($cart);
         $item->setProductId($this->getProductId($product));
         $item->setConfig(json_encode($data));
         $this->di['em']->persist($item);
@@ -627,8 +627,6 @@ class Service implements InjectionAwareInterface
         $promoProductService = $promoId ? $this->getProductService() : null;
         $promo = $promoId ? $promoProductService?->findPromoById($promoId) : null;
 
-        $reservedOrderIds = [];
-        $reservedCount = 0;
         $stockReservedOrders = [];
 
         if (!$client->getCurrency()) {
@@ -637,7 +635,7 @@ class Service implements InjectionAwareInterface
         }
 
         try {
-            return $this->di['em']->wrapInTransaction(function () use ($ca, $cart, $client, $currency, $currencyCode, $gateway_id, $taxed, $promo, $promoProductService, $promoId, &$reservedOrderIds, &$reservedCount, &$stockReservedOrders) {
+            return $this->di['em']->wrapInTransaction(function () use ($ca, $cart, $client, $currency, $currencyCode, $gateway_id, $taxed, $promo, $promoProductService, $promoId, &$stockReservedOrders) {
                 if ($client->getCurrency() != $currencyCode) {
                     throw new \FOSSBilling\InformationException('Selected currency :selected does not match your profile currency :code. Please change cart currency to continue.', [':selected' => $currencyCode, ':code' => $client->getCurrency()]);
                 }
@@ -714,8 +712,6 @@ class Service implements InjectionAwareInterface
                     // Reserve promo capacity at order creation time.
                     if ($promo instanceof Promo && $promoProductService !== null) {
                         $promoProductService->reservePromoForOrder($promo, $order);
-                        $reservedOrderIds[] = $order->getId();
-                        ++$reservedCount;
                     }
 
                     $orderService = $this->di['mod_service']('order');
@@ -733,10 +729,10 @@ class Service implements InjectionAwareInterface
                         'task' => \Box\Mod\Invoice\Entity\InvoiceItem::TASK_ACTIVATE,
                     ];
 
-                    if ($order->getDiscount() > 0) {
+                    if ((float) $order->getDiscount() > 0) {
                         $invoice_items[] = [
                             'title' => __trans('Discount: :product', [':product' => $order->getTitle()]),
-                            'price' => $order->getDiscount() * -1,
+                            'price' => (float) $order->getDiscount() * -1,
                             'quantity' => 1,
                             'unit' => 'discount',
                             'rel_id' => $order->getId(),
@@ -835,17 +831,6 @@ class Service implements InjectionAwareInterface
                 ];
             });
         } catch (\Throwable $e) {
-            if ($promo instanceof Promo && $reservedCount > 0) {
-                try {
-                    $promoProductService->compensateCheckoutPromoFailure($promo, $reservedOrderIds, $reservedCount);
-                } catch (\Throwable $compensationError) {
-                    $this->di['logger']->error('Failed to compensate promo checkout failure', [
-                        'exception' => $compensationError->getMessage(),
-                        'promo_id' => $promo->getId(),
-                    ]);
-                }
-            }
-
             foreach ($stockReservedOrders as $stockReservedOrder) {
                 try {
                     $this->getProductService()->releaseReservedStockForOrder($stockReservedOrder, 'checkout_failed');
@@ -887,7 +872,7 @@ class Service implements InjectionAwareInterface
         foreach ($products as $p) {
             $item = [
                 'id' => $p->getId(),
-                'cart_id' => $p->getCartId(),
+                'cart_id' => $p->getCart()?->getId(),
                 'product_id' => $p->getProductId(),
                 'config' => $this->getItemConfig($p),
             ];
@@ -969,7 +954,7 @@ class Service implements InjectionAwareInterface
         ?array $cartProducts = null,
     ): array {
         if ($cart === null) {
-            $cart = $this->getCartRepository()->find((int) $cartProduct->getCartId());
+            $cart = $cartProduct->getCart();
         }
         if (!$cart instanceof Cart) {
             throw new \FOSSBilling\Exception('Cart not found');
