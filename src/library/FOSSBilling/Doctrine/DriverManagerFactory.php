@@ -97,7 +97,37 @@ class DriverManagerFactory
             'charset' => $charset,
         ];
 
-        return DriverManager::getConnection($connectionParams);
+        $connection = DriverManager::getConnection($connectionParams);
+        self::applySessionSettings($connection, $dbConfig);
+
+        return $connection;
+    }
+
+    /**
+     * Apply per-connection MySQL session settings shared by all Doctrine connections.
+     */
+    private static function applySessionSettings(Connection $connection, array $dbConfig): void
+    {
+        if (($dbConfig['driver'] ?? null) !== 'pdo_mysql') {
+            return;
+        }
+
+        // Set server default charset for newly created tables. Connection charset is handled by DBAL via DSN.
+        $connection->executeStatement('SET character_set_server = utf8');
+
+        // Only override session timeouts when explicitly configured, otherwise preserve server defaults.
+        if (isset($dbConfig['interactive_timeout'])) {
+            $connection->executeStatement('SET SESSION interactive_timeout = ' . (int) $dbConfig['interactive_timeout']);
+        }
+
+        if (isset($dbConfig['wait_timeout'])) {
+            $connection->executeStatement('SET SESSION wait_timeout = ' . (int) $dbConfig['wait_timeout']);
+        }
+
+        // Get the timezone offset in the PDO format
+        $datetime = new \DateTime('now');
+        $offset = $datetime->format('P');
+        $connection->executeStatement("SET time_zone = '{$offset}'");
     }
 
     private static function normalizeDriver(string $driver): string

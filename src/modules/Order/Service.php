@@ -52,6 +52,8 @@ class Service implements InjectionAwareInterface
     public const META_CANCEL_AT_PERIOD_END = 'cancel_at_period_end';
     private const string META_SUSPENSION_WARNING_FOR = 'suspension_warning_for';
 
+    public const META_STOCK_RESERVED_QTY = 'stock_reserved_qty';
+
     private const array BUILT_IN_SERVICE_TYPES = [
         \Box\Mod\Product\Service::CUSTOM,
         \Box\Mod\Product\Service::LICENSE,
@@ -330,6 +332,16 @@ class Service implements InjectionAwareInterface
         }
     }
 
+    /**
+     * Returns the service backing an order.
+     *
+     * Built-in service types return their Doctrine entity (or null when the
+     * entity class is unknown). Third-party service types return the raw
+     * `service_<type>` row as a DBAL assoc array — or false when the order's
+     * service row no longer exists, and null when the order has no service yet.
+     * The value is passed to third-party module methods as-is; extension
+     * authors must access fields via array keys.
+     */
     public function getOrderService(Order $order)
     {
         $serviceId = $order->getServiceId();
@@ -342,13 +354,12 @@ class Service implements InjectionAwareInterface
                     return $this->di['em']->getRepository($entityClass)->find($serviceId);
                 }
 
-                return $this->di['db']->load($this->_getServiceClassName($order), $serviceId);
+                return null;
             }
 
-            return $this->di['db']->findOne(
-                'service_' . $serviceType,
-                'id = :id',
-                [':id' => $serviceId]
+            return $this->di['em']->getConnection()->fetchAssociative(
+                'SELECT * FROM service_' . $serviceType . ' WHERE id = :id',
+                ['id' => $serviceId]
             );
         }
 
@@ -553,7 +564,7 @@ class Service implements InjectionAwareInterface
         $data['meta'] = $this->getOrderMetaRepository()->getPairsForOrder($modelId);
         $data['active_tickets'] = $supportService->getSupportTicketRepository()->countActiveTicketsForOrder($modelId);
         $client = $this->di['em']->getRepository(ClientEntity::class)->find($modelClientId);
-        if (!$client instanceof ClientEntity && !$client instanceof \Model_Client) {
+        if (!$client instanceof ClientEntity) {
             throw new InformationException('Client not found');
         }
         $data['client'] = $clientService->toApiArray($client, false);
@@ -819,7 +830,7 @@ class Service implements InjectionAwareInterface
         return [$query, $bindings];
     }
 
-    public function createOrder(ClientEntity|\Model_Client $client, Product $product, array $data)
+    public function createOrder(ClientEntity $client, Product $product, array $data)
     {
         $quantity = PriceValidator::validateQuantity($data['quantity'] ?? 1);
         $price = isset($data['price']) ? PriceValidator::validateAmount($data['price']) : null;
@@ -830,7 +841,7 @@ class Service implements InjectionAwareInterface
 
         if (isset($data['currency']) && !empty($data['currency'])) {
             $currency = $currencyRepository->findOneByCode($data['currency']);
-        } elseif ($clientCurrency = $client instanceof ClientEntity ? $client->getCurrency() : $client->currency) {
+        } elseif ($clientCurrency = $client->getCurrency()) {
             $currency = $currencyRepository->findOneByCode($clientCurrency);
         } else {
             $currency = $currencyRepository->findDefault();
@@ -907,7 +918,7 @@ class Service implements InjectionAwareInterface
             &$invoice
         ) {
             $order = new Order();
-            $order->setClientId($client instanceof ClientEntity ? $client->getId() : (int) $client->id);
+            $order->setClientId($client->getId());
             $order->setProductId($this->getProductId($product));
             $order->setFormId($this->getProductFormId($product));
             $parentGroupId = $parent_order ? $parent_order->getGroupId() : null;
@@ -978,6 +989,11 @@ class Service implements InjectionAwareInterface
                 $this->di['em']->flush();
             }
 
+            // Reserve stock now rather than at activation - this path bypasses the cart, but has
+            // the same race. Done after the caller-supplied meta above so it can't be overwritten
+            // by a caller passing their own "stock_reserved_qty" meta entry.
+            $this->di['mod_service']('Product')->reserveStockForOrder($order);
+
             if ($invoiceOption == 'issue-invoice') {
                 $invoiceService = $this->di['mod_service']('invoice');
 
@@ -1032,11 +1048,9 @@ class Service implements InjectionAwareInterface
         return $id;
     }
 
-    public function getMasterOrderForClient(ClientEntity|\Model_Client $client, $group_id): ?Order
+    public function getMasterOrderForClient(ClientEntity $client, $group_id): ?Order
     {
-        $clientId = $client instanceof ClientEntity ? $client->getId() : (int) $client->id;
-
-        return $this->getOrderRepository()->findMasterByGroupAndClient((string) $group_id, (int) $clientId);
+        return $this->getOrderRepository()->findMasterByGroupAndClient((string) $group_id, (int) $client->getId());
     }
 
     /**
@@ -1166,13 +1180,12 @@ class Service implements InjectionAwareInterface
             throw $e;
         }
 
-        if ($order->getProductId()) {
-            $productService = $this->di['mod_service']('product');
-            $productService->reduceStock((int) $order->getProductId(), (int) ($order->getQuantity() ?? 1));
-        } else {
+        if (!$order->getProductId()) {
             $this->di['logger']->info("Order without product ID detected Order #{$orderId}.");
         }
 
+        // Stock was already reserved atomically at order-creation time (see
+        // Product\Service::reserveStockForOrder()), so it must not be decremented again here.
         $this->saveStatusChange($order, 'Order activated');
 
         return $result;
@@ -1186,6 +1199,15 @@ class Service implements InjectionAwareInterface
         return $this->getOrderRepository()->findAddonsExcluding((string) $groupId, (int) $clientId, $this->orderId($order));
     }
 
+    /**
+     * Dispatches a lifecycle action to the order's service module.
+     *
+     * Built-in service types are dispatched to `action_<action>` methods on the
+     * module service with the order entity. Third-party service types are
+     * dispatched to an un-prefixed `<action>` method with `$order` and the
+     * `service_<type>` row as a DBAL assoc array — or false when the order's
+     * service row no longer exists, and null when the order has no service yet.
+     */
     protected function _callOnService(Order $order, $action, mixed ...$arguments)
     {
         $serviceType = $order->getServiceType();
@@ -1206,7 +1228,10 @@ class Service implements InjectionAwareInterface
         $service = null;
         $sdbname = 'service_' . $serviceType;
         if ($serviceId) {
-            $service = $this->di['db']->load($sdbname, $serviceId);
+            $service = $this->di['em']->getConnection()->fetchAssociative(
+                'SELECT * FROM ' . $sdbname . ' WHERE id = :id',
+                ['id' => $serviceId]
+            );
         }
         if (method_exists($repo, $action) && is_callable([$repo, $action])) {
             return $repo->$action($order, $service);
@@ -1484,6 +1509,7 @@ class Service implements InjectionAwareInterface
 
         $productService = $this->di['mod_service']('Product');
         $productService->releaseReservedPromoRedemptionsForOrder($order, 'order_canceled');
+        $productService->releaseReservedStockForOrder($order, 'order_canceled');
 
         $note = ($reason === null) ? 'Order canceled' : 'Canceled order for ' . $reason;
         $this->saveStatusChange($order, $note);
@@ -1658,6 +1684,7 @@ class Service implements InjectionAwareInterface
 
         $productService = $this->di['mod_service']('Product');
         $productService->releaseReservedPromoRedemptionsForOrder($order, 'order_deleted');
+        $productService->releaseReservedStockForOrder($order, 'order_deleted');
         $this->rmClientOrderStatusByOrder($order);
         $this->rmOrder($order);
 
@@ -1941,16 +1968,9 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function findForClientById(ClientEntity|\Model_Client $client, $id): ?Order
+    public function findForClientById(ClientEntity $client, $id): ?Order
     {
-        $clientId = $client instanceof ClientEntity ? $client->getId() : (int) $client->id;
-
-        return $this->getOrderRepository()->findForClientById((int) $clientId, (int) $id);
-    }
-
-    public function findEntityForClientById(ClientEntity $client, int $id): ?Order
-    {
-        return $this->getOrderRepository()->findForClientById((int) $client->getId(), $id);
+        return $this->getOrderRepository()->findForClientById((int) $client->getId(), (int) $id);
     }
 
     public function findByClientIdAndOrderId(int $clientId, int $orderId): ?Order
@@ -1958,6 +1978,15 @@ class Service implements InjectionAwareInterface
         return $this->getOrderRepository()->findForClientById($clientId, $orderId);
     }
 
+    /**
+     * Returns the API representation of an order's service data.
+     *
+     * Only entity-backed (built-in) services reach the module's `toApiArray()`;
+     * the third-party (DBAL assoc array or false) path fails the `is_object()`
+     * guard and returns null (logged as "has no active service"). Extension
+     * authors that need third-party service data must read the row via
+     * `getOrderService()`.
+     */
     public function getOrderServiceData(Order $order, $identity = null)
     {
         $orderId = $this->orderId($order);
@@ -2002,7 +2031,7 @@ class Service implements InjectionAwareInterface
         $this->persistOrder($order);
     }
 
-    public function getRelatedOrderIdByType(Order $order, $type)
+    public function getRelatedOrderIdByType(Order $order, $type): ?int
     {
         $groupId = $order->getGroupId();
 
@@ -2011,13 +2040,14 @@ class Service implements InjectionAwareInterface
         return $o instanceof Order ? $o->getId() : null;
     }
 
-    public function rmByClient(ClientEntity|\Model_Client $client): void
+    public function rmByClient(ClientEntity $client): void
     {
         $productService = $this->di['mod_service']('Product');
-        $clientId = $client instanceof ClientEntity ? $client->getId() : (int) $client->id;
-        $orders = $this->getOrderRepository()->findByClientId((int) $clientId);
+        $clientId = (int) $client->getId();
+        $orders = $this->getOrderRepository()->findByClientId($clientId);
         foreach ($orders as $order) {
             $productService->releaseReservedPromoRedemptionsForOrder($order, 'client_deleted');
+            $productService->releaseReservedStockForOrder($order, 'client_deleted');
             $this->getOrderMetaRepository()->deleteByOrderId($this->orderId($order));
             $this->getOrderStatusRepository()->rmByOrderId($this->orderId($order));
         }

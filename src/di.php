@@ -19,7 +19,6 @@ use FOSSBilling\Http\RequestFactory;
 use FOSSBilling\Security\AuthenticationRequiredException;
 use FOSSBilling\Security\EmailValidationRequiredException;
 use FOSSBilling\Version;
-use RedBeanPHP\Facade;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -52,10 +51,10 @@ $di['logger'] = function () use ($di) {
 
     if ($di['auth']->isAdminLoggedIn()) {
         $admin = $di['loggedin_admin'];
-        $log->setEventItem('admin_id', $admin->id);
+        $log->setEventItem('admin_id', $admin->getId());
     } elseif ($di['auth']->isClientLoggedIn()) {
         $client = $di['loggedin_client'];
-        $log->setEventItem('client_id', $client->id);
+        $log->setEventItem('client_id', $client->getId());
     }
 
     $monolog = new FOSSBilling\Monolog();
@@ -86,7 +85,6 @@ $di['crypt'] = function () use ($di) {
  */
 $di['pdo'] = function () {
     $debugConfig = Config::getProperty('debug_and_monitoring', []);
-    $dbConfig = DriverManagerFactory::getDatabaseConfig();
     $driverOptions = [
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     ];
@@ -99,60 +97,12 @@ $di['pdo'] = function () {
         $pdo->setAttribute(PDO::ATTR_STATEMENT_CLASS, ['Box_DbLoggedPDOStatement']);
     }
 
-    if ($dbConfig['driver'] === 'pdo_mysql') {
-        // Set server default charset for newly created tables. Connection charset is handled by DBAL via DSN.
-        $pdo->exec('SET character_set_server = utf8');
-        $pdo->exec('SET SESSION interactive_timeout = 28800');
-        $pdo->exec('SET SESSION wait_timeout = 28800');
-
-        // Get the timezone offset in the PDO format
-        $datetime = new DateTime('now');
-        $offset = $datetime->format('P');
-        $pdo->exec("SET time_zone = '{$offset}'");
-    }
-
     return new DebugBar\DataCollector\PDO\TraceablePDO($pdo);
 };
 
 /*
  *
  * @param void
- *
- * @return \Box_Database The new Box_Database object that was just created.
- */
-$di['db'] = function () use ($di) {
-    $pdo = $di->offsetGet('pdo');
-    if (!$pdo instanceof PDO) {
-        throw new RuntimeException('PDO service must resolve to a PDO instance');
-    }
-
-    RedBeanPHP\R::setup($pdo);
-    RedBeanPHP\Util\DispenseHelper::setEnforceNamingPolicy(false);
-
-    // SECURITY: bind string literals as PARAM_STR, not PARAM_INT. Without
-    // this, ?hash=107 in /api/guest/invoice/get resolves to the invoice
-    // whose hash starts with '107' because MySQL coerces VARCHAR against
-    // int to a leading-digits match. Do not remove; see RedBeanBindingTest.
-    /* @phpstan-ignore-next-line Adapter::getDatabase() returns the abstract Driver; the concrete RPDO implements setUseStringOnlyBinding. */
-    Facade::getDatabaseAdapter()->getDatabase()->setUseStringOnlyBinding(true);
-
-    $helper = new Box_BeanHelper();
-    $helper->setDi($di);
-
-    $mapper = new Facade();
-    $mapper->getRedBean()->setBeanHelper($helper);
-    $freeze = Config::getProperty('db.freeze', true);
-    $mapper->freeze($freeze);
-
-    $db = new Box_Database();
-    $db->setDi($di);
-    $db->setDataMapper($mapper);
-
-    return $db;
-};
-
-/*
- * Creates and returns a Doctrine DBAL connection instance.
  *
  * @return Connection The Doctrine DBAL connection instance.
  */
@@ -338,7 +288,7 @@ $di['is_client_logged'] = function () use ($di) {
 $di['is_client_email_validated'] = $di->protect(function ($model) use ($di) {
     $config = $di['mod_config']('client');
     if (isset($config['require_email_confirmation']) && (bool) $config['require_email_confirmation']) {
-        return (bool) $model->email_approved;
+        return (bool) $model->getEmailApproved();
     }
 
     return true;
@@ -369,7 +319,7 @@ $di['is_admin_logged'] = function () use ($di) {
  *
  * @param void
  *
- * @return \Model_Client The existing logged-in client model object.
+ * @return \Box\Mod\Client\Entity\Client The existing logged-in client entity.
  */
 $di['loggedin_client'] = function () use ($di) {
     $di['is_client_logged'];
@@ -378,8 +328,8 @@ $di['loggedin_client'] = function () use ($di) {
     $client_id = $session->get('client_id');
 
     try {
-        $client = $di['db']->getExistingModelById('Client', $client_id);
-        if ($client->status !== Model_Client::ACTIVE) {
+        $client = $di['em']->getRepository(Box\Mod\Client\Entity\Client::class)->find($client_id);
+        if (!$client instanceof Box\Mod\Client\Entity\Client || $client->getStatus() !== Box\Mod\Client\Entity\Client::ACTIVE) {
             throw new Exception('Client account is not active');
         }
 
@@ -400,11 +350,11 @@ $di['loggedin_client'] = function () use ($di) {
 $di['is_cron'] = false;
 
 /*
- * Returns an existing logged-in admin model object.
+ * Returns an existing logged-in admin entity.
  *
  * @param void
  *
- * @return \Model_Admin|null The existing logged-in admin model object, or null if no admin is logged in.
+ * @return \Box\Mod\Staff\Entity\Admin|null The existing logged-in admin entity, or null if no admin is logged in.
  *
  * @throws \FOSSBilling\Exception If the script is running in CLI or CGI mode and there is no cron admin available.
  */
@@ -419,8 +369,8 @@ $di['loggedin_admin'] = function () use ($di) {
     $admin = $session->get('admin');
 
     try {
-        $model = $di['db']->getExistingModelById('Admin', $admin['id']);
-        if ($model->status !== Model_Admin::STATUS_ACTIVE) {
+        $model = $di['em']->getRepository(Box\Mod\Staff\Entity\Admin::class)->find($admin['id']);
+        if (!$model instanceof Box\Mod\Staff\Entity\Admin || $model->getStatus() !== Box\Mod\Staff\Entity\Admin::STATUS_ACTIVE) {
             throw new Exception('Admin account is not active');
         }
 
@@ -463,7 +413,7 @@ $di['set_return_uri'] = function () use ($di): void {
  */
 $di['api_identity'] = $di->protect(function ($role) use ($di) {
     $identity = match ($role) {
-        'guest' => new Model_Guest(),
+        'guest' => new FOSSBilling\Identity\Guest(),
         'client' => $di['loggedin_client'],
         'admin' => $di['loggedin_admin'],
         default => throw new Exception('Unrecognized Handler type: ' . $role),
@@ -672,22 +622,6 @@ $di['cart'] = function () use ($di) {
 };
 
 /*
- * Creates a new table object and returns it.
- *
- * @param string $name The name of the table to create.
- *
- * @return \Box_Table The new table object that was just created.
- */
-$di['table'] = $di->protect(function ($name) use ($di) {
-    $tools = new FOSSBilling\Tools();
-    $tools->setDi($di);
-    $table = $tools->getTable($name);
-    $table->setDi($di);
-
-    return $table;
-});
-
-/*
  * @param void
  *
  * @return \Box\Mod\Servicelicense\Server
@@ -740,14 +674,7 @@ $di['translate'] = $di->protect(function ($textDomain = '') use ($di) {
     return $tr;
 });
 
-$di['csv_response_factory'] = function () use ($di): FOSSBilling\Http\CsvResponseFactory {
-    $database = $di->offsetGet('db');
-    if (!$database instanceof Box_Database) {
-        throw new RuntimeException('Database service must resolve to a Box_Database instance');
-    }
-
-    return new FOSSBilling\Http\CsvResponseFactory($database);
-};
+$di['csv_response_factory'] = fn (): FOSSBilling\Http\CsvResponseFactory => new FOSSBilling\Http\CsvResponseFactory($di['em']->getConnection());
 
 $di['twig_factory'] = fn (): FOSSBilling\Twig\TwigFactory => new FOSSBilling\Twig\TwigFactory($di);
 

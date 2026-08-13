@@ -45,18 +45,18 @@ test('batch enriches hosting accounts with orders and clients', function (): voi
         'updated_at' => '2026-07-19 10:01:00',
     ];
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')
         ->once()
         ->with(Mockery::pattern('/FROM client_order/'), ['hosting', 10])
         ->andReturn([['id' => 50, 'service_id' => 10]]);
-    $dbMock->shouldNotReceive('findOne');
-    $dbMock->shouldNotReceive('dispense');
+    $connection->shouldNotReceive('fetchAssociative');
+    $connection->shouldNotReceive('fetchOne');
 
     $orderService = Mockery::mock(OrderService::class);
     $orderService->shouldReceive('getBatchForApi')
         ->once()
-        ->with([50], Mockery::type(Model_Admin::class))
+        ->with([50], Mockery::type(Box\Mod\Staff\Entity\Admin::class))
         ->andReturn([[
             'id' => 50,
             'service_id' => 10,
@@ -65,12 +65,11 @@ test('batch enriches hosting accounts with orders and clients', function (): voi
         ]]);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $di['mod_service'] = $di->protect(moduleService(['order' => $orderService]));
     $service->setDi($di);
 
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin = \Tests\Helpers\admin();
     $result = $service->getAccountsBatchForApi([$account], $admin);
 
     expect($result[0])
@@ -86,11 +85,11 @@ test('batch enriches hosting accounts with orders and clients', function (): voi
 
 test('batch returns hosting accounts without orders', function (): void {
     $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')->once()->andReturn([]);
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')->once()->andReturn([]);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $service->setDi($di);
 
     $result = $service->getAccountsBatchForApi([[
@@ -725,7 +724,7 @@ test('to api array', function (): void {
 
     $service->setDi($di);
 
-    $result = $service->toApiArray($model, false, new Model_Admin());
+    $result = $service->toApiArray($model, false, \Tests\Helpers\admin());
     expect($result)->toBeArray();
 });
 
@@ -787,11 +786,11 @@ test('get server pairs', function (): void {
         ],
     ];
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')->atLeast()->once()->andReturn($queryResult);
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')->atLeast()->once()->andReturn($queryResult);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $service->setDi($di);
 
     $result = $service->getServerPairs();
@@ -890,7 +889,7 @@ test('update server', function (): void {
     $di = container();
     $di['em'] = $emMock;
     $di['logger'] = new Box_Log();
-    $di['loggedin_admin'] = (object) ['id' => 7];
+    $di['loggedin_admin'] = \Tests\Helpers\admin(['id' => 7]);
 
     $service->setDi($di);
 
@@ -967,11 +966,11 @@ test('get hp pairs', function (): void {
         ],
     ];
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')->atLeast()->once()->andReturn($queryResult);
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')->atLeast()->once()->andReturn($queryResult);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $service->setDi($di);
 
     $result = $service->getHpPairs();
@@ -1241,8 +1240,7 @@ test('get server manager secret fields', function (string $manager, array $expec
 test('to hosting server api array masks secrets for an admin', function (): void {
     $service = new Service();
 
-    $identity = new Model_Admin();
-    $identity->loadBean(new Tests\Helpers\DummyBean());
+    $identity = \Tests\Helpers\admin();
 
     $hostingServerModel = new ServiceHostingServer();
     $hostingServerModel->setId(1);
@@ -1271,8 +1269,7 @@ test('to hosting server api array masks secrets for an admin', function (): void
 test('to hosting server api array does not leak secrets to non-admin callers', function (): void {
     $service = new Service();
 
-    $identity = new Model_Client();
-    $identity->loadBean(new Tests\Helpers\DummyBean());
+    $identity = createEntity(Box\Mod\Client\Entity\Client::class);
 
     $hostingServerModel = new ServiceHostingServer();
     $hostingServerModel->setId(1);
@@ -1318,7 +1315,7 @@ test('updateServer keeps the existing secret when the incoming value is blank', 
     $di = container();
     $di['em'] = $emMock;
     $di['logger'] = new Box_Log();
-    $di['loggedin_admin'] = (object) ['id' => 7];
+    $di['loggedin_admin'] = \Tests\Helpers\admin(['id' => 7]);
     $service->setDi($di);
 
     $result = $service->updateServer($hostingServerModel, $data);
@@ -1353,7 +1350,7 @@ test('updateServer replaces the stored secret when a new value is submitted', fu
     $di = container();
     $di['em'] = $emMock;
     $di['logger'] = new Box_Log();
-    $di['loggedin_admin'] = (object) ['id' => 7];
+    $di['loggedin_admin'] = \Tests\Helpers\admin(['id' => 7]);
     $service->setDi($di);
 
     $result = $service->updateServer($hostingServerModel, $data);

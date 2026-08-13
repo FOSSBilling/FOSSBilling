@@ -281,7 +281,7 @@ class Service implements InjectionAwareInterface
                 'description' => $file->getDescription(),
             ];
 
-            if ($identity instanceof \Model_Admin) {
+            if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
                 $item['path'] = $this->getStoredFilePath($file->getStoredFilename());
                 $item['downloads'] = $file->getDownloads();
             }
@@ -329,17 +329,17 @@ class Service implements InjectionAwareInterface
             return true;
         }
 
-        $count = (int) $this->di['db']->getCell(
+        $count = (int) $this->di['em']->getConnection()->fetchOne(
             'SELECT COUNT(*) FROM product WHERE config LIKE :pattern',
-            [':pattern' => '%' . $storedFilename . '%']
+            ['pattern' => '%' . $storedFilename . '%']
         );
         if ($count > 0) {
             return true;
         }
 
-        $count = (int) $this->di['db']->getCell(
+        $count = (int) $this->di['em']->getConnection()->fetchOne(
             'SELECT COUNT(*) FROM client_order WHERE config LIKE :pattern',
-            [':pattern' => '%' . $storedFilename . '%']
+            ['pattern' => '%' . $storedFilename . '%']
         );
 
         return $count > 0;

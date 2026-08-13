@@ -22,4 +22,21 @@ class SettingRepository extends EntityRepository
 
         return $setting instanceof Setting ? $setting : null;
     }
+
+    public function findOnePublicByParam(string $param): ?Setting
+    {
+        $setting = $this->findOneBy(['param' => $param, 'public' => true]);
+
+        return $setting instanceof Setting ? $setting : null;
+    }
+
+    /**
+     * @param string[] $params
+     *
+     * @return Setting[]
+     */
+    public function findByParams(array $params): array
+    {
+        return $this->findBy(['param' => $params]);
+    }
 }

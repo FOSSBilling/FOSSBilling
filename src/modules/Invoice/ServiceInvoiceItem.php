@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice;
 
+use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\InvoiceItem;
@@ -197,7 +198,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $pi = new InvoiceItem();
         $pi->setInvoiceId((int) $proforma->getId());
         $pi->setType($data['type'] ?? InvoiceItem::TYPE_CUSTOM);
-        $pi->setRelId($data['rel_id'] ?? null);
+        $pi->setRelId(isset($data['rel_id']) ? (string) $data['rel_id'] : null);
         $pi->setTask($data['task'] ?? InvoiceItem::TASK_VOID);
         $pi->setStatus($data['status'] ?? InvoiceItem::STATUS_PENDING_PAYMENT);
         $pi->setTitle($data['title']);
@@ -233,7 +234,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             return 0;
         }
 
-        $rate = $this->di['db']->getCell('SELECT taxrate FROM invoice WHERE id = :id', ['id' => $item->getInvoiceId()]);
+        $rate = $this->di['em']->getConnection()->fetchOne('SELECT taxrate FROM invoice WHERE id = :id', ['id' => $item->getInvoiceId()]);
         if ($rate <= 0) {
             return 0;
         }
@@ -322,10 +323,11 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
     private function persistCredit(InvoiceItem $item, Invoice $invoice, float $total): ClientBalance
     {
-        $client = $this->di['db']->getExistingModelById('Client', $invoice->getClientId(), 'Client not found');
+        $client = $this->di['em']->getRepository(Client::class)->find($invoice->getClientId())
+            ?? throw new \FOSSBilling\Exception('Client not found');
 
         $credit = new ClientBalance();
-        $credit->setClientId((int) $client->id);
+        $credit->setClientId((int) $client->getId());
         $credit->setType('invoice');
         $credit->setRelId((string) $invoice->getId());
         $credit->setInvoiceItemId($item->getId());
@@ -407,7 +409,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $corderService = $this->di['mod_service']('Order');
 
         $clientService = $this->di['mod_service']('client');
-        $client = $this->di['db']->load('Client', $order->getClientId());
+        $client = $this->di['em']->getRepository(Client::class)->find($order->getClientId());
         $taxed = $clientService->isClientTaxable($client);
         $quantity = $line['quantity'] ?? $order->getQuantity();
         $unit = $line['unit'] ?? $order->getUnit();
@@ -442,7 +444,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                 'price' => $promoAdjustment['discount_amount'] * -1,
                 'quantity' => 1,
                 'unit' => 'discount',
-                'rel_id' => $order->getId(),
+                'rel_id' => (string) $order->getId(),
                 'taxed' => $taxed,
             ];
 
@@ -474,12 +476,12 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                 WHERE invoice_item.status NOT IN (:status_executed, :status_failed) and invoice.status = :invoice_status
                 AND (invoice.paid_at IS NULL OR invoice.paid_at <= :cutoff_time)';
         $bindings = [
-            ':status_executed' => InvoiceItem::STATUS_EXECUTED,
-            ':status_failed' => InvoiceItem::STATUS_FAILED,
-            ':invoice_status' => Invoice::STATUS_PAID,
-            ':cutoff_time' => date('Y-m-d H:i:s', strtotime('-10 minutes')),
+            'status_executed' => InvoiceItem::STATUS_EXECUTED,
+            'status_failed' => InvoiceItem::STATUS_FAILED,
+            'invoice_status' => Invoice::STATUS_PAID,
+            'cutoff_time' => date('Y-m-d H:i:s', strtotime('-10 minutes')),
         ];
 
-        return $this->di['db']->getAll($sql, $bindings);
+        return $this->di['em']->getConnection()->fetchAllAssociative($sql, $bindings);
     }
 }

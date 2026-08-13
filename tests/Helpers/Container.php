@@ -54,17 +54,6 @@ function container(): Container
 
         return $session;
     };
-    $di['db'] = static function (): object {
-        $db = \Mockery::mock(\Box_Database::class)->shouldIgnoreMissing();
-        $db->shouldReceive('find')->byDefault()->andReturn([]);
-        $db->shouldReceive('getAll')->byDefault()->andReturn([]);
-        $db->shouldReceive('getAssoc')->byDefault()->andReturn([]);
-        $db->shouldReceive('toArray')->byDefault()->andReturn([]);
-        $db->shouldReceive('exec')->byDefault()->andReturn(1);
-        $db->shouldReceive('transaction')->byDefault()->andReturnUsing(static fn (callable $callback): mixed => $callback());
-
-        return $db;
-    };
     $di['dbal'] = static function (): object {
         $dbal = \Mockery::mock(\Doctrine\DBAL\Connection::class)->shouldIgnoreMissing();
         $result = \Mockery::mock(\Doctrine\DBAL\Result::class)->shouldIgnoreMissing();
@@ -144,6 +133,11 @@ function container(): Container
         {
             return ['list' => [], 'total' => 0, 'pages' => 0, 'page' => 1, 'per_page' => 20];
         }
+
+        public function paginateDoctrineQuery(\Doctrine\ORM\QueryBuilder $qb, \FOSSBilling\PaginationOptions $pagination, mixed ...$apiArrayArgs): array
+        {
+            return ['list' => [], 'total' => 0, 'pages' => 0, 'page' => $pagination->page, 'per_page' => $pagination->perPage];
+        }
     };
     $di['rate_limiter'] = fn (): object => new class {
         public function consume(string $policyName, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult
@@ -158,7 +152,7 @@ function container(): Container
     };
     $di['mod_config'] = $di->protect(fn (string $name): array => []);
     $di['cookie_queue'] = fn (): \FOSSBilling\Http\CookieQueue => new \FOSSBilling\Http\CookieQueue();
-    $di['em'] = static function (): object {
+    $di['em'] = static function () use ($di): object {
         $adminGroupRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminGroupRepository::class)->shouldIgnoreMissing();
         $adminGroupMemberRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminGroupMemberRepository::class)->shouldIgnoreMissing();
 
@@ -264,8 +258,26 @@ function container(): Container
         $invoiceItemRepository->shouldReceive('find')->byDefault()->andReturn(null);
         $invoiceItemRepository->shouldReceive('findByInvoiceId')->byDefault()->andReturn([]);
 
+        $customPageRepository = \Mockery::mock(\Box\Mod\Custompages\Repository\CustomPageRepository::class)->shouldIgnoreMissing();
+        $customPageRepository->shouldReceive('find')->byDefault()->andReturn(null);
+        $customPageRepository->shouldReceive('findOneBySlug')->byDefault()->andReturn(null);
+        $customPageRepository->shouldReceive('findOneBySlugExcludingId')->byDefault()->andReturn(null);
+        $customPageRepository->shouldReceive('deleteByIds')->byDefault()->andReturn(0);
+        $customPageQueryBuilder = \Mockery::mock(\Doctrine\ORM\QueryBuilder::class)->shouldIgnoreMissing();
+        foreach (['andWhere', 'orWhere', 'setParameter', 'orderBy', 'setFirstResult', 'setMaxResults', 'where'] as $method) {
+            $customPageQueryBuilder->shouldReceive($method)->byDefault()->andReturn($customPageQueryBuilder);
+        }
+        $customPageRepository->shouldReceive('getSearchQueryBuilder')->byDefault()->andReturn($customPageQueryBuilder);
+
+        $settingRepository = \Mockery::mock(\Box\Mod\System\Repository\SettingRepository::class)->shouldIgnoreMissing();
+        $settingRepository->shouldReceive('findOneByParam')->byDefault()->andReturn(null);
+        $settingRepository->shouldReceive('findOnePublicByParam')->byDefault()->andReturn(null);
+        $settingRepository->shouldReceive('findByParams')->byDefault()->andReturn([]);
+        $settingRepository->shouldReceive('findAll')->byDefault()->andReturn([]);
+
         $em = \Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
         $em->shouldReceive('wrapInTransaction')->byDefault()->andReturnUsing(static fn (callable $callback): mixed => $callback());
+        $em->shouldReceive('getConnection')->byDefault()->andReturn($di['dbal']);
         $em->shouldReceive('getRepository')->byDefault()->andReturnUsing(static fn (string $class): object => match ($class) {
             \Box\Mod\Client\Entity\Client::class => $clientRepository,
             \Box\Mod\Client\Entity\ClientBalance::class => $clientBalanceRepository,
@@ -291,6 +303,8 @@ function container(): Container
             \Box\Mod\Invoice\Entity\Subscription::class => $subscriptionRepository,
             \Box\Mod\Invoice\Entity\Invoice::class => $invoiceRepository,
             \Box\Mod\Invoice\Entity\InvoiceItem::class => $invoiceItemRepository,
+            \Box\Mod\Custompages\Entity\CustomPage::class => $customPageRepository,
+            \Box\Mod\System\Entity\Setting::class => $settingRepository,
             \Box\Mod\Extension\Entity\Extension::class => \Mockery::mock(\Box\Mod\Extension\Repository\ExtensionRepository::class)->shouldIgnoreMissing(),
             default => $extensionMetaRepository,
         });

@@ -11,7 +11,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\System;
 
-use Doctrine\DBAL\ArrayParameterType;
+use Box\Mod\System\Entity\Setting;
+use Box\Mod\System\Repository\SettingRepository;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\DeadlockException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
@@ -29,9 +30,9 @@ use Symfony\Contracts\Cache\ItemInterface;
 
 class Service
 {
-    private const int MYSQL_DUPLICATE_ENTRY_ERROR = 23000;
-
     protected ?Container $di = null;
+
+    protected SettingRepository $settingRepository;
 
     private Filesystem $filesystem;
 
@@ -43,6 +44,7 @@ class Service
     public function setDi(Container $di): void
     {
         $this->di = $di;
+        $this->settingRepository = $di['em']->getRepository(Setting::class);
         if (isset($di['filesystem'])) {
             $this->filesystem = $di['filesystem'];
         }
@@ -110,75 +112,55 @@ class Service
             throw new \FOSSBilling\Exception('Parameter key is missing.');
         }
 
-        $query = $this->di['dbal']->createQueryBuilder();
-        $query
-            ->select('value')
-            ->from('setting')
-            ->where('param = :param')
-            ->setParameter('param', $param);
-
-        $result = $query->executeQuery()->fetchOne();
-        if ($result === false) {
+        $setting = $this->settingRepository->findOneByParam($param);
+        if ($setting === null) {
             return $default;
         }
 
-        return $result;
+        return $setting->getValue();
     }
 
     public function setParamValue($param, $value, $createIfNotExists = true): bool
     {
-        // Skip this param if the user isn't permitted to update it.
-        if (!$this->canUpdateParam($param)) {
-            return true;
-        }
-
-        if ($this->paramExists($param)) {
-            $query = $this->di['dbal']->createQueryBuilder();
-            $query
-                ->update('setting')
-                ->set('value', ':value')
-                ->where('param = :param')
-                ->setParameter('param', $param)
-                ->setParameter('value', $value)
-                ->executeStatement();
-        } elseif ($createIfNotExists) {
-            try {
-                $query = $this->di['dbal']->createQueryBuilder();
-                $query
-                    ->insert('setting')
-                    ->values([
-                        'param' => ':param',
-                        'value' => ':value',
-                        'created_at' => ':created_at',
-                        'updated_at' => ':updated_at',
-                    ])
-                    ->setParameter('param', $param)
-                    ->setParameter('value', $value)
-                    ->setParameter('created_at', date('Y-m-d H:i:s'))
-                    ->setParameter('updated_at', date('Y-m-d H:i:s'))
-                    ->executeStatement();
-            } catch (\Exception $e) {
-                if ($e->getCode() != self::MYSQL_DUPLICATE_ENTRY_ERROR) {
-                    throw $e;
-                }
-            }
-        }
+        $this->writeParamValue((string) $param, $value, $createIfNotExists);
+        $this->di['em']->flush();
 
         return true;
     }
 
+    /**
+     * Stage a setting write without flushing; the caller controls when the batch is flushed.
+     * A failed flush closes the EntityManager, so the constraint conflict is never swallowed here.
+     */
+    private function writeParamValue(string $param, $value, bool $createIfNotExists): void
+    {
+        $value = $value === null ? null : (string) $value;
+
+        // Skip this param if the user isn't permitted to update it.
+        if (!$this->canUpdateParam($param)) {
+            return;
+        }
+
+        $setting = $this->settingRepository->findOneByParam($param);
+        if ($setting !== null) {
+            $setting->setValue($value);
+
+            return;
+        }
+
+        if (!$createIfNotExists) {
+            return;
+        }
+
+        $setting = new Setting();
+        $setting->setParam($param);
+        $setting->setValue($value);
+        $this->di['em']->persist($setting);
+    }
+
     public function paramExists($param): bool
     {
-        $query = $this->di['dbal']->createQueryBuilder();
-        $query
-            ->select('id')
-            ->from('setting')
-            ->where('param = :param')
-            ->setParameter('param', $param);
-
-        $result = $query->executeQuery()->fetchOne();
-
-        return (bool) $result;
+        return $this->settingRepository->findOneByParam((string) $param) !== null;
     }
 
     /**
@@ -195,17 +177,9 @@ class Service
                 throw new \FOSSBilling\InformationException('Invalid parameter name, received: param_.', ['param_' => $param]);
             }
         }
-        $query = $this->di['dbal']->createQueryBuilder();
-        $query
-            ->select('param', 'value')
-            ->from('setting')
-            ->where('param IN (:params)')
-            ->setParameter('params', $params, ArrayParameterType::STRING);
-
-        $rows = $query->executeQuery()->fetchAllAssociative();
         $result = [];
-        foreach ($rows as $row) {
-            $result[$row['param']] = $row['value'];
+        foreach ($this->settingRepository->findByParams($params) as $setting) {
+            $result[(string) $setting->getParam()] = $setting->getValue();
         }
 
         return $result;
@@ -283,12 +257,9 @@ class Service
      */
     public function getParams($data): array
     {
-        $query = 'SELECT param, value
-                  FROM setting';
-        $rows = $this->di['dbal']->fetchAllAssociative($query);
         $result = [];
-        foreach ($rows as $row) {
-            $result[$row['param']] = $row['value'];
+        foreach ($this->settingRepository->findAll() as $setting) {
+            $result[(string) $setting->getParam()] = $setting->getValue();
         }
 
         return $result;
@@ -305,8 +276,11 @@ class Service
         }
 
         foreach ($data as $key => $val) {
-            $this->setParamValue($key, $val, true);
+            $this->writeParamValue((string) $key, $val, true);
         }
+
+        // Flush the batch once; a unique-constraint collision surfaces to the caller.
+        $this->di['em']->flush();
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminSettingsUpdate']);
 
@@ -522,7 +496,7 @@ class Service
 
     public function templateExists($file, $identity = null): bool
     {
-        if ($identity instanceof \Model_Admin) {
+        if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
             $client = false;
         } else {
             $client = true;
@@ -662,27 +636,23 @@ class Service
 
     public function getPublicParamValue($param)
     {
-        $query = $this->di['dbal']->createQueryBuilder();
-        $query
-            ->select('value')
-            ->from('setting')
-            ->where('param = :param')
-            ->andWhere('public = 1')
-            ->setParameter('param', $param);
-
-        $result = $query->executeQuery()->fetchOne();
-        if ($result === false) {
+        $setting = $this->settingRepository->findOnePublicByParam((string) $param);
+        if ($setting === null) {
             throw new \FOSSBilling\Exception('Parameter :param does not exist', [':param' => $param]);
         }
 
-        return $result;
+        return $setting->getValue();
     }
 
     public function getNameservers()
     {
-        $query = "SELECT param, value FROM setting WHERE param IN ('nameserver_1', 'nameserver_2', 'nameserver_3', 'nameserver_4')";
+        $settings = $this->settingRepository->findByParams(['nameserver_1', 'nameserver_2', 'nameserver_3', 'nameserver_4']);
+        $result = [];
+        foreach ($settings as $setting) {
+            $result[(string) $setting->getParam()] = $setting->getValue();
+        }
 
-        return $this->di['dbal']->fetchAllKeyValue($query);
+        return $result;
     }
 
     public function getPendingMessages()

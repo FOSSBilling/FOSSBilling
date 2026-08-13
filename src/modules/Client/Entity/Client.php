@@ -270,6 +270,15 @@ class Client implements ApiArrayInterface
 
     public function setEmail(?string $email): self
     {
+        if ($email === null) {
+            throw new \InvalidArgumentException('Email address cannot be null');
+        }
+
+        $email = trim($email);
+        if ($email === '' || filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+            throw new \InvalidArgumentException('Invalid email address');
+        }
+
         $this->email = $email;
 
         return $this;
@@ -924,7 +933,7 @@ class Client implements ApiArrayInterface
             'timezone' => $this->timezone,
         ];
 
-        $isAdmin = $identity instanceof \Model_Admin || $identity instanceof \Box\Mod\Staff\Entity\Admin;
+        $isAdmin = $identity instanceof \Box\Mod\Staff\Entity\Admin;
         if (!$isAdmin) {
             return $details;
         }

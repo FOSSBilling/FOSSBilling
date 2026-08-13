@@ -112,7 +112,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             $post->setCreatedAt(new \DateTime($data['created_at']));
         }
 
-        $post->setAdminId($this->getIdentity()->id);
+        $post->setAdminId($this->getIdentity()->getId());
 
         $this->getDi()['em']->persist($post);
         $this->getDi()['em']->flush();
@@ -134,7 +134,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $post = new Post($data['title'], $this->getDi()['tools']->slug($data['title']));
 
-        $post->setAdminId($this->getIdentity()->id)
+        $post->setAdminId($this->getIdentity()->getId())
              ->setContent($data['content'] ?? null)
              ->setStatus($data['status'] ?? Post::STATUS_ACTIVE)
              ->setDescription($data['description'] ?? null);

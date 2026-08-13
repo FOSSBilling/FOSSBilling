@@ -229,66 +229,66 @@ class Service implements InjectionAwareInterface
         $params = [];
         if ($id) {
             $where[] = '(c.id = :client_id OR c.aid = :alt_client_id)';
-            $params[':client_id'] = $id;
-            $params[':alt_client_id'] = $id;
+            $params['client_id'] = $id;
+            $params['alt_client_id'] = $id;
         }
 
         if ($name) {
             $where[] = '(c.first_name LIKE :first_name or c.last_name LIKE :last_name )';
             $name = '%' . $name . '%';
-            $params[':first_name'] = $name;
-            $params[':last_name'] = $name;
+            $params['first_name'] = $name;
+            $params['last_name'] = $name;
         }
 
         if ($email) {
             $where[] = 'c.email LIKE :email';
-            $params[':email'] = '%' . $email . '%';
+            $params['email'] = '%' . $email . '%';
         }
 
         if ($company) {
             $where[] = 'c.company LIKE :company';
-            $params[':company'] = '%' . $company . '%';
+            $params['company'] = '%' . $company . '%';
         }
 
         if ($status) {
             $where[] = 'c.status = :status';
-            $params[':status'] = $status;
+            $params['status'] = $status;
         }
 
         if ($group_id) {
             $where[] = 'c.client_group_id = :group_id';
-            $params[':group_id'] = $group_id;
+            $params['group_id'] = $group_id;
         }
 
         if ($created_at) {
             $where[] = "DATE_FORMAT(c.created_at, '%Y-%m-%d') = :created_at";
-            $params[':created_at'] = date('Y-m-d', strtotime((string) $created_at));
+            $params['created_at'] = date('Y-m-d', strtotime((string) $created_at));
         }
 
         if ($date_from) {
             $where[] = 'UNIX_TIMESTAMP(c.created_at) >= :date_from';
-            $params[':date_from'] = strtotime((string) $date_from);
+            $params['date_from'] = strtotime((string) $date_from);
         }
 
         if ($date_to) {
             $where[] = 'UNIX_TIMESTAMP(c.created_at) <= :date_to';
-            $params[':date_to'] = strtotime((string) $date_to);
+            $params['date_to'] = strtotime((string) $date_to);
         }
 
         // smartSearch
         if ($search) {
             if (is_numeric($search)) {
                 $where[] = '(c.id = :cid OR c.aid = :caid)';
-                $params[':cid'] = $search;
-                $params[':caid'] = $search;
+                $params['cid'] = $search;
+                $params['caid'] = $search;
             } else {
                 $where[] = "(c.company LIKE :s_company OR c.first_name LIKE :s_first_name OR c.last_name LIKE :s_last_name OR c.email LIKE :s_email OR CONCAT(c.first_name,  ' ', c.last_name ) LIKE  :full_name)";
                 $search = '%' . $search . '%';
-                $params[':s_company'] = $search;
-                $params[':s_first_name'] = $search;
-                $params[':s_last_name'] = $search;
-                $params[':s_email'] = $search;
-                $params[':full_name'] = $search;
+                $params['s_company'] = $search;
+                $params['s_first_name'] = $search;
+                $params['s_last_name'] = $search;
+                $params['s_email'] = $search;
+                $params['full_name'] = $search;
             }
         }
 
@@ -310,34 +310,28 @@ class Service implements InjectionAwareInterface
         return $this->clientRepository->getIdNamePairs($data, (int) $limit);
     }
 
-    public function toSessionArray(Client|\Model_Client $model): array
+    public function toSessionArray(Client $model): array
     {
-        $id = $this->getClientId($model);
-
         return [
-            'id' => $id,
-            'email' => $model instanceof Client ? $model->getEmail() : $model->email,
+            'id' => $model->getId(),
+            'email' => $model->getEmail(),
             'name' => $model->getFullName(),
-            'role' => $model instanceof Client ? $model->getRole() : $model->role,
+            'role' => $model->getRole(),
         ];
     }
 
-    public function emailAlreadyRegistered($new_email, Client|\Model_Client|null $model = null): bool
+    public function emailAlreadyRegistered($new_email, ?Client $model = null): bool
     {
         if ($model instanceof Client && $model->getEmail() == $new_email) {
-            return false;
-        }
-
-        if ($model instanceof \Model_Client && $model->email == $new_email) {
             return false;
         }
 
         return $this->clientRepository->findOneByEmail($new_email) instanceof Client;
     }
 
-    public function canChangeCurrency(Client|\Model_Client $model, $currency = null): bool
+    public function canChangeCurrency(Client $model, $currency = null): bool
     {
-        $modelCurrency = $model instanceof Client ? $model->getCurrency() : $model->currency;
+        $modelCurrency = $model->getCurrency();
         if (!$modelCurrency) {
             return true;
         }
@@ -346,7 +340,7 @@ class Service implements InjectionAwareInterface
             return false;
         }
 
-        $clientId = $this->getClientId($model);
+        $clientId = (int) $model->getId();
         if ($this->di['dbal']->fetchOne('SELECT 1 FROM invoice WHERE client_id = :client_id LIMIT 1', ['client_id' => $clientId])) {
             throw new InformationException('Currency cannot be changed. Client already has invoices issued.');
         }
@@ -358,9 +352,9 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function addFunds(Client|\Model_Client $client, $amount, $description, array $data = []): bool
+    public function addFunds(Client $client, $amount, $description, array $data = []): bool
     {
-        $currency = $client instanceof Client ? $client->getCurrency() : $client->currency;
+        $currency = $client->getCurrency();
         if (!$currency) {
             throw new InformationException('You must define the client\'s currency before adding funds.');
         }
@@ -374,7 +368,7 @@ class Service implements InjectionAwareInterface
         }
 
         $credit = new ClientBalance();
-        $credit->setClientId($this->getClientId($client));
+        $credit->setClientId((int) $client->getId());
         $credit->setType($data['type'] ?? 'gift');
         $credit->setRelId(isset($data['rel_id']) ? (string) $data['rel_id'] : null);
         $credit->setDescription($description);
@@ -412,35 +406,35 @@ class Service implements InjectionAwareInterface
 
         if ($id !== null && $id !== '') {
             $where[] = 'ach.id = :event_id';
-            $params[':event_id'] = (int) $id;
+            $params['event_id'] = (int) $id;
         }
 
         if ($search) {
             $where[] = '(c.first_name LIKE :first_name OR c.last_name LIKE :last_name OR c.email LIKE :email OR c.id LIKE :id)';
-            $params[':first_name'] = '%' . $search . '%';
-            $params[':last_name'] = '%' . $search . '%';
-            $params[':email'] = '%' . $search . '%';
-            $params[':id'] = $search;
+            $params['first_name'] = '%' . $search . '%';
+            $params['last_name'] = '%' . $search . '%';
+            $params['email'] = '%' . $search . '%';
+            $params['id'] = $search;
         }
 
         if ($client_id) {
             $where[] = 'ach.client_id = :client_id';
-            $params[':client_id'] = $client_id;
+            $params['client_id'] = $client_id;
         }
 
         if ($ip !== null && $ip !== '') {
             $where[] = 'ach.ip LIKE :ip';
-            $params[':ip'] = '%' . $ip . '%';
+            $params['ip'] = '%' . $ip . '%';
         }
 
         if ($date_from !== null && $date_from !== '') {
             $where[] = 'ach.created_at >= :date_from';
-            $params[':date_from'] = date('Y-m-d 00:00:00', strtotime((string) $date_from));
+            $params['date_from'] = date('Y-m-d 00:00:00', strtotime((string) $date_from));
         }
 
         if ($date_to !== null && $date_to !== '') {
             $where[] = 'ach.created_at <= :date_to';
-            $params[':date_to'] = date('Y-m-d 23:59:59', strtotime((string) $date_to));
+            $params['date_to'] = date('Y-m-d 23:59:59', strtotime((string) $date_to));
         }
 
         if (!empty($where)) {
@@ -479,32 +473,23 @@ class Service implements InjectionAwareInterface
         return $this->clientRepository->findOneBy(['email' => $email, 'pass' => $password, 'status' => Client::ACTIVE]);
     }
 
-    public function toApiArray(Client|\Model_Client $model, $deep = false, $identity = null, bool $includeSensitive = false): array
+    public function toApiArray(Client $model, $deep = false, $identity = null, bool $includeSensitive = false): array
     {
-        if ($model instanceof Client) {
-            return $this->toClientApiArray($model, null, $deep, $identity, $includeSensitive);
-        }
-
-        $client = $this->clientRepository->find((int) $model->id);
-        if ($client instanceof Client) {
-            return $this->toClientApiArray($client, $model, $deep, $identity, $includeSensitive);
-        }
-
-        return $this->toLegacyClientApiArray($model, $deep, $identity, $includeSensitive);
+        return $this->toClientApiArray($model, $deep, $identity, $includeSensitive);
     }
 
-    public function toClientApiArray(Client $client, Client|\Model_Client|null $model = null, bool $deep = false, $identity = null, bool $includeSensitive = false): array
+    public function toClientApiArray(Client $client, bool $deep = false, $identity = null, bool $includeSensitive = false): array
     {
-        $isAdmin = $this->isAdminIdentity($identity);
-        $isSelf = $this->isClientIdentity($identity) && $this->getIdentityId($identity) === $client->getId();
+        $isAdmin = $identity instanceof Admin;
+        $isSelf = $identity instanceof Client && (int) $identity->getId() === (int) $client->getId();
         $details = $client->toApiArray($isAdmin ? $identity : null);
 
         if ($isAdmin || $isSelf) {
-            $details['billing_email'] = $model instanceof Client ? $model->getBillingEmail() : $client->getBillingEmail();
+            $details['billing_email'] = $client->getBillingEmail();
         }
 
         if ($deep) {
-            $details['balance'] = $this->getClientBalanceFromEntity($client);
+            $details['balance'] = $this->getClientBalance($client);
         }
 
         if ($isAdmin) {
@@ -538,124 +523,9 @@ class Service implements InjectionAwareInterface
         return $details;
     }
 
-    public function getClientBalance(Client|\Model_Client $c): float
+    public function getClientBalance(Client $c): float
     {
-        return $this->clientBalanceRepository->getClientBalanceSum($this->getClientId($c));
-    }
-
-    private function getClientBalanceFromEntity(Client $client): float
-    {
-        return $this->clientBalanceRepository->getClientBalanceSum((int) $client->getId());
-    }
-
-    private function getClientId(Client|\Model_Client $client): int
-    {
-        return (int) ($client instanceof Client ? $client->getId() : $client->id);
-    }
-
-    private function getIdentityId(mixed $identity): ?int
-    {
-        if ($identity instanceof Client || $identity instanceof Admin) {
-            return $identity->getId();
-        }
-
-        if ($identity instanceof \Model_Client || $identity instanceof \Model_Admin) {
-            return (int) $identity->id;
-        }
-
-        return null;
-    }
-
-    private function isAdminIdentity(mixed $identity): bool
-    {
-        return $identity instanceof Admin || $identity instanceof \Model_Admin;
-    }
-
-    private function isClientIdentity(mixed $identity): bool
-    {
-        return $identity instanceof Client || $identity instanceof \Model_Client;
-    }
-
-    private function toLegacyClientApiArray(\Model_Client $client, bool $deep, mixed $identity, bool $includeSensitive): array
-    {
-        $details = [
-            'id' => $client->id,
-            'email' => $client->email,
-            'email_approved' => $client->email_approved,
-            'type' => $client->type,
-            'company' => $client->company,
-            'company_vat' => $client->company_vat,
-            'company_number' => $client->company_number,
-            'first_name' => $client->first_name,
-            'last_name' => $client->last_name,
-            'gender' => $client->gender,
-            'birthday' => $client->birthday,
-            'phone_cc' => $client->phone_cc,
-            'phone' => $client->phone,
-            'address_1' => $client->address_1,
-            'address_2' => $client->address_2,
-            'city' => $client->city,
-            'state' => $client->state,
-            'postcode' => $client->postcode,
-            'country' => $client->country,
-            'currency' => $client->currency,
-            'lang' => $client->lang,
-            'timezone' => $client->timezone,
-        ];
-
-        $isAdmin = $this->isAdminIdentity($identity);
-        $isSelf = $this->isClientIdentity($identity) && $this->getIdentityId($identity) === (int) $client->id;
-        if ($isAdmin || $isSelf) {
-            $details['billing_email'] = $client->billing_email;
-        }
-
-        if ($deep) {
-            $details['balance'] = $this->getClientBalance($client);
-        }
-
-        if ($isAdmin) {
-            for ($i = 1; $i <= 20; ++$i) {
-                $field = 'custom_' . $i;
-                $details[$field] = $client->{$field};
-            }
-
-            $group = $this->clientGroupRepository->find((int) $client->client_group_id);
-            $details += [
-                'aid' => $client->aid,
-                'group_id' => $client->client_group_id,
-                'auth_type' => $client->auth_type,
-                'notes' => $client->notes,
-                'status' => $client->status,
-                'tax_exempt' => $client->tax_exempt,
-                'ip' => $client->ip,
-                'group' => $group instanceof ClientGroup ? $group->getTitle() : null,
-                'created_at' => $client->created_at,
-                'updated_at' => $client->updated_at,
-            ];
-
-            if ($includeSensitive) {
-                $details['api_token'] = $client->api_token;
-            }
-        } else {
-            $config = $this->di['mod_config']('client');
-            foreach (($config['custom_fields'] ?? []) as $fieldName => $fieldConfig) {
-                if (($fieldConfig['active'] ?? false) && !empty($client->{$fieldName})) {
-                    $details[$fieldName] = $client->{$fieldName};
-                }
-            }
-        }
-
-        return $details;
-    }
-
-    private function getLegacyClient(int $clientId): \Model_Client
-    {
-        $client = $this->di['db']->getExistingModelById('Client', $clientId);
-        if (!$client instanceof \Model_Client) {
-            throw new \FOSSBilling\Exception('Client compatibility model not found');
-        }
-
-        return $client;
+        return $this->clientBalanceRepository->getClientBalanceSum((int) $c->getId());
     }
 
     public function get($data)
@@ -680,7 +550,7 @@ class Service implements InjectionAwareInterface
         return $client;
     }
 
-    public function isClientTaxable(Client|\Model_Client $model): bool
+    public function isClientTaxable(?Client $model): bool
     {
         $systemService = $this->di['mod_service']('system');
 
@@ -688,8 +558,7 @@ class Service implements InjectionAwareInterface
             return false;
         }
 
-        $taxExempt = $model instanceof Client ? $model->isTaxExempt() : (bool) $model->tax_exempt;
-        if ($taxExempt) {
+        if ($model instanceof Client && $model->isTaxExempt()) {
             return false;
         }
 
@@ -875,10 +744,10 @@ class Service implements InjectionAwareInterface
         return $client;
     }
 
-    public function createPasswordResetRequestForClient(Client|\Model_Client $client): string
+    public function createPasswordResetRequestForClient(Client $client): string
     {
-        $clientId = $this->getClientId($client);
-        $clientIp = $client instanceof Client ? $client->getIp() : $client->ip;
+        $clientId = (int) $client->getId();
+        $clientIp = $client->getIp();
 
         $existingReset = $this->clientPasswordResetRepository->findOneBy(['clientId' => $clientId]);
         if ($existingReset instanceof ClientPasswordReset) {
@@ -903,9 +772,9 @@ class Service implements InjectionAwareInterface
         return $hash;
     }
 
-    public function sendPasswordResetRequestEmailForClient(Client|\Model_Client $client, string $hash, bool $sendNow = true): void
+    public function sendPasswordResetRequestEmailForClient(Client $client, string $hash, bool $sendNow = true): void
     {
-        $clientId = $this->getClientId($client);
+        $clientId = (int) $client->getId();
 
         $email = [
             'to_client' => $clientId,
@@ -918,10 +787,10 @@ class Service implements InjectionAwareInterface
         $emailService->sendTemplate($email);
     }
 
-    public function sendAdminCreatedWelcomeEmailForClient(Client|\Model_Client $client): void
+    public function sendAdminCreatedWelcomeEmailForClient(Client $client): void
     {
         try {
-            $clientId = $this->getClientId($client);
+            $clientId = (int) $client->getId();
 
             $email = [];
             $email['to_client'] = $clientId;
@@ -943,10 +812,8 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function remove(Client|\Model_Client $model): void
+    public function remove(Client $model): void
     {
-        $clientId = $this->getClientId($model);
-        $legacyClient = $model instanceof \Model_Client ? $model : $this->getLegacyClient($clientId);
         $entityManager = $this->di['em'];
         $connection = $entityManager->getConnection();
 
@@ -954,22 +821,22 @@ class Service implements InjectionAwareInterface
 
         try {
             $service = $this->di['mod_service']('Order');
-            $service->rmByClient($legacyClient);
+            $service->rmByClient($model);
             $service = $this->di['mod_service']('Invoice');
-            $service->rmByClient($legacyClient);
+            $service->rmByClient($model);
             $service = $this->di['mod_service']('Support');
-            $service->rmByClient($legacyClient);
+            $service->rmByClient($model);
             $service = $this->di['mod_service']('Client', 'Balance');
             $service->rmByClient($model);
 
-            $connection->executeStatement('DELETE FROM activity_client_history WHERE client_id = :id', ['id' => $clientId]);
+            $connection->executeStatement('DELETE FROM activity_client_history WHERE client_id = :id', ['id' => $model->getId()]);
 
             $service = $this->di['mod_service']('Email');
-            $service->rmByClient($legacyClient);
+            $service->rmByClient($model);
             $service = $this->di['mod_service']('Activity');
             $service->rmByClient($model);
 
-            $resetRecords = $this->clientPasswordResetRepository->findBy(['clientId' => $clientId]);
+            $resetRecords = $this->clientPasswordResetRepository->findBy(['clientId' => (int) $model->getId()]);
             foreach ($resetRecords as $resetRecord) {
                 $entityManager->remove($resetRecord);
             }
@@ -978,14 +845,10 @@ class Service implements InjectionAwareInterface
             $query
                 ->delete('extension_meta')
                 ->where('client_id = :id')
-                ->setParameter('id', $clientId);
+                ->setParameter('id', $model->getId());
             $query->executeStatement();
 
-            $client = $model instanceof Client ? $model : $this->clientRepository->find($clientId);
-            if ($client instanceof Client) {
-                $entityManager->remove($client);
-            }
-
+            $entityManager->remove($model);
             $entityManager->flush();
             $entityManager->commit();
         } catch (\Throwable $exception) {
@@ -999,33 +862,16 @@ class Service implements InjectionAwareInterface
 
     public function authorizeClient($email, $plainTextPassword): ?Client
     {
-        // The shared authorization service still reads the legacy bean fields directly.
-        // Keep that boundary until the identity/authentication slice migrates as well.
-        $legacyClient = $this->di['db']->findOne('Client', 'email = ? AND status = ?', [$email, Client::ACTIVE]);
-        $authUser = $legacyClient;
-        if (!$authUser) {
-            $candidate = $this->clientRepository->findOneBy(['email' => $email, 'status' => Client::ACTIVE]);
-            $authUser = $candidate instanceof Client ? $candidate : null;
-        }
+        $client = $this->clientRepository->findOneBy(['email' => $email, 'status' => Client::ACTIVE]);
 
-        $authorized = $this->di['auth']->authorizeUser($authUser, $plainTextPassword);
-        if (!$authorized) {
-            return null;
-        }
+        $authorized = $this->di['auth']->authorizeUser($client, $plainTextPassword);
 
-        if ($authorized instanceof Client) {
-            return $authorized;
-        }
-
-        $authorizedId = $authorized->id;
-        $client = $this->clientRepository->find((int) $authorizedId);
-
-        return $client instanceof Client ? $client : null;
+        return $authorized instanceof Client ? $authorized : null;
     }
 
-    public function sendEmailConfirmationForClient(Client|\Model_Client $client): void
+    public function sendEmailConfirmationForClient(Client $client): void
     {
-        $clientId = $this->getClientId($client);
+        $clientId = (int) $client->getId();
 
         try {
             $email = [];
@@ -1042,12 +888,12 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function canChangeEmail(Client|\Model_Client $client, $email): bool
+    public function canChangeEmail(Client $client, $email): bool
     {
         $config = $this->di['mod_config']('client');
 
         if (
-            ($client instanceof Client ? $client->getEmail() : $client->email) != $email
+            $client->getEmail() != $email
             && isset($config['disable_change_email'])
             && $config['disable_change_email']
         ) {
@@ -1087,8 +933,12 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function resolveDocumentNumber(Client|\Model_Client $client): ?string
+    public function resolveDocumentNumber(?Client $client): ?string
     {
+        if (!$client instanceof Client) {
+            return null;
+        }
+
         $config = $this->di['mod_config']('client');
         $customFields = $config['custom_fields'] ?? [];
 
@@ -1104,9 +954,7 @@ class Service implements InjectionAwareInterface
             if ($title === '' || !array_filter($keywords, fn ($k): bool => str_contains($title, (string) $k))) {
                 continue;
             }
-            $value = $client instanceof Client
-                ? $client->{'getCustom' . $i}()
-                : ($client->{$fieldName} ?? null);
+            $value = $client->{'getCustom' . $i}();
             if ($value !== null && $value !== '') {
                 return (string) $value;
             }

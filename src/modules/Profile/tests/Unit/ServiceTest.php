@@ -184,11 +184,6 @@ test('throws exception when email change is not allowed', function (): void {
         ->atLeast()->once()
         ->andReturn(true);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->never()
-        ->andReturn(true);
-
     $modMock = Mockery::mock(FOSSBilling\Module::class);
     $modMock->shouldReceive('getConfig')
         ->atLeast()->once()
@@ -204,7 +199,6 @@ test('throws exception when email change is not allowed', function (): void {
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['events_manager'] = $emMock;
-    $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $clientServiceMock);
     $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
 
@@ -225,11 +219,6 @@ test('throws exception when email already registered', function (): void {
         ->atLeast()->once()
         ->andReturn(true);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->never()
-        ->andReturn(true);
-
     $modMock = Mockery::mock(FOSSBilling\Module::class);
     $modMock->shouldReceive('getConfig')
         ->atLeast()->once()
@@ -248,7 +237,6 @@ test('throws exception when email already registered', function (): void {
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['events_manager'] = $emMock;
-    $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $clientServiceMock);
     $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
     $di['tools'] = $toolsMock;

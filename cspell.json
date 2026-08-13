@@ -59,7 +59,9 @@
         "initialises",
         "WORKTREE",
         "previewable",
-        "falsey"
+        "falsey",
+        "unindexed",
+        "catchable"
     ],
 
     "ignoreWords": [
@@ -540,7 +542,8 @@
         "Namingo",
         "htype",
         "webspace",
-        "webspaces"
+        "webspaces",
+        "serviceexternal"
     ],
     "ignorePaths": [
         "node_modules/**",

@@ -58,7 +58,7 @@ class ServicePayGateway implements InjectionAwareInterface
         $sql = 'SELECT id, gateway, name
             FROM pay_gateway';
 
-        $rows = $this->di['db']->getAll($sql);
+        $rows = $this->di['em']->getConnection()->fetchAllAssociative($sql);
         $result = [];
         foreach ($rows as $row) {
             $result[$row['id']] = $row['name'];
@@ -75,7 +75,7 @@ class ServicePayGateway implements InjectionAwareInterface
         $sql = 'SELECT id, gateway, name
             FROM pay_gateway';
 
-        $rows = $this->di['db']->getAll($sql);
+        $rows = $this->di['em']->getConnection()->fetchAllAssociative($sql);
         $exists = [];
         foreach ($rows as $row) {
             $exists[$row['gateway']] = $row['name'];
@@ -149,7 +149,7 @@ class ServicePayGateway implements InjectionAwareInterface
             'accepted_currencies' => $this->getAcceptedCurrencies($model),
         ];
 
-        if ($identity instanceof \Model_Admin) {
+        if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
             $result['supports_one_time_payments'] = $single;
             $result['supports_subscriptions'] = $recurrent;
             $result['config'] = json_decode($model->getConfig() ?? '', true) ?? [];

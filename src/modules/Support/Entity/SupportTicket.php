@@ -111,7 +111,7 @@ class SupportTicket implements ApiArrayInterface, TimestampInterface
         $this->notes = new ArrayCollection();
     }
 
-    public function toApiArray(\Model_Admin|\Model_Client|\Model_Guest|null $identity = null): array
+    public function toApiArray(\Box\Mod\Client\Entity\Client|\Box\Mod\Staff\Entity\Admin|\FOSSBilling\Identity\Guest|null $identity = null): array
     {
         $data = [
             'id' => $this->id,
@@ -136,7 +136,7 @@ class SupportTicket implements ApiArrayInterface, TimestampInterface
             $data['hash'] = $data['access_hash'];
         }
 
-        if ($identity instanceof \Model_Admin) {
+        if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
             return $data;
         }
 

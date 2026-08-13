@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice;
 
+use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\PayGateway;
@@ -89,7 +90,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return true;
     }
 
-    public function createAndProcess($ipn)
+    public function createAndProcess($ipn): ?int
     {
         $id = $this->create($ipn);
 
@@ -303,120 +304,33 @@ class ServiceTransaction implements InjectionAwareInterface
     }
 
     /**
-     * Convert a transaction search result without loading its model and gateway again.
+     * Convert a transaction list result into the API shape without loading the
+     * transaction's gateway again.
+     *
+     * The gateway name is provided by the list query itself (a LEFT JOIN to
+     * `pay_gateway`), avoiding the per-row lookup that `toApiArray()` performs.
      */
-    public function searchResultToApiArray(array $row): array
+    public function transactionResultToApiArray(Transaction $transaction, ?string $gateway): array
     {
         return [
-            'id' => $row['id'],
-            'invoice_id' => $row['invoice_id'],
-            'txn_id' => $row['txn_id'],
-            'txn_status' => $row['txn_status'],
-            'gateway_id' => $row['gateway_id'],
-            'gateway' => $row['gateway'] ?? null,
-            'amount' => (float) ($row['amount'] ?? 0),
-            'currency' => $row['currency'],
-            'type' => $row['type'],
-            'status' => $row['status'],
-            'ip' => $row['ip'],
-            'validate_ipn' => $row['validate_ipn'],
-            'error' => $row['error'],
-            'error_code' => $row['error_code'],
-            'note' => $row['note'],
-            'created_at' => $row['created_at'],
-            'updated_at' => $row['updated_at'],
+            'id' => $transaction->getId(),
+            'invoice_id' => $transaction->getInvoiceId(),
+            'txn_id' => $transaction->getTxnId(),
+            'txn_status' => $transaction->getTxnStatus(),
+            'gateway_id' => $transaction->getGatewayId(),
+            'gateway' => $gateway,
+            'amount' => (float) ($transaction->getAmount() ?? 0),
+            'currency' => $transaction->getCurrency(),
+            'type' => $transaction->getType(),
+            'status' => $transaction->getStatus(),
+            'ip' => $transaction->getIp(),
+            'validate_ipn' => $transaction->isValidateIpn(),
+            'error' => $transaction->getError(),
+            'error_code' => $transaction->getErrorCode(),
+            'note' => $transaction->getNote(),
+            'created_at' => $transaction->getCreatedAt()?->format('Y-m-d H:i:s'),
+            'updated_at' => $transaction->getUpdatedAt()?->format('Y-m-d H:i:s'),
         ];
-    }
-
-    public function getSearchQuery(array $data): array
-    {
-        $sql = 'SELECT m.*, pg.name AS gateway
-                FROM transaction as m
-                LEFT JOIN invoice as i on m.invoice_id = i.id
-                LEFT JOIN pay_gateway as pg on m.gateway_id = pg.id
-                WHERE 1 ';
-
-        $id = $data['id'] ?? null;
-        $search = $data['search'] ?? null;
-        $invoice_hash = $data['invoice_hash'] ?? null;
-        $invoice_id = $data['invoice_id'] ?? null;
-        $gateway_id = $data['gateway_id'] ?? null;
-        $client_id = $data['client_id'] ?? null;
-        $status = $data['status'] ?? null;
-        $currency = $data['currency'] ?? null;
-        $type = $data['type'] ?? null;
-        $txn_id = $data['txn_id'] ?? null;
-
-        $date_from = $data['date_from'] ?? null;
-        $date_to = $data['date_to'] ?? null;
-
-        $params = [];
-        if ($id) {
-            $sql .= ' AND m.id = :id';
-            $params['id'] = $id;
-        }
-
-        if ($status) {
-            $sql .= ' AND m.status = :status';
-            $params['status'] = $status;
-        }
-
-        if ($invoice_hash) {
-            $sql .= ' AND i.hash = :hash';
-            $params['hash'] = $invoice_hash;
-        }
-
-        if ($invoice_id) {
-            $sql .= ' AND m.invoice_id = :invoice_id';
-            $params['invoice_id'] = $invoice_id;
-        }
-
-        if ($gateway_id) {
-            $sql .= ' AND m.gateway_id = :gateway_id';
-            $params['gateway_id'] = $gateway_id;
-        }
-
-        if ($client_id) {
-            $sql .= ' AND i.client_id = :client_id';
-            $params['client_id'] = $client_id;
-        }
-
-        if ($currency) {
-            $sql .= ' AND m.currency = :currency';
-            $params['currency'] = $currency;
-        }
-
-        if ($type) {
-            $sql .= ' AND m.type = :type';
-            $params['type'] = $type;
-        }
-
-        if ($txn_id) {
-            $sql .= ' AND m.txn_id = :txn_id';
-            $params['txn_id'] = $txn_id;
-        }
-
-        if ($date_from) {
-            $sql .= ' AND UNIX_TIMESTAMP(m.created_at) >= :date_from';
-            $params['date_from'] = strtotime((string) $date_from);
-        }
-
-        if ($date_to) {
-            $sql .= ' AND UNIX_TIMESTAMP(m.created_at) <= :date_to';
-            $params['date_to'] = strtotime((string) $date_to);
-        }
-
-        if ($search) {
-            $sql .= ' AND (m.note LIKE :note OR m.invoice_id LIKE :search_invoice_id OR m.txn_id LIKE :search_txn_id OR m.ipn LIKE :ipn)';
-            $params['note'] = "%$search%";
-            $params['search_invoice_id'] = "%$search%";
-            $params['search_txn_id'] = "%$search%";
-            $params['ipn'] = "%$search%";
-        }
-
-        $sql .= ' ORDER BY m.id DESC';
-
-        return [$sql, $params];
     }
 
     public function counter(): array
@@ -424,7 +338,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $sql = 'SELECT status, count(id) as counter
             FROM transaction
             GROUP BY status';
-        $rows = $this->di['db']->getAll($sql);
+        $rows = $this->di['em']->getConnection()->fetchAllAssociative($sql);
         $data = [];
         foreach ($rows as $row) {
             $data[$row['status']] = $row['counter'];
@@ -492,7 +406,7 @@ class ServiceTransaction implements InjectionAwareInterface
                     OR (m.status = :processing_status AND (m.updated_at IS NULL OR m.updated_at <= :processing_retry_after))
                 ORDER BY m.id DESC';
 
-        return $this->di['db']->getAll($sql, [
+        return $this->di['em']->getConnection()->fetchAllAssociative($sql, [
             'received_status' => Transaction::STATUS_RECEIVED,
             'processing_status' => Transaction::STATUS_PROCESSING,
             'processing_retry_after' => $this->getProcessingRecoveryThreshold(),
@@ -520,7 +434,7 @@ class ServiceTransaction implements InjectionAwareInterface
      */
     public function claimForProcessing(int $id): bool
     {
-        $affectedRows = $this->di['db']->exec(
+        $affectedRows = $this->di['em']->getConnection()->executeStatement(
             'UPDATE transaction SET status = ?, updated_at = ? WHERE id = ? AND (status IN (?, ?) OR (status = ? AND (updated_at IS NULL OR updated_at <= ?)))',
             [
                 Transaction::STATUS_PROCESSING,
@@ -903,12 +817,12 @@ class ServiceTransaction implements InjectionAwareInterface
         $period = $subscriptionService->getSubscriptionPeriod($invoice);
 
         $s = new Subscription();
-        $s->setClientId($invoice->getClientId() !== null ? (int) $invoice->getClientId() : null);
+        $s->setClientId($invoice->getClientId() ?? null);
         $s->setPayGatewayId($tx->getGatewayId());
         $s->setSid($tx->getSId());
         $s->setPeriod($period);
         $s->setRelType('invoice');
-        $s->setRelId($invoice->getId() !== null ? (int) $invoice->getId() : null);
+        $s->setRelId($invoice->getId() ?? null);
         $s->setAmount($tx->getAmount());
         $s->setCurrency($invoice->getCurrency());
         $s->setStatus('active');
@@ -971,9 +885,12 @@ class ServiceTransaction implements InjectionAwareInterface
         if (!$proforma instanceof Invoice) {
             throw new \FOSSBilling\Exception('Invoice #:id not found', [':id' => $tx->getInvoiceId()], 703);
         }
-        $client = $this->di['db']->load('Client', $proforma->getClientId());
+        $client = $this->di['em']->getRepository(Client::class)->find($proforma->getClientId());
+        if (!$client instanceof Client) {
+            throw new \FOSSBilling\Exception('Client #:id not found', [':id' => $proforma->getClientId()]);
+        }
 
-        if ($client->currency != $proforma->getCurrency()) {
+        if ($client->getCurrency() != $proforma->getCurrency()) {
             throw new \FOSSBilling\Exception('Client currency does not match invoice currency');
         }
 
@@ -983,7 +900,7 @@ class ServiceTransaction implements InjectionAwareInterface
         }
 
         $credit = new ClientBalance();
-        $credit->setClientId((int) $client->id);
+        $credit->setClientId((int) $client->getId());
         $credit->setType('transaction');
         $credit->setRelId((string) $tx->getId());
         $credit->setDescription('Invoice #' . $proforma->getId() . ' payment received from transaction #' . $tx->getId());

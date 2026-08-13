@@ -80,9 +80,7 @@ test('creates a subscription', function (): void {
         'gateway_id' => 2,
     ];
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->id = 1;
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
     $pg = createEntity(PayGateway::class, ['id' => 2]);
 
     $result = $service->create($client, $pg, $data);
@@ -333,13 +331,12 @@ test('finds a subscription ID by gateway SID without throwing for missing record
 test('converts to api array', function (): void {
     $subscriptionModel = createEntity(Subscription::class, ['id' => 1, 'clientId' => 5, 'payGatewayId' => 1]);
 
-    $clientModel = new Model_Client();
-    $clientModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientModel = createEntity(Box\Mod\Client\Entity\Client::class);
 
     $gatewayModel = createEntity(PayGateway::class, ['id' => 1]);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('load')
+    $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepo->shouldReceive('find')
         ->atLeast()->once()
         ->andReturn($clientModel);
 
@@ -356,7 +353,10 @@ test('converts to api array', function (): void {
         ->atLeast()->once()
         ->andReturn([]);
 
-    $service = subscriptionService(payGatewayRepo: $pgRepo);
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepo);
+
+    $service = subscriptionService(payGatewayRepo: $pgRepo, em: $em);
     $service->getDi()['mod_service'] = $service->getDi()->protect(function ($serviceName, $sub = '') use ($clientServiceMock, $payGatewayService) {
         if ($serviceName == 'Client') {
             return $clientServiceMock;
@@ -365,7 +365,6 @@ test('converts to api array', function (): void {
             return $payGatewayService;
         }
     });
-    $service->getDi()['db'] = $dbMock;
 
     $result = $service->toApiArray($subscriptionModel);
     expect($result)->toBeArray();
@@ -395,58 +394,14 @@ test('deletes a subscription', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('gets search query with various parameters', function (array $data, string $expectedSqlPart, array $expectedParams): void {
-    $service = subscriptionService();
-
-    $result = $service->getSearchQuery($data);
-
-    expect($result)->toBeArray();
-    expect($result[0])->toBeString();
-    expect($result[1])->toBeArray();
-
-    expect($result[1])->toBe($expectedParams);
-    expect(str_contains((string) $result[0], $expectedSqlPart))->toBeTrue();
-})->with([
-    [
-        [], 'FROM subscription', [],
-    ],
-    [
-        ['status' => 'active'], 'AND status = :status', [':status' => 'active'],
-    ],
-    [
-        ['invoice_id' => '1'], 'AND invoice_id = :invoice_id', [':invoice_id' => '1'],
-    ],
-    [
-        ['gateway_id' => '2'], 'AND gateway_id = :gateway_id', [':gateway_id' => '2'],
-    ],
-    [
-        ['client_id' => '3'], 'AND client_id  = :client_id', [':client_id' => '3'],
-    ],
-    [
-        ['currency' => 'EUR'], 'AND currency =  :currency', [':currency' => 'EUR'],
-    ],
-    [
-        ['date_from' => '1234567'], 'AND UNIX_TIMESTAMP(created_at) >= :date_from', [':date_from' => '1234567'],
-    ],
-    [
-        ['date_to' => '1234567'], 'AND UNIX_TIMESTAMP(created_at) <= :date_to', [':date_to' => '1234567'],
-    ],
-    [
-        ['id' => '10'], 'AND id = :id', [':id' => '10'],
-    ],
-    [
-        ['sid' => '10'], 'AND sid = :sid', [':sid' => '10'],
-    ],
-]);
-
 test('returns false when invoice is not subscribable', function (): void {
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')
+    $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')
         ->atLeast()->once()
         ->andReturn([]);
 
     $service = subscriptionService();
-    $service->getDi()['db'] = $dbMock;
+    $service->getDi()['em']->shouldReceive('getConnection')->andReturn($connection);
 
     $invoice_id = 2;
     $result = $service->isSubscribable($invoice_id);
@@ -454,17 +409,16 @@ test('returns false when invoice is not subscribable', function (): void {
 });
 
 test('checks if invoice is subscribable', function (): void {
-    $dbMock = Mockery::mock('\Box_Database');
-
     $getAllResults = [
         ['period' => '1W', 'price' => 10, 'quantity' => 1],
     ];
-    $dbMock->shouldReceive('getAll')
+    $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')
         ->atLeast()->once()
         ->andReturn($getAllResults);
 
     $service = subscriptionService();
-    $service->getDi()['db'] = $dbMock;
+    $service->getDi()['em']->shouldReceive('getConnection')->andReturn($connection);
 
     $invoice_id = 2;
     $result = $service->isSubscribable($invoice_id);
@@ -475,8 +429,8 @@ test('gets subscription period', function (): void {
     $serviceMock = Mockery::mock(ServiceSubscription::class)->makePartial()->shouldAllowMockingProtectedMethods();
 
     $period = '1W';
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')
+    $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')
         ->atLeast()->once()
         ->andReturn([['period' => $period, 'price' => 10, 'quantity' => 1]]);
 
@@ -484,8 +438,8 @@ test('gets subscription period', function (): void {
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->shouldReceive('getRepository')->with(Subscription::class)->andReturn(Mockery::mock(SubscriptionRepository::class));
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn(Mockery::mock(PayGatewayRepository::class));
+    $em->shouldReceive('getConnection')->andReturn($connection);
     $di['em'] = $em;
-    $di['db'] = $dbMock;
     $serviceMock->setDi($di);
 
     $invoiceModel = createEntity(Invoice::class);

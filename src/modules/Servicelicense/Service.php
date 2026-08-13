@@ -366,7 +366,7 @@ class Service implements InjectionAwareInterface
             'versions' => $model->getAllowedVersions(),
             'pinged_at' => $model->getPingedAt()?->format('Y-m-d H:i:s'),
         ];
-        if ($identity instanceof \Model_Admin) {
+        if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
             $result['plugin'] = $model->getPlugin();
         }
 

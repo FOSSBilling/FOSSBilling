@@ -24,8 +24,8 @@ class Box_Authorization
             return false;
         }
 
-        $client = $this->di['db']->load('Client', $clientId);
-        if (!$client || $client->status !== Model_Client::ACTIVE) {
+        $client = $this->di['em']->getRepository(Box\Mod\Client\Entity\Client::class)->find($clientId);
+        if (!$client instanceof Box\Mod\Client\Entity\Client || $client->getStatus() !== Box\Mod\Client\Entity\Client::ACTIVE) {
             $this->session->delete('client_id');
 
             return false;
@@ -41,8 +41,8 @@ class Box_Authorization
             return false;
         }
 
-        $adminModel = $this->di['db']->load('Admin', $admin['id']);
-        if (!$adminModel || $adminModel->status !== Model_Admin::STATUS_ACTIVE || $adminModel->isCron()) {
+        $adminModel = $this->di['em']->getRepository(Box\Mod\Staff\Entity\Admin::class)->find($admin['id']);
+        if (!$adminModel instanceof Box\Mod\Staff\Entity\Admin || $adminModel->getStatus() !== Box\Mod\Staff\Entity\Admin::STATUS_ACTIVE || $adminModel->isCron()) {
             $this->session->delete('admin');
 
             return false;
@@ -59,11 +59,16 @@ class Box_Authorization
             return null;
         }
 
-        if ($this->di['password']->verify($plainTextPassword, $user->pass)) {
-            if ($this->di['password']->needsRehash($user->pass)) {
-                $user->pass = $this->di['password']->hashIt($plainTextPassword);
-                $user->updated_at = date('Y-m-d H:i:s');
-                $this->di['db']->store($user);
+        if (!$user instanceof Box\Mod\Client\Entity\Client && !$user instanceof Box\Mod\Staff\Entity\Admin) {
+            throw new RuntimeException('Unknown user type');
+        }
+
+        $pass = $user->getPass();
+        if ($this->di['password']->verify($plainTextPassword, $pass)) {
+            if ($this->di['password']->needsRehash($pass)) {
+                $user->setPass($this->di['password']->hashIt($plainTextPassword));
+                $this->di['em']->persist($user);
+                $this->di['em']->flush();
             }
 
             return $user;

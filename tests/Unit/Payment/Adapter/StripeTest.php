@@ -8,7 +8,6 @@ use Box\Mod\Invoice\Repository\TransactionRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Payment_Adapter_Stripe;
 use Stripe\StripeClient;
-use Tests\Helpers\DummyBean;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
@@ -151,6 +150,11 @@ function buildEntityManagerMocks(): array
     $invoiceRepo->shouldReceive('find')->byDefault()->andReturn(null);
     $invoiceRepo->shouldReceive('findByHash')->byDefault()->andReturn(null);
 
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')->byDefault()->andReturn([]);
+    $connection->shouldReceive('fetchOne')->byDefault()->andReturn(null);
+    $connection->shouldReceive('executeStatement')->byDefault()->andReturn(1);
+
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->shouldReceive('getRepository')->byDefault()->andReturnUsing(static fn (string $class): object => match ($class) {
         Transaction::class => $txRepo,
@@ -158,11 +162,12 @@ function buildEntityManagerMocks(): array
         Invoice::class => $invoiceRepo,
         default => Mockery::mock(Doctrine\ORM\EntityRepository::class)->shouldIgnoreMissing(),
     });
+    $em->shouldReceive('getConnection')->byDefault()->andReturn($connection);
     $em->shouldReceive('flush')->byDefault();
     $em->shouldReceive('persist')->byDefault();
     $em->shouldReceive('remove')->byDefault();
 
-    return ['em' => $em, 'txRepo' => $txRepo, 'subRepo' => $subRepo, 'invoiceRepo' => $invoiceRepo];
+    return ['em' => $em, 'txRepo' => $txRepo, 'subRepo' => $subRepo, 'invoiceRepo' => $invoiceRepo, 'connection' => $connection];
 }
 
 describe('getStripeRecurringParams', function (): void {
@@ -306,9 +311,8 @@ describe('handleSubscriptionCreated', function (): void {
             })
             ->andReturn(1);
 
-        $dbMock = Mockery::mock('\Box_Database');
-        $dbMock->shouldReceive('getCell')->andReturn('1M');
-        $dbMock->shouldReceive('getAll')->andReturn([['title' => 'Test Product']]);
+        $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('fetchAllAssociative')->andReturn([['title' => 'Test Product']]);
 
         $invoiceService = Mockery::mock();
         $invoiceService->shouldReceive('getTotalWithTax')->andReturn(10.00);
@@ -317,6 +321,7 @@ describe('handleSubscriptionCreated', function (): void {
         $subscriptionService->shouldReceive('getSubscriptionPeriod')->andReturn('1M');
 
         ['em' => $em, 'subRepo' => $subRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
+        $em->shouldReceive('getConnection')->andReturn($connection);
         $invoiceRepo->shouldReceive('find')->with(5)->andReturn($invoiceModel);
         $subRepo->shouldReceive('findOneBy')
             ->once()
@@ -324,7 +329,6 @@ describe('handleSubscriptionCreated', function (): void {
             ->andReturn(null);
 
         $di = container();
-        $di['db'] = $dbMock;
         $di['em'] = $em;
         $di['mod_service'] = $di->protect(function ($name, $sub = '') use ($invoiceService, $subscriptionService) {
             if ($name === 'Invoice' && $sub === 'Subscription') {
@@ -364,7 +368,6 @@ describe('handleSubscriptionCreated', function (): void {
         $event->data = (object) ['object' => $stripeSubscription];
 
         $di = container();
-        $di['db'] = Mockery::mock('\Box_Database');
         $this->adapter->setDi($di);
 
         $result = invokePrivateMethod($this->adapter, 'handleSubscriptionCreated', [
@@ -602,12 +605,6 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
         $stripeMock->subscriptions = $subscriptionsMock;
         setPrivateProperty($this->adapter, 'stripe', $stripeMock);
 
-        $dbMock = Mockery::mock('\Box_Database');
-        // Already-paid / billing_reason fallback invoice lookup returns nothing.
-        $dbMock->shouldReceive('findOne')
-            ->with('Invoice', 'id = :id', Mockery::any())
-            ->andReturn(null);
-
         $transactionService = Mockery::mock();
         $transactionService->shouldReceive('claimForProcessing')
             ->andReturn(false);
@@ -624,7 +621,6 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
         expectStripeObjectLock($dbalMock, 'in_123', 1);
         $di = container();
         $di['dbal'] = $dbalMock;
-        $di['db'] = $dbMock;
         $di['em'] = $em;
         $di['mod_service'] = $di->protect(function ($module, $service = null) use ($transactionService) {
             if ($service === 'Transaction') {
@@ -697,8 +693,6 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
         $invoiceModel->approved = 0;
         $invoiceModel->currency = 'EUR';
 
-        $dbMock = Mockery::mock('\Box_Database');
-
         $transactionService = Mockery::mock();
         $transactionService->shouldReceive('claimForProcessing')
             ->andReturn(true);
@@ -731,7 +725,6 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
         expectStripeObjectLock($dbalMock, 'in_456', 1);
         $di = container();
         $di['dbal'] = $dbalMock;
-        $di['db'] = $dbMock;
         $di['em'] = $em;
         $di['mod_service'] = $di->protect(fn ($module, $service = null) => match ($service) {
             'Transaction' => $transactionService,
@@ -920,16 +913,6 @@ describe('handleInvoicePaymentSucceeded with invoice_payment event (API 2026-06-
         $invoiceModel->status = Invoice::STATUS_UNPAID;
         $invoiceModel->approved = 0;
 
-        $dbMock = Mockery::mock('\Box_Database');
-        // Already-paid / billing_reason fallback invoice lookup returns nothing
-        // (status check uses the explicit getExistingModelById below).
-        $dbMock->shouldReceive('findOne')
-            ->with('Invoice', 'id = :id', Mockery::any())
-            ->andReturn(null);
-        $dbMock->shouldReceive('getExistingModelById')
-            ->with('Invoice', 42)
-            ->andReturn($invoiceModel);
-
         $transactionService = Mockery::mock();
         $transactionService->shouldReceive('claimForProcessing')
             ->andReturn(true);
@@ -945,7 +928,8 @@ describe('handleInvoicePaymentSucceeded with invoice_payment event (API 2026-06-
         $apiAdmin = Mockery::mock();
         $apiAdmin->shouldReceive('client_balance_add_funds')->once();
 
-        ['em' => $em, 'txRepo' => $txRepo] = buildEntityManagerMocks();
+        ['em' => $em, 'txRepo' => $txRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
+        $invoiceRepo->shouldReceive('find')->with(42)->andReturn($invoiceModel);
         $txRepo->shouldReceive('findProcessingOrProcessedByTxnId')
             ->once()
             ->with('in_1TnBdC', null, 101)
@@ -955,7 +939,6 @@ describe('handleInvoicePaymentSucceeded with invoice_payment event (API 2026-06-
         expectStripeObjectLock($dbalMock, 'in_1TnBdC', 4);
         $di = container();
         $di['dbal'] = $dbalMock;
-        $di['db'] = $dbMock;
         $di['em'] = $em;
         $di['mod_service'] = $di->protect(fn ($module, $service = null) => match ($service) {
             'Transaction' => $transactionService,
@@ -1043,15 +1026,9 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
         $invoiceModel->approved = 1;
         $invoiceModel->client_id = 7;
 
-        $dbMock = Mockery::mock('\Box_Database');
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
         expectStripeObjectLock($dbalMock, 'pi_new', 1);
-        $clientModel = new Model_Client();
-        $clientModel->loadBean(new DummyBean());
-        $clientModel->id = 7;
-        $dbMock->shouldReceive('getExistingModelById')
-            ->with('Client', 7)
-            ->andReturn($clientModel);
+        $clientModel = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]);
 
         $transactionService = Mockery::mock();
         $transactionService->shouldReceive('claimForProcessing')
@@ -1059,7 +1036,10 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
 
         $invoiceService = Mockery::mock();
         $invoiceService->shouldReceive('getTotalWithTax')->andReturn(29.99);
-        $invoiceService->shouldReceive('validatePaymentAmount')->andReturn(null);
+        $invoiceService->shouldReceive('validatePaymentAmount')
+            ->once()
+            ->with(Mockery::on(fn (mixed $amount): bool => is_float($amount) && $amount === 29.99), 29.99)
+            ->andReturn(null);
         $invoiceService->shouldReceive('isInvoiceTypeDeposit')->andReturn(false);
         $invoiceService->shouldReceive('payInvoiceWithCredits')->andReturn(true);
 
@@ -1067,6 +1047,9 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
         $clientService->shouldReceive('addFunds')->once();
 
         ['em' => $em, 'txRepo' => $txRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
+        $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+        $clientRepo->shouldReceive('find')->with(7)->andReturn($clientModel);
+        $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepo);
         $invoiceRepo->shouldReceive('find')
             ->with(15)
             ->andReturn($invoiceModel, null);
@@ -1076,7 +1059,6 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
             ->andReturn(null);
 
         $di = container();
-        $di['db'] = $dbMock;
         $di['dbal'] = $dbalMock;
         $di['em'] = $em;
         $di['mod_service'] = $di->protect(fn ($module, $service = null) => match (true) {
@@ -1100,6 +1082,60 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
 });
 
 describe('processPaymentIntent', function (): void {
+    test('validates a redirect payment amount as a float', function (): void {
+        $tx = buildTransaction();
+        $tx->id = 402;
+        $tx->gateway_id = 4;
+        $tx->invoice_id = 15;
+
+        $invoice = createEntity(Invoice::class, [
+            'id' => 15,
+            'client_id' => 7,
+            'approved' => true,
+        ]);
+        $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]);
+        $charge = (object) [
+            'id' => 'pi_redirect',
+            'status' => 'succeeded',
+            'amount' => 2999,
+            'currency' => 'usd',
+        ];
+
+        $invoiceService = Mockery::mock();
+        $invoiceService->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(29.99);
+        $invoiceService->shouldReceive('validatePaymentAmount')
+            ->once()
+            ->with(Mockery::on(fn (mixed $amount): bool => is_float($amount) && $amount === 29.99), 29.99)
+            ->andReturn(null);
+        $invoiceService->shouldReceive('isInvoiceTypeDeposit')->once()->with($invoice)->andReturn(false);
+        $invoiceService->shouldReceive('payInvoiceWithCredits')->once()->with($invoice)->andReturn(true);
+
+        $transactionService = Mockery::mock();
+        $transactionService->shouldReceive('claimForProcessing')->once()->with(402)->andReturn(true);
+
+        $clientService = Mockery::mock();
+        $clientService->shouldReceive('addFunds')->once();
+
+        ['em' => $em, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
+        $invoiceRepo->shouldReceive('find')->with(15)->andReturn($invoice);
+        $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+        $clientRepo->shouldReceive('find')->once()->with(7)->andReturn($client);
+        $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepo);
+
+        $di = container();
+        $di['em'] = $em;
+        $di['mod_service'] = $di->protect(fn ($module, $service = null) => match (true) {
+            $service === 'Transaction' => $transactionService,
+            $module === 'client' => $clientService,
+            default => $invoiceService,
+        });
+        $this->adapter->setDi($di);
+
+        invokePrivateMethod($this->adapter, 'processPaymentIntentUnderLock', [$tx, $invoice, $charge]);
+
+        expect($tx->status)->toBe(Transaction::STATUS_PROCESSED);
+    });
+
     test('deletes the redirect transaction when the webhook already recorded the PaymentIntent', function (): void {
         $tx = buildTransaction();
         $tx->id = 401;
@@ -1253,11 +1289,6 @@ describe('handleSetupIntentSucceededWebhook', function (): void {
         $invoiceModel->buyer_first_name = 'Test';
         $invoiceModel->buyer_last_name = 'User';
 
-        $dbMock = Mockery::mock('\Box_Database');
-        $dbMock->shouldReceive('store')->andReturn($tx->id);
-        $dbMock->shouldReceive('getCell')->andReturn('1M');
-        $dbMock->shouldReceive('getAll')->andReturn([['title' => 'Test Product']]);
-
         // Mock the Stripe client for customer/subscription creation
         $customer = Stripe\Customer::constructFrom(['id' => 'cus_test']);
 
@@ -1289,7 +1320,9 @@ describe('handleSetupIntentSucceededWebhook', function (): void {
         $invoiceRepo->shouldReceive('find')
             ->with(25)
             ->andReturn($invoiceModel);
-        $di['db'] = $dbMock;
+        $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('fetchAllAssociative')->andReturn([['title' => 'Test Product']]);
+        $di['em']->shouldReceive('getConnection')->andReturn($connection);
         $this->adapter->setDi($di);
 
         invokePrivateMethod($this->adapter, 'handleSetupIntentSucceededWebhook', [
@@ -1490,14 +1523,14 @@ describe('Stripe webhook gateway ownership', function (): void {
         $invoice->nr = 15;
         $invoice->serie = 'INV';
 
-        $dbMock = Mockery::mock('\\Box_Database');
-        $dbMock->shouldReceive('getAll')->once()->andReturn([['title' => 'Hosting']]);
+        $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('fetchAllAssociative')->once()->andReturn([['title' => 'Hosting']]);
 
         $invoiceService = Mockery::mock();
         $invoiceService->shouldReceive('getTotalWithTax')->once()->andReturn(15.00);
 
         $di = container();
-        $di['db'] = $dbMock;
+        $di['em']->shouldReceive('getConnection')->andReturn($connection);
         $di['mod_service'] = $di->protect(fn () => $invoiceService);
         $adapter->setDi($di);
 
@@ -1631,13 +1664,7 @@ describe('applyOneTimePayment already-paid guard', function (): void {
         $invoiceService = Mockery::mock();
         $transactionService = Mockery::mock();
 
-        $dbMock = Mockery::mock('\Box_Database');
-        $dbMock->shouldReceive('findOne')
-            ->with('Invoice', 'id = :id', Mockery::any())
-            ->andReturn($invoice);
-
         $di = container();
-        $di['db'] = $dbMock;
         $di['mod_service'] = $di->protect(function ($name, $sub = null) use ($clientService, $invoiceService, $transactionService) {
             if ($name === 'client') {
                 return $clientService;

@@ -56,7 +56,6 @@ require_once __DIR__ . '/../src/vendor/autoload.php';
 require_once __DIR__ . '/Helpers/Container.php';
 require_once __DIR__ . '/Helpers/Factories.php';
 require_once __DIR__ . '/Helpers/Api.php';
-require_once __DIR__ . '/Helpers/DummyBean.php';
 require_once __DIR__ . '/Support/CombinedTwigLoader.php';
 require_once __DIR__ . '/Support/PermissiveStub.php';
 require_once __DIR__ . '/Support/PermissiveContainer.php';

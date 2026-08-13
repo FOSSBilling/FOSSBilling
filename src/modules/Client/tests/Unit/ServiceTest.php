@@ -183,61 +183,61 @@ dataset('searchQueryData', [
     [
         ['id' => 1],
         '(c.id = :client_id OR c.aid = :alt_client_id)',
-        [':client_id' => 1, ':alt_client_id' => 1],
+        ['client_id' => 1, 'alt_client_id' => 1],
     ],
     [
         ['name' => 'test'],
         '(c.first_name LIKE :first_name or c.last_name LIKE :last_name )',
-        [':first_name' => '%test%', ':last_name' => '%test%'],
+        ['first_name' => '%test%', 'last_name' => '%test%'],
     ],
     [
         ['email' => 'test@example.com'],
         'c.email LIKE :email',
-        [':email' => '%test@example.com%'],
+        ['email' => '%test@example.com%'],
     ],
     [
         ['company' => 'LTD company'],
         'c.company LIKE :company',
-        [':company' => '%LTD company%'],
+        ['company' => '%LTD company%'],
     ],
     [
         ['status' => 'TEST status'],
         'c.status = :status',
-        [':status' => 'TEST status'],
+        ['status' => 'TEST status'],
     ],
     [
         ['group_id' => '1'],
         'c.client_group_id = :group_id',
-        [':group_id' => '1'],
+        ['group_id' => '1'],
     ],
     [
         ['created_at' => '2012-12-12'],
         "DATE_FORMAT(c.created_at, '%Y-%m-%d') = :created_at",
-        [':created_at' => '2012-12-12'],
+        ['created_at' => '2012-12-12'],
     ],
     [
         ['date_from' => '2012-12-10'],
         'UNIX_TIMESTAMP(c.created_at) >= :date_from',
-        [':date_from' => 1355097600],
+        ['date_from' => 1355097600],
     ],
     [
         ['date_to' => '2012-12-11'],
         'UNIX_TIMESTAMP(c.created_at) <= :date_to',
-        [':date_to' => 1355184000],
+        ['date_to' => 1355184000],
     ],
     [
         ['search' => '2'],
         '(c.id = :cid OR c.aid = :caid)',
-        [':cid' => '2', ':caid' => '2'],
+        ['cid' => '2', 'caid' => '2'],
     ],
     [
         ['search' => 'Keyword'],
         "(c.company LIKE :s_company OR c.first_name LIKE :s_first_name OR c.last_name LIKE :s_last_name OR c.email LIKE :s_email OR CONCAT(c.first_name,  ' ', c.last_name ) LIKE  :full_name)",
-        [':s_company' => '%Keyword%',
-            ':s_first_name' => '%Keyword%',
-            ':s_last_name' => '%Keyword%',
-            ':s_email' => '%Keyword%',
-            ':full_name' => '%Keyword%',
+        ['s_company' => '%Keyword%',
+            's_first_name' => '%Keyword%',
+            's_last_name' => '%Keyword%',
+            's_email' => '%Keyword%',
+            'full_name' => '%Keyword%',
         ],
     ],
 ]);
@@ -351,9 +351,6 @@ test('canChangeCurrency returns true when model currency is not set', function (
     $currency = 'EUR';
     $model = createEntity(Box\Mod\Client\Entity\Client::class);
 
-    $database = Mockery::mock('\Box_Database');
-    $database->shouldReceive('findOne')->never();
-
     $result = $service->canChangeCurrency($model, $currency);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
@@ -363,9 +360,6 @@ test('canChangeCurrency returns false when currencies are identical', function (
     $service = new Box\Mod\Client\Service();
     $currency = 'EUR';
     $model = createEntity(Box\Mod\Client\Entity\Client::class, ['currency' => $currency]);
-
-    $database = Mockery::mock('\Box_Database');
-    $database->shouldReceive('findOne')->never();
 
     $result = $service->canChangeCurrency($model, $currency);
     expect($result)->toBeBool();
@@ -393,22 +387,22 @@ dataset('searchBalanceQueryData', [
     [
         ['id' => 1],
         'm.id = :id',
-        [':id' => 1],
+        ['id' => 1],
     ],
     [
         ['client_id' => 1],
         'm.client_id = :client_id',
-        [':client_id' => 1],
+        ['client_id' => 1],
     ],
     [
         ['date_from' => '2012-12-10'],
         'm.created_at >= :date_from',
-        [':date_from' => 1355097600],
+        ['date_from' => 1355097600],
     ],
     [
         ['date_to' => '2012-12-11'],
         'm.created_at <= :date_to',
-        [':date_to' => 1355184000],
+        ['date_to' => 1355184000],
     ],
 ]);
 
@@ -491,15 +485,15 @@ dataset('searchHistoryQueryData', [
         ['search' => 'sameValue'],
         '(c.first_name LIKE :first_name OR c.last_name LIKE :last_name OR c.email LIKE :email OR c.id LIKE :id)',
         [
-            ':first_name' => '%sameValue%',
-            ':last_name' => '%sameValue%',
-            ':email' => '%sameValue%',
-            ':id' => 'sameValue'],
+            'first_name' => '%sameValue%',
+            'last_name' => '%sameValue%',
+            'email' => '%sameValue%',
+            'id' => 'sameValue'],
     ],
     [
         ['client_id' => '1'],
         'ach.client_id = :client_id',
-        [':client_id' => '1'],
+        ['client_id' => '1'],
     ],
 ]);
 
@@ -633,16 +627,12 @@ test('getClientBalance returns numeric', function (): void {
 test('remove wraps client cleanup and flush in one transaction', function (): void {
     $service = new Box\Mod\Client\Service();
     $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
-    $legacyClient = Mockery::mock(Model_Client::class);
     $reset = createEntity(Box\Mod\Client\Entity\ClientPasswordReset::class, ['client_id' => 1]);
 
-    $db = container()['db'];
-    $db->shouldReceive('getExistingModelById')->once()->with('Client', 1)->andReturn($legacyClient);
-
     $services = [];
-    foreach (['order', 'invoice', 'support', 'email'] as $module) {
+    foreach (['order', 'invoice', 'support', 'email', 'activity'] as $module) {
         $moduleService = Mockery::mock();
-        $moduleService->shouldReceive('rmByClient')->once()->with($legacyClient);
+        $moduleService->shouldReceive('rmByClient')->once()->with($client);
         $services[$module] = $moduleService;
     }
 
@@ -650,12 +640,7 @@ test('remove wraps client cleanup and flush in one transaction', function (): vo
     $balanceService->shouldReceive('rmByClient')->once()->with($client);
     $services['client:balance'] = $balanceService;
 
-    $activityService = Mockery::mock();
-    $activityService->shouldReceive('rmByClient')->once()->with($client);
-    $services['activity'] = $activityService;
-
     $di = container();
-    $di['db'] = $db;
     $di['mod_service'] = $di->protect(moduleService($services));
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
@@ -688,17 +673,12 @@ test('remove wraps client cleanup and flush in one transaction', function (): vo
 test('remove rolls back and rethrows cleanup failures', function (): void {
     $service = new Box\Mod\Client\Service();
     $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
-    $legacyClient = Mockery::mock(Model_Client::class);
     $exception = new RuntimeException('cleanup failed');
 
-    $db = container()['db'];
-    $db->shouldReceive('getExistingModelById')->once()->with('Client', 1)->andReturn($legacyClient);
-
     $orderService = Mockery::mock();
-    $orderService->shouldReceive('rmByClient')->once()->with($legacyClient)->andThrow($exception);
+    $orderService->shouldReceive('rmByClient')->once()->with($client)->andThrow($exception);
 
     $di = container();
-    $di['db'] = $db;
     $di['mod_service'] = $di->protect(moduleService(['order' => $orderService]));
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
@@ -757,25 +737,6 @@ test('toApiArray includes custom fields beyond the original cap of 10', function
     $result = $service->toApiArray($model, true, createEntity(Box\Mod\Staff\Entity\Admin::class));
     expect($result)->toBeArray();
     expect($result['custom_1'])->toBeNull();
-});
-
-test('toApiArray reads the client group through the repository for legacy client models', function (): void {
-    $service = new Box\Mod\Client\Service();
-    $legacyClient = new Model_Client();
-    $legacyClient->loadBean(new Tests\Helpers\DummyBean());
-    $legacyClient->client_group_id = 1;
-
-    $clientGroup = createEntity(Box\Mod\Client\Entity\ClientGroup::class, ['id' => 1, 'title' => 'Group Title']);
-
-    $di = container();
-    $di['em']->getRepository(Box\Mod\Client\Entity\Client::class)->shouldReceive('find')->byDefault()->andReturnNull();
-    $di['em']->getRepository(Box\Mod\Client\Entity\ClientGroup::class)->shouldReceive('find')->byDefault()->andReturn($clientGroup);
-
-    $service->setDi($di);
-
-    $result = $service->toApiArray($legacyClient, true, createEntity(Box\Mod\Staff\Entity\Admin::class));
-    expect($result['group'])->toBe('Group Title');
-    expect($result['group_id'])->toBe(1);
 });
 
 dataset('isClientTaxableProvider', [

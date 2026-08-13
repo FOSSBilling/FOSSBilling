@@ -26,7 +26,7 @@ use Symfony\Component\Finder\Finder;
  * that are assigned to `$data['xxx']` only inside conditional blocks. The
  * toApiArray method is the canonical bridge between a service-layer model
  * and the JSON returned to the API; if a template reads a key that is only
- * set inside an `if ($identity instanceof \Model_Admin)` branch, the
+ * set inside an `if ($identity instanceof \Box\Mod\Staff\Entity\Admin)` branch, the
  * template raises `Key "xxx" does not exist` under strict_variables, or
  * returns a silent empty value under permissive rendering, when the
  * response is consumed by a non-admin caller.

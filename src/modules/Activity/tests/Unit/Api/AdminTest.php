@@ -20,7 +20,7 @@ test('log get list with staff user', function (): void {
     $di['pager'] = $paginatorStub;
     $di['mod_service'] = $di->protect(moduleService(['activity' => $serviceStub]));
 
-    $api = new FOSSBilling\Api\Proxy(new Model_Admin());
+    $api = new FOSSBilling\Api\Proxy(\Tests\Helpers\admin());
     $api->setDi($di);
     $di['api_admin'] = $api;
 
@@ -63,7 +63,7 @@ test('log get list with client user', function (): void {
     $di['pager'] = $paginatorStub;
     $di['mod_service'] = $di->protect(moduleService(['activity' => $serviceStub]));
 
-    $api = new FOSSBilling\Api\Proxy(new Model_Admin());
+    $api = new FOSSBilling\Api\Proxy(\Tests\Helpers\admin());
     $api->setDi($di);
     $di['api_admin'] = $api;
 

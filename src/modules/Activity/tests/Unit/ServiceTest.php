@@ -38,9 +38,6 @@ test('dependency injection', function (): void {
     $service = new Box\Mod\Activity\Service();
 
     $di = container();
-    $dbMock = Mockery::mock('Box_Database');
-
-    $di['db'] = $dbMock;
     $service->setDi($di);
     $result = $service->getDi();
     expect($result)->toEqual($di);
@@ -227,29 +224,6 @@ test('to api array', function (): void {
     expect($result['client'])->toHaveKey('email');
 });
 
-test('remove by client', function (): void {
-    $service = new Box\Mod\Activity\Service();
-    $clientModel = new Model_Client();
-    $clientModel->loadBean(new Tests\Helpers\DummyBean());
-    $clientModel->id = 1;
-
-    $clientHistoryRepository = Mockery::mock(ActivityClientHistoryRepository::class);
-    $clientHistoryRepository->shouldReceive('deleteByClientId')->once()->with(1)->andReturn(1);
-    $activitySystemRepository = Mockery::mock(ActivitySystemRepository::class);
-    $activitySystemRepository->shouldReceive('deleteByClientId')->once()->with(1)->andReturn(1);
-
-    $entityManager = Mockery::mock(EntityManagerInterface::class);
-    $entityManager->shouldReceive('getRepository')->once()->with(ActivityClientHistory::class)->andReturn($clientHistoryRepository);
-    $entityManager->shouldReceive('getRepository')->once()->with(ActivitySystem::class)->andReturn($activitySystemRepository);
-
-    $di = container();
-    $di['em'] = $entityManager;
-
-    $service->setDi($di);
-
-    $service->rmByClient($clientModel);
-});
-
 test('remove by Doctrine client', function (): void {
     $service = new Box\Mod\Activity\Service();
     $client = new Client();
@@ -273,8 +247,7 @@ test('remove by Doctrine client', function (): void {
 
 test('remove by client returns early when the client id is null', function (): void {
     $service = new Box\Mod\Activity\Service();
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client = new Client();
 
     $entityManager = Mockery::mock(EntityManagerInterface::class);
     $entityManager->shouldNotReceive('getRepository');

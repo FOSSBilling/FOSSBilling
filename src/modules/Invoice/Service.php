@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice;
 
+use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Invoice\Entity\Invoice;
@@ -20,8 +21,10 @@ use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Repository\InvoiceItemRepository;
 use Box\Mod\Invoice\Repository\InvoiceRepository;
 use Box\Mod\Order\Entity\Order;
+use Doctrine\ORM\EntityManagerInterface;
 use Dompdf\Dompdf;
 use Dompdf\Options;
+use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\Environment;
 use FOSSBilling\Http\ResponseFactory;
 use FOSSBilling\i18n;
@@ -99,6 +102,19 @@ class Service implements InjectionAwareInterface
         return $this->invoiceRepository;
     }
 
+    protected function resetEntityManager(): void
+    {
+        unset($this->di['em']);
+        $this->di['em'] = $this->createEntityManager();
+        $this->invoiceItemRepository = null;
+        $this->invoiceRepository = null;
+    }
+
+    protected function createEntityManager(): EntityManagerInterface
+    {
+        return EntityManagerFactory::create();
+    }
+
     public function getModulePermissions(): array
     {
         return [
@@ -146,150 +162,47 @@ class Service implements InjectionAwareInterface
         $this->filesystem = new Filesystem();
     }
 
-    public function getSearchQuery($data): array
-    {
-        $select = 'p.*';
-        if (!empty($data['summary'])) {
-            $select .= ',
-                (SELECT COALESCE(SUM(COALESCE(invoice_totals.price, 0) * COALESCE(invoice_totals.quantity, 1)), 0)
-                    FROM invoice_item invoice_totals WHERE invoice_totals.invoice_id = p.id) AS list_subtotal,
-                (SELECT COALESCE(SUM(CASE WHEN invoice_taxable.taxed = 1 THEN COALESCE(invoice_taxable.price, 0) * COALESCE(invoice_taxable.quantity, 1) ELSE 0 END), 0)
-                    FROM invoice_item invoice_taxable WHERE invoice_taxable.invoice_id = p.id) AS list_taxable_subtotal';
-        }
-
-        $sql = 'SELECT ' . $select . '
-            FROM invoice p
-            LEFT JOIN invoice_item pi ON (p.id = pi.invoice_id)
-            LEFT JOIN client cl ON (cl.id = p.client_id)
-            WHERE 1 ';
-
-        $params = [];
-
-        $search = $data['search'] ?? null;
-        $order_id = $data['order_id'] ?? null;
-        $id = $data['id'] ?? null;
-        $id_nr = $data['nr'] ?? null;
-        $client_id = $data['client_id'] ?? null;
-        $client = $data['client'] ?? null;
-        $created_at = $data['created_at'] ?? null;
-        $date_from = $data['date_from'] ?? null;
-        $date_to = $data['date_to'] ?? null;
-        $paid_at = $data['paid_at'] ?? null;
-        $status = $data['status'] ?? null;
-        $approved = $data['approved'] ?? null;
-        $currency = $data['currency'] ?? null;
-
-        if ($order_id) {
-            $sql .= ' AND pi.type = :item_type AND pi.rel_id = :order_id';
-            $params['item_type'] = InvoiceItem::TYPE_ORDER;
-            $params['order_id'] = $order_id;
-        }
-
-        if ($id) {
-            $sql .= ' AND p.id = :id';
-            $params['id'] = $id;
-        }
-
-        if ($id_nr) {
-            $sql .= ' AND (p.id = :id_nr OR p.nr = :id_nr)';
-            $params['id_nr'] = $id_nr;
-        }
-
-        if ($approved) {
-            $sql .= ' AND p.approved = :approved';
-            $params['approved'] = (int) $approved;
-        }
-
-        if ($status) {
-            $sql .= ' AND p.status = :status';
-            $params['status'] = $status;
-        }
-
-        if ($currency) {
-            $sql .= ' AND p.currency = :currency';
-            $params['currency'] = $currency;
-        }
-
-        if ($client_id) {
-            $sql .= ' AND p.client_id = :client_id';
-            $params['client_id'] = $client_id;
-        }
-
-        if ($client) {
-            $sql .= ' AND (cl.first_name LIKE :client_search OR cl.last_name LIKE :client_search OR cl.id = :client OR cl.email = :client)';
-            $params['client_search'] = $client . '%';
-            $params['client'] = $client;
-        }
-
-        if ($created_at) {
-            $sql .= " AND DATE_FORMAT(p.created_at, '%Y-%m-%d') = :created_at";
-            $params['created_at'] = date('Y-m-d', (int) strtotime((string) $created_at));
-        }
-
-        if ($date_from) {
-            $sql .= ' AND UNIX_TIMESTAMP(p.created_at) >= :date_from';
-            $params['date_from'] = strtotime((string) $date_from);
-        }
-
-        if ($date_to) {
-            $sql .= ' AND UNIX_TIMESTAMP(p.created_at) <= :date_to';
-            $params['date_to'] = strtotime((string) $date_to);
-        }
-
-        if ($paid_at) {
-            $sql .= " AND DATE_FORMAT(p.paid_at, '%Y-%m-%d') = :paid_at";
-            $params['paid_at'] = date('Y-m-d', (int) strtotime((string) $paid_at));
-        }
-
-        if ($search) {
-            $sql .= ' AND (p.id = :search_numeric_id OR p.nr LIKE :search_like OR p.id LIKE :search OR pi.title LIKE :search_like)';
-            $params['search_numeric_id'] = (int) preg_replace('/[^0-9]/', '', (string) $search);
-            $params['search_like'] = '%' . $search . '%';
-            $params['search'] = $search;
-        }
-
-        $sql .= ' GROUP BY p.id ORDER BY p.id DESC';
-
-        return [$sql, $params];
-    }
-
     /**
-     * Convert an aggregated invoice search result into the fields needed by list views.
+     * Convert an invoice entity into the fields needed by list views.
      *
      * Unlike toApiArray(), this does not load invoice items, orders, products, the client,
      * company details, or subscription information for every invoice in the result set.
+     * The totals come from a grouped aggregate query (`getInvoiceTotals`) rather than
+     * per-invoice loading; keys are absent for invoices without items.
+     *
+     * @param array{subtotal?: float, taxable_subtotal?: float} $totals
      */
-    public function toApiSummaryArray(array $row): array
+    public function toApiSummaryFromEntity(Invoice $invoice, array $totals): array
     {
-        $subtotal = (float) ($row['list_subtotal'] ?? 0);
-        $taxableSubtotal = (float) ($row['list_taxable_subtotal'] ?? 0);
-        $taxRate = (float) ($row['taxrate'] ?? 0);
+        $subtotal = (float) ($totals['subtotal'] ?? 0);
+        $taxableSubtotal = (float) ($totals['taxable_subtotal'] ?? 0);
+        $taxRate = (float) ($invoice->getTaxrate() ?? 0);
         $tax = $taxRate > 0 && $taxableSubtotal !== 0.0 ? round($taxableSubtotal * $taxRate / 100, 2) : 0;
-        $invoiceNumber = is_numeric($row['nr'] ?? null) ? (int) $row['nr'] : (int) $row['id'];
-        $clientId = $row['client_id'] ?? null;
+        $invoiceNumber = is_numeric($invoice->getNr() ?? null) ? (int) $invoice->getNr() : (int) $invoice->getId();
+        $clientId = $invoice->getClientId();
 
         return [
-            'id' => $row['id'],
-            'serie' => $row['serie'],
-            'nr' => $row['nr'],
-            'serie_nr' => $row['serie'] . sprintf('%0' . $this->getInvoiceNumberPadding() . 's', $invoiceNumber),
+            'id' => $invoice->getId(),
+            'serie' => $invoice->getSerie(),
+            'nr' => $invoice->getNr(),
+            'serie_nr' => $invoice->getSerie() . sprintf('%0' . $this->getInvoiceNumberPadding() . 's', $invoiceNumber),
             'client_id' => $clientId,
             'client' => $clientId === null ? null : ['id' => $clientId],
-            'currency' => $row['currency'],
+            'currency' => $invoice->getCurrency(),
             'tax' => $tax,
             'subtotal' => $subtotal,
             'total' => $subtotal + $tax,
-            'status' => $row['status'],
-            'due_at' => $row['due_at'],
-            'paid_at' => $row['paid_at'] ?? null,
-            'created_at' => $row['created_at'],
-            'updated_at' => $row['updated_at'],
+            'status' => $invoice->getStatus(),
+            'due_at' => $invoice->getDueAt()?->format('Y-m-d H:i:s'),
+            'paid_at' => $invoice->getPaidAt()?->format('Y-m-d H:i:s'),
+            'created_at' => $invoice->getCreatedAt()?->format('Y-m-d H:i:s'),
+            'updated_at' => $invoice->getUpdatedAt()?->format('Y-m-d H:i:s'),
             'buyer' => [
-                'first_name' => $row['buyer_first_name'],
-                'last_name' => $row['buyer_last_name'],
-                'email' => $row['buyer_email'],
+                'first_name' => $invoice->getBuyerFirstName(),
+                'last_name' => $invoice->getBuyerLastName(),
+                'email' => $invoice->getBuyerEmail(),
             ],
-            'approved' => (bool) ($row['approved'] ?? false),
+            'approved' => $invoice->isApproved(),
         ];
     }
 
@@ -458,15 +371,14 @@ class Service implements InjectionAwareInterface
         ];
 
         /**
-         * Removed if($identity instanceof \Model_Admin) {}
          * Generates error when this function is called by cron.
          */
-        $client = isset($row['client_id']) ? $this->di['db']->load('Client', $row['client_id']) : null;
+        $client = isset($row['client_id']) ? $this->di['em']->getRepository(Client::class)->find($row['client_id']) : null;
         $clientService = $this->di['mod_service']('client');
-        if ($client instanceof \Model_Client) {
+        if ($client instanceof Client) {
             $result['client'] = $clientService->toApiArray($client);
             if ($includeClientBillingEmail) {
-                $result['client']['billing_email'] = $client->billing_email;
+                $result['client']['billing_email'] = $client->getBillingEmail();
             }
         } else {
             $result['client'] = null;
@@ -510,7 +422,7 @@ class Service implements InjectionAwareInterface
             $orders = $this->di['em']->getRepository(Order::class)->findBy(['id' => $orderIds]);
 
             // Batch load related products
-            $rawProductIds = array_map(static fn (Order $order): int => $order->getProductId() !== null ? (int) $order->getProductId() : 0, $orders);
+            $rawProductIds = array_map(static fn (Order $order): int => $order->getProductId() ?? 0, $orders);
             $nonEmptyProductIds = array_filter($rawProductIds);
             $productIds = array_unique($nonEmptyProductIds);
 
@@ -682,9 +594,9 @@ class Service implements InjectionAwareInterface
             // reminder being sent twice when this event is dispatched more than once for the
             // same invoice (overlapping cron runs, the once-daily batch and the pending-reminder
             // fallback both firing it, etc).
-            $claimed = (bool) $di['db']->exec(
+            $claimed = (bool) $di['em']->getConnection()->executeStatement(
                 "UPDATE invoice SET reminded_at = NOW(), updated_at = NOW() WHERE id = :id AND status = 'unpaid' AND approved = 1 AND due_at > NOW() AND (reminded_at IS NULL OR DATE(reminded_at) < CURDATE())",
-                [':id' => $params['id'] ?? 0]
+                ['id' => $params['id'] ?? 0]
             );
             if (!$claimed) {
                 return;
@@ -700,7 +612,7 @@ class Service implements InjectionAwareInterface
                 // catches its own failures internally, so any exception reaching here means the
                 // email was never queued. Release the claim so a later cron run retries it instead
                 // of the reminder being silently lost for the day.
-                $di['db']->exec('UPDATE invoice SET reminded_at = NULL WHERE id = :id', [':id' => $params['id'] ?? 0]);
+                $di['em']->getConnection()->executeStatement('UPDATE invoice SET reminded_at = NULL WHERE id = :id', ['id' => $params['id'] ?? 0]);
             }
             $di['logger']->setChannel('email')->error('Failed to send invoice reminder email', ['id' => $params['id'] ?? null, 'exception' => $exc->getMessage()]);
         }
@@ -715,7 +627,7 @@ class Service implements InjectionAwareInterface
             // removing old invoices
             $days = (int) $remove_after_days;
             $sql = 'DELETE FROM invoice WHERE status = :status AND DATEDIFF(NOW(), due_at) > :days';
-            $di['db']->exec($sql, [':days' => $days, ':status' => Invoice::STATUS_UNPAID]);
+            $di['em']->getConnection()->executeStatement($sql, ['days' => $days, 'status' => Invoice::STATUS_UNPAID]);
         }
     }
 
@@ -736,9 +648,9 @@ class Service implements InjectionAwareInterface
             // same invoice (overlapping cron runs, the once-daily batch and the pending-reminder
             // fallback both firing it, etc). The claim UPDATE already persists reminded_at and
             // updated_at, so there's no need to store the loaded model again once sent below.
-            $claimed = (bool) $di['db']->exec(
+            $claimed = (bool) $di['em']->getConnection()->executeStatement(
                 "UPDATE invoice SET reminded_at = NOW(), updated_at = NOW() WHERE id = :id AND status = 'unpaid' AND approved = 1 AND ((due_at < NOW()) OR (ABS(DATEDIFF(due_at, NOW())) = 0)) AND (reminded_at IS NULL OR DATE(reminded_at) < CURDATE())",
-                [':id' => $params['id'] ?? 0]
+                ['id' => $params['id'] ?? 0]
             );
             if (!$claimed) {
                 return;
@@ -772,7 +684,7 @@ class Service implements InjectionAwareInterface
                 // Nothing past sendTemplate() can throw, so reaching here with a claim already
                 // made means the email was never confirmed queued. Release the claim so a later
                 // cron run retries this invoice instead of losing the reminder.
-                $di['db']->exec('UPDATE invoice SET reminded_at = NULL WHERE id = :id', [':id' => $params['id'] ?? 0]);
+                $di['em']->getConnection()->executeStatement('UPDATE invoice SET reminded_at = NULL WHERE id = :id', ['id' => $params['id'] ?? 0]);
             }
             $di['logger']->setChannel('email')->error('Failed to send overdue invoice email', ['id' => $params['id'] ?? null, 'exception' => $exc->getMessage()]);
         }
@@ -909,7 +821,7 @@ class Service implements InjectionAwareInterface
 
     public function validateAdminMarkAsPaidRequest(array $data, ?Invoice $invoice = null): PayGateway
     {
-        $gatewayId = isset($data['gateway_id']) && !empty($data['gateway_id']) ? (int) $data['gateway_id'] : (int) ($invoice?->getGatewayId() ?? 0);
+        $gatewayId = isset($data['gateway_id']) && !empty($data['gateway_id']) ? (int) $data['gateway_id'] : $invoice?->getGatewayId() ?? 0;
         if ($gatewayId <= 0) {
             throw new InformationException('Payment gateway is required when marking an invoice as paid.');
         }
@@ -982,9 +894,9 @@ class Service implements InjectionAwareInterface
         $this->di['em']->flush();
     }
 
-    public function prepareInvoice(\Model_Client $client, array $data)
+    public function prepareInvoice(Client $client, array $data): Invoice
     {
-        if (!$client->currency) {
+        if (!$client->getCurrency()) {
             $currencyService = $this->di['mod_service']('currency');
             /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
             $currencyRepository = $currencyService->getCurrencyRepository();
@@ -995,17 +907,18 @@ class Service implements InjectionAwareInterface
             }
 
             $currencyCode = $currency->getCode();
-            $client->currency = $currencyCode;
-            $this->di['db']->store($client);
+            $client->setCurrency($currencyCode);
+            $this->di['em']->persist($client);
+            $this->di['em']->flush();
             if (isset($this->di['logger'])) {
-                $this->di['logger']->info('Client #%s currency was not defined. Set default currency %s.', $client->id, $currencyCode);
+                $this->di['logger']->info('Client #%s currency was not defined. Set default currency %s.', $client->getId(), $currencyCode);
             }
         }
 
         $model = new Invoice();
-        $model->setClientId($client->id !== null ? (int) $client->id : null);
+        $model->setClientId($client->getId() ?? null);
         $model->setStatus(Invoice::STATUS_UNPAID);
-        $model->setCurrency($client->currency);
+        $model->setCurrency($client->getCurrency());
         $model->setApproved(false);
 
         $model->setGatewayId(isset($data['gateway_id']) ? (int) $data['gateway_id'] : $model->getGatewayId());
@@ -1042,10 +955,16 @@ class Service implements InjectionAwareInterface
     {
         $clientService = $this->di['mod_service']('Client');
         $systemService = $this->di['mod_service']('system');
-        $client = $this->di['db']->load('Client', $model->getClientId());
+        $client = $this->di['em']->getRepository(Client::class)->find($model->getClientId());
         $seller = $systemService->getCompany();
 
-        $buyer = $clientService->toApiArray($client);
+        $buyer = $client instanceof Client
+            ? $clientService->toApiArray($client)
+            : array_fill_keys([
+                'first_name', 'last_name', 'company', 'company_vat', 'company_number',
+                'address_1', 'address_2', 'city', 'state', 'country',
+                'phone_cc', 'phone', 'email', 'postcode',
+            ], null);
 
         $model->setSellerCompany($seller['name']);
         $model->setSellerCompanyVat($seller['vat_number']);
@@ -1487,6 +1406,7 @@ class Service implements InjectionAwareInterface
         if ($previousStatus === Invoice::STATUS_UNPAID && $model->getStatus() === Invoice::STATUS_CANCELED) {
             $productService = $this->di['mod_service']('Product');
             $productService->releaseReservedPromoRedemptionsForInvoice($model, 'invoice_canceled');
+            $productService->releaseReservedStockForInvoice($model, 'invoice_canceled');
         }
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceUpdate', 'params' => $this->toApiArray($model)]);
@@ -1500,13 +1420,14 @@ class Service implements InjectionAwareInterface
     {
         $productService = $this->di['mod_service']('Product');
         $productService->releaseReservedPromoRedemptionsForInvoice($model, 'invoice_deleted');
+        $productService->releaseReservedStockForInvoice($model, 'invoice_deleted');
 
         // remove related invoice from orders
         $sql = '
             UPDATE client_order
             SET unpaid_invoice_id = NULL
             WHERE unpaid_invoice_id = :id';
-        $this->di['db']->exec($sql, ['id' => $model->getId()]);
+        $this->di['em']->getConnection()->executeStatement($sql, ['id' => $model->getId()]);
 
         $invoiceItems = $this->getInvoiceItemRepository()->findByInvoiceId((int) $model->getId());
         $entityManager = $this->di['em'];
@@ -1534,7 +1455,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function renewInvoice(Order $model, array $data)
+    public function renewInvoice(Order $model, array $data): ?int
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminGenerateRenewalInvoice', 'params' => ['order_id' => $model->getId()]]);
 
@@ -1634,11 +1555,12 @@ class Service implements InjectionAwareInterface
             throw new InformationException('Invoices are not generated for negative amount orders.');
         }
 
-        $client = $this->di['db']->getExistingModelById('Client', $order->getClientId(), 'Client not found');
+        $client = $this->di['em']->getRepository(Client::class)->find($order->getClientId())
+            ?? throw new InformationException('Client not found');
 
         // generate proforma after validating the resolved renewal amount
         $proforma = new Invoice();
-        $proforma->setClientId($client->id !== null ? (int) $client->id : null);
+        $proforma->setClientId($client->getId() !== null ? (int) $client->getId() : null);
         $proforma->setStatus(Invoice::STATUS_UNPAID);
         $proforma->setCurrency($order->getCurrency());
         $proforma->setApproved(false);
@@ -1719,9 +1641,18 @@ class Service implements InjectionAwareInterface
                     $invoiceItemService->executeTask($model);
                 });
             } catch (\Exception $e) {
-                // Clear the identity map so subsequent iterations work with fresh, database-consistent entities.
-                $this->di['em']->clear();
                 $this->di['logger']->error($e->getMessage());
+
+                // A failed ORM flush closes the EntityManager and clear() can't reopen
+                // it. Replace it with a fresh instance so the rest of the cron run can
+                // keep writing, then stop the batch. Otherwise clear the identity map
+                // between iterations.
+                if (!$this->di['em']->isOpen()) {
+                    $this->resetEntityManager();
+
+                    break;
+                }
+                $this->di['em']->clear();
             }
         }
         $this->di['logger']->info('Executed action to activate paid invoices.');
@@ -1788,13 +1719,13 @@ class Service implements InjectionAwareInterface
         $beforeDueReminderIntervals = $this->parseInvoiceReminderIntervals($ss->getParamValue('invoice_reminder_before_due_days', ''));
         $afterDueReminderIntervals = $this->parseInvoiceReminderIntervals($ss->getParamValue('invoice_reminder_after_due_days', '5'));
 
-        $beforeDueList = $this->di['db']->getAll("SELECT id, DATEDIFF(due_at, NOW()) as days_left FROM invoice WHERE status = 'unpaid' AND approved = 1 AND due_at > NOW()");
+        $beforeDueList = $this->di['em']->getConnection()->fetchAllAssociative("SELECT id, DATEDIFF(due_at, NOW()) as days_left FROM invoice WHERE status = 'unpaid' AND approved = 1 AND due_at > NOW()");
         foreach ($beforeDueList as $params) {
             $params['reminder_intervals'] = $beforeDueReminderIntervals;
             $this->di['events_manager']->fire(['event' => 'onEventBeforeInvoiceIsDue', 'params' => $params]);
         }
 
-        $afterDueList = $this->di['db']->getAll("SELECT id, ABS(DATEDIFF(due_at, NOW())) as days_passed FROM invoice WHERE status = 'unpaid' AND approved = 1 AND ((due_at < NOW()) OR (ABS(DATEDIFF(due_at, NOW())) = 0))");
+        $afterDueList = $this->di['em']->getConnection()->fetchAllAssociative("SELECT id, ABS(DATEDIFF(due_at, NOW())) as days_passed FROM invoice WHERE status = 'unpaid' AND approved = 1 AND ((due_at < NOW()) OR (ABS(DATEDIFF(due_at, NOW())) = 0))");
         foreach ($afterDueList as $params) {
             $params['reminder_intervals'] = $afterDueReminderIntervals;
             $this->di['events_manager']->fire(['event' => 'onEventAfterInvoiceIsDue', 'params' => $params]);
@@ -1826,7 +1757,7 @@ class Service implements InjectionAwareInterface
         $sql = 'SELECT status, count(id) as counter
                  FROM invoice
                  group by status';
-        $rows = $this->di['db']->getAll($sql);
+        $rows = $this->di['em']->getConnection()->fetchAllAssociative($sql);
         $data = [];
         foreach ($rows as $row) {
             $data[$row['status']] = $row['counter'];
@@ -1848,9 +1779,9 @@ class Service implements InjectionAwareInterface
         return (bool) $systemService->getParamValue('funds_enabled', true);
     }
 
-    public function generateFundsInvoice(\Model_Client $client, $amount)
+    public function generateFundsInvoice(Client $client, $amount): Invoice
     {
-        if (!$client->currency) {
+        if (!$client->getCurrency()) {
             throw new InformationException('You must have at least one active order before you can add funds so you cannot proceed at the current time!');
         }
 
@@ -1872,9 +1803,9 @@ class Service implements InjectionAwareInterface
         }
 
         $proforma = new Invoice();
-        $proforma->setClientId($client->id !== null ? (int) $client->id : null);
+        $proforma->setClientId($client->getId() ?? null);
         $proforma->setStatus(Invoice::STATUS_UNPAID);
-        $proforma->setCurrency($client->currency);
+        $proforma->setCurrency($client->getCurrency());
         $proforma->setApproved($this->_isAutoApproved());
         $this->di['em']->persist($proforma);
         $this->di['em']->flush();
@@ -2015,8 +1946,9 @@ class Service implements InjectionAwareInterface
         if ($invoiceModel->getCurrency() !== null) {
             $currencyCode = $invoiceModel->getCurrency();
         } else {
-            $client = $this->di['db']->getExistingModelById('Client', $invoiceModel->getClientId(), 'Client not found');
-            $currencyCode = $client->currency;
+            $client = $this->di['em']->getRepository(Client::class)->find($invoiceModel->getClientId())
+                ?? throw new InformationException('Client not found');
+            $currencyCode = $client->getCurrency();
         }
 
         $CSS = $this->getPdfCss();
@@ -2100,7 +2032,7 @@ class Service implements InjectionAwareInterface
         $sql .= ' GROUP BY m.id, cl.id
                  ORDER BY m.id DESC';
 
-        return $this->di['db']->getAll($sql, $params);
+        return $this->di['em']->getConnection()->fetchAllAssociative($sql, $params);
     }
 
     /**
@@ -2270,9 +2202,9 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public function rmByClient(\Model_Client $client): void
+    public function rmByClient(Client $client): void
     {
-        $invoices = $this->getInvoiceRepository()->findByClientId((int) $client->id);
+        $invoices = $this->getInvoiceRepository()->findByClientId((int) $client->getId());
         foreach ($invoices as $invoice) {
             $this->rmInvoice($invoice);
         }
@@ -2319,7 +2251,7 @@ class Service implements InjectionAwareInterface
         if ($this->di['auth']->isClientLoggedIn()) {
             $client = $this->di['loggedin_client'];
         }
-        $isOwner = $client !== null && (int) $invoiceClientId === (int) $client->id;
+        $isOwner = $client !== null && (int) $invoiceClientId === (int) $client->getId();
 
         if (!$isOwner && $this->isHashExpired($invoice)) {
             throw new InformationException('This invoice link has expired', [], 403);

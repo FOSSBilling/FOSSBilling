@@ -29,9 +29,9 @@ class ClientTestRateLimiterDouble
 
 class ClientTestDefaultApiDouble
 {
-    public function getIdentity(): Model_Client
+    public function getIdentity(): Box\Mod\Client\Entity\Client
     {
-        return new Model_Client();
+        return new Box\Mod\Client\Entity\Client();
     }
 }
 
@@ -296,9 +296,9 @@ test('raw response bypasses JSON rendering', function (): void {
         {
         }
 
-        public function getIdentity(): Model_Guest
+        public function getIdentity(): FOSSBilling\Identity\Guest
         {
-            return new Model_Guest();
+            return new FOSSBilling\Identity\Guest();
         }
     };
 

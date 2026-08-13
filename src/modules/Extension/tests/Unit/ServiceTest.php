@@ -303,7 +303,7 @@ test('getAdminNavigation returns admin navigation', function (): void {
     $di['em'] = extensionBuildEm($extensionRepository);
 
     $service->setDi($di);
-    $result = $service->getAdminNavigation(new Model_Admin());
+    $result = $service->getAdminNavigation(\Tests\Helpers\admin());
     expect($result)->toBeArray();
 });
 

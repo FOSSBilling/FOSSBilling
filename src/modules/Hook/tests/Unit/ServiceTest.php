@@ -118,13 +118,13 @@ test('handles on after admin deactivate extension', function (): void {
     $expectation2 = $eventMock->shouldReceive('setReturnValue');
     $expectation2->atLeast()->once();
 
-    $dbMock = Mockery::mock('\Box_Database');
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
     /** @var Mockery\Expectation $expectation3 */
-    $expectation3 = $dbMock->shouldReceive('exec');
+    $expectation3 = $connection->shouldReceive('executeStatement');
     $expectation3->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
 
     /** @var Mockery\Expectation $expectation4 */
     $expectation4 = $eventMock->shouldReceive('getDi');
@@ -144,12 +144,12 @@ test('batch connects', function (): void {
 
     $data['mods'] = [$mod];
 
-    $dbMock = Mockery::mock('\Box_Database');
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
     /** @var Mockery\Expectation $expectation1 */
-    $expectation1 = $dbMock->shouldReceive('getCell');
+    $expectation1 = $connection->shouldReceive('fetchOne');
     $expectation1->atLeast()->once();
     $expectation1->andReturn(false);
-    $dbMock->shouldReceive('exec')
+    $connection->shouldReceive('executeStatement')
         ->byDefault();
 
     $returnArr = [
@@ -160,7 +160,7 @@ test('batch connects', function (): void {
         ],
     ];
     /** @var Mockery\Expectation $expectation2 */
-    $expectation2 = $dbMock->shouldReceive('getAll');
+    $expectation2 = $connection->shouldReceive('fetchAllAssociative');
     $expectation2->atLeast()->once();
     $expectation2->andReturn($returnArr);
 
@@ -186,7 +186,7 @@ test('batch connects', function (): void {
         ->andReturn(true);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $di['em']->shouldReceive('getRepository')->with(Box\Mod\Extension\Entity\Extension::class)->andReturn($extensionRepository);
     $di['em']->shouldReceive('persist')->atLeast()->once();
     $di['em']->shouldReceive('flush')->atLeast()->once();

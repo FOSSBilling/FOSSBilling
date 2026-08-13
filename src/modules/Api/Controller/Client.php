@@ -15,6 +15,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Api\Controller;
 
+use Box\Mod\Client\Entity\Client as ClientEntity;
+use Box\Mod\Staff\Entity\Admin;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\Http\ApiResponseFactory;
@@ -268,29 +270,29 @@ class Client implements InjectionAwareInterface
 
         switch ($routeRole) {
             case 'client':
-                $model = $this->di['db']->findOne('Client', 'api_token = ? AND status = ?', [$password, \Model_Client::ACTIVE]);
-                if (!$model instanceof \Model_Client) {
+                $model = $this->di['em']->getRepository(ClientEntity::class)->findOneBy(['apiToken' => $password, 'status' => ClientEntity::ACTIVE]);
+                if (!$model instanceof ClientEntity) {
                     throw new \FOSSBilling\InformationException('Authentication Failed', null, 204);
                 }
-                $this->di['session']->set('client_id', $model->id);
+                $this->di['session']->set('client_id', $model->getId());
 
                 break;
 
             case 'admin':
-                $model = $this->di['db']->findOne('Admin', 'api_token = ? AND status = ? AND (system_name IS NULL OR system_name != ?)', [$password, \Model_Admin::STATUS_ACTIVE, \Model_Admin::SYSTEM_CRON]);
-                if (!$model instanceof \Model_Admin) {
+                $model = $this->di['em']->getRepository(Admin::class)->findOneBy(['apiToken' => $password, 'status' => Admin::STATUS_ACTIVE]);
+                if (!$model instanceof Admin || $model->isCron()) {
                     throw new \FOSSBilling\InformationException('Authentication Failed', null, 205);
                 }
 
                 $cronAdmin = $this->di['mod_service']('staff')->getCronAdmin();
-                if ($cronAdmin instanceof \Model_Admin && (int) $model->id === (int) $cronAdmin->id) {
+                if ((int) $model->getId() === (int) $cronAdmin->getId()) {
                     throw new \FOSSBilling\InformationException('Authentication Failed', null, 205);
                 }
 
                 $sessionAdminArray = [
-                    'id' => $model->id,
-                    'email' => $model->email,
-                    'name' => $model->name,
+                    'id' => $model->getId(),
+                    'email' => $model->getEmail(),
+                    'name' => $model->getName(),
                 ];
                 $this->di['session']->set('admin', $sessionAdminArray);
 

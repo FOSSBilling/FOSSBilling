@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Index;
 
+use Box\Mod\Client\Entity\Client;
 use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
@@ -34,13 +35,13 @@ class Service implements InjectionAwareInterface
      * response. It fetches profile information, ticket statistics, invoice statistics,
      * order statistics, and recent items.
      *
-     * @param \Model_Client $client The client model to get dashboard data for
+     * @param Client $client The client entity to get dashboard data for
      *
      * @return array Dashboard data containing profile, tickets, invoices, orders, recent_orders, and recent_tickets
      */
-    public function getDashboardData(\Model_Client $client): array
+    public function getDashboardData(Client $client): array
     {
-        $data['client_id'] = $client->id;
+        $data['client_id'] = (int) $client->getId();
 
         return [
             'profile' => $this->getProfile($client),
@@ -52,7 +53,7 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    private function getProfile(\Model_Client $client): array
+    private function getProfile(Client $client): array
     {
         $clientService = $this->di['mod_service']('client');
 
@@ -66,7 +67,7 @@ class Service implements InjectionAwareInterface
                  WHERE client_id = :client_id
                  GROUP BY status';
 
-        $results = $this->di['db']->getAll($sql, $data);
+        $results = $this->di['em']->getConnection()->fetchAllAssociative($sql, $data);
 
         $counts = [
             'total' => 0,
@@ -95,7 +96,7 @@ class Service implements InjectionAwareInterface
                  ORDER BY st.updated_at DESC
                  LIMIT 5';
 
-        $rows = $this->di['db']->getAll($sql, $data);
+        $rows = $this->di['em']->getConnection()->fetchAllAssociative($sql, $data);
 
         $ids = array_column($rows, 'id');
 
@@ -116,7 +117,7 @@ class Service implements InjectionAwareInterface
                  AND approved = 1
                  GROUP BY status';
 
-        $results = $this->di['db']->getAll($sql, $data);
+        $results = $this->di['em']->getConnection()->fetchAllAssociative($sql, $data);
 
         $counts = [
             'total' => 0,
@@ -144,7 +145,7 @@ class Service implements InjectionAwareInterface
                  AND group_master = 1
                  GROUP BY status';
 
-        $results = $this->di['db']->getAll($sql, $data);
+        $results = $this->di['em']->getConnection()->fetchAllAssociative($sql, $data);
 
         $counts = [
             'total' => 0,
@@ -176,7 +177,7 @@ class Service implements InjectionAwareInterface
                         AND unpaid_invoice_id IS NULL
                         AND DATEDIFF(expires_at, NOW()) <= :days";
 
-        $expiringResult = $this->di['db']->getCell($expiringSql, [
+        $expiringResult = $this->di['em']->getConnection()->fetchOne($expiringSql, [
             'client_id' => $data['client_id'],
             'days' => $daysUntilExpiration,
         ]);
@@ -195,7 +196,7 @@ class Service implements InjectionAwareInterface
                  ORDER BY co.updated_at DESC
                  LIMIT 5';
 
-        $rows = $this->di['db']->getAll($sql, $data);
+        $rows = $this->di['em']->getConnection()->fetchAllAssociative($sql, $data);
 
         $ids = array_column($rows, 'id');
 

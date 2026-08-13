@@ -28,18 +28,17 @@ class Client extends \FOSSBilling\Api\AbstractApi
      */
     public function get_list($data)
     {
-        $data['client_id'] = $this->getIdentity()->id;
+        $data['client_id'] = $this->getIdentity()->getId();
         $data['approved'] = true;
 
-        [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $service = $this->getService();
+        $qb = $service->getInvoiceRepository()->getSearchQueryBuilder($data);
 
-        foreach ($pager['list'] as $key => $item) {
-            $invoice = $this->getDi()['db']->getExistingModelById('Invoice', $item['id'], 'Invoice not found');
-            $pager['list'][$key] = $this->getService()->toApiArray($invoice);
-        }
-
-        return $pager;
+        return $this->getDi()['pager']->paginateMappedQuery(
+            $qb,
+            PaginationOptions::fromArray($data),
+            static fn ($invoice): array => $service->toApiArray($invoice),
+        );
     }
 
     /**
@@ -53,7 +52,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
     public function get($data)
     {
         $identity = $this->getIdentity();
-        $model = $this->getDi()['db']->findOne('Invoice', 'hash = :hash AND client_id = :client_id', ['hash' => $data['hash'], 'client_id' => $identity->id]);
+        $model = $this->getService()->getInvoiceRepository()->findOneBy(['hash' => $data['hash'], 'clientId' => $identity->getId()]);
         if (!$model) {
             throw new \FOSSBilling\InformationException('Invoice was not found');
         }
@@ -73,7 +72,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['order_id' => 'Order ID (order_id) was not passed'])]
     public function renewal_invoice($data)
     {
-        $model = $this->getDi()['em']->getRepository(Order::class)->findOneBy(['clientId' => $this->getIdentity()->id, 'id' => $data['order_id']]);
+        $model = $this->getDi()['em']->getRepository(Order::class)->findOneBy(['clientId' => $this->getIdentity()->getId(), 'id' => $data['order_id']]);
         if (!$model instanceof Order) {
             throw new \FOSSBilling\InformationException('Order not found');
         }
@@ -120,18 +119,16 @@ class Client extends \FOSSBilling\Api\AbstractApi
      */
     public function transaction_get_list($data)
     {
-        $data['client_id'] = $this->getIdentity()->id;
+        $data['client_id'] = $this->getIdentity()->getId();
         $data['status'] = 'processed';
         $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
-        [$sql, $params] = $transactionService->getSearchQuery($data);
+        $qb = $transactionService->getTransactionRepository()->getSearchQueryBuilder($data);
 
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
-
-        foreach ($pager['list'] as $key => $item) {
-            $pager['list'][$key] = $transactionService->searchResultToApiArray($item);
-        }
-
-        return $pager;
+        return $this->getDi()['pager']->paginateMappedQuery(
+            $qb,
+            PaginationOptions::fromArray($data),
+            static fn ($row): array => $transactionService->transactionResultToApiArray($row[0], $row['gateway'] ?? null),
+        );
     }
 
     public function get_tax_rate()

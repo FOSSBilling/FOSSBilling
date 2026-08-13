@@ -396,13 +396,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 LIMIT 2';
 
         $bindings = [
-            ':transaction_id' => $ipn['txn_id'],
-            ':transaction_status' => $ipn['payment_status'],
-            ':transaction_type' => $ipn['txn_type'],
-            ':transaction_amount' => $ipn['mc_gross'],
+            'transaction_id' => $ipn['txn_id'],
+            'transaction_status' => $ipn['payment_status'],
+            'transaction_type' => $ipn['txn_type'],
+            'transaction_amount' => $ipn['mc_gross'],
         ];
 
-        $rows = $this->di['db']->getAll($sql, $bindings);
+        $rows = $this->di['em']->getConnection()->fetchAllAssociative($sql, $bindings);
         if (FOSSBilling\Tools::safeCount($rows) > 1) {
             return true;
         }

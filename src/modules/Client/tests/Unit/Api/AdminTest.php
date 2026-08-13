@@ -24,8 +24,7 @@ test('getDi returns dependency injection container', function (): void {
 
 test('getList returns array', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
-    $identity = new Model_Admin();
-    $identity->loadBean(new Tests\Helpers\DummyBean());
+    $identity = \Tests\Helpers\admin();
     $adminClient->setIdentity($identity);
     $queryBuilder = Mockery::mock(Doctrine\ORM\QueryBuilder::class);
     $simpleResultArr = [
@@ -55,7 +54,7 @@ test('getList returns array', function (): void {
     $pagerMock
     ->shouldReceive('paginateDoctrineQuery')
     ->once()
-    ->with($queryBuilder, Mockery::type(FOSSBilling\PaginationOptions::class), Mockery::type(Model_Admin::class))
+    ->with($queryBuilder, Mockery::type(FOSSBilling\PaginationOptions::class), Mockery::type(Box\Mod\Staff\Entity\Admin::class))
     ->andReturn($simpleResultArr);
 
     $di = container();

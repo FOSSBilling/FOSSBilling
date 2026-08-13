@@ -192,7 +192,7 @@ class Service implements InjectionAwareInterface
         $config = json_decode($model->getConfig() ?? '', true) ?? [];
         $pricing = $this->getProductPricingArray($model);
         $starting_from = $this->getStartingFromPrice($model);
-        $isAdmin = $identity instanceof Admin || $identity instanceof \Model_Admin;
+        $isAdmin = $identity instanceof Admin;
         $addons = $this->getAddonsApiArray($model, $isAdmin);
 
         $result = [
@@ -1008,6 +1008,86 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
+    public function reserveStockForOrder(Order $order): void
+    {
+        $productId = (int) $order->getProductId();
+        if ($productId <= 0) {
+            return;
+        }
+
+        $resolvedProduct = $this->findProductById($productId);
+        $quantity = $order->getQuantity() ?? 1;
+        if (!$resolvedProduct->isStockControl() || $quantity <= 0) {
+            return;
+        }
+
+        $this->reduceStock($resolvedProduct, $quantity);
+
+        $orderService = $this->di['mod_service']('Order');
+        $orderService->updateOrderMeta($order, [
+            \Box\Mod\Order\Service::META_STOCK_RESERVED_QTY => (string) $quantity,
+        ]);
+    }
+
+    // Activation leaves the reservation meta untouched, so cancelling an order that already
+    // went active does not restock it here - only never-activated reservations get released.
+    public function releaseReservedStockForOrder(Order $order, string $reason): void
+    {
+        $orderId = (int) $order->getId();
+        if ($orderId <= 0) {
+            return;
+        }
+
+        $orderService = $this->di['mod_service']('Order');
+        $metaRepository = $orderService->getOrderMetaRepository();
+
+        // Unlike reserveStockForOrder(), callers of this method (order/invoice cancellation and
+        // deletion) don't already run inside a transaction, so the meta delete and the stock
+        // increment it authorizes need their own to avoid losing stock to a crash between them.
+        $this->di['em']->wrapInTransaction(function () use ($order, $orderId, $reason, $metaRepository): void {
+            $meta = $metaRepository->findOneByOrderIdAndName($orderId, \Box\Mod\Order\Service::META_STOCK_RESERVED_QTY);
+            if ($meta === null) {
+                return;
+            }
+
+            $quantity = (int) $meta->getValue();
+
+            $deleted = $metaRepository->deleteByOrderIdAndName($orderId, \Box\Mod\Order\Service::META_STOCK_RESERVED_QTY);
+            if ($deleted === 0 || $quantity <= 0) {
+                // A concurrent release already claimed this reservation.
+                return;
+            }
+
+            $productId = (int) $order->getProductId();
+            if ($productId <= 0) {
+                return;
+            }
+
+            $this->getProductRepository()->incrementStock($productId, $quantity, new \DateTime());
+
+            $resolvedProduct = $this->getProductRepository()->find($productId);
+            if ($resolvedProduct instanceof Product) {
+                // The statement above bypassed the entity, so bring the in-memory copy back in line.
+                $this->di['em']->refresh($resolvedProduct);
+            }
+
+            $this->di['logger']->info('Released stock reservation for order #%s (%s)', $orderId, $reason);
+        });
+    }
+
+    public function releaseReservedStockForInvoice(Invoice $invoice, string $reason): void
+    {
+        $invoiceId = (int) $invoice->getId();
+        if ($invoiceId <= 0) {
+            return;
+        }
+
+        $orderService = $this->di['mod_service']('Order');
+        foreach ($orderService->getOrderRepository()->findByUnpaidInvoiceId($invoiceId) as $order) {
+            $this->releaseReservedStockForOrder($order, $reason);
+        }
+    }
+
     private function getPeriods(Promo $model): array
     {
         return $this->decodePromoSelection($this->getPromoSourceArray($model)['periods'] ?? null);
@@ -1273,7 +1353,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function isPromoAvailableForClientGroup(Promo $promo, Client|\Model_Client|null $client = null): bool
+    public function isPromoAvailableForClientGroup(Promo $promo, ?Client $client = null): bool
     {
         $promoData = $this->getPromoSourceArray($promo);
         $clientGroups = $this->decodePromoSelection($promoData['client_groups'] ?? null);
@@ -1294,7 +1374,7 @@ class Service implements InjectionAwareInterface
             return false;
         }
 
-        $clientGroupId = $client instanceof Client ? $client->getClientGroupId() : $client->client_group_id;
+        $clientGroupId = $client->getClientGroupId();
         if (!$clientGroupId) {
             return false;
         }
@@ -1302,7 +1382,7 @@ class Service implements InjectionAwareInterface
         return in_array($clientGroupId, $clientGroups);
     }
 
-    public function canClientUsePromo(Client|\Model_Client $client, Promo $promo): bool
+    public function canClientUsePromo(Client $client, Promo $promo): bool
     {
         if (!$this->promoCanBeApplied($promo)) {
             return false;
@@ -1358,7 +1438,7 @@ class Service implements InjectionAwareInterface
      */
     public function createCheckoutPromoRedemptions(
         Promo $promo,
-        Client|\Model_Client $client,
+        Client $client,
         array $orders,
         ?Invoice $invoice,
         string $status,
@@ -1454,7 +1534,7 @@ class Service implements InjectionAwareInterface
 
         $productId = $order->getProductId();
         $discountAmount = (float) ($order->getDiscount() ?? 0);
-        $currency = (string) ($order->getCurrency() ?? '');
+        $currency = $order->getCurrency() ?? '';
         $product = $this->findProductById((int) $productId);
 
         if ($product->getType() !== self::DOMAIN) {
@@ -1566,7 +1646,7 @@ class Service implements InjectionAwareInterface
 
     public function createPromoRedemption(
         Promo $promo,
-        Client|\Model_Client $client,
+        Client $client,
         ?Order $order,
         ?Invoice $invoice,
         string $phase,
@@ -1582,13 +1662,13 @@ class Service implements InjectionAwareInterface
         return (int) $redemption->getId();
     }
 
-    public function clientHasActivePromoApplication(Client|\Model_Client $client, Promo $promo): bool
+    public function clientHasActivePromoApplication(Client $client, Promo $promo): bool
     {
         $promoId = (int) ($this->getPromoSourceArray($promo)['id'] ?? 0);
 
-        $clientId = $client instanceof Client ? $client->getId() : $client->id;
+        $clientId = (int) $client->getId();
 
-        return $this->getPromoRedemptionRepository()->clientHasActiveCheckoutApplication($promoId, (int) $clientId);
+        return $this->getPromoRedemptionRepository()->clientHasActiveCheckoutApplication($promoId, $clientId);
     }
 
     public function commitReservedPromoRedemptionsForInvoice(Invoice $invoice): void
@@ -2101,7 +2181,7 @@ class Service implements InjectionAwareInterface
 
     private function newPromoRedemption(
         Promo $promo,
-        Client|\Model_Client $client,
+        Client $client,
         ?Order $order,
         ?Invoice $invoice,
         string $phase,
@@ -2114,12 +2194,12 @@ class Service implements InjectionAwareInterface
         $timestamp = $createdAt ?? date('Y-m-d H:i:s');
         $dateTime = new \DateTime($timestamp);
         $redemption = new PromoRedemption();
-        $clientId = $client instanceof Client ? $client->getId() : $client->id;
+        $clientId = (int) $client->getId();
         $orderId = $order?->getId();
         $redemption
             ->setPromoId($promoId)
-            ->setClientId((int) $clientId)
-            ->setClientOrderId($orderId !== null ? (int) $orderId : null)
+            ->setClientId($clientId)
+            ->setClientOrderId($orderId ?? null)
             ->setInvoiceId($invoice !== null ? (int) $invoice->getId() : null)
             ->setPhase($phase)
             ->setStatus($status)

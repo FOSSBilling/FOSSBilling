@@ -181,7 +181,7 @@ class Service implements InjectionAwareInterface
             $client = $this->di['loggedin_client'];
         }
 
-        if (!is_null($client) && $client->id !== $model->getClientId()) {
+        if (!is_null($client) && $client->getId() !== $model->getClientId()) {
             throw new \FOSSBilling\Exception('API key does not exist');
         }
 
@@ -248,7 +248,7 @@ class Service implements InjectionAwareInterface
             `updated_at` datetime,
             PRIMARY KEY (`id`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;';
-        $this->di['db']->exec($sql);
+        $this->di['em']->getConnection()->executeStatement($sql);
 
         return true;
     }
@@ -258,7 +258,7 @@ class Service implements InjectionAwareInterface
      */
     public function uninstall(): bool
     {
-        $this->di['db']->exec('DROP TABLE IF EXISTS `service_apikey`');
+        $this->di['em']->getConnection()->executeStatement('DROP TABLE IF EXISTS `service_apikey`');
 
         return true;
     }

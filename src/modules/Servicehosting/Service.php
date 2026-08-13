@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicehosting;
 
+use Box\Mod\Client\Entity\Client;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Servicehosting\Entity\ServiceHosting;
@@ -131,11 +132,11 @@ class Service implements InjectionAwareInterface
                 AND LOWER(sh.tld) = LOWER(:tld)
                 AND co.status != :canceled_status';
 
-        $count = (int) $this->di['db']->getCell($query, [
-            ':service_type' => \Box\Mod\Product\Service::HOSTING,
-            ':sld' => $sld,
-            ':tld' => $tld,
-            ':canceled_status' => Order::STATUS_CANCELED,
+        $count = (int) $this->di['em']->getConnection()->fetchOne($query, [
+            'service_type' => \Box\Mod\Product\Service::HOSTING,
+            'sld' => $sld,
+            'tld' => $tld,
+            'canceled_status' => Order::STATUS_CANCELED,
         ]);
 
         if ($count > 0) {
@@ -512,21 +513,22 @@ class Service implements InjectionAwareInterface
         }
 
         $server = $this->getExistingServer((int) $model->getServiceHostingServerId(), 'Server not found');
-        $client = $this->di['db']->getExistingModelById('Client', $model->getClientId(), 'Client not found');
+        $client = $this->di['em']->getRepository(Client::class)->find($model->getClientId())
+            ?? throw new Exception('Client not found');
 
         $server_client = new \Server_Client();
         $server_client
-            ->setEmail($client->email)
-            ->setFirstName($client->first_name)
-            ->setLastName($client->last_name)
+            ->setEmail($client->getEmail())
+            ->setFirstName($client->getFirstName())
+            ->setLastName($client->getLastName())
             ->setFullName($client->getFullName())
-            ->setCompany($client->company)
-            ->setStreet($client->address_1)
-            ->setZip($client->postcode)
-            ->setCity($client->city)
-            ->setState($client->state)
-            ->setCountry($client->country)
-            ->setTelephone($client->phone);
+            ->setCompany($client->getCompany())
+            ->setStreet($client->getAddress1())
+            ->setZip($client->getPostcode())
+            ->setCity($client->getCity())
+            ->setState($client->getState())
+            ->setCountry($client->getCountry())
+            ->setTelephone($client->getPhone());
 
         $package = $this->getServerPackage($hp);
         $server_account = new \Server_Account();
@@ -589,7 +591,7 @@ class Service implements InjectionAwareInterface
             'reseller_cpanel_url' => $whm_url,
         ];
 
-        if ($identity instanceof \Model_Admin) {
+        if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
             $result['id'] = $model->getId();
             $result['active'] = $model->isActive();
             $result['secure'] = $model->isSecure();
@@ -627,7 +629,7 @@ class Service implements InjectionAwareInterface
             'reseller' => $model->isReseller(),
         ];
 
-        if ($identity instanceof \Model_Admin) {
+        if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
             $result['ip'] = $model->getIp();
             $result['username'] = $model->getUsername();
             $result['created_at'] = $this->formatDateTime($model->getCreatedAt());
@@ -654,7 +656,7 @@ class Service implements InjectionAwareInterface
         $orderIdsByServiceId = [];
         if (!empty($serviceIds)) {
             $placeholders = implode(',', array_fill(0, count($serviceIds), '?'));
-            $orderRows = $this->di['db']->getAll(
+            $orderRows = $this->di['em']->getConnection()->fetchAllAssociative(
                 "SELECT id, service_id FROM client_order WHERE service_type = ? AND service_id IN ($placeholders) ORDER BY id ASC",
                 array_merge(['hosting'], $serviceIds),
             );
@@ -706,7 +708,7 @@ class Service implements InjectionAwareInterface
             'reseller' => $account['reseller'],
         ];
 
-        if ($identity instanceof \Model_Admin) {
+        if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
             $result['ip'] = $account['ip'];
             $result['username'] = $account['username'];
             $result['created_at'] = $account['created_at'];
@@ -915,7 +917,7 @@ class Service implements InjectionAwareInterface
         $sql = 'SELECT id, name
                 FROM service_hosting_server
                 ORDER BY id ASC';
-        $rows = $this->di['db']->getAll($sql);
+        $rows = $this->di['em']->getConnection()->fetchAllAssociative($sql);
 
         $result = [];
         foreach ($rows as $record) {
@@ -1065,7 +1067,7 @@ class Service implements InjectionAwareInterface
         }
 
         if ($audit && $incoming !== $existing) {
-            $adminId = $this->di['loggedin_admin']->id ?? 'unknown';
+            $adminId = $this->di['loggedin_admin']->getId() ?? 'unknown';
             $this->di['logger']->info('Rotated %s for hosting server %s by admin %s', $field, (string) $serverId, (string) $adminId);
         }
 
@@ -1117,7 +1119,7 @@ class Service implements InjectionAwareInterface
     {
         $sql = 'SELECT id, name
                 FROM service_hosting_hp';
-        $rows = $this->di['db']->getAll($sql);
+        $rows = $this->di['em']->getConnection()->fetchAllAssociative($sql);
         $result = [];
         foreach ($rows as $record) {
             $result[$record['id']] = $record['name'];

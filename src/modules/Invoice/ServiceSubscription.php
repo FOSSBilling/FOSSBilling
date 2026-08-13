@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice;
 
+use Box\Mod\Client\Entity\Client;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
@@ -41,10 +42,10 @@ class ServiceSubscription implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function create(\Model_Client $client, PayGateway $pg, array $data): int
+    public function create(Client $client, PayGateway $pg, array $data): int
     {
         $model = new Subscription();
-        $model->setClientId($client->id ? (int) $client->id : null);
+        $model->setClientId($client->getId() ? (int) $client->getId() : null);
         $model->setPayGatewayId($pg->getId());
 
         $model->setSid($data['sid'] ?? null);
@@ -112,8 +113,8 @@ class ServiceSubscription implements InjectionAwareInterface
             'created_at' => $model->getCreatedAt()?->format('Y-m-d H:i:s'),
             'updated_at' => $model->getUpdatedAt()?->format('Y-m-d H:i:s'),
         ];
-        $client = $this->di['db']->load('Client', $model->getClientId());
-        if ($client instanceof \Model_Client) {
+        $client = $this->di['em']->getRepository(Client::class)->find($model->getClientId());
+        if ($client instanceof Client) {
             $clientService = $this->di['mod_service']('Client');
             $result['client'] = $clientService->toApiArray($client, false, $identity);
         } else {
@@ -142,81 +143,6 @@ class ServiceSubscription implements InjectionAwareInterface
         $this->di['logger']->info('Removed subscription %s', $id);
 
         return true;
-    }
-
-    public function getSearchQuery(array $data): array
-    {
-        $sql = 'SELECT *
-            FROM subscription
-            WHERE 1 ';
-
-        $id = $data['id'] ?? null;
-        $sid = $data['sid'] ?? null;
-        $search = $data['search'] ?? null;
-        $invoice_id = $data['invoice_id'] ?? null;
-        $gateway_id = $data['gateway_id'] ?? null;
-        $client_id = $data['client_id'] ?? null;
-        $status = $data['status'] ?? null;
-        $currency = $data['currency'] ?? null;
-
-        $date_from = $data['date_from'] ?? null;
-        $date_to = $data['date_to'] ?? null;
-        $params = [];
-
-        if ($status) {
-            $sql .= ' AND status = :status';
-            $params[':status'] = $status;
-        }
-
-        if ($invoice_id) {
-            $sql .= ' AND invoice_id = :invoice_id';
-            $params[':invoice_id'] = $invoice_id;
-        }
-
-        if ($gateway_id) {
-            $sql .= ' AND gateway_id = :gateway_id';
-            $params[':gateway_id'] = $gateway_id;
-        }
-
-        if ($client_id) {
-            $sql .= ' AND client_id  = :client_id';
-            $params[':client_id'] = $client_id;
-        }
-
-        if ($currency) {
-            $sql .= ' AND currency =  :currency ';
-            $params[':currency'] = $currency;
-        }
-
-        if ($date_from) {
-            $sql .= ' AND UNIX_TIMESTAMP(created_at) >= :date_from';
-            $params[':date_from'] = ctype_digit((string) $date_from) ? $date_from : strtotime($date_from . ' 00:00:00');
-        }
-
-        if ($date_to) {
-            $sql .= ' AND UNIX_TIMESTAMP(created_at) <= :date_to';
-            $params[':date_to'] = ctype_digit((string) $date_to) ? $date_to : strtotime($date_to . ' 23:59:59');
-        }
-
-        if ($search) {
-            $sql .= ' AND (sid = :sid OR id = :mid) ';
-            $params[':sid'] = $search;
-            $params[':mid'] = $search;
-        }
-
-        if ($id) {
-            $sql .= ' AND id = :id';
-            $params[':id'] = $id;
-        }
-
-        if ($sid) {
-            $sql .= ' AND sid = :sid';
-            $params[':sid'] = $sid;
-        }
-
-        $sql .= ' ORDER BY id DESC';
-
-        return [$sql, $params];
     }
 
     public function isSubscribable($invoice_id): bool
@@ -419,7 +345,7 @@ class ServiceSubscription implements InjectionAwareInterface
             FROM invoice_item
             WHERE invoice_id = :id
             ORDER BY id ASC';
-        $items = $this->di['db']->getAll($query, [':id' => $invoiceId]);
+        $items = $this->di['em']->getConnection()->fetchAllAssociative($query, ['id' => $invoiceId]);
 
         if (empty($items)) {
             return null;

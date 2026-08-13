@@ -152,6 +152,11 @@ function productTestCreateEntityManagerWithRepositories(
         {
             // Stock is decremented with a direct UPDATE, so nothing to re-read in the stub.
         }
+
+        public function wrapInTransaction(callable $callback): mixed
+        {
+            return $callback();
+        }
     };
 }
 
@@ -491,6 +496,216 @@ test('is stock available uses doctrine product state', function (): void {
     $service->setDi($di);
 
     expect($service->isStockAvailable($product, 2))->toBeFalse();
+});
+
+test('reserveStockForOrder reserves stock atomically and records the reservation', function (): void {
+    $service = new Service();
+    $product = productTestCreateProductEntity(1)
+        ->setStockControl(true)
+        ->setQuantityInStock(5);
+
+    $order = createEntity(Box\Mod\Order\Entity\Order::class, [
+        'id' => 99,
+        'product_id' => 1,
+        'quantity' => 2,
+    ]);
+
+    $productRepo = Mockery::mock(ProductRepository::class);
+    $productRepo->shouldReceive('find')->once()->with(1)->andReturn($product);
+    $productRepo->shouldReceive('decrementStockIfAvailable')
+        ->once()
+        ->with(1, 2, Mockery::type(DateTimeInterface::class))
+        ->andReturn(1);
+
+    $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
+    $orderServiceMock->shouldReceive('updateOrderMeta')
+        ->once()
+        ->with($order, [Box\Mod\Order\Service::META_STOCK_RESERVED_QTY => '2']);
+
+    $di = container();
+    $di['em'] = productTestCreateEntityManagerWithRepositories($productRepo);
+    $di['mod_service'] = $di->protect(fn (string $module): Mockery\MockInterface => match ($module) {
+        'Order' => $orderServiceMock,
+        default => throw new RuntimeException("Unexpected module service {$module}"),
+    });
+    $service->setDi($di);
+
+    $service->reserveStockForOrder($order);
+});
+
+test('reserveStockForOrder does not touch stock or write reservation meta for a non stock-controlled product', function (): void {
+    $service = new Service();
+    $product = productTestCreateProductEntity(1)->setStockControl(false);
+
+    $order = createEntity(Box\Mod\Order\Entity\Order::class, [
+        'id' => 99,
+        'product_id' => 1,
+        'quantity' => 2,
+    ]);
+
+    $productRepo = Mockery::mock(ProductRepository::class);
+    $productRepo->shouldReceive('find')->once()->with(1)->andReturn($product);
+    $productRepo->shouldNotReceive('decrementStockIfAvailable');
+
+    $di = container();
+    $di['em'] = productTestCreateEntityManagerWithRepositories($productRepo);
+    $di['mod_service'] = $di->protect(fn (): never => throw new RuntimeException('mod_service should not be called'));
+    $service->setDi($di);
+
+    $service->reserveStockForOrder($order);
+});
+
+test('reserveStockForOrder is a no-op for an order without a product', function (): void {
+    $service = new Service();
+    $order = createEntity(Box\Mod\Order\Entity\Order::class, ['id' => 99]);
+
+    // Neither 'em' nor 'mod_service' is registered: if the code tried to touch either one it
+    // would hit Pimple's "identifier is not defined" error rather than return quietly.
+    $service->setDi(container());
+
+    expect(fn () => $service->reserveStockForOrder($order))->not->toThrow(Throwable::class);
+});
+
+test('releaseReservedStockForOrder restores stock and clears the reservation', function (): void {
+    $service = new Service();
+    $product = productTestCreateProductEntity(1)->setStockControl(true)->setQuantityInStock(0);
+
+    $order = createEntity(Box\Mod\Order\Entity\Order::class, [
+        'id' => 99,
+        'product_id' => 1,
+    ]);
+
+    $meta = createEntity(Box\Mod\Order\Entity\OrderMeta::class, [
+        'client_order_id' => 99,
+        'name' => Box\Mod\Order\Service::META_STOCK_RESERVED_QTY,
+        'value' => '3',
+    ]);
+
+    $metaRepo = Mockery::mock(Box\Mod\Order\Repository\OrderMetaRepository::class);
+    $metaRepo->shouldReceive('findOneByOrderIdAndName')
+        ->once()
+        ->with(99, Box\Mod\Order\Service::META_STOCK_RESERVED_QTY)
+        ->andReturn($meta);
+    $metaRepo->shouldReceive('deleteByOrderIdAndName')
+        ->once()
+        ->with(99, Box\Mod\Order\Service::META_STOCK_RESERVED_QTY)
+        ->andReturn(1);
+
+    $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
+    $orderServiceMock->shouldReceive('getOrderMetaRepository')->once()->andReturn($metaRepo);
+
+    $productRepo = Mockery::mock(ProductRepository::class);
+    $productRepo->shouldReceive('incrementStock')
+        ->once()
+        ->with(1, 3, Mockery::type(DateTimeInterface::class))
+        ->andReturn(1);
+    $productRepo->shouldReceive('find')->once()->with(1)->andReturn($product);
+
+    $di = container();
+    $di['em'] = productTestCreateEntityManagerWithRepositories($productRepo);
+    $di['mod_service'] = $di->protect(fn (string $module): Mockery\MockInterface => match ($module) {
+        'Order' => $orderServiceMock,
+        default => throw new RuntimeException("Unexpected module service {$module}"),
+    });
+    $di['logger'] = new Box_Log();
+    $service->setDi($di);
+
+    $service->releaseReservedStockForOrder($order, 'order_canceled');
+});
+
+test('releaseReservedStockForOrder is idempotent once the reservation is already released', function (): void {
+    $service = new Service();
+
+    $order = createEntity(Box\Mod\Order\Entity\Order::class, [
+        'id' => 99,
+        'product_id' => 1,
+    ]);
+
+    $metaRepo = Mockery::mock(Box\Mod\Order\Repository\OrderMetaRepository::class);
+    $metaRepo->shouldReceive('findOneByOrderIdAndName')
+        ->once()
+        ->with(99, Box\Mod\Order\Service::META_STOCK_RESERVED_QTY)
+        ->andReturn(null);
+    $metaRepo->shouldNotReceive('deleteByOrderIdAndName');
+
+    $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
+    $orderServiceMock->shouldReceive('getOrderMetaRepository')->once()->andReturn($metaRepo);
+
+    $productRepo = Mockery::mock(ProductRepository::class);
+    $productRepo->shouldNotReceive('incrementStock');
+
+    $di = container();
+    $di['em'] = productTestCreateEntityManagerWithRepositories($productRepo);
+    $di['mod_service'] = $di->protect(fn (string $module): Mockery\MockInterface => match ($module) {
+        'Order' => $orderServiceMock,
+        default => throw new RuntimeException("Unexpected module service {$module}"),
+    });
+    $service->setDi($di);
+
+    $service->releaseReservedStockForOrder($order, 'order_canceled');
+});
+
+test('releaseReservedStockForOrder does not double-restock when a concurrent release already claimed it', function (): void {
+    // The delete's affected-row count is the atomicity gate: a concurrent release could have
+    // read the same meta row and deleted it first, in which case this call must not restock.
+    $service = new Service();
+
+    $order = createEntity(Box\Mod\Order\Entity\Order::class, [
+        'id' => 99,
+        'product_id' => 1,
+    ]);
+
+    $meta = createEntity(Box\Mod\Order\Entity\OrderMeta::class, [
+        'client_order_id' => 99,
+        'name' => Box\Mod\Order\Service::META_STOCK_RESERVED_QTY,
+        'value' => '3',
+    ]);
+
+    $metaRepo = Mockery::mock(Box\Mod\Order\Repository\OrderMetaRepository::class);
+    $metaRepo->shouldReceive('findOneByOrderIdAndName')->once()->andReturn($meta);
+    $metaRepo->shouldReceive('deleteByOrderIdAndName')->once()->andReturn(0);
+
+    $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
+    $orderServiceMock->shouldReceive('getOrderMetaRepository')->once()->andReturn($metaRepo);
+
+    $productRepo = Mockery::mock(ProductRepository::class);
+    $productRepo->shouldNotReceive('incrementStock');
+
+    $di = container();
+    $di['em'] = productTestCreateEntityManagerWithRepositories($productRepo);
+    $di['mod_service'] = $di->protect(fn (string $module): Mockery\MockInterface => match ($module) {
+        'Order' => $orderServiceMock,
+        default => throw new RuntimeException("Unexpected module service {$module}"),
+    });
+    $service->setDi($di);
+
+    $service->releaseReservedStockForOrder($order, 'order_canceled');
+});
+
+test('releaseReservedStockForInvoice releases every order still linked to the invoice', function (): void {
+    $invoice = productTestCreateInvoiceModel(55);
+
+    $firstOrder = createEntity(Box\Mod\Order\Entity\Order::class, ['id' => 1]);
+    $secondOrder = createEntity(Box\Mod\Order\Entity\Order::class, ['id' => 2]);
+
+    $orderRepo = Mockery::mock(Box\Mod\Order\Repository\OrderRepository::class);
+    $orderRepo->shouldReceive('findByUnpaidInvoiceId')->once()->with(55)->andReturn([$firstOrder, $secondOrder]);
+
+    $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
+    $orderServiceMock->shouldReceive('getOrderRepository')->once()->andReturn($orderRepo);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (string $module): Mockery\MockInterface => match ($module) {
+        'Order' => $orderServiceMock,
+        default => throw new RuntimeException("Unexpected module service {$module}"),
+    });
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('releaseReservedStockForOrder')->once()->with($firstOrder, 'invoice_canceled');
+    $serviceMock->shouldReceive('releaseReservedStockForOrder')->once()->with($secondOrder, 'invoice_canceled');
+    $serviceMock->setDi($di);
+
+    $serviceMock->releaseReservedStockForInvoice($invoice, 'invoice_canceled');
 });
 
 test('get product pricing array uses product payment implementation', function (): void {
@@ -947,8 +1162,6 @@ test('create addon', function (): void {
     $service = new Service();
     $newProductId = 1;
 
-    $dbMock = Mockery::mock('\Box_Database')->shouldIgnoreMissing();
-
     $toolMock = Mockery::mock(FOSSBilling\Tools::class);
     $toolMock->shouldReceive('slug')->atLeast()->once()->andReturn('title');
 
@@ -956,7 +1169,6 @@ test('create addon', function (): void {
     $productRepo->shouldReceive('findOneBy')->once()->with(['slug' => 'title'])->andReturn(null);
 
     $di = container();
-    $di['db'] = $dbMock;
     $di['em'] = productTestCreateEntityManagerWithRepositories($productRepo, null, productTestCreateProductEntity($newProductId), productTestCreateProductPaymentEntity(1));
     $di['logger'] = new Box_Log();
     $di['tools'] = $toolMock;
@@ -1901,7 +2113,6 @@ test('delete promo', function (): void {
     };
 
     $di = container();
-    $di['db'] = Mockery::mock('\Box_Database')->shouldIgnoreMissing();
     $di['logger'] = new Box_Log();
     $di['em'] = $emMock;
 
@@ -1933,7 +2144,6 @@ test('delete promo blocks deletion when redemption history exists', function ():
     };
 
     $di = container();
-    $di['db'] = Mockery::mock('\Box_Database')->shouldIgnoreMissing();
     $di['em'] = $emMock;
 
     $service->setDi($di);

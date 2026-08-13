@@ -61,42 +61,6 @@ class Service implements InjectionAwareInterface
         $this->di['em']->flush();
     }
 
-    private function getLegacyClient(Client|\Model_Client $client): \Model_Client
-    {
-        if ($client instanceof \Model_Client) {
-            return $client;
-        }
-
-        $legacyClient = $this->di['db']->getExistingModelById('Client', (int) $client->getId());
-        if (!$legacyClient instanceof \Model_Client) {
-            throw new \FOSSBilling\Exception('Client compatibility model not found');
-        }
-
-        return $legacyClient;
-    }
-
-    private function clientId(Client|\Model_Client $client): int
-    {
-        return (int) ($client instanceof Client ? $client->getId() : $client->id);
-    }
-
-    private function clientCurrency(Client|\Model_Client $client): ?string
-    {
-        return $client instanceof Client ? $client->getCurrency() : $client->currency;
-    }
-
-    private function setClientCurrency(Client|\Model_Client $client, string $currency): void
-    {
-        if ($client instanceof Client) {
-            $client->setCurrency($currency);
-
-            return;
-        }
-
-        $client->currency = $currency;
-        $this->di['db']->store($client);
-    }
-
     /**
      * @return list<CartProduct>
      */
@@ -552,7 +516,7 @@ class Service implements InjectionAwareInterface
         return $subscriptionPeriod;
     }
 
-    public function isClientAbleToUsePromo(Client|\Model_Client $client, Promo $promo)
+    public function isClientAbleToUsePromo(Client $client, Promo $promo)
     {
         return $this->getProductService()->canClientUsePromo($client, $promo);
     }
@@ -567,7 +531,7 @@ class Service implements InjectionAwareInterface
         return $this->getProductService()->isPromoAvailableForClientGroup($promo);
     }
 
-    protected function clientHadUsedPromo(Client|\Model_Client $client, Promo $promo): bool
+    protected function clientHadUsedPromo(Client $client, Promo $promo): bool
     {
         return $this->getProductService()->clientHasActivePromoApplication($client, $promo);
     }
@@ -577,7 +541,7 @@ class Service implements InjectionAwareInterface
         return $this->findCartProducts($model);
     }
 
-    public function checkoutCart(Cart $cart, Client|\Model_Client $client, $gateway_id = null): array
+    public function checkoutCart(Cart $cart, Client $client, $gateway_id = null): array
     {
         $promoId = $cart->getPromoId();
         if ($promoId) {
@@ -596,7 +560,7 @@ class Service implements InjectionAwareInterface
                 'event' => 'onBeforeClientCheckout',
                 'params' => [
                     'ip' => $this->di['request']->getClientIp(),
-                    'client_id' => $this->clientId($client),
+                    'client_id' => (int) $client->getId(),
                     'cart_id' => $cart->getId(),
                 ],
             ]
@@ -613,7 +577,7 @@ class Service implements InjectionAwareInterface
                 'event' => 'onAfterClientOrderCreate',
                 'params' => [
                     'ip' => $this->di['request']->getClientIp(),
-                    'client_id' => $this->clientId($client),
+                    'client_id' => (int) $client->getId(),
                     'id' => $order->getId(),
                 ],
             ]
@@ -637,7 +601,7 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    public function createFromCart(Client|\Model_Client $client, $gateway_id = null): array
+    public function createFromCart(Client $client, $gateway_id = null): array
     {
         $cart = $this->getSessionCart();
         $ca = $this->toApiArray($cart);
@@ -665,24 +629,17 @@ class Service implements InjectionAwareInterface
 
         $reservedOrderIds = [];
         $reservedCount = 0;
+        $stockReservedOrders = [];
 
-        if (!$this->clientCurrency($client)) {
-            $this->setClientCurrency($client, $currencyCode);
-            if ($client instanceof Client) {
-                $this->di['em']->persist($client);
-            }
-        }
-
-        $legacyClient = $this->getLegacyClient($client);
-        if (!$legacyClient->currency) {
-            $legacyClient->currency = $currencyCode;
-            $this->di['db']->store($legacyClient);
+        if (!$client->getCurrency()) {
+            $client->setCurrency($currencyCode);
+            $this->di['em']->persist($client);
         }
 
         try {
-            return $this->di['em']->wrapInTransaction(function () use ($ca, $cart, $client, $legacyClient, $currency, $currencyCode, $gateway_id, $taxed, $promo, $promoProductService, $promoId, &$reservedOrderIds, &$reservedCount) {
-                if ($this->clientCurrency($client) != $currencyCode) {
-                    throw new \FOSSBilling\InformationException('Selected currency :selected does not match your profile currency :code. Please change cart currency to continue.', [':selected' => $currencyCode, ':code' => $this->clientCurrency($client)]);
+            return $this->di['em']->wrapInTransaction(function () use ($ca, $cart, $client, $currency, $currencyCode, $gateway_id, $taxed, $promo, $promoProductService, $promoId, &$reservedOrderIds, &$reservedCount, &$stockReservedOrders) {
+                if ($client->getCurrency() != $currencyCode) {
+                    throw new \FOSSBilling\InformationException('Selected currency :selected does not match your profile currency :code. Please change cart currency to continue.', [':selected' => $currencyCode, ':code' => $client->getCurrency()]);
                 }
 
                 $orders = [];
@@ -726,7 +683,7 @@ class Service implements InjectionAwareInterface
                     }
 
                     $order = new Order();
-                    $order->setClientId($this->clientId($client));
+                    $order->setClientId((int) $client->getId());
                     $order->setPromoId($promoId);
                     $order->setProductId($item['product_id']);
                     $order->setFormId($item['form_id']);
@@ -749,6 +706,10 @@ class Service implements InjectionAwareInterface
                     $this->di['em']->flush();
 
                     $orders[] = $order;
+
+                    // Reserve stock at order creation time instead of leaving it unclaimed until activation.
+                    $this->getProductService()->reserveStockForOrder($order);
+                    $stockReservedOrders[] = $order;
 
                     // Reserve promo capacity at order creation time.
                     if ($promo instanceof Promo && $promoProductService !== null) {
@@ -803,10 +764,10 @@ class Service implements InjectionAwareInterface
 
                 if ($ca['total'] > 0) { // crete invoice if order total > 0
                     $invoiceService = $this->di['mod_service']('Invoice');
-                    $invoiceModel = $invoiceService->prepareInvoice($legacyClient, ['client_id' => $this->clientId($client), 'items' => $invoice_items, 'gateway_id' => $gateway_id]);
+                    $invoiceModel = $invoiceService->prepareInvoice($client, ['client_id' => (int) $client->getId(), 'items' => $invoice_items, 'gateway_id' => $gateway_id]);
 
                     $clientBalanceService = $this->di['mod_service']('Client', 'Balance');
-                    $balanceAmount = $clientBalanceService->getClientBalance($legacyClient);
+                    $balanceAmount = $clientBalanceService->getClientBalance($client);
                     $useCredits = $balanceAmount >= $ca['total'];
 
                     $invoiceService->approveInvoice($invoiceModel, ['id' => $invoiceModel->getId(), 'use_credits' => $useCredits]);
@@ -881,6 +842,17 @@ class Service implements InjectionAwareInterface
                     $this->di['logger']->error('Failed to compensate promo checkout failure', [
                         'exception' => $compensationError->getMessage(),
                         'promo_id' => $promo->getId(),
+                    ]);
+                }
+            }
+
+            foreach ($stockReservedOrders as $stockReservedOrder) {
+                try {
+                    $this->getProductService()->releaseReservedStockForOrder($stockReservedOrder, 'checkout_failed');
+                } catch (\Throwable $compensationError) {
+                    $this->di['logger']->error('Failed to compensate stock checkout failure', [
+                        'exception' => $compensationError->getMessage(),
+                        'order_id' => $stockReservedOrder->getId(),
                     ]);
                 }
             }

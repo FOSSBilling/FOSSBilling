@@ -334,23 +334,23 @@ test('creates action', function (): void {
         ->andReturn($tldModel);
     $serviceMock->shouldReceive('validateOrderData');
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->first_name = 'first_name';
-    $client->last_name = 'last_name';
-    $client->email = 'email';
-    $client->company = 'company';
-    $client->address_1 = 'address_1';
-    $client->address_2 = 'address_2';
-    $client->country = 'country';
-    $client->city = 'city';
-    $client->state = 'state';
-    $client->postcode = 'postcode';
-    $client->phone_cc = 'phone_cc';
-    $client->phone = 'phone';
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, [
+        'first_name' => 'first_name',
+        'last_name' => 'last_name',
+        'email' => 'client@example.com',
+        'company' => 'company',
+        'address_1' => 'address_1',
+        'address_2' => 'address_2',
+        'country' => 'country',
+        'city' => 'city',
+        'state' => 'state',
+        'postcode' => 'postcode',
+        'phone_cc' => 'phone_cc',
+        'phone' => 'phone',
+    ]);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')
+    $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepo->shouldReceive('find')
         ->atLeast()->once()
         ->andReturn($client);
 
@@ -362,7 +362,7 @@ test('creates action', function (): void {
 
         return $systemServiceMock;
     });
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepo);
 
     $serviceMock->setDi($di);
 
@@ -959,12 +959,52 @@ test('throws exception when checking availability not allowed to register', func
         ->toThrow(FOSSBilling\Exception::class);
 });
 
-test('syncs expiration date', function (): void {
-    $service = new Service();
-    $model = new ServiceDomain();
-    $result = $service->syncExpirationDate($model);
+test('syncs expiration date from the registrar', function (): void {
+    $whois = new Registrar_Domain();
+    $whois->setExpirationTime((new DateTime('2030-06-15 00:00:00', new DateTimeZone('UTC')))->getTimestamp());
 
-    expect($result)->toBeNull();
+    $adapter = Mockery::mock(Registrar_Adapter_Custom::class);
+    $adapter->shouldReceive('getDomainDetails')
+        ->once()
+        ->andReturn($whois);
+
+    $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $service->shouldReceive('_getD')
+        ->once()
+        ->andReturn([new Registrar_Domain(), $adapter]);
+
+    $model = new ServiceDomain();
+
+    $di = container();
+    $service->setDi($di);
+
+    $service->syncExpirationDate($model);
+
+    expect($model->getExpiresAt()?->format('Y-m-d H:i:s'))->toBe('2030-06-15 00:00:00');
+});
+
+test('preserves the existing expiration date when the registrar has none', function (): void {
+    $whois = new Registrar_Domain();
+
+    $adapter = Mockery::mock(Registrar_Adapter_Custom::class);
+    $adapter->shouldReceive('getDomainDetails')
+        ->once()
+        ->andReturn($whois);
+
+    $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $service->shouldReceive('_getD')
+        ->once()
+        ->andReturn([new Registrar_Domain(), $adapter]);
+
+    $model = new ServiceDomain();
+    $model->setExpiresAt(new DateTime('2030-06-15 00:00:00', new DateTimeZone('UTC')));
+
+    $di = container();
+    $service->setDi($di);
+
+    $service->syncExpirationDate($model);
+
+    expect($model->getExpiresAt()?->format('Y-m-d H:i:s'))->toBe('2030-06-15 00:00:00');
 });
 
 test('syncWhois stores null dates when registrar dates are unavailable', function (): void {
@@ -1006,7 +1046,7 @@ test('syncWhois stores null dates when registrar dates are unavailable', functio
         ->and($model->getRegisteredAt())->toBeNull();
 });
 
-test('converts to api array', function (?Model_Admin $identity, string $dbLoadCalled): void {
+test('converts to api array', function (?Box\Mod\Staff\Entity\Admin $identity, string $dbLoadCalled): void {
     $service = new Service();
     $model = new ServiceDomain();
 
@@ -1108,19 +1148,14 @@ test('converts to api array', function (?Model_Admin $identity, string $dbLoadCa
     expect($contact['phone_cc'])->toBe($model->getContactPhoneCc());
     expect($contact['phone'])->toBe($model->getContactPhone());
 
-    if ($identity instanceof Model_Admin) {
+    if ($identity instanceof Box\Mod\Staff\Entity\Admin) {
         expect($result)->toHaveKey('transfer_code');
         expect($result)->toHaveKey('registrar');
         expect($result['transfer_code'])->toBe($model->getTransferCode());
         expect($result['registrar'])->toBe($tldRegistrar->getName());
     }
 })->with([
-    [function () {
-        $model = new Model_Admin();
-        $model->loadBean(new Tests\Helpers\DummyBean());
-
-        return $model;
-    }, 'atLeast'],
+    [fn () => \Tests\Helpers\admin(), 'atLeast'],
     [null, 'never'],
 ]);
 
@@ -1133,7 +1168,7 @@ test('converts admin domain to api array without a registrar', function (): void
     $di['em'] = $emMock;
     $service->setDi($di);
 
-    $result = $service->toApiArray(new ServiceDomain(), false, new Model_Admin());
+    $result = $service->toApiArray(new ServiceDomain(), false, \Tests\Helpers\admin());
 
     expect($result['registrar'])->toBeNull();
 });
@@ -1169,6 +1204,38 @@ test('batch syncs expiration dates', function (): void {
         ->andReturn(null);
     $systemServiceMock->shouldReceive('setParamValue')
         ->atLeast()->once();
+
+    $domainModel = new ServiceDomain();
+    $domainRepo = Mockery::mock(DomainRepository::class);
+    $domainRepo->shouldReceive('findAll')->andReturn([$domainModel]);
+    $domainRepo->shouldIgnoreMissing();
+
+    $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $emMock->shouldReceive('getRepository')->with(ServiceDomain::class)->andReturn($domainRepo);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['mod_service'] = $di->protect(fn ($name) => $systemServiceMock);
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $serviceMock->setDi($di);
+
+    $result = $serviceMock->batchSyncExpirationDates();
+
+    expect($result)->toBeTrue();
+});
+
+test('does not advance the last sync marker when a domain sync fails', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('syncExpirationDate')
+        ->atLeast()->once()
+        ->andThrow(new Exception('registrar unavailable'));
+
+    $systemServiceMock = Mockery::mock(SystemService::class);
+    $systemServiceMock->shouldReceive('getParamValue')
+        ->atLeast()->once()
+        ->andReturn(null);
+    $systemServiceMock->shouldReceive('setParamValue')
+        ->never();
 
     $domainModel = new ServiceDomain();
     $domainRepo = Mockery::mock(DomainRepository::class);
@@ -1411,7 +1478,7 @@ test('converts tld to api array', function (): void {
     $model->setPeriods('5,2,2,10');
     $model->setTldRegistrarId(1);
 
-    $result = $service->tldToApiArray($model, new Model_Admin());
+    $result = $service->tldToApiArray($model, \Tests\Helpers\admin());
     expect($result)->toBeArray();
 
     expect($result)->toHaveKey('tld');
@@ -1453,7 +1520,7 @@ test('converts admin tld to api array without a registrar', function (): void {
     $di['em'] = $emMock;
     $service->setDi($di);
 
-    $result = $service->tldToApiArray(new Tld(), new Model_Admin());
+    $result = $service->tldToApiArray(new Tld(), \Tests\Helpers\admin());
 
     expect($result['registrar'])->toBe([
         'id' => null,
