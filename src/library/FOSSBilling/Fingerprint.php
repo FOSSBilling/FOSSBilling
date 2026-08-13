@@ -178,12 +178,16 @@ class Fingerprint
             $percentageWrong = round($percentageWrong * 100, 3);
             $failureThreshold = round($failureThreshold * 100, 3);
 
-            error_log("The session with the ID '$ID' failed its fingerprint check with a (weighted) difference of $percentageWrong% compared to the allowed $failureThreshold%. $itemCount properties were used in the check.");
-            $output = PHP_EOL;
-            foreach ($differing as $name) {
-                $output .= '    ' . $name . PHP_EOL;
-            }
-            error_log('The following properties differed:' . $output);
+            // Fingerprint is intentionally dependency-free, so retain PHP's
+            // fallback logger. Never write the session token itself to logs.
+            error_log(sprintf(
+                'Fingerprint check failed for session %s: weighted difference %.3f%% (allowed %.3f%%), %d properties compared; differing properties: %s',
+                hash('sha256', $ID),
+                $percentageWrong,
+                $failureThreshold,
+                $itemCount,
+                implode(', ', $differing),
+            ));
         }
 
         return $valid;

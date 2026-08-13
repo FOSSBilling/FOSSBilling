@@ -12,6 +12,7 @@ class Box_DbLoggedPDOStatement extends PDOStatement
 {
     public function execute(?array $input_parameters = null): bool
     {
+        // This debug-only statement is created directly by PDO and has no DI access.
         error_log($this->queryString);
 
         return parent::execute($input_parameters);

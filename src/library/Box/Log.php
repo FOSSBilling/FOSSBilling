@@ -177,6 +177,7 @@ class Box_Log implements FOSSBilling\InjectionAwareInterface
             try {
                 $writer->write($event, $this->_channel);
             } catch (Throwable $e) {
+                // A writer failure cannot be routed through this logger without recursion.
                 error_log(sprintf('[Box_Log] writer failure: %s at %s:%d', $e->getMessage(), $e->getFile(), $e->getLine()));
             }
         }

@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Tests\Support;
 
 use PhpParser\Node;
+use PhpParser\Node\Expr\Array_;
 use PhpParser\Node\Expr\ArrayDimFetch;
 use PhpParser\Node\Expr\Assign;
 use PhpParser\Node\Expr\Variable;
@@ -221,6 +222,14 @@ final readonly class ToApiArrayAuditor
         }
 
         if ($node instanceof Assign) {
+            if ($node->var instanceof Variable && $node->var->name === 'data' && $node->expr instanceof Array_) {
+                foreach ($node->expr->items as $item) {
+                    if ($item?->key instanceof Node\Scalar\String_) {
+                        $result[$item->key->value][] = $where;
+                    }
+                }
+            }
+
             $field = $this->extractDataFieldName($node->var);
             if ($field !== null) {
                 $result[$field][] = $where;

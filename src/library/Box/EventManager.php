@@ -86,7 +86,7 @@ class Box_EventManager implements FOSSBilling\InjectionAwareInterface
                     $disp->connect($dispatchEvent, [$s::class, $event]);
                 }
             } catch (Exception $e) {
-                error_log($e->getMessage());
+                $this->di['logger']->setChannel('event')->error($e->getMessage());
             }
         }
     }

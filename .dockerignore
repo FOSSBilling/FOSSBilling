@@ -13,6 +13,7 @@ node_modules
 output.log
 
 src/config.php
+src/config.old.php
 src/vendor
 src/**/node_modules
 src/public/assets

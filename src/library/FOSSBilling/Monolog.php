@@ -27,6 +27,7 @@ class Monolog
         'activity',
         'application',
         'cron',
+        'update',
         'database',
         'license',
         'mail',
@@ -49,7 +50,7 @@ class Monolog
             $this->logger[$channel]->pushHandler($rotatingHandler);
 
             $formatter = new LineFormatter($this->outputFormat, $this->dateFormat, true, true, true);
-            $this->logger[$channel]->getHandlers()[0]->setFormatter($formatter);
+            $rotatingHandler->setFormatter($formatter);
         }
     }
 
@@ -88,8 +89,10 @@ class Monolog
 
         try {
             $this->getChannel($channel)->log($priority, $message, $context);
-        } catch (\Exception $e) {
-            error_log($e->getMessage());
+        } catch (\Throwable $e) {
+            // This is the final fallback when a Monolog handler itself fails;
+            // routing it through the application logger would recurse.
+            error_log(sprintf('[FOSSBilling\\Monolog] writer failure: %s at %s:%d', $e->getMessage(), $e->getFile(), $e->getLine()));
         }
     }
 }

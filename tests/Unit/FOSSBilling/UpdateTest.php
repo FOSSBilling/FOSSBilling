@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use FOSSBilling\InformationException;
 use FOSSBilling\Update;
+use FOSSBilling\Version;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpClient\MockHttpClient;
@@ -40,7 +41,9 @@ test('uses the API digest for archive verification without querying GitHub', fun
         ], JSON_THROW_ON_ERROR));
     });
     $di = new Pimple\Container();
-    $di['cache'] = new ArrayAdapter();
+    $cache = new ArrayAdapter();
+    $cache->get('changelog_from_' . Version::VERSION, static fn (): string => 'test changelog');
+    $di['cache'] = $cache;
     $di['http_client'] = $httpClient;
     $update = new Update();
     $update->setDi($di);

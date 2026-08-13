@@ -97,8 +97,6 @@ class Theme
     {
         $spp = Path::join($this->getPathConfig(), 'settings.html.twig');
         if (!self::getFilesystem()->exists($spp)) {
-            error_log('Theme ' . $this->getName() . ' does not have settings page');
-
             return '';
         }
 

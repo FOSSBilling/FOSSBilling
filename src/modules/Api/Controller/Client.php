@@ -432,7 +432,7 @@ class Client implements InjectionAwareInterface
         $this->_loadConfig();
 
         if ($e instanceof \Exception) {
-            error_log("{$e->getMessage()} {$e->getCode()}.");
+            $this->getDi()['logger']->error("{$e->getMessage()} {$e->getCode()}.");
         }
 
         return (new ApiResponseFactory())->create($data, $e);

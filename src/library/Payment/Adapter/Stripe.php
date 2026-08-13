@@ -52,6 +52,14 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
+    private function debugLog(string $message): void
+    {
+        // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
+        if (DEBUG) {
+            $this->di['logger']->debug($message);
+        }
+    }
+
     public function __construct(private $config)
     {
         if ($this->config['test_mode']) {
@@ -216,10 +224,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $tx->setUpdatedAt(new DateTime());
         $this->di['em']->flush();
 
-        // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
-        if (DEBUG) {
-            error_log(json_encode($e->getJsonBody()));
-        }
+        $this->debugLog((string) json_encode($e->getJsonBody()));
 
         throw new Exception($tx->getError());
     }
@@ -727,9 +732,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         try {
             $this->updateSubscriptionStatusFromGateway($api_admin, $stripeSubscription->id, $status);
         } catch (Exception $e) {
-            if (DEBUG) {
-                error_log('Stripe subscription updated webhook: ' . $e->getMessage());
-            }
+            $this->debugLog('Stripe subscription updated webhook: ' . $e->getMessage());
         }
 
         return false;
@@ -878,9 +881,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         try {
             $this->updateSubscriptionStatusFromGateway($api_admin, $subscriptionId, 'canceled');
         } catch (Exception $e) {
-            if (DEBUG) {
-                error_log('Stripe invoice payment failed webhook: ' . $e->getMessage());
-            }
+            $this->debugLog('Stripe invoice payment failed webhook: ' . $e->getMessage());
         }
 
         return false;
@@ -1059,9 +1060,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 throw $e;
             }
 
-            if (DEBUG) {
-                error_log('Stripe setup_intent webhook: subscription creation deferred to redirect flow: ' . $e->getMessage());
-            }
+            $this->debugLog('Stripe setup_intent webhook: subscription creation deferred to redirect flow: ' . $e->getMessage());
 
             return false;
         }
@@ -1123,9 +1122,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         try {
             $api_admin->invoice_subscription_create($sd);
         } catch (Exception $e) {
-            if (DEBUG) {
-                error_log('Failed to create FOSSBilling subscription for ' . $subscription->id . ': ' . $e->getMessage());
-            }
+            $this->debugLog('Failed to create FOSSBilling subscription for ' . $subscription->id . ': ' . $e->getMessage());
         }
     }
 

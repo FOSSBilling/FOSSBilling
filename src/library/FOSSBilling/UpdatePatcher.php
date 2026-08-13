@@ -181,7 +181,7 @@ class UpdatePatcher implements InjectionAwareInterface
                     $this->filesystem->rename($file, $action);
                 }
             } catch (IOException $e) {
-                error_log($e->getMessage());
+                $this->di['logger']->setChannel('update')->error($e->getMessage());
             }
         }
     }
@@ -216,7 +216,7 @@ class UpdatePatcher implements InjectionAwareInterface
             $this->prepareAndExecute($sql, $params);
         } catch (\Exception $e) {
             // Log the error and then throw a user-friendly exception to prevent further patches from being applied.
-            error_log($e->getMessage());
+            $this->di['logger']->setChannel('update')->error($e->getMessage());
 
             throw new Exception('There was an error while applying database patches. Please check the error log for information on the error, correct it, and then perform the backup patching method to complete the update.');
         }
@@ -1132,7 +1132,7 @@ class UpdatePatcher implements InjectionAwareInterface
             $this->di['cache']->delete('config_mod_spamchecker');
             $this->di['cache']->delete('config_mod_antispam');
         } catch (\Exception $e) {
-            error_log('Spamchecker to Anti-Spam migration error: ' . $e->getMessage());
+            $this->di['logger']->setChannel('update')->error('Spamchecker to Anti-Spam migration error: ' . $e->getMessage());
         }
 
         $fileActions = [
@@ -1167,7 +1167,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 try {
                     $this->filesystem->remove($dir->getPathname());
                 } catch (IOException $e) {
-                    error_log($e->getMessage());
+                    $this->di['logger']->setChannel('update')->error($e->getMessage());
                 }
             }
         } catch (\Symfony\Component\Finder\Exception\DirectoryNotFoundException) {
@@ -1312,7 +1312,7 @@ class UpdatePatcher implements InjectionAwareInterface
             $this->executeSql("DELETE FROM extension WHERE type = 'mod' AND name = 'wysiwyg'");
             $this->di['cache']->delete('config_mod_wysiwyg');
         } catch (\Exception $e) {
-            error_log('Wysiwyg cleanup migration error: ' . $e->getMessage());
+            $this->di['logger']->setChannel('update')->error('Wysiwyg cleanup migration error: ' . $e->getMessage());
         }
 
         $this->executeFileActions([

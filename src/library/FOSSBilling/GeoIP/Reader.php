@@ -78,7 +78,7 @@ class Reader
 
                     return true;
                 } catch (\Exception $e) {
-                    error_log("There was an error while updating the IP address database: {$e->getMessage()}.");
+                    $this->di['logger']->error("There was an error while updating the IP address database: {$e->getMessage()}.");
                 }
             }
         }

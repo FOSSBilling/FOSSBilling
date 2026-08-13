@@ -1028,7 +1028,7 @@ class Service implements InjectionAwareInterface
                 ->execute();
         } catch (\Exception $e) {
             if (!\FOSSBilling\Environment::isTesting()) {
-                error_log($e->getMessage());
+                $di['logger']->error($e->getMessage());
             }
         }
     }

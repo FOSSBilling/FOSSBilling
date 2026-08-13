@@ -175,7 +175,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         try {
             $model = $this->_getOrderService($order);
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            $this->di['logger']->error($e->getMessage());
 
             return true;
         }
@@ -280,7 +280,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $e = new \FOSSBilling\InformationException('Plugin class file :file was not found', [':file' => $file], 3124);
             // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
             if (DEBUG) {
-                error_log($e->getMessage());
+                $this->di['logger']->debug($e->getMessage());
             }
 
             return null;

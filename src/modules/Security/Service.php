@@ -78,7 +78,7 @@ class Service
             if ($newCheck instanceof SecurityCheckInterface) {
                 $checks[$checkID] = $newCheck;
             } else {
-                error_log("{$className} does not implement the SecurityCheckInterface interface.");
+                $this->di['logger']->setChannel('security')->error("{$className} does not implement the SecurityCheckInterface interface.");
             }
         }
 

@@ -29,11 +29,14 @@ function runCheckInstallerWithStubbedFilesystem(bool $expectRemoval): void
 
     $previousFilesystem = $GLOBALS['filesystem'] ?? null;
     $GLOBALS['filesystem'] = $mock;
+    ini_set('error_log', '/dev/null');
 
     try {
         checkInstaller();
     } finally {
         $GLOBALS['filesystem'] = $previousFilesystem;
+        // Keep the suite-wide test logging policy after exercising the production cleanup path.
+        ini_set('error_log', '/dev/null');
     }
 }
 

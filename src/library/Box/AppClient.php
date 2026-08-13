@@ -76,7 +76,7 @@ class Box_AppClient extends Box_App
         } catch (FOSSBilling\InformationException $e) {
             // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
             if (DEBUG) {
-                error_log($e->getMessage());
+                $this->di['logger']->setChannel('routing')->debug($e->getMessage());
             }
         } catch (Twig\Error\LoaderError|Twig\Error\RuntimeError|Twig\Error\SyntaxError $e) {
             // A real template bug, not a missing page. Surface as a 500 so the

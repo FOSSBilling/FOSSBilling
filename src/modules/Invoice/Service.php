@@ -1651,7 +1651,6 @@ class Service implements InjectionAwareInterface
         $ss = $this->di['mod_service']('System');
         $last_time = $ss->getParamValue($key);
         if ($once_per_day && $last_time && (time() - strtotime((string) $last_time)) < 86400) {
-            // error_log('Already executed today.');
             return false;
         }
 

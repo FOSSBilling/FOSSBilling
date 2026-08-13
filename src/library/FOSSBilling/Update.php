@@ -152,7 +152,7 @@ class Update implements InjectionAwareInterface
                 $response = $httpClient->request('GET', $releaseInfoUrl);
                 $releaseInfo = $response->toArray()['result'];
             } catch (TransportExceptionInterface|HttpExceptionInterface $e) {
-                error_log($e->getMessage());
+                $this->di['logger']->setChannel('update')->error($e->getMessage());
 
                 throw new Exception('Failed to download the latest version information. Further details are available in the error log.');
             }
@@ -228,7 +228,7 @@ class Update implements InjectionAwareInterface
         try {
             $this->filesystem->remove($archiveFile);
         } catch (IOException $e) {
-            error_log($e->getMessage());
+            $this->di['logger']->setChannel('update')->error($e->getMessage());
         }
     }
 
@@ -278,7 +278,7 @@ class Update implements InjectionAwareInterface
             $this->filesystem->remove(PATH_CACHE);
             $this->filesystem->mkdir(PATH_CACHE, 0o755);
         } catch (IOException $e) {
-            error_log($e->getMessage());
+            $this->di['logger']->setChannel('update')->error($e->getMessage());
 
             throw new Exception('Unable to clear the cache after applying manual update patches. Further details are available in the error log.');
         }
@@ -308,7 +308,7 @@ class Update implements InjectionAwareInterface
             throw new InformationException('You have the latest version of FOSSBilling. You do not need to update.');
         }
 
-        error_log('Started FOSSBilling auto-update script');
+        $this->di['logger']->setChannel('update')->info('Started FOSSBilling auto-update script');
         $latestVersionNum = $this->getLatestVersion();
         $archiveFile = Path::join(PATH_CACHE, "{$latestVersionNum}.zip");
 
@@ -351,7 +351,7 @@ class Update implements InjectionAwareInterface
             }
             fclose($fileHandler);
         } catch (TransportExceptionInterface|HttpExceptionInterface $e) {
-            error_log($e->getMessage());
+            $this->di['logger']->setChannel('update')->error($e->getMessage());
 
             throw new Exception('Failed to download the update archive. Further details are available in the error log.');
         }
@@ -371,7 +371,7 @@ class Update implements InjectionAwareInterface
             $zip->extractTo(PATH_ROOT);
             $zip->close();
         } catch (ZipException $e) {
-            error_log($e->getMessage());
+            $this->di['logger']->setChannel('update')->error($e->getMessage());
 
             throw new Exception('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
         }
@@ -389,7 +389,7 @@ class Update implements InjectionAwareInterface
             $this->filesystem->remove([PATH_CACHE, Path::join(PATH_ROOT, 'install')]);
             $this->filesystem->mkdir(PATH_CACHE, 0o755);
         } catch (IOException $e) {
-            error_log($e->getMessage());
+            $this->di['logger']->setChannel('update')->error($e->getMessage());
 
             throw new Exception('Unable to clear cache and/or remove install folder. Further details are available in the error log.');
         }

@@ -557,8 +557,8 @@ class ServiceTransaction implements InjectionAwareInterface
             $transaction->setUpdatedAt(new \DateTime());
             $this->di['em']->flush();
 
-            if (defined('DEBUG')) {
-                error_log($e->getMessage());
+            if (DEBUG) {
+                $this->di['logger']->debug($e->getMessage());
             }
             if (Environment::isTesting()) {
                 throw $e;
@@ -767,8 +767,8 @@ class ServiceTransaction implements InjectionAwareInterface
                     $invoiceService->tryPayWithCredits($invoice);
                 }
             } catch (\Exception $e) {
-                if (defined('DEBUG')) {
-                    error_log($e->getMessage());
+                if (DEBUG) {
+                    $this->di['logger']->debug($e->getMessage());
                 }
             }
         }

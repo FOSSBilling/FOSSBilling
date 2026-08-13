@@ -153,4 +153,45 @@ describe('_isIpnValid receiver verification', function (): void {
         // would still be caught.
         expect($capturedRaw)->toContain('address_street=' . urlencode($addressStreet));
     });
+
+    test('logs unknown PayPal transactions through the application logger', function (): void {
+        $adapter = new Payment_Adapter_PayPalEmail(['email' => 'merchant@example.com', 'test_mode' => false]);
+        $logger = new Tests\Helpers\TestLogger();
+        $di = container();
+        $di['logger'] = $logger;
+        $adapter->setDi($di);
+
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldReceive('invoice_transaction_get')
+            ->once()
+            ->with(['id' => 42])
+            ->andReturn([
+                'invoice_id' => 7,
+                'type' => 'unknown_event',
+                'txn_id' => 'paypal-transaction-42',
+                'txn_status' => 'Unknown',
+                'amount' => '10.00',
+                'currency' => 'USD',
+            ]);
+        $apiAdmin->shouldReceive('invoice_get')
+            ->once()
+            ->with(['id' => 7])
+            ->andReturn(['client' => ['id' => 9]]);
+        $apiAdmin->shouldReceive('invoice_transaction_update')
+            ->once()
+            ->with(Mockery::on(fn (array $data): bool => $data['id'] === 42 && $data['status'] === 'processed'));
+
+        $adapter->processTransaction($apiAdmin, 42, [
+            'post' => [
+                'txn_type' => 'unknown_event',
+                'payment_status' => 'Unknown',
+            ],
+            'get' => [],
+        ], 1);
+
+        expect($logger->calls)->toContain([
+            'method' => 'error',
+            'params' => ['Unknown PayPal transaction 42'],
+        ]);
+    });
 });

@@ -269,7 +269,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         if (!Environment::isProduction()) {
             // @phpstan-ignore if.alwaysFalse
             if (DEBUG) {
-                error_log('Skip email sending. Application ENV: ' . Environment::getCurrentEnvironment());
+                $this->di['logger']->debug('Skip email sending. Application ENV: ' . Environment::getCurrentEnvironment());
             }
 
             return true;

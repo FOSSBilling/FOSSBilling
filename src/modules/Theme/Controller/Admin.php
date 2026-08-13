@@ -67,14 +67,14 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
             $service->regenerateThemeCssAndJsFiles($t, $preset, $api);
         } catch (\Exception $e) {
             $error = $e->getMessage();
-            error_log($e->getMessage());
+            $this->di['logger']->error($e->getMessage());
         }
 
         // optional data file
         try {
             $service->regenerateThemeSettingsDataFile($t);
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            $this->di['logger']->error($e->getMessage());
         }
 
         $red_url = '/theme/' . $theme;

@@ -215,7 +215,7 @@ class Server_Manager_Whm extends Server_Manager
 
         $result = $this->request($action, $varHash);
         if (!isset($result->acct[0])) {
-            error_log('Could not synchronize account with cPanel server. Account does not exist.');
+            $this->getLog()->error('Could not synchronize account with cPanel server. Account does not exist.');
 
             return $account;
         }

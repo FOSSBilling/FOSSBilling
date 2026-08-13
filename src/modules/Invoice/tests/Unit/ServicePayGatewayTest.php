@@ -350,6 +350,26 @@ test('gets adapter config', function (): void {
     expect($result)->toBeArray();
 });
 
+test('logs and returns an empty config when an adapter has no getConfig method', function (): void {
+    $payGateway = createEntity(PayGateway::class, ['gateway' => 'Custom']);
+
+    $serviceMock = Mockery::mock(ServicePayGateway::class)->makePartial();
+    $serviceMock->shouldReceive('getAdapterClassName')
+        ->once()
+        ->andReturn(stdClass::class);
+
+    $service = payGatewayService();
+    $logger = new Tests\Helpers\TestLogger();
+    $service->getDi()['logger'] = $logger;
+    $serviceMock->setDi($service->getDi());
+
+    expect($serviceMock->getAdapterConfig($payGateway))->toBe([])
+        ->and($logger->calls)->toContain([
+            'method' => 'error',
+            'params' => ['Payment stdClass gateway does not have getConfig method'],
+        ]);
+});
+
 test('throws exception when adapter class does not exist', function (): void {
     $payGateway = createEntity(PayGateway::class, ['gateway' => 'Custom']);
     $expected = 'Payment_Adapter_ClassDoesNotExists';

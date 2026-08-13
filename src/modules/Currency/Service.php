@@ -632,7 +632,7 @@ class Service implements InjectionAwareInterface
 
             if ($array['result'] !== 'success') {
                 $item->expiresAfter(15 * 60 * 60); // Try again in 15 min
-                error_log('ExchangeRate-API Gave an error: ' . $array['error-type']);
+                $this->di['logger']->error('ExchangeRate-API Gave an error: ' . $array['error-type']);
 
                 throw new \FOSSBilling\Exception('There was an error when fetching currency rates from ExchangeRate-API. See the error log for details.');
             }
@@ -685,7 +685,7 @@ class Service implements InjectionAwareInterface
             $array = $response->toArray();
 
             if ($array['success'] !== true) {
-                error_log($array['error']['info']);
+                $this->di['logger']->error($array['error']['info']);
 
                 throw new \FOSSBilling\Exception('There was an error when fetching currency rates from Currency Data API. See the error log for details.');
             }
@@ -718,7 +718,7 @@ class Service implements InjectionAwareInterface
             $array = $response->toArray();
 
             if ($array['success'] !== true) {
-                error_log($array['error']['info']);
+                $this->di['logger']->error($array['error']['info']);
 
                 throw new \FOSSBilling\Exception('There was an error when fetching currency rates from currencylayer. See the error log for details.');
             }
@@ -761,7 +761,7 @@ class Service implements InjectionAwareInterface
                 $currencyService->updateCurrencyRates();
             }
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            $di['logger']->error($e->getMessage());
         }
 
         return true;

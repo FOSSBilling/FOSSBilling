@@ -234,7 +234,7 @@ test('maintenance path allowlist uses literal prefixes and explicit wildcards', 
 test('maintenance mode recognizes the configured admin prefix', function (): void {
     $app = new BoxAppMaintenanceCheckApp();
     $di = new Pimple\Container();
-    $di['request'] = Request::create(rtrim(SYSTEM_URL, '/') . '/' . ADMIN_PREFIX . '/settings');
+    $di['request'] = Request::create(rtrim(SYSTEM_URL, '/') . '/' . ltrim(ADMIN_PREFIX, '/') . '/settings');
     $app->setDi($di);
 
     expect($app->adminPrefixAllowed())->toBeFalse();

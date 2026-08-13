@@ -626,21 +626,21 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         $json = $result->toArray(false);
 
         if (isset($json['status']) && $json['status'] == 'ERROR') {
-            error_log('ResellerClub error: ' . $json['message']);
+            $this->getLog()->error('ResellerClub error: ' . $json['message']);
             $placeholders = [':action:' => $url, ':type:' => 'ResellerClub'];
 
             throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
 
         if (isset($json['status']) && $json['status'] == 'error') {
-            error_log('ResellerClub error: ' . $json['error']);
+            $this->getLog()->error('ResellerClub error: ' . $json['error']);
             $placeholders = [':action:' => $url, ':type:' => 'ResellerClub'];
 
             throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
 
         if (isset($json['status']) && $json['status'] == 'Failed') {
-            error_log('ResellerClub error: ' . $json['actionstatusdesc']);
+            $this->getLog()->error('ResellerClub error: ' . $json['actionstatusdesc']);
             $placeholders = [':action:' => $url, ':type:' => 'ResellerClub'];
 
             throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);

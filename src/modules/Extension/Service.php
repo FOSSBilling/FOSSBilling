@@ -103,7 +103,7 @@ class Service implements InjectionAwareInterface
         try {
             $extensionService->getExtensionsList([]);
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            $di['logger']->error($e->getMessage());
         }
 
         return true;
@@ -165,7 +165,7 @@ class Service implements InjectionAwareInterface
             try {
                 $manifest = $m->getManifest();
             } catch (\Exception $e) {
-                error_log("Error while decoding the manifest file for {$ext->getName()} : {$e->getMessage()}.");
+                $this->di['logger']->error("Error while decoding the manifest file for {$ext->getName()} : {$e->getMessage()}.");
 
                 continue;
             }
@@ -261,7 +261,7 @@ class Service implements InjectionAwareInterface
             }
 
             if (!$mod->hasManifest()) {
-                error_log("Module {$m} manifest file is missing or is not readable.");
+                $this->di['logger']->error("Module {$m} manifest file is missing or is not readable.");
 
                 continue;
             }
@@ -313,13 +313,13 @@ class Service implements InjectionAwareInterface
         $nav = $this->di['tools']->sortByOneKey($nav, 'index');
         foreach ($subpages as $page) {
             if (!isset($page['location'])) {
-                error_log('Invalid module menu item: ' . print_r($page, true));
+                $this->di['logger']->error('Invalid module menu item: ' . print_r($page, true));
 
                 continue;
             }
 
             if (!isset($nav[$page['location']])) {
-                error_log("Submenu item belongs to not existing location: {$page['location']}.");
+                $this->di['logger']->error("Submenu item belongs to not existing location: {$page['location']}.");
 
                 continue;
             }
@@ -549,7 +549,7 @@ class Service implements InjectionAwareInterface
             $zip->extractTo($extractedPath);
             $zip->close();
         } catch (\PhpZip\Exception\ZipException $e) {
-            error_log($e->getMessage());
+            $this->di['logger']->error($e->getMessage());
 
             throw new \FOSSBilling\Exception('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
         }

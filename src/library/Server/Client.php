@@ -27,11 +27,22 @@ class Server_Client
     private ?string $telephone = null;
     private ?string $fax = null;
 
-    public function __call($name, $arguments)
+    public function __call(string $name, array $arguments): string
     {
+        // This legacy DTO is dependency-free; keep inaccessible-method diagnostics
+        // on PHP's fallback logger rather than coupling it to the DI container.
         $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
+        $caller = $backtrace[1] ?? [];
 
-        error_log(sprintf('Calling %s inaccessible method %s from %s::%d', static::class, $name, $backtrace[1]['file'], $backtrace[1]['line']));
+        if (isset($caller['file'], $caller['line'])) {
+            error_log(sprintf(
+                'Calling %s inaccessible method %s from %s::%d',
+                static::class,
+                $name,
+                $caller['file'],
+                (int) $caller['line'],
+            ));
+        }
 
         return '';
     }

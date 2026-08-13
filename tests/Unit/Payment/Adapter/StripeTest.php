@@ -6,7 +6,6 @@ use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Repository\TransactionRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Payment_Adapter_Stripe;
 use Stripe\StripeClient;
 
 use function Tests\Helpers\container;
@@ -1308,7 +1307,10 @@ describe('handleSetupIntentSucceededWebhook', function (): void {
         $product = Stripe\Product::constructFrom(['id' => 'prod_1']);
         $stripeMock->products = Mockery::mock();
         $stripeMock->products->shouldReceive('search')->andReturn(Stripe\SearchResult::constructFrom(['data' => [$product]]));
-        $price = Stripe\Price::constructFrom(['id' => 'price_1']);
+        $price = Stripe\Price::constructFrom([
+            'id' => 'price_1',
+            'unit_amount' => null,
+        ]);
         $stripeMock->prices = Mockery::mock();
         $stripeMock->prices->shouldReceive('all')->andReturn(Stripe\Collection::constructFrom(['data' => [$price]]));
         $stripeMock->prices->shouldReceive('create')->andReturn($price);

@@ -49,6 +49,65 @@ test('parseResponse decodes the legacy unterminated apostrophe entity', function
     expect($result['name'])->toBe("O'Brien");
 });
 
+test('modifyAccount sends custom package values to DirectAdmin', function (): void {
+    $requests = [];
+    $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$requests): MockResponse {
+        $requests[] = ['method' => $method, 'url' => $url, 'options' => $options];
+
+        return new MockResponse('');
+    });
+    $manager = createDirectadminManager($httpClient);
+    $package = (new Server_Package())
+        ->setBandwidth('1024')
+        ->setQuota('2048')
+        ->setMaxDomains('3')
+        ->setMaxSubdomains('4')
+        ->setMaxParkedDomains('5')
+        ->setMaxFtp('6')
+        ->setMaxSql('7')
+        ->setMaxPop('8')
+        ->setCustomValues([
+            'aftp' => '1',
+            'catchall' => 'false',
+            'cgi' => 'yes',
+            'cron' => 'true',
+            'nemailf' => '5',
+            'nemailml' => 'unlimited',
+            'nemailr' => '7',
+            'php' => 'on',
+            'spam' => 'false',
+            'ssh' => '1',
+            'ssl' => 'yes',
+        ]);
+    $account = (new Server_Account())
+        ->setUsername('example')
+        ->setNs1('ns1.example.com')
+        ->setNs2('ns2.example.com')
+        ->setPackage($package);
+
+    expect($manager->modifyAccount($account))->toBeTrue()
+        ->and($requests)->toHaveCount(1);
+
+    parse_str((string) parse_url($requests[0]['url'], PHP_URL_QUERY), $fields);
+
+    expect($fields)->toMatchArray([
+        'action' => 'customize',
+        'aftp' => 'ON',
+        'catchall' => 'OFF',
+        'cgi' => 'ON',
+        'cron' => 'ON',
+        'nemailf' => '5',
+        'nemailml' => 'unlimited',
+        'nemailr' => '7',
+        'php' => 'ON',
+        'spam' => 'OFF',
+        'ssh' => 'ON',
+        'ssl' => 'ON',
+        'unemailml' => 'ON',
+        'user' => 'example',
+    ]);
+});
+
 test('suspendAccount sends the suspension reason to DirectAdmin', function (): void {
     $requests = [];
     $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$requests): MockResponse {

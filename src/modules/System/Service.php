@@ -337,7 +337,7 @@ class Service
                 );
             }
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            $this->di['logger']->error($e->getMessage());
         }
 
         // Check if FOSSBilling is behind on database patches
@@ -356,7 +356,7 @@ class Service
                 );
             }
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            $this->di['logger']->error($e->getMessage());
         }
 
         if (Environment::isProduction()) {
@@ -465,7 +465,7 @@ class Service
                 );
             }
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            $this->di['logger']->error($e->getMessage());
         }
 
         if ($type === null || $type === '') {
@@ -697,7 +697,7 @@ class Service
                 $di['logger']->setChannel('cron')->info('Pruned the filesystem cache');
             }
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            $di['logger']->error($e->getMessage());
         }
     }
 

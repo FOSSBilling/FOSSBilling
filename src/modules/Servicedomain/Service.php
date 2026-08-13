@@ -284,7 +284,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         try {
             $this->syncWhois($model, $order);
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            $this->di['logger']->error($e->getMessage());
         }
 
         return $model;
@@ -758,7 +758,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $domainService = $di['mod_service']('servicedomain');
             $domainService->batchSyncExpirationDates();
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            $di['logger']->error($e->getMessage());
         }
 
         return true;
@@ -782,7 +782,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 $this->syncExpirationDate($domain);
             } catch (\Exception $e) {
                 $hasFailures = true;
-                error_log($e->getMessage());
+                $this->di['logger']->error($e->getMessage());
             }
         }
 

@@ -35,8 +35,10 @@ class Box_LogDb
             if (method_exists($this->service, 'logEvent')) {
                 $this->service->logEvent($event);
             }
-        } catch (Exception $e) {
-            error_log($e->getMessage());
+        } catch (Throwable $e) {
+            // The database writer cannot use the application logger while it is
+            // writing that logger, so retain PHP's last-resort error log here.
+            error_log(sprintf('[Box_LogDb] writer failure: %s at %s:%d', $e->getMessage(), $e->getFile(), $e->getLine()));
         }
     }
 }

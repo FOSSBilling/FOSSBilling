@@ -59,6 +59,7 @@ function checkInstaller(): void
     // This delete is irreversible, so it requires an explicit APP_ENV=prod rather than the ambiguous default above.
     // @phpstan-ignore booleanNot.alwaysTrue (DEBUG is a runtime constant)
     if (Environment::isExplicitlyProduction() && $filesystem->exists(PATH_CONFIG) && $filesystem->exists(Path::normalize('install')) && !DEBUG) {
+        // Bootstrap runs before the DI logger and PHP error log are configured.
         error_log('Removing the install directory now that installation is complete.');
         $filesystem->remove('install');
     }
@@ -123,6 +124,7 @@ function hasDatabaseTables(): bool
         return $statement !== false && $statement->fetchColumn() !== false;
     } catch (Throwable $e) {
         if ((bool) Config::getProperty('debug', false)) {
+            // Database inspection happens before the DI container is available.
             error_log(sprintf(
                 'hasDatabaseTables() failed to inspect configured database tables: %s in %s on line %d',
                 $e->getMessage(),
@@ -160,6 +162,7 @@ function exceptionHandler(Exception|Error $e): void
         @file_put_contents(Path::join(PATH_LOG, 'exception_handler.log'), date('c') . ' ' . $msg, FILE_APPEND);
         @file_put_contents(Path::join(PATH_ROOT, 'data', 'log', 'exception_handler.log'), date('c') . ' ' . $msg, FILE_APPEND);
     } else {
+        // The exception handler must also work when initialization itself fails.
         error_log("{$e->getMessage()} at {$e->getFile()} : {$e->getLine()}");
     }
 

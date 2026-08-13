@@ -353,7 +353,7 @@ class Service implements InjectionAwareInterface
                     $list[] = $this->buildThemeConfig($file->getFilename());
                 }
             } catch (\Exception $e) {
-                error_log($e->getMessage());
+                $this->di['logger']->error($e->getMessage());
             }
         }
 

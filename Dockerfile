@@ -61,6 +61,8 @@ COPY src/library ./src/library
 COPY src/modules ./src/modules
 
 RUN --mount=type=cache,target=/tmp/composer-cache,id=composer-prod \
+  set -eux; \
+  find ./src/modules -type d -name tests -prune -exec rm -rf {} +; \
   COMPOSER_CACHE_DIR=/tmp/composer-cache \
   composer install --prefer-dist --no-dev --optimize-autoloader --no-interaction --no-progress
 
@@ -112,6 +114,7 @@ COPY --from=frontend-assets /app/src/themes/admin_default/assets/build ./src/the
 COPY --from=frontend-assets /app/src/themes/huraga/assets/build ./src/themes/huraga/assets/build
 
 RUN set -eux; \
+  find ./src/modules -type d -name tests -prune -exec rm -rf {} +; \
   mkdir -p ./src/locale; \
   if [ "${INSTALL_TRANSLATIONS}" = "true" ]; then \
     curl -fsSL "${TRANSLATIONS_URL}" -o /tmp/translations.zip; \
@@ -155,8 +158,9 @@ FROM runtime AS test
 WORKDIR /workspace
 
 COPY --from=release-tree /app/src ./src
+COPY src/modules ./src/modules
 COPY --from=php-dev-vendor /app/src/vendor ./src/vendor
-COPY composer.json composer.lock phpstan.neon phpstan-baseline.neon phpunit.xml.dist ./
+COPY composer.json composer.lock phpstan.neon phpunit.xml.dist ./
 COPY tests ./tests
 
 RUN set -eux; \

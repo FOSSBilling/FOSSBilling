@@ -20,13 +20,15 @@ use Tests\Support\ToApiArrayAuditor;
  * strict_variables.
  *
  * The test is informational by default. It always writes its findings to
- * `tests/Strict/to-api-array-audit.json` and prints a summary, but only
- * fails the suite when a baseline marker file is present:
+ * `tests/Strict/to-api-array-audit.json` and prints a one-line summary, but
+ * only fails the suite when a baseline marker file is present:
  *   tests/Strict/.to-api-array-audit-baseline
  *
  * To promote the test to a CI gate, create the empty marker file
- * (`touch tests/Strict/.to-api-array-audit-baseline`). Until then, the
- * report is the value, not the test outcome.
+ * (`touch tests/Strict/.to-api-array-audit-baseline`). Set
+ * `TO_API_ARRAY_AUDIT_VERBOSE=1` when the full report is useful during local
+ * investigation. Until then, the JSON report is the value, not the test
+ * outcome.
  */
 test('toApiArray methods expose all their fields at the top level', function (): void {
     $srcDir = dirname(__DIR__, 3) . '/src';
@@ -47,20 +49,30 @@ test('toApiArray methods expose all their fields at the top level', function ():
     $gated = is_file($baseline);
 
     if (!empty($findings)) {
-        $lines = [];
-        $lines[] = '';
-        $lines[] = 'toApiArray audit: ' . count($findings) . ' method(s) set fields only inside conditional blocks.';
-        foreach ($findings as $file => $info) {
-            $lines[] = '';
-            $lines[] = "=== $file ===";
-            $lines[] = '  Top-level: ' . (empty($info['top']) ? '(none)' : implode(', ', $info['top']));
-            $lines[] = '  Conditional-only:';
-            foreach ($info['conditional'] as $field => $locs) {
-                $lines[] = "    - $field  (" . implode(', ', $locs) . ')';
-            }
+        $verbose = getenv('TO_API_ARRAY_AUDIT_VERBOSE') === '1';
+        $summary = 'toApiArray audit: ' . count($findings) . ' method(s) set fields only inside conditional blocks.';
+
+        if (!$gated && !$verbose) {
+            $summary .= ' Set TO_API_ARRAY_AUDIT_VERBOSE=1 for details.';
+            fwrite(STDERR, "\n" . $summary . "\n");
         }
-        $lines[] = '';
-        fwrite(STDERR, implode("\n", $lines));
+
+        if ($gated || $verbose) {
+            $lines = [];
+            $lines[] = '';
+            $lines[] = $summary;
+            foreach ($findings as $file => $info) {
+                $lines[] = '';
+                $lines[] = "=== $file ===";
+                $lines[] = '  Top-level: ' . (empty($info['top']) ? '(none)' : implode(', ', $info['top']));
+                $lines[] = '  Conditional-only:';
+                foreach ($info['conditional'] as $field => $locs) {
+                    $lines[] = "    - $field  (" . implode(', ', $locs) . ')';
+                }
+            }
+            $lines[] = '';
+            fwrite(STDERR, implode("\n", $lines));
+        }
     }
 
     if ($gated) {

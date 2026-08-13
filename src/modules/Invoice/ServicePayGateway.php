@@ -365,7 +365,7 @@ class ServicePayGateway implements InjectionAwareInterface
         }
 
         if (!method_exists($class, 'getConfig')) {
-            error_log("Payment $class gateway does not have getConfig method");
+            $this->di['logger']->error("Payment $class gateway does not have getConfig method");
 
             return [];
         }

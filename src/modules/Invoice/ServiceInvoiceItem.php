@@ -113,7 +113,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                             try {
                                 $orderService->activateOrder($order);
                             } catch (\Exception $e) {
-                                error_log($e->getMessage());
+                                $this->di['logger']->error($e->getMessage());
                                 $orderService->saveStatusChange($order, "Order could not be activated due to error: {$e->getMessage()}.");
                                 $taskFailed = true;
                             }
@@ -131,7 +131,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                             $order = $this->di['em']->getRepository(Order::class)->find($order_id);
                             $orderService->renewOrder($order);
                         } catch (\Exception $e) {
-                            error_log($e->getMessage());
+                            $this->di['logger']->error($e->getMessage());
                             $orderService->saveStatusChange($order, "Order could not renew due to error: {$e->getMessage()}.");
                             $taskFailed = true;
                         }
@@ -143,7 +143,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                         break;
                 }
             } catch (\Exception $e) {
-                error_log($e->getMessage());
+                $this->di['logger']->error($e->getMessage());
                 $taskFailed = true;
             }
 
@@ -161,7 +161,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                 $params = json_decode($item->getRelId() ?? '');
                 $this->di['events_manager']->fire(['event' => $item->getTask(), 'params' => $params]);
             } catch (\Exception $e) {
-                error_log($e->getMessage());
+                $this->di['logger']->error($e->getMessage());
                 $taskFailed = true;
             }
             if (!$taskFailed) {

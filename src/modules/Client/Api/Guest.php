@@ -103,7 +103,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             try {
                 $this->login(['email' => $client->getEmail(), 'password' => $data['password']]);
             } catch (\Throwable $e) {
-                error_log($e->getMessage());
+                $this->getDi()['logger']->error($e->getMessage());
             }
         }
 
