@@ -21,6 +21,7 @@ use Box\Mod\Email\Repository\ActivityClientEmailRepository;
 use Box\Mod\Email\Repository\EmailTemplateGroupRepository;
 use Box\Mod\Email\Repository\EmailTemplateRepository;
 use Box\Mod\Email\Repository\QueuedEmailRepository;
+use Box\Mod\Staff\Entity\Admin;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\PaginationOptions;
@@ -294,9 +295,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         // send email to admins
         if (isset($data['to_admin']) && $data['to_admin'] > 0) {
-            /** @todo Doctrine: use Admin entity once Staff is migrated */
-            $oneStaff = $this->di['dbal']->fetchAssociative('SELECT id, email, name, signature, timezone FROM admin WHERE id = :id', ['id' => $data['to_admin']]);
-            $vars['c'] = $this->safeStaffTemplateVars($oneStaff);
+            $admin = $this->di['em']->getRepository(Admin::class)->find((int) $data['to_admin']);
+            if ($admin instanceof Admin && $admin->getId() !== null) {
+                $oneStaff = [
+                    'id' => (int) $admin->getId(),
+                    'email' => $admin->getEmail(),
+                    'name' => $admin->getName(),
+                    'signature' => $admin->getSignature(),
+                    'timezone' => $admin->getTimezone(),
+                ];
+                $vars['c'] = $this->safeStaffTemplateVars($oneStaff);
+            }
         }
 
         $this->setVars($template, $vars);
@@ -723,77 +732,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'name' => $email->getAttachmentName() ?? 'attachment',
             'mime' => $email->getAttachmentMime() ?? 'application/octet-stream',
         ];
-    }
-
-    public function queueGetSearchQuery($data): array
-    {
-        $query = 'SELECT * FROM email_queue';
-
-        $id = $data['id'] ?? null;
-        $search = $data['search'] ?? null;
-        $recipient = $data['recipient'] ?? null;
-        $subject = $data['subject'] ?? null;
-        $status = $data['status'] ?? null;
-        $tries = $data['tries'] ?? null;
-        $date_from = $data['date_from'] ?? null;
-        $date_to = $data['date_to'] ?? null;
-
-        $where = [];
-        $bindings = [];
-
-        if ($id !== null && $id !== '') {
-            $where[] = 'id = :id';
-            $bindings['id'] = (int) $id;
-        }
-
-        if ($search) {
-            $search = "%$search%";
-
-            $where[] = '(recipient LIKE :recipient OR subject LIKE :subject OR content LIKE :content OR to_name LIKE :to_name)';
-
-            $bindings['recipient'] = $search;
-            $bindings['subject'] = $search;
-            $bindings['content'] = $search;
-            $bindings['to_name'] = $search;
-        }
-
-        if ($recipient !== null && $recipient !== '') {
-            $where[] = 'recipient LIKE :filter_recipient';
-            $bindings['filter_recipient'] = '%' . $recipient . '%';
-        }
-
-        if ($subject !== null && $subject !== '') {
-            $where[] = 'subject LIKE :filter_subject';
-            $bindings['filter_subject'] = '%' . $subject . '%';
-        }
-
-        if ($status !== null && $status !== '') {
-            $where[] = 'status = :status';
-            $bindings['status'] = $status;
-        }
-
-        if ($tries !== null && $tries !== '') {
-            $where[] = 'tries = :tries';
-            $bindings['tries'] = (int) $tries;
-        }
-
-        if ($date_from !== null && $date_from !== '') {
-            $where[] = 'created_at >= :date_from';
-            $bindings['date_from'] = date('Y-m-d 00:00:00', strtotime((string) $date_from));
-        }
-
-        if ($date_to !== null && $date_to !== '') {
-            $where[] = 'created_at <= :date_to';
-            $bindings['date_to'] = date('Y-m-d 23:59:59', strtotime((string) $date_to));
-        }
-
-        if (!empty($where)) {
-            $query = $query . ' WHERE ' . implode(' AND ', $where);
-        }
-
-        $query .= ' ORDER BY updated_at DESC';
-
-        return [$query, $bindings];
     }
 
     public function templateToApiArray(EmailTemplate $template, bool $deep = false): array
