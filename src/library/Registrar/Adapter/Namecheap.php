@@ -1,7 +1,6 @@
 <?php
 
 declare(strict_types=1);
-use GeoIp2\Model\Domain;
 use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
 
 class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
@@ -523,7 +522,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
     }
 
     /**
-     * TODO: Implement this correctly.
+     * Namecheap does not expose a domain deletion command through its API.
      *
      * @throws Registrar_Exception
      */

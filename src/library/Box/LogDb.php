@@ -10,7 +10,7 @@ declare(strict_types=1);
  */
 class Box_LogDb
 {
-    private array $ignoredChannels = ['billing', 'routing', 'security', 'email'];
+    private const array IGNORED_CHANNELS = ['billing', 'routing', 'security', 'email'];
 
     /**
      * Class constructor.
@@ -26,8 +26,8 @@ class Box_LogDb
      */
     public function write(array $event, string $channel = 'application'): void
     {
-        // TODO: Temporary! Redo logging stuff in more depth for a major release.
-        if (in_array($channel, $this->ignoredChannels)) {
+        // Deferred: revisit channel filtering as part of a broader logging redesign.
+        if (in_array($channel, self::IGNORED_CHANNELS, true)) {
             return;
         }
 

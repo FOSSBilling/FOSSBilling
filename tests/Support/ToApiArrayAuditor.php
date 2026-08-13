@@ -32,17 +32,9 @@ use Symfony\Component\Finder\Finder;
  * returns a silent empty value under permissive rendering, when the
  * response is consumed by a non-admin caller.
  *
- * Findings shape:
- * <code>
- * [
- *     'modules/Foo/Service.php' => [
- *         'top' => ['config', 'total', ...],   // assigned unconditionally
- *         'conditional' => [
- *             'plugin' => ['if/else', 'if/else'],  // never assigned at the top
- *         ],
- *     ],
- * ]
- * </code>
+ * Only fields that are never assigned at the top level are reported. These
+ * fields need an explicit review because their absence is part of the API
+ * contract, rather than an accidental omission.
  */
 final readonly class ToApiArrayAuditor
 {
@@ -62,7 +54,7 @@ final readonly class ToApiArrayAuditor
     }
 
     /**
-     * @return array<string, array{top: list<string>, conditional: array<string, list<string>>}>
+     * @return array<string, array<string, list<string>>>
      */
     public function audit(): array
     {
@@ -95,29 +87,14 @@ final readonly class ToApiArrayAuditor
                 $relPath = str_replace($this->srcDir . '/', '', $file->getPathName());
                 $fields = $this->auditMethodBody($method->stmts);
 
-                $top = [];
                 $conditional = [];
                 foreach ($fields as $name => $locations) {
-                    $hasTop = false;
-                    $conditionalLocs = [];
-                    foreach ($locations as $loc) {
-                        if ($loc === 'top') {
-                            $hasTop = true;
-                        } else {
-                            $conditionalLocs[] = $loc;
-                        }
-                    }
-                    if ($hasTop) {
-                        $top[] = $name;
-                    } elseif (!empty($conditionalLocs)) {
-                        $conditional[$name] = $conditionalLocs;
+                    if (!in_array('top', $locations, true)) {
+                        $conditional[$name] = array_values(array_unique($locations));
                     }
                 }
-                if (!empty($conditional)) {
-                    $findings[$relPath] = [
-                        'top' => $top,
-                        'conditional' => $conditional,
-                    ];
+                if ($conditional !== []) {
+                    $findings[$relPath] = $conditional;
                 }
             }
         }

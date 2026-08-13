@@ -30,6 +30,20 @@ test('does not resolve the test container implicitly', function (): void {
     expect((new ConcreteApi())->getDi())->toBeNull();
 });
 
+test('stores and returns the module service', function (): void {
+    $service = new stdClass();
+    $api = new ConcreteApi();
+
+    $api->setService($service);
+
+    expect($api->getService())->toBe($service);
+});
+
+test('requires a module service before it is read', function (): void {
+    expect(fn (): object => (new ConcreteApi())->getService())
+        ->toThrow(FOSSBilling\Exception::class, 'Service object is not set for the API');
+});
+
 test('checkPermissions forwards identity to Staff service', function (): void {
     $identity = \Tests\Helpers\admin();
 

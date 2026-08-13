@@ -10,8 +10,6 @@
 
 declare(strict_types=1);
 
-use Payment_Adapter_PayPalEmail;
-
 use function Tests\Helpers\container;
 
 function buildPayPalEmailAdapter(string $configuredEmail, string $postbackResponse, ?array &$capturedRequestBody = null, ?string &$capturedRawRequestBody = null): Payment_Adapter_PayPalEmail

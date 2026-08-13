@@ -205,7 +205,8 @@ class Update implements InjectionAwareInterface
     private function validateDownloadedArchive(string $archiveFile, array $releaseInfo, string $updateBranch): void
     {
         if ($updateBranch === 'preview') {
-            // TODO: Add API-backed integrity verification for preview archives.
+            // Deferred: verify preview archives once the version API publishes
+            // a digest for the corresponding preview artifact.
             return;
         }
 
