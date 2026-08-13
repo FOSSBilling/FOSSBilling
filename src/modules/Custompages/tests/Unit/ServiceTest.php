@@ -18,7 +18,7 @@ function buildCustompagesService(object $repo, ?EntityManagerInterface $em = nul
     $em->allows('getRepository')->with(CustomPage::class)->andReturn($repo);
 
     $di['em'] = $em;
-    // Logger is a Box_Log in production (untyped __call dispatch); mock loosely.
+    // The production logger follows PSR-3; this test only needs a lightweight stub.
     $di['logger'] = Mockery::mock()->shouldIgnoreMissing();
     $di['tools'] = Mockery::mock(FOSSBilling\Tools::class);
     $di['tools']->allows('slug')->andReturnUsing(fn ($s) => strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', (string) $s)));
@@ -128,7 +128,7 @@ test('create page generates unique slug and persists entity', function (): void 
     });
 
     $logger = Mockery::mock();
-    $logger->expects('info')->with('Created new custom page #%s', 42)->once();
+    $logger->expects('info')->with('Created new custom page #{id}', ['id' => 42])->once();
 
     $di = new Pimple\Container();
     $di['em'] = $em;

@@ -104,7 +104,7 @@ class Box_App
 
     public function show404(Exception $e): Response
     {
-        $this->di['logger']->setChannel('routing')->info($e->getMessage());
+        $this->di['logger']->withChannel('routing')->info($e->getMessage());
 
         return $this->errorResponse($e, 404);
     }

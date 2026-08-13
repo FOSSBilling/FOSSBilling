@@ -107,7 +107,7 @@ class Service implements InjectionAwareInterface
         ]);
 
         $formId = (int) $this->getDbal()->lastInsertId();
-        $this->di['logger']->info('Created new form %s with id %s', $data['name'], $formId);
+        $this->di['logger']->info('Created new form {form_name} with id {form_id}', ['form_name' => $data['name'], 'form_id' => $formId]);
 
         return $formId;
     }
@@ -161,7 +161,7 @@ class Service implements InjectionAwareInterface
         ]);
 
         $fieldId = (int) $this->getDbal()->lastInsertId();
-        $this->di['logger']->info('Added new field %s to form %s', $fieldId, $field['form_id']);
+        $this->di['logger']->info('Added new field {field_id} to form {form_id}', ['field_id' => $fieldId, 'form_id' => $field['form_id']]);
 
         return $fieldId;
     }
@@ -252,7 +252,7 @@ class Service implements InjectionAwareInterface
             'updated_at' => date('Y-m-d H:i:s'),
         ], ['id' => $fieldId]);
 
-        $this->di['logger']->info('Updated custom form %s', $fieldId);
+        $this->di['logger']->info('Updated custom form {field_id}', ['field_id' => $fieldId]);
 
         return $fieldId;
     }
@@ -349,7 +349,7 @@ class Service implements InjectionAwareInterface
         $this->getDbal()->executeStatement('UPDATE product SET form_id = NULL WHERE form_id = ?', [$form_id]);
         $this->getDbal()->executeStatement('UPDATE client_order SET form_id = NULL WHERE form_id = ?', [$form_id]);
 
-        $this->di['logger']->info('Deleted custom form %s', $form_id);
+        $this->di['logger']->info('Deleted custom form {form_id}', ['form_id' => $form_id]);
 
         return true;
     }
@@ -361,7 +361,7 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Field was not found');
         }
 
-        $this->di['logger']->info('Deleted custom field %s', $data['id']);
+        $this->di['logger']->info('Deleted custom field {data_id}', ['data_id' => $data['id']]);
 
         return true;
     }
@@ -397,7 +397,7 @@ class Service implements InjectionAwareInterface
             $this->addNewField($fieldData);
         }
 
-        $this->di['logger']->info('Copied form with id %s to new form %s with id %s', $data['form_id'], $data['name'], $newFormId);
+        $this->di['logger']->info('Copied form with id {form_id} to new form {form_name} with id {new_form_id}', ['form_id' => $data['form_id'], 'form_name' => $data['name'], 'new_form_id' => $newFormId]);
 
         return $newFormId;
     }
@@ -415,8 +415,8 @@ class Service implements InjectionAwareInterface
             'updated_at' => date('Y-m-d H:i:s'),
         ], ['id' => $data['form_id']]);
 
-        $this->di['logger']->info('Updated form %s name to %s', $data['form_id'], $data['form_name']);
-        $this->di['logger']->info('Updated form %s type to %s', $data['form_id'], $data['type']);
+        $this->di['logger']->info('Updated form {form_id} name to {form_name}', ['form_id' => $data['form_id'], 'form_name' => $data['form_name']]);
+        $this->di['logger']->info('Updated form {form_id} type to {form_type}', ['form_id' => $data['form_id'], 'form_type' => $data['type']]);
 
         return true;
     }

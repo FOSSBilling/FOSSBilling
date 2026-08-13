@@ -170,7 +170,7 @@ class Session implements InjectionAwareInterface
             $storedFingerprint = json_decode((string) $session['fingerprint'], true);
             if (!is_array($storedFingerprint) || !$fingerprint->checkFingerprint($storedFingerprint)) {
                 $invalid = true;
-                $this->di['logger']->setChannel('security')->warning("Session ID $sessionID has potentially been hijacked as it failed the fingerprint check. The session has automatically been destroyed.");
+                $this->di['logger']->withChannel('security')->warning("Session ID $sessionID has potentially been hijacked as it failed the fingerprint check. The session has automatically been destroyed.");
             }
         }
 

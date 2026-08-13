@@ -979,7 +979,7 @@ test('createFromCart compensates promo usage on transaction failure', function (
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $di['mod_service'] = $di->protect(fn ($serviceName, $sub = '') => match ($serviceName) {
         'currency' => $currencyService,
         'client' => $clientService,
@@ -1077,7 +1077,7 @@ test('createFromCart does not roll back order creation when synchronous activati
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $di['mod_service'] = $di->protect(fn ($serviceName, $sub = '') => match ($serviceName) {
         'currency' => $currencyService,
         'client' => $clientService,
@@ -1455,7 +1455,7 @@ test('addItem for hosting type returns true', function (): void {
 
         return $serviceHostingServiceMock;
     });
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $productService->setDi($di);
     $serviceMock->setDi($di);
@@ -1501,7 +1501,7 @@ test('addItem for license type returns true', function (): void {
 
         return $serviceLicenseServiceMock;
     });
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $productService->setDi($di);
     $serviceMock->setDi($di);
@@ -1547,7 +1547,7 @@ test('addItem for custom type returns true', function (): void {
 
         return $serviceCustomServiceMock;
     });
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $productService->setDi($di);
     $serviceMock->setDi($di);
@@ -1885,7 +1885,7 @@ test('addItem strips client-injected hosting_plan_id', function (): void {
 
         return $serviceHostingServiceMock;
     });
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $productService->setDi($di);
     $serviceHostingServiceMock->setDi($di);

@@ -233,7 +233,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Custom service updated #%s', $model->getId());
+        $this->di['logger']->info('Custom service updated #{model_id}', ['model_id' => $model->getId()]);
     }
 
     public function getServiceCustomByOrderId($orderId, $clientId = null): ?ServiceCustom

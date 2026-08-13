@@ -419,7 +419,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Updated domain #%s nameservers', $model->getId());
+        $this->di['logger']->info('Updated domain #{model_id} nameservers', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -466,7 +466,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Updated domain #%s WHOIS details', $model->getId());
+        $this->di['logger']->info('Updated domain #{model_id} WHOIS details', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -489,7 +489,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Locking domain #%s', $model->getId());
+        $this->di['logger']->info('Locking domain #{model_id}', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -504,7 +504,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Unlocking domain #%s', $model->getId());
+        $this->di['logger']->info('Unlocking domain #{model_id}', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -519,7 +519,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Enabled privacy protection of #%s domain', $model->getId());
+        $this->di['logger']->info('Enabled privacy protection of #{model_id} domain', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -534,7 +534,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Disabled privacy protection of #%s domain', $model->getId());
+        $this->di['logger']->info('Disabled privacy protection of #{model_id} domain', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -817,7 +817,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['em']->persist($model);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Created new top level domain %s', $model->getTld());
+        $this->di['logger']->info('Created new top level domain {model_tld}', ['model_tld' => $model->getTld()]);
 
         return $model->getId();
     }
@@ -844,7 +844,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Updated top level domain %s', $model->getTld());
+        $this->di['logger']->info('Updated top level domain {model_tld}', ['model_tld' => $model->getTld()]);
 
         return true;
     }
@@ -970,7 +970,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $id = $model->getId();
         $this->di['em']->remove($model);
         $this->di['em']->flush();
-        $this->di['logger']->info('Deleted top level domain %s', $id);
+        $this->di['logger']->info('Deleted top level domain {id}', ['id' => $id]);
 
         return true;
     }
@@ -1189,7 +1189,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['em']->persist($model);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Installed new domain registrar %s', $code);
+        $this->di['logger']->info('Installed new domain registrar {code}', ['code' => $code]);
 
         return true;
     }
@@ -1204,7 +1204,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['em']->persist($new);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Copied domain registrar %s', $model->getRegistrar());
+        $this->di['logger']->info('Copied domain registrar {model_registrar}', ['model_registrar' => $model->getRegistrar()]);
 
         return $new->getId();
     }
@@ -1230,7 +1230,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Updated domain registrar %s configuration', $model->getRegistrar());
+        $this->di['logger']->info('Updated domain registrar {model_registrar} configuration', ['model_registrar' => $model->getRegistrar()]);
 
         return true;
     }
@@ -1256,7 +1256,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['em']->remove($model);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Removed domain registrar %s', $name);
+        $this->di['logger']->info('Removed domain registrar {name}', ['name' => $name]);
 
         return true;
     }
@@ -1289,7 +1289,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Updated domain #%s without sending actions to server', $s->getId());
+        $this->di['logger']->info('Updated domain #{s_id} without sending actions to server', ['s_id' => $s->getId()]);
 
         return true;
     }

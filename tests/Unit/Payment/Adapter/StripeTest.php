@@ -1221,8 +1221,8 @@ test('logs Stripe object lock timeouts with lock context', function (): void {
     ]))->toThrow(FOSSBilling\Exception::class, 'Timed out waiting to process this Stripe payment')
         ->and($logger->calls)->toHaveCount(1)
         ->and($logger->calls[0]['method'])->toBe('warning')
-        ->and($logger->calls[0]['params'][0])->toContain('Timed out after')
-        ->and($logger->calls[0]['params'][0])->toContain($lockName);
+        ->and($logger->calls[0]['params'][0])->toBe('Timed out after {duration_ms} ms waiting for Stripe object lock {lock_name}')
+        ->and($logger->calls[0]['params'][1]['lock_name'])->toBe($lockName);
 });
 
 describe('handleSetupIntentSucceededWebhook', function (): void {

@@ -463,7 +463,7 @@ test('change account plan', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serverManagerMock = Mockery::mock('\Server_Manager_Custom');
@@ -501,7 +501,7 @@ test('change account username', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $serviceMock->setDi($di);
 
@@ -544,7 +544,7 @@ test('change account ip', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $serviceMock->setDi($di);
 
@@ -588,7 +588,7 @@ test('change account domain', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $serviceMock->setDi($di);
 
@@ -632,7 +632,7 @@ test('change account password', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $serviceMock->setDi($di);
 
@@ -679,7 +679,7 @@ test('sync', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $serviceMock->setDi($di);
 
@@ -743,7 +743,7 @@ test('update', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $service->setDi($di);
 
     $result = $service->update($model, $data);
@@ -820,7 +820,7 @@ test('create server', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $service->setDi($di);
 
@@ -852,7 +852,7 @@ test('delete server', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $service->setDi($di);
 
     $result = $service->deleteServer($hostingServerModel);
@@ -888,7 +888,7 @@ test('update server', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $di['loggedin_admin'] = \Tests\Helpers\admin(['id' => 7]);
 
     $service->setDi($di);
@@ -1003,7 +1003,7 @@ test('delete hp', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $service->setDi($di);
 
     $result = $service->deleteHp($model);
@@ -1042,7 +1042,7 @@ test('update hp', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $service->setDi($di);
 
@@ -1065,7 +1065,7 @@ test('create hp', function (array $data, string $expectedBandwidth, string $expe
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $service->setDi($di);
 
@@ -1120,7 +1120,7 @@ test('get server manager with log', function (): void {
     $serviceMock->shouldReceive('getServerManager')->atLeast()->once()->andReturn($serverManagerMock);
 
     $orderServiceMock = Mockery::mock(OrderService::class);
-    $orderServiceMock->shouldReceive('getLogger')->atLeast()->once()->andReturn(new Box_Log());
+    $orderServiceMock->shouldReceive('getLogger')->atLeast()->once()->andReturn(new FOSSBilling\Logger());
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
@@ -1314,7 +1314,7 @@ test('updateServer keeps the existing secret when the incoming value is blank', 
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $di['loggedin_admin'] = \Tests\Helpers\admin(['id' => 7]);
     $service->setDi($di);
 
@@ -1349,7 +1349,7 @@ test('updateServer replaces the stored secret when a new value is submitted', fu
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $di['loggedin_admin'] = \Tests\Helpers\admin(['id' => 7]);
     $service->setDi($di);
 

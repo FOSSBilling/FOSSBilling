@@ -688,7 +688,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         if (Environment::isTesting()) {
             // @phpstan-ignore if.alwaysFalse
             if (DEBUG) {
-                $this->di['logger']->setChannel('email')->info('Skipping email sending in test environment');
+                $this->di['logger']->withChannel('email')->info('Skipping email sending in test environment');
             }
 
             return true;
@@ -703,7 +703,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->sendMail($email->getRecipients(), $email->getSender(), $email->getSubject(), $email->getContentHtml(), $customer['first_name'] . ' ' . $customer['last_name'], $from_name, $email->getClientId(), null, false, false, $this->loggedAttachmentToArray($email));
 
-        $this->di['logger']->info('Resent email #%s', $email->getId());
+        $this->di['logger']->info('Resent email #{email_id}', ['email_id' => $email->getId()]);
 
         return true;
     }
@@ -901,7 +901,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         $this->di['em']->flush();
-        $this->di['logger']->info('Updated email template #%s', $template->getId());
+        $this->di['logger']->info('Updated email template #{template_id}', ['template_id' => $template->getId()]);
 
         return true;
     }
@@ -928,7 +928,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['em']->persist(new EmailTemplateGroup($template, $groupId));
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Assigned email template #%s to staff group #%s', $template->getId(), $groupId);
+        $this->di['logger']->info('Assigned email template #{template_id} to staff group #{group_id}', ['template_id' => $template->getId(), 'group_id' => $groupId]);
 
         return true;
     }
@@ -943,7 +943,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['em']->remove($association);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Removed email template #%s from staff group #%s', $template->getId(), $groupId);
+        $this->di['logger']->info('Removed email template #{template_id} from staff group #{group_id}', ['template_id' => $template->getId(), 'group_id' => $groupId]);
 
         return true;
     }
@@ -962,7 +962,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->resetBuiltinTemplate($template, $default);
         $this->di['em']->flush();
-        $this->di['logger']->info('Reset email template: %s', $template->getActionCode());
+        $this->di['logger']->info('Reset email template: {action_code}', ['action_code' => $template->getActionCode()]);
 
         return true;
     }
@@ -990,7 +990,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $em->persist($template);
         $em->flush();
 
-        $this->di['logger']->info('Added new email template #%s', $template->getId());
+        $this->di['logger']->info('Added new email template #{template_id}', ['template_id' => $template->getId()]);
 
         return $template;
     }
@@ -1019,7 +1019,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         $this->di['em']->flush();
-        $this->di['logger']->info(sprintf('Regenerated %d existing file-backed email templates.', $regenerated));
+        $this->di['logger']->info('Regenerated {count} existing file-backed email templates.', ['count' => $regenerated]);
 
         return true;
     }
@@ -1150,7 +1150,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             if ($error !== null) {
                 $template->setLastError($error);
                 $template->setErrorCheckedAt(new \DateTimeImmutable());
-                $this->di['logger']->warning(sprintf('Email template validation failed for "%s": %s', $template->getActionCode(), $error));
+                $this->di['logger']->warning(
+                    'Email template validation failed for "{action_code}": {error}',
+                    ['action_code' => $template->getActionCode(), 'error' => $error]
+                );
                 ++$results['invalid'];
                 $results['errors'][] = [
                     'id' => $template->getId(),
@@ -1226,7 +1229,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             if (filter_var($address, FILTER_VALIDATE_EMAIL)) {
                 $addresses[] = $address;
             } else {
-                $this->di['logger']->setChannel('email')->warning('Skipping invalid Bcc address: ' . $address);
+                $this->di['logger']->withChannel('email')->warning('Skipping invalid Bcc address: ' . $address);
             }
         }
 
@@ -1271,7 +1274,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 if (filter_var($settings['reply_to'], FILTER_VALIDATE_EMAIL)) {
                     $mail->addReplyTo($settings['reply_to']);
                 } else {
-                    $this->di['logger']->setChannel('email')->warning('Skipping invalid Reply-To address: ' . $settings['reply_to']);
+                    $this->di['logger']->withChannel('email')->warning('Skipping invalid Reply-To address: ' . $settings['reply_to']);
                 }
             }
 
@@ -1284,7 +1287,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             }
 
             if (!Environment::isProduction()) {
-                $this->di['logger']->setChannel('email')->info('Skip email sending. Application ENV: ' . Environment::getCurrentEnvironment());
+                $this->di['logger']->withChannel('email')->info('Skip email sending. Application ENV: ' . Environment::getCurrentEnvironment());
 
                 return true;
             }
@@ -1301,11 +1304,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 $this->di['em']->remove($queue);
                 $this->di['em']->flush();
             } catch (\Exception $e) {
-                $this->di['logger']->setChannel('email')->error($e->getMessage());
+                $this->di['logger']->withChannel('email')->error($e->getMessage());
             }
         } catch (\Exception $e) {
             $message = $e->getMessage();
-            $this->di['logger']->setChannel('email')->error($e->getMessage());
+            $this->di['logger']->withChannel('email')->error($e->getMessage());
 
             if ($queue->getPriority()) {
                 $queue->setPriority($queue->getPriority() - 1);

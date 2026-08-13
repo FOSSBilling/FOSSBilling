@@ -56,7 +56,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             (string) $data['target']
         );
 
-        $this->getDi()['logger']->info('Created new redirect #%s', $id);
+        $this->getDi()['logger']->info('Created new redirect #{id}', ['id' => $id]);
 
         return $id;
     }
@@ -76,7 +76,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $this->getService()->update($this->getService()->get((int) $data['id']), $data);
 
-        $this->getDi()['logger']->info('Updated redirect #%s', $data['id']);
+        $this->getDi()['logger']->info('Updated redirect #{data_id}', ['data_id' => $data['id']]);
 
         return true;
     }
@@ -93,7 +93,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $this->getService()->delete($this->getService()->get((int) $data['id']));
 
-        $this->getDi()['logger']->info('Removed redirect #%s', $data['id']);
+        $this->getDi()['logger']->info('Removed redirect #{data_id}', ['data_id' => $data['id']]);
 
         return true;
     }

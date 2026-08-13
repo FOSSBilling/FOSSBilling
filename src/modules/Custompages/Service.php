@@ -126,7 +126,7 @@ class Service
                 $this->di['em']->flush();
 
                 $id = $page->getId() ?? 0;
-                $this->di['logger']->info('Created new custom page #%s', $id);
+                $this->di['logger']->info('Created new custom page #{id}', ['id' => $id]);
 
                 return $id;
             } catch (UniqueConstraintViolationException) {
@@ -163,7 +163,7 @@ class Service
             // and the flush. Surface it as the same uniqueness error as above.
             throw new \FOSSBilling\Exception('You need to set unique slug.', null, 9999);
         }
-        $this->di['logger']->info('Updated custom page #%s', $id);
+        $this->di['logger']->info('Updated custom page #{id}', ['id' => $id]);
 
         return (int) $id;
     }

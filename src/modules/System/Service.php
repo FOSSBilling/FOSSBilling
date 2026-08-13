@@ -523,7 +523,7 @@ class Service
             $vars,
             'Payment adapter template',
             function (\Twig\Sandbox\SecurityError $e): void {
-                $this->di['logger']->setChannel('security')->warning('Payment adapter template sandbox violation', [
+                $this->di['logger']->withChannel('security')->warning('Payment adapter template sandbox violation', [
                     'error' => $e->getMessage(),
                 ]);
             }
@@ -558,7 +558,7 @@ class Service
             $vars,
             'Email template',
             function (\Twig\Sandbox\SecurityError $e): void {
-                $this->di['logger']->setChannel('security')->warning('Email template sandbox violation', [
+                $this->di['logger']->withChannel('security')->warning('Email template sandbox violation', [
                     'error' => $e->getMessage(),
                 ]);
             }
@@ -694,7 +694,7 @@ class Service
             // Prune the FS cache
             $cache = $di['cache'];
             if ($cache->prune()) {
-                $di['logger']->setChannel('cron')->info('Pruned the filesystem cache');
+                $di['logger']->withChannel('cron')->info('Pruned the filesystem cache');
             }
         } catch (\Exception $e) {
             $di['logger']->error($e->getMessage());

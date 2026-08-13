@@ -37,16 +37,16 @@ function appClientWithRender(callable $render, bool $clientLoggedIn = false): Bo
 
     $di = new Pimple\Container();
     $di['logger'] = new class {
-        public function setChannel(string $channel): self
+        public function withChannel(string $channel): self
         {
             return $this;
         }
 
-        public function error(string|Stringable $message, array $context = []): void
+        public function error(string|\Stringable $message, array $context = []): void
         {
         }
 
-        public function info(string|Stringable $message, array $context = []): void
+        public function info(string|\Stringable $message, array $context = []): void
         {
         }
     };

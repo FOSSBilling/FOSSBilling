@@ -69,14 +69,14 @@ class Monolog
     {
         // Map numeric priority to Monolog Level
         return match ($priority) {
-            \Box_Log::EMERG => Level::Emergency,
-            \Box_Log::ALERT => Level::Alert,
-            \Box_Log::CRIT => Level::Critical,
-            \Box_Log::ERR => Level::Error,
-            \Box_Log::WARN => Level::Warning,
-            \Box_Log::NOTICE => Level::Notice,
-            \Box_Log::INFO => Level::Info,
-            \Box_Log::DEBUG => Level::Debug,
+            \FOSSBilling\Logger::EMERG => Level::Emergency,
+            \FOSSBilling\Logger::ALERT => Level::Alert,
+            \FOSSBilling\Logger::CRIT => Level::Critical,
+            \FOSSBilling\Logger::ERR => Level::Error,
+            \FOSSBilling\Logger::WARN => Level::Warning,
+            \FOSSBilling\Logger::NOTICE => Level::Notice,
+            \FOSSBilling\Logger::INFO => Level::Info,
+            \FOSSBilling\Logger::DEBUG => Level::Debug,
             default => Level::Debug,
         };
     }

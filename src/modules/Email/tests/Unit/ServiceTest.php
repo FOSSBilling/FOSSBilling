@@ -1100,10 +1100,14 @@ test('templateBatchRegenerate resets existing built-in templates without module 
         ->and($template->hasError())->toBeFalse()
         ->and($customTemplate->getContent())->toBe('Custom template content');
 
-    $logMessages = array_map(static fn (array $call): string => $call['params'][0], $di['logger']->calls);
-    expect($logMessages)
-        ->not->toContain('Synced file-backed email templates for installed modules.')
-        ->toContain('Regenerated 1 existing file-backed email templates.');
+    expect($di['logger']->calls)->not->toContainEqual([
+        'method' => 'info',
+        'params' => ['Synced file-backed email templates for installed modules.', []],
+    ]);
+    expect($di['logger']->calls)->toContainEqual([
+        'method' => 'info',
+        'params' => ['Regenerated {count} existing file-backed email templates.', ['count' => 1]],
+    ]);
 });
 
 test('templateBatchDisable disables all templates', function (): void {
@@ -1327,7 +1331,13 @@ test('validateAllTemplates reports invalid templates', function (): void {
     expect($result['errors'][0]['action_code'])->toBe('mod_email_broken');
     expect($di['logger']->calls)->toContainEqual([
         'method' => 'warning',
-        'params' => ['Email template validation failed for "mod_email_broken": Email template syntax error: Unknown "filter" filter', []],
+        'params' => [
+            'Email template validation failed for "{action_code}": {error}',
+            [
+                'action_code' => 'mod_email_broken',
+                'error' => 'Email template syntax error: Unknown "filter" filter',
+            ],
+        ],
     ]);
 });
 

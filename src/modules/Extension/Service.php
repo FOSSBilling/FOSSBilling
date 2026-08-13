@@ -493,9 +493,9 @@ class Service implements InjectionAwareInterface
         if ($this->filesystem->exists($path)) {
             try {
                 $this->filesystem->remove($path);
-                $this->di['logger']->info('Removed extension files for "%s" from %s', $id, $path);
+                $this->di['logger']->info('Removed extension files for "{id}" from {path}', ['id' => $id, 'path' => $path]);
             } catch (IOException $e) {
-                $this->di['logger']->warning('Failed to remove extension files for "%s": %s', $id, $e->getMessage());
+                $this->di['logger']->warning('Failed to remove extension files for "{id}": {exception}', ['id' => $id, 'exception' => $e]);
 
                 throw new \FOSSBilling\Exception('Failed to remove extension files. Please check file permissions and try again or manually remove the files from :path', [':path' => $path]);
             }
@@ -641,7 +641,7 @@ class Service implements InjectionAwareInterface
             throw $e;
         }
         $this->di['events_manager']->fire(['event' => 'onAfterAdminActivateExtension', 'params' => ['id' => $ext_id]]);
-        $this->di['logger']->info('Activated extension "%s"', $data['id']);
+        $this->di['logger']->info('Activated extension "{data_id}"', ['data_id' => $data['id']]);
 
         return $result;
     }

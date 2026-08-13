@@ -199,7 +199,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         foreach ($expiredArr as $ticketArr) {
             $ticketModel = $this->getService()->getTicketById((int) $ticketArr['id']);
             if (!$this->getService()->autoClose($ticketModel)) {
-                $this->getDi()['logger']->info('Ticket %s was not closed', $ticketModel->getId());
+                $this->getDi()['logger']->info('Ticket {ticket_id} was not closed', ['ticket_id' => $ticketModel->getId()]);
             }
         }
 

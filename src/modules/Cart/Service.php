@@ -252,7 +252,7 @@ class Service implements InjectionAwareInterface
             $this->addProduct($cart, $productFromList, $productFromListConfig);
         }
 
-        $this->di['logger']->info('Added "%s" to shopping cart', $this->getProductTitle($product));
+        $this->di['logger']->info('Added "{product_title}" to shopping cart', ['product_title' => $this->getProductTitle($product)]);
 
         $this->di['events_manager']->fire(['event' => 'onAfterProductAddedToCart', 'params' => $event_params]);
 
@@ -366,7 +366,7 @@ class Service implements InjectionAwareInterface
         $cart->setCurrencyId($currency->getId());
         $this->persistCart($cart);
 
-        $this->di['logger']->info('Changed shopping cart #%s currency to %s', $cart->getId(), $currency->getCode());
+        $this->di['logger']->info('Changed shopping cart #{cart_id} currency to {currency_code}', ['cart_id' => $cart->getId(), 'currency_code' => $currency->getCode()]);
 
         return true;
     }
@@ -390,7 +390,7 @@ class Service implements InjectionAwareInterface
         $cart->setUpdatedAt(new \DateTime());
         $this->persistCart($cart);
 
-        $this->di['logger']->info('Removed promo code from shopping cart #%s', $cart->getId());
+        $this->di['logger']->info('Removed promo code from shopping cart #{cart_id}', ['cart_id' => $cart->getId()]);
 
         return true;
     }
@@ -411,7 +411,7 @@ class Service implements InjectionAwareInterface
         $cart->setPromoId($promoId);
         $this->persistCart($cart);
 
-        $this->di['logger']->info('Applied promo code %s to shopping cart', $promoCode);
+        $this->di['logger']->info('Applied promo code {promo_code} to shopping cart', ['promo_code' => $promoCode]);
 
         return true;
     }
@@ -822,7 +822,7 @@ class Service implements InjectionAwareInterface
                         // An escaped failure here would roll back the whole
                         // wrapInTransaction() below, including every order
                         // already created for this cart - not just this one.
-                        $this->di['logger']->error('Order activation failed after checkout: %s', $e->getMessage());
+                        $this->di['logger']->error('Order activation failed after checkout: {exception}', ['exception' => $e]);
                         $notes = "Order could not be activated after checkout due to error: {$e->getMessage()}.";
                         $orderService->orderStatusAdd($order, Order::STATUS_FAILED_SETUP, $notes);
                     }
@@ -840,7 +840,7 @@ class Service implements InjectionAwareInterface
                     $promoProductService->compensateCheckoutPromoFailure($promo, $reservedOrderIds, $reservedCount);
                 } catch (\Throwable $compensationError) {
                     $this->di['logger']->error('Failed to compensate promo checkout failure', [
-                        'exception' => $compensationError->getMessage(),
+                        'exception' => $compensationError,
                         'promo_id' => $promo->getId(),
                     ]);
                 }
@@ -851,7 +851,7 @@ class Service implements InjectionAwareInterface
                     $this->getProductService()->releaseReservedStockForOrder($stockReservedOrder, 'checkout_failed');
                 } catch (\Throwable $compensationError) {
                     $this->di['logger']->error('Failed to compensate stock checkout failure', [
-                        'exception' => $compensationError->getMessage(),
+                        'exception' => $compensationError,
                         'order_id' => $stockReservedOrder->getId(),
                     ]);
                 }

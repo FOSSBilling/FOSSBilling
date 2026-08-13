@@ -169,7 +169,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->setChannel('email')->error('Failed to send ticket open email', ['exception' => $exc->getMessage()]);
+            $di['logger']->withChannel('email')->error('Failed to send ticket open email', ['exception' => $exc]);
         }
     }
 
@@ -196,7 +196,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->setChannel('email')->error('Failed to send admin ticket open email', ['exception' => $exc->getMessage()]);
+            $di['logger']->withChannel('email')->error('Failed to send admin ticket open email', ['exception' => $exc]);
         }
     }
 
@@ -223,7 +223,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->setChannel('email')->error('Failed to send ticket close email', ['exception' => $exc->getMessage()]);
+            $di['logger']->withChannel('email')->error('Failed to send ticket close email', ['exception' => $exc]);
         }
     }
 
@@ -250,7 +250,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $email['ticket'] = $ticketArr;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->setChannel('email')->error('Failed to send ticket reply email', ['exception' => $exc->getMessage()]);
+            $di['logger']->withChannel('email')->error('Failed to send ticket reply email', ['exception' => $exc]);
         }
     }
 
@@ -332,7 +332,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $this->di['events_manager']->fire(['event' => 'onAfterClientCloseTicket', 'params' => ['id' => $ticket->getId()]]);
         }
 
-        $this->di['logger']->info('Closed ticket "%s"', $ticket->getId());
+        $this->di['logger']->info('Closed ticket "{ticket_id}"', ['ticket_id' => $ticket->getId()]);
 
         return true;
     }
@@ -341,7 +341,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $model->close();
         $this->di['em']->flush();
-        $this->di['logger']->info('Ticket %s was closed', $model->getId());
+        $this->di['logger']->info('Ticket {model_id} was closed', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -408,7 +408,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $em->remove($model);
         $em->flush();
 
-        $this->di['logger']->info('Removed ticket "%s"', $id);
+        $this->di['logger']->info('Removed ticket "{id}"', ['id' => $id]);
 
         return true;
     }
@@ -791,7 +791,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['em']->remove($model);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Removed note #%s', $id);
+        $this->di['logger']->info('Removed note #{id}', ['id' => $id]);
 
         return true;
     }
@@ -821,7 +821,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->di['em']->remove($model);
         $this->di['em']->flush();
-        $this->di['logger']->info('Deleted helpdesk #%s', $id);
+        $this->di['logger']->info('Deleted helpdesk #{id}', ['id' => $id]);
 
         return true;
     }
@@ -901,7 +901,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Updated ticket #%s', $model->getId());
+        $this->di['logger']->info('Updated ticket #{model_id}', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -926,7 +926,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->setContent($content);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Edited ticket message #%s', $model->getId());
+        $this->di['logger']->info('Edited ticket message #{model_id}', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -979,7 +979,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $this->di['events_manager']->fire(['event' => 'onAfterClientReplyTicket', 'params' => ['id' => $ticket->getId()]]);
         }
 
-        $this->di['logger']->info('Replied to ticket "%s"', $ticket->getId());
+        $this->di['logger']->info('Replied to ticket "{ticket_id}"', ['ticket_id' => $ticket->getId()]);
 
         return (int) $msg->getId();
     }
@@ -1009,7 +1009,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminOpenTicket', 'params' => ['id' => $ticket->getId()]]);
 
-        $this->di['logger']->info('Admin opened new ticket "%s"', $ticket->getId());
+        $this->di['logger']->info('Admin opened new ticket "{ticket_id}"', ['ticket_id' => $ticket->getId()]);
 
         return (int) $ticket->getId();
     }
@@ -1068,7 +1068,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onAfterClientOpenTicket', 'params' => ['id' => $ticket->getId()]]);
 
-        $this->di['logger']->info('"%s" opened guest ticket "%s"', $ticket->getAuthorEmail(), $ticket->getId());
+        $this->di['logger']->info('"{author_email}" opened guest ticket "{ticket_id}"', ['author_email' => $ticket->getAuthorEmail(), 'ticket_id' => $ticket->getId()]);
 
         return $ticket->getAccessHash();
     }
@@ -1191,7 +1191,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $this->sendAutoresponderCannedReply($ticket, $config['autorespond_message_id']);
         }
 
-        $this->di['logger']->info('Submitted new ticket "%s"', $ticket->getId());
+        $this->di['logger']->info('Submitted new ticket "{ticket_id}"', ['ticket_id' => $ticket->getId()]);
 
         return (int) $ticket->getId();
     }
@@ -1202,7 +1202,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $cannedResponse = $this->getCannedResponseRepository()->find((int) $cannedId);
 
             if (!$cannedResponse instanceof CannedResponse) {
-                $this->di['logger']->warning('Autoresponder: canned response #%s not found, skipping reply for ticket #%s', $cannedId, $ticket->getId());
+                $this->di['logger']->warning('Autoresponder: canned response #{canned_id} not found, skipping reply for ticket #{ticket_id}', ['canned_id' => $cannedId, 'ticket_id' => $ticket->getId()]);
 
                 return;
             }
@@ -1216,7 +1216,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 $this->ticketReply($ticket, $admin, $canned['content']);
             }
         } catch (\Exception $e) {
-            $this->di['logger']->error('Autoresponder canned reply failed: %s', $e->getMessage());
+            $this->di['logger']->error('Autoresponder canned reply failed: {exception}', ['exception' => $e]);
         }
     }
 
@@ -1273,7 +1273,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Updated helpdesk #%s', $model->getId());
+        $this->di['logger']->info('Updated helpdesk #{model_id}', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -1292,7 +1292,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $id = (int) $model->getId();
 
-        $this->di['logger']->info('Created helpdesk #%s', $id);
+        $this->di['logger']->info('Created helpdesk #{id}', ['id' => $id]);
 
         return $id;
     }
@@ -1304,7 +1304,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['em']->remove($model);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Deleted canned response #%s', $id);
+        $this->di['logger']->info('Deleted canned response #{id}', ['id' => $id]);
 
         return true;
     }
@@ -1320,7 +1320,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->di['em']->remove($model);
         $this->di['em']->flush();
-        $this->di['logger']->info('Deleted canned response category #%s', $id);
+        $this->di['logger']->info('Deleted canned response category #{id}', ['id' => $id]);
 
         return true;
     }
@@ -1342,7 +1342,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $id = (int) $model->getId();
 
-        $this->di['logger']->info('Created new canned response #%s', $id);
+        $this->di['logger']->info('Created new canned response #{id}', ['id' => $id]);
 
         return $id;
     }
@@ -1368,7 +1368,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Updated canned response #%s', $model->getId());
+        $this->di['logger']->info('Updated canned response #{model_id}', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -1383,7 +1383,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $id = (int) $model->getId();
 
-        $this->di['logger']->info('Created new canned response category #%s', $id);
+        $this->di['logger']->info('Created new canned response category #{id}', ['id' => $id]);
 
         return $id;
     }
@@ -1396,7 +1396,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Updated canned response category #%s', $model->getId());
+        $this->di['logger']->info('Updated canned response category #{model_id}', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -1412,7 +1412,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $em->flush();
 
         $id = (int) $model->getId();
-        $this->di['logger']->info('Added note to ticket #%s', $id);
+        $this->di['logger']->info('Added note to ticket #{id}', ['id' => $id]);
 
         return $id;
     }
@@ -1422,7 +1422,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->markTaskComplete();
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Marked ticket #%s task as complete', $model->getId());
+        $this->di['logger']->info('Marked ticket #{model_id} task as complete', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -1474,7 +1474,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $id = $model->getId();
         $this->di['em']->remove($model);
         $this->di['em']->flush();
-        $this->di['logger']->info('Deleted Knowledge Base article #%s', $id);
+        $this->di['logger']->info('Deleted Knowledge Base article #{id}', ['id' => $id]);
     }
 
     public function kbCreateArticle(int $articleCategoryId, string $title, ?string $status = null, ?string $content = null): int
@@ -1496,7 +1496,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['em']->flush();
 
         $id = (int) $model->getId();
-        $this->di['logger']->info('Created new knowledge base article #%s', $id);
+        $this->di['logger']->info('Created new knowledge base article #{id}', ['id' => $id]);
 
         return $id;
     }
@@ -1541,7 +1541,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Updated knowledge base article #%s', $id);
+        $this->di['logger']->info('Updated knowledge base article #{id}', ['id' => $id]);
 
         return true;
     }
@@ -1568,7 +1568,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['em']->remove($model);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Deleted knowledge base category #%s', $id);
+        $this->di['logger']->info('Deleted knowledge base category #{id}', ['id' => $id]);
 
         return true;
     }
@@ -1584,7 +1584,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['em']->flush();
 
         $id = (int) $model->getId();
-        $this->di['logger']->info('Created new knowledge base category #%s', $id);
+        $this->di['logger']->info('Created new knowledge base category #{id}', ['id' => $id]);
 
         return $id;
     }
@@ -1605,7 +1605,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Updated Knowledge Base category #%s', $model->getId());
+        $this->di['logger']->info('Updated Knowledge Base category #{model_id}', ['model_id' => $model->getId()]);
 
         return true;
     }

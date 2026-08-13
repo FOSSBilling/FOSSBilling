@@ -977,11 +977,10 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
         if ($acquired !== 1) {
             $waitDurationMs = (hrtime(true) - $waitStartedAt) / 1_000_000;
-            $this->di['logger']->warning(sprintf(
-                'Timed out after %.1f ms waiting for Stripe object lock %s',
-                $waitDurationMs,
-                $lockName
-            ));
+            $this->di['logger']->warning(
+                'Timed out after {duration_ms} ms waiting for Stripe object lock {lock_name}',
+                ['duration_ms' => $waitDurationMs, 'lock_name' => $lockName]
+            );
 
             throw new FOSSBilling\Exception('Timed out waiting to process this Stripe payment');
         }

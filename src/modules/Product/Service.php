@@ -466,7 +466,7 @@ class Service implements InjectionAwareInterface
         $this->di['em']->persist($model);
         $this->di['em']->flush();
         $productId = $model->getId();
-        $this->di['logger']->info('Created new product #%s', $model->getId());
+        $this->di['logger']->info('Created new product #{model_id}', ['model_id' => $model->getId()]);
 
         return (int) $productId;
     }
@@ -537,7 +537,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Updated product #%s configuration', $model->getId());
+        $this->di['logger']->info('Updated product #{model_id} configuration', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -587,7 +587,7 @@ class Service implements InjectionAwareInterface
         $model->setUpdatedAt(new \DateTime());
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Updated product #%s configuration', $model->getId());
+        $this->di['logger']->info('Updated product #{model_id} configuration', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -624,7 +624,7 @@ class Service implements InjectionAwareInterface
         $this->di['em']->flush();
         $productId = $model->getId();
 
-        $this->di['logger']->info('Created new addon #%s', $productId);
+        $this->di['logger']->info('Created new addon #{product_id}', ['product_id' => $productId]);
 
         return $productId;
     }
@@ -638,7 +638,7 @@ class Service implements InjectionAwareInterface
         $id = $product->getId();
         $this->di['em']->remove($product);
         $this->di['em']->flush();
-        $this->di['logger']->info('Deleted product #%s', $id);
+        $this->di['logger']->info('Deleted product #{id}', ['id' => $id]);
 
         return true;
     }
@@ -668,7 +668,7 @@ class Service implements InjectionAwareInterface
             ->setDescription($description);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Updated product category #%s', $productCategory->getId());
+        $this->di['logger']->info('Updated product category #{category_id}', ['category_id' => $productCategory->getId()]);
 
         return true;
     }
@@ -683,7 +683,7 @@ class Service implements InjectionAwareInterface
         $this->di['em']->flush();
         $id = $model->getId();
 
-        $this->di['logger']->info('Created new product category #%s', $id);
+        $this->di['logger']->info('Created new product category #{id}', ['id' => $id]);
 
         return $id;
     }
@@ -697,7 +697,7 @@ class Service implements InjectionAwareInterface
         $this->di['em']->remove($category);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Deleted product category #%s', $id);
+        $this->di['logger']->info('Deleted product category #{id}', ['id' => $id]);
 
         return true;
     }
@@ -941,7 +941,7 @@ class Service implements InjectionAwareInterface
 
             $addon = $this->getAddonById($id);
             if (!$addon instanceof Product) {
-                $this->di['logger']->warning('Addon not found by id %s', $id);
+                $this->di['logger']->warning('Addon not found by id {id}', ['id' => $id]);
 
                 continue;
             }
@@ -1071,7 +1071,7 @@ class Service implements InjectionAwareInterface
                 $this->di['em']->refresh($resolvedProduct);
             }
 
-            $this->di['logger']->info('Released stock reservation for order #%s (%s)', $orderId, $reason);
+            $this->di['logger']->info('Released stock reservation for order #{order_id} ({reason})', ['order_id' => $orderId, 'reason' => $reason]);
         });
     }
 
@@ -1279,7 +1279,7 @@ class Service implements InjectionAwareInterface
         $this->di['em']->flush();
         $promoId = (int) $promo->getId();
 
-        $this->di['logger']->info('Created new promotion code %s', $promo->getCode());
+        $this->di['logger']->info('Created new promotion code {promo_code}', ['promo_code' => $promo->getCode()]);
 
         return $promoId;
     }
@@ -1308,7 +1308,7 @@ class Service implements InjectionAwareInterface
         $this->di['em']->flush();
         $promoId = (int) $promo->getId();
 
-        $this->di['logger']->info('Duplicated promotion code %s into new promotion code %s', $model->getCode(), $promo->getCode());
+        $this->di['logger']->info('Duplicated promotion code {model_code} into new promotion code {promo_code}', ['model_code' => $model->getCode(), 'promo_code' => $promo->getCode()]);
 
         return $promoId;
     }
@@ -1732,7 +1732,7 @@ class Service implements InjectionAwareInterface
         $this->applyPromoDataToEntity($promo, $data);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Update promo code %s', $promo->getCode());
+        $this->di['logger']->info('Update promo code {promo_code}', ['promo_code' => $promo->getCode()]);
 
         return true;
     }
@@ -1748,7 +1748,7 @@ class Service implements InjectionAwareInterface
         $this->di['em']->remove($promo);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Removed promo code %s', $promo->getCode());
+        $this->di['logger']->info('Removed promo code {promo_code}', ['promo_code' => $promo->getCode()]);
 
         return true;
     }

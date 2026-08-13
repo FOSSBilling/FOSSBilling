@@ -38,7 +38,7 @@ test('update stores normalized filter', function (): void {
 
     $service = new Box\Mod\Massmailer\Service();
     $di = createMassmailerAdminDi($model);
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $service->setDi($di);
 
     $api = apiEndpoint(new Box\Mod\Massmailer\Api\Admin());
@@ -65,7 +65,7 @@ test('update rejects invalid filter', function (): void {
 
     $service = new Box\Mod\Massmailer\Service();
     $di = createMassmailerAdminDi($model, false);
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $service->setDi($di);
 
     $api = apiEndpoint(new Box\Mod\Massmailer\Api\Admin());

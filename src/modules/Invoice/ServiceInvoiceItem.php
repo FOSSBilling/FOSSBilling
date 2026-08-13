@@ -66,7 +66,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             } catch (UniqueConstraintViolationException) {
                 // Idempotency: the unique constraint on invoice_item_id means a prior
                 // attempt already credited this item. Mark it as charged without re-crediting.
-                $this->di['logger']->setChannel('billing')->info(sprintf('Invoice item #%d was already credited; skipping duplicate credit.', (int) $item->getId()));
+                $this->di['logger']->withChannel('billing')->info('Invoice item #{item_id} was already credited; skipping duplicate credit.', ['item_id' => $item->getId()]);
                 $this->resetEntityManager();
                 $item = $this->di['em']->find(InvoiceItem::class, $item->getId());
                 $item->setCharged(true);
@@ -268,7 +268,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $id = $model->getId();
         $this->di['em']->remove($model);
         $this->di['em']->flush();
-        $this->di['logger']->info('Removed invoice item "%s"', $id);
+        $this->di['logger']->info('Removed invoice item "{id}"', ['id' => $id]);
 
         return true;
     }
@@ -306,7 +306,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         try {
             $this->di['em']->flush();
         } catch (UniqueConstraintViolationException) {
-            $this->di['logger']->setChannel('billing')->info(sprintf('Invoice item #%d was already credited; skipping duplicate credit.', (int) $item->getId()));
+            $this->di['logger']->withChannel('billing')->info('Invoice item #{item_id} was already credited; skipping duplicate credit.', ['item_id' => $item->getId()]);
             $this->resetEntityManager();
 
             return;
@@ -372,7 +372,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
         if ($attempts >= self::MAX_TASK_ATTEMPTS) {
             $item->setStatus(InvoiceItem::STATUS_FAILED);
-            $this->di['logger']->setChannel('billing')->error(sprintf('Invoice item #%d marked as failed after %d task execution attempts.', (int) $item->getId(), $attempts));
+            $this->di['logger']->withChannel('billing')->error('Invoice item #{item_id} marked as failed after {attempts} task execution attempts.', ['item_id' => $item->getId(), 'attempts' => $attempts]);
         }
 
         $this->di['em']->persist($item);
@@ -399,7 +399,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $item->setAttempts(0);
         $this->di['em']->persist($item);
         $this->di['em']->flush();
-        $this->di['logger']->setChannel('billing')->info(sprintf('Invoice item #%d re-queued for execution by an admin.', (int) $item->getId()));
+        $this->di['logger']->withChannel('billing')->info('Invoice item #{item_id} re-queued for execution by an admin.', ['item_id' => $item->getId()]);
 
         return $item;
     }

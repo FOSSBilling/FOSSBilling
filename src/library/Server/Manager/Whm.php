@@ -206,7 +206,7 @@ class Server_Manager_Whm extends Server_Manager
      */
     public function synchronizeAccount(Server_Account $account): Server_Account
     {
-        $this->getLog()->info(sprintf('Synchronizing account %s %s with server', $account->getDomain(), $account->getUsername()));
+        $this->getLog()->info('Synchronizing account {domain} {username} with server', ['domain' => $account->getDomain(), 'username' => $account->getUsername()]);
 
         $action = 'accountsummary';
         $varHash = [
@@ -599,7 +599,7 @@ class Server_Manager_Whm extends Server_Manager
             : 'Basic ' . $username . ':' . $password;
 
         // Log the request
-        $this->getLog()->debug(sprintf('Requesting WHM server action "%s" with params "%s" ', $action, print_r($params, true)));
+        $this->getLog()->debug('Requesting WHM server action "{action}" with params "{params}"', ['action' => $action, 'params' => print_r($params, true)]);
 
         // Send the request and handle any errors
         try {
@@ -629,28 +629,28 @@ class Server_Manager_Whm extends Server_Manager
         }
 
         if (isset($json->cpanelresult->error)) {
-            $this->getLog()->critical(sprintf('WHM server response error calling action %s: "%s"', $action, $json->cpanelresult->error));
+            $this->getLog()->critical('WHM server response error calling action {action}: "{error}"', ['action' => $action, 'error' => $json->cpanelresult->error]);
             $placeholders = ['action' => $action, 'type' => 'cPanel'];
 
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
 
         if (isset($json->data->result) && $json->data->result == '0') {
-            $this->getLog()->critical(sprintf('WHM server response error calling action %s: "%s"', $action, $json->data->reason));
+            $this->getLog()->critical('WHM server response error calling action {action}: "{error}"', ['action' => $action, 'error' => $json->data->reason]);
             $placeholders = [':action:' => $action, ':type:' => 'cPanel'];
 
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
 
         if (isset($json->result) && is_array($json->result) && $json->result[0]->status == 0) {
-            $this->getLog()->critical(sprintf('WHM server response error calling action %s: "%s"', $action, $json->result[0]->statusmsg));
+            $this->getLog()->critical('WHM server response error calling action {action}: "{error}"', ['action' => $action, 'error' => $json->result[0]->statusmsg]);
             $placeholders = [':action:' => $action, ':type:' => 'cPanel'];
 
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
 
         if (isset($json->status) && $json->status != '1') {
-            $this->getLog()->critical(sprintf('WHM server response error calling action %s: "%s"', $action, $json->statusmsg));
+            $this->getLog()->critical('WHM server response error calling action {action}: "{error}"', ['action' => $action, 'error' => $json->statusmsg]);
             $placeholders = [':action:' => $action, ':type:' => 'cPanel'];
 
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);

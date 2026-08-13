@@ -1171,19 +1171,16 @@ test('getLogger returns logger with event items', function (): void {
     ]);
 
     $capturedItems = [];
-    $logger = new class($capturedItems) extends Box_Log {
+    $logger = new class($capturedItems) extends FOSSBilling\Logger {
         public function __construct(public array &$capturedItems)
         {
         }
 
-        public function addWriter($writer): static
+        public function withContext(array $context): static
         {
-            return $this;
-        }
-
-        public function setEventItem(string $name, mixed $value): static
-        {
-            $this->capturedItems[] = [$name, $value];
+            foreach ($context as $name => $value) {
+                $this->capturedItems[] = [$name, $value];
+            }
 
             return $this;
         }
@@ -1197,7 +1194,7 @@ test('getLogger returns logger with event items', function (): void {
 
     $result = $svc->getLogger($model);
 
-    expect($result)->toBeInstanceOf(Box_Log::class);
+    expect($result)->toBeInstanceOf(FOSSBilling\Logger::class);
     expect($capturedItems)->toHaveCount(2);
     expect($capturedItems[0])->toEqual(['client_order_id', 5]);
     expect($capturedItems[1])->toEqual(['status', 'active']);
@@ -1680,7 +1677,7 @@ test('createOrder creates order', function (): void {
     $di['events_manager'] = $eventMock;
     $di['em'] = $emMock;
     $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $svc = new Service();
     $svc->setDi($di);
@@ -1777,7 +1774,7 @@ test('createOrder sets form id from product', function (): void {
     $di['events_manager'] = $eventMock;
     $di['em'] = $emMock;
     $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $svc = new Service();
     $svc->setDi($di);
@@ -1901,7 +1898,7 @@ test('createOrder returns success when invoice follow up fails', function (): vo
     $di['events_manager'] = $eventMock;
     $di['em'] = $emMock;
     $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $svc = new Service();
     $svc->setDi($di);
@@ -2013,7 +2010,7 @@ test('createOrder uses product pricing service for domain orders', function (): 
     });
     $di['events_manager'] = $eventMock;
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $svc = new Service();
     $svc->setDi($di);
@@ -2240,7 +2237,7 @@ test('activateOrder activates pending order', function (): void {
     $di = container();
     $di['em'] = $emMock;
     $di['events_manager'] = $eventMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldAllowMockingProtectedMethods();
@@ -2314,7 +2311,7 @@ test('activateOrder force re-activates an already active order', function (): vo
     $di = container();
     $di['em'] = $emMock;
     $di['events_manager'] = $eventMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldAllowMockingProtectedMethods();
@@ -2435,7 +2432,7 @@ test('updateOrder updates fields', function (): void {
     $di = container();
     $di['events_manager'] = $eventMock;
     $di['em'] = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $data = [
         'period' => '1Y',
@@ -2475,7 +2472,7 @@ test('renewOrder renews order', function (): void {
 
     $di = container();
     $di['events_manager'] = $eventMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldAllowMockingProtectedMethods();
@@ -2605,7 +2602,7 @@ test('suspendFromOrder suspends active order', function (): void {
 
     $di = container();
     $di['events_manager'] = $eventMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldAllowMockingProtectedMethods();
@@ -2657,7 +2654,7 @@ test('cancelFromOrder cancels linked subscriptions', function (): void {
     $di = container();
     $di['em'] = $emMock;
     $di['dbal'] = $connectionMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $di['mod_service'] = $di->protect(function (string $module, string $service = '') use ($productService, $subscriptionService) {
         if ($module === 'Invoice' && $service === 'Subscription') {
             return $subscriptionService;
@@ -2692,7 +2689,7 @@ test('scheduleCancellationFromOrder keeps the service active', function (): void
     $subscriptionService->shouldReceive('scheduleCancellationForOrder')->once()->with($order)->andReturn(1);
 
     $di = container();
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $di['mod_service'] = $di->protect(fn () => $subscriptionService);
 
     $service = Mockery::mock(Service::class)->makePartial();
@@ -3109,7 +3106,7 @@ test('updateOrderMeta clears existing meta', function (): void {
 
 test('updateOrderConfig succeeds when no form id is set', function (): void {
     $di = container();
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $svc = new Service();
     $svc->setDi($di);
@@ -3276,7 +3273,7 @@ test('updateOrderConfig succeeds with valid form data', function (): void {
         }
     });
     $di['em'] = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $svc = new Service();
     $svc->setDi($di);
@@ -3420,7 +3417,7 @@ test('createOrder generates an invoice for a zero-price order with issue-invoice
     $di['events_manager'] = $eventMock;
     $di['em'] = $emMock;
     $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $svc = new Service();
     $svc->setDi($di);
@@ -3533,7 +3530,7 @@ test('createOrder does not roll back when invoice generation fails for a negativ
     $di['events_manager'] = $eventMock;
     $di['em'] = $emMock;
     $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $svc = new Service();
     $svc->setDi($di);
@@ -3608,7 +3605,7 @@ test('batchSendSuspensionWarnings claims and queues each warning once', function
     $di = container();
     $di['em'] = $em;
     $di['events_manager'] = $events;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $di['mod_service'] = $di->protect(fn (string $name): Box\Mod\Email\Service => $emailService);
     $service->setDi($di);
 
@@ -3657,7 +3654,7 @@ test('batchSendSuspensionWarnings releases a failed claim so the warning can be 
     $di = container();
     $di['em'] = $em;
     $di['events_manager'] = $events;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $di['mod_service'] = $di->protect(fn (string $name): Box\Mod\Email\Service => $emailService);
     $service->setDi($di);
 

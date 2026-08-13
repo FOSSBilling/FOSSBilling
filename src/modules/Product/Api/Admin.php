@@ -272,7 +272,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         if (!$model instanceof Product || !$model->isAddon()) {
             throw new \FOSSBilling\InformationException('Addon not found');
         }
-        $this->di['logger']->info('Updated addon #%s', $model->getId());
+        $this->di['logger']->info('Updated addon #{model_id}', ['model_id' => $model->getId()]);
 
         return $this->update($data);
     }

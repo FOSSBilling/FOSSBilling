@@ -64,13 +64,13 @@ class Service
 
         try {
             if ($this->di['update_finalization']->isRequired()) {
-                $this->di['logger']->setChannel('cron')->warning('Skipped cron execution because update finalization is pending.');
+                $this->di['logger']->withChannel('cron')->warning('Skipped cron execution because update finalization is pending.');
 
                 throw new \FOSSBilling\InformationException('Update finalization is pending. Cron jobs are paused until finalization is completed.', [], 503);
             }
 
             $api = $this->di['api_system'];
-            $this->di['logger']->setChannel('cron')->info('Started executing cron jobs.');
+            $this->di['logger']->withChannel('cron')->info('Started executing cron jobs.');
 
             // @core tasks
             $this->_exec($api, 'hook_batch_connect');
@@ -96,14 +96,17 @@ class Service
                     $this->_exec($api, $method);
                 } catch (\Throwable $exception) {
                     $failedTasks[] = $method;
-                    $this->di['logger']->setChannel('cron')->error(sprintf(
-                        'Failed to run cron task %s: %s: %s in %s:%d',
-                        $method,
-                        $exception::class,
-                        $exception->getMessage(),
-                        $exception->getFile(),
-                        $exception->getLine()
-                    ));
+                    $this->di['logger']->withChannel('cron')->error(
+                        'Failed to run cron task {task}: {exception_class}: {exception_message} in {file}:{line}',
+                        [
+                            'task' => $method,
+                            'exception_class' => $exception::class,
+                            'exception_message' => $exception->getMessage(),
+                            'file' => $exception->getFile(),
+                            'line' => $exception->getLine(),
+                            'exception' => $exception,
+                        ]
+                    );
                 }
             }
 
@@ -112,17 +115,17 @@ class Service
 
             // Purge old sessions from the DB
             $count = $this->clearOldSessions() ?? 0;
-            $this->di['logger']->setChannel('cron')->info("Cleared {$count} outdated sessions from the database.");
+            $this->di['logger']->withChannel('cron')->info("Cleared {$count} outdated sessions from the database.");
 
             $this->di['events_manager']->fire(['event' => 'onAfterAdminCronRun']);
 
             if ($failedTasks !== []) {
-                $this->di['logger']->setChannel('cron')->warning('Finished executing cron jobs, but the following tasks failed: ' . implode(', ', $failedTasks) . '.');
+                $this->di['logger']->withChannel('cron')->warning('Finished executing cron jobs, but the following tasks failed: ' . implode(', ', $failedTasks) . '.');
 
                 return false;
             }
 
-            $this->di['logger']->setChannel('cron')->info('Finished executing cron jobs.');
+            $this->di['logger']->withChannel('cron')->info('Finished executing cron jobs.');
 
             return true;
         } finally {

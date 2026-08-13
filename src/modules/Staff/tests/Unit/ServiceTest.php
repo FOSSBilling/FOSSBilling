@@ -1079,7 +1079,7 @@ test('update updates admin details', function (): void {
     $eventsMock = Mockery::mock('\Box_EventManager');
     $eventsMock->shouldReceive('fire')->atLeast()->once();
 
-    $logStub = $this->createStub('\Box_Log');
+    $logStub = $this->createStub('\FOSSBilling\Logger');
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
 
@@ -1147,7 +1147,7 @@ test('delete removes admin account', function (): void {
     $eventsMock = Mockery::mock('\Box_EventManager');
     $eventsMock->shouldReceive('fire')->atLeast()->once();
 
-    $logStub = $this->createStub('\Box_Log');
+    $logStub = $this->createStub('\FOSSBilling\Logger');
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
 
@@ -1205,7 +1205,7 @@ test('changePassword updates admin password', function (): void {
     $eventsMock = Mockery::mock('\Box_EventManager');
     $eventsMock->shouldReceive('fire')->atLeast()->once();
 
-    $logStub = $this->createStub('\Box_Log');
+    $logStub = $this->createStub('\FOSSBilling\Logger');
 
     $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')->atLeast()->once()
@@ -1248,7 +1248,7 @@ test('create creates new admin account', function (): void {
     $eventsMock = Mockery::mock('\Box_EventManager');
     $eventsMock->shouldReceive('fire')->atLeast()->once();
 
-    $logStub = $this->createStub('\Box_Log');
+    $logStub = $this->createStub('\FOSSBilling\Logger');
 
     $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')->atLeast()->once()
@@ -1321,7 +1321,7 @@ test('create throws exception for duplicate email', function (): void {
     ));
     $emMock->shouldReceive('flush')->never();
 
-    $logStub = $this->createStub('\Box_Log');
+    $logStub = $this->createStub('\FOSSBilling\Logger');
 
     $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')->atLeast()->once()

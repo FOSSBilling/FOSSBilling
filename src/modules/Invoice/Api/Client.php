@@ -79,7 +79,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $service = $this->getService();
         $invoice = $service->generateForOrder($model);
         $service->approveInvoice($invoice, ['id' => $invoice->id, 'use_credits' => true]);
-        $this->getDi()['logger']->info('Generated new renewal invoice #%s', $invoice->id);
+        $this->getDi()['logger']->info('Generated new renewal invoice #{invoice_id}', ['invoice_id' => $invoice->id]);
 
         return $invoice->hash;
     }
@@ -100,7 +100,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $service = $this->getService();
         $invoice = $service->generateFundsInvoice($this->getIdentity(), $data['amount']);
         $service->approveInvoice($invoice, ['id' => $invoice->id]);
-        $this->getDi()['logger']->info('Generated add funds invoice #%s', $invoice->id);
+        $this->getDi()['logger']->info('Generated add funds invoice #{invoice_id}', ['invoice_id' => $invoice->id]);
 
         return $invoice->hash;
     }

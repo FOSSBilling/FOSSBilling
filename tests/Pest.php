@@ -107,16 +107,15 @@ function withAppEnv(?string $value, callable $callback): mixed
     }
 }
 
-// Define TestLogger class after autoloader is registered
-// This must be done here because it extends Box_Log which is loaded via the autoloader
-// Using eval() to defer class definition until runtime when Box_Log is available
+// Define TestLogger class after autoloader is registered.
+// This is deferred because FOSSBilling\Logger is loaded via the autoloader.
 // @phpstan-ignore-next-line
 if (!class_exists(Tests\Helpers\TestLogger::class)) {
     // @phpstan-ignore-next-line
     eval('
         namespace Tests\Helpers;
 
-        class TestLogger extends \Box_Log
+        class TestLogger extends \Psr\Log\AbstractLogger
         {
             public array $calls = [];
 
@@ -125,9 +124,24 @@ if (!class_exists(Tests\Helpers\TestLogger::class)) {
                 $this->calls = [];
             }
 
-            public function __call($method, $params): void
+            public function log($level, string|\\Stringable $message, array $context = []): void
             {
-                $this->calls[] = ["method" => $method, "params" => $params];
+                $params = [$message];
+                if ($context !== []) {
+                    $params[] = $context;
+                }
+
+                $this->calls[] = ["method" => $level, "params" => $params];
+            }
+
+            public function withChannel(string $channel): static
+            {
+                return $this;
+            }
+
+            public function withContext(array $context): static
+            {
+                return $this;
             }
         }
     ');

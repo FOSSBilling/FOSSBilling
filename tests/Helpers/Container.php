@@ -37,9 +37,16 @@ function container(): Container
             $this->calls[] = ['method' => $level, 'params' => [$message, $context]];
         }
 
-        public function setChannel(string $channel): self
+        public function withChannel(string $channel): self
         {
-            $this->calls[] = ['method' => 'setChannel', 'params' => [$channel]];
+            $this->calls[] = ['method' => 'withChannel', 'params' => [$channel]];
+
+            return $this;
+        }
+
+        public function withContext(array $context): self
+        {
+            $this->calls[] = ['method' => 'withContext', 'params' => [$context]];
 
             return $this;
         }

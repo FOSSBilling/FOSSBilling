@@ -1,32 +1,37 @@
 <?php
 
 declare(strict_types=1);
+
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-class Box_LogDb
+
+namespace FOSSBilling\Logging;
+
+class DatabaseWriter
 {
+    /**
+     * These channels are kept in file logs only. Email has its own activity
+     * table, while the remaining channels contain sensitive or operational
+     * diagnostics rather than user-facing activity entries.
+     */
     private const array IGNORED_CHANNELS = ['billing', 'routing', 'security', 'email'];
 
-    /**
-     * Class constructor.
-     *
-     * @param object|string $service - module service class object or class name
-     */
-    public function __construct(protected object|string $service)
+    public function __construct(private object $service)
     {
     }
 
     /**
-     * Write a message to the log.
+     * Write a message to the activity log.
+     *
+     * @param array<string|int, mixed> $event
      */
     public function write(array $event, string $channel = 'application'): void
     {
-        // Deferred: revisit channel filtering as part of a broader logging redesign.
         if (in_array($channel, self::IGNORED_CHANNELS, true)) {
             return;
         }
@@ -35,10 +40,10 @@ class Box_LogDb
             if (method_exists($this->service, 'logEvent')) {
                 $this->service->logEvent($event);
             }
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             // The database writer cannot use the application logger while it is
             // writing that logger, so retain PHP's last-resort error log here.
-            error_log(sprintf('[Box_LogDb] writer failure: %s at %s:%d', $e->getMessage(), $e->getFile(), $e->getLine()));
+            error_log(sprintf('[FOSSBilling\\Logging\\DatabaseWriter] writer failure: %s at %s:%d', $e->getMessage(), $e->getFile(), $e->getLine()));
         }
     }
 }

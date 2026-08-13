@@ -39,26 +39,31 @@ if (!$request instanceof Request) {
  *
  * @param void
  *
- * @return Box_Log A new logger instance
+ * @return FOSSBilling\Logger A new logger instance
  */
 $di['logger'] = function () use ($di) {
-    $log = new Box_Log();
+    $log = new FOSSBilling\Logger();
     $log->setDi($di);
 
     $activity_service = $di['mod_service']('activity');
-    $dbWriter = new Box_LogDb($activity_service);
+    $dbWriter = new FOSSBilling\Logging\DatabaseWriter($activity_service);
     $log->addWriter($dbWriter);
 
+    $context = [];
     if ($di['auth']->isAdminLoggedIn()) {
         $admin = $di['loggedin_admin'];
-        $log->setEventItem('admin_id', $admin->getId());
+        $context['admin_id'] = $admin->getId();
     } elseif ($di['auth']->isClientLoggedIn()) {
         $client = $di['loggedin_client'];
-        $log->setEventItem('client_id', $client->getId());
+        $context['client_id'] = $client->getId();
     }
 
     $monolog = new FOSSBilling\Monolog();
     $log->addWriter($monolog);
+
+    if ($context !== []) {
+        $log = $log->withContext($context);
+    }
 
     return $log;
 };
@@ -94,7 +99,7 @@ $di['pdo'] = function () {
     $pdo = $connection->getNativeConnection();
 
     if (isset($debugConfig['debug']) && $debugConfig['debug']) {
-        $pdo->setAttribute(PDO::ATTR_STATEMENT_CLASS, ['Box_DbLoggedPDOStatement']);
+        $pdo->setAttribute(PDO::ATTR_STATEMENT_CLASS, [FOSSBilling\DbLoggedPDOStatement::class]);
     }
 
     return new DebugBar\DataCollector\PDO\TraceablePDO($pdo);

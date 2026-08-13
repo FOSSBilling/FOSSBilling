@@ -155,12 +155,12 @@ function routeDispatchApp(string $routeMode, string $path): BoxAppRouteDispatchA
         }
     };
     $di['logger'] = new class {
-        public function setChannel(string $channel): self
+        public function withChannel(string $channel): self
         {
             return $this;
         }
 
-        public function info(string|Stringable $message, array $context = []): void
+        public function info(string|\Stringable $message, array $context = []): void
         {
         }
     };

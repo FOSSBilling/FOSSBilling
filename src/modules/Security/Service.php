@@ -78,7 +78,7 @@ class Service
             if ($newCheck instanceof SecurityCheckInterface) {
                 $checks[$checkID] = $newCheck;
             } else {
-                $this->di['logger']->setChannel('security')->error("{$className} does not implement the SecurityCheckInterface interface.");
+                $this->di['logger']->withChannel('security')->error("{$className} does not implement the SecurityCheckInterface interface.");
             }
         }
 
@@ -199,7 +199,7 @@ class Service
     {
         $removed = $this->di['rate_limiter']->resetIp($ip, $policy);
 
-        $this->di['logger']->setChannel('security')->info('Rate limiter counters reset for IP %s%s', $ip, $policy ? " and policy {$policy}" : '');
+        $this->di['logger']->withChannel('security')->info('Rate limiter counters reset for IP {ip}{policy}', ['ip' => $ip, 'policy' => $policy ? " and policy {$policy}" : '']);
 
         return [
             'ip' => $ip,
@@ -212,7 +212,7 @@ class Service
     {
         $cleared = $this->di['rate_limiter']->resetAll();
 
-        $this->di['logger']->setChannel('security')->warning('All rate limiter counters were reset');
+        $this->di['logger']->withChannel('security')->warning('All rate limiter counters were reset');
 
         return [
             'cleared' => $cleared,

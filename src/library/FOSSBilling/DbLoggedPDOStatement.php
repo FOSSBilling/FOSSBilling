@@ -1,18 +1,27 @@
 <?php
 
 declare(strict_types=1);
+
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-class Box_DbLoggedPDOStatement extends PDOStatement
+
+namespace FOSSBilling;
+
+/**
+ * PDO statement used for the application's debug SQL trace.
+ *
+ * PDO instantiates this class directly, so it intentionally writes to PHP's
+ * error log instead of depending on the application logger or the container.
+ */
+class DbLoggedPDOStatement extends \PDOStatement
 {
     public function execute(?array $input_parameters = null): bool
     {
-        // This debug-only statement is created directly by PDO and has no DI access.
         error_log($this->queryString);
 
         return parent::execute($input_parameters);

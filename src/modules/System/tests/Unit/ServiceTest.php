@@ -277,7 +277,7 @@ test('updateParams updates system parameters in a single flush', function (): vo
     $eventMock = Mockery::mock('\Box_EventManager');
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
-    $logStub = $this->createStub('\Box_Log');
+    $logStub = $this->createStub('\FOSSBilling\Logger');
 
     $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
     $staffServiceMock->shouldReceive('hasPermission')->andReturn(true);

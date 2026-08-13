@@ -181,7 +181,7 @@ class UpdatePatcher implements InjectionAwareInterface
                     $this->filesystem->rename($file, $action);
                 }
             } catch (IOException $e) {
-                $this->di['logger']->setChannel('update')->error($e->getMessage());
+                $this->di['logger']->withChannel('update')->error($e->getMessage());
             }
         }
     }
@@ -216,7 +216,7 @@ class UpdatePatcher implements InjectionAwareInterface
             $this->prepareAndExecute($sql, $params);
         } catch (\Exception $e) {
             // Log the error and then throw a user-friendly exception to prevent further patches from being applied.
-            $this->di['logger']->setChannel('update')->error($e->getMessage());
+            $this->di['logger']->withChannel('update')->error($e->getMessage());
 
             throw new Exception('There was an error while applying database patches. Please check the error log for information on the error, correct it, and then perform the backup patching method to complete the update.');
         }
@@ -1132,7 +1132,7 @@ class UpdatePatcher implements InjectionAwareInterface
             $this->di['cache']->delete('config_mod_spamchecker');
             $this->di['cache']->delete('config_mod_antispam');
         } catch (\Exception $e) {
-            $this->di['logger']->setChannel('update')->error('Spamchecker to Anti-Spam migration error: ' . $e->getMessage());
+            $this->di['logger']->withChannel('update')->error('Spamchecker to Anti-Spam migration error: ' . $e->getMessage());
         }
 
         $fileActions = [
@@ -1167,7 +1167,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 try {
                     $this->filesystem->remove($dir->getPathname());
                 } catch (IOException $e) {
-                    $this->di['logger']->setChannel('update')->error($e->getMessage());
+                    $this->di['logger']->withChannel('update')->error($e->getMessage());
                 }
             }
         } catch (\Symfony\Component\Finder\Exception\DirectoryNotFoundException) {
@@ -1291,7 +1291,7 @@ class UpdatePatcher implements InjectionAwareInterface
             $needsSave = false;
             foreach ($fields as $field) {
                 if (isset($config[$field]) && is_string($config[$field]) && preg_match('/\b(function|include|import|extends|range|max|min|dump|system|guest\.|admin\.|client\.)\b/i', $config[$field])) {
-                    $this->di['logger']->setChannel('update')->warning('Custom payment adapter template for gateway ID %s contained incompatible Twig syntax and has been cleared. Please re-create it with compatible syntax.', $gateway['id']);
+                    $this->di['logger']->withChannel('update')->warning('Custom payment adapter template for gateway ID {gateway_id} contained incompatible Twig syntax and has been cleared. Please re-create it with compatible syntax.', ['gateway_id' => $gateway['id']]);
                     unset($config[$field]);
                     $needsSave = true;
                 }
@@ -1312,7 +1312,7 @@ class UpdatePatcher implements InjectionAwareInterface
             $this->executeSql("DELETE FROM extension WHERE type = 'mod' AND name = 'wysiwyg'");
             $this->di['cache']->delete('config_mod_wysiwyg');
         } catch (\Exception $e) {
-            $this->di['logger']->setChannel('update')->error('Wysiwyg cleanup migration error: ' . $e->getMessage());
+            $this->di['logger']->withChannel('update')->error('Wysiwyg cleanup migration error: ' . $e->getMessage());
         }
 
         $this->executeFileActions([
@@ -1962,7 +1962,7 @@ class UpdatePatcher implements InjectionAwareInterface
                     ['value' => $documentNr, 'id' => $clientId]
                 );
             } else {
-                $this->di['logger']->setChannel('update')->warning('patch75: client #%d has no free custom field slot; unmigrated document_nr was "%s".', $clientId, $documentNr);
+                $this->di['logger']->withChannel('update')->warning('patch75: client #{client_id} has no free custom field slot; unmigrated document_nr was "{document_nr}".', ['client_id' => $clientId, 'document_nr' => $documentNr]);
             }
         }
 
