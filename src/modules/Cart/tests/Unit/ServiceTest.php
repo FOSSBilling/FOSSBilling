@@ -182,8 +182,8 @@ test('getSessionCart reloads the existing cart after a concurrent insert wins', 
     $initialEntityManager->shouldReceive('persist')->once();
     $initialEntityManager->shouldReceive('flush')->once()->andThrow($duplicateKeyException);
 
-    $winningEntityManager = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
-    $winningEntityManager->shouldReceive('getRepository')->once()->with(Cart::class)->andReturn($winningRepository);
+    $replacementEntityManager = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $replacementEntityManager->shouldReceive('getRepository')->once()->with(Cart::class)->andReturn($winningRepository);
 
     $currencyRepository = Mockery::mock(CurrencyRepository::class);
     $currencyRepository->shouldReceive('findDefault')->once()->andReturn($currency);
@@ -198,10 +198,11 @@ test('getSessionCart reloads the existing cart after a concurrent insert wins', 
     $di['em'] = $initialEntityManager;
     $di['session'] = $session;
     $di['mod_service'] = $di->protect(fn () => $currencyService);
-    $serviceMock->shouldReceive('resetEntityManager')->once()->andReturnUsing(function () use ($di, $winningEntityManager): void {
-        unset($di['em']);
-        $di['em'] = $winningEntityManager;
+
+    $serviceMock->shouldReceive('resetEntityManager')->once()->andReturnUsing(function () use ($di, $replacementEntityManager): void {
+        $di['em'] = $replacementEntityManager;
     });
+
     $serviceMock->setDi($di);
 
     expect($serviceMock->getSessionCart())->toBe($winningCart);
@@ -920,16 +921,112 @@ test('createFromCart compensates promo usage on transaction failure', function (
     $productService->shouldReceive('findPromoById')->once()->with(7)->andReturn($promo);
     $productService->shouldReceive('reserveStockForOrder')->once()->with(Mockery::type(Order::class));
     $productService->shouldReceive('reservePromoForOrder')->once()->with($promo, Mockery::type(Order::class));
+    $productService->shouldReceive('createCheckoutPromoRedemptions')
+        ->andThrow(new RuntimeException('Doctrine flush failed'));
+    $productService->shouldReceive('compensateCheckoutPromoFailure')
+        ->once()
+        ->with($promo, Mockery::any(), Mockery::any());
+    $productService->shouldReceive('releaseReservedStockForOrder')
+        ->once()
+        ->with(Mockery::type(Order::class), 'checkout_failed');
+
+    $product = new Product();
+    $productIdReflection = new ReflectionProperty($product, 'id');
+    $productIdReflection->setValue($product, 5);
+    $product->setStatus('enabled');
+    $product->setType('service');
+    $product->setSetup('manual');
+
+    $cartProduct = createEntity(CartProduct::class);
+    $cartProduct->id = 13;
+
+    $orderService = Mockery::mock(Box\Mod\Order\Service::class)->makePartial();
+    $orderService->shouldReceive('saveStatusChange')->once()->with(Mockery::type(Order::class), 'Order Created');
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('wrapInTransaction')->once()->with(Mockery::type(Closure::class))->andReturnUsing(fn (Closure $callback) => $callback());
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getSessionCart')->once()->andReturn($cart);
+    $serviceMock->shouldReceive('toApiArray')->once()->with($cart)->andReturn([
+        'items' => [['id' => 1]],
+        'total' => 0,
+    ]);
+    $serviceMock->shouldReceive('getCartProducts')->once()->with($cart)->andReturn([$cartProduct]);
+    $serviceMock->shouldReceive('cartProductToApiArray')->once()->with($cartProduct)->andReturn([
+        'product_id' => 5,
+        'form_id' => null,
+        'title' => 'Example product',
+        'type' => 'service',
+        'unit' => 'service',
+        'period' => '1M',
+        'quantity' => 1,
+        'price' => 0,
+        'discount_price' => 0,
+        'setup_price' => 0,
+        'discount_setup' => 0,
+        'notes' => null,
+    ]);
+    $serviceMock->shouldReceive('isStockAvailable')->once()->with($product, 1)->andReturn(true);
+
+    $productService->shouldReceive('findProductById')->once()->with(5)->andReturn($product);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['logger'] = new FOSSBilling\Logger();
+    $di['mod_service'] = $di->protect(fn ($serviceName, $sub = '') => match ($serviceName) {
+        'currency' => $currencyService,
+        'client' => $clientService,
+        'Product' => $productService,
+        'order', 'Order' => $orderService,
+        default => null,
+    });
+
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->createFromCart($client))
+        ->toThrow(RuntimeException::class, 'Doctrine flush failed');
+});
+
+test('createFromCart releases reserved stock on transaction failure', function (): void {
+    $cart = createEntity(Cart::class);
+    $cart->id = 3;
+    $cart->currency_id = 2;
+    $cart->promo_id = 7;
+
+    $client = createEntity(Client::class);
+    $client->id = 9;
+    $client->currency = 'USD';
+
+    $currency = Mockery::mock(Currency::class)->makePartial();
+    $currency->shouldReceive('getCode')->once()->andReturn('USD');
+    $currency->shouldReceive('getConversionRate')->atLeast()->once()->andReturn(1.0);
+
+    $currencyRepository = Mockery::mock(CurrencyRepository::class);
+    $currencyRepository->shouldReceive('find')->once()->with(2)->andReturn($currency);
+
+    $currencyService = Mockery::mock(CurrencyService::class);
+    $currencyService->shouldReceive('getCurrencyRepository')->once()->andReturn($currencyRepository);
+
+    $clientService = Mockery::mock(Box\Mod\Client\Service::class);
+    $clientService->shouldReceive('isClientTaxable')->once()->with($client)->andReturn(false);
+
+    $promo = new Promo();
+    $promo->setCode('PROMO');
+    $promoIdReflection = new ReflectionProperty($promo, 'id');
+    $promoIdReflection->setValue($promo, 7);
+
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('findPromoById')->once()->with(7)->andReturn($promo);
+    $productService->shouldReceive('reserveStockForOrder')->once()->with(Mockery::type(Order::class));
+    $productService->shouldReceive('reservePromoForOrder')->once()->with($promo, Mockery::type(Order::class));
 
     // Simulate Doctrine-side failure during redemption creation.
     $productService->shouldReceive('createCheckoutPromoRedemptions')
         ->andThrow(new RuntimeException('Doctrine flush failed'));
 
-    // The compensating method must be invoked for both promo usage and the stock reservation
-    // taken earlier in the same loop iteration.
-    $productService->shouldReceive('compensateCheckoutPromoFailure')
-        ->once()
-        ->with($promo, Mockery::any(), Mockery::any());
     $productService->shouldReceive('releaseReservedStockForOrder')
         ->once()
         ->with(Mockery::type(Order::class), 'checkout_failed');
@@ -1639,19 +1736,13 @@ test('getProductDiscount returns discount array', function (): void {
     $cartReflection = new ReflectionProperty($modelCart, 'id');
     $cartReflection->setValue($modelCart, 1);
     $modelCart->setPromoId(1);
+    $cartProductModel->setCart($modelCart);
 
     $promoModel = new Promo();
 
     $discountPrice = 25;
 
-    $cartRepo = Mockery::mock(CartRepository::class);
-    $cartRepo->shouldReceive('find')->atLeast()->once()->with(Mockery::any())->andReturn($modelCart);
-
-    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
-    $emMock->shouldReceive('getRepository')->with(Cart::class)->andReturn($cartRepo);
-
     $di = container();
-    $di['em'] = $emMock;
     $productService = Mockery::mock(ProductService::class)->shouldIgnoreMissing();
     $productService->shouldReceive('findPromoById')->once()->with(1)->andReturn($promoModel);
     $di['mod_service'] = $di->protect(fn () => $productService);
@@ -1678,15 +1769,9 @@ test('getProductDiscount returns zeros when no promo', function (): void {
     $modelCart = new Cart();
     $cartReflection = new ReflectionProperty($modelCart, 'id');
     $cartReflection->setValue($modelCart, 1);
-
-    $cartRepo = Mockery::mock(CartRepository::class);
-    $cartRepo->shouldReceive('find')->atLeast()->once()->with(Mockery::any())->andReturn($modelCart);
-
-    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
-    $emMock->shouldReceive('getRepository')->with(Cart::class)->andReturn($cartRepo);
+    $cartProductModel->setCart($modelCart);
 
     $di = container();
-    $di['em'] = $emMock;
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('getRelatedItemsDiscount')->atLeast()->once()->andReturn(0);
@@ -1709,20 +1794,14 @@ test('getProductDiscount returns free setup discount', function (): void {
     $cartReflection = new ReflectionProperty($modelCart, 'id');
     $cartReflection->setValue($modelCart, 1);
     $modelCart->setPromoId(1);
+    $cartProductModel->setCart($modelCart);
 
     $promoModel = new Promo();
     $promoModel->setFreeSetup(true);
 
     $discountPrice = 25;
 
-    $cartRepo = Mockery::mock(CartRepository::class);
-    $cartRepo->shouldReceive('find')->atLeast()->once()->with(Mockery::any())->andReturn($modelCart);
-
-    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
-    $emMock->shouldReceive('getRepository')->with(Cart::class)->andReturn($cartRepo);
-
     $di = container();
-    $di['em'] = $emMock;
     $productService = Mockery::mock(ProductService::class)->shouldIgnoreMissing();
     $productService->shouldReceive('findPromoById')->once()->with(1)->andReturn($promoModel);
     $productService->shouldReceive('isPromoApplicableToProductById')->atLeast()->once()->andReturn(true);
@@ -1751,18 +1830,12 @@ test('getProductDiscount does not waive setup fee for a product the promo is not
     $cartReflection = new ReflectionProperty($modelCart, 'id');
     $cartReflection->setValue($modelCart, 1);
     $modelCart->setPromoId(1);
+    $cartProductModel->setCart($modelCart);
 
     $promoModel = new Promo();
     $promoModel->setFreeSetup(true);
 
-    $cartRepo = Mockery::mock(CartRepository::class);
-    $cartRepo->shouldReceive('find')->atLeast()->once()->with(Mockery::any())->andReturn($modelCart);
-
-    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
-    $emMock->shouldReceive('getRepository')->with(Cart::class)->andReturn($cartRepo);
-
     $di = container();
-    $di['em'] = $emMock;
     $productService = Mockery::mock(ProductService::class)->shouldIgnoreMissing();
     $productService->shouldReceive('findPromoById')->once()->with(1)->andReturn($promoModel);
     // Promo is restricted to a different product/period, so it does not apply here.
@@ -1798,9 +1871,9 @@ test('isPromoAvailableForClientGroup returns expected result', function (Promo $
     expect($result)->toEqual($expectedResult);
 })->with(fn (): array => [
     [createPromoEntity(1)->setClientGroups(json_encode([])), createEntity(Client::class), true],
-    [createPromoEntity(2)->setClientGroups(json_encode([1, 2])), createEntity(Client::class, ['clientGroupId' => null]), false],
-    [createPromoEntity(3)->setClientGroups(json_encode([1, 2])), createEntity(Client::class, ['clientGroupId' => 3]), false],
-    [createPromoEntity(4)->setClientGroups(json_encode([1, 2])), createEntity(Client::class, ['clientGroupId' => 2]), true],
+    [createPromoEntity(2)->setClientGroups(json_encode([1, 2])), createEntity(Client::class, ['clientGroup' => null]), false],
+    [createPromoEntity(3)->setClientGroups(json_encode([1, 2])), createEntity(Client::class, ['clientGroup' => null]), false],
+    [createPromoEntity(4)->setClientGroups(json_encode([1, 2])), createEntity(Client::class, ['clientGroup' => null]), true],
     [createPromoEntity(5)->setClientGroups(json_encode([])), null, true],
     [createPromoEntity(6)->setClientGroups(json_encode([1, 2])), null, false],
 ]);

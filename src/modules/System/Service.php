@@ -635,7 +635,7 @@ class Service
         return $p->getTitle();
     }
 
-    public function getPublicParamValue($param)
+    public function getPublicParamValue($param): ?string
     {
         $setting = $this->settingRepository->findOnePublicByParam((string) $param);
         if ($setting === null) {
@@ -645,7 +645,10 @@ class Service
         return $setting->getValue();
     }
 
-    public function getNameservers()
+    /**
+     * @return mixed[]
+     */
+    public function getNameservers(): array
     {
         $settings = $this->settingRepository->findByParams(['nameserver_1', 'nameserver_2', 'nameserver_3', 'nameserver_4']);
         $result = [];

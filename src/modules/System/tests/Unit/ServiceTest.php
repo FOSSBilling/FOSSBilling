@@ -115,7 +115,7 @@ test('setParamValue propagates a concurrent duplicate insert', function (): void
     $service = new Service();
     $service->setDi($di);
 
-    expect(fn () => $service->setParamValue('new_param', 'ours'))->toThrow($duplicateKeyException);
+    expect(fn (): bool => $service->setParamValue('new_param', 'ours'))->toThrow($duplicateKeyException);
 });
 
 test('setParamValue skips the update when the staff member lacks permission', function (): void {
@@ -317,7 +317,7 @@ test('getMessages returns system messages', function (): void {
     $updaterMock->allows()->getLatestVersion()->andReturn($latestVersion);
     $updaterMock->allows()->isBehindOnDBPatches()->andReturn(false);
 
-    $urlMock = Mockery::mock(Box\Url::class);
+    $urlMock = Mockery::mock(FOSSBilling\Url::class);
     $urlMock->allows()->adminLink(Mockery::any())->andReturn('http://example.com');
 
     $di = container();

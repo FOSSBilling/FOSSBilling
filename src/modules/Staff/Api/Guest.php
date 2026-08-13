@@ -90,12 +90,12 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             }
 
             if (strtotime((string) $reset->getCreatedAt()?->format('Y-m-d H:i:s')) - time() + 900 < 0) {
-                $this->getDi()['logger']->withChannel('security')->info('Staff password reset confirmation failed for admin #{admin_id} from IP {ip}: reset token expired', ['admin_id' => $reset->getAdminId(), 'ip' => $this->getIp()]);
+                $this->getDi()['logger']->withChannel('security')->info('Staff password reset confirmation failed for admin #{admin_id} from IP {ip}: reset token expired', ['admin_id' => $reset->getAdmin()?->getId(), 'ip' => $this->getIp()]);
 
                 throw new \FOSSBilling\InformationException('The link has expired or you have already confirmed the password reset.');
             }
 
-            $admin = $this->getDi()['em']->getRepository(Admin::class)->find($reset->getAdminId());
+            $admin = $reset->getAdmin();
             if (!$admin instanceof Admin) {
                 throw new \FOSSBilling\InformationException('Admin not found');
             }
@@ -178,7 +178,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             $hash = hash('sha256', random_bytes(32));
 
             $reset = new AdminPasswordReset();
-            $reset->setAdminId((int) $c->getId());
+            $reset->setAdmin($c);
             $reset->setIp($this->ip);
             $reset->setHash($hash);
             $this->getDi()['em']->persist($reset);

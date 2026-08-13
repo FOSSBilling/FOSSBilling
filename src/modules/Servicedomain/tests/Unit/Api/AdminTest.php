@@ -25,6 +25,7 @@ use FOSSBilling\PaginationOptions;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
+use function Tests\Helpers\setEntityId;
 
 test('updates domain', function (): void {
     $adminApi = apiEndpoint(new Admin());
@@ -594,7 +595,7 @@ test('copies registrar', function (): void {
     $adminApi = apiEndpoint(new Admin());
     $api = apiEndpoint(new Admin());
     $registrar = new TldRegistrar();
-    $registrar->setId(1);
+    setEntityId($registrar, 1);
 
     $trRepo = Mockery::mock(TldRegistrarRepository::class);
     $trRepo->shouldReceive('find')
@@ -642,7 +643,7 @@ test('gets registrar', function (): void {
     $adminApi = apiEndpoint(new Admin());
     $api = apiEndpoint(new Admin());
     $registrar = new TldRegistrar();
-    $registrar->setId(1);
+    setEntityId($registrar, 1);
 
     $trRepo = Mockery::mock(TldRegistrarRepository::class);
     $trRepo->shouldReceive('find')
@@ -719,7 +720,7 @@ test('updates registrar', function (): void {
     $adminApi = apiEndpoint(new Admin());
     $api = apiEndpoint(new Admin());
     $registrar = new TldRegistrar();
-    $registrar->setId(1);
+    setEntityId($registrar, 1);
 
     $trRepo = Mockery::mock(TldRegistrarRepository::class);
     $trRepo->shouldReceive('find')

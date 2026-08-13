@@ -248,6 +248,16 @@ class Service implements InjectionAwareInterface
         self::sendOrderLifecycleEmail($event, 'renewed', 'uncancel');
     }
 
+    /**
+     * Returns the service backing an order.
+     *
+     * Built-in service types return their Doctrine entity (or null when the
+     * entity class is unknown). Third-party service types return the raw
+     * `service_<type>` row as a DBAL assoc array — or false when the order's
+     * service row no longer exists, and null when the order has no service yet.
+     * The value is passed to third-party module methods as-is; extension
+     * authors must access fields via array keys.
+     */
     public function getOrderService(Order $order)
     {
         $serviceId = $order->getServiceId();
@@ -352,10 +362,8 @@ class Service implements InjectionAwareInterface
      */
     public function saveStatusChange(Order $order, $notes = null): void
     {
-        $orderId = $this->orderId($order);
-
         $os = new OrderStatus();
-        $os->setClientOrderId($orderId);
+        $os->setOrder($order);
         $os->setStatus($order->getStatus());
         $os->setNotes($notes);
         $this->di['em']->persist($os);
@@ -883,7 +891,7 @@ class Service implements InjectionAwareInterface
                     $mm = $this->getOrderMetaRepository()->findOneByOrderIdAndName($orderId, $k);
                     if (!$mm instanceof OrderMeta) {
                         $mm = new OrderMeta();
-                        $mm->setClientOrderId($orderId);
+                        $mm->setOrder($order);
                         $mm->setName($k);
                         $mm->setCreatedAt(new \DateTime());
                     }
@@ -1104,6 +1112,15 @@ class Service implements InjectionAwareInterface
         return $this->getOrderRepository()->findAddonsExcluding((string) $groupId, (int) $clientId, $this->orderId($order));
     }
 
+    /**
+     * Dispatches a lifecycle action to the order's service module.
+     *
+     * Built-in service types are dispatched to `action_<action>` methods on the
+     * module service with the order entity. Third-party service types are
+     * dispatched to an un-prefixed `<action>` method with `$order` and the
+     * `service_<type>` row as a DBAL assoc array — or false when the order's
+     * service row no longer exists, and null when the order has no service yet.
+     */
     protected function _callOnService(Order $order, $action, mixed ...$arguments)
     {
         $serviceType = $order->getServiceType();
@@ -1180,7 +1197,7 @@ class Service implements InjectionAwareInterface
             $mm = $this->getOrderMetaRepository()->findOneByOrderIdAndName($orderId, $k);
             if (!$mm instanceof OrderMeta) {
                 $mm = new OrderMeta();
-                $mm->setClientOrderId($orderId);
+                $mm->setOrder($order);
                 $mm->setName($k);
                 $mm->setCreatedAt(new \DateTime());
             }
@@ -1838,16 +1855,17 @@ class Service implements InjectionAwareInterface
             throw new InformationException('Invalid order status: :status', [':status' => $status]);
         }
 
-        $orderId = $this->orderId($order);
-
-        $bean = new OrderStatus();
-        $bean->setClientOrderId($orderId);
-        $bean->setStatus($status);
-        $bean->setNotes($notes);
-        $this->di['em']->persist($bean);
+        $statusEntry = new OrderStatus();
+        $statusEntry->setOrder($order);
+        $statusEntry->setStatus($status);
+        $statusEntry->setNotes($notes);
+        $this->di['em']->persist($statusEntry);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Added order status history message to order #{bean_id}', ['bean_id' => $bean->getId()]);
+        $this->di['logger']->info(
+            'Added order status history entry {status_id} for order {order_id}',
+            ['status_id' => $statusEntry->getId(), 'order_id' => $order->getId()]
+        );
 
         return true;
     }
@@ -1877,6 +1895,15 @@ class Service implements InjectionAwareInterface
         return $this->getOrderRepository()->findForClientById($clientId, $orderId);
     }
 
+    /**
+     * Returns the API representation of an order's service data.
+     *
+     * Only entity-backed (built-in) services reach the module's `toApiArray()`;
+     * the third-party (DBAL assoc array or false) path fails the `is_object()`
+     * guard and returns null (logged as "has no active service"). Extension
+     * authors that need third-party service data must read the row via
+     * `getOrderService()`.
+     */
     public function getOrderServiceData(Order $order, $identity = null)
     {
         $orderId = $this->orderId($order);

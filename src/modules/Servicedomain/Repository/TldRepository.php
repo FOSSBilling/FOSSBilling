@@ -21,7 +21,61 @@ class TldRepository extends EntityRepository
      */
     public function findAllActive(): array
     {
-        return $this->findBy(['active' => true], ['id' => 'ASC']);
+        return $this->createQueryBuilder('t')
+            ->leftJoin('t.registrar', 'tr')
+            ->addSelect('tr')
+            ->where('t.active = :active')
+            ->setParameter('active', true)
+            ->orderBy('t.id', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Pricing for every active TLD, keyed by the TLD string, matching the legacy
+     * domain-pricing array shape consumed by the Product service.
+     *
+     * @return array<string, array{
+     *     tld: ?string,
+     *     price_registration: ?string,
+     *     price_renew: ?string,
+     *     price_transfer: ?string,
+     *     active: int,
+     *     allow_register: int|null,
+     *     allow_transfer: int|null,
+     *     min_years: ?int,
+     *     periods: int[]|null,
+     *     registrar: array{id: ?int, title: ?string},
+     * }>
+     */
+    public function getActivePricing(): array
+    {
+        $pricing = [];
+        foreach ($this->findAllActive() as $tld) {
+            $tldName = $tld->getTld();
+            if ($tldName === null) {
+                continue;
+            }
+
+            $registrar = $tld->getRegistrar();
+            $pricing[$tldName] = [
+                'tld' => $tldName,
+                'price_registration' => $tld->getPriceRegistration(),
+                'price_renew' => $tld->getPriceRenew(),
+                'price_transfer' => $tld->getPriceTransfer(),
+                'active' => (int) $tld->isActive(),
+                'allow_register' => $tld->isAllowRegister() === null ? null : (int) $tld->isAllowRegister(),
+                'allow_transfer' => $tld->isAllowTransfer() === null ? null : (int) $tld->isAllowTransfer(),
+                'min_years' => $tld->getMinYears(),
+                'periods' => $tld->getPeriodsArray(),
+                'registrar' => [
+                    'id' => $registrar?->getId(),
+                    'title' => $registrar?->getName(),
+                ],
+            ];
+        }
+
+        return $pricing;
     }
 
     public function findOneByTld(string $tld): ?Tld

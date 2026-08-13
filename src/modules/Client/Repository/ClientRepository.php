@@ -112,7 +112,7 @@ class ClientRepository extends EntityRepository
         }
 
         if ($groupId) {
-            $qb->andWhere('c.clientGroupId = :group_id')
+            $qb->andWhere('IDENTITY(c.clientGroup) = :group_id')
                 ->setParameter('group_id', $groupId);
         }
 

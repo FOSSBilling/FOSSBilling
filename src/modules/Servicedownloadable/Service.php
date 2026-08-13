@@ -720,11 +720,7 @@ class Service implements InjectionAwareInterface
     {
         $productService = $this->di['mod_service']('product');
         $orderService = $this->di['mod_service']('order');
-        foreach ($productService->getOrdersForProduct($product) as $orderData) {
-            $order = $this->di['em']->getRepository(Order::class)->find($orderData['id']);
-            if (!$order instanceof Order) {
-                continue;
-            }
+        foreach ($productService->getOrdersForProduct($product) as $order) {
             $service = $orderService->getOrderService($order);
             $callback($order, $service instanceof ServiceDownloadable ? $service : null);
         }

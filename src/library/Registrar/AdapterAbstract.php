@@ -10,7 +10,7 @@ declare(strict_types=1);
  */
 abstract class Registrar_AdapterAbstract
 {
-    protected ?\Psr\Log\LoggerInterface $_log = null;
+    protected ?Psr\Log\LoggerInterface $_log = null;
 
     /**
      * Are we in test mode ?
@@ -190,11 +190,11 @@ abstract class Registrar_AdapterAbstract
     /**
      * Sets the logger object to use for logging messages.
      *
-     * @param \Psr\Log\LoggerInterface $log the logger object to use
+     * @param Psr\Log\LoggerInterface $log the logger object to use
      *
      * @return static the current adapter object, for method chaining
      */
-    public function setLog(\Psr\Log\LoggerInterface $log): static
+    public function setLog(Psr\Log\LoggerInterface $log): static
     {
         $this->_log = $log;
 
@@ -204,12 +204,12 @@ abstract class Registrar_AdapterAbstract
     /**
      * Gets the logger object currently in use for logging messages.
      *
-     * @return \Psr\Log\LoggerInterface the logger object
+     * @return Psr\Log\LoggerInterface the logger object
      */
-    public function getLog(): \Psr\Log\LoggerInterface
+    public function getLog(): Psr\Log\LoggerInterface
     {
         $log = $this->_log;
-        if (!$log instanceof \Psr\Log\LoggerInterface) {
+        if (!$log instanceof Psr\Log\LoggerInterface) {
             $log = new FOSSBilling\Logger();
         }
 

@@ -49,9 +49,11 @@ class EmailTemplateGroupRepository extends EntityRepository
 
     public function countTemplatesUsingGroup(int $groupId): int
     {
-        return (int) $this->getEntityManager()->getConnection()->fetchOne(
-            'SELECT COUNT(DISTINCT email_template_id) FROM email_template_group WHERE admin_group_id = :group_id',
-            ['group_id' => $groupId],
-        );
+        return (int) $this->createQueryBuilder('g')
+            ->select('COUNT(DISTINCT g.emailTemplate)')
+            ->andWhere('g.adminGroupId = :group_id')
+            ->setParameter('group_id', $groupId)
+            ->getQuery()
+            ->getSingleScalarResult();
     }
 }

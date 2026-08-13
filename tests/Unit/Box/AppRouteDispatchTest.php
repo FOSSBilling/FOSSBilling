@@ -160,7 +160,7 @@ function routeDispatchApp(string $routeMode, string $path): BoxAppRouteDispatchA
             return $this;
         }
 
-        public function info(string|\Stringable $message, array $context = []): void
+        public function info(string|Stringable $message, array $context = []): void
         {
         }
     };

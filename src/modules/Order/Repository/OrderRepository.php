@@ -39,6 +39,14 @@ class OrderRepository extends EntityRepository
         return $order instanceof Order ? $order : null;
     }
 
+    /**
+     * @return Order[]
+     */
+    public function findByProductId(int $productId): array
+    {
+        return $this->findBy(['productId' => $productId]);
+    }
+
     public function findOneByServiceTypeAndServiceId(string $serviceType, int $serviceId): ?Order
     {
         $order = $this->findOneBy(['serviceType' => $serviceType, 'serviceId' => $serviceId]);
@@ -73,23 +81,6 @@ class OrderRepository extends EntityRepository
             ->setParameter('groupId', $groupId)
             ->setParameter('clientId', $clientId)
             ->setParameter('excludeId', $excludeOrderId)
-            ->getQuery()
-            ->getResult();
-    }
-
-    /**
-     * @return Order[]
-     */
-    public function getSoonExpiringActiveOrders(int $daysUntilExpiration): array
-    {
-        return $this->getEntityManager()->createQueryBuilder()
-            ->select('o')
-            ->from(Order::class, 'o')
-            ->where('o.status = :status')
-            ->andWhere('o.expiresAt IS NOT NULL')
-            ->andWhere('o.expiresAt <= :expiry_date')
-            ->setParameter('status', Order::STATUS_ACTIVE)
-            ->setParameter('expiry_date', new \DateTime('+' . $daysUntilExpiration . ' days'))
             ->getQuery()
             ->getResult();
     }

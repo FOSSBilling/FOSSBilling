@@ -1016,25 +1016,72 @@ test('getCronAdmin returns existing cron admin', function (): void {
 });
 
 test('getCronAdmin creates and returns new cron admin', function (): void {
+    $adminModel = createEntity(Admin::class, ['id' => 7, 'system_name' => Admin::SYSTEM_CRON]);
+
     $adminRepository = Mockery::mock(AdminRepository::class);
-    $adminRepository->shouldReceive('findOneBy')->atLeast()->once()
-        ->andReturn(null);
+    // First lookup misses; after the DBAL insert the re-read returns the new row.
+    $adminRepository->expects('findOneBy')->with(['systemName' => Admin::SYSTEM_CRON])->twice()
+        ->andReturn(null, $adminModel);
 
     $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
-    $passwordMock->shouldReceive('hashIt')->atLeast()->once();
+    $passwordMock->expects('hashIt')->once()->andReturn('hashed-cron-password');
+
+    $captured = null;
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->expects('insert')->once()->andReturnUsing(function (string $table, array $data) use (&$captured): int {
+        expect($table)->toBe('admin');
+        $captured = $data;
+
+        return 1;
+    });
 
     $di = container();
     $di['em']->shouldReceive('getRepository')->with(Admin::class)->andReturn($adminRepository);
-    $di['em']->shouldReceive('persist')->atLeast()->once();
-    $di['em']->shouldReceive('flush')->atLeast()->once();
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
+    $di['em']->shouldNotReceive('persist');
+    $di['em']->shouldNotReceive('flush');
     $di['password'] = $passwordMock;
 
     $service = new Service();
     $service->setDi($di);
 
     $result = $service->getCronAdmin();
-    expect($result)->not->toBeEmpty();
-    expect($result)->toBeInstanceOf(Admin::class);
+    expect($result)->toBe($adminModel);
+    expect($captured['system_name'])->toBe(Admin::SYSTEM_CRON);
+    expect($captured['status'])->toBe(Admin::STATUS_ACTIVE);
+    expect($captured['pass'])->toBe('hashed-cron-password');
+    expect($captured['created_at'])->not->toBeEmpty();
+    expect($captured['updated_at'])->not->toBeEmpty();
+});
+
+test('getCronAdmin recovers from a concurrent-creation race', function (): void {
+    // A concurrent request won the race; the DBAL insert throws, the ORM EM stays
+    // open, and the re-read returns the winner's row.
+    $adminModel = createEntity(Admin::class, ['id' => 9, 'system_name' => Admin::SYSTEM_CRON]);
+
+    $adminRepository = Mockery::mock(AdminRepository::class);
+    $adminRepository->expects('findOneBy')->with(['systemName' => Admin::SYSTEM_CRON])->twice()
+        ->andReturn(null, $adminModel);
+
+    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
+    $passwordMock->expects('hashIt')->once();
+
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->expects('insert')->once()
+        ->andThrow(Mockery::mock(Doctrine\DBAL\Exception\UniqueConstraintViolationException::class));
+
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Admin::class)->andReturn($adminRepository);
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
+    $di['em']->shouldNotReceive('persist');
+    $di['em']->shouldNotReceive('flush');
+    $di['em']->shouldNotReceive('clear');
+    $di['password'] = $passwordMock;
+
+    $service = new Service();
+    $service->setDi($di);
+
+    expect($service->getCronAdmin())->toBe($adminModel);
 });
 
 test('toApiArray returns admin array data', function (): void {
@@ -1697,7 +1744,7 @@ test('addAdminToGroup is idempotent for existing membership', function (): void 
 
     $groupRepository = Mockery::mock(AdminGroupRepository::class);
     $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
-    $groupMemberRepository->shouldReceive('findMembership')->once()->with(3, 2)->andReturn(new AdminGroupMember(3, $group));
+    $groupMemberRepository->shouldReceive('findMembership')->once()->with(3, 2)->andReturn(new AdminGroupMember($admin, $group));
     $em = staffEntityManager($groupRepository, $groupMemberRepository);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -1717,7 +1764,7 @@ test('removeAdminFromGroup removes membership', function (): void {
 
     $group = new AdminGroup();
     staffSetEntityId($group, 2);
-    $membership = new AdminGroupMember(3, $group);
+    $membership = new AdminGroupMember($admin, $group);
 
     $groupRepository = Mockery::mock(AdminGroupRepository::class);
     $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
@@ -1745,7 +1792,7 @@ test('removeAdminFromGroup rejects removing last active super administrator', fu
 
     $groupRepository = Mockery::mock(AdminGroupRepository::class);
     $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
-    $groupMemberRepository->shouldReceive('findMembership')->once()->with(3, 1)->andReturn(new AdminGroupMember(3, $group));
+    $groupMemberRepository->shouldReceive('findMembership')->once()->with(3, 1)->andReturn(new AdminGroupMember($admin, $group));
     $groupMemberRepository->shouldReceive('adminBelongsToSystemGroup')->once()->with(3, AdminGroup::SYSTEM_SUPER_ADMIN)->andReturn(true);
     $groupMemberRepository->shouldReceive('countActiveMembersInSystemGroup')->once()->with(AdminGroup::SYSTEM_SUPER_ADMIN)->andReturn(1);
 

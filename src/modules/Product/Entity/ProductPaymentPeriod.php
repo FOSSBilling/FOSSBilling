@@ -14,7 +14,7 @@ namespace Box\Mod\Product\Entity;
 use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Period;
 
-#[ORM\Entity(repositoryClass: \Box\Mod\Product\Repository\ProductPaymentPeriodRepository::class)]
+#[ORM\Entity]
 #[ORM\Table(name: 'product_payment_period')]
 #[ORM\UniqueConstraint(name: 'product_payment_period_unique', columns: ['product_payment_id', 'code'])]
 class ProductPaymentPeriod

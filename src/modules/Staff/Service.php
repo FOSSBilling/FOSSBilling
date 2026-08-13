@@ -468,30 +468,36 @@ class Service implements InjectionAwareInterface
         $cronEmail = $this->di['tools']->generatePassword() . '@' . $this->di['tools']->generatePassword() . '.com';
         $cronEmail = filter_var($cronEmail, FILTER_SANITIZE_EMAIL);
 
-        $cronPass = $this->di['tools']->generatePassword(256, 4);
+        $cronPass = $this->di['password']->hashIt($this->di['tools']->generatePassword(256, 4));
 
-        $cron = new Admin();
-        $cron->setSystemName(Admin::SYSTEM_CRON);
-        $cron->setEmail($cronEmail);
-        $cron->setPass($this->di['password']->hashIt($cronPass));
-        $cron->setName('System Cron Job');
-        $cron->setSignature('');
-        $cron->setStatus(Admin::STATUS_ACTIVE);
+        // Two cron runs can race to create the cron admin. Insert via the DBAL
+        // connection (not an ORM flush) so a constraint violation doesn't close the
+        // EntityManager for the rest of this cron run; on conflict, re-read the
+        // winner's row below.
+        $now = date('Y-m-d H:i:s');
+        $connection = $this->di['em']->getConnection();
 
         try {
-            $this->di['em']->persist($cron);
-            $this->di['em']->flush();
+            $connection->insert('admin', [
+                'system_name' => Admin::SYSTEM_CRON,
+                'email' => $cronEmail,
+                'pass' => $cronPass,
+                'name' => 'System Cron Job',
+                'signature' => '',
+                'status' => Admin::STATUS_ACTIVE,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
         } catch (UniqueConstraintViolationException) {
-            $this->di['em']->clear();
-            $cron = $this->getAdminRepository()->findOneBy(['systemName' => Admin::SYSTEM_CRON]);
-            if ($cron instanceof Admin) {
-                return $cron;
-            }
-
-            throw new \FOSSBilling\Exception('The cron administrator account could not be created');
+            // A concurrent request created the cron admin; fall through to re-read it.
         }
 
-        return $cron;
+        $cron = $this->getAdminRepository()->findOneBy(['systemName' => Admin::SYSTEM_CRON]);
+        if ($cron instanceof Admin) {
+            return $cron;
+        }
+
+        throw new \FOSSBilling\Exception('The cron administrator account could not be created');
     }
 
     public function toApiArray(Admin $model, $deep = false): array
@@ -648,7 +654,7 @@ class Service implements InjectionAwareInterface
             $this->di['em']->wrapInTransaction(function () use ($model, $group): void {
                 $this->di['em']->persist($model);
                 $this->di['em']->flush();
-                $this->di['em']->persist(new AdminGroupMember((int) $model->getId(), $group));
+                $this->di['em']->persist(new AdminGroupMember($model, $group));
                 $this->di['em']->flush();
             });
         } catch (UniqueConstraintViolationException) {
@@ -785,7 +791,7 @@ class Service implements InjectionAwareInterface
             return true;
         }
 
-        $this->di['em']->persist(new AdminGroupMember($adminId, $group));
+        $this->di['em']->persist(new AdminGroupMember($admin, $group));
         $this->di['em']->flush();
         $this->permissionCache = [];
 

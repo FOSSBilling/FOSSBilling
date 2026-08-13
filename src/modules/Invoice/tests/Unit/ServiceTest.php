@@ -22,6 +22,7 @@ use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Repository\InvoiceItemRepository;
+use Box\Mod\Invoice\Repository\InvoiceRepository;
 use Box\Mod\Invoice\Repository\PayGatewayRepository;
 use Box\Mod\Invoice\Repository\SubscriptionRepository;
 use Box\Mod\Invoice\Repository\TransactionRepository;
@@ -41,6 +42,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
 use function Tests\Helpers\moduleService;
+use function Tests\Helpers\setEntityId;
 
 /**
  * @return array{0: EntityManagerInterface, 1: InvoiceItemRepository}
@@ -1031,13 +1033,6 @@ test('admin mark as paid with custom gateway records transaction and marks invoi
         ->with(Mockery::type(Invoice::class))
         ->andReturn(42.50);
 
-    $invoiceModel = createEntity(Invoice::class);
-
-    $invoiceModel->id = 10;
-    $invoiceModel->gateway_id = 5;
-    $invoiceModel->currency = 'USD';
-    $invoiceModel->status = Invoice::STATUS_UNPAID;
-
     $gatewayModel = createEntity(PayGateway::class, [
         'id' => 5,
         'gateway' => 'Custom',
@@ -1045,7 +1040,13 @@ test('admin mark as paid with custom gateway records transaction and marks invoi
         'name' => 'Manual payment',
     ]);
 
-    $transactionModel = createEntity(Transaction::class, ['id' => 20, 'invoiceId' => 10]);
+    $invoiceModel = createEntity(Invoice::class);
+    $invoiceModel->id = 10;
+    $invoiceModel->gateway = $gatewayModel;
+    $invoiceModel->currency = 'USD';
+    $invoiceModel->status = Invoice::STATUS_UNPAID;
+
+    $transactionModel = createEntity(Transaction::class, ['id' => 20, 'invoice' => $invoiceModel]);
 
     $transactionServiceMock = Mockery::mock(Box\Mod\Invoice\ServiceTransaction::class);
     $transactionServiceMock->shouldReceive('create')
@@ -1094,20 +1095,22 @@ test('admin mark as paid with custom gateway rejects transaction linked to anoth
         ->with(Mockery::type(Invoice::class))
         ->andReturn(42.50);
 
-    $invoiceModel = createEntity(Invoice::class);
-
-    $invoiceModel->id = 10;
-    $invoiceModel->gateway_id = 5;
-    $invoiceModel->currency = 'USD';
-    $invoiceModel->status = Invoice::STATUS_UNPAID;
-
     $gatewayModel = createEntity(PayGateway::class, [
         'id' => 5,
         'gateway' => 'Custom',
         'enabled' => true,
     ]);
 
-    $transactionModel = createEntity(Transaction::class, ['id' => 20, 'invoiceId' => 99]);
+    $invoiceModel = createEntity(Invoice::class);
+    $invoiceModel->id = 10;
+    $invoiceModel->gateway = $gatewayModel;
+    $invoiceModel->currency = 'USD';
+    $invoiceModel->status = Invoice::STATUS_UNPAID;
+
+    $otherInvoice = createEntity(Invoice::class);
+    $otherInvoice->id = 99;
+
+    $transactionModel = createEntity(Transaction::class, ['id' => 20, 'invoice' => $otherInvoice]);
 
     $transactionServiceMock = Mockery::mock(Box\Mod\Invoice\ServiceTransaction::class);
     $transactionServiceMock->shouldReceive('create')
@@ -1385,9 +1388,12 @@ test('pays an invoice with credits and records a balance transaction', function 
     $service->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(50.0);
     $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false, true)->andReturn(true);
 
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 20]);
+
     $di = container();
+    $di['em']->shouldReceive('getReference')->with(Box\Mod\Client\Entity\Client::class, 20)->andReturn($client);
     $di['em']->shouldReceive('persist')->once()->with(
-        Mockery::on(fn (ClientBalance $balance): bool => $balance->getClientId() === 20
+        Mockery::on(fn (ClientBalance $balance): bool => $balance->getClient()?->getId() === 20
             && $balance->getType() === 'invoice'
             && $balance->getRelId() === '10'
             && $balance->getDescription() === 'Payment for invoice #2024-001 using account credit.'
@@ -1545,7 +1551,7 @@ test('refunds invoice with negative invoice logic', function (): void {
         ->atLeast()->once()
         ->andReturnUsing(function (object $entity) use ($newId): void {
             if ($entity instanceof Invoice && $entity->getId() === null) {
-                $entity->setId($newId);
+                setEntityId($entity, $newId);
             }
         });
     $em->shouldReceive('flush')
@@ -1729,8 +1735,8 @@ test('processes batch pay with credits', function (): void {
 
     $di = container();
     $invoiceRepo = $di['em']->getRepository(Invoice::class);
-    $invoiceRepo->shouldReceive('find')
-        ->andReturn($invoiceModel);
+    $invoiceRepo->shouldReceive('findBy')
+        ->andReturn([$invoiceModel]);
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $serviceMock->setDi($di);
@@ -1972,9 +1978,9 @@ test('generates invoices for expiring orders', function (): void {
         ->andReturn([['id' => 1]]);
 
     $orderRepoMock = Mockery::mock(OrderRepository::class);
-    $orderRepoMock->shouldReceive('find')
+    $orderRepoMock->shouldReceive('findBy')
         ->atLeast()->once()
-        ->andReturn($clientOrder);
+        ->andReturn([$clientOrder]);
 
     $di = container();
     $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
@@ -2046,6 +2052,8 @@ test('handles exception during batch paid invoice activation', function (): void
         ->with('SELECT status FROM invoice_item WHERE id = :id FOR UPDATE', ['id' => 1])
         ->andReturn(InvoiceItem::STATUS_PENDING_SETUP);
     $em->shouldReceive('getConnection')->andReturn($connection);
+    // The exception did not close the EM, so recovery continues: clear and proceed.
+    $em->shouldReceive('isOpen')->once()->andReturn(true);
     $em->shouldReceive('clear')->once();
 
     $di = container();
@@ -2056,6 +2064,95 @@ test('handles exception during batch paid invoice activation', function (): void
     $service->setDi($di);
     $result = $service->doBatchPaidInvoiceActivation();
     expect($result)->toBeBool()->toBeTrue();
+});
+
+test('resets the EntityManager when it closes mid-batch so later consumers keep working', function (): void {
+    // A flush failure inside executeTask closes the ORM EntityManager. The batch must
+    // stop, and the closed manager must be replaced so the rest of the cron run can
+    // keep writing (a later consumer reads from the replacement, not the dead EM).
+    $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $invoiceItemModel = createEntity(InvoiceItem::class, []);
+
+    $itemInvoiceServiceMock = Mockery::mock(ServiceInvoiceItem::class);
+    $itemInvoiceServiceMock->shouldReceive('getAllNotExecutePaidItems')
+        ->once()
+        ->andReturn([['id' => 1], ['id' => 2]]);
+    // Only the first item is attempted; the batch breaks before the second.
+    $itemInvoiceServiceMock->shouldReceive('executeTask')
+        ->once()
+        ->with($invoiceItemModel)
+        ->andThrow(new Exception('flush failure closed the EM'));
+
+    [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
+    $invoiceItemRepo->shouldReceive('find')
+        ->once()
+        ->andReturn($invoiceItemModel);
+
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('transactional')
+        ->once()
+        ->andReturnUsing(fn (callable $func) => $func($connection));
+    $connection->shouldReceive('fetchOne')
+        ->with('SELECT status FROM invoice_item WHERE id = :id FOR UPDATE', ['id' => 1])
+        ->andReturn(InvoiceItem::STATUS_PENDING_SETUP);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $em->shouldReceive('isOpen')->once()->andReturn(false);
+    $em->shouldNotReceive('clear');
+
+    $replacementEm = Mockery::mock(EntityManagerInterface::class);
+    $replacementEm->shouldReceive('isOpen')->andReturn(true);
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $itemInvoiceServiceMock);
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->shouldReceive('resetEntityManager')->once()->andReturnUsing(function () use ($di, $replacementEm): void {
+        unset($di['em']);
+        $di['em'] = $replacementEm;
+    });
+    $service->setDi($di);
+
+    expect($service->doBatchPaidInvoiceActivation())->toBeTrue();
+    // The closed manager is gone; later cron consumers see the open replacement.
+    expect($di['em'])->toBe($replacementEm);
+    expect($di['em']->isOpen())->toBeTrue();
+});
+
+test('resetEntityManager invalidates both cached repositories so they re-resolve from the replacement', function (): void {
+    // Exercises the real resetEntityManager() body (only the factory seam is mocked),
+    // verifying that both lazily-cached repositories are dropped and re-resolve from
+    // the replacement EntityManager rather than the closed one.
+    $initialItemRepo = Mockery::mock(InvoiceItemRepository::class);
+    $initialInvoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $initialEm = Mockery::mock(EntityManagerInterface::class);
+    $initialEm->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($initialItemRepo);
+    $initialEm->shouldReceive('getRepository')->with(Invoice::class)->andReturn($initialInvoiceRepo);
+    $initialEm->shouldReceive('getConnection')->once()->andReturn(Mockery::mock(Doctrine\DBAL\Connection::class));
+
+    $replacementItemRepo = Mockery::mock(InvoiceItemRepository::class);
+    $replacementInvoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $replacementEm = Mockery::mock(EntityManagerInterface::class);
+    $replacementEm->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($replacementItemRepo);
+    $replacementEm->shouldReceive('getRepository')->with(Invoice::class)->andReturn($replacementInvoiceRepo);
+
+    $di = container();
+    $di['em'] = $initialEm;
+
+    $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $service->shouldReceive('createEntityManager')->once()->with(Mockery::type(Doctrine\DBAL\Connection::class))->andReturn($replacementEm);
+    $service->setDi($di);
+
+    // Prime both caches from the initial EM.
+    expect($service->getInvoiceItemRepository())->toBe($initialItemRepo);
+    expect($service->getInvoiceRepository())->toBe($initialInvoiceRepo);
+
+    // Trigger the real reset flow; only the factory seam is intercepted.
+    (new ReflectionMethod(Service::class, 'resetEntityManager'))->invoke($service);
+
+    // Both repositories now come from the replacement EntityManager.
+    expect($service->getInvoiceItemRepository())->toBe($replacementItemRepo);
+    expect($service->getInvoiceRepository())->toBe($replacementInvoiceRepo);
+    expect($di['em'])->toBe($replacementEm);
 });
 
 test('skips invoice items already finalized by another process during batch activation', function (): void {
@@ -2327,7 +2424,7 @@ test('throws exception when generating funds invoice without active order', func
     $service = new Service();
     $clientModel = createEntity(Box\Mod\Client\Entity\Client::class);
 
-    expect(fn () => $service->generateFundsInvoice($clientModel, 10))
+    expect(fn (): Invoice => $service->generateFundsInvoice($clientModel, 10))
         ->toThrow(FOSSBilling\Exception::class, 'You must have at least one active order before you can add funds so you cannot proceed at the current time!');
 });
 
@@ -2346,7 +2443,7 @@ test('throws exception when generating funds invoice while the feature is disabl
 
     $service->setDi($di);
 
-    expect(fn () => $service->generateFundsInvoice($clientModel, 10))
+    expect(fn (): Invoice => $service->generateFundsInvoice($clientModel, 10))
         ->toThrow(FOSSBilling\Exception::class, 'Adding funds to the account balance is currently disabled');
 });
 
@@ -2367,7 +2464,7 @@ test('throws exception when generating funds invoice below minimum amount', func
 
     $service->setDi($di);
 
-    expect(fn () => $service->generateFundsInvoice($clientModel, $fundsAmount))
+    expect(fn (): Invoice => $service->generateFundsInvoice($clientModel, $fundsAmount))
         ->toThrow(FOSSBilling\Exception::class, 'Amount must be at least ' . $minAmount);
 });
 
@@ -2388,7 +2485,7 @@ test('throws exception when generating funds invoice above maximum amount', func
 
     $service->setDi($di);
 
-    expect(fn () => $service->generateFundsInvoice($clientModel, $fundsAmount))
+    expect(fn (): Invoice => $service->generateFundsInvoice($clientModel, $fundsAmount))
         ->toThrow(FOSSBilling\Exception::class, 'Amount cannot exceed ' . $maxAmount);
 });
 

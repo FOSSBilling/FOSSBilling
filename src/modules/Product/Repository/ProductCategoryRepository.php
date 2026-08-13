@@ -69,7 +69,7 @@ class ProductCategoryRepository extends EntityRepository
     private function applyEnabledVisibleProductFilters(QueryBuilder $queryBuilder, string $alias): QueryBuilder
     {
         return $queryBuilder
-            ->andWhere(sprintf('%s.productCategoryId = c.id', $alias))
+            ->andWhere(sprintf('IDENTITY(%s.productCategory) = c.id', $alias))
             ->andWhere(sprintf('%s.status = :status', $alias))
             ->andWhere(sprintf('%s.hidden = :hidden', $alias))
             ->andWhere(sprintf('%s.isAddon = :isAddon', $alias));

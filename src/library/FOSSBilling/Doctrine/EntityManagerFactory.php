@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Doctrine;
 
+use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Mapping\UnderscoreNamingStrategy;
 use Doctrine\ORM\ORMSetup;
@@ -22,7 +23,7 @@ use Symfony\Component\Finder\Finder;
 
 class EntityManagerFactory
 {
-    public static function create(): EntityManager
+    public static function create(?Connection $connection = null): EntityManager
     {
         $finder = new Finder();
         $finder->directories()->in(PATH_MODS . '/*/Entity')->depth('== 0');
@@ -57,7 +58,7 @@ class EntityManagerFactory
             }
         }
 
-        $connection = DriverManagerFactory::getConnection();
+        $connection ??= DriverManagerFactory::getSharedConnection();
 
         return new EntityManager($connection, $config);
     }

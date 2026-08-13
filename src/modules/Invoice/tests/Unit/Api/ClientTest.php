@@ -24,6 +24,7 @@ use Box\Mod\Order\Repository\OrderRepository;
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
 use function Tests\Helpers\moduleService;
+use function Tests\Helpers\setEntityId;
 
 test('gets dependency injection container', function (): void {
     $api = apiEndpoint(new Client());
@@ -53,9 +54,7 @@ test('gets invoice list', function (): void {
     $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
     $paginatorMock->shouldReceive('paginateMappedQuery')
         ->once()
-        ->andReturnUsing(function ($qb, $pagination, $mapper) {
-            return ['list' => [$mapper(createEntity(Invoice::class))]];
-        });
+        ->andReturnUsing(fn ($qb, $pagination, $mapper) => ['list' => [$mapper(createEntity(Invoice::class))]]);
 
     $di = container();
     $di['pager'] = $paginatorMock;
@@ -121,6 +120,44 @@ test('creates renewal invoice', function (): void {
     $model = createEntity(Invoice::class);
 
     $model->hash = $generatedHash;
+    $serviceMock->shouldReceive('generateForOrder')
+        ->atLeast()->once()
+        ->andReturn($model);
+    $serviceMock->shouldReceive('approveInvoice');
+
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('findOneBy')
+        ->atLeast()->once()
+        ->andReturn(createEntity(Order::class, ['price' => 10]));
+
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $api->setDi($di);
+    $api->setService($serviceMock);
+    $identity = \Tests\Helpers\admin();
+    $api->setIdentity($identity);
+
+    $data['order_id'] = 1;
+    $result = $api->renewal_invoice($data);
+    expect($result)->toBeString()->toBe($generatedHash);
+});
+
+test('creates renewal invoice from a real invoice entity without accessing private properties', function (): void {
+    // Regression test: renewal_invoice() used to read $invoice->id and
+    // $invoice->hash directly, which are private on the Doctrine entity and
+    // fatal with "Cannot access private property". createEntity() below
+    // masks that with magic getters/setters, so this uses a real Invoice
+    // instance instead.
+    $api = apiEndpoint(new Client());
+    $generatedHash = 'generatedHashString';
+
+    $model = new Invoice();
+    setEntityId($model, 1);
+    $model->setHash($generatedHash);
+
+    $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('generateForOrder')
         ->atLeast()->once()
         ->andReturn($model);
@@ -223,6 +260,35 @@ test('creates funds invoice', function (): void {
     expect($result)->toBeString()->toBe($generatedHash);
 });
 
+test('creates funds invoice from a real invoice entity without accessing private properties', function (): void {
+    // Regression test: same as the renewal_invoice() case above - funds_invoice()
+    // also read $invoice->id and $invoice->hash directly.
+    $api = apiEndpoint(new Client());
+    $generatedHash = 'generatedHashString';
+
+    $model = new Invoice();
+    setEntityId($model, 1);
+    $model->setHash($generatedHash);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('generateFundsInvoice')
+        ->atLeast()->once()
+        ->andReturn($model);
+    $serviceMock->shouldReceive('approveInvoice');
+
+    $di = container();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $api->setDi($di);
+    $api->setService($serviceMock);
+    $identity = createEntity(Box\Mod\Client\Entity\Client::class);
+    $api->setIdentity($identity);
+
+    $data['amount'] = 10;
+    $result = $api->funds_invoice($data);
+    expect($result)->toBeString()->toBe($generatedHash);
+});
+
 test('gets transaction list', function (): void {
     $api = apiEndpoint(new Client());
     $transactionService = Mockery::mock(ServiceTransaction::class);
@@ -240,9 +306,7 @@ test('gets transaction list', function (): void {
     $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
     $paginatorMock->shouldReceive('paginateMappedQuery')
         ->once()
-        ->andReturnUsing(function ($qb, $pagination, $mapper) {
-            return ['list' => [$mapper([0 => createEntity(Transaction::class, ['id' => 1]), 'gateway' => 'Stripe'])]];
-        });
+        ->andReturnUsing(fn ($qb, $pagination, $mapper) => ['list' => [$mapper([0 => createEntity(Transaction::class, ['id' => 1]), 'gateway' => 'Stripe'])]]);
 
     $di = container();
     $di['pager'] = $paginatorMock;

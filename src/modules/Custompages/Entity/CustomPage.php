@@ -13,6 +13,7 @@ namespace Box\Mod\Custompages\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use FOSSBilling\Doctrine\CreatedAtTrait;
 use FOSSBilling\Interfaces\ApiArrayInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Custompages\Repository\CustomPageRepository::class)]
@@ -21,6 +22,8 @@ use FOSSBilling\Interfaces\ApiArrayInterface;
 #[ORM\HasLifecycleCallbacks]
 class CustomPage implements ApiArrayInterface
 {
+    use CreatedAtTrait;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::INTEGER)]
@@ -41,17 +44,6 @@ class CustomPage implements ApiArrayInterface
 
     #[ORM\Column(type: Types::STRING, length: 255)]
     private string $slug;
-
-    #[ORM\Column(name: 'created_at', type: Types::DATETIME_MUTABLE)]
-    private ?\DateTime $createdAt = null;
-
-    #[ORM\PrePersist]
-    public function onPrePersist(): void
-    {
-        if ($this->createdAt === null) {
-            $this->createdAt = new \DateTime();
-        }
-    }
 
     public function toApiArray(): array
     {
@@ -96,11 +88,6 @@ class CustomPage implements ApiArrayInterface
         return $this->slug;
     }
 
-    public function getCreatedAt(): ?\DateTime
-    {
-        return $this->createdAt;
-    }
-
     public function setTitle(string $title): self
     {
         $this->title = $title;
@@ -132,13 +119,6 @@ class CustomPage implements ApiArrayInterface
     public function setSlug(string $slug): self
     {
         $this->slug = $slug;
-
-        return $this;
-    }
-
-    public function setCreatedAt(?\DateTime $createdAt): self
-    {
-        $this->createdAt = $createdAt;
 
         return $this;
     }

@@ -113,9 +113,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         `content` text DEFAULT NULL,
         `filter` text DEFAULT NULL,
         `status` varchar(255) DEFAULT NULL,
-        `sent_at` varchar(35) DEFAULT NULL,
-        `created_at` varchar(35) DEFAULT NULL,
-        `updated_at` varchar(35) DEFAULT NULL,
+        `sent_at` datetime DEFAULT NULL,
+        `created_at` datetime DEFAULT NULL,
+        `updated_at` datetime DEFAULT NULL,
         PRIMARY KEY (`id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=1;
         ';
