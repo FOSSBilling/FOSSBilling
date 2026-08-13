@@ -51,7 +51,7 @@ test('uses the API digest for archive verification without querying GitHub', fun
 
         (new ReflectionMethod(Update::class, 'validateDownloadedArchive'))->invoke($update, $archive, $releaseInfo);
 
-        expect($releaseInfo['sha256'])->toBe($digest)
+        expect($releaseInfo['digest'])->toBe($digest)
             ->and($requests)->toBe([
                 ['method' => 'GET', 'url' => 'https://api.fossbilling.net/versions/v1/latest'],
             ]);
@@ -68,7 +68,7 @@ test('validates a downloaded archive against a SHA-256 digest', function (): voi
         (new ReflectionMethod(Update::class, 'validateDownloadedArchive'))->invoke(
             new Update(),
             $archive,
-            ['sha256' => 'sha256:' . hash('sha256', $content)],
+            ['digest' => 'sha256:' . hash('sha256', $content)],
         );
 
         expect((new Filesystem())->exists($archive))->toBeTrue();
@@ -83,78 +83,20 @@ test('rejects and removes a downloaded archive with the wrong digest', function 
     expect(fn (): mixed => (new ReflectionMethod(Update::class, 'validateDownloadedArchive'))->invoke(
         new Update(),
         $archive,
-        ['sha256' => hash('sha256', 'different archive')],
+        ['digest' => hash('sha256', 'different archive')],
     ))->toThrow(InformationException::class, 'integrity verification');
 
     expect((new Filesystem())->exists($archive))->toBeFalse();
 });
 
-test('gets the digest from the exact GitHub release asset when metadata does not include one', function (): void {
-    $content = 'release archive';
-    $archive = createUpdateTestArchive($content);
-    $downloadUrl = 'https://github.com/FOSSBilling/FOSSBilling/releases/download/0.8.5/FOSSBilling-0.8.5.zip';
-    $requests = [];
-    $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$requests, $downloadUrl, $content): MockResponse {
-        $requests[] = ['method' => $method, 'url' => $url, 'options' => $options];
-
-        return new MockResponse(json_encode([
-            'assets' => [
-                [
-                    'browser_download_url' => 'https://github.com/FOSSBilling/FOSSBilling/releases/download/0.8.5/other.zip',
-                    'digest' => 'sha256:' . hash('sha256', 'other archive'),
-                ],
-                [
-                    'browser_download_url' => $downloadUrl,
-                    'digest' => 'sha256:' . hash('sha256', $content),
-                ],
-            ],
-        ], JSON_THROW_ON_ERROR));
-    });
-    $di = new Pimple\Container();
-    $di['http_client'] = $httpClient;
-    $update = new Update();
-    $update->setDi($di);
-
-    try {
-        (new ReflectionMethod(Update::class, 'validateDownloadedArchive'))->invoke(
-            $update,
-            $archive,
-            [
-                'version' => '0.8.5',
-                'github_release_id' => 352974509,
-                'download_url' => $downloadUrl,
-            ],
-        );
-
-        expect($requests)->toHaveCount(1)
-            ->and($requests[0]['method'])->toBe('GET')
-            ->and($requests[0]['url'])->toBe('https://api.github.com/repos/FOSSBilling/FOSSBilling/releases/352974509')
-            ->and($requests[0]['options']['normalized_headers']['accept'][0])->toBe('Accept: application/vnd.github+json');
-    } finally {
-        (new Filesystem())->remove($archive);
-    }
-});
-
-test('rejects a GitHub release asset without a digest', function (): void {
+test('rejects release metadata without an API digest', function (): void {
     $archive = createUpdateTestArchive('release archive');
-    $downloadUrl = 'https://github.com/FOSSBilling/FOSSBilling/releases/download/0.8.5/FOSSBilling-0.8.5.zip';
-    $httpClient = new MockHttpClient(new MockResponse(json_encode([
-        'assets' => [['browser_download_url' => $downloadUrl]],
-    ], JSON_THROW_ON_ERROR)));
-    $di = new Pimple\Container();
-    $di['http_client'] = $httpClient;
-    $update = new Update();
-    $update->setDi($di);
 
     expect(fn (): mixed => (new ReflectionMethod(Update::class, 'validateDownloadedArchive'))->invoke(
-        $update,
+        new Update(),
         $archive,
-        [
-            'version' => '0.8.5',
-            'github_release_id' => 352974509,
-            'download_url' => $downloadUrl,
-        ],
-    ))->toThrow(InformationException::class);
+        []
+    ))->toThrow(InformationException::class, 'version API did not provide a SHA-256 digest');
 
     expect((new Filesystem())->exists($archive))->toBeFalse();
 });
