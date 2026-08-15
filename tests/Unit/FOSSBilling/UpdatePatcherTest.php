@@ -131,6 +131,48 @@ test('fresh installs constrain client balance to one credit per invoice item', f
         ->and($structure)->toContain('UNIQUE KEY `uniq_invoice_item_credit` (`invoice_item_id`)');
 });
 
+test('fresh installs use Symfony session storage', function (): void {
+    $filesystem = new Filesystem();
+    $structure = $filesystem->readFile(Path::join(PATH_ROOT, 'install', 'sql', 'structure.sql'));
+
+    expect($structure)->toContain('`id` varbinary(128) NOT NULL')
+        ->and($structure)->toContain('`content` blob NOT NULL')
+        ->and($structure)->toContain('`lifetime` int(11) unsigned NOT NULL')
+        ->and($structure)->toContain('PRIMARY KEY (`id`)')
+        ->and($structure)->toContain('KEY `session_lifetime_idx` (`lifetime`)');
+});
+
+test('session storage migration follows the obsolete core file cleanup', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 104);
+
+    expect($patches)->toHaveKey(105)
+        ->and($patches[105][1])->toBe('patch105')
+        ->and($patches)->toHaveKey(106)
+        ->and($patches[106][1])->toBe('patch106');
+});
+
+test('obsolete empty directories are removed without deleting hidden files', function (): void {
+    $filesystem = new Filesystem();
+    $root = Path::join(sys_get_temp_dir(), 'fossbilling-update-patcher-' . bin2hex(random_bytes(8)));
+    $emptyDirectory = Path::join($root, 'empty');
+    $hiddenFileDirectory = Path::join($root, 'hidden-file');
+    $hiddenFile = Path::join($hiddenFileDirectory, '.keep');
+
+    $filesystem->mkdir([$emptyDirectory, $hiddenFileDirectory]);
+    $filesystem->dumpFile($hiddenFile, 'keep');
+
+    try {
+        $patcher = new UpdatePatcher();
+        (new ReflectionMethod($patcher, 'removeEmptyDirectories'))->invoke($patcher, [$emptyDirectory, $hiddenFileDirectory]);
+
+        expect($filesystem->exists($emptyDirectory))->toBeFalse()
+            ->and($filesystem->exists($hiddenFileDirectory))->toBeTrue()
+            ->and($filesystem->exists($hiddenFile))->toBeTrue();
+    } finally {
+        $filesystem->remove($root);
+    }
+});
+
 test('client balance unique credit patch adds column and index for existing installs', function (): void {
     $balanceColumns = Mockery::mock(PDOStatement::class);
     $balanceColumns->expects('execute')->with([])->andReturnTrue();

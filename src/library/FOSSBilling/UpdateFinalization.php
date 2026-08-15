@@ -118,6 +118,22 @@ class UpdateFinalization implements InjectionAwareInterface
         );
     }
 
+    /**
+     * Apply an outstanding update before the session service is constructed.
+     *
+     * The Symfony session handler reads the current table shape while it is
+     * being initialized. This must therefore happen before the first request
+     * resolves the session, including after a manually extracted update or an
+     * interrupted automatic update.
+     */
+    public function finalizePendingUpdate(): void
+    {
+        $state = $this->ensureCurrentVersionFinalization();
+        if (($state['status'] ?? null) === self::STATUS_PENDING) {
+            $this->finalizeUpdate();
+        }
+    }
+
     public function createPendingState(?string $fromVersion, string $targetVersion, array $context = []): array
     {
         $existing = $this->readState();
@@ -166,7 +182,7 @@ class UpdateFinalization implements InjectionAwareInterface
             $this->filesystem->remove(Path::join(PATH_ROOT, 'install'));
             $this->clearCache();
         } catch (IOException $e) {
-            $this->di['logger']->withChannel('update')->error($e->getMessage());
+            $this->logUpdateError($e->getMessage());
 
             throw new Exception('Unable to clear cache and/or remove install folder while finalizing the update. Further details are available in the error log.');
         }
@@ -325,6 +341,22 @@ class UpdateFinalization implements InjectionAwareInterface
     {
         $this->filesystem->remove(PATH_CACHE);
         $this->filesystem->mkdir(PATH_CACHE, 0o755);
+    }
+
+    private function logUpdateError(string $message): void
+    {
+        try {
+            if ($this->di instanceof \Pimple\Container && $this->di->offsetExists('logger')) {
+                $this->di['logger']->withChannel('update')->error($message);
+
+                return;
+            }
+        } catch (\Throwable) {
+            // Logging must not prevent recovery when the old session schema
+            // makes normal dependency initialization unavailable.
+        }
+
+        error_log('FOSSBilling update: ' . $message);
     }
 
     private function stateRequiresFinalization(?array $state): bool

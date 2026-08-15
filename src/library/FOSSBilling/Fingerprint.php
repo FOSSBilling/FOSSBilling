@@ -114,7 +114,7 @@ class Fingerprint
      *
      * @return bool `true` if the fingerprint passes, `false` if it's considered invalid
      */
-    public function checkFingerprint(array $fingerprint): bool
+    public function checkFingerprint(array $fingerprint, ?string $sessionId = null): bool
     {
         $itemCount = 0;
         $scoreSubtract = 0;
@@ -170,7 +170,7 @@ class Fingerprint
 
         // If fingerprint debugging is enabled and it failed, print some debug info to the log
         if (!$valid && Config::getProperty('security.debug_fingerprint', false)) {
-            $ID = session_id() ?: $this->request->cookies->get(CookieNames::SESSION);
+            $ID = $sessionId ?: $this->request->cookies->get(CookieNames::SESSION);
             if (!$ID) {
                 return $valid;
             }

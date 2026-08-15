@@ -308,6 +308,33 @@ test('logs out client', function (): void {
     expect($result)->toBeTrue();
 });
 
+test('invalidates client sessions stored in Symfony attribute format', function (): void {
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')
+        ->once()
+        ->with('SELECT id, content FROM session WHERE content IS NOT NULL AND OCTET_LENGTH(content) > 0')
+        ->andReturn([
+            ['id' => 'matching-session', 'content' => '_sf2_attributes|a:1:{s:9:"client_id";i:42;}_symfony_flashes|a:0:{}_sf2_meta|a:0:{}'],
+            ['id' => 'other-session', 'content' => '_sf2_attributes|a:1:{s:9:"client_id";i:7;}_symfony_flashes|a:0:{}_sf2_meta|a:0:{}'],
+            ['id' => 'malformed-session', 'content' => '_sf2_attributes|not-a-serialized-array'],
+        ]);
+    $connection->shouldReceive('executeStatement')
+        ->once()
+        ->with('DELETE FROM session WHERE id = :id', ['id' => 'matching-session'])
+        ->andReturn(1);
+
+    $entityManager = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $entityManager->shouldReceive('getConnection')->once()->andReturn($connection);
+
+    $di = container();
+    $di['em'] = $entityManager;
+
+    $service = new Service();
+    $service->setDi($di);
+
+    expect($service->invalidateSessions('client', 42))->toBeTrue();
+});
+
 test('i18n::validateTimezone returns null for null and empty input', function (): void {
     expect(FOSSBilling\i18n::validateTimezone(null))->toBeNull();
     expect(FOSSBilling\i18n::validateTimezone(''))->toBeNull();

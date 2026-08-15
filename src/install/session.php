@@ -3,127 +3,51 @@
 declare(strict_types=1);
 
 use FOSSBilling\Http\CookieNames;
+use Symfony\Component\HttpFoundation\Session\Session as SymfonySession;
+use Symfony\Component\HttpFoundation\Session\Storage\NativeSessionStorage;
 
 class Session
 {
-    private $_handler;
+    private readonly SymfonySession $session;
 
     public function __construct()
     {
-        $this->_handler = Box_SessionFile::getInstance();
+        $storage = new NativeSessionStorage([
+            'cache_limiter' => '',
+            'cookie_lifetime' => 0,
+            'name' => CookieNames::SESSION,
+        ]);
+        $this->session = new SymfonySession($storage);
+
+        if (!headers_sent()) {
+            $this->session->start();
+        }
     }
 
-    public function getId()
+    public function getId(): string
     {
-        return $this->_handler->getId();
+        return $this->session->getId();
     }
 
-    public function delete($key)
+    public function delete(string $key): void
     {
-        return $this->_handler->delete($key);
+        $this->session->remove($key);
     }
 
-    public function get($key)
+    public function get(string $key): mixed
     {
-        return $this->_handler->get($key);
+        return $this->session->get($key);
     }
 
-    public function set($key, $value): void
+    public function set(string $key, mixed $value): void
     {
-        $this->_handler->set($key, $value);
+        $this->session->set($key, $value);
     }
 
     public function destroy(): void
     {
-        $this->_handler->destroy();
-    }
-}
-
-class Box_SessionFile
-{
-    final public const bool SESSION_STARTED = true;
-    final public const bool SESSION_NOT_STARTED = false;
-
-    protected $sessionState = self::SESSION_NOT_STARTED;
-
-    protected static $instance;
-
-    public static function getInstance()
-    {
-        if (!isset(self::$instance)) {
-            self::$instance = new self();
-            session_name(CookieNames::SESSION);
-            if (!self::$instance->sessionExists() && !headers_sent()) {
-                self::$instance->sessionState = session_start();
-            }
+        if ($this->session->isStarted()) {
+            $this->session->invalidate();
         }
-
-        return self::$instance;
-    }
-
-    public function getId(): string|false
-    {
-        return session_id();
-    }
-
-    public function destroy(): void
-    {
-        if (self::$instance->sessionExists()) {
-            session_destroy();
-        }
-    }
-
-    public function delete($key): bool
-    {
-        if (isset($_SESSION[$key])) {
-            unset($_SESSION[$key]);
-        }
-
-        return true;
-    }
-
-    private function sessionExists(): bool
-    {
-        if (!isset($_SESSION)) {
-            return false;
-        }
-
-        if (ini_get('session.use_cookies') == '1' && isset($_COOKIE[session_name()])) {
-            return true;
-        } elseif ($this->sessionState) {
-            return true;
-        }
-
-        return false;
-    }
-
-    public function get($key)
-    {
-        return $this->__get($key);
-    }
-
-    public function set($key, $value)
-    {
-        return $this->__set($key, $value);
-    }
-
-    public function __get($key)
-    {
-        return $_SESSION[$key] ?? null;
-    }
-
-    public function __set($key, $value)
-    {
-        $_SESSION[$key] = $value;
-    }
-
-    public function __isset($name)
-    {
-        return isset($_SESSION[$name]);
-    }
-
-    public function __unset($name)
-    {
-        unset($_SESSION[$name]);
     }
 }

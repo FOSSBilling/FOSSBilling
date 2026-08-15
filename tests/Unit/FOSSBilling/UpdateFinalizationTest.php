@@ -78,6 +78,13 @@ test('creates one pending state and keeps it unchanged across repeated checks', 
         ->and($maintenanceMode['allowed_urls'])->toContain(rtrim((string) ADMIN_PREFIX, '/') . '/system/update/finalize');
 });
 
+test('finalizes pending updates before the session service is initialized', function (): void {
+    $finalization = Mockery::mock(UpdateFinalization::class)->makePartial();
+    $finalization->shouldReceive('finalizeUpdate')->once()->andReturn([]);
+
+    $finalization->finalizePendingUpdate();
+});
+
 test('completion restores captured maintenance mode and records the current version', function (): void {
     $config = Config::getConfig();
     $config['maintenance_mode'] = [

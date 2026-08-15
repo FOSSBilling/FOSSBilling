@@ -22,6 +22,8 @@ use Symfony\Component\Intl\Locales;
 
 class Service implements InjectionAwareInterface
 {
+    private const string SESSION_ATTRIBUTES_PREFIX = '_sf2_attributes|';
+
     protected ?\Pimple\Container $di = null;
 
     public function getModulePermissions(): array
@@ -300,46 +302,55 @@ class Service implements InjectionAwareInterface
 
     private function getSessions(): array
     {
-        $query = 'SELECT * FROM session WHERE content IS NOT NULL AND content <> ""';
+        $query = 'SELECT id, content FROM session WHERE content IS NOT NULL AND OCTET_LENGTH(content) > 0';
 
         return $this->di['em']->getConnection()->fetchAllAssociative($query);
     }
 
     private function deleteSessionIfMatching(array $session, string $type, int $id): void
     {
-        $data = base64_decode((string) $session['content']);
-        $stringStart = ($type === 'admin') ? 'admin|' : 'client_id|';
-        if (!str_starts_with($data, $stringStart)) {
+        $content = $session['content'] ?? '';
+        $data = is_resource($content) ? stream_get_contents($content) : (string) $content;
+        if (!is_string($data)) {
             return;
         }
 
-        $data = str_replace($stringStart, '', $data);
+        $attributes = $this->decodeSessionAttributes($data);
+        if ($attributes === []) {
+            return;
+        }
 
         if ($type === 'admin') {
-            $dataArray = $this->phpSessionDecode($data);
-            if (is_array($dataArray) && isset($dataArray['id']) && (int) $dataArray['id'] === $id) {
+            $admin = $attributes['admin'] ?? null;
+            if (is_array($admin) && isset($admin['id']) && (int) $admin['id'] === $id) {
                 $this->trashSessionByArray($session);
             }
-        } else {
-            $clientId = $this->phpSessionDecode($data);
-            if (is_int($clientId) && $clientId === $id) {
-                $this->trashSessionByArray($session);
-            }
+        } elseif (($attributes['client_id'] ?? null) === $id) {
+            $this->trashSessionByArray($session);
         }
     }
 
-    private function phpSessionDecode(string $data): array|int|false
+    private function decodeSessionAttributes(string $data): array
     {
-        if ($data === '' || !in_array($data[0], ['a', 'i'], true)) {
-            return false;
+        if (!str_starts_with($data, self::SESSION_ATTRIBUTES_PREFIX)) {
+            return [];
         }
 
-        $result = unserialize($data, ['allowed_classes' => false]);
-        if (is_array($result) || is_int($result)) {
-            return $result;
+        // PHP concatenates the serialized session bags. unserialize() returns
+        // the first value and emits an "extra data" warning for the following
+        // bags. Suppress warnings emitted by this unserialize call only; a
+        // malformed record is treated as a non-matching session.
+        set_error_handler(static function (int $severity, string $message): bool {
+            return $severity === E_WARNING && str_starts_with($message, 'unserialize():');
+        }, E_WARNING);
+
+        try {
+            $attributes = unserialize(substr($data, strlen(self::SESSION_ATTRIBUTES_PREFIX)), ['allowed_classes' => false]);
+        } finally {
+            restore_error_handler();
         }
 
-        return false;
+        return is_array($attributes) ? $attributes : [];
     }
 
     private function trashSessionByArray(array $session): void

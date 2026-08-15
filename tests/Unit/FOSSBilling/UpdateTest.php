@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 use FOSSBilling\InformationException;
 use FOSSBilling\Update;
+use FOSSBilling\UpdateFinalization;
 use FOSSBilling\Version;
+use PhpZip\ZipFile;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 
@@ -21,6 +24,95 @@ function createUpdateTestArchive(string $content): string
 
     return $archive;
 }
+
+test('does not finalize an update in the request that extracts it', function (): void {
+    $filesystem = new Filesystem();
+    $latestVersion = '0.8.5-test-' . bin2hex(random_bytes(8));
+    $entryName = '.fossbilling-update-test-' . bin2hex(random_bytes(8)) . '.txt';
+    $extractedFile = Path::join(PATH_ROOT, $entryName);
+    $archiveFile = Path::join(PATH_CACHE, $latestVersion . '.zip');
+    $lockFile = Path::join(PATH_ROOT, Update::LOCK_FILENAME);
+    $lockExisted = $filesystem->exists($lockFile);
+
+    $zip = new ZipFile();
+    $zip->addFromString($entryName, 'update handoff test');
+    $archiveContent = $zip->outputAsString();
+
+    $releaseInfo = [
+        'version' => $latestVersion,
+        'minimum_php_version' => '8.3',
+        'download_url' => 'https://github.com/FOSSBilling/FOSSBilling/releases/download/test/update.zip',
+        'digest' => 'sha256:' . hash('sha256', $archiveContent),
+        'update_type' => 0,
+    ];
+
+    $finalization = Mockery::mock(UpdateFinalization::class);
+    $finalization->shouldReceive('isRequired')->once()->andReturnFalse();
+    $finalization->shouldReceive('createPendingState')->once()->with(
+        Version::VERSION,
+        $latestVersion,
+        [
+            'branch' => 'release',
+            'update_type' => 0,
+            'source' => 'auto-update',
+        ]
+    )->andReturn(['status' => 'pending']);
+    $finalization->shouldNotReceive('finalizeUpdate');
+
+    $readiness = Mockery::mock();
+    $readiness->shouldReceive('check')->once()->andReturn(['can_update' => true]);
+
+    $session = Mockery::mock();
+    $session->shouldReceive('destroy')->once()->with('admin');
+
+    $di = new Pimple\Container();
+    $di['filesystem'] = $filesystem;
+    $di['http_client'] = new MockHttpClient(new MockResponse($archiveContent));
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['session'] = $session;
+    $di['update_finalization'] = $finalization;
+    $di['update_readiness'] = $readiness;
+
+    $update = new class($releaseInfo) extends Update {
+        public function __construct(private readonly array $releaseInfo)
+        {
+            parent::__construct();
+        }
+
+        public function getUpdateBranch(): string
+        {
+            return 'release';
+        }
+
+        public function getLatestVersion(): string
+        {
+            return $this->releaseInfo['version'];
+        }
+
+        public function getLatestVersionInfo(?string $branch = null, bool $refetch = false): array
+        {
+            return $this->releaseInfo;
+        }
+
+        public function isUpdateAvailable(): bool
+        {
+            return true;
+        }
+    };
+    $update->setDi($di);
+
+    try {
+        $update->performUpdate();
+
+        expect($filesystem->exists($extractedFile))->toBeTrue();
+    } finally {
+        $filesystem->remove($extractedFile);
+        $filesystem->remove($archiveFile);
+        if (!$lockExisted) {
+            $filesystem->remove($lockFile);
+        }
+    }
+});
 
 test('uses the API digest for archive verification without querying GitHub', function (): void {
     $content = 'release archive from the version API';

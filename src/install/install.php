@@ -176,7 +176,7 @@ final class FOSSBilling_Installer
                     // Attempt installation
                     $this->install();
                     $this->generateEmailTemplates();
-                    session_destroy();
+                    $this->session->destroy();
 
                     $result = $this->render(PAGE_RESULT, [
                         'success' => true,
