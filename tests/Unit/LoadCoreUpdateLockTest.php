@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use FOSSBilling\Update;
+use Symfony\Component\Filesystem\Filesystem;
 
 /**
  * isCoreUpdateLockActive() reads a real, fixed path (PATH_ROOT/.update-lock) rather than
@@ -17,23 +18,24 @@ function lockFilePath(): string
 
 function withCoreUpdateLock(?int $mtime, Closure $callback): void
 {
+    $filesystem = new Filesystem();
     $path = lockFilePath();
-    $existed = file_exists($path);
+    $existed = $filesystem->exists($path);
     $originalMtime = $existed ? filemtime($path) : null;
 
     try {
         if ($mtime === null) {
-            @unlink($path);
+            $filesystem->remove($path);
         } else {
-            touch($path, $mtime);
+            $filesystem->touch($path, $mtime);
         }
 
         $callback();
     } finally {
         if ($existed) {
-            touch($path, (int) $originalMtime);
+            $filesystem->touch($path, (int) $originalMtime);
         } else {
-            @unlink($path);
+            $filesystem->remove($path);
         }
     }
 }
@@ -56,6 +58,12 @@ test('isCoreUpdateLockActive is true for a freshly written lock file', function 
 
 test('isCoreUpdateLockActive is true just under the staleness window', function (): void {
     withCoreUpdateLock(time() - 599, function (): void {
+        expect(isCoreUpdateLockActive())->toBeTrue();
+    });
+});
+
+test('isCoreUpdateLockActive is true exactly at the staleness boundary', function (): void {
+    withCoreUpdateLock(time() - 600, function (): void {
         expect(isCoreUpdateLockActive())->toBeTrue();
     });
 });

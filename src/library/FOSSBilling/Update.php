@@ -32,6 +32,13 @@ class Update implements InjectionAwareInterface
      */
     public const string LOCK_FILENAME = '.update-lock';
 
+    /**
+     * How long a lock file is honored before it's treated as abandoned - see the
+     * comment above isCoreUpdateLockActive() in load.php, which applies the same
+     * window to decide whether to keep refusing requests.
+     */
+    private const int LOCK_STALE_SECONDS = 600;
+
     protected ?\Pimple\Container $di = null;
     private array $allowedDownloadPrefixes = [
         'https://github.com/FOSSBilling/FOSSBilling/releases/',
@@ -318,9 +325,27 @@ class Update implements InjectionAwareInterface
          * self-expires it in case this process dies before the `finally` below
          * runs), so create it before touching any files and make sure PHP keeps
          * running even if the client triggering the update disconnects mid-request.
+         *
+         * The create is exclusive (fails if the file already exists) so two
+         * updates triggered at the same time can't both extract into PATH_ROOT
+         * concurrently - the loser is turned away instead of corrupting the
+         * extraction. A leftover lock from a run that never reached the
+         * `finally` below (the process was killed outright) is treated as
+         * abandoned once it's older than LOCK_STALE_SECONDS.
          */
         $lockFile = Path::join(PATH_ROOT, self::LOCK_FILENAME);
-        $this->filesystem->dumpFile($lockFile, '');
+        if ($this->filesystem->exists($lockFile) && (time() - (int) @filemtime($lockFile)) > self::LOCK_STALE_SECONDS) {
+            $this->filesystem->remove($lockFile);
+        }
+
+        // fopen(..., 'x') rather than Filesystem here: it's the only way to make the
+        // create atomic (it fails if the file already exists), which is what makes
+        // this a real mutex against two updates racing each other below.
+        $lockHandle = @fopen($lockFile, 'x');
+        if ($lockHandle === false) {
+            throw new InformationException('Another update appears to already be in progress. Please wait for it to finish before trying again.');
+        }
+        fclose($lockHandle);
         ignore_user_abort(true);
 
         try {
@@ -328,6 +353,11 @@ class Update implements InjectionAwareInterface
             try {
                 $zip = new ZipFile();
                 $zip->openFile($archiveFile);
+                foreach ($zip->getListFiles() as $entryName) {
+                    if (!self::isSafeArchiveEntry($entryName)) {
+                        throw new Exception('The update archive contains an unsafe file path and cannot be extracted.');
+                    }
+                }
                 $zip->extractTo(PATH_ROOT);
                 $zip->close();
             } catch (ZipException $e) {
@@ -335,6 +365,11 @@ class Update implements InjectionAwareInterface
 
                 throw new Exception('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
             }
+
+            // Extraction is the slow part; refresh the lock now so a legitimately
+            // long-running update isn't mistaken for an abandoned one while the
+            // patches below are still applying.
+            $this->filesystem->touch($lockFile);
 
             /*
              * Apply pending config/database patches and remove the install folder
@@ -356,5 +391,23 @@ class Update implements InjectionAwareInterface
 
         // Log off the current user and destroy the session.
         $this->di['session']->destroy('admin');
+    }
+
+    /**
+     * Whether a release archive entry name is safe to extract under PATH_ROOT
+     * (Zip Slip / CWE-22 guard).
+     *
+     * nelexa/zip normalizes entry names by splitting on '/' only, so on a
+     * Windows host an entry such as `..\..\poc.php` isn't recognized as
+     * traversal and extractTo() can write outside PATH_ROOT (CVE-2026-16767).
+     * Normalizing backslashes to forward slashes before checking for '..'
+     * segments and absolute paths closes that gap on every platform.
+     */
+    public static function isSafeArchiveEntry(string $entryName): bool
+    {
+        $normalized = str_replace('\\', '/', $entryName);
+        $segments = explode('/', $normalized);
+
+        return !str_starts_with($normalized, '/') && !preg_match('#^[a-zA-Z]:#', $normalized) && !in_array('..', $segments, true);
     }
 }
