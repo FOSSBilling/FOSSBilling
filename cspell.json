@@ -62,7 +62,8 @@
         "falsey",
         "unindexed",
         "catchable",
-        "nelexa"
+        "nelexa",
+        "apisecret"
     ],
 
     "ignoreWords": [
