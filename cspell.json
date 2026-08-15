@@ -61,7 +61,8 @@
         "previewable",
         "falsey",
         "unindexed",
-        "catchable"
+        "catchable",
+        "nelexa"
     ],
 
     "ignoreWords": [
@@ -366,6 +367,8 @@
         "FileCacheExcption",
         "Autoloader",
         "autoloader",
+        "autoloading",
+        "autoloaded",
         "qwertyuiopasdfghjklzxccvbnm",
         "QWERTYUIOPASDFGHJKLZXCVBNM",
         "subkeys",

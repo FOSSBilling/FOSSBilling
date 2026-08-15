@@ -167,12 +167,68 @@ function exceptionHandler(Exception|Error $e): void
 }
 
 /*
+ * Refuse to serve this request while FOSSBilling\Update::performUpdate() is
+ * actively writing files to PATH_ROOT.
+ *
+ * This intentionally runs before the Composer autoloader is loaded, and
+ * before any FOSSBilling class is referenced: while a core update is
+ * extracting a release archive on top of the live codebase, a concurrent
+ * request that starts autoloading classes mid-swap can see a torn mix of old
+ * and new files and fatal out with an "incompatible declaration" error.
+ * See https://github.com/FOSSBilling/FOSSBilling/issues/4159.
+ *
+ * The lock filename below is duplicated as a literal (see
+ * Update::LOCK_FILENAME) because this check has to run before that class -
+ * or anything else - can be autoloaded. Keep both copies in sync if it
+ * changes. The 600-second staleness window only exists here; performUpdate()
+ * always removes the lock itself via a `finally` block, so this is purely a
+ * failsafe for the rare case that PHP is killed outright (host timeout, OOM)
+ * before that block can run.
+ */
+function isCoreUpdateLockActive(?int $now = null): bool
+{
+    $mtime = @filemtime(PATH_ROOT . DIRECTORY_SEPARATOR . '.update-lock');
+    $now ??= time();
+
+    // No lock file, or it's old enough that the process which created it must
+    // have died without cleaning up (e.g. a host-side request timeout killed
+    // it before the update's `finally` block could run). Treat an old lock as
+    // abandoned rather than blocking the site forever.
+    return $mtime !== false && ($now - $mtime) <= 600;
+}
+
+function blockWhileCoreUpdateIsRunning(): void
+{
+    if (!isCoreUpdateLockActive()) {
+        return;
+    }
+
+    if (PHP_SAPI === 'cli') {
+        fwrite(STDERR, "FOSSBilling is currently applying a core update. Please try again in a few moments.\n");
+        exit(1);
+    }
+
+    http_response_code(503);
+    header('Retry-After: 5');
+    header('Content-Type: text/html; charset=utf-8');
+    echo '<!doctype html><html><head><meta charset="utf-8"><title>Updating&hellip;</title></head>'
+        . '<body style="font-family:sans-serif;text-align:center;padding:4rem 1rem;">'
+        . '<h1>FOSSBilling is updating</h1>'
+        . '<p>This installation is being updated and will be back in a moment. This page will retry automatically.</p>'
+        . '<script>setTimeout(function () { location.reload(); }, 5000);</script>'
+        . '</body></html>';
+    exit;
+}
+
+/*
  * Pre-initialization.
  */
 function preInit(): void
 {
     // Define root path.
     define('PATH_ROOT', __DIR__);
+
+    blockWhileCoreUpdateIsRunning();
 
     // Check vendor folder exists and load Composer autoloader.
     define('PATH_VENDOR', PATH_ROOT . DIRECTORY_SEPARATOR . 'vendor');
