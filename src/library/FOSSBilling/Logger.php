@@ -176,15 +176,16 @@ class Logger extends AbstractLogger implements InjectionAwareInterface
             return;
         }
 
+        $scopedContext = $this->maskContext($this->context);
         $event = [
             'timestamp' => date('Y-m-d H:i:s'),
             'message' => $message,
             'priority' => $priority,
             'priorityName' => self::PRIORITY_NAMES[$priority],
-            ...$this->context,
+            ...$scopedContext,
         ];
 
-        $writerContext = [...$this->context, ...$context];
+        $writerContext = $this->maskContext([...$this->context, ...$context]);
         if ($writerContext !== []) {
             $event['info'] = $writerContext;
         }

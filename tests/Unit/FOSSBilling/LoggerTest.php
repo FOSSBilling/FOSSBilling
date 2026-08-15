@@ -103,6 +103,36 @@ test('context is scoped to the returned logger', function (): void {
         ->not->toHaveKey('status');
 });
 
+test('logger masks sensitive scoped context before writing', function (): void {
+    $writer = new class {
+        public array $writes = [];
+
+        public function write(array $event, string $channel = 'application'): void
+        {
+            $this->writes[] = $event;
+        }
+    };
+
+    $logger = new FOSSBilling\Logger();
+    $logger->addWriter($writer);
+
+    $logger->withContext([
+        'token' => 'scoped-secret',
+        'nested' => ['password' => 'nested-secret'],
+        'client_order_id' => 42,
+    ])->info('Scoped event');
+
+    expect($writer->writes[0])
+        ->toHaveKey('token', '********')
+        ->toHaveKey('nested', ['password' => '********'])
+        ->and($writer->writes[0]['info'])
+        ->toBe([
+            'token' => '********',
+            'nested' => ['password' => '********'],
+            'client_order_id' => 42,
+        ]);
+});
+
 test('database writer keeps excluded channels out of activity history', function (): void {
     $service = new class {
         public array $events = [];
