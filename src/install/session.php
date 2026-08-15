@@ -48,6 +48,7 @@ class Session
     {
         if ($this->session->isStarted()) {
             $this->session->invalidate();
+            $this->session->save();
         }
     }
 }
