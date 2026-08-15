@@ -889,6 +889,107 @@ test('createFromCart with promo entity uses product promo service', function ():
     expect(count($result[2]))->toBe(1);
 });
 
+test('createFromCart compensates promo usage on transaction failure', function (): void {
+    $cart = createEntity(Cart::class);
+    $cart->id = 3;
+    $cart->currency_id = 2;
+    $cart->promo_id = 7;
+
+    $client = createEntity(Client::class);
+    $client->id = 9;
+    $client->currency = 'USD';
+
+    $currency = Mockery::mock(Currency::class)->makePartial();
+    $currency->shouldReceive('getCode')->once()->andReturn('USD');
+    $currency->shouldReceive('getConversionRate')->atLeast()->once()->andReturn(1.0);
+
+    $currencyRepository = Mockery::mock(CurrencyRepository::class);
+    $currencyRepository->shouldReceive('find')->once()->with(2)->andReturn($currency);
+
+    $currencyService = Mockery::mock(CurrencyService::class);
+    $currencyService->shouldReceive('getCurrencyRepository')->once()->andReturn($currencyRepository);
+
+    $clientService = Mockery::mock(Box\Mod\Client\Service::class);
+    $clientService->shouldReceive('isClientTaxable')->once()->with($client)->andReturn(false);
+
+    $promo = new Promo();
+    $promo->setCode('PROMO');
+    $promoIdReflection = new ReflectionProperty($promo, 'id');
+    $promoIdReflection->setValue($promo, 7);
+
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('findPromoById')->once()->with(7)->andReturn($promo);
+    $productService->shouldReceive('reserveStockForOrder')->once()->with(Mockery::type(Order::class));
+    $productService->shouldReceive('reservePromoForOrder')->once()->with($promo, Mockery::type(Order::class));
+    $productService->shouldReceive('createCheckoutPromoRedemptions')
+        ->andThrow(new RuntimeException('Doctrine flush failed'));
+    $productService->shouldReceive('compensateCheckoutPromoFailure')
+        ->once()
+        ->with($promo, Mockery::any(), Mockery::any());
+    $productService->shouldReceive('releaseReservedStockForOrder')
+        ->once()
+        ->with(Mockery::type(Order::class), 'checkout_failed');
+
+    $product = new Product();
+    $productIdReflection = new ReflectionProperty($product, 'id');
+    $productIdReflection->setValue($product, 5);
+    $product->setStatus('enabled');
+    $product->setType('service');
+    $product->setSetup('manual');
+
+    $cartProduct = createEntity(CartProduct::class);
+    $cartProduct->id = 13;
+
+    $orderService = Mockery::mock(Box\Mod\Order\Service::class)->makePartial();
+    $orderService->shouldReceive('saveStatusChange')->once()->with(Mockery::type(Order::class), 'Order Created');
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('wrapInTransaction')->once()->with(Mockery::type(Closure::class))->andReturnUsing(fn (Closure $callback) => $callback());
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getSessionCart')->once()->andReturn($cart);
+    $serviceMock->shouldReceive('toApiArray')->once()->with($cart)->andReturn([
+        'items' => [['id' => 1]],
+        'total' => 0,
+    ]);
+    $serviceMock->shouldReceive('getCartProducts')->once()->with($cart)->andReturn([$cartProduct]);
+    $serviceMock->shouldReceive('cartProductToApiArray')->once()->with($cartProduct)->andReturn([
+        'product_id' => 5,
+        'form_id' => null,
+        'title' => 'Example product',
+        'type' => 'service',
+        'unit' => 'service',
+        'period' => '1M',
+        'quantity' => 1,
+        'price' => 0,
+        'discount_price' => 0,
+        'setup_price' => 0,
+        'discount_setup' => 0,
+        'notes' => null,
+    ]);
+    $serviceMock->shouldReceive('isStockAvailable')->once()->with($product, 1)->andReturn(true);
+
+    $productService->shouldReceive('findProductById')->once()->with(5)->andReturn($product);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['logger'] = new FOSSBilling\Logger();
+    $di['mod_service'] = $di->protect(fn ($serviceName, $sub = '') => match ($serviceName) {
+        'currency' => $currencyService,
+        'client' => $clientService,
+        'Product' => $productService,
+        'order', 'Order' => $orderService,
+        default => null,
+    });
+
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->createFromCart($client))
+        ->toThrow(RuntimeException::class, 'Doctrine flush failed');
+});
+
 test('createFromCart releases reserved stock on transaction failure', function (): void {
     $cart = createEntity(Cart::class);
     $cart->id = 3;
@@ -975,7 +1076,7 @@ test('createFromCart releases reserved stock on transaction failure', function (
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $di['mod_service'] = $di->protect(fn ($serviceName, $sub = '') => match ($serviceName) {
         'currency' => $currencyService,
         'client' => $clientService,
@@ -1073,7 +1174,7 @@ test('createFromCart does not roll back order creation when synchronous activati
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $di['mod_service'] = $di->protect(fn ($serviceName, $sub = '') => match ($serviceName) {
         'currency' => $currencyService,
         'client' => $clientService,
@@ -1451,7 +1552,7 @@ test('addItem for hosting type returns true', function (): void {
 
         return $serviceHostingServiceMock;
     });
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $productService->setDi($di);
     $serviceMock->setDi($di);
@@ -1497,7 +1598,7 @@ test('addItem for license type returns true', function (): void {
 
         return $serviceLicenseServiceMock;
     });
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $productService->setDi($di);
     $serviceMock->setDi($di);
@@ -1543,7 +1644,7 @@ test('addItem for custom type returns true', function (): void {
 
         return $serviceCustomServiceMock;
     });
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $productService->setDi($di);
     $serviceMock->setDi($di);
@@ -1857,7 +1958,7 @@ test('addItem strips client-injected hosting_plan_id', function (): void {
 
         return $serviceHostingServiceMock;
     });
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $productService->setDi($di);
     $serviceHostingServiceMock->setDi($di);

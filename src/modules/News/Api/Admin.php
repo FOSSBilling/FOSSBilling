@@ -117,7 +117,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->getDi()['em']->persist($post);
         $this->getDi()['em']->flush();
 
-        $this->getDi()['logger']->info('Updated news item #%s', $post->getId());
+        $this->getDi()['logger']->info('Updated news item #{post_id}', ['post_id' => $post->getId()]);
 
         return true;
     }
@@ -142,7 +142,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->getDi()['em']->persist($post);
         $this->getDi()['em']->flush();
 
-        $this->getDi()['logger']->info('Created news item #%s', $post->getId());
+        $this->getDi()['logger']->info('Created news item #{post_id}', ['post_id' => $post->getId()]);
 
         return $post->getId();
     }
@@ -167,7 +167,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->getDi()['em']->remove($post);
         $this->getDi()['em']->flush();
 
-        $this->getDi()['logger']->info('Removed news item #%s', $data['id']);
+        $this->getDi()['logger']->info('Removed news item #{data_id}', ['data_id' => $data['id']]);
 
         return true;
     }
@@ -185,7 +185,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $count = $repo->deleteByIds($data['ids']);
 
-        $this->getDi()['logger']->info('Removed %s news items', $count);
+        $this->getDi()['logger']->info('Removed {count} news items', ['count' => $count]);
 
         return true;
     }

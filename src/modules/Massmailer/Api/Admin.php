@@ -87,7 +87,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $this->getDi()['em']->flush();
 
-        $this->getDi()['logger']->info('Updated mail message #%s', $model->getId());
+        $this->getDi()['logger']->info('Updated mail message #{model_id}', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -140,7 +140,7 @@ Order our services at {{ "order"|url }}
             throw new \FOSSBilling\Exception('Failed to retrieve ID of created mail message.');
         }
 
-        $this->getDi()['logger']->info('Created mail message #%s', $id);
+        $this->getDi()['logger']->info('Created mail message #{id}', ['id' => $id]);
 
         return $id;
     }
@@ -161,7 +161,7 @@ Order our services at {{ "order"|url }}
 
         $this->getService()->sendMessage($model, $client_id, true);
 
-        $this->getDi()['logger']->info('Sent test mail message #%s to client ', $model->getId());
+        $this->getDi()['logger']->info('Sent test mail message #{model_id} to client ', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -188,7 +188,7 @@ Order our services at {{ "order"|url }}
         $model->setSentAt(new \DateTime());
         $this->getDi()['em']->flush();
 
-        $this->getDi()['logger']->info('Added mass mail messages #%s to queue', $model->getId());
+        $this->getDi()['logger']->info('Added mass mail messages #{model_id} to queue', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -218,7 +218,7 @@ Order our services at {{ "order"|url }}
             throw new \FOSSBilling\Exception('Failed to retrieve ID of copied mail message.');
         }
 
-        $this->getDi()['logger']->info('Copied mail message #%s to #%s', $model->getId(), $id);
+        $this->getDi()['logger']->info('Copied mail message #{model_id} to #{id}', ['model_id' => $model->getId(), 'id' => $id]);
 
         return $id;
     }
@@ -248,7 +248,7 @@ Order our services at {{ "order"|url }}
         $this->getDi()['em']->remove($model);
         $this->getDi()['em']->flush();
 
-        $this->getDi()['logger']->info('Removed mail message #%s', $id);
+        $this->getDi()['logger']->info('Removed mail message #{id}', ['id' => $id]);
 
         return true;
     }

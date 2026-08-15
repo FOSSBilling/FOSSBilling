@@ -130,7 +130,7 @@ class Service implements InjectionAwareInterface
         $this->di['session']->regenerateId();
         $this->di['session']->set('admin', $result);
 
-        $this->di['logger']->info(sprintf('Staff member %s logged in', $model->getId()));
+        $this->di['logger']->info('Staff member {admin_id} logged in', ['admin_id' => $model->getId()]);
 
         return $result;
     }
@@ -262,7 +262,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->setChannel('email')->error('Failed to send staff order notification email', ['exception' => $exc->getMessage()]);
+            $di['logger']->withChannel('email')->error('Failed to send staff order notification email', ['exception' => $exc]);
         }
     }
 
@@ -285,8 +285,8 @@ class Service implements InjectionAwareInterface
                 'order' => $orderService->toApiArray($order, false),
             ]);
         } catch (\Throwable $exception) {
-            $di['logger']->setChannel('email')->error('Failed to send staff order suspension notification email', [
-                'exception' => $exception->getMessage(),
+            $di['logger']->withChannel('email')->error('Failed to send staff order suspension notification email', [
+                'exception' => $exception,
             ]);
         }
     }
@@ -320,7 +320,7 @@ class Service implements InjectionAwareInterface
             $email['ticket'] = $ticket;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->setChannel('email')->error('Failed to send staff ticket notification email', ['exception' => $exc->getMessage()]);
+            $di['logger']->withChannel('email')->error('Failed to send staff ticket notification email', ['exception' => $exc]);
         }
     }
 
@@ -342,7 +342,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->setChannel('email')->error('Failed to send staff ticket reply notification email', ['exception' => $exc->getMessage()]);
+            $di['logger']->withChannel('email')->error('Failed to send staff ticket reply notification email', ['exception' => $exc]);
         }
     }
 
@@ -363,7 +363,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->setChannel('email')->error('Failed to send staff ticket close notification email', ['exception' => $exc->getMessage()]);
+            $di['logger']->withChannel('email')->error('Failed to send staff ticket close notification email', ['exception' => $exc]);
         }
     }
 
@@ -403,7 +403,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->setChannel('email')->error('Failed to send staff client signup notification email', ['exception' => $exc->getMessage()]);
+            $di['logger']->withChannel('email')->error('Failed to send staff client signup notification email', ['exception' => $exc]);
         }
 
         return true;
@@ -569,7 +569,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffUpdate', 'params' => ['id' => $model->getId()]]);
 
-        $this->di['logger']->info('Updated staff member #%s "%s" details; status is "%s"', $model->getId(), $model->getName(), $model->getStatus());
+        $this->di['logger']->info('Updated staff member #{model_id} "{model_name}" details; status is "{model_status}"', ['model_id' => $model->getId(), 'model_name' => $model->getName(), 'model_status' => $model->getStatus()]);
 
         return true;
     }
@@ -597,7 +597,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffDelete', 'params' => ['id' => $id]]);
 
-        $this->di['logger']->info('Deleted staff member #%s "%s"', $id, $name);
+        $this->di['logger']->info('Deleted staff member #{id} "{name}"', ['id' => $id, 'name' => $name]);
 
         return true;
     }
@@ -618,7 +618,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffPasswordChange', 'params' => ['id' => $model->getId()]]);
 
-        $this->di['logger']->info('Changed password for staff member #%s "%s"', $model->getId(), $model->getName());
+        $this->di['logger']->info('Changed password for staff member #{model_id} "{model_name}"', ['model_id' => $model->getId(), 'model_name' => $model->getName()]);
 
         return true;
     }
@@ -665,7 +665,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffCreate', 'params' => ['id' => $newId]]);
 
-        $this->di['logger']->info('Created staff member #%s "%s" in group #%s "%s"', $newId, $model->getName(), $groupId, $group->getName());
+        $this->di['logger']->info('Created staff member #{admin_id} "{model_name}" in group #{group_id} "{group_name}"', ['admin_id' => $newId, 'model_name' => $model->getName(), 'group_id' => $groupId, 'group_name' => $group->getName()]);
 
         return $newId;
     }
@@ -685,7 +685,7 @@ class Service implements InjectionAwareInterface
         $this->di['em']->persist($group);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Created staff group #%s "%s" under parent group #%s "%s"', $group->getId(), $group->getName(), $parent->getId(), $parent->getName());
+        $this->di['logger']->info('Created staff group #{group_id} "{group_name}" under parent group #{parent_id} "{parent_name}"', ['group_id' => $group->getId(), 'group_name' => $group->getName(), 'parent_id' => $parent->getId(), 'parent_name' => $parent->getName()]);
 
         return (int) $group->getId();
     }
@@ -718,7 +718,7 @@ class Service implements InjectionAwareInterface
         $this->di['em']->flush();
         $this->permissionCache = [];
 
-        $this->di['logger']->info('Deleted staff group #%s "%s"', $id, $name);
+        $this->di['logger']->info('Deleted staff group #{id} "{name}"', ['id' => $id, 'name' => $name]);
 
         return true;
     }
@@ -774,13 +774,7 @@ class Service implements InjectionAwareInterface
         $this->di['em']->flush();
         $this->permissionCache = [];
 
-        $this->di['logger']->info(
-            'Updated staff group #%s "%s"; parent changed: %s; permissions changed: %s',
-            $model->getId(),
-            $model->getName(),
-            $parentChanged ? 'yes' : 'no',
-            $permissionsChanged ? 'yes' : 'no',
-        );
+        $this->di['logger']->info('Updated staff group #{model_id} "{model_name}"; parent changed: {parent_changed}; permissions changed: {permissions_changed}', ['model_id' => $model->getId(), 'model_name' => $model->getName(), 'parent_changed' => $parentChanged ? 'yes' : 'no', 'permissions_changed' => $permissionsChanged ? 'yes' : 'no']);
 
         return true;
     }
@@ -801,7 +795,7 @@ class Service implements InjectionAwareInterface
         $this->di['em']->flush();
         $this->permissionCache = [];
 
-        $this->di['logger']->info('Added staff member #%s "%s" to group #%s "%s"', $adminId, $admin->getName(), $groupId, $group->getName());
+        $this->di['logger']->info('Added staff member #{admin_id} "{admin_name}" to group #{group_id} "{group_name}"', ['admin_id' => $adminId, 'admin_name' => $admin->getName(), 'group_id' => $groupId, 'group_name' => $group->getName()]);
 
         return true;
     }
@@ -827,7 +821,7 @@ class Service implements InjectionAwareInterface
         $this->di['em']->flush();
         $this->permissionCache = [];
 
-        $this->di['logger']->info('Removed staff member #%s "%s" from group #%s "%s"', $adminId, $admin->getName(), $groupId, $group->getName());
+        $this->di['logger']->info('Removed staff member #{admin_id} "{admin_name}" from group #{group_id} "{group_name}"', ['admin_id' => $adminId, 'admin_name' => $admin->getName(), 'group_id' => $groupId, 'group_name' => $group->getName()]);
 
         return true;
     }

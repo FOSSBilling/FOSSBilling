@@ -125,6 +125,11 @@ class BoxAppRouteDispatchApp extends Box_App
 
 class BoxAppMaintenanceCheckApp extends Box_App
 {
+    public function adminPrefixAllowed(): bool
+    {
+        return $this->checkAdminPrefix();
+    }
+
     public function pathAllowed(string $requestPath, string $allowedPath): bool
     {
         return $this->pathMatchesMaintenancePattern($requestPath, $allowedPath);
@@ -150,7 +155,7 @@ function routeDispatchApp(string $routeMode, string $path): BoxAppRouteDispatchA
         }
     };
     $di['logger'] = new class {
-        public function setChannel(string $channel): self
+        public function withChannel(string $channel): self
         {
             return $this;
         }
@@ -224,6 +229,15 @@ test('maintenance path allowlist uses literal prefixes and explicit wildcards', 
         ->and($app->pathAllowed('/api/guest/staff/login', '/api/guest/staff/*'))->toBeTrue()
         ->and($app->pathAllowed('/docs/v10', '/docs/v1.0'))->toBeFalse()
         ->and($app->pathAllowed('/api/admin', ''))->toBeFalse();
+});
+
+test('maintenance mode recognizes the configured admin prefix', function (): void {
+    $app = new BoxAppMaintenanceCheckApp();
+    $di = new Pimple\Container();
+    $di['request'] = Request::create(rtrim(SYSTEM_URL, '/') . '/' . ltrim(ADMIN_PREFIX, '/') . '/settings');
+    $app->setDi($di);
+
+    expect($app->adminPrefixAllowed())->toBeFalse();
 });
 
 test('maintenance IP allowlist supports exact IPs, CIDR ranges, and IPv6', function (): void {

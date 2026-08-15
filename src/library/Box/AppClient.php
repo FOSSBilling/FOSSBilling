@@ -76,18 +76,20 @@ class Box_AppClient extends Box_App
         } catch (FOSSBilling\InformationException $e) {
             // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
             if (DEBUG) {
-                error_log($e->getMessage());
+                $this->di['logger']->withChannel('routing')->debug($e->getMessage());
             }
         } catch (Twig\Error\LoaderError|Twig\Error\RuntimeError|Twig\Error\SyntaxError $e) {
             // A real template bug, not a missing page. Surface as a 500 so the
             // next regression of this shape (issue #3818) cannot hide behind a
             // generic 404.
-            $this->di['logger']->setChannel('routing')->error(sprintf(
-                'Template rendering failed for "%s" (page "%s"): %s',
-                $tpl,
-                (string) $page,
-                $e->getMessage(),
-            ), ['exception' => $e]);
+            $this->di['logger']->withChannel('routing')->error(
+                'Template rendering failed for "{template}" (page "{page}").',
+                [
+                    'template' => $tpl,
+                    'page' => (string) $page,
+                    'exception_class' => $e::class,
+                ]
+            );
 
             $internal = new FOSSBilling\InformationException('The requested page could not be rendered.', [], 500);
 
@@ -95,7 +97,7 @@ class Box_AppClient extends Box_App
         }
         $e = new FOSSBilling\InformationException('Page :url not found', [':url' => $this->url], 404);
 
-        $this->di['logger']->setChannel('routing')->info($e->getMessage());
+        $this->di['logger']->withChannel('routing')->info($e->getMessage());
 
         return $this->errorResponse($e, 404);
     }
@@ -109,7 +111,7 @@ class Box_AppClient extends Box_App
         try {
             $template = $this->getTwig()->load(Path::changeExtension($fileName, $ext));
         } catch (Twig\Error\LoaderError $e) {
-            $this->di['logger']->setChannel('routing')->info($e->getMessage());
+            $this->di['logger']->withChannel('routing')->info($e->getMessage());
 
             throw new FOSSBilling\InformationException('Page not found', null, 404);
         }

@@ -881,7 +881,7 @@ CREATE TABLE `product_payment` (
 CREATE TABLE `product_payment_period` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `product_payment_id` bigint(20) NOT NULL,
-  `code` varchar(10) NOT NULL COMMENT 'Box_Period code, e.g. 1M, 3Y, 45D',
+  `code` varchar(10) NOT NULL COMMENT 'Billing period code, e.g. 1M, 3Y, 45D',
   `price` decimal(18,2) NOT NULL DEFAULT '0.00',
   `setup_price` decimal(18,2) NOT NULL DEFAULT '0.00',
   `enabled` tinyint(1) NOT NULL DEFAULT '1',

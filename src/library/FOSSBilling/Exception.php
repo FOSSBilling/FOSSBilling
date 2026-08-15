@@ -37,9 +37,9 @@ class Exception extends \Exception
         }
 
         if (DEBUG && $logStack && !Environment::isTesting()) {
-            error_log("Exception: $message");
-            error_log('Stack trace:');
-            error_log($this->stackTrace($stackLength, $protected));
+            // Exceptions can be created before the DI container and its logger
+            // exist, so keep this diagnostic on PHP's fallback logger.
+            error_log(sprintf("Exception: %s\nStack trace:\n%s", $message, $this->stackTrace($stackLength, $protected)));
         }
 
         // Pass the message to the parent

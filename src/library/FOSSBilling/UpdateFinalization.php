@@ -166,7 +166,7 @@ class UpdateFinalization implements InjectionAwareInterface
             $this->filesystem->remove(Path::join(PATH_ROOT, 'install'));
             $this->clearCache();
         } catch (IOException $e) {
-            error_log($e->getMessage());
+            $this->di['logger']->withChannel('update')->error($e->getMessage());
 
             throw new Exception('Unable to clear cache and/or remove install folder while finalizing the update. Further details are available in the error log.');
         }

@@ -57,7 +57,7 @@ test('order new only lists periods the product is actually priced for', function
     $renderer = new StrictTemplateRenderer();
 
     // Products can be priced with any custom billing period, not just the ones in
-    // Box_Period::getPredefined(). Regression test for #4063: indexing pricing.recurrent
+    // Period::getPredefined(). Regression test for #4063: indexing pricing.recurrent
     // by every system period used to throw under strict_variables; the fix is for the
     // template to read the period's own precomputed 'title' instead of doing a second
     // lookup into a fixed system period list that a custom period wouldn't be in.
@@ -76,7 +76,7 @@ test('order new only lists periods the product is actually priced for', function
             ],
         ],
         'guest' => [
-            'system_periods' => Box_Period::getPredefined(),
+            'system_periods' => FOSSBilling\Period::getPredefined(),
         ],
     ]);
 

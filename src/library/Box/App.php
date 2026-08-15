@@ -104,7 +104,7 @@ class Box_App
 
     public function show404(Exception $e): Response
     {
-        $this->di['logger']->setChannel('routing')->info($e->getMessage());
+        $this->di['logger']->withChannel('routing')->info($e->getMessage());
 
         return $this->errorResponse($e, 404);
     }
@@ -399,7 +399,7 @@ class Box_App
     protected function checkAdminPrefix(): bool
     {
         $requestPath = $this->getRequestPath();
-        $realAdminUrl = rtrim(SYSTEM_URL, '/') . ADMIN_PREFIX;
+        $realAdminUrl = rtrim(SYSTEM_URL, '/') . '/' . ltrim(ADMIN_PREFIX, '/');
         $realAdminPath = parse_url($realAdminUrl, PHP_URL_PATH);
 
         if ($this->pathStartsWith($requestPath, $realAdminPath)) {

@@ -8,22 +8,28 @@ declare(strict_types=1);
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-class Box_Url implements FOSSBilling\InjectionAwareInterface
-{
-    protected ?Pimple\Container $di = null;
-    protected ?string $baseUri = null;
 
-    public function setDi(Pimple\Container $di): void
+namespace FOSSBilling;
+
+use Pimple\Container;
+
+class Url implements InjectionAwareInterface
+{
+    protected ?Container $di = null;
+
+    private string $baseUri = '';
+
+    public function setDi(Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi(): ?Pimple\Container
+    public function getDi(): ?Container
     {
         return $this->di;
     }
 
-    public function setBaseUri($baseUri): void
+    public function setBaseUri(string $baseUri): void
     {
         $this->baseUri = $baseUri;
     }
@@ -36,22 +42,21 @@ class Box_Url implements FOSSBilling\InjectionAwareInterface
         return $this->baseUri . $uri;
     }
 
-    public function link(?string $uri = null, ?array $params = []): string
+    public function link(?string $uri = null, ?array $params = null): string
     {
-        $uri ??= '';
-        $uri = trim($uri, '/');
+        $uri = trim($uri ?? '', '/');
+        $params ??= [];
         $link = $this->baseUri . $uri;
-        if (!empty($params)) {
+        if ($params !== []) {
             $link .= '?' . http_build_query($params);
         }
 
         return $link;
     }
 
-    public function adminLink(?string $uri, ?array $params = []): string
+    public function adminLink(?string $uri = null, ?array $params = null): string
     {
-        $uri ??= '';
-        $uri = trim($uri, '/');
+        $uri = trim($uri ?? '', '/');
         $uri = ADMIN_PREFIX . '/' . $uri;
 
         return $this->link($uri, $params);

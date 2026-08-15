@@ -62,7 +62,8 @@
         "falsey",
         "unindexed",
         "catchable",
-        "nelexa"
+        "nelexa",
+        "apisecret"
     ],
 
     "ignoreWords": [
@@ -546,7 +547,17 @@
         "htype",
         "webspace",
         "webspaces",
-        "serviceexternal"
+        "serviceexternal",
+        "aftp",
+        "anonftp",
+        "dnscontrol",
+        "maillists",
+        "nemailf",
+        "nemailml",
+        "nemailr",
+        "spamfilter",
+        "sysinfo",
+        "unemailml"
     ],
     "ignorePaths": [
         "node_modules/**",
@@ -585,7 +596,6 @@
         ".github/**",
         ".gitignore",
         "src/.htaccess",
-        "phpstan-baseline.neon",
         "Dockerfile",
         ".ddev/**"
     ]

@@ -25,6 +25,7 @@ use FOSSBilling\Twig\Extension\DebugBarExtension;
 use FOSSBilling\Twig\Extension\FOSSBillingExtension;
 use FOSSBilling\Twig\Extension\LegacyExtension;
 use FOSSBilling\Twig\Markdown\FOSSBillingMarkdown;
+use FOSSBilling\Url;
 use FOSSBilling\Version;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Intl\Currencies;
@@ -412,7 +413,7 @@ class TwigFactory
         unset($requestData['_url']);
 
         $requestQuery = $requestData;
-        $requestPath = \Box_Url::normalizeLinkPath(RequestFactory::getRoutePath($request));
+        $requestPath = Url::normalizeLinkPath(RequestFactory::getRoutePath($request));
         $requestHasFilters = count(array_diff_key($requestData, [
             'page' => true,
             'search' => true,

@@ -422,6 +422,8 @@ class Server_Manager_Plesk extends Server_Manager
     private function createSubscriptionProps(Server_Account $account, string $action): array
     {
         $package = $account->getPackage();
+        $maxMailLists = $package->getCustomValue('nemailml');
+        $manageMailLists = is_numeric($maxMailLists) && (int) $maxMailLists > 0;
 
         // check if bandwidth quota is set as an integer. If so, convert it to bytes
         $bandwidth = 0;
@@ -484,7 +486,7 @@ class Server_Manager_Plesk extends Server_Manager
                     ],
                     [
                         'name' => 'max_maillists',
-                        'value' => $package->getMaxEmailLists() ?: 0,
+                        'value' => $maxMailLists ?: 0,
                     ],
                     [
                         'name' => 'max_box',
@@ -524,19 +526,19 @@ class Server_Manager_Plesk extends Server_Manager
                     ],
                     [
                         'name' => 'manage_crontab',
-                        'value' => $package->getHasCron() ? 'true' : 'false',
+                        'value' => FOSSBilling\Tools::normalizeBoolean($package->getCustomValue('cron')) ? 'true' : 'false',
                     ],
                     [
                         'name' => 'manage_anonftp',
-                        'value' => $package->getHasAnonymousFtp() ? 'true' : 'false',
+                        'value' => FOSSBilling\Tools::normalizeBoolean($package->getCustomValue('aftp')) ? 'true' : 'false',
                     ],
                     [
                         'name' => 'manage_sh_access',
-                        'value' => $package->getHasShell() ? 'true' : 'false',
+                        'value' => FOSSBilling\Tools::normalizeBoolean($package->getCustomValue('ssh')) ? 'true' : 'false',
                     ],
                     [
                         'name' => 'manage_maillists',
-                        'value' => $package->getMaxEmailLists() ? 'true' : 'false',
+                        'value' => $manageMailLists ? 'true' : 'false',
                     ],
                     [
                         'name' => 'create_domains',
@@ -552,7 +554,7 @@ class Server_Manager_Plesk extends Server_Manager
                     ],
                     [
                         'name' => 'manage_not_chroot_shell',
-                        'value' => $package->getHasShell() ? 'true' : 'false',
+                        'value' => FOSSBilling\Tools::normalizeBoolean($package->getCustomValue('ssh')) ? 'true' : 'false',
                     ],
                     [
                         'name' => 'manage_domain_aliases',
@@ -564,7 +566,7 @@ class Server_Manager_Plesk extends Server_Manager
                     ],
                     [
                         'name' => 'manage_spamfilter',
-                        'value' => $package->getHasSpamFilter() ? 'true' : 'false',
+                        'value' => FOSSBilling\Tools::normalizeBoolean($package->getCustomValue('spam')) ? 'true' : 'false',
                     ],
                 ],
             ],

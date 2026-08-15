@@ -19,6 +19,7 @@ use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\GeoIP\Reader;
+use FOSSBilling\Period;
 use FOSSBilling\Sanitizer\BrowserHtmlSanitizer;
 use FOSSBilling\SentryHelper;
 use FOSSBilling\Twig\SandboxedStringRenderer;
@@ -337,7 +338,7 @@ class Service
                 );
             }
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            $this->di['logger']->error($e->getMessage());
         }
 
         // Check if FOSSBilling is behind on database patches
@@ -356,7 +357,7 @@ class Service
                 );
             }
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            $this->di['logger']->error($e->getMessage());
         }
 
         if (Environment::isProduction()) {
@@ -465,7 +466,7 @@ class Service
                 );
             }
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            $this->di['logger']->error($e->getMessage());
         }
 
         if ($type === null || $type === '') {
@@ -523,7 +524,7 @@ class Service
             $vars,
             'Payment adapter template',
             function (\Twig\Sandbox\SecurityError $e): void {
-                $this->di['logger']->setChannel('security')->warning('Payment adapter template sandbox violation', [
+                $this->di['logger']->withChannel('security')->warning('Payment adapter template sandbox violation', [
                     'error' => $e->getMessage(),
                 ]);
             }
@@ -558,7 +559,7 @@ class Service
             $vars,
             'Email template',
             function (\Twig\Sandbox\SecurityError $e): void {
-                $this->di['logger']->setChannel('security')->warning('Email template sandbox violation', [
+                $this->di['logger']->withChannel('security')->warning('Email template sandbox violation', [
                     'error' => $e->getMessage(),
                 ]);
             }
@@ -624,12 +625,12 @@ class Service
             return '-';
         }
 
-        $p = \Box_Period::getPredefined();
+        $p = Period::getPredefined();
         if (isset($p[$code])) {
             return $p[$code];
         }
 
-        $p = new \Box_Period($code);
+        $p = new Period($code);
 
         return $p->getTitle();
     }
@@ -697,10 +698,10 @@ class Service
             // Prune the FS cache
             $cache = $di['cache'];
             if ($cache->prune()) {
-                $di['logger']->setChannel('cron')->info('Pruned the filesystem cache');
+                $di['logger']->withChannel('cron')->info('Pruned the filesystem cache');
             }
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            $di['logger']->error($e->getMessage());
         }
     }
 

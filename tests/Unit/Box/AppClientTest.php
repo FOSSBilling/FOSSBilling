@@ -37,7 +37,7 @@ function appClientWithRender(callable $render, bool $clientLoggedIn = false): Bo
 
     $di = new Pimple\Container();
     $di['logger'] = new class {
-        public function setChannel(string $channel): self
+        public function withChannel(string $channel): self
         {
             return $this;
         }
@@ -60,7 +60,7 @@ function appClientWithRender(callable $render, bool $clientLoggedIn = false): Bo
     $di['mod_service'] = $di->protect(static fn (): object => $extensionService);
     $di['auth'] = Mockery::mock(Box_Authorization::class)
         ->shouldReceive('isClientLoggedIn')->andReturn($clientLoggedIn)->getMock();
-    $di['url'] = Mockery::mock(Box_Url::class)
+    $di['url'] = Mockery::mock(FOSSBilling\Url::class)
         ->shouldReceive('link')->andReturnArg(0)->getMock();
     $app->setDi($di);
     $app->setUrl('/test');

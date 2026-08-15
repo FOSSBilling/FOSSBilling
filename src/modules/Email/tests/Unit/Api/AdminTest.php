@@ -220,7 +220,7 @@ test('email delete', function (): void {
     $em->shouldReceive('remove')->atLeast()->once();
     $em->shouldReceive('flush')->atLeast()->once();
 
-    $loggerStub = $this->createStub('\Box_Log');
+    $loggerStub = $this->createStub('\FOSSBilling\Logger');
 
     $di = container();
     $di['em'] = $em;
@@ -309,7 +309,7 @@ test('template delete', function (): void {
     $templateGroupRepo->shouldReceive('deleteAssociationsForTemplate')->atLeast()->once()->with(1);
     $emailService->shouldReceive('getTemplateGroupRepository')->andReturn($templateGroupRepo);
 
-    $loggerStub = $this->createStub('\Box_Log');
+    $loggerStub = $this->createStub('\FOSSBilling\Logger');
     $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $em->shouldReceive('remove')->atLeast()->once()->with($model);
     $em->shouldReceive('flush')->atLeast()->once();

@@ -16,6 +16,7 @@ declare(strict_types=1);
 namespace Box\Mod\System\Api;
 
 use FOSSBilling\i18n;
+use FOSSBilling\Period;
 use FOSSBilling\Validation\Api\RequiredParams;
 use PrinsFrank\Standards\CountryCallingCode\CountryCallingCode;
 use Symfony\Component\Intl\Countries;
@@ -113,7 +114,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      */
     public function periods()
     {
-        return \Box_Period::getPredefined();
+        return Period::getPredefined();
     }
 
     /**

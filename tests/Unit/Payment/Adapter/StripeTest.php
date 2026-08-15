@@ -7,7 +7,6 @@ use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Repository\TransactionRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Payment_Adapter_Stripe;
 use Stripe\StripeClient;
 
 use function Tests\Helpers\container;
@@ -197,7 +196,7 @@ describe('getStripeRecurringParams', function (): void {
     });
 
     test('rejects a period whose interval_count exceeds Stripe\'s 3-year cap', function (): void {
-        // Box_Period allows up to 5Y, but Stripe's own recurring interval_count cap for
+        // Billing periods allow up to 5Y, but Stripe's own recurring interval_count cap for
         // "year" is 3, so this must fail loudly instead of silently mis-billing.
         expect(fn (): mixed => invokePrivateMethod($this->adapter, 'getStripeRecurringParams', ['5Y']))
             ->toThrow(Payment_Exception::class);
@@ -1225,8 +1224,8 @@ test('logs Stripe object lock timeouts with lock context', function (): void {
     ]))->toThrow(FOSSBilling\Exception::class, 'Timed out waiting to process this Stripe payment')
         ->and($logger->calls)->toHaveCount(1)
         ->and($logger->calls[0]['method'])->toBe('warning')
-        ->and($logger->calls[0]['params'][0])->toContain('Timed out after')
-        ->and($logger->calls[0]['params'][0])->toContain($lockName);
+        ->and($logger->calls[0]['params'][0])->toBe('Timed out after {duration_ms} ms waiting for Stripe object lock {lock_name}')
+        ->and($logger->calls[0]['params'][1]['lock_name'])->toBe($lockName);
 });
 
 describe('handleSetupIntentSucceededWebhook', function (): void {
@@ -1311,7 +1310,10 @@ describe('handleSetupIntentSucceededWebhook', function (): void {
         $product = Stripe\Product::constructFrom(['id' => 'prod_1']);
         $stripeMock->products = Mockery::mock();
         $stripeMock->products->shouldReceive('search')->andReturn(Stripe\SearchResult::constructFrom(['data' => [$product]]));
-        $price = Stripe\Price::constructFrom(['id' => 'price_1']);
+        $price = Stripe\Price::constructFrom([
+            'id' => 'price_1',
+            'unit_amount' => null,
+        ]);
         $stripeMock->prices = Mockery::mock();
         $stripeMock->prices->shouldReceive('all')->andReturn(Stripe\Collection::constructFrom(['data' => [$price]]));
         $stripeMock->prices->shouldReceive('create')->andReturn($price);

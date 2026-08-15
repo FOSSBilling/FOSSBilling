@@ -28,7 +28,7 @@ abstract class Payment_AdapterAbstract
     /**
      * Log object.
      */
-    private ?Box_Log $_log = null;
+    private ?Psr\Log\LoggerInterface $_log = null;
 
     // Stub function that can be overridden by a registrar
     public function init()
@@ -125,16 +125,16 @@ abstract class Payment_AdapterAbstract
         return $data['invoice_id'] ?? null;
     }
 
-    public function setLog(Box_Log $log): void
+    public function setLog(Psr\Log\LoggerInterface $log): void
     {
         $this->_log = $log;
     }
 
-    public function getLog()
+    public function getLog(): Psr\Log\LoggerInterface
     {
         $log = $this->_log;
-        if (!$log instanceof Box_Log) {
-            $log = new Box_Log();
+        if (!$log instanceof Psr\Log\LoggerInterface) {
+            $log = new FOSSBilling\Logger();
         }
 
         return $log;

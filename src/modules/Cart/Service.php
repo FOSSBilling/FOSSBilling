@@ -252,7 +252,7 @@ class Service implements InjectionAwareInterface
             $this->addProduct($cart, $productFromList, $productFromListConfig);
         }
 
-        $this->di['logger']->info('Added "%s" to shopping cart', $this->getProductTitle($product));
+        $this->di['logger']->info('Added "{product_title}" to shopping cart', ['product_title' => $this->getProductTitle($product)]);
 
         $this->di['events_manager']->fire(['event' => 'onAfterProductAddedToCart', 'params' => $event_params]);
 
@@ -366,7 +366,7 @@ class Service implements InjectionAwareInterface
         $cart->setCurrencyId($currency->getId());
         $this->persistCart($cart);
 
-        $this->di['logger']->info('Changed shopping cart #%s currency to %s', $cart->getId(), $currency->getCode());
+        $this->di['logger']->info('Changed shopping cart #{cart_id} currency to {currency_code}', ['cart_id' => $cart->getId(), 'currency_code' => $currency->getCode()]);
 
         return true;
     }
@@ -390,7 +390,7 @@ class Service implements InjectionAwareInterface
         $cart->setUpdatedAt(new \DateTime());
         $this->persistCart($cart);
 
-        $this->di['logger']->info('Removed promo code from shopping cart #%s', $cart->getId());
+        $this->di['logger']->info('Removed promo code from shopping cart #{cart_id}', ['cart_id' => $cart->getId()]);
 
         return true;
     }
@@ -411,7 +411,7 @@ class Service implements InjectionAwareInterface
         $cart->setPromoId($promoId);
         $this->persistCart($cart);
 
-        $this->di['logger']->info('Applied promo code %s to shopping cart', $promoCode);
+        $this->di['logger']->info('Applied promo code {promo_code} to shopping cart', ['promo_code' => $promoCode]);
 
         return true;
     }
@@ -627,6 +627,8 @@ class Service implements InjectionAwareInterface
         $promoProductService = $promoId ? $this->getProductService() : null;
         $promo = $promoId ? $promoProductService?->findPromoById($promoId) : null;
 
+        $reservedOrderIds = [];
+        $reservedCount = 0;
         $stockReservedOrders = [];
 
         if (!$client->getCurrency()) {
@@ -635,7 +637,7 @@ class Service implements InjectionAwareInterface
         }
 
         try {
-            return $this->di['em']->wrapInTransaction(function () use ($ca, $cart, $client, $currency, $currencyCode, $gateway_id, $taxed, $promo, $promoProductService, $promoId, &$stockReservedOrders) {
+            return $this->di['em']->wrapInTransaction(function () use ($ca, $cart, $client, $currency, $currencyCode, $gateway_id, $taxed, $promo, $promoProductService, $promoId, &$reservedOrderIds, &$reservedCount, &$stockReservedOrders) {
                 if ($client->getCurrency() != $currencyCode) {
                     throw new \FOSSBilling\InformationException('Selected currency :selected does not match your profile currency :code. Please change cart currency to continue.', [':selected' => $currencyCode, ':code' => $client->getCurrency()]);
                 }
@@ -710,8 +712,10 @@ class Service implements InjectionAwareInterface
                     $stockReservedOrders[] = $order;
 
                     // Reserve promo capacity at order creation time.
-                    if ($promo instanceof Promo && $promoProductService !== null) {
+                    if ($promo instanceof Promo) {
                         $promoProductService->reservePromoForOrder($promo, $order);
+                        $reservedOrderIds[] = $order->getId();
+                        ++$reservedCount;
                     }
 
                     $orderService = $this->di['mod_service']('order');
@@ -781,7 +785,7 @@ class Service implements InjectionAwareInterface
                     }
                 }
 
-                if ($promo instanceof Promo && $promoProductService !== null) {
+                if ($promo instanceof Promo) {
                     $redemptionStatus = $invoiceModel instanceof Invoice
                         && $invoiceModel->getStatus() === Invoice::STATUS_UNPAID
                         ? \Box\Mod\Product\Entity\PromoRedemption::STATUS_RESERVED
@@ -818,7 +822,7 @@ class Service implements InjectionAwareInterface
                         // An escaped failure here would roll back the whole
                         // wrapInTransaction() below, including every order
                         // already created for this cart - not just this one.
-                        $this->di['logger']->error('Order activation failed after checkout: %s', $e->getMessage());
+                        $this->di['logger']->error('Order activation failed after checkout: {exception}', ['exception' => $e]);
                         $notes = "Order could not be activated after checkout due to error: {$e->getMessage()}.";
                         $orderService->orderStatusAdd($order, Order::STATUS_FAILED_SETUP, $notes);
                     }
@@ -831,12 +835,23 @@ class Service implements InjectionAwareInterface
                 ];
             });
         } catch (\Throwable $e) {
+            if ($promo instanceof Promo && $reservedCount > 0) {
+                try {
+                    $promoProductService->compensateCheckoutPromoFailure($promo, $reservedOrderIds, $reservedCount);
+                } catch (\Throwable $compensationError) {
+                    $this->di['logger']->error('Failed to compensate promo checkout failure', [
+                        'exception' => $compensationError,
+                        'promo_id' => $promo->getId(),
+                    ]);
+                }
+            }
+
             foreach ($stockReservedOrders as $stockReservedOrder) {
                 try {
                     $this->getProductService()->releaseReservedStockForOrder($stockReservedOrder, 'checkout_failed');
                 } catch (\Throwable $compensationError) {
                     $this->di['logger']->error('Failed to compensate stock checkout failure', [
-                        'exception' => $compensationError->getMessage(),
+                        'exception' => $compensationError,
                         'order_id' => $stockReservedOrder->getId(),
                     ]);
                 }

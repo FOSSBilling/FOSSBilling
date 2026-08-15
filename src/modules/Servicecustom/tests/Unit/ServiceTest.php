@@ -615,7 +615,7 @@ test('update config', function (): void {
 
     $di = container();
     $di['em'] = $em;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $serviceMock->setDi($di);
 
     $config = ['param1' => 'value1'];
@@ -634,7 +634,7 @@ test('update config not array exception', function (): void {
 
     $di = container();
     $di['em'] = $em;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $serviceMock->setDi($di);
 
     $config = '';

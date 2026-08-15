@@ -355,12 +355,15 @@ class Tools
                     return $ip;
                 }
             } catch (\Exception $e) {
-                error_log(sprintf(
-                    'Error fetching external IP from "%s" (%s): %s',
-                    $service,
-                    $e::class,
-                    $e->getMessage()
-                ));
+                $this->di['logger']->error(
+                    'Error fetching external IP from "{service}" ({exception_class}): {exception_message}',
+                    [
+                        'service' => $service,
+                        'exception_class' => $e::class,
+                        'exception_message' => $e->getMessage(),
+                        'exception' => $e,
+                    ]
+                );
             }
         }
 

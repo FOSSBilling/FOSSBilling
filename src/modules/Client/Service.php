@@ -202,7 +202,7 @@ class Service implements InjectionAwareInterface
 
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->setChannel('email')->error('Failed to send client signup email', ['exception' => $exc->getMessage()]);
+            $di['logger']->withChannel('email')->error('Failed to send client signup email', ['exception' => $exc]);
         }
 
         return true;
@@ -571,7 +571,7 @@ class Service implements InjectionAwareInterface
         $this->di['em']->persist($group);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Created new client group #%s', $group->getId());
+        $this->di['logger']->info('Created new client group #{group_id}', ['group_id' => $group->getId()]);
 
         return (int) $group->getId();
     }
@@ -588,7 +588,7 @@ class Service implements InjectionAwareInterface
             $this->di['em']->remove($group);
             $this->di['em']->flush();
         }
-        $this->di['logger']->info('Removed client group #%s', $model->getId());
+        $this->di['logger']->info('Removed client group #{model_id}', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -701,7 +701,7 @@ class Service implements InjectionAwareInterface
             $this->sendAdminCreatedWelcomeEmailForClient($client);
         }
         $this->di['events_manager']->fire(['event' => 'onAfterAdminCreateClient', 'params' => ['id' => $client->getId()]]);
-        $this->di['logger']->info('Created new client #%s', $client->getId());
+        $this->di['logger']->info('Created new client #{client_id}', ['client_id' => $client->getId()]);
 
         return (int) $client->getId();
     }
@@ -745,7 +745,7 @@ class Service implements InjectionAwareInterface
             'ip' => $safeData['ip'],
         ];
         $this->di['events_manager']->fire(['event' => 'onAfterClientSignUp', 'params' => $event_params]);
-        $this->di['logger']->info('Client #%s signed up', $client->getId());
+        $this->di['logger']->info('Client #{client_id} signed up', ['client_id' => $client->getId()]);
 
         return $client;
     }
@@ -813,7 +813,7 @@ class Service implements InjectionAwareInterface
             $emailService = $this->di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $this->di['logger']->setChannel('email')->error('Failed to send client welcome email', ['exception' => $exc->getMessage()]);
+            $this->di['logger']->withChannel('email')->error('Failed to send client welcome email', ['exception' => $exc]);
         }
     }
 
@@ -889,7 +889,7 @@ class Service implements InjectionAwareInterface
             $emailService = $this->di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $this->di['logger']->setChannel('email')->error('Failed to send email confirmation email', ['exception' => $exc->getMessage()]);
+            $this->di['logger']->withChannel('email')->error('Failed to send email confirmation email', ['exception' => $exc]);
         }
     }
 
@@ -1033,7 +1033,7 @@ class Service implements InjectionAwareInterface
                 ->execute();
         } catch (\Exception $e) {
             if (!\FOSSBilling\Environment::isTesting()) {
-                error_log($e->getMessage());
+                $di['logger']->error($e->getMessage());
             }
         }
     }

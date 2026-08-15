@@ -59,7 +59,13 @@ class ServiceTransaction implements InjectionAwareInterface
             if ($model === null) {
                 continue;
             }
-            $this->preProcessTransaction($model);
+
+            try {
+                $this->preProcessTransaction($model);
+            } catch (\Throwable) {
+                // The individual transaction has already been marked as failed.
+                // Continue processing the rest of the batch.
+            }
         }
 
         return true;
@@ -97,7 +103,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $this->di['em']->flush();
         $this->di['events_manager']->fire(['event' => 'onAfterAdminTransactionUpdate', 'params' => ['id' => $model->getId()]]);
 
-        $this->di['logger']->info('Updated transaction #%s', $model->getId());
+        $this->di['logger']->info('Updated transaction #{model_id}', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -114,13 +120,7 @@ class ServiceTransaction implements InjectionAwareInterface
             return $id;
         }
 
-        try {
-            $this->processTransaction($id);
-        } catch (\Throwable $e) {
-            $this->markTransactionError($id, $e);
-
-            throw $e;
-        }
+        $this->processTransactionWithErrorHandling((int) $id);
 
         return $id;
     }
@@ -146,6 +146,17 @@ class ServiceTransaction implements InjectionAwareInterface
             $this->processTransaction($id);
         } catch (\Throwable $e) {
             $this->markTransactionError($id, $e);
+        }
+    }
+
+    private function processTransactionWithErrorHandling(int $id): mixed
+    {
+        try {
+            return $this->processTransaction($id);
+        } catch (\Throwable $e) {
+            $this->markTransactionError($id, $e);
+
+            throw $e;
         }
     }
 
@@ -195,7 +206,7 @@ class ServiceTransaction implements InjectionAwareInterface
         if ($txnIdCandidate && !empty($data['gateway_id'])) {
             $existing = $this->getTransactionRepository()->findOneByTxnIdAndGatewayId((string) $txnIdCandidate, (int) $data['gateway_id']);
             if ($existing !== null && $existing->getStatus() === Transaction::STATUS_PROCESSED) {
-                $this->di['logger']->info('Duplicate transaction ignored, returning existing processed transaction #%s', $existing->getId());
+                $this->di['logger']->info('Duplicate transaction ignored, returning existing processed transaction #{existing_id}', ['existing_id' => $existing->getId()]);
 
                 return $existing->getId();
             }
@@ -216,7 +227,7 @@ class ServiceTransaction implements InjectionAwareInterface
         if ($supportsIpnHash && !empty($data['gateway_id']) && !empty($ipn_hash)) {
             $existingByHash = $this->getTransactionRepository()->findOneByGatewayIdAndIpnHash((int) $data['gateway_id'], $ipn_hash);
             if ($existingByHash !== null) {
-                $this->di['logger']->info('Duplicate transaction detected by IPN hash, returning existing transaction #%s', $existingByHash->getId());
+                $this->di['logger']->info('Duplicate transaction detected by IPN hash, returning existing transaction #{transaction_id}', ['transaction_id' => $existingByHash->getId()]);
 
                 return $existingByHash->getId();
             }
@@ -241,7 +252,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $this->di['em']->flush();
         $newId = (int) $transaction->getId();
 
-        $this->di['logger']->info('Received transaction %s from payment gateway %s', $newId, $transaction->getGateway()?->getId());
+        $this->di['logger']->info('Received transaction {transaction_id} from payment gateway {gateway_id}', ['transaction_id' => $newId, 'gateway_id' => $transaction->getGateway()?->getId()]);
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminTransactionCreate', 'params' => ['id' => $newId]]);
 
@@ -262,7 +273,7 @@ class ServiceTransaction implements InjectionAwareInterface
             $supported = in_array('ipn_hash', $columns, true) && in_array('transaction_ipn_hash_idx', $indexes, true);
         } catch (\Throwable $e) {
             if (isset($this->di['logger'])) {
-                $this->di['logger']->warning('Could not determine whether transaction.ipn_hash exists; disabling IPN hash dedupe: %s', $e->getMessage());
+                $this->di['logger']->warning('Could not determine whether transaction.ipn_hash exists; disabling IPN hash dedupe: {exception}', ['exception' => $e]);
             }
 
             return false;
@@ -278,7 +289,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $id = $model->getId();
         $this->di['em']->remove($model);
         $this->di['em']->flush();
-        $this->di['logger']->info('Removed transaction #%s', $id);
+        $this->di['logger']->info('Removed transaction #{id}', ['id' => $id]);
 
         return true;
     }
@@ -466,16 +477,10 @@ class ServiceTransaction implements InjectionAwareInterface
 
     public function preProcessTransaction(Transaction $model)
     {
-        try {
-            $output = $this->processTransaction($model->getId());
-        } catch (\Throwable $e) {
-            $this->markTransactionError((int) $model->getId(), $e);
-
-            throw $e;
-        }
+        $output = $this->processTransactionWithErrorHandling((int) $model->getId());
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminTransactionProcess', 'params' => ['id' => $model->getId()]]);
-        $this->di['logger']->info('Processed transaction #%s', $model->getId());
+        $this->di['logger']->info('Processed transaction #{model_id}', ['model_id' => $model->getId()]);
 
         return !empty($output) ? $output : true;
     }
@@ -505,7 +510,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $tx->setUpdatedAt(new \DateTime());
         $this->di['em']->flush();
 
-        $this->di['logger']->error('Failed to process transaction #%s: %s', $id, $e->getMessage());
+        $this->di['logger']->error('Failed to process transaction #{id}: {exception}', ['id' => $id, 'exception' => $e]);
     }
 
     /**
@@ -568,8 +573,8 @@ class ServiceTransaction implements InjectionAwareInterface
             $transaction->setUpdatedAt(new \DateTime());
             $this->di['em']->flush();
 
-            if (defined('DEBUG')) {
-                error_log($e->getMessage());
+            if (DEBUG) {
+                $this->di['logger']->debug($e->getMessage());
             }
             if (Environment::isTesting()) {
                 throw $e;
@@ -771,8 +776,8 @@ class ServiceTransaction implements InjectionAwareInterface
                 $invoiceService = $this->di['mod_service']('Invoice');
                 $invoiceService->tryPayWithCredits($invoice);
             } catch (\Exception $e) {
-                if (defined('DEBUG')) {
-                    error_log($e->getMessage());
+                if (DEBUG) {
+                    $this->di['logger']->debug($e->getMessage());
                 }
             }
         }

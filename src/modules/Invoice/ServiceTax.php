@@ -95,7 +95,7 @@ class ServiceTax implements InjectionAwareInterface
         $name = $model->getName();
         $this->di['em']->remove($model);
         $this->di['em']->flush();
-        $this->di['logger']->info('Deleted tax rule %s', $name);
+        $this->di['logger']->info('Deleted tax rule {name}', ['name' => $name]);
 
         return true;
     }
@@ -111,7 +111,7 @@ class ServiceTax implements InjectionAwareInterface
         $this->di['em']->persist($model);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Created new tax rule %s', $model->getName());
+        $this->di['logger']->info('Created new tax rule {model_name}', ['model_name' => $model->getName()]);
 
         return $model->getId();
     }
@@ -124,7 +124,7 @@ class ServiceTax implements InjectionAwareInterface
         $model->setTaxrate($data['taxrate']);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Updated tax rule %s', $model->getName());
+        $this->di['logger']->info('Updated tax rule {model_name}', ['model_name' => $model->getName()]);
 
         return true;
     }

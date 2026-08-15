@@ -235,7 +235,7 @@ class Service implements InjectionAwareInterface
                     continue;
                 }
             } catch (\Exception $e) {
-                error_log($e->getMessage());
+                $this->di['logger']->error($e->getMessage());
             }
         }
     }

@@ -13,6 +13,7 @@ use Box\Mod\Client\Entity\Client;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Transaction;
+use FOSSBilling\Period;
 use Stripe\StripeClient;
 use Symfony\Component\Intl\Currencies;
 
@@ -50,6 +51,14 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     public function getDi(): ?Pimple\Container
     {
         return $this->di;
+    }
+
+    private function debugLog(string $message): void
+    {
+        // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
+        if (DEBUG) {
+            $this->di['logger']->debug($message);
+        }
     }
 
     public function __construct(private $config)
@@ -216,10 +225,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $tx->setUpdatedAt(new DateTime());
         $this->di['em']->flush();
 
-        // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
-        if (DEBUG) {
-            error_log(json_encode($e->getJsonBody()));
-        }
+        $this->debugLog((string) json_encode($e->getJsonBody()));
 
         throw new Exception($tx->getError());
     }
@@ -730,9 +736,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         try {
             $this->updateSubscriptionStatusFromGateway($api_admin, $stripeSubscription->id, $status);
         } catch (Exception $e) {
-            if (DEBUG) {
-                error_log('Stripe subscription updated webhook: ' . $e->getMessage());
-            }
+            $this->debugLog('Stripe subscription updated webhook: ' . $e->getMessage());
         }
 
         return false;
@@ -881,9 +885,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         try {
             $this->updateSubscriptionStatusFromGateway($api_admin, $subscriptionId, 'canceled');
         } catch (Exception $e) {
-            if (DEBUG) {
-                error_log('Stripe invoice payment failed webhook: ' . $e->getMessage());
-            }
+            $this->debugLog('Stripe invoice payment failed webhook: ' . $e->getMessage());
         }
 
         return false;
@@ -979,11 +981,10 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
         if ($acquired !== 1) {
             $waitDurationMs = (hrtime(true) - $waitStartedAt) / 1_000_000;
-            $this->di['logger']->warning(sprintf(
-                'Timed out after %.1f ms waiting for Stripe object lock %s',
-                $waitDurationMs,
-                $lockName
-            ));
+            $this->di['logger']->warning(
+                'Timed out after {duration_ms} ms waiting for Stripe object lock {lock_name}',
+                ['duration_ms' => $waitDurationMs, 'lock_name' => $lockName]
+            );
 
             throw new FOSSBilling\Exception('Timed out waiting to process this Stripe payment');
         }
@@ -1065,9 +1066,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 throw $e;
             }
 
-            if (DEBUG) {
-                error_log('Stripe setup_intent webhook: subscription creation deferred to redirect flow: ' . $e->getMessage());
-            }
+            $this->debugLog('Stripe setup_intent webhook: subscription creation deferred to redirect flow: ' . $e->getMessage());
 
             return false;
         }
@@ -1129,9 +1128,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         try {
             $api_admin->invoice_subscription_create($sd);
         } catch (Exception $e) {
-            if (DEBUG) {
-                error_log('Failed to create FOSSBilling subscription for ' . $subscription->id . ': ' . $e->getMessage());
-            }
+            $this->debugLog('Failed to create FOSSBilling subscription for ' . $subscription->id . ': ' . $e->getMessage());
         }
     }
 
@@ -1394,9 +1391,9 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     }
 
     /**
-     * Converts a Box_Period code (e.g. "1M", "3Y", "45D") into Stripe's recurring price
+     * Converts a billing period code (e.g. "1M", "3Y", "45D") into Stripe's recurring price
      * parameters. Stripe caps how large interval_count can be per unit, so periods that
-     * exceed those caps (Box_Period already allows up to 5 years) are rejected outright
+     * exceed those caps (billing periods allow up to 5 years) are rejected outright
      * rather than silently mis-billed.
      *
      * @see https://docs.stripe.com/api/prices/create#create_price-recurring-interval_count
@@ -1405,7 +1402,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
      */
     private function getStripeRecurringParams(string $periodCode): array
     {
-        $period = new Box_Period($periodCode);
+        $period = new Period($periodCode);
         $interval = $this->convertPeriodToStripe($period);
         $intervalCount = $period->getQty();
 
@@ -1427,13 +1424,13 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         ];
     }
 
-    private function convertPeriodToStripe(Box_Period $period): string
+    private function convertPeriodToStripe(Period $period): string
     {
         return match ($period->getUnit()) {
-            Box_Period::UNIT_DAY => 'day',
-            Box_Period::UNIT_WEEK => 'week',
-            Box_Period::UNIT_MONTH => 'month',
-            Box_Period::UNIT_YEAR => 'year',
+            Period::UNIT_DAY => 'day',
+            Period::UNIT_WEEK => 'week',
+            Period::UNIT_MONTH => 'month',
+            Period::UNIT_YEAR => 'year',
             default => 'month',
         };
     }

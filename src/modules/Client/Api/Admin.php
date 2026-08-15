@@ -120,11 +120,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $session = $this->getDi()['session'];
         $session->set('client_id', $client->getId());
-        $this->getDi()['logger']->info('Logged in as client #%s', $client->getId());
+        $this->getDi()['logger']->info('Logged in as client #{client_id}', ['client_id' => $client->getId()]);
 
         if (Tools::normalizeBoolean($data['strip_admin_identity'] ?? false)) {
             $session->destroy('admin');
-            $this->getDi()['logger']->info('Stripped admin identity from session after logging in as client #%s', $client->getId());
+            $this->getDi()['logger']->info('Stripped admin identity from session after logging in as client #{client_id}', ['client_id' => $client->getId()]);
         }
 
         return $result;
@@ -238,7 +238,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->getService()->remove($model);
         $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminClientDelete', 'params' => ['id' => $clientId]]);
 
-        $this->getDi()['logger']->info('Removed client #%s', $clientId);
+        $this->getDi()['logger']->info('Removed client #{client_id}', ['client_id' => $clientId]);
 
         return true;
     }
@@ -459,7 +459,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminClientUpdate', 'params' => ['id' => $client->getId()]]);
 
-        $this->getDi()['logger']->info('Updated client #%s profile', $client->getId());
+        $this->getDi()['logger']->info('Updated client #{client_id} profile', ['client_id' => $client->getId()]);
 
         return true;
     }
@@ -489,7 +489,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminClientPasswordChange', 'params' => ['id' => $client->getId()]]);
 
-        $this->getDi()['logger']->info('Changed client #%s password', $client->getId());
+        $this->getDi()['logger']->info('Changed client #{client_id} password', ['client_id' => $client->getId()]);
 
         return true;
     }
@@ -537,7 +537,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->getDi()['em']->remove($model);
         $this->getDi()['em']->flush();
 
-        $this->getDi()['logger']->info('Removed line %s from client #%s balance for %s', $id, $client_id, $amount);
+        $this->getDi()['logger']->info('Removed line {id} from client #{client_id} balance for {amount}', ['id' => $id, 'client_id' => $client_id, 'amount' => $amount]);
 
         return true;
     }

@@ -100,7 +100,7 @@ class ProductPayment
     }
 
     /**
-     * Finds a configured billing period by its Box_Period code (e.g. "1M", "3Y", "45D").
+     * Finds a configured billing period by its code (e.g. "1M", "3Y", "45D").
      */
     public function getPeriod(string $code): ?ProductPaymentPeriod
     {

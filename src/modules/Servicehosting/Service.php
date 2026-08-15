@@ -344,7 +344,7 @@ class Service implements InjectionAwareInterface
         }
 
         $this->di['em']->flush();
-        $this->di['logger']->info('Changed hosting plan of account #%s', $model->getId());
+        $this->di['logger']->info('Changed hosting plan of account #{model_id}', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -365,7 +365,7 @@ class Service implements InjectionAwareInterface
         $model->setUsername($u);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Changed hosting account %s username', $model->getId());
+        $this->di['logger']->info('Changed hosting account {model_id} username', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -385,7 +385,7 @@ class Service implements InjectionAwareInterface
 
         $model->setIp($ip);
         $this->di['em']->flush();
-        $this->di['logger']->info('Changed hosting account %s ip', $model->getId());
+        $this->di['logger']->info('Changed hosting account {model_id} ip', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -410,7 +410,7 @@ class Service implements InjectionAwareInterface
         $model->setSld($sld);
         $model->setTld($tld);
         $this->di['em']->flush();
-        $this->di['logger']->info('Changed hosting account %s domain', $model->getId());
+        $this->di['logger']->info('Changed hosting account {model_id} domain', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -433,7 +433,7 @@ class Service implements InjectionAwareInterface
 
         $model->setPass(self::PASSWORD_PLACEHOLDER);
         $this->di['em']->flush();
-        $this->di['logger']->info('Changed hosting account %s password', $model->getId());
+        $this->di['logger']->info('Changed hosting account {model_id} password', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -452,7 +452,7 @@ class Service implements InjectionAwareInterface
         }
 
         $this->di['em']->flush();
-        $this->di['logger']->info('Synchronizing hosting account %s with server', $model->getId());
+        $this->di['logger']->info('Synchronizing hosting account {model_id} with server', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -796,7 +796,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Updated hosting account %s without sending actions to server', $model->getId());
+        $this->di['logger']->info('Updated hosting account {model_id} without sending actions to server', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -993,7 +993,7 @@ class Service implements InjectionAwareInterface
 
         $newId = $model->getId();
 
-        $this->di['logger']->info('Added new hosting server %s', $newId);
+        $this->di['logger']->info('Added new hosting server {server_id}', ['server_id' => $newId]);
 
         return $newId;
     }
@@ -1003,7 +1003,7 @@ class Service implements InjectionAwareInterface
         $id = $model->getId();
         $this->di['em']->remove($model);
         $this->di['em']->flush();
-        $this->di['logger']->info('Deleted hosting server %s', $id);
+        $this->di['logger']->info('Deleted hosting server {id}', ['id' => $id]);
 
         return true;
     }
@@ -1043,7 +1043,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Update hosting server %s', $model->getId());
+        $this->di['logger']->info('Update hosting server {model_id}', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -1068,7 +1068,7 @@ class Service implements InjectionAwareInterface
 
         if ($audit && $incoming !== $existing) {
             $adminId = $this->di['loggedin_admin']->getId() ?? 'unknown';
-            $this->di['logger']->info('Rotated %s for hosting server %s by admin %s', $field, (string) $serverId, (string) $adminId);
+            $this->di['logger']->info('Rotated {field} for hosting server {server_id} by admin {admin_id}', ['field' => $field, 'server_id' => (string) $serverId, 'admin_id' => (string) $adminId]);
         }
 
         return $incoming;
@@ -1149,7 +1149,7 @@ class Service implements InjectionAwareInterface
         }
         $this->di['em']->remove($model);
         $this->di['em']->flush();
-        $this->di['logger']->info('Deleted hosting plan %s', $id);
+        $this->di['logger']->info('Deleted hosting plan {id}', ['id' => $id]);
 
         return true;
     }
@@ -1212,7 +1212,7 @@ class Service implements InjectionAwareInterface
         $model->setConfig(json_encode($config));
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Updated hosting plan %s', $model->getId());
+        $this->di['logger']->info('Updated hosting plan {model_id}', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -1237,7 +1237,7 @@ class Service implements InjectionAwareInterface
 
         $newId = $model->getId();
 
-        $this->di['logger']->info('Added new hosting plan %s', $newId);
+        $this->di['logger']->info('Added new hosting plan {plan_id}', ['plan_id' => $newId]);
 
         return $newId;
     }

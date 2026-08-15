@@ -269,7 +269,7 @@ class Service implements InjectionAwareInterface
             ['settings' => $settings],
             'Theme settings template',
             function (\Twig\Sandbox\SecurityError $e) use ($theme): void {
-                $this->di['logger']->setChannel('security')->warning('Theme settings template sandbox violation', [
+                $this->di['logger']->withChannel('security')->warning('Theme settings template sandbox violation', [
                     'theme' => $theme->getName(),
                     'error' => $e->getMessage(),
                 ]);
@@ -353,7 +353,7 @@ class Service implements InjectionAwareInterface
                     $list[] = $this->buildThemeConfig($file->getFilename());
                 }
             } catch (\Exception $e) {
-                error_log($e->getMessage());
+                $this->di['logger']->error($e->getMessage());
             }
         }
 

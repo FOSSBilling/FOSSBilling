@@ -242,7 +242,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminUpdateCore']);
         $updater->performUpdate();
 
-        $this->getDi()['logger']->info('Installed FOSSBilling update files from %s to %s. Update finalization is pending.', \FOSSBilling\Version::VERSION, $new_version);
+        $this->getDi()['logger']->info('Installed FOSSBilling update files from {previous_version} to {new_version}. Update finalization is pending.', ['previous_version' => \FOSSBilling\Version::VERSION, 'new_version' => $new_version]);
 
         return true;
     }
@@ -264,7 +264,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $this->getDi()['update_finalization']->finalizeUpdate();
         $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminUpdateCore']);
-        $this->getDi()['logger']->info('Finalized FOSSBilling update to %s.', \FOSSBilling\Version::VERSION);
+        $this->getDi()['logger']->info('Finalized FOSSBilling update to {version}.', ['version' => \FOSSBilling\Version::VERSION]);
 
         return true;
     }
@@ -274,7 +274,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkUpdateFinalizationPermissions();
 
         $this->getDi()['update_finalization']->completeFinalization();
-        $this->getDi()['logger']->info('Completed FOSSBilling update finalization for %s.', \FOSSBilling\Version::VERSION);
+        $this->getDi()['logger']->info('Completed FOSSBilling update finalization for {version}.', ['version' => \FOSSBilling\Version::VERSION]);
 
         return true;
     }

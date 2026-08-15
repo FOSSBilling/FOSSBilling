@@ -118,7 +118,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $em->remove($model);
         $em->flush();
 
-        $this->getDi()['logger']->info('Deleted email #%s', $id);
+        $this->getDi()['logger']->info('Deleted email #{id}', ['id' => $id]);
 
         return true;
     }
@@ -191,7 +191,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->getDi()['em']->remove($template);
         $this->getDi()['em']->flush();
 
-        $this->getDi()['logger']->info('Deleted email template #%s', $id);
+        $this->getDi()['logger']->info('Deleted email template #{id}', ['id' => $id]);
 
         return true;
     }

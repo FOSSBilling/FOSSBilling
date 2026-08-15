@@ -572,7 +572,7 @@ test('releaseReservedStockForOrder restores stock and clears the reservation', f
         'Order' => $orderServiceMock,
         default => throw new RuntimeException("Unexpected module service {$module}"),
     });
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $service->setDi($di);
 
     $service->releaseReservedStockForOrder($order, 'order_canceled');
@@ -750,7 +750,7 @@ test('get related product discount uses domain pricing implementation', function
     $tldService = productTestCreateDomainTldServiceMock($tld);
 
     $di = container();
-    $di['period'] = $di->protect(fn (string $period): Box_Period => new Box_Period($period));
+    $di['period'] = $di->protect(fn (string $period): FOSSBilling\Period => new FOSSBilling\Period($period));
     $di['mod_service'] = $di->protect(function (string $serviceName, ?string $sub = null) use ($tldService) {
         if ($serviceName === 'servicedomain' && $sub === 'Tld') {
             return $tldService;
@@ -837,7 +837,7 @@ test('get product order line config uses domain pricing implementation', functio
     $tldService = productTestCreateDomainTldServiceMock($tld);
 
     $di = container();
-    $di['period'] = $di->protect(fn (string $period): Box_Period => new Box_Period($period));
+    $di['period'] = $di->protect(fn (string $period): FOSSBilling\Period => new FOSSBilling\Period($period));
     $di['mod_service'] = $di->protect(function (string $serviceName, ?string $sub = null) use ($tldService) {
         if ($serviceName === 'servicedomain' && $sub === 'Tld') {
             return $tldService;
@@ -871,7 +871,7 @@ test('get product renewal line config uses domain pricing implementation', funct
     $tldService = productTestCreateDomainTldServiceMock($tld);
 
     $di = container();
-    $di['period'] = $di->protect(fn (string $period): Box_Period => new Box_Period($period));
+    $di['period'] = $di->protect(fn (string $period): FOSSBilling\Period => new FOSSBilling\Period($period));
     $di['mod_service'] = $di->protect(function (string $serviceName, ?string $sub = null) use ($tldService) {
         if ($serviceName === 'servicedomain' && $sub === 'Tld') {
             return $tldService;
@@ -937,7 +937,7 @@ test('create product', function (): void {
     $di = container();
     $di['em'] = productTestCreateEntityManagerWithRepositories($productRepo, null, productTestCreateProductEntity($newProductId), productTestCreateProductPaymentEntity(1));
     $di['tools'] = $toolMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $service->setDi($di);
     $result = $service->createProduct('title', 'domain');
@@ -1014,7 +1014,7 @@ test('update product', function (): void {
 
     $di = container();
     $di['em'] = productTestCreateEntityManagerWithRepositories(null, null, null, null, $categoryRepo);
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $serviceMock->setDi($di);
 
@@ -1051,7 +1051,7 @@ test('update priority', function (): void {
 
     $di = container();
     $di['em'] = productTestCreateEntityManagerWithRepositories($productRepo);
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $service->setDi($di);
 
@@ -1074,7 +1074,7 @@ test('update config', function (): void {
 
     $di = container();
     $di['em'] = productTestCreateEntityManagerWithRepositories();
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $service->setDi($di);
 
@@ -1093,7 +1093,7 @@ test('get addons', function (): void {
 
     $di = container();
     $di['em'] = productTestCreateEntityManagerWithRepositories($productRepo);
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $service->setDi($di);
 
@@ -1114,7 +1114,7 @@ test('create addon', function (): void {
 
     $di = container();
     $di['em'] = productTestCreateEntityManagerWithRepositories($productRepo, null, productTestCreateProductEntity($newProductId), productTestCreateProductPaymentEntity(1));
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $di['tools'] = $toolMock;
 
     $service->setDi($di);
@@ -1164,7 +1164,7 @@ test('update category', function (): void {
 
     $di = container();
     $di['em'] = productTestCreateEntityManagerWithRepositories();
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $service->setDi($di);
 
@@ -1179,7 +1179,7 @@ test('create category', function (): void {
 
     $di = container();
     $di['em'] = productTestCreateEntityManagerWithRepositories(null, null, null, null, null, productTestCreateProductCategoryEntity($newCategoryId));
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $service->setDi($di);
 
@@ -1212,7 +1212,7 @@ test('remove product category', function (): void {
 
     $di = container();
     $di['em'] = productTestCreateEntityManagerWithRepositories($productRepository);
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $service->setDi($di);
 
@@ -1249,7 +1249,7 @@ test('create promo', function (): void {
     };
 
     $di = container();
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $di['em'] = $emMock;
 
     $service->setDi($di);
@@ -1306,7 +1306,7 @@ test('duplicate promo', function (): void {
     };
 
     $di = container();
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $di['em'] = $emMock;
 
     $service->setDi($di);
@@ -1363,7 +1363,7 @@ test('duplicate promo generates alternate code when copy code already exists', f
     };
 
     $di = container();
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $di['em'] = $emMock;
 
     $service->setDi($di);
@@ -1922,6 +1922,124 @@ test('release reserved promo redemptions for invoice releases reservations and d
     expect($di['em']->flushCalls)->toBe(1);
 });
 
+test('failed checkout compensation removes only active checkout reservations atomically', function (): void {
+    $service = new Service();
+    $promo = productTestCreatePromoEntity(7);
+    $activeRedemption = (new PromoRedemption())
+        ->setPromo($promo)
+        ->setPhase(PromoRedemption::PHASE_CHECKOUT)
+        ->setStatus(PromoRedemption::STATUS_RESERVED);
+
+    $redemptionRepository = Mockery::mock(PromoRedemptionRepository::class);
+    $redemptionRepository->shouldReceive('findBy')->once()->with([
+        'promo' => $promo,
+        'clientOrderId' => [11, 12],
+        'phase' => PromoRedemption::PHASE_CHECKOUT,
+        'status' => PromoRedemption::STATUS_RESERVED,
+    ])->andReturn([$activeRedemption]);
+
+    $promoRepository = Mockery::mock(PromoRepository::class);
+    $promoRepository->shouldReceive('decrementUsage')
+        ->once()
+        ->with(7, 1, Mockery::type(DateTimeInterface::class));
+
+    $entityManager = new class($promoRepository, $redemptionRepository) {
+        public array $removed = [];
+        public int $flushCalls = 0;
+        public int $transactionCalls = 0;
+
+        public function __construct(
+            private readonly object $promoRepository,
+            private readonly object $redemptionRepository,
+        ) {
+        }
+
+        public function getRepository(string $class): object
+        {
+            return $class === Promo::class ? $this->promoRepository : $this->redemptionRepository;
+        }
+
+        public function remove(object $entity): void
+        {
+            $this->removed[] = $entity;
+        }
+
+        public function flush(): void
+        {
+            ++$this->flushCalls;
+        }
+
+        public function wrapInTransaction(callable $callback): mixed
+        {
+            ++$this->transactionCalls;
+
+            return $callback();
+        }
+    };
+
+    $di = container();
+    $di['em'] = $entityManager;
+    $service->setDi($di);
+
+    $service->compensateCheckoutPromoFailure($promo, [11, 12], 1);
+
+    expect($entityManager->removed)->toBe([$activeRedemption])
+        ->and($entityManager->flushCalls)->toBe(1)
+        ->and($entityManager->transactionCalls)->toBe(1);
+});
+
+test('failed checkout compensation does nothing when no active reservation remains', function (): void {
+    $service = new Service();
+    $promo = productTestCreatePromoEntity(7);
+    $redemptionRepository = Mockery::mock(PromoRedemptionRepository::class);
+    $redemptionRepository->shouldReceive('findBy')->once()->with([
+        'promo' => $promo,
+        'clientOrderId' => [11],
+        'phase' => PromoRedemption::PHASE_CHECKOUT,
+        'status' => PromoRedemption::STATUS_RESERVED,
+    ])->andReturn([]);
+
+    $promoRepository = Mockery::mock(PromoRepository::class);
+    $promoRepository->shouldNotReceive('decrementUsage');
+
+    $entityManager = new class($promoRepository, $redemptionRepository) {
+        public int $removeCalls = 0;
+        public int $transactionCalls = 0;
+
+        public function __construct(
+            private readonly object $promoRepository,
+            private readonly object $redemptionRepository,
+        ) {
+        }
+
+        public function getRepository(string $class): object
+        {
+            return $class === Promo::class ? $this->promoRepository : $this->redemptionRepository;
+        }
+
+        public function remove(object $entity): void
+        {
+            ++$this->removeCalls;
+        }
+
+        public function wrapInTransaction(callable $callback): mixed
+        {
+            ++$this->transactionCalls;
+
+            return $callback();
+        }
+    };
+
+    $di = container();
+    $di['em'] = $entityManager;
+    $service->setDi($di);
+
+    $service->compensateCheckoutPromoFailure($promo, [11], 1);
+
+    expect($entityManager->removeCalls)->toBe(0)
+        ->and($entityManager->transactionCalls)->toBe(1);
+});
+
 test('update promo', function (): void {
     $service = new Service();
     $data = [
@@ -1964,7 +2082,7 @@ test('update promo', function (): void {
     };
 
     $di = container();
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $di['em'] = $emMock;
 
     $service->setDi($di);
@@ -2005,7 +2123,7 @@ test('delete promo', function (): void {
     };
 
     $di = container();
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $di['em'] = $emMock;
 
     $service->setDi($di);
@@ -2452,7 +2570,7 @@ test('update product accepts a custom recurring period and drops periods no long
     ]);
 
     $di = container();
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $serviceMock->setDi($di);
 
     $data = [
@@ -2486,7 +2604,7 @@ test('update product rejects an invalid custom period code', function (): void {
     ]);
 
     $di = container();
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $serviceMock->setDi($di);
 
     $data = [

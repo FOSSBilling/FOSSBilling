@@ -131,12 +131,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!$this->isAllowedMimeType($mimeType, $allowedTypes['mime_types']) && $this->di->offsetExists('logger')) {
-            $this->di['logger']->warning(
-                'Accepting downloadable upload %s with unexpected MIME type %s because the extension %s is allowed',
-                $file->getClientOriginalName(),
-                $mimeType,
-                $extension
-            );
+            $this->di['logger']->warning('Accepting downloadable upload {original_filename} with unexpected MIME type {mime_type} because the extension {extension} is allowed', ['original_filename' => $file->getClientOriginalName(), 'mime_type' => $mimeType, 'extension' => $extension]);
         }
     }
 
@@ -376,7 +371,7 @@ class Service implements InjectionAwareInterface
                 $this->addFileToExistingOrders($productModel, $fileDefinition);
             }
         });
-        $this->di['logger']->info('Uploaded new file for product %s', $productModel->getId());
+        $this->di['logger']->info('Uploaded new file for product {product_id}', ['product_id' => $productModel->getId()]);
 
         return true;
     }
@@ -495,7 +490,7 @@ class Service implements InjectionAwareInterface
         $response->headers->set('Content-Type', 'application/octet-stream');
         $response->headers->set('Content-Disposition', $disposition);
 
-        $this->di['logger']->info('Downloaded service file %s', $file->getId());
+        $this->di['logger']->info('Downloaded service file {file_id}', ['file_id' => $file->getId()]);
 
         return $response;
     }
@@ -534,7 +529,7 @@ class Service implements InjectionAwareInterface
         $response->headers->set('Content-Type', 'application/octet-stream');
         $response->headers->set('Content-Disposition', $disposition);
 
-        $this->di['logger']->info('Downloaded product %s file by admin.', $product->getId());
+        $this->di['logger']->info('Downloaded product {product_id} file by admin.', ['product_id' => $product->getId()]);
 
         return $response;
     }

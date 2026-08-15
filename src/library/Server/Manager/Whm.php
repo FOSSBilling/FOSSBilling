@@ -206,7 +206,7 @@ class Server_Manager_Whm extends Server_Manager
      */
     public function synchronizeAccount(Server_Account $account): Server_Account
     {
-        $this->getLog()->info(sprintf('Synchronizing account %s %s with server', $account->getDomain(), $account->getUsername()));
+        $this->getLog()->info('Synchronizing account {domain} {username} with server', ['domain' => $account->getDomain(), 'username' => $account->getUsername()]);
 
         $action = 'accountsummary';
         $varHash = [
@@ -215,7 +215,7 @@ class Server_Manager_Whm extends Server_Manager
 
         $result = $this->request($action, $varHash);
         if (!isset($result->acct[0])) {
-            error_log('Could not synchronize account with cPanel server. Account does not exist.');
+            $this->getLog()->error('Could not synchronize account with cPanel server. Account does not exist.');
 
             return $account;
         }
@@ -599,7 +599,7 @@ class Server_Manager_Whm extends Server_Manager
             : 'Basic ' . $username . ':' . $password;
 
         // Log the request
-        $this->getLog()->debug(sprintf('Requesting WHM server action "%s" with params "%s" ', $action, print_r($params, true)));
+        $this->getLog()->debug('Requesting WHM server action "{action}" with params "{params}"', ['action' => $action, 'params' => print_r($params, true)]);
 
         // Send the request and handle any errors
         try {
@@ -629,28 +629,28 @@ class Server_Manager_Whm extends Server_Manager
         }
 
         if (isset($json->cpanelresult->error)) {
-            $this->getLog()->critical(sprintf('WHM server response error calling action %s: "%s"', $action, $json->cpanelresult->error));
+            $this->getLog()->critical('WHM server response error calling action {action}: "{error}"', ['action' => $action, 'error' => $json->cpanelresult->error]);
             $placeholders = ['action' => $action, 'type' => 'cPanel'];
 
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
 
         if (isset($json->data->result) && $json->data->result == '0') {
-            $this->getLog()->critical(sprintf('WHM server response error calling action %s: "%s"', $action, $json->data->reason));
+            $this->getLog()->critical('WHM server response error calling action {action}: "{error}"', ['action' => $action, 'error' => $json->data->reason]);
             $placeholders = [':action:' => $action, ':type:' => 'cPanel'];
 
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
 
         if (isset($json->result) && is_array($json->result) && $json->result[0]->status == 0) {
-            $this->getLog()->critical(sprintf('WHM server response error calling action %s: "%s"', $action, $json->result[0]->statusmsg));
+            $this->getLog()->critical('WHM server response error calling action {action}: "{error}"', ['action' => $action, 'error' => $json->result[0]->statusmsg]);
             $placeholders = [':action:' => $action, ':type:' => 'cPanel'];
 
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
 
         if (isset($json->status) && $json->status != '1') {
-            $this->getLog()->critical(sprintf('WHM server response error calling action %s: "%s"', $action, $json->statusmsg));
+            $this->getLog()->critical('WHM server response error calling action {action}: "{error}"', ['action' => $action, 'error' => $json->statusmsg]);
             $placeholders = [':action:' => $action, ':type:' => 'cPanel'];
 
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
@@ -720,43 +720,5 @@ class Server_Manager_Whm extends Server_Manager
     private function getPackageName(Server_Package $package): string
     {
         return $this->_config['username'] . '_' . $package->getName();
-    }
-
-    /**
-     * Modifies the package of an account on the WHM server.
-     *
-     * @param Server_Account $a the account for which to modify the package
-     * @param Server_Package $p the new package
-     *
-     * @return true if the package was successfully modified
-     *
-     * @throws Server_Exception if an error occurs during the request
-     */
-    private function modifyAccountPackage(Server_Account $a, Server_Package $p): bool
-    {
-        // Log the modification
-        $this->getLog()->info('Modifying account ' . $a->getUsername());
-
-        // Prepare the parameters for the API request
-        $varHash = [
-            'user' => $a->getUsername(),
-            'domain' => $a->getDomain(),
-            'HASCGI' => $p->getHasCgi(),
-            'CPTHEME' => $p->getTheme(),
-            'LANG' => $p->getLanguage(),
-            'MAXPOP' => $p->getMaxPop(),
-            'MAXFTP' => $p->getMaxFtp(),
-            'MAXLST' => $p->getMaxEmailLists(),
-            'MAXSUB' => $p->getMaxSubdomains(),
-            'MAXPARK' => $p->getMaxParkedDomains(),
-            'MAXADDON' => $p->getMaxAddons(),
-            'MAXSQL' => $p->getMaxSql(),
-            'shell' => $p->getHasShell(),
-        ];
-
-        // Send a request to the WHM server to modify the account's package
-        $this->request('modifyacct', $varHash);
-
-        return true;
     }
 }

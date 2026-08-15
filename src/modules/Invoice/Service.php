@@ -414,13 +414,6 @@ class Service implements InjectionAwareInterface
 
         if (!empty($orderIds)) {
             // Batch load orders
-            $orderIdPlaceholders = [];
-            $orderIdParams = [];
-            foreach ($orderIds as $idx => $id) {
-                $placeholder = ':order_id_' . $idx;
-                $orderIdPlaceholders[] = $placeholder;
-                $orderIdParams['order_id_' . $idx] = $id;
-            }
             $orders = $this->di['em']->getRepository(Order::class)->findBy(['id' => $orderIds]);
 
             // Batch load related products
@@ -473,7 +466,7 @@ class Service implements InjectionAwareInterface
                 $service->sendInvoiceEmail($invoiceModel, $invoice, 'mod_invoice_paid');
             }
         } catch (\Exception $exc) {
-            $di['logger']->setChannel('email')->error('Failed to send email for invoice payment', ['exception' => $exc->getMessage()]);
+            $di['logger']->withChannel('email')->error('Failed to send email for invoice payment', ['exception' => $exc]);
         }
 
         return true;
@@ -494,7 +487,7 @@ class Service implements InjectionAwareInterface
             $invoice = $service->toApiArray($invoiceModel, true, null, true);
             $service->sendInvoiceEmail($invoiceModel, $invoice, 'mod_invoice_created');
         } catch (\Exception $exc) {
-            $di['logger']->setChannel('email')->error('Failed to send email for invoice creation', ['exception' => $exc->getMessage()]);
+            $di['logger']->withChannel('email')->error('Failed to send email for invoice creation', ['exception' => $exc]);
         }
 
         return true;
@@ -524,7 +517,7 @@ class Service implements InjectionAwareInterface
                 $service->extendInvoiceHashLifetime($invoiceModel);
             }
         } catch (\Exception $exc) {
-            $di['logger']->setChannel('email')->error('Failed to send email for invoice approval', ['exception' => $exc->getMessage()]);
+            $di['logger']->withChannel('email')->error('Failed to send email for invoice approval', ['exception' => $exc]);
         }
 
         return true;
@@ -576,7 +569,7 @@ class Service implements InjectionAwareInterface
             // since the recipient is being re-engaged via the same link.
             $service->extendInvoiceHashLifetime($invoiceModel);
         } catch (\Exception $exc) {
-            $di['logger']->setChannel('email')->error('Failed to send invoice reminder email', ['exception' => $exc->getMessage()]);
+            $di['logger']->withChannel('email')->error('Failed to send invoice reminder email', ['exception' => $exc]);
         }
     }
 
@@ -616,7 +609,7 @@ class Service implements InjectionAwareInterface
                 // of the reminder being silently lost for the day.
                 $di['em']->getConnection()->executeStatement('UPDATE invoice SET reminded_at = NULL WHERE id = :id', ['id' => $params['id'] ?? 0]);
             }
-            $di['logger']->setChannel('email')->error('Failed to send invoice reminder email', ['id' => $params['id'] ?? null, 'exception' => $exc->getMessage()]);
+            $di['logger']->withChannel('email')->error('Failed to send invoice reminder email', ['id' => $params['id'] ?? null, 'exception' => $exc]);
         }
     }
 
@@ -688,7 +681,7 @@ class Service implements InjectionAwareInterface
                 // cron run retries this invoice instead of losing the reminder.
                 $di['em']->getConnection()->executeStatement('UPDATE invoice SET reminded_at = NULL WHERE id = :id', ['id' => $params['id'] ?? 0]);
             }
-            $di['logger']->setChannel('email')->error('Failed to send overdue invoice email', ['id' => $params['id'] ?? null, 'exception' => $exc->getMessage()]);
+            $di['logger']->withChannel('email')->error('Failed to send overdue invoice email', ['id' => $params['id'] ?? null, 'exception' => $exc]);
         }
     }
 
@@ -751,13 +744,7 @@ class Service implements InjectionAwareInterface
         }
 
         if ($execute) {
-            foreach ($invoiceItems as $item) {
-                try {
-                    $invoiceItemService->executeTask($item);
-                } catch (\Exception $e) {
-                    $this->di['logger']->warning($e->getMessage());
-                }
-            }
+            $this->executeInvoiceItemTasks($invoiceItems, $invoiceItemService);
         }
 
         $this->di['logger']->info("Marked invoice {$invoice->getId()} as paid.");
@@ -913,7 +900,7 @@ class Service implements InjectionAwareInterface
             $this->di['em']->persist($client);
             $this->di['em']->flush();
             if (isset($this->di['logger'])) {
-                $this->di['logger']->info('Client #%s currency was not defined. Set default currency %s.', $client->getId(), $currencyCode);
+                $this->di['logger']->info('Client #{client_id} currency was not defined. Set default currency {currency_code}.', ['client_id' => $client->getId(), 'currency_code' => $currencyCode]);
             }
         }
 
@@ -1051,8 +1038,8 @@ class Service implements InjectionAwareInterface
         $overpaymentTolerance = 1.00;
         if ($received > $expected + $overpaymentTolerance) {
             $this->di['logger']->warning(
-                'Payment amount significantly exceeds the expected invoice total. Expected :expected, received :received.',
-                [':expected' => number_format($expected, 2, '.', ''), ':received' => number_format($received, 2, '.', '')]
+                'Payment amount significantly exceeds the expected invoice total. Expected {expected}, received {received}.',
+                ['expected' => number_format($expected, 2, '.', ''), 'received' => number_format($received, 2, '.', '')]
             );
         }
     }
@@ -1064,7 +1051,7 @@ class Service implements InjectionAwareInterface
         }
         if ($invoice->getStatus() == Invoice::STATUS_PAID) {
             if (DEBUG) {
-                $this->di['logger']->setChannel('billing')->info("Skipping credit payment for already paid invoice {$invoice->getId()}.");
+                $this->di['logger']->withChannel('billing')->info("Skipping credit payment for already paid invoice {$invoice->getId()}.");
             }
 
             return false;
@@ -1091,7 +1078,7 @@ class Service implements InjectionAwareInterface
             if ($difference < -$epsilon) {
                 // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
                 if (DEBUG) {
-                    $this->di['logger']->setChannel('billing')->info("Invoice {$invoice->getId()} could not be paid with credits. Money in balance {$balance} Required: {$required}.");
+                    $this->di['logger']->withChannel('billing')->info("Invoice {$invoice->getId()} could not be paid with credits. Money in balance {$balance} Required: {$required}.");
                 }
 
                 return false;
@@ -1099,7 +1086,7 @@ class Service implements InjectionAwareInterface
 
             // @phpstan-ignore if.alwaysFalse
             if (DEBUG) {
-                $this->di['logger']->setChannel('billing')->info("Setting invoice {$invoice->getId()} as paid with credits for the amount of {$required}.");
+                $this->di['logger']->withChannel('billing')->info("Setting invoice {$invoice->getId()} as paid with credits for the amount of {$required}.");
             }
 
             if ($required > $epsilon) {
@@ -1127,7 +1114,10 @@ class Service implements InjectionAwareInterface
 
         if ($paid) {
             $this->firePaymentReceivedEvent($invoice);
-            $this->executeInvoiceItemTasks($invoice);
+            $this->executeInvoiceItemTasks(
+                $this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId()),
+                $this->di['mod_service']('Invoice', 'InvoiceItem')
+            );
         }
 
         return $paid;
@@ -1139,13 +1129,14 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * The task execution markAsPaid() performs with $execute, for callers that must run it after
-     * their transaction commits.
+     * Execute invoice-item tasks after the payment transaction has committed.
+     *
+     * @param InvoiceItem[]      $invoiceItems
+     * @param ServiceInvoiceItem $invoiceItemService
      */
-    private function executeInvoiceItemTasks(Invoice $invoice): void
+    private function executeInvoiceItemTasks(array $invoiceItems, $invoiceItemService): void
     {
-        $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
-        foreach ($this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId()) as $item) {
+        foreach ($invoiceItems as $item) {
             try {
                 $invoiceItemService->executeTask($item);
             } catch (\Exception $e) {
@@ -1458,7 +1449,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceDelete', 'params' => ['id' => $id]]);
 
-        $this->di['logger']->info('Removed invoice #%s', $id);
+        $this->di['logger']->info('Removed invoice #{id}', ['id' => $id]);
 
         return true;
     }
@@ -1688,7 +1679,6 @@ class Service implements InjectionAwareInterface
         $ss = $this->di['mod_service']('System');
         $last_time = $ss->getParamValue($key);
         if ($once_per_day && $last_time && (time() - strtotime((string) $last_time)) < 86400) {
-            // error_log('Already executed today.');
             return false;
         }
 
@@ -1880,7 +1870,7 @@ class Service implements InjectionAwareInterface
         $i = clone $invoice;
         $mpi = $this->getPaymentInvoice($i, $subscribe);
         $r = ($subscribe) ? $adapter->recurrentPayment($mpi) : $adapter->singlePayment($mpi);
-        $this->di['logger']->info('Went to pay for invoice #%s via %s', $invoice->getId(), $gtw->getGateway());
+        $this->di['logger']->info('Went to pay for invoice #{invoice_id} via {gateway}', ['invoice_id' => $invoice->getId(), 'gateway' => $gtw->getGateway()]);
 
         // @bug https://github.com/boxbilling/boxbilling/issues/108
         if ($adapter->getType() != 'html') {
@@ -1935,7 +1925,7 @@ class Service implements InjectionAwareInterface
                 'mime' => 'application/pdf',
             ];
         } catch (\Exception $e) {
-            $this->di['logger']->setChannel('email')->error('Failed to generate PDF invoice attachment: ' . $e->getMessage());
+            $this->di['logger']->withChannel('email')->error('Failed to generate PDF invoice attachment: ' . $e->getMessage());
 
             return null;
         }

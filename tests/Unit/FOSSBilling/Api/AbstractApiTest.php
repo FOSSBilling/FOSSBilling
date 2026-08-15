@@ -19,10 +19,29 @@ class ConcreteApi extends AbstractApi
     {
         $this->checkPermissions($module, $key, $constraint);
     }
+
+    public function callCheckCaptchaIfEnabled(array $data): void
+    {
+        $this->checkCaptchaIfEnabled($data);
+    }
 }
 
 test('does not resolve the test container implicitly', function (): void {
     expect((new ConcreteApi())->getDi())->toBeNull();
+});
+
+test('stores and returns the module service', function (): void {
+    $service = new stdClass();
+    $api = new ConcreteApi();
+
+    $api->setService($service);
+
+    expect($api->getService())->toBe($service);
+});
+
+test('requires a module service before it is read', function (): void {
+    expect(fn (): object => (new ConcreteApi())->getService())
+        ->toThrow(FOSSBilling\Exception::class, 'Service object is not set for the API');
 });
 
 test('checkPermissions forwards identity to Staff service', function (): void {
@@ -65,4 +84,39 @@ test('checkPermissions forwards constraint to Staff service', function (): void 
     $api->setIdentity($identity);
 
     $api->callCheckPermissions('order', 'manage', 42);
+});
+
+test('checkCaptchaIfEnabled skips an inactive antispam extension', function (): void {
+    $extensionService = Mockery::mock();
+    $extensionService->shouldReceive('isExtensionActive')->once()->with('mod', 'antispam')->andReturnFalse();
+
+    $di = new Pimple\Container();
+    $di['mod_service'] = $di->protect(fn (string $name): object => match (strtolower($name)) {
+        'extension' => $extensionService,
+        default => throw new RuntimeException("Unexpected mod service: $name"),
+    });
+
+    $api = new ConcreteApi();
+    $api->setDi($di);
+    $api->callCheckCaptchaIfEnabled(['email' => 'user@example.com']);
+});
+
+test('checkCaptchaIfEnabled delegates to the antispam extension', function (): void {
+    $data = ['g-recaptcha-response' => 'token'];
+    $extensionService = Mockery::mock();
+    $extensionService->shouldReceive('isExtensionActive')->once()->with('mod', 'antispam')->andReturnTrue();
+
+    $antispamService = Mockery::mock();
+    $antispamService->shouldReceive('checkCaptcha')->once()->with($data);
+
+    $di = new Pimple\Container();
+    $di['mod_service'] = $di->protect(fn (string $name): object => match (strtolower($name)) {
+        'extension' => $extensionService,
+        'antispam' => $antispamService,
+        default => throw new RuntimeException("Unexpected mod service: $name"),
+    });
+
+    $api = new ConcreteApi();
+    $api->setDi($di);
+    $api->callCheckCaptchaIfEnabled($data);
 });

@@ -61,7 +61,7 @@ class ServiceSubscription implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminSubscriptionCreate', 'params' => ['id' => $newId]]);
 
-        $this->di['logger']->info('Created subscription %s', $newId);
+        $this->di['logger']->info('Created subscription {subscription_id}', ['subscription_id' => $newId]);
 
         return $newId;
     }
@@ -96,7 +96,7 @@ class ServiceSubscription implements InjectionAwareInterface
         $this->di['em']->flush();
         $newId = (int) $model->getId();
 
-        $this->di['logger']->info('Updated subscription %s', $newId);
+        $this->di['logger']->info('Updated subscription {subscription_id}', ['subscription_id' => $newId]);
 
         return true;
     }
@@ -140,7 +140,7 @@ class ServiceSubscription implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminSubscriptionDelete', 'params' => ['id' => $id]]);
 
-        $this->di['logger']->info('Removed subscription %s', $id);
+        $this->di['logger']->info('Removed subscription {id}', ['id' => $id]);
 
         return true;
     }

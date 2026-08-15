@@ -24,6 +24,7 @@ use Box\Mod\Product\Entity\Product;
 use Box\Mod\Staff\Entity\Admin;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Logger;
 use FOSSBilling\Validation\NonNegativeIntegerValidator;
 use FOSSBilling\Validation\PriceValidator;
 use Symfony\Component\HttpFoundation\Response;
@@ -185,151 +186,65 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->setChannel('email')->error('Failed to send order activation email', ['exception' => $exc->getMessage(), 'order_id' => $order_id]);
+            $di['logger']->withChannel('email')->error('Failed to send order activation email', ['exception' => $exc, 'order_id' => $order_id]);
+        }
+    }
+
+    private static function sendOrderLifecycleEmail(\Box_Event $event, string $templateSuffix, string $logAction, bool $includeService = true): void
+    {
+        $params = $event->getParameters();
+        $orderId = $params['id'];
+        $di = $event->getDi();
+        $orderService = $di['mod_service']('order');
+
+        try {
+            $order = $di['em']->getRepository(Order::class)->find($orderId);
+            if (!$order instanceof Order) {
+                throw new \FOSSBilling\Exception('Order not found');
+            }
+
+            $service = $includeService ? $orderService->getOrderServiceData($order) : null;
+            $orderArr = $orderService->toApiArray($order, true);
+
+            $email = [
+                'to_client' => $orderArr['client']['id'],
+                'code' => sprintf('mod_service%s_%s', $orderArr['service_type'], $templateSuffix),
+            ];
+            if ($includeService) {
+                $email['service'] = $service;
+            }
+            $email['order'] = $orderArr;
+
+            $emailService = $di['mod_service']('email');
+            $emailService->sendTemplate($email);
+        } catch (\Exception $exc) {
+            $di['logger']->withChannel('email')->error('Failed to send order {action} email', ['action' => $logAction, 'exception' => $exc]);
         }
     }
 
     public static function onAfterAdminOrderRenew(\Box_Event $event): void
     {
-        $params = $event->getParameters();
-        $order_id = $params['id'];
-        $di = $event->getDi();
-        $orderService = $di['mod_service']('order');
-
-        try {
-            $order = $di['em']->getRepository(Order::class)->find($order_id);
-            if (!$order instanceof Order) {
-                throw new \FOSSBilling\Exception('Order not found');
-            }
-            $identity = $di['loggedin_admin'] ?? null;
-            $service = $orderService->getOrderServiceData($order, $identity);
-            $orderArr = $orderService->toApiArray($order, true, $identity);
-
-            $email = [];
-            $email['to_client'] = $orderArr['client']['id'];
-            $email['code'] = sprintf('mod_service%s_renewed', $orderArr['service_type']);
-            $email['service'] = $service;
-            $email['order'] = $orderArr;
-
-            $emailService = $di['mod_service']('email');
-            $emailService->sendTemplate($email);
-        } catch (\Exception $exc) {
-            $di['logger']->setChannel('email')->error('Failed to send order renewal email', ['exception' => $exc->getMessage()]);
-        }
+        self::sendOrderLifecycleEmail($event, 'renewed', 'renewal');
     }
 
     public static function onAfterAdminOrderSuspend(\Box_Event $event): void
     {
-        $params = $event->getParameters();
-        $order_id = $params['id'];
-        $di = $event->getDi();
-        $service = $di['mod_service']('order');
-
-        try {
-            $order = $di['em']->getRepository(Order::class)->find($order_id);
-            if (!$order instanceof Order) {
-                throw new \FOSSBilling\Exception('Order not found');
-            }
-            $identity = $di['loggedin_admin'] ?? null;
-            $s = $service->getOrderServiceData($order, $identity);
-            $orderArr = $service->toApiArray($order, true, $identity);
-
-            $email = [];
-            $email['to_client'] = $orderArr['client']['id'];
-            $email['code'] = sprintf('mod_service%s_suspended', $orderArr['service_type']);
-            $email['service'] = $s;
-            $email['order'] = $orderArr;
-
-            $emailService = $di['mod_service']('email');
-            $emailService->sendTemplate($email);
-        } catch (\Exception $exc) {
-            $di['logger']->setChannel('email')->error('Failed to send order suspension email', ['exception' => $exc->getMessage()]);
-        }
+        self::sendOrderLifecycleEmail($event, 'suspended', 'suspension');
     }
 
     public static function onAfterAdminOrderUnsuspend(\Box_Event $event): void
     {
-        $params = $event->getParameters();
-        $order_id = $params['id'];
-        $di = $event->getDi();
-        $service = $di['mod_service']('order');
-
-        try {
-            $order = $di['em']->getRepository(Order::class)->find($order_id);
-            if (!$order instanceof Order) {
-                throw new \FOSSBilling\Exception('Order not found');
-            }
-            $identity = $di['loggedin_admin'] ?? null;
-            $s = $service->getOrderServiceData($order, $identity);
-            $orderArr = $service->toApiArray($order, true, $identity);
-
-            $email = [];
-            $email['to_client'] = $orderArr['client']['id'];
-            $email['code'] = sprintf('mod_service%s_unsuspended', $orderArr['service_type']);
-            $email['service'] = $s;
-            $email['order'] = $orderArr;
-
-            $emailService = $di['mod_service']('email');
-            $emailService->sendTemplate($email);
-        } catch (\Exception $exc) {
-            $di['logger']->setChannel('email')->error('Failed to send order unsuspension email', ['exception' => $exc->getMessage()]);
-        }
+        self::sendOrderLifecycleEmail($event, 'unsuspended', 'unsuspension');
     }
 
     public static function onAfterAdminOrderCancel(\Box_Event $event): void
     {
-        $params = $event->getParameters();
-        $order_id = $params['id'];
-        $di = $event->getDi();
-        $service = $di['mod_service']('order');
-
-        try {
-            $order = $di['em']->getRepository(Order::class)->find($order_id);
-            if (!$order instanceof Order) {
-                throw new \FOSSBilling\Exception('Order not found');
-            }
-            $identity = $di['loggedin_admin'] ?? null;
-            $orderArr = $service->toApiArray($order, true, $identity);
-
-            $email = [];
-            $email['to_client'] = $orderArr['client']['id'];
-            $email['code'] = sprintf('mod_service%s_canceled', $orderArr['service_type']);
-            $email['order'] = $orderArr;
-
-            $emailService = $di['mod_service']('email');
-            $emailService->sendTemplate($email);
-        } catch (\Exception $exc) {
-            $di['logger']->setChannel('email')->error('Failed to send order cancellation email', ['exception' => $exc->getMessage()]);
-        }
+        self::sendOrderLifecycleEmail($event, 'canceled', 'cancellation', false);
     }
 
     public static function onAfterAdminOrderUncancel(\Box_Event $event): void
     {
-        $params = $event->getParameters();
-        $order_id = $params['id'];
-        $di = $event->getDi();
-        $service = $di['mod_service']('order');
-
-        try {
-            $order = $di['em']->getRepository(Order::class)->find($order_id);
-            if (!$order instanceof Order) {
-                throw new \FOSSBilling\Exception('Order not found');
-            }
-            $identity = $di['loggedin_admin'] ?? null;
-            $s = $service->getOrderServiceData($order, $identity);
-            $orderArr = $service->toApiArray($order, true, $identity);
-
-            $email = [];
-            $email['to_client'] = $orderArr['client']['id'];
-            $email['code'] = sprintf('mod_service%s_renewed', $orderArr['service_type']);
-            $email['order'] = $orderArr;
-            $email['service'] = $s;
-
-            $emailService = $di['mod_service']('email');
-            $emailService->sendTemplate($email);
-        } catch (\Exception $exc) {
-            $di['logger']->setChannel('email')->error('Failed to send order uncancel email', ['exception' => $exc->getMessage()]);
-        }
+        self::sendOrderLifecycleEmail($event, 'renewed', 'uncancel');
     }
 
     /**
@@ -431,15 +346,14 @@ class Service implements InjectionAwareInterface
         return $order instanceof Order;
     }
 
-    public function getLogger(Order $order)
+    public function getLogger(Order $order): Logger
     {
         $orderId = $this->orderId($order);
 
-        $log = $this->di['logger'];
-        $log->setEventItem('client_order_id', $orderId);
-        $log->setEventItem('status', $order->getStatus());
-
-        return $log;
+        return $this->di['logger']->withContext([
+            'client_order_id' => $orderId,
+            'status' => $order->getStatus(),
+        ]);
     }
 
     /**
@@ -1032,7 +946,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderCreate', 'params' => ['id' => $order->getId()], 'subject' => $this->getProductType($product)]);
 
-        $this->di['logger']->info('Created order #%s', $id);
+        $this->di['logger']->info('Created order #{id}', ['id' => $id]);
 
         // activate immediately on creation
         if ($activate) {
@@ -1111,7 +1025,7 @@ class Service implements InjectionAwareInterface
 
         $this->activateOrderAddons($order);
 
-        $this->di['logger']->info('Activated order #%s', $orderId);
+        $this->di['logger']->info('Activated order #{order_id}', ['order_id' => $orderId]);
 
         return true;
     }
@@ -1360,7 +1274,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderUpdate', 'params' => ['id' => $orderId]]);
 
-        $this->di['logger']->info('Update order #%s', $orderId);
+        $this->di['logger']->info('Update order #{order_id}', ['order_id' => $orderId]);
 
         return true;
     }
@@ -1386,7 +1300,7 @@ class Service implements InjectionAwareInterface
         }
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderRenew', 'params' => ['id' => $orderId]]);
-        $this->di['logger']->info('Renewed order #%s', $orderId);
+        $this->di['logger']->info('Renewed order #{order_id}', ['order_id' => $orderId]);
 
         return true;
     }
@@ -1466,7 +1380,7 @@ class Service implements InjectionAwareInterface
             $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderSuspend', 'params' => ['id' => $orderId]]);
         }
 
-        $this->di['logger']->info('Suspended order #%s', $orderId);
+        $this->di['logger']->info('Suspended order #{order_id}', ['order_id' => $orderId]);
 
         return true;
     }
@@ -1489,7 +1403,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderUnsuspend', 'params' => ['id' => $orderId]]);
 
-        $this->di['logger']->info('Unsuspended order #%s', $orderId);
+        $this->di['logger']->info('Unsuspended order #{order_id}', ['order_id' => $orderId]);
 
         return true;
     }
@@ -1516,7 +1430,7 @@ class Service implements InjectionAwareInterface
             $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderCancel', 'params' => ['id' => $orderId]]);
         }
 
-        $this->di['logger']->info('Canceled order #%s', $orderId);
+        $this->di['logger']->info('Canceled order #{order_id}', ['order_id' => $orderId]);
 
         return true;
     }
@@ -1540,7 +1454,7 @@ class Service implements InjectionAwareInterface
         $order->setUpdatedAt(new \DateTime());
         $this->persistOrder($order);
         $this->saveStatusChange($order, 'Cancellation scheduled at the end of the current billing period');
-        $this->di['logger']->info('Scheduled cancellation for order #%s at the end of the current billing period', $orderId);
+        $this->di['logger']->info('Scheduled cancellation for order #{order_id} at the end of the current billing period', ['order_id' => $orderId]);
 
         return true;
     }
@@ -1620,7 +1534,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderUncancel', 'params' => ['id' => $orderId]]);
 
-        $this->di['logger']->info('Uncanceled order #%s', $orderId);
+        $this->di['logger']->info('Uncanceled order #{order_id}', ['order_id' => $orderId]);
 
         return true;
     }
@@ -1687,7 +1601,7 @@ class Service implements InjectionAwareInterface
         $this->rmOrder($order);
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderDelete', 'params' => ['id' => $orderId]]);
-        $this->di['logger']->info('Deleted order #%s', $orderId);
+        $this->di['logger']->info('Deleted order #{order_id}', ['order_id' => $orderId]);
 
         return true;
     }
@@ -1718,9 +1632,9 @@ class Service implements InjectionAwareInterface
                 ]);
             } catch (\Throwable $exception) {
                 $this->releaseSuspensionWarningClaim($order, $candidate['suspension_at']);
-                $this->di['logger']->setChannel('email')->error('Failed to send order suspension warning email', [
+                $this->di['logger']->withChannel('email')->error('Failed to send order suspension warning email', [
                     'order_id' => $order->getId(),
-                    'exception' => $exception->getMessage(),
+                    'exception' => $exception,
                 ]);
             }
         }
@@ -1865,7 +1779,10 @@ class Service implements InjectionAwareInterface
         $this->di['em']->persist($order);
         $this->di['em']->flush();
 
-        $this->di['logger']->info(sprintf("Order #%s config changes:\n%s\n%s", $orderId, $oldConfig, $order->getConfig()));
+        $this->di['logger']->info(
+            "Order #{order_id} config changes:\n{old_config}\n{new_config}",
+            ['order_id' => $orderId, 'old_config' => $oldConfig, 'new_config' => $order->getConfig()]
+        );
 
         return true;
     }
@@ -1944,7 +1861,10 @@ class Service implements InjectionAwareInterface
         $this->di['em']->persist($statusEntry);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Added order status history message to order #%s', $statusEntry->getId());
+        $this->di['logger']->info(
+            'Added order status history entry {status_id} for order {order_id}',
+            ['status_id' => $statusEntry->getId(), 'order_id' => $order->getId()]
+        );
 
         return true;
     }

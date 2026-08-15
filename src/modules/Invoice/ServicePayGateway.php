@@ -131,7 +131,7 @@ class ServicePayGateway implements InjectionAwareInterface
         $this->di['em']->persist($new);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Installed new payment gateway %s', $code);
+        $this->di['logger']->info('Installed new payment gateway {code}', ['code' => $code]);
 
         return true;
     }
@@ -175,7 +175,7 @@ class ServicePayGateway implements InjectionAwareInterface
         $this->di['em']->persist($new);
         $this->di['em']->flush();
         $newId = (int) $new->getId();
-        $this->di['logger']->info('Copied payment gateway #%s - %s', $newId, $model->getGateway());
+        $this->di['logger']->info('Copied payment gateway #{gateway_id} - {gateway}', ['gateway_id' => $newId, 'gateway' => $model->getGateway()]);
 
         return $newId;
     }
@@ -208,7 +208,7 @@ class ServicePayGateway implements InjectionAwareInterface
         $model->setAllowRecurrent((bool) ($data['allow_recurrent'] ?? $model->isAllowRecurrent()));
         $model->setTestMode($newTestMode);
         $this->di['em']->flush();
-        $this->di['logger']->info('Updated payment gateway %s', $model->getGateway());
+        $this->di['logger']->info('Updated payment gateway {model_gateway}', ['model_gateway' => $model->getGateway()]);
 
         return true;
     }
@@ -242,7 +242,7 @@ class ServicePayGateway implements InjectionAwareInterface
         $id = $model->getId();
         $this->di['em']->remove($model);
         $this->di['em']->flush();
-        $this->di['logger']->info('Removed payment gateway %s', $id);
+        $this->di['logger']->info('Removed payment gateway {id}', ['id' => $id]);
 
         return true;
     }
@@ -365,7 +365,7 @@ class ServicePayGateway implements InjectionAwareInterface
         }
 
         if (!method_exists($class, 'getConfig')) {
-            error_log("Payment $class gateway does not have getConfig method");
+            $this->di['logger']->error("Payment $class gateway does not have getConfig method");
 
             return [];
         }

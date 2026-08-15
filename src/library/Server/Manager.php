@@ -23,7 +23,7 @@ abstract class Server_Manager
         'port' => null,
         'passwordLength' => null,
     ];
-    private ?Box_Log $_log = null;
+    private ?Psr\Log\LoggerInterface $_log = null;
 
     /**
      * Constructor for the class.
@@ -148,12 +148,12 @@ abstract class Server_Manager
     /**
      * Returns the logger object.
      *
-     * @return Box_Log|null the logger object
+     * @return Psr\Log\LoggerInterface|null the logger object
      */
-    public function getLog(): ?Box_Log
+    public function getLog(): ?Psr\Log\LoggerInterface
     {
-        if (!$this->_log instanceof Box_Log) {
-            return new Box_Log();
+        if (!$this->_log instanceof Psr\Log\LoggerInterface) {
+            return new FOSSBilling\Logger();
         }
 
         return $this->_log;
@@ -162,9 +162,9 @@ abstract class Server_Manager
     /**
      * Sets the logger object.
      *
-     * @param Box_Log $value the logger object
+     * @param Psr\Log\LoggerInterface $value the logger object
      */
-    public function setLog(Box_Log $value): static
+    public function setLog(Psr\Log\LoggerInterface $value): static
     {
         $this->_log = $value;
 

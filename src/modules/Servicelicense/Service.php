@@ -212,7 +212,7 @@ class Service implements InjectionAwareInterface
         $model->setPaths(json_encode([]));
         $model->setVersions(json_encode([]));
         $this->di['em']->flush();
-        $this->di['logger']->info('Reset license %s information', $model->getId());
+        $this->di['logger']->info('Reset license {model_id} information', ['model_id' => $model->getId()]);
 
         $data = [
             'id' => $model->getId(),
@@ -409,7 +409,7 @@ class Service implements InjectionAwareInterface
             }
         }
         if (isset($this->di['logger'])) {
-            $this->di['logger']->info('License #%s plugin %s is invalid.', $model->getId(), $model->getPlugin());
+            $this->di['logger']->info('License #{model_id} plugin {model_plugin} is invalid.', ['model_id' => $model->getId(), 'model_plugin' => $model->getPlugin()]);
         }
 
         return null;
@@ -452,7 +452,7 @@ class Service implements InjectionAwareInterface
     public function checkLicenseDetails(array $data)
     {
         $result = [];
-        $log = $this->di['logger']->setChannel('license');
+        $log = $this->di['logger']->withChannel('license');
         // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
         if (DEBUG) {
             $log->debug(print_r($data, true));

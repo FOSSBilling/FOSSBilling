@@ -219,7 +219,7 @@ class Service implements InjectionAwareInterface
         $em->persist($currency);
         $em->flush();
 
-        $this->di['logger']->info('Set currency %s as default.', $currency->getCode());
+        $this->di['logger']->info('Set currency {currency_code} as default.', ['currency_code' => $currency->getCode()]);
 
         return true;
     }
@@ -260,11 +260,7 @@ class Service implements InjectionAwareInterface
                 $conversionRate = $this->getRate(null, $currencyCode);
             } catch (\Exception $e) {
                 // If rate fetch fails, log a warning and use a default rate of 1.0
-                $this->di['logger']->warning(
-                    'Failed to fetch conversion rate for %s: %s. Using default rate of 1.0.',
-                    $currencyCode,
-                    $e->getMessage()
-                );
+                $this->di['logger']->warning('Failed to fetch conversion rate for {currency_code}: {exception}. Using default rate of 1.0.', ['currency_code' => $currencyCode, 'exception' => $e]);
                 $conversionRate = 1.0;
             }
         } else {
@@ -284,7 +280,7 @@ class Service implements InjectionAwareInterface
         $em->persist($currency);
         $em->flush();
 
-        $this->di['logger']->info('Added new currency %s.', $currency->getCode());
+        $this->di['logger']->info('Added new currency {currency_code}.', ['currency_code' => $currency->getCode()]);
 
         return $currency->getCode();
     }
@@ -317,7 +313,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminDeleteCurrency', 'params' => ['code' => $currencyCode]]);
 
-        $this->di['logger']->info('Removed currency %s.', $currency->getCode());
+        $this->di['logger']->info('Removed currency {currency_code}.', ['currency_code' => $currency->getCode()]);
 
         return true;
     }
@@ -380,7 +376,7 @@ class Service implements InjectionAwareInterface
         $em->flush();
 
         unset($this->formattingCache[$currencyCode]);
-        $this->di['logger']->info('Updated currency %s.', $model->getCode());
+        $this->di['logger']->info('Updated currency {model_code}.', ['model_code' => $model->getCode()]);
 
         return true;
     }
@@ -541,7 +537,7 @@ class Service implements InjectionAwareInterface
 
         $em->flush();
 
-        $this->di['logger']->info('Updated %d currency rates.', $updatedCount);
+        $this->di['logger']->info('Updated {updated_count} currency rates.', ['updated_count' => $updatedCount]);
 
         return true;
     }
@@ -632,7 +628,7 @@ class Service implements InjectionAwareInterface
 
             if ($array['result'] !== 'success') {
                 $item->expiresAfter(15 * 60 * 60); // Try again in 15 min
-                error_log('ExchangeRate-API Gave an error: ' . $array['error-type']);
+                $this->di['logger']->error('ExchangeRate-API Gave an error: ' . $array['error-type']);
 
                 throw new \FOSSBilling\Exception('There was an error when fetching currency rates from ExchangeRate-API. See the error log for details.');
             }
@@ -685,7 +681,7 @@ class Service implements InjectionAwareInterface
             $array = $response->toArray();
 
             if ($array['success'] !== true) {
-                error_log($array['error']['info']);
+                $this->di['logger']->error($array['error']['info']);
 
                 throw new \FOSSBilling\Exception('There was an error when fetching currency rates from Currency Data API. See the error log for details.');
             }
@@ -718,7 +714,7 @@ class Service implements InjectionAwareInterface
             $array = $response->toArray();
 
             if ($array['success'] !== true) {
-                error_log($array['error']['info']);
+                $this->di['logger']->error($array['error']['info']);
 
                 throw new \FOSSBilling\Exception('There was an error when fetching currency rates from currencylayer. See the error log for details.');
             }
@@ -761,7 +757,7 @@ class Service implements InjectionAwareInterface
                 $currencyService->updateCurrencyRates();
             }
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            $di['logger']->error($e->getMessage());
         }
 
         return true;

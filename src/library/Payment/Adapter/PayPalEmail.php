@@ -259,7 +259,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                 break;
 
             default:
-                error_log('Unknown paypal transaction ' . $id);
+                $this->di['logger']->error('Unknown PayPal transaction ' . $id);
 
                 break;
         }

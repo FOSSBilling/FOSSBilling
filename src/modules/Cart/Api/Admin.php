@@ -75,7 +75,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
                 $conn->executeStatement('DELETE FROM cart_product WHERE cart_id = :id', ['id' => $id]);
                 $conn->executeStatement('DELETE FROM cart WHERE id = :id', ['id' => $id]);
             }
-            $this->getDi()['logger']->info('Removed %s expired shopping carts', \FOSSBilling\Tools::safeCount($expiredCarts));
+            $this->getDi()['logger']->info('Removed {expired_count} expired shopping carts', ['expired_count' => \FOSSBilling\Tools::safeCount($expiredCarts)]);
         }
 
         return true;
