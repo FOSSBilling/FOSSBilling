@@ -42,9 +42,10 @@ class Url implements InjectionAwareInterface
         return $this->baseUri . $uri;
     }
 
-    public function link(?string $uri = null, array $params = []): string
+    public function link(?string $uri = null, ?array $params = null): string
     {
         $uri = trim($uri ?? '', '/');
+        $params ??= [];
         $link = $this->baseUri . $uri;
         if ($params !== []) {
             $link .= '?' . http_build_query($params);
@@ -53,7 +54,7 @@ class Url implements InjectionAwareInterface
         return $link;
     }
 
-    public function adminLink(?string $uri = null, array $params = []): string
+    public function adminLink(?string $uri = null, ?array $params = null): string
     {
         $uri = trim($uri ?? '', '/');
         $uri = ADMIN_PREFIX . '/' . $uri;
