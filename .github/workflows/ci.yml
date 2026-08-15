@@ -75,7 +75,7 @@ jobs:
           persist-credentials: false
 
       - name: 'Perform Spellcheck'
-        uses: streetsidesoftware/cspell-action@de2a73e963e7443969755b648a1008f77033c5b2 # v8
+        uses: streetsidesoftware/cspell-action@a670ca8616c79069394da60e3cc71d6edb1f91c2 # v9
         with:
           incremental_files_only: true
 
