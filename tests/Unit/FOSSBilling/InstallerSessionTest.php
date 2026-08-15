@@ -14,6 +14,8 @@ test('installer session uses secure cookie attributes over HTTPS', function (): 
 
     $originalName = session_name();
     $originalCookieParams = session_get_cookie_params();
+    $originalSerializeHandler = ini_get('session.serialize_handler');
+    $originalCacheLimiter = ini_get('session.cache_limiter');
     $session = null;
 
     try {
@@ -33,5 +35,13 @@ test('installer session uses secure cookie attributes over HTTPS', function (): 
 
         session_name($originalName);
         session_set_cookie_params($originalCookieParams);
+
+        if ($originalSerializeHandler !== false) {
+            ini_set('session.serialize_handler', $originalSerializeHandler);
+        }
+
+        if ($originalCacheLimiter !== false) {
+            ini_set('session.cache_limiter', $originalCacheLimiter);
+        }
     }
 });
