@@ -275,8 +275,8 @@ Order our services at {{ "order"|url }}
             foreach ($clients as $client) {
                 $clientInfo = $clientService->get(['id' => $client['id']]);
                 $recipients[] = [
-                    'email' => $clientInfo->email,
-                    'name' => $clientInfo->first_name . ' ' . $clientInfo->last_name,
+                    'email' => $clientInfo->getEmail(),
+                    'name' => $clientInfo->getFirstName() . ' ' . $clientInfo->getLastName(),
                 ];
             }
         }
