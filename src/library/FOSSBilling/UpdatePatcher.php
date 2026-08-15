@@ -508,6 +508,7 @@ class UpdatePatcher implements InjectionAwareInterface
             101 => 'patch101',
             102 => 'patch102',
             103 => 'patch103',
+            104 => 'patch104',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -3085,6 +3086,17 @@ class UpdatePatcher implements InjectionAwareInterface
                 }
             }
         }
+    }
+
+    private function patch104(): void
+    {
+        // Legacy RedBeanPHP installs stored `0` rather than NULL for clients with no
+        // group, since group ids start at 1. The Client entity's ClientGroup
+        // association only tolerates NULL, so Doctrine throws "Entity of type
+        // '...ClientGroup' for IDs id(0) was not found" the moment it tries to load
+        // the association for these clients.
+        // @see https://github.com/FOSSBilling/FOSSBilling/issues/4160
+        $this->executeSql('UPDATE `client` SET `client_group_id` = NULL WHERE `client_group_id` = 0;');
     }
 
     /**

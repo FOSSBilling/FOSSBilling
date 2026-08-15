@@ -736,3 +736,27 @@ test('custom pages slug unique patch is a no-op when the index already exists', 
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch102'))->invoke($patcher);
 });
+
+test('client group patch follows the money column decimal patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 103);
+
+    expect($patches)->toHaveKey(104)
+        ->and($patches[104][1])->toBe('patch104');
+});
+
+test('client group patch normalizes legacy zero group ids to null', function (): void {
+    $statement = Mockery::mock(PDOStatement::class);
+    $statement->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')
+        ->with('UPDATE `client` SET `client_group_id` = NULL WHERE `client_group_id` = 0;')
+        ->andReturn($statement);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch104'))->invoke($patcher);
+});
