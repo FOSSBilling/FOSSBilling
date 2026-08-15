@@ -300,7 +300,7 @@ test('rejects a crafted order for an inactive tld before contacting the registra
         ->toThrow(FOSSBilling\InformationException::class, 'TLD is not active');
 })->with(['register', 'transfer']);
 
-test('creates action', function (): void {
+test('creates action', function (int|string $registerYears): void {
     $service = new Service();
     $tldModel = new Tld();
     $tldModel->setRegistrar(new TldRegistrar());
@@ -309,7 +309,7 @@ test('creates action', function (): void {
         'action' => 'register',
         'register_sld' => 'example',
         'register_tld' => '.com',
-        'register_years' => 2,
+        'register_years' => $registerYears,
         'ns2' => 'custom-ns2.example.com',
     ];
 
@@ -372,7 +372,11 @@ test('creates action', function (): void {
     $result = $serviceMock->action_create($order);
     expect($result)->toBeInstanceOf(ServiceDomain::class);
     expect($result->getNs2())->toBe('custom-ns2.example.com');
-});
+    expect($result->getPeriod())->toBe(2);
+})->with([
+    'int register_years' => [2],
+    'string register_years' => ['2'],
+]);
 
 test('throws exception when creating action with missing nameservers', function (): void {
     $service = new Service();

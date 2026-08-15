@@ -870,7 +870,7 @@ class Service implements InjectionAwareInterface
             return;
         }
 
-        if (!in_array((int) $group->getId(), $this->adminGroupRepository->getDescendantIdsForGroups($this->adminGroupMemberRepository->getGroupIdsForAdmin((int) $actor->id)), true)) {
+        if (!in_array((int) $group->getId(), $this->adminGroupRepository->getDescendantIdsForGroups($this->adminGroupMemberRepository->getGroupIdsForAdmin((int) $actor->getId())), true)) {
             throw new \FOSSBilling\InformationException('You can only manage lower staff groups');
         }
     }

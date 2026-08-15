@@ -216,7 +216,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->validateOrderData($c);
 
         [$sld, $tld] = $this->_getTuple($c);
-        $years = $c['register_years'] ?? 1;
+        $years = (int) ($c['register_years'] ?? 1);
 
         // @todo ?
         $systemService = $this->di['mod_service']('system');
