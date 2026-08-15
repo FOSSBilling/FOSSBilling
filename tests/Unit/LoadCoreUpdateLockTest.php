@@ -63,8 +63,15 @@ test('isCoreUpdateLockActive is true just under the staleness window', function 
 });
 
 test('isCoreUpdateLockActive is true exactly at the staleness boundary', function (): void {
-    withCoreUpdateLock(time() - 600, function (): void {
-        expect(isCoreUpdateLockActive())->toBeTrue();
+    // The boundary is exact (<=600), so this asserts a fixed reference time
+    // against a fixed mtime instead of two separate time() calls - otherwise a
+    // clock tick between writing the lock and checking it could flip a
+    // legitimately-600-second-old lock to 601 and fail this on production code
+    // that's still correct.
+    $now = time();
+
+    withCoreUpdateLock($now - 600, function () use ($now): void {
+        expect(isCoreUpdateLockActive($now))->toBeTrue();
     });
 });
 

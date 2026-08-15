@@ -406,8 +406,21 @@ class Update implements InjectionAwareInterface
     public static function isSafeArchiveEntry(string $entryName): bool
     {
         $normalized = str_replace('\\', '/', $entryName);
-        $segments = explode('/', $normalized);
 
-        return !str_starts_with($normalized, '/') && !preg_match('#^[a-zA-Z]:#', $normalized) && !in_array('..', $segments, true);
+        if (str_starts_with($normalized, '/') || preg_match('#^[a-zA-Z]:#', $normalized)) {
+            return false;
+        }
+
+        foreach (explode('/', $normalized) as $segment) {
+            // Windows strips trailing spaces and periods from path components, so
+            // '.. .' or '...' resolve to '..' at extraction time even though they
+            // don't match it literally here. Reject any segment that is nothing
+            // but dots and/or spaces rather than just the exact '..' segment.
+            if ($segment !== '' && trim($segment, ' .') === '') {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

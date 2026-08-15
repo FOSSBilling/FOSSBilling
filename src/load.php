@@ -185,15 +185,16 @@ function exceptionHandler(Exception|Error $e): void
  * failsafe for the rare case that PHP is killed outright (host timeout, OOM)
  * before that block can run.
  */
-function isCoreUpdateLockActive(): bool
+function isCoreUpdateLockActive(?int $now = null): bool
 {
     $mtime = @filemtime(PATH_ROOT . DIRECTORY_SEPARATOR . '.update-lock');
+    $now ??= time();
 
     // No lock file, or it's old enough that the process which created it must
     // have died without cleaning up (e.g. a host-side request timeout killed
     // it before the update's `finally` block could run). Treat an old lock as
     // abandoned rather than blocking the site forever.
-    return $mtime !== false && (time() - $mtime) <= 600;
+    return $mtime !== false && ($now - $mtime) <= 600;
 }
 
 function blockWhileCoreUpdateIsRunning(): void
