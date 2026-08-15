@@ -61,7 +61,8 @@
         "previewable",
         "falsey",
         "unindexed",
-        "catchable"
+        "catchable",
+        "nelexa"
     ],
 
     "ignoreWords": [
