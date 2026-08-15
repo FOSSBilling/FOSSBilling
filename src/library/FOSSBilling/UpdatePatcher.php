@@ -1964,7 +1964,7 @@ class UpdatePatcher implements InjectionAwareInterface
                     ['value' => $documentNr, 'id' => $clientId]
                 );
             } else {
-                $this->di['logger']->withChannel('update')->warning('patch75: client #{client_id} has no free custom field slot; unmigrated document_nr was "{document_nr}".', ['client_id' => $clientId, 'document_nr' => $documentNr]);
+                $this->di['logger']->withChannel('update')->warning('patch75: client #{client_id} has no free custom field slot; the document number could not be migrated.', ['client_id' => $clientId]);
             }
         }
 

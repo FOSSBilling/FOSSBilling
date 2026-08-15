@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+
 /**
  * Copyright 2022-2025 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.

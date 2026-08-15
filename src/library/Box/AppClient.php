@@ -83,8 +83,12 @@ class Box_AppClient extends Box_App
             // next regression of this shape (issue #3818) cannot hide behind a
             // generic 404.
             $this->di['logger']->withChannel('routing')->error(
-                'Template rendering failed for "{template}" (page "{page}"): {exception}',
-                ['template' => $tpl, 'page' => (string) $page, 'exception' => $e]
+                'Template rendering failed for "{template}" (page "{page}").',
+                [
+                    'template' => $tpl,
+                    'page' => (string) $page,
+                    'exception_class' => $e::class,
+                ]
             );
 
             $internal = new FOSSBilling\InformationException('The requested page could not be rendered.', [], 500);

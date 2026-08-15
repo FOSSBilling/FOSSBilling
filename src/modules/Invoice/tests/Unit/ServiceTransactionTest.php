@@ -307,6 +307,33 @@ test('preProcessTransaction marks error on a generic exception', function (): vo
         ->and($transactionModel->getError())->toBe('Unexpected DB error');
 });
 
+test('processes the rest of a received transaction batch after a failure', function (): void {
+    $first = createEntity(Transaction::class, ['id' => 1]);
+    $second = createEntity(Transaction::class, ['id' => 2]);
+
+    $transactionRepository = Mockery::mock(TransactionRepository::class);
+    $transactionRepository->shouldReceive('find')->once()->with(1)->andReturn($first);
+    $transactionRepository->shouldReceive('find')->once()->with(2)->andReturn($second);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepository);
+
+    $di = container();
+    $di['em'] = $em;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $service = Mockery::mock(ServiceTransaction::class)->makePartial();
+    $service->shouldReceive('getReceived')->once()->andReturn([
+        ['id' => 1],
+        ['id' => 2],
+    ]);
+    $service->shouldReceive('preProcessTransaction')->once()->with($first)->andThrow(new RuntimeException('First transaction failed'));
+    $service->shouldReceive('preProcessTransaction')->once()->with($second)->andReturnTrue();
+    $service->setDi($di);
+
+    expect($service->processReceivedATransactions())->toBeTrue();
+});
+
 test('claimForProcessing includes error status in claim query', function (): void {
     $execArgs = [];
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);

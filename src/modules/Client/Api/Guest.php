@@ -179,14 +179,14 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
             $ipLimit = $this->getDi()['rate_limiter']->consume('client_password_reset_ip', (string) $this->getIp());
             if ($ipLimit->isLimited()) {
-                $this->getDi()['logger']->withChannel('security')->info('Client password reset rate limited from IP {ip}: email {email}', ['ip' => $this->getIp(), 'email' => $data['email']]);
+                $this->getDi()['logger']->withChannel('security')->info('Client password reset rate limited from IP {ip}.', ['ip' => $this->getIp()]);
 
                 return true;
             }
 
             $emailLimit = $this->getDi()['rate_limiter']->consume('client_password_reset_email', (string) $data['email']);
             if ($emailLimit->isLimited()) {
-                $this->getDi()['logger']->withChannel('security')->info('Client password reset rate limited for email {email} from IP {ip}', ['email' => $data['email'], 'ip' => $this->getIp()]);
+                $this->getDi()['logger']->withChannel('security')->info('Client password reset rate limited for an account from IP {ip}.', ['ip' => $this->getIp()]);
 
                 return true;
             }
@@ -198,13 +198,13 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             $em = $this->getDi()['em'];
             $client = $em->getRepository(Client::class)->findOneByEmailAndActive($data['email']);
             if (!$client instanceof Client) {
-                $this->getDi()['logger']->withChannel('security')->info('Client password reset requested for unknown email {email} from IP {ip}', ['email' => $data['email'], 'ip' => $this->getIp()]);
+                $this->getDi()['logger']->withChannel('security')->info('Client password reset requested for an unknown account from IP {ip}.', ['ip' => $this->getIp()]);
 
                 return true;
             }
 
             if ($client->getStatus() !== Client::ACTIVE) {
-                $this->getDi()['logger']->withChannel('security')->info('Client password reset requested for ineligible client #{client_id} from IP {ip}: email {email}, account status {status}', ['client_id' => $client->getId(), 'ip' => $this->getIp(), 'email' => $data['email'], 'status' => $client->getStatus()]);
+                $this->getDi()['logger']->withChannel('security')->info('Client password reset requested for ineligible client #{client_id} from IP {ip}: account status {status}.', ['client_id' => $client->getId(), 'ip' => $this->getIp(), 'status' => $client->getStatus()]);
 
                 return true;
             }
@@ -212,7 +212,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             $hash = $service->createPasswordResetRequestForClient($client);
             $service->sendPasswordResetRequestEmailForClient($client, $hash);
 
-            $this->getDi()['logger']->withChannel('security')->info('Client password reset email queued for client #{client_id} from IP {ip}: email {email}', ['client_id' => $client->getId(), 'ip' => $this->getIp(), 'email' => $data['email']]);
+            $this->getDi()['logger']->withChannel('security')->info('Client password reset email queued for client #{client_id} from IP {ip}.', ['client_id' => $client->getId(), 'ip' => $this->getIp()]);
 
             return true;
         } finally {

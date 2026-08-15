@@ -95,7 +95,9 @@ test('context is scoped to the returned logger', function (): void {
 
     expect($writer->writes[0])
         ->toHaveKey('client_order_id', 42)
-        ->toHaveKey('status', 'active');
+        ->toHaveKey('status', 'active')
+        ->and($writer->writes[0]['info'])
+        ->toBe(['client_order_id' => 42, 'status' => 'active']);
     expect($writer->writes[1])
         ->not->toHaveKey('client_order_id')
         ->not->toHaveKey('status');

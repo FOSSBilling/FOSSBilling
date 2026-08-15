@@ -369,7 +369,7 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
         }
 
         if ($this->isTestEnv()) {
-            $this->getLog()->debug(print_r($result, true));
+            $this->getLog()->debug('Internet.bs response received.', ['status' => $result['status'] ?? null]);
         }
 
         return $result;

@@ -31,24 +31,38 @@ function container(): Container
     $di['filesystem'] = fn (): \Symfony\Component\Filesystem\Filesystem => new \Symfony\Component\Filesystem\Filesystem();
     $di['logger'] = fn (): \Psr\Log\LoggerInterface => new class extends AbstractLogger {
         public array $calls = [];
+        private string $channel = 'application';
+        private array $context = [];
 
         public function log($level, string|\Stringable $message, array $context = []): void
         {
-            $this->calls[] = ['method' => $level, 'params' => [$message, $context]];
+            $effectiveContext = [...$this->context, ...$context];
+            $call = ['method' => $level, 'params' => [$message, $effectiveContext]];
+            if ($this->channel !== 'application') {
+                $call['channel'] = $this->channel;
+            }
+
+            $this->calls[] = $call;
         }
 
-        public function withChannel(string $channel): self
+        public function withChannel(string $channel): static
         {
             $this->calls[] = ['method' => 'withChannel', 'params' => [$channel]];
+            $logger = clone $this;
+            $logger->calls = &$this->calls;
+            $logger->channel = $channel;
 
-            return $this;
+            return $logger;
         }
 
-        public function withContext(array $context): self
+        public function withContext(array $context): static
         {
             $this->calls[] = ['method' => 'withContext', 'params' => [$context]];
+            $logger = clone $this;
+            $logger->calls = &$this->calls;
+            $logger->context = [...$this->context, ...$context];
 
-            return $this;
+            return $logger;
         }
     };
     $di['request'] = fn (): Request => Request::create('http://localhost/');

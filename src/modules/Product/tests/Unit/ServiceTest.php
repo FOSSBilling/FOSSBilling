@@ -1922,6 +1922,124 @@ test('release reserved promo redemptions for invoice releases reservations and d
     expect($di['em']->flushCalls)->toBe(1);
 });
 
+test('failed checkout compensation removes only active checkout reservations atomically', function (): void {
+    $service = new Service();
+    $promo = productTestCreatePromoEntity(7);
+    $activeRedemption = (new PromoRedemption())
+        ->setPromo($promo)
+        ->setPhase(PromoRedemption::PHASE_CHECKOUT)
+        ->setStatus(PromoRedemption::STATUS_RESERVED);
+
+    $redemptionRepository = Mockery::mock(PromoRedemptionRepository::class);
+    $redemptionRepository->shouldReceive('findBy')->once()->with([
+        'promo' => $promo,
+        'clientOrderId' => [11, 12],
+        'phase' => PromoRedemption::PHASE_CHECKOUT,
+        'status' => PromoRedemption::STATUS_RESERVED,
+    ])->andReturn([$activeRedemption]);
+
+    $promoRepository = Mockery::mock(PromoRepository::class);
+    $promoRepository->shouldReceive('decrementUsage')
+        ->once()
+        ->with(7, 1, Mockery::type(DateTimeInterface::class));
+
+    $entityManager = new class($promoRepository, $redemptionRepository) {
+        public array $removed = [];
+        public int $flushCalls = 0;
+        public int $transactionCalls = 0;
+
+        public function __construct(
+            private readonly object $promoRepository,
+            private readonly object $redemptionRepository,
+        ) {
+        }
+
+        public function getRepository(string $class): object
+        {
+            return $class === Promo::class ? $this->promoRepository : $this->redemptionRepository;
+        }
+
+        public function remove(object $entity): void
+        {
+            $this->removed[] = $entity;
+        }
+
+        public function flush(): void
+        {
+            ++$this->flushCalls;
+        }
+
+        public function wrapInTransaction(callable $callback): mixed
+        {
+            ++$this->transactionCalls;
+
+            return $callback();
+        }
+    };
+
+    $di = container();
+    $di['em'] = $entityManager;
+    $service->setDi($di);
+
+    $service->compensateCheckoutPromoFailure($promo, [11, 12], 1);
+
+    expect($entityManager->removed)->toBe([$activeRedemption])
+        ->and($entityManager->flushCalls)->toBe(1)
+        ->and($entityManager->transactionCalls)->toBe(1);
+});
+
+test('failed checkout compensation does nothing when no active reservation remains', function (): void {
+    $service = new Service();
+    $promo = productTestCreatePromoEntity(7);
+    $redemptionRepository = Mockery::mock(PromoRedemptionRepository::class);
+    $redemptionRepository->shouldReceive('findBy')->once()->with([
+        'promo' => $promo,
+        'clientOrderId' => [11],
+        'phase' => PromoRedemption::PHASE_CHECKOUT,
+        'status' => PromoRedemption::STATUS_RESERVED,
+    ])->andReturn([]);
+
+    $promoRepository = Mockery::mock(PromoRepository::class);
+    $promoRepository->shouldNotReceive('decrementUsage');
+
+    $entityManager = new class($promoRepository, $redemptionRepository) {
+        public int $removeCalls = 0;
+        public int $transactionCalls = 0;
+
+        public function __construct(
+            private readonly object $promoRepository,
+            private readonly object $redemptionRepository,
+        ) {
+        }
+
+        public function getRepository(string $class): object
+        {
+            return $class === Promo::class ? $this->promoRepository : $this->redemptionRepository;
+        }
+
+        public function remove(object $entity): void
+        {
+            ++$this->removeCalls;
+        }
+
+        public function wrapInTransaction(callable $callback): mixed
+        {
+            ++$this->transactionCalls;
+
+            return $callback();
+        }
+    };
+
+    $di = container();
+    $di['em'] = $entityManager;
+    $service->setDi($di);
+
+    $service->compensateCheckoutPromoFailure($promo, [11], 1);
+
+    expect($entityManager->removeCalls)->toBe(0)
+        ->and($entityManager->transactionCalls)->toBe(1);
+});
+
 test('update promo', function (): void {
     $service = new Service();
     $data = [

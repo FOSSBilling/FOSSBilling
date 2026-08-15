@@ -1449,8 +1449,9 @@ class Service implements InjectionAwareInterface
      *
      * A normal checkout runs through the shared Doctrine transaction, so a
      * rollback removes these rows before this method finds them. The cleanup
-     * remains useful for failures that occur after a reservation is committed
-     * or when an older integration uses a separate connection.
+     * remains useful when an older integration persists a reservation outside
+     * that transaction. Only active checkout reservations are eligible; if none
+     * remain, there is no safe usage counter adjustment to make.
      *
      * @param list<int> $orderIds      order IDs from the failed checkout
      * @param int       $reservedCount number of successful reservations
@@ -1466,20 +1467,29 @@ class Service implements InjectionAwareInterface
             return;
         }
 
-        $redemptions = $this->getPromoRedemptionRepository()->findBy([
-            'promoId' => $promoId,
-            'clientOrderId' => $orderIds,
-        ]);
-        if ($redemptions === []) {
-            return;
-        }
+        $redemptionRepository = $this->getPromoRedemptionRepository();
+        $promoRepository = $this->getPromoRepository();
+        $this->di['em']->wrapInTransaction(function () use ($redemptionRepository, $promoRepository, $promo, $orderIds, $promoId): void {
+            $redemptions = $redemptionRepository->findBy([
+                'promo' => $promo,
+                'clientOrderId' => $orderIds,
+                'phase' => PromoRedemption::PHASE_CHECKOUT,
+                'status' => PromoRedemption::STATUS_RESERVED,
+            ]);
+            if ($redemptions === []) {
+                // The checkout transaction may already have rolled back these
+                // rows. Do not decrement from the caller's count when there is
+                // nothing left to remove.
+                return;
+            }
 
-        foreach ($redemptions as $redemption) {
-            $this->di['em']->remove($redemption);
-        }
-        $this->di['em']->flush();
+            foreach ($redemptions as $redemption) {
+                $this->di['em']->remove($redemption);
+            }
+            $this->di['em']->flush();
 
-        $this->getPromoRepository()->decrementUsage($promoId, count($redemptions), new \DateTimeImmutable());
+            $promoRepository->decrementUsage($promoId, count($redemptions), new \DateTimeImmutable());
+        });
     }
 
     /**

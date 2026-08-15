@@ -203,9 +203,8 @@ class Service implements InjectionAwareInterface
                 throw new \FOSSBilling\Exception('Order not found');
             }
 
-            $identity = $di['loggedin_admin'] ?? null;
-            $service = $includeService ? $orderService->getOrderServiceData($order, $identity) : null;
-            $orderArr = $orderService->toApiArray($order, true, $identity);
+            $service = $includeService ? $orderService->getOrderServiceData($order) : null;
+            $orderArr = $orderService->toApiArray($order, true);
 
             $email = [
                 'to_client' => $orderArr['client']['id'],

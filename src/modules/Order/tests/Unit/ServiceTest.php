@@ -214,8 +214,8 @@ test('onAfterAdminOrderRenew fires template without an admin session', function 
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('getOrderServiceData')->once()->with($order, null)->andReturn([]);
-    $serviceMock->shouldReceive('toApiArray')->once()->with($order, true, null)->andReturn($orderArr);
+    $serviceMock->shouldReceive('getOrderServiceData')->once()->with($order)->andReturn([]);
+    $serviceMock->shouldReceive('toApiArray')->once()->with($order, true)->andReturn($orderArr);
 
     $di = container();
     $di['em']->getRepository(Order::class)->shouldReceive('find')->once()->with(1)->andReturn($order);
@@ -339,8 +339,8 @@ test('onAfterAdminOrderSuspend fires template without an admin session', functio
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('getOrderServiceData')->once()->with($order, null)->andReturn([]);
-    $serviceMock->shouldReceive('toApiArray')->once()->with($order, true, null)->andReturn($orderArr);
+    $serviceMock->shouldReceive('getOrderServiceData')->once()->with($order)->andReturn([]);
+    $serviceMock->shouldReceive('toApiArray')->once()->with($order, true)->andReturn($orderArr);
 
     $di = container();
     $di['em']->getRepository(Order::class)->shouldReceive('find')->once()->with(1)->andReturn($order);
@@ -464,8 +464,8 @@ test('onAfterAdminOrderUnsuspend fires template without an admin session', funct
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('getOrderServiceData')->once()->with($order, null)->andReturn([]);
-    $serviceMock->shouldReceive('toApiArray')->once()->with($order, true, null)->andReturn($orderArr);
+    $serviceMock->shouldReceive('getOrderServiceData')->once()->with($order)->andReturn([]);
+    $serviceMock->shouldReceive('toApiArray')->once()->with($order, true)->andReturn($orderArr);
 
     $di = container();
     $di['em']->getRepository(Order::class)->shouldReceive('find')->once()->with(1)->andReturn($order);
@@ -587,7 +587,7 @@ test('onAfterAdminOrderCancel fires template without an admin session', function
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('toApiArray')->once()->with($order, true, null)->andReturn($orderArr);
+    $serviceMock->shouldReceive('toApiArray')->once()->with($order, true)->andReturn($orderArr);
 
     $di = container();
     $di['em']->getRepository(Order::class)->shouldReceive('find')->once()->with(1)->andReturn($order);
@@ -710,8 +710,8 @@ test('onAfterAdminOrderUncancel fires template without an admin session', functi
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('getOrderServiceData')->once()->with($order, null)->andReturn([]);
-    $serviceMock->shouldReceive('toApiArray')->once()->with($order, true, null)->andReturn($orderArr);
+    $serviceMock->shouldReceive('getOrderServiceData')->once()->with($order)->andReturn([]);
+    $serviceMock->shouldReceive('toApiArray')->once()->with($order, true)->andReturn($orderArr);
 
     $di = container();
     $di['em']->getRepository(Order::class)->shouldReceive('find')->once()->with(1)->andReturn($order);
@@ -1382,7 +1382,7 @@ test('getLogger returns logger with event items', function (): void {
                 $this->capturedItems[] = [$name, $value];
             }
 
-            return $this;
+            return clone $this;
         }
     };
 

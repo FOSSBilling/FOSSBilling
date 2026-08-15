@@ -404,11 +404,23 @@ class Update implements InjectionAwareInterface
             $response = $httpClient->request('GET', $releaseInfo['download_url'], $downloadOptions);
 
             $fileHandler = fopen($archiveFile, 'w');
-            foreach ($httpClient->stream($response) as $chunk) {
-                fwrite($fileHandler, (string) $chunk->getContent());
+            if ($fileHandler === false) {
+                throw new \RuntimeException('Unable to create the update archive.');
             }
-            fclose($fileHandler);
-        } catch (TransportExceptionInterface|HttpExceptionInterface $e) {
+
+            try {
+                foreach ($httpClient->stream($response) as $chunk) {
+                    $content = (string) $chunk->getContent();
+                    $written = fwrite($fileHandler, $content);
+                    if ($written === false || $written !== strlen($content)) {
+                        throw new \RuntimeException('Unable to write the update archive.');
+                    }
+                }
+            } finally {
+                fclose($fileHandler);
+            }
+        } catch (\Throwable $e) {
+            $this->removeDownloadedArchive($archiveFile);
             $this->di['logger']->withChannel('update')->error($e->getMessage());
 
             throw new Exception('Failed to download the update archive. Further details are available in the error log.');

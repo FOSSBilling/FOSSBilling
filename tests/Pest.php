@@ -117,6 +117,8 @@ if (!class_exists(Tests\Helpers\TestLogger::class)) {
         class TestLogger extends \Psr\Log\AbstractLogger
         {
             public array $calls = [];
+            private string $channel = "application";
+            private array $context = [];
 
             public function __construct()
             {
@@ -125,22 +127,36 @@ if (!class_exists(Tests\Helpers\TestLogger::class)) {
 
             public function log($level, string|\\Stringable $message, array $context = []): void
             {
+                $effectiveContext = [...$this->context, ...$context];
                 $params = [$message];
-                if ($context !== []) {
-                    $params[] = $context;
+                if ($effectiveContext !== []) {
+                    $params[] = $effectiveContext;
                 }
 
-                $this->calls[] = ["method" => $level, "params" => $params];
+                $call = ["method" => $level, "params" => $params];
+                if ($this->channel !== "application") {
+                    $call["channel"] = $this->channel;
+                }
+
+                $this->calls[] = $call;
             }
 
             public function withChannel(string $channel): static
             {
-                return $this;
+                $logger = clone $this;
+                $logger->calls =& $this->calls;
+                $logger->channel = $channel;
+
+                return $logger;
             }
 
             public function withContext(array $context): static
             {
-                return $this;
+                $logger = clone $this;
+                $logger->calls =& $this->calls;
+                $logger->context = [...$this->context, ...$context];
+
+                return $logger;
             }
         }
     ');

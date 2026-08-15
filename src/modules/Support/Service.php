@@ -1216,7 +1216,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 $this->ticketReply($ticket, $admin, $canned['content']);
             }
         } catch (\Exception $e) {
-            $this->di['logger']->error('Autoresponder canned reply failed: {exception}', ['exception' => $e]);
+            $this->di['logger']->error('Autoresponder canned reply failed.', ['exception' => $e]);
         }
     }
 

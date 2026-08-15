@@ -184,8 +184,9 @@ class Logger extends AbstractLogger implements InjectionAwareInterface
             ...$this->context,
         ];
 
-        if ($context !== []) {
-            $event['info'] = $context;
+        $writerContext = [...$this->context, ...$context];
+        if ($writerContext !== []) {
+            $event['info'] = $writerContext;
         }
 
         // Do not log debug level messages if debug is OFF.

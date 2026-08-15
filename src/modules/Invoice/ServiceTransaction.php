@@ -59,7 +59,13 @@ class ServiceTransaction implements InjectionAwareInterface
             if ($model === null) {
                 continue;
             }
-            $this->preProcessTransaction($model);
+
+            try {
+                $this->preProcessTransaction($model);
+            } catch (\Throwable) {
+                // The individual transaction has already been marked as failed.
+                // Continue processing the rest of the batch.
+            }
         }
 
         return true;

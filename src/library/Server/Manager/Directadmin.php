@@ -676,7 +676,7 @@ class Server_Manager_Directadmin extends Server_Manager
             'catchall' => $this->getCustomPackageFlag($package, 'catchall'),
             'cgi' => $this->getCustomPackageFlag($package, 'cgi'),
             'cron' => $this->getCustomPackageFlag($package, 'cron'),
-            'dnscontrol' => $this->getCustomPackageFlag($package, 'dnscontrol'),
+            'dnscontrol' => $this->getCustomPackageFlag($package, 'dnscontrol', 'ON'),
             'domainptr' => $package->getMaxParkedDomains(),
             'ftp' => $package->getMaxFtp(),
             'login_keys' => $this->getCustomPackageFlag($package, 'login_keys'),
@@ -692,7 +692,7 @@ class Server_Manager_Directadmin extends Server_Manager
             'ssh' => $this->getCustomPackageFlag($package, 'ssh'),
             'ssl' => $this->getCustomPackageFlag($package, 'ssl'),
             'suspend_at_limit' => $this->getCustomPackageFlag($package, 'suspend_at_limit'),
-            'sysinfo' => $this->getCustomPackageFlag($package, 'sysinfo'),
+            'sysinfo' => $this->getCustomPackageFlag($package, 'sysinfo', 'ON'),
             'vdomains' => $package->getMaxDomains(),
         ];
 
