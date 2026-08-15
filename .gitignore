@@ -9,6 +9,7 @@
 /src/data/cache/*
 /src/data/uploads/*
 /src/data/update-finalization.json
+/src/.update-lock
 !/src/data/cache/.gitkeep
 /src/public/assets
 /src/vendor/*
