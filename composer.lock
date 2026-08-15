@@ -2884,16 +2884,16 @@
         },
         {
             "name": "phpmyadmin/motranslator",
-            "version": "6.0.0",
+            "version": "6.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpmyadmin/motranslator.git",
-                "reference": "f7aff2bd67c67267055c82e78854f09eb79b9741"
+                "reference": "325812bd30c868751c76a38692ddfcd5129b3186"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpmyadmin/motranslator/zipball/f7aff2bd67c67267055c82e78854f09eb79b9741",
-                "reference": "f7aff2bd67c67267055c82e78854f09eb79b9741",
+                "url": "https://api.github.com/repos/phpmyadmin/motranslator/zipball/325812bd30c868751c76a38692ddfcd5129b3186",
+                "reference": "325812bd30c868751c76a38692ddfcd5129b3186",
                 "shasum": ""
             },
             "require": {
@@ -2907,7 +2907,7 @@
                 "phpstan/phpstan-deprecation-rules": "^2.0",
                 "phpstan/phpstan-phpunit": "^2.0",
                 "phpstan/phpstan-strict-rules": "^2.0",
-                "phpunit/phpunit": "^11.5 || ^12.0",
+                "phpunit/phpunit": "^11.5 || ^12.5 || ^13.3",
                 "psalm/plugin-phpunit": "^0.19.2",
                 "vimeo/psalm": "^6.8"
             },
@@ -2951,7 +2951,7 @@
                 "issues": "https://github.com/phpmyadmin/motranslator/issues",
                 "source": "https://github.com/phpmyadmin/motranslator"
             },
-            "time": "2025-10-31T16:17:44+00:00"
+            "time": "2026-08-14T19:26:37+00:00"
         },
         {
             "name": "pimple/pimple",
