@@ -80,6 +80,7 @@ test('creates one pending state and keeps it unchanged across repeated checks', 
 
 test('finalizes pending updates before the session service is initialized', function (): void {
     $finalization = Mockery::mock(UpdateFinalization::class)->makePartial();
+    $finalization->shouldReceive('ensureCurrentVersionFinalization')->once()->andReturn(['status' => 'pending']);
     $finalization->shouldReceive('finalizeUpdate')->once()->andReturn([]);
 
     $finalization->finalizePendingUpdate();

@@ -324,7 +324,7 @@ test('invalidates client sessions stored in Symfony attribute format', function 
         ->andReturn(1);
 
     $entityManager = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
-    $entityManager->shouldReceive('getConnection')->once()->andReturn($connection);
+    $entityManager->shouldReceive('getConnection')->twice()->andReturn($connection);
 
     $di = container();
     $di['em'] = $entityManager;
