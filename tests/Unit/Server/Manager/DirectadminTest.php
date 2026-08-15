@@ -96,6 +96,7 @@ test('modifyAccount sends custom package values to DirectAdmin', function (): vo
         'catchall' => 'OFF',
         'cgi' => 'ON',
         'cron' => 'ON',
+        'dnscontrol' => 'ON',
         'nemailf' => '5',
         'nemailml' => 'unlimited',
         'nemailr' => '7',
@@ -103,9 +104,34 @@ test('modifyAccount sends custom package values to DirectAdmin', function (): vo
         'spam' => 'OFF',
         'ssh' => 'ON',
         'ssl' => 'ON',
+        'sysinfo' => 'ON',
         'unemailml' => 'ON',
         'user' => 'example',
     ]);
+});
+
+test('modifyAccount honors explicit false DNS and system information permissions', function (): void {
+    $requests = [];
+    $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$requests): MockResponse {
+        $requests[] = ['method' => $method, 'url' => $url, 'options' => $options];
+
+        return new MockResponse('');
+    });
+    $manager = createDirectadminManager($httpClient);
+    $package = (new Server_Package())->setCustomValues([
+        'dnscontrol' => 'false',
+        'sysinfo' => '0',
+    ]);
+    $account = (new Server_Account())
+        ->setUsername('example')
+        ->setPackage($package);
+
+    expect($manager->modifyAccount($account))->toBeTrue();
+
+    parse_str((string) parse_url($requests[0]['url'], PHP_URL_QUERY), $fields);
+
+    expect($fields['dnscontrol'])->toBe('OFF')
+        ->and($fields['sysinfo'])->toBe('OFF');
 });
 
 test('suspendAccount sends the suspension reason to DirectAdmin', function (): void {

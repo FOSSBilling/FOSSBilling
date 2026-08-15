@@ -422,6 +422,8 @@ class Server_Manager_Plesk extends Server_Manager
     private function createSubscriptionProps(Server_Account $account, string $action): array
     {
         $package = $account->getPackage();
+        $maxMailLists = $package->getCustomValue('nemailml');
+        $manageMailLists = is_numeric($maxMailLists) && (int) $maxMailLists > 0;
 
         // check if bandwidth quota is set as an integer. If so, convert it to bytes
         $bandwidth = 0;
@@ -484,7 +486,7 @@ class Server_Manager_Plesk extends Server_Manager
                     ],
                     [
                         'name' => 'max_maillists',
-                        'value' => $package->getCustomValue('nemailml') ?: 0,
+                        'value' => $maxMailLists ?: 0,
                     ],
                     [
                         'name' => 'max_box',
@@ -536,7 +538,7 @@ class Server_Manager_Plesk extends Server_Manager
                     ],
                     [
                         'name' => 'manage_maillists',
-                        'value' => (bool) $package->getCustomValue('nemailml') ? 'true' : 'false',
+                        'value' => $manageMailLists ? 'true' : 'false',
                     ],
                     [
                         'name' => 'create_domains',

@@ -513,6 +513,8 @@ class Server_Manager_Directadmin extends Server_Manager
         $package = $account->getPackage();
 
         $fields = $this->getCustomPackageFields($package);
+        $fields['dnscontrol'] = $this->getCustomPackageFlag($package, 'dnscontrol', 'ON');
+        $fields['sysinfo'] = $this->getCustomPackageFlag($package, 'sysinfo', 'ON');
         $fields['action'] = 'customize';
         $fields['ns1'] = $account->getNs1();
         $fields['ns2'] = $account->getNs2();
@@ -741,9 +743,14 @@ class Server_Manager_Directadmin extends Server_Manager
         return $fields;
     }
 
-    private function getCustomPackageFlag(Server_Package $package, string $key): string
+    private function getCustomPackageFlag(Server_Package $package, string $key, string $default = 'OFF'): string
     {
-        return FOSSBilling\Tools::normalizeBoolean($package->getCustomValue($key)) ? 'ON' : 'OFF';
+        $value = $package->getCustomValue($key);
+        if ($value === null) {
+            return $default;
+        }
+
+        return FOSSBilling\Tools::normalizeBoolean($value) ? 'ON' : 'OFF';
     }
 
     /**

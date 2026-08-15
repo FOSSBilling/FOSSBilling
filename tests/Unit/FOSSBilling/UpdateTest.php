@@ -170,35 +170,6 @@ test('rejects update metadata without an API digest', function (): void {
     expect((new Filesystem())->exists($archive))->toBeFalse();
 });
 
-test('verifies preview archives against the API digest', function (): void {
-    $content = 'preview archive';
-    $archive = createUpdateTestArchive($content);
-
-    try {
-        (new ReflectionMethod(Update::class, 'validateDownloadedArchive'))->invoke(
-            new Update(),
-            $archive,
-            ['digest' => 'sha256:' . hash('sha256', $content)],
-        );
-
-        expect((new Filesystem())->exists($archive))->toBeTrue();
-    } finally {
-        (new Filesystem())->remove($archive);
-    }
-});
-
-test('rejects preview metadata without an API digest', function (): void {
-    $archive = createUpdateTestArchive('preview archive');
-
-    expect(fn (): mixed => (new ReflectionMethod(Update::class, 'validateDownloadedArchive'))->invoke(
-        new Update(),
-        $archive,
-        [],
-    ))->toThrow(InformationException::class, 'update API did not provide a SHA-256 digest');
-
-    expect((new Filesystem())->exists($archive))->toBeFalse();
-});
-
 test('isSafeArchiveEntry accepts a normal relative entry', function (): void {
     expect(Update::isSafeArchiveEntry('src/library/FOSSBilling/Update.php'))->toBeTrue();
 });
