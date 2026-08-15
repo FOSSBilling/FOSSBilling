@@ -22,6 +22,16 @@ use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 
 class Update implements InjectionAwareInterface
 {
+    /**
+     * Name of the marker file that tells load.php to refuse all requests while
+     * performUpdate() is writing files to PATH_ROOT.
+     *
+     * This filename is duplicated as a literal string at the top of load.php,
+     * which has to check for the lock before the Composer autoloader (and
+     * therefore this class) is available. Keep both in sync if you change it.
+     */
+    public const string LOCK_FILENAME = '.update-lock';
+
     protected ?\Pimple\Container $di = null;
     private array $allowedDownloadPrefixes = [
         'https://github.com/FOSSBilling/FOSSBilling/releases/',
@@ -296,34 +306,52 @@ class Update implements InjectionAwareInterface
             'source' => 'auto-update',
         ]);
 
-        // Extract latest version archive on top of the current version.
+        /*
+         * From here until the lock is released below, files under PATH_ROOT are
+         * being overwritten in place while the site may still be serving other
+         * requests (this HTTP request is the only one that knows an update is
+         * running). A request that lands mid-extraction can autoload a mix of
+         * old and new class files and fatal out with an "incompatible
+         * declaration" error - see https://github.com/FOSSBilling/FOSSBilling/issues/4159.
+         *
+         * load.php refuses to serve any request while this lock file exists (and
+         * self-expires it in case this process dies before the `finally` below
+         * runs), so create it before touching any files and make sure PHP keeps
+         * running even if the client triggering the update disconnects mid-request.
+         */
+        $lockFile = Path::join(PATH_ROOT, self::LOCK_FILENAME);
+        $this->filesystem->dumpFile($lockFile, '');
+        ignore_user_abort(true);
+
         try {
-            $zip = new ZipFile();
-            $zip->openFile($archiveFile);
-            $zip->extractTo(PATH_ROOT);
-            $zip->close();
-        } catch (ZipException $e) {
-            error_log($e->getMessage());
+            // Extract latest version archive on top of the current version.
+            try {
+                $zip = new ZipFile();
+                $zip->openFile($archiveFile);
+                $zip->extractTo(PATH_ROOT);
+                $zip->close();
+            } catch (ZipException $e) {
+                error_log($e->getMessage());
 
-            throw new Exception('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
-        }
+                throw new Exception('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
+            }
 
-        // Clear the cache folder to reduce chances of errors
-        try {
-            $this->filesystem->remove(PATH_CACHE);
-            $this->filesystem->mkdir(PATH_CACHE, 0o755);
-        } catch (\Exception) {
-            // This step is rarely important, we can safely ignore an error here
-        }
-
-        // Clear cache and remove the install folder.
-        try {
-            $this->filesystem->remove([PATH_CACHE, Path::join(PATH_ROOT, 'install')]);
-            $this->filesystem->mkdir(PATH_CACHE, 0o755);
-        } catch (IOException $e) {
-            error_log($e->getMessage());
-
-            throw new Exception('Unable to clear cache and/or remove install folder. Further details are available in the error log.');
+            /*
+             * Apply pending config/database patches and remove the install folder
+             * now, while the admin who triggered the update is still authenticated.
+             *
+             * This must happen before the session is destroyed below: the login
+             * screen (and the Doctrine queries it runs to authenticate the admin)
+             * is generated against the newly extracted code, which can expect
+             * database columns that only the patches below create. Deferring this
+             * work until after the forced logout would leave the admin unable to
+             * log back in - and therefore unable to reach the finalization screen -
+             * until the schema is patched. See the class docblock on
+             * UpdateFinalization for the rest of the finalization flow.
+             */
+            $finalization->finalizeUpdate();
+        } finally {
+            $this->filesystem->remove($lockFile);
         }
 
         // Log off the current user and destroy the session.
