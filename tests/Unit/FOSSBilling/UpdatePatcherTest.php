@@ -134,12 +134,14 @@ test('fresh installs constrain client balance to one credit per invoice item', f
 test('fresh installs use Symfony session storage', function (): void {
     $filesystem = new Filesystem();
     $structure = $filesystem->readFile(Path::join(PATH_ROOT, 'install', 'sql', 'structure.sql'));
+    preg_match('/CREATE TABLE `session` \((.*?)\) ENGINE=/s', $structure, $matches);
+    $sessionDefinition = $matches[1] ?? '';
 
-    expect($structure)->toContain('`id` varbinary(128) NOT NULL')
-        ->and($structure)->toContain('`content` blob NOT NULL')
-        ->and($structure)->toContain('`lifetime` int(11) unsigned NOT NULL')
-        ->and($structure)->toContain('PRIMARY KEY (`id`)')
-        ->and($structure)->toContain('KEY `session_lifetime_idx` (`lifetime`)');
+    expect($sessionDefinition)->toContain('`id` varbinary(128) NOT NULL')
+        ->and($sessionDefinition)->toContain('`content` blob NOT NULL')
+        ->and($sessionDefinition)->toContain('`lifetime` int(11) unsigned NOT NULL')
+        ->and($sessionDefinition)->toContain('PRIMARY KEY (`id`)')
+        ->and($sessionDefinition)->toContain('KEY `session_lifetime_idx` (`lifetime`)');
 });
 
 test('session storage migration follows the obsolete core file cleanup', function (): void {

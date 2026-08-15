@@ -114,6 +114,73 @@ test('does not finalize an update in the request that extracts it', function ():
     }
 });
 
+test('does not create pending state when archive extraction fails', function (): void {
+    $filesystem = new Filesystem();
+    $latestVersion = '0.8.5-test-' . bin2hex(random_bytes(8));
+    $archiveFile = Path::join(PATH_CACHE, $latestVersion . '.zip');
+    $lockFile = Path::join(PATH_ROOT, Update::LOCK_FILENAME);
+    $lockExisted = $filesystem->exists($lockFile);
+    $archiveContent = 'not a zip archive';
+
+    $finalization = Mockery::mock(UpdateFinalization::class);
+    $finalization->shouldReceive('isRequired')->once()->andReturnFalse();
+    $finalization->shouldNotReceive('createPendingState');
+
+    $readiness = Mockery::mock();
+    $readiness->shouldReceive('check')->once()->andReturn(['can_update' => true]);
+
+    $di = new Pimple\Container();
+    $di['filesystem'] = $filesystem;
+    $di['http_client'] = new MockHttpClient(new MockResponse($archiveContent));
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['session'] = Mockery::mock();
+    $di['update_finalization'] = $finalization;
+    $di['update_readiness'] = $readiness;
+
+    $update = new class($latestVersion) extends Update {
+        public function __construct(private readonly string $latestVersion)
+        {
+            parent::__construct();
+        }
+
+        public function getUpdateBranch(): string
+        {
+            return 'release';
+        }
+
+        public function getLatestVersion(): string
+        {
+            return $this->latestVersion;
+        }
+
+        public function getLatestVersionInfo(?string $branch = null, bool $refetch = false): array
+        {
+            return [
+                'version' => $this->latestVersion,
+                'minimum_php_version' => '8.3',
+                'download_url' => 'https://github.com/FOSSBilling/FOSSBilling/releases/download/test/update.zip',
+                'digest' => 'sha256:' . hash('sha256', 'not a zip archive'),
+                'update_type' => 0,
+            ];
+        }
+
+        public function isUpdateAvailable(): bool
+        {
+            return true;
+        }
+    };
+    $update->setDi($di);
+
+    try {
+        expect(fn (): mixed => $update->performUpdate())->toThrow(FOSSBilling\Exception::class, 'Failed to extract file');
+    } finally {
+        $filesystem->remove($archiveFile);
+        if (!$lockExisted) {
+            $filesystem->remove($lockFile);
+        }
+    }
+});
+
 test('uses the API digest for archive verification without querying GitHub', function (): void {
     $content = 'release archive from the version API';
     $digest = 'sha256:' . hash('sha256', $content);

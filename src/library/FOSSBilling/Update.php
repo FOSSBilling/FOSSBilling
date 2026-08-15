@@ -428,12 +428,6 @@ class Update implements InjectionAwareInterface
 
         $this->validateDownloadedArchive($archiveFile, $releaseInfo);
 
-        $finalization->createPendingState(Version::VERSION, $latestVersionNum, [
-            'branch' => $updateBranch,
-            'update_type' => $releaseInfo['update_type'] ?? Version::getUpdateType($latestVersionNum),
-            'source' => 'auto-update',
-        ]);
-
         /*
          * From here until the lock is released below, files under PATH_ROOT are
          * being overwritten in place while the site may still be serving other
@@ -493,10 +487,15 @@ class Update implements InjectionAwareInterface
                 throw new Exception('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
             }
 
-            // Extraction is the slow part; refresh the lock now so a legitimately
-            // long-running update isn't mistaken for an abandoned one while the
-            // patches below are still applying.
+            // Mark extraction complete so the short finalization handoff below
+            // is not mistaken for an abandoned update.
             $this->filesystem->touch($lockFile);
+
+            $finalization->createPendingState(Version::VERSION, $latestVersionNum, [
+                'branch' => $updateBranch,
+                'update_type' => $releaseInfo['update_type'] ?? Version::getUpdateType($latestVersionNum),
+                'source' => 'auto-update',
+            ]);
         } finally {
             $this->filesystem->remove($lockFile);
         }

@@ -78,12 +78,48 @@ test('creates one pending state and keeps it unchanged across repeated checks', 
         ->and($maintenanceMode['allowed_urls'])->toContain(rtrim((string) ADMIN_PREFIX, '/') . '/system/update/finalize');
 });
 
-test('finalizes pending updates before the session service is initialized', function (): void {
-    $finalization = Mockery::mock(UpdateFinalization::class)->makePartial();
-    $finalization->shouldReceive('ensureCurrentVersionFinalization')->once()->andReturn(['status' => 'pending']);
-    $finalization->shouldReceive('finalizeUpdate')->once()->andReturn([]);
+test('does not re-run a finalized update before the session service is initialized', function (): void {
+    $this->updateFinalizationFilesystem->dumpFile(
+        $this->updateFinalizationStatePath,
+        json_encode([
+            'status' => 'finalized',
+            'target_version' => Version::VERSION,
+        ], JSON_THROW_ON_ERROR)
+    );
+
+    $finalization = new UpdateFinalization();
 
     $finalization->finalizePendingUpdate();
+
+    $state = json_decode(
+        $this->updateFinalizationFilesystem->readFile($this->updateFinalizationStatePath),
+        true,
+        512,
+        JSON_THROW_ON_ERROR
+    );
+    expect($state['status'])->toBe('finalized');
+});
+
+test('serializes finalization with an exclusive lock', function (): void {
+    $finalization = new UpdateFinalization();
+    $lockPath = Path::join(PATH_DATA, 'update-finalization.lock');
+    $lockMethod = new ReflectionMethod(UpdateFinalization::class, 'withFinalizationLock');
+    $lockHeld = false;
+
+    $lockMethod->invoke($finalization, function () use (&$lockHeld, $lockPath): void {
+        $handle = fopen($lockPath, 'c');
+        if ($handle === false) {
+            throw new RuntimeException('Unable to open the finalization lock for testing.');
+        }
+
+        try {
+            $lockHeld = !flock($handle, LOCK_EX | LOCK_NB);
+        } finally {
+            fclose($handle);
+        }
+    });
+
+    expect($lockHeld)->toBeTrue();
 });
 
 test('completion restores captured maintenance mode and records the current version', function (): void {

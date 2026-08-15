@@ -28,6 +28,7 @@ use Symfony\Component\Filesystem\Path;
 class UpdateFinalization implements InjectionAwareInterface
 {
     public const string STATE_FILENAME = 'update-finalization.json';
+    private const string FINALIZATION_LOCK_FILENAME = 'update-finalization.lock';
 
     private const string STATUS_PENDING = 'pending';
     private const string STATUS_FINALIZED = 'finalized';
@@ -128,10 +129,12 @@ class UpdateFinalization implements InjectionAwareInterface
      */
     public function finalizePendingUpdate(): void
     {
-        $state = $this->ensureCurrentVersionFinalization();
-        if (($state['status'] ?? null) === self::STATUS_PENDING) {
-            $this->finalizeUpdate();
-        }
+        $this->withFinalizationLock(function (): void {
+            $state = $this->ensureCurrentVersionFinalization();
+            if (($state['status'] ?? null) === self::STATUS_PENDING) {
+                $this->finalizeUpdateLocked($state);
+            }
+        });
     }
 
     public function createPendingState(?string $fromVersion, string $targetVersion, array $context = []): array
@@ -170,8 +173,11 @@ class UpdateFinalization implements InjectionAwareInterface
      */
     public function finalizeUpdate(): array
     {
-        $state = $this->ensureCurrentVersionFinalization();
+        return $this->withFinalizationLock(fn (): array => $this->finalizeUpdateLocked($this->ensureCurrentVersionFinalization()));
+    }
 
+    private function finalizeUpdateLocked(?array $state): array
+    {
         try {
             $this->clearCache();
 
@@ -194,6 +200,28 @@ class UpdateFinalization implements InjectionAwareInterface
         }
 
         return $this->getStatus(false);
+    }
+
+    private function withFinalizationLock(\Closure $callback): mixed
+    {
+        $this->filesystem->mkdir(PATH_DATA, 0o755);
+        $handle = fopen(Path::join(PATH_DATA, self::FINALIZATION_LOCK_FILENAME), 'c');
+        if ($handle === false) {
+            throw new Exception('Unable to acquire the update finalization lock.');
+        }
+
+        if (!flock($handle, LOCK_EX)) {
+            fclose($handle);
+
+            throw new Exception('Unable to acquire the update finalization lock.');
+        }
+
+        try {
+            return $callback();
+        } finally {
+            flock($handle, LOCK_UN);
+            fclose($handle);
+        }
     }
 
     public function completeFinalization(): void

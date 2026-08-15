@@ -242,6 +242,7 @@ $di['session'] = function () use ($di) {
         'cookie_secure' => $cookieParams['secure'],
         'cookie_httponly' => $cookieParams['httponly'],
         'cookie_samesite' => $cookieParams['samesite'],
+        'serialize_handler' => 'php',
     ], $handler);
     $session = new FOSSBilling\Session(new SymfonySession($storage), $cookieParams);
     $session->setDi($di);
