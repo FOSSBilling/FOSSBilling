@@ -404,12 +404,13 @@ class Server_Manager_Plesk extends Server_Manager
 
     /**
      * Creates an array of properties for a subscription.
-     * The properties include the domain name, owner login, hosting type, IP address, FTP login, FTP password, PHP, SSL, CGI, limits, and permissions.
+     * The properties include the domain name, owner login, hosting type, IP address, the hosting plan name, FTP login, FTP password, PHP, SSL, CGI, limits, and permissions.
      *
      * For the 'add' action, the properties are sent as the direct children of the <add> node, per the
      * webspace add operation's schema. For the 'set' action, Plesk requires the <set> node to contain only
      * a <filter> (identifying which subscription to update) and a <values> node wrapping the actual
-     * settings; its gen_setup element also does not accept 'htype', which only applies at creation time.
+     * settings; its gen_setup element also does not accept 'htype', which only applies at creation time,
+     * and its schema has no plan-related node at all, so 'plan-name' is only ever sent on 'add'.
      *
      * @see https://docs.plesk.com/en-US/obsidian/api-rpc/reference/managing-subscriptions-webspaces/creating-a-subscription-webspace.33892/
      * @see https://docs.plesk.com/en-US/obsidian/api-rpc/reference/managing-subscriptions-webspaces/setting-subscription-parameters.33907/
@@ -583,6 +584,12 @@ class Server_Manager_Plesk extends Server_Manager
                 ],
             ];
         }
+
+        // 'plan-name' must come after 'permissions', per the add schema's element order -- Plesk's
+        // XML-RPC API validates requests against an XSD sequence, and plesk/api-php-lib serializes
+        // this array's key order verbatim into the XML it sends. It's add-only: 'set' has no
+        // plan-related node, so changing an existing subscription's plan isn't supported here.
+        $values['plan-name'] = $package->getName();
 
         return [
             $action => $values,

@@ -30,7 +30,7 @@ test('createSubscriptionProps sends the settings directly under <add>, in schema
     $props = invokePleskCreateSubscriptionProps($this->manager, $this->account, 'add');
 
     expect($props)->toHaveKey('add')
-        ->and(array_keys($props['add']))->toBe(['gen_setup', 'hosting', 'limits', 'permissions'])
+        ->and(array_keys($props['add']))->toBe(['gen_setup', 'hosting', 'limits', 'permissions', 'plan-name'])
         ->and($props['add'])->not->toHaveKey('filter')
         ->and($props['add'])->not->toHaveKey('values');
 });
@@ -62,4 +62,48 @@ test('createSubscriptionProps omits htype from gen_setup for the set action', fu
     $props = invokePleskCreateSubscriptionProps($this->manager, $this->account, 'set');
 
     expect($props['set']['values']['gen_setup'])->not->toHaveKey('htype');
+});
+
+test('createSubscriptionProps uses custom package limits and permissions', function (): void {
+    $this->account->getPackage()->setCustomValues([
+        'aftp' => 'true',
+        'cron' => '1',
+        'nemailml' => '25',
+        'spam' => 'yes',
+        'ssh' => 'on',
+    ]);
+
+    $props = invokePleskCreateSubscriptionProps($this->manager, $this->account, 'add');
+    $limits = array_column($props['add']['limits']['limit'], 'value', 'name');
+    $permissions = array_column($props['add']['permissions']['permission'], 'value', 'name');
+
+    expect($limits['max_maillists'])->toBe('25')
+        ->and($permissions['manage_crontab'])->toBe('true')
+        ->and($permissions['manage_anonftp'])->toBe('true')
+        ->and($permissions['manage_maillists'])->toBe('true')
+        ->and($permissions['manage_not_chroot_shell'])->toBe('true')
+        ->and($permissions['manage_spamfilter'])->toBe('true');
+});
+
+test('createSubscriptionProps disables mailing lists when the custom limit is zero', function (): void {
+    $this->account->getPackage()->setCustomValue('nemailml', '0');
+
+    $props = invokePleskCreateSubscriptionProps($this->manager, $this->account, 'add');
+    $limits = array_column($props['add']['limits']['limit'], 'value', 'name');
+    $permissions = array_column($props['add']['permissions']['permission'], 'value', 'name');
+
+    expect($limits['max_maillists'])->toBe(0)
+        ->and($permissions['manage_maillists'])->toBe('false');
+});
+
+test('createSubscriptionProps assigns the hosting plan name to the Plesk subscription on creation', function (): void {
+    $props = invokePleskCreateSubscriptionProps($this->manager, $this->account, 'add');
+
+    expect($props['add']['plan-name'])->toBe('Business Hosting');
+});
+
+test('createSubscriptionProps does not send plan-name on updates, since webspace/set has no plan node', function (): void {
+    $props = invokePleskCreateSubscriptionProps($this->manager, $this->account, 'set');
+
+    expect($props['set']['values'])->not->toHaveKey('plan-name');
 });
