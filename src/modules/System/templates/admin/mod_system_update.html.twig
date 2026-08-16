@@ -67,7 +67,7 @@
                         {% if isPreviewBranch %}
                             <h4 class="mb-2">{{ 'Preview Build Updates'|trans }}</h4>
                             {% if updateAvailable %}
-                                <p>{{ 'FOSSBilling %version% is available for download.'|trans({'%version%': update_info['version']}) }}</p>
+                                <p>{{ 'FOSSBilling'|trans }} <strong>{{ update_info['version'] }}</strong> {{ 'is available for download.'|trans }}</p>
                             {% else %}
                                 <div class="alert alert-success" role="alert">
                                     {{ 'You are already running the latest available preview build. You can still reinstall it below if needed.'|trans }}
