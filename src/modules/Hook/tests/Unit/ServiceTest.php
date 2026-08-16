@@ -155,6 +155,9 @@ test('batch connects', function (): void {
     $expectation1->andReturn(false);
     $connection->shouldReceive('executeStatement')
         ->byDefault();
+    $connection->shouldReceive('executeStatement')
+        ->with(Mockery::on(fn ($sql) => str_contains((string) $sql, 'RELEASE_LOCK')), Mockery::any())
+        ->once();
     $connection->shouldReceive('transactional')
         ->atLeast()->once()
         ->andReturnUsing(fn (Closure $callback) => $callback($connection));

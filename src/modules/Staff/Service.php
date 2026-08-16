@@ -125,10 +125,18 @@ class Service implements InjectionAwareInterface
         // nothing, so an admin's very first logins would go unrecorded. Connect them now so
         // that gap does not exist. batchConnect() returns false if another process was still
         // rebuilding the set when it gave up waiting; retry once rather than firing the event
-        // below against a set we know is incomplete.
+        // below against a set we know is incomplete. If both attempts fail, log it and let the
+        // login proceed anyway - failing the login itself over this housekeeping step would
+        // turn a rare missed audit entry into every admin being locked out while it's stuck.
         $hookService = $this->di['mod_service']('hook');
-        if (!$hookService->hasConnectedListeners() && !$hookService->batchConnect()) {
-            $hookService->batchConnect();
+        if (!$hookService->hasConnectedListeners()) {
+            $connected = $hookService->batchConnect();
+            if (!$connected) {
+                $connected = $hookService->batchConnect();
+            }
+            if (!$connected) {
+                $this->di['logger']->warning('Could not connect event listeners after two attempts; this login (and other events) may not be recorded.');
+            }
         }
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminLogin', 'params' => ['id' => $model->getId(), 'ip' => $ip]]);
