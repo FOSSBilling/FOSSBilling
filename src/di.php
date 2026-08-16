@@ -24,6 +24,9 @@ use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Session\Session as SymfonySession;
+use Symfony\Component\HttpFoundation\Session\Storage\Handler\PdoSessionHandler;
+use Symfony\Component\HttpFoundation\Session\Storage\NativeSessionStorage;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 $di = new Pimple\Container();
@@ -209,8 +212,39 @@ $di['session'] = function () use ($di) {
         throw new RuntimeException('PDO service must resolve to a PDO instance');
     }
 
-    $handler = new PdoSessionHandler($pdo);
-    $session = new FOSSBilling\Session($handler);
+    $sessionLifetime = max(1, (int) Config::getProperty('security.session_lifespan', 7200));
+    $handler = new PdoSessionHandler($pdo, [
+        'db_table' => 'session',
+        'db_id_col' => 'id',
+        'db_data_col' => 'content',
+        'db_lifetime_col' => 'lifetime',
+        'db_time_col' => 'modified_at',
+        // The application uses the same connection for its business queries;
+        // advisory locking avoids holding a transaction open for the request.
+        'lock_mode' => PdoSessionHandler::LOCK_ADVISORY,
+    ]);
+    $currentCookieParams = session_get_cookie_params();
+    $cookieParams = [
+        'path' => $currentCookieParams['path'],
+        'domain' => $currentCookieParams['domain'],
+        'secure' => Config::getProperty('security.force_https', true) || $di['request']->isSecure(),
+        'httponly' => true,
+        'samesite' => Config::getProperty('security.mode', 'strict') === 'strict'
+            ? 'Strict'
+            : $currentCookieParams['samesite'],
+    ];
+    $storage = new NativeSessionStorage([
+        'cache_limiter' => '',
+        'cookie_lifetime' => 0,
+        'gc_maxlifetime' => $sessionLifetime,
+        'cookie_path' => $cookieParams['path'],
+        'cookie_domain' => $cookieParams['domain'],
+        'cookie_secure' => $cookieParams['secure'],
+        'cookie_httponly' => $cookieParams['httponly'],
+        'cookie_samesite' => $cookieParams['samesite'],
+        'serialize_handler' => 'php',
+    ], $handler);
+    $session = new FOSSBilling\Session(new SymfonySession($storage), $cookieParams);
     $session->setDi($di);
     $session->setupSession();
 

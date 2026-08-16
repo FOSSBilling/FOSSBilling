@@ -336,7 +336,7 @@ function init(): void
     $di = require Path::join(PATH_ROOT, 'di.php');
 
     if (!Environment::isCLI() && !Environment::isTesting()) {
-        $di['update_finalization']->ensureCurrentVersionFinalization();
+        $di['update_finalization']->finalizePendingUpdate();
     }
 
     // Now that the config file is loaded, we can enable Sentry.

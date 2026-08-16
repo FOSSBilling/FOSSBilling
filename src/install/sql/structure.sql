@@ -1189,12 +1189,14 @@ CREATE TABLE `service_license` (
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `session` (
-  `id` varchar(32) NOT NULL DEFAULT '',
-  `modified_at` int(11) DEFAULT NULL,
+  `id` varbinary(128) NOT NULL,
+  `modified_at` int(11) unsigned NOT NULL,
   `created_at` int(11) DEFAULT NULL,
-  `content` text,
+  `content` blob NOT NULL,
+  `lifetime` int(11) unsigned NOT NULL,
   `fingerprint` text,
-  UNIQUE KEY `unique_id` (`id`)
+  PRIMARY KEY (`id`),
+  KEY `session_lifetime_idx` (`lifetime`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

@@ -181,7 +181,7 @@ class UpdatePatcher implements InjectionAwareInterface
                     $this->filesystem->rename($file, $action);
                 }
             } catch (IOException $e) {
-                $this->di['logger']->withChannel('update')->error($e->getMessage());
+                $this->logUpdate('error', $e->getMessage());
             }
         }
     }
@@ -216,10 +216,26 @@ class UpdatePatcher implements InjectionAwareInterface
             $this->prepareAndExecute($sql, $params);
         } catch (\Exception $e) {
             // Log the error and then throw a user-friendly exception to prevent further patches from being applied.
-            $this->di['logger']->withChannel('update')->error($e->getMessage());
+            $this->logUpdate('error', $e->getMessage());
 
             throw new Exception('There was an error while applying database patches. Please check the error log for information on the error, correct it, and then perform the backup patching method to complete the update.');
         }
+    }
+
+    private function logUpdate(string $level, string $message, array $context = []): void
+    {
+        try {
+            if ($this->di instanceof \Pimple\Container && $this->di->offsetExists('logger')) {
+                $this->di['logger']->withChannel('update')->log($level, $message, $context);
+
+                return;
+            }
+        } catch (\Throwable) {
+            // Logging must not hide the patch failure when the session schema
+            // is still being migrated and the normal logger cannot initialize.
+        }
+
+        error_log('FOSSBilling update: ' . $message);
     }
 
     private function fetchAll(string $sql, array $params = []): array
@@ -509,6 +525,8 @@ class UpdatePatcher implements InjectionAwareInterface
             102 => 'patch102',
             103 => 'patch103',
             104 => 'patch104',
+            105 => 'patch105',
+            106 => 'patch106',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -1134,7 +1152,7 @@ class UpdatePatcher implements InjectionAwareInterface
             $this->di['cache']->delete('config_mod_spamchecker');
             $this->di['cache']->delete('config_mod_antispam');
         } catch (\Exception $e) {
-            $this->di['logger']->withChannel('update')->error('Spamchecker to Anti-Spam migration error: ' . $e->getMessage());
+            $this->logUpdate('error', 'Spamchecker to Anti-Spam migration error: ' . $e->getMessage());
         }
 
         $fileActions = [
@@ -1169,7 +1187,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 try {
                     $this->filesystem->remove($dir->getPathname());
                 } catch (IOException $e) {
-                    $this->di['logger']->withChannel('update')->error($e->getMessage());
+                    $this->logUpdate('error', $e->getMessage());
                 }
             }
         } catch (\Symfony\Component\Finder\Exception\DirectoryNotFoundException) {
@@ -1293,7 +1311,7 @@ class UpdatePatcher implements InjectionAwareInterface
             $needsSave = false;
             foreach ($fields as $field) {
                 if (isset($config[$field]) && is_string($config[$field]) && preg_match('/\b(function|include|import|extends|range|max|min|dump|system|guest\.|admin\.|client\.)\b/i', $config[$field])) {
-                    $this->di['logger']->withChannel('update')->warning('Custom payment adapter template for gateway ID {gateway_id} contained incompatible Twig syntax and has been cleared. Please re-create it with compatible syntax.', ['gateway_id' => $gateway['id']]);
+                    $this->logUpdate('warning', 'Custom payment adapter template for gateway ID {gateway_id} contained incompatible Twig syntax and has been cleared. Please re-create it with compatible syntax.', ['gateway_id' => $gateway['id']]);
                     unset($config[$field]);
                     $needsSave = true;
                 }
@@ -1314,7 +1332,7 @@ class UpdatePatcher implements InjectionAwareInterface
             $this->executeSql("DELETE FROM extension WHERE type = 'mod' AND name = 'wysiwyg'");
             $this->di['cache']->delete('config_mod_wysiwyg');
         } catch (\Exception $e) {
-            $this->di['logger']->withChannel('update')->error('Wysiwyg cleanup migration error: ' . $e->getMessage());
+            $this->logUpdate('error', 'Wysiwyg cleanup migration error: ' . $e->getMessage());
         }
 
         $this->executeFileActions([
@@ -1964,7 +1982,7 @@ class UpdatePatcher implements InjectionAwareInterface
                     ['value' => $documentNr, 'id' => $clientId]
                 );
             } else {
-                $this->di['logger']->withChannel('update')->warning('patch75: client #{client_id} has no free custom field slot; the document number could not be migrated.', ['client_id' => $clientId]);
+                $this->logUpdate('warning', 'patch75: client #{client_id} has no free custom field slot; the document number could not be migrated.', ['client_id' => $clientId]);
             }
         }
 
@@ -3097,6 +3115,142 @@ class UpdatePatcher implements InjectionAwareInterface
         // the association for these clients.
         // @see https://github.com/FOSSBilling/FOSSBilling/issues/4160
         $this->executeSql('UPDATE `client` SET `client_group_id` = NULL WHERE `client_group_id` = 0;');
+    }
+
+    private function patch105(): void
+    {
+        // Remove core files that were deleted or moved after the 0.8.5 release.
+        // Updates extract archives over the existing installation, so obsolete
+        // files need explicit cleanup while user-owned data remains untouched.
+        $this->executeFileActions([
+            Path::join(PATH_LIBRARY, 'Box', 'BeanHelper.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Box', 'Database.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Box', 'DbLoggedPDOStatement.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Box', 'Log.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Box', 'LogDb.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Box', 'Translate.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Box', 'Crypt.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Box', 'Period.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Box', 'Url.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'PdoSessionHandler.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'FOSSBilling', 'DbLoggedPDOStatement.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ActivityAdminHistory.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ActivityClientEmail.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ActivityClientHistory.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ActivityClientHistoryTable.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ActivitySystem.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'Admin.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'AdminPasswordReset.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'Cart.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'CartProduct.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'Client.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ClientBalance.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ClientGroup.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ClientOrder.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ClientOrderMeta.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ClientOrderStatus.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ClientPasswordReset.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'Extension.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ExtensionMeta.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'Form.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'FormField.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'Guest.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'Invoice.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'InvoiceItem.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ModEmailQueue.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'PayGateway.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ServiceApiKey.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ServiceCustom.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ServiceDomain.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ServiceDownloadable.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ServiceHosting.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ServiceHostingHp.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ServiceHostingServer.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'ServiceLicense.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'Session.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'Setting.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'Subscription.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'Tax.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'Tld.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'TldRegistrar.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Model', 'Transaction.php') => 'unlink',
+            Path::join(PATH_MODS, 'Product', 'Repository', 'DomainPricingRepository.php') => 'unlink',
+            Path::join(PATH_MODS, 'Product', 'Repository', 'ProductOrderRepository.php') => 'unlink',
+            Path::join(PATH_MODS, 'Product', 'Repository', 'ProductPaymentPeriodRepository.php') => 'unlink',
+            Path::join(PATH_MODS, 'Servicecustom', 'Repository', 'ServiceCustomRepository.php') => 'unlink',
+        ]);
+
+        $this->removeEmptyDirectories([
+            Path::join(PATH_LIBRARY, 'Box'),
+            Path::join(PATH_LIBRARY, 'FOSSBilling', 'Session'),
+            Path::join(PATH_LIBRARY, 'Model'),
+            Path::join(PATH_MODS, 'Product', 'Repository'),
+            Path::join(PATH_MODS, 'Servicecustom', 'Repository'),
+        ]);
+    }
+
+    /**
+     * Remove obsolete directories only when they contain no files, including hidden files.
+     *
+     * @param list<string> $directories
+     */
+    private function removeEmptyDirectories(array $directories): void
+    {
+        foreach ($directories as $directory) {
+            if (!is_dir($directory)) {
+                continue;
+            }
+
+            $finder = (new Finder())
+                ->in($directory)
+                ->depth('== 0')
+                ->ignoreDotFiles(false)
+                ->ignoreVCS(false);
+
+            if ($finder->hasResults()) {
+                continue;
+            }
+
+            // rmdir is intentional here: Filesystem::remove() is recursive and could
+            // delete a file created between the emptiness check and the removal.
+            if (!@rmdir($directory)) {
+                $this->logUpdate('warning', sprintf('Unable to remove empty obsolete directory "%s".', $directory));
+            }
+        }
+    }
+
+    private function patch106(): void
+    {
+        // Symfony stores application attributes in a different session format
+        // from FOSSBilling's previous handler. This release deliberately does
+        // not migrate session data, so invalidate all existing sessions before
+        // changing the table to Symfony's schema.
+        if (!$this->tableExists('session')) {
+            return;
+        }
+
+        $this->executeSql('DELETE FROM `session`');
+
+        if (!$this->tableHasColumn('session', 'lifetime')) {
+            $this->executeSql('ALTER TABLE `session` ADD COLUMN `lifetime` INT UNSIGNED NOT NULL DEFAULT 0 AFTER `content`');
+        }
+
+        // The table is empty, so these conversions do not need a data-copy
+        // step and remain safe to repeat after a partially applied patch.
+        $this->executeSql('ALTER TABLE `session` MODIFY `content` BLOB NOT NULL');
+        $this->executeSql('ALTER TABLE `session` MODIFY `id` VARBINARY(128) NOT NULL');
+        $this->executeSql('ALTER TABLE `session` MODIFY `modified_at` INT UNSIGNED NOT NULL');
+        $this->executeSql('ALTER TABLE `session` MODIFY `lifetime` INT UNSIGNED NOT NULL');
+
+        if ($this->tableHasIndex('session', 'unique_id')) {
+            $this->executeSql('ALTER TABLE `session` DROP INDEX `unique_id`');
+        }
+        if (!$this->tableHasIndex('session', 'PRIMARY')) {
+            $this->executeSql('ALTER TABLE `session` ADD PRIMARY KEY (`id`)');
+        }
+        if (!$this->tableHasIndex('session', 'session_lifetime_idx')) {
+            $this->executeSql('ALTER TABLE `session` ADD INDEX `session_lifetime_idx` (`lifetime`)');
+        }
     }
 
     /**

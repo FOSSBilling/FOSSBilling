@@ -5,16 +5,12 @@ declare(strict_types=1);
 use Doctrine\DBAL\Connection;
 use FOSSBilling\Http\CookieNames;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Session\Session as SymfonySession;
+use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 
-function createSession(): FOSSBilling\Session
+function createSession(?SymfonySession $httpSession = null): FOSSBilling\Session
 {
-    $handler = new class extends PdoSessionHandler {
-        public function __construct()
-        {
-        }
-    };
-
-    return new FOSSBilling\Session($handler);
+    return new FOSSBilling\Session($httpSession ?? new SymfonySession(new MockArraySessionStorage('PHPSESSID')));
 }
 
 /**
@@ -37,10 +33,7 @@ function createDatabaseSession(Connection $connection): array
 
 function setSessionCookie(string $sessionId): void
 {
-    $sessionName = session_name();
-    if ($sessionName !== false) {
-        $_COOKIE[$sessionName] = $sessionId;
-    }
+    $_COOKIE['PHPSESSID'] = $sessionId;
 }
 
 function createSessionDbalException(): RuntimeException
@@ -57,27 +50,23 @@ function invokePrivate(object $instance, string $method, array $args = []): mixe
 }
 
 afterEach(function (): void {
-    $_SESSION = [];
     foreach ([
         CookieNames::SESSION,
         'PHPSESSID',
     ] as $sessionName) {
         unset($_COOKIE[$sessionName]);
     }
-    if (session_status() === PHP_SESSION_NONE) {
-        session_id('');
-        session_name('PHPSESSID');
-    }
 });
 
 test('session cookie name migrates and expires the previous session cookie', function (): void {
     $_COOKIE['PHPSESSID'] = 'legacy-session';
-    $session = createSession();
+    $httpSession = new SymfonySession(new MockArraySessionStorage('PHPSESSID'));
+    $session = createSession($httpSession);
 
     invokePrivate($session, 'configureCookieName');
 
-    expect(session_name())->toBe(CookieNames::SESSION)
-        ->and(session_id())->toBe('legacy-session');
+    expect($httpSession->getName())->toBe(CookieNames::SESSION)
+        ->and($httpSession->getId())->toBe('legacy-session');
 
     invokePrivate($session, 'expireLegacySessionCookies');
 
@@ -163,7 +152,7 @@ test('session validation deletes an expired session', function (): void {
 
     invokePrivate($session, 'canUseSession');
 
-    expect($_COOKIE)->not->toHaveKey((string) session_name());
+    expect($_COOKIE)->not->toHaveKey('PHPSESSID');
 });
 
 test('session validation deletes a malformed fingerprint', function (): void {
@@ -199,7 +188,7 @@ test('session validation clears an invalid cookie when database deletion fails',
 
     invokePrivate($session, 'canUseSession');
 
-    expect($_COOKIE)->not->toHaveKey((string) session_name());
+    expect($_COOKIE)->not->toHaveKey('PHPSESSID');
 });
 
 test('fingerprint update persists the current fingerprint', function (): void {
@@ -325,64 +314,52 @@ test('obsolete session expiry honors grace window', function (): void {
 });
 
 test('destroying a client login preserves the admin login', function (): void {
-    $_SESSION = [
-        'admin' => ['id' => 1],
-        'client' => ['id' => 2],
-        'client_id' => 2,
-    ];
+    $session = createSession();
+    $session->set('admin', ['id' => 1]);
+    $session->set('client', ['id' => 2]);
+    $session->set('client_id', 2);
 
-    $result = createSession()->destroy('client');
+    $result = $session->destroy('client');
 
     expect($result)->toBeTrue()
-        ->and($_SESSION)->toHaveKey('admin')
-        ->not->toHaveKeys(['client', 'client_id']);
+        ->and($session->get('admin'))->toBe(['id' => 1])
+        ->and($session->get('client'))->toBeNull()
+        ->and($session->get('client_id'))->toBeNull();
 });
 
 test('destroying an admin login preserves the client login', function (): void {
-    $_SESSION = [
-        'admin' => ['id' => 1],
-        'client' => ['id' => 2],
-        'client_id' => 2,
-    ];
+    $session = createSession();
+    $session->set('admin', ['id' => 1]);
+    $session->set('client', ['id' => 2]);
+    $session->set('client_id', 2);
 
-    $result = createSession()->destroy('admin');
+    $result = $session->destroy('admin');
 
     expect($result)->toBeTrue()
-        ->and($_SESSION)->not->toHaveKey('admin')
-        ->and($_SESSION)->toHaveKeys(['client', 'client_id']);
+        ->and($session->get('admin'))->toBeNull()
+        ->and($session->get('client'))->toBe(['id' => 2])
+        ->and($session->get('client_id'))->toBe(2);
 });
 
 test('destroying a client login regenerates the session with the configured grace period, not zero', function (): void {
-    $handler = new class extends PdoSessionHandler {
-        public function __construct()
-        {
-        }
-    };
+    $httpSession = new SymfonySession(new MockArraySessionStorage('PHPSESSID'));
 
-    $session = Mockery::mock(FOSSBilling\Session::class, [$handler])->makePartial();
+    $session = Mockery::mock(FOSSBilling\Session::class, [$httpSession])->makePartial();
     $session->shouldReceive('regenerateId')->withNoArgs()->once();
 
-    $_SESSION = [
-        'client' => ['id' => 2],
-        'client_id' => 2,
-    ];
+    $session->set('client', ['id' => 2]);
+    $session->set('client_id', 2);
 
     $session->destroy('client');
 });
 
 test('destroying an admin login regenerates the session with the configured grace period, not zero', function (): void {
-    $handler = new class extends PdoSessionHandler {
-        public function __construct()
-        {
-        }
-    };
+    $httpSession = new SymfonySession(new MockArraySessionStorage('PHPSESSID'));
 
-    $session = Mockery::mock(FOSSBilling\Session::class, [$handler])->makePartial();
+    $session = Mockery::mock(FOSSBilling\Session::class, [$httpSession])->makePartial();
     $session->shouldReceive('regenerateId')->withNoArgs()->once();
 
-    $_SESSION = [
-        'admin' => ['id' => 1],
-    ];
+    $session->set('admin', ['id' => 1]);
 
     $session->destroy('admin');
 });

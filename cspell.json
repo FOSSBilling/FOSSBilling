@@ -137,6 +137,8 @@
         "sysdate",
         "promocode",
         "maxuses",
+        "maxlifetime",
+        "varbinary",
         "freesetup",
         "nopadding",
         "fieldset",

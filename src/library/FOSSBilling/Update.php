@@ -428,12 +428,6 @@ class Update implements InjectionAwareInterface
 
         $this->validateDownloadedArchive($archiveFile, $releaseInfo);
 
-        $finalization->createPendingState(Version::VERSION, $latestVersionNum, [
-            'branch' => $updateBranch,
-            'update_type' => $releaseInfo['update_type'] ?? Version::getUpdateType($latestVersionNum),
-            'source' => 'auto-update',
-        ]);
-
         /*
          * From here until the lock is released below, files under PATH_ROOT are
          * being overwritten in place while the site may still be serving other
@@ -469,6 +463,12 @@ class Update implements InjectionAwareInterface
         fclose($lockHandle);
         ignore_user_abort(true);
 
+        /*
+         * Do not finalize in this process. Once extraction completes, this
+         * request is still running the old loaded code; the next request must
+         * run the new code before constructing the session handler so database
+         * patches and removed-file cleanup are applied safely.
+         */
         try {
             // Extract latest version archive on top of the current version.
             try {
@@ -487,25 +487,15 @@ class Update implements InjectionAwareInterface
                 throw new Exception('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
             }
 
-            // Extraction is the slow part; refresh the lock now so a legitimately
-            // long-running update isn't mistaken for an abandoned one while the
-            // patches below are still applying.
+            // Mark extraction complete so the short finalization handoff below
+            // is not mistaken for an abandoned update.
             $this->filesystem->touch($lockFile);
 
-            /*
-             * Apply pending config/database patches and remove the install folder
-             * now, while the admin who triggered the update is still authenticated.
-             *
-             * This must happen before the session is destroyed below: the login
-             * screen (and the Doctrine queries it runs to authenticate the admin)
-             * is generated against the newly extracted code, which can expect
-             * database columns that only the patches below create. Deferring this
-             * work until after the forced logout would leave the admin unable to
-             * log back in - and therefore unable to reach the finalization screen -
-             * until the schema is patched. See the class docblock on
-             * UpdateFinalization for the rest of the finalization flow.
-             */
-            $finalization->finalizeUpdate();
+            $finalization->createPendingState(Version::VERSION, $latestVersionNum, [
+                'branch' => $updateBranch,
+                'update_type' => $releaseInfo['update_type'] ?? Version::getUpdateType($latestVersionNum),
+                'source' => 'auto-update',
+            ]);
         } finally {
             $this->filesystem->remove($lockFile);
         }

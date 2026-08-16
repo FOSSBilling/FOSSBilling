@@ -318,7 +318,7 @@ class ServicePayGateway implements InjectionAwareInterface
         $defaults['continue_shopping_url'] = $this->di['tools']->url('/order');
         $defaults['single_page'] = true;
         if ($model instanceof Invoice) {
-            $defaults['thankyou_url'] = $this->di['url']->link("/invoice/thank-you/{$model->getHash()}", ['restore_token' => Tools::createSessionRestoreToken(session_id())]);
+            $defaults['thankyou_url'] = $this->di['url']->link("/invoice/thank-you/{$model->getHash()}", ['restore_token' => Tools::createSessionRestoreToken($this->di['session']->getId())]);
             $defaults['invoice_url'] = $this->di['tools']->url("/invoice/{$model->getHash()}");
         }
 
@@ -444,19 +444,19 @@ class ServicePayGateway implements InjectionAwareInterface
     private function getReturnUrl(PayGateway $pg, ?Invoice $model = null): string
     {
         if ($model instanceof Invoice) {
-            return $this->di['url']->link("/invoice/{$model->getHash()}", ['status' => 'ok', 'restore_token' => Tools::createSessionRestoreToken(session_id())]);
+            return $this->di['url']->link("/invoice/{$model->getHash()}", ['status' => 'ok', 'restore_token' => Tools::createSessionRestoreToken($this->di['session']->getId())]);
         }
 
-        return $this->di['url']->link('/invoice', ['status' => 'ok', 'restore_token' => Tools::createSessionRestoreToken(session_id())]);
+        return $this->di['url']->link('/invoice', ['status' => 'ok', 'restore_token' => Tools::createSessionRestoreToken($this->di['session']->getId())]);
     }
 
     private function getCancelUrl(PayGateway $pg, ?Invoice $model = null): string
     {
         if ($model instanceof Invoice) {
-            return $this->di['url']->link("/invoice/{$model->getHash()}", ['status' => 'cancel', 'restore_token' => Tools::createSessionRestoreToken(session_id())]);
+            return $this->di['url']->link("/invoice/{$model->getHash()}", ['status' => 'cancel', 'restore_token' => Tools::createSessionRestoreToken($this->di['session']->getId())]);
         }
 
-        return $this->di['url']->link('/invoice', ['status' => 'cancel', 'restore_token' => Tools::createSessionRestoreToken(session_id())]);
+        return $this->di['url']->link('/invoice', ['status' => 'cancel', 'restore_token' => Tools::createSessionRestoreToken($this->di['session']->getId())]);
     }
 
     private function getCallbackRedirect(PayGateway $pg, ?Invoice $model = null): string

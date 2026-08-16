@@ -94,7 +94,7 @@ final class FOSSBilling_Installer
     public function __construct(private readonly Request $request, private readonly array $preConfigProxyCandidate = [])
     {
         require_once Path::join(PATH_INSTALL, 'session.php');
-        $this->session = new Session();
+        $this->session = new Session($this->request);
         $this->filesystem = new Filesystem();
         $config = $this->getExistingConfig();
         if ($config !== null) {
@@ -175,8 +175,8 @@ final class FOSSBilling_Installer
 
                     // Attempt installation
                     $this->install();
+                    $this->session->destroy();
                     $this->generateEmailTemplates();
-                    session_destroy();
 
                     $result = $this->render(PAGE_RESULT, [
                         'success' => true,
