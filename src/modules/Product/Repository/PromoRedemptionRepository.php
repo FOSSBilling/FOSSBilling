@@ -61,7 +61,7 @@ class PromoRedemptionRepository extends EntityRepository
         $qb = $this->createQueryBuilder('pr');
 
         if (!empty($data['promo_id'])) {
-            $qb->andWhere('IDENTITY(pr.promo) = :promoId')
+            $qb->andWhere('pr.promoId = :promoId')
                 ->setParameter('promoId', $data['promo_id']);
         }
 
@@ -94,7 +94,7 @@ class PromoRedemptionRepository extends EntityRepository
     {
         $count = (int) $this->createQueryBuilder('pr')
             ->select('COUNT(pr.id)')
-            ->where('IDENTITY(pr.promo) = :promoId')
+            ->where('pr.promoId = :promoId')
             ->andWhere('pr.clientId = :clientId')
             ->andWhere('pr.phase = :phase')
             ->andWhere('pr.status IN (:statuses)')
@@ -112,7 +112,7 @@ class PromoRedemptionRepository extends EntityRepository
     {
         return (int) $this->createQueryBuilder('pr')
             ->select('COUNT(pr.id)')
-            ->where('IDENTITY(pr.promo) = :promoId')
+            ->where('pr.promoId = :promoId')
             ->setParameter('promoId', $promoId)
             ->getQuery()
             ->getSingleScalarResult();
@@ -143,7 +143,7 @@ class PromoRedemptionRepository extends EntityRepository
             ->addSelect('SUM(CASE WHEN pr.status = :releasedStatus THEN 1 ELSE 0 END) AS released_applications')
             ->addSelect('COUNT(DISTINCT pr.clientId) AS distinct_clients')
             ->addSelect('COUNT(DISTINCT pr.clientOrderId) AS orders_using_promo')
-            ->where('IDENTITY(pr.promo) = :promoId')
+            ->where('pr.promoId = :promoId')
             ->setParameter('promoId', $promoId)
             ->setParameter('checkoutPhase', PromoRedemption::PHASE_CHECKOUT)
             ->setParameter('renewalPhase', PromoRedemption::PHASE_RENEWAL)
