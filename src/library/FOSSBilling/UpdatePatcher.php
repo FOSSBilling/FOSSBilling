@@ -503,6 +503,7 @@ class UpdatePatcher implements InjectionAwareInterface
             91 => 'patch91',
             92 => 'patch92',
             93 => 'patch93',
+            94 => 'patch94',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2679,6 +2680,20 @@ class UpdatePatcher implements InjectionAwareInterface
         // the association for these clients.
         // @see https://github.com/FOSSBilling/FOSSBilling/issues/4160
         $this->executeSql('UPDATE `client` SET `client_group_id` = NULL WHERE `client_group_id` = 0;');
+    }
+
+    private function patch94(): void
+    {
+        // Unique constraint on client_balance.invoice_item_id prevents duplicate credits
+        // for the same invoice item. MySQL treats multiple NULLs as distinct, so other
+        // rows (transaction debits, default deductions) are unaffected.
+        if (!$this->tableHasColumn('client_balance', 'invoice_item_id')) {
+            $this->executeSql('ALTER TABLE `client_balance` ADD COLUMN `invoice_item_id` BIGINT DEFAULT NULL AFTER `rel_id`');
+        }
+
+        if (!$this->tableHasIndex('client_balance', 'uniq_invoice_item_credit')) {
+            $this->executeSql('ALTER TABLE `client_balance` ADD UNIQUE INDEX `uniq_invoice_item_credit` (`invoice_item_id`)');
+        }
     }
 
     /**

@@ -330,3 +330,51 @@ test('client group patch normalizes legacy zero group ids to null', function ():
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch93'))->invoke($patcher);
 });
+
+test('client balance unique credit patch follows the client group patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 93);
+
+    expect($patches)->toHaveKey(94)
+        ->and($patches[94][1])->toBe('patch94');
+});
+
+test('fresh installs constrain client balance to one credit per invoice item', function (): void {
+    $filesystem = new Filesystem();
+    $structure = $filesystem->readFile(Path::join(PATH_ROOT, 'install', 'sql', 'structure.sql'));
+
+    expect($structure)->toContain('`invoice_item_id` bigint(20) DEFAULT NULL')
+        ->and($structure)->toContain('UNIQUE KEY `uniq_invoice_item_credit` (`invoice_item_id`)');
+});
+
+test('client balance unique credit patch adds column and index for existing installs', function (): void {
+    $balanceColumns = Mockery::mock(PDOStatement::class);
+    $balanceColumns->expects('execute')->with([])->andReturnTrue();
+    $balanceColumns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([]);
+
+    $balanceIndexes = Mockery::mock(PDOStatement::class);
+    $balanceIndexes->expects('execute')->with([])->andReturnTrue();
+    $balanceIndexes->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([]);
+
+    $addColumn = Mockery::mock(PDOStatement::class);
+    $addColumn->expects('execute')->with([])->andReturnTrue();
+
+    $addIndex = Mockery::mock(PDOStatement::class);
+    $addIndex->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `client_balance`')->andReturn($balanceColumns);
+    $pdo->expects('prepare')->with('SHOW INDEX FROM `client_balance`')->andReturn($balanceIndexes);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `client_balance` ADD COLUMN `invoice_item_id` BIGINT DEFAULT NULL AFTER `rel_id`')
+        ->andReturn($addColumn);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `client_balance` ADD UNIQUE INDEX `uniq_invoice_item_credit` (`invoice_item_id`)')
+        ->andReturn($addIndex);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch94'))->invoke($patcher);
+});

@@ -17,6 +17,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: \Box\Mod\Client\Repository\ClientBalanceRepository::class)]
 #[ORM\Table(name: 'client_balance')]
 #[ORM\Index(name: 'client_id_idx', columns: ['client_id'])]
+#[ORM\UniqueConstraint(name: 'uniq_invoice_item_credit', columns: ['invoice_item_id'])]
 #[ORM\HasLifecycleCallbacks]
 class ClientBalance
 {
@@ -34,6 +35,9 @@ class ClientBalance
 
     #[ORM\Column(name: 'rel_id', type: Types::STRING, length: 20, nullable: true)]
     private ?string $relId = null;
+
+    #[ORM\Column(name: 'invoice_item_id', type: Types::BIGINT, nullable: true)]
+    private ?int $invoiceItemId = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 18, scale: 2, nullable: true, options: ['default' => '0.00'])]
     private ?string $amount = '0.00';
@@ -84,6 +88,18 @@ class ClientBalance
     public function setRelId(?string $relId): self
     {
         $this->relId = $relId;
+
+        return $this;
+    }
+
+    public function getInvoiceItemId(): ?int
+    {
+        return $this->invoiceItemId;
+    }
+
+    public function setInvoiceItemId(?int $invoiceItemId): self
+    {
+        $this->invoiceItemId = $invoiceItemId;
 
         return $this;
     }

@@ -338,6 +338,52 @@ test('credits invoice item', function (): void {
     $serviceMock->creditInvoiceItem($invoiceItemModel);
 });
 
+test('credits invoice item is idempotent on a duplicate credit', function (): void {
+    $serviceMock = Mockery::mock(ServiceInvoiceItem::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('getTotalWithTax')
+        ->atLeast()->once()
+        ->andReturn(11.2);
+
+    $invoiceItemModel = new Model_InvoiceItem();
+    $invoiceItemModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientModel = new Model_Client();
+    $clientModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientBalanceModel = new Model_Client();
+    $clientBalanceModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $callCount = 0;
+    $dbMock->shouldReceive('getExistingModelById')
+        ->atLeast()->once()
+        ->andReturnUsing(function () use ($invoiceModel, $clientModel, &$callCount) {
+            return ++$callCount === 1 ? $invoiceModel : $clientModel;
+        });
+    $dbMock->shouldReceive('dispense')
+        ->atLeast()->once()
+        ->andReturn($clientBalanceModel);
+    $dbMock->shouldReceive('store')
+        ->atLeast()->once()
+        ->andThrow(new RedBeanPHP\RedException('Duplicate entry for uniq_invoice_item_credit'));
+
+    // A prior attempt already credited this item, so the retry must not add a second note.
+    $invoiceServiceMock = Mockery::mock(InvoiceService::class);
+    $invoiceServiceMock->shouldReceive('addNote')->never();
+
+    $loggerMock = Mockery::mock();
+    $loggerMock->shouldReceive('setChannel')->with('billing')->andReturnSelf();
+    $loggerMock->shouldReceive('info')->atLeast()->once();
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['logger'] = $loggerMock;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $invoiceServiceMock);
+
+    $serviceMock->setDi($di);
+    $serviceMock->creditInvoiceItem($invoiceItemModel);
+});
+
 test('gets total with tax', function (): void {
     $service = new ServiceInvoiceItem();
     $total = 5.0;

@@ -247,11 +247,21 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $credit->client_id = $client->id;
         $credit->type = 'invoice';
         $credit->rel_id = $invoice->id;
+        $credit->invoice_item_id = $item->id;
         $credit->description = $item->title;
         $credit->amount = -$total;
         $credit->created_at = date('Y-m-d H:i:s');
         $credit->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($credit);
+
+        // Idempotency: the unique constraint on invoice_item_id guarantees at most one
+        // credit per item. A violation means a retry already credited it — treat as a no-op.
+        try {
+            $this->di['db']->store($credit);
+        } catch (\RedBeanPHP\RedException) {
+            $this->di['logger']->setChannel('billing')->info(sprintf('Invoice item #%d was already credited; skipping duplicate credit.', $item->id));
+
+            return;
+        }
 
         $invoiceService = $this->di['mod_service']('Invoice');
         $invoiceService->addNote($invoice, sprintf('Charged clients balance with %s %s for %s', $total, $invoice->currency, $item->title));
