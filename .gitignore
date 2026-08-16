@@ -5,12 +5,12 @@
 /cache
 /src/config.php
 /src/config.old.php
-/src/data/log/*
-/src/data/cache/*
-/src/data/uploads/*
-/src/data/update-finalization.json
-/src/.update-lock
+/src/data/*
+!/src/data/.htaccess
+!/src/data/index.html
 !/src/data/cache/.gitkeep
+!/src/data/log/index.html
+!/src/data/uploads/index.html
 /src/public/assets
 /src/vendor/*
 build
