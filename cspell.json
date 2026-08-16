@@ -559,7 +559,13 @@
         "nemailr",
         "spamfilter",
         "sysinfo",
-        "unemailml"
+        "unemailml",
+        "listpkgs",
+        "addpkg",
+        "createacct",
+        "setupreseller",
+        "setacls",
+        "acllist"
     ],
     "ignorePaths": [
         "node_modules/**",
