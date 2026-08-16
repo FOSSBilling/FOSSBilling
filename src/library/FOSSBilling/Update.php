@@ -182,8 +182,64 @@ class Update implements InjectionAwareInterface
                 'next_check' => date('Y-m-d H:i:s', time() + 3600),
                 'branch' => $branch,
                 'minimum_php_version' => $releaseInfo['minimum_php_version'],
+                'digest' => $releaseInfo['digest'] ?? null,
             ];
         });
+    }
+
+    /**
+     * Resolve the SHA-256 digest for the exact update archive being downloaded.
+     */
+    private function getArchiveDigest(array $releaseInfo): string
+    {
+        if (!isset($releaseInfo['digest'])) {
+            throw new InformationException('The FOSSBilling update API did not provide a SHA-256 digest. Update canceled for security reasons.');
+        }
+
+        return $this->normalizeSha256Digest($releaseInfo['digest']);
+    }
+
+    private function normalizeSha256Digest(mixed $digest): string
+    {
+        if (!is_string($digest)) {
+            throw new InformationException('The FOSSBilling update API provided an invalid SHA-256 digest. Update canceled for security reasons.');
+        }
+
+        $digest = trim($digest);
+        if (str_starts_with(strtolower($digest), 'sha256:')) {
+            $digest = substr($digest, 7);
+        }
+
+        if (preg_match('/\A[0-9a-fA-F]{64}\z/', $digest) !== 1) {
+            throw new InformationException('The FOSSBilling update API provided an invalid SHA-256 digest. Update canceled for security reasons.');
+        }
+
+        return strtolower($digest);
+    }
+
+    private function validateDownloadedArchive(string $archiveFile, array $releaseInfo): void
+    {
+        try {
+            $expectedDigest = $this->getArchiveDigest($releaseInfo);
+            $actualDigest = hash_file('sha256', $archiveFile);
+
+            if ($actualDigest === false || !hash_equals($expectedDigest, $actualDigest)) {
+                throw new InformationException('The downloaded update archive failed integrity verification. Update canceled for security reasons.');
+            }
+        } catch (Exception $e) {
+            $this->removeDownloadedArchive($archiveFile);
+
+            throw $e;
+        }
+    }
+
+    private function removeDownloadedArchive(string $archiveFile): void
+    {
+        try {
+            $this->filesystem->remove($archiveFile);
+        } catch (IOException $e) {
+            $this->di['logger']->setChannel('update')->error($e->getMessage());
+        }
     }
 
     /**
@@ -262,7 +318,7 @@ class Update implements InjectionAwareInterface
             throw new InformationException('You have the latest version of FOSSBilling. You do not need to update.');
         }
 
-        error_log('Started FOSSBilling auto-update script');
+        $this->di['logger']->setChannel('update')->info('Started FOSSBilling auto-update script');
         $latestVersionNum = $this->getLatestVersion();
         $archiveFile = Path::join(PATH_CACHE, "{$latestVersionNum}.zip");
 
@@ -292,20 +348,41 @@ class Update implements InjectionAwareInterface
                 'timeout' => 30,
                 'max_duration' => 120,
             ]);
-            $response = $httpClient->request('GET', $releaseInfo['download_url']);
+            $downloadOptions = [];
+            if (str_starts_with((string) $releaseInfo['download_url'], 'https://api.github.com/repos/FOSSBilling/FOSSBilling/releases/assets/')) {
+                $downloadOptions['headers'] = ['Accept' => 'application/octet-stream'];
+            }
+
+            $response = $httpClient->request('GET', $releaseInfo['download_url'], $downloadOptions);
 
             $fileHandler = fopen($archiveFile, 'w');
-            foreach ($httpClient->stream($response) as $chunk) {
-                fwrite($fileHandler, (string) $chunk->getContent());
+            if ($fileHandler === false) {
+                throw new \RuntimeException('Unable to create the update archive.');
             }
-            fclose($fileHandler);
-        } catch (TransportExceptionInterface|HttpExceptionInterface $e) {
-            error_log($e->getMessage());
+
+            try {
+                foreach ($httpClient->stream($response) as $chunk) {
+                    $content = (string) $chunk->getContent();
+                    $written = fwrite($fileHandler, $content);
+                    if ($written === false || $written !== strlen($content)) {
+                        throw new \RuntimeException('Unable to write the update archive.');
+                    }
+                }
+            } finally {
+                fclose($fileHandler);
+            }
+        } catch (\Throwable $e) {
+            $this->removeDownloadedArchive($archiveFile);
+            $this->di['logger']->setChannel('update')->error($e->getMessage());
 
             throw new Exception('Failed to download the update archive. Further details are available in the error log.');
         }
 
-        // @TODO - Validate downloaded file hash.
+        // The preview branch's release info isn't sourced from the versions API this
+        // digest comes from, so it has nothing to verify against here.
+        if ($updateBranch !== 'preview') {
+            $this->validateDownloadedArchive($archiveFile, $releaseInfo);
+        }
 
         $finalization->createPendingState(Version::VERSION, $latestVersionNum, [
             'branch' => $updateBranch,
@@ -361,7 +438,7 @@ class Update implements InjectionAwareInterface
                 $zip->extractTo(PATH_ROOT);
                 $zip->close();
             } catch (ZipException $e) {
-                error_log($e->getMessage());
+                $this->di['logger']->setChannel('update')->error($e->getMessage());
 
                 throw new Exception('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
             }
