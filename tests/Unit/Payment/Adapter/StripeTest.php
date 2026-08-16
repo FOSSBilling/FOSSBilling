@@ -548,8 +548,12 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
         $transactionService->shouldReceive('claimForProcessing')
             ->andReturn(false);
 
+        $dbalMock = Mockery::mock();
+        expectPaymentIntentLock($dbalMock, 'in_123', 1);
+
         $di = container();
         $di['db'] = $dbMock;
+        $di['dbal'] = $dbalMock;
         $di['mod_service'] = $di->protect(function ($module, $service = null) use ($transactionService) {
             if ($service === 'Transaction') {
                 return $transactionService;
@@ -648,8 +652,12 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
         $apiAdmin = Mockery::mock();
         $apiAdmin->shouldReceive('client_balance_add_funds')->once();
 
+        $dbalMock = Mockery::mock();
+        expectPaymentIntentLock($dbalMock, 'in_456', 1);
+
         $di = container();
         $di['db'] = $dbMock;
+        $di['dbal'] = $dbalMock;
         $di['mod_service'] = $di->protect(fn ($module, $service = null) => match ($service) {
             'Transaction' => $transactionService,
             default => $invoiceService,
@@ -859,8 +867,12 @@ describe('handleInvoicePaymentSucceeded with invoice_payment event (API 2026-06-
         $apiAdmin = Mockery::mock();
         $apiAdmin->shouldReceive('client_balance_add_funds')->once();
 
+        $dbalMock = Mockery::mock();
+        expectPaymentIntentLock($dbalMock, 'in_1TnBdC', 4);
+
         $di = container();
         $di['db'] = $dbMock;
+        $di['dbal'] = $dbalMock;
         $di['mod_service'] = $di->protect(fn ($module, $service = null) => match ($service) {
             'Transaction' => $transactionService,
             default => $invoiceService,
@@ -1068,7 +1080,7 @@ test('releases the PaymentIntent lock when processing fails', function (): void 
     $di['dbal'] = $dbalMock;
     $this->adapter->setDi($di);
 
-    expect(fn (): mixed => invokePrivateMethod($this->adapter, 'withPaymentIntentLock', [
+    expect(fn (): mixed => invokePrivateMethod($this->adapter, 'withStripeObjectLock', [
         'pi_failure',
         2,
         fn () => throw new RuntimeException('Processing failed'),
@@ -1089,7 +1101,7 @@ test('logs PaymentIntent lock timeouts with lock context', function (): void {
     $di['logger'] = $logger;
     $this->adapter->setDi($di);
 
-    expect(fn (): mixed => invokePrivateMethod($this->adapter, 'withPaymentIntentLock', [
+    expect(fn (): mixed => invokePrivateMethod($this->adapter, 'withStripeObjectLock', [
         'pi_timeout',
         2,
         fn (): null => null,
