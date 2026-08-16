@@ -303,3 +303,147 @@ test('clearPendingMessages clears pending messages', function (): void {
     $result = $service->clearPendingMessages();
     expect($result)->toBeTrue();
 });
+
+test('reserveNextNumericParamValue claims the current value and advances the counter under lock', function (): void {
+    $service = new Service();
+
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('transactional')
+        ->once()
+        ->andReturnUsing(fn (callable $callback): mixed => $callback($dbalMock));
+    // The read must take the row lock, otherwise two callers can be handed the same number.
+    $dbalMock->shouldReceive('fetchOne')
+        ->once()
+        ->with('SELECT value FROM setting WHERE param = :param FOR UPDATE', ['param' => 'invoice_starting_number'])
+        ->andReturn('7');
+    $dbalMock->shouldReceive('executeStatement')
+        ->once()
+        ->with(
+            'UPDATE setting SET value = :value, updated_at = :updated_at WHERE param = :param',
+            Mockery::on(fn (array $params): bool => $params['value'] === '8' && $params['param'] === 'invoice_starting_number')
+        )
+        ->andReturn(1);
+
+    $di = container();
+    $di['dbal'] = $dbalMock;
+    $service->setDi($di);
+
+    expect($service->reserveNextNumericParamValue('invoice_starting_number'))->toBe(7);
+});
+
+test('reserveNextNumericParamValue returns null when the counter is missing or not numeric', function (): void {
+    $service = new Service();
+
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('transactional')
+        ->once()
+        ->andReturnUsing(fn (callable $callback): mixed => $callback($dbalMock));
+    $dbalMock->shouldReceive('fetchOne')->once()->andReturn(false);
+    $dbalMock->shouldNotReceive('executeStatement');
+
+    $di = container();
+    $di['dbal'] = $dbalMock;
+    $service->setDi($di);
+
+    expect($service->reserveNextNumericParamValue('invoice_starting_number'))->toBeNull();
+});
+
+test('reserveNextNumericParamValue rejects non-integer counter values', function (): void {
+    $service = new Service();
+
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('transactional')
+        ->once()
+        ->andReturnUsing(fn (callable $callback): mixed => $callback($dbalMock));
+    // Truncating this to 5 and writing 6 would silently skip a number.
+    $dbalMock->shouldReceive('fetchOne')->once()->andReturn('5.5');
+    $dbalMock->shouldNotReceive('executeStatement');
+
+    $di = container();
+    $di['dbal'] = $dbalMock;
+    $service->setDi($di);
+
+    expect($service->reserveNextNumericParamValue('invoice_starting_number'))->toBeNull();
+});
+
+test('reserveNextNumericParamValue seeds a missing counter and reserves from it', function (): void {
+    $service = new Service();
+
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('transactional')
+        ->once()
+        ->andReturnUsing(fn (callable $callback): mixed => $callback($dbalMock));
+    $dbalMock->shouldReceive('fetchOne')->once()->andReturn(false);
+    $dbalMock->shouldReceive('executeStatement')
+        ->once()
+        ->with(
+            Mockery::pattern('/^INSERT INTO setting/'),
+            Mockery::on(fn (array $params): bool => $params['value'] === '102' && $params['param'] === 'invoice_starting_number')
+        )
+        ->andReturn(1);
+
+    $di = container();
+    $di['dbal'] = $dbalMock;
+    $service->setDi($di);
+
+    expect($service->reserveNextNumericParamValue('invoice_starting_number', 101))->toBe(101);
+});
+
+test('reserveNextNumericParamValue ignores the seed when the counter became valid under the lock', function (): void {
+    $service = new Service();
+
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('transactional')
+        ->once()
+        ->andReturnUsing(fn (callable $callback): mixed => $callback($dbalMock));
+    // A concurrent caller seeded the counter while we waited for the lock.
+    $dbalMock->shouldReceive('fetchOne')->once()->andReturn('102');
+    $dbalMock->shouldReceive('executeStatement')
+        ->once()
+        ->with(
+            Mockery::pattern('/^UPDATE setting/'),
+            Mockery::on(fn (array $params): bool => $params['value'] === '103')
+        )
+        ->andReturn(1);
+
+    $di = container();
+    $di['dbal'] = $dbalMock;
+    $service->setDi($di);
+
+    expect($service->reserveNextNumericParamValue('invoice_starting_number', 101))->toBe(102);
+});
+
+test('reserveNextNumericParamValue reserves from the winning row when seeding collides', function (): void {
+    $service = new Service();
+
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('transactional')
+        ->twice()
+        ->andReturnUsing(fn (callable $callback): mixed => $callback($dbalMock));
+
+    // First attempt: the row is missing, so we seed it, but another caller inserts it first.
+    // Second attempt: that caller's row is now visible, so reserve from it rather than failing.
+    $dbalMock->shouldReceive('fetchOne')->once()->ordered()->andReturn(false);
+    $dbalMock->shouldReceive('executeStatement')
+        ->once()
+        ->ordered()
+        ->with(Mockery::pattern('/^INSERT INTO setting/'), Mockery::any())
+        ->andThrow(Mockery::mock(Doctrine\DBAL\Exception\UniqueConstraintViolationException::class));
+    // The winner seeded the row with 102, having itself reserved 101.
+    $dbalMock->shouldReceive('fetchOne')->once()->ordered()->andReturn('102');
+    $dbalMock->shouldReceive('executeStatement')
+        ->once()
+        ->ordered()
+        ->with(
+            Mockery::pattern('/^UPDATE setting/'),
+            Mockery::on(fn (array $params): bool => $params['value'] === '103')
+        )
+        ->andReturn(1);
+
+    $di = container();
+    $di['dbal'] = $dbalMock;
+    $service->setDi($di);
+
+    // Must not be 101: that is the number the winner reserved.
+    expect($service->reserveNextNumericParamValue('invoice_starting_number', 101))->toBe(102);
+});

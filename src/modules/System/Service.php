@@ -12,6 +12,9 @@ declare(strict_types=1);
 namespace Box\Mod\System;
 
 use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Exception\DeadlockException;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\GeoIP\Reader;
@@ -726,6 +729,74 @@ class Service
         } catch (\Exception $e) {
             error_log($e->getMessage());
         }
+    }
+
+    /**
+     * Claims a numeric counter setting's current value and advances it, under a row lock so two
+     * concurrent callers are never handed the same number. Returns null if it is missing or not
+     * numeric and no $seed was given to repair it with.
+     *
+     * A $seed is only used if the setting is still missing or invalid once the lock is held, so
+     * concurrent callers seeding the same value cannot both reserve it. If they collide on
+     * creating the row, the loser reserves from the winner's row instead.
+     *
+     * Not subject to canUpdateParam(): this reserves an internal counter rather than applying a
+     * user-driven settings change, and must work in client and cron contexts.
+     */
+    public function reserveNextNumericParamValue(string $param, ?int $seed = null): ?int
+    {
+        if (empty($param)) {
+            throw new \FOSSBilling\Exception('Parameter key is missing.');
+        }
+
+        try {
+            return $this->reserveNumericParamValue($param, $seed);
+        } catch (UniqueConstraintViolationException|DeadlockException) {
+            // Two callers seeding a counter that does not exist yet both pass the locking read:
+            // InnoDB gap locks are shared, so neither blocks the other, and they collide on the
+            // insert instead. The loser's transaction is rolled back, so reserve from the row the
+            // winner committed rather than failing the caller.
+            return $this->reserveNumericParamValue($param, $seed);
+        }
+    }
+
+    private function reserveNumericParamValue(string $param, ?int $seed): ?int
+    {
+        return $this->di['dbal']->transactional(function (Connection $connection) use ($param, $seed): ?int {
+            $now = date('Y-m-d H:i:s');
+            $current = $connection->fetchOne(
+                'SELECT value FROM setting WHERE param = :param FOR UPDATE',
+                ['param' => $param]
+            );
+
+            $exists = $current !== false;
+            if (!$exists || filter_var($current, FILTER_VALIDATE_INT) === false) {
+                if ($seed === null) {
+                    return null;
+                }
+
+                if ($exists) {
+                    $connection->executeStatement(
+                        'UPDATE setting SET value = :value, updated_at = :updated_at WHERE param = :param',
+                        ['value' => (string) ($seed + 1), 'updated_at' => $now, 'param' => $param]
+                    );
+                } else {
+                    $connection->executeStatement(
+                        'INSERT INTO setting (param, value, created_at, updated_at) VALUES (:param, :value, :created_at, :updated_at)',
+                        ['param' => $param, 'value' => (string) ($seed + 1), 'created_at' => $now, 'updated_at' => $now]
+                    );
+                }
+
+                return $seed;
+            }
+
+            $connection->executeStatement(
+                'UPDATE setting SET value = :value, updated_at = :updated_at WHERE param = :param',
+                ['value' => (string) (intval($current) + 1), 'updated_at' => $now, 'param' => $param]
+            );
+
+            return intval($current);
+        });
     }
 
     private function canUpdateParam(string $param): bool
