@@ -32,6 +32,18 @@ test('exception response factory creates FOSSBilling error pages outside testing
         ->and($response->getContent())->toContain('Your Configuration is Empty');
 });
 
+test('exception response factory falls back to 500 for non-integer exception codes', function (): void {
+    // PDOException's $code property is untyped, so PDO can set it to a string SQLSTATE.
+    $exception = new PDOException('Unknown column');
+    $codeProperty = new ReflectionProperty($exception, 'code');
+    $codeProperty->setAccessible(true);
+    $codeProperty->setValue($exception, '42S22');
+
+    $response = (new ExceptionResponseFactory())->create($exception);
+
+    expect($response->getStatusCode())->toBe(Response::HTTP_INTERNAL_SERVER_ERROR);
+});
+
 test('error page can render without sending output', function (): void {
     $page = (new ErrorPage())->renderPage(404, 'Missing route');
 
