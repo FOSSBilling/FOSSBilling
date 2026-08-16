@@ -50,9 +50,9 @@
                             <label class="form-label">{{ 'Client Status'|trans }}</label>
                             <div class="form-text mb-2">{{ 'Limit recipients to clients with these account states.'|trans }}</div>
                             <select class="form-select" name="filter[client_status][]" multiple="multiple" size="4">
-                                <option value="active" {% if 'active' in msg.filter.client_status %} selected="selected"{% endif %}>{{ 'Active'|trans }}</option>
-                                <option value="suspended" {% if 'suspended' in msg.filter.client_status %} selected="selected"{% endif %}>{{ 'Suspended'|trans }}</option>
-                                <option value="canceled" {% if 'canceled' in msg.filter.client_status %} selected="selected"{% endif %}>{{ 'Canceled'|trans }}</option>
+                                <option value="active" {% if 'active' in (msg.filter.client_status ?? []) %} selected="selected"{% endif %}>{{ 'Active'|trans }}</option>
+                                <option value="suspended" {% if 'suspended' in (msg.filter.client_status ?? []) %} selected="selected"{% endif %}>{{ 'Suspended'|trans }}</option>
+                                <option value="canceled" {% if 'canceled' in (msg.filter.client_status ?? []) %} selected="selected"{% endif %}>{{ 'Canceled'|trans }}</option>
                             </select>
                         </div>
                         <div class="col-lg-6">
@@ -60,7 +60,7 @@
                             <div class="form-text mb-2">{{ 'Target only clients assigned to these groups.'|trans }}</div>
                             <select class="form-select" name="filter[client_groups][]" multiple="multiple" size="4">
                                 {% for id,label in admin.client_group_get_pairs %}
-                                    <option value="{{id}}" {% if id in msg.filter.client_groups %} selected="selected"{% endif %}>{{label}}</option>
+                                    <option value="{{id}}" {% if id in (msg.filter.client_groups ?? []) %} selected="selected"{% endif %}>{{label}}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -69,7 +69,7 @@
                             <div class="form-text mb-2">{{ 'Match clients who have orders currently in these states.'|trans }}</div>
                             <select class="form-select" name="filter[has_order_with_status][]" multiple="multiple" size="6">
                                 {% for id,label in admin.order_get_status_pairs %}
-                                    <option value="{{id}}" {% if id in msg.filter.has_order_with_status %} selected="selected"{% endif %}>{{label}}</option>
+                                    <option value="{{id}}" {% if id in (msg.filter.has_order_with_status ?? []) %} selected="selected"{% endif %}>{{label}}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -78,7 +78,7 @@
                             <div class="form-text mb-2">{{ 'Match clients who have purchased any of these products.'|trans }}</div>
                             <select class="form-select" name="filter[has_order][]" multiple="multiple" size="6">
                                 {% for id,label in admin.product_get_pairs %}
-                                    <option value="{{id}}" {% if id in msg.filter.has_order %} selected="selected"{% endif %}>{{label}}</option>
+                                    <option value="{{id}}" {% if id in (msg.filter.has_order ?? []) %} selected="selected"{% endif %}>{{label}}</option>
                                 {% endfor %}
                             </select>
                         </div>
