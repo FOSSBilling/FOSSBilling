@@ -66,6 +66,13 @@
                         {% endif %}
                         {% if isPreviewBranch %}
                             <h4 class="mb-2">{{ 'Preview Build Updates'|trans }}</h4>
+                            {% if updateAvailable %}
+                                <p>{{ 'FOSSBilling %version% is available for download.'|trans({'%version%': update_info['version']}) }}</p>
+                            {% else %}
+                                <div class="alert alert-success" role="alert">
+                                    {{ 'You are already running the latest available preview build. You can still reinstall it below if needed.'|trans }}
+                                </div>
+                            {% endif %}
                             <div class="alert alert-warning" role="alert">
                                 {{ 'Preview builds track unreleased development changes and may be unstable. It is not recommended to use them in production environments.'|trans }}
                             </div>
