@@ -161,12 +161,17 @@ test('login returns admin details on successful login', function (): void {
         ->with($admin, $password)
         ->andReturn($admin);
 
+    $hookServiceMock = Mockery::mock(Box\Mod\Hook\Service::class);
+    $hookServiceMock->shouldReceive('hasConnectedListeners')->once()->andReturn(true);
+    $hookServiceMock->shouldNotReceive('batchConnect');
+
     $di = container();
     $di['events_manager'] = $emMock;
     $di['db'] = $dbMock;
     $di['session'] = $sessionMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['auth'] = $authMock;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $hookServiceMock);
 
     $service = new Service();
     $service->setDi($di);
@@ -180,6 +185,146 @@ test('login returns admin details on successful login', function (): void {
     ];
 
     expect($result)->toBe($expected);
+});
+
+test('login connects listeners on demand when none are connected yet', function (): void {
+    $email = 'email@domain.com';
+    $password = 'pass';
+    $ip = '127.0.0.1';
+
+    $admin = new Model_Admin();
+    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin->id = 1;
+    $admin->email = $email;
+    $admin->name = 'Admin';
+
+    $emMock = Mockery::mock('\Box_EventManager');
+    $emMock->shouldReceive('fire')->atLeast()->once()->andReturn(true);
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('findOne')->atLeast()->once()->andReturn($admin);
+
+    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
+    $sessionMock->shouldReceive('regenerateId')->atLeast()->once();
+    $sessionMock->shouldReceive('set')->atLeast()->once();
+
+    $authMock = Mockery::mock('\Box_Authorization');
+    $authMock->shouldReceive('authorizeUser')->atLeast()->once()->with($admin, $password)->andReturn($admin);
+
+    $hookServiceMock = Mockery::mock(Box\Mod\Hook\Service::class);
+    $hookServiceMock->shouldReceive('hasConnectedListeners')->once()->andReturn(false);
+    $hookServiceMock->shouldReceive('batchConnect')->once()->andReturn(true);
+
+    $di = container();
+    $di['events_manager'] = $emMock;
+    $di['db'] = $dbMock;
+    $di['session'] = $sessionMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['auth'] = $authMock;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $hookServiceMock);
+
+    $service = new Service();
+    $service->setDi($di);
+
+    $result = $service->login($email, $password, $ip);
+
+    expect($result['id'])->toBe(1);
+});
+
+test('login retries batchConnect once and still succeeds when the second attempt connects listeners', function (): void {
+    $email = 'email@domain.com';
+    $password = 'pass';
+    $ip = '127.0.0.1';
+
+    $admin = new Model_Admin();
+    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin->id = 1;
+    $admin->email = $email;
+    $admin->name = 'Admin';
+
+    $emMock = Mockery::mock('\Box_EventManager');
+    $emMock->shouldReceive('fire')->atLeast()->once()->andReturn(true);
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('findOne')->atLeast()->once()->andReturn($admin);
+
+    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
+    $sessionMock->shouldReceive('regenerateId')->atLeast()->once();
+    $sessionMock->shouldReceive('set')->atLeast()->once();
+
+    $authMock = Mockery::mock('\Box_Authorization');
+    $authMock->shouldReceive('authorizeUser')->atLeast()->once()->with($admin, $password)->andReturn($admin);
+
+    $hookServiceMock = Mockery::mock(Box\Mod\Hook\Service::class);
+    $hookServiceMock->shouldReceive('hasConnectedListeners')->once()->andReturn(false);
+    $hookServiceMock->shouldReceive('batchConnect')->twice()->andReturn(false, true);
+
+    $loggerMock = Mockery::mock();
+    $loggerMock->shouldReceive('info');
+    $loggerMock->shouldNotReceive('warning');
+
+    $di = container();
+    $di['events_manager'] = $emMock;
+    $di['db'] = $dbMock;
+    $di['session'] = $sessionMock;
+    $di['logger'] = $loggerMock;
+    $di['auth'] = $authMock;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $hookServiceMock);
+
+    $service = new Service();
+    $service->setDi($di);
+
+    $result = $service->login($email, $password, $ip);
+
+    expect($result['id'])->toBe(1);
+});
+
+test('login proceeds and logs a warning when both batchConnect attempts fail', function (): void {
+    $email = 'email@domain.com';
+    $password = 'pass';
+    $ip = '127.0.0.1';
+
+    $admin = new Model_Admin();
+    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin->id = 1;
+    $admin->email = $email;
+    $admin->name = 'Admin';
+
+    $emMock = Mockery::mock('\Box_EventManager');
+    $emMock->shouldReceive('fire')->atLeast()->once()->andReturn(true);
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('findOne')->atLeast()->once()->andReturn($admin);
+
+    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
+    $sessionMock->shouldReceive('regenerateId')->atLeast()->once();
+    $sessionMock->shouldReceive('set')->atLeast()->once();
+
+    $authMock = Mockery::mock('\Box_Authorization');
+    $authMock->shouldReceive('authorizeUser')->atLeast()->once()->with($admin, $password)->andReturn($admin);
+
+    $hookServiceMock = Mockery::mock(Box\Mod\Hook\Service::class);
+    $hookServiceMock->shouldReceive('hasConnectedListeners')->once()->andReturn(false);
+    $hookServiceMock->shouldReceive('batchConnect')->twice()->andReturn(false, false);
+
+    $loggerMock = Mockery::mock();
+    $loggerMock->shouldReceive('info');
+    $loggerMock->shouldReceive('warning')->once();
+
+    $di = container();
+    $di['events_manager'] = $emMock;
+    $di['db'] = $dbMock;
+    $di['session'] = $sessionMock;
+    $di['logger'] = $loggerMock;
+    $di['auth'] = $authMock;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $hookServiceMock);
+
+    $service = new Service();
+    $service->setDi($di);
+
+    $result = $service->login($email, $password, $ip);
+
+    expect($result['id'])->toBe(1);
 });
 
 test('login throws exception when credentials are invalid', function (): void {

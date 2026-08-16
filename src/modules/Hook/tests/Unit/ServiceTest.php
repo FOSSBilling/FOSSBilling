@@ -209,7 +209,64 @@ test('batch connects', function (): void {
     $validatorExpectation = $validatorMock->shouldReceive('checkRequiredParamsForArray');
     $validatorExpectation->atLeast()->once();
     $di['validator'] = $validatorMock;
+
+    $connectionMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connectionMock->shouldReceive('fetchOne')
+        ->once()
+        ->with('SELECT GET_LOCK(:name, 5)', ['name' => 'fossbilling_hook_batch_connect'])
+        ->andReturn(1);
+    $connectionMock->shouldReceive('transactional')
+        ->once()
+        ->andReturnUsing(fn (callable $callback) => $callback());
+    $connectionMock->shouldReceive('executeStatement')
+        ->once()
+        ->with('SELECT RELEASE_LOCK(:name)', ['name' => 'fossbilling_hook_batch_connect']);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getConnection')->andReturn($connectionMock);
+    $di['em'] = $emMock;
+
     $service->setDi($di);
     $result = $service->batchConnect($mod);
     expect($result)->toBeTrue();
 });
+
+test('batch connect returns false without rebuilding when the lock is held by another process', function (): void {
+    $service = new Box\Mod\Hook\Service();
+
+    $connectionMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connectionMock->shouldReceive('fetchOne')
+        ->once()
+        ->with('SELECT GET_LOCK(:name, 5)', ['name' => 'fossbilling_hook_batch_connect'])
+        ->andReturn(0);
+    $connectionMock->shouldNotReceive('transactional');
+    $connectionMock->shouldNotReceive('executeStatement');
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getConnection')->andReturn($connectionMock);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $service->setDi($di);
+
+    $result = $service->batchConnect();
+    expect($result)->toBeFalse();
+});
+
+test('hasConnectedListeners reflects whether any listener row exists', function (bool $exists): void {
+    $service = new Box\Mod\Hook\Service();
+
+    $connectionMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connectionMock->shouldReceive('fetchOne')
+        ->once()
+        ->andReturn($exists ? 1 : false);
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getConnection')->andReturn($connectionMock);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $service->setDi($di);
+
+    expect($service->hasConnectedListeners())->toBe($exists);
+})->with([
+    'listeners connected' => [true],
+    'no listeners connected' => [false],
+]);

@@ -115,6 +115,26 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Check your login details', null, 403);
         }
 
+        // Event listeners (e.g. this login being recorded in the login history) are normally
+        // connected by the cron job's hook_batch_connect task. Before cron has run for the
+        // first time, no listeners are connected and the event fired below would silently do
+        // nothing, so an admin's very first logins would go unrecorded. Connect them now so
+        // that gap does not exist. batchConnect() returns false if another process was still
+        // rebuilding the set when it gave up waiting; retry once rather than firing the event
+        // below against a set we know is incomplete. If both attempts fail, log it and let the
+        // login proceed anyway - failing the login itself over this housekeeping step would
+        // turn a rare missed audit entry into every admin being locked out while it's stuck.
+        $hookService = $this->di['mod_service']('hook');
+        if (!$hookService->hasConnectedListeners()) {
+            $connected = $hookService->batchConnect();
+            if (!$connected) {
+                $connected = $hookService->batchConnect();
+            }
+            if (!$connected) {
+                $this->di['logger']->warning('Could not connect event listeners after two attempts; this login (and other events) may not be recorded.');
+            }
+        }
+
         $this->di['events_manager']->fire(['event' => 'onAfterAdminLogin', 'params' => ['id' => $model->id, 'ip' => $ip]]);
 
         $result = [
