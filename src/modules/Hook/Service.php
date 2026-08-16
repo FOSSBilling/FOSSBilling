@@ -125,46 +125,55 @@ class Service implements InjectionAwareInterface
     /**
      * Serializes batchConnect() runs so two concurrent callers (e.g. overlapping cron and
      * on-demand rebuilds triggered by a login) cannot interleave connect()'s check-then-insert
-     * and create duplicate listener rows, or leave a partially rebuilt set visible in between.
+     * and create duplicate listener rows. The rebuild itself runs in a single DB transaction,
+     * so hasConnectedListeners() can only ever observe the previous complete set or the new
+     * complete set, never a partially rebuilt one.
+     *
+     * Returns false if the lock could not be acquired within the timeout, so a failure to
+     * initialize is never mistaken for success - callers that need listeners connected before
+     * proceeding should check the return value rather than assume this always succeeds.
      */
     public function batchConnect($mod_name = null): bool
     {
         $connection = $this->di['em']->getConnection();
         if ((int) $connection->fetchOne('SELECT GET_LOCK(:name, 5)', ['name' => self::BATCH_CONNECT_LOCK]) !== 1) {
-            // Another process is already rebuilding the listener set; let it finish rather
-            // than racing it.
-            return true;
+            // Another process is already rebuilding the listener set and holding the lock
+            // past our wait. Report failure rather than claiming a rebuild we didn't run or
+            // wait for actually completed.
+            return false;
         }
 
         try {
-            // Clean up the existing list before we add to it
-            $this->_disconnectUnavailable();
-            $extensionService = $this->di['mod_service']('extension');
+            $connection->transactional(function () use ($mod_name): void {
+                // Clean up the existing list before we add to it
+                $this->_disconnectUnavailable();
+                $extensionService = $this->di['mod_service']('extension');
 
-            $mods = [];
-            if ($mod_name !== null) {
-                $mods[] = $mod_name;
-            } else {
-                $mods = $extensionService->getCoreAndActiveModules();
-            }
-
-            foreach ($mods as $m) {
-                $installed = $this->getExtensionRepository()->existsActiveByTypeAndName(Extension::TYPE_MOD, $m);
-                if (!$installed && !$extensionService->isCoreModule($m)) {
-                    continue;
+                $mods = [];
+                if ($mod_name !== null) {
+                    $mods[] = $mod_name;
+                } else {
+                    $mods = $extensionService->getCoreAndActiveModules();
                 }
 
-                $mod = $this->di['mod']($m);
-                if ($mod->hasService()) {
-                    $class = $mod->getService();
-                    $reflector = new \ReflectionClass($class);
-                    foreach ($reflector->getMethods() as $method) {
-                        if ($this->canBeConnected($method)) {
-                            $this->connect(['event' => $method->getName(), 'mod' => $mod->getName()]);
+                foreach ($mods as $m) {
+                    $installed = $this->getExtensionRepository()->existsActiveByTypeAndName(Extension::TYPE_MOD, $m);
+                    if (!$installed && !$extensionService->isCoreModule($m)) {
+                        continue;
+                    }
+
+                    $mod = $this->di['mod']($m);
+                    if ($mod->hasService()) {
+                        $class = $mod->getService();
+                        $reflector = new \ReflectionClass($class);
+                        foreach ($reflector->getMethods() as $method) {
+                            if ($this->canBeConnected($method)) {
+                                $this->connect(['event' => $method->getName(), 'mod' => $mod->getName()]);
+                            }
                         }
                     }
                 }
-            }
+            });
 
             return true;
         } finally {

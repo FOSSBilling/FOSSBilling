@@ -155,6 +155,9 @@ test('batch connects', function (): void {
     $expectation1->andReturn(false);
     $connection->shouldReceive('executeStatement')
         ->byDefault();
+    $connection->shouldReceive('transactional')
+        ->atLeast()->once()
+        ->andReturnUsing(fn (Closure $callback) => $callback($connection));
 
     $returnArr = [
         [
@@ -210,13 +213,14 @@ test('batch connects', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('batch connect defers to another process already holding the lock', function (): void {
+test('batch connect reports failure when another process holds the lock', function (): void {
     $service = new Box\Mod\Hook\Service();
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connection->shouldReceive('fetchOne')
         ->with(Mockery::on(fn ($sql) => str_contains((string) $sql, 'GET_LOCK')), Mockery::any())
         ->andReturn(0);
+    $connection->shouldNotReceive('transactional');
     $connection->shouldNotReceive('fetchAllAssociative');
     $connection->shouldNotReceive('executeStatement')
         ->with(Mockery::on(fn ($sql) => str_contains((string) $sql, 'RELEASE_LOCK')), Mockery::any());
@@ -227,5 +231,5 @@ test('batch connect defers to another process already holding the lock', functio
 
     $result = $service->batchConnect('activity');
 
-    expect($result)->toBeTrue();
+    expect($result)->toBeFalse();
 });

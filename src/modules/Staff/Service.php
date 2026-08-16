@@ -123,9 +123,11 @@ class Service implements InjectionAwareInterface
         // connected by the cron job's hook_batch_connect task. Before cron has run for the
         // first time, no listeners are connected and the event fired below would silently do
         // nothing, so an admin's very first logins would go unrecorded. Connect them now so
-        // that gap does not exist.
+        // that gap does not exist. batchConnect() returns false if another process was still
+        // rebuilding the set when it gave up waiting; retry once rather than firing the event
+        // below against a set we know is incomplete.
         $hookService = $this->di['mod_service']('hook');
-        if (!$hookService->hasConnectedListeners()) {
+        if (!$hookService->hasConnectedListeners() && !$hookService->batchConnect()) {
             $hookService->batchConnect();
         }
 
