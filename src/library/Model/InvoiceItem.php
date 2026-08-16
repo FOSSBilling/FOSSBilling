@@ -22,4 +22,5 @@ class Model_InvoiceItem extends RedBeanPHP\SimpleModel
     final public const string STATUS_PENDING_PAYMENT = 'pending_payment';
     final public const string STATUS_PENDING_SETUP = 'pending_setup';
     final public const string STATUS_EXECUTED = 'executed';
+    final public const string STATUS_FAILED = 'failed';
 }

@@ -69,11 +69,12 @@ test('returns true when executing task on already executed item', function (): v
     expect($result)->toBeTrue();
 });
 
-test('throws exception when executing task for order type with client order not found', function (): void {
-    $service = new ServiceInvoiceItem();
+test('records failure when executing task for order type with client order not found', function (): void {
     $invoiceItemModel = new Model_InvoiceItem();
     $invoiceItemModel->loadBean(new Tests\Helpers\DummyBean());
     $invoiceItemModel->type = Model_InvoiceItem::TYPE_ORDER;
+    $invoiceItemModel->status = Model_InvoiceItem::STATUS_PENDING_SETUP;
+    $invoiceItemModel->attempts = 0;
     $orderId = 22;
 
     $serviceMock = Mockery::mock(ServiceInvoiceItem::class)->makePartial()->shouldAllowMockingProtectedMethods();
@@ -85,13 +86,18 @@ test('throws exception when executing task for order type with client order not 
     $dbMock->shouldReceive('load')
         ->atLeast()->once()
         ->andReturn(null);
+    // A single failed attempt doesn't reach MAX_TASK_ATTEMPTS, so the item stays pending, just
+    // with its attempt counter incremented -- the exception is caught, not propagated.
+    $dbMock->shouldReceive('store')->once();
 
     $di = container();
     $di['db'] = $dbMock;
     $serviceMock->setDi($di);
 
-    expect(fn () => $serviceMock->executeTask($invoiceItemModel))
-        ->toThrow(FOSSBilling\Exception::class, sprintf('Could not activate proforma item. Order %d not found', $orderId));
+    $serviceMock->executeTask($invoiceItemModel);
+
+    expect($invoiceItemModel->attempts)->toBe(1)
+        ->and($invoiceItemModel->status)->toBe(Model_InvoiceItem::STATUS_PENDING_SETUP);
 });
 
 test('executes task for hook call type', function (): void {
@@ -428,13 +434,18 @@ test('returns zero when invoice item type is not order', function (): void {
     expect($result)->toBeInt()->toBe(0);
 });
 
-test('gets all not execute paid items', function (): void {
+test('gets all not execute paid items excluding executed and failed', function (): void {
     $service = new ServiceInvoiceItem();
     $di = container();
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getAll')
-        ->atLeast()->once()
+        ->withArgs(function (string $sql, array $bindings): bool {
+            return str_contains($sql, 'NOT IN (:status_executed, :status_failed)')
+                && $bindings[':status_executed'] === Model_InvoiceItem::STATUS_EXECUTED
+                && $bindings[':status_failed'] === Model_InvoiceItem::STATUS_FAILED;
+        })
+        ->once()
         ->andReturn([]);
 
     $di['db'] = $dbMock;
@@ -442,4 +453,71 @@ test('gets all not execute paid items', function (): void {
 
     $result = $service->getAllNotExecutePaidItems();
     expect($result)->toBeArray();
+});
+
+test('gets failed items', function (): void {
+    $service = new ServiceInvoiceItem();
+    $di = container();
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getAll')
+        ->withArgs(function (string $sql, array $bindings): bool {
+            return str_contains($sql, 'WHERE status = :status')
+                && $bindings[':status'] === Model_InvoiceItem::STATUS_FAILED;
+        })
+        ->once()
+        ->andReturn([['id' => 5, 'status' => Model_InvoiceItem::STATUS_FAILED, 'attempts' => 3]]);
+
+    $di['db'] = $dbMock;
+    $service->setDi($di);
+
+    $result = $service->getFailedItems();
+    expect($result)->toBe([['id' => 5, 'status' => Model_InvoiceItem::STATUS_FAILED, 'attempts' => 3]]);
+});
+
+test('requeues a failed item, resetting status and attempts', function (): void {
+    $service = new ServiceInvoiceItem();
+    $item = new Model_InvoiceItem();
+    $item->loadBean(new Tests\Helpers\DummyBean());
+    $item->id = 7;
+    $item->status = Model_InvoiceItem::STATUS_FAILED;
+    $item->attempts = 3;
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getExistingModelById')
+        ->once()
+        ->with('InvoiceItem', 7, Mockery::any())
+        ->andReturn($item);
+    $dbMock->shouldReceive('store')->once();
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $service->setDi($di);
+
+    $result = $service->requeueItem(7);
+
+    expect($result->status)->toBe(Model_InvoiceItem::STATUS_PENDING_SETUP)
+        ->and($result->attempts)->toBe(0);
+});
+
+test('requeueItem throws when the item is not in a failed state', function (): void {
+    $service = new ServiceInvoiceItem();
+    $item = new Model_InvoiceItem();
+    $item->loadBean(new Tests\Helpers\DummyBean());
+    $item->id = 8;
+    $item->status = Model_InvoiceItem::STATUS_PENDING_SETUP;
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getExistingModelById')
+        ->once()
+        ->with('InvoiceItem', 8, Mockery::any())
+        ->andReturn($item);
+    $dbMock->shouldNotReceive('store');
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $service->setDi($di);
+
+    expect(fn () => $service->requeueItem(8))
+        ->toThrow(FOSSBilling\InformationException::class, 'Invoice item is not in a failed state');
 });

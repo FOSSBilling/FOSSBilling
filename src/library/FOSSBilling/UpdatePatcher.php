@@ -506,6 +506,7 @@ class UpdatePatcher implements InjectionAwareInterface
             94 => 'patch94',
             95 => 'patch95',
             96 => 'patch96',
+            97 => 'patch97',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2713,6 +2714,15 @@ class UpdatePatcher implements InjectionAwareInterface
     {
         if (!$this->tableHasColumn('currency', 'is_rate_manual')) {
             $this->executeSql("ALTER TABLE `currency` ADD COLUMN `is_rate_manual` tinyint(1) DEFAULT '0' AFTER `conversion_rate`");
+        }
+    }
+
+    private function patch97(): void
+    {
+        // Failed execution attempt counter for the bounded-retry logic in
+        // ServiceInvoiceItem before an item is marked STATUS_FAILED.
+        if (!$this->tableHasColumn('invoice_item', 'attempts')) {
+            $this->executeSql("ALTER TABLE `invoice_item` ADD COLUMN `attempts` INT NOT NULL DEFAULT '0' AFTER `taxed`");
         }
     }
 

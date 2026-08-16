@@ -211,6 +211,36 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
+     * Returns invoice items whose task execution permanently failed.
+     *
+     * @return array
+     */
+    public function get_failed_items($data)
+    {
+        $this->checkPermissions('invoice', 'view');
+
+        $invoiceItemService = $this->getDi()['mod_service']('Invoice', 'InvoiceItem');
+
+        return $invoiceItemService->getFailedItems();
+    }
+
+    /**
+     * Re-queue a failed invoice item for execution by resetting its status and attempt counter.
+     *
+     * @return bool
+     */
+    #[RequiredParams(['id' => 'Invoice item ID was not passed'])]
+    public function item_requeue($data)
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+
+        $invoiceItemService = $this->getDi()['mod_service']('Invoice', 'InvoiceItem');
+        $invoiceItemService->requeueItem((int) $data['id']);
+
+        return true;
+    }
+
+    /**
      * Delete invoice.
      *
      * @return bool
