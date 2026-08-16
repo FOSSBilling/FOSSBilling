@@ -967,7 +967,7 @@ class Service implements InjectionAwareInterface
             $service = $this->di['mod_service']('Email');
             $service->rmByClient($legacyClient);
             $service = $this->di['mod_service']('Activity');
-            $service->rmByClient($model);
+            $service->rmByClient($legacyClient);
 
             $resetRecords = $this->clientPasswordResetRepository->findBy(['clientId' => $clientId]);
             foreach ($resetRecords as $resetRecord) {

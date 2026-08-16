@@ -651,7 +651,7 @@ test('remove wraps client cleanup and flush in one transaction', function (): vo
     $services['client:balance'] = $balanceService;
 
     $activityService = Mockery::mock();
-    $activityService->shouldReceive('rmByClient')->once()->with($client);
+    $activityService->shouldReceive('rmByClient')->once()->with($legacyClient);
     $services['activity'] = $activityService;
 
     $di = container();
