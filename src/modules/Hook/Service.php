@@ -63,6 +63,26 @@ class Service implements InjectionAwareInterface
         return [$q, []];
     }
 
+    /**
+     * Whether any module event listener has ever been connected.
+     *
+     * Listeners are normally (re)connected by the cron job's hook_batch_connect task.
+     * Before cron has run for the first time (e.g. right after a fresh install), this
+     * is false and every event fired by the application silently has no listeners.
+     */
+    public function hasConnectedListeners(): bool
+    {
+        $q = "SELECT 1
+            FROM extension_meta
+            WHERE extension = 'mod_hook'
+            AND rel_type = 'mod'
+            AND meta_key = 'listener'
+            LIMIT 1
+        ";
+
+        return (bool) $this->di['em']->getConnection()->fetchOne($q);
+    }
+
     public function toApiArray($row)
     {
         return $row;
