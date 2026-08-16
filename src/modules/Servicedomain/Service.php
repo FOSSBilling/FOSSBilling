@@ -171,7 +171,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             if ($years === false || $years < 1) {
                 throw new \FOSSBilling\InformationException('Domain registration period must be a positive integer');
             }
-            if ($years < $tld->min_years) {
+
+            $allowedPeriods = $this->getTldPeriodsArray($tld);
+            if ($allowedPeriods !== null) {
+                if (!in_array($years, $allowedPeriods, true)) {
+                    throw new \FOSSBilling\Exception(':tld can only be registered for :periods years', [':tld' => $tld->tld, ':periods' => implode(', ', $allowedPeriods)]);
+                }
+            } elseif ($years < ($tld->min_years ?? 1)) {
                 throw new \FOSSBilling\Exception(':tld can be registered for at least :years years', [':tld' => $tld->tld, ':years' => $tld->min_years]);
             }
 
@@ -822,6 +828,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->price_renew = $data['price_renew'];
         $model->price_transfer = $data['price_transfer'];
         $model->min_years = isset($data['min_years']) ? (int) $data['min_years'] : 1;
+        $model->periods = array_key_exists('periods', $data) ? $data['periods'] : null;
         $model->allow_register = isset($data['allow_register']) ? (bool) $data['allow_register'] : true;
         $model->allow_transfer = isset($data['allow_transfer']) ? (bool) $data['allow_transfer'] : true;
         $model->active = isset($data['active']) ? (bool) $data['active'] : true;
@@ -850,6 +857,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->price_renew = $data['price_renew'] ?? $model->price_renew;
         $model->price_transfer = $data['price_transfer'] ?? $model->price_transfer;
         $model->min_years = $data['min_years'] ?? $model->min_years;
+        $model->periods = array_key_exists('periods', $data) ? $data['periods'] : $model->periods;
         $model->allow_register = $data['allow_register'] ?? $model->allow_register;
         $model->allow_transfer = $data['allow_transfer'] ?? $model->allow_transfer;
         $model->active = $data['active'] ?? $model->active;
@@ -888,7 +896,61 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $data['min_years'] = $minimumYears;
         }
 
+        if (array_key_exists('periods', $data)) {
+            $data['periods'] = $this->normalizePeriods($data['periods']);
+        }
+
         return $data;
+    }
+
+    /**
+     * Normalize a raw comma-separated "periods" string into a sorted, deduplicated
+     * comma-separated string of positive integers, or null when empty.
+     */
+    private function normalizePeriods(?string $periods): ?string
+    {
+        if ($periods === null || trim($periods) === '') {
+            return null;
+        }
+
+        $years = array_filter(array_map('trim', explode(',', $periods)), fn ($year): bool => $year !== '');
+
+        $normalized = [];
+        foreach ($years as $year) {
+            $value = filter_var($year, FILTER_VALIDATE_INT);
+            if ($value === false || $value < 1) {
+                throw new \FOSSBilling\InformationException('Registration periods must be a comma-separated list of positive integers');
+            }
+            $normalized[] = $value;
+        }
+
+        if ($normalized === []) {
+            return null;
+        }
+
+        $normalized = array_unique($normalized);
+        sort($normalized);
+
+        return implode(',', $normalized);
+    }
+
+    /**
+     * The allowed registration periods (in years), sorted ascending, or null when
+     * this TLD has no explicit period list and any period from min_years upwards
+     * is allowed.
+     *
+     * @return int[]|null
+     */
+    private function getTldPeriodsArray(\Model_Tld $tld): ?array
+    {
+        if (empty($tld->periods) || trim((string) $tld->periods) === '') {
+            return null;
+        }
+
+        $years = array_unique(array_map('intval', explode(',', (string) $tld->periods)));
+        sort($years);
+
+        return $years;
     }
 
     public function tldGetSearchQuery($data): array
@@ -964,6 +1026,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'allow_register' => $model->allow_register,
             'allow_transfer' => $model->allow_transfer,
             'min_years' => $model->min_years,
+            'periods' => $this->getTldPeriodsArray($model),
         ];
 
         if ($identity instanceof \Model_Admin) {

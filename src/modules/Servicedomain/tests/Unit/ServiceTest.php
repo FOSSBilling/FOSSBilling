@@ -204,6 +204,68 @@ test('throws exception for register order data with invalid tld', function (arra
     ];
 });
 
+test('rejects a registration period outside the tld allowed periods list', function (): void {
+    $tldModel = new Model_Tld();
+    $tldModel->loadBean(new Tests\Helpers\DummyBean());
+    $tldModel->tld = '.com';
+    $tldModel->min_years = 1;
+    $tldModel->periods = '1,2,5';
+    $tldModel->active = true;
+
+    $data = [
+        'action' => 'register',
+        'register_sld' => 'example',
+        'register_years' => 3,
+        'register_tld' => '.com',
+    ];
+
+    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock->shouldReceive('isSldValid')->atLeast()->once()->andReturn(true);
+    $validatorMock->shouldReceive('checkRequiredParamsForArray')->zeroOrMoreTimes();
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('tldFindOneByTld')->atLeast()->once()->andReturn($tldModel);
+
+    $di = container();
+    $di['validator'] = $validatorMock;
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->validateOrderData($data))
+        ->toThrow(FOSSBilling\Exception::class);
+});
+
+test('accepts a registration period within the tld allowed periods list', function (): void {
+    $tldModel = new Model_Tld();
+    $tldModel->loadBean(new Tests\Helpers\DummyBean());
+    $tldModel->tld = '.com';
+    $tldModel->min_years = 1;
+    $tldModel->periods = '1,2,5';
+    $tldModel->active = true;
+
+    $data = [
+        'action' => 'register',
+        'register_sld' => 'example',
+        'register_years' => 5,
+        'register_tld' => '.com',
+    ];
+
+    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock->shouldReceive('isSldValid')->atLeast()->once()->andReturn(true);
+    $validatorMock->shouldReceive('checkRequiredParamsForArray')->zeroOrMoreTimes();
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('tldFindOneByTld')->atLeast()->once()->andReturn($tldModel);
+    $serviceMock->shouldReceive('isDomainAvailable')->atLeast()->once()->andReturn(true);
+
+    $di = container();
+    $di['validator'] = $validatorMock;
+    $serviceMock->setDi($di);
+
+    $serviceMock->validateOrderData($data);
+
+    expect($data['period'])->toBe('5Y');
+});
+
 test('rejects a crafted order for an inactive tld before contacting the registrar', function (string $action): void {
     $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->atLeast()->once();
@@ -1493,6 +1555,7 @@ test('converts tld to api array', function (): void {
     $model->allow_register = 1;
     $model->allow_transfer = 1;
     $model->min_years = 2;
+    $model->periods = '5,2,2,10';
     $model->tld_registrar_id = 1;
 
     $result = $service->tldToApiArray($model, new Model_Admin());
@@ -1506,6 +1569,7 @@ test('converts tld to api array', function (): void {
     expect($result)->toHaveKey('allow_register');
     expect($result)->toHaveKey('allow_transfer');
     expect($result)->toHaveKey('min_years');
+    expect($result)->toHaveKey('periods');
     expect($result)->toHaveKey('registrar');
 
     $registrar = $result['registrar'];
@@ -1521,6 +1585,7 @@ test('converts tld to api array', function (): void {
     expect($result['allow_register'])->toBe($model->allow_register);
     expect($result['allow_transfer'])->toBe($model->allow_transfer);
     expect($result['min_years'])->toBe($model->min_years);
+    expect($result['periods'])->toBe([2, 5, 10]);
 
     expect($registrar['id'])->toBe($model->tld_registrar_id);
     expect($registrar['title'])->toBe($tldRegistrar->name);
@@ -1859,6 +1924,7 @@ test('creates tld', function (): void {
         'price_renew' => 1,
         'price_transfer' => 1,
         'min_years' => random_int(1, 5),
+        'periods' => '5,1,1,3',
         'allow_register' => 1,
         'allow_transfer' => 1,
         'updated_at' => date('Y-m-d H:i:s'),
@@ -1893,6 +1959,7 @@ test('creates tld', function (): void {
     expect($result)->toBe($randId);
     expect($tldModel->tld)->toBe('.com.ua');
     expect($tldModel->active)->toBeTruthy();
+    expect($tldModel->periods)->toBe('1,3,5');
 });
 
 test('updates tld', function (): void {
@@ -1905,6 +1972,7 @@ test('updates tld', function (): void {
         'price_renew' => 1,
         'price_transfer' => 1,
         'min_years' => random_int(1, 5),
+        'periods' => '10,2',
         'allow_register' => true,
         'allow_transfer' => true,
         'active' => true,
@@ -1936,6 +2004,30 @@ test('updates tld', function (): void {
     $result = $service->tldUpdate($model, $data);
 
     expect($result)->toBeTrue();
+    expect($model->periods)->toBe('2,10');
+});
+
+test('clears tld periods when an empty value is provided', function (): void {
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('registrarValidateConfiguration')->never();
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('store')->atLeast()->once();
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    $model = new Model_Tld();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->tld = '.com';
+    $model->periods = '1,2,5';
+
+    $result = $service->tldUpdate($model, ['tld' => '.com', 'periods' => '']);
+
+    expect($result)->toBeTrue();
+    expect($model->periods)->toBeNull();
 });
 
 test('rejects invalid tld pricing and minimum periods', function (array $data): void {
@@ -1961,6 +2053,8 @@ test('rejects invalid tld pricing and minimum periods', function (array $data): 
     'negative registration price' => [['price_registration' => -1]],
     'non-numeric renewal price' => [['price_renew' => 'free']],
     'non-positive minimum period' => [['min_years' => 0]],
+    'non-numeric period in periods list' => [['periods' => '1,2,five']],
+    'non-positive period in periods list' => [['periods' => '1,0,3']],
 ]);
 
 test('creates registrar', function (): void {

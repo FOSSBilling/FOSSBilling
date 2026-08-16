@@ -25,9 +25,55 @@ test('manual currency rate patch follows the currency formatting patch', functio
 test('invoice item attempts patch follows the manual currency rate patch', function (): void {
     $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 96);
 
-    expect($patches)->toHaveCount(1)
-        ->toHaveKey(97)
+    expect($patches)->toHaveKey(97)
         ->and($patches[97][1])->toBe('patch97');
+});
+
+test('tld periods patch follows the invoice item attempts patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 97);
+
+    expect($patches)->toHaveCount(1)
+        ->toHaveKey(98)
+        ->and($patches[98][1])->toBe('patch98');
+});
+
+test('tld periods patch adds the column for existing installs', function (): void {
+    $columns = Mockery::mock(PDOStatement::class);
+    $columns->expects('execute')->with([])->andReturnTrue();
+    $columns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([]);
+
+    $addColumn = Mockery::mock(PDOStatement::class);
+    $addColumn->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `tld`')->andReturn($columns);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `tld` ADD COLUMN `periods` VARCHAR(255) DEFAULT NULL AFTER `min_years`')
+        ->andReturn($addColumn);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch98'))->invoke($patcher);
+});
+
+test('tld periods patch is a no-op when the column already exists', function (): void {
+    $columns = Mockery::mock(PDOStatement::class);
+    $columns->expects('execute')->with([])->andReturnTrue();
+    $columns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([['Field' => 'periods']]);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `tld`')->andReturn($columns);
+    $pdo->shouldNotReceive('prepare')->with('ALTER TABLE `tld` ADD COLUMN `periods` VARCHAR(255) DEFAULT NULL AFTER `min_years`');
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch98'))->invoke($patcher);
 });
 
 test('invoice item attempts patch adds the column for existing installs', function (): void {

@@ -1399,6 +1399,7 @@ CREATE TABLE `tld` (
   `allow_transfer` tinyint(1) DEFAULT NULL,
   `active` tinyint(1) DEFAULT '1',
   `min_years` tinyint(4) DEFAULT NULL,
+  `periods` varchar(255) DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
