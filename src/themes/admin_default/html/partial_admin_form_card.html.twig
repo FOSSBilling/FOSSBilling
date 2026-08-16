@@ -24,7 +24,7 @@
     </div>
 
     {% if form_actions %}
-        <div class="card-footer d-flex justify-content-{{ footer_align|default('end') }}">
+        <div class="card-footer d-flex flex-wrap justify-content-{{ footer_align|default('end') }} gap-2">
             {{ form_actions|raw }}
         </div>
     {% endif %}
