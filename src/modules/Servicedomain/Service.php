@@ -606,9 +606,19 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $adapter->isDomainAvailable($domain);
     }
 
-    public function syncExpirationDate($model): void
+    public function syncExpirationDate(\Model_ServiceDomain $model): void
     {
-        // @todo
+        // @adapterAction
+        [$domain, $adapter] = $this->_getD($model);
+
+        $whois = $adapter->getDomainDetails($domain);
+
+        $expiresAt = $this->formatRegistrarTimestamp($whois->getExpirationTime());
+        if ($expiresAt !== null) {
+            $model->expires_at = $expiresAt;
+        }
+
+        $this->di['db']->store($model);
     }
 
     public function toApiArray(\Model_ServiceDomain $model, $deep = false, $identity = null): array
@@ -779,15 +789,20 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $list = $this->di['db']->find('ServiceDomain');
 
+        $hasFailures = false;
         foreach ($list as $domain) {
             try {
                 $this->syncExpirationDate($domain);
             } catch (\Exception $e) {
+                $hasFailures = true;
                 error_log($e->getMessage());
             }
         }
 
-        $ss->setParamValue($key, date('Y-m-d H:i:s'));
+        if (!$hasFailures) {
+            $ss->setParamValue($key, date('Y-m-d H:i:s'));
+        }
+
         $this->di['logger']->info('Executed action to synchronize domain expiration dates with registrar');
 
         return true;

@@ -990,13 +990,62 @@ test('throws exception when checking availability not allowed to register', func
         ->toThrow(FOSSBilling\Exception::class);
 });
 
-test('syncs expiration date', function (): void {
-    $service = new Service();
+test('syncs expiration date from the registrar', function (): void {
+    $whois = new Registrar_Domain();
+    $whois->setExpirationTime((new DateTime('2030-06-15 00:00:00', new DateTimeZone('UTC')))->getTimestamp());
+
+    $adapter = Mockery::mock(Registrar_Adapter_Custom::class);
+    $adapter->shouldReceive('getDomainDetails')
+        ->once()
+        ->andReturn($whois);
+
+    $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $service->shouldReceive('_getD')
+        ->once()
+        ->andReturn([new Registrar_Domain(), $adapter]);
+
     $model = new Model_ServiceDomain();
     $model->loadBean(new Tests\Helpers\DummyBean());
-    $result = $service->syncExpirationDate($model);
 
-    expect($result)->toBeNull();
+    $db = Mockery::mock(Box_Database::class);
+    $db->shouldReceive('store')->once()->with($model);
+
+    $di = container();
+    $di['db'] = $db;
+    $service->setDi($di);
+
+    $service->syncExpirationDate($model);
+
+    expect($model->expires_at)->toBe('2030-06-15 00:00:00');
+});
+
+test('preserves the existing expiration date when the registrar has none', function (): void {
+    $whois = new Registrar_Domain();
+
+    $adapter = Mockery::mock(Registrar_Adapter_Custom::class);
+    $adapter->shouldReceive('getDomainDetails')
+        ->once()
+        ->andReturn($whois);
+
+    $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $service->shouldReceive('_getD')
+        ->once()
+        ->andReturn([new Registrar_Domain(), $adapter]);
+
+    $model = new Model_ServiceDomain();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->expires_at = '2030-06-15 00:00:00';
+
+    $db = Mockery::mock(Box_Database::class);
+    $db->shouldReceive('store')->once()->with($model);
+
+    $di = container();
+    $di['db'] = $db;
+    $service->setDi($di);
+
+    $service->syncExpirationDate($model);
+
+    expect($model->expires_at)->toBe('2030-06-15 00:00:00');
 });
 
 test('syncWhois stores null dates when registrar dates are unavailable', function (): void {
@@ -1198,15 +1247,44 @@ test('batch syncs expiration dates', function (): void {
         ->atLeast()->once();
 
     $domains = [
-        'domain1.com',
-        'domain2.com',
-        'domain3.com',
-        'domain4.com',
+        new Model_ServiceDomain(),
+        new Model_ServiceDomain(),
+        new Model_ServiceDomain(),
+        new Model_ServiceDomain(),
     ];
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('find')
         ->atLeast()->once()
         ->andReturn($domains);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn ($name) => $systemServiceMock);
+    $di['db'] = $dbMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $serviceMock->setDi($di);
+
+    $result = $serviceMock->batchSyncExpirationDates();
+
+    expect($result)->toBeTrue();
+});
+
+test('does not advance the last sync marker when a domain sync fails', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('syncExpirationDate')
+        ->atLeast()->once()
+        ->andThrow(new Exception('registrar unavailable'));
+
+    $systemServiceMock = Mockery::mock(SystemService::class);
+    $systemServiceMock->shouldReceive('getParamValue')
+        ->atLeast()->once()
+        ->andReturn(null);
+    $systemServiceMock->shouldReceive('setParamValue')
+        ->never();
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('find')
+        ->atLeast()->once()
+        ->andReturn([new Model_ServiceDomain()]);
 
     $di = container();
     $di['mod_service'] = $di->protect(fn ($name) => $systemServiceMock);
