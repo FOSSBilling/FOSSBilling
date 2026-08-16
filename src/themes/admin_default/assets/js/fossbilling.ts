@@ -201,6 +201,26 @@ globalThis.FOSSBilling = Object.assign(globalThis.FOSSBilling || {}, {
      showTabById(nextTabId);
    });
 
+   //===== Jump-to-tab links outside the tab nav (e.g. a note referencing another tab) =====//
+   // These links point at a tab pane but aren't themselves part of the .nav tab list, so they
+   // must not carry data-bs-toggle="tab" - Bootstrap's Tab plugin assumes its trigger lives
+   // inside the real nav and throws when asked to activate one that doesn't. Reuse the same
+   // showTabById() helper used for hash deep-linking instead.
+   document.addEventListener('click', (event) => {
+     const trigger = event.target.closest('[data-tab-jump]');
+     if (!trigger) {
+       return;
+     }
+
+     const targetSelector = trigger.getAttribute('href');
+     if (!targetSelector || !targetSelector.startsWith('#')) {
+       return;
+     }
+
+     event.preventDefault();
+     showTabById(targetSelector.slice(1));
+   });
+
    //===== Discord community popover (shown once) =====//
    const discordBtn = document.getElementById('discord-community-btn');
    const isDiscordBtnVisible = () => {
