@@ -710,7 +710,7 @@ class Service implements InjectionAwareInterface
         return $email;
     }
 
-    public function markAsPaid(\Model_Invoice $invoice, $charge = true, $execute = false): bool
+    public function markAsPaid(\Model_Invoice $invoice, $charge = true, $execute = false, bool $deferEvents = false): bool
     {
         if ($invoice->status == \Model_Invoice::STATUS_PAID) {
             return true;
@@ -746,7 +746,11 @@ class Service implements InjectionAwareInterface
         $productService = $this->di['mod_service']('Product');
         $productService->commitReservedPromoRedemptionsForInvoice($invoice);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoicePaymentReceived', 'params' => ['id' => $invoice->id]]);
+        // Listeners render PDFs and send email, so a caller holding a payment lock defers this
+        // until after it has released it, rather than holding it for the duration of an SMTP send.
+        if (!$deferEvents) {
+            $this->firePaymentReceivedEvent($invoice);
+        }
 
         if ($execute) {
             foreach ($invoiceItems as $item) {
@@ -761,6 +765,28 @@ class Service implements InjectionAwareInterface
         $this->di['logger']->info("Marked invoice {$invoice->id} as paid.");
 
         return true;
+    }
+
+    private function firePaymentReceivedEvent(\Model_Invoice $invoice): void
+    {
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoicePaymentReceived', 'params' => ['id' => $invoice->id]]);
+    }
+
+    /**
+     * The task execution markAsPaid() performs with $execute, for callers that must run it after
+     * their own lock has been released.
+     */
+    private function executeInvoiceItemTasks(\Model_Invoice $invoice): void
+    {
+        $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
+        $items = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', [$invoice->id]);
+        foreach ($items as $item) {
+            try {
+                $invoiceItemService->executeTask($item);
+            } catch (\Exception $e) {
+                $this->di['logger']->warning($e->getMessage());
+            }
+        }
     }
 
     public function markAsPaidByAdmin(\Model_Invoice $invoice, array $data = []): bool
@@ -855,19 +881,25 @@ class Service implements InjectionAwareInterface
     public function getNextInvoiceNumber()
     {
         $systemService = $this->di['mod_service']('system');
-        $next_nr = $systemService->getParamValue('invoice_starting_number');
 
-        if (empty($next_nr)) {
+        // Claimed and advanced in one locked step, otherwise two concurrent approvals take the
+        // same number and issue two invoices sharing an invoice number.
+        $next_nr = $systemService->reserveNextNumericParamValue('invoice_starting_number');
+
+        if ($next_nr === null) {
             // In theory this code should never need to be called, but is provided as a fallback
             $r = $this->di['db']->findOne('Invoice', 'nr is not null order by id desc');
-            if ($r instanceof \Model_Invoice && is_numeric($r->nr)) {
-                $next_nr = intval($r->nr) + 1;
-            } else {
+            if (!$r instanceof \Model_Invoice || !is_numeric($r->nr)) {
+                throw new \FOSSBilling\Exception('Unable to determine the next invoice number');
+            }
+
+            // Seeding the counter and reserving from it has to be one locked step too, otherwise
+            // two callers deriving the same seed both write it and both reserve the same number.
+            $next_nr = $systemService->reserveNextNumericParamValue('invoice_starting_number', intval($r->nr) + 1);
+            if ($next_nr === null) {
                 throw new \FOSSBilling\Exception('Unable to determine the next invoice number');
             }
         }
-
-        $systemService->setParamValue('invoice_starting_number', intval($next_nr) + 1);
 
         return $next_nr;
     }
@@ -1044,49 +1076,77 @@ class Service implements InjectionAwareInterface
             return false;
         }
 
-        $client = $this->di['db']->load('Client', $invoice->client_id);
-        $cbrepo = $this->di['mod_service']('Client', 'Balance');
-        $balance = $cbrepo->getClientBalance($client);
-        $required = $this->getTotalWithTax($invoice);
-        $epsilon = 0.01;
-        $difference = $balance - $required;
+        // Reading the balance and marking the invoice paid without a lock lets two concurrent
+        // requests for the same client each pass the balance check and each spend the same
+        // credit. Serialize with a named lock scoped to the client rather than a row lock, since
+        // the balance (Doctrine) and the invoice (RedBeanPHP) are written through separate
+        // database connections here, and holding a row lock open on one while writing through the
+        // other would block that write on itself for the lifetime of the request.
+        $clientId = (int) $invoice->client_id;
+        $lockName = 'fb:credit_payment:client:' . $clientId;
+        $acquired = (int) $this->di['dbal']->fetchOne('SELECT GET_LOCK(:lock_name, 10)', ['lock_name' => $lockName]);
+        if ($acquired !== 1) {
+            throw new \FOSSBilling\Exception('Timed out waiting to process this credit payment.');
+        }
 
-        if ($difference >= -$epsilon) {
+        try {
+            // Another request could have paid this invoice while we waited for the lock. A plain
+            // read of the bean passed in could still reflect the state from before we waited, so
+            // re-read the status directly rather than trusting it.
+            $currentStatus = $this->di['dbal']->fetchOne('SELECT status FROM invoice WHERE id = :id', ['id' => $invoice->id]);
+            if ($currentStatus === \Model_Invoice::STATUS_PAID) {
+                return false;
+            }
+
+            $client = $this->di['db']->load('Client', $clientId);
+            $cbrepo = $this->di['mod_service']('Client', 'Balance');
+            $balance = $cbrepo->getClientBalance($client);
+            $required = $this->getTotalWithTax($invoice);
+            $epsilon = 0.01;
+            $difference = $balance - $required;
+
+            if ($difference < -$epsilon) {
+                // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
+                if (DEBUG) {
+                    $this->di['logger']->setChannel('billing')->info("Invoice {$invoice->id} could not be paid with credits. Money in balance {$balance} Required: {$required}.");
+                }
+
+                return false;
+            }
+
             // @phpstan-ignore if.alwaysFalse
             if (DEBUG) {
                 $this->di['logger']->setChannel('billing')->info("Setting invoice {$invoice->id} as paid with credits for the amount of {$required}.");
             }
 
-            if ($required <= $epsilon) {
-                // Nothing was actually charged against the client's balance, so don't record a $0 credit transaction.
-                $this->markAsPaid($invoice, false, true);
+            if ($required > $epsilon) {
+                // Nothing at or below the epsilon is actually charged against the client's
+                // balance, so don't record a $0 credit transaction.
+                $balanceTransaction = $this->di['db']->dispense('ClientBalance');
+                $balanceTransaction->client_id = $clientId;
+                $balanceTransaction->type = 'invoice';
+                $balanceTransaction->rel_id = $invoice->id;
 
-                return true;
+                $invoice_identifier = $invoice->nr ?: $invoice->id;
+                $balanceTransaction->description = "Payment for invoice #{$invoice_identifier} using account credit.";
+
+                $balanceTransaction->amount = -$required;
+                $balanceTransaction->created_at = date('Y-m-d H:i:s');
+                $balanceTransaction->updated_at = date('Y-m-d H:i:s');
+                $this->di['db']->store($balanceTransaction);
             }
 
-            $balanceTransaction = $this->di['db']->dispense('ClientBalance');
-            $balanceTransaction->client_id = $client->id;
-            $balanceTransaction->type = 'invoice';
-            $balanceTransaction->rel_id = $invoice->id;
-
-            $invoice_identifier = $invoice->nr ?: $invoice->id;
-            $balanceTransaction->description = "Payment for invoice #{$invoice_identifier} using account credit.";
-
-            $balanceTransaction->amount = -$required;
-            $balanceTransaction->created_at = date('Y-m-d H:i:s');
-            $balanceTransaction->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($balanceTransaction);
-
-            $this->markAsPaid($invoice, false, true);
-
-            return true;
-        }
-        // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
-        if (DEBUG) {
-            $this->di['logger']->setChannel('billing')->info("Invoice {$invoice->id} could not be paid with credits. Money in balance {$balance} Required: {$required}.");
+            // Events and tasks run after the lock is released below, so neither notifications nor
+            // provisioning hold up a concurrent credit payment for the same client.
+            $this->markAsPaid($invoice, false, false, true);
+        } finally {
+            $this->di['dbal']->fetchOne('SELECT RELEASE_LOCK(:lock_name)', ['lock_name' => $lockName]);
         }
 
-        return false;
+        $this->firePaymentReceivedEvent($invoice);
+        $this->executeInvoiceItemTasks($invoice);
+
+        return true;
     }
 
     public function getTotalWithTax(\Model_Invoice $invoice): float
