@@ -200,6 +200,91 @@ test('action renew order without active service', function (): void {
         ->toThrow(FOSSBilling\Exception::class, sprintf('Order %d has no active service', $orderModel->id));
 });
 
+test('action activate creates the account when it has not been provisioned yet', function (): void {
+    $orderModel = new Model_ClientOrder();
+    $orderModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $model = new Model_ServiceHosting();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->sld = 'example';
+    $model->tld = '.com';
+
+    $hostingServerModel = new Model_ServiceHostingServer();
+    $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
+    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($model);
+    $orderServiceMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([]);
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getExistingModelById')->atLeast()->once()->with('ServiceHostingServer', Mockery::any(), Mockery::any())->andReturn($hostingServerModel);
+    $dbMock->shouldReceive('store')->atLeast()->once();
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
+
+    $serverManagerMock = Mockery::mock('\Server_Manager_Custom');
+    $serverManagerMock->shouldReceive('getPasswordLength')->atLeast()->once()->andReturn(12);
+    $serverManagerMock->shouldReceive('generateUsername')->atLeast()->once()->with('example.com')->andReturn('example');
+
+    $adapterMock = Mockery::mock('\Server_Manager_Custom');
+    $adapterMock->shouldReceive('createAccount')->once();
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('getServerManager')->atLeast()->once()->andReturn($serverManagerMock);
+    $serviceMock->shouldReceive('_getAM')->once()->andReturn([$adapterMock, new Server_Account()]);
+    $serviceMock->setDi($di);
+
+    $result = $serviceMock->action_activate($orderModel);
+
+    expect($result)->toBe(['username' => 'example'])
+        ->and($model->username)->toBe('example');
+});
+
+test('action activate does not recreate an account that was already provisioned', function (): void {
+    // Regression test: if a previous activation attempt already created the
+    // account on the server (its username was persisted), retrying must not
+    // call createAccount() again - the account already exists remotely and
+    // doing so only fails with a duplicate-account server error.
+    $orderModel = new Model_ClientOrder();
+    $orderModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $model = new Model_ServiceHosting();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->sld = 'example';
+    $model->tld = '.com';
+    $model->username = 'example';
+
+    $hostingServerModel = new Model_ServiceHostingServer();
+    $hostingServerModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
+    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($model);
+    $orderServiceMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([]);
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getExistingModelById')->atLeast()->once()->with('ServiceHostingServer', Mockery::any(), Mockery::any())->andReturn($hostingServerModel);
+    $dbMock->shouldReceive('store')->atLeast()->once();
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
+
+    $serverManagerMock = Mockery::mock('\Server_Manager_Custom');
+    $serverManagerMock->shouldReceive('getPasswordLength')->atLeast()->once()->andReturn(12);
+    $serverManagerMock->shouldNotReceive('generateUsername');
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('getServerManager')->atLeast()->once()->andReturn($serverManagerMock);
+    $serviceMock->shouldNotReceive('_getAM');
+    $serviceMock->setDi($di);
+
+    $result = $serviceMock->action_activate($orderModel);
+
+    expect($result)->toBe(['username' => 'example']);
+});
+
 test('action suspend', function (): void {
     $service = new Service();
     $orderModel = new Model_ClientOrder();

@@ -186,6 +186,15 @@ class Service implements InjectionAwareInterface
         // Retrieve the server manager for the order
         $serverManager = $this->_getServerManagerForOrder($model);
 
+        // A username is only ever persisted below once the account has
+        // actually been created on the server. If one is already present,
+        // a previous activation attempt already provisioned this account -
+        // most likely the order's status update afterwards failed to save,
+        // and this call is a retry. Re-running createAccount() in that case
+        // would only fail with a "domain/account already exists" server
+        // error, so treat the account as already provisioned instead.
+        $alreadyProvisioned = !empty($model->username);
+
         // Generate a password for the service
         $pass = $this->di['tools']->generatePassword($serverManager->getPasswordLength(), true);
 
@@ -195,7 +204,9 @@ class Service implements InjectionAwareInterface
         }
 
         // Generate a username for the service
-        if (isset($config['username']) && !empty($config['username'])) {
+        if ($alreadyProvisioned) {
+            $username = $model->username;
+        } elseif (isset($config['username']) && !empty($config['username'])) {
             $username = $config['username'];
         } else {
             $username = $serverManager->generateUsername($model->sld . $model->tld);
@@ -206,7 +217,7 @@ class Service implements InjectionAwareInterface
         $model->pass = $pass;
 
         // If the order's configuration does not specify that the service should be imported, create an account for the service on the server
-        if (!isset($config['import']) || !$config['import']) {
+        if (!$alreadyProvisioned && (!isset($config['import']) || !$config['import'])) {
             [$adapter, $account] = $this->_getAM($model);
             $adapter->createAccount($account);
         }
