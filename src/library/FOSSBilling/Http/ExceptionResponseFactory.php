@@ -68,8 +68,9 @@ final readonly class ExceptionResponseFactory
 
     private function getStatusCode(\Throwable $exception): int
     {
+        // getCode() is documented as int, but e.g. PDOException returns a string SQLSTATE.
         $code = $exception->getCode();
 
-        return $code >= 400 && $code <= 599 ? $code : Response::HTTP_INTERNAL_SERVER_ERROR;
+        return is_int($code) && $code >= 400 && $code <= 599 ? $code : Response::HTTP_INTERNAL_SERVER_ERROR;
     }
 }

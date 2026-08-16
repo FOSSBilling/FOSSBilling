@@ -122,6 +122,17 @@ test('serializes finalization with an exclusive lock', function (): void {
     expect($lockHeld)->toBeTrue();
 });
 
+test('removes the install directory unless the environment is explicitly dev or test', function (): void {
+    $shouldRemove = new ReflectionMethod(UpdateFinalization::class, 'shouldRemoveInstallDirectory');
+    $finalization = new UpdateFinalization();
+
+    withAppEnv(null, fn () => expect($shouldRemove->invoke($finalization))->toBeTrue());
+    withAppEnv('staging', fn () => expect($shouldRemove->invoke($finalization))->toBeTrue());
+    withAppEnv('prod', fn () => expect($shouldRemove->invoke($finalization))->toBeTrue());
+    withAppEnv('dev', fn () => expect($shouldRemove->invoke($finalization))->toBeFalse());
+    withAppEnv('test', fn () => expect($shouldRemove->invoke($finalization))->toBeFalse());
+});
+
 test('completion restores captured maintenance mode and records the current version', function (): void {
     $config = Config::getConfig();
     $config['maintenance_mode'] = [
