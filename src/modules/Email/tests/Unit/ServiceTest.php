@@ -14,6 +14,7 @@ use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Email\Entity\EmailTemplate;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 use function Tests\Helpers\moduleService;
 
 function emailTemplate(string $actionCode = '', ?int $id = null, array $data = []): EmailTemplate

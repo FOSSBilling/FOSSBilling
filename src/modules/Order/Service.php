@@ -480,7 +480,6 @@ class Service implements InjectionAwareInterface
         $serviceType = $this->orderServiceType($order);
 
         return match ($serviceType) {
-            \Box\Mod\Product\Service::DOWNLOADABLE => \Box\Mod\Servicedownloadable\Entity\ServiceDownloadable::class,
             \Box\Mod\Product\Service::LICENSE => \Box\Mod\Servicelicense\Entity\ServiceLicense::class,
             \Box\Mod\Product\Service::CUSTOM => \Box\Mod\Servicecustom\Entity\ServiceCustom::class,
             \Box\Mod\Product\Service::APIKEY => \Box\Mod\Serviceapikey\Entity\ServiceApiKey::class,
@@ -489,7 +488,6 @@ class Service implements InjectionAwareInterface
     }
 
     private const SERVICE_ENTITY_TYPE_MAP = [
-        \Box\Mod\Servicedownloadable\Entity\ServiceDownloadable::class => \Box\Mod\Product\Service::DOWNLOADABLE,
         \Box\Mod\Servicelicense\Entity\ServiceLicense::class => \Box\Mod\Product\Service::LICENSE,
         \Box\Mod\Servicecustom\Entity\ServiceCustom::class => \Box\Mod\Product\Service::CUSTOM,
         \Box\Mod\Serviceapikey\Entity\ServiceApiKey::class => \Box\Mod\Product\Service::APIKEY,
