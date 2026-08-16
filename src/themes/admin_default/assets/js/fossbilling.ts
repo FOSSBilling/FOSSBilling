@@ -203,6 +203,10 @@ globalThis.FOSSBilling = Object.assign(globalThis.FOSSBilling || {}, {
 
    //===== Jump-to-tab links outside the tab nav (e.g. a note referencing another tab) =====//
    document.addEventListener('click', (event) => {
+     if (!(event.target instanceof Element)) {
+       return;
+     }
+
      const trigger = event.target.closest('[data-tab-jump]');
      if (!trigger) {
        return;

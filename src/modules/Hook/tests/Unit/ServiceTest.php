@@ -145,8 +145,12 @@ test('batch connects', function (): void {
     $data['mods'] = [$mod];
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchOne')
+        ->with(Mockery::on(fn ($sql) => str_contains((string) $sql, 'GET_LOCK')), Mockery::any())
+        ->andReturn(1);
     /** @var Mockery\Expectation $expectation1 */
-    $expectation1 = $connection->shouldReceive('fetchOne');
+    $expectation1 = $connection->shouldReceive('fetchOne')
+        ->with(Mockery::on(fn ($sql) => !str_contains((string) $sql, 'GET_LOCK')), Mockery::any());
     $expectation1->atLeast()->once();
     $expectation1->andReturn(false);
     $connection->shouldReceive('executeStatement')
@@ -203,5 +207,25 @@ test('batch connects', function (): void {
     $di['validator'] = $validatorMock;
     $service->setDi($di);
     $result = $service->batchConnect($mod);
+    expect($result)->toBeTrue();
+});
+
+test('batch connect defers to another process already holding the lock', function (): void {
+    $service = new Box\Mod\Hook\Service();
+
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchOne')
+        ->with(Mockery::on(fn ($sql) => str_contains((string) $sql, 'GET_LOCK')), Mockery::any())
+        ->andReturn(0);
+    $connection->shouldNotReceive('fetchAllAssociative');
+    $connection->shouldNotReceive('executeStatement')
+        ->with(Mockery::on(fn ($sql) => str_contains((string) $sql, 'RELEASE_LOCK')), Mockery::any());
+
+    $di = container();
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
+    $service->setDi($di);
+
+    $result = $service->batchConnect('activity');
+
     expect($result)->toBeTrue();
 });

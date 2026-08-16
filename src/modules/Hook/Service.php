@@ -18,6 +18,8 @@ use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
+    private const string BATCH_CONNECT_LOCK = 'fossbilling_hook_batch_connect';
+
     protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
@@ -120,38 +122,54 @@ class Service implements InjectionAwareInterface
         $event->setReturnValue(true);
     }
 
+    /**
+     * Serializes batchConnect() runs so two concurrent callers (e.g. overlapping cron and
+     * on-demand rebuilds triggered by a login) cannot interleave connect()'s check-then-insert
+     * and create duplicate listener rows, or leave a partially rebuilt set visible in between.
+     */
     public function batchConnect($mod_name = null): bool
     {
-        // Clean up the existing list before we add to it
-        $this->_disconnectUnavailable();
-        $extensionService = $this->di['mod_service']('extension');
-
-        $mods = [];
-        if ($mod_name !== null) {
-            $mods[] = $mod_name;
-        } else {
-            $mods = $extensionService->getCoreAndActiveModules();
+        $connection = $this->di['em']->getConnection();
+        if ((int) $connection->fetchOne('SELECT GET_LOCK(:name, 5)', ['name' => self::BATCH_CONNECT_LOCK]) !== 1) {
+            // Another process is already rebuilding the listener set; let it finish rather
+            // than racing it.
+            return true;
         }
 
-        foreach ($mods as $m) {
-            $installed = $this->getExtensionRepository()->existsActiveByTypeAndName(Extension::TYPE_MOD, $m);
-            if (!$installed && !$extensionService->isCoreModule($m)) {
-                continue;
+        try {
+            // Clean up the existing list before we add to it
+            $this->_disconnectUnavailable();
+            $extensionService = $this->di['mod_service']('extension');
+
+            $mods = [];
+            if ($mod_name !== null) {
+                $mods[] = $mod_name;
+            } else {
+                $mods = $extensionService->getCoreAndActiveModules();
             }
 
-            $mod = $this->di['mod']($m);
-            if ($mod->hasService()) {
-                $class = $mod->getService();
-                $reflector = new \ReflectionClass($class);
-                foreach ($reflector->getMethods() as $method) {
-                    if ($this->canBeConnected($method)) {
-                        $this->connect(['event' => $method->getName(), 'mod' => $mod->getName()]);
+            foreach ($mods as $m) {
+                $installed = $this->getExtensionRepository()->existsActiveByTypeAndName(Extension::TYPE_MOD, $m);
+                if (!$installed && !$extensionService->isCoreModule($m)) {
+                    continue;
+                }
+
+                $mod = $this->di['mod']($m);
+                if ($mod->hasService()) {
+                    $class = $mod->getService();
+                    $reflector = new \ReflectionClass($class);
+                    foreach ($reflector->getMethods() as $method) {
+                        if ($this->canBeConnected($method)) {
+                            $this->connect(['event' => $method->getName(), 'mod' => $mod->getName()]);
+                        }
                     }
                 }
             }
-        }
 
-        return true;
+            return true;
+        } finally {
+            $connection->executeStatement('SELECT RELEASE_LOCK(:name)', ['name' => self::BATCH_CONNECT_LOCK]);
+        }
     }
 
     private function canBeConnected(\ReflectionMethod $method): bool
