@@ -226,4 +226,12 @@ class ProductRepository extends EntityRepository
             'status' => 'enabled',
         ]);
     }
+
+    public function decrementStockIfAvailable(int $productId, int $quantity, \DateTimeInterface $updatedAt): int
+    {
+        return $this->getEntityManager()->getConnection()->executeStatement(
+            'UPDATE product SET quantity_in_stock = quantity_in_stock - ?, updated_at = ? WHERE id = ? AND quantity_in_stock >= ?',
+            [$quantity, $updatedAt->format('Y-m-d H:i:s'), $productId, $quantity]
+        );
+    }
 }
