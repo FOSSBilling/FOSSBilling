@@ -37,12 +37,12 @@ function runCheckInstallerWithStubbedFilesystem(bool $expectRemoval): void
     }
 }
 
-test('checkInstaller does not delete the install directory when APP_ENV is unset', function (): void {
-    withAppEnv(null, fn () => runCheckInstallerWithStubbedFilesystem(expectRemoval: false));
+test('checkInstaller deletes the install directory when APP_ENV is unset', function (): void {
+    withAppEnv(null, fn () => runCheckInstallerWithStubbedFilesystem(expectRemoval: true));
 });
 
-test('checkInstaller does not delete the install directory when APP_ENV holds an unrecognized value', function (): void {
-    withAppEnv('staging', fn () => runCheckInstallerWithStubbedFilesystem(expectRemoval: false));
+test('checkInstaller deletes the install directory when APP_ENV holds an unrecognized value', function (): void {
+    withAppEnv('staging', fn () => runCheckInstallerWithStubbedFilesystem(expectRemoval: true));
 });
 
 test('checkInstaller does not delete the install directory when APP_ENV is dev or test', function (): void {

@@ -163,7 +163,9 @@ class UpdateFinalization implements InjectionAwareInterface
             $patcher->applyConfigPatches(force: true);
             $patcher->applyCorePatches(force: true);
 
-            $this->filesystem->remove(Path::join(PATH_ROOT, 'install'));
+            if ($this->shouldRemoveInstallDirectory()) {
+                $this->filesystem->remove(Path::join(PATH_ROOT, 'install'));
+            }
             $this->clearCache();
         } catch (IOException $e) {
             error_log($e->getMessage());
@@ -298,6 +300,16 @@ class UpdateFinalization implements InjectionAwareInterface
             static fn (string $path): string => $adminPrefix . '/' . $path,
             self::ALLOWED_ADMIN_PATHS
         );
+    }
+
+    /**
+     * Mirrors checkInstaller()'s guard in load.php: skipped for explicit dev/test
+     * environments and while debugging, so those instances keep the installer.
+     */
+    private function shouldRemoveInstallDirectory(): bool
+    {
+        // @phpstan-ignore booleanNot.alwaysTrue (DEBUG is a runtime constant)
+        return Environment::isProduction() && !DEBUG;
     }
 
     private function getAvailablePatchCount(): ?int
