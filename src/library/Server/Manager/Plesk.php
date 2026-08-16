@@ -409,7 +409,8 @@ class Server_Manager_Plesk extends Server_Manager
      * For the 'add' action, the properties are sent as the direct children of the <add> node, per the
      * webspace add operation's schema. For the 'set' action, Plesk requires the <set> node to contain only
      * a <filter> (identifying which subscription to update) and a <values> node wrapping the actual
-     * settings; its gen_setup element also does not accept 'htype', which only applies at creation time.
+     * settings; its gen_setup element also does not accept 'htype', which only applies at creation time,
+     * and its schema has no plan-related node at all, so 'plan-name' is only ever sent on 'add'.
      *
      * @see https://docs.plesk.com/en-US/obsidian/api-rpc/reference/managing-subscriptions-webspaces/creating-a-subscription-webspace.33892/
      * @see https://docs.plesk.com/en-US/obsidian/api-rpc/reference/managing-subscriptions-webspaces/setting-subscription-parameters.33907/
@@ -570,10 +571,6 @@ class Server_Manager_Plesk extends Server_Manager
                     ],
                 ],
             ],
-            // 'plan-name' must come after 'permissions' in both the add and set schemas -- Plesk's
-            // XML-RPC API validates requests against an XSD sequence, so element order matters and
-            // plesk/api-php-lib serializes this array's key order verbatim into the XML it sends.
-            'plan-name' => $package->getName(),
         ];
 
         if ($action === 'set') {
@@ -589,6 +586,12 @@ class Server_Manager_Plesk extends Server_Manager
                 ],
             ];
         }
+
+        // 'plan-name' must come after 'permissions', per the add schema's element order -- Plesk's
+        // XML-RPC API validates requests against an XSD sequence, and plesk/api-php-lib serializes
+        // this array's key order verbatim into the XML it sends. It's add-only: 'set' has no
+        // plan-related node, so changing an existing subscription's plan isn't supported here.
+        $values['plan-name'] = $package->getName();
 
         return [
             $action => $values,

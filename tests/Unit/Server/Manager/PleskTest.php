@@ -47,7 +47,7 @@ test('createSubscriptionProps wraps the set action in filter and values, as Ples
 
     expect($props)->toHaveKey('set')
         ->and(array_keys($props['set']))->toBe(['filter', 'values'])
-        ->and(array_keys($props['set']['values']))->toBe(['gen_setup', 'hosting', 'limits', 'permissions', 'plan-name']);
+        ->and(array_keys($props['set']['values']))->toBe(['gen_setup', 'hosting', 'limits', 'permissions']);
 });
 
 test('createSubscriptionProps filters the set action by domain name, not owner-login', function (): void {
@@ -96,14 +96,14 @@ test('createSubscriptionProps disables mailing lists when the custom limit is ze
         ->and($permissions['manage_maillists'])->toBe('false');
 });
 
-test('createSubscriptionProps assigns the hosting plan name to the Plesk subscription', function (): void {
+test('createSubscriptionProps assigns the hosting plan name to the Plesk subscription on creation', function (): void {
     $props = invokePleskCreateSubscriptionProps($this->manager, $this->account, 'add');
 
     expect($props['add']['plan-name'])->toBe('Business Hosting');
 });
 
-test('createSubscriptionProps carries the plan name through on updates too', function (): void {
+test('createSubscriptionProps does not send plan-name on updates, since webspace/set has no plan node', function (): void {
     $props = invokePleskCreateSubscriptionProps($this->manager, $this->account, 'set');
 
-    expect($props['set']['values']['plan-name'])->toBe('Business Hosting');
+    expect($props['set']['values'])->not->toHaveKey('plan-name');
 });
