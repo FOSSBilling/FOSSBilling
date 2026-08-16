@@ -176,6 +176,8 @@ export async function purgeCssFile(cssFilePath: string, options: PurgeOptions) {
           /^collapse/,
           /^alert/,
           /^spinner/,
+          /^tooltip/,
+          /^popover/,
           /^active$/,
           /^show$/,
           /^fade$/,

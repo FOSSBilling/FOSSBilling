@@ -201,6 +201,26 @@ globalThis.FOSSBilling = Object.assign(globalThis.FOSSBilling || {}, {
      showTabById(nextTabId);
    });
 
+   //===== Jump-to-tab links outside the tab nav (e.g. a note referencing another tab) =====//
+   document.addEventListener('click', (event) => {
+     if (!(event.target instanceof Element)) {
+       return;
+     }
+
+     const trigger = event.target.closest('[data-tab-jump]');
+     if (!trigger) {
+       return;
+     }
+
+     const targetSelector = trigger.getAttribute('href');
+     if (!targetSelector || !targetSelector.startsWith('#')) {
+       return;
+     }
+
+     event.preventDefault();
+     showTabById(targetSelector.slice(1));
+   });
+
    //===== Discord community popover (shown once) =====//
    const discordBtn = document.getElementById('discord-community-btn');
    const isDiscordBtnVisible = () => {

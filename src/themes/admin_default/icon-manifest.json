@@ -42,6 +42,7 @@
     "mail",
     "moon",
     "note",
+    "notes",
     { "name": "package", "dynamic": true },
     "player-pause",
     { "name": "photo", "dynamic": true },

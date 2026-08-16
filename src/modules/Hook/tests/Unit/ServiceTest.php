@@ -145,12 +145,22 @@ test('batch connects', function (): void {
     $data['mods'] = [$mod];
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchOne')
+        ->with(Mockery::on(fn ($sql) => str_contains((string) $sql, 'GET_LOCK')), Mockery::any())
+        ->andReturn(1);
     /** @var Mockery\Expectation $expectation1 */
-    $expectation1 = $connection->shouldReceive('fetchOne');
+    $expectation1 = $connection->shouldReceive('fetchOne')
+        ->with(Mockery::on(fn ($sql) => !str_contains((string) $sql, 'GET_LOCK')), Mockery::any());
     $expectation1->atLeast()->once();
     $expectation1->andReturn(false);
     $connection->shouldReceive('executeStatement')
         ->byDefault();
+    $connection->shouldReceive('executeStatement')
+        ->with(Mockery::on(fn ($sql) => str_contains((string) $sql, 'RELEASE_LOCK')), Mockery::any())
+        ->once();
+    $connection->shouldReceive('transactional')
+        ->atLeast()->once()
+        ->andReturnUsing(fn (Closure $callback) => $callback($connection));
 
     $returnArr = [
         [
@@ -204,4 +214,25 @@ test('batch connects', function (): void {
     $service->setDi($di);
     $result = $service->batchConnect($mod);
     expect($result)->toBeTrue();
+});
+
+test('batch connect reports failure when another process holds the lock', function (): void {
+    $service = new Box\Mod\Hook\Service();
+
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchOne')
+        ->with(Mockery::on(fn ($sql) => str_contains((string) $sql, 'GET_LOCK')), Mockery::any())
+        ->andReturn(0);
+    $connection->shouldNotReceive('transactional');
+    $connection->shouldNotReceive('fetchAllAssociative');
+    $connection->shouldNotReceive('executeStatement')
+        ->with(Mockery::on(fn ($sql) => str_contains((string) $sql, 'RELEASE_LOCK')), Mockery::any());
+
+    $di = container();
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
+    $service->setDi($di);
+
+    $result = $service->batchConnect('activity');
+
+    expect($result)->toBeFalse();
 });
