@@ -1136,7 +1136,7 @@ test('converts to api array', function (?Box\Mod\Staff\Entity\Admin $identity, s
         expect($result['registrar'])->toBe($tldRegistrar->getName());
     }
 })->with([
-    [\Tests\Helpers\admin(...), 'atLeast'],
+    [fn () => \Tests\Helpers\admin(), 'atLeast'],
     [null, 'never'],
 ]);
 
