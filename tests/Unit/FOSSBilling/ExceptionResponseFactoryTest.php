@@ -36,7 +36,6 @@ test('exception response factory falls back to 500 for non-integer exception cod
     // PDOException's $code property is untyped, so PDO can set it to a string SQLSTATE.
     $exception = new PDOException('Unknown column');
     $codeProperty = new ReflectionProperty($exception, 'code');
-    $codeProperty->setAccessible(true);
     $codeProperty->setValue($exception, '42S22');
 
     $response = (new ExceptionResponseFactory())->create($exception);

@@ -340,9 +340,7 @@ class Service implements InjectionAwareInterface
         // the first value and emits an "extra data" warning for the following
         // bags. Suppress warnings emitted by this unserialize call only; a
         // malformed record is treated as a non-matching session.
-        set_error_handler(static function (int $severity, string $message): bool {
-            return $severity === E_WARNING && str_starts_with($message, 'unserialize():');
-        }, E_WARNING);
+        set_error_handler(static fn (int $severity, string $message): bool => $severity === E_WARNING && str_starts_with($message, 'unserialize():'), E_WARNING);
 
         try {
             $attributes = unserialize(substr($data, strlen(self::SESSION_ATTRIBUTES_PREFIX)), ['allowed_classes' => false]);

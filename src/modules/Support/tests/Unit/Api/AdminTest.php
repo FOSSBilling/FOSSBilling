@@ -368,7 +368,7 @@ test('batch ticket auto close', function (): void {
 
     $api->setService($serviceMock);
     $di = container();
-    $di['logger'] = $this->createStub('\FOSSBilling\Logger');
+    $di['logger'] = $this->createStub(FOSSBilling\Logger::class);
     $api->setDi($di);
 
     $result = $api->batch_ticket_auto_close([]);
@@ -390,7 +390,7 @@ test('batch ticket auto close not closed', function (): void {
 
     $api->setService($serviceMock);
     $di = container();
-    $di['logger'] = $this->createStub('\FOSSBilling\Logger');
+    $di['logger'] = $this->createStub(FOSSBilling\Logger::class);
     $api->setDi($di);
 
     $result = $api->batch_ticket_auto_close([]);

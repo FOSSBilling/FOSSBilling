@@ -146,17 +146,17 @@ test('batch connects', function (): void {
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connection->shouldReceive('fetchOne')
-        ->with(Mockery::on(fn ($sql) => str_contains((string) $sql, 'GET_LOCK')), Mockery::any())
+        ->with(Mockery::on(fn ($sql): bool => str_contains((string) $sql, 'GET_LOCK')), Mockery::any())
         ->andReturn(1);
     /** @var Mockery\Expectation $expectation1 */
     $expectation1 = $connection->shouldReceive('fetchOne')
-        ->with(Mockery::on(fn ($sql) => !str_contains((string) $sql, 'GET_LOCK')), Mockery::any());
+        ->with(Mockery::on(fn ($sql): bool => !str_contains((string) $sql, 'GET_LOCK')), Mockery::any());
     $expectation1->atLeast()->once();
     $expectation1->andReturn(false);
     $connection->shouldReceive('executeStatement')
         ->byDefault();
     $connection->shouldReceive('executeStatement')
-        ->with(Mockery::on(fn ($sql) => str_contains((string) $sql, 'RELEASE_LOCK')), Mockery::any())
+        ->with(Mockery::on(fn ($sql): bool => str_contains((string) $sql, 'RELEASE_LOCK')), Mockery::any())
         ->once();
     $connection->shouldReceive('transactional')
         ->atLeast()->once()
@@ -221,12 +221,12 @@ test('batch connect reports failure when another process holds the lock', functi
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connection->shouldReceive('fetchOne')
-        ->with(Mockery::on(fn ($sql) => str_contains((string) $sql, 'GET_LOCK')), Mockery::any())
+        ->with(Mockery::on(fn ($sql): bool => str_contains((string) $sql, 'GET_LOCK')), Mockery::any())
         ->andReturn(0);
     $connection->shouldNotReceive('transactional');
     $connection->shouldNotReceive('fetchAllAssociative');
     $connection->shouldNotReceive('executeStatement')
-        ->with(Mockery::on(fn ($sql) => str_contains((string) $sql, 'RELEASE_LOCK')), Mockery::any());
+        ->with(Mockery::on(fn ($sql): bool => str_contains((string) $sql, 'RELEASE_LOCK')), Mockery::any());
 
     $di = container();
     $di['em']->shouldReceive('getConnection')->andReturn($connection);
