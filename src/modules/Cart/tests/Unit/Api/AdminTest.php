@@ -95,7 +95,7 @@ test('get returns array', function (): void {
 test('batchExpire returns true', function (): void {
     $adminApi = apiEndpoint(new Box\Mod\Cart\Api\Admin());
 
-    $logStub = $this->createStub('\FOSSBilling\Logger');
+    $logStub = $this->createStub(FOSSBilling\Logger::class);
 
     $conn = Mockery::mock(Doctrine\DBAL\Connection::class);
     $conn->shouldReceive('fetchAllKeyValue')->atLeast()->once()->andReturn([1 => date('Y-m-d H:i:s')]);

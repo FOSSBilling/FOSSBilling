@@ -189,8 +189,8 @@ function productTestCreateProductPaymentEntityManager(ProductPaymentRepository $
 
 function productTestCreateEntityManagerReturning(object $repository): object
 {
-    return new class($repository) {
-        public function __construct(private readonly object $repository)
+    return new readonly class($repository) {
+        public function __construct(private object $repository)
         {
         }
 

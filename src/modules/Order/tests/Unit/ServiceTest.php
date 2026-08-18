@@ -867,7 +867,7 @@ test('_callOnService dispatches to a third-party module with the DBAL row array'
 
     $di = container();
     $di['em'] = $em;
-    $di['mod_service'] = $di->protect(fn (string $name) => match ($name) {
+    $di['mod_service'] = $di->protect(fn (string $name): object => match ($name) {
         'serviceexternal' => $module,
         default => throw new LogicException('Unexpected service: ' . $name),
     });
@@ -904,7 +904,7 @@ test('_callOnService dispatches to a third-party module with null when no servic
 
     $di = container();
     $di['em'] = $em;
-    $di['mod_service'] = $di->protect(fn (string $name) => match ($name) {
+    $di['mod_service'] = $di->protect(fn (string $name): object => match ($name) {
         'serviceexternal' => $module,
         default => throw new LogicException('Unexpected service: ' . $name),
     });
@@ -948,7 +948,7 @@ test('_callOnService dispatches to a third-party module with false when the serv
 
     $di = container();
     $di['em'] = $em;
-    $di['mod_service'] = $di->protect(fn (string $name) => match ($name) {
+    $di['mod_service'] = $di->protect(fn (string $name): object => match ($name) {
         'serviceexternal' => $module,
         default => throw new LogicException('Unexpected service: ' . $name),
     });
@@ -1020,7 +1020,7 @@ test('getOrderServiceData returns module data for a built-in service type', func
 
     $di = container();
     $di['em'] = $em;
-    $di['mod_service'] = $di->protect(fn (string $name) => match ($name) {
+    $di['mod_service'] = $di->protect(fn (string $name): object => match ($name) {
         'servicecustom' => $module,
         default => throw new LogicException('Unexpected service: ' . $name),
     });
