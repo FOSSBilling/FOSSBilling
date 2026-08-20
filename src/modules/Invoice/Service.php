@@ -619,10 +619,16 @@ class Service implements InjectionAwareInterface
         $systemService = $di['mod_service']('System');
         $remove_after_days = $systemService->getParamValue('remove_after_days');
         if (isset($remove_after_days) && $remove_after_days) {
-            // removing old invoices
+            // removing old unpaid invoices, through rmInvoice() so related
+            // orders, invoice items, and reserved resources stay consistent
             $days = (int) $remove_after_days;
-            $sql = 'DELETE FROM invoice WHERE status = :status AND DATEDIFF(NOW(), due_at) > :days';
-            $di['em']->getConnection()->executeStatement($sql, ['days' => $days, 'status' => Invoice::STATUS_UNPAID]);
+            $service = $di['mod_service']('invoice');
+            $invoices = $service->getInvoiceRepository()->findUnpaidOlderThan($days);
+            foreach ($invoices as $invoiceModel) {
+                $id = $invoiceModel->getId();
+                $service->rmInvoice($invoiceModel);
+                $di['logger']->info('Removed expired unpaid invoice #{id}', ['id' => $id]);
+            }
         }
     }
 

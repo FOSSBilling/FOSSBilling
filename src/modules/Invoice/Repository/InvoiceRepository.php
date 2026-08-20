@@ -247,6 +247,25 @@ class InvoiceRepository extends EntityRepository
     }
 
     /**
+     * Unpaid invoices whose due date is more than the given number of days
+     * in the past. Used by the cron cleanup that expires stale unpaid
+     * invoices.
+     *
+     * @return Invoice[]
+     */
+    public function findUnpaidOlderThan(int $days): array
+    {
+        return $this->createQueryBuilder('i')
+            ->andWhere('i.status = :status')
+            ->andWhere('i.dueAt IS NOT NULL')
+            ->andWhere('DATE_DIFF(CURRENT_TIMESTAMP(), i.dueAt) > :days')
+            ->setParameter('status', Invoice::STATUS_UNPAID)
+            ->setParameter('days', $days)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * Latest invoice that has a non-null nr — fallback for invoice
      * number generation.
      */

@@ -242,3 +242,42 @@ test('getInvoiceTotals omits invoices without items', function (): void {
 
     expect($totals)->toBe([]);
 });
+
+test('findUnpaidOlderThan returns only unpaid invoices whose due date is far enough in the past', function (): void {
+    $config = ORMSetup::createAttributeMetadataConfig([Path::join(__DIR__, '..', '..', '..', 'Entity')], true);
+    $config->setProxyDir(sys_get_temp_dir());
+    $config->setProxyNamespace('FOSSBilling\\Tests\\DoctrineProxies');
+    $entityManager = new EntityManager(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
+
+    $metadata = array_map(
+        $entityManager->getClassMetadata(...),
+        [Invoice::class, InvoiceItem::class],
+    );
+    (new Doctrine\ORM\Tools\SchemaTool($entityManager))->createSchema($metadata);
+
+    $farOverdue = new Invoice();
+    $farOverdue->setStatus(Invoice::STATUS_UNPAID);
+    $farOverdue->setDueAt(new DateTime('-10 days'));
+    $entityManager->persist($farOverdue);
+
+    $recentlyOverdue = new Invoice();
+    $recentlyOverdue->setStatus(Invoice::STATUS_UNPAID);
+    $recentlyOverdue->setDueAt(new DateTime('-2 days'));
+    $entityManager->persist($recentlyOverdue);
+
+    $noDueDate = new Invoice();
+    $noDueDate->setStatus(Invoice::STATUS_UNPAID);
+    $entityManager->persist($noDueDate);
+
+    $paidButOverdue = new Invoice();
+    $paidButOverdue->setStatus(Invoice::STATUS_PAID);
+    $paidButOverdue->setDueAt(new DateTime('-10 days'));
+    $entityManager->persist($paidButOverdue);
+
+    $entityManager->flush();
+
+    $result = $entityManager->getRepository(Invoice::class)->findUnpaidOlderThan(5);
+
+    expect($result)->toHaveCount(1)
+        ->and($result[0]->getId())->toBe($farOverdue->getId());
+});
