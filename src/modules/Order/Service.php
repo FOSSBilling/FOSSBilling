@@ -1726,11 +1726,7 @@ class Service implements InjectionAwareInterface
         }
 
         $reason = $config['batch_cancel_suspended_reason'] ?? null;
-        $days = isset($config['batch_cancel_suspended_after_days']) ? (int) $config['batch_cancel_suspended_after_days'] : 7;
-
-        if ($days < 0) {
-            $days = 7;
-        }
+        $days = $this->resolveBatchAfterDays($config['batch_cancel_suspended_after_days'] ?? null);
 
         $sql = "
             SELECT id, suspended_at, DATEDIFF(NOW(), suspended_at) as days_passed_since_suspension
@@ -1759,6 +1755,108 @@ class Service implements InjectionAwareInterface
         $this->di['logger']->info('Executed action to cancel suspended orders');
 
         return true;
+    }
+
+    public function batchCancelUnpaid(): bool
+    {
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminBatchCancelUnpaidOrders']);
+
+        $mod = $this->di['mod']('order');
+        $config = $mod->getConfig();
+        if (!isset($config['batch_cancel_unpaid']) || !$config['batch_cancel_unpaid']) {
+            return false;
+        }
+
+        $days = $this->resolveBatchAfterDays($config['batch_cancel_unpaid_after_days'] ?? null);
+
+        $staleOrders = $this->getOrderRepository()->getStaleUnpaid($days);
+
+        $invoiceService = $this->di['mod_service']('Invoice');
+
+        // A single invoice can cover several orders from one cart checkout
+        // (Cart\Service sets the same unpaid_invoice_id on all of them), so
+        // they're batch-loaded once up front rather than once per order.
+        $invoiceIds = array_values(array_unique(array_filter(
+            array_map(static fn (Order $order): ?int => $order->getUnpaidInvoiceId(), $staleOrders),
+            static fn (?int $id): bool => $id !== null
+        )));
+        $invoicesById = [];
+        foreach ($invoiceIds === [] ? [] : $invoiceService->getInvoiceRepository()->findBy(['id' => $invoiceIds]) as $invoice) {
+            $invoicesById[$invoice->getId()] = $invoice;
+        }
+
+        // Whether each invoice's group may proceed to order deletion - set only
+        // once the invoice is confirmed gone or removed, so a failed removal
+        // leaves it unresolved for a sibling order to retry rather than
+        // wrongly treating the group as already handled.
+        $invoiceHandled = [];
+
+        // Pending-setup orders were never provisioned, so cancelFromOrder() (which
+        // tears down an active service) explicitly rejects them. deleteFromOrder()
+        // is the same path an admin uses to manually remove one. The linked unpaid
+        // invoice is removed first via deleteInvoiceByAdmin() so it doesn't linger
+        // empty and still eligible for reminder emails after the order it belongs
+        // to is gone.
+        foreach ($staleOrders as $order) {
+            try {
+                // Re-check the order's current status before touching anything for
+                // it: deleteFromOrder() has no status guard of its own, and this
+                // order may have been activated or otherwise moved on while earlier
+                // orders in this same run were being processed.
+                $this->di['em']->refresh($order);
+                if ($order->getStatus() !== Order::STATUS_PENDING_SETUP) {
+                    continue;
+                }
+
+                $invoiceId = $order->getUnpaidInvoiceId();
+                if ($invoiceId !== null) {
+                    if (!array_key_exists($invoiceId, $invoiceHandled)) {
+                        $invoice = $invoicesById[$invoiceId] ?? null;
+                        $status = $invoice instanceof Invoice ? $invoice->getStatus() : null;
+
+                        if ($status === Invoice::STATUS_PAID) {
+                            // Paid since getStaleUnpaid() ran - leave every order tied
+                            // to it alone instead of deleting one out from under that.
+                            $invoiceHandled[$invoiceId] = false;
+                        } else {
+                            if ($status === Invoice::STATUS_UNPAID) {
+                                $invoiceService->deleteInvoiceByAdmin($invoice);
+                            }
+                            // Already gone, or canceled/refunded/some other non-live
+                            // status - either way it's no longer a live unpaid invoice,
+                            // so the orders that reference it may proceed.
+                            $invoiceHandled[$invoiceId] = true;
+                        }
+                    }
+
+                    if (!$invoiceHandled[$invoiceId]) {
+                        continue;
+                    }
+                }
+
+                $this->deleteFromOrder($order);
+            } catch (\Exception $e) {
+                $this->di['logger']->info($e->getMessage());
+            }
+        }
+
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminBatchCancelUnpaidOrders']);
+
+        $this->di['logger']->info('Executed action to remove stale unpaid orders');
+
+        return true;
+    }
+
+    /**
+     * Parses a "cancel/remove after N days" batch-job setting. A blank form field is
+     * submitted as '', which isset() treats as present - so this is not just `(int) $value`,
+     * which would silently turn a blank field into 0 instead of the intended default.
+     */
+    private function resolveBatchAfterDays(mixed $configValue, int $default = 7): int
+    {
+        $days = ($configValue === null || $configValue === '') ? $default : (int) $configValue;
+
+        return $days < 0 ? $default : $days;
     }
 
     public function updateOrderConfig(Order $order, array $config): bool
