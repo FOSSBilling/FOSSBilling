@@ -10,6 +10,8 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Invoice\Entity\Invoice;
+use Box\Mod\Invoice\Entity\InvoiceItem;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Order\Repository\OrderRepository;
 use Doctrine\DBAL\Connection;
@@ -68,4 +70,42 @@ test('suspension warnings use positive grace periods in the final 24 hour window
     expect($repository->getDueSuspensionWarnings())->toBe([
         ['id' => 8, 'suspension_at' => '2026-08-01 12:00:00'],
     ]);
+});
+
+test('stale unpaid orders are matched by pending-setup status, unpaid invoice overdue days, or an orphaned order past its own age', function (): void {
+    $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('fetchFirstColumn')
+        ->once()
+        ->withArgs(function (string $sql, array $parameters): bool {
+            $sql = normalizeOrderRepositorySql($sql);
+            $subqueryCount = substr_count($sql, 'FROM invoice i');
+
+            return $parameters === [
+                'status' => Order::STATUS_PENDING_SETUP,
+                'item_type' => InvoiceItem::TYPE_ORDER,
+                'paid_status' => Invoice::STATUS_PAID,
+                'unpaid_status' => Invoice::STATUS_UNPAID,
+                'days' => 5,
+            ]
+                // Orders any paid invoice ever covered are never touched.
+                && str_contains($sql, 'NOT EXISTS')
+                && str_contains($sql, 'ii.rel_id = o.id AND ii.type = :item_type AND pi.status = :paid_status')
+                // Still linked to a live, overdue unpaid invoice.
+                && str_contains($sql, 'i.id = o.unpaid_invoice_id')
+                && str_contains($sql, 'i.status = :unpaid_status')
+                && str_contains($sql, 'DATEDIFF(NOW(), i.due_at) > :days')
+                // Or it no longer has one (removed, canceled, refunded, or never linked),
+                // judged instead by the order's own age. Checked in a second subquery
+                // against unpaid_invoice_id, distinct from the overdue-invoice one above.
+                && $subqueryCount === 2
+                && str_contains($sql, 'DATEDIFF(NOW(), o.created_at) > :days');
+        })
+        ->andReturn([]);
+
+    $entityManager = Mockery::mock(EntityManagerInterface::class);
+    $entityManager->shouldReceive('getConnection')->once()->andReturn($connection);
+
+    $repository = new OrderRepository($entityManager, new ClassMetadata(Order::class));
+
+    expect($repository->getStaleUnpaid(5))->toBe([]);
 });

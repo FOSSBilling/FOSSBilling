@@ -539,6 +539,20 @@ test('batch cancels suspended orders', function (): void {
     expect($result)->toBeTrue();
 });
 
+test('batch cancels unpaid orders', function (): void {
+    $api = apiEndpoint(new Admin());
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('batchCancelUnpaid')->atLeast()->once()->andReturn(true);
+
+    $api->setService($serviceMock);
+
+    $data = [];
+    $result = $api->batch_cancel_unpaid($data);
+
+    expect($result)->toBeTrue();
+});
+
 test('updates order config', function (): void {
     $order = createEntity(Box\Mod\Order\Entity\Order::class);
 
