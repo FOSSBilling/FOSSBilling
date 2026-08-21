@@ -273,6 +273,7 @@ function container(): Container
         $invoiceRepository->shouldReceive('findPaid')->byDefault()->andReturn([]);
         $invoiceRepository->shouldReceive('findByClientId')->byDefault()->andReturn([]);
         $invoiceRepository->shouldReceive('findUnpaidApprovedNotRemindedBefore')->byDefault()->andReturn([]);
+        $invoiceRepository->shouldReceive('findUnpaidOlderThan')->byDefault()->andReturn([]);
         $invoiceRepository->shouldReceive('findPaidByRelId')->byDefault()->andReturn([]);
 
         $invoiceItemRepository = \Mockery::mock(\Box\Mod\Invoice\Repository\InvoiceItemRepository::class)->shouldIgnoreMissing();

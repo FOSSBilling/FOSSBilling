@@ -451,7 +451,6 @@ test('handles after admin invoice reminder sent event', function (): void {
 });
 
 test('handles after admin cron run event', function (): void {
-    $service = new Service();
     $eventMock = Mockery::mock('\Box_Event');
 
     $remove_after_days = 64;
@@ -461,20 +460,31 @@ test('handles after admin cron run event', function (): void {
         ->atLeast()->once()
         ->andReturn($remove_after_days);
 
-    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
-    $connection->shouldReceive('executeStatement')
-        ->atLeast()->once();
+    $invoiceModel = createEntity(Invoice::class, ['id' => 1]);
+
+    $invoiceServiceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $invoiceServiceMock->shouldReceive('rmInvoice')
+        ->once()
+        ->with($invoiceModel)
+        ->andReturn(true);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemServiceMock);
-    $di['em']->shouldReceive('getConnection')->andReturn($connection);
+    $di['em']->getRepository(Invoice::class)->shouldReceive('findUnpaidOlderThan')
+        ->with(64)
+        ->once()
+        ->andReturn([$invoiceModel]);
+    $di['mod_service'] = $di->protect(fn (string $name = ''): object => match (strtolower($name)) {
+        'system' => $systemServiceMock,
+        'invoice' => $invoiceServiceMock,
+        default => Mockery::mock()->shouldIgnoreMissing(),
+    });
 
-    $service->setDi($di);
+    $invoiceServiceMock->setDi($di);
     $eventMock->shouldReceive('getDi')
         ->atLeast()->once()
         ->andReturn($di);
 
-    $service->onAfterAdminCronRun($eventMock);
+    Service::onAfterAdminCronRun($eventMock);
 });
 
 test('uses the client billing email for invoice notifications', function (): void {
