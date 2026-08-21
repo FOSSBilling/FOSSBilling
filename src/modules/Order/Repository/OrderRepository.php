@@ -157,13 +157,14 @@ class OrderRepository extends EntityRepository
     /**
      * Pending-setup orders that were never paid and have gone stale, either
      * because their linked unpaid invoice has been overdue for more than the
-     * given number of days, or - if that invoice is no longer a live unpaid
-     * one (already removed by the invoice module's own "Remove Unpaid
-     * Invoices After" cleanup, canceled, refunded, or simply never linked) -
-     * because the order itself has sat untouched that long. Orders that any
-     * paid invoice ever referenced are excluded, since a paid order can
-     * legitimately stay pending_setup for a long time awaiting manual setup.
-     * Used by the cron cleanup that removes stale, never-paid orders.
+     * given number of days (falling back to the order's own creation date if
+     * that invoice has no due date set), or - if that invoice is no longer a
+     * live unpaid one (already removed by the invoice module's own "Remove
+     * Unpaid Invoices After" cleanup, canceled, refunded, or simply never
+     * linked) - because the order itself has sat untouched that long. Orders
+     * that any paid invoice ever referenced are excluded, since a paid order
+     * can legitimately stay pending_setup for a long time awaiting manual
+     * setup. Used by the cron cleanup that removes stale, never-paid orders.
      *
      * @return Order[]
      */
@@ -185,7 +186,7 @@ class OrderRepository extends EntityRepository
                           SELECT 1 FROM invoice i
                           WHERE i.id = o.unpaid_invoice_id
                             AND i.status = :unpaid_status
-                            AND DATEDIFF(NOW(), i.due_at) > :days
+                            AND DATEDIFF(NOW(), COALESCE(i.due_at, o.created_at)) > :days
                       )
                       OR (
                           NOT EXISTS (

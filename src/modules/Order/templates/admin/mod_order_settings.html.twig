@@ -105,11 +105,12 @@
                         </select>
                     </div>
                     <div class="col-lg-6">
-                        <label class="form-label" for="batch_cancel_unpaid_after_days">{{ 'Remove After Invoice Due Date'|trans }}</label>
+                        <label class="form-label" for="batch_cancel_unpaid_after_days">{{ 'Remove After'|trans }}</label>
                         <div class="input-group">
                             <input class="form-control" id="batch_cancel_unpaid_after_days" type="number" min="0" name="batch_cancel_unpaid_after_days" value="{{ params.batch_cancel_unpaid_after_days|default('') }}" placeholder="7">
                             <span class="input-group-text">{{ 'days'|trans }}</span>
                         </div>
+                        <small class="form-hint">{{ 'Counted from the invoice due date. If no unpaid invoice remains, counted from the order creation date instead. Defaults to 7 days when left blank.'|trans }}</small>
                     </div>
                 </div>
             </div>
