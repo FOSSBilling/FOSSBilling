@@ -1786,9 +1786,9 @@ class Service implements InjectionAwareInterface
         }
 
         // Whether each invoice's group may proceed to order deletion - set only
-        // after deleteInvoiceByAdmin() succeeds, so a failed deletion leaves the
-        // invoice unresolved for a sibling order to retry, instead of wrongly
-        // treating the group as already handled.
+        // once the invoice is confirmed gone or removed, so a failed removal
+        // leaves it unresolved for a sibling order to retry rather than
+        // wrongly treating the group as already handled.
         $invoiceHandled = [];
 
         // Pending-setup orders were never provisioned, so cancelFromOrder() (which
@@ -1799,32 +1799,39 @@ class Service implements InjectionAwareInterface
         // to is gone.
         foreach ($staleOrders as $order) {
             try {
+                // Re-check the order's current status before touching anything for
+                // it: deleteFromOrder() has no status guard of its own, and this
+                // order may have been activated or otherwise moved on while earlier
+                // orders in this same run were being processed.
+                $this->di['em']->refresh($order);
+                if ($order->getStatus() !== Order::STATUS_PENDING_SETUP) {
+                    continue;
+                }
+
                 $invoiceId = $order->getUnpaidInvoiceId();
                 if ($invoiceId !== null) {
                     if (!array_key_exists($invoiceId, $invoiceHandled)) {
                         $invoice = $invoicesById[$invoiceId] ?? null;
-                        $stillUnpaid = $invoice instanceof Invoice && $invoice->getStatus() === Invoice::STATUS_UNPAID;
-                        if ($stillUnpaid) {
-                            $invoiceService->deleteInvoiceByAdmin($invoice);
+                        $status = $invoice instanceof Invoice ? $invoice->getStatus() : null;
+
+                        if ($status === Invoice::STATUS_PAID) {
+                            // Paid since getStaleUnpaid() ran - leave every order tied
+                            // to it alone instead of deleting one out from under that.
+                            $invoiceHandled[$invoiceId] = false;
+                        } else {
+                            if ($status === Invoice::STATUS_UNPAID) {
+                                $invoiceService->deleteInvoiceByAdmin($invoice);
+                            }
+                            // Already gone, or canceled/refunded/some other non-live
+                            // status - either way it's no longer a live unpaid invoice,
+                            // so the orders that reference it may proceed.
+                            $invoiceHandled[$invoiceId] = true;
                         }
-                        $invoiceHandled[$invoiceId] = $stillUnpaid;
                     }
 
                     if (!$invoiceHandled[$invoiceId]) {
-                        // The invoice was paid (or its removal just failed and will be
-                        // retried) since getStaleUnpaid() ran - leave this order alone
-                        // instead of deleting it out from under that outcome.
                         continue;
                     }
-                }
-
-                // Re-check the order's current status right before deleting it:
-                // deleteFromOrder() has no status guard of its own, and this order
-                // may have been activated or otherwise moved on while earlier orders
-                // in this same run were being processed.
-                $this->di['em']->refresh($order);
-                if ($order->getStatus() !== Order::STATUS_PENDING_SETUP) {
-                    continue;
                 }
 
                 $this->deleteFromOrder($order);
