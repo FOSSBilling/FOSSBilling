@@ -126,7 +126,7 @@ jobs:
     with:
       cypress-project-id: ${{ vars.CYPRESS_PROJECT_ID }}
     secrets:
-      CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+      OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
 
   cypress-tests-push:
     name: 'Cypress Tests'
@@ -138,7 +138,7 @@ jobs:
     with:
       cypress-project-id: ${{ vars.CYPRESS_PROJECT_ID }}
     secrets:
-      CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+      OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
 
   preview-build-pr:
     name: 'Create Preview Build'
@@ -189,6 +189,8 @@ jobs:
 
   upload-preview:
     name: 'Upload Preview Release'
+    permissions:
+      contents: read
     needs: [ preview-build-pr, preview-build-push, preview-docker ]
     if: ${{ !cancelled() && (needs['preview-build-pr'].result == 'success' || needs['preview-build-push'].result == 'success' || needs['preview-docker'].result == 'success') }}
     runs-on: ubuntu-slim
