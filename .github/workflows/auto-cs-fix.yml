@@ -30,13 +30,7 @@ jobs:
         env:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
           # FOSSBilling Bot token stored in 1Password.
-          BOT_TOKEN: op://mkqkefntgcmjlgyxzeaekzuuvq/fossbilling-bot/token
-
-      - name: 'Consolidate Bot Token (fallback to legacy secret until vault provisioning is complete)'
-        run: |
-          if [ -z "${BOT_TOKEN}" ]; then
-            echo "BOT_TOKEN=${{ secrets.BOT_TOKEN }}" >> "$GITHUB_ENV"
-          fi
+          FOSSBILLING_BOT_TOKEN: op://mkqkefntgcmjlgyxzeaekzuuvq/fossbilling-bot/token
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -89,7 +83,7 @@ jobs:
           branch: chore/cs-fix
           body: Automated run of PHP-CS-Fixer and Rector to ensure code styling, quality, and modern practices.
           delete-branch: true
-          token: ${{ env.BOT_TOKEN }}
+          token: ${{ env.FOSSBILLING_BOT_TOKEN }}
           committer: FOSSBilling Bot <fossbilling-bot>
           author: FOSSBilling Bot <fossbilling-bot>
           labels: skip-changelog
