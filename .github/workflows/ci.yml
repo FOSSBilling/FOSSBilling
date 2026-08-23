@@ -197,6 +197,8 @@ jobs:
           FOSSBILLING_VERSION=${{ github.sha }}
           FOSSBILLING_VERSION_TRUNCATE=7
           SENTRY_DSN=${{ vars.SENTRY_DSN }}
+        DOCKERHUB_USERNAME: ${{ env.DOCKERHUB_USERNAME }}
+        DOCKERHUB_TOKEN: ${{ env.DOCKERHUB_TOKEN }}
 
   upload-preview:
     name: 'Upload Preview Release'
