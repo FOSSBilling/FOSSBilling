@@ -232,9 +232,10 @@ jobs:
           export-env: true
         env:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          # Cloudflare R2 (fossbilling-download) API token stored in 1Password.
+          # Cloudflare R2 GitHub CI/CD API token stored in 1Password.
           AWS_ACCESS_KEY_ID: op://mkqkefntgcmjlgyxzeaekzuuvq/xddzaoo5rrgl3wg2memaxpcntm/access-key-id
           AWS_SECRET_ACCESS_KEY: op://mkqkefntgcmjlgyxzeaekzuuvq/xddzaoo5rrgl3wg2memaxpcntm/secret-access-key
+          CF_R2_ENDPOINT_URL: op://mkqkefntgcmjlgyxzeaekzuuvq/xddzaoo5rrgl3wg2memaxpcntm/endpoint-url
 
       - name: 'Upload Downloadable Preview to R2'
         if: ${{ github.ref == 'refs/heads/main' }}
@@ -246,4 +247,3 @@ jobs:
             --no-progress
         env:
           CF_R2_DOWNLOAD_BUCKET: ${{ vars.CF_R2_DOWNLOAD_BUCKET }}
-          CF_R2_ENDPOINT_URL: ${{ vars.CF_R2_ENDPOINT_URL }}
