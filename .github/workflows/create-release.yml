@@ -45,7 +45,27 @@ jobs:
     if: ${{ github.repository == 'FOSSBilling/FOSSBilling' }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
     steps:
+      - name: 'Load Copilot Secrets from 1Password'
+        if: ${{ env.OP_SERVICE_ACCOUNT_TOKEN != '' && inputs.release_notes == 'copilot' }}
+        uses: 1password/load-secrets-action@eb2efd0703da22a93c467f2d1ffbb6826c11e19c # v4.1.1
+        continue-on-error: true
+        with:
+          export-env: true
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          # Copilot BYOK provider API key stored in 1Password.
+          COPILOT_PROVIDER_API_KEY: op://mkqkefntgcmjlgyxzeaekzuuvq/copilot-provider/api-key
+
+      - name: 'Consolidate Copilot API Key (fallback to legacy secret until vault provisioning is complete)'
+        if: ${{ inputs.release_notes == 'copilot' }}
+        run: |
+          if [ -z "${COPILOT_PROVIDER_API_KEY}" ]; then
+            echo "COPILOT_PROVIDER_API_KEY=${{ secrets.COPILOT_PROVIDER_API_KEY }}" >> "$GITHUB_ENV"
+          fi
+
       - name: 'Validate Release Inputs'
         env:
           RELEASE_VERSION: ${{ inputs.version }}
@@ -133,7 +153,7 @@ jobs:
         env:
           COPILOT_MODEL: ${{ vars.COPILOT_MODEL }}
           COPILOT_OFFLINE: true
-          COPILOT_PROVIDER_API_KEY: ${{ secrets.COPILOT_PROVIDER_API_KEY }}
+          COPILOT_PROVIDER_API_KEY: ${{ env.COPILOT_PROVIDER_API_KEY }}
           COPILOT_PROVIDER_BASE_URL: ${{ vars.COPILOT_PROVIDER_BASE_URL }}
           COPILOT_PROVIDER_TYPE: ${{ vars.COPILOT_PROVIDER_TYPE }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -8,6 +8,8 @@ on:
         type: string
         default: ''
     secrets:
+      OP_SERVICE_ACCOUNT_TOKEN:
+        required: false
       CYPRESS_RECORD_KEY:
         required: false
 
@@ -17,8 +19,33 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      CYPRESS_RECORDING_DISABLED: ${{ secrets.CYPRESS_RECORD_KEY == '' }}
+      OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
     steps:
+      - name: 'Load Cypress Secrets from 1Password'
+        if: ${{ env.OP_SERVICE_ACCOUNT_TOKEN != '' }}
+        uses: 1password/load-secrets-action@eb2efd0703da22a93c467f2d1ffbb6826c11e19c # v4.1.1
+        continue-on-error: true
+        with:
+          export-env: true
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          # Cypress Cloud record key stored in 1Password.
+          CYPRESS_RECORD_KEY: op://mkqkefntgcmjlgyxzeaekzuuvq/cypress-cloud/record-key
+
+      - name: 'Consolidate Cypress Record Key (fallback to legacy secret until vault provisioning is complete)'
+        run: |
+          if [ -z "${CYPRESS_RECORD_KEY}" ]; then
+            echo "CYPRESS_RECORD_KEY=${{ secrets.CYPRESS_RECORD_KEY }}" >> "$GITHUB_ENV"
+          fi
+
+      - name: 'Set Cypress Recording Disabled'
+        run: |
+          if [ -z "${CYPRESS_RECORD_KEY}" ]; then
+            echo "CYPRESS_RECORDING_DISABLED=true" >> "$GITHUB_ENV"
+          else
+            echo "CYPRESS_RECORDING_DISABLED=false" >> "$GITHUB_ENV"
+          fi
+
       - name: 'Checkout Repository'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -40,7 +67,7 @@ jobs:
       - name: 'Run Cypress Tests'
         env:
           CYPRESS_PROJECT_ID: ${{ inputs.cypress-project-id }}
-          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+          CYPRESS_RECORD_KEY: ${{ env.CYPRESS_RECORD_KEY }}
         run: bash ./.github/scripts/run-docker-cypress-tests.sh fossbilling:test-8.5
 
       - name: 'Upload Cypress Artifacts'

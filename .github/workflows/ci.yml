@@ -127,6 +127,7 @@ jobs:
       cypress-project-id: ${{ vars.CYPRESS_PROJECT_ID }}
     secrets:
       OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+      CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
 
   cypress-tests-push:
     name: 'Cypress Tests'
@@ -139,6 +140,7 @@ jobs:
       cypress-project-id: ${{ vars.CYPRESS_PROJECT_ID }}
     secrets:
       OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+      CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
 
   preview-build-pr:
     name: 'Create Preview Build'

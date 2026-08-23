@@ -18,7 +18,26 @@ jobs:
     name: Rector & PHP-CS-Fixer
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
     steps:
+      - name: 'Load Bot Token from 1Password'
+        if: ${{ env.OP_SERVICE_ACCOUNT_TOKEN != '' }}
+        uses: 1password/load-secrets-action@eb2efd0703da22a93c467f2d1ffbb6826c11e19c # v4.1.1
+        continue-on-error: true
+        with:
+          export-env: true
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          # FOSSBilling Bot token stored in 1Password.
+          BOT_TOKEN: op://mkqkefntgcmjlgyxzeaekzuuvq/fossbilling-bot/token
+
+      - name: 'Consolidate Bot Token (fallback to legacy secret until vault provisioning is complete)'
+        run: |
+          if [ -z "${BOT_TOKEN}" ]; then
+            echo "BOT_TOKEN=${{ secrets.BOT_TOKEN }}" >> "$GITHUB_ENV"
+          fi
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
@@ -70,7 +89,7 @@ jobs:
           branch: chore/cs-fix
           body: Automated run of PHP-CS-Fixer and Rector to ensure code styling, quality, and modern practices.
           delete-branch: true
-          token: ${{ secrets.BOT_TOKEN }}
+          token: ${{ env.BOT_TOKEN }}
           committer: FOSSBilling Bot <fossbilling-bot>
           author: FOSSBilling Bot <fossbilling-bot>
           labels: skip-changelog
