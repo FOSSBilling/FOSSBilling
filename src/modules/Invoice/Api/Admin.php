@@ -1078,6 +1078,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     public function export_csv($data): Response
     {
+        $this->checkPermissions('invoice', 'view');
         $this->checkPermissions('invoice', 'export');
 
         $data['headers'] ??= [];
