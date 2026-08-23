@@ -83,7 +83,7 @@ COPY package.json package-lock.json ./
 COPY src/themes/admin_default/package.json src/themes/admin_default/package.json
 COPY src/themes/huraga/package.json src/themes/huraga/package.json
 
-RUN --mount=type=cache,target=/root/.npm CYPRESS_INSTALL_BINARY=0 npm ci
+RUN --mount=type=cache,target=/root/.npm npm ci
 
 COPY tsconfig.json ./
 COPY src/themes/admin_default ./src/themes/admin_default

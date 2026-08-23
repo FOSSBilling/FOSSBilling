@@ -12,11 +12,11 @@
     "build-admin_default": "npm run build -w admin_default",
     "check": "npm run check-types && npm run check-icons",
     "check-types": "tsc --noEmit",
+    "pw:tsc": "tsc --noEmit -p tests/E2E/Playwright",
     "check-icons": "node ./frontend/tools/check-icons.mts",
     "test:js": "node --test 'frontend/core/tests/**/*.test.mts' 'frontend/tools/tests/**/*.test.mts'",
-    "cy:open": "npm exec --yes cypress@15.15.0 -- open",
-    "cy:run": "npm exec --yes cypress@15.15.0 -- run",
-    "cy:run:record": "npm exec --yes cypress@15.15.0 -- run --record"
+    "pw:open": "playwright test --ui",
+    "pw:run": "playwright test"
   },
   "repository": {
     "type": "git",
@@ -30,6 +30,7 @@
     "src/themes/admin_default"
   ],
   "devDependencies": {
+    "@playwright/test": "1.62.1",
     "@types/node": "24.13.3",
     "autoprefixer": "10.5.4",
     "ckeditor5": "48.4.0",
