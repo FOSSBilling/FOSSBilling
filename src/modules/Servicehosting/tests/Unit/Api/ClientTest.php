@@ -95,7 +95,7 @@ test('testHpGetPairs', function (): void {
     $api = apiEndpoint(new Client());
     $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
     $serviceMock
-    ->shouldReceive('getHpPairs')
+    ->shouldReceive('getOrderableHpPairs')
     ->atLeast()->once()
     ->andReturn([]);
 

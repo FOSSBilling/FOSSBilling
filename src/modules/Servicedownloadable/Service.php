@@ -174,7 +174,7 @@ class Service implements InjectionAwareInterface
         return array_merge($data, $config);
     }
 
-    public function validateOrderData(array &$data): void
+    public function validateOrderData(array &$data, ?Product $product = null): void
     {
         $required = [
             'filename' => 'Filename is missing in product config',

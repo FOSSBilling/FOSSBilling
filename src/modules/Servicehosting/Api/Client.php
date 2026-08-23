@@ -55,11 +55,15 @@ class Client extends \FOSSBilling\Api\AbstractApi
     /**
      * Get hosting plans pairs. Usually for select box.
      *
+     * Scoped to plans referenced by at least one enabled hosting product, so
+     * clients can only enumerate plans that are actually orderable. Use the
+     * admin API for the full list.
+     *
      * @return array
      */
     public function hp_get_pairs($data)
     {
-        return $this->getService()->getHpPairs();
+        return $this->getService()->getOrderableHpPairs();
     }
 
     /**

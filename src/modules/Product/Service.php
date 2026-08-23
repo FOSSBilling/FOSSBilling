@@ -339,7 +339,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (method_exists($service, 'validateOrderData')) {
-            $service->validateOrderData($config);
+            $service->validateOrderData($config, $product);
         }
 
         if (method_exists($service, 'validateCustomForm')) {
