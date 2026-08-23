@@ -673,6 +673,8 @@ class Service implements InjectionAwareInterface
 
     public function setConfig($data): bool
     {
+        // Intentional defense-in-depth: this method stores sensitive configuration,
+        // so authorization is enforced here independently of any caller-side checks.
         $this->hasManagePermission($data['ext']);
         $ext = $data['ext'];
         $this->getConfig($ext); // Creates new config if it does not exist in DB
@@ -833,8 +835,11 @@ class Service implements InjectionAwareInterface
         $staff_service = $this->di['mod_service']('Staff');
         $permission_module = str_starts_with($module, 'mod_') ? substr($module, 4) : $module;
 
-        // The module isn't active or has no permissions if this is the case, so continue as normal
+        // Inactive modules can only be managed by staff allowed to manage extensions,
+        // for example to write default configuration during module installation
         if (!$this->isExtensionActive('mod', $permission_module)) {
+            $staff_service->checkPermissionsAndThrowException('extension', 'manage_extensions');
+
             return;
         }
 
