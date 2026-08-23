@@ -1,4 +1,4 @@
-name: Upload Release to Docker Registries
+name: Upload Release to Docker Hub
 
 on:
   release:
