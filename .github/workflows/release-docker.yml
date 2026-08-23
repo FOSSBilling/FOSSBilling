@@ -44,8 +44,7 @@ jobs:
     needs: [ check-latest ]
     uses: ./.github/workflows/docker-build.yml
     secrets:
-      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
     with:
       target: runtime
       cache-scope: cache-release

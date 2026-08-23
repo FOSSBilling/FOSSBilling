@@ -33,9 +33,11 @@ on:
         default: 'release-tree'
     secrets:
       DOCKERHUB_USERNAME:
-        required: true
+        required: false
       DOCKERHUB_TOKEN:
-        required: true
+        required: false
+      OP_SERVICE_ACCOUNT_TOKEN:
+        required: false
     outputs:
       release-tree-artifact:
         value: ${{ jobs.build.outputs.release-tree-artifact }}
@@ -48,6 +50,8 @@ jobs:
   build:
     name: 'Build (${{ matrix.platform }})'
     runs-on: ${{ matrix.runner }}
+    env:
+      OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
     strategy:
       matrix:
         include:
@@ -74,12 +78,22 @@ jobs:
         if: inputs.extract-release-tree
         run: echo "artifact-name=${{ inputs.release-tree-artifact-name }}" >> "${GITHUB_OUTPUT}"
 
+      - name: 'Load Docker Hub Secrets from 1Password'
+        if: ${{ env.OP_SERVICE_ACCOUNT_TOKEN != '' }}
+        uses: 1password/load-secrets-action@eb2efd0703da22a93c467f2d1ffbb6826c11e19c # v4.1.1
+        with:
+          export-env: true
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          DOCKERHUB_USERNAME: op://mkqkefntgcmjlgyxzeaekzuuvq/wfhjv4rztrniimaukzgfzkwlmi/username
+          DOCKERHUB_TOKEN: op://mkqkefntgcmjlgyxzeaekzuuvq/wfhjv4rztrniimaukzgfzkwlmi/credential
+
       - name: 'Login to Docker Hub'
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
         with:
           registry: docker.io
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ env.DOCKERHUB_USERNAME || secrets.DOCKERHUB_USERNAME }}
+          password: ${{ env.DOCKERHUB_TOKEN || secrets.DOCKERHUB_TOKEN }}
 
       - name: 'Login to GitHub Container Registry'
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
@@ -156,13 +170,25 @@ jobs:
     name: 'Merge Multi-Platform Manifest'
     needs: [ build ]
     runs-on: ubuntu-latest
+    env:
+      OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
     steps:
+      - name: 'Load Docker Hub Secrets from 1Password'
+        if: ${{ env.OP_SERVICE_ACCOUNT_TOKEN != '' }}
+        uses: 1password/load-secrets-action@eb2efd0703da22a93c467f2d1ffbb6826c11e19c # v4.1.1
+        with:
+          export-env: true
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          DOCKERHUB_USERNAME: op://mkqkefntgcmjlgyxzeaekzuuvq/wfhjv4rztrniimaukzgfzkwlmi/username
+          DOCKERHUB_TOKEN: op://mkqkefntgcmjlgyxzeaekzuuvq/wfhjv4rztrniimaukzgfzkwlmi/credential
+
       - name: 'Login to Docker Hub'
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
         with:
           registry: docker.io
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ env.DOCKERHUB_USERNAME || secrets.DOCKERHUB_USERNAME }}
+          password: ${{ env.DOCKERHUB_TOKEN || secrets.DOCKERHUB_TOKEN }}
 
       - name: 'Login to GitHub Container Registry'
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4

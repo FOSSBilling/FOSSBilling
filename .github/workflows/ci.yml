@@ -169,36 +169,23 @@ jobs:
       packages: write
     needs: [ live-tests-push, cypress-tests-push ]
     if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
-    runs-on: ubuntu-latest
-    steps:
-    - name: 'Load Secrets for Docker Hub'
-      uses: 1password/load-secrets-action@v4
-      with:
-        export-env: true
-      env:
-        OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-        # Docker Hub (GitHub CI/CD) credentials stored in 1Password.
-        DOCKERHUB_USERNAME: op://mkqkefntgcmjlgyxzeaekzuuvq/wfhjv4rztrniimaukzgfzkwlmi/username
-        DOCKERHUB_TOKEN: op://mkqkefntgcmjlgyxzeaekzuuvq/wfhjv4rztrniimaukzgfzkwlmi/credential
-
-    - name: 'Build and Push Preview Docker Image'
-      uses: ./.github/workflows/docker-build.yml
-      with:
-        target: runtime
-        cache-scope: cache-preview
-        extract-release-tree: true
-        release-tree-artifact-name: preview-build
-        meta-images: fossbilling/fossbilling
-        meta-tags: |
-          type=raw,value=preview
-        meta-flavor: |
-          latest=false
-        build-args: |
-          FOSSBILLING_VERSION=${{ github.sha }}
-          FOSSBILLING_VERSION_TRUNCATE=7
-          SENTRY_DSN=${{ vars.SENTRY_DSN }}
-        DOCKERHUB_USERNAME: ${{ env.DOCKERHUB_USERNAME }}
-        DOCKERHUB_TOKEN: ${{ env.DOCKERHUB_TOKEN }}
+    uses: ./.github/workflows/docker-build.yml
+    secrets:
+      OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+    with:
+      target: runtime
+      cache-scope: cache-preview
+      extract-release-tree: true
+      release-tree-artifact-name: preview-build
+      meta-images: fossbilling/fossbilling
+      meta-tags: |
+        type=raw,value=preview
+      meta-flavor: |
+        latest=false
+      build-args: |
+        FOSSBILLING_VERSION=${{ github.sha }}
+        FOSSBILLING_VERSION_TRUNCATE=7
+        SENTRY_DSN=${{ vars.SENTRY_DSN }}
 
   upload-preview:
     name: 'Upload Preview Release'
@@ -223,9 +210,9 @@ jobs:
         run: |
           GITHUB_SHORT_SHA="$(echo "${GITHUB_SHA}" | cut -c1-7)"
           echo "GITHUB_SHORT_SHA=${GITHUB_SHORT_SHA}" >> "$GITHUB_ENV"
-          mkdir ../dist
-          zip -qr ../dist/FOSSBilling-preview-${GITHUB_SHORT_SHA}.zip .
-          echo "PREVIEW_DIGEST=sha256:$(sha256sum ../dist/FOSSBilling-preview-${GITHUB_SHORT_SHA}.zip | awk '{print $1}')" >> "$GITHUB_ENV"
+          mkdir -p ../dist
+          zip -qr "../dist/FOSSBilling-preview-${GITHUB_SHORT_SHA}.zip" .
+          echo "PREVIEW_DIGEST=sha256:$(sha256sum "../dist/FOSSBilling-preview-${GITHUB_SHORT_SHA}.zip" | awk '{print $1}')" >> "$GITHUB_ENV"
         working-directory: ./src/
 
       - name: 'Upload Downloadable Preview to GitHub'
@@ -239,7 +226,7 @@ jobs:
 
       - name: 'Load Secrets for R2 Upload'
         if: ${{ github.ref == 'refs/heads/main' }}
-        uses: 1password/load-secrets-action@v4
+        uses: 1password/load-secrets-action@eb2efd0703da22a93c467f2d1ffbb6826c11e19c # v4.1.1
         with:
           export-env: true
         env:
@@ -259,3 +246,4 @@ jobs:
             --no-progress
         env:
           CF_R2_DOWNLOAD_BUCKET: ${{ vars.CF_R2_DOWNLOAD_BUCKET }}
+          AWS_REGION: 'auto'
