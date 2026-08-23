@@ -169,24 +169,34 @@ jobs:
       packages: write
     needs: [ live-tests-push, cypress-tests-push ]
     if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
-    uses: ./.github/workflows/docker-build.yml
-    secrets:
-      DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
-      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-    with:
-      target: runtime
-      cache-scope: cache-preview
-      extract-release-tree: true
-      release-tree-artifact-name: preview-build
-      meta-images: fossbilling/fossbilling
-      meta-tags: |
-        type=raw,value=preview
-      meta-flavor: |
-        latest=false
-      build-args: |
-        FOSSBILLING_VERSION=${{ github.sha }}
-        FOSSBILLING_VERSION_TRUNCATE=7
-        SENTRY_DSN=${{ vars.SENTRY_DSN }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: 'Load Secrets for Docker Hub'
+      uses: 1password/load-secrets-action@v4
+      with:
+        export-env: true
+      env:
+        OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+        # Docker Hub (GitHub CI/CD) credentials stored in 1Password.
+        DOCKERHUB_USERNAME: op://mkqkefntgcmjlgyxzeaekzuuvq/wfhjv4rztrniimaukzgfzkwlmi/username
+        DOCKERHUB_TOKEN: op://mkqkefntgcmjlgyxzeaekzuuvq/wfhjv4rztrniimaukzgfzkwlmi/credential
+
+    - name: 'Build and Push Preview Docker Image'
+      uses: ./.github/workflows/docker-build.yml
+      with:
+        target: runtime
+        cache-scope: cache-preview
+        extract-release-tree: true
+        release-tree-artifact-name: preview-build
+        meta-images: fossbilling/fossbilling
+        meta-tags: |
+          type=raw,value=preview
+        meta-flavor: |
+          latest=false
+        build-args: |
+          FOSSBILLING_VERSION=${{ github.sha }}
+          FOSSBILLING_VERSION_TRUNCATE=7
+          SENTRY_DSN=${{ vars.SENTRY_DSN }}
 
   upload-preview:
     name: 'Upload Preview Release'
@@ -232,7 +242,7 @@ jobs:
           export-env: true
         env:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          # Cloudflare R2 GitHub CI/CD API token stored in 1Password.
+          # Cloudflare R2 (GitHub CI/CD) API credentials stored in 1Password.
           AWS_ACCESS_KEY_ID: op://mkqkefntgcmjlgyxzeaekzuuvq/xddzaoo5rrgl3wg2memaxpcntm/access-key-id
           AWS_SECRET_ACCESS_KEY: op://mkqkefntgcmjlgyxzeaekzuuvq/xddzaoo5rrgl3wg2memaxpcntm/secret-access-key
           CF_R2_ENDPOINT_URL: op://mkqkefntgcmjlgyxzeaekzuuvq/xddzaoo5rrgl3wg2memaxpcntm/endpoint-url
