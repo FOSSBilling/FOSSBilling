@@ -29,5 +29,5 @@ src/install/php_error.log
 src/themes/huraga/config/settings_data.json
 output.log
 
-### Cypress ###
-tests/E2E/Cypress/artifacts
+### Playwright ###
+tests/E2E/Playwright/artifacts

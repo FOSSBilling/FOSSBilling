@@ -1,28 +1,27 @@
-name: Cypress Tests
+name: Playwright Tests
 
 on:
   workflow_call:
-    inputs:
-      cypress-project-id:
-        required: false
-        type: string
-        default: ''
-    secrets:
-      CYPRESS_RECORD_KEY:
-        required: false
 
 jobs:
-  cypress-tests:
-    name: 'Cypress Tests'
+  playwright-tests:
+    name: 'Playwright Tests'
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    env:
-      CYPRESS_RECORDING_DISABLED: ${{ secrets.CYPRESS_RECORD_KEY == '' }}
     steps:
       - name: 'Checkout Repository'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
+
+      - name: 'Set up Node'
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: 'Typecheck Test Suite'
+        run: npm ci --no-audit --no-fund && npm run pw:tsc
 
       - name: 'Set up Docker Compose'
         uses: docker/setup-compose-action@4eb059ff7f16592f9c84d5ca339c53cb7c5064e2 # v2.3.0
@@ -37,19 +36,14 @@ jobs:
       - name: 'Load Test Image'
         run: zstd --decompress --stdout /tmp/test-image-8.5.tar.zst | docker load
 
-      - name: 'Run Cypress Tests'
-        env:
-          CYPRESS_PROJECT_ID: ${{ inputs.cypress-project-id }}
-          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
-        run: bash ./.github/scripts/run-docker-cypress-tests.sh fossbilling:test-8.5
+      - name: 'Run Playwright Tests'
+        run: bash ./.github/scripts/run-docker-playwright-tests.sh fossbilling:test-8.5
 
-      - name: 'Upload Cypress Artifacts'
-        if: ${{ failure() && env.CYPRESS_RECORDING_DISABLED == 'true' }}
+      - name: 'Upload Playwright Artifacts'
+        if: ${{ failure() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: cypress-artifacts
+          name: playwright-artifacts
           if-no-files-found: ignore
           path: |
-            tests/E2E/Cypress/artifacts/screenshots
-            tests/E2E/Cypress/artifacts/videos
-            tests/E2E/Cypress/artifacts/downloads
+            tests/E2E/Playwright/artifacts
