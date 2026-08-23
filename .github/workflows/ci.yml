@@ -211,37 +211,39 @@ jobs:
         run: |
           GITHUB_SHORT_SHA="$(echo "${GITHUB_SHA}" | cut -c1-7)"
           echo "GITHUB_SHORT_SHA=${GITHUB_SHORT_SHA}" >> "$GITHUB_ENV"
-          zip -qr ../FOSSBilling-preview-${GITHUB_SHORT_SHA}.zip .
-          echo "FOSSBILLING_PREVIEW_DIGEST=sha256:$(sha256sum ../FOSSBilling-preview-${GITHUB_SHORT_SHA}.zip | awk '{print $1}')" >> "$GITHUB_ENV"
+          mkdir ../dist
+          zip -qr ../dist/FOSSBilling-preview-${GITHUB_SHORT_SHA}.zip .
+          echo "PREVIEW_DIGEST=sha256:$(sha256sum ../dist/FOSSBilling-preview-${GITHUB_SHORT_SHA}.zip | awk '{print $1}')" >> "$GITHUB_ENV"
         working-directory: ./src/
-
-      - name: 'Move Downloadable Preview for Upload'
-        run: |
-          mkdir ./dist
-          cp ./FOSSBilling-preview-${GITHUB_SHORT_SHA}.zip ./dist/FOSSBilling-preview.zip
-
-      - name: 'Upload Downloadable Preview to S3'
-        if: ${{ github.ref == 'refs/heads/main' }}
-        run: |
-          aws s3 sync "${SOURCE_DIR}" "s3://${AWS_S3_BUCKET}/" \
-            --endpoint-url "${AWS_S3_ENDPOINT}" \
-            --metadata="digest=${{ env.FOSSBILLING_PREVIEW_DIGEST }},commit-sha=${{ github.sha }}" \
-            --acl public-read \
-            --follow-symlinks \
-            --no-progress
-        env:
-          AWS_S3_BUCKET: ${{ vars.CF_R2_DOWNLOAD_BUCKET }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.CF_R2_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.CF_R2_SECRET_ACCESS_KEY }}
-          AWS_S3_ENDPOINT: ${{ vars.CF_R2_ENDPOINT_URL }}
-          AWS_REGION: 'auto'
-          SOURCE_DIR: './dist'
 
       - name: 'Upload Downloadable Preview to GitHub'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           if-no-files-found: 'error'
           name: 'FOSSBilling-preview-${{ env.GITHUB_SHORT_SHA }}.zip'
-          path: './FOSSBilling-preview-${{ env.GITHUB_SHORT_SHA }}.zip'
+          path: './dist/FOSSBilling-preview-${{ env.GITHUB_SHORT_SHA }}.zip'
           archive: false
           retention-days: 14
+
+      - name: 'Load Secrets for R2 Upload'
+        if: ${{ github.ref == 'refs/heads/main' }}
+        uses: 1password/load-secrets-action@v4
+        with:
+          export-env: true
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          # Cloudflare R2 (fossbilling-download) API token stored in 1Password.
+          AWS_ACCESS_KEY_ID: op://mkqkefntgcmjlgyxzeaekzuuvq/xddzaoo5rrgl3wg2memaxpcntm/access-key-id
+          AWS_SECRET_ACCESS_KEY: op://mkqkefntgcmjlgyxzeaekzuuvq/xddzaoo5rrgl3wg2memaxpcntm/secret-access-key
+
+      - name: 'Upload Downloadable Preview to R2'
+        if: ${{ github.ref == 'refs/heads/main' }}
+        run: |
+          aws s3 cp "./dist/FOSSBilling-preview-${{ env.GITHUB_SHORT_SHA }}.zip" "s3://${CF_R2_DOWNLOAD_BUCKET}/FOSSBilling-preview.zip" \
+            --endpoint-url "${CF_R2_ENDPOINT_URL}" \
+            --metadata="digest=${{ env.PREVIEW_DIGEST }},commit-sha=${{ github.sha }}" \
+            --acl public-read \
+            --no-progress
+        env:
+          CF_R2_DOWNLOAD_BUCKET: ${{ vars.CF_R2_DOWNLOAD_BUCKET }}
+          CF_R2_ENDPOINT_URL: ${{ vars.CF_R2_ENDPOINT_URL }}
