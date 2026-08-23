@@ -630,10 +630,16 @@ class Service implements InjectionAwareInterface
         $systemService = $di['mod_service']('System');
         $remove_after_days = $systemService->getParamValue('remove_after_days');
         if (isset($remove_after_days) && $remove_after_days) {
-            // removing old invoices
+            // removing old unpaid invoices, through rmInvoice() so related
+            // orders, invoice items, and reserved resources stay consistent
             $days = (int) $remove_after_days;
-            $sql = 'DELETE FROM invoice WHERE status = :status AND DATEDIFF(NOW(), due_at) > :days';
-            $di['db']->exec($sql, [':days' => $days, ':status' => \Model_Invoice::STATUS_UNPAID]);
+            $service = $di['mod_service']('invoice');
+            $invoices = $service->findUnpaidOlderThan($days);
+            foreach ($invoices as $invoiceModel) {
+                $id = $invoiceModel->id;
+                $service->rmInvoice($invoiceModel);
+                $di['logger']->info("Removed expired unpaid invoice #{$id}.");
+            }
         }
     }
 
@@ -1982,6 +1988,20 @@ class Service implements InjectionAwareInterface
     public function findAllPaid()
     {
         return $this->di['db']->find('Invoice', 'status = ? order by id desc', [\Model_Invoice::STATUS_PAID]);
+    }
+
+    /**
+     * Unpaid invoices whose due date is more than the given number of days
+     * in the past. Used by the cron cleanup that expires stale unpaid
+     * invoices.
+     *
+     * @return \Model_Invoice[]
+     */
+    public function findUnpaidOlderThan(int $days): array
+    {
+        $conditions = 'status = ? and due_at is not null and DATEDIFF(NOW(), due_at) > ?';
+
+        return $this->di['db']->find('Invoice', $conditions, [\Model_Invoice::STATUS_UNPAID, $days]);
     }
 
     public function getUnpaidInvoicesLateFor($days_after_issue = 2)

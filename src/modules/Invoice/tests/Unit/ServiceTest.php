@@ -622,7 +622,6 @@ test('handles after admin invoice reminder sent event', function (): void {
 });
 
 test('handles after admin cron run event', function (): void {
-    $service = new Service();
     $eventMock = Mockery::mock('\Box_Event');
 
     $remove_after_days = 64;
@@ -632,20 +631,31 @@ test('handles after admin cron run event', function (): void {
         ->atLeast()->once()
         ->andReturn($remove_after_days);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('exec')
-        ->atLeast()->once();
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $invoiceServiceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $invoiceServiceMock->shouldReceive('findUnpaidOlderThan')
+        ->with($remove_after_days)
+        ->once()
+        ->andReturn([$invoiceModel]);
+    $invoiceServiceMock->shouldReceive('rmInvoice')
+        ->once()
+        ->with($invoiceModel)
+        ->andReturn(true);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemServiceMock);
-    $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(moduleService([
+        'system' => $systemServiceMock,
+        'invoice' => $invoiceServiceMock,
+    ]));
 
-    $service->setDi($di);
+    $invoiceServiceMock->setDi($di);
     $eventMock->shouldReceive('getDi')
         ->atLeast()->once()
         ->andReturn($di);
 
-    $service->onAfterAdminCronRun($eventMock);
+    Service::onAfterAdminCronRun($eventMock);
 });
 
 test('uses the client billing email for invoice notifications', function (): void {
@@ -3052,6 +3062,26 @@ test('gets unpaid invoices late for', function (): void {
     $service->setDi($di);
 
     $result = $service->getUnpaidInvoicesLateFor();
+    expect($result)->toBeArray();
+    expect($result[0])->toBeInstanceOf(Model_Invoice::class);
+});
+
+test('finds unpaid invoices older than the given number of days', function (): void {
+    $service = new Service();
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('find')
+        ->once()
+        ->with('Invoice', Mockery::type('string'), [Model_Invoice::STATUS_UNPAID, 30])
+        ->andReturn([$invoiceModel]);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $service->setDi($di);
+
+    $result = $service->findUnpaidOlderThan(30);
     expect($result)->toBeArray();
     expect($result[0])->toBeInstanceOf(Model_Invoice::class);
 });
