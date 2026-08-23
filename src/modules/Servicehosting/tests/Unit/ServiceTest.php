@@ -1446,8 +1446,13 @@ test('validateOrderData rejects admin-controlled values differing from product c
 
     $data[$field] = $injectedValue;
 
-    expect(fn () => $service->validateOrderData($data, $product))
-        ->toThrow(FOSSBilling\InformationException::class);
+    try {
+        $service->validateOrderData($data, $product);
+        expect(true)->toBeFalse('Expected FOSSBilling\InformationException was not thrown.');
+    } catch (FOSSBilling\InformationException $e) {
+        expect($e->getMessage())->toBe('The requested configuration does not match the selected product.');
+        expect($e->getCode())->toBe(705);
+    }
 })->with([
     ['hosting_plan_id', 999],
     ['server_id', 42],

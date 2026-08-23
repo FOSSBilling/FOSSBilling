@@ -783,9 +783,15 @@ test('export_csv delegates to service when permissions granted', function (): vo
     $di = container();
     $staffServiceMock = $di['mod_service']('staff');
     $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
-        ->twice()
-        ->with('order', Mockery::anyOf('view', 'export'), null, Mockery::any())
-        ->andReturn(true);
+        ->once()
+        ->with('order', 'view', null, Mockery::any())
+        ->andReturn(true)
+        ->ordered();
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+        ->once()
+        ->with('order', 'export', null, Mockery::any())
+        ->andReturn(true)
+        ->ordered();
 
     $api->setDi($di);
     $api->setService($serviceMock);
