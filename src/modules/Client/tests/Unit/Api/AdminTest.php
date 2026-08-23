@@ -721,7 +721,7 @@ test('export_csv requires both view and export permissions', function (): void {
     $adminClient->setDi($di);
     $adminClient->setService($serviceMock);
 
-    expect(fn () => $adminClient->export_csv(['headers' => ['email', 'pass', 'salt', 'api_token']]))
+    expect(fn () => $adminClient->export_csv(['headers' => ['id']]))
         ->toThrow(FOSSBilling\InformationException::class);
 });
 
