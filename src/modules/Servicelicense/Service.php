@@ -70,7 +70,7 @@ class Service implements InjectionAwareInterface
     /**
      * Method is called before adding product to cart.
      */
-    public function validateOrderData(array &$data): bool
+    public function validateOrderData(array &$data, ?Product $product = null): bool
     {
         return true;
     }

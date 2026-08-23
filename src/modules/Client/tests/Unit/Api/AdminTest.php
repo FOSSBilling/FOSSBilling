@@ -739,7 +739,7 @@ test('export_csv delegates to service when permissions granted', function (): vo
     $staffServiceMock = $di['mod_service']('staff');
     $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
         ->twice()
-        ->with(Mockery::pattern('/^client$/'), Mockery::anyOf('view', 'export'), null, Mockery::any())
+        ->with('client', Mockery::anyOf('view', 'export'), null, Mockery::any())
         ->andReturn(true);
 
     $adminClient->setDi($di);
