@@ -64,7 +64,14 @@
         "unindexed",
         "catchable",
         "nelexa",
-        "apisecret"
+        "apisecret",
+        "cutover",
+        "mysqldump",
+        "mysqldump's",
+        "portableize",
+        "setval",
+        "nextval",
+        "repoints"
     ],
 
     "ignoreWords": [
