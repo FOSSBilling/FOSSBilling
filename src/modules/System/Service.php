@@ -15,6 +15,7 @@ use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\DeadlockException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use FOSSBilling\Cache\CacheFactory;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\GeoIP\Reader;
@@ -625,6 +626,10 @@ class Service
         $path = $cachePath ?? PATH_CACHE;
         $this->filesystem->remove($path);
         $this->filesystem->mkdir($path);
+
+        // Also flush the configured application/rate-limiter/Doctrine cache pools, which may be
+        // backed by Redis or Memcached rather than the filesystem path cleared above.
+        CacheFactory::clearAll();
 
         return true;
     }
