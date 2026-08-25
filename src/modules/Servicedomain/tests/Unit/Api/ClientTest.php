@@ -119,6 +119,29 @@ test('disables privacy protection', function (): void {
     expect($result)->toBeTrue();
 });
 
+test('synchronizes domain with registrar', function (): void {
+    $clientApi = apiEndpoint(new Client());
+    $api = apiEndpoint(new Client());
+    $model = new ServiceDomain();
+
+    $clientApiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods());
+    $clientApiMock->shouldReceive('_getService')
+        ->atLeast()->once()
+        ->andReturn($model);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('synchronizeDomain')
+        ->atLeast()->once()
+        ->with($model);
+
+    $clientApiMock->setService($serviceMock);
+
+    $data = [];
+    $result = $clientApiMock->sync($data);
+
+    expect($result)->toBeTrue();
+});
+
 test('gets transfer code', function (): void {
     $clientApi = apiEndpoint(new Client());
     $api = apiEndpoint(new Client());

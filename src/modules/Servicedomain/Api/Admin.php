@@ -109,6 +109,22 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
+     * Synchronize domain registration details with the registrar.
+     *
+     * @return bool
+     */
+    #[RequiredParams(['order_id' => 'Order ID is missing'])]
+    public function sync($data)
+    {
+        $this->checkPermissions('servicedomain', 'manage_domains');
+
+        $s = $this->_getService($data);
+        $this->getService()->synchronizeDomain($s);
+
+        return true;
+    }
+
+    /**
      * Get domain transfer code.
      *
      * @return bool
