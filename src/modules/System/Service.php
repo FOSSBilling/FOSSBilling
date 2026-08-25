@@ -736,6 +736,16 @@ class Service
      *
      * Not subject to canUpdateParam(): this reserves an internal counter rather than applying a
      * user-driven settings change, and must work in client and cron contexts.
+     *
+     * Callers should invoke this before doing any of their own reads on the shared connection,
+     * not after. On SQLite, an outer transaction that already read something is holding a SHARED
+     * lock the whole time this method runs; if a competing writer is holding RESERVED when this
+     * method's own lock-escalating write attempts to upgrade that SHARED lock, the outer
+     * transaction cannot release just its read - only rolling back the whole thing would - so
+     * sustained contention can exhaust every retry with the outer transaction still open. This
+     * doesn't apply to the getNextInvoiceNumber() caller today (it calls this before its own
+     * flush() opens any transaction), but would matter for a future caller that reserves from
+     * partway through an already-open transaction.
      */
     public function reserveNextNumericParamValue(string $param, ?int $seed = null): ?int
     {
