@@ -849,3 +849,150 @@ test('downloadable file and suspension grace patches are not skipped by 0.8-next
         ->and($patches)->toHaveKey(109)
         ->and($patches[109][1])->toBe('patch109');
 });
+
+test('foreign key width patch is numbered 110', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 109);
+
+    expect($patches)->toHaveKey(110)
+        ->and($patches[110][1])->toBe('patch110');
+});
+
+test('foreign key width patch widens narrow gateway_id columns but leaves already-wide columns alone', function (): void {
+    // invoice.gateway_id and transaction.gateway_id were declared int(11) in structure.sql
+    // while pay_gateway.id (which they reference) is bigint(20). email_queue.client_id and
+    // email_queue.admin_id have the same mismatch against client.id/admin.id. This patch
+    // widens any column still at int(11) and is a no-op for columns already fixed.
+    $invoiceColumns = Mockery::mock(PDOStatement::class);
+    $invoiceColumns->expects('execute')->with([])->andReturnTrue();
+    $invoiceColumns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Field' => 'id'],
+        ['Field' => 'gateway_id'],
+    ]);
+
+    $invoiceLength = Mockery::mock(PDOStatement::class);
+    $invoiceLength->expects('execute')->with(['column' => 'gateway_id'])->andReturnTrue();
+    $invoiceLength->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Field' => 'gateway_id', 'Type' => 'int(11)'],
+    ]);
+
+    $invoiceAlter = Mockery::mock(PDOStatement::class);
+    $invoiceAlter->expects('execute')->with([])->andReturnTrue();
+
+    $transactionColumns = Mockery::mock(PDOStatement::class);
+    $transactionColumns->expects('execute')->with([])->andReturnTrue();
+    $transactionColumns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Field' => 'id'],
+        ['Field' => 'gateway_id'],
+    ]);
+
+    $transactionLength = Mockery::mock(PDOStatement::class);
+    $transactionLength->expects('execute')->with(['column' => 'gateway_id'])->andReturnTrue();
+    $transactionLength->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Field' => 'gateway_id', 'Type' => 'int(11)'],
+    ]);
+
+    $transactionAlter = Mockery::mock(PDOStatement::class);
+    $transactionAlter->expects('execute')->with([])->andReturnTrue();
+
+    $emailQueueColumns = Mockery::mock(PDOStatement::class);
+    $emailQueueColumns->expects('execute')->with([])->twice()->andReturnTrue();
+    $emailQueueColumns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->twice()->andReturn([
+        ['Field' => 'id'],
+        ['Field' => 'client_id'],
+        ['Field' => 'admin_id'],
+    ]);
+
+    $emailQueueClientLength = Mockery::mock(PDOStatement::class);
+    $emailQueueClientLength->expects('execute')->with(['column' => 'client_id'])->andReturnTrue();
+    $emailQueueClientLength->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Field' => 'client_id', 'Type' => 'bigint(20)'],
+    ]);
+
+    $emailQueueAdminLength = Mockery::mock(PDOStatement::class);
+    $emailQueueAdminLength->expects('execute')->with(['column' => 'admin_id'])->andReturnTrue();
+    $emailQueueAdminLength->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Field' => 'admin_id', 'Type' => 'bigint(20)'],
+    ]);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `invoice`')->andReturn($invoiceColumns);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `invoice` LIKE :column')->andReturn($invoiceLength);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `invoice` MODIFY COLUMN `gateway_id` bigint(20) DEFAULT NULL')
+        ->andReturn($invoiceAlter);
+
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `transaction`')->andReturn($transactionColumns);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `transaction` LIKE :column')->andReturn($transactionLength);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `transaction` MODIFY COLUMN `gateway_id` bigint(20) DEFAULT NULL')
+        ->andReturn($transactionAlter);
+
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `email_queue`')->twice()->andReturn($emailQueueColumns);
+    $pdo->expects('prepare')
+        ->with('SHOW COLUMNS FROM `email_queue` LIKE :column')
+        ->twice()
+        ->andReturn($emailQueueClientLength, $emailQueueAdminLength);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch110'))->invoke($patcher);
+});
+
+test('service apikey table patch is numbered 111', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 110);
+
+    expect($patches)->toHaveKey(111)
+        ->and($patches[111][1])->toBe('patch111');
+});
+
+test('service apikey table patch is a no-op when the table already exists', function (): void {
+    // The Serviceapikey module (PR #4055) added the ServiceApiKey Doctrine entity but never
+    // gave it a structure.sql counterpart, so service_apikey was never created on any MySQL
+    // install. This patch backfills it for existing installs, guarded so it never overwrites
+    // a table that's somehow already there (e.g. an install that already ran this patch).
+    $tableExists = Mockery::mock(PDOStatement::class);
+    $tableExists->expects('execute')->with(['table' => 'service_apikey'])->andReturnTrue();
+    $tableExists->expects('fetchColumn')->andReturn('1');
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')
+        ->with('SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table LIMIT 1')
+        ->andReturn($tableExists);
+    $pdo->shouldNotReceive('prepare')->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'CREATE TABLE `service_apikey`')));
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch111'))->invoke($patcher);
+});
+
+test('service apikey table patch creates the table when it is missing', function (): void {
+    $tableExists = Mockery::mock(PDOStatement::class);
+    $tableExists->expects('execute')->with(['table' => 'service_apikey'])->andReturnTrue();
+    $tableExists->expects('fetchColumn')->andReturn(false);
+
+    $createTable = Mockery::mock(PDOStatement::class);
+    $createTable->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')
+        ->with('SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table LIMIT 1')
+        ->andReturn($tableExists);
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'CREATE TABLE `service_apikey`')
+            && str_contains($sql, '`client_id` BIGINT DEFAULT NULL')
+            && str_contains($sql, 'KEY `client_id_idx` (`client_id`)')))
+        ->andReturn($createTable);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch111'))->invoke($patcher);
+});
