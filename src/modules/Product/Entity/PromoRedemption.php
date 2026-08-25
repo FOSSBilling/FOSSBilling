@@ -55,10 +55,10 @@ class PromoRedemption implements ApiArrayInterface, TimestampInterface
     #[ORM\Column(name: 'invoice_id', type: \Doctrine\DBAL\Types\Types::BIGINT, nullable: true)]
     private ?int $invoiceId = null;
 
-    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 30)]
+    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 30, options: ['default' => self::PHASE_CHECKOUT])]
     private string $phase = self::PHASE_CHECKOUT;
 
-    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 30)]
+    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 30, options: ['default' => self::STATUS_RESERVED])]
     private string $status = self::STATUS_RESERVED;
 
     #[ORM\Column(name: 'discount_amount', type: \Doctrine\DBAL\Types\Types::DECIMAL, precision: 18, scale: 2, nullable: true)]

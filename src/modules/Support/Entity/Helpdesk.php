@@ -42,7 +42,7 @@ class Helpdesk implements ApiArrayInterface, TimestampInterface
     #[ORM\Column(name: 'can_reopen', type: Types::BOOLEAN, nullable: true)]
     private ?bool $canReopen = null;
 
-    #[ORM\Column(name: 'close_after', type: Types::SMALLINT, nullable: true)]
+    #[ORM\Column(name: 'close_after', type: Types::SMALLINT, nullable: true, options: ['default' => 24])]
     private ?int $closeAfter = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]

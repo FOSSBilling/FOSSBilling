@@ -47,10 +47,10 @@ class Post implements ApiArrayInterface, TimestampInterface
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 255, nullable: true)]
     private ?string $image = null;
 
-    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 100, nullable: true)]
+    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 255, nullable: true)]
     private ?string $section = null;
 
-    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 20)]
+    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 30)]
     private string $status = self::STATUS_ACTIVE;
 
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]

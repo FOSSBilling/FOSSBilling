@@ -96,7 +96,7 @@ class Product implements TimestampInterface
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::TEXT, nullable: true)]
     private ?string $upgrades = null;
 
-    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::INTEGER, nullable: true)]
+    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::BIGINT, nullable: true)]
     private ?int $priority = null;
 
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::TEXT, nullable: true)]
