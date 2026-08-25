@@ -160,7 +160,7 @@ class Service implements InjectionAwareInterface
         if (!$result) {
             throw new InformationException('Invalid email confirmation link');
         }
-        $dbal->executeStatement('UPDATE client SET email_approved = 1 WHERE id = :id', ['id' => $result['client_id']]);
+        $dbal->executeStatement('UPDATE client SET email_approved = true WHERE id = :id', ['id' => $result['client_id']]);
         $dbal->executeStatement('DELETE FROM extension_meta WHERE id = :id', ['id' => $result['id']]);
 
         return true;

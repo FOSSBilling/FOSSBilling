@@ -593,7 +593,7 @@ class Service implements InjectionAwareInterface
             // fallback both firing it, etc).
             $now = new \DateTimeImmutable();
             $claimed = (bool) $di['em']->getConnection()->executeStatement(
-                "UPDATE invoice SET reminded_at = :now, updated_at = :now WHERE id = :id AND status = 'unpaid' AND approved = 1 AND due_at > :now AND (reminded_at IS NULL OR reminded_at < :today_start)",
+                "UPDATE invoice SET reminded_at = :now, updated_at = :now WHERE id = :id AND status = 'unpaid' AND approved = true AND due_at > :now AND (reminded_at IS NULL OR reminded_at < :today_start)",
                 [
                     'id' => $params['id'] ?? 0,
                     'now' => $now->format('Y-m-d H:i:s'),
@@ -662,7 +662,7 @@ class Service implements InjectionAwareInterface
             $now = new \DateTimeImmutable();
             $todayStart = $now->modify('today');
             $claimed = (bool) $di['em']->getConnection()->executeStatement(
-                "UPDATE invoice SET reminded_at = :now, updated_at = :now WHERE id = :id AND status = 'unpaid' AND approved = 1 AND due_at < :tomorrow_start AND (reminded_at IS NULL OR reminded_at < :today_start)",
+                "UPDATE invoice SET reminded_at = :now, updated_at = :now WHERE id = :id AND status = 'unpaid' AND approved = true AND due_at < :tomorrow_start AND (reminded_at IS NULL OR reminded_at < :today_start)",
                 [
                     'id' => $params['id'] ?? 0,
                     'now' => $now->format('Y-m-d H:i:s'),
@@ -1444,25 +1444,30 @@ class Service implements InjectionAwareInterface
         $productService->releaseReservedPromoRedemptionsForInvoice($model, 'invoice_deleted');
         $productService->releaseReservedStockForInvoice($model, 'invoice_deleted');
 
-        // remove related invoice from orders
-        $sql = '
-            UPDATE client_order
-            SET unpaid_invoice_id = NULL
-            WHERE unpaid_invoice_id = :id';
-        $this->di['em']->getConnection()->executeStatement($sql, ['id' => $model->getId()]);
-
-        // Detach (not delete) transactions referencing this invoice - a transaction is a real
-        // record of a payment attempt/event, same reasoning as unpaid_invoice_id above.
-        $this->di['em']->getRepository(Transaction::class)->detachFromInvoice((int) $model->getId());
-
-        $invoiceItems = $this->getInvoiceItemRepository()->findByInvoiceId((int) $model->getId());
         $entityManager = $this->di['em'];
-        foreach ($invoiceItems as $item) {
-            $entityManager->remove($item);
-        }
-        $entityManager->flush();
-        $entityManager->remove($model);
-        $entityManager->flush();
+        $entityManager->wrapInTransaction(function () use ($model, $entityManager): void {
+            // remove related invoice from orders
+            $sql = '
+                UPDATE client_order
+                SET unpaid_invoice_id = NULL
+                WHERE unpaid_invoice_id = :id';
+            $entityManager->getConnection()->executeStatement($sql, ['id' => $model->getId()]);
+
+            // Detach (not delete) transactions referencing this invoice - a transaction is a real
+            // record of a payment attempt/event, same reasoning as unpaid_invoice_id above. Runs
+            // inside the same transaction as the flushes below: without that, a later flush
+            // failing (e.g. removing the invoice itself) would leave these transactions
+            // permanently detached from an invoice that was never actually deleted.
+            $entityManager->getRepository(Transaction::class)->detachFromInvoice((int) $model->getId());
+
+            $invoiceItems = $this->getInvoiceItemRepository()->findByInvoiceId((int) $model->getId());
+            foreach ($invoiceItems as $item) {
+                $entityManager->remove($item);
+            }
+            $entityManager->flush();
+            $entityManager->remove($model);
+            $entityManager->flush();
+        });
 
         return true;
     }
@@ -1747,7 +1752,7 @@ class Service implements InjectionAwareInterface
 
         $daysLeft = SqlExpr::dateDiffDays($connection, 'due_at', ':now');
         $beforeDueList = $connection->fetchAllAssociative(
-            "SELECT id, {$daysLeft} as days_left FROM invoice WHERE status = 'unpaid' AND approved = 1 AND due_at > :now",
+            "SELECT id, {$daysLeft} as days_left FROM invoice WHERE status = 'unpaid' AND approved = true AND due_at > :now",
             ['now' => $nowFormatted]
         );
         foreach ($beforeDueList as $params) {
@@ -1760,7 +1765,7 @@ class Service implements InjectionAwareInterface
         // sometime today" is exactly "due before the start of tomorrow".
         $daysPassed = SqlExpr::dateDiffDays($connection, 'due_at', ':now');
         $afterDueList = $connection->fetchAllAssociative(
-            "SELECT id, ABS({$daysPassed}) as days_passed FROM invoice WHERE status = 'unpaid' AND approved = 1 AND due_at < :tomorrow_start",
+            "SELECT id, ABS({$daysPassed}) as days_passed FROM invoice WHERE status = 'unpaid' AND approved = true AND due_at < :tomorrow_start",
             ['now' => $nowFormatted, 'tomorrow_start' => $tomorrowStart]
         );
         foreach ($afterDueList as $params) {
@@ -2054,7 +2059,7 @@ class Service implements InjectionAwareInterface
                     LEFT JOIN client_balance as cb on m.client_id = cb.client_id
                     LEFT JOIN invoice_item as pi on pi.invoice_id = m.id
                 WHERE m.status = :status
-                    AND m.approved = 1
+                    AND m.approved = true
                     AND cb.amount >= pi.price
                     AND pi.type != :type';
         $params = ['status' => Invoice::STATUS_UNPAID, 'type' => InvoiceItem::TYPE_DEPOSIT];

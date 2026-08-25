@@ -70,7 +70,13 @@ final class NamedLock
         $deadline = microtime(true) + $timeoutSeconds;
 
         do {
-            if ((bool) $connection->fetchOne('SELECT pg_try_advisory_lock(:key)', ['key' => $key])) {
+            // Not a bare (bool) cast: PDO's pgsql driver returns a boolean column as the literal
+            // string 't'/'f' rather than a native PHP bool (Connection::fetchOne() on a raw SQL
+            // string does no Doctrine type-mapping to normalize that) - and (bool) 'f' is true,
+            // since any non-empty PHP string is truthy. That would report every failed/busy
+            // acquisition attempt as successful on the very first poll.
+            $result = $connection->fetchOne('SELECT pg_try_advisory_lock(:key)', ['key' => $key]);
+            if (in_array($result, [true, 1, '1', 't'], true)) {
                 return true;
             }
             usleep(self::POLL_INTERVAL_MICROSECONDS);

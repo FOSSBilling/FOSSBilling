@@ -71,6 +71,26 @@ test('addHours produces real, working SQLite syntax, including NULL propagation'
     expect($connection->fetchOne("SELECT {$nullExpr}"))->toBeNull();
 });
 
+test('dateOnly uses DATE() on MySQL and MariaDB', function (string $platformClass): void {
+    $connection = connectionMockedToPlatform($platformClass);
+
+    expect(SqlExpr::dateOnly($connection, 'created_at'))->toBe('DATE(created_at)');
+})->with([MySQLPlatform::class, MariaDBPlatform::class]);
+
+test('dateOnly uses a ::date cast on PostgreSQL', function (): void {
+    $connection = connectionMockedToPlatform(PostgreSQLPlatform::class);
+
+    expect(SqlExpr::dateOnly($connection, 'created_at'))->toBe('(created_at)::date');
+});
+
+test('dateOnly produces real, working SQLite syntax', function (): void {
+    $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+
+    $expr = SqlExpr::dateOnly($connection, "'2026-01-31 10:22:33'");
+    expect($expr)->toBe("date('2026-01-31 10:22:33')")
+        ->and($connection->fetchOne("SELECT {$expr}"))->toBe('2026-01-31');
+});
+
 test('dateDiffDays produces real, working SQLite syntax', function (): void {
     $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
 

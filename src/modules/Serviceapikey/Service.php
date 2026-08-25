@@ -254,7 +254,9 @@ class Service implements InjectionAwareInterface
      */
     public function uninstall(): bool
     {
-        $this->di['em']->getConnection()->executeStatement('DROP TABLE IF EXISTS `service_apikey`');
+        // No backticks: PostgreSQL doesn't recognize them as identifier quoting (a parse error,
+        // not a no-op), unlike the install() hook above's now-portable path.
+        $this->di['em']->getConnection()->executeStatement('DROP TABLE IF EXISTS service_apikey');
 
         return true;
     }

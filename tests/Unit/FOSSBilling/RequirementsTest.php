@@ -28,16 +28,15 @@ test('checkCompat reports every supported database driver extension individually
 });
 
 test('checkCompat does not fail overall on the database driver check when at least one supported driver extension is loaded', function (): void {
-    // This test environment has pdo_mysql, pdo_pgsql, and pdo_sqlite all loaded, so the
-    // "at least one" requirement can never be the reason can_install is false here.
-    $anySupportedDriverLoaded = false;
-    foreach (DriverManagerFactory::SUPPORTED_DRIVERS as $driver) {
-        if (extension_loaded($driver)) {
-            $anySupportedDriverLoaded = true;
+    $result = (new Requirements())->checkCompat();
 
-            break;
-        }
-    }
+    $reportedDrivers = array_intersect_key(
+        $result['required_extensions'],
+        array_flip(DriverManagerFactory::SUPPORTED_DRIVERS),
+    );
 
-    expect($anySupportedDriverLoaded)->toBeTrue();
+    // Precondition: this test environment has pdo_mysql, pdo_pgsql, and pdo_sqlite all loaded, so
+    // the "at least one" requirement can never be the reason can_install is false here.
+    expect(in_array(true, $reportedDrivers, true))->toBeTrue()
+        ->and($result['can_install'])->toBeTrue();
 });

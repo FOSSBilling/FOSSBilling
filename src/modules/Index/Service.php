@@ -114,7 +114,7 @@ class Service implements InjectionAwareInterface
         $sql = 'SELECT status, COUNT(*) as total
                  FROM invoice
                  WHERE client_id = :client_id
-                 AND approved = 1
+                 AND approved = true
                  GROUP BY status';
 
         $results = $this->di['em']->getConnection()->fetchAllAssociative($sql, $data);

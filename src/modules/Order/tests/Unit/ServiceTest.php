@@ -1296,7 +1296,7 @@ test('getSoonExpiringActiveOrdersQuery builds expected SQL and bindings', functi
                     AND pending_item.task = :pending_item_task
                     AND pending_item.status != :pending_item_status
                     AND pending_invoice.status = :pending_invoice_status
-                ) AND co.client_id = :client_id HAVING co.expires_at < :expires_before ORDER BY co.client_id DESC';
+                ) AND co.client_id = :client_id AND co.expires_at < :expires_before ORDER BY co.client_id DESC';
 
     $expectedBindings = [
         'client_id' => $randId,

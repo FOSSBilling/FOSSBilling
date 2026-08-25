@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Stats;
 
 use Box\Mod\Invoice\Entity\Invoice;
+use FOSSBilling\Doctrine\SqlExpr;
 use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
@@ -155,7 +156,7 @@ class Service implements InjectionAwareInterface
         $dbal = $this->di['dbal'];
         $boundaries = $this->getDayBoundaries();
 
-        $base = "SELECT (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income FROM invoice WHERE approved = 1 AND (status = 'paid' OR status = 'refunded')";
+        $base = "SELECT (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income FROM invoice WHERE approved = true AND (status = 'paid' OR status = 'refunded')";
         $total_query = $base;
         $yeste_query = $base . ' AND paid_at >= :yesterday_start AND paid_at < :today_start';
         $today_query = $base . ' AND paid_at >= :today_start AND paid_at < :tomorrow_start';
@@ -234,7 +235,7 @@ class Service implements InjectionAwareInterface
 
         $query = 'SELECT COALESCE(SUM(base_refund), 0) AS refund, COALESCE(SUM(base_income), 0) AS income
                 FROM invoice
-                WHERE approved = 1
+                WHERE approved = true
                 AND (status = :status1 OR status = :status2)
                 ';
 
@@ -263,15 +264,15 @@ class Service implements InjectionAwareInterface
 
         $dbal = $this->di['dbal'];
 
-        // SUBSTR(..., 1, 10) truncates the 'Y-m-d H:i:s' column down to its 'Y-m-d' prefix for
-        // grouping - a portable stand-in for MySQL's DATE_FORMAT(), which PostgreSQL and SQLite
-        // don't have.
-        $query = 'SELECT SUBSTR(created_at, 1, 10) AS date, COALESCE(SUM(base_refund), 0) AS refund
+        // Truncates the 'Y-m-d H:i:s' column down to its 'Y-m-d' prefix for grouping - a portable
+        // stand-in for MySQL's DATE_FORMAT(), which PostgreSQL and SQLite don't have.
+        $date = SqlExpr::dateOnly($dbal, 'created_at');
+        $query = "SELECT {$date} AS date, COALESCE(SUM(base_refund), 0) AS refund
                 FROM invoice
                 WHERE created_at BETWEEN :date_from AND :date_to
-                AND approved = 1
+                AND approved = true
                 AND status = :status
-                GROUP BY date';
+                GROUP BY date";
 
         $result = $dbal->executeQuery($query, [
             'status' => Invoice::STATUS_REFUNDED,
@@ -299,15 +300,15 @@ class Service implements InjectionAwareInterface
 
         $dbal = $this->di['dbal'];
 
-        // SUBSTR(..., 1, 10) truncates the 'Y-m-d H:i:s' column down to its 'Y-m-d' prefix for
-        // grouping - a portable stand-in for MySQL's DATE_FORMAT(), which PostgreSQL and SQLite
-        // don't have.
-        $query = 'SELECT SUBSTR(paid_at, 1, 10) AS date, (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income
+        // Truncates the 'Y-m-d H:i:s' column down to its 'Y-m-d' prefix for grouping - a portable
+        // stand-in for MySQL's DATE_FORMAT(), which PostgreSQL and SQLite don't have.
+        $date = SqlExpr::dateOnly($dbal, 'paid_at');
+        $query = "SELECT {$date} AS date, (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income
                 FROM invoice
                 WHERE paid_at BETWEEN :date_from AND :date_to
-                AND approved = 1
+                AND approved = true
                 AND status = :status
-                GROUP BY date';
+                GROUP BY date";
 
         $result = $dbal->executeQuery($query, [
             'status' => Invoice::STATUS_PAID,
@@ -388,10 +389,11 @@ class Service implements InjectionAwareInterface
 
         $dbal = $this->di['dbal'];
 
-        // SUBSTR(..., 1, 10) truncates the 'Y-m-d H:i:s' column down to its 'Y-m-d' prefix for
-        // grouping - a portable stand-in for MySQL's DATE_FORMAT(), which PostgreSQL and SQLite
-        // don't have. $table is safe to interpolate: it was checked against $allowedTables above.
-        $query = "SELECT SUBSTR(created_at, 1, 10) AS date, COUNT(1) AS count
+        // Truncates the 'Y-m-d H:i:s' column down to its 'Y-m-d' prefix for grouping - a portable
+        // stand-in for MySQL's DATE_FORMAT(), which PostgreSQL and SQLite don't have. $table is
+        // safe to interpolate: it was checked against $allowedTables above.
+        $date = SqlExpr::dateOnly($dbal, 'created_at');
+        $query = "SELECT {$date} AS date, COUNT(1) AS count
                 FROM $table
                 WHERE created_at BETWEEN :date_from AND :date_to
                 GROUP BY date";

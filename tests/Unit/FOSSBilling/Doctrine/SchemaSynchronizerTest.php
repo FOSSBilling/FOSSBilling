@@ -145,6 +145,32 @@ test('sync never applies an index whose name is reused with a different definiti
  * checked against every current row, which years of unconstrained data has no guarantee of
  * satisfying - so this must never happen automatically, even though it's technically additive.
  */
+/*
+ * Regression test for a third real bug: several entities were renamed from a short,
+ * per-table-scoped index name (matching legacy structure.sql, which an existing pre-cutover
+ * MySQL install upgrading through this change still has on disk) to a table-prefixed one, to
+ * satisfy SQLite/PostgreSQL's database-wide index-name uniqueness requirement (invoice_item's
+ * `invoice_id_idx` -> `invoice_item_invoice_id_idx` is one of seven such renames). Doctrine's own
+ * comparator represents an unambiguous same-columns rename as a rename, not an add+drop pair
+ * (TableDiff::getRenamedIndexes(), separate from getAddedIndexes()/getDroppedIndexes()) -
+ * splitAdditiveChanges() has to explicitly carry that through, or the new name is silently never
+ * created at all, on every sync, forever.
+ */
+test('sync applies a pure index rename', function (): void {
+    [$connection, $entityManager] = schemaSynchronizerFixture();
+
+    // Simulate the legacy short index name a pre-cutover MySQL install still has.
+    $connection->executeStatement('DROP INDEX invoice_item_invoice_id_idx');
+    $connection->executeStatement('CREATE INDEX invoice_id_idx ON invoice_item (invoice_id)');
+
+    $result = SchemaSynchronizer::sync($entityManager);
+
+    $indexNames = array_keys($connection->createSchemaManager()->introspectTable('invoice_item')->getIndexes());
+    expect($indexNames)->toContain('invoice_item_invoice_id_idx')
+        ->and($indexNames)->not->toContain('invoice_id_idx')
+        ->and($result['skipped'])->toBe([EXPECTED_PERMANENT_SKIP]);
+});
+
 test('sync never adds a foreign key constraint to an existing table', function (): void {
     [$connection, $entityManager] = schemaSynchronizerFixture();
 

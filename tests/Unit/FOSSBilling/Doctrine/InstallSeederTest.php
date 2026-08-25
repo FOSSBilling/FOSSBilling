@@ -15,6 +15,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\Doctrine\InstallSeeder;
 use FOSSBilling\Doctrine\SchemaInstaller;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
 /**
@@ -88,7 +89,7 @@ function postgresSeederConnection(): array
 
 function realContentSql(): string
 {
-    return file_get_contents(Path::join(PATH_ROOT, 'install', 'sql', 'content.sql'));
+    return (new Filesystem())->readFile(Path::join(PATH_ROOT, 'install', 'sql', 'content.sql'));
 }
 
 /**
@@ -156,6 +157,28 @@ test('seedContent unescapes mysqldump backslash sequences into real characters',
         ->toContain("\n") // a real newline, not the two literal characters "\" and "n"
         ->not->toContain('\\n')
         ->toContain('Click "Continue"'); // \" unescaped to a literal double quote
+});
+
+test('seedContent does not mistake a literal ";\n" escape sequence inside seeded text for a statement boundary', function (): void {
+    // Statements are split on a real ";" followed by a real newline - mysqldump's own escaped
+    // "\n" (a literal backslash then "n", two characters) has to stay unescaped until *after*
+    // splitting, or a seeded string ending in ";\n" would be turned into a real ";<newline>"
+    // first and get mistaken for the end of the INSERT statement, splitting it into two garbage
+    // fragments. content.sql itself doesn't happen to contain this sequence today, but nothing
+    // stops a future row from having one, so this is a synthetic fixture, not the real file.
+    [$connection, $entityManager] = installSeederConnection();
+    $miniContentSql = <<<'SQL'
+        LOCK TABLES `setting` WRITE;
+        INSERT INTO `setting` (`id`, `param`, `value`, `public`, `category`, `hash`, `created_at`, `updated_at`)
+        VALUES
+        (1,'test_param','before;\nafter',0,NULL,NULL,NOW(),NOW());
+        UNLOCK TABLES;
+        SQL;
+
+    InstallSeeder::seedContent($connection, $entityManager, $miniContentSql, new DateTimeImmutable('2026-08-23 12:00:00'));
+
+    expect((int) $connection->fetchOne('SELECT COUNT(*) FROM setting'))->toBe(1)
+        ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'test_param'"))->toBe("before;\nafter");
 });
 
 test('seedContent preserves doubled-single-quote escaping as a literal apostrophe', function (): void {

@@ -71,7 +71,11 @@
         "portableize",
         "setval",
         "nextval",
-        "repoints"
+        "repoints",
+        "pgsql",
+        "julianday",
+        "mtimes",
+        "unroutable"
     ],
 
     "ignoreWords": [
@@ -248,6 +252,8 @@
         "ພູເກັດ",
         "ctable",
         "DATEDIFF",
+        "AUTOINCREMENT",
+        "CLOB",
         "cbrepo",
         "OODB",
         "Inno",

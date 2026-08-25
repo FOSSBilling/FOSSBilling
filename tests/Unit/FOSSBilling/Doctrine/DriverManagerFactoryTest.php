@@ -195,9 +195,9 @@ test('getConnection actually connects for a file-based pdo_sqlite database', fun
             $connection->executeStatement('CREATE TABLE t (id INTEGER PRIMARY KEY)');
 
             expect($connection->fetchOne('SELECT COUNT(*) FROM t'))->toEqual(0)
-                ->and(is_file($path))->toBeTrue();
+                ->and((new Filesystem())->exists($path))->toBeTrue();
         });
     } finally {
-        @unlink($path);
+        (new Filesystem())->remove($path);
     }
 });

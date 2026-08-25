@@ -249,7 +249,7 @@ test('getSearchQuery returns correct query and params', function ($data, $expect
     expect($result[1])->toBeArray();
 
     expect(str_contains((string) $result[0], (string) $expectedStr))->toBeTrue($result[0]);
-    expect(array_diff_key($result[1], $expectedParams))->toEqual([]);
+    expect($result[1])->toEqual($expectedParams);
 })->with('searchQueryData');
 
 test('getSearchQuery with custom select statement', function (): void {

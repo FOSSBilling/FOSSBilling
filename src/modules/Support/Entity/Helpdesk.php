@@ -27,6 +27,14 @@ class Helpdesk implements ApiArrayInterface, TimestampInterface
 {
     use TimestampTrait;
 
+    /**
+     * The DB-level default below only ever applies to a column Doctrine leaves out of its INSERT
+     * entirely - and it never does, mapped nullable or not, so a caller omitting a value still
+     * gets a literal NULL written, not this default. {@see \Box\Mod\Support\Service::helpdeskCreate()}
+     * uses this constant as its own PHP-level fallback for exactly that reason.
+     */
+    public const int DEFAULT_CLOSE_AFTER_HOURS = 24;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::BIGINT)]
@@ -42,7 +50,7 @@ class Helpdesk implements ApiArrayInterface, TimestampInterface
     #[ORM\Column(name: 'can_reopen', type: Types::BOOLEAN, nullable: true)]
     private ?bool $canReopen = null;
 
-    #[ORM\Column(name: 'close_after', type: Types::SMALLINT, nullable: true, options: ['default' => 24])]
+    #[ORM\Column(name: 'close_after', type: Types::SMALLINT, nullable: true, options: ['default' => self::DEFAULT_CLOSE_AFTER_HOURS])]
     private ?int $closeAfter = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]

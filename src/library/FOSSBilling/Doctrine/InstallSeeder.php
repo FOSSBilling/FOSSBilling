@@ -38,9 +38,26 @@ final class InstallSeeder
      */
     public static function seedContent(Connection $connection, EntityManagerInterface $entityManager, string $contentSql, \DateTimeInterface $now): void
     {
-        $portableSql = self::portableize($contentSql, $now, self::booleanColumnsByTable($entityManager));
+        $booleanColumns = self::booleanColumnsByTable($entityManager);
+
+        $sql = self::stripBookkeeping($contentSql);
+        // MySQL identifier quoting; none of the seed data itself contains a backtick character.
+        $sql = str_replace('`', '', $sql);
+        // A literal, bound-at-seed-time timestamp in place of the MySQL NOW() function. Embedding
+        // it as a literal (rather than a bind parameter) keeps the multi-row VALUES(...) lists
+        // intact without having to parse and rebuild them.
+        $sql = str_replace('NOW()', "'" . $now->format('Y-m-d H:i:s') . "'", $sql);
+
         $seededTables = [];
-        foreach (self::splitStatements($portableSql) as $statement) {
+        foreach (self::splitStatements($sql) as $statement) {
+            // Unescaping mysqldump's backslash sequences has to happen per-statement, after
+            // splitting - not before. Splitting on the still-escaped text means a literal `;\n`
+            // (backslash, "n" - two characters, not a real newline) sitting inside seeded string
+            // content can never be mistaken for a statement's own `;` followed by a *real*
+            // newline, which unescaping first would turn it into.
+            $statement = strtr($statement, ['\\n' => "\n", '\\"' => '"']);
+            $statement = self::portableizeBooleans($statement, $booleanColumns);
+
             $connection->executeStatement($statement);
             if (preg_match('/^INSERT INTO (\w+)/i', $statement, $match) === 1) {
                 $seededTables[$match[1]] = true;
@@ -99,9 +116,13 @@ final class InstallSeeder
     }
 
     /**
-     * @param array<string, list<string>> $booleanColumnsByTable table name => its boolean-mapped column names
+     * Strips mysqldump's own bookkeeping: comments, `/*!`-versioned directives, and the
+     * `LOCK/UNLOCK TABLES` pair around each table's data. Line-based and safe to run before
+     * splitting into statements - content.sql's row data is always one physical line per row (no
+     * real newlines inside a row until the per-statement unescape step below introduces them), so
+     * this can never mistake seeded content for one of these bookkeeping lines.
      */
-    private static function portableize(string $sql, \DateTimeInterface $now, array $booleanColumnsByTable): string
+    private static function stripBookkeeping(string $sql): string
     {
         $lines = array_filter(
             explode("\n", $sql),
@@ -115,70 +136,53 @@ final class InstallSeeder
                     && !str_starts_with($trimmed, 'UNLOCK TABLES');
             },
         );
-        $sql = implode("\n", $lines);
 
-        // MySQL identifier quoting; none of the seed data itself contains a backtick character.
-        $sql = str_replace('`', '', $sql);
-
-        // A literal, bound-at-seed-time timestamp in place of the MySQL NOW() function. Embedding
-        // it as a literal (rather than a bind parameter) keeps the multi-row VALUES(...) lists
-        // intact without having to parse and rebuild them. Must happen before the boolean rewrite
-        // below, which walks parenthesized VALUES tuples and would otherwise mistake NOW()'s own
-        // parentheses for a tuple boundary.
-        $sql = str_replace('NOW()', "'" . $now->format('Y-m-d H:i:s') . "'", $sql);
-
-        // mysqldump backslash-escapes string content (\n, \") that standard-conforming string
-        // literals (PostgreSQL, SQLite) don't interpret the same way - undo the escaping so the
-        // stored text matches what a MySQL install ends up with, rather than storing literal
-        // backslash sequences.
-        $sql = strtr($sql, ['\\n' => "\n", '\\"' => '"']);
-
-        return self::portableizeBooleans($sql, $booleanColumnsByTable);
+        return implode("\n", $lines);
     }
 
     /**
+     * Rewrites bare 0/1 literals to false/true for one already-split INSERT statement, but only
+     * in the column positions that are genuinely boolean-mapped for that statement's table - never
+     * touches a real integer/counter column that happens to also hold a 0 or 1 (e.g.
+     * `product`.`quantity_in_stock`), and leaves NULL and every other literal alone.
+     *
      * @param array<string, list<string>> $booleanColumnsByTable
      */
-    private static function portableizeBooleans(string $sql, array $booleanColumnsByTable): string
+    private static function portableizeBooleans(string $statement, array $booleanColumnsByTable): string
     {
-        // Only rewrites the column positions that are genuinely boolean-mapped for that INSERT's
-        // table - never touches a real integer/counter column that happens to also hold a 0 or 1
-        // (e.g. `product`.`quantity_in_stock`), and leaves NULL and every other literal alone.
-        return preg_replace_callback(
-            '/INSERT INTO (\w+) \(([^)]+)\)\s*VALUES\s*(.*?);/is',
-            static function (array $matches) use ($booleanColumnsByTable): string {
-                [$statement, $table, $columnList, $valuesList] = $matches;
-                $booleanColumns = $booleanColumnsByTable[$table] ?? [];
-                if ($booleanColumns === []) {
-                    return $statement;
+        if (preg_match('/^INSERT INTO (\w+) \(([^)]+)\)\s*VALUES\s*(.*?);?$/is', $statement, $matches) !== 1) {
+            return $statement;
+        }
+
+        [, $table, $columnList, $valuesList] = $matches;
+        $booleanColumns = $booleanColumnsByTable[$table] ?? [];
+        if ($booleanColumns === []) {
+            return $statement;
+        }
+
+        $columns = array_map(trim(...), explode(',', $columnList));
+        $booleanIndexes = array_keys(array_intersect($columns, $booleanColumns));
+        if ($booleanIndexes === []) {
+            return $statement;
+        }
+
+        $rows = array_map(
+            static function (array $fields) use ($booleanIndexes): string {
+                foreach ($booleanIndexes as $index) {
+                    $value = trim($fields[$index]);
+                    if ($value === '0') {
+                        $fields[$index] = 'false';
+                    } elseif ($value === '1') {
+                        $fields[$index] = 'true';
+                    }
                 }
 
-                $columns = array_map(trim(...), explode(',', $columnList));
-                $booleanIndexes = array_keys(array_intersect($columns, $booleanColumns));
-                if ($booleanIndexes === []) {
-                    return $statement;
-                }
-
-                $rows = array_map(
-                    static function (array $fields) use ($booleanIndexes): string {
-                        foreach ($booleanIndexes as $index) {
-                            $value = trim($fields[$index]);
-                            if ($value === '0') {
-                                $fields[$index] = 'false';
-                            } elseif ($value === '1') {
-                                $fields[$index] = 'true';
-                            }
-                        }
-
-                        return '(' . implode(',', $fields) . ')';
-                    },
-                    self::splitValueTuples($valuesList),
-                );
-
-                return "INSERT INTO {$table} ({$columnList}) VALUES\n" . implode(",\n", $rows) . ';';
+                return '(' . implode(',', $fields) . ')';
             },
-            $sql,
+            self::splitValueTuples($valuesList),
         );
+
+        return "INSERT INTO {$table} ({$columnList}) VALUES\n" . implode(",\n", $rows);
     }
 
     /**

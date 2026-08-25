@@ -47,6 +47,16 @@ test('hasDatabaseTables is false for a sqlite path that does not exist on disk y
     });
 });
 
+test('hasDatabaseTables is false for an in-memory sqlite configuration', function (): void {
+    // An in-memory database is always empty on every process start, so it can never be
+    // "already installed" - without an explicit check, buildDatabaseProbeDsn() has no path to
+    // probe and returns null (no path, and no "memory" case of its own), which is otherwise
+    // treated as "assume already installed".
+    withHasDatabaseTablesConfig(['driver' => 'pdo_sqlite', 'memory' => true], function (): void {
+        expect(hasDatabaseTables())->toBeFalse();
+    });
+});
+
 test('hasDatabaseTables is false for an existing sqlite file with no tables', function (): void {
     $path = sys_get_temp_dir() . '/fossbilling-has-tables-test-empty-' . bin2hex(random_bytes(4)) . '.sqlite';
     (new PDO('sqlite:' . $path))->exec('SELECT 1'); // creates the (empty) database file on disk
@@ -56,7 +66,7 @@ test('hasDatabaseTables is false for an existing sqlite file with no tables', fu
             expect(hasDatabaseTables())->toBeFalse();
         });
     } finally {
-        @unlink($path);
+        (new Filesystem())->remove($path);
     }
 });
 
@@ -69,7 +79,7 @@ test('hasDatabaseTables is true for an existing sqlite file with at least one ta
             expect(hasDatabaseTables())->toBeTrue();
         });
     } finally {
-        @unlink($path);
+        (new Filesystem())->remove($path);
     }
 });
 

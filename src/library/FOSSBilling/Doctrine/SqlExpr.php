@@ -81,6 +81,25 @@ final class SqlExpr
     }
 
     /**
+     * Portable "truncate a datetime expression down to its date portion" (as a `'Y-m-d'` string),
+     * for grouping a report by calendar day - a stand-in for MySQL's SUBSTR(dateExpr, 1, 10),
+     * which works there only because MySQL's driver returns a DATETIME column as a plain string in
+     * the first place. PostgreSQL has no implicit cast from `timestamp` to `text`, so SUBSTR()
+     * against a real timestamp column fails outright there.
+     */
+    public static function dateOnly(Connection $connection, string $dateExpr): string
+    {
+        $platform = $connection->getDatabasePlatform();
+
+        return match (true) {
+            $platform instanceof AbstractMySQLPlatform => "DATE({$dateExpr})",
+            $platform instanceof PostgreSQLPlatform => "({$dateExpr})::date",
+            $platform instanceof SQLitePlatform => "date({$dateExpr})",
+            default => throw new \RuntimeException('Unsupported database platform: ' . $platform::class),
+        };
+    }
+
+    /**
      * Portable "whole calendar days between two datetime expressions" (a minus b, ignoring
      * time-of-day) - a stand-in for MySQL's DATEDIFF(a, b) where the result itself is needed
      * (e.g. returned to the caller), not just compared against a threshold. When you only need

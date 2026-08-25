@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 use FOSSBilling\Cache\CacheFactory;
 use FOSSBilling\Config;
+use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\Exception;
 use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Component\Filesystem\Filesystem;
@@ -91,6 +92,25 @@ test('falls back to a working filesystem cache when config.php does not exist ye
         $filesystem->rename($backup, PATH_CONFIG, true);
         clearstatcache(true, PATH_CONFIG);
     }
+});
+
+test('clearAll() alone cannot reach the Doctrine metadata cache pool, but explicitly clearing EntityManagerFactory::metadataCacheNamespace() does', function (): void {
+    // EntityManagerFactory::create() stores the Doctrine metadata/query/result cache under a
+    // namespace hashed from the current entity files, not clearAll()'s fixed NAMESPACE_DOCTRINE
+    // constant - so clearAll() alone can never reach it, which matters most for a Redis/
+    // Memcached-backed pool (a FilesystemAdapter's data is also caught by the plain PATH_CACHE
+    // directory wipe every clearAll() caller already does alongside it).
+    $namespace = EntityManagerFactory::metadataCacheNamespace();
+    $pool = CacheFactory::create($namespace);
+    $item = $pool->getItem('regression_probe');
+    $item->set('value');
+    $pool->save($item);
+
+    CacheFactory::clearAll();
+    expect(CacheFactory::create($namespace)->getItem('regression_probe')->isHit())->toBeTrue();
+
+    CacheFactory::create($namespace)->clear();
+    expect(CacheFactory::create($namespace)->getItem('regression_probe')->isHit())->toBeFalse();
 });
 
 test('rejects an unsupported cache driver', function (): void {

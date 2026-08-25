@@ -436,8 +436,11 @@ class Service implements InjectionAwareInterface
         // co.expires_at < :expires_before is a portable stand-in for MySQL's
         // DATEDIFF(co.expires_at, NOW()) <= :days_until_expiration - DATEDIFF compares calendar
         // dates only (ignoring time-of-day), so "at most N days from today" means expires_at
-        // falls on or before N days from now, i.e. before the start of day N+1.
-        $query .= ' HAVING co.expires_at < :expires_before ORDER BY co.client_id DESC';
+        // falls on or before N days from now, i.e. before the start of day N+1. This is a plain
+        // row filter, not an aggregate condition, so it belongs in WHERE (via AND) - PostgreSQL
+        // rejects a HAVING clause referencing an ungrouped, non-aggregate column outright, unlike
+        // MySQL/SQLite's more permissive handling of HAVING without GROUP BY.
+        $query .= ' AND co.expires_at < :expires_before ORDER BY co.client_id DESC';
         $bindings['status'] = Order::STATUS_ACTIVE;
         $bindings['invoice_option'] = 'issue-invoice';
         $bindings['unpaid_invoice_status'] = Invoice::STATUS_UNPAID;

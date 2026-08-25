@@ -140,7 +140,16 @@ function hasDatabaseTables(): bool
         return true;
     }
 
-    // A SQLite database that doesn't exist on disk yet unambiguously has no tables.
+    // A SQLite database that doesn't exist on disk yet unambiguously has no tables. An in-memory
+    // SQLite database (never written by the installer's own SQLite config output, but a real,
+    // documented config.php option - see config-sample.php) is the same case: it's always empty
+    // on every process start, so it can never be "already installed" either. Handled explicitly
+    // here rather than falling through to buildDatabaseProbeDsn(), which returns null for both
+    // (no path to probe) - null is elsewhere treated as "assume already installed", the opposite
+    // of what's actually true for either of these.
+    if ($driver === 'pdo_sqlite' && !empty($dbConfig['memory'])) {
+        return false;
+    }
     if ($driver === 'pdo_sqlite' && !empty($dbConfig['path']) && !is_file($dbConfig['path'])) {
         return false;
     }

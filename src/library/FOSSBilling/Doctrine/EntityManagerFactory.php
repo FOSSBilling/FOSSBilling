@@ -25,19 +25,7 @@ class EntityManagerFactory
 {
     public static function create(?Connection $connection = null): EntityManager
     {
-        // Each module's own Entity/ folder itself, not its contents: in(PATH_MODS . '/*/Entity')
-        // would search *inside* every Entity/ folder for matches, which - since those folders
-        // hold only PHP files, no subdirectories - silently finds nothing. Metadata lookups for
-        // one already-known entity class never needed this (they resolve via reflection on the
-        // class directly), so this went unnoticed until something needed *every* entity at once
-        // (schema generation, migrations-diff tooling).
-        $finder = new Finder();
-        $finder->directories()->in(PATH_MODS)->depth('== 1')->name('Entity');
-        $moduleEntityPaths = array_map(
-            static fn (\SplFileInfo $directory): string => $directory->getPathname(),
-            iterator_to_array($finder)
-        );
-        $moduleEntityPaths = array_values($moduleEntityPaths);
+        $moduleEntityPaths = self::moduleEntityPaths();
 
         // ORMSetup uses this as the metadata, query, AND result cache. Always pass an explicit,
         // non-null pool here: if `cache` is omitted, Doctrine silently probes for APCu/Memcached/Redis
@@ -56,8 +44,7 @@ class EntityManagerFactory
         // internal cache construction would have done, so an entity file change is picked up on
         // its own, the same way a fresh install or migration already would be - regardless of
         // which cache backend (filesystem/Redis/Memcached) is actually configured.
-        $cacheNamespaceSeed = self::getCacheNamespaceSeed($moduleEntityPaths);
-        $cache = CacheFactory::create(CacheFactory::NAMESPACE_DOCTRINE . '_' . hash('xxh128', $cacheNamespaceSeed));
+        $cache = CacheFactory::create(self::metadataCacheNamespace($moduleEntityPaths));
 
         $config = ORMSetup::createAttributeMetadataConfig(
             paths: $moduleEntityPaths,
@@ -84,6 +71,41 @@ class EntityManagerFactory
         $connection ??= DriverManagerFactory::getSharedConnection();
 
         return new EntityManager($connection, $config);
+    }
+
+    /**
+     * The CacheFactory namespace create() above stores the Doctrine metadata/query/result cache
+     * under. Exposed so {@see \FOSSBilling\Config::setConfig()} and
+     * {@see \Box\Mod\System\Service::clearCache()} can clear this specific pool directly -
+     * CacheFactory::clearAll()'s own fixed namespace list can't reach it, since (see below) this
+     * one changes identity whenever entity files do.
+     *
+     * @param list<string>|null $moduleEntityPaths pass the already-computed list from create() to
+     *                                             avoid re-running the Finder; omit to compute it fresh
+     */
+    public static function metadataCacheNamespace(?array $moduleEntityPaths = null): string
+    {
+        return CacheFactory::NAMESPACE_DOCTRINE . '_' . hash('xxh128', self::getCacheNamespaceSeed($moduleEntityPaths ?? self::moduleEntityPaths()));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function moduleEntityPaths(): array
+    {
+        // Each module's own Entity/ folder itself, not its contents: in(PATH_MODS . '/*/Entity')
+        // would search *inside* every Entity/ folder for matches, which - since those folders
+        // hold only PHP files, no subdirectories - silently finds nothing. Metadata lookups for
+        // one already-known entity class never needed this (they resolve via reflection on the
+        // class directly), so this went unnoticed until something needed *every* entity at once
+        // (schema generation, migrations-diff tooling).
+        $finder = new Finder();
+        $finder->directories()->in(PATH_MODS)->depth('== 1')->name('Entity');
+
+        return array_values(array_map(
+            static fn (\SplFileInfo $directory): string => $directory->getPathname(),
+            iterator_to_array($finder)
+        ));
     }
 
     /**

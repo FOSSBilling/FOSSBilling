@@ -66,6 +66,22 @@ test('acquire polls pg_try_advisory_lock until it succeeds', function (): void {
     expect(NamedLock::acquire($connection, 'my-lock', 5))->toBeTrue();
 });
 
+test('acquire treats PostgreSQL\'s own "f"/"t" driver strings correctly, not as PHP truthy/falsy', function (): void {
+    // PDO's pgsql driver returns a boolean column as the literal string 't'/'f' by default, not a
+    // native PHP bool - a bare (bool) cast on the raw fetchOne() result would treat *both* as
+    // truthy (any non-empty PHP string is truthy), reporting the very first "busy" poll as a
+    // successful lock. Mirrors the "polls until it succeeds" test above, but with the actual
+    // driver-format values instead of native PHP booleans - Mockery's times(2) here fails if the
+    // 'f' poll were (incorrectly) treated as an immediate success.
+    $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')->andReturn(Mockery::mock(PostgreSQLPlatform::class));
+    $connection->shouldReceive('fetchOne')
+        ->times(2)
+        ->andReturn('f', 't');
+
+    expect(NamedLock::acquire($connection, 'my-lock', 5))->toBeTrue();
+});
+
 test('acquire gives up on PostgreSQL once the timeout elapses', function (): void {
     $connection = Mockery::mock(Connection::class);
     $connection->shouldReceive('getDatabasePlatform')->andReturn(Mockery::mock(PostgreSQLPlatform::class));

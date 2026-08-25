@@ -164,10 +164,20 @@ final class SchemaSynchronizer
                 static fn ($index): bool => !in_array($index->getObjectName()->toString(), $droppedIndexNames, true),
             ));
 
+            // A pure index rename (same columns/uniqueness, different name only - e.g. several
+            // entities moving from MySQL's per-table-scoped short index names to table-prefixed
+            // ones, to satisfy SQLite/PostgreSQL's database-wide uniqueness requirement) is safe
+            // to apply unconditionally: unlike a new FK constraint, it validates nothing against
+            // existing rows, so it doesn't need the same caution as everything else this method
+            // deliberately leaves untouched. Left unapplied, it's not just a cosmetic mismatch -
+            // Doctrine's own comparator represents the rename as a drop+add pair internally
+            // (getRenamedIndexes(), not getAddedIndexes()/getDroppedIndexes()), so omitting it
+            // here means the new name is never created at all, silently, on every sync.
             $safeTableDiff = new TableDiff(
                 oldTable: $tableDiff->getOldTable(),
                 addedColumns: $safeAddedColumns,
                 addedIndexes: $safeAddedIndexes,
+                renamedIndexes: $tableDiff->getRenamedIndexes(),
             );
 
             if (!$safeTableDiff->isEmpty()) {

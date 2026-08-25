@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use Doctrine\DBAL\DriverManager;
+use Doctrine\DBAL\Platforms\MySQLPlatform;
 
 use function Tests\Helpers\container;
 
@@ -128,6 +129,7 @@ test('gets product summary', function (): void {
     $expectation1->andReturn([]);
 
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('getDatabasePlatform')->andReturn(Mockery::mock(MySQLPlatform::class));
     /** @var Mockery\Expectation $expectation2 */
     $expectation2 = $dbalMock->shouldReceive('executeQuery');
     $expectation2->atLeast()->once();
@@ -150,6 +152,7 @@ test('gets summary', function (): void {
     $expectation1->andReturn(null);
 
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('getDatabasePlatform')->andReturn(Mockery::mock(MySQLPlatform::class));
     /** @var Mockery\Expectation $expectation2 */
     $expectation2 = $dbalMock->shouldReceive('executeQuery');
     $expectation2->atLeast()->once();
@@ -199,6 +202,7 @@ test('gets summary income', function (): void {
     $expectation1->andReturn(null);
 
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('getDatabasePlatform')->andReturn(Mockery::mock(MySQLPlatform::class));
     /** @var Mockery\Expectation $expectation2 */
     $expectation2 = $dbalMock->shouldReceive('executeQuery');
     $expectation2->atLeast()->once();
@@ -231,6 +235,7 @@ test('gets product sales', function (): void {
     $expectation1->andReturn($res);
 
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('getDatabasePlatform')->andReturn(Mockery::mock(MySQLPlatform::class));
     /** @var Mockery\Expectation $expectation2 */
     $expectation2 = $dbalMock->shouldReceive('executeQuery');
     $expectation2->atLeast()->once();
@@ -263,6 +268,7 @@ test('gets income and refund stats', function (): void {
     $expectation1->andReturn($res);
 
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('getDatabasePlatform')->andReturn(Mockery::mock(MySQLPlatform::class));
     /** @var Mockery\Expectation $expectation2 */
     $expectation2 = $dbalMock->shouldReceive('executeQuery');
     $expectation2->atLeast()->once();
@@ -286,6 +292,7 @@ test('gets refunds', function (): void {
     $expectation1->andReturn([]);
 
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('getDatabasePlatform')->andReturn(Mockery::mock(MySQLPlatform::class));
     /** @var Mockery\Expectation $expectation2 */
     $expectation2 = $dbalMock->shouldReceive('executeQuery');
     $expectation2->atLeast()->once();
@@ -313,6 +320,7 @@ test('gets income', function (): void {
     $expectation1->andReturn([]);
 
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('getDatabasePlatform')->andReturn(Mockery::mock(MySQLPlatform::class));
     /** @var Mockery\Expectation $expectation2 */
     $expectation2 = $dbalMock->shouldReceive('executeQuery');
     $expectation2->atLeast()->once();
@@ -340,6 +348,7 @@ test('gets client countries', function (): void {
     $expectation1->andReturn([]);
 
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('getDatabasePlatform')->andReturn(Mockery::mock(MySQLPlatform::class));
     /** @var Mockery\Expectation $expectation2 */
     $expectation2 = $dbalMock->shouldReceive('executeQuery');
     $expectation2->atLeast()->once();
@@ -363,6 +372,7 @@ test('gets sales by country', function (): void {
     $expectation1->andReturn([]);
 
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('getDatabasePlatform')->andReturn(Mockery::mock(MySQLPlatform::class));
     /** @var Mockery\Expectation $expectation2 */
     $expectation2 = $dbalMock->shouldReceive('executeQuery');
     $expectation2->atLeast()->once();
@@ -386,6 +396,7 @@ test('gets table stats', function (): void {
     $expectation1->andReturn([]);
 
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('getDatabasePlatform')->andReturn(Mockery::mock(MySQLPlatform::class));
     /** @var Mockery\Expectation $expectation2 */
     $expectation2 = $dbalMock->shouldReceive('executeQuery');
     $expectation2->atLeast()->once();

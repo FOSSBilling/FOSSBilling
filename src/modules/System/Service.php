@@ -18,6 +18,7 @@ use Doctrine\DBAL\Exception\DeadlockException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use FOSSBilling\Cache\CacheFactory;
 use FOSSBilling\Config;
+use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\Doctrine\RowLock;
 use FOSSBilling\Environment;
 use FOSSBilling\GeoIP\Reader;
@@ -592,6 +593,15 @@ class Service
         // Also flush the configured application/rate-limiter/Doctrine cache pools, which may be
         // backed by Redis or Memcached rather than the filesystem path cleared above.
         CacheFactory::clearAll();
+
+        // clearAll() above only reaches CacheFactory::NAMESPACE_DOCTRINE's own bare namespace -
+        // EntityManagerFactory actually stores the Doctrine metadata/query/result cache under a
+        // namespace hashed from the current entity files' mtimes/sizes (so it self-invalidates on
+        // an entity change without needing this call at all), which clearAll()'s fixed namespace
+        // list can never know to include. Harmless to skip on the filesystem driver (the
+        // remove()/mkdir() above already covers it), but a Redis/Memcached-backed pool has no
+        // other way to ever be reached.
+        CacheFactory::create(EntityManagerFactory::metadataCacheNamespace())->clear();
 
         return true;
     }
