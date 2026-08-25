@@ -37,7 +37,7 @@ test('login without password', function (): void {
     $guestApi = apiEndpoint(new Box\Mod\Staff\Api\Guest());
 
     $di = container();
-    $di['validator'] = new FOSSBilling\Validate();
+    $di['validator'] = new FOSSBilling\Validation\Validator();
 
     $guestApi->setDi($di);
     expect(fn () => $guestApi->login(['email' => 'email@domain.com']))->toThrow(FOSSBilling\Exception\BaseException::class);
@@ -74,7 +74,7 @@ test('successful login', function (): void {
     $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once();
     $di['tools'] = $toolsMock;
     $di['session'] = $sessionMock;
-    $di['validator'] = new FOSSBilling\Validate();
+    $di['validator'] = new FOSSBilling\Validation\Validator();
 
     $guestApi = apiEndpoint(new Box\Mod\Staff\Api\Guest());
     $guestApi->setMod($modMock);
@@ -101,7 +101,7 @@ test('login check ip exception', function (): void {
     $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
     $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once();
     $di['tools'] = $toolsMock;
-    $di['validator'] = new FOSSBilling\Validate();
+    $di['validator'] = new FOSSBilling\Validation\Validator();
 
     $guestApi = apiEndpoint(new Box\Mod\Staff\Api\Guest());
     $guestApi->setMod($modMock);

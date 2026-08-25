@@ -648,7 +648,7 @@ test('copies registrar', function (): void {
         ->andReturn(1);
 
     $di = container();
-    $di['validator'] = new FOSSBilling\Validate();
+    $di['validator'] = new FOSSBilling\Validation\Validator();
     $di['em'] = $emMock;
 
     $adminApi->setDi($di);
@@ -697,7 +697,7 @@ test('gets registrar', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['validator'] = new FOSSBilling\Validate();
+    $di['validator'] = new FOSSBilling\Validation\Validator();
 
     $adminApi->setDi($di);
     $adminApi->setService($serviceMock);
@@ -720,7 +720,7 @@ test('throws exception when getting registrar without id', function (): void {
         ->never();
 
     $di = container();
-    $di['validator'] = new FOSSBilling\Validate();
+    $di['validator'] = new FOSSBilling\Validation\Validator();
 
     $adminApi->setDi($di);
     $adminApi->setService($serviceMock);
@@ -774,7 +774,7 @@ test('updates registrar', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['validator'] = new FOSSBilling\Validate();
+    $di['validator'] = new FOSSBilling\Validation\Validator();
 
     $adminApi->setDi($di);
     $adminApi->setService($serviceMock);
@@ -797,7 +797,7 @@ test('throws exception when updating registrar without id', function (): void {
         ->never();
 
     $di = container();
-    $di['validator'] = new FOSSBilling\Validate();
+    $di['validator'] = new FOSSBilling\Validation\Validator();
 
     $adminApi->setDi($di);
     $adminApi->setService($serviceMock);
@@ -837,7 +837,7 @@ test('gets service', function (): void {
     $di = container();
     $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
     $di['mod_service'] = $di->protect(fn (string $name = ''): Mockery\MockInterface => strtolower($name) === 'staff' ? $staffServiceMock : $orderServiceMock);
-    $di['validator'] = new FOSSBilling\Validate();
+    $di['validator'] = new FOSSBilling\Validation\Validator();
 
     $adminApi->setDi($di);
 
@@ -868,7 +868,7 @@ test('throws exception when getting service without order_id', function (): void
     $di = container();
     $di['em']->shouldReceive('getConnection')->never();
     $di['mod_service'] = $di->protect(fn (string $name = ''): Mockery\MockInterface => strtolower($name) === 'staff' ? $staffServiceMock : $orderServiceMock);
-    $di['validator'] = new FOSSBilling\Validate();
+    $di['validator'] = new FOSSBilling\Validation\Validator();
 
     $adminApi->setDi($di);
 
@@ -906,7 +906,7 @@ test('throws exception when getting service for not activated order', function (
     $di = container();
     $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
     $di['mod_service'] = $di->protect(fn (string $name = ''): Mockery\MockInterface => strtolower($name) === 'staff' ? $staffServiceMock : $orderServiceMock);
-    $di['validator'] = new FOSSBilling\Validate();
+    $di['validator'] = new FOSSBilling\Validation\Validator();
 
     $adminApi->setDi($di);
 

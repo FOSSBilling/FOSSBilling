@@ -146,7 +146,7 @@ test('is allowed', function (): void {
     ->atLeast()->once()
     ->andReturn(true);
 
-    $validatorStub = $this->createStub(FOSSBilling\Validate::class);
+    $validatorStub = $this->createStub(FOSSBilling\Validation\Validator::class);
 
     $di = container();
     $di['mod_service'] = $di->protect(function ($serviceName) use ($staffServiceMock) {

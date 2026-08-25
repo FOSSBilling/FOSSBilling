@@ -1245,7 +1245,7 @@ test('addItem throws exception when recurring payment period param missing', fun
 
         return $serviceHostingServiceMock;
     });
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class)->shouldIgnoreMissing();
+    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class)->shouldIgnoreMissing();
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->andThrow(new FOSSBilling\Exception\BaseException('Period parameter not passed'));
     $di['validator'] = $validatorMock;
     $productService->setDi($di);
@@ -1281,7 +1281,7 @@ test('addItem throws exception when recurring payment period is not enabled', fu
 
         return $serviceHostingServiceMock;
     });
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class)->shouldIgnoreMissing();
+    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class)->shouldIgnoreMissing();
     $di['validator'] = $validatorMock;
     $productService->setDi($di);
     $serviceMock->setDi($di);

@@ -79,7 +79,7 @@ test('gets cart product title', function (array $data, string $expected): void {
 
 test('throws exception for invalid order data action', function (): void {
     $service = new Service();
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')
         ->atLeast()->once();
 
@@ -97,7 +97,7 @@ test('throws exception for invalid order data action', function (): void {
 
 test('throws exception for transfer order data with invalid tld', function (array $data, array $isSldValidArr, array $tldFindOneByTldArr, array $canBeTransferred): void {
     $service = new Service();
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
     $validatorMock->shouldReceive('isSldValid')
         ->{$isSldValidArr['called']}()
         ->andReturn($isSldValidArr['returns']);
@@ -162,7 +162,7 @@ test('throws exception when a tld requires a transfer code and none is provided'
         $data['transfer_code'] = $transferCode;
     }
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
     $validatorMock->shouldReceive('isSldValid')->atLeast()->once()->andReturn(true);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->zeroOrMoreTimes();
 
@@ -197,7 +197,7 @@ test('accepts a transfer order data when the transfer code requirement is satisf
         $data['transfer_code'] = $transferCode;
     }
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
     $validatorMock->shouldReceive('isSldValid')->atLeast()->once()->andReturn(true);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->zeroOrMoreTimes();
 
@@ -219,7 +219,7 @@ test('accepts a transfer order data when the transfer code requirement is satisf
 
 test('throws exception for register order data with invalid tld', function (array $data, array $isSldValidArr, array $tldFindOneByTldArr, array $isDomainAvailable): void {
     $service = new Service();
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
     $validatorMock->shouldReceive('isSldValid')
         ->{$isSldValidArr['called']}()
         ->andReturn($isSldValidArr['returns']);
@@ -297,7 +297,7 @@ test('rejects a registration period outside the tld allowed periods list', funct
         'register_tld' => '.com',
     ];
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
     $validatorMock->shouldReceive('isSldValid')->atLeast()->once()->andReturn(true);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->zeroOrMoreTimes();
 
@@ -326,7 +326,7 @@ test('accepts a registration period within the tld allowed periods list', functi
         'register_tld' => '.com',
     ];
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
     $validatorMock->shouldReceive('isSldValid')->atLeast()->once()->andReturn(true);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->zeroOrMoreTimes();
 
@@ -344,7 +344,7 @@ test('accepts a registration period within the tld allowed periods list', functi
 });
 
 test('rejects a crafted order for an inactive tld before contacting the registrar', function (string $action): void {
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->atLeast()->once();
     $validatorMock->shouldReceive('isSldValid')->once()->andReturnTrue();
 
@@ -750,7 +750,7 @@ test('updates contacts', function (): void {
         ->atLeast()->once()
         ->andReturn([new Registrar_Domain(), $registrarAdapterMock]);
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')
         ->zeroOrMoreTimes();
 
@@ -956,7 +956,7 @@ test('checks if domain is available', function (): void {
     $tldRegistrar = new TldRegistrar();
     setEntityId($tldRegistrar, 1);
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
     $validatorMock->shouldReceive('isSldValid')
         ->atLeast()->once()
         ->andReturn(true);
@@ -985,7 +985,7 @@ test('throws exception when checking availability with empty sld', function (): 
 
 test('throws exception when checking availability with invalid sld', function (): void {
     $service = new Service();
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
     $validatorMock->shouldReceive('isSldValid')
         ->atLeast()->once()
         ->andReturn(false);
@@ -1002,7 +1002,7 @@ test('throws exception when checking availability with invalid sld', function ()
 
 test('throws exception when checking availability not allowed to register', function (): void {
     $service = new Service();
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
     $validatorMock->shouldReceive('isSldValid')
         ->atLeast()->once()
         ->andReturn(true);

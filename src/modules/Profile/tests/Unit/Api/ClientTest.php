@@ -78,7 +78,7 @@ test('changes client password', function (): void {
     $service->shouldReceive('invalidateSessions')
         ->atLeast()->once();
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
     $validatorMock->shouldReceive('isPasswordStrong')
         ->atLeast()->once()
         ->andReturn(true);

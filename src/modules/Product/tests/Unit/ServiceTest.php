@@ -363,7 +363,7 @@ test('get selected addons for cart returns prepared addon items', function (): v
     $parentProduct = productTestCreateProductEntity(10);
     $addon = productTestCreateProductEntity(20)->setStatus('enabled')->setType(Service::CUSTOM)->setIsAddon(true);
 
-    $validator = Mockery::mock(FOSSBilling\Validate::class);
+    $validator = Mockery::mock(FOSSBilling\Validation\Validator::class);
     $validator->shouldNotReceive('checkRequiredParamsForArray');
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();

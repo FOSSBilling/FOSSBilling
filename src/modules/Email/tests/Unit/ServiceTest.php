@@ -312,7 +312,7 @@ test('sendTemplate returns false when template does not exist', function (): voi
         return $api;
     };
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->byDefault();
     $di['validator'] = $validatorMock;
     $service->setDi($di);
@@ -359,7 +359,7 @@ test('sendTemplate sends email when template exists', function (): void {
 
         return $api;
     };
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->byDefault();
     $di['validator'] = $validatorMock;
 
@@ -439,7 +439,7 @@ test('sendTemplate forwards the attachment to the queue and strips it from the s
 
         return $api;
     };
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->byDefault();
     $di['validator'] = $validatorMock;
 
@@ -600,7 +600,7 @@ test('sendTemplate handles to_staff and to_client options', function (array $dat
         return $api;
     };
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->byDefault();
     $di['validator'] = $validatorMock;
 
@@ -686,7 +686,7 @@ test('sendTemplate sends to a specific admin via to_admin using the Admin entity
     $cryptMock = Mockery::mock(FOSSBilling\Security\Crypt::class);
     $cryptMock->shouldReceive('encrypt')->atLeast()->once();
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->byDefault();
     $di['validator'] = $validatorMock;
 
@@ -739,7 +739,7 @@ test('sendTemplate throws when to_admin does not resolve to an admin', function 
 
     $di['em'] = emailBuildEm(null, $templateRepo, null, true, $templateGroupRepo, $adminRepo);
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->byDefault();
     $di['validator'] = $validatorMock;
 
@@ -785,7 +785,7 @@ test('sendTemplate does not send to staff when template has no assigned groups',
     $cryptMock = Mockery::mock(FOSSBilling\Security\Crypt::class);
     $cryptMock->shouldReceive('encrypt')->atLeast()->once();
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->byDefault();
 
     $twigStub = Mockery::mock(Twig\Environment::class);

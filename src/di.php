@@ -543,10 +543,23 @@ $di['tools'] = function () use ($di) {
  *
  * @param void
  *
- * @return \FOSSBilling\Validate
+ * @return \FOSSBilling\Validation\DomainValidator
+ */
+$di['domainValidator'] = function () use ($di) {
+    $validator = new FOSSBilling\Validation\DomainValidator();
+    $validator->setDi($di);
+
+    return $validator;
+};
+
+/*
+ *
+ * @param void
+ *
+ * @return \FOSSBilling\Validation\Validator
  */
 $di['validator'] = function () use ($di) {
-    $validator = new FOSSBilling\Validate();
+    $validator = new FOSSBilling\Validation\Validator();
     $validator->setDi($di);
 
     return $validator;

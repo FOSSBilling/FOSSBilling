@@ -26,7 +26,7 @@ function container(): Container
         'salt' => 'test_salt_' . uniqid(),
         'url' => 'http://localhost/',
     ];
-    $di['validator'] = fn (): \FOSSBilling\Validate => new \FOSSBilling\Validate();
+    $di['validator'] = fn (): \FOSSBilling\Validation\Validator => new \FOSSBilling\Validation\Validator();
     $di['tools'] = fn (): \FOSSBilling\Tools => new \FOSSBilling\Tools();
     $di['filesystem'] = fn (): \Symfony\Component\Filesystem\Filesystem => new \Symfony\Component\Filesystem\Filesystem();
     $di['logger'] = fn (): \Psr\Log\LoggerInterface => new class extends AbstractLogger {

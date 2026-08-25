@@ -119,7 +119,7 @@ test('login returns array', function (): void {
     $di['mod_service'] = $di->protect(moduleService(['client' => $serviceMock]));
     $di['session'] = $sessionMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $validatorStub = $this->createStub(FOSSBilling\Validate::class);
+    $validatorStub = $this->createStub(FOSSBilling\Validation\Validator::class);
     $di['validator'] = $validatorStub;
 
     $adminClient->setDi($di);
@@ -195,7 +195,7 @@ test('delete returns true', function (): void {
     $di = container();
     $di['events_manager'] = $eventMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $validatorStub = $this->createStub(FOSSBilling\Validate::class);
+    $validatorStub = $this->createStub(FOSSBilling\Validation\Validator::class);
     $di['validator'] = $validatorStub;
 
     $adminClient->setDi($di);
@@ -383,7 +383,7 @@ test('update throws exception when email is already registered', function (): vo
     $di['mod_service'] = $di->protect(moduleService(['client' => $serviceMock]));
     $di['events_manager'] = $eventMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['validator'] = new FOSSBilling\Validate();
+    $di['validator'] = new FOSSBilling\Validation\Validator();
 
     $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
     $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once();
@@ -400,7 +400,7 @@ test('update throws exception when id is not passed', function (): void {
 
     $di = container();
 
-    $di['validator'] = new FOSSBilling\Validate();
+    $di['validator'] = new FOSSBilling\Validation\Validator();
     $adminClient->setDi($di);
 
     // Validate required parameters before calling update
@@ -431,7 +431,7 @@ test('changePassword returns true', function (): void {
     $di['events_manager'] = $eventMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['password'] = $passwordMock;
-    $validatorStub = $this->createStub(FOSSBilling\Validate::class);
+    $validatorStub = $this->createStub(FOSSBilling\Validation\Validator::class);
     $di['validator'] = $validatorStub;
     $di['mod_service'] = $di->protect(moduleService(['profile' => $profileService]));
 
@@ -449,7 +449,7 @@ test('changePassword throws exception when passwords do not match', function ():
         'password_confirm' => 'NotIdentical',
     ];
 
-    $validatorStub = new FOSSBilling\Validate();
+    $validatorStub = new FOSSBilling\Validation\Validator();
 
     $di = container();
     $di['validator'] = $validatorStub;
@@ -508,7 +508,7 @@ test('balanceDelete returns true', function (): void {
 
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $validatorStub = $this->createStub(FOSSBilling\Validate::class);
+    $validatorStub = $this->createStub(FOSSBilling\Validation\Validator::class);
     $di['validator'] = $validatorStub;
 
     $adminClient->setDi($di);
@@ -531,7 +531,7 @@ test('balanceAddFunds returns true', function (): void {
     $di = container();
     $di['mod_service'] = $di->protect(moduleService(['client' => $serviceMock]));
 
-    $validatorStub = $this->createStub(FOSSBilling\Validate::class);
+    $validatorStub = $this->createStub(FOSSBilling\Validation\Validator::class);
     $di['validator'] = $validatorStub;
 
     $adminClient->setDi($di);
@@ -641,7 +641,7 @@ test('groupUpdate returns true', function (): void {
 
     $di = container();
 
-    $validatorStub = $this->createStub(FOSSBilling\Validate::class);
+    $validatorStub = $this->createStub(FOSSBilling\Validation\Validator::class);
     $di['validator'] = $validatorStub;
 
     $adminClient->setDi($di);
@@ -663,7 +663,7 @@ test('groupDelete returns true', function (): void {
 
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $validatorStub = $this->createStub(FOSSBilling\Validate::class);
+    $validatorStub = $this->createStub(FOSSBilling\Validation\Validator::class);
     $di['validator'] = $validatorStub;
 
     $adminClient->setDi($di);
@@ -679,7 +679,7 @@ test('groupGet returns array', function (): void {
     $data['id'] = '2';
 
     $di = container();
-    $validatorStub = $this->createStub(FOSSBilling\Validate::class);
+    $validatorStub = $this->createStub(FOSSBilling\Validation\Validator::class);
     $di['validator'] = $validatorStub;
 
     $adminClient->setDi($di);
@@ -694,7 +694,7 @@ test('batchDelete returns true', function (): void {
     $activityMock = Mockery::mock(Box\Mod\Client\Api\Admin::class)->makePartial();
     $activityMock->shouldReceive('delete')->atLeast()->once()->andReturn(true);
 
-    $validatorStub = $this->createStub(FOSSBilling\Validate::class);
+    $validatorStub = $this->createStub(FOSSBilling\Validation\Validator::class);
 
     $di = container();
     $di['validator'] = $validatorStub;

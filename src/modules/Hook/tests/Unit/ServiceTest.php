@@ -206,7 +206,7 @@ test('batch connects', function (): void {
             return $extensionServiceMock;
         }
     });
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
     /** @var Mockery\Expectation $validatorExpectation */
     $validatorExpectation = $validatorMock->shouldReceive('checkRequiredParamsForArray');
     $validatorExpectation->atLeast()->once();

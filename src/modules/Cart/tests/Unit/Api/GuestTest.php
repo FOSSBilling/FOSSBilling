@@ -64,7 +64,7 @@ test('setCurrency returns true', function (): void {
     $serviceMock->shouldReceive('getSessionCart')->atLeast()->once()->andReturn(createEntity(Box\Mod\Cart\Entity\Cart::class));
     $serviceMock->shouldReceive('changeCartCurrency')->atLeast()->once()->andReturn(true);
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class)->shouldIgnoreMissing();
+    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class)->shouldIgnoreMissing();
 
     $currencyMock = Mockery::mock(Currency::class)->shouldIgnoreMissing();
 
@@ -95,7 +95,7 @@ test('setCurrency throws exception when currency is not found', function (): voi
     $serviceMock->shouldNotReceive('getSessionCart');
     $serviceMock->shouldNotReceive('changeCartCurrency');
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class)->shouldIgnoreMissing();
+    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class)->shouldIgnoreMissing();
 
     $currencyRepositoryMock = Mockery::mock(CurrencyRepository::class)->makePartial();
     $currencyRepositoryMock->shouldReceive('findOneByCode')->atLeast()->once()->andReturn(null);
