@@ -99,7 +99,7 @@ test('a failed bootstrap fetch disables all lookups and logs a warning', functio
         ->and($logger->records[0][1])->toContain('RDAP bootstrap registry');
 });
 
-test('an unparseable bootstrap response disables all lookups for the instance', function (): void {
+test('a malformed bootstrap response disables all lookups for the instance', function (): void {
     $httpClient = new MockHttpClient(fn (): MockResponse => new MockResponse('not-json'));
     $rdap = new Registrar_Rdap($httpClient);
 
@@ -138,7 +138,7 @@ test('inputs that cannot be a domain name are rejected without any HTTP traffic'
 
     expect($rdap->isDomainAvailable($input))->toBeNull()
         ->and($tracker->urls)->toBe([]);
-})->with(['', '.com', 'nodot']);
+})->with(['', '.com', 'example']);
 
 test('the bootstrap registry is only fetched once per instance', function (): void {
     [$rdap, $tracker] = createRdapClient([[['com'], ['https://rdap.example.com/com/v1/']]], fn (): MockResponse => new MockResponse('', ['http_code' => 404]));
