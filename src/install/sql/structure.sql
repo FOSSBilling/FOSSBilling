@@ -187,7 +187,7 @@ CREATE TABLE `cart` (
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `session_id_idx` (`session_id`),
+  UNIQUE KEY `session_id_idx` (`session_id`),
   KEY `currency_id_idx` (`currency_id`),
   KEY `promo_id_idx` (`promo_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

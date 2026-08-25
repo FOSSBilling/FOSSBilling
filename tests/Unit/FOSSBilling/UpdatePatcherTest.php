@@ -1115,6 +1115,86 @@ test('admin salt column drop patch drops the column when it still exists', funct
     (new ReflectionMethod($patcher, 'patch113'))->invoke($patcher);
 });
 
+test('cart unique session_id patch is numbered 113', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 112);
+
+    expect($patches)->toHaveKey(113)
+        ->and($patches[113][1])->toBe('patch113');
+});
+
+test('cart unique session_id patch is a no-op when the index is already unique and there are no duplicates', function (): void {
+    $duplicates = Mockery::mock(PDOStatement::class);
+    $duplicates->expects('execute')->with([])->andReturnTrue();
+    $duplicates->expects('fetchAll')->with(PDO::FETCH_COLUMN)->andReturn([]);
+
+    $indexes = Mockery::mock(PDOStatement::class);
+    $indexes->expects('execute')->with([])->andReturnTrue();
+    $indexes->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Key_name' => 'session_id_idx', 'Non_unique' => '0'],
+    ]);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'SELECT c.id FROM cart c')))
+        ->andReturn($duplicates);
+    $pdo->expects('prepare')->with('SHOW INDEX FROM `cart`')->andReturn($indexes);
+    $pdo->shouldNotReceive('prepare')->with('ALTER TABLE `cart` DROP INDEX `session_id_idx`');
+    $pdo->shouldNotReceive('prepare')->with('ALTER TABLE `cart` ADD UNIQUE INDEX `session_id_idx` (`session_id`)');
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch113'))->invoke($patcher);
+});
+
+test('cart unique session_id patch reconciles duplicate sessions then converts the index to unique', function (): void {
+    // Two carts (ids 5 and 9) share a session_id; id 9 is the newer one and is kept.
+    $duplicates = Mockery::mock(PDOStatement::class);
+    $duplicates->expects('execute')->with([])->andReturnTrue();
+    $duplicates->expects('fetchAll')->with(PDO::FETCH_COLUMN)->andReturn([5]);
+
+    $deleteCartProduct = Mockery::mock(PDOStatement::class);
+    $deleteCartProduct->expects('execute')->with([5])->andReturnTrue();
+
+    $deleteCart = Mockery::mock(PDOStatement::class);
+    $deleteCart->expects('execute')->with([5])->andReturnTrue();
+
+    $indexes = Mockery::mock(PDOStatement::class);
+    $indexes->expects('execute')->with([])->andReturnTrue();
+    $indexes->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Key_name' => 'session_id_idx', 'Non_unique' => '1'],
+    ]);
+
+    $dropIndex = Mockery::mock(PDOStatement::class);
+    $dropIndex->expects('execute')->with([])->andReturnTrue();
+
+    $addIndex = Mockery::mock(PDOStatement::class);
+    $addIndex->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'SELECT c.id FROM cart c')))
+        ->andReturn($duplicates);
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'DELETE FROM `cart_product` WHERE `cart_id` IN (?)')))
+        ->andReturn($deleteCartProduct);
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'DELETE FROM `cart` WHERE `id` IN (?)')))
+        ->andReturn($deleteCart);
+    $pdo->expects('prepare')->with('SHOW INDEX FROM `cart`')->andReturn($indexes);
+    $pdo->expects('prepare')->with('ALTER TABLE `cart` DROP INDEX `session_id_idx`')->andReturn($dropIndex);
+    $pdo->expects('prepare')->with('ALTER TABLE `cart` ADD UNIQUE INDEX `session_id_idx` (`session_id`)')->andReturn($addIndex);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch113'))->invoke($patcher);
+});
+
 /**
  * These patches are raw MySQL/MariaDB DDL with no PostgreSQL/SQLite equivalent - see
  * UpdatePatcher::isMysqlDriver(). Swaps the real config.php's `db.driver`, mirroring
