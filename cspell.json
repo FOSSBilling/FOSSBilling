@@ -225,6 +225,7 @@
         "copyfields",
         "mydomain",
         "WHOIS",
+        "RDAP",
         "supportticket",
         "massmailer",
         "kbcategories",
