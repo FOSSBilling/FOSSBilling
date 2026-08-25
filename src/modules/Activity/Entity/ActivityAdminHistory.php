@@ -17,7 +17,7 @@ use FOSSBilling\Doctrine\CreatedAtTrait;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Activity\Repository\ActivityAdminHistoryRepository::class)]
 #[ORM\Table(name: 'activity_admin_history')]
-#[ORM\Index(name: 'admin_id_idx', columns: ['admin_id'])]
+#[ORM\Index(name: 'activity_admin_history_admin_id_idx', columns: ['admin_id'])]
 #[ORM\HasLifecycleCallbacks]
 class ActivityAdminHistory
 {

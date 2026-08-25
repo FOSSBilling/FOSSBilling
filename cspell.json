@@ -64,7 +64,21 @@
         "unindexed",
         "catchable",
         "nelexa",
-        "apisecret"
+        "apisecret",
+        "cutover",
+        "mysqldump",
+        "mysqldump's",
+        "portableize",
+        "setval",
+        "nextval",
+        "repoints",
+        "pgsql",
+        "julianday",
+        "mtimes",
+        "unroutable",
+        "namedlock",
+        "entrancy",
+        "writability"
     ],
 
     "ignoreWords": [
@@ -243,6 +257,8 @@
         "ພູເກັດ",
         "ctable",
         "DATEDIFF",
+        "AUTOINCREMENT",
+        "CLOB",
         "cbrepo",
         "OODB",
         "Inno",

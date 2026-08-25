@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Stats;
 
 use Box\Mod\Invoice\Entity\Invoice;
+use FOSSBilling\Doctrine\SqlExpr;
 use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
@@ -39,33 +40,59 @@ class Service implements InjectionAwareInterface
         ];
     }
 
+    /**
+     * Day/month range boundaries for "today"/"yesterday"/"this month"/"last month" stats,
+     * expressed as portable `column >= :start AND column < :end` params rather than the
+     * MySQL-only DATE_FORMAT()/CURDATE()/DATE_SUB() functions this replaced. Computed once and
+     * reused across every table's queries in a call.
+     *
+     * @return array<string, string>
+     */
+    private function getDayBoundaries(): array
+    {
+        $todayStart = new \DateTimeImmutable('today');
+        $monthStart = $todayStart->modify('first day of this month');
+
+        $format = static fn (\DateTimeImmutable $date): string => $date->format('Y-m-d H:i:s');
+
+        return [
+            'yesterday_start' => $format($todayStart->modify('-1 day')),
+            'today_start' => $format($todayStart),
+            'tomorrow_start' => $format($todayStart->modify('+1 day')),
+            'last_month_start' => $format($monthStart->modify('-1 month')),
+            'month_start' => $format($monthStart),
+            'next_month_start' => $format($monthStart->modify('+1 month')),
+        ];
+    }
+
     public function getSummary(): array
     {
         $stats = [];
 
         $dbal = $this->di['dbal'];
+        $boundaries = $this->getDayBoundaries();
 
         $total_query = 'SELECT COUNT(1) FROM :table';
-        $yeste_query = "SELECT COUNT(1) FROM :table WHERE DATE_FORMAT(`created_at`, '%Y-%m-%d') = DATE_SUB(CURDATE(), INTERVAL 1 DAY)";
-        $today_query = "SELECT COUNT(1) FROM :table WHERE DATE_FORMAT(`created_at`, '%Y-%m-%d') = CURDATE()";
-        $month_query = "SELECT COUNT(1) FROM :table WHERE DATE_FORMAT(`created_at`, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')";
-        $last_month_query = "SELECT COUNT(1) FROM :table WHERE created_at BETWEEN DATE_FORMAT(NOW() - INTERVAL 1 MONTH, '%Y-%m-01') AND DATE_FORMAT(NOW() ,'%Y-%m-01')";
+        $yeste_query = 'SELECT COUNT(1) FROM :table WHERE created_at >= :yesterday_start AND created_at < :today_start';
+        $today_query = 'SELECT COUNT(1) FROM :table WHERE created_at >= :today_start AND created_at < :tomorrow_start';
+        $month_query = 'SELECT COUNT(1) FROM :table WHERE created_at >= :month_start AND created_at < :next_month_start';
+        $last_month_query = 'SELECT COUNT(1) FROM :table WHERE created_at >= :last_month_start AND created_at < :month_start';
 
         // client stats
         $table = 'client';
         $result = $dbal->executeQuery(str_replace(':table', $table, $total_query));
         $stats['clients_total'] = $result->fetchOne();
 
-        $result = $dbal->executeQuery(str_replace(':table', $table, $today_query));
+        $result = $dbal->executeQuery(str_replace(':table', $table, $today_query), $boundaries);
         $stats['clients_today'] = $result->fetchOne();
 
-        $result = $dbal->executeQuery(str_replace(':table', $table, $yeste_query));
+        $result = $dbal->executeQuery(str_replace(':table', $table, $yeste_query), $boundaries);
         $stats['clients_yesterday'] = $result->fetchOne();
 
-        $result = $dbal->executeQuery(str_replace(':table', $table, $month_query));
+        $result = $dbal->executeQuery(str_replace(':table', $table, $month_query), $boundaries);
         $stats['clients_this_month'] = $result->fetchOne();
 
-        $result = $dbal->executeQuery(str_replace(':table', $table, $last_month_query));
+        $result = $dbal->executeQuery(str_replace(':table', $table, $last_month_query), $boundaries);
         $stats['clients_last_month'] = $result->fetchOne();
 
         // orders stats
@@ -73,16 +100,16 @@ class Service implements InjectionAwareInterface
         $result = $dbal->executeQuery(str_replace(':table', $table, $total_query));
         $stats['orders_total'] = $result->fetchOne();
 
-        $result = $dbal->executeQuery(str_replace(':table', $table, $today_query));
+        $result = $dbal->executeQuery(str_replace(':table', $table, $today_query), $boundaries);
         $stats['orders_today'] = $result->fetchOne();
 
-        $result = $dbal->executeQuery(str_replace(':table', $table, $yeste_query));
+        $result = $dbal->executeQuery(str_replace(':table', $table, $yeste_query), $boundaries);
         $stats['orders_yesterday'] = $result->fetchOne();
 
-        $result = $dbal->executeQuery(str_replace(':table', $table, $month_query));
+        $result = $dbal->executeQuery(str_replace(':table', $table, $month_query), $boundaries);
         $stats['orders_this_month'] = $result->fetchOne();
 
-        $result = $dbal->executeQuery(str_replace(':table', $table, $last_month_query));
+        $result = $dbal->executeQuery(str_replace(':table', $table, $last_month_query), $boundaries);
         $stats['orders_last_month'] = $result->fetchOne();
 
         // invoice stats
@@ -90,16 +117,16 @@ class Service implements InjectionAwareInterface
         $result = $dbal->executeQuery(str_replace(':table', $table, $total_query));
         $stats['invoices_total'] = $result->fetchOne();
 
-        $result = $dbal->executeQuery(str_replace(':table', $table, $today_query));
+        $result = $dbal->executeQuery(str_replace(':table', $table, $today_query), $boundaries);
         $stats['invoices_today'] = $result->fetchOne();
 
-        $result = $dbal->executeQuery(str_replace(':table', $table, $yeste_query));
+        $result = $dbal->executeQuery(str_replace(':table', $table, $yeste_query), $boundaries);
         $stats['invoices_yesterday'] = $result->fetchOne();
 
-        $result = $dbal->executeQuery(str_replace(':table', $table, $month_query));
+        $result = $dbal->executeQuery(str_replace(':table', $table, $month_query), $boundaries);
         $stats['invoices_this_month'] = $result->fetchOne();
 
-        $result = $dbal->executeQuery(str_replace(':table', $table, $last_month_query));
+        $result = $dbal->executeQuery(str_replace(':table', $table, $last_month_query), $boundaries);
         $stats['invoices_last_month'] = $result->fetchOne();
 
         // ticket stats
@@ -107,16 +134,16 @@ class Service implements InjectionAwareInterface
         $result = $dbal->executeQuery(str_replace(':table', $table, $total_query));
         $stats['tickets_total'] = $result->fetchOne();
 
-        $result = $dbal->executeQuery(str_replace(':table', $table, $today_query));
+        $result = $dbal->executeQuery(str_replace(':table', $table, $today_query), $boundaries);
         $stats['tickets_today'] = $result->fetchOne();
 
-        $result = $dbal->executeQuery(str_replace(':table', $table, $yeste_query));
+        $result = $dbal->executeQuery(str_replace(':table', $table, $yeste_query), $boundaries);
         $stats['tickets_yesterday'] = $result->fetchOne();
 
-        $result = $dbal->executeQuery(str_replace(':table', $table, $month_query));
+        $result = $dbal->executeQuery(str_replace(':table', $table, $month_query), $boundaries);
         $stats['tickets_this_month'] = $result->fetchOne();
 
-        $result = $dbal->executeQuery(str_replace(':table', $table, $last_month_query));
+        $result = $dbal->executeQuery(str_replace(':table', $table, $last_month_query), $boundaries);
         $stats['tickets_last_month'] = $result->fetchOne();
 
         return $stats;
@@ -127,26 +154,28 @@ class Service implements InjectionAwareInterface
         $stats = [];
 
         $dbal = $this->di['dbal'];
+        $boundaries = $this->getDayBoundaries();
 
-        $total_query = "SELECT (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income FROM invoice WHERE approved = 1 AND (status = 'paid' OR status = 'refunded')";
-        $yeste_query = "SELECT (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income FROM invoice WHERE approved = 1 AND (status = 'paid' OR status = 'refunded') AND DATE_FORMAT(`paid_at`, '%Y-%m-%d') = DATE_SUB(CURDATE(), INTERVAL 1 DAY)";
-        $today_query = "SELECT (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income FROM invoice WHERE approved = 1 AND (status = 'paid' OR status = 'refunded') AND DATE_FORMAT(`paid_at`, '%Y-%m-%d') = CURDATE()";
-        $month_query = "SELECT (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income FROM invoice WHERE approved = 1 AND (status = 'paid' OR status = 'refunded') AND DATE_FORMAT(`paid_at`, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')";
-        $last_month_query = "SELECT (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income FROM invoice WHERE approved = 1 AND (status = 'paid' OR status = 'refunded') AND paid_at BETWEEN DATE_FORMAT(NOW() - INTERVAL 1 MONTH, '%Y-%m-01') AND DATE_FORMAT(NOW() ,'%Y-%m-01')";
+        $base = "SELECT (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income FROM invoice WHERE approved = true AND (status = 'paid' OR status = 'refunded')";
+        $total_query = $base;
+        $yeste_query = $base . ' AND paid_at >= :yesterday_start AND paid_at < :today_start';
+        $today_query = $base . ' AND paid_at >= :today_start AND paid_at < :tomorrow_start';
+        $month_query = $base . ' AND paid_at >= :month_start AND paid_at < :next_month_start';
+        $last_month_query = $base . ' AND paid_at >= :last_month_start AND paid_at < :month_start';
 
         $result = $dbal->executeQuery($total_query);
         $stats['total'] = $result->fetchOne();
 
-        $result = $dbal->executeQuery($today_query);
+        $result = $dbal->executeQuery($today_query, $boundaries);
         $stats['today'] = $result->fetchOne();
 
-        $result = $dbal->executeQuery($yeste_query);
+        $result = $dbal->executeQuery($yeste_query, $boundaries);
         $stats['yesterday'] = $result->fetchOne();
 
-        $result = $dbal->executeQuery($month_query);
+        $result = $dbal->executeQuery($month_query, $boundaries);
         $stats['this_month'] = $result->fetchOne();
 
-        $result = $dbal->executeQuery($last_month_query);
+        $result = $dbal->executeQuery($last_month_query, $boundaries);
         $stats['last_month'] = $result->fetchOne();
 
         return $stats;
@@ -166,8 +195,8 @@ class Service implements InjectionAwareInterface
         $dbal = $this->di['dbal'];
 
         $query = "SELECT p.id, p.title, COUNT(o.id) as orders
-                FROM `client_order` o
-                RIGHT JOIN `product` p ON(p.id = o.product_id)
+                FROM client_order o
+                RIGHT JOIN product p ON(p.id = o.product_id)
                 WHERE o.status = 'active'
                 GROUP BY o.product_id
                 ORDER BY orders DESC
@@ -185,9 +214,9 @@ class Service implements InjectionAwareInterface
         $dbal = $this->di['dbal'];
 
         $query = 'SELECT title, COUNT(product_id) as sales
-                FROM `client_order`
+                FROM client_order
                 WHERE status = :status
-                AND `created_at` BETWEEN :date_from AND :date_to
+                AND created_at BETWEEN :date_from AND :date_to
                 GROUP BY product_id
                 ';
 
@@ -204,9 +233,9 @@ class Service implements InjectionAwareInterface
     {
         $dbal = $this->di['dbal'];
 
-        $query = 'SELECT COALESCE(SUM(base_refund), 0) AS `refund`, COALESCE(SUM(base_income), 0) AS `income`
-                FROM `invoice`
-                WHERE approved = 1
+        $query = 'SELECT COALESCE(SUM(base_refund), 0) AS refund, COALESCE(SUM(base_income), 0) AS income
+                FROM invoice
+                WHERE approved = true
                 AND (status = :status1 OR status = :status2)
                 ';
 
@@ -235,12 +264,15 @@ class Service implements InjectionAwareInterface
 
         $dbal = $this->di['dbal'];
 
-        $query = "SELECT DATE_FORMAT(`created_at`, '%Y-%m-%d') AS `date`, COALESCE(SUM(base_refund), 0) AS `refund`
-                FROM `invoice`
-                WHERE `created_at` BETWEEN :date_from AND :date_to
-                AND approved = 1
+        // Truncates the 'Y-m-d H:i:s' column down to its 'Y-m-d' prefix for grouping - a portable
+        // stand-in for MySQL's DATE_FORMAT(), which PostgreSQL and SQLite don't have.
+        $date = SqlExpr::dateOnly($dbal, 'created_at');
+        $query = "SELECT {$date} AS date, COALESCE(SUM(base_refund), 0) AS refund
+                FROM invoice
+                WHERE created_at BETWEEN :date_from AND :date_to
+                AND approved = true
                 AND status = :status
-                GROUP BY `date`";
+                GROUP BY date";
 
         $result = $dbal->executeQuery($query, [
             'status' => Invoice::STATUS_REFUNDED,
@@ -268,12 +300,15 @@ class Service implements InjectionAwareInterface
 
         $dbal = $this->di['dbal'];
 
-        $query = "SELECT DATE_FORMAT(`paid_at`, '%Y-%m-%d') AS `date`, (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS `income`
-                FROM `invoice`
-                WHERE `paid_at` BETWEEN :date_from AND :date_to
-                AND approved = 1
+        // Truncates the 'Y-m-d H:i:s' column down to its 'Y-m-d' prefix for grouping - a portable
+        // stand-in for MySQL's DATE_FORMAT(), which PostgreSQL and SQLite don't have.
+        $date = SqlExpr::dateOnly($dbal, 'paid_at');
+        $query = "SELECT {$date} AS date, (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income
+                FROM invoice
+                WHERE paid_at BETWEEN :date_from AND :date_to
+                AND approved = true
                 AND status = :status
-                GROUP BY `date`";
+                GROUP BY date";
 
         $result = $dbal->executeQuery($query, [
             'status' => Invoice::STATUS_PAID,
@@ -291,8 +326,8 @@ class Service implements InjectionAwareInterface
         $limit = (int) ($data['limit'] ?? 10);
         $q = "
             SELECT country, COUNT(id) as clients
-            FROM `client`
-            GROUP BY `country`
+            FROM client
+            GROUP BY country
             ORDER BY clients DESC
             LIMIT $limit
         ";
@@ -307,9 +342,9 @@ class Service implements InjectionAwareInterface
         $limit = (int) ($data['limit'] ?? 10);
         $q = "
             SELECT buyer_country, COUNT(id) as sales
-            FROM `invoice`
+            FROM invoice
             WHERE status = 'paid'
-            GROUP BY `buyer_country`
+            GROUP BY buyer_country
             ORDER BY sales DESC
             LIMIT $limit
         ";
@@ -354,10 +389,14 @@ class Service implements InjectionAwareInterface
 
         $dbal = $this->di['dbal'];
 
-        $query = "SELECT DATE_FORMAT(`created_at`, '%Y-%m-%d') AS `date`, COUNT(1) AS `count`
-                FROM `$table`
-                WHERE `created_at` BETWEEN :date_from AND :date_to
-                GROUP BY `date`";
+        // Truncates the 'Y-m-d H:i:s' column down to its 'Y-m-d' prefix for grouping - a portable
+        // stand-in for MySQL's DATE_FORMAT(), which PostgreSQL and SQLite don't have. $table is
+        // safe to interpolate: it was checked against $allowedTables above.
+        $date = SqlExpr::dateOnly($dbal, 'created_at');
+        $query = "SELECT {$date} AS date, COUNT(1) AS count
+                FROM $table
+                WHERE created_at BETWEEN :date_from AND :date_to
+                GROUP BY date";
 
         $result = $dbal->executeQuery($query, [
             'date_from' => date('Y-m-d', $time_from),

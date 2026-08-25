@@ -17,7 +17,7 @@ test('maps the existing client activity history table', function (): void {
 
     expect($metadata->getTableName())->toBe('activity_client_history')
         ->and($metadata->getColumnNames())->toBe(['id', 'client_id', 'ip', 'created_at'])
-        ->and($metadata->table['indexes']['client_id_idx']['columns'])->toBe(['client_id']);
+        ->and($metadata->table['indexes']['activity_client_history_client_id_idx']['columns'])->toBe(['client_id']);
 });
 
 test('stores client activity history and initializes its timestamp', function (): void {

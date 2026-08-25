@@ -145,6 +145,8 @@ test('batch connects', function (): void {
     $data['mods'] = [$mod];
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
     $connection->shouldReceive('fetchOne')
         ->with(Mockery::on(fn ($sql): bool => str_contains((string) $sql, 'GET_LOCK')), Mockery::any())
         ->andReturn(1);
@@ -220,6 +222,8 @@ test('batch connect reports failure when another process holds the lock', functi
     $service = new Box\Mod\Hook\Service();
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
     $connection->shouldReceive('fetchOne')
         ->with(Mockery::on(fn ($sql): bool => str_contains((string) $sql, 'GET_LOCK')), Mockery::any())
         ->andReturn(0);

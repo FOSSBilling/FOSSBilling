@@ -155,23 +155,6 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             }
         }
 
-        if ($item->getType() == InvoiceItem::TYPE_HOOK_CALL) {
-            $taskFailed = false;
-
-            try {
-                $params = json_decode($item->getRelId() ?? '');
-                $this->di['events_manager']->fire(['event' => $item->getTask(), 'params' => $params]);
-            } catch (\Exception $e) {
-                $this->di['logger']->error($e->getMessage());
-                $taskFailed = true;
-            }
-            if (!$taskFailed) {
-                $this->markAsExecuted($item);
-            } else {
-                $this->recordTaskFailure($item);
-            }
-        }
-
         if ($item->getType() == InvoiceItem::TYPE_DEPOSIT) {
             // do not request to add funds to client balance
             // associated invoice will have already been marked with a valid transaction and funds added

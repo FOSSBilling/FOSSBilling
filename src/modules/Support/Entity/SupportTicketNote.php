@@ -25,6 +25,9 @@ use FOSSBilling\Interfaces\TimestampInterface;
 #[ORM\Entity(repositoryClass: SupportTicketNoteRepository::class)]
 #[ORM\Table(name: 'support_ticket_note')]
 #[ORM\Index(name: 'idx_note_ticket', columns: ['support_ticket_id'])]
+// Named per-table (unlike structure.sql's bare `admin_id_idx`) because index names must be
+// unique database-wide on SQLite/PostgreSQL, not just per-table like MySQL.
+#[ORM\Index(name: 'support_ticket_note_admin_id_idx', columns: ['admin_id'])]
 #[ORM\HasLifecycleCallbacks]
 class SupportTicketNote implements ApiArrayInterface, TimestampInterface
 {

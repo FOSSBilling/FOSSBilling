@@ -19,6 +19,28 @@ use Doctrine\ORM\QueryBuilder;
 
 class TransactionRepository extends EntityRepository
 {
+    public function existsByGatewayId(int $gatewayId): bool
+    {
+        return (bool) $this->createQueryBuilder('t')
+            ->select('1')
+            ->andWhere('IDENTITY(t.gateway) = :gateway_id')
+            ->setParameter('gateway_id', $gatewayId)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    /**
+     * Detaches (rather than deletes) transactions from a soon-to-be-removed invoice - a
+     * transaction is a real record of a payment attempt/event and, like
+     * client_order.unpaid_invoice_id, shouldn't be destroyed just because the invoice it
+     * once pointed to was.
+     */
+    public function detachFromInvoice(int $invoiceId): int
+    {
+        return (int) $this->getEntityManager()->getConnection()->update('transaction', ['invoice_id' => null], ['invoice_id' => $invoiceId]);
+    }
+
     /**
      * Build a QueryBuilder for transaction searches/listings.
      *

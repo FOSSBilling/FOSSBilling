@@ -11,8 +11,10 @@ declare(strict_types=1);
 
 use FOSSBilling\Cache\CacheFactory;
 use FOSSBilling\Config;
+use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\Exception;
 use Psr\Cache\CacheItemPoolInterface;
+use Symfony\Component\Filesystem\Filesystem;
 
 beforeEach(function (): void {
     $this->cacheFactoryOriginalConfig = Config::getConfig();
@@ -62,6 +64,64 @@ test('defaults to a working filesystem cache when no cache configuration is set'
 
     $pool->deleteItem('probe');
 });
+
+test('falls back to a working filesystem cache when config.php does not exist yet', function (): void {
+    // The state SchemaInstaller/InstallSeeder's EntityManagerFactory::create() call hits during a
+    // fresh install: config.php is only written at the very end of install(), so every earlier
+    // step - including the Doctrine metadata cache this reaches for - has to run with no config
+    // file on disk at all. Config::getProperty() throws a plain \RuntimeException in that case
+    // (not this namespace's Exception), so this is the regression test for a narrower catch here
+    // once again breaking every fresh install.
+    $filesystem = new Filesystem();
+    $backup = PATH_CONFIG . '.cache-factory-test-backup';
+    $filesystem->rename(PATH_CONFIG, $backup);
+
+    try {
+        $pool = CacheFactory::create('cache_factory_test');
+
+        expect($pool)->toBeInstanceOf(CacheItemPoolInterface::class);
+
+        $item = $pool->getItem('probe');
+        $item->set('value');
+        $pool->save($item);
+
+        expect($pool->getItem('probe')->get())->toBe('value');
+
+        $pool->deleteItem('probe');
+    } finally {
+        $filesystem->rename($backup, PATH_CONFIG, true);
+        clearstatcache(true, PATH_CONFIG);
+    }
+});
+
+test('clearAll() alone cannot reach the Doctrine metadata cache pool, but explicitly clearing EntityManagerFactory::metadataCacheNamespace() does', function (): void {
+    // EntityManagerFactory::create() stores the Doctrine metadata/query/result cache under a
+    // namespace hashed from the current entity files, not clearAll()'s fixed NAMESPACE_DOCTRINE
+    // constant - so clearAll() alone can never reach it, which matters most for a Redis/
+    // Memcached-backed pool (a FilesystemAdapter's data is also caught by the plain PATH_CACHE
+    // directory wipe every clearAll() caller already does alongside it).
+    $namespace = EntityManagerFactory::metadataCacheNamespace();
+    $pool = CacheFactory::create($namespace);
+    $item = $pool->getItem('regression_probe');
+    $item->set('value');
+    $pool->save($item);
+
+    CacheFactory::clearAll();
+    expect(CacheFactory::create($namespace)->getItem('regression_probe')->isHit())->toBeTrue();
+
+    CacheFactory::clearNamespace($namespace);
+    expect(CacheFactory::create($namespace)->getItem('regression_probe')->isHit())->toBeFalse();
+});
+
+test('clearNamespace never throws even with a misconfigured driver', function (): void {
+    if (hasRedisExtension()) {
+        $this->markTestSkipped('This test requires an environment without the redis/relay extension.');
+    }
+
+    setCacheConfig(['driver' => 'redis', 'redis' => ['host' => '127.0.0.1', 'port' => 6379]]);
+
+    CacheFactory::clearNamespace('cache_factory_test');
+})->expectNotToPerformAssertions();
 
 test('rejects an unsupported cache driver', function (): void {
     expect(fn () => CacheFactory::createFromConfig(['driver' => 'memory'], 'cache_factory_test', 0, true))

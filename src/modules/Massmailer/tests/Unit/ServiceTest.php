@@ -193,3 +193,35 @@ test('send message accepts a client with a valid email', function (): void {
 
     expect($service->sendMessage($model, 1))->toBeTrue();
 });
+
+test('install creates the mod_massmailer table portably instead of via raw MySQL DDL', function (): void {
+    // Regression test: install() used to run raw MySQL-only DDL (backticks, ENGINE=InnoDB)
+    // directly via $di['dbal'], which fails outright on PostgreSQL/SQLite - confirmed here
+    // against a real SQLite connection. mod_massmailer already exists in structure.sql, so this
+    // hook was already redundant on MySQL; it's only load-bearing on PG/SQLite.
+    $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $em = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+
+    expect($connection->createSchemaManager()->tablesExist(['mod_massmailer']))->toBeFalse();
+
+    $capturedConfig = null;
+    $extensionServiceMock = Mockery::mock();
+    $extensionServiceMock->shouldReceive('setConfig')
+        ->once()
+        ->with(['ext' => 'mod_massmailer', 'limit' => '2', 'interval' => '10', 'test_client_id' => 1])
+        ->andReturnUsing(function (array $config) use (&$capturedConfig): void {
+            $capturedConfig = $config;
+        });
+
+    $di = new Pimple\Container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(fn (string $name): object => $extensionServiceMock);
+
+    $service = new Box\Mod\Massmailer\Service();
+    $service->setDi($di);
+
+    $service->install();
+
+    expect($connection->createSchemaManager()->tablesExist(['mod_massmailer']))->toBeTrue()
+        ->and($capturedConfig)->toBe(['ext' => 'mod_massmailer', 'limit' => '2', 'interval' => '10', 'test_client_id' => 1]);
+});

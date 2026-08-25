@@ -22,6 +22,7 @@ use Box\Mod\Order\Repository\OrderRepository;
 use Box\Mod\Order\Repository\OrderStatusRepository;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Staff\Entity\Admin;
+use FOSSBilling\Doctrine\RowLock;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Logger;
@@ -432,7 +433,14 @@ class Service implements InjectionAwareInterface
             $query = $query . ' AND ' . implode(' AND ', $where);
         }
 
-        $query .= ' HAVING DATEDIFF(co.expires_at, NOW()) <= :days_until_expiration ORDER BY co.client_id DESC';
+        // co.expires_at < :expires_before is a portable stand-in for MySQL's
+        // DATEDIFF(co.expires_at, NOW()) <= :days_until_expiration - DATEDIFF compares calendar
+        // dates only (ignoring time-of-day), so "at most N days from today" means expires_at
+        // falls on or before N days from now, i.e. before the start of day N+1. This is a plain
+        // row filter, not an aggregate condition, so it belongs in WHERE (via AND) - PostgreSQL
+        // rejects a HAVING clause referencing an ungrouped, non-aggregate column outright, unlike
+        // MySQL/SQLite's more permissive handling of HAVING without GROUP BY.
+        $query .= ' AND co.expires_at < :expires_before ORDER BY co.client_id DESC';
         $bindings['status'] = Order::STATUS_ACTIVE;
         $bindings['invoice_option'] = 'issue-invoice';
         $bindings['unpaid_invoice_status'] = Invoice::STATUS_UNPAID;
@@ -440,7 +448,9 @@ class Service implements InjectionAwareInterface
         $bindings['pending_item_task'] = \Box\Mod\Invoice\Entity\InvoiceItem::TASK_RENEW;
         $bindings['pending_item_status'] = \Box\Mod\Invoice\Entity\InvoiceItem::STATUS_EXECUTED;
         $bindings['pending_invoice_status'] = Invoice::STATUS_PAID;
-        $bindings['days_until_expiration'] = $days_until_expiration;
+        $bindings['expires_before'] = (new \DateTimeImmutable('today'))
+            ->modify('+' . ((int) $days_until_expiration + 1) . ' days')
+            ->format('Y-m-d H:i:s');
 
         return [$query, $bindings];
     }
@@ -710,18 +720,24 @@ class Service implements InjectionAwareInterface
         }
 
         if ($created_at) {
-            $where[] = "DATE_FORMAT(co.created_at, '%Y-%m-%d') = :created_at";
-            $bindings['created_at'] = date('Y-m-d', strtotime((string) $created_at));
+            // A day range rather than DATE_FORMAT(...) = :created_at, which MySQL supports but
+            // PostgreSQL and SQLite don't.
+            $where[] = 'co.created_at >= :created_at_start AND co.created_at < :created_at_end';
+            $dayStart = strtotime(date('Y-m-d', strtotime((string) $created_at)));
+            $bindings['created_at_start'] = date('Y-m-d H:i:s', $dayStart);
+            $bindings['created_at_end'] = date('Y-m-d H:i:s', strtotime('+1 day', $dayStart));
         }
 
         if ($date_from) {
-            $where[] = 'UNIX_TIMESTAMP(co.created_at) >= :date_from';
-            $bindings['date_from'] = strtotime((string) $date_from);
+            // Compares directly against the datetime column rather than UNIX_TIMESTAMP(co.created_at),
+            // which MySQL supports but PostgreSQL and SQLite don't.
+            $where[] = 'co.created_at >= :date_from';
+            $bindings['date_from'] = date('Y-m-d H:i:s', strtotime((string) $date_from));
         }
 
         if ($date_to) {
-            $where[] = 'UNIX_TIMESTAMP(co.created_at) <= :date_to';
-            $bindings['date_to'] = strtotime((string) $date_to);
+            $where[] = 'co.created_at <= :date_to';
+            $bindings['date_to'] = date('Y-m-d H:i:s', strtotime((string) $date_to));
         }
 
         // smartSearch
@@ -1615,6 +1631,7 @@ class Service implements InjectionAwareInterface
         $productService->releaseReservedPromoRedemptionsForOrder($order, 'order_deleted');
         $productService->releaseReservedStockForOrder($order, 'order_deleted');
         $this->rmClientOrderStatusByOrder($order);
+        $this->getOrderMetaRepository()->deleteByOrderId($orderId);
         $this->rmOrder($order);
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderDelete', 'params' => ['id' => $orderId]]);
@@ -1667,7 +1684,7 @@ class Service implements InjectionAwareInterface
         $connection = $this->di['em']->getConnection();
 
         return $connection->transactional(function () use ($connection, $order, $suspensionAt): bool {
-            $connection->fetchOne('SELECT id FROM client_order WHERE id = :id FOR UPDATE', ['id' => $order->getId()]);
+            $connection->fetchOne('SELECT id FROM client_order WHERE id = :id' . RowLock::suffix($connection), ['id' => $order->getId()]);
             $existing = $connection->fetchAssociative(
                 'SELECT id, value FROM client_order_meta WHERE client_order_id = :order_id AND name = :name ORDER BY id LIMIT 1',
                 ['order_id' => $order->getId(), 'name' => self::META_SUSPENSION_WARNING_FOR]
@@ -1745,15 +1762,20 @@ class Service implements InjectionAwareInterface
         $reason = $config['batch_cancel_suspended_reason'] ?? null;
         $days = $this->resolveBatchAfterDays($config['batch_cancel_suspended_after_days'] ?? null);
 
+        // suspended_at < :suspended_before is a portable stand-in for MySQL's
+        // DATEDIFF(NOW(), suspended_at) > :days - DATEDIFF compares calendar dates only
+        // (ignoring time-of-day), so "more than N days ago" means suspended_at's date is
+        // strictly before N days before today.
         $sql = "
-            SELECT id, suspended_at, DATEDIFF(NOW(), suspended_at) as days_passed_since_suspension
+            SELECT id, suspended_at
             FROM client_order
             WHERE status = 'suspended'
-            AND DATEDIFF(NOW(), suspended_at) > :days
+            AND suspended_at < :suspended_before
             ORDER BY id DESC
         ";
+        $suspendedBefore = (new \DateTimeImmutable('today'))->modify("-{$days} days")->format('Y-m-d H:i:s');
 
-        $orders = $this->di['em']->getConnection()->fetchAllAssociative($sql, ['days' => $days]);
+        $orders = $this->di['em']->getConnection()->fetchAllAssociative($sql, ['suspended_before' => $suspendedBefore]);
 
         foreach ($orders as $orderArr) {
             try {

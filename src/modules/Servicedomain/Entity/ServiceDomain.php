@@ -18,8 +18,8 @@ use FOSSBilling\Interfaces\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Servicedomain\Repository\DomainRepository::class)]
 #[ORM\Table(name: 'service_domain')]
-#[ORM\Index(name: 'client_id_idx', columns: ['client_id'])]
-#[ORM\Index(name: 'tld_registrar_id_idx', columns: ['tld_registrar_id'])]
+#[ORM\Index(name: 'service_domain_client_id_idx', columns: ['client_id'])]
+#[ORM\Index(name: 'service_domain_tld_registrar_id_idx', columns: ['tld_registrar_id'])]
 #[ORM\HasLifecycleCallbacks]
 class ServiceDomain implements TimestampInterface
 {

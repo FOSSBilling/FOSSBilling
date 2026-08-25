@@ -47,7 +47,7 @@ class ServiceHostingServer implements TimestampInterface
     #[ORM\Column(type: Types::BOOLEAN, nullable: true)]
     private ?bool $active = null;
 
-    #[ORM\Column(name: 'max_accounts', type: Types::INTEGER, nullable: true)]
+    #[ORM\Column(name: 'max_accounts', type: Types::BIGINT, nullable: true)]
     private ?int $maxAccounts = null;
 
     #[ORM\Column(type: Types::STRING, length: 100, nullable: true)]

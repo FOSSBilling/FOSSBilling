@@ -1194,6 +1194,34 @@ test('helpdesk create', function (): void {
     expect($result)->toEqual($randId);
 });
 
+test('helpdesk create falls back to the default close_after when omitted, instead of storing NULL', function (): void {
+    // Doctrine always includes a mapped column in its INSERT, so an omitted close_after would
+    // otherwise write a literal NULL and bypass the column's own DB-level default - silently
+    // excluding this helpdesk's tickets from ever being auto-closed by findExpiredOnHold().
+    $service = new Service();
+    $randId = 1;
+    $persisted = null;
+
+    $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    supportWireKbRepositories($emMock);
+    $emMock->shouldReceive('persist')
+        ->atLeast()->once()
+        ->andReturnUsing(function (Helpdesk $helpdesk) use ($randId, &$persisted): void {
+            supportSetEntityId($helpdesk, $randId);
+            $persisted = $helpdesk;
+        });
+    $emMock->shouldReceive('flush')->atLeast()->once();
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    $service->helpdeskCreate(['name' => 'Name']);
+
+    expect($persisted->getCloseAfter())->toBe(Helpdesk::DEFAULT_CLOSE_AFTER_HOURS);
+});
+
 /*
  * Knowledge Base Tests
  */

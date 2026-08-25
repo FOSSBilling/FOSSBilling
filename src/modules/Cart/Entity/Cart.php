@@ -13,7 +13,7 @@ use FOSSBilling\Interfaces\TimestampInterface;
 #[ORM\Table(name: 'cart')]
 #[ORM\UniqueConstraint(name: 'session_id_idx', columns: ['session_id'])]
 #[ORM\Index(name: 'currency_id_idx', columns: ['currency_id'])]
-#[ORM\Index(name: 'promo_id_idx', columns: ['promo_id'])]
+#[ORM\Index(name: 'cart_promo_id_idx', columns: ['promo_id'])]
 #[ORM\HasLifecycleCallbacks]
 class Cart implements TimestampInterface
 {

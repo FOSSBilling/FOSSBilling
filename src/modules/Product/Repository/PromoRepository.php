@@ -14,6 +14,7 @@ namespace Box\Mod\Product\Repository;
 use Box\Mod\Product\Entity\Promo;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\Doctrine\SqlExpr;
 
 class PromoRepository extends EntityRepository
 {
@@ -82,8 +83,11 @@ class PromoRepository extends EntityRepository
 
     public function decrementUsage(int $promoId, int $count, \DateTimeInterface $updatedAt): int
     {
-        return $this->getEntityManager()->getConnection()->executeStatement(
-            'UPDATE promo SET used = GREATEST(COALESCE(used, 0) - ?, 0), updated_at = ? WHERE id = ?',
+        $connection = $this->getEntityManager()->getConnection();
+        $newUsed = SqlExpr::greatestOfTwo($connection, 'COALESCE(used, 0) - ?', '0');
+
+        return $connection->executeStatement(
+            "UPDATE promo SET used = {$newUsed}, updated_at = ? WHERE id = ?",
             [$count, $updatedAt->format('Y-m-d H:i:s'), $promoId]
         );
     }
