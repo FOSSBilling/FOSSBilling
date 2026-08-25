@@ -149,6 +149,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 throw new \FOSSBilling\InformationException(':domain cannot be transferred!', [':domain' => $domain]);
             }
 
+            if ($tld->isRequireTransferCode() && trim((string) ($data['transfer_code'] ?? '')) === '') {
+                throw new \FOSSBilling\InformationException('A transfer code (EPP/auth code) is required to transfer :domain', [':domain' => $domain]);
+            }
+
             $data['period'] = '1Y';
             $data['quantity'] = 1;
         }
@@ -822,6 +826,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->setPeriods(array_key_exists('periods', $data) ? $data['periods'] : null);
         $model->setAllowRegister(isset($data['allow_register']) ? (bool) $data['allow_register'] : true);
         $model->setAllowTransfer(isset($data['allow_transfer']) ? (bool) $data['allow_transfer'] : true);
+        $model->setRequireTransferCode(isset($data['require_transfer_code']) ? (bool) $data['require_transfer_code'] : false);
         $model->setActive(isset($data['active']) ? (bool) $data['active'] : true);
 
         $this->di['em']->persist($model);
@@ -850,6 +855,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->setPeriods(array_key_exists('periods', $data) ? $data['periods'] : $model->getPeriods());
         $model->setAllowRegister(array_key_exists('allow_register', $data) ? (bool) $data['allow_register'] : $model->isAllowRegister());
         $model->setAllowTransfer(array_key_exists('allow_transfer', $data) ? (bool) $data['allow_transfer'] : $model->isAllowTransfer());
+        $model->setRequireTransferCode(array_key_exists('require_transfer_code', $data) ? (bool) $data['require_transfer_code'] : $model->isRequireTransferCode());
         $model->setActive(array_key_exists('active', $data) ? (bool) $data['active'] : $model->isActive());
 
         $this->di['em']->flush();
@@ -996,6 +1002,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'active' => $model->isActive(),
             'allow_register' => $model->isAllowRegister(),
             'allow_transfer' => $model->isAllowTransfer(),
+            'require_transfer_code' => $model->isRequireTransferCode(),
             'min_years' => $model->getMinYears(),
             'periods' => $model->getPeriodsArray(),
         ];
