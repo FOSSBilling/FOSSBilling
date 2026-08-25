@@ -617,12 +617,22 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         }
 
         $content = $result->getContent(false);
-        if (in_array($content, ['true', 'false'], true)) {
-            return $content;
+        $trimmedContent = trim($content);
+
+        // Some endpoints (e.g. domains/validate-transfer, domains/orderid) respond with a bare
+        // scalar instead of a JSON object, which would make toArray() below throw "JSON content
+        // was expected to decode to an array". Match booleans case-insensitively and trimmed,
+        // since the registrar isn't consistent about formatting - see
+        // https://github.com/FOSSBilling/FOSSBilling/issues/2939.
+        if (in_array(strtolower($trimmedContent), ['true', 'false'], true)) {
+            return strtolower($trimmedContent);
         }
-        if (is_numeric($content)) {
-            return $content;
+
+        $decoded = json_decode($trimmedContent, true);
+        if (json_last_error() === JSON_ERROR_NONE && !is_array($decoded)) {
+            return $trimmedContent;
         }
+
         $json = $result->toArray(false);
 
         if (isset($json['status']) && $json['status'] == 'ERROR') {
