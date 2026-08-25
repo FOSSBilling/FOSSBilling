@@ -165,6 +165,15 @@ test('synchronizes domain with registrar', function (): void {
     expect($result)->toBeTrue();
 });
 
+test('throws exception when synchronizing domain without order_id', function (): void {
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
+    $dispatcher = new FOSSBilling\Api\Dispatcher();
+
+    expect(fn () => $dispatcher->validateRequiredParams($adminApi, 'sync', []))
+        ->toThrow(FOSSBilling\InformationException::class);
+});
+
 test('gets transfer code', function (): void {
     $adminApi = apiEndpoint(new Admin());
     $api = apiEndpoint(new Admin());

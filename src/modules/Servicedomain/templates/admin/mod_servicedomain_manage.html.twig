@@ -73,12 +73,12 @@
             <div class="btn-list justify-content-center">
                 {{ order_actions|default('') }}
                 {% if order.status == 'active' %}
-                <a class="btn btn-secondary" type="button" id="domain-sync">
+                <button class="btn btn-secondary" type="button" id="domain-sync">
                     <svg class="icon">
                         <use href="#refresh" />
                     </svg>
                     <span>{{ 'Sync Now'|trans }}</span>
-                </a>
+                </button>
                 <a class="btn btn-primary" type="button" id="get-epp">
                     <svg class="icon">
                         <use href="#key" />

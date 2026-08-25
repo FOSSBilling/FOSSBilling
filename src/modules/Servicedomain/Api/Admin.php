@@ -113,6 +113,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      */
+    #[RequiredParams(['order_id' => 'Order ID is missing'])]
     public function sync($data)
     {
         $this->checkPermissions('servicedomain', 'manage_domains');
