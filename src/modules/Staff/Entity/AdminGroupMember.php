@@ -17,7 +17,10 @@ use FOSSBilling\Doctrine\CreatedAtTrait;
 use FOSSBilling\Interfaces\ApiArrayInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Staff\Repository\AdminGroupMemberRepository::class)]
-#[ORM\Table(name: 'admin_group_member', uniqueConstraints: [new ORM\UniqueConstraint(name: 'admin_group_member_unique', columns: ['admin_id', 'admin_group_id'])])]
+#[ORM\Table(name: 'admin_group_member')]
+// Doctrine\ORM\Mapping\Table's $uniqueConstraints constructor param is a documented no-op
+// (see the Deprecation::trigger() in its constructor) - it must be a standalone attribute.
+#[ORM\UniqueConstraint(name: 'admin_group_member_unique', columns: ['admin_id', 'admin_group_id'])]
 #[ORM\HasLifecycleCallbacks]
 class AdminGroupMember implements ApiArrayInterface
 {

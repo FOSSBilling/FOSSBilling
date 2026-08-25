@@ -29,6 +29,7 @@ use FOSSBilling\Interfaces\TimestampInterface;
 #[ORM\Table(name: 'support_ticket')]
 #[ORM\Index(name: 'idx_ticket_status', columns: ['status'])]
 #[ORM\Index(name: 'idx_ticket_client', columns: ['client_id'])]
+#[ORM\Index(name: 'access_hash_idx', columns: ['access_hash'])]
 #[ORM\HasLifecycleCallbacks]
 class SupportTicket implements ApiArrayInterface, TimestampInterface
 {

@@ -18,6 +18,9 @@ use FOSSBilling\Interfaces\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\News\Repository\PostRepository::class)]
 #[ORM\Table(name: 'post')]
+// Named per-table (unlike structure.sql's bare `admin_id_idx`) because index names must be
+// unique database-wide on SQLite/PostgreSQL, not just per-table like MySQL.
+#[ORM\Index(name: 'post_admin_id_idx', columns: ['admin_id'])]
 #[ORM\HasLifecycleCallbacks]
 class Post implements ApiArrayInterface, TimestampInterface
 {

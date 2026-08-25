@@ -20,6 +20,15 @@ use FOSSBilling\Interfaces\TimestampInterface;
 #[ORM\Entity(repositoryClass: \Box\Mod\Invoice\Repository\InvoiceItemRepository::class)]
 #[ORM\Table(name: 'invoice_item')]
 #[ORM\Index(name: 'invoice_item_invoice_id_idx', columns: ['invoice_id'])]
+// invoice_item_pending_renewal_idx (structure.sql: rel_id(20), type, task, status, invoice_id) is
+// deliberately NOT reproduced here. rel_id is mapped TEXT below (unlike structure.sql's
+// varchar(20)), so a composite index over it needs a MySQL-only column-length prefix
+// (options: ['lengths' => [20, null, null, null, null]]) to avoid "key too long" on
+// MySQL/MariaDB. That option can't round-trip through SQLite/PostgreSQL introspection, which
+// makes FOSSBilling\Doctrine\SchemaSynchronizer::sync() (a live path for existing PG/SQLite
+// installs) permanently misreport this index as missing on every sync. Fix rel_id's mapped
+// type to match structure.sql's varchar(20) first, then add this index as a plain composite
+// with no length prefix - safe on every platform.
 #[ORM\HasLifecycleCallbacks]
 class InvoiceItem implements ApiArrayInterface, TimestampInterface
 {

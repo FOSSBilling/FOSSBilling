@@ -17,6 +17,9 @@ use FOSSBilling\Interfaces\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Product\Repository\ProductRepository::class)]
 #[ORM\Table(name: 'product')]
+#[ORM\UniqueConstraint(name: 'slug', columns: ['slug'])]
+#[ORM\Index(name: 'form_id_idx', columns: ['form_id'])]
+#[ORM\Index(name: 'product_type_idx', columns: ['type'])]
 #[ORM\HasLifecycleCallbacks]
 class Product implements TimestampInterface
 {

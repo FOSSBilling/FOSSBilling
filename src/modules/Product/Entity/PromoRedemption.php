@@ -18,6 +18,13 @@ use FOSSBilling\Interfaces\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Product\Repository\PromoRedemptionRepository::class)]
 #[ORM\Table(name: 'promo_redemption')]
+// Named per-table (unlike structure.sql's bare names below) because index names must be
+// unique database-wide on SQLite/PostgreSQL, not just per-table like MySQL.
+#[ORM\Index(name: 'promo_redemption_client_id_idx', columns: ['client_id'])]
+#[ORM\Index(name: 'promo_redemption_client_order_id_idx', columns: ['client_order_id'])]
+#[ORM\Index(name: 'promo_redemption_invoice_id_idx', columns: ['invoice_id'])]
+#[ORM\Index(name: 'promo_redemption_phase_idx', columns: ['phase'])]
+#[ORM\Index(name: 'promo_redemption_status_idx', columns: ['status'])]
 #[ORM\HasLifecycleCallbacks]
 class PromoRedemption implements ApiArrayInterface, TimestampInterface
 {
