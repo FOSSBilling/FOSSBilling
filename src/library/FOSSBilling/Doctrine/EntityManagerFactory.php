@@ -43,12 +43,25 @@ class EntityManagerFactory
         // non-null pool here: if `cache` is omitted, Doctrine silently probes for APCu/Memcached/Redis
         // on localhost with no authentication (see ORMSetup::createCacheInstance()), which would let
         // whatever happens to be installed on the host override the admin's configured cache driver.
-        $cache = CacheFactory::create(CacheFactory::NAMESPACE_DOCTRINE);
+        //
+        // ORMSetup::createConfig() only ever applies a $cacheNamespaceSeed when it builds its OWN
+        // cache instance internally - see its private createCacheInstance(), which returns $cache
+        // as-is, unused seed and all, whenever one is passed in (as we always do here, via
+        // CacheFactory, to honor the admin's configured driver). So Doctrine's ClassMetadata cache
+        // would otherwise never invalidate when entity attributes change, persisting stale mappings
+        // (missing columns/indexes, renamed fields, ...) across deploys until something else
+        // wipes the cache outright (UpdateFinalization::clearCache() covers real upgrades, but
+        // not e.g. local development or a hot-deployed release with no new UpdatePatcher patch).
+        // Baking the seed into the pool's own namespace instead reproduces what Doctrine's
+        // internal cache construction would have done, so an entity file change is picked up on
+        // its own, the same way a fresh install or migration already would be - regardless of
+        // which cache backend (filesystem/Redis/Memcached) is actually configured.
+        $cacheNamespaceSeed = self::getCacheNamespaceSeed($moduleEntityPaths);
+        $cache = CacheFactory::create(CacheFactory::NAMESPACE_DOCTRINE . '_' . hash('xxh128', $cacheNamespaceSeed));
 
         $config = ORMSetup::createAttributeMetadataConfig(
             paths: $moduleEntityPaths,
             isDevMode: Environment::isDevelopment(),
-            cacheNamespaceSeed: self::getCacheNamespaceSeed($moduleEntityPaths),
             cache: $cache,
         );
 
@@ -74,8 +87,10 @@ class EntityManagerFactory
     }
 
     /**
-     * Build a cache namespace seed that changes when local entity definitions change.
-     * This prevents stale production metadata caches from surviving reinstalls/upgrades.
+     * Build a cache namespace seed that changes when local entity definitions change - hashed
+     * into the metadata cache's namespace in create() above, so a stale cache never survives
+     * an entity attribute edit (a new/renamed column, a new index, ...) regardless of whether
+     * anything else along the way happens to clear PATH_CACHE outright.
      *
      * @param list<string> $entityDirectories
      */
