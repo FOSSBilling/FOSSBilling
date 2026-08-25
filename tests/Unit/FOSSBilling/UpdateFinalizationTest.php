@@ -126,11 +126,11 @@ test('removes the install directory unless the environment is explicitly dev or 
     $shouldRemove = new ReflectionMethod(UpdateFinalization::class, 'shouldRemoveInstallDirectory');
     $finalization = new UpdateFinalization();
 
-    withAppEnv(null, fn (): Pest\Mixins\Expectation => expect($shouldRemove->invoke($finalization))->toBeTrue());
-    withAppEnv('staging', fn (): Pest\Mixins\Expectation => expect($shouldRemove->invoke($finalization))->toBeTrue());
-    withAppEnv('prod', fn (): Pest\Mixins\Expectation => expect($shouldRemove->invoke($finalization))->toBeTrue());
-    withAppEnv('dev', fn (): Pest\Mixins\Expectation => expect($shouldRemove->invoke($finalization))->toBeFalse());
-    withAppEnv('test', fn (): Pest\Mixins\Expectation => expect($shouldRemove->invoke($finalization))->toBeFalse());
+    withAppEnv(null, fn () => expect($shouldRemove->invoke($finalization))->toBeTrue());
+    withAppEnv('staging', fn () => expect($shouldRemove->invoke($finalization))->toBeTrue());
+    withAppEnv('prod', fn () => expect($shouldRemove->invoke($finalization))->toBeTrue());
+    withAppEnv('dev', fn () => expect($shouldRemove->invoke($finalization))->toBeFalse());
+    withAppEnv('test', fn () => expect($shouldRemove->invoke($finalization))->toBeFalse());
 });
 
 test('completion restores captured maintenance mode and records the current version', function (): void {
