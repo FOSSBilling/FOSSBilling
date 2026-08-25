@@ -25,6 +25,11 @@ abstract class Registrar_AdapterAbstract
     protected ?Model_ClientOrder $_order = null;
 
     /**
+     * Lazily created RDAP client, shared by all availability checks of the adapter.
+     */
+    protected ?Registrar_Rdap $_rdap = null;
+
+    /**
      * Return array with configuration.
      *
      * Must be overridden in adapter class
@@ -236,6 +241,14 @@ abstract class Registrar_AdapterAbstract
     public function getHttpClient(): Symfony\Contracts\HttpClient\HttpClientInterface
     {
         return Symfony\Component\HttpClient\HttpClient::create(['bindto' => BIND_TO]);
+    }
+
+    /**
+     * Creates an RDAP client for registry-based domain availability lookups.
+     */
+    protected function getRdap(): Registrar_Rdap
+    {
+        return $this->_rdap ??= new Registrar_Rdap($this->getHttpClient(), $this->getLog());
     }
 
     /**

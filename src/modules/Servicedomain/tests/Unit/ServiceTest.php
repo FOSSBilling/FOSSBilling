@@ -1237,7 +1237,7 @@ test('synchronizes domain with registrar', function (): void {
     $order = new Model_ClientOrder();
     $order->loadBean(new Tests\Helpers\DummyBean());
 
-    $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
+    $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getServiceOrder')
         ->once()
         ->with($model)
@@ -1259,7 +1259,7 @@ test('throws when synchronizing a domain without an order', function (): void {
     $model = new Model_ServiceDomain();
     $model->loadBean(new Tests\Helpers\DummyBean());
 
-    $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
+    $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getServiceOrder')
         ->once()
         ->with($model)
