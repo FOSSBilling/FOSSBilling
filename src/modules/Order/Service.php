@@ -1628,6 +1628,7 @@ class Service implements InjectionAwareInterface
         $productService->releaseReservedPromoRedemptionsForOrder($order, 'order_deleted');
         $productService->releaseReservedStockForOrder($order, 'order_deleted');
         $this->rmClientOrderStatusByOrder($order);
+        $this->getOrderMetaRepository()->deleteByOrderId($orderId);
         $this->rmOrder($order);
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderDelete', 'params' => ['id' => $orderId]]);
