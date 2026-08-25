@@ -1071,6 +1071,50 @@ test('require transfer code patch is a no-op when the column already exists', fu
     (new ReflectionMethod($patcher, 'patch112'))->invoke($patcher);
 });
 
+test('admin salt column drop patch is numbered 113', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 112);
+
+    expect($patches)->toHaveKey(113)
+        ->and($patches[113][1])->toBe('patch113');
+});
+
+test('admin salt column drop patch is a no-op when the column is already gone', function (): void {
+    $columns = Mockery::mock(PDOStatement::class);
+    $columns->expects('execute')->with([])->andReturnTrue();
+    $columns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([]);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `admin`')->andReturn($columns);
+    $pdo->shouldNotReceive('prepare')->with('ALTER TABLE `admin` DROP COLUMN `salt`');
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch113'))->invoke($patcher);
+});
+
+test('admin salt column drop patch drops the column when it still exists', function (): void {
+    $columns = Mockery::mock(PDOStatement::class);
+    $columns->expects('execute')->with([])->andReturnTrue();
+    $columns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([['Field' => 'salt']]);
+
+    $dropColumn = Mockery::mock(PDOStatement::class);
+    $dropColumn->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `admin`')->andReturn($columns);
+    $pdo->expects('prepare')->with('ALTER TABLE `admin` DROP COLUMN `salt`')->andReturn($dropColumn);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch113'))->invoke($patcher);
+});
+
 /**
  * These patches are raw MySQL/MariaDB DDL with no PostgreSQL/SQLite equivalent - see
  * UpdatePatcher::isMysqlDriver(). Swaps the real config.php's `db.driver`, mirroring

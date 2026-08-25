@@ -637,6 +637,7 @@ class UpdatePatcher implements InjectionAwareInterface
             110 => 'patch110',
             111 => 'patch111',
             112 => 'patch112',
+            113 => 'patch113',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2779,6 +2780,17 @@ class UpdatePatcher implements InjectionAwareInterface
         // value that only fails later at the registrar. See issue #2335.
         if (!$this->tableHasColumn('tld', 'require_transfer_code')) {
             $this->executeSql('ALTER TABLE `tld` ADD COLUMN `require_transfer_code` tinyint(1) DEFAULT NULL AFTER `allow_transfer`');
+        }
+    }
+
+    private function patch113(): void
+    {
+        // admin.salt is dead weight from a pre-password_hash() auth scheme - nothing in the
+        // codebase reads or writes it (Config::getProperty('info.salt') is an unrelated
+        // app-wide config value, not this per-admin column). Confirmed no other code path
+        // depends on its presence before dropping it for real.
+        if ($this->tableHasColumn('admin', 'salt')) {
+            $this->executeSql('ALTER TABLE `admin` DROP COLUMN `salt`');
         }
     }
 

@@ -102,7 +102,6 @@ CREATE TABLE `admin` (
   `system_name` varchar(100) DEFAULT NULL,
   `email` varchar(255) DEFAULT NULL,
   `pass` varchar(255) DEFAULT NULL,
-  `salt` varchar(255) DEFAULT NULL,
   `name` varchar(255) DEFAULT NULL,
   `signature` varchar(255) DEFAULT NULL,
   `status` varchar(30) DEFAULT 'active' COMMENT 'active, inactive',
