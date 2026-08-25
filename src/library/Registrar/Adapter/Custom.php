@@ -8,20 +8,15 @@ declare(strict_types=1);
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-
-use Iodev\Whois\Factory;
-
 class Registrar_Adapter_Custom extends Registrar_AdapterAbstract
 {
     public $config = [
-        'use_whois' => false,
+        'use_rdap' => false,
     ];
 
     public function __construct($options)
     {
-        if (isset($options['use_whois'])) {
-            $this->config['use_whois'] = (bool) $options['use_whois'];
-        }
+        $this->config['use_rdap'] = (bool) ($options['use_rdap'] ?? $options['use_whois'] ?? false);
     }
 
     public static function getConfig(): array
@@ -29,9 +24,9 @@ class Registrar_Adapter_Custom extends Registrar_AdapterAbstract
         return [
             'label' => 'Custom Registrar always responds with positive results. Useful if no other registrar is suitable.',
             'form' => [
-                'use_whois' => ['radio', [
+                'use_rdap' => ['radio', [
                     'multiOptions' => ['1' => 'Yes', '0' => 'No'],
-                    'label' => 'Use WHOIS to Check for Domain Availability',
+                    'label' => 'Use RDAP Registry Lookups to Check for Domain Availability',
                 ],
                 ],
             ],
@@ -49,13 +44,11 @@ class Registrar_Adapter_Custom extends Registrar_AdapterAbstract
     {
         $this->getLog()->debug('Checking domain availability: ' . $domain->getName());
 
-        if ($this->config['use_whois']) {
-            $whois = Factory::get()->createWhois();
-
-            return $whois->isDomainAvailable($domain->getName());
+        if (!$this->config['use_rdap']) {
+            return true;
         }
 
-        return true;
+        return $this->getRdap()->isDomainAvailable($domain->getName()) ?? true;
     }
 
     public function modifyNs(Registrar_Domain $domain): bool
@@ -79,7 +72,7 @@ class Registrar_Adapter_Custom extends Registrar_AdapterAbstract
 
     public function getDomainDetails(Registrar_Domain $domain)
     {
-        $this->getLog()->debug('Getting whois: ' . $domain->getName());
+        $this->getLog()->debug('Getting domain details: ' . $domain->getName());
 
         if (!$domain->getRegistrationTime()) {
             $domain->setRegistrationTime(time());

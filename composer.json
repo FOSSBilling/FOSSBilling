@@ -51,7 +51,6 @@
         "dompdf/dompdf": "^3.1.4",
         "egulias/email-validator": "^4.0.4",
         "filp/whoops": "^2.18.4",
-        "io-developer/php-whois": "^4.1.10",
         "league/commonmark": "^2.8",
         "league/csv": "^9.28",
         "liborm85/composer-vendor-cleaner": "^1.7.1",
