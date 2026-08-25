@@ -164,6 +164,21 @@
             });
         };
 
+        function updateTransferCodeRequirement() {
+            const tldSelect = document.querySelector('select[name="transfer_tld"]');
+            const selectedOption = tldSelect && tldSelect.options[tldSelect.selectedIndex];
+            const requiresTransferCode = selectedOption && selectedOption.dataset.requireTransferCode === '1';
+            const transferCodeInput = document.getElementById('transfer-code');
+            const transferCodeHint = document.getElementById('transfer-code-hint');
+            if (transferCodeInput) transferCodeInput.required = requiresTransferCode;
+            if (transferCodeHint) transferCodeHint.style.display = requiresTransferCode ? '' : 'none';
+        }
+
+        const transferTldSelect = document.querySelector('select[name="transfer_tld"]');
+        if (transferTldSelect) {
+            transferTldSelect.addEventListener('change', updateTransferCodeRequirement);
+        }
+
         const transferCheck = document.getElementById('transfer-check');
         if (transferCheck) {
             transferCheck.addEventListener('click', function (event) {
@@ -188,12 +203,7 @@
                         const transferOrderButton = document.querySelector('#transfer .order-button');
                         if (transferOrderButton) transferOrderButton.style.display = '';
 
-                        const selectedOption = tldSelect.options[tldSelect.selectedIndex];
-                        const requiresTransferCode = selectedOption && selectedOption.dataset.requireTransferCode === '1';
-                        const transferCodeInput = document.getElementById('transfer-code');
-                        const transferCodeHint = document.getElementById('transfer-code-hint');
-                        if (transferCodeInput) transferCodeInput.required = requiresTransferCode;
-                        if (transferCodeHint) transferCodeHint.style.display = requiresTransferCode ? '' : 'none';
+                        updateTransferCodeRequirement();
                     },
                 );
 
