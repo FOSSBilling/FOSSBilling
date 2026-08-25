@@ -81,7 +81,6 @@ jobs:
           existing_pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --head chore/cs-fix --base main --state open --json number -q '.[0].number')
 
           if [ -n "$existing_pr" ]; then
-            echo "operation=updated" >> "$GITHUB_OUTPUT"
             gh pr view "$existing_pr" --repo "$GITHUB_REPOSITORY" --json url -q '"url=" + .url' >> "$GITHUB_OUTPUT"
             echo "Pull request #$existing_pr already open; push updated it."
           else
@@ -92,7 +91,6 @@ jobs:
               --base main \
               --head chore/cs-fix \
               --label skip-changelog)
-            echo "operation=created" >> "$GITHUB_OUTPUT"
             echo "url=$url" >> "$GITHUB_OUTPUT"
           fi
 
