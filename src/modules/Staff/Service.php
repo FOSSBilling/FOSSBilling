@@ -15,8 +15,10 @@ use Box\Mod\Activity\Entity\ActivityAdminHistory;
 use Box\Mod\Staff\Entity\Admin;
 use Box\Mod\Staff\Entity\AdminGroup;
 use Box\Mod\Staff\Entity\AdminGroupMember;
+use Box\Mod\Staff\Entity\AdminPasswordReset;
 use Box\Mod\Staff\Repository\AdminGroupMemberRepository;
 use Box\Mod\Staff\Repository\AdminGroupRepository;
+use Box\Mod\Staff\Repository\AdminPasswordResetRepository;
 use Box\Mod\Staff\Repository\AdminRepository;
 use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Entity\SupportTicket;
@@ -32,6 +34,7 @@ class Service implements InjectionAwareInterface
 
     private AdminGroupRepository $adminGroupRepository;
     private AdminGroupMemberRepository $adminGroupMemberRepository;
+    private AdminPasswordResetRepository $adminPasswordResetRepository;
 
     protected ?\Pimple\Container $di = null;
 
@@ -40,6 +43,7 @@ class Service implements InjectionAwareInterface
         $this->di = $di;
         $this->adminGroupRepository = $di['em']->getRepository(AdminGroup::class);
         $this->adminGroupMemberRepository = $di['em']->getRepository(AdminGroupMember::class);
+        $this->adminPasswordResetRepository = $di['em']->getRepository(AdminPasswordReset::class);
     }
 
     public function getDi(): ?\Pimple\Container
@@ -613,6 +617,7 @@ class Service implements InjectionAwareInterface
         $name = $model->getName();
         $this->di['em']->wrapInTransaction(function () use ($model, $id): void {
             $this->adminGroupMemberRepository->deleteMembershipsForAdmin((int) $id);
+            $this->adminPasswordResetRepository->deleteResetsForAdmin((int) $id);
             $this->di['em']->remove($model);
             $this->di['em']->flush();
         });
