@@ -77,7 +77,8 @@
         "mtimes",
         "unroutable",
         "namedlock",
-        "entrancy"
+        "entrancy",
+        "writability"
     ],
 
     "ignoreWords": [

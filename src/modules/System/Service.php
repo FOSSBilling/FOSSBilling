@@ -770,6 +770,17 @@ class Service
         // silently write the same value the first writer already committed. Driving the
         // transaction with a raw BEGIN IMMEDIATE instead takes SQLite's write lock upfront,
         // matching what FOR UPDATE achieves on the other platforms.
+        //
+        // Known gap, not currently reachable: if $connection already has an open transaction
+        // (getTransactionNestingLevel() > 0 - not true for any call site today, since every
+        // current caller reaches this after its own flush() has already committed and closed its
+        // transaction), this falls through to the plain transactional() branch below, which nests
+        // via a SAVEPOINT rather than a fresh BEGIN IMMEDIATE - so the race this method exists to
+        // close would reopen for a caller that ever does wrap this in its own transaction. Fixing
+        // that needs either forcing an early real write (SQLite escalates its lock on the first
+        // write of *any* nesting depth, not just a top-level BEGIN IMMEDIATE) or another atomic
+        // reservation mechanism entirely - deliberately not attempted here without dedicated
+        // review, since this reserves invoice numbers.
         if ($connection->getDatabasePlatform() instanceof SQLitePlatform && $connection->getTransactionNestingLevel() === 0) {
             $connection->executeStatement('BEGIN IMMEDIATE');
 

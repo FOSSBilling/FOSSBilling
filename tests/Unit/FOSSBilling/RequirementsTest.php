@@ -28,15 +28,25 @@ test('checkCompat reports every supported database driver extension individually
 });
 
 test('checkCompat does not fail overall on the database driver check when at least one supported driver extension is loaded', function (): void {
-    $result = (new Requirements())->checkCompat();
+    $requirements = new Requirements();
+    // Isolate the driver rule from every other requirement checkCompat() folds into can_install
+    // (folder/file writability, other required extensions) - both are public, mutable properties,
+    // so this is real isolation, not a mock standing in for the real check. can_install can then
+    // only be false here if the "at least one supported driver" rule itself is what failed - the
+    // PHP-version check stays live, but this project already requires PHP 8.3+ to run at all
+    // (composer.json's php-64bit platform requirement), so it can never be what fails this test.
+    $requirements->writable = ['folders' => [], 'files' => []];
+    $requirements->php_reqs['required_extensions'] = [];
+
+    $result = $requirements->checkCompat();
 
     $reportedDrivers = array_intersect_key(
         $result['required_extensions'],
         array_flip(DriverManagerFactory::SUPPORTED_DRIVERS),
     );
 
-    // Only the "at least one supported driver" rule is under test here - can_install also folds
-    // in folder permissions, other extensions, and the PHP version, so asserting it here would
-    // fail this test for reasons that have nothing to do with the database driver check.
-    expect(in_array(true, $reportedDrivers, true))->toBeTrue();
+    // Precondition: this test environment has pdo_mysql, pdo_pgsql, and pdo_sqlite all loaded, so
+    // the "at least one" rule can never be the reason can_install is false here.
+    expect(in_array(true, $reportedDrivers, true))->toBeTrue()
+        ->and($result['can_install'])->toBeTrue();
 });
