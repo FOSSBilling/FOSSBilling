@@ -638,6 +638,7 @@ class UpdatePatcher implements InjectionAwareInterface
             111 => 'patch111',
             112 => 'patch112',
             113 => 'patch113',
+            114 => 'patch114',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2794,7 +2795,7 @@ class UpdatePatcher implements InjectionAwareInterface
         }
     }
 
-    private function patch113(): void
+    private function patch114(): void
     {
         // Enforce unique session_id on cart at the DB level (matches the Cart entity
         // UniqueConstraint and CartRepository::findBySessionId()'s existing assumption of at

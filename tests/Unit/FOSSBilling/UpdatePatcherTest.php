@@ -1115,11 +1115,11 @@ test('admin salt column drop patch drops the column when it still exists', funct
     (new ReflectionMethod($patcher, 'patch113'))->invoke($patcher);
 });
 
-test('cart unique session_id patch is numbered 113', function (): void {
-    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 112);
+test('cart unique session_id patch is numbered 114', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 113);
 
-    expect($patches)->toHaveKey(113)
-        ->and($patches[113][1])->toBe('patch113');
+    expect($patches)->toHaveKey(114)
+        ->and($patches[114][1])->toBe('patch114');
 });
 
 test('cart unique session_id patch is a no-op when the index is already unique and there are no duplicates', function (): void {
@@ -1146,7 +1146,7 @@ test('cart unique session_id patch is a no-op when the index is already unique a
 
     $patcher = new UpdatePatcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch113'))->invoke($patcher);
+    (new ReflectionMethod($patcher, 'patch114'))->invoke($patcher);
 });
 
 test('cart unique session_id patch reconciles duplicate sessions then converts the index to unique', function (): void {
@@ -1192,7 +1192,7 @@ test('cart unique session_id patch reconciles duplicate sessions then converts t
 
     $patcher = new UpdatePatcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch113'))->invoke($patcher);
+    (new ReflectionMethod($patcher, 'patch114'))->invoke($patcher);
 });
 
 /**
