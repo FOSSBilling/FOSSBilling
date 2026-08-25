@@ -83,27 +83,9 @@ test('an error-object response still throws a Registrar_Exception', function ():
         ->toThrow(Registrar_Exception::class);
 });
 
-test('modifyContact creates a new contact and re-associates it with the domain order instead of calling the deprecated contacts/modify endpoint', function (): void {
-    // Regression test for #2365: ResellerClub deprecated contacts/modify in December 2016 due to
-    // ICANN's IRTP-C policy - existing contacts can no longer be edited in place. modifyContact must
-    // instead create a new contact via contacts/add and re-point the domain order at it via
-    // domains/modify-contact.
-    $requests = [];
-    $responses = [
-        json_encode(['customerid' => '555']), // customers/details
-        '998877', // contacts/add -> new contact id
-        '112233', // domains/orderid
-        json_encode(['status' => 'Success']), // domains/modify-contact
-    ];
-
-    $httpClient = new MockHttpClient(function (string $method, string $url) use (&$requests, &$responses): MockResponse {
-        $requests[] = $method . ' ' . parse_url($url, PHP_URL_PATH);
-
-        return new MockResponse(array_shift($responses));
-    });
-    $adapter = createResellerclubAdapter($httpClient);
-
-    $contact = (new Registrar_Domain_Contact())
+function createResellerclubTestContact(): Registrar_Domain_Contact
+{
+    return (new Registrar_Domain_Contact())
         ->setName('Jane Doe')
         ->setEmail('jane@example.com')
         ->setAddress1('1 Example St')
@@ -112,14 +94,79 @@ test('modifyContact creates a new contact and re-associates it with the domain o
         ->setTelCc('1')
         ->setTel('5551234567')
         ->setCountry('US');
+}
 
-    $domain = createResellerclubDomain()->setContactRegistrar($contact);
+test('modifyContact creates a new contact and re-associates it with the domain order instead of calling the deprecated contacts/modify endpoint', function (): void {
+    // Regression test for #2365: ResellerClub deprecated contacts/modify in December 2016 due to
+    // ICANN's IRTP-C policy - existing contacts can no longer be edited in place. modifyContact must
+    // instead create a new contact via contacts/add and re-point the domain order at it via
+    // domains/modify-contact.
+    $requests = [];
+    $responses = [
+        json_encode(['customerid' => '555']), // customers/details
+        json_encode(['recsonpage' => 0]), // contacts/search (no existing contact to delete)
+        '998877', // contacts/add -> new contact id
+        '112233', // domains/orderid
+        json_encode(['status' => 'Success']), // domains/modify-contact
+    ];
+    $lastBody = null;
+
+    $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$requests, &$responses, &$lastBody): MockResponse {
+        $requests[] = $method . ' ' . parse_url($url, PHP_URL_PATH);
+        $lastBody = $options['body'] ?? null;
+
+        return new MockResponse(array_shift($responses));
+    });
+    $adapter = createResellerclubAdapter($httpClient);
+    $domain = createResellerclubDomain()->setContactRegistrar(createResellerclubTestContact());
 
     expect($adapter->modifyContact($domain))->toBeTrue();
     expect($requests)->toBe([
         'GET /api/customers/details.json',
+        'GET /api/contacts/search.json',
         'POST /api/contacts/add.json',
         'GET /api/domains/orderid.json',
         'POST /api/domains/modify-contact.json',
     ]);
+
+    // a plain .com domain only needs one general contact, shared across all four roles
+    parse_str((string) $lastBody, $body);
+    expect($body['reg-contact-id'])->toBe('998877');
+    expect($body['admin-contact-id'])->toBe('998877');
+    expect($body['tech-contact-id'])->toBe('998877');
+    expect($body['billing-contact-id'])->toBe('998877');
+});
+
+test('modifyContact assigns per-role contact IDs for TLDs that require a dedicated contact type (.co.uk)', function (): void {
+    // Regression test for the .uk/.co.uk/.org.uk handling that _getAllContacts() already applies for
+    // registerDomain(): ResellerClub doesn't accept a general contact for these roles, so modifyContact
+    // must go through _getAllContacts() rather than pointing every role at one general contact ID.
+    $requests = [];
+    $responses = [
+        json_encode(['customerid' => '555']), // customers/details
+        json_encode(['recsonpage' => 0]), // contacts/search (general Contact)
+        '111111', // contacts/add (general Contact) -> id
+        json_encode(['recsonpage' => 0]), // contacts/search (UkContact)
+        '222222', // contacts/add (UkContact) -> id
+        '333333', // domains/orderid
+        json_encode(['status' => 'Success']), // domains/modify-contact
+    ];
+    $lastBody = null;
+
+    $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$requests, &$responses, &$lastBody): MockResponse {
+        $requests[] = $method . ' ' . parse_url($url, PHP_URL_PATH);
+        $lastBody = $options['body'] ?? null;
+
+        return new MockResponse(array_shift($responses));
+    });
+    $adapter = createResellerclubAdapter($httpClient);
+    $domain = createResellerclubDomain(tld: '.co.uk')->setContactRegistrar(createResellerclubTestContact());
+
+    expect($adapter->modifyContact($domain))->toBeTrue();
+
+    parse_str((string) $lastBody, $body);
+    expect($body['reg-contact-id'])->toBe('222222'); // the UkContact, not the general contact
+    expect($body['admin-contact-id'])->toBe('-1');
+    expect($body['tech-contact-id'])->toBe('-1');
+    expect($body['billing-contact-id'])->toBe('-1');
 });

@@ -134,16 +134,20 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
     {
         // ResellerClub deprecated contacts/modify in December 2016 due to ICANN's IRTP-C policy:
         // https://manage.resellerclub.com/kb/answer/791. Existing contacts can no longer be edited
-        // in place; instead a new contact has to be created and then associated with the domain
+        // in place; instead new contacts have to be created and then associated with the domain
         // order via domains/modify-contact. See https://github.com/FOSSBilling/FOSSBilling/issues/2365.
-        $contact_id = $this->getContactIdForDomain($domain);
+        // Reuse _getAllContacts() (as registerDomain() already does) rather than assigning a single
+        // general contact to every role, since several TLDs (e.g. .uk, .de, .ru) require their own
+        // contact type and don't allow a general contact for all four roles.
+        $customer = $this->_getCustomerDetails($domain);
+        [$reg_contact_id, $admin_contact_id, $tech_contact_id, $billing_contact_id] = $this->_getAllContacts($domain->getTld(), $customer['customerid'], $domain->getContactRegistrar());
 
         $params = [
             'order-id' => $this->_getDomainOrderId($domain),
-            'reg-contact-id' => $contact_id,
-            'admin-contact-id' => $contact_id,
-            'tech-contact-id' => $contact_id,
-            'billing-contact-id' => $contact_id,
+            'reg-contact-id' => $reg_contact_id,
+            'admin-contact-id' => $admin_contact_id,
+            'tech-contact-id' => $tech_contact_id,
+            'billing-contact-id' => $billing_contact_id,
         ];
 
         $result = $this->_makeRequest('domains/modify-contact', $params, 'POST');
