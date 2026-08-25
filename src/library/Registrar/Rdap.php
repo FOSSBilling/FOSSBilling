@@ -146,13 +146,49 @@ class Registrar_Rdap
             return $this->bootstrap = [];
         }
 
+        $services = is_array($data) ? $data['services'] ?? [] : null;
+        if (!is_array($services)) {
+            return $this->rejectBootstrap('The RDAP bootstrap registry response is malformed');
+        }
+
         $map = [];
-        foreach ($data['services'] ?? [] as [$labels, $servers]) {
-            foreach ($labels ?? [] as $label) {
-                $map[strtolower($label)] = $servers;
+        foreach ($services as $service) {
+            if (!$this->isValidServiceEntry($service)) {
+                return $this->rejectBootstrap('The RDAP bootstrap registry response is malformed');
+            }
+
+            foreach ($service[0] as $label) {
+                $map[strtolower($label)] = array_values($service[1]);
             }
         }
 
         return $this->bootstrap = $map;
+    }
+
+    private function rejectBootstrap(string $message): array
+    {
+        $this->logger?->warning($message);
+
+        return $this->bootstrap = [];
+    }
+
+    /**
+     * Validates one [labels, servers] entry of the bootstrap registry.
+     *
+     * @param mixed $entry
+     */
+    private function isValidServiceEntry($entry): bool
+    {
+        if (!is_array($entry) || count($entry) !== 2 || !is_array($entry[0]) || !is_array($entry[1])) {
+            return false;
+        }
+
+        foreach ([...$entry[0], ...$entry[1]] as $value) {
+            if (!is_string($value) || $value === '') {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

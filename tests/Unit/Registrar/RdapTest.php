@@ -15,14 +15,16 @@ final class RdapRequestTracker
 /**
  * @return array{0: Registrar_Rdap, 1: RdapRequestTracker}
  */
-function createRdapClient(array $bootstrapServices, ?callable $respond = null): array
+function createRdapClient(array|string $bootstrapServices, ?callable $respond = null): array
 {
     $tracker = new RdapRequestTracker();
     $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use ($tracker, $bootstrapServices, $respond): MockResponse {
         if ($url === Registrar_Rdap::BOOTSTRAP_URL) {
             $tracker->urls[] = $url;
 
-            return new MockResponse(json_encode(['version' => '1.0', 'services' => $bootstrapServices], JSON_THROW_ON_ERROR));
+            return new MockResponse(is_string($bootstrapServices)
+                ? $bootstrapServices
+                : json_encode(['version' => '1.0', 'services' => $bootstrapServices], JSON_THROW_ON_ERROR));
         }
 
         $tracker->urls[] = $url;
@@ -130,6 +132,21 @@ test('a malformed bootstrap response disables all lookups for the instance', fun
 
     expect($rdap->isDomainAvailable('example.com'))->toBeNull();
 });
+
+test('a bootstrap response violating the expected schema disables all lookups', function (string $body): void {
+    [$rdap, $tracker] = createRdapClient($body, fn (): MockResponse => new MockResponse('', ['http_code' => 404]));
+
+    expect($rdap->isDomainAvailable('example.com'))->toBeNull()
+        ->and($tracker->urls)->toBe([Registrar_Rdap::BOOTSTRAP_URL]);
+})->with([
+    '"scalar"',
+    '{"services": "oops"}',
+    '{"services": ["oops"]}',
+    '{"services": [["com", ["https://rdap.example.com/com/v1/"]]]}',
+    '{"services": [[["com", 42], ["https://rdap.example.com/com/v1/"]]]}',
+    '{"services": [[["com"], ["https://rdap.example.com/com/v1/", null]]]}',
+    '{"services": [[["com"], [""]]]}',
+]);
 
 test('a failing domain query falls through to the next RDAP server of the zone', function (): void {
     $handlers = [
