@@ -248,6 +248,23 @@ class Service implements InjectionAwareInterface
     }
 
     /**
+     * Guards against interacting with a service on an expired order.
+     *
+     * @throws InformationException if the order has an expiry date in the past
+     */
+    public function assertOrderUsable(Order $order): void
+    {
+        $expiresAt = $order->getExpiresAt();
+        if ($expiresAt === null) {
+            return;
+        }
+
+        if ($expiresAt->getTimestamp() <= time()) {
+            throw new InformationException('Subscription expired');
+        }
+    }
+
+    /**
      * Returns the service backing an order.
      *
      * Built-in service types return their Doctrine entity (or null when the
