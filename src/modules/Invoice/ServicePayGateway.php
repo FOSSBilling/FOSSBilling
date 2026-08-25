@@ -242,7 +242,7 @@ class ServicePayGateway implements InjectionAwareInterface
             $secretFields = $this->getSecretFields($model);
             foreach ($data['config'] as $key => $value) {
                 $mergedConfig[$key] = in_array($key, $secretFields, true)
-                    ? $this->normalizeSecretValue((string) $key, $value, $existingConfig[$key] ?? null, $model)
+                    ? $this->normalizeSecretValue($key, $value, $existingConfig[$key] ?? null, $model)
                     : $value;
             }
         }

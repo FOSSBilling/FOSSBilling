@@ -1243,7 +1243,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $secretFields = $this->resolveRegistrarSecretFields($model, $adapterConfiguration);
             foreach ($data['config'] as $key => $value) {
                 $configuration[$key] = in_array($key, $secretFields, true)
-                    ? $this->normalizeRegistrarSecretValue((string) $key, $value, $existingConfiguration[$key] ?? null, $model)
+                    ? $this->normalizeRegistrarSecretValue($key, $value, $existingConfiguration[$key] ?? null, $model)
                     : $value;
             }
 
