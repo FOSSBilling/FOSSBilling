@@ -10,6 +10,8 @@
 
 declare(strict_types=1);
 
+use FOSSBilling\Config;
+
 use function Tests\Helpers\container;
 
 test('dependency injection', function (): void {
@@ -51,6 +53,27 @@ test('update params', function (): void {
     $result = $api->update_params($data);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
+});
+
+test('update cache settings clears the saved redis password only when explicitly requested', function (): void {
+    $api = apiEndpoint(new Box\Mod\System\Api\Admin());
+    $originalConfig = Config::getConfig();
+
+    try {
+        // Saving a password stores it.
+        $api->update_cache_settings(['driver' => 'filesystem', 'redis_password' => 'secret']);
+        expect(Config::getProperty('cache.redis.password'))->toBe('secret');
+
+        // Leaving the field blank on a later save keeps the existing password.
+        $api->update_cache_settings(['driver' => 'filesystem']);
+        expect(Config::getProperty('cache.redis.password'))->toBe('secret');
+
+        // The explicit "clear" checkbox is what actually removes it.
+        $api->update_cache_settings(['driver' => 'filesystem', 'redis_password_clear' => '1']);
+        expect(Config::getProperty('cache.redis.password'))->toBeNull();
+    } finally {
+        Config::setConfig($originalConfig, false);
+    }
 });
 
 test('messages', function (): void {

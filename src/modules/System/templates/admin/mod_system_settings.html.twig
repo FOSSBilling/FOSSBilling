@@ -26,6 +26,7 @@
     {% set new_params = admin.extension_config_get({ 'ext': 'mod_system' }) %}
     {% set params = admin.system_get_params %}
     {% set localization = admin.system_localization_settings %}
+    {% set cache_settings = admin.system_cache_settings %}
     {% set can_update_params = has_permission('system', 'update_params') %}
     {% set can_invalidate_cache = has_permission('system', 'invalidate_cache') %}
     {% set can_toggle_error_reporting = has_permission('system', 'toggle_error_reporting') %}
@@ -258,7 +259,78 @@
                 </div>
 
                 <div class="tab-pane fade" id="tab-cache" role="tabpanel">
-                    <div class="card-body d-flex align-items-center justify-content-between gap-3">
+                    <div class="card-body">
+                        <h4 class="card-title mb-2">{{ 'Cache Backend'|trans }}</h4>
+                        <p class="text-secondary">{{ 'Choose the backend used for the application cache, rate limiter, and Doctrine ORM cache. Redis and Memcached require the corresponding PHP extension to be installed on the server.'|trans }}</p>
+                        <form method="post" action="{{ 'system/update_cache_settings'|api_url }}" {{ fb_api_form({ message: 'Cache settings updated'|trans }) }}>
+                            <div class="d-flex flex-wrap gap-3 mb-3" id="cache-driver">
+                                <div class="form-check">
+                                    <input class="form-check-input" id="radioCacheFilesystem" type="radio" name="driver" value="filesystem"{% if cache_settings.driver == 'filesystem' %} checked{% endif %}>
+                                    <label class="form-check-label" for="radioCacheFilesystem">{{ 'Filesystem'|trans }}</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" id="radioCacheRedis" type="radio" name="driver" value="redis"{% if cache_settings.driver == 'redis' %} checked{% endif %}>
+                                    <label class="form-check-label" for="radioCacheRedis">{{ 'Redis'|trans }}</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" id="radioCacheMemcached" type="radio" name="driver" value="memcached"{% if cache_settings.driver == 'memcached' %} checked{% endif %}>
+                                    <label class="form-check-label" for="radioCacheMemcached">{{ 'Memcached'|trans }}</label>
+                                </div>
+                            </div>
+
+                            <fieldset class="cache-redis"{% if cache_settings.driver != 'redis' %} style="display:none;"{% endif %}>
+                                <legend class="h5 mb-3">{{ 'Redis Settings'|trans }}</legend>
+                                <div class="row g-3">
+                                    <div class="col-lg-6">
+                                        <label class="form-label" for="redis_host">{{ 'Host'|trans }}</label>
+                                        <input class="form-control" id="redis_host" type="text" name="redis_host" value="{{ cache_settings.redis_host }}" placeholder="127.0.0.1">
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <label class="form-label" for="redis_port">{{ 'Port'|trans }}</label>
+                                        <input class="form-control" id="redis_port" type="text" name="redis_port" value="{{ cache_settings.redis_port }}" placeholder="6379">
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <label class="form-label" for="redis_password">{{ 'Password'|trans }}</label>
+                                        <input class="form-control" id="redis_password" type="password" name="redis_password" placeholder="{% if cache_settings.redis_password_set %}{{ '(unchanged)'|trans }}{% endif %}">
+                                        <div class="form-hint">{{ 'Leave blank to keep the current password.'|trans }}</div>
+                                        {% if cache_settings.redis_password_set %}
+                                            <label class="form-check mt-1">
+                                                <input type="hidden" name="redis_password_clear" value="0">
+                                                <input class="form-check-input" type="checkbox" name="redis_password_clear" value="1">
+                                                <span class="form-check-label">{{ 'Clear the saved password'|trans }}</span>
+                                            </label>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <label class="form-label" for="redis_database">{{ 'Database Index'|trans }}</label>
+                                        <input class="form-control" id="redis_database" type="text" name="redis_database" value="{{ cache_settings.redis_database }}" placeholder="0">
+                                    </div>
+                                </div>
+                                <div class="form-hint mt-2">{{ 'Requires the PHP redis (or relay) extension.'|trans }}</div>
+                            </fieldset>
+
+                            <fieldset class="cache-memcached"{% if cache_settings.driver != 'memcached' %} style="display:none;"{% endif %}>
+                                <legend class="h5 mb-3">{{ 'Memcached Settings'|trans }}</legend>
+                                <div class="row g-3">
+                                    <div class="col-lg-6">
+                                        <label class="form-label" for="memcached_host">{{ 'Host'|trans }}</label>
+                                        <input class="form-control" id="memcached_host" type="text" name="memcached_host" value="{{ cache_settings.memcached_host }}" placeholder="127.0.0.1">
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <label class="form-label" for="memcached_port">{{ 'Port'|trans }}</label>
+                                        <input class="form-control" id="memcached_port" type="text" name="memcached_port" value="{{ cache_settings.memcached_port }}" placeholder="11211">
+                                    </div>
+                                </div>
+                                <div class="form-hint mt-2">{{ 'Requires the PHP memcached extension.'|trans }}</div>
+                            </fieldset>
+
+                            <div class="mt-3">
+                                <button class="btn btn-primary" type="submit"{% if not can_update_params %} disabled aria-disabled="true"{% endif %}>{{ 'Update Settings'|trans }}</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="card-body d-flex align-items-center justify-content-between gap-3 border-top">
                         <div>
                             <h4 class="card-title mb-2">{{ 'Cache Control'|trans }}</h4>
                             <p class="text-secondary mb-0">{{ 'Clear compiled templates and cached system state when you need configuration or theme changes to take effect immediately.'|trans }}</p>
@@ -501,6 +573,18 @@
         FOSSBilling.message(`{{ 'Network interface updated.'|trans }}`);
         updateExternalIP();
     }
+
+    const cacheDriverInputs = document.querySelectorAll('#cache-driver input');
+
+    cacheDriverInputs.forEach(input => {
+        input.addEventListener('click', function() {
+            const redisFieldset = document.querySelector('fieldset.cache-redis');
+            const memcachedFieldset = document.querySelector('fieldset.cache-memcached');
+
+            redisFieldset.style.display = this.value === 'redis' ? 'block' : 'none';
+            memcachedFieldset.style.display = this.value === 'memcached' ? 'block' : 'none';
+        });
+    });
 </script>
 {% endblock %}
 
