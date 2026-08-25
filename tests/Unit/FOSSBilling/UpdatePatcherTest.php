@@ -861,14 +861,7 @@ test('foreign key width patch widens narrow gateway_id columns but leaves alread
     // invoice.gateway_id and transaction.gateway_id were declared int(11) in structure.sql
     // while pay_gateway.id (which they reference) is bigint(20). email_queue.client_id and
     // email_queue.admin_id have the same mismatch against client.id/admin.id. This patch
-    // widens any column still at int(11) and is a no-op for columns already fixed.
-    $invoiceColumns = Mockery::mock(PDOStatement::class);
-    $invoiceColumns->expects('execute')->with([])->andReturnTrue();
-    $invoiceColumns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
-        ['Field' => 'id'],
-        ['Field' => 'gateway_id'],
-    ]);
-
+    // widens any column still typed int and is a no-op for columns already bigint.
     $invoiceLength = Mockery::mock(PDOStatement::class);
     $invoiceLength->expects('execute')->with(['column' => 'gateway_id'])->andReturnTrue();
     $invoiceLength->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
@@ -878,13 +871,6 @@ test('foreign key width patch widens narrow gateway_id columns but leaves alread
     $invoiceAlter = Mockery::mock(PDOStatement::class);
     $invoiceAlter->expects('execute')->with([])->andReturnTrue();
 
-    $transactionColumns = Mockery::mock(PDOStatement::class);
-    $transactionColumns->expects('execute')->with([])->andReturnTrue();
-    $transactionColumns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
-        ['Field' => 'id'],
-        ['Field' => 'gateway_id'],
-    ]);
-
     $transactionLength = Mockery::mock(PDOStatement::class);
     $transactionLength->expects('execute')->with(['column' => 'gateway_id'])->andReturnTrue();
     $transactionLength->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
@@ -893,14 +879,6 @@ test('foreign key width patch widens narrow gateway_id columns but leaves alread
 
     $transactionAlter = Mockery::mock(PDOStatement::class);
     $transactionAlter->expects('execute')->with([])->andReturnTrue();
-
-    $emailQueueColumns = Mockery::mock(PDOStatement::class);
-    $emailQueueColumns->expects('execute')->with([])->twice()->andReturnTrue();
-    $emailQueueColumns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->twice()->andReturn([
-        ['Field' => 'id'],
-        ['Field' => 'client_id'],
-        ['Field' => 'admin_id'],
-    ]);
 
     $emailQueueClientLength = Mockery::mock(PDOStatement::class);
     $emailQueueClientLength->expects('execute')->with(['column' => 'client_id'])->andReturnTrue();
@@ -915,19 +893,69 @@ test('foreign key width patch widens narrow gateway_id columns but leaves alread
     ]);
 
     $pdo = Mockery::mock(PDO::class);
-    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `invoice`')->andReturn($invoiceColumns);
     $pdo->expects('prepare')->with('SHOW COLUMNS FROM `invoice` LIKE :column')->andReturn($invoiceLength);
     $pdo->expects('prepare')
         ->with('ALTER TABLE `invoice` MODIFY COLUMN `gateway_id` bigint(20) DEFAULT NULL')
         ->andReturn($invoiceAlter);
 
-    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `transaction`')->andReturn($transactionColumns);
     $pdo->expects('prepare')->with('SHOW COLUMNS FROM `transaction` LIKE :column')->andReturn($transactionLength);
     $pdo->expects('prepare')
         ->with('ALTER TABLE `transaction` MODIFY COLUMN `gateway_id` bigint(20) DEFAULT NULL')
         ->andReturn($transactionAlter);
 
-    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `email_queue`')->twice()->andReturn($emailQueueColumns);
+    $pdo->expects('prepare')
+        ->with('SHOW COLUMNS FROM `email_queue` LIKE :column')
+        ->twice()
+        ->andReturn($emailQueueClientLength, $emailQueueAdminLength);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch110'))->invoke($patcher);
+});
+
+test('foreign key width patch widens a narrow column even when MySQL omits the display width', function (): void {
+    // MySQL 8.0.19+ deprecates (and 8.4+ drops) integer display widths, so SHOW COLUMNS can
+    // report a bare "int" with no "(11)" suffix. The patch must key off the base type name,
+    // not a parsed display-width digit, or it would silently skip widening on newer servers.
+    $invoiceLength = Mockery::mock(PDOStatement::class);
+    $invoiceLength->expects('execute')->with(['column' => 'gateway_id'])->andReturnTrue();
+    $invoiceLength->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Field' => 'gateway_id', 'Type' => 'int'],
+    ]);
+
+    $invoiceAlter = Mockery::mock(PDOStatement::class);
+    $invoiceAlter->expects('execute')->with([])->andReturnTrue();
+
+    $transactionLength = Mockery::mock(PDOStatement::class);
+    $transactionLength->expects('execute')->with(['column' => 'gateway_id'])->andReturnTrue();
+    $transactionLength->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Field' => 'gateway_id', 'Type' => 'bigint'],
+    ]);
+
+    $emailQueueClientLength = Mockery::mock(PDOStatement::class);
+    $emailQueueClientLength->expects('execute')->with(['column' => 'client_id'])->andReturnTrue();
+    $emailQueueClientLength->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Field' => 'client_id', 'Type' => 'bigint'],
+    ]);
+
+    $emailQueueAdminLength = Mockery::mock(PDOStatement::class);
+    $emailQueueAdminLength->expects('execute')->with(['column' => 'admin_id'])->andReturnTrue();
+    $emailQueueAdminLength->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Field' => 'admin_id', 'Type' => 'bigint'],
+    ]);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `invoice` LIKE :column')->andReturn($invoiceLength);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `invoice` MODIFY COLUMN `gateway_id` bigint(20) DEFAULT NULL')
+        ->andReturn($invoiceAlter);
+
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `transaction` LIKE :column')->andReturn($transactionLength);
+    $pdo->shouldNotReceive('prepare')->with('ALTER TABLE `transaction` MODIFY COLUMN `gateway_id` bigint(20) DEFAULT NULL');
+
     $pdo->expects('prepare')
         ->with('SHOW COLUMNS FROM `email_queue` LIKE :column')
         ->twice()

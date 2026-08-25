@@ -328,6 +328,15 @@ class UpdatePatcher implements InjectionAwareInterface
         return isset($matches[1]) ? (int) $matches[1] : null;
     }
 
+    private function getColumnType(string $table, string $column): ?string
+    {
+        $rows = $this->fetchAll(sprintf('SHOW COLUMNS FROM `%s` LIKE :column', $this->quoteIdentifier($table)), [
+            'column' => $column,
+        ]);
+
+        return $rows === [] ? null : (string) $rows[0]['Type'];
+    }
+
     private function tableHasIndex(string $table, string $indexName): bool
     {
         $indexes = $this->fetchAll(sprintf('SHOW INDEX FROM `%s`', $this->quoteIdentifier($table)));
@@ -2643,7 +2652,11 @@ class UpdatePatcher implements InjectionAwareInterface
         ];
 
         foreach ($narrowForeignKeys as [$table, $column]) {
-            if ($this->tableHasColumn($table, $column) && $this->getColumnLength($table, $column) === 11) {
+            // Match on the base type name, not the int(11) display width: MySQL 8.0.19+
+            // deprecates (and 8.4+ drops) integer display widths, so SHOW COLUMNS can
+            // report a bare "int" with no parenthesised length on newer servers.
+            $type = $this->getColumnType($table, $column);
+            if ($type !== null && str_starts_with($type, 'int')) {
                 $this->executeSql(sprintf('ALTER TABLE `%s` MODIFY COLUMN `%s` bigint(20) DEFAULT NULL', $table, $column));
             }
         }
