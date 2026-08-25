@@ -518,7 +518,6 @@ class UpdatePatcher implements InjectionAwareInterface
             95 => 'patch95',
             96 => 'patch96',
             97 => 'patch97',
-            98 => 'patch98',
             99 => 'patch99',
             100 => 'patch100',
             101 => 'patch101',
@@ -527,6 +526,12 @@ class UpdatePatcher implements InjectionAwareInterface
             104 => 'patch104',
             105 => 'patch105',
             106 => 'patch106',
+            // Intentionally out of sequence: 0.8-next (which main descended from) independently
+            // used patch number 98 for an unrelated migration (tld.periods, main's patch99) that
+            // was never ported here. An install upgrading from a 0.8-next-based release already
+            // has last_patch >= 98 from that patch, which would silently skip this migration if it
+            // kept number 98 — see https://github.com/FOSSBilling/FOSSBilling/issues/4188.
+            107 => 'patch107',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2641,7 +2646,7 @@ class UpdatePatcher implements InjectionAwareInterface
         }
     }
 
-    private function patch98(): void
+    private function patch107(): void
     {
         // Move product_payment's fixed w/m/q/b/a/bia/tria recurring pricing columns into a
         // proper one-row-per-period table, so admins can configure arbitrary billing periods

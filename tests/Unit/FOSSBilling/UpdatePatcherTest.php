@@ -804,3 +804,23 @@ test('client group patch normalizes legacy zero group ids to null', function ():
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch104'))->invoke($patcher);
 });
+
+test('custom recurring billing periods patch is numbered 107, out of sequence', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 106);
+
+    expect($patches)->toHaveKey(107)
+        ->and($patches[107][1])->toBe('patch107');
+});
+
+test('custom recurring billing periods patch is not skipped by 0.8-next installs already at patch level 98', function (): void {
+    // 0.8-next independently used patch number 98 for an unrelated migration (tld.periods),
+    // which never touched product_payment. An install coming from that lineage already has
+    // last_patch = 98, so the migration must live at a number above 98 (not 98 itself) or it
+    // would silently never run here. See https://github.com/FOSSBilling/FOSSBilling/issues/4188.
+    $allPatches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 0);
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 98);
+
+    expect($allPatches)->not->toHaveKey(98)
+        ->and($patches)->toHaveKey(107)
+        ->and($patches[107][1])->toBe('patch107');
+});
