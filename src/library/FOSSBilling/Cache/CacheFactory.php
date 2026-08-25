@@ -76,9 +76,14 @@ class CacheFactory
     {
         try {
             return self::createFromConfig(self::getCacheConfig(), $namespace, $defaultLifetime, fallbackOnFailure: true);
-        } catch (Exception) {
-            // Unsupported driver values are also treated as a soft failure at runtime; a hard failure
-            // here would otherwise break every feature that reads from $di['cache'].
+        } catch (\Throwable) {
+            // Catches more than this method's own Exception: getCacheConfig() reads the config
+            // file via Config::getProperty(), which throws a plain \RuntimeException (not this
+            // namespace's Exception) when config.php doesn't exist yet - the normal state during
+            // a fresh install, before install() has written it. SchemaInstaller/InstallSeeder's
+            // EntityManagerFactory::create() call reaches here for the Doctrine metadata cache at
+            // exactly that point, so a narrower catch here would otherwise break every fresh
+            // install, not just an unreachable/unsupported cache driver.
             return new FilesystemAdapter($namespace, $defaultLifetime, PATH_CACHE);
         }
     }
