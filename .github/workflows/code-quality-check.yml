@@ -64,7 +64,7 @@ jobs:
         if: steps.changed_files.outputs.has_php_files == 'true'
         run: |
           mapfile -d '' -t files < "$RUNNER_TEMP/changed-php-files.txt"
-          composer rector:check -- --no-progress-bar "${files[@]}"
+          composer rector:check -- --no-progress-bar -- "${files[@]}"
 
       # --config is required here: PHP-CS-Fixer only auto-discovers
       # .php-cs-fixer.dist.php when given a single (or zero) path argument,
@@ -74,7 +74,7 @@ jobs:
         if: steps.changed_files.outputs.has_php_files == 'true'
         run: |
           mapfile -d '' -t files < "$RUNNER_TEMP/changed-php-files.txt"
-          composer cs:check -- --config=.php-cs-fixer.dist.php "${files[@]}"
+          composer cs:check -- --config=.php-cs-fixer.dist.php -- "${files[@]}"
 
       - name: Write Job Summary
         if: always()
