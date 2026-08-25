@@ -156,6 +156,7 @@ test('names are normalized before being queried', function (string $input, strin
 })->with([
     [' EXAMPLE.com ', 'https://rdap.example.com/com/v1/domain/example.com'],
     ['exämple.com', 'https://rdap.example.com/com/v1/domain/xn--exmple-cua.com'],
+    ['faß.com', 'https://rdap.example.com/com/v1/domain/xn--fa-hia.com'],
 ]);
 
 test('inputs that cannot be a domain name are rejected without any HTTP traffic', function (string $input): void {
@@ -163,7 +164,7 @@ test('inputs that cannot be a domain name are rejected without any HTTP traffic'
 
     expect($rdap->isDomainAvailable($input))->toBeNull()
         ->and($tracker->urls)->toBe([]);
-})->with(['', '.com', 'example', 'example..com']);
+})->with(['', '.com', 'example', 'example..com', '_foo.com']);
 
 test('the bootstrap registry is only fetched once per instance', function (): void {
     [$rdap, $tracker] = createRdapClient([[['com'], ['https://rdap.example.com/com/v1/']]], fn (): MockResponse => new MockResponse('', ['http_code' => 404]));

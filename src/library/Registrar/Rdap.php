@@ -61,7 +61,7 @@ class Registrar_Rdap
     public function isDomainAvailable(string $domain): ?bool
     {
         $domain = strtolower(trim($domain));
-        $ascii = $domain === '' ? false : idn_to_ascii($domain);
+        $ascii = $domain === '' ? false : idn_to_ascii($domain, IDNA_NONTRANSITIONAL_TO_ASCII | IDNA_USE_STD3_RULES);
         if ($ascii === false) {
             return null;
         }
