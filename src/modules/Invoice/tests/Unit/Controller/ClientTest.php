@@ -19,7 +19,7 @@ test('invoice browser controller redirects denied invoice access to invoice list
     $api = new class {
         public function invoice_get(array $data): array
         {
-            throw new FOSSBilling\InformationException('You do not have permission to perform this action', [], 403);
+            throw new FOSSBilling\Exception\InformationException('You do not have permission to perform this action', [], 403);
         }
     };
 

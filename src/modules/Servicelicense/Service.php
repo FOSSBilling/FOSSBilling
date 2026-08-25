@@ -16,7 +16,7 @@ use Box\Mod\Order\Entity\Order;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Servicelicense\Entity\ServiceLicense;
 use Box\Mod\Servicelicense\Repository\ServiceLicenseRepository;
-use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Interfaces\InjectionAwareInterface;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
 
@@ -121,11 +121,11 @@ class Service implements InjectionAwareInterface
         $plugin = $this->_getPlugin($model);
 
         if (!is_object($plugin)) {
-            throw new \FOSSBilling\Exception('License plugin :plugin was not found.', [':plugin' => $model->getPlugin()]);
+            throw new \FOSSBilling\Exception\BaseException('License plugin :plugin was not found.', [':plugin' => $model->getPlugin()]);
         }
 
         if (!method_exists($plugin, 'generate')) {
-            throw new \FOSSBilling\Exception('License plugin does not have generate method');
+            throw new \FOSSBilling\Exception\BaseException('License plugin does not have generate method');
         }
 
         if (method_exists($plugin, 'setDi')) {
@@ -136,7 +136,7 @@ class Service implements InjectionAwareInterface
         do {
             $licenseKey = $plugin->generate($model, $order, $c);
             if ($i++ >= $iterations) {
-                throw new \FOSSBilling\Exception('Maximum number of iterations reached while generating license key');
+                throw new \FOSSBilling\Exception\BaseException('Maximum number of iterations reached while generating license key');
             }
         } while ($this->getRepository()->findByLicenseKey($licenseKey) !== null);
 
@@ -494,7 +494,7 @@ class Service implements InjectionAwareInterface
         $model = $orderService->getOrderService($order);
         if (!$model instanceof ServiceLicense) {
             if ($required) {
-                throw new \FOSSBilling\Exception('Could not find associated service license');
+                throw new \FOSSBilling\Exception\BaseException('Could not find associated service license');
             }
 
             return null;

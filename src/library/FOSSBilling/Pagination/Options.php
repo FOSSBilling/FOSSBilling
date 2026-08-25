@@ -9,9 +9,11 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling;
+namespace FOSSBilling\Pagination;
 
-final readonly class PaginationOptions
+use FOSSBilling\Exception\InformationException;
+
+final readonly class Options
 {
     public const int MAX_PER_PAGE = 500;
     public const int DEFAULT_PER_PAGE = 100;

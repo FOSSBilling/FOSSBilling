@@ -67,7 +67,7 @@ function container(): Container
     };
     $di['request'] = fn (): Request => Request::create('http://localhost/');
     $di['session'] = static function (): object {
-        $session = \Mockery::mock(\FOSSBilling\Session::class)->shouldIgnoreMissing();
+        $session = \Mockery::mock(\FOSSBilling\Security\Session::class)->shouldIgnoreMissing();
         $session->shouldReceive('regenerateId')->byDefault()->andReturnNull();
         $session->shouldReceive('set')->byDefault()->andReturnNull();
         $session->shouldReceive('get')->byDefault()->andReturnNull();
@@ -155,7 +155,7 @@ function container(): Container
             return ['list' => [], 'total' => 0, 'pages' => 0, 'page' => 1, 'per_page' => 20];
         }
 
-        public function paginateDoctrineQuery(\Doctrine\ORM\QueryBuilder $qb, \FOSSBilling\PaginationOptions $pagination, mixed ...$apiArrayArgs): array
+        public function paginateDoctrineQuery(\Doctrine\ORM\QueryBuilder $qb, \FOSSBilling\Pagination\Options $pagination, mixed ...$apiArrayArgs): array
         {
             return ['list' => [], 'total' => 0, 'pages' => 0, 'page' => $pagination->page, 'per_page' => $pagination->perPage];
         }

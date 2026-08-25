@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-use FOSSBilling\UpdatePatcher;
+use FOSSBilling\Update\Patcher;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
 test('currency formatting patch follows the client balance gateway repair', function (): void {
-    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 89);
+    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 89);
 
     expect($patches)->toHaveKey(90)
         ->and($patches[90][1])->toBe('patch90')
@@ -19,28 +19,28 @@ test('currency formatting patch follows the client balance gateway repair', func
 });
 
 test('stock reservation backfill patch follows the TLD periods patch', function (): void {
-    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 99);
+    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 99);
 
     expect($patches)->toHaveKey(100)
         ->and($patches[100][1])->toBe('patch100');
 });
 
 test('unpaid invoice id index patch follows the stock reservation backfill patch', function (): void {
-    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 100);
+    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 100);
 
     expect($patches)->toHaveKey(101)
         ->and($patches[101][1])->toBe('patch101');
 });
 
 test('manual currency rate patch follows the currency formatting patch', function (): void {
-    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 93);
+    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 93);
 
     expect($patches)->toHaveKey(94)
         ->and($patches[94][1])->toBe('patch94');
 });
 
 test('client balance unique credit patch follows the manual currency rate patch, skipping the removed number 95', function (): void {
-    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 94);
+    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 94);
 
     expect($patches)->not->toHaveKey(95)
         ->and($patches)->toHaveKey(96)
@@ -48,14 +48,14 @@ test('client balance unique credit patch follows the manual currency rate patch,
 });
 
 test('client balance unique credit patch is still offered to installs already at patch level 95', function (): void {
-    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 95);
+    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 95);
 
     expect($patches)->toHaveKey(96)
         ->and($patches[96][1])->toBe('patch96');
 });
 
 test('invoice item attempts patch follows the client balance credit patch', function (): void {
-    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 96);
+    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 96);
 
     expect($patches)->toHaveKey(97)
         ->and($patches[97][1])->toBe('patch97');
@@ -78,7 +78,7 @@ test('invoice item attempts patch adds the column for existing installs', functi
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
 
-    $patcher = new UpdatePatcher();
+    $patcher = new Patcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch97'))->invoke($patcher);
 });
@@ -95,7 +95,7 @@ test('invoice item attempts patch is a no-op when the column already exists', fu
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
 
-    $patcher = new UpdatePatcher();
+    $patcher = new Patcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch97'))->invoke($patcher);
 });
@@ -106,7 +106,7 @@ test('fresh installs start at the latest patch level', function (): void {
 
     preg_match("/\\(1,'last_patch','(\\d+)'/", $content, $matches);
 
-    expect((int) ($matches[1] ?? 0))->toBe((new UpdatePatcher())->latestPatchLevel());
+    expect((int) ($matches[1] ?? 0))->toBe((new Patcher())->latestPatchLevel());
 });
 
 test('fresh installs index order suspension candidates', function (): void {
@@ -145,7 +145,7 @@ test('fresh installs use Symfony session storage', function (): void {
 });
 
 test('session storage migration follows the obsolete core file cleanup', function (): void {
-    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 104);
+    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 104);
 
     expect($patches)->toHaveKey(105)
         ->and($patches[105][1])->toBe('patch105')
@@ -164,7 +164,7 @@ test('obsolete empty directories are removed without deleting hidden files', fun
     $filesystem->dumpFile($hiddenFile, 'keep');
 
     try {
-        $patcher = new UpdatePatcher();
+        $patcher = new Patcher();
         (new ReflectionMethod($patcher, 'removeEmptyDirectories'))->invoke($patcher, [$emptyDirectory, $hiddenFileDirectory]);
 
         expect($filesystem->exists($emptyDirectory))->toBeFalse()
@@ -203,7 +203,7 @@ test('client balance unique credit patch adds column and index for existing inst
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
 
-    $patcher = new UpdatePatcher();
+    $patcher = new Patcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch96'))->invoke($patcher);
 });
@@ -239,7 +239,7 @@ test('suspension grace patch indexes existing order tables', function (): void {
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
 
-    $patcher = new UpdatePatcher();
+    $patcher = new Patcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch109'))->invoke($patcher);
 });
@@ -258,7 +258,7 @@ test('client balance gateway patch restores one-time payments', function (): voi
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
 
-    $patcher = new UpdatePatcher();
+    $patcher = new Patcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch91'))->invoke($patcher);
 });
@@ -301,7 +301,7 @@ test('legacy email patch restores untouched 0.7.2 defaults without replacing cus
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
 
-    $patcher = new UpdatePatcher();
+    $patcher = new Patcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch90'))->invoke($patcher);
 });
@@ -319,7 +319,7 @@ test('stock reservation backfill patch is a no-op when there is nothing to backf
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
 
-    $patcher = new UpdatePatcher();
+    $patcher = new Patcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch100'))->invoke($patcher);
 });
@@ -340,7 +340,7 @@ test('stock reservation backfill patch orders candidates by creation time, not i
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
 
-    $patcher = new UpdatePatcher();
+    $patcher = new Patcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch100'))->invoke($patcher);
 });
@@ -389,7 +389,7 @@ test('stock reservation backfill patch reserves stock for a pending order and de
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
 
-    $patcher = new UpdatePatcher();
+    $patcher = new Patcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch100'))->invoke($patcher);
 });
@@ -414,7 +414,7 @@ test('stock reservation backfill patch skips orders with a non-positive quantity
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
 
-    $patcher = new UpdatePatcher();
+    $patcher = new Patcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch100'))->invoke($patcher);
 });
@@ -443,7 +443,7 @@ test('stock reservation backfill patch rolls back if a statement fails partway t
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
 
-    $patcher = new UpdatePatcher();
+    $patcher = new Patcher();
     $patcher->setDi($di);
 
     expect(fn (): mixed => (new ReflectionMethod($patcher, 'patch100'))->invoke($patcher))
@@ -505,7 +505,7 @@ test('stock reservation backfill patch stops once a product is already oversold'
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
 
-    $patcher = new UpdatePatcher();
+    $patcher = new Patcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch100'))->invoke($patcher);
 });
@@ -527,7 +527,7 @@ test('unpaid invoice id index patch adds the index for existing installs', funct
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
 
-    $patcher = new UpdatePatcher();
+    $patcher = new Patcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch101'))->invoke($patcher);
 });
@@ -546,13 +546,13 @@ test('unpaid invoice id index patch is a no-op when the index already exists', f
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
 
-    $patcher = new UpdatePatcher();
+    $patcher = new Patcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch101'))->invoke($patcher);
 });
 
 test('custom pages slug unique patch follows the unpaid invoice id index patch', function (): void {
-    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 101);
+    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 101);
 
     expect($patches)->toHaveKey(102)
         ->and($patches[102][1])->toBe('patch102');
@@ -572,7 +572,7 @@ test('custom pages slug unique patch is a no-op when the table does not exist', 
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
 
-    $patcher = new UpdatePatcher();
+    $patcher = new Patcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch102'))->invoke($patcher);
 });
@@ -625,7 +625,7 @@ test('custom pages slug unique patch reconciles duplicates then adds the index',
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
 
-    $patcher = new UpdatePatcher();
+    $patcher = new Patcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch102'))->invoke($patcher);
 });
@@ -684,7 +684,7 @@ test('custom pages slug unique patch skips an occupied suffix before renaming', 
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
 
-    $patcher = new UpdatePatcher();
+    $patcher = new Patcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch102'))->invoke($patcher);
 });
@@ -743,7 +743,7 @@ test('custom pages slug unique patch truncates long duplicate slugs to fit varch
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
 
-    $patcher = new UpdatePatcher();
+    $patcher = new Patcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch102'))->invoke($patcher);
 });
@@ -776,13 +776,13 @@ test('custom pages slug unique patch is a no-op when the index already exists', 
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
 
-    $patcher = new UpdatePatcher();
+    $patcher = new Patcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch102'))->invoke($patcher);
 });
 
 test('client group patch follows the money column decimal patch', function (): void {
-    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 103);
+    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 103);
 
     expect($patches)->toHaveKey(104)
         ->and($patches[104][1])->toBe('patch104');
@@ -800,13 +800,13 @@ test('client group patch normalizes legacy zero group ids to null', function ():
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
 
-    $patcher = new UpdatePatcher();
+    $patcher = new Patcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch104'))->invoke($patcher);
 });
 
 test('custom recurring billing periods patch is numbered 107, out of sequence', function (): void {
-    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 106);
+    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 106);
 
     expect($patches)->toHaveKey(107)
         ->and($patches[107][1])->toBe('patch107');
@@ -817,8 +817,8 @@ test('custom recurring billing periods patch is not skipped by 0.8-next installs
     // which never touched product_payment. An install coming from that lineage already has
     // last_patch = 98, so the migration must live at a number above 98 (not 98 itself) or it
     // would silently never run here. See https://github.com/FOSSBilling/FOSSBilling/issues/4188.
-    $allPatches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 0);
-    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 98);
+    $allPatches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 0);
+    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 98);
 
     expect($allPatches)->not->toHaveKey(98)
         ->and($patches)->toHaveKey(107)
@@ -826,7 +826,7 @@ test('custom recurring billing periods patch is not skipped by 0.8-next installs
 });
 
 test('downloadable file and suspension grace patches are numbered 108 and 109, out of sequence', function (): void {
-    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 107);
+    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 107);
 
     expect($patches)->toHaveKey(108)
         ->and($patches[108][1])->toBe('patch108')
@@ -839,8 +839,8 @@ test('downloadable file and suspension grace patches are not skipped by 0.8-next
     // reused numbers 92 and 95 for unrelated migrations, but never ported the downloadable-file
     // table or suspension-grace-days columns at all. An install coming from that lineage already
     // has last_patch = 98, so both migrations must live above 98 or they'd never run here.
-    $allPatches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 0);
-    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 98);
+    $allPatches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 0);
+    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 98);
 
     expect($allPatches)->not->toHaveKey(92)
         ->and($allPatches)->not->toHaveKey(95)
@@ -851,7 +851,7 @@ test('downloadable file and suspension grace patches are not skipped by 0.8-next
 });
 
 test('foreign key width patch is numbered 110', function (): void {
-    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 109);
+    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 109);
 
     expect($patches)->toHaveKey(110)
         ->and($patches[110][1])->toBe('patch110');
@@ -911,7 +911,7 @@ test('foreign key width patch widens narrow gateway_id columns but leaves alread
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
 
-    $patcher = new UpdatePatcher();
+    $patcher = new Patcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch110'))->invoke($patcher);
 });
@@ -964,13 +964,13 @@ test('foreign key width patch widens a narrow column even when MySQL omits the d
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
 
-    $patcher = new UpdatePatcher();
+    $patcher = new Patcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch110'))->invoke($patcher);
 });
 
 test('service apikey table patch is numbered 111', function (): void {
-    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 110);
+    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 110);
 
     expect($patches)->toHaveKey(111)
         ->and($patches[111][1])->toBe('patch111');
@@ -994,7 +994,7 @@ test('service apikey table patch is a no-op when the table already exists', func
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
 
-    $patcher = new UpdatePatcher();
+    $patcher = new Patcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch111'))->invoke($patcher);
 });
@@ -1020,13 +1020,13 @@ test('service apikey table patch creates the table when it is missing', function
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
 
-    $patcher = new UpdatePatcher();
+    $patcher = new Patcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch111'))->invoke($patcher);
 });
 
 test('require transfer code patch is numbered 112', function (): void {
-    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 111);
+    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 111);
 
     expect($patches)->toHaveKey(112)
         ->and($patches[112][1])->toBe('patch112');
@@ -1049,7 +1049,7 @@ test('require transfer code patch adds the column for existing installs', functi
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
 
-    $patcher = new UpdatePatcher();
+    $patcher = new Patcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch112'))->invoke($patcher);
 });
@@ -1066,7 +1066,7 @@ test('require transfer code patch is a no-op when the column already exists', fu
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
 
-    $patcher = new UpdatePatcher();
+    $patcher = new Patcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch112'))->invoke($patcher);
 });

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use FOSSBilling\Update;
+use FOSSBilling\Update\Updater;
 use Symfony\Component\Filesystem\Filesystem;
 
 /**
@@ -40,8 +40,8 @@ function withCoreUpdateLock(?int $mtime, Closure $callback): void
     }
 }
 
-test('the lock filename load.php checks for matches Update::LOCK_FILENAME', function (): void {
-    expect(basename(lockFilePath()))->toBe(Update::LOCK_FILENAME);
+test('the lock filename load.php checks for matches Updater::LOCK_FILENAME', function (): void {
+    expect(basename(lockFilePath()))->toBe(Updater::LOCK_FILENAME);
 });
 
 test('isCoreUpdateLockActive is false when no lock file exists', function (): void {

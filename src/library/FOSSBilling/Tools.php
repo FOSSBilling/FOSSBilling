@@ -15,6 +15,9 @@ use Egulias\EmailValidator\EmailValidator;
 use Egulias\EmailValidator\Validation\DNSCheckValidation;
 use Egulias\EmailValidator\Validation\MultipleValidationWithAnd;
 use Egulias\EmailValidator\Validation\RFCValidation;
+use FOSSBilling\Exception\InformationException;
+use FOSSBilling\System\Config;
+use FOSSBilling\System\Environment;
 
 class Tools
 {

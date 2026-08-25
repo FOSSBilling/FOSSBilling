@@ -81,7 +81,7 @@ test('changes admin password', function (): void {
         ->atLeast()->once()
         ->andReturn(true);
 
-    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\Security\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')
         ->with($password);
 
@@ -210,7 +210,7 @@ test('throws exception when email change is not allowed', function (): void {
     $service->setDi($di);
 
     expect(fn (): bool => $service->updateClient($model, $data))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception\BaseException::class);
 });
 
 test('throws exception when email already registered', function (): void {
@@ -249,7 +249,7 @@ test('throws exception when email already registered', function (): void {
     $service->setDi($di);
 
     expect(fn (): bool => $service->updateClient($model, $data))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception\BaseException::class);
 });
 
 test('resets api key', function (): void {
@@ -274,7 +274,7 @@ test('changes client password', function (): void {
 
     $password = 'new password';
 
-    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\Security\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')
         ->with($password);
 
@@ -292,7 +292,7 @@ test('changes client password', function (): void {
 });
 
 test('logs out client', function (): void {
-    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
+    $sessionMock = Mockery::mock(FOSSBilling\Security\Session::class);
     $sessionMock->shouldReceive('destroy')
         ->atLeast()->once();
 
@@ -336,16 +336,16 @@ test('invalidates client sessions stored in Symfony attribute format', function 
 });
 
 test('i18n::validateTimezone returns null for null and empty input', function (): void {
-    expect(FOSSBilling\i18n::validateTimezone(null))->toBeNull();
-    expect(FOSSBilling\i18n::validateTimezone(''))->toBeNull();
+    expect(FOSSBilling\I18n\I18n::validateTimezone(null))->toBeNull();
+    expect(FOSSBilling\I18n\I18n::validateTimezone(''))->toBeNull();
 });
 
 test('i18n::validateTimezone accepts any IANA identifier', function (): void {
-    expect(FOSSBilling\i18n::validateTimezone('America/New_York'))->toBe('America/New_York');
-    expect(FOSSBilling\i18n::validateTimezone('Asia/Tokyo'))->toBe('Asia/Tokyo');
-    expect(FOSSBilling\i18n::validateTimezone('UTC'))->toBe('UTC');
+    expect(FOSSBilling\I18n\I18n::validateTimezone('America/New_York'))->toBe('America/New_York');
+    expect(FOSSBilling\I18n\I18n::validateTimezone('Asia/Tokyo'))->toBe('Asia/Tokyo');
+    expect(FOSSBilling\I18n\I18n::validateTimezone('UTC'))->toBe('UTC');
 });
 
 test('i18n::validateTimezone throws InformationException for unknown identifier', function (): void {
-    expect(fn (): ?string => FOSSBilling\i18n::validateTimezone('Mars/Olympus'))->toThrow(FOSSBilling\InformationException::class);
+    expect(fn (): ?string => FOSSBilling\I18n\I18n::validateTimezone('Mars/Olympus'))->toThrow(FOSSBilling\Exception\InformationException::class);
 });

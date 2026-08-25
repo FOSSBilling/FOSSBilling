@@ -12,7 +12,7 @@ declare(strict_types=1);
 use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Currency\Repository\CurrencyRepository;
 use Box\Mod\Currency\Service;
-use FOSSBilling\InformationException;
+use FOSSBilling\Exception\InformationException;
 use FOSSBilling\Twig\Extension\FOSSBillingExtension;
 use Twig\Environment;
 use Twig\Extension\AttributeExtension;

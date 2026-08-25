@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Seo;
 
-use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Interfaces\InjectionAwareInterface;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
 

@@ -181,7 +181,7 @@ test('testGetServiceOrderNotActivated', function (): void {
     $clientModel = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
     $api->setIdentity($clientModel);
 
-    $this->expectException(FOSSBilling\InformationException::class);
+    $this->expectException(FOSSBilling\Exception\InformationException::class);
     $this->expectExceptionMessage('Order is not activated');
     $api->_getService($data);
 });
@@ -206,7 +206,7 @@ test('testGetServiceOrderNotFound', function (): void {
     $clientModel = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
     $api->setIdentity($clientModel);
 
-    $this->expectException(FOSSBilling\InformationException::class);
+    $this->expectException(FOSSBilling\Exception\InformationException::class);
     $this->expectExceptionMessage('Order not found');
     $api->_getService($data);
 });
@@ -215,7 +215,7 @@ test('testGetServiceMissingOrderId', function (): void {
     $api = apiEndpoint(new Client());
     $data = [];
 
-    $this->expectException(FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\Exception\BaseException::class);
     $this->expectExceptionMessage('Order ID is required');
     $api->_getService($data);
 });
@@ -238,7 +238,7 @@ test('testGetServiceThrowsForExpiredOrder', function (): void {
     $orderServiceMock->shouldReceive('assertOrderUsable')
         ->once()
         ->with($clientOrderModel)
-        ->andThrow(new FOSSBilling\InformationException('Subscription expired'));
+        ->andThrow(new FOSSBilling\Exception\InformationException('Subscription expired'));
     $orderServiceMock->shouldReceive('getOrderService')->never();
 
     $di = container();
@@ -251,5 +251,5 @@ test('testGetServiceThrowsForExpiredOrder', function (): void {
     $api->setIdentity($clientModel);
 
     expect(fn () => $api->_getService($data))
-        ->toThrow(FOSSBilling\InformationException::class, 'Subscription expired');
+        ->toThrow(FOSSBilling\Exception\InformationException::class, 'Subscription expired');
 });

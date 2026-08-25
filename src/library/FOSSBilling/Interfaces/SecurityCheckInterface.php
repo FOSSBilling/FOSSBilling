@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Interfaces;
 
-use FOSSBilling\SecurityCheckResult;
+use FOSSBilling\Security\CheckResult;
 
 interface SecurityCheckInterface
 {
@@ -28,5 +28,5 @@ interface SecurityCheckInterface
     /**
      * Performs the check and returns the appropriate result.
      */
-    public function performCheck(): SecurityCheckResult;
+    public function performCheck(): CheckResult;
 }

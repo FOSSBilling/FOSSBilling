@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Custompages\Controller;
 
-class Admin implements \FOSSBilling\InjectionAwareInterface
+class Admin implements \FOSSBilling\Interfaces\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 

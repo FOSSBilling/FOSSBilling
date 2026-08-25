@@ -9,7 +9,7 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling;
+namespace FOSSBilling\System;
 
 final class Version
 {
@@ -21,7 +21,7 @@ final class Version
 
     /**
      * Compare the specified FOSSBilling version string $version
-     * with the current \FOSSBilling\Version::VERSION of FOSSBilling.
+     * with the current \FOSSBilling\System\Version::VERSION of FOSSBilling.
      *
      * @param string $version A version string (e.g. "0.7.1").
      *

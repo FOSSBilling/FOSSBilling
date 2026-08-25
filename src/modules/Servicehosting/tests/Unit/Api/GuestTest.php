@@ -67,5 +67,5 @@ test('free tlds product type is not hosting', function (): void {
     $api->setDi($di);
 
     expect(fn () => $api->free_tlds(['product_id' => 1]))
-        ->toThrow(FOSSBilling\Exception::class, 'Product type is invalid');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Product type is invalid');
 });

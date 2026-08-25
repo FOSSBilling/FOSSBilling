@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Http;
 
-use FOSSBilling\Config;
+use FOSSBilling\System\Config;
 use Symfony\Component\HttpFoundation\IpUtils;
 use Symfony\Component\HttpFoundation\Request;
 

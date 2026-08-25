@@ -95,7 +95,7 @@ class Payment_Adapter_Custom
                 throw new Exception('Transaction not found');
             }
             $invoice = $tx->getInvoice()
-                ?? throw new FOSSBilling\InformationException('Invoice not found');
+                ?? throw new FOSSBilling\Exception\InformationException('Invoice not found');
 
             // Load the payment gateway and client associated with the transaction
             $gateway = $tx->getGateway();

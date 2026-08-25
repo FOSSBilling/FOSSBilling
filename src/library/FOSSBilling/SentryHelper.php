@@ -11,6 +11,11 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
+use FOSSBilling\Exception\InformationException;
+use FOSSBilling\Http\ErrorPage;
+use FOSSBilling\System\Config;
+use FOSSBilling\System\Environment;
+use FOSSBilling\System\Version;
 use Sentry\Event;
 use Sentry\EventHint;
 use Sentry\HttpClient\HttpClientInterface;

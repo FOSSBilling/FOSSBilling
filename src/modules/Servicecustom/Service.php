@@ -14,11 +14,11 @@ namespace Box\Mod\Servicecustom;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Servicecustom\Entity\ServiceCustom;
-use FOSSBilling\Environment;
+use FOSSBilling\System\Environment;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
-class Service implements \FOSSBilling\InjectionAwareInterface
+class Service implements \FOSSBilling\Interfaces\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
     private Filesystem $filesystem;
@@ -61,14 +61,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 if (($field['required'] ?? 0) == 1) {
                     $field_name = $field['name'];
                     if (!isset($data[$field_name]) || empty($data[$field_name])) {
-                        throw new \FOSSBilling\InformationException('You must fill in all required fields. ' . $field['label'] . ' is missing', null, 9684);
+                        throw new \FOSSBilling\Exception\InformationException('You must fill in all required fields. ' . $field['label'] . ' is missing', null, 9684);
                     }
                 }
 
                 if (($field['readonly'] ?? 0) == 1) {
                     $field_name = $field['name'];
                     if ($data[$field_name] != $field['default_value']) {
-                        throw new \FOSSBilling\InformationException('Field ' . $field['label'] . ' is read only. You cannot change its value', null, 5468);
+                        throw new \FOSSBilling\Exception\InformationException('Field ' . $field['label'] . ' is read only. You cannot change its value', null, 5468);
                     }
                 }
 
@@ -76,12 +76,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                     $field_name = $field['name'];
                     if (!empty($data[$field_name])) {
                         if (!is_string($data[$field_name])) {
-                            throw new \FOSSBilling\InformationException('Field ' . $field['label'] . ' must be a valid URL with a TLD (e.g., https://example.com)', null, 1248);
+                            throw new \FOSSBilling\Exception\InformationException('Field ' . $field['label'] . ' must be a valid URL with a TLD (e.g., https://example.com)', null, 1248);
                         }
 
                         $formbuilderService = $this->di['mod_service']('formbuilder');
                         if (!$formbuilderService->validateUrlField($data[$field_name])) {
-                            throw new \FOSSBilling\InformationException('Field ' . $field['label'] . ' must be a valid URL with a TLD (e.g., https://example.com)', null, 1248);
+                            throw new \FOSSBilling\Exception\InformationException('Field ' . $field['label'] . ' must be a valid URL with a TLD (e.g., https://example.com)', null, 1248);
                         }
                     }
                 }
@@ -93,7 +93,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $product = $this->di['mod_service']('product')->findProductById((int) $order->getProductId());
         if (!$product instanceof Product) {
-            throw new \FOSSBilling\InformationException('Product not found');
+            throw new \FOSSBilling\Exception\InformationException('Product not found');
         }
 
         $model = new ServiceCustom();
@@ -216,7 +216,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'activate',
         ];
         if (in_array($method, $forbidden_methods)) {
-            throw new \FOSSBilling\Exception('Custom plugin method :method is forbidden', [':method' => $method], 403);
+            throw new \FOSSBilling\Exception\BaseException('Custom plugin method :method is forbidden', [':method' => $method], 403);
         }
 
         return $this->callOnAdapter($model, $method, $params);
@@ -225,7 +225,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     public function updateConfig($orderId, $config): void
     {
         if (!is_array($config)) {
-            throw new \FOSSBilling\Exception('Config must be an array');
+            throw new \FOSSBilling\Exception\BaseException('Config must be an array');
         }
 
         $model = $this->getServiceCustomByOrderId($orderId);
@@ -243,25 +243,25 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         if ($clientId !== null) {
             $order = $this->di['em']->getRepository(Order::class)->findOneBy(['id' => $orderId, 'clientId' => $clientId]);
             if (!$order instanceof Order) {
-                throw new \FOSSBilling\InformationException('Order not found');
+                throw new \FOSSBilling\Exception\InformationException('Order not found');
             }
 
             $orderService->assertOrderUsable($order);
 
             if ($order->getStatus() !== Order::STATUS_ACTIVE) {
-                throw new \FOSSBilling\InformationException('Order is not activated');
+                throw new \FOSSBilling\Exception\InformationException('Order is not activated');
             }
         } else {
             $order = $this->di['em']->getRepository(Order::class)->find($orderId);
             if (!$order instanceof Order) {
-                throw new \FOSSBilling\InformationException('Order not found');
+                throw new \FOSSBilling\Exception\InformationException('Order not found');
             }
         }
 
         $s = $orderService->getOrderService($order);
 
         if (!$s instanceof ServiceCustom) {
-            throw new \FOSSBilling\Exception('Order is not activated');
+            throw new \FOSSBilling\Exception\BaseException('Order is not activated');
         }
 
         return $s;
@@ -277,7 +277,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         // check if plugin exists. If plugin does not exist, do not throw error. Simply add to log
         $file = Path::join('Plugin', $plugin, "{$plugin}.php");
         if (!Environment::isTesting() && !$this->filesystem->exists(Path::join(PATH_LIBRARY, $file))) {
-            $e = new \FOSSBilling\InformationException('Plugin class file :file was not found', [':file' => $file], 3124);
+            $e = new \FOSSBilling\Exception\InformationException('Plugin class file :file was not found', [':file' => $file], 3124);
             // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
             if (DEBUG) {
                 $this->di['logger']->debug($e->getMessage());
@@ -293,7 +293,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $adapter = new $plugin($config);
 
         if (!method_exists($adapter, $method)) {
-            throw new \FOSSBilling\Exception('Plugin :plugin does not support action :action', [':plugin' => $plugin, ':action' => $method], 3125);
+            throw new \FOSSBilling\Exception\BaseException('Plugin :plugin does not support action :action', [':plugin' => $plugin, ':action' => $method], 3125);
         }
 
         $orderService = $this->di['mod_service']('order');
@@ -309,7 +309,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
         if (!$model instanceof ServiceCustom) {
-            throw new \FOSSBilling\Exception('Order :id has no active service', [':id' => $order->getId()]);
+            throw new \FOSSBilling\Exception\BaseException('Order :id has no active service', [':id' => $order->getId()]);
         }
 
         return $model;

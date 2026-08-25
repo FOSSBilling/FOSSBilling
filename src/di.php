@@ -12,14 +12,14 @@ declare(strict_types=1);
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManager;
 use FOSSBilling\Cache\CacheFactory;
-use FOSSBilling\Config;
 use FOSSBilling\Doctrine\DriverManagerFactory;
 use FOSSBilling\Doctrine\EntityManagerFactory;
-use FOSSBilling\Environment;
 use FOSSBilling\Http\RequestFactory;
 use FOSSBilling\Security\AuthenticationRequiredException;
 use FOSSBilling\Security\EmailValidationRequiredException;
-use FOSSBilling\Version;
+use FOSSBilling\System\Config;
+use FOSSBilling\System\Environment;
+use FOSSBilling\System\Version;
 use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -43,10 +43,10 @@ if (!$request instanceof Request) {
  *
  * @param void
  *
- * @return FOSSBilling\Logger A new logger instance
+ * @return FOSSBilling\Logging\Logger A new logger instance
  */
 $di['logger'] = function () use ($di) {
-    $log = new FOSSBilling\Logger();
+    $log = new FOSSBilling\Logging\Logger();
     $log->setDi($di);
 
     $activity_service = $di['mod_service']('activity');
@@ -62,7 +62,7 @@ $di['logger'] = function () use ($di) {
         $context['client_id'] = $client->getId();
     }
 
-    $monolog = new FOSSBilling\Monolog();
+    $monolog = new FOSSBilling\Logging\Factory();
     $log->addWriter($monolog);
 
     if ($context !== []) {
@@ -76,10 +76,10 @@ $di['logger'] = function () use ($di) {
  *
  * @param void
  *
- * @return FOSSBilling\Crypt
+ * @return FOSSBilling\Security\Crypt
  */
 $di['crypt'] = function () use ($di) {
-    $crypt = new FOSSBilling\Crypt();
+    $crypt = new FOSSBilling\Security\Crypt();
     $crypt->setDi($di);
 
     return $crypt;
@@ -130,10 +130,10 @@ $di['pdo'] = function () {
  *
  * @param void
  *
- * @return FOSSBilling\Pagination
+ * @return FOSSBilling\Pagination\Service
  */
 $di['pager'] = function () use ($di) {
-    $service = new FOSSBilling\Pagination();
+    $service = new FOSSBilling\Pagination\Service();
     $service->setDi($di);
 
     return $service;
@@ -203,9 +203,9 @@ $di['events_manager'] = function () use ($di) {
  *
  * @param void
  *
- * @return \FOSSBilling\Session
+ * @return \FOSSBilling\Security\Session
  *
- * @var \FOSSBilling\Session $di['session']
+ * @var \FOSSBilling\Security\Session $di['session']
  */
 $di['session'] = function () use ($di) {
     $pdo = $di->offsetGet('pdo');
@@ -245,7 +245,7 @@ $di['session'] = function () use ($di) {
         'cookie_samesite' => $cookieParams['samesite'],
         'serialize_handler' => 'php',
     ], $handler);
-    $session = new FOSSBilling\Session(new SymfonySession($storage), $cookieParams);
+    $session = new FOSSBilling\Security\Session(new SymfonySession($storage), $cookieParams);
     $session->setDi($di);
     $session->setupSession();
 
@@ -366,7 +366,7 @@ $di['is_admin_logged'] = function () use ($di) {
  */
 $di['loggedin_client'] = function () use ($di) {
     $di['is_client_logged'];
-    /** @var FOSSBilling\Session $session */
+    /** @var FOSSBilling\Security\Session $session */
     $session = $di['session'];
     $client_id = $session->get('client_id');
 
@@ -399,7 +399,7 @@ $di['is_cron'] = false;
  *
  * @return \Box\Mod\Staff\Entity\Admin|null The existing logged-in admin entity, or null if no admin is logged in.
  *
- * @throws \FOSSBilling\Exception If the script is running in CLI or CGI mode and there is no cron admin available.
+ * @throws \FOSSBilling\Exception\BaseException If the script is running in CLI or CGI mode and there is no cron admin available.
  */
 $di['loggedin_admin'] = function () use ($di) {
     if (Environment::isCLI()) {
@@ -407,7 +407,7 @@ $di['loggedin_admin'] = function () use ($di) {
     }
 
     $di['is_admin_logged'];
-    /** @var FOSSBilling\Session $session */
+    /** @var FOSSBilling\Security\Session $session */
     $session = $di['session'];
     $admin = $session->get('admin');
 
@@ -440,7 +440,7 @@ $di['set_return_uri'] = function () use ($di): void {
         $url .= '?' . http_build_query($query);
     }
 
-    /** @var FOSSBilling\Session $session */
+    /** @var FOSSBilling\Security\Session $session */
     $session = $di['session'];
     $session->set('redirect_uri', $url);
 };
@@ -556,10 +556,10 @@ $di['validator'] = function () use ($di) {
  *
  * @param void
  *
- * @return \FOSSBilling\CentralAlerts
+ * @return \FOSSBilling\Remote\CentralAlerts
  */
 $di['central_alerts'] = function () use ($di) {
-    $centralalerts = new FOSSBilling\CentralAlerts();
+    $centralalerts = new FOSSBilling\Remote\CentralAlerts();
     $centralalerts->setDi($di);
 
     return $centralalerts;
@@ -569,10 +569,10 @@ $di['central_alerts'] = function () use ($di) {
  *
  * @param void
  *
- * @return \FOSSBilling\ExtensionManager
+ * @return \FOSSBilling\Remote\ExtensionManager
  */
 $di['extension_manager'] = function () use ($di) {
-    $extension = new FOSSBilling\ExtensionManager();
+    $extension = new FOSSBilling\Remote\ExtensionManager();
     $extension->setDi($di);
 
     return $extension;
@@ -582,23 +582,23 @@ $di['extension_manager'] = function () use ($di) {
  *
  * @param void
  *
- * @return \FOSSBilling\Update
+ * @return \FOSSBilling\Update\Updater
  */
 $di['updater'] = function () use ($di) {
-    $updater = new FOSSBilling\Update();
+    $updater = new FOSSBilling\Update\Updater();
     $updater->setDi($di);
 
     return $updater;
 };
 
 $di['update_finalization'] = function () use ($di) {
-    $finalization = new FOSSBilling\UpdateFinalization();
+    $finalization = new FOSSBilling\Update\Finalization();
     $finalization->setDi($di);
 
     return $finalization;
 };
 
-$di['update_readiness'] = new FOSSBilling\UpdateReadinessCheck(
+$di['update_readiness'] = new FOSSBilling\Update\ReadinessCheck(
     \PATH_ROOT,
     \PATH_DATA,
     \PATH_CONFIG,
@@ -691,25 +691,25 @@ $di['geoip'] = function () use ($di) {
 /*
  * @param void
  *
- * @return \FOSSBilling\PasswordManager
+ * @return \FOSSBilling\Security\PasswordManager
  */
-$di['password'] = fn (): FOSSBilling\PasswordManager => new FOSSBilling\PasswordManager();
+$di['password'] = fn (): FOSSBilling\Security\PasswordManager => new FOSSBilling\Security\PasswordManager();
 
 /*
- * Creates a new FOSSBilling\Translate object and sets the specified text domain, locale, and other options.
+ * Creates a new FOSSBilling\I18n\Translator object and sets the specified text domain, locale, and other options.
  *
  * @param string $textDomain The text domain to create the translation object with.
  *
- * @return FOSSBilling\Translate The new translation object that was just created.
+ * @return FOSSBilling\I18n\Translator The new translation object that was just created.
  */
 $di['translate'] = $di->protect(function ($textDomain = '') use ($di) {
-    $tr = new FOSSBilling\Translate();
+    $tr = new FOSSBilling\I18n\Translator();
 
     if (!empty($textDomain)) {
         $tr->setDomain($textDomain);
     }
 
-    $locale = FOSSBilling\i18n::getActiveLocale($di['request'], true, $di['cookie_queue']);
+    $locale = FOSSBilling\I18n\I18n::getActiveLocale($di['request'], true, $di['cookie_queue']);
 
     $tr->setLocale($locale);
     $tr->setup();

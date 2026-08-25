@@ -1144,7 +1144,7 @@ test('admin mark as paid with custom gateway rejects transaction linked to anoth
 
     expect(fn () => $serviceMock->markAsPaidByAdmin($invoiceModel, [
         'transactionId' => 'manual-reference-1',
-    ]))->toThrow(FOSSBilling\InformationException::class, 'Transaction ID is already associated with another invoice.');
+    ]))->toThrow(FOSSBilling\Exception\InformationException::class, 'Transaction ID is already associated with another invoice.');
 });
 
 test('counts income', function (): void {
@@ -1948,7 +1948,7 @@ test('throws exception when generating invoice for negative amount order', funct
     $clientOrder = createEntity(Order::class, ['price' => -1, 'quantity' => 1]);
 
     expect(fn (): Invoice => $service->generateForOrder($clientOrder))
-        ->toThrow(FOSSBilling\Exception::class, 'Invoices are not generated for negative amount orders.');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Invoices are not generated for negative amount orders.');
 });
 
 test('returns true when no expiring orders found', function (): void {
@@ -2044,7 +2044,7 @@ test('handles exception during batch paid invoice activation', function (): void
     $itemInvoiceServiceMock = Mockery::mock(ServiceInvoiceItem::class);
     $itemInvoiceServiceMock->shouldReceive('executeTask')
         ->with($invoiceItemModel)
-        ->andThrow(new FOSSBilling\Exception('testing exception..'));
+        ->andThrow(new FOSSBilling\Exception\BaseException('testing exception..'));
     $itemInvoiceServiceMock->shouldReceive('getAllNotExecutePaidItems')
         ->atLeast()->once()
         ->andReturn([['id' => 1]]);
@@ -2435,7 +2435,7 @@ test('throws exception when generating funds invoice without active order', func
     $clientModel = createEntity(Box\Mod\Client\Entity\Client::class);
 
     expect(fn (): Invoice => $service->generateFundsInvoice($clientModel, 10))
-        ->toThrow(FOSSBilling\Exception::class, 'You must have at least one active order before you can add funds so you cannot proceed at the current time!');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'You must have at least one active order before you can add funds so you cannot proceed at the current time!');
 });
 
 test('throws exception when generating funds invoice while the feature is disabled', function (): void {
@@ -2454,7 +2454,7 @@ test('throws exception when generating funds invoice while the feature is disabl
     $service->setDi($di);
 
     expect(fn (): Invoice => $service->generateFundsInvoice($clientModel, 10))
-        ->toThrow(FOSSBilling\Exception::class, 'Adding funds to the account balance is currently disabled');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Adding funds to the account balance is currently disabled');
 });
 
 test('throws exception when generating funds invoice below minimum amount', function (): void {
@@ -2475,7 +2475,7 @@ test('throws exception when generating funds invoice below minimum amount', func
     $service->setDi($di);
 
     expect(fn (): Invoice => $service->generateFundsInvoice($clientModel, $fundsAmount))
-        ->toThrow(FOSSBilling\Exception::class, 'Amount must be at least ' . $minAmount);
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Amount must be at least ' . $minAmount);
 });
 
 test('throws exception when generating funds invoice above maximum amount', function (): void {
@@ -2496,7 +2496,7 @@ test('throws exception when generating funds invoice above maximum amount', func
     $service->setDi($di);
 
     expect(fn (): Invoice => $service->generateFundsInvoice($clientModel, $fundsAmount))
-        ->toThrow(FOSSBilling\Exception::class, 'Amount cannot exceed ' . $maxAmount);
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Amount cannot exceed ' . $maxAmount);
 });
 
 test('generates funds invoice', function (): void {
@@ -2587,7 +2587,7 @@ test('throws exception when processing invoice not found', function (): void {
     $service->setDi($di);
 
     expect(fn (): array => $service->processInvoice($data))
-        ->toThrow(FOSSBilling\InformationException::class, 'Invoice not found');
+        ->toThrow(FOSSBilling\Exception\InformationException::class, 'Invoice not found');
 });
 
 test('throws exception when processing invoice with gateway not found', function (): void {
@@ -2613,7 +2613,7 @@ test('throws exception when processing invoice with gateway not found', function
     $service->setDi($di);
 
     expect(fn (): array => $service->processInvoice($data))
-        ->toThrow(FOSSBilling\InformationException::class, 'Payment method not found');
+        ->toThrow(FOSSBilling\Exception\InformationException::class, 'Payment method not found');
 });
 
 test('throws exception when processing invoice with gateway not enabled', function (): void {
@@ -2641,7 +2641,7 @@ test('throws exception when processing invoice with gateway not enabled', functi
     $service->setDi($di);
 
     expect(fn (): array => $service->processInvoice($data))
-        ->toThrow(FOSSBilling\Exception::class, 'Payment method not enabled');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Payment method not enabled');
 });
 
 test('processes an invoice', function (): void {
@@ -2948,7 +2948,7 @@ test('validatePaymentAmount throws on underpayment', function (): void {
     $service->setDi($di);
 
     expect(fn () => $service->validatePaymentAmount(40.00, 50.00))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception\BaseException::class);
 });
 
 test('validatePaymentAmount logs warning on significant overpayment', function (): void {

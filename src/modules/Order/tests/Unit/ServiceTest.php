@@ -1371,7 +1371,7 @@ test('getLogger returns logger with event items', function (): void {
     ]);
 
     $capturedItems = [];
-    $logger = new class($capturedItems) extends FOSSBilling\Logger {
+    $logger = new class($capturedItems) extends FOSSBilling\Logging\Logger {
         public function __construct(public array &$capturedItems)
         {
         }
@@ -1394,7 +1394,7 @@ test('getLogger returns logger with event items', function (): void {
 
     $result = $svc->getLogger($model);
 
-    expect($result)->toBeInstanceOf(FOSSBilling\Logger::class);
+    expect($result)->toBeInstanceOf(FOSSBilling\Logging\Logger::class);
     expect($capturedItems)->toHaveCount(2);
     expect($capturedItems[0])->toEqual(['client_order_id', 5]);
     expect($capturedItems[1])->toEqual(['status', 'active']);
@@ -1661,7 +1661,7 @@ test('createOrder throws when no order currency is set', function (): void {
     $svc->setDi($di);
 
     expect(fn () => $svc->createOrder($modelClient, $modelProduct, []))
-        ->toThrow(FOSSBilling\Exception::class, 'Currency could not be determined for order');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Currency could not be determined for order');
 });
 
 test('createOrder throws when out of stock', function (): void {
@@ -1701,7 +1701,7 @@ test('createOrder throws when out of stock', function (): void {
     $svc->setDi($di);
 
     expect(fn () => $svc->createOrder($modelClient, $modelProduct, []))
-        ->toThrow(FOSSBilling\Exception::class, 'Product 1 is out of stock.');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Product 1 is out of stock.');
 });
 
 test('createOrder throws when group id missing for addon', function (): void {
@@ -1742,7 +1742,7 @@ test('createOrder throws when group id missing for addon', function (): void {
     $svc->setDi($di);
 
     expect(fn () => $svc->createOrder($modelClient, $modelProduct, []))
-        ->toThrow(FOSSBilling\Exception::class, 'Group ID parameter is missing for addon product order');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Group ID parameter is missing for addon product order');
 });
 
 test('createOrder throws when parent order not found', function (): void {
@@ -1787,7 +1787,7 @@ test('createOrder throws when parent order not found', function (): void {
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->createOrder($modelClient, $modelProduct, ['group_id' => 1]))
-        ->toThrow(FOSSBilling\Exception::class, 'Parent order 1 was not found');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Parent order 1 was not found');
 });
 
 test('createOrder creates order', function (): void {
@@ -1877,7 +1877,7 @@ test('createOrder creates order', function (): void {
     $di['events_manager'] = $eventMock;
     $di['em'] = $emMock;
     $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Logging\Logger();
 
     $svc = new Service();
     $svc->setDi($di);
@@ -1974,7 +1974,7 @@ test('createOrder sets form id from product', function (): void {
     $di['events_manager'] = $eventMock;
     $di['em'] = $emMock;
     $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Logging\Logger();
 
     $svc = new Service();
     $svc->setDi($di);
@@ -2098,7 +2098,7 @@ test('createOrder returns success when invoice follow up fails', function (): vo
     $di['events_manager'] = $eventMock;
     $di['em'] = $emMock;
     $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Logging\Logger();
 
     $svc = new Service();
     $svc->setDi($di);
@@ -2210,7 +2210,7 @@ test('createOrder uses product pricing service for domain orders', function (): 
     });
     $di['events_manager'] = $eventMock;
     $di['em'] = $emMock;
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Logging\Logger();
 
     $svc = new Service();
     $svc->setDi($di);
@@ -2322,12 +2322,12 @@ test('createFromOrder marks the order failed_setup when provisioning succeeds bu
     $di = container();
     $di['em'] = $emMock;
     $di['period'] = $di->protect(function (): never {
-        throw new FOSSBilling\Exception('Simulated post-provisioning failure');
+        throw new FOSSBilling\Exception\BaseException('Simulated post-provisioning failure');
     });
     $serviceMock->setDi($di);
 
     expect(fn (): mixed => $serviceMock->createFromOrder($order))
-        ->toThrow(FOSSBilling\Exception::class, 'Simulated post-provisioning failure');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Simulated post-provisioning failure');
 
     // Confirm persistOrder() actually stored the failure - not just that the
     // in-memory $order object was mutated - by reloading it through the
@@ -2409,7 +2409,7 @@ test('activateOrder throws for non-pending order', function (): void {
     $svc->setDi($di);
 
     expect(fn (): bool => $svc->activateOrder($clientOrderModel))
-        ->toThrow(FOSSBilling\Exception::class, 'Only pending setup or failed orders can be activated');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Only pending setup or failed orders can be activated');
 });
 
 test('activateOrder activates pending order', function (): void {
@@ -2437,7 +2437,7 @@ test('activateOrder activates pending order', function (): void {
     $di = container();
     $di['em'] = $emMock;
     $di['events_manager'] = $eventMock;
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Logging\Logger();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldAllowMockingProtectedMethods();
@@ -2511,7 +2511,7 @@ test('activateOrder force re-activates an already active order', function (): vo
     $di = container();
     $di['em'] = $emMock;
     $di['events_manager'] = $eventMock;
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Logging\Logger();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldAllowMockingProtectedMethods();
@@ -2607,7 +2607,7 @@ test('stockSale throws when quantity would go negative', function (): void {
     $productService->shouldReceive('reduceStock')
         ->once()
         ->with($productModel, 2)
-        ->andThrow(new FOSSBilling\InformationException('Product :id is out of stock.', [':id' => 1], 831));
+        ->andThrow(new FOSSBilling\Exception\InformationException('Product :id is out of stock.', [':id' => 1], 831));
 
     $di = container();
     $di['mod_service'] = $di->protect(function ($serviceName) use ($productService) {
@@ -2620,7 +2620,7 @@ test('stockSale throws when quantity would go negative', function (): void {
     $svc->setDi($di);
 
     expect(fn (): bool => $svc->stockSale($productModel, 2))
-        ->toThrow(FOSSBilling\InformationException::class, 'Product 1 is out of stock.');
+        ->toThrow(FOSSBilling\Exception\InformationException::class, 'Product 1 is out of stock.');
 });
 
 test('updateOrder updates fields', function (): void {
@@ -2632,7 +2632,7 @@ test('updateOrder updates fields', function (): void {
     $di = container();
     $di['events_manager'] = $eventMock;
     $di['em'] = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Logging\Logger();
 
     $data = [
         'period' => '1Y',
@@ -2672,7 +2672,7 @@ test('renewOrder renews order', function (): void {
 
     $di = container();
     $di['events_manager'] = $eventMock;
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Logging\Logger();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldAllowMockingProtectedMethods();
@@ -2790,7 +2790,7 @@ test('suspendFromOrder throws for non-active order', function (): void {
     $svc->setDi($di);
 
     expect(fn (): bool => $svc->suspendFromOrder($clientOrderModel))
-        ->toThrow(FOSSBilling\Exception::class, 'Only active orders can be suspended');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Only active orders can be suspended');
 });
 
 test('suspendFromOrder suspends active order', function (): void {
@@ -2802,7 +2802,7 @@ test('suspendFromOrder suspends active order', function (): void {
 
     $di = container();
     $di['events_manager'] = $eventMock;
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Logging\Logger();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldAllowMockingProtectedMethods();
@@ -2854,7 +2854,7 @@ test('cancelFromOrder cancels linked subscriptions', function (): void {
     $di = container();
     $di['em'] = $emMock;
     $di['dbal'] = $connectionMock;
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Logging\Logger();
     $di['mod_service'] = $di->protect(function (string $module, string $service = '') use ($productService, $subscriptionService) {
         if ($module === 'Invoice' && $service === 'Subscription') {
             return $subscriptionService;
@@ -2889,7 +2889,7 @@ test('scheduleCancellationFromOrder keeps the service active', function (): void
     $subscriptionService->shouldReceive('scheduleCancellationForOrder')->once()->with($order)->andReturn(1);
 
     $di = container();
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Logging\Logger();
     $di['mod_service'] = $di->protect(fn () => $subscriptionService);
 
     $service = Mockery::mock(Service::class)->makePartial();
@@ -2926,7 +2926,7 @@ test('scheduleCancellationFromOrder does not mark the order when no subscription
     $service->setDi($di);
 
     expect(fn () => $service->scheduleCancellationFromOrder($order))
-        ->toThrow(FOSSBilling\InformationException::class, 'No active gateway subscription is linked to this order.');
+        ->toThrow(FOSSBilling\Exception\InformationException::class, 'No active gateway subscription is linked to this order.');
 });
 
 test('cancelFromOrder does not cancel subscriptions when service cancellation fails', function (): void {
@@ -3305,7 +3305,7 @@ test('updateOrderMeta clears existing meta', function (): void {
 
 test('updateOrderConfig succeeds when no form id is set', function (): void {
     $di = container();
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Logging\Logger();
 
     $svc = new Service();
     $svc->setDi($di);
@@ -3342,7 +3342,7 @@ test('updateOrderConfig throws when required field is missing', function (): voi
     $order->form_id = 7;
 
     expect(fn (): bool => $svc->updateOrderConfig($order, []))
-        ->toThrow(FOSSBilling\Exception::class, '', 4892);
+        ->toThrow(FOSSBilling\Exception\BaseException::class, '', 4892);
 });
 
 test('updateOrderConfig throws for invalid select option', function (): void {
@@ -3369,7 +3369,7 @@ test('updateOrderConfig throws for invalid select option', function (): void {
     $order->form_id = 8;
 
     expect(fn (): bool => $svc->updateOrderConfig($order, ['plan' => 'enterprise']))
-        ->toThrow(FOSSBilling\Exception::class, '', 4893);
+        ->toThrow(FOSSBilling\Exception\BaseException::class, '', 4893);
 });
 
 test('updateOrderConfig select rejects array value', function (): void {
@@ -3396,7 +3396,7 @@ test('updateOrderConfig select rejects array value', function (): void {
     $order->form_id = 11;
 
     expect(fn (): bool => $svc->updateOrderConfig($order, ['plan' => ['pro']]))
-        ->toThrow(FOSSBilling\Exception::class, '', 4893);
+        ->toThrow(FOSSBilling\Exception\BaseException::class, '', 4893);
 });
 
 test('updateOrderConfig throws for invalid radio option', function (): void {
@@ -3423,7 +3423,7 @@ test('updateOrderConfig throws for invalid radio option', function (): void {
     $order->form_id = 9;
 
     expect(fn (): bool => $svc->updateOrderConfig($order, ['os' => 'macos']))
-        ->toThrow(FOSSBilling\Exception::class, '', 4893);
+        ->toThrow(FOSSBilling\Exception\BaseException::class, '', 4893);
 });
 
 test('updateOrderConfig throws for invalid checkbox option', function (): void {
@@ -3450,7 +3450,7 @@ test('updateOrderConfig throws for invalid checkbox option', function (): void {
     $order->form_id = 10;
 
     expect(fn (): bool => $svc->updateOrderConfig($order, ['addons' => ['backup', 'ddos-protection']]))
-        ->toThrow(FOSSBilling\Exception::class, '', 4894);
+        ->toThrow(FOSSBilling\Exception\BaseException::class, '', 4894);
 });
 
 test('updateOrderConfig succeeds with valid form data', function (): void {
@@ -3472,7 +3472,7 @@ test('updateOrderConfig succeeds with valid form data', function (): void {
         }
     });
     $di['em'] = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Logging\Logger();
 
     $svc = new Service();
     $svc->setDi($di);
@@ -3491,7 +3491,7 @@ test('createOrder rejects invalid price and quantity', function (array $data, st
     $product = orderServiceCreateProductEntity(1, 'custom');
 
     expect(fn () => $service->createOrder($client, $product, $data))
-        ->toThrow(FOSSBilling\InformationException::class, $message);
+        ->toThrow(FOSSBilling\Exception\InformationException::class, $message);
 })->with([
     'negative price' => [['price' => -1], 'Price cannot be negative'],
     'invalid price' => [['price' => 'invalid'], 'Price must be a valid number'],
@@ -3512,7 +3512,7 @@ test('updateOrder rejects a negative price', function (): void {
     $service->setDi($di);
 
     expect(fn () => $service->updateOrder($order, ['price' => -1]))
-        ->toThrow(FOSSBilling\InformationException::class, 'Price cannot be negative');
+        ->toThrow(FOSSBilling\Exception\InformationException::class, 'Price cannot be negative');
 });
 
 test('createOrder generates an invoice for a zero-price order with issue-invoice', function (): void {
@@ -3616,7 +3616,7 @@ test('createOrder generates an invoice for a zero-price order with issue-invoice
     $di['events_manager'] = $eventMock;
     $di['em'] = $emMock;
     $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Logging\Logger();
 
     $svc = new Service();
     $svc->setDi($di);
@@ -3664,7 +3664,7 @@ test('createOrder does not roll back when invoice generation fails for a negativ
     $invoiceServiceMock->shouldReceive('generateForOrder')
         ->once()
         ->with(Mockery::any())
-        ->andThrow(new FOSSBilling\InformationException('Invoices are not generated for negative amount orders.'));
+        ->andThrow(new FOSSBilling\Exception\InformationException('Invoices are not generated for negative amount orders.'));
     $invoiceServiceMock->shouldReceive('approveInvoice')->never();
 
     $persistedEntities = [];
@@ -3729,7 +3729,7 @@ test('createOrder does not roll back when invoice generation fails for a negativ
     $di['events_manager'] = $eventMock;
     $di['em'] = $emMock;
     $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Logging\Logger();
 
     $svc = new Service();
     $svc->setDi($di);
@@ -3971,7 +3971,7 @@ test('batchCancelUnpaid does not delete a sibling order when removing the shared
     $invoiceServiceMock->shouldReceive('deleteInvoiceByAdmin')
         ->once()
         ->with($invoiceModel)
-        ->andThrow(new FOSSBilling\Exception('db went away'));
+        ->andThrow(new FOSSBilling\Exception\BaseException('db went away'));
     $invoiceServiceMock->shouldReceive('deleteInvoiceByAdmin')
         ->once()
         ->with($invoiceModel)
@@ -4116,7 +4116,7 @@ test('batchCancelUnpaid logs and continues when removing one stale order fails',
     $serviceMock->shouldReceive('deleteFromOrder')
         ->once()
         ->with($orderA)
-        ->andThrow(new FOSSBilling\Exception('boom'));
+        ->andThrow(new FOSSBilling\Exception\BaseException('boom'));
     $serviceMock->shouldReceive('deleteFromOrder')->once()->with($orderB);
 
     $serviceMock->setDi($di);
@@ -4207,7 +4207,7 @@ test('batchSendSuspensionWarnings claims and queues each warning once', function
     $di = container();
     $di['em'] = $em;
     $di['events_manager'] = $events;
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Logging\Logger();
     $di['mod_service'] = $di->protect(fn (string $name): Box\Mod\Email\Service => $emailService);
     $service->setDi($di);
 
@@ -4256,7 +4256,7 @@ test('batchSendSuspensionWarnings releases a failed claim so the warning can be 
     $di = container();
     $di['em'] = $em;
     $di['events_manager'] = $events;
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Logging\Logger();
     $di['mod_service'] = $di->protect(fn (string $name): Box\Mod\Email\Service => $emailService);
     $service->setDi($di);
 

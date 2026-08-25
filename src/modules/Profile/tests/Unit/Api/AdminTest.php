@@ -48,7 +48,7 @@ test('gets admin profile', function (): void {
 });
 
 test('logs out admin', function (): void {
-    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
+    $sessionMock = Mockery::mock(FOSSBilling\Security\Session::class);
     $sessionMock->shouldReceive('destroy')
         ->atLeast()->once();
 
@@ -100,13 +100,13 @@ test('throws exception when changing password without required params', function
     $adminApi->setDi($di);
 
     expect(fn () => $adminApi->change_password([]))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception\BaseException::class);
 });
 
 test('changes password', function (): void {
     $di = container();
     $di['validator'] = new FOSSBilling\Validate();
-    $di['password'] = new FOSSBilling\PasswordManager();
+    $di['password'] = new FOSSBilling\Security\PasswordManager();
 
     $model = createEntity(Box\Mod\Staff\Entity\Admin::class, ['pass' => $di['password']->hashIt('oldpw')]);
 

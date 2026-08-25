@@ -114,7 +114,7 @@ test('setCurrency throws exception when currency is not found', function (): voi
         'currency' => 'EUR',
     ];
 
-    expect(fn () => $guestApi->set_currency($data))->toThrow(FOSSBilling\InformationException::class, 'Currency not found');
+    expect(fn () => $guestApi->set_currency($data))->toThrow(FOSSBilling\Exception\InformationException::class, 'Currency not found');
 });
 
 test('getCurrency returns array when currency found', function (): void {
@@ -225,7 +225,7 @@ test('applyPromo throws exception when promo not found', function (): void {
     ];
 
     expect(fn () => $guestApi->apply_promo($data))
-        ->toThrow(FOSSBilling\InformationException::class, 'The promo code has expired or does not exist');
+        ->toThrow(FOSSBilling\Exception\InformationException::class, 'The promo code has expired or does not exist');
 });
 
 test('applyPromo throws exception when promo cannot be applied', function (): void {
@@ -252,7 +252,7 @@ test('applyPromo throws exception when promo cannot be applied', function (): vo
     ];
 
     expect(fn () => $guestApi->apply_promo($data))
-        ->toThrow(FOSSBilling\InformationException::class, 'The promo code has expired or does not exist');
+        ->toThrow(FOSSBilling\Exception\InformationException::class, 'The promo code has expired or does not exist');
 });
 
 test('applyPromo throws exception when promo cannot be applied for user', function (): void {
@@ -278,7 +278,7 @@ test('applyPromo throws exception when promo cannot be applied for user', functi
     ];
 
     expect(fn () => $guestApi->apply_promo($data))
-        ->toThrow(FOSSBilling\InformationException::class, 'Promo code cannot be applied to your account');
+        ->toThrow(FOSSBilling\Exception\InformationException::class, 'Promo code cannot be applied to your account');
 });
 
 test('removePromo returns true', function (): void {

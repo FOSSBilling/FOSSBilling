@@ -10,10 +10,10 @@ declare(strict_types=1);
  */
 
 use Box\Mod\Invoice\Entity\Invoice;
-use FOSSBilling\Environment;
+use FOSSBilling\System\Environment;
 use Pimple\Container;
 
-class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOSSBilling\InjectionAwareInterface
+class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOSSBilling\Interfaces\InjectionAwareInterface
 {
     protected ?Container $di = null;
 

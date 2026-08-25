@@ -13,8 +13,8 @@ namespace Box\Mod\Currency;
 
 use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Currency\Repository\CurrencyRepository;
-use FOSSBilling\InformationException;
-use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Exception\InformationException;
+use FOSSBilling\Interfaces\InjectionAwareInterface;
 use Symfony\Component\Intl\Currencies;
 use Symfony\Contracts\Cache\ItemInterface;
 use Twig\Extra\Intl\IntlExtension;
@@ -46,7 +46,7 @@ class Service implements InjectionAwareInterface
     {
         if ($this->currencyRepository === null) {
             if ($this->di === null) {
-                throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
+                throw new \FOSSBilling\Exception\BaseException('The dependency injection container has not been set.');
             }
 
             $this->currencyRepository = $this->di['em']->getRepository(Currency::class);
@@ -101,14 +101,14 @@ class Service implements InjectionAwareInterface
      *
      * @return float Amount converted to the default currency
      *
-     * @throws \FOSSBilling\Exception If default currency cannot be found
+     * @throws \FOSSBilling\Exception\BaseException If default currency cannot be found
      */
     public function toBaseCurrency(string $fromCurrencyCode, float|int $amount): float
     {
         $defaultCurrency = $this->currencyRepository->findDefault();
 
         if ($defaultCurrency === null) {
-            throw new \FOSSBilling\Exception('Default currency not found.');
+            throw new \FOSSBilling\Exception\BaseException('Default currency not found.');
         }
 
         if ($defaultCurrency->getCode() === $fromCurrencyCode) {
@@ -127,18 +127,18 @@ class Service implements InjectionAwareInterface
      *
      * @return float Conversion rate to convert from the specified currency to the default currency
      *
-     * @throws \FOSSBilling\Exception If currency not found or rate is zero
+     * @throws \FOSSBilling\Exception\BaseException If currency not found or rate is zero
      */
     public function getBaseCurrencyRate(string $fromCurrencyCode): float
     {
         $rate = $this->currencyRepository->getRateByCode($fromCurrencyCode);
 
         if ($rate === null) {
-            throw new \FOSSBilling\Exception('Currency not found.');
+            throw new \FOSSBilling\Exception\BaseException('Currency not found.');
         }
 
         if ($rate === 0.0) {
-            throw new \FOSSBilling\Exception('Currency conversion rate cannot be zero.');
+            throw new \FOSSBilling\Exception\BaseException('Currency conversion rate cannot be zero.');
         }
 
         return 1 / $rate;
@@ -153,7 +153,7 @@ class Service implements InjectionAwareInterface
      * @return Currency Currency entity for the client's currency or the default currency if client
      *                  has no specific currency set
      *
-     * @throws \FOSSBilling\Exception If default currency cannot be found
+     * @throws \FOSSBilling\Exception\BaseException If default currency cannot be found
      */
     public function getCurrencyByClientId(int $clientId): Currency
     {
@@ -162,7 +162,7 @@ class Service implements InjectionAwareInterface
         if ($currencyCode === null) {
             $defaultCurrency = $this->currencyRepository->findDefault();
             if ($defaultCurrency === null) {
-                throw new \FOSSBilling\Exception('Default currency not found.');
+                throw new \FOSSBilling\Exception\BaseException('Default currency not found.');
             }
 
             return $defaultCurrency;
@@ -175,7 +175,7 @@ class Service implements InjectionAwareInterface
 
         $defaultCurrency = $this->currencyRepository->findDefault();
         if ($defaultCurrency === null) {
-            throw new \FOSSBilling\Exception('Default currency not found.');
+            throw new \FOSSBilling\Exception\BaseException('Default currency not found.');
         }
 
         return $defaultCurrency;
@@ -187,7 +187,7 @@ class Service implements InjectionAwareInterface
      *
      * @param Currency $currency Currency entity to set as default
      *
-     * @throws \FOSSBilling\Exception If currency code is invalid or if the currency cannot be found after clearing the identity map
+     * @throws \FOSSBilling\Exception\BaseException If currency code is invalid or if the currency cannot be found after clearing the identity map
      */
     public function setAsDefault(Currency $currency): bool
     {
@@ -196,7 +196,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!$currency->getCode()) {
-            throw new \FOSSBilling\Exception('Currency code not provided.');
+            throw new \FOSSBilling\Exception\BaseException('Currency code not provided.');
         }
 
         // Store currency code before clearing identity map (entity will be detached)
@@ -210,7 +210,7 @@ class Service implements InjectionAwareInterface
 
         $currency = $this->currencyRepository->findOneByCode($currencyCode);
         if (!$currency instanceof Currency) {
-            throw new \FOSSBilling\Exception("Currency with code {$currencyCode} not found after clearing identity map.");
+            throw new \FOSSBilling\Exception\BaseException("Currency with code {$currencyCode} not found after clearing identity map.");
         }
 
         $currency
@@ -244,7 +244,7 @@ class Service implements InjectionAwareInterface
      *
      * @return string The code of the newly created currency
      *
-     * @throws \FOSSBilling\Exception If currency code is invalid or if fetching the conversion rate fails
+     * @throws \FOSSBilling\Exception\BaseException If currency code is invalid or if fetching the conversion rate fails
      */
     public function createCurrency(
         string $currencyCode,
@@ -265,7 +265,7 @@ class Service implements InjectionAwareInterface
             }
         } else {
             if (!is_numeric($conversionRate) || $conversionRate <= 0) {
-                throw new \FOSSBilling\Exception('Currency conversion rate must be a positive number.');
+                throw new \FOSSBilling\Exception\BaseException('Currency conversion rate must be a positive number.');
             }
 
             $conversionRate = (float) $conversionRate;
@@ -290,15 +290,15 @@ class Service implements InjectionAwareInterface
      *
      * @param string $currencyCode Currency code to remove
      *
-     * @throws InformationException   If trying to remove the default currency
-     * @throws \FOSSBilling\Exception If currency code is invalid
+     * @throws InformationException                 If trying to remove the default currency
+     * @throws \FOSSBilling\Exception\BaseException If currency code is invalid
      */
     public function removeCurrency(string $currencyCode): bool
     {
         $currency = $this->currencyRepository->findOneByCode($currencyCode);
 
         if (!$currency instanceof Currency) {
-            throw new \FOSSBilling\Exception('Currency not found.');
+            throw new \FOSSBilling\Exception\BaseException('Currency not found.');
         }
 
         if ($currency->isDefault()) {
@@ -329,8 +329,8 @@ class Service implements InjectionAwareInterface
      * } $formatting Formatting values to update; omitted keys are left unchanged
      * @param bool|null $isRateManual Whether bulk rate synchronization should preserve this rate; null leaves it unchanged
      *
-     * @throws \FOSSBilling\Exception If currency not found
-     * @throws InformationException   If a provided value is invalid
+     * @throws \FOSSBilling\Exception\BaseException If currency not found
+     * @throws InformationException                 If a provided value is invalid
      */
     public function updateCurrency(
         string $currencyCode,
@@ -340,7 +340,7 @@ class Service implements InjectionAwareInterface
     ): bool {
         $model = $this->currencyRepository->findOneByCode($currencyCode);
         if (!$model instanceof Currency) {
-            throw new \FOSSBilling\Exception('Currency not found.');
+            throw new \FOSSBilling\Exception\BaseException('Currency not found.');
         }
 
         $updateFormatPattern = array_key_exists('format_pattern', $formatting);
@@ -508,14 +508,14 @@ class Service implements InjectionAwareInterface
      * This will fetch the latest rates from the configured provider and update all
      * non-default currencies accordingly.
      *
-     * @throws \FOSSBilling\Exception If default currency cannot be found
+     * @throws \FOSSBilling\Exception\BaseException If default currency cannot be found
      */
     public function updateCurrencyRates(): bool
     {
         $defaultCurrency = $this->currencyRepository->findDefault();
 
         if ($defaultCurrency === null) {
-            throw new \FOSSBilling\Exception('Default currency not found. Cannot update rates.');
+            throw new \FOSSBilling\Exception\BaseException('Default currency not found. Cannot update rates.');
         }
 
         $em = $this->di['em'];
@@ -553,8 +553,8 @@ class Service implements InjectionAwareInterface
      *
      * @return float Conversion rate from the source currency to the target currency
      *
-     * @throws \FOSSBilling\Exception If default currency cannot be found
-     * @throws InformationException   If API configuration is invalid, or unable to fetch conversion rate
+     * @throws \FOSSBilling\Exception\BaseException If default currency cannot be found
+     * @throws InformationException                 If API configuration is invalid, or unable to fetch conversion rate
      */
     protected function getRate(?string $fromCurrencyCode, string $toCurrencyCode): float
     {
@@ -562,7 +562,7 @@ class Service implements InjectionAwareInterface
         if ($fromCurrencyCode === null || $fromCurrencyCode === '') {
             $defaultCurrency = $this->currencyRepository->findDefault();
             if ($defaultCurrency === null) {
-                throw new \FOSSBilling\Exception('Default currency not found.');
+                throw new \FOSSBilling\Exception\BaseException('Default currency not found.');
             }
             $fromCurrencyCode = $defaultCurrency->getCode();
         }
@@ -602,7 +602,7 @@ class Service implements InjectionAwareInterface
             return floatval($rates[$toCurrencyCode]);
         }
 
-        throw new \FOSSBilling\Exception("Unable to fetch conversion rate for currency: {$toCurrencyCode}.");
+        throw new \FOSSBilling\Exception\BaseException("Unable to fetch conversion rate for currency: {$toCurrencyCode}.");
     }
 
     /**
@@ -630,7 +630,7 @@ class Service implements InjectionAwareInterface
                 $item->expiresAfter(15 * 60 * 60); // Try again in 15 min
                 $this->di['logger']->error('ExchangeRate-API Gave an error: ' . $array['error-type']);
 
-                throw new \FOSSBilling\Exception('There was an error when fetching currency rates from ExchangeRate-API. See the error log for details.');
+                throw new \FOSSBilling\Exception\BaseException('There was an error when fetching currency rates from ExchangeRate-API. See the error log for details.');
             }
 
             if ($validFor === 0) {
@@ -683,7 +683,7 @@ class Service implements InjectionAwareInterface
             if ($array['success'] !== true) {
                 $this->di['logger']->error($array['error']['info']);
 
-                throw new \FOSSBilling\Exception('There was an error when fetching currency rates from Currency Data API. See the error log for details.');
+                throw new \FOSSBilling\Exception\BaseException('There was an error when fetching currency rates from Currency Data API. See the error log for details.');
             }
 
             return $array;
@@ -716,7 +716,7 @@ class Service implements InjectionAwareInterface
             if ($array['success'] !== true) {
                 $this->di['logger']->error($array['error']['info']);
 
-                throw new \FOSSBilling\Exception('There was an error when fetching currency rates from currencylayer. See the error log for details.');
+                throw new \FOSSBilling\Exception\BaseException('There was an error when fetching currency rates from currencylayer. See the error log for details.');
             }
 
             return $array;

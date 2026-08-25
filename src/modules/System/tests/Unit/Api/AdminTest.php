@@ -10,7 +10,7 @@
 
 declare(strict_types=1);
 
-use FOSSBilling\Config;
+use FOSSBilling\System\Config;
 
 use function Tests\Helpers\container;
 
@@ -234,7 +234,7 @@ test('update finalization status rejects legacy non-admin while pending', functi
     $api->setDi($di);
 
     expect(fn (): array => $api->update_finalization_status())
-        ->toThrow(FOSSBilling\InformationException::class, 'You need to be a Super Administrator to finalize this update.');
+        ->toThrow(FOSSBilling\Exception\InformationException::class, 'You need to be a Super Administrator to finalize this update.');
 });
 
 test('update finalization status does not mask unrelated errors from isSuperAdministrator while pending', function (): void {

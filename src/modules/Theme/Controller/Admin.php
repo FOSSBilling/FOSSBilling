@@ -13,7 +13,7 @@ namespace Box\Mod\Theme\Controller;
 
 use Symfony\Component\HttpFoundation\Response;
 
-class Admin implements \FOSSBilling\InjectionAwareInterface
+class Admin implements \FOSSBilling\Interfaces\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
@@ -61,7 +61,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
         try {
             if (!$t->isAssetsPathWritable()) {
-                throw new \FOSSBilling\Exception('Theme ":name" assets folder is not writable. Files cannot be uploaded and settings cannot be saved. Set folder permissions to 755', [':name' => $t->getName()]);
+                throw new \FOSSBilling\Exception\BaseException('Theme ":name" assets folder is not writable. Files cannot be uploaded and settings cannot be saved. Set folder permissions to 755', [':name' => $t->getName()]);
             }
             $service->updateSettings($t, $preset, $body);
             $service->regenerateThemeCssAndJsFiles($t, $preset, $api);
@@ -98,7 +98,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
         try {
             $html = $service->renderThemeSettingsPageHtml($t, $settings);
-        } catch (\FOSSBilling\InformationException $e) {
+        } catch (\FOSSBilling\Exception\InformationException $e) {
             $html = '';
             $error ??= $e->getMessage();
         }

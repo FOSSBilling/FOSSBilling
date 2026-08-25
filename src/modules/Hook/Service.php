@@ -14,7 +14,7 @@ namespace Box\Mod\Hook;
 use Box\Mod\Extension\Entity\Extension;
 use Box\Mod\Extension\Entity\ExtensionMeta;
 use Box\Mod\Extension\Repository\ExtensionRepository;
-use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Interfaces\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
@@ -199,7 +199,7 @@ class Service implements InjectionAwareInterface
     /**
      * Connect event for module.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     private function connect($data): bool
     {

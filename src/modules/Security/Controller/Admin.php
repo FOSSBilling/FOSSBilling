@@ -11,9 +11,9 @@ declare(strict_types=1);
 
 namespace Box\Mod\Security\Controller;
 
-use FOSSBilling\PaginationOptions;
+use FOSSBilling\Pagination\Options;
 
-class Admin implements \FOSSBilling\InjectionAwareInterface
+class Admin implements \FOSSBilling\Interfaces\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
@@ -114,7 +114,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
         $page = filter_var($request->query->get('page', 1), FILTER_VALIDATE_INT, ['options' => ['default' => 1, 'min_range' => 1]]);
         $perPage = filter_var($request->query->get('per_page', 25), FILTER_VALIDATE_INT, ['options' => ['default' => 25, 'min_range' => 1, 'max_range' => 100]]);
-        $counters = $this->di['pager']->paginateArray($counters, new PaginationOptions($page, $perPage));
+        $counters = $this->di['pager']->paginateArray($counters, new Options($page, $perPage));
 
         return $app->render('mod_security_rate_limits', [
             'rate_limit_status' => $this->di['mod_service']('Security')->getRateLimitStatus(),

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use Box\Mod\Formbuilder\Entity\Form;
 use Box\Mod\Formbuilder\Repository\FormRepository;
-use FOSSBilling\InformationException;
+use FOSSBilling\Exception\InformationException;
 
 test('finds an existing form by ID', function (): void {
     $form = new Form();

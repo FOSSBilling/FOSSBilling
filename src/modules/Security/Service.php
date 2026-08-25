@@ -11,9 +11,9 @@ declare(strict_types=1);
 
 namespace Box\Mod\Security;
 
+use FOSSBilling\Exception\InformationException;
 use FOSSBilling\GeoIP\IncompleteRecord;
 use FOSSBilling\GeoIP\Reader;
-use FOSSBilling\InformationException;
 use FOSSBilling\Interfaces\SecurityCheckInterface;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;

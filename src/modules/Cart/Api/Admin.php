@@ -12,7 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Cart\Api;
 
 use Box\Mod\Cart\Entity\Cart;
-use FOSSBilling\PaginationOptions;
+use FOSSBilling\Pagination\Options;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 /**
@@ -28,12 +28,12 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     public function get_list($data)
     {
         [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, Options::fromArray($data));
 
         foreach ($pager['list'] as $key => $cartArr) {
             $cart = $this->getDi()['em']->getRepository(Cart::class)->find((int) $cartArr['id']);
             if (!$cart instanceof Cart) {
-                throw new \FOSSBilling\Exception('Cart not found');
+                throw new \FOSSBilling\Exception\BaseException('Cart not found');
             }
             $pager['list'][$key] = $this->getService()->toApiArray($cart);
         }
@@ -53,7 +53,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $cart = $this->getDi()['em']->getRepository(Cart::class)->find((int) $data['id']);
         if (!$cart instanceof Cart) {
-            throw new \FOSSBilling\Exception('Shopping cart not found');
+            throw new \FOSSBilling\Exception\BaseException('Shopping cart not found');
         }
 
         return $this->getService()->toApiArray($cart);

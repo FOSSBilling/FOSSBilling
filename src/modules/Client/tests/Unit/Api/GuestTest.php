@@ -114,7 +114,7 @@ test('create throws exception when client exists', function (): void {
     $guestClient->setService($serviceMock);
 
     $guestClient->create($data);
-})->throws(FOSSBilling\Exception::class, 'This email address is already registered.');
+})->throws(FOSSBilling\Exception\BaseException::class, 'This email address is already registered.');
 
 test('create throws exception when signup is disabled', function (): void {
     $guestClient = apiEndpoint(new Box\Mod\Client\Api\Guest());
@@ -133,7 +133,7 @@ test('create throws exception when signup is disabled', function (): void {
     $guestClient->setDi($di);
 
     $guestClient->create($data);
-})->throws(FOSSBilling\Exception::class, 'New registrations are temporarily disabled');
+})->throws(FOSSBilling\Exception\BaseException::class, 'New registrations are temporarily disabled');
 
 test('create throws exception when passwords do not match', function (): void {
     $guestClient = apiEndpoint(new Box\Mod\Client\Api\Guest());
@@ -152,7 +152,7 @@ test('create throws exception when passwords do not match', function (): void {
     $guestClient->setDi($di);
 
     $guestClient->create($data);
-})->throws(FOSSBilling\Exception::class, 'Passwords do not match.');
+})->throws(FOSSBilling\Exception\BaseException::class, 'Passwords do not match.');
 
 test('login returns array', function (): void {
     $guestClient = apiEndpoint(new Box\Mod\Client\Api\Guest());
@@ -177,7 +177,7 @@ test('login returns array', function (): void {
     $eventMock = Mockery::mock('\Box_EventManager');
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
-    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
+    $sessionMock = Mockery::mock(FOSSBilling\Security\Session::class);
     $sessionMock->shouldReceive('set')->atLeast()->once();
     $sessionMock->shouldReceive('getId')->atLeast()->once();
     $sessionMock->shouldReceive('regenerateId')->atLeast()->once();
@@ -306,7 +306,7 @@ test('updatePassword returns true', function (): void {
     $eventMock = Mockery::mock('\Box_EventManager');
     $eventMock->shouldReceive('fire')->times(2);
 
-    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\Security\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')->atLeast()->once();
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
@@ -346,7 +346,7 @@ test('updatePassword throws exception when reset not found', function (): void {
     $guestClient->setDi($di);
 
     $guestClient->update_password($data);
-})->throws(FOSSBilling\Exception::class, 'The link has expired or you have already reset your password.');
+})->throws(FOSSBilling\Exception\BaseException::class, 'The link has expired or you have already reset your password.');
 
 test('required returns array', function (): void {
     $guestClient = apiEndpoint(new Box\Mod\Client\Api\Guest());

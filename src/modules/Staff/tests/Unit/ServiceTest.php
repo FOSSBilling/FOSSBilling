@@ -154,11 +154,11 @@ test('login returns admin details on successful login', function (): void {
         ->with($email)
         ->andReturn($admin);
 
-    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
+    $sessionMock = Mockery::mock(FOSSBilling\Security\Session::class);
     $sessionMock->shouldReceive('regenerateId')->atLeast()->once();
     $sessionMock->shouldReceive('set')->atLeast()->once();
 
-    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\Security\PasswordManager::class);
     $passwordMock->shouldReceive('verify')->atLeast()->once()
         ->with($password, $admin->getPass())
         ->andReturn(true);
@@ -202,11 +202,11 @@ test('login retries connecting event listeners once before firing the login even
         ->with($email)
         ->andReturn($admin);
 
-    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
+    $sessionMock = Mockery::mock(FOSSBilling\Security\Session::class);
     $sessionMock->shouldReceive('regenerateId')->atLeast()->once();
     $sessionMock->shouldReceive('set')->atLeast()->once();
 
-    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\Security\PasswordManager::class);
     $passwordMock->shouldReceive('verify')->atLeast()->once()
         ->with($password, $admin->getPass())
         ->andReturn(true);
@@ -254,11 +254,11 @@ test('login still succeeds, and logs a warning, when both attempts to connect ev
         ->with($email)
         ->andReturn($admin);
 
-    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
+    $sessionMock = Mockery::mock(FOSSBilling\Security\Session::class);
     $sessionMock->shouldReceive('regenerateId')->atLeast()->once();
     $sessionMock->shouldReceive('set')->atLeast()->once();
 
-    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\Security\PasswordManager::class);
     $passwordMock->shouldReceive('verify')->atLeast()->once()
         ->with($password, $admin->getPass())
         ->andReturn(true);
@@ -312,7 +312,7 @@ test('login throws exception when credentials are invalid', function (): void {
         ->with($email)
         ->andReturn(null);
 
-    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\Security\PasswordManager::class);
     $passwordMock->shouldReceive('dummyVerify')->atLeast()->once()
         ->with($password);
 
@@ -325,7 +325,7 @@ test('login throws exception when credentials are invalid', function (): void {
     $service->setDi($di);
 
     expect(fn (): array => $service->login($email, $password, $ip))
-        ->toThrow(FOSSBilling\Exception::class, 'Check your login details');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Check your login details');
 });
 
 test('hasPermission returns true for super administrator group member', function (): void {
@@ -548,7 +548,7 @@ test('onAfterClientReplyTicket still sends when its client no longer exists', fu
     $clientServiceMock = Mockery::mock(Box\Mod\Client\Service::class);
     $clientServiceMock->shouldReceive('get')->once()
         ->with(['id' => $clientId])
-        ->andThrow(new FOSSBilling\InformationException('Client not found'));
+        ->andThrow(new FOSSBilling\Exception\InformationException('Client not found'));
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
     $emailServiceMock->shouldReceive('sendTemplate')->once()
@@ -1053,7 +1053,7 @@ test('onAfterClientOpenTicket sends mod_support_helpdesk_ticket_open email', fun
 });
 
 test('getList returns paginated result', function (): void {
-    $pagerMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
+    $pagerMock = Mockery::mock(FOSSBilling\Pagination\Service::class)->makePartial();
     $pagerMock->shouldReceive('getPaginatedResultSet')->atLeast()->once()
         ->andReturn([]);
 
@@ -1148,7 +1148,7 @@ test('getCronAdmin creates and returns new cron admin', function (): void {
     $adminRepository->expects('findOneBy')->with(['systemName' => Admin::SYSTEM_CRON])->twice()
         ->andReturn(null, $adminModel);
 
-    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\Security\PasswordManager::class);
     $passwordMock->expects('hashIt')->once()->andReturn('hashed-cron-password');
 
     $captured = null;
@@ -1188,7 +1188,7 @@ test('getCronAdmin recovers from a concurrent-creation race', function (): void 
     $adminRepository->expects('findOneBy')->with(['systemName' => Admin::SYSTEM_CRON])->twice()
         ->andReturn(null, $adminModel);
 
-    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\Security\PasswordManager::class);
     $passwordMock->expects('hashIt')->once();
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
@@ -1251,7 +1251,7 @@ test('update updates admin details', function (): void {
     $eventsMock = Mockery::mock('\Box_EventManager');
     $eventsMock->shouldReceive('fire')->atLeast()->once();
 
-    $logStub = $this->createStub(FOSSBilling\Logger::class);
+    $logStub = $this->createStub(FOSSBilling\Logging\Logger::class);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
 
@@ -1291,7 +1291,7 @@ test('update rejects deactivating last active super administrator', function ():
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->update($adminModel, ['status' => Admin::STATUS_INACTIVE]))
-        ->toThrow(FOSSBilling\InformationException::class, 'Cannot remove the last active super administrator');
+        ->toThrow(FOSSBilling\Exception\InformationException::class, 'Cannot remove the last active super administrator');
 });
 
 test('update rejects deactivating own staff account', function (): void {
@@ -1310,7 +1310,7 @@ test('update rejects deactivating own staff account', function (): void {
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->update($adminModel, ['status' => Admin::STATUS_INACTIVE]))
-        ->toThrow(FOSSBilling\InformationException::class, 'You cannot deactivate your own staff account');
+        ->toThrow(FOSSBilling\Exception\InformationException::class, 'You cannot deactivate your own staff account');
 });
 
 test('delete removes admin account', function (): void {
@@ -1319,7 +1319,7 @@ test('delete removes admin account', function (): void {
     $eventsMock = Mockery::mock('\Box_EventManager');
     $eventsMock->shouldReceive('fire')->atLeast()->once();
 
-    $logStub = $this->createStub(FOSSBilling\Logger::class);
+    $logStub = $this->createStub(FOSSBilling\Logging\Logger::class);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
 
@@ -1358,7 +1358,7 @@ test('delete rejects removing last active super administrator', function (): voi
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->delete($adminModel))
-        ->toThrow(FOSSBilling\InformationException::class, 'Cannot remove the last active super administrator');
+        ->toThrow(FOSSBilling\Exception\InformationException::class, 'Cannot remove the last active super administrator');
 });
 
 test('delete rejects cron account', function (): void {
@@ -1367,7 +1367,7 @@ test('delete rejects cron account', function (): void {
     $service = new Service();
 
     expect(fn (): bool => $service->delete($adminModel))
-        ->toThrow(FOSSBilling\Exception::class, 'The cron administrator account cannot be removed');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'The cron administrator account cannot be removed');
 });
 
 test('changePassword updates admin password', function (): void {
@@ -1377,9 +1377,9 @@ test('changePassword updates admin password', function (): void {
     $eventsMock = Mockery::mock('\Box_EventManager');
     $eventsMock->shouldReceive('fire')->atLeast()->once();
 
-    $logStub = $this->createStub(FOSSBilling\Logger::class);
+    $logStub = $this->createStub(FOSSBilling\Logging\Logger::class);
 
-    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\Security\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')->atLeast()->once()
         ->with($plainTextPassword);
 
@@ -1420,9 +1420,9 @@ test('create creates new admin account', function (): void {
     $eventsMock = Mockery::mock('\Box_EventManager');
     $eventsMock->shouldReceive('fire')->atLeast()->once();
 
-    $logStub = $this->createStub(FOSSBilling\Logger::class);
+    $logStub = $this->createStub(FOSSBilling\Logging\Logger::class);
 
-    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\Security\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')->atLeast()->once()
         ->with($data['password']);
 
@@ -1458,7 +1458,7 @@ test('create rejects missing initial group', function (): void {
         'name' => 'testJohn',
         'status' => 'active',
         'password' => '1345',
-    ]))->toThrow(FOSSBilling\InformationException::class, 'Group ID was not passed');
+    ]))->toThrow(FOSSBilling\Exception\InformationException::class, 'Group ID was not passed');
 });
 
 test('create throws exception for duplicate email', function (): void {
@@ -1493,9 +1493,9 @@ test('create throws exception for duplicate email', function (): void {
     ));
     $emMock->shouldReceive('flush')->never();
 
-    $logStub = $this->createStub(FOSSBilling\Logger::class);
+    $logStub = $this->createStub(FOSSBilling\Logging\Logger::class);
 
-    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\Security\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')->atLeast()->once()
         ->with($data['password']);
 
@@ -1513,7 +1513,7 @@ test('create throws exception for duplicate email', function (): void {
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->create($data))
-        ->toThrow(FOSSBilling\Exception::class, "Staff member with email {$data['email']} is already registered.");
+        ->toThrow(FOSSBilling\Exception\BaseException::class, "Staff member with email {$data['email']} is already registered.");
 });
 
 test('createGroup creates new admin group', function (): void {
@@ -1562,13 +1562,13 @@ test('createGroup rejects non-super administrator', function (): void {
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->createGroup('new_group_name', $parent))
-        ->toThrow(FOSSBilling\Exception::class, 'Only super administrators can manage staff groups');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Only super administrators can manage staff groups');
     expect($em->persisted)->toBe([]);
 });
 
 test('createGroup rejects missing super administrator root group', function (): void {
     $groupRepository = Mockery::mock(AdminGroupRepository::class);
-    $groupRepository->shouldReceive('findSuperAdministratorGroup')->once()->andThrow(new FOSSBilling\InformationException('Super Administrator group not found'));
+    $groupRepository->shouldReceive('findSuperAdministratorGroup')->once()->andThrow(new FOSSBilling\Exception\InformationException('Super Administrator group not found'));
     $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
     $groupMemberRepository->shouldReceive('adminBelongsToSystemGroup')->atLeast()->once()->andReturn(true);
 
@@ -1581,7 +1581,7 @@ test('createGroup rejects missing super administrator root group', function (): 
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->createGroup('new_group_name'))
-        ->toThrow(FOSSBilling\Exception::class, 'Super Administrator group not found');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Super Administrator group not found');
 });
 
 test('deleteGroup removes admin group', function (): void {
@@ -1626,7 +1626,7 @@ test('deleteGroup rejects non-super administrator', function (): void {
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->deleteGroup($adminGroupModel))
-        ->toThrow(FOSSBilling\Exception::class, 'Only super administrators can manage staff groups');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Only super administrators can manage staff groups');
 });
 
 test('deleteGroup throws exception for protected group', function (): void {
@@ -1643,7 +1643,7 @@ test('deleteGroup throws exception for protected group', function (): void {
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->deleteGroup($adminGroupModel))
-        ->toThrow(FOSSBilling\Exception::class, 'Protected staff groups cannot be removed');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Protected staff groups cannot be removed');
 });
 
 test('deleteGroup throws exception when group has members', function (): void {
@@ -1665,7 +1665,7 @@ test('deleteGroup throws exception when group has members', function (): void {
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->deleteGroup($adminGroupModel))
-        ->toThrow(FOSSBilling\Exception::class, 'Cannot remove group which has staff members');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Cannot remove group which has staff members');
 });
 
 test('deleteGroup throws exception when group restricts email templates', function (): void {
@@ -1692,7 +1692,7 @@ test('deleteGroup throws exception when group restricts email templates', functi
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->deleteGroup($adminGroupModel))
-        ->toThrow(FOSSBilling\Exception::class, 'Cannot remove group which is used to restrict email templates');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Cannot remove group which is used to restrict email templates');
 });
 
 test('deleteGroup throws exception when group has child groups', function (): void {
@@ -1714,7 +1714,7 @@ test('deleteGroup throws exception when group has child groups', function (): vo
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->deleteGroup($adminGroupModel))
-        ->toThrow(FOSSBilling\Exception::class, 'Cannot remove group which has child groups');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Cannot remove group which has child groups');
 });
 
 test('updateGroup updates group details', function (): void {
@@ -1760,7 +1760,7 @@ test('updateGroup rejects details changes from non-super administrator', functio
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->updateGroup($adminGroupModel, ['name' => 'Nope']))
-        ->toThrow(FOSSBilling\Exception::class, 'Only super administrators can manage staff groups');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Only super administrators can manage staff groups');
 });
 
 test('updateGroup allows super administrator to update permissions', function (): void {
@@ -1801,7 +1801,7 @@ test('updateGroup rejects permission changes from non-super administrator', func
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->updateGroup($adminGroupModel, ['permissions' => ['support' => ['access' => true]]]))
-        ->toThrow(FOSSBilling\Exception::class, 'Only super administrators can manage staff groups');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Only super administrators can manage staff groups');
 });
 
 test('updateGroup rejects protected group changes', function (): void {
@@ -1817,7 +1817,7 @@ test('updateGroup rejects protected group changes', function (): void {
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->updateGroup($adminGroupModel, ['name' => 'Nope']))
-        ->toThrow(FOSSBilling\Exception::class, 'Protected staff groups cannot be modified');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Protected staff groups cannot be modified');
 });
 
 test('updateGroup rejects clearing parent group', function (): void {
@@ -1834,7 +1834,7 @@ test('updateGroup rejects clearing parent group', function (): void {
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->updateGroup($adminGroupModel, ['parent_id' => '']))
-        ->toThrow(FOSSBilling\Exception::class, 'Staff groups must have a parent group');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Staff groups must have a parent group');
 });
 
 test('addAdminToGroup creates membership', function (): void {
@@ -1930,7 +1930,7 @@ test('removeAdminFromGroup rejects removing last active super administrator', fu
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->removeAdminFromGroup($admin, $group))
-        ->toThrow(FOSSBilling\InformationException::class, 'Cannot remove the last active super administrator');
+        ->toThrow(FOSSBilling\Exception\InformationException::class, 'Cannot remove the last active super administrator');
 });
 
 test('delete rejects staff outside actor group subtree', function (): void {
@@ -1955,7 +1955,7 @@ test('delete rejects staff outside actor group subtree', function (): void {
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->delete($target))
-        ->toThrow(FOSSBilling\InformationException::class, 'You can only manage staff accounts in lower groups');
+        ->toThrow(FOSSBilling\Exception\InformationException::class, 'You can only manage staff accounts in lower groups');
 });
 
 test('addAdminToGroup rejects target staff without a group', function (): void {
@@ -1982,7 +1982,7 @@ test('addAdminToGroup rejects target staff without a group', function (): void {
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->addAdminToGroup($target, $peerGroup))
-        ->toThrow(FOSSBilling\InformationException::class, 'You can only manage staff accounts in lower groups');
+        ->toThrow(FOSSBilling\Exception\InformationException::class, 'You can only manage staff accounts in lower groups');
 });
 
 test('addAdminToGroup rejects assigning groups outside actor subtree', function (): void {
@@ -2010,7 +2010,7 @@ test('addAdminToGroup rejects assigning groups outside actor subtree', function 
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->addAdminToGroup($target, $peerGroup))
-        ->toThrow(FOSSBilling\InformationException::class, 'You can only manage lower staff groups');
+        ->toThrow(FOSSBilling\Exception\InformationException::class, 'You can only manage lower staff groups');
 });
 
 test('updateGroup rejects moving group below its own child', function (): void {
@@ -2033,7 +2033,7 @@ test('updateGroup rejects moving group below its own child', function (): void {
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->updateGroup($group, ['parent_id' => 3]))
-        ->toThrow(FOSSBilling\InformationException::class, 'A group cannot use one of its subgroups as parent');
+        ->toThrow(FOSSBilling\Exception\InformationException::class, 'A group cannot use one of its subgroups as parent');
 });
 
 // Data provider for ActivityAdminHistorySearchFilters
@@ -2199,7 +2199,7 @@ test('authorizeAdmin returns null when email not found', function (): void {
         ->with($email)
         ->andReturn(null);
 
-    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\Security\PasswordManager::class);
     $passwordMock->shouldReceive('dummyVerify')->atLeast()->once()
         ->with($password);
 
@@ -2225,7 +2225,7 @@ test('authorizeAdmin returns admin model on success', function (): void {
         ->with($email)
         ->andReturn($model);
 
-    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\Security\PasswordManager::class);
     $passwordMock->shouldReceive('verify')->atLeast()->once()
         ->with($password, $model->getPass())
         ->andReturn(true);
@@ -2244,16 +2244,16 @@ test('authorizeAdmin returns admin model on success', function (): void {
 });
 
 test('i18n::validateTimezone returns null for null and empty input', function (): void {
-    expect(FOSSBilling\i18n::validateTimezone(null))->toBeNull();
-    expect(FOSSBilling\i18n::validateTimezone(''))->toBeNull();
+    expect(FOSSBilling\I18n\I18n::validateTimezone(null))->toBeNull();
+    expect(FOSSBilling\I18n\I18n::validateTimezone(''))->toBeNull();
 });
 
 test('i18n::validateTimezone accepts any IANA identifier', function (): void {
-    expect(FOSSBilling\i18n::validateTimezone('America/New_York'))->toBe('America/New_York');
-    expect(FOSSBilling\i18n::validateTimezone('Europe/Berlin'))->toBe('Europe/Berlin');
-    expect(FOSSBilling\i18n::validateTimezone('UTC'))->toBe('UTC');
+    expect(FOSSBilling\I18n\I18n::validateTimezone('America/New_York'))->toBe('America/New_York');
+    expect(FOSSBilling\I18n\I18n::validateTimezone('Europe/Berlin'))->toBe('Europe/Berlin');
+    expect(FOSSBilling\I18n\I18n::validateTimezone('UTC'))->toBe('UTC');
 });
 
 test('i18n::validateTimezone throws InformationException for unknown identifier', function (): void {
-    expect(fn (): ?string => FOSSBilling\i18n::validateTimezone('Not/A_Zone'))->toThrow(FOSSBilling\InformationException::class);
+    expect(fn (): ?string => FOSSBilling\I18n\I18n::validateTimezone('Not/A_Zone'))->toThrow(FOSSBilling\Exception\InformationException::class);
 });

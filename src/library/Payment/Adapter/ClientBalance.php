@@ -13,7 +13,7 @@ use Box\Mod\Client\Entity\Client;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\PayGateway;
 
-class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterface
+class Payment_Adapter_ClientBalance implements FOSSBilling\Interfaces\InjectionAwareInterface
 {
     protected ?Pimple\Container $di = null;
 

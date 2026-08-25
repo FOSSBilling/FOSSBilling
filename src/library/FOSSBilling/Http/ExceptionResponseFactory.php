@@ -11,8 +11,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Http;
 
-use FOSSBilling\Environment;
-use FOSSBilling\ErrorPage;
+use FOSSBilling\System\Environment;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;

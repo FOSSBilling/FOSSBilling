@@ -10,7 +10,7 @@
 
 declare(strict_types=1);
 
-use FOSSBilling\Paginator;
+use FOSSBilling\Pagination\ViewPaginator;
 use Tests\Support\StrictTemplateRenderer;
 
 function paginationRequest(array $overrides = []): array
@@ -34,7 +34,7 @@ function paginationList(int $total, int $pages, int $perPage = 25, array $items 
 
 function paginationPaginator(int $total, int $currentPage, int $perPage): array
 {
-    return (new Paginator($total, $currentPage, $perPage))->toArray();
+    return (new ViewPaginator($total, $currentPage, $perPage))->toArray();
 }
 
 test('admin pagination partial silently skips rendering when url is null and the list has multiple pages', function (): void {

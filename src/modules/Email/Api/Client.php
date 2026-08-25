@@ -15,7 +15,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Email\Api;
 
-use FOSSBilling\PaginationOptions;
+use FOSSBilling\Pagination\Options;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Client extends \FOSSBilling\Api\AbstractApi
@@ -34,7 +34,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
 
         return $this->getDi()['pager']->paginateDoctrineQuery(
             $repo->getSearchQueryBuilder($data),
-            PaginationOptions::fromArray($data),
+            Options::fromArray($data),
         );
     }
 
@@ -43,7 +43,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
      *
      * @return array
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function get($data)
@@ -61,7 +61,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function resend($data)
@@ -82,7 +82,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
     /**
      * Remove email from system.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function delete($data): bool

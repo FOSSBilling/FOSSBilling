@@ -26,7 +26,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return int - ID of the created form
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     #[RequiredParams(['name' => 'Form name was not provided'])]
     public function create_form($data)
@@ -34,7 +34,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('formbuilder', 'manage');
 
         if (isset($data['type']) && !in_array(strtolower($data['type']), ['horizontal', 'default'])) {
-            throw new \FOSSBilling\Exception('Form style was not found in predefined list', null, 3657);
+            throw new \FOSSBilling\Exception\BaseException('Form style was not found in predefined list', null, 3657);
         }
 
         $service = $this->getService();
@@ -65,7 +65,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return int - ID of created field
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     #[RequiredParams(['type' => 'Form field type is invalid', 'form_id' => 'Form id was not passed'])]
     public function add_field($data)
@@ -74,13 +74,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $service = $this->getService();
         if (!isset($data['type']) || !$service->isValidFieldType($data['type'])) {
-            throw new \FOSSBilling\Exception('Form field type is invalid', null, 2684);
+            throw new \FOSSBilling\Exception\BaseException('Form field type is invalid', null, 2684);
         }
         if (!isset($data['form_id'])) {
-            throw new \FOSSBilling\InformationException('Form id was not passed', null, 1822);
+            throw new \FOSSBilling\Exception\InformationException('Form id was not passed', null, 1822);
         }
         if (isset($data['options']) && is_array($data['options']) && !$service->isArrayUnique($data['options'])) {
-            throw new \FOSSBilling\InformationException('This input type must have unique values', null, 3658);
+            throw new \FOSSBilling\Exception\InformationException('This input type must have unique values', null, 3658);
         }
 
         return $service->addNewField($data);
@@ -91,7 +91,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return array
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     public function get_form($data)
     {
@@ -112,7 +112,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return array
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     public function get_form_fields($data)
     {
@@ -133,7 +133,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return array
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     public function get_field($data)
     {
@@ -154,7 +154,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return array
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     public function get_forms()
     {
@@ -168,7 +168,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Delete form and its form fields.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     public function delete_form($data): bool
     {
@@ -188,7 +188,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Delete field by id.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     public function delete_field($data): bool
     {
@@ -229,7 +229,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return int - The ID of the updated field
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     public function update_field($data)
     {
@@ -242,7 +242,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $service = $this->getService();
         if (isset($data['options']) && !$service->isArrayUnique($data['options'])) {
-            throw new \FOSSBilling\InformationException('This input type must have unique values', null, 3658);
+            throw new \FOSSBilling\Exception\InformationException('This input type must have unique values', null, 3658);
         }
 
         return $service->updateField($data);
@@ -265,7 +265,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return int - ID of the new form
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     #[RequiredParams(['form_id' => 'Form id was not passed', 'name' => 'Form name was not passed'])]
     public function copy_form($data)
@@ -302,7 +302,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $type = $data['type'] ?? null;
         if ($type !== 'horizontal' && $type !== 'default') {
-            throw new \FOSSBilling\Exception('Field type not supported', null, 3207);
+            throw new \FOSSBilling\Exception\BaseException('Field type not supported', null, 3207);
         }
 
         $service = $this->getService();

@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
+use FOSSBilling\Exception\BaseException as Exception;
+
 class Period
 {
     final public const string UNIT_DAY = 'D';

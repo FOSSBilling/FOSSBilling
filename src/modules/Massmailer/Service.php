@@ -17,10 +17,10 @@ use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\ParameterType;
 use FOSSBilling\Enums\ClientOrderStatusEnum;
 use FOSSBilling\Enums\ClientStatusEnum;
-use FOSSBilling\Environment;
-use FOSSBilling\InformationException;
+use FOSSBilling\Exception\InformationException;
+use FOSSBilling\System\Environment;
 
-class Service implements \FOSSBilling\InjectionAwareInterface
+class Service implements \FOSSBilling\Interfaces\InjectionAwareInterface
 {
     private const string FILTER_CLIENT_STATUS = 'client_status';
     private const string FILTER_CLIENT_GROUPS = 'client_groups';
@@ -64,7 +64,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         if ($this->messageRepository === null) {
             if ($this->di === null) {
-                throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
+                throw new \FOSSBilling\Exception\BaseException('The dependency injection container has not been set.');
             }
 
             $this->messageRepository = $this->di['em']->getRepository(MassmailerMessage::class);

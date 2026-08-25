@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use FOSSBilling\InformationException;
-use FOSSBilling\Update;
-use FOSSBilling\UpdateFinalization;
-use FOSSBilling\Version;
+use FOSSBilling\Exception\InformationException;
+use FOSSBilling\System\Version;
+use FOSSBilling\Update\Finalization;
+use FOSSBilling\Update\Updater;
 use PhpZip\ZipFile;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Filesystem\Filesystem;
@@ -31,7 +31,7 @@ test('does not finalize an update in the request that extracts it', function ():
     $entryName = '.fossbilling-update-test-' . bin2hex(random_bytes(8)) . '.txt';
     $extractedFile = Path::join(PATH_ROOT, $entryName);
     $archiveFile = Path::join(PATH_CACHE, $latestVersion . '.zip');
-    $lockFile = Path::join(PATH_ROOT, Update::LOCK_FILENAME);
+    $lockFile = Path::join(PATH_ROOT, Updater::LOCK_FILENAME);
     $lockExisted = $filesystem->exists($lockFile);
 
     $zip = new ZipFile();
@@ -46,7 +46,7 @@ test('does not finalize an update in the request that extracts it', function ():
         'update_type' => 0,
     ];
 
-    $finalization = Mockery::mock(UpdateFinalization::class);
+    $finalization = Mockery::mock(Finalization::class);
     $finalization->shouldReceive('isRequired')->once()->andReturnFalse();
     $finalization->shouldReceive('createPendingState')->once()->with(
         Version::VERSION,
@@ -73,7 +73,7 @@ test('does not finalize an update in the request that extracts it', function ():
     $di['update_finalization'] = $finalization;
     $di['update_readiness'] = $readiness;
 
-    $update = new class($releaseInfo) extends Update {
+    $update = new class($releaseInfo) extends Updater {
         public function __construct(private readonly array $releaseInfo)
         {
             parent::__construct();
@@ -118,11 +118,11 @@ test('does not create pending state when archive extraction fails', function ():
     $filesystem = new Filesystem();
     $latestVersion = '0.8.5-test-' . bin2hex(random_bytes(8));
     $archiveFile = Path::join(PATH_CACHE, $latestVersion . '.zip');
-    $lockFile = Path::join(PATH_ROOT, Update::LOCK_FILENAME);
+    $lockFile = Path::join(PATH_ROOT, Updater::LOCK_FILENAME);
     $lockExisted = $filesystem->exists($lockFile);
     $archiveContent = 'not a zip archive';
 
-    $finalization = Mockery::mock(UpdateFinalization::class);
+    $finalization = Mockery::mock(Finalization::class);
     $finalization->shouldReceive('isRequired')->once()->andReturnFalse();
     $finalization->shouldNotReceive('createPendingState');
 
@@ -137,7 +137,7 @@ test('does not create pending state when archive extraction fails', function ():
     $di['update_finalization'] = $finalization;
     $di['update_readiness'] = $readiness;
 
-    $update = new class($latestVersion) extends Update {
+    $update = new class($latestVersion) extends Updater {
         public function __construct(private readonly string $latestVersion)
         {
             parent::__construct();
@@ -172,7 +172,7 @@ test('does not create pending state when archive extraction fails', function ():
     $update->setDi($di);
 
     try {
-        expect(fn (): mixed => $update->performUpdate())->toThrow(FOSSBilling\Exception::class, 'Failed to extract file');
+        expect(fn (): mixed => $update->performUpdate())->toThrow(FOSSBilling\Exception\BaseException::class, 'Failed to extract file');
     } finally {
         $filesystem->remove($archiveFile);
         if (!$lockExisted) {
@@ -204,14 +204,14 @@ test('uses the API digest for archive verification without querying GitHub', fun
     $cache->get('changelog_from_' . Version::VERSION, static fn (): string => 'test changelog');
     $di['cache'] = $cache;
     $di['http_client'] = $httpClient;
-    $update = new Update();
+    $update = new Updater();
     $update->setDi($di);
     $archive = createUpdateTestArchive($content);
 
     try {
         $releaseInfo = $update->getLatestVersionInfo('release', true);
 
-        (new ReflectionMethod(Update::class, 'validateDownloadedArchive'))->invoke($update, $archive, $releaseInfo);
+        (new ReflectionMethod(Updater::class, 'validateDownloadedArchive'))->invoke($update, $archive, $releaseInfo);
 
         expect($releaseInfo['digest'])->toBe($digest)
             ->and($requests)->toBe([
@@ -241,7 +241,7 @@ test('uses the previews API for the current preview build', function (): void {
     $di = new Pimple\Container();
     $di['cache'] = new ArrayAdapter();
     $di['http_client'] = $httpClient;
-    $update = new Update();
+    $update = new Updater();
     $update->setDi($di);
 
     $info = $update->getLatestVersionInfo('preview', true);
@@ -261,7 +261,7 @@ test('uses the previews API for the current preview build', function (): void {
 });
 
 test('treats a different preview commit as an available update', function (): void {
-    $update = new class extends Update {
+    $update = new class extends Updater {
         public function getUpdateBranch(): string
         {
             return 'preview';
@@ -281,8 +281,8 @@ test('validates a downloaded archive against a SHA-256 digest', function (): voi
     $archive = createUpdateTestArchive($content);
 
     try {
-        (new ReflectionMethod(Update::class, 'validateDownloadedArchive'))->invoke(
-            new Update(),
+        (new ReflectionMethod(Updater::class, 'validateDownloadedArchive'))->invoke(
+            new Updater(),
             $archive,
             ['digest' => 'sha256:' . hash('sha256', $content)],
         );
@@ -296,8 +296,8 @@ test('validates a downloaded archive against a SHA-256 digest', function (): voi
 test('rejects and removes a downloaded archive with the wrong digest', function (): void {
     $archive = createUpdateTestArchive('tampered update archive');
 
-    expect(fn (): mixed => (new ReflectionMethod(Update::class, 'validateDownloadedArchive'))->invoke(
-        new Update(),
+    expect(fn (): mixed => (new ReflectionMethod(Updater::class, 'validateDownloadedArchive'))->invoke(
+        new Updater(),
         $archive,
         ['digest' => hash('sha256', 'different archive')],
     ))->toThrow(InformationException::class, 'integrity verification');
@@ -308,8 +308,8 @@ test('rejects and removes a downloaded archive with the wrong digest', function 
 test('rejects update metadata with an invalid digest', function (): void {
     $archive = createUpdateTestArchive('update archive');
 
-    expect(fn (): mixed => (new ReflectionMethod(Update::class, 'validateDownloadedArchive'))->invoke(
-        new Update(),
+    expect(fn (): mixed => (new ReflectionMethod(Updater::class, 'validateDownloadedArchive'))->invoke(
+        new Updater(),
         $archive,
         ['digest' => 'not-a-sha256-digest'],
     ))->toThrow(InformationException::class, 'invalid SHA-256 digest');
@@ -320,8 +320,8 @@ test('rejects update metadata with an invalid digest', function (): void {
 test('rejects update metadata without an API digest', function (): void {
     $archive = createUpdateTestArchive('release archive');
 
-    expect(fn (): mixed => (new ReflectionMethod(Update::class, 'validateDownloadedArchive'))->invoke(
-        new Update(),
+    expect(fn (): mixed => (new ReflectionMethod(Updater::class, 'validateDownloadedArchive'))->invoke(
+        new Updater(),
         $archive,
         [],
     ))->toThrow(InformationException::class, 'update API did not provide a SHA-256 digest');
@@ -330,37 +330,37 @@ test('rejects update metadata without an API digest', function (): void {
 });
 
 test('isSafeArchiveEntry accepts a normal relative entry', function (): void {
-    expect(Update::isSafeArchiveEntry('src/library/FOSSBilling/Update.php'))->toBeTrue();
+    expect(Updater::isSafeArchiveEntry('src/library/FOSSBilling/Update.php'))->toBeTrue();
 });
 
 test('isSafeArchiveEntry rejects a forward-slash traversal segment', function (): void {
-    expect(Update::isSafeArchiveEntry('../../etc/passwd'))->toBeFalse();
+    expect(Updater::isSafeArchiveEntry('../../etc/passwd'))->toBeFalse();
 });
 
 test('isSafeArchiveEntry rejects a backslash traversal segment', function (): void {
-    expect(Update::isSafeArchiveEntry('..\\..\\poc.php'))->toBeFalse();
+    expect(Updater::isSafeArchiveEntry('..\\..\\poc.php'))->toBeFalse();
 });
 
 test('isSafeArchiveEntry rejects a mixed-separator traversal segment', function (): void {
-    expect(Update::isSafeArchiveEntry('src\\..\\..\\poc.php'))->toBeFalse();
+    expect(Updater::isSafeArchiveEntry('src\\..\\..\\poc.php'))->toBeFalse();
 });
 
 test('isSafeArchiveEntry rejects a Unix absolute path', function (): void {
-    expect(Update::isSafeArchiveEntry('/etc/passwd'))->toBeFalse();
+    expect(Updater::isSafeArchiveEntry('/etc/passwd'))->toBeFalse();
 });
 
 test('isSafeArchiveEntry rejects a Windows drive-letter absolute path', function (): void {
-    expect(Update::isSafeArchiveEntry('C:\\Windows\\System32\\evil.dll'))->toBeFalse();
+    expect(Updater::isSafeArchiveEntry('C:\\Windows\\System32\\evil.dll'))->toBeFalse();
 });
 
 test('isSafeArchiveEntry rejects a trailing-space-and-dot segment Windows normalizes to a parent traversal', function (): void {
-    expect(Update::isSafeArchiveEntry('.. .\\outside.php'))->toBeFalse();
+    expect(Updater::isSafeArchiveEntry('.. .\\outside.php'))->toBeFalse();
 });
 
 test('isSafeArchiveEntry rejects an all-dots segment', function (): void {
-    expect(Update::isSafeArchiveEntry('.../outside.php'))->toBeFalse();
+    expect(Updater::isSafeArchiveEntry('.../outside.php'))->toBeFalse();
 });
 
 test('isSafeArchiveEntry accepts a filename that legitimately contains spaces and periods', function (): void {
-    expect(Update::isSafeArchiveEntry('src/data/my file v1.2.3.txt'))->toBeTrue();
+    expect(Updater::isSafeArchiveEntry('src/data/my file v1.2.3.txt'))->toBeTrue();
 });

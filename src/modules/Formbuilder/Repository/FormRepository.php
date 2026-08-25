@@ -13,7 +13,7 @@ namespace Box\Mod\Formbuilder\Repository;
 
 use Box\Mod\Formbuilder\Entity\Form;
 use Doctrine\ORM\EntityRepository;
-use FOSSBilling\InformationException;
+use FOSSBilling\Exception\InformationException;
 
 class FormRepository extends EntityRepository
 {

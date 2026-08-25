@@ -175,7 +175,7 @@ test('setVars encrypts and sets variables', function (): void {
     $service = new Box\Mod\Email\Service();
 
     $di = container();
-    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
+    $cryptMock = Mockery::mock(FOSSBilling\Security\Crypt::class);
     $cryptMock->shouldReceive('encrypt')
         ->atLeast()->once()
         ->andReturn('encrypted-vars');
@@ -200,7 +200,7 @@ test('getVars decrypts and returns variables', function (): void {
     $service = new Box\Mod\Email\Service();
 
     $di = container();
-    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
+    $cryptMock = Mockery::mock(FOSSBilling\Security\Crypt::class);
     $cryptMock->shouldReceive('decrypt')
         ->atLeast()->once()
         ->andReturn('{"param1":"value1"}');
@@ -265,7 +265,7 @@ test('getVars supplies preview variables for support and staff templates before 
 test('getVars merges stored examples over preview defaults', function (): void {
     $service = new Box\Mod\Email\Service();
 
-    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
+    $cryptMock = Mockery::mock(FOSSBilling\Security\Crypt::class);
     $cryptMock->shouldReceive('decrypt')->once()->andReturn('{"ticket":{"subject":"Stored subject"}}');
 
     $di = container();
@@ -299,7 +299,7 @@ test('sendTemplate returns false when template does not exist', function (): voi
     $em->shouldReceive('persist')->atLeast()->once();
     $em->shouldReceive('flush')->atLeast()->once();
 
-    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
+    $cryptMock = Mockery::mock(FOSSBilling\Security\Crypt::class);
     $cryptMock->shouldReceive('encrypt')
         ->atLeast()->once();
 
@@ -363,7 +363,7 @@ test('sendTemplate sends email when template exists', function (): void {
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->byDefault();
     $di['validator'] = $validatorMock;
 
-    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
+    $cryptMock = Mockery::mock(FOSSBilling\Security\Crypt::class);
     $cryptMock->shouldReceive('encrypt')
         ->atLeast()->once();
 
@@ -444,7 +444,7 @@ test('sendTemplate forwards the attachment to the queue and strips it from the s
     $di['validator'] = $validatorMock;
 
     $encryptedVars = null;
-    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
+    $cryptMock = Mockery::mock(FOSSBilling\Security\Crypt::class);
     $cryptMock->shouldReceive('encrypt')
         ->atLeast()->once()
         ->with(Mockery::on(function ($json) use (&$encryptedVars): bool {
@@ -589,7 +589,7 @@ test('sendTemplate handles to_staff and to_client options', function (array $dat
 
     $twigStub = Mockery::mock(Twig\Environment::class);
 
-    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
+    $cryptMock = Mockery::mock(FOSSBilling\Security\Crypt::class);
     $cryptMock->shouldReceive('encrypt')
         ->atLeast()->once();
 
@@ -683,7 +683,7 @@ test('sendTemplate sends to a specific admin via to_admin using the Admin entity
     $clientServiceMock->shouldReceive('get')->never();
     $clientServiceMock->shouldReceive('toApiArray')->never();
 
-    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
+    $cryptMock = Mockery::mock(FOSSBilling\Security\Crypt::class);
     $cryptMock->shouldReceive('encrypt')->atLeast()->once();
 
     $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
@@ -752,7 +752,7 @@ test('sendTemplate throws when to_admin does not resolve to an admin', function 
         'default_template' => 'TEMPLATE',
         'default_description' => 'DESCRIPTION',
     ]);
-})->throws(FOSSBilling\InformationException::class, 'Admin not found');
+})->throws(FOSSBilling\Exception\InformationException::class, 'Admin not found');
 
 test('sendTemplate does not send to staff when template has no assigned groups', function (): void {
     $service = new Box\Mod\Email\Service();
@@ -782,7 +782,7 @@ test('sendTemplate does not send to staff when template has no assigned groups',
         'from_email' => 'test@test.com',
     ]);
 
-    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
+    $cryptMock = Mockery::mock(FOSSBilling\Security\Crypt::class);
     $cryptMock->shouldReceive('encrypt')->atLeast()->once();
 
     $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
@@ -899,7 +899,7 @@ test('addTemplateToGroup throws when the staff group does not exist', function (
     $service->setDi($di);
 
     $service->addTemplateToGroup($template, 3);
-})->throws(FOSSBilling\InformationException::class, 'Staff group not found');
+})->throws(FOSSBilling\Exception\InformationException::class, 'Staff group not found');
 
 test('removeTemplateFromGroup removes an existing association', function (): void {
     $service = new Box\Mod\Email\Service();
@@ -1136,7 +1136,7 @@ test('updateTemplate updates template', function (array $data, string $templateR
 
     $loggerStub = new Tests\Helpers\TestLogger();
 
-    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
+    $cryptMock = Mockery::mock(FOSSBilling\Security\Crypt::class);
     $cryptMock->shouldReceive('decrypt')
         ->never();
     $configMock = ['salt' => md5(random_bytes(13))];
@@ -1427,7 +1427,7 @@ test('validateAllTemplates reports invalid templates', function (): void {
             expect($vars)->toBe([]);
 
             if ($template === 'Broken') {
-                throw new FOSSBilling\InformationException('Email template syntax error: Unknown "filter" filter');
+                throw new FOSSBilling\Exception\InformationException('Email template syntax error: Unknown "filter" filter');
             }
 
             return $template;
@@ -1561,7 +1561,7 @@ test('validateAllTemplates renders templates with stored vars to enforce sandbox
         ->once()
         ->andReturn([$template]);
 
-    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
+    $cryptMock = Mockery::mock(FOSSBilling\Security\Crypt::class);
     $cryptMock->shouldReceive('decrypt')
         ->once()
         ->with('encrypted-vars', Mockery::type('string'))
@@ -1571,7 +1571,7 @@ test('validateAllTemplates renders templates with stored vars to enforce sandbox
     $systemMock->shouldReceive('renderEmailTplString')
         ->once()
         ->with('{{ content|disallowed_filter }}', ['name' => 'Ada', 'content' => 'Body'])
-        ->andThrow(new FOSSBilling\InformationException('Email template contains disallowed Twig syntax: Filter "disallowed_filter" is not allowed'));
+        ->andThrow(new FOSSBilling\Exception\InformationException('Email template contains disallowed Twig syntax: Filter "disallowed_filter" is not allowed'));
     $systemMock->shouldReceive('renderEmailTplString')
         ->with('Hello {{ name }}', Mockery::any())
         ->never();
@@ -1643,7 +1643,7 @@ test('templateCreate throws on invalid content', function (): void {
         ->andReturn('rendered');
     $systemMock->shouldReceive('renderEmailTplString')
         ->once()
-        ->andThrow(new FOSSBilling\InformationException('Email template syntax error: Unknown "bad_filter" filter'));
+        ->andThrow(new FOSSBilling\Exception\InformationException('Email template syntax error: Unknown "bad_filter" filter'));
 
     $di['mod_service'] = $di->protect(function ($name) use ($systemMock) {
         if ($name === 'System' || $name === 'system') {
@@ -1654,7 +1654,7 @@ test('templateCreate throws on invalid content', function (): void {
     $service->setDi($di);
 
     $service->templateCreate('mod_test_broken', 'subject', '{{ x|bad_filter }}', 1);
-})->throws(FOSSBilling\InformationException::class, 'Email template syntax error');
+})->throws(FOSSBilling\Exception\InformationException::class, 'Email template syntax error');
 
 test('EmailTemplate hasError returns true when lastError is set', function (): void {
     $template = new EmailTemplate('test_code', 1);

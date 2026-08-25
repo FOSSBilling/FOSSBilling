@@ -40,7 +40,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     /**
      * Retrieve extension public settings.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     #[RequiredParams(['ext' => 'Parameter ext is missing'])]
     public function settings($data): array
@@ -58,6 +58,6 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      */
     public function languages($deep = false)
     {
-        return \FOSSBilling\i18n::getLocales($deep);
+        return \FOSSBilling\I18n\I18n::getLocales($deep);
     }
 }

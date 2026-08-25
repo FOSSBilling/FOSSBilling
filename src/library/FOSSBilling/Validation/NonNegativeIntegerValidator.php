@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Validation;
 
-use FOSSBilling\InformationException;
+use FOSSBilling\Exception\InformationException;
 
 final class NonNegativeIntegerValidator
 {

@@ -59,7 +59,7 @@ class KbArticle implements ApiArrayInterface, TimestampInterface
     {
         $category = $this->category;
         if (!$category instanceof KbArticleCategory) {
-            throw new \FOSSBilling\Exception('Knowledge Base category not found');
+            throw new \FOSSBilling\Exception\BaseException('Knowledge Base category not found');
         }
 
         $data = [

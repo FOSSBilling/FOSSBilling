@@ -11,9 +11,9 @@ declare(strict_types=1);
 
 namespace Box\Mod\System\Commands;
 
-use FOSSBilling\Environment;
-use FOSSBilling\UpdatePatcher;
-use FOSSBilling\Version;
+use FOSSBilling\System\Environment;
+use FOSSBilling\System\Version;
+use FOSSBilling\Update\Patcher;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -25,7 +25,7 @@ use Symfony\Component\Filesystem\Exception\IOException;
     description: 'Runs update patches and config migrations',
     hidden: false
 )]
-class RunPatcher extends Command implements \FOSSBilling\InjectionAwareInterface
+class RunPatcher extends Command implements \FOSSBilling\Interfaces\InjectionAwareInterface
 {
     private const string CACHE_VERSION_KEY = 'version';
     private const string CACHE_LATEST_PATCH_LEVEL_KEY = 'latest_patch_level';
@@ -50,7 +50,7 @@ class RunPatcher extends Command implements \FOSSBilling\InjectionAwareInterface
             return Command::FAILURE;
         }
 
-        $patcher = new UpdatePatcher();
+        $patcher = new Patcher();
         $patcher->setDi($this->di);
         $finalization = $this->di['update_finalization'];
         $finalizationRequired = $finalization->isRequired();

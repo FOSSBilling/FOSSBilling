@@ -14,7 +14,7 @@ namespace FOSSBilling\Twig\Extension;
 use Composer\InstalledVersions;
 use DiceBear\Avatar;
 use DiceBear\Style;
-use FOSSBilling\Environment as AppEnvironment;
+use FOSSBilling\System\Environment as AppEnvironment;
 use FOSSBilling\Twig\Enum\AppArea;
 use Symfony\Component\Filesystem\Path;
 use Twig\Attribute\AsTwigFilter;

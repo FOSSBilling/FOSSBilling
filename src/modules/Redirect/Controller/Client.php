@@ -14,7 +14,7 @@ namespace Box\Mod\Redirect\Controller;
 use FOSSBilling\Http\ResponseFactory;
 use Symfony\Component\HttpFoundation\Response;
 
-class Client implements \FOSSBilling\InjectionAwareInterface
+class Client implements \FOSSBilling\Interfaces\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 

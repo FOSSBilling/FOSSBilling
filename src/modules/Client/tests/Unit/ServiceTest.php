@@ -46,7 +46,7 @@ test('approveClientEmailByHash throws exception for invalid hash', function (): 
     $service->setDi($di);
 
     $service->approveClientEmailByHash('');
-})->throws(FOSSBilling\Exception::class, 'Invalid email confirmation link');
+})->throws(FOSSBilling\Exception\BaseException::class, 'Invalid email confirmation link');
 
 test('generateEmailConfirmationLink returns string', function (): void {
     $service = new Box\Mod\Client\Service();
@@ -390,7 +390,7 @@ test('canChangeCurrency throws exception when client has invoices', function ():
     $service->setDi($di);
 
     $service->canChangeCurrency($model, $currency);
-})->throws(FOSSBilling\InformationException::class, 'Currency cannot be changed. Client already has invoices issued.');
+})->throws(FOSSBilling\Exception\InformationException::class, 'Currency cannot be changed. Client already has invoices issued.');
 
 dataset('searchBalanceQueryData', [
     [[], 'FROM client_balance as m', []],
@@ -456,7 +456,7 @@ test('addFunds throws exception when currency is not defined', function (): void
     $description = 'test description';
 
     $service->addFunds($modelClient, $amount, $description);
-})->throws(FOSSBilling\Exception::class, "You must define the client's currency before adding funds.");
+})->throws(FOSSBilling\Exception\BaseException::class, "You must define the client's currency before adding funds.");
 
 test('addFunds throws exception when amount is missing', function (): void {
     $service = new Box\Mod\Client\Service();
@@ -466,7 +466,7 @@ test('addFunds throws exception when amount is missing', function (): void {
     $description = '';
 
     $service->addFunds($modelClient, $amount, $description);
-})->throws(FOSSBilling\Exception::class, 'Funds amount is invalid');
+})->throws(FOSSBilling\Exception\BaseException::class, 'Funds amount is invalid');
 
 test('addFunds throws exception when description is invalid', function (): void {
     $service = new Box\Mod\Client\Service();
@@ -476,7 +476,7 @@ test('addFunds throws exception when description is invalid', function (): void 
     $description = null;
 
     $service->addFunds($modelClient, $amount, $description);
-})->throws(FOSSBilling\Exception::class, 'Funds description is invalid');
+})->throws(FOSSBilling\Exception\BaseException::class, 'Funds description is invalid');
 
 test('getExpiredPasswordReminders returns array', function (): void {
     $service = new Box\Mod\Client\Service();
@@ -620,7 +620,7 @@ test('get throws exception when client not found', function (): void {
 
     $data = ['id' => 0];
     $service->get($data);
-})->throws(FOSSBilling\InformationException::class, 'Client not found');
+})->throws(FOSSBilling\Exception\InformationException::class, 'Client not found');
 
 test('getClientBalance returns numeric', function (): void {
     $service = new Box\Mod\Client\Service();
@@ -792,7 +792,7 @@ test('adminCreateClient returns int', function (): void {
     $eventManagerMock->shouldReceive('fire')
         ->twice();
 
-    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\Security\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')
         ->atLeast()->once()
         ->with($data['password']);
@@ -846,7 +846,7 @@ test('deleteGroup throws exception when group has clients', function (): void {
     $service->setDi($di);
 
     $service->deleteGroup($model);
-})->throws(FOSSBilling\Exception::class, 'Cannot remove groups with clients');
+})->throws(FOSSBilling\Exception\BaseException::class, 'Cannot remove groups with clients');
 
 test('authorizeClient returns null when email not found', function (): void {
     $service = new Box\Mod\Client\Service();
@@ -995,7 +995,7 @@ test('canChangeEmail throws exception when email change is disabled', function (
     $service->setDi($di);
 
     $service->canChangeEmail($clientModel, $email);
-})->throws(FOSSBilling\Exception::class, 'Email address cannot be changed');
+})->throws(FOSSBilling\Exception\BaseException::class, 'Email address cannot be changed');
 
 test('checkExtraRequiredFields throws exception for missing field', function (): void {
     $service = new Box\Mod\Client\Service();
@@ -1008,7 +1008,7 @@ test('checkExtraRequiredFields throws exception for missing field', function ():
 
     $service->setDi($di);
     $service->checkExtraRequiredFields($data);
-})->throws(FOSSBilling\Exception::class, 'Field Id cannot be empty');
+})->throws(FOSSBilling\Exception\BaseException::class, 'Field Id cannot be empty');
 
 test('checkCustomFields throws exception for required field', function (): void {
     $service = new Box\Mod\Client\Service();
@@ -1026,7 +1026,7 @@ test('checkCustomFields throws exception for required field', function (): void 
     $data = [];
     $service->setDi($di);
     $service->checkCustomFields($data);
-})->throws(FOSSBilling\Exception::class, 'Field custom_field_title cannot be empty');
+})->throws(FOSSBilling\Exception\BaseException::class, 'Field custom_field_title cannot be empty');
 
 test('checkCustomFields returns null when field is not required', function (): void {
     $service = new Box\Mod\Client\Service();
@@ -1126,18 +1126,18 @@ test('resolveDocumentNumber returns null when no custom_fields config exists', f
 });
 
 test('i18n::validateTimezone returns null for null and empty input', function (): void {
-    expect(FOSSBilling\i18n::validateTimezone(null))->toBeNull();
-    expect(FOSSBilling\i18n::validateTimezone(''))->toBeNull();
+    expect(FOSSBilling\I18n\I18n::validateTimezone(null))->toBeNull();
+    expect(FOSSBilling\I18n\I18n::validateTimezone(''))->toBeNull();
 });
 
 test('i18n::validateTimezone returns the value when it is a known IANA identifier', function (): void {
-    expect(FOSSBilling\i18n::validateTimezone('America/New_York'))->toBe('America/New_York');
-    expect(FOSSBilling\i18n::validateTimezone('Europe/Berlin'))->toBe('Europe/Berlin');
-    expect(FOSSBilling\i18n::validateTimezone('UTC'))->toBe('UTC');
+    expect(FOSSBilling\I18n\I18n::validateTimezone('America/New_York'))->toBe('America/New_York');
+    expect(FOSSBilling\I18n\I18n::validateTimezone('Europe/Berlin'))->toBe('Europe/Berlin');
+    expect(FOSSBilling\I18n\I18n::validateTimezone('UTC'))->toBe('UTC');
 });
 
 test('i18n::validateTimezone throws InformationException for an unknown identifier', function (): void {
-    expect(fn (): ?string => FOSSBilling\i18n::validateTimezone('Mars/Olympus_Mons'))->toThrow(FOSSBilling\InformationException::class);
+    expect(fn (): ?string => FOSSBilling\I18n\I18n::validateTimezone('Mars/Olympus_Mons'))->toThrow(FOSSBilling\Exception\InformationException::class);
 });
 
 test('exportCSV uses default columns when no headers are provided', function (): void {

@@ -8,8 +8,8 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
-use FOSSBilling\Pagination;
-use FOSSBilling\PaginationOptions;
+use FOSSBilling\Pagination\Options as PaginationOptions;
+use FOSSBilling\Pagination\Service as PaginationService;
 
 function buildCustompagesService(object $repo, ?EntityManagerInterface $em = null, ?Pimple\Container $extra = null): Service
 {
@@ -41,7 +41,7 @@ test('search pages delegates to repository query builder and doctrine paginator'
     $repo = Mockery::mock(Box\Mod\Custompages\Repository\CustomPageRepository::class);
     $repo->expects('getSearchQueryBuilder')->with(['search' => 'landing'])->andReturn($qb);
 
-    $pager = Mockery::mock(Pagination::class);
+    $pager = Mockery::mock(PaginationService::class);
     $pager->expects('paginateDoctrineQuery')->with($qb, Mockery::on(fn ($o): bool => $o instanceof PaginationOptions))->andReturn(['list' => [], 'total' => 0]);
 
     $extra = new Pimple\Container();
@@ -111,7 +111,7 @@ test('get page rejects unknown column type', function (): void {
 
     $service = buildCustompagesService($repo);
 
-    expect(fn (): ?array => $service->getPage(1, 'title'))->toThrow(FOSSBilling\Exception::class);
+    expect(fn (): ?array => $service->getPage(1, 'title'))->toThrow(FOSSBilling\Exception\BaseException::class);
 });
 
 test('create page generates unique slug and inserts via dbal', function (): void {
@@ -195,7 +195,7 @@ test('update page throws when page not found', function (): void {
 
     $service = buildCustompagesService($repo);
 
-    expect(fn (): int => $service->updatePage(5, 't', '', '', 'c', 'slug'))->toThrow(FOSSBilling\Exception::class, 'Custom page not found');
+    expect(fn (): int => $service->updatePage(5, 't', '', '', 'c', 'slug'))->toThrow(FOSSBilling\Exception\BaseException::class, 'Custom page not found');
 });
 
 test('update page throws on duplicate slug with legacy code', function (): void {
@@ -209,7 +209,7 @@ test('update page throws on duplicate slug with legacy code', function (): void 
     $service = buildCustompagesService($repo);
 
     expect(fn (): int => $service->updatePage(5, 'T', '', '', 'C', 'taken'))
-        ->toThrow(fn (FOSSBilling\Exception $e): bool => $e->getCode() === 9999);
+        ->toThrow(fn (FOSSBilling\Exception\BaseException $e): bool => $e->getCode() === 9999);
 });
 
 test('update page applies setters and returns id', function (): void {
@@ -360,7 +360,7 @@ test('create page gives up after repeated slug conflicts', function (): void {
     $service->setDi($di);
 
     expect(fn (): int => $service->createPage('Title', '', '', 'content'))
-        ->toThrow(FOSSBilling\Exception::class, 'Unable to generate a unique slug');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Unable to generate a unique slug');
 });
 
 test('update page surfaces a concurrent constraint violation as the uniqueness error', function (): void {
@@ -385,7 +385,7 @@ test('update page surfaces a concurrent constraint violation as the uniqueness e
     $service->setDi($di);
 
     expect(fn (): int => $service->updatePage(5, 'New', '', '', 'content', 'New Slug'))
-        ->toThrow(fn (FOSSBilling\Exception $e): bool => $e->getCode() === 9999);
+        ->toThrow(fn (FOSSBilling\Exception\BaseException $e): bool => $e->getCode() === 9999);
 });
 
 test('create page truncates a long title slug to fit varchar 255', function (): void {

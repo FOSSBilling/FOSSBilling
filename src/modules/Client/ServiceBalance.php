@@ -8,7 +8,7 @@ use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Client\Repository\ClientBalanceRepository;
 use Doctrine\ORM\QueryBuilder;
-use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Interfaces\InjectionAwareInterface;
 
 class ServiceBalance implements InjectionAwareInterface
 {
@@ -68,7 +68,7 @@ class ServiceBalance implements InjectionAwareInterface
     {
         $client ??= $model->getClient();
         if (!$client instanceof Client) {
-            throw new \FOSSBilling\InformationException('Client not found');
+            throw new \FOSSBilling\Exception\InformationException('Client not found');
         }
 
         return [

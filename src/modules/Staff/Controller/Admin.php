@@ -12,7 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Staff\Controller;
 
 use Box\Mod\Staff\Entity\AdminPasswordReset;
-use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Interfaces\InjectionAwareInterface;
 use FOSSBilling\Security\RandomizedTimeFloor;
 use Symfony\Component\HttpFoundation\Response;
 

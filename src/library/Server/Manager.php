@@ -153,7 +153,7 @@ abstract class Server_Manager
     public function getLog(): ?Psr\Log\LoggerInterface
     {
         if (!$this->_log instanceof Psr\Log\LoggerInterface) {
-            return new FOSSBilling\Logger();
+            return new FOSSBilling\Logging\Logger();
         }
 
         return $this->_log;

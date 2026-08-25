@@ -6,7 +6,7 @@ use Box\Mod\Massmailer\Entity\MassmailerMessage;
 use Box\Mod\Massmailer\Repository\MassmailerMessageRepository;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
-use FOSSBilling\InformationException;
+use FOSSBilling\Exception\InformationException;
 
 function createMassmailerDi(?Connection $dbal = null): Pimple\Container
 {

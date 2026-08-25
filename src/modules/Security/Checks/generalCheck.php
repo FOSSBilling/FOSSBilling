@@ -11,8 +11,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Security\Checks;
 
-use FOSSBilling\Enums\SecurityCheckResultEnum;
-use FOSSBilling\SecurityCheckResult;
+use FOSSBilling\Security\CheckResult;
+use FOSSBilling\Security\Enum\CheckResultStatus;
 
 class generalCheck implements \FOSSBilling\Interfaces\SecurityCheckInterface
 {
@@ -30,12 +30,12 @@ class generalCheck implements \FOSSBilling\Interfaces\SecurityCheckInterface
         return __trans('Checks general information such as the FOSSBilling configuration.');
     }
 
-    public function performCheck(): SecurityCheckResult
+    public function performCheck(): CheckResult
     {
         $status = $this->okay;
         $message = '';
 
-        $config = \FOSSBilling\Config::getConfig();
+        $config = \FOSSBilling\System\Config::getConfig();
 
         /*
          * Security settings
@@ -76,7 +76,7 @@ class generalCheck implements \FOSSBilling\Interfaces\SecurityCheckInterface
             $message .= '- ' . __trans('Warning: FOSSBilling is configured to update to non-release versions of FOSSBilling.') . "\n";
             $status = $status <= $this->warn ? $this->warn : $status;
         }
-        if (\FOSSBilling\Version::isPreviewVersion()) {
+        if (\FOSSBilling\System\Version::isPreviewVersion()) {
             $message .= '- ' . __trans('Warning: You appear to be using a non-release version of FOSSBilling.') . "\n";
             $status = $status <= $this->warn ? $this->warn : $status;
         }
@@ -86,12 +86,12 @@ class generalCheck implements \FOSSBilling\Interfaces\SecurityCheckInterface
         }
 
         $result = match ($status) {
-            0 => SecurityCheckResultEnum::PASS,
-            1 => SecurityCheckResultEnum::WARN,
-            2 => SecurityCheckResultEnum::FAIL,
-            default => SecurityCheckResultEnum::FAIL,
+            0 => CheckResultStatus::PASS,
+            1 => CheckResultStatus::WARN,
+            2 => CheckResultStatus::FAIL,
+            default => CheckResultStatus::FAIL,
         };
 
-        return new SecurityCheckResult($result, $message);
+        return new CheckResult($result, $message);
     }
 }

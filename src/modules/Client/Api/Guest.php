@@ -75,7 +75,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $config = $this->getDi()['mod_config']('client');
 
         if (isset($config['disable_signup']) && $config['disable_signup']) {
-            throw new \FOSSBilling\InformationException('New registrations are temporarily disabled');
+            throw new \FOSSBilling\Exception\InformationException('New registrations are temporarily disabled');
         }
 
         $this->getDi()['validator']->passwordsMatch($data);
@@ -90,7 +90,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $email = $this->getDi()['tools']->validateAndSanitizeEmail($email);
         $email = strtolower(trim((string) $email));
         if ($service->clientAlreadyExists($email)) {
-            throw new \FOSSBilling\InformationException('This email address is already registered.');
+            throw new \FOSSBilling\Exception\InformationException('This email address is already registered.');
         }
 
         $client = $service->guestCreateClient($data);
@@ -115,7 +115,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      *
      * @return array - session data
      *
-     * @throws \FOSSBilling\InformationException
+     * @throws \FOSSBilling\Exception\InformationException
      */
     #[RequiredParams(['email' => 'Email required', 'password' => 'Password required'])]
     public function login($data)
@@ -135,7 +135,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             if (!$client instanceof Client) {
                 $this->getDi()['events_manager']->fire(['event' => 'onEventClientLoginFailed', 'params' => $event_params]);
 
-                throw new \FOSSBilling\InformationException('Please check your login details.', [], 401);
+                throw new \FOSSBilling\Exception\InformationException('Please check your login details.', [], 401);
             }
 
             $this->getDi()['events_manager']->fire(['event' => 'onAfterClientLogin', 'params' => ['id' => $client->getId(), 'ip' => $this->ip]]);
@@ -163,7 +163,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     /**
      * Password reset confirmation email will be sent to email.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     #[RequiredParams(['email' => 'Email required'])]
     public function reset_password($data): bool
@@ -238,24 +238,24 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             if (!$reset instanceof ClientPasswordReset) {
                 $this->getDi()['logger']->withChannel('security')->info('Client password reset confirmation failed from IP {ip}: reset token not found', ['ip' => $this->getIp()]);
 
-                throw new \FOSSBilling\InformationException('The link has expired or you have already reset your password.');
+                throw new \FOSSBilling\Exception\InformationException('The link has expired or you have already reset your password.');
             }
 
             if (strtotime((string) $reset->getCreatedAt()?->format('Y-m-d H:i:s')) - time() + 900 < 0) {
                 $this->getDi()['logger']->withChannel('security')->info('Client password reset confirmation failed for client #{client_id} from IP {ip}: reset token expired', ['client_id' => $reset->getClient()?->getId(), 'ip' => $this->getIp()]);
 
-                throw new \FOSSBilling\InformationException('The link has expired or you have already reset your password.');
+                throw new \FOSSBilling\Exception\InformationException('The link has expired or you have already reset your password.');
             }
 
             $client = $reset->getClient();
             if (!$client instanceof Client) {
-                throw new \FOSSBilling\InformationException('The link has expired or you have already reset your password.');
+                throw new \FOSSBilling\Exception\InformationException('The link has expired or you have already reset your password.');
             }
 
             if ($client->getStatus() !== Client::ACTIVE) {
                 $this->getDi()['logger']->withChannel('security')->info('Client password reset confirmation failed for client #{client_id} from IP {ip}: account status {status}', ['client_id' => $client->getId(), 'ip' => $this->getIp(), 'status' => $client->getStatus()]);
 
-                throw new \FOSSBilling\InformationException('The link has expired or you have already reset your password.');
+                throw new \FOSSBilling\Exception\InformationException('The link has expired or you have already reset your password.');
             }
 
             $client->setPass($this->getDi()['password']->hashIt($data['password']));

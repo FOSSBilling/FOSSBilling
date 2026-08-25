@@ -11,10 +11,10 @@ declare(strict_types=1);
 
 namespace Box\Mod\Extension\Controller;
 
-use FOSSBilling\InformationException;
+use FOSSBilling\Exception\InformationException;
 use Symfony\Component\HttpFoundation\Response;
 
-class Admin implements \FOSSBilling\InjectionAwareInterface
+class Admin implements \FOSSBilling\Interfaces\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 

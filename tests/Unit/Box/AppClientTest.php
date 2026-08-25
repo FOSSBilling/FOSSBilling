@@ -147,7 +147,7 @@ test('get_custom_page still returns 404 when the top-level template is missing',
             return 'error body';
         }
 
-        throw new FOSSBilling\InformationException('Page not found', null, 404);
+        throw new FOSSBilling\Exception\InformationException('Page not found', null, 404);
     });
 
     $response = $app->get_custom_page('signup');
@@ -161,7 +161,7 @@ test('numeric custom page paths return a themed 404', function (): void {
             return 'error body';
         }
 
-        throw new FOSSBilling\InformationException('Page not found', null, 404);
+        throw new FOSSBilling\Exception\InformationException('Page not found', null, 404);
     });
     $app->setUrl('/12345');
 

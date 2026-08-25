@@ -11,35 +11,35 @@ declare(strict_types=1);
 
 namespace Box\Mod\Security\Checks;
 
-use FOSSBilling\Enums\SecurityCheckResultEnum;
-use FOSSBilling\SecurityCheckResult;
+use FOSSBilling\Security\CheckResult;
+use FOSSBilling\Security\Enum\CheckResultStatus;
 
 class dangerousFunctions implements \FOSSBilling\Interfaces\SecurityCheckInterface
 {
     private array $functions = [
         'exec' => [
-            'type' => SecurityCheckResultEnum::WARN,
+            'type' => CheckResultStatus::WARN,
         ],
         'passthru' => [
-            'type' => SecurityCheckResultEnum::WARN,
+            'type' => CheckResultStatus::WARN,
         ],
         'system' => [
-            'type' => SecurityCheckResultEnum::WARN,
+            'type' => CheckResultStatus::WARN,
         ],
         'shell_exec' => [
-            'type' => SecurityCheckResultEnum::WARN,
+            'type' => CheckResultStatus::WARN,
         ],
         '``' => [
-            'type' => SecurityCheckResultEnum::WARN,
+            'type' => CheckResultStatus::WARN,
         ],
         'popen' => [
-            'type' => SecurityCheckResultEnum::WARN,
+            'type' => CheckResultStatus::WARN,
         ],
         'proc_open' => [
-            'type' => SecurityCheckResultEnum::WARN,
+            'type' => CheckResultStatus::WARN,
         ],
         'pcntl_exec' => [
-            'type' => SecurityCheckResultEnum::WARN,
+            'type' => CheckResultStatus::WARN,
         ],
     ];
 
@@ -53,10 +53,10 @@ class dangerousFunctions implements \FOSSBilling\Interfaces\SecurityCheckInterfa
         return __trans('Checks to see if potentially dangerous PHP functions are enabled.');
     }
 
-    public function performCheck(): SecurityCheckResult
+    public function performCheck(): CheckResult
     {
         $functionsFound = [];
-        $state = SecurityCheckResultEnum::PASS;
+        $state = CheckResultStatus::PASS;
         $result = '';
 
         foreach ($this->functions as $function => $properties) {
@@ -76,10 +76,10 @@ class dangerousFunctions implements \FOSSBilling\Interfaces\SecurityCheckInterfa
             }
         }
 
-        if ($state === SecurityCheckResultEnum::PASS) {
-            return new SecurityCheckResult(SecurityCheckResultEnum::PASS, __trans('No potentially dangerous PHP functions were detected as enabled'));
+        if ($state === CheckResultStatus::PASS) {
+            return new CheckResult(CheckResultStatus::PASS, __trans('No potentially dangerous PHP functions were detected as enabled'));
         }
 
-        return new SecurityCheckResult(SecurityCheckResultEnum::WARN, $result);
+        return new CheckResult(CheckResultStatus::WARN, $result);
     }
 }

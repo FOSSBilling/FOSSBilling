@@ -22,17 +22,17 @@ class Client extends \FOSSBilling\Api\AbstractApi
      * Call a method from the service's plugin.
      * Pass any additional params and they will be passed to the plugin method.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     #[RequiredParams(['order_id' => 'Order ID is required', 'method' => 'Method is required'])]
     public function call($data)
     {
         if (!isset($data['order_id'])) {
-            throw new \FOSSBilling\Exception('Order ID is required');
+            throw new \FOSSBilling\Exception\BaseException('Order ID is required');
         }
 
         if (!isset($data['method'])) {
-            throw new \FOSSBilling\Exception('Method is required');
+            throw new \FOSSBilling\Exception\BaseException('Method is required');
         }
 
         $identity = $this->getIdentity();

@@ -19,7 +19,7 @@ use Box\Mod\Activity\Repository\ActivitySystemRepository;
 use Box\Mod\Client\Entity\Client;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Types\Types;
-use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Interfaces\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
@@ -246,7 +246,7 @@ class Service implements InjectionAwareInterface
         )->fetchAssociative();
 
         if ($client === false) {
-            throw new \FOSSBilling\Exception('Client not found');
+            throw new \FOSSBilling\Exception\BaseException('Client not found');
         }
 
         return [

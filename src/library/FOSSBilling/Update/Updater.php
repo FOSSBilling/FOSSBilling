@@ -9,8 +9,13 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling;
+namespace FOSSBilling\Update;
 
+use FOSSBilling\Exception\BaseException;
+use FOSSBilling\Exception\InformationException;
+use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\System\Config;
+use FOSSBilling\System\Version;
 use PhpZip\Exception\ZipException;
 use PhpZip\ZipFile;
 use Symfony\Component\Filesystem\Exception\IOException;
@@ -20,7 +25,7 @@ use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 
-class Update implements InjectionAwareInterface
+class Updater implements InjectionAwareInterface
 {
     /**
      * Name of the marker file that tells load.php to refuse all requests while
@@ -127,8 +132,8 @@ class Update implements InjectionAwareInterface
      *                        valid values are: 'preview' or 'release'
      * @param bool   $refetch Set to `true` to have FOSSBilling invalidate the update cache and fetch the latest info
      *
-     * @throws Exception if there is an error downloading the latest
-     *                   version information
+     * @throws BaseException if there is an error downloading the latest
+     *                       version information
      */
     public function getLatestVersionInfo(?string $branch = null, bool $refetch = false): array
     {
@@ -151,16 +156,16 @@ class Update implements InjectionAwareInterface
                 } catch (TransportExceptionInterface|HttpExceptionInterface $e) {
                     $this->di['logger']->withChannel('update')->error($e->getMessage());
 
-                    throw new Exception('Failed to download the latest preview information. Further details are available in the error log.');
+                    throw new BaseException('Failed to download the latest preview information. Further details are available in the error log.');
                 }
 
                 if (!is_array($previewInfo)) {
-                    throw new Exception('The previews API returned invalid preview metadata.');
+                    throw new BaseException('The previews API returned invalid preview metadata.');
                 }
 
                 $downloadUrl = $previewInfo['download_url'] ?? null;
                 if (!is_string($downloadUrl) || !str_starts_with($downloadUrl, 'https://download.fossbilling.org/')) {
-                    throw new Exception('The previews API returned invalid preview metadata.');
+                    throw new BaseException('The previews API returned invalid preview metadata.');
                 }
 
                 $shortSha = $previewInfo['short_sha'] ?? null;
@@ -170,7 +175,7 @@ class Update implements InjectionAwareInterface
                 }
                 $shortSha = strtolower(trim($shortSha));
                 if ($shortSha !== Version::VERSION && preg_match('/\A[0-9a-f]{7,40}\z/', $shortSha) !== 1) {
-                    throw new Exception('The previews API returned an invalid preview commit identifier.');
+                    throw new BaseException('The previews API returned an invalid preview commit identifier.');
                 }
 
                 $currentVersion = Version::VERSION;
@@ -212,7 +217,7 @@ class Update implements InjectionAwareInterface
             } catch (TransportExceptionInterface|HttpExceptionInterface $e) {
                 $this->di['logger']->withChannel('update')->error($e->getMessage());
 
-                throw new Exception('Failed to download the latest version information. Further details are available in the error log.');
+                throw new BaseException('Failed to download the latest version information. Further details are available in the error log.');
             }
 
             return [
@@ -269,7 +274,7 @@ class Update implements InjectionAwareInterface
             if ($actualDigest === false || !hash_equals($expectedDigest, $actualDigest)) {
                 throw new InformationException('The downloaded update archive failed integrity verification. Update canceled for security reasons.');
             }
-        } catch (Exception $e) {
+        } catch (BaseException $e) {
             $this->removeDownloadedArchive($archiveFile);
 
             throw $e;
@@ -306,7 +311,7 @@ class Update implements InjectionAwareInterface
 
     public function isBehindOnDBPatches(): bool
     {
-        $patcher = new UpdatePatcher();
+        $patcher = new Patcher();
         $patcher->setDi($this->di);
 
         return $patcher->availablePatches() > 0;
@@ -315,7 +320,7 @@ class Update implements InjectionAwareInterface
     /**
      * Perform manual update - apply patches and update config.
      *
-     * @throws Exception
+     * @throws BaseException
      */
     public function performManualUpdate(): void
     {
@@ -327,7 +332,7 @@ class Update implements InjectionAwareInterface
         }
 
         // Apply system patches and migrate configuration file.
-        $patcher = new UpdatePatcher();
+        $patcher = new Patcher();
         $patcher->setDi($this->di);
         $patcher->applyConfigPatches(force: true);
         $patcher->applyCorePatches(force: true);
@@ -338,7 +343,7 @@ class Update implements InjectionAwareInterface
         } catch (IOException $e) {
             $this->di['logger']->withChannel('update')->error($e->getMessage());
 
-            throw new Exception('Unable to clear the cache after applying manual update patches. Further details are available in the error log.');
+            throw new BaseException('Unable to clear the cache after applying manual update patches. Further details are available in the error log.');
         }
     }
 
@@ -346,8 +351,8 @@ class Update implements InjectionAwareInterface
      * Perform system update.
      *
      * @throws InformationException if latest version already installed
-     * @throws Exception            if unable to download the update archive
-     * @throws Exception            if unable to extract the update archive
+     * @throws BaseException        if unable to download the update archive
+     * @throws BaseException        if unable to extract the update archive
      */
     public function performUpdate(): void
     {
@@ -358,7 +363,7 @@ class Update implements InjectionAwareInterface
 
         $readiness = $this->di['update_readiness']->check();
         if (!$readiness['can_update']) {
-            throw new Exception('FOSSBilling does not have sufficient filesystem permissions to perform the update. Resolve the reported issues before trying again.', null, 820);
+            throw new BaseException('FOSSBilling does not have sufficient filesystem permissions to perform the update. Resolve the reported issues before trying again.', null, 820);
         }
 
         $updateBranch = $this->getUpdateBranch();
@@ -423,7 +428,7 @@ class Update implements InjectionAwareInterface
             $this->removeDownloadedArchive($archiveFile);
             $this->di['logger']->withChannel('update')->error($e->getMessage());
 
-            throw new Exception('Failed to download the update archive. Further details are available in the error log.');
+            throw new BaseException('Failed to download the update archive. Further details are available in the error log.');
         }
 
         $this->validateDownloadedArchive($archiveFile, $releaseInfo);
@@ -476,7 +481,7 @@ class Update implements InjectionAwareInterface
                 $zip->openFile($archiveFile);
                 foreach ($zip->getListFiles() as $entryName) {
                     if (!self::isSafeArchiveEntry($entryName)) {
-                        throw new Exception('The update archive contains an unsafe file path and cannot be extracted.');
+                        throw new BaseException('The update archive contains an unsafe file path and cannot be extracted.');
                     }
                 }
                 $zip->extractTo(PATH_ROOT);
@@ -484,7 +489,7 @@ class Update implements InjectionAwareInterface
             } catch (ZipException $e) {
                 $this->di['logger']->withChannel('update')->error($e->getMessage());
 
-                throw new Exception('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
+                throw new BaseException('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
             }
 
             // Mark extraction complete so the short finalization handoff below

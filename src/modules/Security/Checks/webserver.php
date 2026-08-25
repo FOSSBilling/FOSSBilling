@@ -11,8 +11,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Security\Checks;
 
-use FOSSBilling\Enums\SecurityCheckResultEnum;
-use FOSSBilling\SecurityCheckResult;
+use FOSSBilling\Security\CheckResult;
+use FOSSBilling\Security\Enum\CheckResultStatus;
 use Pimple\Container;
 
 class webserver implements \FOSSBilling\Interfaces\SecurityCheckInterface
@@ -46,7 +46,7 @@ class webserver implements \FOSSBilling\Interfaces\SecurityCheckInterface
         return __trans('Performs simple checks to validate your if webserver blocks access to sensitive files.');
     }
 
-    public function performCheck(): SecurityCheckResult
+    public function performCheck(): CheckResult
     {
         $isOkay = true;
         $result = '';
@@ -65,6 +65,6 @@ class webserver implements \FOSSBilling\Interfaces\SecurityCheckInterface
             $result = __trans('All tested URLs were inaccessible.');
         }
 
-        return new SecurityCheckResult($isOkay ? SecurityCheckResultEnum::PASS : SecurityCheckResultEnum::FAIL, $result);
+        return new CheckResult($isOkay ? CheckResultStatus::PASS : CheckResultStatus::FAIL, $result);
     }
 }

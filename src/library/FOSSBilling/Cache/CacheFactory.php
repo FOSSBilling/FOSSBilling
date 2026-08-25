@@ -11,8 +11,8 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Cache;
 
-use FOSSBilling\Config;
-use FOSSBilling\Exception;
+use FOSSBilling\Exception\BaseException;
+use FOSSBilling\System\Config;
 use FOSSBilling\Tools;
 use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
@@ -76,7 +76,7 @@ class CacheFactory
     {
         try {
             return self::createFromConfig(self::getCacheConfig(), $namespace, $defaultLifetime, fallbackOnFailure: true);
-        } catch (Exception) {
+        } catch (BaseException) {
             // Unsupported driver values are also treated as a soft failure at runtime; a hard failure
             // here would otherwise break every feature that reads from $di['cache'].
             return new FilesystemAdapter($namespace, $defaultLifetime, PATH_CACHE);
@@ -90,7 +90,7 @@ class CacheFactory
      * $fallbackOnFailure is false, connection/extension problems are thrown as a FOSSBilling
      * Exception with a specific reason instead of silently degrading to filesystem.
      *
-     * @throws Exception if the driver is unsupported, or (when $fallbackOnFailure is false) unreachable
+     * @throws BaseException if the driver is unsupported, or (when $fallbackOnFailure is false) unreachable
      */
     public static function createFromConfig(array $cacheConfig, string $namespace, int $defaultLifetime, bool $fallbackOnFailure): CacheItemPoolInterface
     {
@@ -101,7 +101,7 @@ class CacheFactory
         $driver = $cacheConfig['driver'] ?? 'filesystem';
 
         if (!in_array($driver, self::SUPPORTED_DRIVERS, true)) {
-            throw new Exception('Unsupported cache driver :driver. Supported drivers are: :supported.', [':driver' => $driver, ':supported' => implode(', ', self::SUPPORTED_DRIVERS)]);
+            throw new BaseException('Unsupported cache driver :driver. Supported drivers are: :supported.', [':driver' => $driver, ':supported' => implode(', ', self::SUPPORTED_DRIVERS)]);
         }
 
         if ($driver === 'filesystem') {
@@ -119,7 +119,7 @@ class CacheFactory
             return $pool;
         } catch (\Throwable $e) {
             if (!$fallbackOnFailure) {
-                throw new Exception('Could not connect to the configured ":driver" cache backend: :message', [':driver' => $driver, ':message' => $e->getMessage()]);
+                throw new BaseException('Could not connect to the configured ":driver" cache backend: :message', [':driver' => $driver, ':message' => $e->getMessage()]);
             }
 
             error_log(sprintf('FOSSBilling: failed to initialize the "%s" cache driver (%s); falling back to the filesystem cache.', $driver, $e->getMessage()));
@@ -152,7 +152,7 @@ class CacheFactory
         $cacheConfig = Config::getProperty('cache', []);
 
         if (!is_array($cacheConfig)) {
-            throw new Exception('Cache configuration is invalid.');
+            throw new BaseException('Cache configuration is invalid.');
         }
 
         $cacheConfig['driver'] ??= 'filesystem';
@@ -179,7 +179,7 @@ class CacheFactory
     private static function createRedisAdapter(array $redisConfig, string $namespace, int $defaultLifetime): RedisAdapter
     {
         if (!class_exists(\Redis::class) && !class_exists(\Relay\Relay::class) && !class_exists(\RedisCluster::class)) {
-            throw new Exception('The "redis" cache driver requires the PHP redis (or relay) extension to be installed.');
+            throw new BaseException('The "redis" cache driver requires the PHP redis (or relay) extension to be installed.');
         }
 
         $connection = RedisAdapter::createConnection(self::buildRedisDsn($redisConfig));
@@ -190,7 +190,7 @@ class CacheFactory
     private static function createMemcachedAdapter(array $memcachedConfig, string $namespace, int $defaultLifetime): MemcachedAdapter
     {
         if (!class_exists(\Memcached::class)) {
-            throw new Exception('The "memcached" cache driver requires the PHP memcached extension to be installed.');
+            throw new BaseException('The "memcached" cache driver requires the PHP memcached extension to be installed.');
         }
 
         $connection = MemcachedAdapter::createConnection(self::buildMemcachedDsn($memcachedConfig));

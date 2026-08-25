@@ -10,8 +10,8 @@ declare(strict_types=1);
  */
 
 use Box\Mod\Email\Service;
-use FOSSBilling\Environment;
 use FOSSBilling\Http\RequestFactory;
+use FOSSBilling\System\Environment;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -206,14 +206,14 @@ final class FOSSBilling_Installer
                 }
             case 'index':
             default:
-                $requirements = new FOSSBilling\Requirements();
+                $requirements = new FOSSBilling\System\Requirements();
                 $compatibility = $requirements->checkCompat();
                 $vars = [
                     'compatibility' => $compatibility,
                     'os' => PHP_OS,
                     'os_ok' => (str_starts_with(strtoupper(PHP_OS), 'WIN')) ? false : true,
                     'is_subfolder' => $this->isSubfolder(),
-                    'fossbilling_ver' => FOSSBilling\Version::VERSION,
+                    'fossbilling_ver' => FOSSBilling\System\Version::VERSION,
                     'canInstall' => !$this->isSubfolder() && $compatibility['can_install'],
                     'alreadyInstalled' => $this->isAlreadyInstalled(),
                     'database_hostname' => $this->session->get('database_hostname'),
@@ -261,7 +261,7 @@ final class FOSSBilling_Installer
         $loader = new FilesystemLoader($options['paths']);
         $twig = new Twig\Environment($loader, $options);
         $twig->addGlobal('request', array_merge($this->request->query->all(), $this->request->request->all()));
-        $twig->addGlobal('version', FOSSBilling\Version::VERSION);
+        $twig->addGlobal('version', FOSSBilling\System\Version::VERSION);
 
         return $twig->render($name, $vars);
     }
@@ -405,7 +405,7 @@ final class FOSSBilling_Installer
         }
 
         // Create default administrator
-        $passwordObject = new FOSSBilling\PasswordManager();
+        $passwordObject = new FOSSBilling\Security\PasswordManager();
         $stmt = $this->pdo->prepare('INSERT INTO admin (name, email, pass, created_at, updated_at, api_token) VALUES(:admin_name, :admin_email, :admin_password, NOW(), NOW(), :api_token);');
         $stmt->execute([
             'admin_name' => $this->session->get('admin_name'),
@@ -430,7 +430,7 @@ final class FOSSBilling_Installer
         $stmt = $this->pdo->prepare('INSERT INTO setting (param, value, created_at, updated_at) VALUES (:param, :value, NOW(), NOW())');
         $stmt->execute([
             ':param' => 'last_error_reporting_nudge',
-            ':value' => FOSSBilling\Version::VERSION,
+            ':value' => FOSSBilling\System\Version::VERSION,
         ]);
 
         // Copy config templates when applicable
@@ -461,7 +461,7 @@ final class FOSSBilling_Installer
         if (function_exists('opcache_invalidate')) {
             opcache_invalidate(PATH_CONFIG, true);
         }
-        (new FOSSBilling\UpdateFinalization())->writeCompleteState();
+        (new FOSSBilling\Update\Finalization())->writeCompleteState();
 
         // Installation completed successfully
         return true;
@@ -536,7 +536,7 @@ final class FOSSBilling_Installer
      */
     private function getConfigOutput(): string
     {
-        $updateBranch = FOSSBilling\Version::isPreviewVersion() ? 'preview' : 'release';
+        $updateBranch = FOSSBilling\System\Version::isPreviewVersion() ? 'preview' : 'release';
 
         // Load default sample config
         $data = require PATH_CONFIG_SAMPLE;
@@ -566,7 +566,7 @@ final class FOSSBilling_Installer
             'password' => $this->session->get('database_password'),
         ];
         $data['twig']['cache'] = PATH_CACHE;
-        $data['disable_auto_cron'] = !FOSSBilling\Version::isPreviewVersion() && !Environment::isDevelopment();
+        $data['disable_auto_cron'] = !FOSSBilling\System\Version::isPreviewVersion() && !Environment::isDevelopment();
 
         // Build and return data
         $output = '<?php ' . PHP_EOL;

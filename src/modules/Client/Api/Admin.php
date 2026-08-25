@@ -18,8 +18,8 @@ namespace Box\Mod\Client\Api;
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Client\Entity\ClientGroup;
-use FOSSBilling\InformationException;
-use FOSSBilling\PaginationOptions;
+use FOSSBilling\Exception\InformationException;
+use FOSSBilling\Pagination\Options;
 use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 use Symfony\Component\HttpFoundation\Response;
@@ -44,7 +44,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $queryBuilder = $repository->getSearchQueryBuilder($data);
         $pager = $this->getDi()['pager']->paginateDoctrineQuery(
             $queryBuilder,
-            PaginationOptions::fromArray($data),
+            Options::fromArray($data),
             $this->getIdentity(),
         );
 
@@ -505,7 +505,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $service = $this->getDi()['mod_service']('Client', 'Balance');
         [$q, $params] = $service->getSearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($q, $params, PaginationOptions::fromArray($data));
+        $pager = $this->getDi()['pager']->getPaginatedResultSet($q, $params, Options::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = [
@@ -592,7 +592,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('client', 'view_login_history');
 
         [$q, $params] = $this->getService()->getHistorySearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($q, $params, PaginationOptions::fromArray($data));
+        $pager = $this->getDi()['pager']->getPaginatedResultSet($q, $params, Options::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = [

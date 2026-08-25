@@ -13,8 +13,8 @@ namespace FOSSBilling\Doctrine;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
-use FOSSBilling\Config;
-use FOSSBilling\Exception;
+use FOSSBilling\Exception\BaseException;
+use FOSSBilling\System\Config;
 use FOSSBilling\Tools;
 
 class DriverManagerFactory
@@ -64,7 +64,7 @@ class DriverManagerFactory
     {
         $dbConfig = Config::getProperty('db', []);
         if (!is_array($dbConfig)) {
-            throw new Exception('Database configuration is invalid.');
+            throw new BaseException('Database configuration is invalid.');
         }
 
         $dbConfig['driver'] ??= self::normalizeDriver($dbConfig['type'] ?? 'pdo_mysql');
@@ -78,7 +78,7 @@ class DriverManagerFactory
      *
      * @param array $driverOptions optional driver-specific options
      *
-     * @throws Exception if required database configuration keys are missing or the driver is unsupported
+     * @throws BaseException if required database configuration keys are missing or the driver is unsupported
      */
     public static function getConnection(array $driverOptions = []): Connection
     {
@@ -87,12 +87,12 @@ class DriverManagerFactory
         $requiredKeys = ['driver', 'host', 'port', 'name', 'user', 'password'];
         foreach ($requiredKeys as $key) {
             if (!isset($dbConfig[$key])) {
-                throw new Exception('Database configuration missing required key: :key.', [':key' => $key]);
+                throw new BaseException('Database configuration missing required key: :key.', [':key' => $key]);
             }
         }
 
         if (!in_array($dbConfig['driver'], self::SUPPORTED_DRIVERS, true)) {
-            throw new Exception('Unsupported database driver :driver. Supported drivers are: :supported.', [':driver' => $dbConfig['driver'], ':supported' => implode(', ', self::SUPPORTED_DRIVERS)]);
+            throw new BaseException('Unsupported database driver :driver. Supported drivers are: :supported.', [':driver' => $dbConfig['driver'], ':supported' => implode(', ', self::SUPPORTED_DRIVERS)]);
         }
 
         $charset = $dbConfig['charset'] ?? 'utf8';

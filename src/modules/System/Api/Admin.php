@@ -16,7 +16,7 @@ declare(strict_types=1);
 namespace Box\Mod\System\Api;
 
 use FOSSBilling\Cache\CacheFactory;
-use FOSSBilling\Config;
+use FOSSBilling\System\Config;
 use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
@@ -64,7 +64,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Updates localization settings stored in the FOSSBilling config file.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     public function update_localization_settings($data): bool
     {
@@ -105,7 +105,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * anything is saved, so a mistyped host/port/password is rejected with a clear reason rather
      * than being written and silently falling back to the filesystem cache later.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     public function update_cache_settings($data): bool
     {
@@ -113,7 +113,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $driver = $data['driver'] ?? 'filesystem';
         if (!in_array($driver, CacheFactory::SUPPORTED_DRIVERS, true)) {
-            throw new \FOSSBilling\Exception('Unsupported cache driver: :driver', [':driver' => $driver]);
+            throw new \FOSSBilling\Exception\BaseException('Unsupported cache driver: :driver', [':driver' => $driver]);
         }
 
         // Keep the existing password when the admin leaves the field blank, so re-saving the
@@ -221,7 +221,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     #[RequiredParams(['mod' => '"mod" key is missing'])]
     public function is_allowed($data)
@@ -295,13 +295,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Update FOSSBilling core.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     public function update_core($data): bool
     {
         $updater = $this->getDi()['updater'];
         if ($updater->getUpdateBranch() !== 'preview' && !$updater->isUpdateAvailable()) {
-            throw new \FOSSBilling\InformationException('You have the latest version of FOSSBilling. You do not need to update.');
+            throw new \FOSSBilling\Exception\InformationException('You have the latest version of FOSSBilling. You do not need to update.');
         }
 
         $this->checkPermissions('system', 'system_update');
@@ -314,7 +314,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminUpdateCore']);
         $updater->performUpdate();
 
-        $this->getDi()['logger']->info('Installed FOSSBilling update files from {previous_version} to {new_version}. Update finalization is pending.', ['previous_version' => \FOSSBilling\Version::VERSION, 'new_version' => $new_version]);
+        $this->getDi()['logger']->info('Installed FOSSBilling update files from {previous_version} to {new_version}. Update finalization is pending.', ['previous_version' => \FOSSBilling\System\Version::VERSION, 'new_version' => $new_version]);
 
         return true;
     }
@@ -336,7 +336,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $this->getDi()['update_finalization']->finalizeUpdate();
         $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminUpdateCore']);
-        $this->getDi()['logger']->info('Finalized FOSSBilling update to {version}.', ['version' => \FOSSBilling\Version::VERSION]);
+        $this->getDi()['logger']->info('Finalized FOSSBilling update to {version}.', ['version' => \FOSSBilling\System\Version::VERSION]);
 
         return true;
     }
@@ -346,7 +346,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkUpdateFinalizationPermissions();
 
         $this->getDi()['update_finalization']->completeFinalization();
-        $this->getDi()['logger']->info('Completed FOSSBilling update finalization for {version}.', ['version' => \FOSSBilling\Version::VERSION]);
+        $this->getDi()['logger']->info('Completed FOSSBilling update finalization for {version}.', ['version' => \FOSSBilling\System\Version::VERSION]);
 
         return true;
     }
@@ -376,13 +376,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             }
         }
 
-        throw new \FOSSBilling\InformationException('You need to be a Super Administrator to finalize this update.', [], 403);
+        throw new \FOSSBilling\Exception\InformationException('You need to be a Super Administrator to finalize this update.', [], 403);
     }
 
     /**
      * Update FOSSBilling config.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     public function manual_update(): bool
     {
@@ -471,7 +471,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         if (isset($data['interface'])) {
             $interface = $data['interface'];
             if ($interface !== '0' && !filter_var($interface, FILTER_VALIDATE_IP)) {
-                throw new \FOSSBilling\Exception('Invalid interface IP address');
+                throw new \FOSSBilling\Exception\BaseException('Invalid interface IP address');
             }
             $config['interface_ip'] = $interface;
         }
@@ -479,7 +479,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         if (isset($data['custom_interface'])) {
             $custom = $data['custom_interface'];
             if ($custom !== '' && !Tools::isValidHttpInterface($custom)) {
-                throw new \FOSSBilling\Exception('Invalid custom interface. Must be a valid IP address or hostname.');
+                throw new \FOSSBilling\Exception\BaseException('Invalid custom interface. Must be a valid IP address or hostname.');
             }
             $config['custom_interface_ip'] = $custom;
         }

@@ -10,8 +10,9 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling;
+namespace FOSSBilling\Logging;
 
+use FOSSBilling\Interfaces\InjectionAwareInterface;
 use Pimple\Container;
 use Psr\Log\AbstractLogger;
 use Psr\Log\InvalidArgumentException;

@@ -10,8 +10,8 @@ declare(strict_types=1);
  */
 
 use FOSSBilling\Cache\CacheFactory;
-use FOSSBilling\Config;
-use FOSSBilling\Exception;
+use FOSSBilling\Exception\BaseException;
+use FOSSBilling\System\Config;
 use Psr\Cache\CacheItemPoolInterface;
 
 beforeEach(function (): void {
@@ -65,7 +65,7 @@ test('defaults to a working filesystem cache when no cache configuration is set'
 
 test('rejects an unsupported cache driver', function (): void {
     expect(fn () => CacheFactory::createFromConfig(['driver' => 'memory'], 'cache_factory_test', 0, true))
-        ->toThrow(Exception::class, 'Unsupported cache driver');
+        ->toThrow(BaseException::class, 'Unsupported cache driver');
 });
 
 test('falls back to the filesystem cache at runtime when the configured driver is unreachable', function (): void {
@@ -96,7 +96,7 @@ test('rejects saving a redis configuration when the redis extension is unavailab
         'cache_factory_test',
         0,
         false,
-    ))->toThrow(Exception::class, 'requires the PHP redis');
+    ))->toThrow(BaseException::class, 'requires the PHP redis');
 });
 
 test('rejects saving a memcached configuration when the memcached extension is unavailable', function (): void {
@@ -109,7 +109,7 @@ test('rejects saving a memcached configuration when the memcached extension is u
         'cache_factory_test',
         0,
         false,
-    ))->toThrow(Exception::class, 'requires the PHP memcached');
+    ))->toThrow(BaseException::class, 'requires the PHP memcached');
 });
 
 test('cache pools are isolated per installation instance id', function (): void {

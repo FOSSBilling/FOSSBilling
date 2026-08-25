@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Box\Mod\Profile;
 
 use Box\Mod\Client\Entity\Client;
-use FOSSBilling\InformationException;
+use FOSSBilling\Exception\InformationException;
 
 class ClientValidator
 {

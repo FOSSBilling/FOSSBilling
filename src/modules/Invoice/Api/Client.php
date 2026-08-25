@@ -16,7 +16,7 @@ declare(strict_types=1);
 namespace Box\Mod\Invoice\Api;
 
 use Box\Mod\Order\Entity\Order;
-use FOSSBilling\PaginationOptions;
+use FOSSBilling\Pagination\Options;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Client extends \FOSSBilling\Api\AbstractApi
@@ -36,7 +36,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
 
         return $this->getDi()['pager']->paginateMappedQuery(
             $qb,
-            PaginationOptions::fromArray($data),
+            Options::fromArray($data),
             static fn ($invoice): array => $service->toApiArray($invoice),
         );
     }
@@ -46,7 +46,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
      *
      * @return array
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     #[RequiredParams(['hash' => 'Invoice hash was not passed'])]
     public function get($data)
@@ -54,7 +54,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $identity = $this->getIdentity();
         $model = $this->getService()->getInvoiceRepository()->findOneBy(['hash' => $data['hash'], 'clientId' => $identity->getId()]);
         if (!$model) {
-            throw new \FOSSBilling\InformationException('Invoice was not found');
+            throw new \FOSSBilling\Exception\InformationException('Invoice was not found');
         }
 
         return $this->getService()->toApiArray($model, true, $identity);
@@ -67,14 +67,14 @@ class Client extends \FOSSBilling\Api\AbstractApi
      *
      * @return string - invoice hash
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     #[RequiredParams(['order_id' => 'Order ID (order_id) was not passed'])]
     public function renewal_invoice($data)
     {
         $model = $this->getDi()['em']->getRepository(Order::class)->findOneBy(['clientId' => $this->getIdentity()->getId(), 'id' => $data['order_id']]);
         if (!$model instanceof Order) {
-            throw new \FOSSBilling\InformationException('Order not found');
+            throw new \FOSSBilling\Exception\InformationException('Order not found');
         }
         $service = $this->getService();
         $invoice = $service->generateForOrder($model);
@@ -94,7 +94,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
     public function funds_invoice($data)
     {
         if (!is_numeric($data['amount'])) {
-            throw new \FOSSBilling\InformationException('You need to enter numeric value');
+            throw new \FOSSBilling\Exception\InformationException('You need to enter numeric value');
         }
 
         $service = $this->getService();
@@ -126,7 +126,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
 
         return $this->getDi()['pager']->paginateMappedQuery(
             $qb,
-            PaginationOptions::fromArray($data),
+            Options::fromArray($data),
             static fn ($row): array => $transactionService->transactionResultToApiArray($row[0], $row['gateway'] ?? null),
         );
     }

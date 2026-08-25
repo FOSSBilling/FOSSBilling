@@ -88,7 +88,7 @@ test('changes client password', function (): void {
 
     $di = container();
     $di['validator'] = $validatorMock;
-    $di['password'] = new FOSSBilling\PasswordManager();
+    $di['password'] = new FOSSBilling\Security\PasswordManager();
 
     $model = createEntity(Box\Mod\Client\Entity\Client::class, ['pass' => $di['password']->hashIt('oldpw')]);
 

@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use Box\Mod\Api\Controller\Client;
-use FOSSBilling\InformationException;
+use FOSSBilling\Exception\InformationException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;

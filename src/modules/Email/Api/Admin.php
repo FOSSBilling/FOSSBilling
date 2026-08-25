@@ -16,7 +16,7 @@ declare(strict_types=1);
 namespace Box\Mod\Email\Api;
 
 use Box\Mod\Staff\Entity\AdminGroup;
-use FOSSBilling\PaginationOptions;
+use FOSSBilling\Pagination\Options;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Admin extends \FOSSBilling\Api\AbstractApi
@@ -34,7 +34,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         return $this->getDi()['pager']->paginateDoctrineQuery(
             $repo->getSearchQueryBuilder($data),
-            PaginationOptions::fromArray($data),
+            Options::fromArray($data),
         );
     }
 
@@ -89,7 +89,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function email_resend($data)
@@ -104,7 +104,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Delete sent email from logs.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function email_delete($data): bool
@@ -158,7 +158,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return array
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function template_get($data)
@@ -173,7 +173,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Delete email template.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function template_delete($data): bool
@@ -183,7 +183,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $service = $this->getService();
         $template = $service->getTemplate((int) $data['id']);
         if (!$template->isCustom() && $service->hasDefaultTemplate($template->getActionCode())) {
-            throw new \FOSSBilling\Exception('Only custom email templates can be deleted');
+            throw new \FOSSBilling\Exception\BaseException('Only custom email templates can be deleted');
         }
 
         $id = $template->getId();
@@ -202,7 +202,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return int - newly created template id
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     #[RequiredParams([
         'action_code' => 'Email template code is required',
@@ -226,7 +226,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function template_update($data)
@@ -436,7 +436,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('email', 'send_emails');
 
         if (!isset($data['to']) && !isset($data['to_staff']) && !isset($data['to_client'])) {
-            throw new \FOSSBilling\InformationException('Receiver is not defined. Define to or to_client or to_staff parameter');
+            throw new \FOSSBilling\Exception\InformationException('Receiver is not defined. Define to or to_client or to_staff parameter');
         }
 
         return $this->getService()->sendTemplate($data);
@@ -485,7 +485,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         return $this->getDi()['pager']->paginateDoctrineQuery(
             $repo->getSearchQueryBuilder($data),
-            PaginationOptions::fromArray($data),
+            Options::fromArray($data),
         );
     }
 }

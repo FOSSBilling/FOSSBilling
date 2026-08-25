@@ -9,7 +9,7 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling;
+namespace FOSSBilling\Logging;
 
 use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\RotatingFileHandler;
@@ -17,7 +17,7 @@ use Monolog\Level;
 use Monolog\Logger;
 use Symfony\Component\Filesystem\Path;
 
-class Monolog
+class Factory
 {
     protected $logger;
     public string $dateFormat = 'd-M-Y H:i:s e';
@@ -69,14 +69,14 @@ class Monolog
     {
         // Map numeric priority to Monolog Level
         return match ($priority) {
-            \FOSSBilling\Logger::EMERG => Level::Emergency,
-            \FOSSBilling\Logger::ALERT => Level::Alert,
-            \FOSSBilling\Logger::CRIT => Level::Critical,
-            \FOSSBilling\Logger::ERR => Level::Error,
-            \FOSSBilling\Logger::WARN => Level::Warning,
-            \FOSSBilling\Logger::NOTICE => Level::Notice,
-            \FOSSBilling\Logger::INFO => Level::Info,
-            \FOSSBilling\Logger::DEBUG => Level::Debug,
+            \FOSSBilling\Logging\Logger::EMERG => Level::Emergency,
+            \FOSSBilling\Logging\Logger::ALERT => Level::Alert,
+            \FOSSBilling\Logging\Logger::CRIT => Level::Critical,
+            \FOSSBilling\Logging\Logger::ERR => Level::Error,
+            \FOSSBilling\Logging\Logger::WARN => Level::Warning,
+            \FOSSBilling\Logging\Logger::NOTICE => Level::Notice,
+            \FOSSBilling\Logging\Logger::INFO => Level::Info,
+            \FOSSBilling\Logging\Logger::DEBUG => Level::Debug,
             default => Level::Debug,
         };
     }

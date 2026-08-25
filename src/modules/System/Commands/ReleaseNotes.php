@@ -21,7 +21,7 @@ use Symfony\Component\Console\Output\OutputInterface;
     description: 'Returns the release notes of all newer versions of FOSSBilling',
     hidden: false
 )]
-class ReleaseNotes extends Command implements \FOSSBilling\InjectionAwareInterface
+class ReleaseNotes extends Command implements \FOSSBilling\Interfaces\InjectionAwareInterface
 {
     protected $di;
 

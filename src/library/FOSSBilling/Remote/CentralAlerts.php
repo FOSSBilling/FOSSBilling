@@ -9,8 +9,12 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling;
+namespace FOSSBilling\Remote;
 
+use FOSSBilling\Exception\BaseException as Exception;
+use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\System\Config;
+use FOSSBilling\System\Version;
 use Pimple\Container;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;

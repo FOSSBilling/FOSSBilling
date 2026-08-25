@@ -14,7 +14,7 @@ namespace Box\Mod\Serviceapikey;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Serviceapikey\Entity\ServiceApiKey;
-use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Interfaces\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
@@ -138,12 +138,12 @@ class Service implements InjectionAwareInterface
     public function isValid(array $data): bool
     {
         if (empty($data['key'])) {
-            throw new \FOSSBilling\Exception('You must provide an API key to check it\'s validity.');
+            throw new \FOSSBilling\Exception\BaseException('You must provide an API key to check it\'s validity.');
         }
 
         $model = $this->getRepository()->findByApiKey($data['key']);
         if ($model === null) {
-            throw new \FOSSBilling\Exception('API key does not exist');
+            throw new \FOSSBilling\Exception\BaseException('API key does not exist');
         }
 
         return $this->isActive($model);
@@ -159,11 +159,11 @@ class Service implements InjectionAwareInterface
     public function resetApiKey(array $data): bool
     {
         if (empty($data['key']) && empty($data['order_id'])) {
-            throw new \FOSSBilling\Exception('You must provide either the API key or API key order ID in order to reset it.');
+            throw new \FOSSBilling\Exception\BaseException('You must provide either the API key or API key order ID in order to reset it.');
         } elseif (!empty($data['order_id'])) {
             $order = $this->getOrderRepository()->find($data['order_id']);
             if ($order === null) {
-                throw new \FOSSBilling\Exception('Order not found');
+                throw new \FOSSBilling\Exception\BaseException('Order not found');
             }
 
             $orderService = $this->di['mod_service']('order');
@@ -173,7 +173,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!$model instanceof ServiceApiKey) {
-            throw new \FOSSBilling\Exception('API key does not exist');
+            throw new \FOSSBilling\Exception\BaseException('API key does not exist');
         }
 
         $client = null;
@@ -182,11 +182,11 @@ class Service implements InjectionAwareInterface
         }
 
         if (!is_null($client) && $client->getId() !== $model->getClientId()) {
-            throw new \FOSSBilling\Exception('API key does not exist');
+            throw new \FOSSBilling\Exception\BaseException('API key does not exist');
         }
 
         if (!$this->isActive($model)) {
-            throw new \FOSSBilling\InformationException('Order is not active');
+            throw new \FOSSBilling\Exception\InformationException('Order is not active');
         }
 
         $config = json_decode($model->getConfig() ?? '', true);
@@ -207,23 +207,23 @@ class Service implements InjectionAwareInterface
     public function updateApiKey(array $data): bool
     {
         if (empty($data['order_id'])) {
-            throw new \FOSSBilling\Exception('You must provide the API key order ID in order to update it.');
+            throw new \FOSSBilling\Exception\BaseException('You must provide the API key order ID in order to update it.');
         }
 
         $order = $this->getOrderRepository()->find($data['order_id']);
         if ($order === null) {
-            throw new \FOSSBilling\Exception('Order not found');
+            throw new \FOSSBilling\Exception\BaseException('Order not found');
         }
 
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
 
         if (!$model instanceof ServiceApiKey) {
-            throw new \FOSSBilling\Exception('API key does not exist');
+            throw new \FOSSBilling\Exception\BaseException('API key does not exist');
         }
 
         if (isset($data['api_key']) && $model->getApiKey() !== $data['api_key']) {
-            throw new \FOSSBilling\Exception('To change the API key, please use the reset function rather than updating it.');
+            throw new \FOSSBilling\Exception\BaseException('To change the API key, please use the reset function rather than updating it.');
         }
 
         $config = !empty($data['config']) ? json_encode($data['config']) : $model->getConfig();
@@ -283,7 +283,7 @@ class Service implements InjectionAwareInterface
         do {
             // Try 10 times to generate a unique API key. Fail if we are unable to.
             if ($i++ >= 10) {
-                throw new \FOSSBilling\Exception('Maximum number of iterations reached while generating API key');
+                throw new \FOSSBilling\Exception\BaseException('Maximum number of iterations reached while generating API key');
             }
 
             // Generate random bytes half the length of the configured length, as the length will doubled when converted to a hex string.
@@ -318,7 +318,7 @@ class Service implements InjectionAwareInterface
 
                     break;
                 default:
-                    throw new \FOSSBilling\Exception("Unknown uppercase option ':case:'. API generator only accepts 'lower', 'upper', or 'mixed'.", [':case:' => $case]);
+                    throw new \FOSSBilling\Exception\BaseException("Unknown uppercase option ':case:'. API generator only accepts 'lower', 'upper', or 'mixed'.", [':case:' => $case]);
             }
         } while ($this->getRepository()->findByApiKey($apiKey) !== null);
 
@@ -332,7 +332,7 @@ class Service implements InjectionAwareInterface
             'serviceType' => \Box\Mod\Product\Service::APIKEY,
         ]);
         if (!$order instanceof Order) {
-            throw new \FOSSBilling\Exception('API key does not exist');
+            throw new \FOSSBilling\Exception\BaseException('API key does not exist');
         }
 
         if ($order->getStatus() !== Order::STATUS_ACTIVE) {
@@ -353,7 +353,7 @@ class Service implements InjectionAwareInterface
         $model = $orderService->getOrderService($order);
         if (!$model instanceof ServiceApiKey) {
             if ($required) {
-                throw new \FOSSBilling\Exception('Could not find active service');
+                throw new \FOSSBilling\Exception\BaseException('Could not find active service');
             }
 
             return null;

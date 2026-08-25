@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use FOSSBilling\Exception;
+use FOSSBilling\Exception\BaseException;
 
 dataset('validTargets', fn (): array => [
     ['/new-page', '/new-page'],
@@ -43,7 +43,7 @@ test('validate target allows valid targets', function (string $input, string $ex
 
 test('validate target rejects invalid targets', function (string $input): void {
     $service = new Box\Mod\Redirect\Service();
-    expect(fn (): string => $service->validateTarget($input))->toThrow(Exception::class);
+    expect(fn (): string => $service->validateTarget($input))->toThrow(BaseException::class);
 })->with('invalidTargets');
 
 test('validate target trims whitespace', function (): void {
@@ -58,5 +58,5 @@ test('validate path strips slashes', function (string $input, string $expected):
 
 test('validate path rejects invalid paths', function (string $input): void {
     $service = new Box\Mod\Redirect\Service();
-    expect(fn (): string => $service->validatePath($input))->toThrow(Exception::class);
+    expect(fn (): string => $service->validatePath($input))->toThrow(BaseException::class);
 })->with('invalidPaths');

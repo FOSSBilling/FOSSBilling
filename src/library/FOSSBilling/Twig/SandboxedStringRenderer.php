@@ -29,11 +29,11 @@ final class SandboxedStringRenderer
                 $onSecurityError($e);
             }
 
-            throw new \FOSSBilling\InformationException($errorPrefix . ' contains disallowed Twig syntax: ' . $e->getMessage());
+            throw new \FOSSBilling\Exception\InformationException($errorPrefix . ' contains disallowed Twig syntax: ' . $e->getMessage());
         } catch (\Twig\Error\SyntaxError $e) {
-            throw new \FOSSBilling\InformationException($errorPrefix . ' syntax error: ' . $e->getMessage());
+            throw new \FOSSBilling\Exception\InformationException($errorPrefix . ' syntax error: ' . $e->getMessage());
         } catch (\Twig\Error\Error $e) {
-            throw new \FOSSBilling\InformationException($errorPrefix . ' rendering error: ' . $e->getMessage());
+            throw new \FOSSBilling\Exception\InformationException($errorPrefix . ' rendering error: ' . $e->getMessage());
         }
     }
 }

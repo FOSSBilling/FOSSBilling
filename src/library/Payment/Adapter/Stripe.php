@@ -17,7 +17,7 @@ use FOSSBilling\Period;
 use Stripe\StripeClient;
 use Symfony\Component\Intl\Currencies;
 
-class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
+class Payment_Adapter_Stripe implements FOSSBilling\Interfaces\InjectionAwareInterface
 {
     protected ?Pimple\Container $di = null;
 
@@ -144,7 +144,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     {
         $invoiceModel = $this->di['em']->getRepository(Invoice::class)->find($invoice_id);
         if (!$invoiceModel instanceof Invoice) {
-            throw new FOSSBilling\Exception('Invoice not found');
+            throw new FOSSBilling\Exception\BaseException('Invoice not found');
         }
 
         if ($subscription) {
@@ -238,7 +238,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     {
         $tx = $this->di['em']->getRepository(Transaction::class)->find($id);
         if (!$tx instanceof Transaction) {
-            throw new FOSSBilling\Exception('Transaction not found');
+            throw new FOSSBilling\Exception\BaseException('Transaction not found');
         }
 
         if ($this->isStripeWebhook($data)) {
@@ -258,7 +258,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         } catch (Stripe\Exception\CardException|Stripe\Exception\InvalidRequestException|Stripe\Exception\AuthenticationException|Stripe\Exception\ApiConnectionException|Stripe\Exception\ApiErrorException $e) {
             $this->logError($e, $tx);
 
-            throw new FOSSBilling\Exception('There was an error when processing the transaction');
+            throw new FOSSBilling\Exception\BaseException('There was an error when processing the transaction');
         }
     }
 
@@ -366,14 +366,14 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             $clientService = $this->di['mod_service']('client');
             $client = $invoice
                 ? $this->di['em']->getRepository(Client::class)->find($invoice->getClientId())
-                    ?? throw new FOSSBilling\InformationException('Client not found') : $this->getClientFromTransaction($tx, $charge);
+                    ?? throw new FOSSBilling\Exception\InformationException('Client not found') : $this->getClientFromTransaction($tx, $charge);
 
             if ($invoice) {
                 $expected = $invoiceService->getTotalWithTax($invoice);
 
                 try {
                     $invoiceService->validatePaymentAmount((float) $tx->getAmount(), $expected);
-                } catch (FOSSBilling\Exception $e) {
+                } catch (FOSSBilling\Exception\BaseException $e) {
                     $tx->setStatus(Transaction::STATUS_ERROR);
                     $tx->setError($e->getMessage());
                     $tx->setUpdatedAt(new DateTime());
@@ -544,18 +544,18 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         // event from a forged one, so refuse to process the event at all
         // rather than trusting an unsigned payload.
         if (empty($webhookSecret)) {
-            throw new FOSSBilling\Exception('Stripe webhook signing secret is not configured');
+            throw new FOSSBilling\Exception\BaseException('Stripe webhook signing secret is not configured');
         }
         if (empty($sigHeader)) {
-            throw new FOSSBilling\Exception('Missing Stripe-Signature header');
+            throw new FOSSBilling\Exception\BaseException('Missing Stripe-Signature header');
         }
 
         try {
             $event = Stripe\Webhook::constructEvent($rawBody, $sigHeader, $webhookSecret);
         } catch (UnexpectedValueException) {
-            throw new FOSSBilling\Exception('Invalid Stripe webhook payload');
+            throw new FOSSBilling\Exception\BaseException('Invalid Stripe webhook payload');
         } catch (Stripe\Exception\SignatureVerificationException) {
-            throw new FOSSBilling\Exception('Invalid Stripe webhook signature');
+            throw new FOSSBilling\Exception\BaseException('Invalid Stripe webhook signature');
         }
 
         $tx->setTxnId($event->id);
@@ -606,7 +606,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         } catch (Stripe\Exception\CardException|Stripe\Exception\InvalidRequestException|Stripe\Exception\AuthenticationException|Stripe\Exception\ApiConnectionException|Stripe\Exception\ApiErrorException $e) {
             $this->logError($e, $tx);
 
-            throw new FOSSBilling\Exception('There was an error when processing the Stripe webhook');
+            throw new FOSSBilling\Exception\BaseException('There was an error when processing the Stripe webhook');
         }
 
         if ($keepTransaction) {
@@ -990,7 +990,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 ['duration_ms' => $waitDurationMs, 'lock_name' => $lockName]
             );
 
-            throw new FOSSBilling\Exception('Timed out waiting to process this Stripe payment');
+            throw new FOSSBilling\Exception\BaseException('Timed out waiting to process this Stripe payment');
         }
 
         try {
@@ -1171,14 +1171,14 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $clientService = $this->di['mod_service']('client');
         $client = $invoice
             ? $this->di['em']->getRepository(Client::class)->find($invoice->getClientId())
-                ?? throw new FOSSBilling\InformationException('Client not found') : $this->getClientFromTransaction($tx, $charge);
+                ?? throw new FOSSBilling\Exception\InformationException('Client not found') : $this->getClientFromTransaction($tx, $charge);
 
         if ($invoice) {
             $expected = $invoiceService->getTotalWithTax($invoice);
 
             try {
                 $invoiceService->validatePaymentAmount((float) $tx->getAmount(), $expected);
-            } catch (FOSSBilling\Exception $e) {
+            } catch (FOSSBilling\Exception\BaseException $e) {
                 $tx->setStatus(Transaction::STATUS_ERROR);
                 $tx->setError($e->getMessage());
                 $tx->setUpdatedAt(new DateTime());
@@ -1446,8 +1446,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         if ($clientId > 0) {
             try {
                 return $this->di['em']->getRepository(Client::class)->find($clientId)
-                    ?? throw new FOSSBilling\InformationException('Client not found');
-            } catch (FOSSBilling\Exception $e) {
+                    ?? throw new FOSSBilling\Exception\InformationException('Client not found');
+            } catch (FOSSBilling\Exception\BaseException $e) {
                 throw new Payment_Exception('Unable to load client for transaction: :msg', [':msg' => $e->getMessage()]);
             }
         }

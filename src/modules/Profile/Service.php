@@ -13,9 +13,9 @@ namespace Box\Mod\Profile;
 
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Staff\Entity\Admin;
-use FOSSBilling\i18n;
-use FOSSBilling\InformationException;
-use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Exception\InformationException;
+use FOSSBilling\I18n\I18n;
+use FOSSBilling\Interfaces\InjectionAwareInterface;
 use FOSSBilling\Tools;
 use Symfony\Component\Intl\Countries;
 use Symfony\Component\Intl\Locales;
@@ -89,7 +89,7 @@ class Service implements InjectionAwareInterface
         $admin->setName($data['name'] ?? $admin->getName());
         $admin->setSignature($data['signature'] ?? $admin->getSignature());
         if (array_key_exists('timezone', $data)) {
-            $admin->setTimezone(i18n::validateTimezone($data['timezone']));
+            $admin->setTimezone(I18n::validateTimezone($data['timezone']));
         }
         $this->di['em']->persist($admin);
         $this->di['em']->flush();
@@ -191,7 +191,7 @@ class Service implements InjectionAwareInterface
         }
         $client->setLang($lang);
         if (array_key_exists('timezone', $data)) {
-            $client->setTimezone(i18n::validateTimezone($data['timezone']));
+            $client->setTimezone(I18n::validateTimezone($data['timezone']));
         }
         $client->setNotes($data['notes'] ?? $client->getNotes());
         $client->setCustom1($data['custom_1'] ?? $client->getCustom1());
@@ -270,7 +270,7 @@ class Service implements InjectionAwareInterface
             } elseif ($auth->isClientLoggedIn()) {
                 $type = 'client';
             } else {
-                throw new \FOSSBilling\Exception('Unable to invalidate sessions, nobody is logged in');
+                throw new \FOSSBilling\Exception\BaseException('Unable to invalidate sessions, nobody is logged in');
             }
         }
 
@@ -289,7 +289,7 @@ class Service implements InjectionAwareInterface
         }
 
         if ($type !== 'admin' && $type !== 'client') {
-            throw new \FOSSBilling\Exception('Unable to invalidate sessions, an invalid type was used');
+            throw new \FOSSBilling\Exception\BaseException('Unable to invalidate sessions, an invalid type was used');
         }
 
         $sessions = $this->getSessions();

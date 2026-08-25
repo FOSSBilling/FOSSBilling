@@ -17,7 +17,7 @@ namespace Box\Mod\Support\Api;
 
 use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Entity\SupportTicket;
-use FOSSBilling\PaginationOptions;
+use FOSSBilling\Pagination\Options;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Client extends \FOSSBilling\Api\AbstractApi
@@ -38,7 +38,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
 
         return $this->getDi()['pager']->paginateMappedQuery(
             $repo->getSearchQueryBuilder($data),
-            PaginationOptions::fromArray($data),
+            Options::fromArray($data),
             fn (SupportTicket $ticket): array => $this->getService()->toApiArray($ticket, true, $this->getIdentity()),
         );
     }
@@ -88,7 +88,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
 
         $helpdesk = $repo->find((int) $data['support_helpdesk_id']);
         if (!$helpdesk instanceof Helpdesk) {
-            throw new \FOSSBilling\InformationException('Helpdesk invalid');
+            throw new \FOSSBilling\Exception\InformationException('Helpdesk invalid');
         }
 
         $client = $this->getIdentity();
@@ -108,11 +108,11 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $ticket = $this->getService()->getSupportTicketRepository()->findOneByClient((int) $client->getId(), (int) $data['id']);
 
         if (!$ticket instanceof SupportTicket) {
-            throw new \FOSSBilling\InformationException('Ticket not found');
+            throw new \FOSSBilling\Exception\InformationException('Ticket not found');
         }
 
         if (!$this->getService()->canBeReopened($ticket)) {
-            throw new \FOSSBilling\InformationException('Ticket cannot be reopened.');
+            throw new \FOSSBilling\Exception\InformationException('Ticket cannot be reopened.');
         }
 
         $result = $this->getService()->ticketReply($ticket, $client, $data['content']);

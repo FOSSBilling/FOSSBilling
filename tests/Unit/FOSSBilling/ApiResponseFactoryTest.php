@@ -21,7 +21,7 @@ test('API response factory creates the standard success envelope', function (): 
 });
 
 test('API response factory maps authentication errors to unauthorized responses', function (): void {
-    $response = (new ApiResponseFactory())->create(null, new FOSSBilling\Exception('Authentication Failed', null, 201));
+    $response = (new ApiResponseFactory())->create(null, new FOSSBilling\Exception\BaseException('Authentication Failed', null, 201));
 
     expect($response->getStatusCode())->toBe(Response::HTTP_UNAUTHORIZED)
         ->and(json_decode((string) $response->getContent(), true))->toBe([
@@ -34,7 +34,7 @@ test('API response factory maps authentication errors to unauthorized responses'
 });
 
 test('API response factory preserves legacy ok status for unmapped application errors', function (): void {
-    $response = (new ApiResponseFactory())->create(null, new FOSSBilling\Exception('Unexpected API error', null, 9999));
+    $response = (new ApiResponseFactory())->create(null, new FOSSBilling\Exception\BaseException('Unexpected API error', null, 9999));
 
     expect($response->getStatusCode())->toBe(Response::HTTP_OK);
 });

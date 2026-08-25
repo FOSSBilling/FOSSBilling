@@ -17,13 +17,13 @@ namespace Box\Mod\Api\Controller;
 
 use Box\Mod\Client\Entity\Client as ClientEntity;
 use Box\Mod\Staff\Entity\Admin;
-use FOSSBilling\Config;
-use FOSSBilling\Environment;
 use FOSSBilling\Http\ApiResponseFactory;
 use FOSSBilling\Http\ResponseFactory;
-use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Interfaces\InjectionAwareInterface;
 use FOSSBilling\Security\AuthenticationRequiredException;
 use FOSSBilling\Security\EmailValidationRequiredException;
+use FOSSBilling\System\Config;
+use FOSSBilling\System\Environment;
 use Symfony\Component\HttpFoundation\Response;
 
 class Client implements InjectionAwareInterface
@@ -54,7 +54,7 @@ class Client implements InjectionAwareInterface
 
     public function show_error(\Box_App $app, $page): Response
     {
-        $exc = new \FOSSBilling\Exception('Unknown API call :call', [':call' => $page], 879);
+        $exc = new \FOSSBilling\Exception\BaseException('Unknown API call :call', [':call' => $page], 879);
 
         return $this->renderJson(null, $exc);
     }
@@ -73,7 +73,7 @@ class Client implements InjectionAwareInterface
         } catch (\Symfony\Component\HttpFoundation\Exception\JsonException $e) {
             $message = $e->getPrevious()?->getMessage() ?? $e->getMessage();
 
-            return $this->renderJson(null, new \FOSSBilling\Exception('Malformed JSON input: :error', [':error' => $message], 400));
+            return $this->renderJson(null, new \FOSSBilling\Exception\BaseException('Malformed JSON input: :error', [':error' => $message], 400));
         }
 
         $call = $class . '_' . $method;
@@ -89,9 +89,9 @@ class Client implements InjectionAwareInterface
         try {
             return $this->_apiCall($role, $class, $call, $p);
         } catch (AuthenticationRequiredException) {
-            return $this->renderJson(null, new \FOSSBilling\InformationException('Authentication Failed', null, 201));
+            return $this->renderJson(null, new \FOSSBilling\Exception\InformationException('Authentication Failed', null, 201));
         } catch (EmailValidationRequiredException $exc) {
-            return $this->renderJson(null, new \FOSSBilling\InformationException($exc->getMessage(), null, 403));
+            return $this->renderJson(null, new \FOSSBilling\Exception\InformationException($exc->getMessage(), null, 403));
         } catch (\Exception $exc) {
             // Sentry by default only captures unhandled exceptions, so we need to manually capture these.
             \Sentry\captureException($exc);
@@ -110,7 +110,7 @@ class Client implements InjectionAwareInterface
     private function checkUpdateFinalization(string $role, string $class, string $method): void
     {
         if ($role === 'admin' && $this->di['update_finalization']->isRequired() && !$this->di['update_finalization']->isAdminApiCallAllowed($class, $method)) {
-            throw new \FOSSBilling\InformationException('FOSSBilling update finalization is pending. Complete finalization before using the admin API.', [], 503);
+            throw new \FOSSBilling\Exception\InformationException('FOSSBilling update finalization is pending. Complete finalization before using the admin API.', [], 503);
         }
     }
 
@@ -154,7 +154,7 @@ class Client implements InjectionAwareInterface
             $referer = $this->di['request']->headers->get('Referer');
             $referer = is_string($referer) ? strtolower($referer) : null;
             if (!$referer || !str_starts_with($referer, $url)) {
-                throw new \FOSSBilling\InformationException('Invalid request. Make sure request origin is :from', [':from' => SYSTEM_URL], 1004);
+                throw new \FOSSBilling\Exception\InformationException('Invalid request. Make sure request origin is :from', [':from' => SYSTEM_URL], 1004);
             }
         }
 
@@ -165,7 +165,7 @@ class Client implements InjectionAwareInterface
     {
         $ips = $this->apiConfig['allowed_ips'];
         if (!empty($ips) && !in_array($this->_getIp(), $ips)) {
-            throw new \FOSSBilling\InformationException('Unauthorized IP', null, 1002);
+            throw new \FOSSBilling\Exception\InformationException('Unauthorized IP', null, 1002);
         }
 
         return true;
@@ -239,7 +239,7 @@ class Client implements InjectionAwareInterface
         if (!$server->has('PHP_AUTH_USER') && $this->di['request']->headers->has('Authorization')) {
             $parsedAuth = $this->tryParseBasicAuthHeader();
             if ($parsedAuth === null) {
-                throw new \FOSSBilling\InformationException('Authentication Failed', null, 201);
+                throw new \FOSSBilling\Exception\InformationException('Authentication Failed', null, 201);
             }
 
             $server->set('PHP_AUTH_USER', $parsedAuth['username']);
@@ -247,15 +247,15 @@ class Client implements InjectionAwareInterface
         }
 
         if (!$server->has('PHP_AUTH_USER')) {
-            throw new \FOSSBilling\InformationException('Authentication Failed', null, 201);
+            throw new \FOSSBilling\Exception\InformationException('Authentication Failed', null, 201);
         }
 
         if (!$server->has('PHP_AUTH_PW')) {
-            throw new \FOSSBilling\InformationException('Authentication Failed', null, 202);
+            throw new \FOSSBilling\Exception\InformationException('Authentication Failed', null, 202);
         }
 
         if ($server->get('PHP_AUTH_PW') === '') {
-            throw new \FOSSBilling\InformationException('Authentication Failed', null, 206);
+            throw new \FOSSBilling\Exception\InformationException('Authentication Failed', null, 206);
         }
 
         return [(string) $server->get('PHP_AUTH_USER'), (string) $server->get('PHP_AUTH_PW')];
@@ -265,14 +265,14 @@ class Client implements InjectionAwareInterface
     {
         [$username, $password] = $this->getAuth();
         if ($username !== $routeRole) {
-            throw new \FOSSBilling\InformationException('Authentication Failed', null, 203);
+            throw new \FOSSBilling\Exception\InformationException('Authentication Failed', null, 203);
         }
 
         switch ($routeRole) {
             case 'client':
                 $model = $this->di['em']->getRepository(ClientEntity::class)->findOneBy(['apiToken' => $password, 'status' => ClientEntity::ACTIVE]);
                 if (!$model instanceof ClientEntity) {
-                    throw new \FOSSBilling\InformationException('Authentication Failed', null, 204);
+                    throw new \FOSSBilling\Exception\InformationException('Authentication Failed', null, 204);
                 }
                 $this->di['session']->set('client_id', $model->getId());
 
@@ -281,12 +281,12 @@ class Client implements InjectionAwareInterface
             case 'admin':
                 $model = $this->di['em']->getRepository(Admin::class)->findOneBy(['apiToken' => $password, 'status' => Admin::STATUS_ACTIVE]);
                 if (!$model instanceof Admin || $model->isCron()) {
-                    throw new \FOSSBilling\InformationException('Authentication Failed', null, 205);
+                    throw new \FOSSBilling\Exception\InformationException('Authentication Failed', null, 205);
                 }
 
                 $cronAdmin = $this->di['mod_service']('staff')->getCronAdmin();
                 if ((int) $model->getId() === (int) $cronAdmin->getId()) {
-                    throw new \FOSSBilling\InformationException('Authentication Failed', null, 205);
+                    throw new \FOSSBilling\Exception\InformationException('Authentication Failed', null, 205);
                 }
 
                 $sessionAdminArray = [
@@ -299,7 +299,7 @@ class Client implements InjectionAwareInterface
                 break;
 
             default:
-                throw new \FOSSBilling\InformationException('Authentication Failed', null, 203);
+                throw new \FOSSBilling\Exception\InformationException('Authentication Failed', null, 203);
         }
     }
 
@@ -324,7 +324,7 @@ class Client implements InjectionAwareInterface
         }
 
         if ($username !== $routeRole) {
-            throw new \FOSSBilling\InformationException('Authentication Failed', null, 203);
+            throw new \FOSSBilling\Exception\InformationException('Authentication Failed', null, 203);
         }
 
         return true;
@@ -405,23 +405,23 @@ class Client implements InjectionAwareInterface
             if ($role === 'client' || $role === 'admin') {
                 $this->_checkCSRFToken();
             }
-        } catch (\FOSSBilling\InformationException $exception) {
+        } catch (\FOSSBilling\Exception\InformationException $exception) {
             throw $exception;
         } catch (AuthenticationRequiredException|\Exception) {
-            throw new \FOSSBilling\InformationException('Authentication Failed', null, 201);
+            throw new \FOSSBilling\Exception\InformationException('Authentication Failed', null, 201);
         }
     }
 
     /**
      * @param string $role
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     private function isRoleAllowed($role): bool
     {
         $allowed = ['guest', 'client', 'admin'];
         if (!in_array($role, $allowed, true)) {
-            throw new \FOSSBilling\Exception('Unknown API call :call', [':call' => (string) $role], 701);
+            throw new \FOSSBilling\Exception\BaseException('Unknown API call :call', [':call' => (string) $role], 701);
         }
 
         return true;
@@ -451,7 +451,7 @@ class Client implements InjectionAwareInterface
     /**
      * Checks if the CSRF token provided is valid.
      *
-     * @throws \FOSSBilling\InformationException
+     * @throws \FOSSBilling\Exception\InformationException
      */
     public function _checkCSRFToken()
     {
@@ -480,11 +480,11 @@ class Client implements InjectionAwareInterface
         $sessionToken = $this->di['session']->get('csrf_token');
 
         if (!is_string($token) || !is_string($sessionToken) || $sessionToken === '' || !hash_equals($sessionToken, $token)) {
-            throw new \FOSSBilling\InformationException('CSRF token invalid', null, 403);
+            throw new \FOSSBilling\Exception\InformationException('CSRF token invalid', null, 403);
         }
 
         if (is_string($cookieToken) && $cookieToken !== '' && !hash_equals($sessionToken, $cookieToken)) {
-            throw new \FOSSBilling\InformationException('CSRF token invalid', null, 403);
+            throw new \FOSSBilling\Exception\InformationException('CSRF token invalid', null, 403);
         }
     }
 }

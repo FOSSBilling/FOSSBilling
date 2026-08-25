@@ -51,12 +51,12 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      *
      * @return array
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     public function get($data)
     {
         if (!isset($data['id']) && !isset($data['slug'])) {
-            throw new \FOSSBilling\Exception('Product ID or slug is missing');
+            throw new \FOSSBilling\Exception\BaseException('Product ID or slug is missing');
         }
 
         $id = $data['id'] ?? null;
@@ -70,7 +70,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         }
 
         if (!$model instanceof Product) {
-            throw new \FOSSBilling\InformationException('Product not found');
+            throw new \FOSSBilling\Exception\InformationException('Product not found');
         }
 
         return $service->toApiArray($model);

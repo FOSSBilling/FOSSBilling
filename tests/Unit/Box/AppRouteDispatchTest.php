@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 use Symfony\Component\HttpFoundation\Request;
 
-class BoxAppRouteDispatchSharedController implements FOSSBilling\InjectionAwareInterface
+class BoxAppRouteDispatchSharedController implements FOSSBilling\Interfaces\InjectionAwareInterface
 {
     private ?Pimple\Container $di = null;
 

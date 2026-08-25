@@ -48,7 +48,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('theme', 'view');
 
         if ($this->isInvalidClientParameter($data['client'] ?? null)) {
-            throw new \FOSSBilling\InformationException('Invalid "client" parameter.');
+            throw new \FOSSBilling\Exception\InformationException('Invalid "client" parameter.');
         }
 
         $client = Tools::normalizeBoolean($data['client'] ?? true, true);

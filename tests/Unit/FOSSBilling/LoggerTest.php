@@ -20,7 +20,7 @@ test('channel changes are scoped to the returned logger', function (): void {
         }
     };
 
-    $logger = new FOSSBilling\Logger();
+    $logger = new FOSSBilling\Logging\Logger();
     $logger->addWriter($writer);
 
     $logger->withChannel('security')->info('Security event');
@@ -40,7 +40,7 @@ test('logger implements PSR-3 and interpolates context', function (): void {
         }
     };
 
-    $logger = new FOSSBilling\Logger();
+    $logger = new FOSSBilling\Logging\Logger();
     $logger->addWriter($writer);
 
     expect($logger)->toBeInstanceOf(Psr\Log\LoggerInterface::class);
@@ -61,7 +61,7 @@ test('logger masks sensitive context and rejects unknown levels', function (): v
         }
     };
 
-    $logger = new FOSSBilling\Logger();
+    $logger = new FOSSBilling\Logging\Logger();
     $logger->addWriter($writer);
 
     expect(fn () => $logger->log('verbose', 'Unknown level'))
@@ -86,7 +86,7 @@ test('context is scoped to the returned logger', function (): void {
         }
     };
 
-    $logger = new FOSSBilling\Logger();
+    $logger = new FOSSBilling\Logging\Logger();
     $logger->addWriter($writer);
 
     $logger->withContext(['client_order_id' => 42, 'status' => 'active'])
@@ -113,7 +113,7 @@ test('logger masks sensitive scoped context before writing', function (): void {
         }
     };
 
-    $logger = new FOSSBilling\Logger();
+    $logger = new FOSSBilling\Logging\Logger();
     $logger->addWriter($writer);
 
     $logger->withContext([

@@ -9,9 +9,13 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling;
+namespace FOSSBilling\Security;
 
 use FOSSBilling\Http\CookieNames;
+use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\System\Config;
+use FOSSBilling\System\Environment;
+use FOSSBilling\Tools;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 
 class Session implements InjectionAwareInterface

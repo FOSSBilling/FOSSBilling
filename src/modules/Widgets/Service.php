@@ -12,7 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Widgets;
 
 use Box\Mod\Extension\Entity\Extension;
-use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Interfaces\InjectionAwareInterface;
 use FOSSBilling\Interfaces\WidgetProviderInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 

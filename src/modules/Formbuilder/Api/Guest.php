@@ -24,7 +24,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      *
      * @return array
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Form ID was not passed'])]
     public function get($data)

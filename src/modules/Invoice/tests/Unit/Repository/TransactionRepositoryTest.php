@@ -17,8 +17,8 @@ use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\Tools\SchemaTool;
-use FOSSBilling\Pagination;
-use FOSSBilling\PaginationOptions;
+use FOSSBilling\Pagination\Options;
+use FOSSBilling\Pagination\Service;
 use Symfony\Component\Filesystem\Path;
 
 function transactionEntityManager(): EntityManager
@@ -193,9 +193,9 @@ test('paginateMappedQuery yields gateway-aware mixed rows', function (): void {
     $entityManager->flush();
 
     $qb = $entityManager->getRepository(Transaction::class)->getSearchQueryBuilder([]);
-    $result = (new Pagination())->paginateMappedQuery(
+    $result = (new Service())->paginateMappedQuery(
         $qb,
-        new PaginationOptions(perPage: 25),
+        new Options(perPage: 25),
         static fn ($row): array => [$row[0]::class, $row['gateway'] ?? null],
     );
 

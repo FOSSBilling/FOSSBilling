@@ -179,7 +179,7 @@ class SupportTicket implements ApiArrayInterface, TimestampInterface
 
         $helpdesk = $this->helpdesk;
         if (!$helpdesk instanceof Helpdesk) {
-            throw new \FOSSBilling\Exception('Helpdesk invalid');
+            throw new \FOSSBilling\Exception\BaseException('Helpdesk invalid');
         }
 
         return $helpdesk->canReopen();

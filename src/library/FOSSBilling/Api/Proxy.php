@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Api;
 
-use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Interfaces\InjectionAwareInterface;
 use Pimple\Container;
 
 final class Proxy implements InjectionAwareInterface

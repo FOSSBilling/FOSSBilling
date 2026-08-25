@@ -19,7 +19,7 @@ test('empty fire', function (): void {
 
 test('fire', function (): void {
     $di = container();
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Logging\Logger();
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connection->shouldReceive('fetchAllAssociative')->atLeast()->once()->andReturn([]);

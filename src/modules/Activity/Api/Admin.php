@@ -15,7 +15,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Activity\Api;
 
-use FOSSBilling\PaginationOptions;
+use FOSSBilling\Pagination\Options;
 
 class Admin extends \FOSSBilling\Api\AbstractApi
 {
@@ -32,7 +32,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $data['min_priority'] ??= 6;
         [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, Options::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
             if (isset($item['staff_id'])) {

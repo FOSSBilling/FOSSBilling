@@ -28,7 +28,7 @@ test('create delegates to service', function (): void {
     $staffService->shouldReceive('checkPermissionsAndThrowException')->with('redirect', 'create_and_edit', Mockery::any(), Mockery::any())->once();
 
     $di = new Pimple\Container();
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Logging\Logger();
     $di['mod_service'] = $di->protect(fn (string $name): object => match (strtolower($name)) {
         'staff' => $staffService,
         default => throw new RuntimeException("Unexpected mod service: $name"),
@@ -55,7 +55,7 @@ test('delete delegates to service entity', function (): void {
     $staffService->shouldReceive('checkPermissionsAndThrowException')->with('redirect', 'delete', Mockery::any(), Mockery::any())->once();
 
     $di = new Pimple\Container();
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Logging\Logger();
     $di['mod_service'] = $di->protect(fn (string $name): object => match (strtolower($name)) {
         'staff' => $staffService,
         default => throw new RuntimeException("Unexpected mod service: $name"),

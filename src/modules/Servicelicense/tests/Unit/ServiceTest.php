@@ -161,7 +161,7 @@ test('action activate license collision max iterations exception', function (): 
     $service->setDi($di);
 
     expect(fn (): bool => $service->action_activate($clientOrderModel))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception\BaseException::class);
 });
 
 test('action activate plugin not found', function (): void {
@@ -176,13 +176,13 @@ test('action activate plugin not found', function (): void {
     $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($serviceLicenseModel);
 
     $di = container();
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Logging\Logger();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $service->setDi($di);
 
     expect(fn (): bool => $service->action_activate($clientOrderModel))
-        ->toThrow(FOSSBilling\Exception::class, 'License plugin TestPlugin was not found.');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'License plugin TestPlugin was not found.');
 });
 
 test('action activate order activation exception', function (): void {
@@ -199,7 +199,7 @@ test('action activate order activation exception', function (): void {
     $service->setDi($di);
 
     expect(fn (): bool => $service->action_activate($clientOrderModel))
-        ->toThrow(FOSSBilling\Exception::class, 'Could not find associated service license');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Could not find associated service license');
 });
 
 test('action delete', function (): void {
@@ -235,7 +235,7 @@ test('reset', function (): void {
 
     $di = container();
     $di['em'] = $em;
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Logging\Logger();
     $di['events_manager'] = $eventMock;
 
     $service->setDi($di);

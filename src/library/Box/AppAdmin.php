@@ -43,7 +43,7 @@ class Box_AppAdmin extends Box_App
         $service = $this->di['mod_service']('Staff');
 
         if ($this->mod !== 'extension' && $this->di['auth']->isAdminLoggedIn() && !$service->hasPermission(null, $this->mod)) {
-            $e = new FOSSBilling\InformationException('You do not have permission to access the :mod: module', [':mod:' => $this->mod], 403);
+            $e = new FOSSBilling\Exception\InformationException('You do not have permission to access the :mod: module', [':mod:' => $this->mod], 403);
 
             return $this->errorResponse($e, 403);
         }

@@ -57,7 +57,7 @@ test('get list', function (): void {
     $resultSet = [
         'list' => ['id' => 1],
     ];
-    $pagerMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
+    $pagerMock = Mockery::mock(FOSSBilling\Pagination\Service::class)->makePartial();
     $pagerMock
     ->shouldReceive('getPaginatedResultSet')
     ->atLeast()->once()
@@ -197,7 +197,7 @@ test('change password password do not match', function (): void {
     $di = container();
     $api->setDi($di);
     expect(fn () => $api->change_password($data))
-        ->toThrow(FOSSBilling\Exception::class, 'Passwords do not match');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Passwords do not match');
 });
 
 test('change password weak password', function (): void {
@@ -215,14 +215,14 @@ test('change password weak password', function (): void {
     $validatorMock
         ->shouldReceive('isPasswordStrong')
         ->atLeast()->once()
-        ->andThrow(new FOSSBilling\InformationException('Password is too weak.'));
+        ->andThrow(new FOSSBilling\Exception\InformationException('Password is too weak.'));
 
     $di = container();
     $di['validator'] = $validatorMock;
 
     $api->setDi($di);
     expect(fn () => $api->change_password($data))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception\BaseException::class);
 });
 
 test('create', function (): void {
@@ -639,7 +639,7 @@ test('login history get list', function (): void {
         'name' => 'Administrator',
         'email' => 'admin@example.test',
     ]]];
-    $pagerMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
+    $pagerMock = Mockery::mock(FOSSBilling\Pagination\Service::class)->makePartial();
     $pagerMock
     ->shouldReceive('getPaginatedResultSet')
     ->atLeast()->once()

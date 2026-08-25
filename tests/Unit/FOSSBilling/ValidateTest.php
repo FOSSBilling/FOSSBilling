@@ -53,11 +53,11 @@ test('check required params for array', function (array $data, array $required, 
 
     if ($expectException) {
         expect(fn () => $validate->checkRequiredParamsForArray($required, $data, $variables))
-            ->toThrow(FOSSBilling\Exception::class);
+            ->toThrow(FOSSBilling\Exception\BaseException::class);
     } else {
         // Method returns void on success - wrap in closure and expect no exception
         expect(fn () => $validate->checkRequiredParamsForArray($required, $data, $variables))
-            ->not->toThrow(FOSSBilling\Exception::class);
+            ->not->toThrow(FOSSBilling\Exception\BaseException::class);
     }
 })->with('requiredParamsProvider');
 
@@ -78,7 +78,7 @@ test('check required params passes with all required', function (): void {
 
     // Method returns void on success - wrap in closure and expect no exception
     expect(fn () => $validate->checkRequiredParamsForArray($required, $data))
-        ->not->toThrow(FOSSBilling\Exception::class);
+        ->not->toThrow(FOSSBilling\Exception\BaseException::class);
 });
 
 test('check required params fails with missing key', function (): void {
@@ -91,7 +91,7 @@ test('check required params fails with missing key', function (): void {
     ];
 
     expect(fn () => $validate->checkRequiredParamsForArray($required, $data))
-        ->toThrow(FOSSBilling\Exception::class, 'Name is required');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Name is required');
 });
 
 test('check required params fails with empty value', function (): void {
@@ -103,7 +103,7 @@ test('check required params fails with empty value', function (): void {
     ];
 
     expect(fn () => $validate->checkRequiredParamsForArray($required, $data))
-        ->toThrow(FOSSBilling\Exception::class, 'Name is required');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Name is required');
 });
 
 test('check required params fails with null value', function (): void {
@@ -115,7 +115,7 @@ test('check required params fails with null value', function (): void {
     ];
 
     expect(fn () => $validate->checkRequiredParamsForArray($required, $data))
-        ->toThrow(FOSSBilling\Exception::class, 'Name is required');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Name is required');
 });
 
 test('check required params with zero value passes', function (): void {
@@ -128,7 +128,7 @@ test('check required params with zero value passes', function (): void {
 
     // Method returns void on success - wrap in closure and expect no exception
     expect(fn () => $validate->checkRequiredParamsForArray($required, $data))
-        ->not->toThrow(FOSSBilling\Exception::class);
+        ->not->toThrow(FOSSBilling\Exception\BaseException::class);
 });
 
 test('check required params with false value fails', function (): void {
@@ -140,7 +140,7 @@ test('check required params with false value fails', function (): void {
     ];
 
     expect(fn () => $validate->checkRequiredParamsForArray($required, $data))
-        ->toThrow(FOSSBilling\Exception::class, 'Enabled flag is required');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Enabled flag is required');
 });
 
 test('check required params with custom error code', function (): void {
@@ -153,7 +153,7 @@ test('check required params with custom error code', function (): void {
     try {
         $validate->checkRequiredParamsForArray($required, $data, [], $errorCode);
         expect(false)->toBeTrue('Expected exception was not thrown');
-    } catch (FOSSBilling\Exception $e) {
+    } catch (FOSSBilling\Exception\BaseException $e) {
         expect($e->getCode())->toBe($errorCode);
         expect($e->getMessage())->toBe('ID is required');
     }
@@ -167,7 +167,7 @@ test('check required params with message placeholder', function (): void {
     $variables = [':key' => 'my_key'];
 
     expect(fn () => $validate->checkRequiredParamsForArray($required, $data, $variables))
-        ->toThrow(FOSSBilling\Exception::class, 'Key my_key must be set');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Key my_key must be set');
 });
 
 test('check required params with multiple placeholders', function (): void {
@@ -181,7 +181,7 @@ test('check required params with multiple placeholders', function (): void {
     ];
 
     expect(fn () => $validate->checkRequiredParamsForArray($required, $data, $variables))
-        ->toThrow(FOSSBilling\Exception::class, 'Key my_key must be set for array config');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Key my_key must be set for array config');
 });
 
 test('check required params with whitespace fails', function (): void {
@@ -191,5 +191,5 @@ test('check required params with whitespace fails', function (): void {
     $required = ['name' => 'Name is required'];
 
     expect(fn () => $validate->checkRequiredParamsForArray($required, $data))
-        ->toThrow(FOSSBilling\Exception::class, 'Name is required');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Name is required');
 });

@@ -9,17 +9,20 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling;
+namespace FOSSBilling\I18n;
 
+use FOSSBilling\Exception\InformationException;
 use FOSSBilling\Http\CookieNames;
 use FOSSBilling\Http\CookieQueue;
+use FOSSBilling\System\Config;
+use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Intl\Locales;
 
-class i18n
+class I18n
 {
     private static ?Filesystem $filesystem = null;
 

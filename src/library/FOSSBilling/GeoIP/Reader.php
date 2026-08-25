@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling\GeoIP;
 
-use FOSSBilling\Config;
+use FOSSBilling\System\Config;
 use MaxMind\Db\Reader as MaxMindReader;
 use MaxMind\Db\Reader\InvalidDatabaseException;
 use Pimple\Container;

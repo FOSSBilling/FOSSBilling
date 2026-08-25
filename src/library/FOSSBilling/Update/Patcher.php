@@ -9,16 +9,23 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling;
+namespace FOSSBilling\Update;
 
 use Box\Mod\Extension\Entity\Extension;
+use FOSSBilling\Exception\BaseException;
+use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\Security\Crypt;
+use FOSSBilling\System\Config;
+use FOSSBilling\System\Environment;
+use FOSSBilling\System\Version;
+use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Uid\Uuid;
 
-class UpdatePatcher implements InjectionAwareInterface
+class Patcher implements InjectionAwareInterface
 {
     private ?\Pimple\Container $di = null;
     private Filesystem $filesystem;
@@ -73,7 +80,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $currentConfig = Config::getConfig();
 
         if (empty($currentConfig)) {
-            throw new Exception('Unable to load existing configuration');
+            throw new BaseException('Unable to load existing configuration');
         }
 
         $newConfig = $currentConfig;
@@ -191,7 +198,7 @@ class UpdatePatcher implements InjectionAwareInterface
         // The first request after updating from 0.7.x still uses the old Composer autoloader.
         // Use PDO here because it is available before and after the archive is extracted.
         if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('pdo')) {
-            throw new Exception('Database connection is not available.');
+            throw new BaseException('Database connection is not available.');
         }
 
         return $this->di['pdo'];
@@ -218,7 +225,7 @@ class UpdatePatcher implements InjectionAwareInterface
             // Log the error and then throw a user-friendly exception to prevent further patches from being applied.
             $this->logUpdate('error', $e->getMessage());
 
-            throw new Exception('There was an error while applying database patches. Please check the error log for information on the error, correct it, and then perform the backup patching method to complete the update.');
+            throw new BaseException('There was an error while applying database patches. Please check the error log for information on the error, correct it, and then perform the backup patching method to complete the update.');
         }
     }
 
@@ -352,7 +359,7 @@ class UpdatePatcher implements InjectionAwareInterface
     private function quoteIdentifier(string $identifier): string
     {
         if (!preg_match('/^[A-Za-z0-9_]+$/', $identifier)) {
-            throw new Exception('Invalid database identifier: :identifier', [':identifier' => $identifier]);
+            throw new BaseException('Invalid database identifier: :identifier', [':identifier' => $identifier]);
         }
 
         return $identifier;
@@ -376,7 +383,7 @@ class UpdatePatcher implements InjectionAwareInterface
             || str_contains($where, '`')
             || !preg_match('/^[A-Za-z0-9_:\\s<>=!().,%+-]++$/', $where)
         ) {
-            throw new Exception('Invalid SQL WHERE clause fragment.');
+            throw new BaseException('Invalid SQL WHERE clause fragment.');
         }
 
         $rows = $this->fetchAll("SELECT {$idColumn} AS id, {$valueColumn} AS encrypted_value FROM {$quotedTable} WHERE {$where}", $params);
@@ -1213,7 +1220,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 }
             }
         } catch (\Symfony\Component\Finder\Exception\DirectoryNotFoundException) {
-            throw new Exception('The modules directory does not exist. Cannot apply patch 56.');
+            throw new BaseException('The modules directory does not exist. Cannot apply patch 56.');
         }
 
         $this->executeFileActions([
@@ -1378,7 +1385,7 @@ class UpdatePatcher implements InjectionAwareInterface
         }
 
         if (!class_exists($uuidClass)) {
-            throw new Exception('Unable to load the Symfony UID package from Composer. Please reinstall dependencies and try again.');
+            throw new BaseException('Unable to load the Symfony UID package from Composer. Please reinstall dependencies and try again.');
         }
     }
 

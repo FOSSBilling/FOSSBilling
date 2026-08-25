@@ -86,19 +86,19 @@ class Client extends \FOSSBilling\Api\AbstractApi
     public function _getService($data): array
     {
         if (!isset($data['order_id'])) {
-            throw new \FOSSBilling\Exception('Order ID is required');
+            throw new \FOSSBilling\Exception\BaseException('Order ID is required');
         }
         $identity = $this->getIdentity();
         $order = $this->getDi()['em']->getRepository(Order::class)->findOneBy(['id' => $data['order_id'], 'clientId' => $identity->getId()]);
         if (!$order instanceof Order) {
-            throw new \FOSSBilling\InformationException('Order not found');
+            throw new \FOSSBilling\Exception\InformationException('Order not found');
         }
 
         $orderService = $this->getDi()['mod_service']('order');
         $orderService->assertOrderUsable($order);
         $s = $orderService->getOrderService($order);
         if (!$s instanceof ServiceHosting || $order->getStatus() !== Order::STATUS_ACTIVE) {
-            throw new \FOSSBilling\InformationException('Order is not activated');
+            throw new \FOSSBilling\Exception\InformationException('Order is not activated');
         }
 
         return [$order, $s];

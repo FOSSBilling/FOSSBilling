@@ -43,19 +43,19 @@ class Client extends \FOSSBilling\Api\AbstractApi
         ]);
 
         if (!$order instanceof \Box\Mod\Order\Entity\Order) {
-            throw new \FOSSBilling\InformationException('Order not found');
+            throw new \FOSSBilling\Exception\InformationException('Order not found');
         }
 
         $orderService = $this->getDi()['mod_service']('order');
         $orderService->assertOrderUsable($order);
 
         if ($order->getStatus() !== \Box\Mod\Order\Entity\Order::STATUS_ACTIVE) {
-            throw new \FOSSBilling\InformationException('Order is not activated');
+            throw new \FOSSBilling\Exception\InformationException('Order is not activated');
         }
 
         $s = $orderService->getOrderService($order);
         if (!$s instanceof ServiceLicense) {
-            throw new \FOSSBilling\Exception('Order is not activated');
+            throw new \FOSSBilling\Exception\BaseException('Order is not activated');
         }
 
         return $s;

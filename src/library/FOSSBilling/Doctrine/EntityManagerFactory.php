@@ -17,7 +17,7 @@ use Doctrine\ORM\Mapping\UnderscoreNamingStrategy;
 use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\Proxy\ProxyFactory;
 use FOSSBilling\Cache\CacheFactory;
-use FOSSBilling\Environment;
+use FOSSBilling\System\Environment;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
 

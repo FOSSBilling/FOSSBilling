@@ -31,11 +31,11 @@ use Box\Mod\Support\Repository\SupportTicketMessageHistoryRepository;
 use Box\Mod\Support\Repository\SupportTicketMessageRepository;
 use Box\Mod\Support\Repository\SupportTicketNoteRepository;
 use Box\Mod\Support\Repository\SupportTicketRepository;
-use FOSSBilling\InformationException;
+use FOSSBilling\Exception\InformationException;
 use FOSSBilling\Tools;
 use FOSSBilling\Twig\Markdown\FOSSBillingMarkdown;
 
-class Service implements \FOSSBilling\InjectionAwareInterface
+class Service implements \FOSSBilling\Interfaces\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
     protected KbArticleRepository $kbArticleRepository;
@@ -1045,7 +1045,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             : $this->getHelpdeskRepository()->getDefault();
 
         if (!$helpdesk instanceof Helpdesk) {
-            throw new \FOSSBilling\Exception('Helpdesk invalid');
+            throw new \FOSSBilling\Exception\BaseException('Helpdesk invalid');
         }
 
         $em = $this->di['em'];
@@ -1112,7 +1112,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         if (isset($data['rel_id'])) {
             if (filter_var($data['rel_id'], FILTER_VALIDATE_INT) === false) {
-                throw new \FOSSBilling\Exception('rel_id must be a valid integer, received: :value', [':value' => $data['rel_id']]);
+                throw new \FOSSBilling\Exception\BaseException('rel_id must be a valid integer, received: :value', [':value' => $data['rel_id']]);
             }
             $rel_id = (int) $data['rel_id'];
         } else {
@@ -1130,17 +1130,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $orderService = $this->di['mod_service']('order');
             $order = $orderService->findForClientById($client, $rel_id);
             if (!$order instanceof Order) {
-                throw new \FOSSBilling\Exception('You do not have permission to reference this order.');
+                throw new \FOSSBilling\Exception\BaseException('You do not have permission to reference this order.');
             }
         }
 
         if ($rel_task === SupportTicket::REL_TASK_UPGRADE) {
             if (!$order instanceof Order) {
-                throw new \FOSSBilling\Exception('You must provide both an order ID and a new product ID in order to request an upgrade.');
+                throw new \FOSSBilling\Exception\BaseException('You must provide both an order ID and a new product ID in order to request an upgrade.');
             }
 
             if (filter_var($rel_new_value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) === false) {
-                throw new \FOSSBilling\Exception('rel_new_value must be a valid positive integer product ID, received: :value', [':value' => $rel_new_value]);
+                throw new \FOSSBilling\Exception\BaseException('rel_new_value must be a valid positive integer product ID, received: :value', [':value' => $rel_new_value]);
             }
 
             $productService = $this->di['mod_service']('product');
@@ -1233,7 +1233,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         } elseif ($identity instanceof Client) {
             $msg->setClientId((int) $identity->getId());
         } else {
-            throw new \FOSSBilling\Exception('Identity is invalid');
+            throw new \FOSSBilling\Exception\BaseException('Identity is invalid');
         }
         $msg->setContent($content);
         $msg->setIp($this->di['request']->getClientIp());
@@ -1247,7 +1247,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $guestTicket = $this->getSupportTicketRepository()->findOneByAccessHash($hash);
         if (!$guestTicket instanceof SupportTicket) {
-            throw new \FOSSBilling\Exception('Guest ticket not found');
+            throw new \FOSSBilling\Exception\BaseException('Guest ticket not found');
         }
 
         return $guestTicket;
@@ -1329,7 +1329,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $category = $this->getCannedResponseCategoryRepository()->find($categoryId);
         if (!$category instanceof CannedResponseCategory) {
-            throw new \FOSSBilling\Exception('Canned category not found');
+            throw new \FOSSBilling\Exception\BaseException('Canned category not found');
         }
 
         $model = (new CannedResponse())
@@ -1352,7 +1352,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         if (isset($data['category_id'])) {
             $category = $this->getCannedResponseCategoryRepository()->find((int) $data['category_id']);
             if (!$category instanceof CannedResponseCategory) {
-                throw new \FOSSBilling\Exception('Canned category not found');
+                throw new \FOSSBilling\Exception\BaseException('Canned category not found');
             }
 
             $model->setCategory($category);
@@ -1482,7 +1482,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $status = $this->normalizeKbArticleStatus($status ?? KbArticle::DRAFT);
         $category = $this->getKbArticleCategoryRepository()->find($articleCategoryId);
         if (!$category instanceof KbArticleCategory) {
-            throw new \FOSSBilling\Exception('Knowledge Base category not found');
+            throw new \FOSSBilling\Exception\BaseException('Knowledge Base category not found');
         }
 
         $model = (new KbArticle())
@@ -1507,13 +1507,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model = $this->getKbArticleRepository()->find($id);
 
         if (!$model instanceof KbArticle) {
-            throw new \FOSSBilling\Exception('Article not found');
+            throw new \FOSSBilling\Exception\BaseException('Article not found');
         }
 
         if (isset($articleCategoryId)) {
             $category = $this->getKbArticleCategoryRepository()->find($articleCategoryId);
             if (!$category instanceof KbArticleCategory) {
-                throw new \FOSSBilling\Exception('Knowledge Base category not found');
+                throw new \FOSSBilling\Exception\BaseException('Knowledge Base category not found');
             }
 
             $model->setCategory($category);
@@ -1550,7 +1550,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $status = strtolower(trim($status));
         if (!in_array($status, [KbArticle::ACTIVE, KbArticle::DRAFT], true)) {
-            throw new \FOSSBilling\Exception('Invalid knowledge base article status: :status', [':status' => $status]);
+            throw new \FOSSBilling\Exception\BaseException('Invalid knowledge base article status: :status', [':status' => $status]);
         }
 
         return $status;

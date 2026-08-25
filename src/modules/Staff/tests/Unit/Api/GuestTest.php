@@ -29,7 +29,7 @@ test('login without email', function (): void {
     $dispatcher = new FOSSBilling\Api\Dispatcher();
 
     expect(fn () => $dispatcher->validateRequiredParams($guestApi, 'login', ['email' => null, 'password' => 'pass']))
-        ->toThrow(FOSSBilling\InformationException::class);
+        ->toThrow(FOSSBilling\Exception\InformationException::class);
 });
 
 test('login without password', function (): void {
@@ -40,7 +40,7 @@ test('login without password', function (): void {
     $di['validator'] = new FOSSBilling\Validate();
 
     $guestApi->setDi($di);
-    expect(fn () => $guestApi->login(['email' => 'email@domain.com']))->toThrow(FOSSBilling\Exception::class);
+    expect(fn () => $guestApi->login(['email' => 'email@domain.com']))->toThrow(FOSSBilling\Exception\BaseException::class);
 });
 
 test('password reset requires an email', function (): void {
@@ -48,7 +48,7 @@ test('password reset requires an email', function (): void {
     $guestApi = new Box\Mod\Staff\Api\Guest();
 
     expect(fn () => $dispatcher->validateRequiredParams($guestApi, 'passwordreset', []))
-        ->toThrow(FOSSBilling\InformationException::class, 'Email required');
+        ->toThrow(FOSSBilling\Exception\InformationException::class, 'Email required');
 });
 
 test('successful login', function (): void {
@@ -65,7 +65,7 @@ test('successful login', function (): void {
     ->atLeast()->once()
     ->andReturn([]);
 
-    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
+    $sessionMock = Mockery::mock(FOSSBilling\Security\Session::class);
     $sessionMock->shouldReceive('delete')->atLeast()->once();
 
     $di = container();
@@ -114,7 +114,7 @@ test('login check ip exception', function (): void {
         'password' => 'pass',
     ];
     expect(fn () => $guestApi->login($data))
-        ->toThrow(FOSSBilling\Exception::class, 'You are not allowed to login to admin area from this IP address.');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'You are not allowed to login to admin area from this IP address.');
 });
 
 test('updatePassword invalidates existing sessions', function (): void {
@@ -133,7 +133,7 @@ test('updatePassword invalidates existing sessions', function (): void {
     $eventMock = Mockery::mock('\Box_EventManager');
     $eventMock->shouldReceive('fire')->times(2);
 
-    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\Security\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')->atLeast()->once();
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);

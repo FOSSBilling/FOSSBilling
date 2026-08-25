@@ -15,7 +15,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Hook\Api;
 
-use FOSSBilling\PaginationOptions;
+use FOSSBilling\Pagination\Options;
 
 class Admin extends \FOSSBilling\Api\AbstractApi
 {
@@ -31,7 +31,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $service = $this->getService();
         [$sql, $params] = $service->getSearchQuery($data);
 
-        return $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        return $this->getDi()['pager']->getPaginatedResultSet($sql, $params, Options::fromArray($data));
     }
 
     /**

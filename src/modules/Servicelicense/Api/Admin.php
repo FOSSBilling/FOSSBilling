@@ -75,7 +75,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     public function _getService(array $data): ServiceLicense
     {
@@ -84,13 +84,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $order = $this->getDi()['em']->getRepository(\Box\Mod\Order\Entity\Order::class)->find($data['order_id']);
         if ($order === null) {
-            throw new \FOSSBilling\Exception('Order not found');
+            throw new \FOSSBilling\Exception\BaseException('Order not found');
         }
 
         $orderService = $this->getDi()['mod_service']('order');
         $s = $orderService->getOrderService($order);
         if (!$s instanceof ServiceLicense) {
-            throw new \FOSSBilling\Exception('Order is not activated');
+            throw new \FOSSBilling\Exception\BaseException('Order is not activated');
         }
 
         return $s;

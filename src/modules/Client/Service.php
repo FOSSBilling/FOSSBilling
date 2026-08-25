@@ -20,9 +20,9 @@ use Box\Mod\Client\Repository\ClientGroupRepository;
 use Box\Mod\Client\Repository\ClientPasswordResetRepository;
 use Box\Mod\Client\Repository\ClientRepository;
 use Box\Mod\Staff\Entity\Admin;
-use FOSSBilling\i18n;
-use FOSSBilling\InformationException;
-use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Exception\InformationException;
+use FOSSBilling\I18n\I18n;
+use FOSSBilling\Interfaces\InjectionAwareInterface;
 use FOSSBilling\Tools;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Intl\Countries;
@@ -582,7 +582,7 @@ class Service implements InjectionAwareInterface
     {
         $client = $this->clientRepository->findOneBy(['clientGroup' => $model]);
         if ($client) {
-            throw new \FOSSBilling\Exception('Cannot remove groups with clients');
+            throw new \FOSSBilling\Exception\BaseException('Cannot remove groups with clients');
         }
 
         $group = $this->clientGroupRepository->find((int) $model->getId());
@@ -656,7 +656,7 @@ class Service implements InjectionAwareInterface
         if ($client->getLang() !== null && $client->getLang() !== '' && !Locales::exists($client->getLang())) {
             throw new InformationException('Invalid locale code: :code', [':code' => $client->getLang()]);
         }
-        $client->setTimezone(i18n::validateTimezone($data['timezone'] ?? null));
+        $client->setTimezone(I18n::validateTimezone($data['timezone'] ?? null));
         $client->setCurrency($data['currency'] ?? null);
 
         $client->setCustom1($data['custom_1'] ?? null);
@@ -1034,7 +1034,7 @@ class Service implements InjectionAwareInterface
                 ->getQuery()
                 ->execute();
         } catch (\Exception $e) {
-            if (!\FOSSBilling\Environment::isTesting()) {
+            if (!\FOSSBilling\System\Environment::isTesting()) {
                 $di['logger']->error($e->getMessage());
             }
         }

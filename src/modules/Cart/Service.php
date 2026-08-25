@@ -23,7 +23,7 @@ use Box\Mod\Product\Entity\Product;
 use Box\Mod\Product\Entity\Promo;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use FOSSBilling\Doctrine\EntityManagerFactory;
-use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Interfaces\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
@@ -126,7 +126,7 @@ class Service implements InjectionAwareInterface
         if (!$currency instanceof Currency) {
             $currency = $currencyRepository->findDefault();
             if (!$currency instanceof Currency) {
-                throw new \FOSSBilling\Exception('Default currency not found');
+                throw new \FOSSBilling\Exception\BaseException('Default currency not found');
             }
         }
 
@@ -162,7 +162,7 @@ class Service implements InjectionAwareInterface
             $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
             if (!$this->isPeriodEnabledForProduct($product, $data['period'])) {
-                throw new \FOSSBilling\InformationException('Selected billing period is invalid');
+                throw new \FOSSBilling\Exception\InformationException('Selected billing period is invalid');
             }
         }
 
@@ -204,7 +204,7 @@ class Service implements InjectionAwareInterface
                     }
                     foreach ($domainsBeingAdded as $incoming) {
                         if (strcasecmp($existing, $incoming) === 0) {
-                            throw new \FOSSBilling\InformationException('This domain is already in the cart.');
+                            throw new \FOSSBilling\Exception\InformationException('This domain is already in the cart.');
                         }
                     }
                 }
@@ -242,7 +242,7 @@ class Service implements InjectionAwareInterface
 
             $reservedQty = $this->getReservedQuantityInCart($cart, $cartProductId);
             if (!$this->isStockAvailable($cartProduct, $reservedQty + $pendingQuantities[$cartProductId])) {
-                throw new \FOSSBilling\InformationException('This item is currently out of stock');
+                throw new \FOSSBilling\Exception\InformationException('This item is currently out of stock');
             }
         }
 
@@ -333,7 +333,7 @@ class Service implements InjectionAwareInterface
     {
         $cartProduct = $this->findCartProduct($cart, (int) $id);
         if (!$cartProduct instanceof CartProduct) {
-            throw new \FOSSBilling\Exception('Product not found');
+            throw new \FOSSBilling\Exception\BaseException('Product not found');
         }
 
         if ($removeAddons) {
@@ -405,7 +405,7 @@ class Service implements InjectionAwareInterface
         }
 
         if ($this->isEmptyCart($cart)) {
-            throw new \FOSSBilling\InformationException('Add products to your cart before applying promo code');
+            throw new \FOSSBilling\Exception\InformationException('Add products to your cart before applying promo code');
         }
 
         $cart->setPromoId($promoId);
@@ -450,7 +450,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!$currency instanceof Currency) {
-            throw new \FOSSBilling\Exception('Currency not found and no default currency is configured');
+            throw new \FOSSBilling\Exception\BaseException('Currency not found and no default currency is configured');
         }
 
         $items = [];
@@ -547,11 +547,11 @@ class Service implements InjectionAwareInterface
         if ($promoId) {
             $promo = $this->getProductService()->findPromoById($promoId);
             if (!$this->isClientAbleToUsePromo($client, $promo)) {
-                throw new \FOSSBilling\InformationException('You have already used this promo code. Please remove the promo code and checkout again.', null, 9874);
+                throw new \FOSSBilling\Exception\InformationException('You have already used this promo code. Please remove the promo code and checkout again.', null, 9874);
             }
 
             if (!$this->isPromoAvailableForClientGroup($promo)) {
-                throw new \FOSSBilling\InformationException('Promo code cannot be applied to your account');
+                throw new \FOSSBilling\Exception\InformationException('Promo code cannot be applied to your account');
             }
         }
 
@@ -606,7 +606,7 @@ class Service implements InjectionAwareInterface
         $cart = $this->getSessionCart();
         $ca = $this->toApiArray($cart);
         if (\FOSSBilling\Tools::safeCount($ca['items']) == 0) {
-            throw new \FOSSBilling\InformationException('Cannot checkout an empty cart');
+            throw new \FOSSBilling\Exception\InformationException('Cannot checkout an empty cart');
         }
 
         $currencyService = $this->di['mod_service']('currency');
@@ -616,7 +616,7 @@ class Service implements InjectionAwareInterface
         if (!$currency instanceof Currency) {
             $currency = $currencyRepository->findDefault();
             if (!$currency instanceof Currency) {
-                throw new \FOSSBilling\Exception('Default currency not found.');
+                throw new \FOSSBilling\Exception\BaseException('Default currency not found.');
             }
         }
         $currencyCode = $currency->getCode();
@@ -639,7 +639,7 @@ class Service implements InjectionAwareInterface
         try {
             return $this->di['em']->wrapInTransaction(function () use ($ca, $cart, $client, $currency, $currencyCode, $gateway_id, $taxed, $promo, $promoProductService, $promoId, &$reservedOrderIds, &$reservedCount, &$stockReservedOrders) {
                 if ($client->getCurrency() != $currencyCode) {
-                    throw new \FOSSBilling\InformationException('Selected currency :selected does not match your profile currency :code. Please change cart currency to continue.', [':selected' => $currencyCode, ':code' => $client->getCurrency()]);
+                    throw new \FOSSBilling\Exception\InformationException('Selected currency :selected does not match your profile currency :code. Please change cart currency to continue.', [':selected' => $currencyCode, ':code' => $client->getCurrency()]);
                 }
 
                 $orders = [];
@@ -654,14 +654,14 @@ class Service implements InjectionAwareInterface
 
                     $product = $this->getProductService()->findProductById((int) $item['product_id']);
                     if ($product->getStatus() !== 'enabled') {
-                        throw new \FOSSBilling\InformationException('Unable to complete order. One or more of the selected products are invalid.');
+                        throw new \FOSSBilling\Exception\InformationException('Unable to complete order. One or more of the selected products are invalid.');
                     }
 
                     $requestedQty = $this->getRequestedQuantity($item);
                     $productId = (int) $product->getId();
                     $requestedProductQuantities[$productId] = ($requestedProductQuantities[$productId] ?? 0) + $requestedQty;
                     if (!$this->isStockAvailable($product, $requestedProductQuantities[$productId])) {
-                        throw new \FOSSBilling\InformationException('Unable to complete order. One or more selected products are out of stock.');
+                        throw new \FOSSBilling\Exception\InformationException('Unable to complete order. One or more selected products are out of stock.');
                     }
 
                     /*
@@ -972,7 +972,7 @@ class Service implements InjectionAwareInterface
             $cart = $cartProduct->getCart();
         }
         if (!$cart instanceof Cart) {
-            throw new \FOSSBilling\Exception('Cart not found');
+            throw new \FOSSBilling\Exception\BaseException('Cart not found');
         }
         $discount_price = $this->getRelatedItemsDiscount($cart, $cartProduct, $cartProducts);
         $discount_setup = 0;

@@ -13,7 +13,7 @@ namespace Box\Mod\Invoice\Controller;
 
 use Symfony\Component\HttpFoundation\Response;
 
-class Admin implements \FOSSBilling\InjectionAwareInterface
+class Admin implements \FOSSBilling\Interfaces\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
@@ -191,7 +191,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $response = $api->invoice_pdf($data);
 
         if (!$response instanceof Response) {
-            throw new \FOSSBilling\Exception('Invoice PDF response could not be generated');
+            throw new \FOSSBilling\Exception\BaseException('Invoice PDF response could not be generated');
         }
 
         return $response;

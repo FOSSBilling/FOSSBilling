@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use FOSSBilling\Environment;
+use FOSSBilling\System\Environment;
 
 test('getCurrentEnvironment defaults to production when APP_ENV is unset', function (): void {
     withAppEnv(null, function (): void {

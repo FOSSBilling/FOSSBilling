@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use FOSSBilling\ErrorPage;
+use FOSSBilling\Http\ErrorPage;
 use FOSSBilling\Http\ExceptionResponseFactory;
 use Symfony\Component\HttpFoundation\Response;
 

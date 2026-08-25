@@ -158,7 +158,7 @@ test('runCrons restores the previous cron context when update finalization inter
 
     try {
         $service->runCrons();
-    } catch (FOSSBilling\InformationException) {
+    } catch (FOSSBilling\Exception\InformationException) {
         // Expected: update finalization is pending, cron tasks are skipped.
     }
 

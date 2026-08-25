@@ -9,15 +9,15 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-use FOSSBilling\Config;
-use FOSSBilling\UpdateFinalization;
-use FOSSBilling\Version;
+use FOSSBilling\System\Config;
+use FOSSBilling\System\Version;
+use FOSSBilling\Update\Finalization;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
 beforeEach(function (): void {
     $filesystem = new Filesystem();
-    $statePath = Path::join(PATH_DATA, UpdateFinalization::STATE_FILENAME);
+    $statePath = Path::join(PATH_DATA, Finalization::STATE_FILENAME);
     $configBackupPath = Path::changeExtension(PATH_CONFIG, 'old.php');
 
     $this->updateFinalizationFilesystem = $filesystem;
@@ -61,7 +61,7 @@ test('creates one pending state and keeps it unchanged across repeated checks', 
     ];
     Config::setConfig($config, false);
 
-    $finalization = new UpdateFinalization();
+    $finalization = new Finalization();
     $state = $finalization->ensureCurrentVersionFinalization();
     $stateAgain = $finalization->ensureCurrentVersionFinalization();
 
@@ -87,7 +87,7 @@ test('does not re-run a finalized update before the session service is initializ
         ], JSON_THROW_ON_ERROR)
     );
 
-    $finalization = new UpdateFinalization();
+    $finalization = new Finalization();
 
     $finalization->finalizePendingUpdate();
 
@@ -101,9 +101,9 @@ test('does not re-run a finalized update before the session service is initializ
 });
 
 test('serializes finalization with an exclusive lock', function (): void {
-    $finalization = new UpdateFinalization();
+    $finalization = new Finalization();
     $lockPath = Path::join(PATH_DATA, 'update-finalization.lock');
-    $lockMethod = new ReflectionMethod(UpdateFinalization::class, 'withFinalizationLock');
+    $lockMethod = new ReflectionMethod(Finalization::class, 'withFinalizationLock');
     $lockHeld = false;
 
     $lockMethod->invoke($finalization, function () use (&$lockHeld, $lockPath): void {
@@ -123,8 +123,8 @@ test('serializes finalization with an exclusive lock', function (): void {
 });
 
 test('removes the install directory unless the environment is explicitly dev or test', function (): void {
-    $shouldRemove = new ReflectionMethod(UpdateFinalization::class, 'shouldRemoveInstallDirectory');
-    $finalization = new UpdateFinalization();
+    $shouldRemove = new ReflectionMethod(Finalization::class, 'shouldRemoveInstallDirectory');
+    $finalization = new Finalization();
 
     withAppEnv(null, fn () => expect($shouldRemove->invoke($finalization))->toBeTrue());
     withAppEnv('staging', fn () => expect($shouldRemove->invoke($finalization))->toBeTrue());
@@ -163,7 +163,7 @@ test('completion restores captured maintenance mode and records the current vers
         json_encode($state, JSON_THROW_ON_ERROR)
     );
 
-    $finalization = new UpdateFinalization();
+    $finalization = new Finalization();
     $finalization->completeFinalization();
 
     $completedState = json_decode(

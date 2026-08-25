@@ -14,7 +14,7 @@ namespace Box\Mod\Client\Controller;
 use FOSSBilling\Security\RandomizedTimeFloor;
 use Symfony\Component\HttpFoundation\Response;
 
-class Client implements \FOSSBilling\InjectionAwareInterface
+class Client implements \FOSSBilling\Interfaces\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 

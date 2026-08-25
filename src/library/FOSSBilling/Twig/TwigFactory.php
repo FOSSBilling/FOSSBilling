@@ -14,10 +14,11 @@ namespace FOSSBilling\Twig;
 use Box\Mod\Currency\Entity\Currency;
 use DebugBar\Bridge\Twig\NamespacedTwigProfileCollector;
 use DebugBar\StandardDebugBar;
-use FOSSBilling\Config;
 use FOSSBilling\Http\CookieNames;
 use FOSSBilling\Http\RequestFactory;
-use FOSSBilling\i18n;
+use FOSSBilling\I18n\I18n;
+use FOSSBilling\System\Config;
+use FOSSBilling\System\Version;
 use FOSSBilling\Tools;
 use FOSSBilling\Twig\Enum\AppArea;
 use FOSSBilling\Twig\Extension\ApiExtension;
@@ -26,7 +27,6 @@ use FOSSBilling\Twig\Extension\FOSSBillingExtension;
 use FOSSBilling\Twig\Extension\LegacyExtension;
 use FOSSBilling\Twig\Markdown\FOSSBillingMarkdown;
 use FOSSBilling\Url;
-use FOSSBilling\Version;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Intl\Currencies;
 use Twig\Environment;
@@ -82,7 +82,7 @@ class TwigFactory
             }
         }
 
-        return i18n::getActiveTimezone($this->di['request'], $clientTimezone, $adminTimezone, $this->di['cookie_queue']);
+        return I18n::getActiveTimezone($this->di['request'], $clientTimezone, $adminTimezone, $this->di['cookie_queue']);
     }
 
     /**
@@ -91,7 +91,7 @@ class TwigFactory
     public function createBaseEnvironment(): Environment
     {
         // Get internationalisation settings from config, or use sensible defaults.
-        $locale = i18n::getActiveLocale($this->di['request'], true, $this->di['cookie_queue']);
+        $locale = I18n::getActiveLocale($this->di['request'], true, $this->di['cookie_queue']);
         $timezone = $this->resolveTimezoneForActiveUser();
         $dateFormat = strtoupper((string) Config::getProperty('i18n.date_format', 'MEDIUM'));
         $timeFormat = strtoupper((string) Config::getProperty('i18n.time_format', 'SHORT'));
@@ -209,7 +209,7 @@ class TwigFactory
     public function createEmailEnvironment(?string $timezone = null): Environment
     {
         // Get internationalisation settings from config
-        $locale = i18n::getActiveLocale($this->di['request'], true, $this->di['cookie_queue']);
+        $locale = I18n::getActiveLocale($this->di['request'], true, $this->di['cookie_queue']);
         $timezone ??= $this->resolveTimezoneForActiveUser();
         $dateFormat = strtoupper((string) Config::getProperty('i18n.date_format', 'MEDIUM'));
         $timeFormat = strtoupper((string) Config::getProperty('i18n.time_format', 'SHORT'));
@@ -329,7 +329,7 @@ class TwigFactory
 
     private function createSandboxedFragmentEnvironment(SecurityPolicyInterface $policy): Environment
     {
-        $locale = i18n::getActiveLocale($this->di['request'], true, $this->di['cookie_queue']);
+        $locale = I18n::getActiveLocale($this->di['request'], true, $this->di['cookie_queue']);
         $timezone = Config::getProperty('i18n.timezone', 'UTC');
         $dateFormat = strtoupper((string) Config::getProperty('i18n.date_format', 'MEDIUM'));
         $timeFormat = strtoupper((string) Config::getProperty('i18n.time_format', 'SHORT'));
@@ -519,7 +519,7 @@ class TwigFactory
 
     private function configureDebugging(Environment $twig, StandardDebugBar $debugBar): void
     {
-        if (\FOSSBilling\Environment::isDevelopment()) {
+        if (\FOSSBilling\System\Environment::isDevelopment()) {
             $profile = new Profile();
             $twig->addExtension(new ProfilerExtension($profile));
             $collector = new NamespacedTwigProfileCollector($profile);

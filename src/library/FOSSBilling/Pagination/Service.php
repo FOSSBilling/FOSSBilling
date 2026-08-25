@@ -9,15 +9,17 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling;
+namespace FOSSBilling\Pagination;
 
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator as DoctrinePaginator;
+use FOSSBilling\Exception\InformationException;
 use FOSSBilling\Interfaces\ApiArrayInterface;
+use FOSSBilling\Interfaces\InjectionAwareInterface;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
 
-class Pagination implements InjectionAwareInterface
+class Service implements InjectionAwareInterface
 {
     private ?\Pimple\Container $di = null;
 
@@ -52,9 +54,9 @@ class Pagination implements InjectionAwareInterface
      * Entities implementing `ApiArrayInterface` will use `toApiArray()`, others will be normalized
      * using Symfony's ObjectNormalizer.
      *
-     * @param QueryBuilder      $qb              the Doctrine QueryBuilder instance to paginate
-     * @param PaginationOptions $pagination      pagination options
-     * @param mixed             ...$apiArrayArgs optional arguments passed to entity toApiArray() methods
+     * @param QueryBuilder $qb              the Doctrine QueryBuilder instance to paginate
+     * @param Options      $pagination      pagination options
+     * @param mixed        ...$apiArrayArgs optional arguments passed to entity toApiArray() methods
      *
      * @return array{
      *     pages: int,      // Total number of pages
@@ -64,7 +66,7 @@ class Pagination implements InjectionAwareInterface
      *     list: array      // List of paginated items as arrays
      * }
      */
-    public function paginateDoctrineQuery(QueryBuilder $qb, PaginationOptions $pagination, mixed ...$apiArrayArgs): array
+    public function paginateDoctrineQuery(QueryBuilder $qb, Options $pagination, mixed ...$apiArrayArgs): array
     {
         $serializer = new Serializer([new ObjectNormalizer()]);
 
@@ -80,9 +82,9 @@ class Pagination implements InjectionAwareInterface
     /**
      * Paginate a SQL query using a simple LIMIT clause and a secondary count query.
      *
-     * @param string            $query      the base SQL query without LIMIT
-     * @param array             $params     the values to bind to the query
-     * @param PaginationOptions $pagination pagination options
+     * @param string  $query      the base SQL query without LIMIT
+     * @param array   $params     the values to bind to the query
+     * @param Options $pagination pagination options
      *
      * @return array{
      *     pages: int,      // Total number of pages
@@ -94,7 +96,7 @@ class Pagination implements InjectionAwareInterface
      *
      * @throws InformationException if the SQL query is invalid
      */
-    public function getPaginatedResultSet(string $query, array $params, PaginationOptions $pagination): array
+    public function getPaginatedResultSet(string $query, array $params, Options $pagination): array
     {
         $offset = ($pagination->page - 1) * $pagination->perPage;
 
@@ -123,7 +125,7 @@ class Pagination implements InjectionAwareInterface
      *     list: array      // List of paginated items as arrays
      * }
      */
-    public function paginateArray(array $items, PaginationOptions $pagination): array
+    public function paginateArray(array $items, Options $pagination): array
     {
         $total = count($items);
         $pages = $total > 0 ? (int) ceil($total / $pagination->perPage) : 0;
@@ -140,9 +142,9 @@ class Pagination implements InjectionAwareInterface
      * cross-module lookups) that the default `paginateDoctrineQuery()` cannot provide.
      * The caller supplies a closure that performs the mapping.
      *
-     * @param QueryBuilder      $qb         the Doctrine QueryBuilder instance to paginate
-     * @param PaginationOptions $pagination pagination options
-     * @param callable          $mapper     fn(object $entity): array applied to each row
+     * @param QueryBuilder $qb         the Doctrine QueryBuilder instance to paginate
+     * @param Options      $pagination pagination options
+     * @param callable     $mapper     fn(object $entity): array applied to each row
      *
      * @return array{
      *     pages: int,      // Total number of pages
@@ -152,7 +154,7 @@ class Pagination implements InjectionAwareInterface
      *     list: array      // List of paginated items as arrays
      * }
      */
-    public function paginateMappedQuery(QueryBuilder $qb, PaginationOptions $pagination, callable $mapper): array
+    public function paginateMappedQuery(QueryBuilder $qb, Options $pagination, callable $mapper): array
     {
         $qb->setFirstResult(($pagination->page - 1) * $pagination->perPage)
             ->setMaxResults($pagination->perPage);

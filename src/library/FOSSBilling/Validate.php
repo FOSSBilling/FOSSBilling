@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
+use FOSSBilling\Exception\BaseException as Exception;
+use FOSSBilling\Exception\InformationException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Contracts\Cache\ItemInterface;

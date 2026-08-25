@@ -8,13 +8,13 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Session\Session as SymfonySession;
 use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 
-function createSession(?SymfonySession $httpSession = null): FOSSBilling\Session
+function createSession(?SymfonySession $httpSession = null): FOSSBilling\Security\Session
 {
-    return new FOSSBilling\Session($httpSession ?? new SymfonySession(new MockArraySessionStorage('PHPSESSID')));
+    return new FOSSBilling\Security\Session($httpSession ?? new SymfonySession(new MockArraySessionStorage('PHPSESSID')));
 }
 
 /**
- * @return array{FOSSBilling\Session, Pimple\Container}
+ * @return array{FOSSBilling\Security\Session, Pimple\Container}
  */
 function createDatabaseSession(Connection $connection): array
 {
@@ -101,7 +101,7 @@ test('session validation tolerates a database lookup failure', function (): void
 test('session validation initializes a missing creation time', function (): void {
     $connection = Mockery::mock(Connection::class);
     [$session, $di] = createDatabaseSession($connection);
-    $fingerprint = json_encode((new FOSSBilling\Fingerprint($di['request']))->fingerprint(), JSON_THROW_ON_ERROR);
+    $fingerprint = json_encode((new FOSSBilling\Security\Fingerprint($di['request']))->fingerprint(), JSON_THROW_ON_ERROR);
 
     $connection->shouldReceive('fetchAssociative')
         ->once()
@@ -138,7 +138,7 @@ test('session validation tolerates a creation time update failure', function ():
 test('session validation deletes an expired session', function (): void {
     $connection = Mockery::mock(Connection::class);
     [$session, $di] = createDatabaseSession($connection);
-    $fingerprint = json_encode((new FOSSBilling\Fingerprint($di['request']))->fingerprint(), JSON_THROW_ON_ERROR);
+    $fingerprint = json_encode((new FOSSBilling\Security\Fingerprint($di['request']))->fingerprint(), JSON_THROW_ON_ERROR);
 
     $connection->shouldReceive('fetchAssociative')
         ->once()
@@ -238,8 +238,8 @@ test('fingerprint update tolerates a database failure', function (): void {
 });
 
 test('disabled fingerprinting skips validation and stores an empty fingerprint', function (): void {
-    $previousSetting = FOSSBilling\Config::getProperty('security.perform_session_fingerprinting', true);
-    FOSSBilling\Config::setProperty('security.perform_session_fingerprinting', false, false);
+    $previousSetting = FOSSBilling\System\Config::getProperty('security.perform_session_fingerprinting', true);
+    FOSSBilling\System\Config::setProperty('security.perform_session_fingerprinting', false, false);
 
     try {
         $connection = Mockery::mock(Connection::class);
@@ -272,7 +272,7 @@ test('disabled fingerprinting skips validation and stores an empty fingerprint',
         invokePrivate($session, 'canUseSession');
         invokePrivate($session, 'updateFingerprint');
     } finally {
-        FOSSBilling\Config::setProperty('security.perform_session_fingerprinting', $previousSetting, false);
+        FOSSBilling\System\Config::setProperty('security.perform_session_fingerprinting', $previousSetting, false);
     }
 });
 
@@ -344,7 +344,7 @@ test('destroying an admin login preserves the client login', function (): void {
 test('destroying a client login regenerates the session with the configured grace period, not zero', function (): void {
     $httpSession = new SymfonySession(new MockArraySessionStorage('PHPSESSID'));
 
-    $session = Mockery::mock(FOSSBilling\Session::class, [$httpSession])->makePartial();
+    $session = Mockery::mock(FOSSBilling\Security\Session::class, [$httpSession])->makePartial();
     $session->shouldReceive('regenerateId')->withNoArgs()->once();
 
     $session->set('client', ['id' => 2]);
@@ -356,7 +356,7 @@ test('destroying a client login regenerates the session with the configured grac
 test('destroying an admin login regenerates the session with the configured grace period, not zero', function (): void {
     $httpSession = new SymfonySession(new MockArraySessionStorage('PHPSESSID'));
 
-    $session = Mockery::mock(FOSSBilling\Session::class, [$httpSession])->makePartial();
+    $session = Mockery::mock(FOSSBilling\Security\Session::class, [$httpSession])->makePartial();
     $session->shouldReceive('regenerateId')->withNoArgs()->once();
 
     $session->set('admin', ['id' => 1]);

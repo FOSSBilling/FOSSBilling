@@ -95,7 +95,7 @@ test('unknown policy throws exception', function (): void {
     $limiter = createRateLimiter(requestIp: '1.1.1.1');
 
     expect(fn (): RateLimitResult => $limiter->consume('unknown_policy', 'subject'))
-        ->toThrow(FOSSBilling\Exception::class, 'Rate limiter policy unknown_policy is not defined or invalid');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Rate limiter policy unknown_policy is not defined or invalid');
 });
 
 test('CIDR whitelist bypasses limiter', function (): void {

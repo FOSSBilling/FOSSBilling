@@ -92,7 +92,7 @@ test('throws exception for invalid order data action', function (): void {
     ];
 
     expect(fn () => $service->validateOrderData($data))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception\BaseException::class);
 });
 
 test('throws exception for transfer order data with invalid tld', function (array $data, array $isSldValidArr, array $tldFindOneByTldArr, array $canBeTransferred): void {
@@ -117,7 +117,7 @@ test('throws exception for transfer order data with invalid tld', function (arra
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->validateOrderData($data))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception\BaseException::class);
 })->with(function () {
     $tldModel = new Tld();
     $tldModel->setTld('.com');
@@ -175,7 +175,7 @@ test('throws exception when a tld requires a transfer code and none is provided'
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->validateOrderData($data))
-        ->toThrow(FOSSBilling\InformationException::class, 'A transfer code (EPP/auth code) is required to transfer example.com');
+        ->toThrow(FOSSBilling\Exception\InformationException::class, 'A transfer code (EPP/auth code) is required to transfer example.com');
 })->with([
     'missing entirely' => [null],
     'blank string' => [''],
@@ -239,7 +239,7 @@ test('throws exception for register order data with invalid tld', function (arra
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->validateOrderData($data))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception\BaseException::class);
 })->with(function () {
     $tldModel = new Tld();
     $tldModel->setTld('.com');
@@ -309,7 +309,7 @@ test('rejects a registration period outside the tld allowed periods list', funct
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->validateOrderData($data))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception\BaseException::class);
 });
 
 test('accepts a registration period within the tld allowed periods list', function (): void {
@@ -367,7 +367,7 @@ test('rejects a crafted order for an inactive tld before contacting the registra
         : ['action' => 'transfer', 'transfer_sld' => 'example', 'transfer_tld' => '.com'];
 
     expect(fn () => $service->validateOrderData($data))
-        ->toThrow(FOSSBilling\InformationException::class, 'TLD is not active');
+        ->toThrow(FOSSBilling\Exception\InformationException::class, 'TLD is not active');
 })->with(['register', 'transfer']);
 
 test('creates action', function (int|string $registerYears): void {
@@ -487,7 +487,7 @@ test('throws exception when creating action with missing nameservers', function 
     $order = createEntity(Order::class, ['client_id' => 1]);
 
     expect(fn () => $serviceMock->action_create($order))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception\BaseException::class);
 });
 
 test('activates action', function (string $action, string $registerDomainCalled, string $transferDomainCalled): void {
@@ -542,7 +542,7 @@ test('throws exception when activating without order service', function (): void
     $order = createEntity(Order::class, ['client_id' => 1]);
 
     expect(fn (): ServiceDomain => $service->action_activate($order))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception\BaseException::class);
 });
 
 test('renews action', function (): void {
@@ -591,7 +591,7 @@ test('throws exception when renewing without order service', function (): void {
     $order = createEntity(Order::class, ['id' => 1, 'client_id' => 1]);
 
     expect(fn (): bool => $service->action_renew($order))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception\BaseException::class);
 });
 
 test('suspends action', function (): void {
@@ -653,7 +653,7 @@ test('throws exception when canceling without order service', function (): void 
     $order = createEntity(Order::class, ['id' => 1, 'client_id' => 1]);
 
     expect(fn (): bool => $service->action_cancel($order))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception\BaseException::class);
 });
 
 test('uncancels action', function (): void {
@@ -733,7 +733,7 @@ test('throws exception when updating nameservers with missing ns1 or ns2', funct
     $serviceDomainModel = new ServiceDomain();
 
     expect(fn (): bool => $service->updateNameservers($serviceDomainModel, $data))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception\BaseException::class);
 })->with([
     [['ns2' => 'ns2.example.com']],
     [['ns1' => 'ns1.example.com']],
@@ -918,7 +918,7 @@ test('checks if domain can be transferred', function (): void {
 test('throws exception when checking transfer with empty sld', function (): void {
     $service = new Service();
     expect(fn () => $service->canBeTransferred(new Tld(), ''))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception\BaseException::class);
 });
 
 test('throws exception when checking transfer not allowed', function (): void {
@@ -927,7 +927,7 @@ test('throws exception when checking transfer not allowed', function (): void {
     $tldModel->setAllowTransfer(false);
 
     expect(fn () => $service->canBeTransferred($tldModel, 'example'))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception\BaseException::class);
 });
 
 test('throws registrar not found when checking transfer without registrar', function (): void {
@@ -937,7 +937,7 @@ test('throws registrar not found when checking transfer without registrar', func
     $tldModel->setTld('.com');
 
     expect(fn () => $service->canBeTransferred($tldModel, 'example'))
-        ->toThrow(FOSSBilling\Exception::class, 'Registrar not found');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Registrar not found');
 });
 
 test('checks if domain is available', function (): void {
@@ -980,7 +980,7 @@ test('throws exception when checking availability with empty sld', function (): 
     $tldModel = new Tld();
 
     expect(fn () => $service->isDomainAvailable($tldModel, ''))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception\BaseException::class);
 });
 
 test('throws exception when checking availability with invalid sld', function (): void {
@@ -997,7 +997,7 @@ test('throws exception when checking availability with invalid sld', function ()
     $tldModel = new Tld();
 
     expect(fn () => $service->isDomainAvailable($tldModel, 'example'))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception\BaseException::class);
 });
 
 test('throws exception when checking availability not allowed to register', function (): void {
@@ -1015,7 +1015,7 @@ test('throws exception when checking availability not allowed to register', func
     $model->setAllowRegister(false);
 
     expect(fn () => $service->isDomainAvailable($model, 'example'))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception\BaseException::class);
 });
 
 test('syncs expiration date from the registrar', function (): void {
@@ -1143,7 +1143,7 @@ test('throws when synchronizing a domain without an order', function (): void {
     $service->setDi($di);
 
     expect(fn () => $service->synchronizeDomain($model))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception\BaseException::class);
 });
 
 test('converts to api array', function (?Box\Mod\Staff\Entity\Admin $identity, string $dbLoadCalled): void {
@@ -1673,7 +1673,7 @@ test('rejects invalid tlds', function (string $input): void {
     $service = new Service();
 
     expect(fn (): string => $service->normalizeTld($input))
-        ->toThrow(FOSSBilling\InformationException::class, 'TLD is invalid');
+        ->toThrow(FOSSBilling\Exception\InformationException::class, 'TLD is invalid');
 })->with([
     'empty' => '',
     'only dots' => '..',
@@ -1803,7 +1803,7 @@ test('throws exception when getting registrar adapter config for non-existing re
     $model->setRegistrar('NonExisting');
 
     expect(fn () => $service->registrarGetRegistrarAdapterConfig($model))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Exception\BaseException::class);
 });
 
 test('gets registrar adapter', function (): void {
@@ -1833,7 +1833,7 @@ test('validates required registrar fields even when the adapter constructor does
     $model->setTestMode(false);
 
     expect(fn () => $service->registrarValidateConfiguration($model))
-        ->toThrow(FOSSBilling\InformationException::class, 'missing required configuration');
+        ->toThrow(FOSSBilling\Exception\InformationException::class, 'missing required configuration');
 });
 
 test('validates conditional registrar fields using boolean snake case accessors', function (): void {
@@ -1852,7 +1852,7 @@ test('validates conditional registrar fields using boolean snake case accessors'
     $model->setTestMode(true);
 
     expect(fn () => $service->registrarValidateConfiguration($model))
-        ->toThrow(FOSSBilling\InformationException::class, 'missing required configuration');
+        ->toThrow(FOSSBilling\Exception\InformationException::class, 'missing required configuration');
 });
 
 test('throws exception when getting registrar adapter for non-existing registrar', function (): void {
@@ -1917,7 +1917,7 @@ test('throws exception when removing registrar with domains', function (): void 
     $service->setDi($di);
 
     expect(fn (): bool => $service->registrarRm($model))
-        ->toThrow(FOSSBilling\InformationException::class, 'Registrar is used by 1 domains');
+        ->toThrow(FOSSBilling\Exception\InformationException::class, 'Registrar is used by 1 domains');
 });
 
 test('converts registrar to api array', function (): void {
@@ -2211,7 +2211,7 @@ test('rejects invalid tld pricing and minimum periods', function (array $data): 
         'price_renew' => 1,
         'price_transfer' => 1,
         'min_years' => 1,
-    ], $data)))->toThrow(FOSSBilling\InformationException::class);
+    ], $data)))->toThrow(FOSSBilling\Exception\InformationException::class);
 })->with([
     'negative registration price' => [['price_registration' => -1]],
     'non-numeric renewal price' => [['price_renew' => 'free']],

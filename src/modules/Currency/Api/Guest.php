@@ -12,7 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Currency\Api;
 
 use Box\Mod\Currency\Entity\Currency;
-use FOSSBilling\i18n;
+use FOSSBilling\I18n\I18n;
 use FOSSBilling\Tools;
 
 class Guest extends \FOSSBilling\Api\AbstractApi
@@ -43,7 +43,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         }
 
         if (!$model instanceof Currency) {
-            throw new \FOSSBilling\Exception('Currency not found.');
+            throw new \FOSSBilling\Exception\BaseException('Currency not found.');
         }
 
         return $model->toApiArray();
@@ -73,7 +73,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         }
 
         $di = $this->getDi();
-        $locale = i18n::getActiveLocale($di['request'], true, $di['cookie_queue']);
+        $locale = I18n::getActiveLocale($di['request'], true, $di['cookie_queue']);
 
         if ($withoutCurrency) {
             return $this->getService()->formatNumber($p, $c['code'], locale: $locale);

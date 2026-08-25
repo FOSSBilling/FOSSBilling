@@ -49,12 +49,12 @@ test('getList returns array', function (): void {
     ->once()
     ->andReturn($repository);
 
-    $pagerMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
+    $pagerMock = Mockery::mock(FOSSBilling\Pagination\Service::class)->makePartial();
 
     $pagerMock
     ->shouldReceive('paginateDoctrineQuery')
     ->once()
-    ->with($queryBuilder, Mockery::type(FOSSBilling\PaginationOptions::class), Mockery::type(Box\Mod\Staff\Entity\Admin::class))
+    ->with($queryBuilder, Mockery::type(FOSSBilling\Pagination\Options::class), Mockery::type(Box\Mod\Staff\Entity\Admin::class))
     ->andReturn($simpleResultArr);
 
     $di = container();
@@ -112,7 +112,7 @@ test('login returns array', function (): void {
     $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
     $serviceMock->shouldReceive('toSessionArray')->atLeast()->once()->andReturn($sessionArray);
 
-    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
+    $sessionMock = Mockery::mock(FOSSBilling\Security\Session::class);
     $sessionMock->shouldReceive('set')->atLeast()->once();
 
     $di = container();
@@ -180,7 +180,7 @@ test('create throws exception when email is already registered', function (): vo
     $adminClient->setService($serviceMock);
 
     $adminClient->create($data);
-})->throws(FOSSBilling\Exception::class, 'This email address is already registered.');
+})->throws(FOSSBilling\Exception\BaseException::class, 'This email address is already registered.');
 
 test('delete returns true', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
@@ -327,7 +327,7 @@ test('update rejects a non-integer client_group_id alias', function (): void {
     $adminClient->setDi($di);
 
     expect(fn () => $adminClient->update(['id' => 1, 'client_group_id' => 'invalid']))
-        ->toThrow(FOSSBilling\InformationException::class, 'Invalid client group ID');
+        ->toThrow(FOSSBilling\Exception\InformationException::class, 'Invalid client group ID');
 });
 
 test('update throws exception when email is already registered', function (): void {
@@ -392,7 +392,7 @@ test('update throws exception when email is already registered', function (): vo
     $adminClient->setDi($di);
 
     $adminClient->update($data);
-})->throws(FOSSBilling\Exception::class, 'This email address is already registered.');
+})->throws(FOSSBilling\Exception\BaseException::class, 'This email address is already registered.');
 
 test('update throws exception when id is not passed', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
@@ -408,7 +408,7 @@ test('update throws exception when id is not passed', function (): void {
     $validator->checkRequiredParamsForArray(['id' => 'Client ID was not passed'], $data);
 
     $adminClient->update($data);
-})->throws(FOSSBilling\Exception::class, 'Client ID was not passed');
+})->throws(FOSSBilling\Exception\BaseException::class, 'Client ID was not passed');
 
 test('changePassword returns true', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
@@ -421,7 +421,7 @@ test('changePassword returns true', function (): void {
     $eventMock = Mockery::mock('\Box_EventManager');
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
-    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\Security\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')->atLeast()->once()->with($data['password']);
 
     $profileService = Mockery::mock(Box\Mod\Profile\Service::class);
@@ -457,7 +457,7 @@ test('changePassword throws exception when passwords do not match', function ():
     $adminClient->setDi($di);
 
     $adminClient->change_password($data);
-})->throws(FOSSBilling\Exception::class, 'Passwords do not match');
+})->throws(FOSSBilling\Exception\BaseException::class, 'Passwords do not match');
 
 test('balanceGetList returns array', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
@@ -481,7 +481,7 @@ test('balanceGetList returns array', function (): void {
     ->atLeast()->once()
     ->andReturn(['String', []]);
 
-    $pagerMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
+    $pagerMock = Mockery::mock(FOSSBilling\Pagination\Service::class)->makePartial();
 
     $pagerMock
     ->shouldReceive('getPaginatedResultSet')
@@ -572,7 +572,7 @@ test('loginHistoryGetList returns array', function (): void {
     ->atLeast()->once()
     ->andReturn(['String', []]);
 
-    $pagerMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
+    $pagerMock = Mockery::mock(FOSSBilling\Pagination\Service::class)->makePartial();
 
     $pagerMock
     ->shouldReceive('getPaginatedResultSet')
@@ -716,13 +716,13 @@ test('export_csv requires both view and export permissions', function (): void {
     $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
         ->once()
         ->with('client', 'view', null, Mockery::any())
-        ->andThrow(new FOSSBilling\InformationException('You need the "client.view" permission to perform this action', [], 403));
+        ->andThrow(new FOSSBilling\Exception\InformationException('You need the "client.view" permission to perform this action', [], 403));
 
     $adminClient->setDi($di);
     $adminClient->setService($serviceMock);
 
     expect(fn () => $adminClient->export_csv(['headers' => ['id']]))
-        ->toThrow(FOSSBilling\InformationException::class);
+        ->toThrow(FOSSBilling\Exception\InformationException::class);
 });
 
 test('export_csv delegates to service when permissions granted', function (): void {

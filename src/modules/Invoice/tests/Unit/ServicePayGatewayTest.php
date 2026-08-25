@@ -114,7 +114,7 @@ test('throws exception when installing unavailable gateway', function (): void {
     $serviceMock->setDi($service->getDi());
 
     expect(fn () => $serviceMock->install($code))
-        ->toThrow(FOSSBilling\Exception::class, 'Payment gateway is not available for installation.');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Payment gateway is not available for installation.');
 });
 
 test('converts to api array', function (): void {
@@ -420,7 +420,7 @@ test('throws exception when payment gateway adapter class is missing', function 
     $serviceMock->setDi($service->getDi());
 
     expect(fn () => $serviceMock->getPaymentAdapter($payGateway, $invoiceModel))
-        ->toThrow(FOSSBilling\Exception::class, 'Payment gateway  was not found.');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Payment gateway  was not found.');
 });
 
 test('gets adapter config', function (): void {
@@ -482,7 +482,7 @@ test('throws exception when adapter class does not exist', function (): void {
     $serviceMock->setDi($service->getDi());
 
     expect(fn () => $serviceMock->getAdapterConfig($payGateway))
-        ->toThrow(FOSSBilling\Exception::class, sprintf('Payment gateway %s was not found', $payGateway->getGateway()));
+        ->toThrow(FOSSBilling\Exception\BaseException::class, sprintf('Payment gateway %s was not found', $payGateway->getGateway()));
 });
 
 test('throws exception when adapter does not exist', function (): void {
@@ -502,7 +502,7 @@ test('throws exception when adapter does not exist', function (): void {
     $serviceMock->setDi($service->getDi());
 
     expect(fn () => $serviceMock->getAdapterConfig($payGateway))
-        ->toThrow(FOSSBilling\Exception::class, sprintf('Payment gateway %s was not found', $payGateway->getGateway()));
+        ->toThrow(FOSSBilling\Exception\BaseException::class, sprintf('Payment gateway %s was not found', $payGateway->getGateway()));
 });
 
 test('gets adapter class name', function (): void {

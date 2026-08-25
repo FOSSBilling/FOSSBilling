@@ -10,7 +10,7 @@
 
 declare(strict_types=1);
 
-use FOSSBilling\PasswordManager;
+use FOSSBilling\Security\PasswordManager;
 
 test('set algo', function (): void {
     $boxPassword = new PasswordManager();

@@ -12,7 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\News\Api;
 
 use Box\Mod\News\Entity\Post;
-use FOSSBilling\PaginationOptions;
+use FOSSBilling\Pagination\Options;
 
 class Guest extends \FOSSBilling\Api\AbstractApi
 {
@@ -33,7 +33,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         // Repository method returns a QueryBuilder with filters applied
         $qb = $repo->getSearchQueryBuilder($data);
 
-        return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
+        return $this->getDi()['pager']->paginateDoctrineQuery($qb, Options::fromArray($data));
     }
 
     /**
@@ -41,7 +41,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      *
      * @param array $data ['id' => int|null, 'slug' => string|null]
      *
-     * @throws \FOSSBilling\InformationException if ID/slug is missing or news item not found
+     * @throws \FOSSBilling\Exception\InformationException if ID/slug is missing or news item not found
      */
     public function get(array $data): array
     {
@@ -49,7 +49,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $slug = $data['slug'] ?? null;
 
         if (!$id && !$slug) {
-            throw new \FOSSBilling\InformationException('ID or slug is required.');
+            throw new \FOSSBilling\Exception\InformationException('ID or slug is required.');
         }
 
         /** @var \Box\Mod\News\Repository\PostRepository $repo */
@@ -63,7 +63,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         }
 
         if (!$post || $post->getStatus() !== Post::STATUS_ACTIVE) {
-            throw new \FOSSBilling\InformationException('News item not found.');
+            throw new \FOSSBilling\Exception\InformationException('News item not found.');
         }
 
         /**@todo Doctrine: Replace with actual Admin entity once it's migrated to Doctrine. */

@@ -17,7 +17,7 @@ namespace Box\Mod\Profile\Api;
 
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Staff\Entity\Admin as AdminEntity;
-use FOSSBilling\InformationException;
+use FOSSBilling\Exception\InformationException;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Admin extends \FOSSBilling\Api\AbstractApi
@@ -69,7 +69,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     public function update($data)
     {
@@ -95,7 +95,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     #[RequiredParams([
         'current_password' => 'Current password is required',

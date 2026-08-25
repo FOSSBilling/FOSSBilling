@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Security;
 
-use FOSSBilling\Environment;
+use FOSSBilling\System\Environment;
 
 class RandomizedTimeFloor
 {

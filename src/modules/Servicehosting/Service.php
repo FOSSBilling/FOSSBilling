@@ -20,9 +20,9 @@ use Box\Mod\Servicehosting\Entity\ServiceHostingServer;
 use Box\Mod\Servicehosting\Repository\ServiceHostingHpRepository;
 use Box\Mod\Servicehosting\Repository\ServiceHostingRepository;
 use Box\Mod\Servicehosting\Repository\ServiceHostingServerRepository;
-use FOSSBilling\Exception;
-use FOSSBilling\InformationException;
-use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Exception\BaseException;
+use FOSSBilling\Exception\InformationException;
+use FOSSBilling\Interfaces\InjectionAwareInterface;
 use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -206,7 +206,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @throws Exception
+     * @throws BaseException
      */
     public function action_activate(Order $order): array
     {
@@ -269,7 +269,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @throws Exception
+     * @throws BaseException
      *
      * @todo
      */
@@ -282,7 +282,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @throws Exception
+     * @throws BaseException
      */
     public function action_suspend(Order $order, ?string $reason = null): bool
     {
@@ -297,7 +297,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @throws Exception
+     * @throws BaseException
      */
     public function action_unsuspend(Order $order): bool
     {
@@ -311,7 +311,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @throws Exception
+     * @throws BaseException
      */
     public function action_cancel(Order $order): bool
     {
@@ -325,7 +325,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @throws Exception
+     * @throws BaseException
      */
     public function action_uncancel(Order $order): bool
     {
@@ -529,7 +529,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @throws Exception
+     * @throws BaseException
      */
     private function _getServerManagerForOrder(ServiceHosting $model)
     {
@@ -546,7 +546,7 @@ class Service implements InjectionAwareInterface
 
         $server = $this->getExistingServer((int) $model->getServiceHostingServer()?->getId(), 'Server not found');
         $client = $this->di['em']->getRepository(Client::class)->find($model->getClientId())
-            ?? throw new Exception('Client not found');
+            ?? throw new BaseException('Client not found');
 
         $server_client = new \Server_Client();
         $server_client
@@ -988,7 +988,7 @@ class Service implements InjectionAwareInterface
     public function createServer($name, $ip, $manager, $data): ?int
     {
         if (!in_array($manager, $this->_getServerManagers(), true)) {
-            throw new Exception('Server manager :manager is not a valid server manager', [':manager' => $manager]);
+            throw new BaseException('Server manager :manager is not a valid server manager', [':manager' => $manager]);
         }
 
         $model = new ServiceHostingServer();
@@ -1060,7 +1060,7 @@ class Service implements InjectionAwareInterface
         $model->setNs4($data['ns4'] ?? $model->getNs4());
         if (isset($data['manager'])) {
             if (!in_array($data['manager'], $this->_getServerManagers(), true)) {
-                throw new Exception('Server manager :manager is not a valid server manager', [':manager' => $data['manager']]);
+                throw new BaseException('Server manager :manager is not a valid server manager', [':manager' => $data['manager']]);
             }
             $model->setManager($data['manager']);
         }
@@ -1107,12 +1107,12 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @throws Exception
+     * @throws BaseException
      */
     public function getServerManager(ServiceHostingServer $model)
     {
         if (empty($model->getManager())) {
-            throw new Exception('Invalid server manager. Server was not configured properly.', null, 654);
+            throw new BaseException('Invalid server manager. Server was not configured properly.', null, 654);
         }
 
         $config = [];
@@ -1130,7 +1130,7 @@ class Service implements InjectionAwareInterface
         $manager = $this->di['server_manager']($model->getManager(), $config);
 
         if (!$manager instanceof \Server_Manager) {
-            throw new Exception('Server manager :adapter is invalid.', [':adapter' => $model->getManager()]);
+            throw new BaseException('Server manager :adapter is invalid.', [':adapter' => $model->getManager()]);
         }
 
         return $manager;
@@ -1138,7 +1138,7 @@ class Service implements InjectionAwareInterface
 
     /**
      * @throws \Server_Exception
-     * @throws Exception
+     * @throws BaseException
      */
     public function testConnection(ServiceHostingServer $model)
     {
@@ -1334,7 +1334,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @throws Exception
+     * @throws BaseException
      */
     public function getServerManagerWithLog(ServiceHostingServer $model, Order $order)
     {
@@ -1480,7 +1480,7 @@ class Service implements InjectionAwareInterface
         $table = $this->di['mod_service']('product');
         $d = $table->getMainDomainProduct();
         if (!$d instanceof Product) {
-            throw new Exception('Could not find main domain product');
+            throw new BaseException('Could not find main domain product');
         }
 
         return ['product' => $d, 'config' => $dc];
@@ -1555,7 +1555,7 @@ class Service implements InjectionAwareInterface
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
         if (!$model instanceof ServiceHosting) {
-            throw new Exception('Order :id has no active service', [':id' => $order->getId()]);
+            throw new BaseException('Order :id has no active service', [':id' => $order->getId()]);
         }
 
         return $model;
@@ -1565,7 +1565,7 @@ class Service implements InjectionAwareInterface
     {
         $server = $this->getServiceHostingServerRepository()->find($id);
         if (!$server instanceof ServiceHostingServer) {
-            throw new Exception($message);
+            throw new BaseException($message);
         }
 
         return $server;
@@ -1575,7 +1575,7 @@ class Service implements InjectionAwareInterface
     {
         $hp = $this->getServiceHostingHpRepository()->find($id);
         if (!$hp instanceof ServiceHostingHp) {
-            throw new Exception($message);
+            throw new BaseException($message);
         }
 
         return $hp;

@@ -9,11 +9,11 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-use FOSSBilling\Config;
-use FOSSBilling\Environment;
 use FOSSBilling\Http\ExceptionResponseFactory;
 use FOSSBilling\Http\RequestFactory;
 use FOSSBilling\SentryHelper;
+use FOSSBilling\System\Config;
+use FOSSBilling\System\Environment;
 use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -170,7 +170,7 @@ function exceptionHandler(Exception|Error $e): void
 }
 
 /*
- * Refuse to serve this request while FOSSBilling\Update::performUpdate() is
+ * Refuse to serve this request while FOSSBilling\Update\Updater::performUpdate() is
  * actively writing files to PATH_ROOT.
  *
  * This intentionally runs before the Composer autoloader is loaded, and
@@ -255,9 +255,9 @@ function preInit(): void
     define('PATH_CONFIG', Path::join(PATH_ROOT, 'config.php'));
 
     // Load required FOSSBilling libraries.
-    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'ErrorPage.php');
+    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'ErrorPage.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'SentryHelper.php');
-    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Environment.php');
+    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'System', 'Environment.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'ApiResponseFactory.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'ExceptionResponseFactory.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'RequestFactory.php');
@@ -265,7 +265,7 @@ function preInit(): void
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'RouteDefinition.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'RouteMatch.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'RouteMatcher.php');
-    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Config.php');
+    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'System', 'Config.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Tools.php');
 }
 

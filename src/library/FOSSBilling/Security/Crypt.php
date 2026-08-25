@@ -9,8 +9,11 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling;
+namespace FOSSBilling\Security;
 
+use FOSSBilling\Exception\BaseException as Exception;
+use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\System\Config;
 use Pimple\Container;
 
 class Crypt implements InjectionAwareInterface

@@ -24,7 +24,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      *
      * @return array
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     #[RequiredParams(['product_id' => 'Product ID is missing'])]
     public function free_tlds($data = [])
@@ -35,7 +35,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         if (!$product instanceof Product || $product->getType() !== \Box\Mod\Product\Service::HOSTING) {
             $friendlyName = ucfirst(__trans('Product type'));
 
-            throw new \FOSSBilling\Exception(':friendlyName: is invalid', [':friendlyName:' => $friendlyName]);
+            throw new \FOSSBilling\Exception\BaseException(':friendlyName: is invalid', [':friendlyName:' => $friendlyName]);
         }
 
         return $this->getService()->getFreeTlds($product);

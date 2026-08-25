@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use FOSSBilling\Fingerprint;
+use FOSSBilling\Security\Fingerprint;
 use Symfony\Component\HttpFoundation\Request;
 
 function createFingerprint(array $properties): Fingerprint

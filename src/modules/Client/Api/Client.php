@@ -17,8 +17,8 @@ namespace Box\Mod\Client\Api;
 
 use Box\Mod\Client\Entity\Client as ClientEntity;
 use Box\Mod\Client\Entity\ClientBalance;
-use FOSSBilling\InformationException;
-use FOSSBilling\PaginationOptions;
+use FOSSBilling\Exception\InformationException;
+use FOSSBilling\Pagination\Options;
 
 class Client extends \FOSSBilling\Api\AbstractApi
 {
@@ -35,7 +35,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
 
         return $this->getDi()['pager']->paginateMappedQuery(
             $service->getSearchQueryBuilder($data),
-            PaginationOptions::fromArray($data),
+            Options::fromArray($data),
             fn (ClientBalance $balance): array => $service->toApiArray($balance, $client),
         );
     }

@@ -10,7 +10,7 @@
 
 declare(strict_types=1);
 
-use FOSSBilling\InformationException;
+use FOSSBilling\Exception\InformationException;
 use FOSSBilling\Validation\PriceValidator;
 
 dataset('validAmounts', fn (): array => [

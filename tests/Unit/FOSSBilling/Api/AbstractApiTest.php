@@ -41,7 +41,7 @@ test('stores and returns the module service', function (): void {
 
 test('requires a module service before it is read', function (): void {
     expect(fn (): object => (new ConcreteApi())->getService())
-        ->toThrow(FOSSBilling\Exception::class, 'Service object is not set for the API');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Service object is not set for the API');
 });
 
 test('checkPermissions forwards identity to Staff service', function (): void {

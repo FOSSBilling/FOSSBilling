@@ -9,8 +9,14 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling;
+namespace FOSSBilling\Update;
 
+use FOSSBilling\Exception\BaseException;
+use FOSSBilling\Exception\InformationException;
+use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\System\Config;
+use FOSSBilling\System\Environment;
+use FOSSBilling\System\Version;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -25,7 +31,7 @@ use Symfony\Component\Filesystem\Path;
  * how updates from old versions and manual file uploads are forced to go through
  * finalization even though they could not create pending state before files changed.
  */
-class UpdateFinalization implements InjectionAwareInterface
+class Finalization implements InjectionAwareInterface
 {
     public const string STATE_FILENAME = 'update-finalization.json';
     private const string FINALIZATION_LOCK_FILENAME = 'update-finalization.lock';
@@ -192,7 +198,7 @@ class UpdateFinalization implements InjectionAwareInterface
         } catch (IOException $e) {
             $this->logUpdateError($e->getMessage());
 
-            throw new Exception('Unable to clear cache and/or remove install folder while finalizing the update. Further details are available in the error log.');
+            throw new BaseException('Unable to clear cache and/or remove install folder while finalizing the update. Further details are available in the error log.');
         }
 
         if ($state !== null) {
@@ -209,13 +215,13 @@ class UpdateFinalization implements InjectionAwareInterface
         $this->filesystem->mkdir(PATH_DATA, 0o755);
         $handle = fopen(Path::join(PATH_DATA, self::FINALIZATION_LOCK_FILENAME), 'c');
         if ($handle === false) {
-            throw new Exception('Unable to acquire the update finalization lock.');
+            throw new BaseException('Unable to acquire the update finalization lock.');
         }
 
         if (!flock($handle, LOCK_EX)) {
             fclose($handle);
 
-            throw new Exception('Unable to acquire the update finalization lock.');
+            throw new BaseException('Unable to acquire the update finalization lock.');
         }
 
         try {
@@ -367,9 +373,9 @@ class UpdateFinalization implements InjectionAwareInterface
         }
     }
 
-    private function createPatcher(): UpdatePatcher
+    private function createPatcher(): Patcher
     {
-        $patcher = new UpdatePatcher();
+        $patcher = new Patcher();
         if ($this->di instanceof \Pimple\Container) {
             $patcher->setDi($this->di);
         }

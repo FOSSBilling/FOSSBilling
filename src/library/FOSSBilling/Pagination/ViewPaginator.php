@@ -9,16 +9,16 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling;
+namespace FOSSBilling\Pagination;
 
 /**
  * Calculates pagination metadata for rendering page navigation controls.
  *
  * Produces a compact page range (e.g., 1 2 3 ... 7 8 9) given a total
  * item count, current page, and items per page. Does not perform any
- * database queries — use the `Pagination` class for data retrieval.
+ * database queries — use the `Service` class for data retrieval.
  */
-class Paginator
+class ViewPaginator
 {
     /**
      * @param int $itemsCount  total number of items across all pages

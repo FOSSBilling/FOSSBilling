@@ -33,7 +33,7 @@ class ClientBalanceRepository extends EntityRepository
         $connection = $this->getEntityManager()->getConnection();
 
         if (!$connection->isTransactionActive()) {
-            throw new \FOSSBilling\Exception('Client balance cannot be locked outside of a transaction.');
+            throw new \FOSSBilling\Exception\BaseException('Client balance cannot be locked outside of a transaction.');
         }
 
         // The balance sums insert-only rows, so a concurrent deduction inserts rather than updates

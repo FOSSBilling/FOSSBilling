@@ -94,28 +94,28 @@ test('rejects inactive modules before resolving the API class', function (): voi
     $dispatcher = createApiDispatcher(createApiDispatcherDi(extensionActive: false));
 
     expect(fn (): mixed => $dispatcher->dispatch(new FOSSBilling\Identity\Guest(), 'system_period_title', ['code' => '1M']))
-        ->toThrow(FOSSBilling\Exception::class, 'FOSSBilling module system is not installed/activated');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'FOSSBilling module system is not installed/activated');
 });
 
 test('reports missing API classes as missing API calls', function (): void {
     $dispatcher = createApiDispatcher(createApiDispatcherDi(moduleHasService: false));
 
     expect(fn (): mixed => $dispatcher->dispatch(new FOSSBilling\Identity\Guest(), 'missingmodule_get', []))
-        ->toThrow(FOSSBilling\Exception::class, 'Guest API call get does not exist in module missingmodule');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Guest API call get does not exist in module missingmodule');
 });
 
 test('reports missing API methods unless the API class implements __call', function (): void {
     $dispatcher = createApiDispatcher(createApiDispatcherDi());
 
     expect(fn (): mixed => $dispatcher->dispatch(new FOSSBilling\Identity\Guest(), 'system_missing_method', []))
-        ->toThrow(FOSSBilling\Exception::class, 'Guest API call missing_method does not exist in module system');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Guest API call missing_method does not exist in module system');
 });
 
 test('validates required API parameters before dispatching', function (): void {
     $dispatcher = createApiDispatcher(createApiDispatcherDi());
 
     expect(fn (): mixed => $dispatcher->dispatch(new FOSSBilling\Identity\Guest(), 'system_param', []))
-        ->toThrow(FOSSBilling\InformationException::class, '"key" parameter was not passed');
+        ->toThrow(FOSSBilling\Exception\InformationException::class, '"key" parameter was not passed');
 });
 
 test('dispatches positional arguments for in-process API calls', function (): void {

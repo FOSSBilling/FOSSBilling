@@ -15,7 +15,7 @@ use Box\Mod\Client\Entity\Client;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\Tax;
 use Box\Mod\Invoice\Repository\TaxRepository;
-use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Interfaces\InjectionAwareInterface;
 
 class ServiceTax implements InjectionAwareInterface
 {

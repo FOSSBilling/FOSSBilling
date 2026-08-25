@@ -12,7 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Stats;
 
 use Box\Mod\Invoice\Entity\Invoice;
-use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Interfaces\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
@@ -339,7 +339,7 @@ class Service implements InjectionAwareInterface
     {
         $allowedTables = ['client_order', 'client', 'invoice', 'support_ticket'];
         if (!in_array($table, $allowedTables, true)) {
-            throw new \FOSSBilling\Exception('Invalid table name: :table', [':table' => $table]);
+            throw new \FOSSBilling\Exception\BaseException('Invalid table name: :table', [':table' => $table]);
         }
         $time_from = strtotime('-1 month');
         $time_to = strtotime('+1 day');

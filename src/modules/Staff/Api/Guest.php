@@ -27,7 +27,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      *
      * @return array
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Exception\BaseException
      */
     #[RequiredParams(['email' => 'Email required', 'password' => 'Password required'])]
     public function login($data)
@@ -44,7 +44,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
                 $allowed_ips = explode(PHP_EOL, (string) $config['allowed_ips']);
                 $allowed_ips = array_map(trim(...), $allowed_ips);
                 if (!in_array($this->getIp(), $allowed_ips)) {
-                    throw new \FOSSBilling\InformationException('You are not allowed to login to admin area from this IP address.', null, 403);
+                    throw new \FOSSBilling\Exception\InformationException('You are not allowed to login to admin area from this IP address.', null, 403);
                 }
             }
 
@@ -66,7 +66,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
             $config = $this->getMod()->getConfig();
             if (isset($config['public']['reset_pw']) && $config['public']['reset_pw'] == '0') {
-                throw new \FOSSBilling\InformationException('Password reset has been disabled');
+                throw new \FOSSBilling\Exception\InformationException('Password reset has been disabled');
             }
             $this->getDi()['events_manager']->fire(['event' => 'onBeforePasswordResetStaff']);
             $required = [
@@ -86,24 +86,24 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             if (!$reset instanceof AdminPasswordReset) {
                 $this->getDi()['logger']->withChannel('security')->info('Staff password reset confirmation failed from IP {ip}: reset token not found', ['ip' => $this->getIp()]);
 
-                throw new \FOSSBilling\InformationException('The link has expired or you have already confirmed the password reset.');
+                throw new \FOSSBilling\Exception\InformationException('The link has expired or you have already confirmed the password reset.');
             }
 
             if (strtotime((string) $reset->getCreatedAt()?->format('Y-m-d H:i:s')) - time() + 900 < 0) {
                 $this->getDi()['logger']->withChannel('security')->info('Staff password reset confirmation failed for admin #{admin_id} from IP {ip}: reset token expired', ['admin_id' => $reset->getAdmin()?->getId(), 'ip' => $this->getIp()]);
 
-                throw new \FOSSBilling\InformationException('The link has expired or you have already confirmed the password reset.');
+                throw new \FOSSBilling\Exception\InformationException('The link has expired or you have already confirmed the password reset.');
             }
 
             $admin = $reset->getAdmin();
             if (!$admin instanceof Admin) {
-                throw new \FOSSBilling\InformationException('Admin not found');
+                throw new \FOSSBilling\Exception\InformationException('Admin not found');
             }
 
             if ($admin->getStatus() !== Admin::STATUS_ACTIVE || $admin->isCron()) {
                 $this->getDi()['logger']->withChannel('security')->info('Staff password reset confirmation failed for admin #{admin_id} from IP {ip}: account status {status}, system name {system_name}', ['admin_id' => $admin->getId(), 'ip' => $this->getIp(), 'status' => $admin->getStatus(), 'system_name' => $admin->getSystemName()]);
 
-                throw new \FOSSBilling\InformationException('The link has expired or you have already confirmed the password reset.');
+                throw new \FOSSBilling\Exception\InformationException('The link has expired or you have already confirmed the password reset.');
             }
 
             $admin->setPass($this->getDi()['password']->hashIt($data['password']));
@@ -136,7 +136,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     {
         $config = $this->getMod()->getConfig();
         if (isset($config['public']['reset_pw']) && $config['public']['reset_pw'] == '0') {
-            throw new \FOSSBilling\InformationException('Password reset has been disabled');
+            throw new \FOSSBilling\Exception\InformationException('Password reset has been disabled');
         }
 
         $startedAt = microtime(true);

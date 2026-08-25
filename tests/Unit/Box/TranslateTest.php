@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 test('set locale', function (): void {
     $locale = 'en_US';
-    $translateObj = new FOSSBilling\Translate();
+    $translateObj = new FOSSBilling\I18n\Translator();
     $translateObj->setLocale($locale);
     $result = $translateObj->getLocale();
 
@@ -20,7 +20,7 @@ test('set locale', function (): void {
 });
 
 test('domain setter and getter', function (): void {
-    $translateObj = new FOSSBilling\Translate();
+    $translateObj = new FOSSBilling\I18n\Translator();
 
     $default = 'messages';
     $result = $translateObj->getDomain();
@@ -33,7 +33,7 @@ test('domain setter and getter', function (): void {
 
 test('translate', function (): void {
     $text = 'Translate ME';
-    $translateObj = new FOSSBilling\Translate();
+    $translateObj = new FOSSBilling\I18n\Translator();
     $translateObj->setup();
     $result = __trans($text);
 
@@ -45,7 +45,7 @@ test('setup configures the default locale used by Twig Intl filters', function (
     Locale::setDefault('en_US_POSIX');
 
     try {
-        $translateObj = new FOSSBilling\Translate();
+        $translateObj = new FOSSBilling\I18n\Translator();
         $translateObj->setLocale('en_US');
         $translateObj->setup();
 

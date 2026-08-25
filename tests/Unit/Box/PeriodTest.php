@@ -46,19 +46,19 @@ test('has expiration time in the future', function (): void {
 });
 
 test('throws exception for a period code with no quantity', function (): void {
-    expect(fn (): FOSSBilling\Period => new FOSSBilling\Period('D'))->toThrow(FOSSBilling\Exception::class, 'Invalid period code. Period definition must be a quantity followed by a unit letter');
+    expect(fn (): FOSSBilling\Period => new FOSSBilling\Period('D'))->toThrow(FOSSBilling\Exception\BaseException::class, 'Invalid period code. Period definition must be a quantity followed by a unit letter');
 });
 
 test('throws exception for invalid period unit', function (): void {
-    expect(fn (): FOSSBilling\Period => new FOSSBilling\Period('1Z'))->toThrow(FOSSBilling\Exception::class, 'Period Error. Unit Z is not defined');
+    expect(fn (): FOSSBilling\Period => new FOSSBilling\Period('1Z'))->toThrow(FOSSBilling\Exception\BaseException::class, 'Period Error. Unit Z is not defined');
 });
 
 test('throws exception for empty period code', function (): void {
-    expect(fn (): FOSSBilling\Period => new FOSSBilling\Period(''))->toThrow(FOSSBilling\Exception::class, 'Invalid period code. Period definition must be a quantity followed by a unit letter');
+    expect(fn (): FOSSBilling\Period => new FOSSBilling\Period(''))->toThrow(FOSSBilling\Exception\BaseException::class, 'Invalid period code. Period definition must be a quantity followed by a unit letter');
 });
 
 test('throws exception for a period code with no unit letter', function (): void {
-    expect(fn (): FOSSBilling\Period => new FOSSBilling\Period('123'))->toThrow(FOSSBilling\Exception::class, 'Invalid period code. Period definition must be a quantity followed by a unit letter');
+    expect(fn (): FOSSBilling\Period => new FOSSBilling\Period('123'))->toThrow(FOSSBilling\Exception\BaseException::class, 'Invalid period code. Period definition must be a quantity followed by a unit letter');
 });
 
 test('accepts multi-digit quantities up to each unit\'s upper bound', function (): void {
@@ -68,5 +68,5 @@ test('accepts multi-digit quantities up to each unit\'s upper bound', function (
 });
 
 test('throws exception for a quantity beyond a unit\'s upper bound', function (): void {
-    expect(fn (): FOSSBilling\Period => new FOSSBilling\Period('91D'))->toThrow(FOSSBilling\Exception::class, 'Invalid period quantity 91 for unit D. Allowed range is from 1 to 90');
+    expect(fn (): FOSSBilling\Period => new FOSSBilling\Period('91D'))->toThrow(FOSSBilling\Exception\BaseException::class, 'Invalid period quantity 91 for unit D. Allowed range is from 1 to 90');
 });

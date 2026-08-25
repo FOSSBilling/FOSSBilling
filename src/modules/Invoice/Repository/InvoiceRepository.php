@@ -179,7 +179,7 @@ class InvoiceRepository extends EntityRepository
         $connection = $this->getEntityManager()->getConnection();
 
         if (!$connection->isTransactionActive()) {
-            throw new \FOSSBilling\Exception('Invoice status cannot be locked outside of a transaction.');
+            throw new \FOSSBilling\Exception\BaseException('Invoice status cannot be locked outside of a transaction.');
         }
 
         $status = $connection->fetchOne(

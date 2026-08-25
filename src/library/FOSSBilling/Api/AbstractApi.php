@@ -11,8 +11,8 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Api;
 
-use FOSSBilling\Exception;
-use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Exception\BaseException;
+use FOSSBilling\Interfaces\InjectionAwareInterface;
 use FOSSBilling\Module;
 use Pimple\Container;
 
@@ -62,7 +62,7 @@ class AbstractApi implements InjectionAwareInterface
     {
         // @phpstan-ignore isset.property (Runtime check to ensure mod is set)
         if (!isset($this->mod)) {
-            throw new Exception('Mod object is not set for the service');
+            throw new BaseException('Mod object is not set for the service');
         }
 
         return $this->mod;
@@ -92,7 +92,7 @@ class AbstractApi implements InjectionAwareInterface
     public function getService(): object
     {
         if ($this->service === null) {
-            throw new Exception('Service object is not set for the API');
+            throw new BaseException('Service object is not set for the API');
         }
 
         return $this->service;

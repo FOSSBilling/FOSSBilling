@@ -11,9 +11,9 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Api;
 
-use FOSSBilling\Exception;
-use FOSSBilling\InformationException;
-use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Exception\BaseException;
+use FOSSBilling\Exception\InformationException;
+use FOSSBilling\Interfaces\InjectionAwareInterface;
 use FOSSBilling\Validation\Api\RequiredParams;
 use Pimple\Container;
 
@@ -39,7 +39,7 @@ final class Dispatcher implements InjectionAwareInterface
     public function dispatchWithArguments(object $identity, string $method, array $arguments = []): mixed
     {
         if (!str_contains($method, '_')) {
-            throw new Exception('Method :method must contain underscore', [':method' => $method], 710);
+            throw new BaseException('Method :method must contain underscore', [':method' => $method], 710);
         }
 
         $role = Identity::typeFromObject($identity);
@@ -49,12 +49,12 @@ final class Dispatcher implements InjectionAwareInterface
         $methodName = implode('_', $parts);
 
         if (empty($mod)) {
-            throw new Exception('Invalid module name', null, 714);
+            throw new BaseException('Invalid module name', null, 714);
         }
 
         $extensionService = $this->getDi()['mod']('extension')->getService();
         if (!$extensionService->isExtensionActive('mod', $mod)) {
-            throw new Exception('FOSSBilling module :mod is not installed/activated', [':mod' => $mod], 715);
+            throw new BaseException('FOSSBilling module :mod is not installed/activated', [':mod' => $mod], 715);
         }
 
         /*
@@ -66,18 +66,18 @@ final class Dispatcher implements InjectionAwareInterface
         if ($role === 'admin' && !$this->isAllowedAdminFinalizationCall($mod, $method)) {
             $staffService = $this->getDi()['mod_service']('Staff');
             if (!$staffService->hasPermission($identity, $mod)) {
-                throw new Exception('You do not have access to the :mod module', [':mod' => $mod], 725);
+                throw new BaseException('You do not have access to the :mod module', [':mod' => $mod], 725);
             }
         }
 
         $apiClass = '\Box\Mod\\' . ucfirst($mod) . '\Api\\' . ucfirst($role);
         if (!class_exists($apiClass)) {
-            throw new Exception(':type API call :method does not exist in module :module', [':type' => ucfirst($role), ':method' => $methodName, ':module' => $mod], 740);
+            throw new BaseException(':type API call :method does not exist in module :module', [':type' => ucfirst($role), ':method' => $methodName, ':module' => $mod], 740);
         }
 
         $api = new $apiClass();
         if (!$api instanceof AbstractApi) {
-            throw new Exception('Api class must be an instance of FOSSBilling\Api\AbstractApi', null, 730);
+            throw new BaseException('Api class must be an instance of FOSSBilling\Api\AbstractApi', null, 730);
         }
 
         $module = $this->getDi()['mod']($mod);
@@ -92,7 +92,7 @@ final class Dispatcher implements InjectionAwareInterface
         if (!method_exists($api, $methodName) || !is_callable([$api, $methodName])) {
             $reflector = new \ReflectionClass($api);
             if (!$reflector->hasMethod('__call')) {
-                throw new Exception(':type API call :method does not exist in module :module', [':type' => ucfirst($role), ':method' => $methodName, ':module' => $mod], 740);
+                throw new BaseException(':type API call :method does not exist in module :module', [':type' => ucfirst($role), ':method' => $methodName, ':module' => $mod], 740);
             }
         }
 

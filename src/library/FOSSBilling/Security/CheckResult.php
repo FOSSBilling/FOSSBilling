@@ -9,17 +9,17 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling;
+namespace FOSSBilling\Security;
 
-use FOSSBilling\Enums\SecurityCheckResultEnum;
+use FOSSBilling\Security\Enum\CheckResultStatus;
 
-class SecurityCheckResult
+class CheckResult
 {
     /**
-     * @param SecurityCheckResultEnum $result  the result of the check
-     * @param string                  $message an optional message to go with the result
+     * @param CheckResultStatus $result  the result of the check
+     * @param string            $message an optional message to go with the result
      */
-    public function __construct(public readonly SecurityCheckResultEnum $result, public readonly string $message = '')
+    public function __construct(public readonly CheckResultStatus $result, public readonly string $message = '')
     {
     }
 

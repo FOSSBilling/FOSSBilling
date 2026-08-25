@@ -73,7 +73,7 @@ class Box_AppClient extends Box_App
             }
 
             return $this->responseFactory()->html($content);
-        } catch (FOSSBilling\InformationException $e) {
+        } catch (FOSSBilling\Exception\InformationException $e) {
             // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
             if (DEBUG) {
                 $this->di['logger']->withChannel('routing')->debug($e->getMessage());
@@ -91,11 +91,11 @@ class Box_AppClient extends Box_App
                 ]
             );
 
-            $internal = new FOSSBilling\InformationException('The requested page could not be rendered.', [], 500);
+            $internal = new FOSSBilling\Exception\InformationException('The requested page could not be rendered.', [], 500);
 
             return $this->errorResponse($internal);
         }
-        $e = new FOSSBilling\InformationException('Page :url not found', [':url' => $this->url], 404);
+        $e = new FOSSBilling\Exception\InformationException('Page :url not found', [':url' => $this->url], 404);
 
         $this->di['logger']->withChannel('routing')->info($e->getMessage());
 
@@ -113,7 +113,7 @@ class Box_AppClient extends Box_App
         } catch (Twig\Error\LoaderError $e) {
             $this->di['logger']->withChannel('routing')->info($e->getMessage());
 
-            throw new FOSSBilling\InformationException('Page not found', null, 404);
+            throw new FOSSBilling\Exception\InformationException('Page not found', null, 404);
         }
 
         return $template->render($variableArray);

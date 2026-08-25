@@ -18,8 +18,8 @@ namespace Box\Mod\Order\Api;
 use Box\Mod\Client\Entity\Client as ClientEntity;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Order\Repository\OrderRepository;
-use FOSSBilling\InformationException;
-use FOSSBilling\PaginationOptions;
+use FOSSBilling\Exception\InformationException;
+use FOSSBilling\Pagination\Options;
 use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 use Symfony\Component\HttpFoundation\Response;
@@ -68,7 +68,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $data['hide_addons'] = (isset($orderConfig['show_addons']) && $orderConfig['show_addons']) ? 0 : 1;
 
         [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $resultSet = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $resultSet = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, Options::fromArray($data));
 
         $resultSet['list'] = $this->getService()->getBatchForApi(
             array_column($resultSet['list'], 'id'),
@@ -365,7 +365,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $config = $data['config'] ?? null;
         if (!is_array($config)) {
-            throw new \FOSSBilling\Exception('Order config not passed');
+            throw new \FOSSBilling\Exception\BaseException('Order config not passed');
         }
 
         return $this->getService()->updateOrderConfig($order, $config);
@@ -400,7 +400,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         [$sql, $bindings] = $this->getService()->getOrderStatusSearchQuery($data);
 
-        return $this->getDi()['pager']->getPaginatedResultSet($sql, $bindings, PaginationOptions::fromArray($data));
+        return $this->getDi()['pager']->getPaginatedResultSet($sql, $bindings, Options::fromArray($data));
     }
 
     /**

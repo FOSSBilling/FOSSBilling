@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 use Box\Mod\Extension\Controller\Admin;
 use Box\Mod\Extension\Service;
-use FOSSBilling\InformationException;
+use FOSSBilling\Exception\InformationException;
 use Symfony\Component\HttpFoundation\Response;
 
 use function Tests\Helpers\container;

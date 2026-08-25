@@ -9,9 +9,11 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling;
+namespace FOSSBilling\Security;
 
+use FOSSBilling\GeoIP\Reader as GeoIPReader;
 use FOSSBilling\Http\CookieNames;
+use FOSSBilling\System\Config;
 use Symfony\Component\HttpFoundation\Request;
 
 class Fingerprint
@@ -241,7 +243,7 @@ class Fingerprint
 
         // Otherwise, instance the system's GeoIP reader and read the country from there.
         try {
-            $reader = new GeoIP\Reader();
+            $reader = new GeoIPReader();
             $remoteAddr = $this->request->server->get('REMOTE_ADDR', '');
 
             if (empty($remoteAddr)) {
@@ -263,8 +265,8 @@ class Fingerprint
                 return '';
             }
 
-            $asnDb = GeoIP\Reader::getAsnDatabase();
-            $reader = new GeoIP\Reader($asnDb);
+            $asnDb = GeoIPReader::getAsnDatabase();
+            $reader = new GeoIPReader($asnDb);
 
             return $reader->asn($remoteAddr)->asnNumber;
         } catch (\Exception) {

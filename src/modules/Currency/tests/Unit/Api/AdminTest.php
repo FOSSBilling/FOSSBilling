@@ -189,7 +189,7 @@ test('get list', function (): void {
     ->atLeast()->once()
     ->andReturn($repositoryMock);
 
-    $pager = Mockery::mock('\\' . FOSSBilling\Pagination::class)->makePartial();
+    $pager = Mockery::mock('\\' . FOSSBilling\Pagination\Service::class)->makePartial();
     $pager
     ->shouldReceive('paginateDoctrineQuery')
     ->atLeast()->once()
@@ -347,7 +347,7 @@ test('create exception', function ($data, $findOneByCodeCalled, $findOneByCodeRe
     $di = container();
     $adminApi->setService($service);
     $adminApi->setDi($di);
-    $this->expectException(FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\Exception\BaseException::class);
     $adminApi->create($data);
 })->with('createException');
 
@@ -443,7 +443,7 @@ test('delete exception', function (): void {
     $service->shouldReceive('removeCurrency')->never();
 
     $dispatcher = new FOSSBilling\Api\Dispatcher();
-    $this->expectException(FOSSBilling\InformationException::class);
+    $this->expectException(FOSSBilling\Exception\InformationException::class);
     $dispatcher->validateRequiredParams($adminApi, 'delete', []);
 
     $di = container();
@@ -507,7 +507,7 @@ test('set default exception', function ($data, $findOneByCodeCalled, $findOneByC
     $adminApi->setDi($di);
 
     $adminApi->setService($service);
-    $this->expectException(FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\Exception\BaseException::class);
     $adminApi->set_default($data);
 })->with('setDefaultException');
 

@@ -1221,7 +1221,7 @@ test('logs Stripe object lock timeouts with lock context', function (): void {
         'pi_timeout',
         2,
         fn (): null => null,
-    ]))->toThrow(FOSSBilling\Exception::class, 'Timed out waiting to process this Stripe payment')
+    ]))->toThrow(FOSSBilling\Exception\BaseException::class, 'Timed out waiting to process this Stripe payment')
         ->and($logger->calls)->toHaveCount(1)
         ->and($logger->calls[0]['method'])->toBe('warning')
         ->and($logger->calls[0]['params'][0])->toBe('Timed out after {duration_ms} ms waiting for Stripe object lock {lock_name}')
@@ -1365,7 +1365,7 @@ describe('processWebhookEvent signature verification', function (): void {
             $data,
             1,
         ]);
-    })->throws(FOSSBilling\Exception::class, 'Missing Stripe-Signature header');
+    })->throws(FOSSBilling\Exception\BaseException::class, 'Missing Stripe-Signature header');
 
     test('rejects webhook events with an invalid signature', function (): void {
         $tx = buildTransaction();
@@ -1386,7 +1386,7 @@ describe('processWebhookEvent signature verification', function (): void {
             $data,
             1,
         ]);
-    })->throws(FOSSBilling\Exception::class, 'Invalid Stripe webhook signature');
+    })->throws(FOSSBilling\Exception\BaseException::class, 'Invalid Stripe webhook signature');
 
     test('rejects webhook events when no webhook secret is configured', function (): void {
         $adapter = new Payment_Adapter_Stripe([
@@ -1413,7 +1413,7 @@ describe('processWebhookEvent signature verification', function (): void {
             $data,
             1,
         ]);
-    })->throws(FOSSBilling\Exception::class, 'Stripe webhook signing secret is not configured');
+    })->throws(FOSSBilling\Exception\BaseException::class, 'Stripe webhook signing secret is not configured');
 });
 
 describe('processWebhookEvent noise filtering', function (): void {

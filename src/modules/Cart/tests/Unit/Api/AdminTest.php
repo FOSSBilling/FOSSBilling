@@ -23,7 +23,7 @@ test('getList returns array', function (): void {
         ],
     ];
 
-    $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
+    $paginatorMock = Mockery::mock(FOSSBilling\Pagination\Service::class)->makePartial();
     $paginatorMock
     ->shouldReceive('getPaginatedResultSet')
     ->atLeast()->once()
@@ -95,7 +95,7 @@ test('get returns array', function (): void {
 test('batchExpire returns true', function (): void {
     $adminApi = apiEndpoint(new Box\Mod\Cart\Api\Admin());
 
-    $logStub = $this->createStub(FOSSBilling\Logger::class);
+    $logStub = $this->createStub(FOSSBilling\Logging\Logger::class);
 
     $conn = Mockery::mock(Doctrine\DBAL\Connection::class);
     $conn->shouldReceive('fetchAllKeyValue')->atLeast()->once()->andReturn([1 => date('Y-m-d H:i:s')]);

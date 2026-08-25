@@ -103,7 +103,7 @@ test('throws exception when creating transaction with missing invoice id', funct
     ];
 
     expect(fn (): ?int => $service->create($data))
-        ->toThrow(FOSSBilling\Exception::class, 'Transaction invoice ID is missing');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Transaction invoice ID is missing');
 });
 
 test('throws exception when creating transaction with missing gateway id', function (): void {
@@ -120,7 +120,7 @@ test('throws exception when creating transaction with missing gateway id', funct
     ];
 
     expect(fn (): ?int => $service->create($data))
-        ->toThrow(FOSSBilling\Exception::class, 'Payment gateway ID is missing');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Payment gateway ID is missing');
 });
 
 test('deletes a transaction', function (): void {
@@ -538,5 +538,5 @@ test('debitTransaction rejects a transaction without a client', function (): voi
     $service = transactionService(em: $em);
 
     expect(fn () => $service->debitTransaction($tx))
-        ->toThrow(FOSSBilling\Exception::class, 'Client #20 not found');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Client #20 not found');
 });

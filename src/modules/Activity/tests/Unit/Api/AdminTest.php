@@ -15,7 +15,7 @@ use function Tests\Helpers\moduleService;
 
 test('log get list with staff user', function (): void {
     $serviceStub = Mockery::mock(Box\Mod\Activity\Service::class);
-    $paginatorStub = Mockery::mock(FOSSBilling\Pagination::class);
+    $paginatorStub = Mockery::mock(FOSSBilling\Pagination\Service::class);
     $di = container();
     $di['pager'] = $paginatorStub;
     $di['mod_service'] = $di->protect(moduleService(['activity' => $serviceStub]));
@@ -45,7 +45,7 @@ test('log get list with staff user', function (): void {
     $expectation1->atLeast()->once();
     $expectation1->andReturn(['String', []]);
 
-    $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
+    $paginatorMock = Mockery::mock(FOSSBilling\Pagination\Service::class);
     /** @var Mockery\Expectation $expectation3 */
     $expectation3 = $paginatorMock->shouldReceive('getPaginatedResultSet');
     $expectation3->atLeast()->once();
@@ -58,7 +58,7 @@ test('log get list with staff user', function (): void {
 
 test('log get list with client user', function (): void {
     $serviceStub = Mockery::mock(Box\Mod\Activity\Service::class);
-    $paginatorStub = Mockery::mock(FOSSBilling\Pagination::class);
+    $paginatorStub = Mockery::mock(FOSSBilling\Pagination\Service::class);
     $di = container();
     $di['pager'] = $paginatorStub;
     $di['mod_service'] = $di->protect(moduleService(['activity' => $serviceStub]));
@@ -88,7 +88,7 @@ test('log get list with client user', function (): void {
     $expectation1->atLeast()->once();
     $expectation1->andReturn(['String', []]);
 
-    $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
+    $paginatorMock = Mockery::mock(FOSSBilling\Pagination\Service::class);
     /** @var Mockery\Expectation $expectation3 */
     $expectation3 = $paginatorMock->shouldReceive('getPaginatedResultSet');
     $expectation3->atLeast()->once();

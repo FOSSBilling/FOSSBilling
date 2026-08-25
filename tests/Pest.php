@@ -27,7 +27,7 @@ define('PATH_TESTS', __DIR__);
 // with 255 mid-suite. 2G is comfortably above peak usage (~185M).
 ini_set('memory_limit', '2G');
 
-// Disable DEBUG mode to prevent FOSSBilling\Exception from logging stack traces
+// Disable DEBUG mode to prevent FOSSBilling\Exception\BaseException from logging stack traces
 // Must be defined BEFORE load.php is included
 if (!defined('DEBUG')) {
     define('DEBUG', false);
@@ -107,7 +107,7 @@ function withAppEnv(?string $value, callable $callback): mixed
 }
 
 // Define TestLogger class after autoloader is registered.
-// This is deferred because FOSSBilling\Logger is loaded via the autoloader.
+// This is deferred because FOSSBilling\Logging\Logger is loaded via the autoloader.
 // @phpstan-ignore-next-line
 if (!class_exists(Tests\Helpers\TestLogger::class)) {
     // @phpstan-ignore-next-line

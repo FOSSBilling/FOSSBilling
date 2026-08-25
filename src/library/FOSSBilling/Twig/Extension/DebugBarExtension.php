@@ -13,7 +13,7 @@ namespace FOSSBilling\Twig\Extension;
 
 use DebugBar\JavascriptRenderer;
 use DebugBar\StandardDebugBar;
-use FOSSBilling\Environment;
+use FOSSBilling\System\Environment;
 use Twig\Attribute\AsTwigFunction;
 
 class DebugBarExtension

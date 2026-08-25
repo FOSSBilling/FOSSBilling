@@ -15,7 +15,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\System\Api;
 
-use FOSSBilling\i18n;
+use FOSSBilling\I18n\I18n;
 use FOSSBilling\Period;
 use FOSSBilling\Validation\Api\RequiredParams;
 use PrinsFrank\Standards\CountryCallingCode\CountryCallingCode;
@@ -159,7 +159,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $limit = (int) ($data['per_page'] ?? 20);
         $itemsCount = (int) ($data['total'] ?? 0);
 
-        $p = new \FOSSBilling\Paginator($itemsCount, $current_page, $limit, $midrange);
+        $p = new \FOSSBilling\Pagination\ViewPaginator($itemsCount, $current_page, $limit, $midrange);
 
         return $p->toArray();
     }
@@ -193,7 +193,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      */
     public function locale(): string
     {
-        return i18n::getActiveLocale($this->getDi()['request'], true, $this->getDi()['cookie_queue']);
+        return I18n::getActiveLocale($this->getDi()['request'], true, $this->getDi()['cookie_queue']);
     }
 
     /**
@@ -203,7 +203,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      */
     public function timezones(): array
     {
-        return i18n::getTimezones();
+        return I18n::getTimezones();
     }
 
     public function get_pending_messages()

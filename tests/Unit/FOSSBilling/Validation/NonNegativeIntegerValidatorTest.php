@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use FOSSBilling\InformationException;
+use FOSSBilling\Exception\InformationException;
 use FOSSBilling\Validation\NonNegativeIntegerValidator;
 
 test('validates non-negative integers', function (mixed $value, int $expected): void {

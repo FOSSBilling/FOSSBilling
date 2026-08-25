@@ -11,14 +11,14 @@ declare(strict_types=1);
 
 use DebugBar\DataCollector\TimeDataCollector;
 use DebugBar\StandardDebugBar;
-use FOSSBilling\Config;
 use FOSSBilling\Http\RequestFactory;
 use FOSSBilling\Http\ResponseFactory;
 use FOSSBilling\Http\RouteDefinition;
 use FOSSBilling\Http\RouteMatcher;
-use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Interfaces\InjectionAwareInterface;
 use FOSSBilling\Security\AuthenticationRequiredException;
 use FOSSBilling\Security\EmailValidationRequiredException;
+use FOSSBilling\System\Config;
 use Symfony\Component\HttpFoundation\IpUtils;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -419,7 +419,7 @@ class Box_App
             // Check the allowlists
             if ($this->checkAdminPrefix() && $this->checkAllowedURLs() && $this->checkAllowedIPs()) {
                 if ($this->mod == 'api') {
-                    $exc = new FOSSBilling\InformationException('The system is undergoing maintenance. Please try again later', [], 503);
+                    $exc = new FOSSBilling\Exception\InformationException('The system is undergoing maintenance. Please try again later', [], 503);
                     $apiController = new Box\Mod\Api\Controller\Client();
                     $apiController->setDi($this->di);
 
@@ -448,7 +448,7 @@ class Box_App
         }
         $this->stopMeasureIfStarted($timeCollector, 'mapping');
 
-        $e = new FOSSBilling\InformationException('Page :url not found', [':url' => $this->url], 404);
+        $e = new FOSSBilling\Exception\InformationException('Page :url not found', [':url' => $this->url], 404);
 
         return $this->show404($e);
     }

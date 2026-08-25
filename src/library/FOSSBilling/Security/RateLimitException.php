@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Security;
 
-use FOSSBilling\InformationException;
+use FOSSBilling\Exception\InformationException;
 
 class RateLimitException extends InformationException
 {

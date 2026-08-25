@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use Box\Mod\Activity\Entity\ActivityAdminHistory;
 use Box\Mod\Activity\Repository\ActivityAdminHistoryRepository;
-use FOSSBilling\InformationException;
+use FOSSBilling\Exception\InformationException;
 
 test('finds an admin activity history event by id', function (): void {
     $history = new ActivityAdminHistory();

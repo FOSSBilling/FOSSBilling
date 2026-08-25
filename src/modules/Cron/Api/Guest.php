@@ -15,7 +15,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Cron\Api;
 
-use FOSSBilling\InformationException;
+use FOSSBilling\Exception\InformationException;
 
 class Guest extends \FOSSBilling\Api\AbstractApi
 {

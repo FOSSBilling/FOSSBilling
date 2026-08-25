@@ -54,7 +54,7 @@ test('throws exception when form type is not in predefined list', function (): v
     $api->setDi($di);
 
     expect(fn () => $api->create_form($data))
-        ->toThrow(FOSSBilling\Exception::class, 'Form style was not found in predefined list');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Form style was not found in predefined list');
 });
 
 test('adds a field to a form', function (): void {
@@ -94,7 +94,7 @@ test('throws exception when adding field with missing type', function (): void {
     $api->setService(Mockery::mock(Service::class));
 
     expect(fn () => $api->add_field($data))
-        ->toThrow(FOSSBilling\Exception::class, 'Form field type is invalid');
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Form field type is invalid');
 });
 
 test('throws exception when field options are not unique', function (): void {
@@ -113,7 +113,7 @@ test('throws exception when field options are not unique', function (): void {
     $api->setDi(container());
 
     expect(fn () => $api->add_field($data))
-        ->toThrow(FOSSBilling\InformationException::class, 'This input type must have unique values');
+        ->toThrow(FOSSBilling\Exception\InformationException::class, 'This input type must have unique values');
 });
 
 test('throws exception when adding field without form id', function (): void {
@@ -130,7 +130,7 @@ test('throws exception when adding field without form id', function (): void {
     $api->setDi(container());
 
     expect(fn () => $api->add_field($data))
-        ->toThrow(FOSSBilling\InformationException::class, 'Form id was not passed');
+        ->toThrow(FOSSBilling\Exception\InformationException::class, 'Form id was not passed');
 });
 
 test('gets a form', function (): void {
@@ -346,7 +346,7 @@ test('throws exception when copying form without id', function (): void {
 
     $api->setDi(container());
     expect(fn () => $api->copy_form($data))
-        ->toThrow(FOSSBilling\InformationException::class, 'Form id was not passed');
+        ->toThrow(FOSSBilling\Exception\InformationException::class, 'Form id was not passed');
 });
 
 test('throws exception when copying form without name', function (): void {
@@ -355,7 +355,7 @@ test('throws exception when copying form without name', function (): void {
 
     $api->setDi(container());
     expect(fn () => $api->copy_form($data))
-        ->toThrow(FOSSBilling\InformationException::class, 'Form name was not passed');
+        ->toThrow(FOSSBilling\Exception\InformationException::class, 'Form name was not passed');
 });
 
 test('updates form settings', function (): void {
@@ -389,7 +389,7 @@ test('throws exception when updating form settings with missing fields', functio
 
     $api->setDi(container());
     expect(fn () => $api->update_form_settings($data))
-        ->toThrow(FOSSBilling\Exception::class, $exceptionMessage);
+        ->toThrow(FOSSBilling\Exception\BaseException::class, $exceptionMessage);
 })->with([
     ['form_id', 'Form id was not passed'],
     ['form_name', 'Form name was not passed'],
