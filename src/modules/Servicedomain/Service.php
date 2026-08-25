@@ -826,7 +826,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->setPeriods(array_key_exists('periods', $data) ? $data['periods'] : null);
         $model->setAllowRegister(isset($data['allow_register']) ? (bool) $data['allow_register'] : true);
         $model->setAllowTransfer(isset($data['allow_transfer']) ? (bool) $data['allow_transfer'] : true);
-        $model->setRequireTransferCode(isset($data['require_transfer_code']) ? (bool) $data['require_transfer_code'] : false);
+        $model->setRequireTransferCode(isset($data['require_transfer_code']) && (bool) $data['require_transfer_code']);
         $model->setActive(isset($data['active']) ? (bool) $data['active'] : true);
 
         $this->di['em']->persist($model);
