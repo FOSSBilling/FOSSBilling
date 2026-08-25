@@ -142,8 +142,10 @@ class Config
             // on an entity change without needing this call at all), which clearAll()'s fixed
             // namespace list can never know to include. Harmless to skip on the filesystem driver
             // (the PATH_CACHE wipe above already covers it), but a Redis/Memcached-backed pool has
-            // no other way to ever be reached.
-            CacheFactory::create(EntityManagerFactory::metadataCacheNamespace())->clear();
+            // no other way to ever be reached. clearNamespace() is best-effort, same as clearAll()
+            // itself above - config.php is already written by this point, so a cache-backend
+            // hiccup here must not make setConfig() look like it failed.
+            CacheFactory::clearNamespace(EntityManagerFactory::metadataCacheNamespace());
         }
     }
 

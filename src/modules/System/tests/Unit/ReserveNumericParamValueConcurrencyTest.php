@@ -70,7 +70,7 @@ test('reserveNextNumericParamValue never hands out a duplicate value under real 
         foreach (range(1, $workerCount) as $ignored) {
             $descriptors = [1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
             $process = proc_open(
-                ['php', $workerScriptPath, $autoloadPath, $dbPath, (string) $reservationsPerWorker],
+                [PHP_BINARY, $workerScriptPath, $autoloadPath, $dbPath, (string) $reservationsPerWorker],
                 $descriptors,
                 $pipes
             );

@@ -140,11 +140,24 @@ class CacheFactory
     public static function clearAll(): void
     {
         foreach (self::ALL_NAMESPACES as $namespace) {
-            try {
-                self::create($namespace)->clear();
-            } catch (\Throwable) {
-                // Clearing the cache is best-effort; a failure here shouldn't halt execution.
-            }
+            self::clearNamespace($namespace);
+        }
+    }
+
+    /**
+     * Clears one specific cache pool by namespace. Best-effort, same as {@see self::clearAll()}:
+     * create() already falls back to the filesystem driver for a misconfigured/unreachable
+     * backend, but clear() itself can still fail on its own (e.g. a Redis ACL that permits get/set
+     * but not the flush command) - callers that already did the work clear() is meant to follow up
+     * (writing a new config file, wiping the filesystem cache directory) must not have that
+     * reported as their own failure.
+     */
+    public static function clearNamespace(string $namespace): void
+    {
+        try {
+            self::create($namespace)->clear();
+        } catch (\Throwable) {
+            // Clearing the cache is best-effort; a failure here shouldn't halt execution.
         }
     }
 

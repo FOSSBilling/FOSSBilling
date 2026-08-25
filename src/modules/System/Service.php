@@ -602,8 +602,10 @@ class Service
         // an entity change without needing this call at all), which clearAll()'s fixed namespace
         // list can never know to include. Harmless to skip on the filesystem driver (the
         // remove()/mkdir() above already covers it), but a Redis/Memcached-backed pool has no
-        // other way to ever be reached.
-        CacheFactory::create(EntityManagerFactory::metadataCacheNamespace())->clear();
+        // other way to ever be reached. clearNamespace() is best-effort, same as clearAll() itself
+        // above - a cache-backend hiccup here must not make clearCache() report failure when the
+        // filesystem cache was already cleared fine.
+        CacheFactory::clearNamespace(EntityManagerFactory::metadataCacheNamespace());
 
         return true;
     }

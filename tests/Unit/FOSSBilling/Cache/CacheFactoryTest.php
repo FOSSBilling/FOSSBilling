@@ -109,9 +109,19 @@ test('clearAll() alone cannot reach the Doctrine metadata cache pool, but explic
     CacheFactory::clearAll();
     expect(CacheFactory::create($namespace)->getItem('regression_probe')->isHit())->toBeTrue();
 
-    CacheFactory::create($namespace)->clear();
+    CacheFactory::clearNamespace($namespace);
     expect(CacheFactory::create($namespace)->getItem('regression_probe')->isHit())->toBeFalse();
 });
+
+test('clearNamespace never throws even with a misconfigured driver', function (): void {
+    if (hasRedisExtension()) {
+        $this->markTestSkipped('This test requires an environment without the redis/relay extension.');
+    }
+
+    setCacheConfig(['driver' => 'redis', 'redis' => ['host' => '127.0.0.1', 'port' => 6379]]);
+
+    CacheFactory::clearNamespace('cache_factory_test');
+})->expectNotToPerformAssertions();
 
 test('rejects an unsupported cache driver', function (): void {
     expect(fn () => CacheFactory::createFromConfig(['driver' => 'memory'], 'cache_factory_test', 0, true))
