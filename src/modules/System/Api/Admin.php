@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\System\Api;
 
+use FOSSBilling\Cache\CacheFactory;
 use FOSSBilling\Config;
 use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
@@ -74,6 +75,76 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         }
 
         Config::setProperty('i18n.auto_detect_locale', Tools::normalizeBoolean($data['auto_detect_locale'] ?? true, true));
+
+        return true;
+    }
+
+    /**
+     * Returns the cache backend settings stored in the FOSSBilling config file.
+     * The Redis password, if set, is never returned.
+     */
+    public function cache_settings(): array
+    {
+        $this->checkPermissions('system', 'manage_settings');
+
+        return [
+            'driver' => (string) Config::getProperty('cache.driver', 'filesystem'),
+            'redis_host' => (string) Config::getProperty('cache.redis.host', '127.0.0.1'),
+            'redis_port' => (int) Config::getProperty('cache.redis.port', 6379),
+            'redis_password_set' => Config::getProperty('cache.redis.password') !== null,
+            'redis_database' => (int) Config::getProperty('cache.redis.database', 0),
+            'memcached_host' => (string) Config::getProperty('cache.memcached.host', '127.0.0.1'),
+            'memcached_port' => (int) Config::getProperty('cache.memcached.port', 11211),
+        ];
+    }
+
+    /**
+     * Updates the cache backend settings stored in the FOSSBilling config file.
+     *
+     * The new settings are validated by attempting to connect to the configured backend before
+     * anything is saved, so a mistyped host/port/password is rejected with a clear reason rather
+     * than being written and silently falling back to the filesystem cache later.
+     *
+     * @throws \FOSSBilling\Exception
+     */
+    public function update_cache_settings($data): bool
+    {
+        $this->checkPermissions('system', 'update_params');
+
+        $driver = $data['driver'] ?? 'filesystem';
+        if (!in_array($driver, CacheFactory::SUPPORTED_DRIVERS, true)) {
+            throw new \FOSSBilling\Exception('Unsupported cache driver: :driver', [':driver' => $driver]);
+        }
+
+        // Keep the existing password when the admin doesn't provide a new one, so re-saving the
+        // other Redis fields doesn't require re-entering it.
+        $redisPassword = $data['redis_password'] ?? '';
+        if ($redisPassword === '') {
+            $redisPassword = Config::getProperty('cache.redis.password');
+        }
+
+        $newCacheConfig = [
+            'driver' => $driver,
+            'redis' => [
+                'host' => $data['redis_host'] ?? '127.0.0.1',
+                'port' => Tools::normalizePort($data['redis_port'] ?? null, 6379),
+                'password' => $redisPassword ?: null,
+                'database' => (int) ($data['redis_database'] ?? 0),
+            ],
+            'memcached' => [
+                'host' => $data['memcached_host'] ?? '127.0.0.1',
+                'port' => Tools::normalizePort($data['memcached_port'] ?? null, 11211),
+            ],
+        ];
+
+        // Filesystem can't fail to connect, so only redis/memcached need the eager check.
+        if ($driver !== 'filesystem') {
+            CacheFactory::createFromConfig($newCacheConfig, CacheFactory::NAMESPACE_CONNECTION_TEST, 60, fallbackOnFailure: false);
+        }
+
+        $config = Config::getConfig();
+        $config['cache'] = $newCacheConfig;
+        Config::setConfig($config);
 
         return true;
     }
