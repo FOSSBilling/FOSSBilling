@@ -25,8 +25,14 @@ class EntityManagerFactory
 {
     public static function create(?Connection $connection = null): EntityManager
     {
+        // Each module's own Entity/ folder itself, not its contents: in(PATH_MODS . '/*/Entity')
+        // would search *inside* every Entity/ folder for matches, which - since those folders
+        // hold only PHP files, no subdirectories - silently finds nothing. Metadata lookups for
+        // one already-known entity class never needed this (they resolve via reflection on the
+        // class directly), so this went unnoticed until something needed *every* entity at once
+        // (schema generation, migrations-diff tooling).
         $finder = new Finder();
-        $finder->directories()->in(PATH_MODS . '/*/Entity')->depth('== 0');
+        $finder->directories()->in(PATH_MODS)->depth('== 1')->name('Entity');
         $moduleEntityPaths = array_map(
             static fn (\SplFileInfo $directory): string => $directory->getPathname(),
             iterator_to_array($finder)

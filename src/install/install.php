@@ -88,6 +88,7 @@ final class FOSSBilling_Installer
 {
     private readonly Session $session;
     private PDO $pdo;
+    private Doctrine\DBAL\Connection $connection;
     private bool $isDebug = false;
     private readonly Filesystem $filesystem;
 
@@ -147,16 +148,27 @@ final class FOSSBilling_Installer
 
                     // Set up default currency before validation to preserve user selection if validation fails
                     $this->session->set('currency_code', $this->request->request->get('currency_code'));
+
                     // Handle database information
-                    $this->session->set('database_hostname', $this->request->request->get('database_hostname'));
-                    $databasePort = FOSSBilling\Tools::normalizePort($this->request->request->get('database_port'));
-                    if ($databasePort === null) {
-                        throw new Exception('Database port is invalid.');
+                    $databaseDriver = (string) $this->request->request->get('database_driver', 'pdo_mysql');
+                    if (!in_array($databaseDriver, FOSSBilling\Doctrine\DriverManagerFactory::SUPPORTED_DRIVERS, true)) {
+                        throw new Exception('Unsupported database driver.');
                     }
-                    $this->session->set('database_port', $databasePort);
-                    $this->session->set('database_name', $this->request->request->get('database_name'));
-                    $this->session->set('database_username', $this->request->request->get('database_username'));
-                    $this->session->set('database_password', $this->request->request->get('database_password'));
+                    $this->session->set('database_driver', $databaseDriver);
+
+                    if ($databaseDriver === 'pdo_sqlite') {
+                        $this->session->set('database_path', $this->request->request->get('database_path'));
+                    } else {
+                        $this->session->set('database_hostname', $this->request->request->get('database_hostname'));
+                        $databasePort = FOSSBilling\Tools::normalizePort($this->request->request->get('database_port'));
+                        if ($databasePort === null) {
+                            throw new Exception('Database port is invalid.');
+                        }
+                        $this->session->set('database_port', $databasePort);
+                        $this->session->set('database_name', $this->request->request->get('database_name'));
+                        $this->session->set('database_username', $this->request->request->get('database_username'));
+                        $this->session->set('database_password', $this->request->request->get('database_password'));
+                    }
                     $this->connectDatabase();
 
                     // Handle admin information
@@ -216,10 +228,12 @@ final class FOSSBilling_Installer
                     'fossbilling_ver' => FOSSBilling\Version::VERSION,
                     'canInstall' => !$this->isSubfolder() && $compatibility['can_install'],
                     'alreadyInstalled' => $this->isAlreadyInstalled(),
+                    'database_driver' => $this->session->get('database_driver') ?: 'pdo_mysql',
                     'database_hostname' => $this->session->get('database_hostname'),
                     'database_name' => $this->session->get('database_name'),
                     'database_username' => $this->session->get('database_username'),
                     'database_password' => $this->session->get('database_password'),
+                    'database_path' => $this->session->get('database_path') ?: Path::join(PATH_DATA, 'database.sqlite'),
                     'admin_name' => $this->session->get('admin_name'),
                     'admin_email' => $this->session->get('admin_email'),
                     'admin_password' => $this->session->get('admin_password'),
@@ -271,6 +285,21 @@ final class FOSSBilling_Installer
      */
     private function connectDatabase(): void
     {
+        match ((string) ($this->session->get('database_driver') ?: 'pdo_mysql')) {
+            'pdo_pgsql' => $this->connectPostgres(),
+            'pdo_sqlite' => $this->connectSqlite(),
+            default => $this->connectMysql(),
+        };
+    }
+
+    /**
+     * MySQL/MariaDB connection - the original, unchanged install path every existing install
+     * already runs on. Uses raw PDO rather than the portable {@see FOSSBilling\Doctrine\DriverManagerFactory}
+     * path the other two drivers use below, deliberately: this is proven and every existing
+     * install depends on it working exactly as it always has.
+     */
+    private function connectMysql(): void
+    {
         $databaseName = $this->quoteMysqlIdentifier((string) $this->session->get('database_name'));
 
         // Open the connection
@@ -305,6 +334,72 @@ final class FOSSBilling_Installer
         $this->pdo->query('USE ' . $databaseName . ';');
     }
 
+    /**
+     * PostgreSQL connection. Unlike MySQL, PostgreSQL has no "CREATE DATABASE IF NOT EXISTS" and
+     * can't create a database from within the connection that will use it - so this connects to
+     * the always-present `postgres` maintenance database first to issue the CREATE DATABASE, then
+     * opens the real, portable connection to the target database.
+     */
+    private function connectPostgres(): void
+    {
+        $host = (string) $this->session->get('database_hostname');
+        $port = FOSSBilling\Tools::normalizePort($this->session->get('database_port'), 5432);
+        $user = (string) $this->session->get('database_username');
+        $password = (string) $this->session->get('database_password');
+        $databaseName = (string) $this->session->get('database_name');
+
+        $adminPdo = new PDO(
+            "pgsql:host={$host};port={$port};dbname=postgres",
+            $user,
+            $password,
+            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION],
+        );
+
+        try {
+            $adminPdo->exec('CREATE DATABASE ' . $this->quotePostgresIdentifier($databaseName));
+        } catch (PDOException) {
+            // Silently fail if the database already exists, matching connectMysql()'s behavior.
+        }
+        unset($adminPdo);
+
+        $this->connection = FOSSBilling\Doctrine\DriverManagerFactory::getConnection([], [
+            'driver' => 'pdo_pgsql',
+            'host' => $host,
+            'port' => $port,
+            'name' => $databaseName,
+            'user' => $user,
+            'password' => $password,
+        ]);
+        $this->connection->fetchOne('SELECT 1');
+    }
+
+    /**
+     * SQLite "connection" - there's no server to reach or database to pre-create; PDO creates the
+     * file lazily on first real use, so only the containing directory needs to exist.
+     */
+    private function connectSqlite(): void
+    {
+        $path = (string) $this->session->get('database_path');
+        if ($path === '') {
+            throw new Exception('The SQLite database file path is required.');
+        }
+
+        $directory = Path::getDirectory($path);
+        if ($directory !== '' && !$this->filesystem->exists($directory)) {
+            try {
+                $this->filesystem->mkdir($directory);
+            } catch (IOException) {
+                throw new Exception('Unable to create the SQLite database directory at ' . $directory . '. Check file and folder permissions.');
+            }
+        }
+
+        $this->connection = FOSSBilling\Doctrine\DriverManagerFactory::getConnection([], [
+            'driver' => 'pdo_sqlite',
+            'path' => $path,
+        ]);
+        $this->connection->fetchOne('SELECT 1');
+    }
+
     private function quoteMysqlIdentifier(string $identifier): string
     {
         if ($identifier === '' || str_contains($identifier, "\0")) {
@@ -312,6 +407,15 @@ final class FOSSBilling_Installer
         }
 
         return '`' . str_replace('`', '``', $identifier) . '`';
+    }
+
+    private function quotePostgresIdentifier(string $identifier): string
+    {
+        if ($identifier === '' || str_contains($identifier, "\0")) {
+            throw new InvalidArgumentException('The database name is invalid.');
+        }
+
+        return '"' . str_replace('"', '""', $identifier) . '"';
     }
 
     /**
@@ -382,9 +486,10 @@ final class FOSSBilling_Installer
     }
 
     /**
-     * Installation processor.
+     * MySQL/MariaDB schema + seed data: replays install/sql/structure.sql and content.sql almost
+     * verbatim via raw PDO, unchanged from before PostgreSQL/SQLite support existed.
      */
-    private function install(): bool
+    private function installMysql(): void
     {
         // Load database structure
         $sql = $this->filesystem->readFile(PATH_SQL);
@@ -432,6 +537,50 @@ final class FOSSBilling_Installer
             ':param' => 'last_error_reporting_nudge',
             ':value' => FOSSBilling\Version::VERSION,
         ]);
+    }
+
+    /**
+     * PostgreSQL/SQLite schema + seed data: schema is generated from Doctrine entity metadata
+     * (there's no hand-maintained SQL dump for these platforms - see {@see FOSSBilling\Doctrine\SchemaInstaller}),
+     * and content.sql's seed rows are replayed through a portable rewrite of that same file (see
+     * {@see FOSSBilling\Doctrine\InstallSeeder}) rather than a second, duplicated copy of the data.
+     */
+    private function installPortable(): void
+    {
+        $entityManager = FOSSBilling\Doctrine\EntityManagerFactory::create($this->connection);
+        FOSSBilling\Doctrine\SchemaInstaller::createSchema($entityManager);
+
+        $contentSql = $this->filesystem->readFile(PATH_SQL_DATA);
+        if (!$contentSql) {
+            throw new Exception('Could not read content.sql file');
+        }
+
+        $now = new DateTimeImmutable();
+        FOSSBilling\Doctrine\InstallSeeder::seedContent($this->connection, $contentSql, $now);
+
+        $passwordObject = new FOSSBilling\PasswordManager();
+        FOSSBilling\Doctrine\InstallSeeder::seedAdmin(
+            $this->connection,
+            (string) $this->session->get('admin_name'),
+            (string) $this->session->get('admin_email'),
+            $passwordObject->hashIt((string) $this->session->get('admin_password')),
+            $this->session->get('admin_api_token'),
+            $now,
+        );
+        FOSSBilling\Doctrine\InstallSeeder::setDefaultCurrency($this->connection, (string) $this->session->get('currency_code'));
+        FOSSBilling\Doctrine\InstallSeeder::seedInstallNudge($this->connection, FOSSBilling\Version::VERSION, $now);
+    }
+
+    /**
+     * Installation processor.
+     */
+    private function install(): bool
+    {
+        if ((string) ($this->session->get('database_driver') ?: 'pdo_mysql') === 'pdo_mysql') {
+            $this->installMysql();
+        } else {
+            $this->installPortable();
+        }
 
         // Copy config templates when applicable
         if (!$this->filesystem->exists(HURAGA_CONFIG) && $this->filesystem->exists(HURAGA_CONFIG_TEMPLATE)) {
@@ -557,14 +706,20 @@ final class FOSSBilling_Installer
         $data['info']['instance_id'] = Uuid::v4()->toString();
         $data['url'] = str_replace(['https://', 'http://'], '', $systemUrl);
         $data['path_data'] = PATH_DATA;
-        $data['db'] = [
-            'driver' => 'pdo_mysql',
-            'host' => $this->session->get('database_hostname'),
-            'port' => FOSSBilling\Tools::normalizePort($this->session->get('database_port'), 3306),
-            'name' => $this->session->get('database_name'),
-            'user' => $this->session->get('database_username'),
-            'password' => $this->session->get('database_password'),
-        ];
+        $driver = (string) ($this->session->get('database_driver') ?: 'pdo_mysql');
+        $data['db'] = $driver === 'pdo_sqlite'
+            ? [
+                'driver' => 'pdo_sqlite',
+                'path' => (string) $this->session->get('database_path'),
+            ]
+            : [
+                'driver' => $driver,
+                'host' => $this->session->get('database_hostname'),
+                'port' => FOSSBilling\Tools::normalizePort($this->session->get('database_port'), $driver === 'pdo_pgsql' ? 5432 : 3306),
+                'name' => $this->session->get('database_name'),
+                'user' => $this->session->get('database_username'),
+                'password' => $this->session->get('database_password'),
+            ];
         $data['twig']['cache'] = PATH_CACHE;
         $data['disable_auto_cron'] = !FOSSBilling\Version::isPreviewVersion() && !Environment::isDevelopment();
 

@@ -18,7 +18,7 @@ use FOSSBilling\Interfaces\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Servicelicense\Repository\ServiceLicenseRepository::class)]
 #[ORM\Table(name: 'service_license')]
-#[ORM\Index(name: 'client_id_idx', columns: ['client_id'])]
+#[ORM\Index(name: 'service_license_client_id_idx', columns: ['client_id'])]
 #[ORM\HasLifecycleCallbacks]
 class ServiceLicense implements TimestampInterface
 {

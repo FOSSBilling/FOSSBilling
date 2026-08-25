@@ -18,7 +18,7 @@ use FOSSBilling\Interfaces\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Staff\Repository\AdminPasswordResetRepository::class)]
 #[ORM\Table(name: 'admin_password_reset')]
-#[ORM\Index(name: 'admin_id_idx', columns: ['admin_id'])]
+#[ORM\Index(name: 'admin_password_reset_admin_id_idx', columns: ['admin_id'])]
 #[ORM\HasLifecycleCallbacks]
 class AdminPasswordReset implements TimestampInterface
 {

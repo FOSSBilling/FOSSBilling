@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Client\Repository;
 
 use Doctrine\ORM\EntityRepository;
+use FOSSBilling\Doctrine\RowLock;
 
 class ClientBalanceRepository extends EntityRepository
 {
@@ -39,14 +40,14 @@ class ClientBalanceRepository extends EntityRepository
         // The balance sums insert-only rows, so a concurrent deduction inserts rather than updates
         // and there is nothing for the sum to serialize against. Lock the client row as the mutex.
         $connection->fetchOne(
-            'SELECT id FROM client WHERE id = :client_id FOR UPDATE',
+            'SELECT id FROM client WHERE id = :client_id' . RowLock::suffix($connection),
             ['client_id' => $clientId],
         );
 
         // A locking read, because a plain one is served from the transaction snapshot, which under
         // REPEATABLE READ can predate the deduction we just waited on above.
         $result = $connection->fetchOne(
-            'SELECT SUM(amount) FROM client_balance WHERE client_id = :client_id FOR UPDATE',
+            'SELECT SUM(amount) FROM client_balance WHERE client_id = :client_id' . RowLock::suffix($connection),
             ['client_id' => $clientId],
         );
 

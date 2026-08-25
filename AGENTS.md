@@ -73,7 +73,9 @@ The application uses a modern PHP architecture with dependency injection, event-
 * **Composer** for PHP dependency management
 * **Node.js and npm** for frontend asset management
   * Docker and DDEV use Node.js 24, and `package.json` requires npm 11 or newer.
-* **MySQL/MariaDB** database server
+* A database server: **MySQL/MariaDB**, **PostgreSQL**, or **SQLite**
+  * Fresh installs support all four drivers (`pdo_mysql`, `pdo_pgsql`, `pdo_sqlite`) — see `DriverManagerFactory::SUPPORTED_DRIVERS`. PostgreSQL/SQLite schema is generated from Doctrine entity metadata (`FOSSBilling\Doctrine\SchemaInstaller`); MySQL/MariaDB still installs from `src/install/sql/structure.sql`.
+  * Upgrading an *existing* install keeps the database **structure** current automatically, on every driver: `UpdatePatcher::applyCorePatches()` always runs `FOSSBilling\Doctrine\SchemaSynchronizer` after its (MySQL/MariaDB-only) legacy patches, which diffs live schema against current Doctrine entity metadata and applies only additive changes (new tables/columns/indexes) — it never drops or alters existing structure, and never adds a foreign key constraint to a table that already exists (only to a table it's creating fresh), since FOSSBilling's schema has never had real FK constraints and existing rows aren't guaranteed to satisfy one. Anything it doesn't recognize or won't touch is logged, not silently ignored. What it does *not* do: replay the **data transformations** several historical patches perform (splitting/merging tables, rewriting existing rows) — those remain MySQL/MariaDB-only raw SQL forever, so an install can pick up new schema going forward but won't get an old data-migration's effect retroactively on any driver.
 
 **Important:** If PHP is not installed or configured on the system, try using `ddev` to manage the development environment and run PHP/Composer commands.
 DDEV is configured with `docroot: src`, Node.js 24, MariaDB 10.11, and `data/uploads` as its upload directory. Its post-start hook installs Composer/npm dependencies and rebuilds frontend assets when needed.
@@ -261,5 +263,5 @@ tests/                         # Pest, live API, and end-to-end test structure
 ## Important Notes
 
 * **PHP Version:** Requires PHP 8.3 or higher
-* **Database:** Requires MySQL/MariaDB database server
+* **Database:** MySQL, MariaDB, PostgreSQL, or SQLite for fresh installs; upgrades on every driver stay in schema sync automatically, but MySQL/MariaDB-only historical data migrations never replay on any driver (see Prerequisites above)
 * **License:** Apache License 2.0

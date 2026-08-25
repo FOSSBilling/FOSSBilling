@@ -134,7 +134,10 @@ return [
 
     'db' => [
         /*
-         * Database type. Don't change this if in doubt.
+         * Database driver. Don't change this if in doubt.
+         * Supported: 'pdo_mysql' (MySQL/MariaDB), 'pdo_pgsql' (PostgreSQL), 'pdo_sqlite' (SQLite).
+         * pdo_sqlite ignores 'host'/'port'/'user'/'password' below and instead reads a 'path'
+         * (filesystem path to the database file) or 'memory' (bool, for an in-memory database).
          */
         'driver' => 'pdo_mysql',
 

@@ -1070,3 +1070,142 @@ test('require transfer code patch is a no-op when the column already exists', fu
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch112'))->invoke($patcher);
 });
+
+/**
+ * These patches are raw MySQL/MariaDB DDL with no PostgreSQL/SQLite equivalent - see
+ * UpdatePatcher::isMysqlDriver(). Swaps the real config.php's `db.driver`, mirroring
+ * DriverManagerFactoryTest's config-swap pattern, since getDatabaseConfig() reads it directly.
+ */
+function withNonMysqlDbDriver(Closure $callback): void
+{
+    withDbDriverConfig(['driver' => 'pdo_sqlite', 'path' => '/tmp/does-not-matter.sqlite'], $callback);
+}
+
+/**
+ * Same config-swap as {@see withNonMysqlDbDriver()}, but forcing `pdo_mysql` regardless of what
+ * the ambient test config already has - so a test doesn't silently depend on that.
+ */
+function withMysqlDbDriver(Closure $callback): void
+{
+    withDbDriverConfig(['driver' => 'pdo_mysql', 'host' => '127.0.0.1', 'port' => 3306, 'name' => 'does_not_matter', 'user' => 'root', 'password' => ''], $callback);
+}
+
+function withDbDriverConfig(array $dbConfig, Closure $callback): void
+{
+    $filesystem = new Filesystem();
+    $original = $filesystem->readFile(PATH_CONFIG);
+    $config = FOSSBilling\Config::getConfig();
+    $config['db'] = $dbConfig;
+    $filesystem->dumpFile(PATH_CONFIG, '<?php return ' . var_export($config, true) . ';');
+    clearstatcache(true, PATH_CONFIG);
+    if (function_exists('opcache_invalidate')) {
+        @opcache_invalidate(PATH_CONFIG, true);
+    }
+
+    try {
+        $callback();
+    } finally {
+        $filesystem->dumpFile(PATH_CONFIG, $original);
+        clearstatcache(true, PATH_CONFIG);
+        if (function_exists('opcache_invalidate')) {
+            @opcache_invalidate(PATH_CONFIG, true);
+        }
+    }
+}
+
+test('applyCorePatches never runs a legacy MySQL patch on a non-MySQL driver, even if the patch level looks stale', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $pdo = Mockery::mock(PDO::class);
+        $pdo->shouldNotReceive('prepare');
+        $pdo->shouldNotReceive('query');
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        // force: true is exactly the path finalizeUpdateLocked() calls unconditionally on every
+        // request when finalization state is missing/stale - this must never touch the database
+        // via a legacy MySQL-only patch. With no entity manager in $di, there is also nothing for
+        // the portable schema sync to run against, so this is a full no-op end to end.
+        $patcher->applyCorePatches(force: true);
+    });
+});
+
+test('applyCorePatches runs a portable schema sync instead of legacy patches on a non-MySQL driver', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+        $entityManager = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+        FOSSBilling\Doctrine\SchemaInstaller::createSchema($entityManager);
+
+        // Simulate a PostgreSQL/SQLite install that predates a table current entity metadata
+        // knows about - the same situation a real upgrade would hit.
+        $connection->executeStatement('DROP TABLE custom_pages');
+
+        $pdo = Mockery::mock(PDO::class);
+        $pdo->shouldNotReceive('prepare');
+        $pdo->shouldNotReceive('query');
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+        $di['em'] = $entityManager;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        $patcher->applyCorePatches(force: true);
+
+        expect($connection->createSchemaManager()->tablesExist(['custom_pages']))->toBeTrue();
+    });
+});
+
+test('applyCorePatches also runs a portable schema sync after legacy patches on a MySQL driver', function (): void {
+    withMysqlDbDriver(function (): void {
+        $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+        $entityManager = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+        FOSSBilling\Doctrine\SchemaInstaller::createSchema($entityManager);
+        $connection->executeStatement('DROP TABLE custom_pages');
+
+        // The legacy patch loop still needs a patch level to compare against - report the latest
+        // one so getPatches() finds nothing pending and the loop body never runs. That isolates
+        // this test to proving the sync step runs afterward, not re-testing the patches themselves.
+        $latestPatchLevel = (new UpdatePatcher())->latestPatchLevel();
+        $statement = Mockery::mock(PDOStatement::class);
+        $statement->shouldReceive('execute')->once()->andReturn(true);
+        $statement->shouldReceive('fetchColumn')->once()->andReturn((string) $latestPatchLevel);
+
+        $pdo = Mockery::mock(PDO::class);
+        $pdo->shouldReceive('prepare')->once()->andReturn($statement);
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+        $di['em'] = $entityManager;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        $patcher->applyCorePatches(force: true);
+
+        expect($connection->createSchemaManager()->tablesExist(['custom_pages']))->toBeTrue();
+    });
+});
+
+test('availablePatches reports 0 on a non-MySQL driver regardless of the last_patch value', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $pdo = Mockery::mock(PDO::class);
+        $pdo->shouldNotReceive('prepare');
+        $pdo->shouldNotReceive('query');
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        expect($patcher->availablePatches())->toBe(0);
+    });
+});

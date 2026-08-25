@@ -18,6 +18,7 @@ use Doctrine\DBAL\Exception\DeadlockException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use FOSSBilling\Cache\CacheFactory;
 use FOSSBilling\Config;
+use FOSSBilling\Doctrine\RowLock;
 use FOSSBilling\Environment;
 use FOSSBilling\GeoIP\Reader;
 use FOSSBilling\Period;
@@ -744,7 +745,7 @@ class Service
         return $this->di['dbal']->transactional(function (Connection $connection) use ($param, $seed): ?int {
             $now = date('Y-m-d H:i:s');
             $current = $connection->fetchOne(
-                'SELECT value FROM setting WHERE param = :param FOR UPDATE',
+                'SELECT value FROM setting WHERE param = :param' . RowLock::suffix($connection),
                 ['param' => $param]
             );
 

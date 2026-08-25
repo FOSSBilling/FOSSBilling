@@ -535,7 +535,7 @@ test('handles event after invoice is due', function (): void {
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connection->shouldReceive('executeStatement')
         ->once()
-        ->with(Mockery::type('string'), ['id' => 1])
+        ->with(Mockery::type('string'), Mockery::on(fn (array $params): bool => $params['id'] === 1 && isset($params['now'])))
         ->andReturn(1);
 
     $di = container();
@@ -586,7 +586,7 @@ test('skips overdue invoice reminder when the invoice was already claimed', func
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connection->shouldReceive('executeStatement')
         ->once()
-        ->with(Mockery::type('string'), ['id' => 1])
+        ->with(Mockery::type('string'), Mockery::on(fn (array $params): bool => $params['id'] === 1 && isset($params['now'])))
         ->andReturn(0);
 
     $di = container();
@@ -648,7 +648,7 @@ test('releases the claim when sending the overdue invoice email fails', function
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connection->shouldReceive('executeStatement')
         ->once()
-        ->with(Mockery::type('string'), ['id' => 1])
+        ->with(Mockery::type('string'), Mockery::on(fn (array $params): bool => $params['id'] === 1 && isset($params['now'])))
         ->andReturn(1);
     $connection->shouldReceive('executeStatement')
         ->once()
@@ -710,7 +710,7 @@ test('releases the overdue reminder claim when invoice client data is unavailabl
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connection->shouldReceive('executeStatement')
         ->once()
-        ->with(Mockery::type('string'), ['id' => 1])
+        ->with(Mockery::type('string'), Mockery::on(fn (array $params): bool => $params['id'] === 1 && isset($params['now'])))
         ->andReturn(1);
     $connection->shouldReceive('executeStatement')
         ->once()
@@ -767,7 +767,7 @@ test('handles event before invoice is due', function (): void {
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connection->shouldReceive('executeStatement')
         ->once()
-        ->with(Mockery::type('string'), ['id' => 1])
+        ->with(Mockery::type('string'), Mockery::on(fn (array $params): bool => $params['id'] === 1 && isset($params['now'])))
         ->andReturn(1);
 
     $di = container();
@@ -815,7 +815,7 @@ test('releases the claim when sending the before-due invoice reminder fails', fu
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connection->shouldReceive('executeStatement')
         ->once()
-        ->with(Mockery::type('string'), ['id' => 1])
+        ->with(Mockery::type('string'), Mockery::on(fn (array $params): bool => $params['id'] === 1 && isset($params['now'])))
         ->andReturn(1);
     $connection->shouldReceive('executeStatement')
         ->once()
@@ -867,7 +867,7 @@ test('skips before due invoice reminder when the invoice was already claimed', f
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connection->shouldReceive('executeStatement')
         ->once()
-        ->with(Mockery::type('string'), ['id' => 1])
+        ->with(Mockery::type('string'), Mockery::on(fn (array $params): bool => $params['id'] === 1 && isset($params['now'])))
         ->andReturn(0);
 
     $di = container();
@@ -2019,6 +2019,8 @@ test('activates paid invoices in batch', function (): void {
         ->andReturn($invoiceItemModel);
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
     $connection->shouldReceive('transactional')
         ->once()
         ->andReturnUsing(fn (callable $func) => $func($connection));
@@ -2055,6 +2057,8 @@ test('handles exception during batch paid invoice activation', function (): void
         ->andReturn($invoiceItemModel);
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
     $connection->shouldReceive('transactional')
         ->once()
         ->andReturnUsing(fn (callable $func) => $func($connection));
@@ -2099,6 +2103,8 @@ test('resets the EntityManager when it closes mid-batch so later consumers keep 
         ->andReturn($invoiceItemModel);
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
     $connection->shouldReceive('transactional')
         ->once()
         ->andReturnUsing(fn (callable $func) => $func($connection));
@@ -2178,6 +2184,8 @@ test('skips invoice items already finalized by another process during batch acti
     $invoiceItemRepo->shouldNotReceive('find');
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
     $connection->shouldReceive('transactional')
         ->once()
         ->andReturnUsing(fn (callable $func): mixed => $func($connection));
@@ -2264,6 +2272,8 @@ test('fires due events via the pending reminder fallback when the primary batch 
         ->andReturn('5');
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
     $connection->shouldReceive('fetchAllAssociative')
         ->twice()
         ->andReturn([['id' => 2, 'days_left' => 7]], []);
@@ -2308,6 +2318,8 @@ test('guards the primary reminder batch throttle while the fallback still dispat
         ->with('invoice_overdue_invoked', Mockery::type('string'));
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
     $connection->shouldReceive('fetchAllAssociative')
         ->times(4)
         ->andReturn([['id' => 1, 'days_left' => 7]], [], [], []);
@@ -2352,6 +2364,8 @@ test('invokes due event in batch', function (): void {
         ->atLeast()->once();
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
     $connection->shouldReceive('fetchAllAssociative')
         ->atLeast()->once()
         ->andReturn([['id' => 1]]);

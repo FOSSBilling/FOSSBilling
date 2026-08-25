@@ -14,6 +14,7 @@ namespace Box\Mod\Hook;
 use Box\Mod\Extension\Entity\Extension;
 use Box\Mod\Extension\Entity\ExtensionMeta;
 use Box\Mod\Extension\Repository\ExtensionRepository;
+use FOSSBilling\Doctrine\NamedLock;
 use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
@@ -136,7 +137,7 @@ class Service implements InjectionAwareInterface
     public function batchConnect($mod_name = null): bool
     {
         $connection = $this->di['em']->getConnection();
-        if ((int) $connection->fetchOne('SELECT GET_LOCK(:name, 5)', ['name' => self::BATCH_CONNECT_LOCK]) !== 1) {
+        if (!NamedLock::acquire($connection, self::BATCH_CONNECT_LOCK, 5)) {
             // Another process is already rebuilding the listener set and holding the lock
             // past our wait. Report failure rather than claiming a rebuild we didn't run or
             // wait for actually completed.
@@ -177,7 +178,7 @@ class Service implements InjectionAwareInterface
 
             return true;
         } finally {
-            $connection->executeStatement('SELECT RELEASE_LOCK(:name)', ['name' => self::BATCH_CONNECT_LOCK]);
+            NamedLock::release($connection, self::BATCH_CONNECT_LOCK);
         }
     }
 

@@ -13,6 +13,7 @@ use Box\Mod\Client\Entity\Client;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Transaction;
+use FOSSBilling\Doctrine\NamedLock;
 use FOSSBilling\Period;
 use Stripe\StripeClient;
 use Symfony\Component\Intl\Currencies;
@@ -978,12 +979,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     {
         $lockName = 'fb:stripe:' . substr(hash('sha256', $gatewayId . ':' . $objectId), 0, 54);
         $waitStartedAt = hrtime(true);
-        $acquired = (int) $this->di['dbal']->fetchOne(
-            'SELECT GET_LOCK(:lock_name, 10)',
-            ['lock_name' => $lockName]
-        );
 
-        if ($acquired !== 1) {
+        if (!NamedLock::acquire($this->di['dbal'], $lockName, 10)) {
             $waitDurationMs = (hrtime(true) - $waitStartedAt) / 1_000_000;
             $this->di['logger']->warning(
                 'Timed out after {duration_ms} ms waiting for Stripe object lock {lock_name}',
@@ -996,7 +993,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         try {
             return $callback();
         } finally {
-            $this->di['dbal']->fetchOne('SELECT RELEASE_LOCK(:lock_name)', ['lock_name' => $lockName]);
+            NamedLock::release($this->di['dbal'], $lockName);
         }
     }
 

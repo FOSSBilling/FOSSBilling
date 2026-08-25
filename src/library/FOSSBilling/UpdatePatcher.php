@@ -12,6 +12,8 @@ declare(strict_types=1);
 namespace FOSSBilling;
 
 use Box\Mod\Extension\Entity\Extension;
+use FOSSBilling\Doctrine\DriverManagerFactory;
+use FOSSBilling\Doctrine\SchemaSynchronizer;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -44,6 +46,12 @@ class UpdatePatcher implements InjectionAwareInterface
 
     public function availablePatches(): int
     {
+        // These are MySQL/MariaDB-only patches (see applyCorePatches()) - never "pending" on
+        // another platform, regardless of what the last_patch bookkeeping row says.
+        if (!$this->isMysqlDriver()) {
+            return 0;
+        }
+
         $patchLevel = $this->getPatchLevel();
         $patches = $this->getPatches($patchLevel);
 
@@ -157,11 +165,91 @@ class UpdatePatcher implements InjectionAwareInterface
             return;
         }
 
-        $patchLevel = $this->getPatchLevel();
-        $patches = $this->getPatches($patchLevel);
-        foreach ($patches as $patchLevel => $patch) {
-            call_user_func($patch);
-            $this->setPatchLevel($patchLevel);
+        // The patches below are raw MySQL/MariaDB DDL (backtick identifiers, ENGINE=, SHOW COLUMNS
+        // introspection, ON DUPLICATE KEY UPDATE, ...) with no PostgreSQL/SQLite equivalent, and
+        // several of them are one-time data transformations tied to a specific historical release
+        // (splitting/merging tables, rewriting existing rows) that can't be ported by rewriting SQL
+        // syntax alone. Porting all of that is out of scope; see SchemaSynchronizer's docblock. On
+        // PostgreSQL/SQLite there is nothing here to run at all.
+        //
+        // This guard matters beyond "there's nothing to run": getPatchLevel() returning null (e.g.
+        // a restored/cloned database missing its `setting` row for last_patch) makes getPatches()
+        // treat every patch as pending. Without this check, that combined with a missing/stale
+        // update-finalization state would make the very next page load - see
+        // UpdateFinalization::finalizePendingUpdate(), called unconditionally from every request -
+        // start executing MySQL-only DDL against a non-MySQL database. That fails partway through
+        // (setPatchLevel() itself uses ON DUPLICATE KEY UPDATE), leaving the schema in a state no
+        // later patch or install can cleanly recover from.
+        if ($this->isMysqlDriver()) {
+            $patchLevel = $this->getPatchLevel();
+            $patches = $this->getPatches($patchLevel);
+            foreach ($patches as $patchLevel => $patch) {
+                call_user_func($patch);
+                $this->setPatchLevel($patchLevel);
+            }
+        }
+
+        // Additive structural sync runs on every platform, MySQL/MariaDB included: it picks up any
+        // column/table/index that's on entity metadata but not yet applied, without needing a
+        // hand-written patch for it - the only mechanism at all on PostgreSQL/SQLite, and on
+        // MySQL/MariaDB a catch-all for anything the patches above didn't (or, going forward, for
+        // structural changes that land on metadata without a patch being written at all).
+        $this->syncPortableSchema();
+    }
+
+    /**
+     * Whether the configured database driver is MySQL/MariaDB - the only platform
+     * {@see self::applyCorePatches()}'s raw SQL patches are written for.
+     */
+    private function isMysqlDriver(): bool
+    {
+        try {
+            return DriverManagerFactory::getDatabaseConfig()['driver'] === 'pdo_mysql';
+        } catch (\Throwable) {
+            // Can't determine the driver - don't guess. Fail safe by not running MySQL-only DDL.
+            return false;
+        }
+    }
+
+    /**
+     * Brings the live schema up to date with current Doctrine entity metadata - see
+     * {@see SchemaSynchronizer} for exactly what this does and does not cover (additive structural
+     * changes only, never a substitute for the legacy patches' data transformations).
+     *
+     * Errors are logged, not thrown: this runs on every request via UpdateFinalization, and a
+     * database this can't reach (or a metadata error) should degrade to "nothing changed", the same
+     * outcome as before this method existed, rather than breaking the request.
+     */
+    private function syncPortableSchema(): void
+    {
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('em')) {
+            return;
+        }
+
+        try {
+            $result = SchemaSynchronizer::sync($this->di['em']);
+        } catch (\Throwable $e) {
+            $this->logUpdate('error', 'Schema sync against the configured database failed: ' . $e->getMessage());
+
+            return;
+        }
+
+        if ($result['applied'] !== []) {
+            $this->logUpdate('info', 'Synced database schema with current entity metadata.', ['statements' => $result['applied']]);
+        }
+
+        // Never one log line per skipped item: on MySQL especially, entity metadata and the live
+        // schema can differ in ways that were never meant to be applied (see SchemaSynchronizer's
+        // "never touches" guarantees) and there can legitimately be hundreds of them - logging each
+        // on every request this runs would be pure noise. A single rolled-up count, with the detail
+        // attached as structured context rather than the message, keeps this useful without
+        // flooding the log.
+        if ($result['skipped'] !== []) {
+            $this->logUpdate(
+                'info',
+                sprintf('Schema sync left %d existing structural difference(s) from entity metadata untouched.', count($result['skipped'])),
+                ['skipped' => $result['skipped']],
+            );
         }
     }
 

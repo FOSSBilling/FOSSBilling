@@ -111,9 +111,20 @@
                 <details id="step-3">
                     <summary>Step 3 - Database Connection</summary>
 
-                    <p>Enter the MySQL or MariaDB database details FOSSBilling should use.</p>
+                    <p>Choose the database FOSSBilling should use, and enter its connection details.</p>
 
                     <fieldset>
+                        {% set selectedDriver = request.database_driver|default(database_driver)|default('pdo_mysql') %}
+                        <label for="database_driver">Database Type <span class="red">*</span></label>
+                        <select id="database_driver" name="database_driver">
+                            <option value="pdo_mysql" {% if selectedDriver == 'pdo_mysql' %} selected {% endif %}>MySQL / MariaDB</option>
+                            <option value="pdo_pgsql" {% if selectedDriver == 'pdo_pgsql' %} selected {% endif %}>PostgreSQL</option>
+                            <option value="pdo_sqlite" {% if selectedDriver == 'pdo_sqlite' %} selected {% endif %}>SQLite</option>
+                        </select>
+                        <small id="database-upgrade-notice" hidden>PostgreSQL and SQLite are supported for new installs. Future updates keep the database structure current automatically, but one-time data migrations tied to a specific historical release are MySQL/MariaDB-only - MySQL/MariaDB is recommended if your installation may need one of those.</small>
+                    </fieldset>
+
+                    <fieldset id="database-server-fields">
                         <label for="database_hostname">Database Hostname <span class="red">*</span></label>
                         <input type="text" id="database_hostname" name="database_hostname" value="{{ request.database_hostname|default(database_hostname)|default('localhost') }}" placeholder="localhost, mysql, db.domain.com, 12.34.56.78 ..." required>
                         <small>Use the database service name in Docker environments, for example <strong>mariadb</strong>.</small>
@@ -129,6 +140,12 @@
 
                         <label for="database_password">Database Password <span class="red">*</span></label>
                         <input type="password" id="database_password" name="database_password" value="{{ request.database_password|default(database_password) }}" placeholder="Database password" required>
+                    </fieldset>
+
+                    <fieldset id="database-sqlite-fields" hidden>
+                        <label for="database_path">Database File Path <span class="red">*</span></label>
+                        <input type="text" id="database_path" name="database_path" value="{{ request.database_path|default(database_path) }}" placeholder="/path/to/data/database.sqlite">
+                        <small>Created automatically if it doesn't exist. The containing directory must be writable by the web server, and should live outside the public web root.</small>
                     </fieldset>
                 </details>
 
@@ -305,6 +322,39 @@
             const step4 = document.getElementById("step-4");
             const step5 = document.getElementById("step-5");
             const steps = [step1, step2, step3, step4, step5];
+
+            const databaseDriverSelect = document.getElementById('database_driver');
+            const databaseServerFields = document.getElementById('database-server-fields');
+            const databaseSqliteFields = document.getElementById('database-sqlite-fields');
+            const databaseUpgradeNotice = document.getElementById('database-upgrade-notice');
+            const databasePortInput = document.getElementById('database_port');
+            const defaultPortByDriver = { pdo_mysql: '3306', pdo_pgsql: '5432' };
+
+            function setFieldsetActive(fieldset, active) {
+                fieldset.hidden = !active;
+                fieldset.querySelectorAll('input').forEach(function (input) {
+                    input.required = active;
+                });
+            }
+
+            function updateDatabaseFields() {
+                const driver = databaseDriverSelect.value;
+                const isSqlite = driver === 'pdo_sqlite';
+
+                setFieldsetActive(databaseServerFields, !isSqlite);
+                setFieldsetActive(databaseSqliteFields, isSqlite);
+                databaseUpgradeNotice.hidden = driver === 'pdo_mysql';
+
+                if (!isSqlite && defaultPortByDriver[driver] && (databasePortInput.value === '' || Object.values(defaultPortByDriver).includes(databasePortInput.value))) {
+                    databasePortInput.value = defaultPortByDriver[driver];
+                }
+                if (!isSqlite) {
+                    databasePortInput.placeholder = defaultPortByDriver[driver] || '';
+                }
+            }
+
+            databaseDriverSelect.addEventListener('change', updateDatabaseFields);
+            updateDatabaseFields();
 
             function isStepAllowed(step, reportValidity = false) {
                 for (let i = 1; i < step; i++) {

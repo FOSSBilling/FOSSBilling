@@ -212,18 +212,18 @@ dataset('searchQueryData', [
     ],
     [
         ['created_at' => '2012-12-12'],
-        "DATE_FORMAT(c.created_at, '%Y-%m-%d') = :created_at",
-        ['created_at' => '2012-12-12'],
+        'c.created_at >= :created_at_start AND c.created_at < :created_at_end',
+        ['created_at_start' => '2012-12-12 00:00:00', 'created_at_end' => '2012-12-13 00:00:00'],
     ],
     [
         ['date_from' => '2012-12-10'],
-        'UNIX_TIMESTAMP(c.created_at) >= :date_from',
-        ['date_from' => 1355097600],
+        'c.created_at >= :date_from',
+        ['date_from' => date('Y-m-d H:i:s', 1355097600)],
     ],
     [
         ['date_to' => '2012-12-11'],
-        'UNIX_TIMESTAMP(c.created_at) <= :date_to',
-        ['date_to' => 1355184000],
+        'c.created_at <= :date_to',
+        ['date_to' => date('Y-m-d H:i:s', 1355184000)],
     ],
     [
         ['search' => '2'],

@@ -16,6 +16,7 @@ use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\InvoiceItem;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\Doctrine\RowLock;
 use FOSSBilling\Tools;
 
 class InvoiceRepository extends EntityRepository
@@ -183,7 +184,7 @@ class InvoiceRepository extends EntityRepository
         }
 
         $status = $connection->fetchOne(
-            'SELECT status FROM invoice WHERE id = :id FOR UPDATE',
+            'SELECT status FROM invoice WHERE id = :id' . RowLock::suffix($connection),
             ['id' => $invoiceId],
         );
 

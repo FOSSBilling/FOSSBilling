@@ -459,6 +459,8 @@ test('reserveNextNumericParamValue claims the current value and advances the cou
     $service = new Service();
 
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
     $dbalMock->shouldReceive('transactional')
         ->once()
         ->andReturnUsing(fn (callable $callback): mixed => $callback($dbalMock));
@@ -486,6 +488,8 @@ test('reserveNextNumericParamValue returns null when the counter is missing or n
     $service = new Service();
 
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
     $dbalMock->shouldReceive('transactional')
         ->once()
         ->andReturnUsing(fn (callable $callback): mixed => $callback($dbalMock));
@@ -503,6 +507,8 @@ test('reserveNextNumericParamValue rejects non-integer counter values', function
     $service = new Service();
 
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
     $dbalMock->shouldReceive('transactional')
         ->once()
         ->andReturnUsing(fn (callable $callback): mixed => $callback($dbalMock));
@@ -521,6 +527,8 @@ test('reserveNextNumericParamValue seeds a missing counter and reserves from it'
     $service = new Service();
 
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
     $dbalMock->shouldReceive('transactional')
         ->once()
         ->andReturnUsing(fn (callable $callback): mixed => $callback($dbalMock));
@@ -544,6 +552,8 @@ test('reserveNextNumericParamValue ignores the seed when the counter became vali
     $service = new Service();
 
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
     $dbalMock->shouldReceive('transactional')
         ->once()
         ->andReturnUsing(fn (callable $callback): mixed => $callback($dbalMock));
@@ -568,6 +578,8 @@ test('reserveNextNumericParamValue reserves from the winning row when seeding co
     $service = new Service();
 
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
     $dbalMock->shouldReceive('transactional')
         ->twice()
         ->andReturnUsing(fn (callable $callback): mixed => $callback($dbalMock));

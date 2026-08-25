@@ -18,7 +18,7 @@ use FOSSBilling\Interfaces\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Formbuilder\Repository\FormFieldRepository::class)]
 #[ORM\Table(name: 'form_field')]
-#[ORM\Index(name: 'form_id_idx', columns: ['form_id'])]
+#[ORM\Index(name: 'form_field_form_id_idx', columns: ['form_id'])]
 #[ORM\HasLifecycleCallbacks]
 class FormField implements TimestampInterface
 {

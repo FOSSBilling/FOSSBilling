@@ -1295,7 +1295,7 @@ test('getSoonExpiringActiveOrdersQuery builds expected SQL and bindings', functi
                     AND pending_item.task = :pending_item_task
                     AND pending_item.status != :pending_item_status
                     AND pending_invoice.status = :pending_invoice_status
-                ) AND co.client_id = :client_id HAVING DATEDIFF(co.expires_at, NOW()) <= :days_until_expiration ORDER BY co.client_id DESC';
+                ) AND co.client_id = :client_id HAVING co.expires_at < :expires_before ORDER BY co.client_id DESC';
 
     $expectedBindings = [
         'client_id' => $randId,
@@ -1306,7 +1306,7 @@ test('getSoonExpiringActiveOrdersQuery builds expected SQL and bindings', functi
         'pending_invoice_status' => Invoice::STATUS_PAID,
         'status' => Order::STATUS_ACTIVE,
         'invoice_option' => 'issue-invoice',
-        'days_until_expiration' => $randId,
+        'expires_before' => (new DateTimeImmutable('today'))->modify('+' . ($randId + 1) . ' days')->format('Y-m-d H:i:s'),
     ];
 
     expect($result[0])->toBeString();
@@ -1562,18 +1562,18 @@ dataset('searchQueryData', fn (): array => [
     ],
     'created_at' => [
         ['created_at' => '2012-12-11'],
-        "DATE_FORMAT(co.created_at, '%Y-%m-%d') = :created_at",
-        ['created_at' => '2012-12-11'],
+        'co.created_at >= :created_at_start AND co.created_at < :created_at_end',
+        ['created_at_start' => '2012-12-11 00:00:00', 'created_at_end' => '2012-12-12 00:00:00'],
     ],
     'date_from' => [
         ['date_from' => '2012-12-11'],
-        'UNIX_TIMESTAMP(co.created_at) >= :date_from',
-        ['date_from' => strtotime('2012-12-11')],
+        'co.created_at >= :date_from',
+        ['date_from' => date('Y-m-d H:i:s', strtotime('2012-12-11'))],
     ],
     'date_to' => [
         ['date_to' => '2012-12-11'],
-        'UNIX_TIMESTAMP(co.created_at) <= :date_to',
-        ['date_to' => strtotime('2012-12-11')],
+        'co.created_at <= :date_to',
+        ['date_to' => date('Y-m-d H:i:s', strtotime('2012-12-11'))],
     ],
     'search numeric' => [
         ['search' => 120],
@@ -4172,6 +4172,8 @@ test('batchSendSuspensionWarnings claims and queues each warning once', function
     $repository->shouldReceive('find')->twice()->with(8)->andReturn($order);
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
     $connection->shouldReceive('transactional')->twice()->andReturnUsing(fn (callable $callback): mixed => $callback());
     $connection->shouldReceive('fetchOne')->twice()->with(
         'SELECT id FROM client_order WHERE id = :id FOR UPDATE',
@@ -4223,6 +4225,8 @@ test('batchSendSuspensionWarnings releases a failed claim so the warning can be 
     $repository->shouldReceive('find')->twice()->with(8)->andReturn($order);
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
     $connection->shouldReceive('transactional')->twice()->andReturnUsing(fn (callable $callback): mixed => $callback());
     $connection->shouldReceive('fetchOne')->twice()->andReturn(8);
     $connection->shouldReceive('fetchAssociative')->twice()->andReturn(false);

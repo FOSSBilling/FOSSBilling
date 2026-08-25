@@ -8,6 +8,7 @@ use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\InvoiceItem;
 use Box\Mod\Order\Entity\Order;
 use Doctrine\ORM\EntityRepository;
+use FOSSBilling\Doctrine\SqlExpr;
 
 class OrderRepository extends EntityRepository
 {
@@ -92,20 +93,23 @@ class OrderRepository extends EntityRepository
      */
     public function getExpired(): array
     {
-        $ids = $this->getEntityManager()->getConnection()->fetchFirstColumn(
-            <<<'SQL'
+        $connection = $this->getEntityManager()->getConnection();
+        // The grace period is per-row (order override, falling back to the product's), so it
+        // can't be reduced to a single bound parameter the way :now below is - see SqlExpr.
+        $graceDays = SqlExpr::greatestOfTwo($connection, 'COALESCE(o.suspension_grace_days, p.suspension_grace_days, 0)', '0');
+        $expiresPlusGrace = SqlExpr::addDays($connection, 'o.expires_at', $graceDays);
+
+        $ids = $connection->fetchFirstColumn(
+            <<<SQL
                 SELECT o.id
                 FROM client_order o
                 LEFT JOIN product p ON p.id = o.product_id
                 WHERE o.status = :status
                   AND o.expires_at IS NOT NULL
-                  AND DATE_ADD(
-                      o.expires_at,
-                      INTERVAL GREATEST(COALESCE(o.suspension_grace_days, p.suspension_grace_days, 0), 0) DAY
-                  ) <= NOW()
+                  AND {$expiresPlusGrace} <= :now
                 ORDER BY o.id
                 SQL,
-            ['status' => Order::STATUS_ACTIVE]
+            ['status' => Order::STATUS_ACTIVE, 'now' => (new \DateTimeImmutable())->format('Y-m-d H:i:s')]
         );
 
         return $ids === [] ? [] : $this->findBy(['id' => array_map(intval(...), $ids)]);
@@ -116,28 +120,34 @@ class OrderRepository extends EntityRepository
      */
     public function getDueSuspensionWarnings(): array
     {
-        $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
-            <<<'SQL'
+        $connection = $this->getEntityManager()->getConnection();
+        $graceDays = SqlExpr::greatestOfTwo($connection, 'COALESCE(o.suspension_grace_days, p.suspension_grace_days, 0)', '0');
+        $suspensionAt = SqlExpr::addDays($connection, 'o.expires_at', $graceDays);
+
+        $now = new \DateTimeImmutable();
+        $rows = $connection->fetchAllAssociative(
+            <<<SQL
                 SELECT due.id, due.suspension_at
                 FROM (
                     SELECT
                         o.id,
-                        GREATEST(COALESCE(o.suspension_grace_days, p.suspension_grace_days, 0), 0) AS grace_days,
-                        DATE_ADD(
-                            o.expires_at,
-                            INTERVAL GREATEST(COALESCE(o.suspension_grace_days, p.suspension_grace_days, 0), 0) DAY
-                        ) AS suspension_at
+                        {$graceDays} AS grace_days,
+                        {$suspensionAt} AS suspension_at
                     FROM client_order o
                     LEFT JOIN product p ON p.id = o.product_id
                     WHERE o.status = :status
                       AND o.expires_at IS NOT NULL
                 ) due
                 WHERE due.grace_days > 0
-                  AND due.suspension_at > NOW()
-                  AND due.suspension_at <= DATE_ADD(NOW(), INTERVAL 1 DAY)
+                  AND due.suspension_at > :now
+                  AND due.suspension_at <= :tomorrow
                 ORDER BY due.id
                 SQL,
-            ['status' => Order::STATUS_ACTIVE]
+            [
+                'status' => Order::STATUS_ACTIVE,
+                'now' => $now->format('Y-m-d H:i:s'),
+                'tomorrow' => $now->modify('+1 day')->format('Y-m-d H:i:s'),
+            ]
         );
 
         return array_map(static fn (array $row): array => [
@@ -170,6 +180,11 @@ class OrderRepository extends EntityRepository
      */
     public function getStaleUnpaid(int $days): array
     {
+        // DATEDIFF(NOW(), X) > :days, compared only by calendar date, is equivalent to
+        // X < cutoff, where cutoff is midnight $days days ago - a portable stand-in that also
+        // lets $days collapse to a single bound parameter computed once in PHP.
+        $cutoff = (new \DateTimeImmutable('today'))->modify("-{$days} days")->format('Y-m-d H:i:s');
+
         $ids = $this->getEntityManager()->getConnection()->fetchFirstColumn(
             <<<'SQL'
                 SELECT o.id
@@ -186,14 +201,14 @@ class OrderRepository extends EntityRepository
                           SELECT 1 FROM invoice i
                           WHERE i.id = o.unpaid_invoice_id
                             AND i.status = :unpaid_status
-                            AND DATEDIFF(NOW(), COALESCE(i.due_at, o.created_at)) > :days
+                            AND COALESCE(i.due_at, o.created_at) < :cutoff
                       )
                       OR (
                           NOT EXISTS (
                               SELECT 1 FROM invoice i
                               WHERE i.id = o.unpaid_invoice_id AND i.status = :unpaid_status
                           )
-                          AND DATEDIFF(NOW(), o.created_at) > :days
+                          AND o.created_at < :cutoff
                       )
                   )
                 ORDER BY o.id
@@ -203,7 +218,7 @@ class OrderRepository extends EntityRepository
                 'item_type' => InvoiceItem::TYPE_ORDER,
                 'paid_status' => Invoice::STATUS_PAID,
                 'unpaid_status' => Invoice::STATUS_UNPAID,
-                'days' => $days,
+                'cutoff' => $cutoff,
             ]
         );
 

@@ -26,6 +26,8 @@ use Doctrine\ORM\EntityManagerInterface;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use FOSSBilling\Doctrine\EntityManagerFactory;
+use FOSSBilling\Doctrine\RowLock;
+use FOSSBilling\Doctrine\SqlExpr;
 use FOSSBilling\Environment;
 use FOSSBilling\Http\ResponseFactory;
 use FOSSBilling\i18n;
@@ -589,9 +591,14 @@ class Service implements InjectionAwareInterface
             // reminder being sent twice when this event is dispatched more than once for the
             // same invoice (overlapping cron runs, the once-daily batch and the pending-reminder
             // fallback both firing it, etc).
+            $now = new \DateTimeImmutable();
             $claimed = (bool) $di['em']->getConnection()->executeStatement(
-                "UPDATE invoice SET reminded_at = NOW(), updated_at = NOW() WHERE id = :id AND status = 'unpaid' AND approved = 1 AND due_at > NOW() AND (reminded_at IS NULL OR DATE(reminded_at) < CURDATE())",
-                ['id' => $params['id'] ?? 0]
+                "UPDATE invoice SET reminded_at = :now, updated_at = :now WHERE id = :id AND status = 'unpaid' AND approved = 1 AND due_at > :now AND (reminded_at IS NULL OR reminded_at < :today_start)",
+                [
+                    'id' => $params['id'] ?? 0,
+                    'now' => $now->format('Y-m-d H:i:s'),
+                    'today_start' => $now->modify('today')->format('Y-m-d H:i:s'),
+                ]
             );
             if (!$claimed) {
                 return;
@@ -649,9 +656,19 @@ class Service implements InjectionAwareInterface
             // same invoice (overlapping cron runs, the once-daily batch and the pending-reminder
             // fallback both firing it, etc). The claim UPDATE already persists reminded_at and
             // updated_at, so there's no need to store the loaded model again once sent below.
+            // due_at < :tomorrow_start is a portable stand-in for MySQL's
+            // (due_at < NOW()) OR (ABS(DATEDIFF(due_at, NOW())) = 0): "already overdue, or due
+            // sometime today" is exactly "due before the start of tomorrow".
+            $now = new \DateTimeImmutable();
+            $todayStart = $now->modify('today');
             $claimed = (bool) $di['em']->getConnection()->executeStatement(
-                "UPDATE invoice SET reminded_at = NOW(), updated_at = NOW() WHERE id = :id AND status = 'unpaid' AND approved = 1 AND ((due_at < NOW()) OR (ABS(DATEDIFF(due_at, NOW())) = 0)) AND (reminded_at IS NULL OR DATE(reminded_at) < CURDATE())",
-                ['id' => $params['id'] ?? 0]
+                "UPDATE invoice SET reminded_at = :now, updated_at = :now WHERE id = :id AND status = 'unpaid' AND approved = 1 AND due_at < :tomorrow_start AND (reminded_at IS NULL OR reminded_at < :today_start)",
+                [
+                    'id' => $params['id'] ?? 0,
+                    'now' => $now->format('Y-m-d H:i:s'),
+                    'today_start' => $todayStart->format('Y-m-d H:i:s'),
+                    'tomorrow_start' => $todayStart->modify('+1 day')->format('Y-m-d H:i:s'),
+                ]
             );
             if (!$claimed) {
                 return;
@@ -1628,7 +1645,7 @@ class Service implements InjectionAwareInterface
                 $connection->transactional(function () use ($connection, $item, $invoiceItemService): void {
                     // Claim the row so concurrent cron processes cannot execute the same item twice.
                     $status = $connection->fetchOne(
-                        'SELECT status FROM invoice_item WHERE id = :id FOR UPDATE',
+                        'SELECT status FROM invoice_item WHERE id = :id' . RowLock::suffix($connection),
                         ['id' => (int) ($item['id'] ?? 0)]
                     );
                     if (in_array($status, [InvoiceItem::STATUS_EXECUTED, InvoiceItem::STATUS_FAILED], true)) {
@@ -1719,13 +1736,29 @@ class Service implements InjectionAwareInterface
         $beforeDueReminderIntervals = $this->parseInvoiceReminderIntervals($ss->getParamValue('invoice_reminder_before_due_days', ''));
         $afterDueReminderIntervals = $this->parseInvoiceReminderIntervals($ss->getParamValue('invoice_reminder_after_due_days', '5'));
 
-        $beforeDueList = $this->di['em']->getConnection()->fetchAllAssociative("SELECT id, DATEDIFF(due_at, NOW()) as days_left FROM invoice WHERE status = 'unpaid' AND approved = 1 AND due_at > NOW()");
+        $connection = $this->di['em']->getConnection();
+        $now = new \DateTimeImmutable();
+        $tomorrowStart = $now->modify('today')->modify('+1 day')->format('Y-m-d H:i:s');
+        $nowFormatted = $now->format('Y-m-d H:i:s');
+
+        $daysLeft = SqlExpr::dateDiffDays($connection, 'due_at', ':now');
+        $beforeDueList = $connection->fetchAllAssociative(
+            "SELECT id, {$daysLeft} as days_left FROM invoice WHERE status = 'unpaid' AND approved = 1 AND due_at > :now",
+            ['now' => $nowFormatted]
+        );
         foreach ($beforeDueList as $params) {
             $params['reminder_intervals'] = $beforeDueReminderIntervals;
             $this->di['events_manager']->fire(['event' => 'onEventBeforeInvoiceIsDue', 'params' => $params]);
         }
 
-        $afterDueList = $this->di['em']->getConnection()->fetchAllAssociative("SELECT id, ABS(DATEDIFF(due_at, NOW())) as days_passed FROM invoice WHERE status = 'unpaid' AND approved = 1 AND ((due_at < NOW()) OR (ABS(DATEDIFF(due_at, NOW())) = 0))");
+        // due_at < :tomorrow_start is a portable stand-in for MySQL's
+        // (due_at < NOW()) OR (ABS(DATEDIFF(due_at, NOW())) = 0): "already overdue, or due
+        // sometime today" is exactly "due before the start of tomorrow".
+        $daysPassed = SqlExpr::dateDiffDays($connection, 'due_at', ':now');
+        $afterDueList = $connection->fetchAllAssociative(
+            "SELECT id, ABS({$daysPassed}) as days_passed FROM invoice WHERE status = 'unpaid' AND approved = 1 AND due_at < :tomorrow_start",
+            ['now' => $nowFormatted, 'tomorrow_start' => $tomorrowStart]
+        );
         foreach ($afterDueList as $params) {
             $params['reminder_intervals'] = $afterDueReminderIntervals;
             $this->di['events_manager']->fire(['event' => 'onEventAfterInvoiceIsDue', 'params' => $params]);

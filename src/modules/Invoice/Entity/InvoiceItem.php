@@ -19,7 +19,7 @@ use FOSSBilling\Interfaces\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Invoice\Repository\InvoiceItemRepository::class)]
 #[ORM\Table(name: 'invoice_item')]
-#[ORM\Index(name: 'invoice_id_idx', columns: ['invoice_id'])]
+#[ORM\Index(name: 'invoice_item_invoice_id_idx', columns: ['invoice_id'])]
 #[ORM\HasLifecycleCallbacks]
 class InvoiceItem implements ApiArrayInterface, TimestampInterface
 {
