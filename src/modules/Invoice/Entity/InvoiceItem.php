@@ -20,16 +20,20 @@ use FOSSBilling\Interfaces\TimestampInterface;
 #[ORM\Entity(repositoryClass: \Box\Mod\Invoice\Repository\InvoiceItemRepository::class)]
 #[ORM\Table(name: 'invoice_item')]
 #[ORM\Index(name: 'invoice_item_invoice_id_idx', columns: ['invoice_id'])]
-// invoice_item_pending_renewal_idx (structure.sql: rel_id(20), type, task, status, invoice_id) is
-// deliberately NOT reproduced here. rel_id is TEXT on both sides (structure.sql has always had
-// it as TEXT too - the varchar(20) elsewhere in structure.sql that looks similar belongs to the
-// unrelated client_balance.rel_id column) - the `(20)` in structure.sql's own index is a MySQL
-// column-length *prefix*, required because InnoDB can't index a full TEXT column at all, not a
-// real 20-character limit on the data. Reproducing that prefix needs a MySQL-only Doctrine Index
-// `options: ['lengths' => [20, null, null, null, null]]`, which can't round-trip through
-// SQLite/PostgreSQL introspection - it made FOSSBilling\Doctrine\SchemaSynchronizer::sync() (a
-// live path for existing PG/SQLite installs) permanently misreport this index as missing on
-// every sync. No portable fix exists without picking one of those platforms' tradeoffs.
+// rel_id is mapped TEXT (matches structure.sql exactly - the varchar(20) elsewhere in
+// structure.sql that looks similar belongs to the unrelated client_balance.rel_id column), so
+// this needs a MySQL-only column-length prefix on rel_id: InnoDB can't index a full TEXT column
+// at all, and structure.sql's own `rel_id(20)` index has always carried the same prefix for the
+// same reason - it's an index-key-length workaround, not a real 20-character data limit.
+// SQLite/PostgreSQL ignore the `lengths` option entirely (AbstractPlatform::
+// supportsColumnLengthIndexes() is false there), so the index they create is the full,
+// unprefixed 5-column index - strictly more capable than MySQL's, not narrower. The one cost:
+// that option can't round-trip through SQLite/PostgreSQL schema introspection, so
+// FOSSBilling\Doctrine\SchemaSynchronizer::sync() permanently reports this one index as an
+// "existing structural difference" on every sync against an otherwise fully-current PG/SQLite
+// database - harmless (skipped items are never applied, see SchemaSynchronizer's docblock), but
+// worth knowing before treating a nonzero skip count as evidence of drift on those platforms.
+#[ORM\Index(name: 'invoice_item_pending_renewal_idx', columns: ['rel_id', 'type', 'task', 'status', 'invoice_id'], options: ['lengths' => [20, null, null, null, null]])]
 #[ORM\HasLifecycleCallbacks]
 class InvoiceItem implements ApiArrayInterface, TimestampInterface
 {
