@@ -17,11 +17,6 @@ jobs:
     name: Rector & PHP-CS-Fixer
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # All git/GitHub operations below authenticate as the fossbilling-bot
-    # account via this PAT, not the default GITHUB_TOKEN — nothing in this
-    # job needs the ambient token to have any write permission.
-    env:
-      GH_TOKEN: ${{ secrets.FOSSBILLING_BOT_TOKEN }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -44,6 +39,15 @@ jobs:
         run: |
           git config user.name "FOSSBilling Bot"
           git config user.email "fossbilling-bot"
+
+      - name: 'Load Secrets for FOSSBilling Bot'
+        uses: 1password/load-secrets-action@70062d7a876d3eb6334754fa26efd2fbd90c32f2 # v5.0.1
+        with:
+          export-env: true
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          # FOSSBilling Bot (GitHub CI/CD) credentials stored in 1Password.
+          GH_TOKEN: op://mkqkefntgcmjlgyxzeaekzuuvq/yyxe5dc4jyw45h2pagqhl7576i/credential
 
       # Registers `gh` as git's credential helper for github.com, so the
       # plain `git push` below authenticates using GH_TOKEN above.
