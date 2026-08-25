@@ -76,23 +76,26 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
     public function isDomainAvailable(Registrar_Domain $domain): bool
     {
+        $sld = strtolower((string) $domain->getSld());
+        $tld = strtolower((string) $domain->getTld());
+        $domainName = $sld . $tld;
+
         $params = [
-            'domain-name' => $domain->getSld(),
-            'tlds' => [$domain->getTld(false)],
+            'domain-name' => $sld,
+            'tlds' => [ltrim($tld, '.')],
             'suggest-alternative' => false,
         ];
 
         $result = $this->_makeRequest('domains/available', $params);
-        if (!isset($result[$domain->getName()])) {
-            return true;
+        // the response is keyed by domain name, but the casing of that key isn't guaranteed to match what we sent
+        $result = array_change_key_case((array) $result, CASE_LOWER);
+        if (!isset($result[$domainName]['status'])) {
+            $placeholders = [':action:' => 'domains/available', ':type:' => 'ResellerClub'];
+
+            throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
 
-        $check = $result[$domain->getName()];
-        if ($check && $check['status'] == 'available') {
-            return true;
-        }
-
-        return false;
+        return strtolower((string) $result[$domainName]['status']) === 'available';
     }
 
     public function isDomaincanBeTransferred(Registrar_Domain $domain): bool
@@ -617,12 +620,22 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         }
 
         $content = $result->getContent(false);
-        if (in_array($content, ['true', 'false'], true)) {
-            return $content;
+        $trimmedContent = trim($content);
+
+        // Some endpoints (e.g. domains/validate-transfer, domains/orderid) respond with a bare
+        // scalar instead of a JSON object, which would make toArray() below throw "JSON content
+        // was expected to decode to an array". Match booleans case-insensitively and trimmed,
+        // since the registrar isn't consistent about formatting - see
+        // https://github.com/FOSSBilling/FOSSBilling/issues/2939.
+        if (in_array(strtolower($trimmedContent), ['true', 'false'], true)) {
+            return strtolower($trimmedContent);
         }
-        if (is_numeric($content)) {
-            return $content;
+
+        $decoded = json_decode($trimmedContent, true);
+        if (json_last_error() === JSON_ERROR_NONE && is_scalar($decoded)) {
+            return $trimmedContent;
         }
+
         $json = $result->toArray(false);
 
         if (isset($json['status']) && $json['status'] == 'ERROR') {
