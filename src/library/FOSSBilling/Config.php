@@ -163,7 +163,7 @@ class Config
      *
      * @throws Exception if the number of recursive iterations passes this class's MAX_RECURSION_LEVEL
      */
-    private static function recursivelyIdentAndFormat(array|string|bool|float|int $value, $level = 1): string
+    private static function recursivelyIdentAndFormat(array|string|bool|float|int|null $value, $level = 1): string
     {
         if ($level > self::MAX_RECURSION_LEVEL) {
             throw new Exception('Too many iterations were performed while formatting the config file');
