@@ -99,7 +99,7 @@ test('modifyContact creates a new contact and re-associates it with the domain o
     $httpClient = new MockHttpClient(function (string $method, string $url) use (&$requests, &$responses): MockResponse {
         $requests[] = $method . ' ' . parse_url($url, PHP_URL_PATH);
 
-        return new MockResponse((string) array_shift($responses));
+        return new MockResponse(array_shift($responses));
     });
     $adapter = createResellerclubAdapter($httpClient);
 
