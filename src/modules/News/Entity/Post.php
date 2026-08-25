@@ -38,7 +38,7 @@ class Post implements ApiArrayInterface, TimestampInterface
     #[ORM\Column(name: 'admin_id', type: \Doctrine\DBAL\Types\Types::BIGINT, nullable: true)]
     private ?int $adminId = null;
 
-    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 255, nullable: true)]
+    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::TEXT, nullable: true)]
     private ?string $description = null;
 
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::TEXT, nullable: true)]
