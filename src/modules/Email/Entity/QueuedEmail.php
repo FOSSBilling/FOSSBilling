@@ -56,10 +56,10 @@ class QueuedEmail implements ApiArrayInterface, TimestampInterface
     #[ORM\Column(name: 'from_name', type: Types::STRING, length: 255, nullable: true)]
     private ?string $fromName = null;
 
-    #[ORM\Column(name: 'client_id', type: Types::INTEGER, nullable: true)]
+    #[ORM\Column(name: 'client_id', type: Types::BIGINT, nullable: true)]
     private ?int $clientId = null;
 
-    #[ORM\Column(name: 'admin_id', type: Types::INTEGER, nullable: true)]
+    #[ORM\Column(name: 'admin_id', type: Types::BIGINT, nullable: true)]
     private ?int $adminId = null;
 
     #[ORM\Column(type: Types::INTEGER, nullable: true)]

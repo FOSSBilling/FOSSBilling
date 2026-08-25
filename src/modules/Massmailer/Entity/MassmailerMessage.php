@@ -30,7 +30,7 @@ class MassmailerMessage implements ApiArrayInterface, TimestampInterface
     public function __construct(
         #[ORM\Id]
         #[ORM\GeneratedValue]
-        #[ORM\Column(type: \Doctrine\DBAL\Types\Types::INTEGER)]
+        #[ORM\Column(type: \Doctrine\DBAL\Types\Types::BIGINT)]
         private ?int $id = null,
     ) {
     }
