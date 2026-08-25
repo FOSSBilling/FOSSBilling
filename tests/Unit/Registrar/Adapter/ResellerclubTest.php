@@ -100,11 +100,12 @@ test('modifyContact creates a new contact and re-associates it with the domain o
     // Regression test for #2365: ResellerClub deprecated contacts/modify in December 2016 due to
     // ICANN's IRTP-C policy - existing contacts can no longer be edited in place. modifyContact must
     // instead create a new contact via contacts/add and re-point the domain order at it via
-    // domains/modify-contact.
+    // domains/modify-contact. It must never call contacts/search or contacts/delete: that search
+    // isn't scoped to this domain's order, so it could delete an unrelated active contact belonging
+    // to the same customer.
     $requests = [];
     $responses = [
         json_encode(['customerid' => '555']), // customers/details
-        json_encode(['recsonpage' => 0]), // contacts/search (no existing contact to delete)
         '998877', // contacts/add -> new contact id
         '112233', // domains/orderid
         json_encode(['status' => 'Success']), // domains/modify-contact
@@ -123,7 +124,6 @@ test('modifyContact creates a new contact and re-associates it with the domain o
     expect($adapter->modifyContact($domain))->toBeTrue();
     expect($requests)->toBe([
         'GET /api/customers/details.json',
-        'GET /api/contacts/search.json',
         'POST /api/contacts/add.json',
         'GET /api/domains/orderid.json',
         'POST /api/domains/modify-contact.json',
@@ -144,9 +144,7 @@ test('modifyContact assigns per-role contact IDs for TLDs that require a dedicat
     $requests = [];
     $responses = [
         json_encode(['customerid' => '555']), // customers/details
-        json_encode(['recsonpage' => 0]), // contacts/search (general Contact)
         '111111', // contacts/add (general Contact) -> id
-        json_encode(['recsonpage' => 0]), // contacts/search (UkContact)
         '222222', // contacts/add (UkContact) -> id
         '333333', // domains/orderid
         json_encode(['status' => 'Success']), // domains/modify-contact
