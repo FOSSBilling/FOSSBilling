@@ -710,3 +710,63 @@ test('reserveNextNumericParamValue retries once when SQLite reports the write lo
 
     expect($service->reserveNextNumericParamValue('invoice_starting_number'))->toBe(7);
 });
+
+test('reserveNextNumericParamValue retries more than once when SQLite contention outlasts a single retry', function (): void {
+    // With only two or three concurrent SQLite writers, a single retry (the case above) is
+    // typically enough - but DriverManagerFactory's connection sets no busy timeout, so with more
+    // concurrent writers than that, the retry itself can land in the same instant as another
+    // failed attempt and collide again. This is the regression test for that: three failures in a
+    // row still succeed on the fourth attempt, proving the retry isn't bounded to just one.
+    $service = new Service();
+
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\SQLitePlatform::class));
+
+    $dbalMock->shouldReceive('transactional')
+        ->times(4)
+        ->andReturnUsing(fn (callable $callback): mixed => $callback($dbalMock));
+
+    $dbalMock->shouldReceive('executeStatement')
+        ->times(3)
+        ->ordered()
+        ->with('UPDATE setting SET updated_at = updated_at WHERE param = :param', Mockery::any())
+        ->andThrow(Mockery::mock(Doctrine\DBAL\Exception\LockWaitTimeoutException::class));
+    $dbalMock->shouldReceive('executeStatement')->once()->ordered()
+        ->with('UPDATE setting SET updated_at = updated_at WHERE param = :param', Mockery::any());
+    $dbalMock->shouldReceive('fetchOne')->once()->ordered()->andReturn('7');
+    $dbalMock->shouldReceive('executeStatement')->once()->ordered()->with(
+        'UPDATE setting SET value = :value, updated_at = :updated_at WHERE param = :param',
+        Mockery::any()
+    );
+
+    $di = container();
+    $di['dbal'] = $dbalMock;
+    $service->setDi($di);
+
+    expect($service->reserveNextNumericParamValue('invoice_starting_number'))->toBe(7);
+});
+
+test('reserveNextNumericParamValue gives up and rethrows once contention exhausts every retry', function (): void {
+    $service = new Service();
+
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\SQLitePlatform::class));
+
+    $dbalMock->shouldReceive('transactional')
+        ->times(5)
+        ->andReturnUsing(fn (callable $callback): mixed => $callback($dbalMock));
+
+    $dbalMock->shouldReceive('executeStatement')
+        ->times(5)
+        ->with('UPDATE setting SET updated_at = updated_at WHERE param = :param', Mockery::any())
+        ->andThrow(Mockery::mock(Doctrine\DBAL\Exception\LockWaitTimeoutException::class));
+
+    $di = container();
+    $di['dbal'] = $dbalMock;
+    $service->setDi($di);
+
+    expect(fn () => $service->reserveNextNumericParamValue('invoice_starting_number'))
+        ->toThrow(Doctrine\DBAL\Exception\LockWaitTimeoutException::class);
+});

@@ -743,17 +743,32 @@ class Service
             throw new \FOSSBilling\Exception('Parameter key is missing.');
         }
 
-        try {
-            return $this->reserveNumericParamValue($param, $seed);
-        } catch (UniqueConstraintViolationException|DeadlockException|LockWaitTimeoutException) {
-            // Two callers seeding a counter that does not exist yet both pass the locking read:
-            // InnoDB gap locks are shared, so neither blocks the other, and they collide on the
-            // insert instead. The loser's transaction is rolled back, so reserve from the row the
-            // winner committed rather than failing the caller. LockWaitTimeoutException is the
-            // SQLite analogue: the lock-escalating write in doReserveNumericParamValue() fails
-            // outright rather than blocking, so a loser that would otherwise gap-lock on MySQL
-            // surfaces here as "database is locked" instead.
-            return $this->reserveNumericParamValue($param, $seed);
+        // On MySQL/PostgreSQL this only ever needs the single, unconditional retry below: two
+        // callers seeding a counter that does not exist yet both pass the locking read (InnoDB gap
+        // locks are shared, so neither blocks the other) and collide on the insert instead - the
+        // loser's transaction rolls back, and its one retry finds the winner's row already there,
+        // so there's no further contention to loop on.
+        //
+        // SQLite is different: DriverManagerFactory's pdo_sqlite connection sets no busy timeout,
+        // so doReserveNumericParamValue()'s lock-escalating write fails outright (non-blocking)
+        // rather than waiting, surfacing here as LockWaitTimeoutException - the same as MySQL's
+        // gap-lock collision from this method's point of view, but for a different reason. With
+        // only two or three concurrent SQLite writers this is still typically a one-shot race the
+        // single retry resolves, but with more than two, the retry itself can collide again (all
+        // attempts landing at roughly the same instant, not staggered) - so this loops with a short
+        // random backoff between attempts, up to a small bound, rather than assuming one retry is
+        // always enough on every driver.
+        $attempts = 0;
+        while (true) {
+            try {
+                return $this->reserveNumericParamValue($param, $seed);
+            } catch (UniqueConstraintViolationException|DeadlockException|LockWaitTimeoutException $e) {
+                if (++$attempts >= 5) {
+                    throw $e;
+                }
+
+                usleep(random_int(5_000, 25_000));
+            }
         }
     }
 
