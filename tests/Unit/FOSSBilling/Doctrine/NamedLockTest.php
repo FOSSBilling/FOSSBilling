@@ -10,11 +10,32 @@ declare(strict_types=1);
  */
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Platforms\MariaDBPlatform;
 use Doctrine\DBAL\Platforms\MySQLPlatform;
 use Doctrine\DBAL\Platforms\PostgreSQLPlatform;
-use Doctrine\DBAL\Platforms\SQLitePlatform;
 use FOSSBilling\Doctrine\NamedLock;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
+
+/**
+ * SQLite has no session-scoped lock manager, so acquire()/release() fall back to flock() on a
+ * file under PATH_DATA/locks.
+ */
+function sqliteLockFilePath(string $name): string
+{
+    return Path::join(PATH_DATA, 'locks', hash('sha256', $name) . '.lock');
+}
+
+beforeEach(function (): void {
+    // The SQLite branch never queries the connection, it only uses getDatabasePlatform() to
+    // select the flock() path, so a real in-memory connection is enough here.
+    $this->sqliteConnection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+});
+
+afterEach(function (): void {
+    (new Filesystem())->remove(sqliteLockFilePath('fb-namedlock-test-lock'));
+});
 
 test('acquire and release use GET_LOCK/RELEASE_LOCK for MySQL and MariaDB', function (string $platformClass): void {
     $connection = Mockery::mock(Connection::class);
@@ -92,12 +113,56 @@ test('acquire gives up on PostgreSQL once the timeout elapses', function (): voi
     expect(NamedLock::acquire($connection, 'my-lock', 0))->toBeFalse();
 });
 
-test('acquire and release are safe no-ops on SQLite', function (): void {
-    $connection = Mockery::mock(Connection::class);
-    $connection->shouldReceive('getDatabasePlatform')->andReturn(Mockery::mock(SQLitePlatform::class));
-    $connection->shouldNotReceive('fetchOne');
-    $connection->shouldNotReceive('executeStatement');
+test('acquire and release use flock() on a lock file under PATH_DATA for SQLite', function (): void {
+    expect(NamedLock::acquire($this->sqliteConnection, 'fb-namedlock-test-lock'))->toBeTrue();
 
-    expect(NamedLock::acquire($connection, 'my-lock'))->toBeTrue();
-    NamedLock::release($connection, 'my-lock');
+    $lockPath = sqliteLockFilePath('fb-namedlock-test-lock');
+    expect((new Filesystem())->exists($lockPath))->toBeTrue();
+
+    // A second, independent file handle on the same lock file must fail to acquire an exclusive
+    // lock while the first is still held - this is exactly how a second OS process attempting the
+    // same lock would behave, not just a same-process re-entrancy check.
+    $contendingHandle = fopen($lockPath, 'c');
+
+    try {
+        expect(flock($contendingHandle, LOCK_EX | LOCK_NB))->toBeFalse();
+    } finally {
+        fclose($contendingHandle);
+    }
+
+    NamedLock::release($this->sqliteConnection, 'fb-namedlock-test-lock');
+
+    // Once released, an independent handle can take the lock immediately.
+    $afterReleaseHandle = fopen($lockPath, 'c');
+
+    try {
+        expect(flock($afterReleaseHandle, LOCK_EX | LOCK_NB))->toBeTrue();
+        flock($afterReleaseHandle, LOCK_UN);
+    } finally {
+        fclose($afterReleaseHandle);
+    }
+});
+
+test('acquire times out on SQLite when another holder keeps the lock file locked', function (): void {
+    $lockPath = sqliteLockFilePath('fb-namedlock-test-lock');
+    (new Filesystem())->mkdir(dirname($lockPath));
+    $externalHolder = fopen($lockPath, 'c');
+    flock($externalHolder, LOCK_EX);
+
+    try {
+        // timeoutSeconds: 0 still tries once (matching the PostgreSQL "gives up" test above), so
+        // this returns quickly instead of waiting out a real multi-second timeout.
+        expect(NamedLock::acquire($this->sqliteConnection, 'fb-namedlock-test-lock', 0))->toBeFalse();
+    } finally {
+        flock($externalHolder, LOCK_UN);
+        fclose($externalHolder);
+    }
+});
+
+test('release on SQLite is a no-op when the lock was never acquired', function (): void {
+    // Must not error - Stripe/Hook always call release() in a finally block, including on the
+    // path where acquire() itself failed or threw before this lock was ever taken.
+    NamedLock::release($this->sqliteConnection, 'fb-namedlock-test-lock-never-acquired');
+
+    expect(true)->toBeTrue();
 });

@@ -15,7 +15,9 @@ use Box\Mod\System\Entity\Setting;
 use Box\Mod\System\Repository\SettingRepository;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\DeadlockException;
+use Doctrine\DBAL\Exception\LockWaitTimeoutException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Doctrine\DBAL\Platforms\SQLitePlatform;
 use FOSSBilling\Cache\CacheFactory;
 use FOSSBilling\Config;
 use FOSSBilling\Doctrine\EntityManagerFactory;
@@ -741,52 +743,84 @@ class Service
 
         try {
             return $this->reserveNumericParamValue($param, $seed);
-        } catch (UniqueConstraintViolationException|DeadlockException) {
+        } catch (UniqueConstraintViolationException|DeadlockException|LockWaitTimeoutException) {
             // Two callers seeding a counter that does not exist yet both pass the locking read:
             // InnoDB gap locks are shared, so neither blocks the other, and they collide on the
             // insert instead. The loser's transaction is rolled back, so reserve from the row the
-            // winner committed rather than failing the caller.
+            // winner committed rather than failing the caller. LockWaitTimeoutException is the
+            // SQLite analogue: BEGIN IMMEDIATE below fails outright rather than blocking, so a
+            // loser that would otherwise gap-lock on MySQL surfaces here as "database is locked"
+            // instead.
             return $this->reserveNumericParamValue($param, $seed);
         }
     }
 
     private function reserveNumericParamValue(string $param, ?int $seed): ?int
     {
-        return $this->di['dbal']->transactional(function (Connection $connection) use ($param, $seed): ?int {
-            $now = date('Y-m-d H:i:s');
-            $current = $connection->fetchOne(
-                'SELECT value FROM setting WHERE param = :param' . RowLock::suffix($connection),
-                ['param' => $param]
-            );
+        /** @var Connection $connection */
+        $connection = $this->di['dbal'];
 
-            $exists = $current !== false;
-            if (!$exists || filter_var($current, FILTER_VALIDATE_INT) === false) {
-                if ($seed === null) {
-                    return null;
-                }
+        // RowLock::suffix() appends `FOR UPDATE` on MySQL/PostgreSQL, taking the write lock at
+        // the SELECT below. SQLite has no such clause, and its PDO driver only ever issues a
+        // plain deferred BEGIN, which takes no lock at all until the first write - so two
+        // concurrent transactions could both pass the read under a shared lock before either
+        // takes a write lock, and the second writer - having cached a stale $current - would
+        // silently write the same value the first writer already committed. Driving the
+        // transaction with a raw BEGIN IMMEDIATE instead takes SQLite's write lock upfront,
+        // matching what FOR UPDATE achieves on the other platforms.
+        if ($connection->getDatabasePlatform() instanceof SQLitePlatform && $connection->getTransactionNestingLevel() === 0) {
+            $connection->executeStatement('BEGIN IMMEDIATE');
 
-                if ($exists) {
-                    $connection->executeStatement(
-                        'UPDATE setting SET value = :value, updated_at = :updated_at WHERE param = :param',
-                        ['value' => (string) ($seed + 1), 'updated_at' => $now, 'param' => $param]
-                    );
-                } else {
-                    $connection->executeStatement(
-                        'INSERT INTO setting (param, value, created_at, updated_at) VALUES (:param, :value, :created_at, :updated_at)',
-                        ['param' => $param, 'value' => (string) ($seed + 1), 'created_at' => $now, 'updated_at' => $now]
-                    );
-                }
+            try {
+                $result = $this->doReserveNumericParamValue($connection, $param, $seed);
+                $connection->executeStatement('COMMIT');
 
-                return $seed;
+                return $result;
+            } catch (\Throwable $e) {
+                $connection->executeStatement('ROLLBACK');
+
+                throw $e;
+            }
+        }
+
+        return $connection->transactional(fn (Connection $connection): ?int => $this->doReserveNumericParamValue($connection, $param, $seed));
+    }
+
+    private function doReserveNumericParamValue(Connection $connection, string $param, ?int $seed): ?int
+    {
+        $now = date('Y-m-d H:i:s');
+        $current = $connection->fetchOne(
+            'SELECT value FROM setting WHERE param = :param' . RowLock::suffix($connection),
+            ['param' => $param]
+        );
+
+        $exists = $current !== false;
+        if (!$exists || filter_var($current, FILTER_VALIDATE_INT) === false) {
+            if ($seed === null) {
+                return null;
             }
 
-            $connection->executeStatement(
-                'UPDATE setting SET value = :value, updated_at = :updated_at WHERE param = :param',
-                ['value' => (string) (intval($current) + 1), 'updated_at' => $now, 'param' => $param]
-            );
+            if ($exists) {
+                $connection->executeStatement(
+                    'UPDATE setting SET value = :value, updated_at = :updated_at WHERE param = :param',
+                    ['value' => (string) ($seed + 1), 'updated_at' => $now, 'param' => $param]
+                );
+            } else {
+                $connection->executeStatement(
+                    'INSERT INTO setting (param, value, created_at, updated_at) VALUES (:param, :value, :created_at, :updated_at)',
+                    ['param' => $param, 'value' => (string) ($seed + 1), 'created_at' => $now, 'updated_at' => $now]
+                );
+            }
 
-            return intval($current);
-        });
+            return $seed;
+        }
+
+        $connection->executeStatement(
+            'UPDATE setting SET value = :value, updated_at = :updated_at WHERE param = :param',
+            ['value' => (string) (intval($current) + 1), 'updated_at' => $now, 'param' => $param]
+        );
+
+        return intval($current);
     }
 
     private function canUpdateParam(string $param): bool

@@ -14,6 +14,9 @@ namespace FOSSBilling\Doctrine;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Platforms\AbstractMySQLPlatform;
 use Doctrine\DBAL\Platforms\PostgreSQLPlatform;
+use Doctrine\DBAL\Platforms\SQLitePlatform;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
 
 /**
  * Portable named/advisory locking, for serializing a critical section across concurrent
@@ -23,15 +26,38 @@ use Doctrine\DBAL\Platforms\PostgreSQLPlatform;
  * MySQL/MariaDB have session-scoped named locks (`GET_LOCK`/`RELEASE_LOCK`). PostgreSQL has
  * session-scoped advisory locks keyed by integer rather than string, so the name is folded to an
  * integer key; `pg_try_advisory_lock()` is polled rather than using the blocking
- * `pg_advisory_lock()`, since Postgres has no built-in wait-timeout for it. SQLite has no
- * multi-process lock manager at all, but it doesn't need one for this use case either: SQLite
- * already takes a database-wide write lock for the duration of a write transaction, so a
- * SQLite-backed install cannot actually run the guarded section concurrently in the first place -
- * acquire()/release() are safe no-ops there.
+ * `pg_advisory_lock()`, since Postgres has no built-in wait-timeout for it.
+ *
+ * SQLite has no session-scoped lock manager, but {@see RowLock} shows that most call sites don't
+ * actually need one: SQLite already takes a database-wide write lock for the duration of a write
+ * transaction, so wrapping the whole guarded section in a single transaction is enough to
+ * serialize it against other writers there. That reasoning breaks down for a critical section
+ * spanning more than one transaction - e.g. Stripe::withStripeObjectLock(), which guards several
+ * separate flushes plus an external API call - so on SQLite this falls back to a real
+ * cross-process lock: `flock()` on a zero-byte file under PATH_DATA, one per lock name, polled
+ * with `LOCK_EX|LOCK_NB` the same way the PostgreSQL path above polls `pg_try_advisory_lock()`
+ * (plain blocking `LOCK_EX` has no way to time out).
+ *
+ * Lock files are deliberately never deleted. flock() locks the open file descriptor, not the
+ * path, so removing the file out from under a lock a process still holds - or that another
+ * process is about to open - would let a second process create and lock a fresh file at the same
+ * path while the first still believes it holds the original, defeating mutual exclusion. Leaving
+ * the (empty) files in place avoids that race entirely; a SQLite install's lock names are bounded
+ * by the number of distinct Stripe objects and batch operations it ever processes, so the
+ * footprint stays small - the files hold no data, only OS-level lock state, same as a MySQL named
+ * lock or a Postgres advisory lock holds none in the database itself. This also relies on the
+ * database file living on local storage rather than an NFS/network filesystem, but that is not a
+ * new constraint: SQLite's own documentation already warns that its locking is unreliable there,
+ * so a SQLite-backed install must avoid network filesystems regardless of this class.
  */
 final class NamedLock
 {
     private const int POLL_INTERVAL_MICROSECONDS = 100_000;
+
+    private const string SQLITE_LOCK_SUBDIRECTORY = 'locks';
+
+    /** @var array<string, resource> open file handles for locks currently held on SQLite, keyed by lock name */
+    private static array $sqliteLockHandles = [];
 
     /**
      * Attempts to acquire the named lock, waiting up to $timeoutSeconds. Returns true once
@@ -47,6 +73,7 @@ final class NamedLock
                 ['name' => $name, 'timeout' => $timeoutSeconds],
             ) === 1,
             $platform instanceof PostgreSQLPlatform => self::acquirePostgresAdvisoryLock($connection, self::advisoryLockKey($name), $timeoutSeconds),
+            $platform instanceof SQLitePlatform => self::acquireSqliteFileLock($name, $timeoutSeconds),
             default => true,
         };
     }
@@ -61,6 +88,7 @@ final class NamedLock
         match (true) {
             $platform instanceof AbstractMySQLPlatform => $connection->executeStatement('SELECT RELEASE_LOCK(:name)', ['name' => $name]),
             $platform instanceof PostgreSQLPlatform => $connection->executeStatement('SELECT pg_advisory_unlock(:key)', ['key' => self::advisoryLockKey($name)]),
+            $platform instanceof SQLitePlatform => self::releaseSqliteFileLock($name),
             default => null,
         };
     }
@@ -93,5 +121,58 @@ final class NamedLock
     private static function advisoryLockKey(string $name): int
     {
         return crc32($name);
+    }
+
+    private static function acquireSqliteFileLock(string $name, int $timeoutSeconds): bool
+    {
+        $handle = fopen(Path::join(self::sqliteLockDirectory(), self::sqliteLockFilename($name)), 'c');
+        if ($handle === false) {
+            return false;
+        }
+
+        $deadline = microtime(true) + $timeoutSeconds;
+
+        do {
+            if (flock($handle, LOCK_EX | LOCK_NB)) {
+                self::$sqliteLockHandles[$name] = $handle;
+
+                return true;
+            }
+            usleep(self::POLL_INTERVAL_MICROSECONDS);
+        } while (microtime(true) < $deadline);
+
+        fclose($handle);
+
+        return false;
+    }
+
+    private static function releaseSqliteFileLock(string $name): void
+    {
+        $handle = self::$sqliteLockHandles[$name] ?? null;
+        if ($handle === null) {
+            return;
+        }
+
+        flock($handle, LOCK_UN);
+        fclose($handle);
+        unset(self::$sqliteLockHandles[$name]);
+    }
+
+    private static function sqliteLockDirectory(): string
+    {
+        $directory = Path::join(\PATH_DATA, self::SQLITE_LOCK_SUBDIRECTORY);
+        (new Filesystem())->mkdir($directory, 0o755);
+
+        return $directory;
+    }
+
+    /**
+     * Lock names aren't guaranteed to be filesystem-safe (Stripe's happen to be hex, but this is a
+     * general-purpose primitive), so the name is hashed into a fixed-width, path-safe filename
+     * rather than sanitized.
+     */
+    private static function sqliteLockFilename(string $name): string
+    {
+        return hash('sha256', $name) . '.lock';
     }
 }

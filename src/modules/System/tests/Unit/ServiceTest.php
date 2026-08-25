@@ -610,3 +610,117 @@ test('reserveNextNumericParamValue reserves from the winning row when seeding co
     // Must not be 101: that is the number the winner reserved.
     expect($service->reserveNextNumericParamValue('invoice_starting_number', 101))->toBe(102);
 });
+
+test('reserveNextNumericParamValue drives a raw BEGIN IMMEDIATE transaction on SQLite instead of transactional()', function (): void {
+    $service = new Service();
+
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\SQLitePlatform::class));
+    $dbalMock->shouldReceive('getTransactionNestingLevel')->andReturn(0);
+    $dbalMock->shouldNotReceive('transactional');
+
+    // BEGIN IMMEDIATE takes SQLite's write lock upfront, before the read - unlike the deferred
+    // BEGIN transactional() would otherwise issue, which takes no lock until the first write.
+    $dbalMock->shouldReceive('executeStatement')->once()->ordered()->with('BEGIN IMMEDIATE');
+    // No ' FOR UPDATE' suffix: RowLock::suffix() is a no-op on SQLite, the BEGIN IMMEDIATE above
+    // is what actually serializes this read against other writers.
+    $dbalMock->shouldReceive('fetchOne')
+        ->once()
+        ->ordered()
+        ->with('SELECT value FROM setting WHERE param = :param', ['param' => 'invoice_starting_number'])
+        ->andReturn('7');
+    $dbalMock->shouldReceive('executeStatement')
+        ->once()
+        ->ordered()
+        ->with(
+            'UPDATE setting SET value = :value, updated_at = :updated_at WHERE param = :param',
+            Mockery::on(fn (array $params): bool => $params['value'] === '8' && $params['param'] === 'invoice_starting_number')
+        )
+        ->andReturn(1);
+    $dbalMock->shouldReceive('executeStatement')->once()->ordered()->with('COMMIT');
+
+    $di = container();
+    $di['dbal'] = $dbalMock;
+    $service->setDi($di);
+
+    expect($service->reserveNextNumericParamValue('invoice_starting_number'))->toBe(7);
+});
+
+test('reserveNextNumericParamValue rolls back the SQLite BEGIN IMMEDIATE transaction when the guarded work fails', function (): void {
+    $service = new Service();
+
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\SQLitePlatform::class));
+    $dbalMock->shouldReceive('getTransactionNestingLevel')->andReturn(0);
+
+    $dbalMock->shouldReceive('executeStatement')->once()->ordered()->with('BEGIN IMMEDIATE');
+    $dbalMock->shouldReceive('fetchOne')->once()->ordered()->andThrow(new RuntimeException('boom'));
+    $dbalMock->shouldReceive('executeStatement')->once()->ordered()->with('ROLLBACK');
+    $dbalMock->shouldNotReceive('executeStatement')->with('COMMIT');
+
+    $di = container();
+    $di['dbal'] = $dbalMock;
+    $service->setDi($di);
+
+    expect(fn () => $service->reserveNextNumericParamValue('invoice_starting_number'))
+        ->toThrow(RuntimeException::class, 'boom');
+});
+
+test('reserveNextNumericParamValue retries once when SQLite reports the write lock is already held', function (): void {
+    $service = new Service();
+
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\SQLitePlatform::class));
+    $dbalMock->shouldReceive('getTransactionNestingLevel')->andReturn(0);
+
+    // A concurrent writer holds the RESERVED lock, so the first BEGIN IMMEDIATE fails outright -
+    // Doctrine's SQLite ExceptionConverter maps "database is locked" to LockWaitTimeoutException.
+    // There is no open transaction to roll back at this point, so only the retry's statements run.
+    $dbalMock->shouldReceive('executeStatement')
+        ->once()
+        ->ordered()
+        ->with('BEGIN IMMEDIATE')
+        ->andThrow(Mockery::mock(Doctrine\DBAL\Exception\LockWaitTimeoutException::class));
+    $dbalMock->shouldReceive('executeStatement')->once()->ordered()->with('BEGIN IMMEDIATE');
+    $dbalMock->shouldReceive('fetchOne')->once()->ordered()->andReturn('7');
+    $dbalMock->shouldReceive('executeStatement')->once()->ordered()->with(
+        'UPDATE setting SET value = :value, updated_at = :updated_at WHERE param = :param',
+        Mockery::any()
+    );
+    $dbalMock->shouldReceive('executeStatement')->once()->ordered()->with('COMMIT');
+
+    $di = container();
+    $di['dbal'] = $dbalMock;
+    $service->setDi($di);
+
+    expect($service->reserveNextNumericParamValue('invoice_starting_number'))->toBe(7);
+});
+
+test('reserveNextNumericParamValue falls back to transactional() on SQLite when already inside a transaction', function (): void {
+    $service = new Service();
+
+    // A raw BEGIN IMMEDIATE cannot be issued while a transaction is already open on the same
+    // connection - fall back to the ordinary (SAVEPOINT-based) transactional() path instead of
+    // erroring, same as every other platform.
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\SQLitePlatform::class));
+    $dbalMock->shouldReceive('getTransactionNestingLevel')->andReturn(1);
+    $dbalMock->shouldNotReceive('executeStatement')->with('BEGIN IMMEDIATE');
+    $dbalMock->shouldReceive('transactional')
+        ->once()
+        ->andReturnUsing(fn (callable $callback): mixed => $callback($dbalMock));
+    $dbalMock->shouldReceive('fetchOne')->once()->andReturn('7');
+    $dbalMock->shouldReceive('executeStatement')
+        ->once()
+        ->with(Mockery::pattern('/^UPDATE setting/'), Mockery::any());
+
+    $di = container();
+    $di['dbal'] = $dbalMock;
+    $service->setDi($di);
+
+    expect($service->reserveNextNumericParamValue('invoice_starting_number'))->toBe(7);
+});
