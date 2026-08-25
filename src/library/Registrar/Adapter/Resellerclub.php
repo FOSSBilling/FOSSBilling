@@ -132,33 +132,28 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
     public function modifyContact(Registrar_Domain $domain): bool
     {
+        // ResellerClub deprecated contacts/modify in December 2016 due to ICANN's IRTP-C policy:
+        // https://manage.resellerclub.com/kb/answer/791. Existing contacts can no longer be edited
+        // in place; instead new contacts have to be created and then associated with the domain
+        // order via domains/modify-contact. See https://github.com/FOSSBilling/FOSSBilling/issues/2365.
+        // Reuse _getAllContacts() (as registerDomain() already does) rather than assigning a single
+        // general contact to every role, since several TLDs (e.g. .uk, .de, .ru) require their own
+        // contact type and don't allow a general contact for all four roles. Pass replaceExisting:
+        // false so it only adds the new contact(s) - contacts/search isn't scoped to this domain's
+        // order, so the default replace-existing behaviour could delete an unrelated active contact
+        // belonging to the same customer.
         $customer = $this->_getCustomerDetails($domain);
-        $cdetails = $this->_getDefaultContactDetails($domain, $customer['customerid']);
-        $contact_id = $cdetails['Contact']['registrant'];
+        [$reg_contact_id, $admin_contact_id, $tech_contact_id, $billing_contact_id] = $this->_getAllContacts($domain->getTld(), $customer['customerid'], $domain->getContactRegistrar(), replaceExisting: false);
 
-        $c = $domain->getContactRegistrar();
-
-        $required_params = [
-            'contact-id' => $contact_id,
-            'name' => $c->getName(),
-            'company' => $c->getCompany(),
-            'email' => $c->getEmail(),
-            'address-line-1' => $c->getAddress1(),
-            'city' => $c->getCity(),
-            'zipcode' => $c->getZip(),
-            'phone-cc' => $c->getTelCc(),
-            'phone' => $c->getTel(),
-            'country' => $c->getCountry(),
+        $params = [
+            'order-id' => $this->_getDomainOrderId($domain),
+            'reg-contact-id' => $reg_contact_id,
+            'admin-contact-id' => $admin_contact_id,
+            'tech-contact-id' => $tech_contact_id,
+            'billing-contact-id' => $billing_contact_id,
         ];
 
-        $optional_params = [
-            'address-line-2' => $c->getAddress2(),
-            'address-line-3' => $c->getAddress3(),
-            'state' => $c->getState(),
-        ];
-
-        $params = [...$optional_params, ...$required_params];
-        $result = $this->_makeRequest('contacts/modify', $params, 'POST');
+        $result = $this->_makeRequest('domains/modify-contact', $params, 'POST');
 
         return $result['status'] == 'Success';
     }
@@ -682,7 +677,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         return preg_replace('~%5B(\d+)%5D~', '', $params);
     }
 
-    private function _getAllContacts($tld, $customer_id, Registrar_Domain_Contact $client): array
+    private function _getAllContacts($tld, $customer_id, Registrar_Domain_Contact $client, bool $replaceExisting = true): array
     {
         if ($tld[0] != '.') {
             $tld = '.' . $tld; // $tld must start with a dot(.)
@@ -718,7 +713,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         }
 
         // create general contact id
-        $reg_contact_id = $this->_getContact($contact, $customer_id, $contact['type']);
+        $reg_contact_id = $this->_getContact($contact, $customer_id, $contact['type'], $replaceExisting);
 
         if ($tld == '.nl') {
             $contact['type'] = 'NlContact';
@@ -850,7 +845,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
         $special_contact_id = null;
         if ($contact['type'] != 'Contact') {
-            $special_contact_id = $this->_getContact($contact, $customer_id, $contact['type']);
+            $special_contact_id = $this->_getContact($contact, $customer_id, $contact['type'], $replaceExisting);
         }
 
         // by default special contact is also admin, tech and billing contact, but not always
@@ -876,24 +871,28 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         return [$reg_contact_id, $admin_contact_id, $tech_contact_id, $billing_contact_id];
     }
 
-    private function _getContact($contact, $customer_id, $type = 'Contact')
+    private function _getContact($contact, $customer_id, $type = 'Contact', bool $replaceExisting = true)
     {
-        try {
-            $params = [
-                'customer-id' => $customer_id,
-                'no-of-records' => 20,
-                'page-no' => 1,
-                'status' => 'Active',
-                'type' => $type,
-            ];
-            $result = $this->_makeRequest('contacts/search', $params, 'GET', 'json');
-            if ($result['recsonpage'] < 1) {
-                throw new Registrar_Exception('Contact not found');
+        // contacts/search isn't scoped to a domain/order, so this only replaces an existing contact
+        // when the caller has confirmed there's nothing else relying on it (e.g. during registration).
+        if ($replaceExisting) {
+            try {
+                $params = [
+                    'customer-id' => $customer_id,
+                    'no-of-records' => 20,
+                    'page-no' => 1,
+                    'status' => 'Active',
+                    'type' => $type,
+                ];
+                $result = $this->_makeRequest('contacts/search', $params, 'GET', 'json');
+                if ($result['recsonpage'] < 1) {
+                    throw new Registrar_Exception('Contact not found');
+                }
+                $existing_contact_id = $result['result'][0]['entity.entityid'];
+                $this->_makeRequest('contacts/delete', ['contact-id' => $existing_contact_id], 'POST');
+            } catch (Registrar_Exception $e) {
+                $this->getLog()->info($e->getMessage());
             }
-            $existing_contact_id = $result['result'][0]['entity.entityid'];
-            $this->_makeRequest('contacts/delete', ['contact-id' => $existing_contact_id], 'POST');
-        } catch (Registrar_Exception $e) {
-            $this->getLog()->info($e->getMessage());
         }
 
         return $this->_makeRequest('contacts/add', $contact, 'POST');
