@@ -70,7 +70,7 @@ jobs:
           # preserved between runs — --force-with-lease still guards
           # against clobbering a remote branch that moved unexpectedly
           # (e.g. a reviewer pushed changes to the open PR).
-          git fetch origin chore/cs-fix 2>/dev/null || true
+          git fetch origin '+refs/heads/chore/cs-fix:refs/remotes/origin/chore/cs-fix' 2>/dev/null || true
           git push --force-with-lease origin HEAD:refs/heads/chore/cs-fix
           echo "changed=true" >> "$GITHUB_OUTPUT"
 

@@ -30,6 +30,12 @@ jobs:
         with:
           php-version: 8.3
 
+      # The path list is written to a file, not a $GITHUB_OUTPUT string —
+      # ${{ }} is literal text substitution into the run: script before bash
+      # ever parses it, so interpolating a filename there is a script
+      # injection vector (and breaks on spaces regardless). Only the boolean
+      # below crosses the step boundary via outputs; every step that needs
+      # the actual paths reads them back into a real array with mapfile.
       - name: Determine Changed PHP Files
         id: changed_files
         env:
@@ -39,12 +45,14 @@ jobs:
           # Triple-dot diffs against the merge-base, not the base branch's
           # current tip, so a PR isn't blamed for drift on main it never
           # touched — matches what GitHub's own "Files changed" tab shows.
-          files=$(git diff --name-only --diff-filter=ACMR "$BASE_SHA...$HEAD_SHA" -- '*.php' | paste -sd' ' -)
-          echo "files=$files" >> "$GITHUB_OUTPUT"
-          if [ -z "$files" ]; then
-            echo "No changed PHP files in this pull request — skipping style/quality checks."
+          git diff -z --name-only --diff-filter=ACMR "$BASE_SHA...$HEAD_SHA" -- '*.php' > "$RUNNER_TEMP/changed-php-files.txt"
+          if [ -s "$RUNNER_TEMP/changed-php-files.txt" ]; then
+            echo "has_php_files=true" >> "$GITHUB_OUTPUT"
+            echo "Changed PHP files:"
+            xargs -0 -n1 printf '  %s\n' < "$RUNNER_TEMP/changed-php-files.txt"
           else
-            echo "Changed PHP files: $files"
+            echo "has_php_files=false" >> "$GITHUB_OUTPUT"
+            echo "No changed PHP files in this pull request — skipping style/quality checks."
           fi
 
       # Scoped to just the files this PR touches, not the whole repo — see
@@ -53,16 +61,20 @@ jobs:
       # scheduled sweep in auto-cs-fix.yml) can't fail an unrelated PR.
       - name: Run Rector (dry-run)
         id: rector
-        if: steps.changed_files.outputs.files != ''
-        run: composer rector:check -- --no-progress-bar ${{ steps.changed_files.outputs.files }}
+        if: steps.changed_files.outputs.has_php_files == 'true'
+        run: |
+          mapfile -d '' -t files < "$RUNNER_TEMP/changed-php-files.txt"
+          composer rector:check -- --no-progress-bar "${files[@]}"
 
       # --config is required here: PHP-CS-Fixer only auto-discovers
       # .php-cs-fixer.dist.php when given a single (or zero) path argument,
       # and refuses to run against multiple explicit paths without it.
       - name: Run PHP-CS-Fixer (dry-run)
         id: php_cs_fixer
-        if: steps.changed_files.outputs.files != ''
-        run: composer cs:check -- --config=.php-cs-fixer.dist.php ${{ steps.changed_files.outputs.files }}
+        if: steps.changed_files.outputs.has_php_files == 'true'
+        run: |
+          mapfile -d '' -t files < "$RUNNER_TEMP/changed-php-files.txt"
+          composer cs:check -- --config=.php-cs-fixer.dist.php "${files[@]}"
 
       - name: Write Job Summary
         if: always()
