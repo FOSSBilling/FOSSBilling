@@ -18,7 +18,7 @@ final class RdapRequestTracker
 function createRdapClient(array $bootstrapServices, ?callable $respond = null): array
 {
     $tracker = new RdapRequestTracker();
-    $httpClient = new MockHttpClient(function (string $method, string $url) use ($tracker, $bootstrapServices, $respond): MockResponse {
+    $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use ($tracker, $bootstrapServices, $respond): MockResponse {
         if ($url === Registrar_Rdap::BOOTSTRAP_URL) {
             $tracker->urls[] = $url;
 
@@ -27,7 +27,7 @@ function createRdapClient(array $bootstrapServices, ?callable $respond = null): 
 
         $tracker->urls[] = $url;
         if ($respond !== null) {
-            return $respond($method, $url);
+            return $respond($method, $url, $options);
         }
 
         return new MockResponse('{}');
@@ -44,6 +44,27 @@ test('a domain query answered with 404 means the domain is available', function 
             Registrar_Rdap::BOOTSTRAP_URL,
             'https://rdap.example.com/com/v1/domain/example.com',
         ]);
+});
+
+test('requests are bounded with explicit time limits', function (): void {
+    $options = null;
+    $bootstrap = json_encode(['version' => '1.0', 'services' => [[['com'], ['https://rdap.example.com/com/v1/']]]], JSON_THROW_ON_ERROR);
+    [$rdap] = createRdapClient(
+        [[['com'], ['https://rdap.example.com/com/v1/']]],
+        function (string $method, string $url, array $requestOptions) use (&$options, $bootstrap): MockResponse {
+            if (!str_contains($url, '/domain/')) {
+                return new MockResponse($bootstrap);
+            }
+
+            $options = $requestOptions;
+
+            return new MockResponse('', ['http_code' => 404]);
+        },
+    );
+
+    expect($rdap->isDomainAvailable('example.com'))->toBeTrue()
+        ->and($options['timeout'])->toBe(10.0)
+        ->and($options['max_duration'])->toBe(15.0);
 });
 
 test('a domain query answered with a success status means the domain is registered', function (int $statusCode): void {
