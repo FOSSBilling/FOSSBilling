@@ -61,6 +61,17 @@ test('a bare numeric response (e.g. domains/orderid) is still returned as-is', f
     expect($result)->toBe('98765');
 });
 
+test('a bare "null" response is not silently treated as a scalar', function (): void {
+    // Regression guard for the scalar short-circuit above: json_decode('null') also returns
+    // null with no decode error, but null isn't a usable scalar result (e.g. getDomainDetails()
+    // would go on to index it like an array), so it must fall through to toArray() instead.
+    $httpClient = new MockHttpClient(fn (): MockResponse => new MockResponse('null'));
+    $adapter = createResellerclubAdapter($httpClient);
+
+    expect(fn () => $adapter->isDomaincanBeTransferred(createResellerclubDomain()))
+        ->toThrow(Symfony\Component\HttpClient\Exception\JsonException::class);
+});
+
 test('an error-object response still throws a Registrar_Exception', function (): void {
     $httpClient = new MockHttpClient(fn (): MockResponse => new MockResponse(json_encode([
         'status' => 'ERROR',
