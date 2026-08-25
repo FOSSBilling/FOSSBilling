@@ -615,7 +615,7 @@ CREATE TABLE `invoice` (
   `buyer_phone` varchar(255) DEFAULT NULL,
   `buyer_phone_cc` varchar(255) DEFAULT NULL,
   `buyer_email` varchar(255) DEFAULT NULL,
-  `gateway_id` int(11) DEFAULT NULL,
+  `gateway_id` bigint(20) DEFAULT NULL,
   `approved` tinyint(1) DEFAULT '0',
   `taxname` varchar(255) DEFAULT NULL,
   `taxrate` varchar(35) DEFAULT NULL,
@@ -715,8 +715,8 @@ CREATE TABLE `email_queue` (
   `content` text NOT NULL,
   `to_name` varchar(255) DEFAULT NULL,
   `from_name` varchar(255) DEFAULT NULL,
-  `client_id` int(11) DEFAULT NULL,
-  `admin_id` int(11) DEFAULT NULL,
+  `client_id` bigint(20) DEFAULT NULL,
+  `admin_id` bigint(20) DEFAULT NULL,
   `priority` int(11) DEFAULT NULL,
   `tries` int(11) NOT NULL,
   `status` varchar(20) NOT NULL,
@@ -952,6 +952,24 @@ CREATE TABLE `promo_redemption` (
   KEY `invoice_id_idx` (`invoice_id`),
   KEY `phase_idx` (`phase`),
   KEY `status_idx` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `service_apikey`
+--
+
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `service_apikey` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `client_id` bigint(20) DEFAULT NULL,
+  `api_key` varchar(255) DEFAULT NULL,
+  `config` text,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `client_id_idx` (`client_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -1458,7 +1476,7 @@ CREATE TABLE `tld_registrar` (
 CREATE TABLE `transaction` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `invoice_id` bigint(20) DEFAULT NULL,
-  `gateway_id` int(11) DEFAULT NULL,
+  `gateway_id` bigint(20) DEFAULT NULL,
   `txn_id` varchar(255) DEFAULT NULL,
   `txn_status` varchar(255) DEFAULT NULL,
   `s_id` varchar(255) DEFAULT NULL,

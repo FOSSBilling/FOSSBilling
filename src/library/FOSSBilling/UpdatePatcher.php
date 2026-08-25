@@ -328,6 +328,15 @@ class UpdatePatcher implements InjectionAwareInterface
         return isset($matches[1]) ? (int) $matches[1] : null;
     }
 
+    private function getColumnType(string $table, string $column): ?string
+    {
+        $rows = $this->fetchAll(sprintf('SHOW COLUMNS FROM `%s` LIKE :column', $this->quoteIdentifier($table)), [
+            'column' => $column,
+        ]);
+
+        return $rows === [] ? null : (string) $rows[0]['Type'];
+    }
+
     private function tableHasIndex(string $table, string $indexName): bool
     {
         $indexes = $this->fetchAll(sprintf('SHOW INDEX FROM `%s`', $this->quoteIdentifier($table)));
@@ -537,6 +546,8 @@ class UpdatePatcher implements InjectionAwareInterface
             // 98) would silently skip both forever if they kept their original numbers.
             108 => 'patch108',
             109 => 'patch109',
+            110 => 'patch110',
+            111 => 'patch111',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2625,6 +2636,50 @@ class UpdatePatcher implements InjectionAwareInterface
 
         if (!$this->tableHasIndex('client_order', 'client_order_status_expires_at_idx')) {
             $this->executeSql('ALTER TABLE `client_order` ADD INDEX `client_order_status_expires_at_idx` (`status`, `expires_at`)');
+        }
+    }
+
+    private function patch110(): void
+    {
+        // These columns were declared int(11) in structure.sql while the primary key
+        // column they reference is bigint(20), a width mismatch that predates this
+        // patch. Widen them to match so large ids don't overflow the FK column.
+        $narrowForeignKeys = [
+            ['invoice', 'gateway_id'],
+            ['transaction', 'gateway_id'],
+            ['email_queue', 'client_id'],
+            ['email_queue', 'admin_id'],
+        ];
+
+        foreach ($narrowForeignKeys as [$table, $column]) {
+            // Match on the base type name, not the int(11) display width: MySQL 8.0.19+
+            // deprecates (and 8.4+ drops) integer display widths, so SHOW COLUMNS can
+            // report a bare "int" with no parenthesised length on newer servers.
+            $type = $this->getColumnType($table, $column);
+            if ($type !== null && str_starts_with($type, 'int')) {
+                $this->executeSql(sprintf('ALTER TABLE `%s` MODIFY COLUMN `%s` bigint(20) DEFAULT NULL', $table, $column));
+            }
+        }
+    }
+
+    private function patch111(): void
+    {
+        // The Serviceapikey module (PR #4055) added the ServiceApiKey Doctrine entity but
+        // never gave it a structure.sql counterpart, so the service_apikey table was never
+        // created on any MySQL install — fresh or upgraded.
+        if (!$this->tableExists('service_apikey')) {
+            $this->executeSql(
+                'CREATE TABLE `service_apikey` (
+                    `id` BIGINT NOT NULL AUTO_INCREMENT,
+                    `client_id` BIGINT DEFAULT NULL,
+                    `api_key` VARCHAR(255) DEFAULT NULL,
+                    `config` TEXT,
+                    `created_at` DATETIME DEFAULT NULL,
+                    `updated_at` DATETIME DEFAULT NULL,
+                    PRIMARY KEY (`id`),
+                    KEY `client_id_idx` (`client_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8'
+            );
         }
     }
 

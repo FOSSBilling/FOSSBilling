@@ -27,12 +27,12 @@ class ExtensionMeta implements ApiArrayInterface, TimestampInterface
     public function __construct(
         #[ORM\Id]
         #[ORM\GeneratedValue]
-        #[ORM\Column(type: Types::INTEGER)]
+        #[ORM\Column(type: Types::BIGINT)]
         private ?int $id = null,
     ) {
     }
 
-    #[ORM\Column(name: 'client_id', type: Types::INTEGER, nullable: true)]
+    #[ORM\Column(name: 'client_id', type: Types::BIGINT, nullable: true)]
     private ?int $clientId = null;
 
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
