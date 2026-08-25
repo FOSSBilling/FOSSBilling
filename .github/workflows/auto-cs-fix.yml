@@ -11,7 +11,6 @@ concurrency:
 
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
   fix-cs:
@@ -23,57 +22,77 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: PHP Build
-        uses: FOSSBilling/.workflows/.github/actions/php-build@76b4af76fb2a1a2b553ec1c2839044984299a271
+      - name: Set Up PHP Quality Tools
+        uses: ./.github/actions/php-quality-setup
         with:
           php-version: 8.3
-
-      - name: Set up PHP
-        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
-        with:
-          php-version: 8.3
-          extensions: intl, xml, dom, curl, iconv, json
-
-      - name: Create Cache Directories
-        run: |
-          echo "MONTH=$(date '+%h')" >> "${GITHUB_ENV}"
-          mkdir -p cache/rector
-
-      - name: Restore Rector Cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
-        with:
-          path: ./cache/rector
-          key: ${{ env.MONTH }}-rector
-          restore-keys: ${{ env.MONTH }}-rector
-
-      - name: Restore CS-Fixer Cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
-        with:
-          path: .php-cs-fixer.cache
-          key: ${{ env.MONTH }}-csfixer
-          restore-keys: ${{ env.MONTH }}-csfixer
 
       - name: Run Rector
         id: rector
-        run: php src/vendor/bin/rector
+        run: composer rector:fix
 
       - name: Run PHP-CS-Fixer
         id: php_cs_fixer
-        run: php src/vendor/bin/php-cs-fixer fix
+        run: composer cs:fix
 
-      - name: Create Pull Request
-        id: create_pr
-        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8
+      - name: Configure Git Identity
+        run: |
+          git config user.name "FOSSBilling Bot"
+          git config user.email "fossbilling-bot"
+
+      - name: 'Load Secrets for FOSSBilling Bot'
+        uses: 1password/load-secrets-action@70062d7a876d3eb6334754fa26efd2fbd90c32f2 # v5.0.1
         with:
-          title: Apply PHP Code Styling & Quality Changes
-          commit-message: Apply PHP Code Styling & Quality Changes
-          branch: chore/cs-fix
-          body: Automated run of PHP-CS-Fixer and Rector to ensure code styling, quality, and modern practices.
-          delete-branch: true
-          token: ${{ secrets.BOT_TOKEN }}
-          committer: FOSSBilling Bot <fossbilling-bot>
-          author: FOSSBilling Bot <fossbilling-bot>
-          labels: skip-changelog
+          export-env: true
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          # FOSSBilling Bot (GitHub CI/CD) credentials stored in 1Password.
+          GH_TOKEN: op://mkqkefntgcmjlgyxzeaekzuuvq/yyxe5dc4jyw45h2pagqhl7576i/credential
+
+      # Registers `gh` as git's credential helper for github.com, so the
+      # plain `git push` below authenticates using GH_TOKEN above.
+      - name: Authenticate Git via gh
+        run: gh auth setup-git
+
+      - name: Commit and Push Changes
+        id: push_changes
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          git add -A
+          git commit -m "Apply PHP Code Styling & Quality Changes"
+
+          # chore/cs-fix is fully regenerated every run, so history isn't
+          # preserved between runs — --force-with-lease still guards
+          # against clobbering a remote branch that moved unexpectedly
+          # (e.g. a reviewer pushed changes to the open PR).
+          git fetch origin '+refs/heads/chore/cs-fix:refs/remotes/origin/chore/cs-fix' 2>/dev/null || true
+          git push --force-with-lease origin HEAD:refs/heads/chore/cs-fix
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Create or Update Pull Request
+        id: create_pr
+        if: steps.push_changes.outputs.changed == 'true'
+        run: |
+          existing_pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --head chore/cs-fix --base main --state open --json number -q '.[0].number')
+
+          if [ -n "$existing_pr" ]; then
+            gh pr view "$existing_pr" --repo "$GITHUB_REPOSITORY" --json url -q '"url=" + .url' >> "$GITHUB_OUTPUT"
+            echo "Pull request #$existing_pr already open; push updated it."
+          else
+            url=$(gh pr create \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "Apply PHP Code Styling & Quality Changes" \
+              --body "Automated run of PHP-CS-Fixer and Rector to ensure code styling, quality, and modern practices." \
+              --base main \
+              --head chore/cs-fix \
+              --label skip-changelog)
+            echo "url=$url" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Write Job Summary
         if: always()
@@ -86,6 +105,6 @@ jobs:
           | PHP version | `8.3` |
           | Rector | `${{ steps.rector.outcome }}` |
           | PHP-CS-Fixer | `${{ steps.php_cs_fixer.outcome }}` |
-          | Pull request action | `${{ steps.create_pr.outcome }}` |
-          | Pull request | `${{ steps.create_pr.outputs.pull-request-url || 'No changes' }}` |
+          | Changes pushed | `${{ steps.push_changes.outputs.changed || 'false' }}` |
+          | Pull request | `${{ steps.create_pr.outputs.url || 'No changes' }}` |
           EOF

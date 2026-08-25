@@ -68,7 +68,7 @@ test('a bare "null" response is not silently treated as a scalar', function (): 
     $httpClient = new MockHttpClient(fn (): MockResponse => new MockResponse('null'));
     $adapter = createResellerclubAdapter($httpClient);
 
-    expect(fn () => $adapter->isDomaincanBeTransferred(createResellerclubDomain()))
+    expect(fn (): bool => $adapter->isDomaincanBeTransferred(createResellerclubDomain()))
         ->toThrow(Symfony\Component\HttpClient\Exception\JsonException::class);
 });
 
@@ -79,7 +79,7 @@ test('an error-object response still throws a Registrar_Exception', function ():
     ])));
     $adapter = createResellerclubAdapter($httpClient);
 
-    expect(fn () => $adapter->isDomaincanBeTransferred(createResellerclubDomain()))
+    expect(fn (): bool => $adapter->isDomaincanBeTransferred(createResellerclubDomain()))
         ->toThrow(Registrar_Exception::class);
 });
 

@@ -59,7 +59,7 @@ class CacheFactory
      *
      * @var string[]
      */
-    private const ALL_NAMESPACES = [
+    private const array ALL_NAMESPACES = [
         self::NAMESPACE_APP,
         self::NAMESPACE_RATE_LIMIT,
         self::NAMESPACE_DOCTRINE,
@@ -235,7 +235,7 @@ class CacheFactory
     private static function assertUsable(CacheItemPoolInterface&CacheInterface $pool): void
     {
         $testKey = '__fossbilling_cache_connection_test__';
-        $pool->get($testKey, static fn () => true);
+        $pool->get($testKey, static fn (): true => true);
         $pool->delete($testKey);
     }
 }
