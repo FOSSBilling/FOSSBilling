@@ -23,43 +23,18 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: PHP Build
-        uses: FOSSBilling/.workflows/.github/actions/php-build@76b4af76fb2a1a2b553ec1c2839044984299a271
+      - name: Set Up PHP Quality Tools
+        uses: ./.github/actions/php-quality-setup
         with:
           php-version: 8.3
-
-      - name: Set up PHP
-        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
-        with:
-          php-version: 8.3
-          extensions: intl, xml, dom, curl, iconv, json
-
-      - name: Create Cache Directories
-        run: |
-          echo "MONTH=$(date '+%h')" >> "${GITHUB_ENV}"
-          mkdir -p cache/rector
-
-      - name: Restore Rector Cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
-        with:
-          path: ./cache/rector
-          key: ${{ env.MONTH }}-rector
-          restore-keys: ${{ env.MONTH }}-rector
-
-      - name: Restore CS-Fixer Cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
-        with:
-          path: .php-cs-fixer.cache
-          key: ${{ env.MONTH }}-csfixer
-          restore-keys: ${{ env.MONTH }}-csfixer
 
       - name: Run Rector
         id: rector
-        run: php src/vendor/bin/rector
+        run: composer rector:fix
 
       - name: Run PHP-CS-Fixer
         id: php_cs_fixer
-        run: php src/vendor/bin/php-cs-fixer fix
+        run: composer cs:fix
 
       - name: Create Pull Request
         id: create_pr
@@ -70,7 +45,7 @@ jobs:
           branch: chore/cs-fix
           body: Automated run of PHP-CS-Fixer and Rector to ensure code styling, quality, and modern practices.
           delete-branch: true
-          token: ${{ secrets.BOT_TOKEN }}
+          token: ${{ secrets.FOSSBILLING_BOT_TOKEN }}
           committer: FOSSBilling Bot <fossbilling-bot>
           author: FOSSBilling Bot <fossbilling-bot>
           labels: skip-changelog
