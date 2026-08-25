@@ -83,6 +83,7 @@
                                         <td>
                                             {{ 'Allow register:'|trans }} {% if tld.allow_register %}{{ 'Yes'|trans }}{% else %}{{ 'No'|trans }}{% endif %}<br>
                                             {{ 'Allow transfer:'|trans }} {% if tld.allow_transfer %}{{ 'Yes'|trans }}{% else %}{{ 'No'|trans }}{% endif %}<br>
+                                            {{ 'Require transfer code:'|trans }} {% if tld.require_transfer_code %}{{ 'Yes'|trans }}{% else %}{{ 'No'|trans }}{% endif %}<br>
                                             {{ 'Active:'|trans }} {% if tld.active %}{{ 'Yes'|trans }}{% else %}{{ 'No'|trans }}{% endif %}
                                         </td>
                                         <td>
@@ -299,6 +300,20 @@
                                             <span class="form-check-label">{{ 'No'|trans }}</span>
                                         </label>
                                     </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">{{ 'Require Transfer Code'|trans }}</label>
+                                    <div class="d-flex flex-wrap gap-3 pt-2">
+                                        <label class="form-check form-check-inline mb-0">
+                                            <input class="form-check-input" type="radio" name="require_transfer_code" value="1">
+                                            <span class="form-check-label">{{ 'Yes'|trans }}</span>
+                                        </label>
+                                        <label class="form-check form-check-inline mb-0">
+                                            <input class="form-check-input" type="radio" name="require_transfer_code" value="0" checked>
+                                            <span class="form-check-label">{{ 'No'|trans }}</span>
+                                        </label>
+                                    </div>
+                                    <div class="form-hint">{{ 'Require clients to enter a transfer code (EPP/auth code) before this TLD can be ordered for transfer.'|trans }}</div>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">{{ 'Active'|trans }}</label>
