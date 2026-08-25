@@ -64,7 +64,7 @@ class DriverManagerFactory
      *
      * @var array<string, int>
      */
-    private const DEFAULT_PORTS = [
+    private const array DEFAULT_PORTS = [
         'pdo_mysql' => 3306,
         'pdo_pgsql' => 5432,
     ];

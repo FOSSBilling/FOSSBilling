@@ -31,7 +31,7 @@ use Doctrine\DBAL\Platforms\PostgreSQLPlatform;
  */
 final class NamedLock
 {
-    private const POLL_INTERVAL_MICROSECONDS = 100_000;
+    private const int POLL_INTERVAL_MICROSECONDS = 100_000;
 
     /**
      * Attempts to acquire the named lock, waiting up to $timeoutSeconds. Returns true once
