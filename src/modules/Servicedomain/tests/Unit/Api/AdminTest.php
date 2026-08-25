@@ -142,6 +142,29 @@ test('disables privacy protection', function (): void {
     expect($result)->toBeTrue();
 });
 
+test('synchronizes domain with registrar', function (): void {
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
+    $model = new ServiceDomain();
+
+    $adminApiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods());
+    $adminApiMock->shouldReceive('_getService')
+        ->atLeast()->once()
+        ->andReturn($model);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('synchronizeDomain')
+        ->atLeast()->once()
+        ->with($model);
+
+    $adminApiMock->setService($serviceMock);
+
+    $data = [];
+    $result = $adminApiMock->sync($data);
+
+    expect($result)->toBeTrue();
+});
+
 test('gets transfer code', function (): void {
     $adminApi = apiEndpoint(new Admin());
     $api = apiEndpoint(new Admin());

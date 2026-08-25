@@ -1032,7 +1032,48 @@ test('syncWhois stores null dates when registrar dates are unavailable', functio
     $service->syncWhoisPublic($model, $order);
 
     expect($model->getExpiresAt())->toBeNull()
-        ->and($model->getRegisteredAt())->toBeNull();
+        ->and($model->getRegisteredAt())->toBeNull()
+        ->and($model->getSyncedAt())->not->toBeNull();
+});
+
+test('synchronizes domain with registrar', function (): void {
+    $model = new ServiceDomain();
+    $order = createEntity(Order::class);
+
+    $orderServiceMock = Mockery::mock(OrderService::class);
+    $orderServiceMock->shouldReceive('getServiceOrder')
+        ->once()
+        ->with($model)
+        ->andReturn($order);
+
+    $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $service->shouldReceive('syncWhois')
+        ->once()
+        ->with($model, $order);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $orderServiceMock);
+    $service->setDi($di);
+
+    $service->synchronizeDomain($model);
+});
+
+test('throws when synchronizing a domain without an order', function (): void {
+    $model = new ServiceDomain();
+
+    $orderServiceMock = Mockery::mock(OrderService::class);
+    $orderServiceMock->shouldReceive('getServiceOrder')
+        ->once()
+        ->with($model)
+        ->andReturn(null);
+
+    $service = new Service();
+    $di = container();
+    $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $orderServiceMock);
+    $service->setDi($di);
+
+    expect(fn () => $service->synchronizeDomain($model))
+        ->toThrow(FOSSBilling\Exception::class);
 });
 
 test('converts to api array', function (?Box\Mod\Staff\Entity\Admin $identity, string $dbLoadCalled): void {
@@ -1050,6 +1091,7 @@ test('converts to api array', function (?Box\Mod\Staff\Entity\Admin $identity, s
     $model->setLocked(true);
     $model->setRegisteredAt(new DateTime(date('Y-m-d H:i:s')));
     $model->setExpiresAt(new DateTime(date('Y-m-d H:i:s')));
+    $model->setSyncedAt(new DateTime(date('Y-m-d H:i:s')));
 
     $model->setContactFirstName('first_name');
     $model->setContactLastName('last_name');
@@ -1088,6 +1130,7 @@ test('converts to api array', function (?Box\Mod\Staff\Entity\Admin $identity, s
     expect($result)->toHaveKey('locked');
     expect($result)->toHaveKey('registered_at');
     expect($result)->toHaveKey('expires_at');
+    expect($result)->toHaveKey('synced_at');
     expect($result)->toHaveKey('contact');
 
     $contact = $result['contact'];
