@@ -135,6 +135,33 @@ test('setDefaultCurrency repoints the seeded USD row at the chosen currency code
         ->and($connection->fetchOne('SELECT code FROM currency WHERE id = 1'))->toBe('EUR');
 });
 
+test('seedContent respects foreign key dependency order for every real FK-mapped seed table', function (): void {
+    // Plain installSeederConnection() (like every other test above) runs against SQLite with FK
+    // enforcement left at its default off, so a child row seeded before its parent silently
+    // succeeds there even when it wouldn't on a platform that actually enforces the constraint.
+    // MySQL/MariaDB never had real FK constraints before the MySQL-onto-SchemaInstaller cutover
+    // (see install.php's installPortable()), so content.sql's mysqldump-derived table order -
+    // effectively alphabetical, which for several tables means the *child* row (`product`,
+    // `support_kb_article`, `support_pr`, `tld`) is dumped before its own *parent* (`product_
+    // category`, `support_kb_article_category`, `support_pr_category`, `tld_registrar`) - was
+    // never actually exercised against real FK enforcement. Turning the pragma on here catches
+    // exactly the class of bug a live MariaDB/PostgreSQL run caught during that cutover: seeding
+    // support_kb_article's `kb_article_category_id = 2` before support_kb_article_category's own
+    // id 2 row existed, and the same shape for product/tld/support_pr's own category-or-registrar
+    // reference.
+    $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('PRAGMA foreign_keys = ON');
+    $entityManager = EntityManagerFactory::create($connection);
+    SchemaInstaller::createSchema($entityManager);
+
+    InstallSeeder::seedContent($connection, realContentSql(), new DateTimeImmutable());
+
+    expect((int) $connection->fetchOne('SELECT COUNT(*) FROM product'))->toBe(1)
+        ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM tld'))->toBe(1)
+        ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM support_pr'))->toBe(17)
+        ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM support_kb_article'))->toBe(3);
+});
+
 test('seedInstallNudge records the version as a new setting row', function (): void {
     $connection = installSeederConnection();
     InstallSeeder::seedContent($connection, realContentSql(), new DateTimeImmutable());
