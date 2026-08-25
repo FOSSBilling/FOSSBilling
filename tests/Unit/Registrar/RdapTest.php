@@ -163,7 +163,7 @@ test('inputs that cannot be a domain name are rejected without any HTTP traffic'
 
     expect($rdap->isDomainAvailable($input))->toBeNull()
         ->and($tracker->urls)->toBe([]);
-})->with(['', '.com', 'example']);
+})->with(['', '.com', 'example', 'example..com']);
 
 test('the bootstrap registry is only fetched once per instance', function (): void {
     [$rdap, $tracker] = createRdapClient([[['com'], ['https://rdap.example.com/com/v1/']]], fn (): MockResponse => new MockResponse('', ['http_code' => 404]));
