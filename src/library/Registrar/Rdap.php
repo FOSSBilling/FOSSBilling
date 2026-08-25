@@ -53,9 +53,11 @@ class Registrar_Rdap
     public function isDomainAvailable(string $domain): ?bool
     {
         $domain = strtolower(trim($domain));
-        $ascii = idn_to_ascii($domain);
-        if ($ascii !== false) {
-            $domain = rtrim($ascii, '.');
+        if ($domain !== '') {
+            $ascii = idn_to_ascii($domain);
+            if ($ascii !== false) {
+                $domain = rtrim($ascii, '.');
+            }
         }
 
         if ($domain === '' || !str_contains($domain, '.') || str_starts_with($domain, '.') || str_ends_with($domain, '.')) {
