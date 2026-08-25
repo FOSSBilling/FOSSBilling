@@ -21,14 +21,15 @@ use FOSSBilling\Interfaces\TimestampInterface;
 #[ORM\Table(name: 'invoice_item')]
 #[ORM\Index(name: 'invoice_item_invoice_id_idx', columns: ['invoice_id'])]
 // invoice_item_pending_renewal_idx (structure.sql: rel_id(20), type, task, status, invoice_id) is
-// deliberately NOT reproduced here. rel_id is mapped TEXT below (unlike structure.sql's
-// varchar(20)), so a composite index over it needs a MySQL-only column-length prefix
-// (options: ['lengths' => [20, null, null, null, null]]) to avoid "key too long" on
-// MySQL/MariaDB. That option can't round-trip through SQLite/PostgreSQL introspection, which
-// makes FOSSBilling\Doctrine\SchemaSynchronizer::sync() (a live path for existing PG/SQLite
-// installs) permanently misreport this index as missing on every sync. Fix rel_id's mapped
-// type to match structure.sql's varchar(20) first, then add this index as a plain composite
-// with no length prefix - safe on every platform.
+// deliberately NOT reproduced here. rel_id is TEXT on both sides (structure.sql has always had
+// it as TEXT too - the varchar(20) elsewhere in structure.sql that looks similar belongs to the
+// unrelated client_balance.rel_id column) - the `(20)` in structure.sql's own index is a MySQL
+// column-length *prefix*, required because InnoDB can't index a full TEXT column at all, not a
+// real 20-character limit on the data. Reproducing that prefix needs a MySQL-only Doctrine Index
+// `options: ['lengths' => [20, null, null, null, null]]`, which can't round-trip through
+// SQLite/PostgreSQL introspection - it made FOSSBilling\Doctrine\SchemaSynchronizer::sync() (a
+// live path for existing PG/SQLite installs) permanently misreport this index as missing on
+// every sync. No portable fix exists without picking one of those platforms' tradeoffs.
 #[ORM\HasLifecycleCallbacks]
 class InvoiceItem implements ApiArrayInterface, TimestampInterface
 {
@@ -37,7 +38,6 @@ class InvoiceItem implements ApiArrayInterface, TimestampInterface
     final public const string TYPE_DEPOSIT = 'deposit';
     final public const string TYPE_CUSTOM = 'custom';
     final public const string TYPE_ORDER = 'order';
-    final public const string TYPE_HOOK_CALL = 'hook_call';
 
     final public const string TASK_VOID = 'void';
     final public const string TASK_ACTIVATE = 'activate';
