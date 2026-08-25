@@ -157,6 +157,7 @@ test('converts to api array', function (): void {
         'supports_one_time_payments' => false,
         'supports_subscriptions' => false,
         'config' => [],
+        'secret_fields' => [],
         'form' => [],
         'description' => null,
         'enabled' => null,
@@ -222,6 +223,90 @@ test('updates a gateway', function (): void {
     ];
     $result = $service->update($payGatewayModel, $data);
     expect($result)->toBeTrue();
+});
+
+test('converts to api array masks secrets for an admin', function (): void {
+    $payGatewayModel = new Model_PayGateway();
+    $payGatewayModel->loadBean(new Tests\Helpers\DummyBean());
+    $payGatewayModel->gateway = 'Stripe';
+    $payGatewayModel->accepted_currencies = json_encode(['USD']);
+    $payGatewayModel->config = json_encode([
+        'pub_key' => 'pk_live_visible',
+        'api_key' => 'sk_live_secret',
+        'webhook_secret' => 'whsec_secret',
+    ]);
+
+    $service = new ServicePayGateway();
+    $di = container();
+    $service->setDi($di);
+
+    $result = $service->toApiArray($payGatewayModel, false, new Model_Admin());
+
+    expect($result['secret_fields'])->toContain('api_key');
+    expect($result['secret_fields'])->toContain('webhook_secret');
+    expect($result['secret_fields'])->toContain('test_api_key');
+    expect($result['secret_fields'])->toContain('test_webhook_secret');
+    expect($result['secret_fields'])->not->toContain('pub_key');
+    expect($result['config']['pub_key'])->toBe('pk_live_visible');
+    expect($result['config']['api_key'])->toBeNull();
+    expect($result['config']['api_key_set'])->toBeTrue();
+    expect($result['config']['webhook_secret'])->toBeNull();
+    expect($result['config']['webhook_secret_set'])->toBeTrue();
+    expect($result['config']['test_api_key_set'])->toBeFalse();
+});
+
+test('update keeps the existing secret gateway value when the incoming value is blank', function (): void {
+    $payGatewayModel = new Model_PayGateway();
+    $payGatewayModel->loadBean(new Tests\Helpers\DummyBean());
+    $payGatewayModel->gateway = 'Stripe';
+    $payGatewayModel->config = json_encode(['api_key' => 'sk_live_existing', 'pub_key' => 'pk_live_existing']);
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('store')->atLeast()->once();
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['loggedin_admin'] = new Model_Admin();
+
+    $service = new ServicePayGateway();
+    $service->setDi($di);
+
+    $result = $service->update($payGatewayModel, [
+        'config' => [
+            'api_key' => ServicePayGateway::CREDENTIAL_KEEP_SENTINEL,
+            'pub_key' => 'pk_live_new',
+        ],
+    ]);
+
+    expect($result)->toBeTrue();
+    $config = json_decode((string) $payGatewayModel->config, true);
+    expect($config['api_key'])->toBe('sk_live_existing');
+    expect($config['pub_key'])->toBe('pk_live_new');
+});
+
+test('update rotates a secret gateway value when a new value is submitted', function (): void {
+    $payGatewayModel = new Model_PayGateway();
+    $payGatewayModel->loadBean(new Tests\Helpers\DummyBean());
+    $payGatewayModel->gateway = 'Stripe';
+    $payGatewayModel->config = json_encode(['api_key' => 'sk_live_old']);
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('store')->atLeast()->once();
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['loggedin_admin'] = new Model_Admin();
+
+    $service = new ServicePayGateway();
+    $service->setDi($di);
+
+    $result = $service->update($payGatewayModel, ['config' => ['api_key' => 'sk_live_new']]);
+
+    expect($result)->toBeTrue();
+    $config = json_decode((string) $payGatewayModel->config, true);
+    expect($config['api_key'])->toBe('sk_live_new');
 });
 
 test('deletes a gateway', function (): void {

@@ -1914,6 +1914,99 @@ test('converts registrar to api array', function (): void {
     $serviceMock->registrarToApiArray($model);
 });
 
+test('converts registrar to api array masks secrets for an admin', function (): void {
+    $service = new Service();
+    $di = container();
+    $service->setDi($di);
+
+    $model = new Model_TldRegistrar();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->id = 1;
+    $model->name = 'Namecheap';
+    $model->registrar = 'Namecheap';
+    $model->test_mode = false;
+    $model->config = json_encode([
+        'api-user-id' => 'reseller-id',
+        'api-key' => 'super-secret-key',
+        'username' => 'my-username',
+    ]);
+
+    $result = $service->registrarToApiArray($model);
+
+    expect($result['secret_fields'])->toContain('api-key');
+    expect($result['secret_fields'])->not->toContain('api-user-id');
+    expect($result['secret_fields'])->not->toContain('username');
+    expect($result['config']['api-user-id'])->toBe('reseller-id');
+    expect($result['config']['api-key'])->toBeNull();
+    expect($result['config']['api-key_set'])->toBeTrue();
+});
+
+test('registrarUpdate keeps the existing secret when the incoming value is blank', function (): void {
+    $service = new Service();
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('store')->atLeast()->once();
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['loggedin_admin'] = new Model_Admin();
+    $service->setDi($di);
+
+    $model = new Model_TldRegistrar();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->id = 1;
+    $model->registrar = 'Namecheap';
+    $model->config = json_encode([
+        'api-user-id' => 'reseller-id',
+        'api-key' => 'existing-secret',
+        'username' => 'existing-username',
+        'ip' => '127.0.0.1',
+    ]);
+
+    $result = $service->registrarUpdate($model, [
+        'config' => [
+            'api-key' => Service::REGISTRAR_CREDENTIAL_KEEP_SENTINEL,
+            'api-user-id' => 'new-reseller-id',
+        ],
+    ]);
+
+    expect($result)->toBeTrue();
+    $config = json_decode((string) $model->config, true);
+    expect($config['api-key'])->toBe('existing-secret');
+    expect($config['api-user-id'])->toBe('new-reseller-id');
+});
+
+test('registrarUpdate rotates a secret when a new value is submitted', function (): void {
+    $service = new Service();
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('store')->atLeast()->once();
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['loggedin_admin'] = new Model_Admin();
+    $service->setDi($di);
+
+    $model = new Model_TldRegistrar();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->id = 1;
+    $model->registrar = 'Namecheap';
+    $model->config = json_encode([
+        'api-user-id' => 'reseller-id',
+        'api-key' => 'old-secret',
+        'username' => 'existing-username',
+        'ip' => '127.0.0.1',
+    ]);
+
+    $result = $service->registrarUpdate($model, ['config' => ['api-key' => 'new-secret']]);
+
+    expect($result)->toBeTrue();
+    $config = json_decode((string) $model->config, true);
+    expect($config['api-key'])->toBe('new-secret');
+});
+
 test('creates tld', function (): void {
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('registrarValidateConfiguration')->once();

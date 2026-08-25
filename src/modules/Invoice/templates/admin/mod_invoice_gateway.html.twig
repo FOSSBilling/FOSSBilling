@@ -75,6 +75,8 @@
                     <div class="d-flex flex-column gap-4">
                         {% for name, element in gateway.form %}
                             {% set field_required = mf.compute_field_required(element, gateway) == 'true' %}
+                            {% set is_secret = name in (gateway.secret_fields|default([])) %}
+                            {% set is_set = is_secret and gateway.config[name ~ '_set']|default(false) %}
                             <div>
                                 {% if element[0] == 'select' %}
                                     <label class="form-label" for="gateway-config-{{ name }}">{{ element[1].label }}</label>
@@ -104,19 +106,24 @@
                                         {% endfor %}
                                     </div>
                                 {% elseif element[0] == 'textarea' %}
-                                    <label class="form-label" for="gateway-config-{{ name }}">{{ element[1].label }}</label>
+                                    <label class="form-label" for="gateway-config-{{ name }}">{{ element[1].label }}{% if is_set %} <span class="badge text-bg-success">{{ 'Configured'|trans }}</span>{% endif %}</label>
                                     {% if element[1].description is defined and element[1].description %}<div class="form-text mb-2">{{ element[1].description|markdown_to_html }}</div>{% endif %}
                                     <textarea class="form-control" id="gateway-config-{{ name }}" name="config[{{ name }}]" rows="8"
-                                        {% if field_required %} required{% endif %}
-                                        {% if element[1].required_when is defined and element[1].required_when.enabled is defined %} data-required-when-enabled="{{ element[1].required_when.enabled ? 'true' : 'false' }}"{% endif %}
-                                        {% if element[1].required_when is defined and element[1].required_when.test_mode is defined %} data-required-when-test-mode="{{ element[1].required_when.test_mode ? 'true' : 'false' }}"{% endif %}>{{ gateway.config[name]|default('') }}</textarea>
+                                        {% if field_required and not is_set %} required{% endif %}
+                                        {% if is_set %} placeholder="{{ 'Leave blank to keep the saved credential.'|trans }}"{% endif %}
+                                        {% if not is_set and element[1].required_when is defined and element[1].required_when.enabled is defined %} data-required-when-enabled="{{ element[1].required_when.enabled ? 'true' : 'false' }}"{% endif %}
+                                        {% if not is_set and element[1].required_when is defined and element[1].required_when.test_mode is defined %} data-required-when-test-mode="{{ element[1].required_when.test_mode ? 'true' : 'false' }}"{% endif %}>{{ gateway.config[name]|default('') }}</textarea>
+                                    {% if is_set %}<div class="form-text">{{ 'Leave blank to keep the saved credential.'|trans }}</div>{% endif %}
                                 {% else %}
-                                    <label class="form-label" for="gateway-config-{{ name }}">{{ element[1].label }}</label>
+                                    <label class="form-label" for="gateway-config-{{ name }}">{{ element[1].label }}{% if is_set %} <span class="badge text-bg-success">{{ 'Configured'|trans }}</span>{% endif %}</label>
                                     {% if element[1].description is defined and element[1].description %}<div class="form-text mb-2">{{ element[1].description|markdown_to_html }}</div>{% endif %}
                                     <input class="form-control" id="gateway-config-{{ name }}" type="{{ element[0] }}" name="config[{{ name }}]" value="{{ gateway.config[name]|default('') }}"
-                                        {% if field_required %} required{% endif %}
-                                        {% if element[1].required_when is defined and element[1].required_when.enabled is defined %} data-required-when-enabled="{{ element[1].required_when.enabled ? 'true' : 'false' }}"{% endif %}
-                                        {% if element[1].required_when is defined and element[1].required_when.test_mode is defined %} data-required-when-test-mode="{{ element[1].required_when.test_mode ? 'true' : 'false' }}"{% endif %}>
+                                        {% if is_secret %} autocomplete="new-password"{% endif %}
+                                        {% if field_required and not is_set %} required{% endif %}
+                                        {% if is_set %} placeholder="{{ 'Leave blank to keep the saved credential.'|trans }}"{% endif %}
+                                        {% if not is_set and element[1].required_when is defined and element[1].required_when.enabled is defined %} data-required-when-enabled="{{ element[1].required_when.enabled ? 'true' : 'false' }}"{% endif %}
+                                        {% if not is_set and element[1].required_when is defined and element[1].required_when.test_mode is defined %} data-required-when-test-mode="{{ element[1].required_when.test_mode ? 'true' : 'false' }}"{% endif %}>
+                                    {% if is_set %}<div class="form-text">{{ 'Leave blank to keep the saved credential.'|trans }}</div>{% endif %}
                                 {% endif %}
                             </div>
                         {% endfor %}
