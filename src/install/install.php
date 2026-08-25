@@ -44,7 +44,6 @@ require PATH_VENDOR . DIRECTORY_SEPARATOR . 'autoload.php';
 define('PATH_INSTALL_THEMES', Path::join(PATH_ROOT, 'install'));
 define('PATH_THEMES', Path::join(PATH_ROOT, 'themes'));
 define('PATH_LICENSE', Path::join(PATH_ROOT, 'LICENSE'));
-define('PATH_SQL', Path::join(PATH_ROOT, 'install', 'sql', 'structure.sql'));
 define('PATH_SQL_DATA', Path::join(PATH_ROOT, 'install', 'sql', 'content.sql'));
 define('PATH_INSTALL', Path::join(PATH_ROOT, 'install'));
 define('PATH_CONFIG', Path::join(PATH_ROOT, 'config.php'));
@@ -293,10 +292,13 @@ final class FOSSBilling_Installer
     }
 
     /**
-     * MySQL/MariaDB connection - the original, unchanged install path every existing install
-     * already runs on. Uses raw PDO rather than the portable {@see FOSSBilling\Doctrine\DriverManagerFactory}
-     * path the other two drivers use below, deliberately: this is proven and every existing
-     * install depends on it working exactly as it always has.
+     * MySQL/MariaDB connection. Opens the original raw PDO connection first - proven, unchanged
+     * from before PostgreSQL/SQLite support existed - to apply session settings and create the
+     * database itself (`DriverManagerFactory::getConnection()` below connects to a specific,
+     * already-existing `dbname`; it doesn't create one). Then opens the portable
+     * {@see FOSSBilling\Doctrine\DriverManagerFactory} connection the other two drivers use,
+     * since {@see self::install()} now installs every driver, MySQL included, through the same
+     * entity-metadata-driven path (see {@see self::installPortable()}).
      */
     private function connectMysql(): void
     {
@@ -332,6 +334,16 @@ final class FOSSBilling_Installer
 
         // Select the database as default for future queries
         $this->pdo->query('USE ' . $databaseName . ';');
+
+        $this->connection = FOSSBilling\Doctrine\DriverManagerFactory::getConnection([], [
+            'driver' => 'pdo_mysql',
+            'host' => (string) $this->session->get('database_hostname'),
+            'port' => $databasePort,
+            'name' => (string) $this->session->get('database_name'),
+            'user' => (string) $this->session->get('database_username'),
+            'password' => (string) $this->session->get('database_password'),
+        ]);
+        $this->connection->fetchOne('SELECT 1');
     }
 
     /**
@@ -486,64 +498,16 @@ final class FOSSBilling_Installer
     }
 
     /**
-     * MySQL/MariaDB schema + seed data: replays install/sql/structure.sql and content.sql almost
-     * verbatim via raw PDO, unchanged from before PostgreSQL/SQLite support existed.
-     */
-    private function installMysql(): void
-    {
-        // Load database structure
-        $sql = $this->filesystem->readFile(PATH_SQL);
-        $sql_content = $this->filesystem->readFile(PATH_SQL_DATA);
-        if (!$sql || !$sql_content) {
-            throw new Exception('Could not read structure.sql file');
-        }
-
-        // Read content, parse queries into an array, then loop and execute each query
-        $sql .= $sql_content;
-        $sql = preg_split('/\;[\r]*\n/ism', $sql);
-        $sql = array_map(trim(...), $sql);
-        foreach ($sql as $query) {
-            if (!trim($query)) {
-                continue;
-            }
-            $this->pdo->query($query);
-        }
-
-        // Create default administrator
-        $passwordObject = new FOSSBilling\PasswordManager();
-        $stmt = $this->pdo->prepare('INSERT INTO admin (name, email, pass, created_at, updated_at, api_token) VALUES(:admin_name, :admin_email, :admin_password, NOW(), NOW(), :api_token);');
-        $stmt->execute([
-            'admin_name' => $this->session->get('admin_name'),
-            'admin_email' => $this->session->get('admin_email'),
-            'admin_password' => $passwordObject->hashIt($this->session->get('admin_password')),
-            'api_token' => $this->session->get('admin_api_token'),
-        ]);
-
-        $stmt = $this->pdo->prepare('INSERT INTO admin_group_member (admin_id, admin_group_id, created_at) VALUES (:admin_id, 1, NOW())');
-        $stmt->execute([
-            'admin_id' => $this->pdo->lastInsertId(),
-        ]);
-
-        // Delete default currency from content file and use currency passed in the installer
-        $stmt = $this->pdo->prepare("DELETE FROM currency WHERE code='USD'");
-        $stmt->execute();
-        $stmt = $this->pdo->prepare('INSERT INTO currency (id, code, is_default, conversion_rate, created_at, updated_at) VALUES(1, :currency_code, 1, 1.000000, NOW(), NOW());');
-        $stmt->execute([
-            'currency_code' => $this->session->get('currency_code'),
-        ]);
-
-        $stmt = $this->pdo->prepare('INSERT INTO setting (param, value, created_at, updated_at) VALUES (:param, :value, NOW(), NOW())');
-        $stmt->execute([
-            ':param' => 'last_error_reporting_nudge',
-            ':value' => FOSSBilling\Version::VERSION,
-        ]);
-    }
-
-    /**
-     * PostgreSQL/SQLite schema + seed data: schema is generated from Doctrine entity metadata
-     * (there's no hand-maintained SQL dump for these platforms - see {@see FOSSBilling\Doctrine\SchemaInstaller}),
-     * and content.sql's seed rows are replayed through a portable rewrite of that same file (see
-     * {@see FOSSBilling\Doctrine\InstallSeeder}) rather than a second, duplicated copy of the data.
+     * Schema + seed data for a fresh install, on any supported platform. Schema is generated
+     * from Doctrine entity metadata rather than a hand-maintained SQL dump (see
+     * {@see FOSSBilling\Doctrine\SchemaInstaller}), and content.sql's seed rows are replayed
+     * through a portable rewrite of that same file (see {@see FOSSBilling\Doctrine\InstallSeeder})
+     * rather than a second, duplicated copy of the data.
+     *
+     * MySQL/MariaDB installs used to run install/sql/structure.sql and content.sql almost
+     * verbatim via raw PDO instead - `install/sql/structure.sql` is no longer used by a fresh
+     * install of any platform; it remains only as the frozen definition existing, pre-cutover
+     * MySQL installs are upgraded from via {@see FOSSBilling\UpdatePatcher}'s legacy patches.
      */
     private function installPortable(): void
     {
@@ -576,11 +540,7 @@ final class FOSSBilling_Installer
      */
     private function install(): bool
     {
-        if ((string) ($this->session->get('database_driver') ?: 'pdo_mysql') === 'pdo_mysql') {
-            $this->installMysql();
-        } else {
-            $this->installPortable();
-        }
+        $this->installPortable();
 
         // Copy config templates when applicable
         if (!$this->filesystem->exists(HURAGA_CONFIG) && $this->filesystem->exists(HURAGA_CONFIG_TEMPLATE)) {

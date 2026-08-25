@@ -17,8 +17,8 @@ use Doctrine\ORM\Mapping as ORM;
 /**
  * Maps the `session` table purely so Doctrine's schema tooling knows about it - actual reads and
  * writes go through {@see \FOSSBilling\Session}'s own hand-written, already-portable parameterized
- * SQL, not this entity. Without a mapping here, generating schema from entity metadata (the
- * PostgreSQL/SQLite install path - MySQL/MariaDB still install from `install/sql/structure.sql`)
+ * SQL, not this entity. Without a mapping here, generating schema from entity metadata (what
+ * every fresh install does, on every platform - see {@see \FOSSBilling\Doctrine\SchemaInstaller})
  * would silently omit this table, since it's the one table with no other Doctrine entity.
  */
 #[ORM\Entity]

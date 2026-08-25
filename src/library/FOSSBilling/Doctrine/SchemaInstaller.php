@@ -15,10 +15,11 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
 
 /**
- * Creates the initial database schema for PostgreSQL and SQLite installs, generated directly from
- * Doctrine entity metadata rather than a hand-maintained SQL dump. MySQL/MariaDB installs still use
- * `install/sql/structure.sql` (a proven, unchanged path for the platform every existing install
- * already runs on) - this class exists for the platforms that dump was never written for.
+ * Creates the initial database schema for a fresh install, on any supported platform (MySQL/
+ * MariaDB, PostgreSQL, SQLite), generated directly from Doctrine entity metadata rather than a
+ * hand-maintained SQL dump. `install/sql/structure.sql` is no longer used to create a fresh
+ * install's schema - it remains only as the frozen definition existing, pre-cutover MySQL
+ * installs are upgraded from via {@see \FOSSBilling\UpdatePatcher}'s legacy patches.
  *
  * This only works because the entity mapping is already portable: no `columnDefinition`, no
  * `unsigned` options, no native enum types, safe `AUTO` id generation (see the DB-portability
