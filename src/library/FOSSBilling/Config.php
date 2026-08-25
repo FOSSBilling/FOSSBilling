@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
+use FOSSBilling\Cache\CacheFactory;
 use Symfony\Component\Filesystem\Exception\FileNotFoundException;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
@@ -128,6 +129,11 @@ class Config
             } catch (\Exception) {
                 // We shouldn't need to halt execution if there was an error when clearing the cache
             }
+
+            // Also flush the configured application/rate-limiter/Doctrine cache pools. The filesystem
+            // wipe above only clears Twig's cache and Doctrine's proxy classes; it won't reach a
+            // Redis/Memcached-backed pool.
+            CacheFactory::clearAll();
         }
     }
 
@@ -157,7 +163,7 @@ class Config
      *
      * @throws Exception if the number of recursive iterations passes this class's MAX_RECURSION_LEVEL
      */
-    private static function recursivelyIdentAndFormat(array|string|bool|float|int $value, $level = 1): string
+    private static function recursivelyIdentAndFormat(array|string|bool|float|int|null $value, $level = 1): string
     {
         if ($level > self::MAX_RECURSION_LEVEL) {
             throw new Exception('Too many iterations were performed while formatting the config file');

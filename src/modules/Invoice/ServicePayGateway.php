@@ -23,6 +23,13 @@ use Symfony\Component\Finder\Finder;
 
 class ServicePayGateway implements InjectionAwareInterface
 {
+    /**
+     * Sent by the admin UI in place of a secret config field's value to mean
+     * "keep the currently stored value". Blank input means the same thing;
+     * this sentinel exists only for clients that can't send an empty string.
+     */
+    public const string CREDENTIAL_KEEP_SENTINEL = '__KEEP__';
+
     protected ?\Pimple\Container $di = null;
 
     protected PayGatewayRepository $payGatewayRepository;
@@ -150,9 +157,18 @@ class ServicePayGateway implements InjectionAwareInterface
         ];
 
         if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
+            $config = json_decode($model->getConfig() ?? '', true) ?? [];
+            $secretFields = $this->getSecretFields($model);
+            foreach ($secretFields as $field) {
+                $value = $config[$field] ?? null;
+                $config[$field] = null;
+                $config[$field . '_set'] = $value !== null && $value !== '';
+            }
+
             $result['supports_one_time_payments'] = $single;
             $result['supports_subscriptions'] = $recurrent;
-            $result['config'] = json_decode($model->getConfig() ?? '', true) ?? [];
+            $result['config'] = $config;
+            $result['secret_fields'] = $secretFields;
             $result['form'] = $this->getFormElements($model);
             $result['description'] = $this->getDescription($model);
             $result['enabled'] = $model->isEnabled();
@@ -161,6 +177,40 @@ class ServicePayGateway implements InjectionAwareInterface
         }
 
         return $result;
+    }
+
+    /**
+     * Config field names for this gateway's adapter whose stored values must
+     * be hidden in the API and admin UI: the adapter's own declared secrets
+     * plus any form field marked `'secret' => true`.
+     *
+     * @return string[]
+     */
+    public function getSecretFields(PayGateway $model): array
+    {
+        $secrets = [];
+
+        try {
+            $class = $this->getAdapterClassName($model);
+            if (is_callable($class . '::getSecretFields')) {
+                $declared = $class::getSecretFields();
+                $secrets = array_merge($secrets, $declared);
+            }
+        } catch (\Throwable) {
+            // Gateway adapter could not be resolved; fall back to the form's own 'secret' flags below.
+        }
+
+        $form = $this->getAdapterConfig($model)['form'] ?? [];
+        if (is_array($form)) {
+            foreach ($form as $name => $element) {
+                $options = $element[1] ?? [];
+                if (!empty($options['secret'])) {
+                    $secrets[] = (string) $name;
+                }
+            }
+        }
+
+        return array_values(array_unique($secrets));
     }
 
     public function copy(PayGateway $model): int
@@ -186,9 +236,15 @@ class ServicePayGateway implements InjectionAwareInterface
 
         $newEnabled = isset($data['enabled']) ? (bool) $data['enabled'] : $model->isEnabled();
         $newTestMode = isset($data['test_mode']) ? (bool) $data['test_mode'] : $model->isTestMode();
-        $mergedConfig = json_decode($model->getConfig() ?? '', true) ?? [];
+        $existingConfig = json_decode($model->getConfig() ?? '', true) ?? [];
+        $mergedConfig = $existingConfig;
         if (isset($data['config']) && is_array($data['config'])) {
-            $mergedConfig = array_merge($mergedConfig, $data['config']);
+            $secretFields = $this->getSecretFields($model);
+            foreach ($data['config'] as $key => $value) {
+                $mergedConfig[$key] = in_array($key, $secretFields, true)
+                    ? $this->normalizeSecretValue((string) $key, $value, $existingConfig[$key] ?? null, $model)
+                    : $value;
+            }
         }
 
         if ($newEnabled) {
@@ -235,6 +291,32 @@ class ServicePayGateway implements InjectionAwareInterface
         } catch (\Throwable $e) {
             throw new \FOSSBilling\Exception('Payment gateway configuration error: ' . $e->getMessage(), null, 819);
         }
+    }
+
+    /**
+     * Returns the value to store for a secret config field. Blank, whitespace-only
+     * or {@see CREDENTIAL_KEEP_SENTINEL} inputs preserve the existing value;
+     * everything else replaces it. A successful rotation is logged (the value
+     * itself is never logged).
+     */
+    private function normalizeSecretValue(string $field, mixed $incoming, mixed $existing, PayGateway $model): mixed
+    {
+        if ($incoming === null || !is_scalar($incoming)) {
+            return $existing;
+        }
+
+        $incoming = (string) $incoming;
+
+        if (trim($incoming) === '' || $incoming === self::CREDENTIAL_KEEP_SENTINEL) {
+            return $existing;
+        }
+
+        if ($incoming !== $existing) {
+            $adminId = $this->di['loggedin_admin']->getId() ?? 'unknown';
+            $this->di['logger']->info('Rotated {field} for payment gateway {gateway_id} by admin {admin_id}', ['field' => $field, 'gateway_id' => (string) $model->getId(), 'admin_id' => (string) $adminId]);
+        }
+
+        return $incoming;
     }
 
     public function delete(PayGateway $model): bool
