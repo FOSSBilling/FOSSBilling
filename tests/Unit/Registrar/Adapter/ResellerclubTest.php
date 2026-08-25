@@ -82,3 +82,44 @@ test('an error-object response still throws a Registrar_Exception', function ():
     expect(fn () => $adapter->isDomaincanBeTransferred(createResellerclubDomain()))
         ->toThrow(Registrar_Exception::class);
 });
+
+test('modifyContact creates a new contact and re-associates it with the domain order instead of calling the deprecated contacts/modify endpoint', function (): void {
+    // Regression test for #2365: ResellerClub deprecated contacts/modify in December 2016 due to
+    // ICANN's IRTP-C policy - existing contacts can no longer be edited in place. modifyContact must
+    // instead create a new contact via contacts/add and re-point the domain order at it via
+    // domains/modify-contact.
+    $requests = [];
+    $responses = [
+        json_encode(['customerid' => '555']), // customers/details
+        '998877', // contacts/add -> new contact id
+        '112233', // domains/orderid
+        json_encode(['status' => 'Success']), // domains/modify-contact
+    ];
+
+    $httpClient = new MockHttpClient(function (string $method, string $url) use (&$requests, &$responses): MockResponse {
+        $requests[] = $method . ' ' . parse_url($url, PHP_URL_PATH);
+
+        return new MockResponse((string) array_shift($responses));
+    });
+    $adapter = createResellerclubAdapter($httpClient);
+
+    $contact = (new Registrar_Domain_Contact())
+        ->setName('Jane Doe')
+        ->setEmail('jane@example.com')
+        ->setAddress1('1 Example St')
+        ->setCity('Example City')
+        ->setZip('12345')
+        ->setTelCc('1')
+        ->setTel('5551234567')
+        ->setCountry('US');
+
+    $domain = createResellerclubDomain()->setContactRegistrar($contact);
+
+    expect($adapter->modifyContact($domain))->toBeTrue();
+    expect($requests)->toBe([
+        'GET /api/customers/details.json',
+        'POST /api/contacts/add.json',
+        'GET /api/domains/orderid.json',
+        'POST /api/domains/modify-contact.json',
+    ]);
+});

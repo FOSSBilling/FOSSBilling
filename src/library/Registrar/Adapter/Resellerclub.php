@@ -132,33 +132,21 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
     public function modifyContact(Registrar_Domain $domain): bool
     {
-        $customer = $this->_getCustomerDetails($domain);
-        $cdetails = $this->_getDefaultContactDetails($domain, $customer['customerid']);
-        $contact_id = $cdetails['Contact']['registrant'];
+        // ResellerClub deprecated contacts/modify in December 2016 due to ICANN's IRTP-C policy:
+        // https://manage.resellerclub.com/kb/answer/791. Existing contacts can no longer be edited
+        // in place; instead a new contact has to be created and then associated with the domain
+        // order via domains/modify-contact. See https://github.com/FOSSBilling/FOSSBilling/issues/2365.
+        $contact_id = $this->getContactIdForDomain($domain);
 
-        $c = $domain->getContactRegistrar();
-
-        $required_params = [
-            'contact-id' => $contact_id,
-            'name' => $c->getName(),
-            'company' => $c->getCompany(),
-            'email' => $c->getEmail(),
-            'address-line-1' => $c->getAddress1(),
-            'city' => $c->getCity(),
-            'zipcode' => $c->getZip(),
-            'phone-cc' => $c->getTelCc(),
-            'phone' => $c->getTel(),
-            'country' => $c->getCountry(),
+        $params = [
+            'order-id' => $this->_getDomainOrderId($domain),
+            'reg-contact-id' => $contact_id,
+            'admin-contact-id' => $contact_id,
+            'tech-contact-id' => $contact_id,
+            'billing-contact-id' => $contact_id,
         ];
 
-        $optional_params = [
-            'address-line-2' => $c->getAddress2(),
-            'address-line-3' => $c->getAddress3(),
-            'state' => $c->getState(),
-        ];
-
-        $params = [...$optional_params, ...$required_params];
-        $result = $this->_makeRequest('contacts/modify', $params, 'POST');
+        $result = $this->_makeRequest('domains/modify-contact', $params, 'POST');
 
         return $result['status'] == 'Success';
     }
