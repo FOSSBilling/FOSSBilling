@@ -1671,6 +1671,14 @@ test('removes an invoice', function (): void {
     $em->shouldReceive('flush')
         ->atLeast()->once();
 
+    // Regression coverage: transaction.invoice_id would be a real FK if MySQL ever adopted the
+    // entity-metadata-driven schema generator - this cleanup used to be missing entirely, which
+    // would make a real FK constraint reject the delete outright. Confirmed against a live
+    // MariaDB container with FK enforcement during the unification scoping audit.
+    $transactionRepo = Mockery::mock(TransactionRepository::class);
+    $transactionRepo->shouldReceive('detachFromInvoice')->once()->with((int) $invoiceModel->getId());
+    $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo);
+
     $di = container();
     $di['em'] = $em;
     $em->shouldReceive('getConnection')->andReturn($connection);

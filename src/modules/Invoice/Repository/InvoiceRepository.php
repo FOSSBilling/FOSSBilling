@@ -32,6 +32,17 @@ class InvoiceRepository extends EntityRepository
         return $invoice instanceof Invoice ? $invoice : null;
     }
 
+    public function existsByGatewayId(int $gatewayId): bool
+    {
+        return (bool) $this->createQueryBuilder('i')
+            ->select('1')
+            ->andWhere('IDENTITY(i.gateway) = :gateway_id')
+            ->setParameter('gateway_id', $gatewayId)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
     /**
      * Build a QueryBuilder for invoice searches/listings.
      *

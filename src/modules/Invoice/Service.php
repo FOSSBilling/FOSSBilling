@@ -1451,6 +1451,10 @@ class Service implements InjectionAwareInterface
             WHERE unpaid_invoice_id = :id';
         $this->di['em']->getConnection()->executeStatement($sql, ['id' => $model->getId()]);
 
+        // Detach (not delete) transactions referencing this invoice - a transaction is a real
+        // record of a payment attempt/event, same reasoning as unpaid_invoice_id above.
+        $this->di['em']->getRepository(Transaction::class)->detachFromInvoice((int) $model->getId());
+
         $invoiceItems = $this->getInvoiceItemRepository()->findByInvoiceId((int) $model->getId());
         $entityManager = $this->di['em'];
         foreach ($invoiceItems as $item) {

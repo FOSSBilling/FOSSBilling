@@ -13,6 +13,8 @@ namespace Box\Mod\Invoice;
 
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\PayGateway;
+use Box\Mod\Invoice\Entity\Subscription;
+use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Repository\PayGatewayRepository;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Tools;
@@ -321,7 +323,20 @@ class ServicePayGateway implements InjectionAwareInterface
 
     public function delete(PayGateway $model): bool
     {
-        $id = $model->getId();
+        $id = (int) $model->getId();
+
+        if ($this->di['em']->getRepository(Invoice::class)->existsByGatewayId($id)) {
+            throw new \FOSSBilling\InformationException('Cannot remove payment gateway with existing invoices');
+        }
+
+        if ($this->di['em']->getRepository(Subscription::class)->existsByGatewayId($id)) {
+            throw new \FOSSBilling\InformationException('Cannot remove payment gateway with existing subscriptions');
+        }
+
+        if ($this->di['em']->getRepository(Transaction::class)->existsByGatewayId($id)) {
+            throw new \FOSSBilling\InformationException('Cannot remove payment gateway with existing transactions');
+        }
+
         $this->di['em']->remove($model);
         $this->di['em']->flush();
         $this->di['logger']->info('Removed payment gateway {id}', ['id' => $id]);
