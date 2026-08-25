@@ -25,17 +25,17 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
  */
 class Registrar_Rdap
 {
-    final public const BOOTSTRAP_URL = 'https://data.iana.org/rdap/dns.json';
+    final public const string BOOTSTRAP_URL = 'https://data.iana.org/rdap/dns.json';
 
     /**
      * Bounds applied to every request so a slow registry cannot occupy a worker indefinitely.
      */
-    private const REQUEST_OPTIONS = [
+    private const array REQUEST_OPTIONS = [
         'timeout' => 10,
         'max_duration' => 15,
     ];
 
-    private HttpClientInterface $httpClient;
+    private readonly HttpClientInterface $httpClient;
 
     /**
      * Map of lowercase TLD labels to their RDAP base URLs.
@@ -174,8 +174,6 @@ class Registrar_Rdap
 
     /**
      * Validates one [labels, servers] entry of the bootstrap registry.
-     *
-     * @param mixed $entry
      */
     private function isValidServiceEntry($entry): bool
     {
@@ -198,9 +196,6 @@ class Registrar_Rdap
         return true;
     }
 
-    /**
-     * @param mixed $server
-     */
     private static function isValidServerUrl($server): bool
     {
         return is_string($server)

@@ -104,7 +104,8 @@ test('domains under zones without an RDAP service are left undetermined without 
 test('a failed bootstrap fetch disables all lookups and is not retried', function (): void {
     $attempts = 0;
     $httpClient = new MockHttpClient(function () use (&$attempts): never {
-        $attempts++;
+        ++$attempts;
+
         throw new TransportException('connection refused');
     });
     $logger = new class extends Psr\Log\AbstractLogger {
