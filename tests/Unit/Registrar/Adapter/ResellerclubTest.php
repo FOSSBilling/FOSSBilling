@@ -174,6 +174,7 @@ test('modifyContact assigns per-role contact IDs for .fr, which only forces tech
     // registry still expects a real admin-contact-id rather than -1. See
     // https://manage.resellerclub.com/kb/answer/752 and https://manage.resellerclub.com/kb/answer/790
     $requests = [];
+    $bodies = [];
     $responses = [
         json_encode(['customerid' => '555']), // customers/details
         '111111', // contacts/add (general Contact) -> id
@@ -181,11 +182,10 @@ test('modifyContact assigns per-role contact IDs for .fr, which only forces tech
         '333333', // domains/orderid
         json_encode(['status' => 'Success']), // domains/modify-contact
     ];
-    $lastBody = null;
 
-    $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$requests, &$responses, &$lastBody): MockResponse {
+    $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$requests, &$responses, &$bodies): MockResponse {
         $requests[] = $method . ' ' . parse_url($url, PHP_URL_PATH);
-        $lastBody = $options['body'] ?? null;
+        $bodies[] = $options['body'] ?? null;
 
         return new MockResponse(array_shift($responses));
     });
@@ -194,7 +194,12 @@ test('modifyContact assigns per-role contact IDs for .fr, which only forces tech
 
     expect($adapter->modifyContact($domain))->toBeTrue();
 
-    parse_str((string) $lastBody, $body);
+    // the second contacts/add call must actually be creating the FrContact, not just landing on the
+    // right id by coincidence
+    parse_str((string) $bodies[2], $frContactBody);
+    expect($frContactBody['type'])->toBe('FrContact');
+
+    parse_str((string) end($bodies), $body);
     expect($body['reg-contact-id'])->toBe('222222'); // the FrContact, not the general contact
     expect($body['admin-contact-id'])->toBe('222222'); // real contact, NOT -1
     expect($body['tech-contact-id'])->toBe('-1');
@@ -206,6 +211,7 @@ test('registerDomain sends the .fr registry consent attribute alongside the FrCo
     // attribute on domains/register, on top of the FrContact type/contact-id handling above. See
     // https://manage.resellerclub.com/kb/answer/752
     $requests = [];
+    $bodies = [];
     $responses = [
         json_encode(['status' => 'ERROR', 'message' => 'Order not found']), // domains/orderid (via _hasCompletedOrder)
         json_encode(['customerid' => '555']), // customers/details
@@ -215,11 +221,10 @@ test('registerDomain sends the .fr registry consent attribute alongside the FrCo
         '222222', // contacts/add (FrContact) -> id
         json_encode(['status' => 'Success']), // domains/register
     ];
-    $lastBody = null;
 
-    $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$requests, &$responses, &$lastBody): MockResponse {
+    $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$requests, &$responses, &$bodies): MockResponse {
         $requests[] = $method . ' ' . parse_url($url, PHP_URL_PATH);
-        $lastBody = $options['body'] ?? null;
+        $bodies[] = $options['body'] ?? null;
 
         return new MockResponse(array_shift($responses));
     });
@@ -233,7 +238,12 @@ test('registerDomain sends the .fr registry consent attribute alongside the FrCo
     expect($adapter->registerDomain($domain))->toBeTrue();
     expect($requests[6])->toBe('POST /api/domains/register.json');
 
-    parse_str((string) $lastBody, $body);
+    // the second contacts/add call must actually be creating the FrContact, not just landing on the
+    // right id by coincidence
+    parse_str((string) $bodies[5], $frContactBody);
+    expect($frContactBody['type'])->toBe('FrContact');
+
+    parse_str((string) end($bodies), $body);
     expect($body['reg-contact-id'])->toBe('222222');
     expect($body['admin-contact-id'])->toBe('222222');
     expect($body['tech-contact-id'])->toBe('-1');
