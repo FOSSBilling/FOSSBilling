@@ -66,9 +66,9 @@ If you prefer to start a conversation first, drop by the [forum](https://forum.f
 
 <a href="https://www.star-history.com/?repos=FOSSBilling%2FFOSSBilling&type=date&legend=top-left">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=FOSSBilling/FOSSBilling&type=date&theme=dark&legend=top-left&sealed_token=ioJopLgtNzi8yMGmGszWYUH4Wt8JZOgRfi9GscyJOzAhSUWXjpK_hCml7VrZAOnJkL7sWGtd47X7WWR-a0hnJrYr6v-S6IjBNrQJW36PZPQXZSXcfiTnasf0F_U2DDomBkP_p3hUcPegkId4CIwL5vk4dM1S_K-bjklbRDDqnSJpnZg7Pus4QG8uez3K" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=FOSSBilling/FOSSBilling&type=date&legend=top-left&sealed_token=ioJopLgtNzi8yMGmGszWYUH4Wt8JZOgRfi9GscyJOzAhSUWXjpK_hCml7VrZAOnJkL7sWGtd47X7WWR-a0hnJrYr6v-S6IjBNrQJW36PZPQXZSXcfiTnasf0F_U2DDomBkP_p3hUcPegkId4CIwL5vk4dM1S_K-bjklbRDDqnSJpnZg7Pus4QG8uez3K" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=FOSSBilling/FOSSBilling&type=date&legend=top-left&sealed_token=ioJopLgtNzi8yMGmGszWYUH4Wt8JZOgRfi9GscyJOzAhSUWXjpK_hCml7VrZAOnJkL7sWGtd47X7WWR-a0hnJrYr6v-S6IjBNrQJW36PZPQXZSXcfiTnasf0F_U2DDomBkP_p3hUcPegkId4CIwL5vk4dM1S_K-bjklbRDDqnSJpnZg7Pus4QG8uez3K" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=FOSSBilling/FOSSBilling&type=date&theme=dark&legend=top-left&sealed_token=Imt45TQsmOl2wo97NTmR7vsrH9SbJ1R5OvbXL3zLgFfc6f_rrzAxDDqgxSmD-EowpNbyzjx0vFfBWCU-VN5HNlE67V6MN-Ssc7LrlZRPkdHSbw1V3NeImFQU3carSCrPm1Af3jbXZjqukrKLkqYii4bXvG_9006YdjIjWzbbGByUhXZOXgv7zH_fphhz" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=FOSSBilling/FOSSBilling&type=date&legend=top-left&sealed_token=Imt45TQsmOl2wo97NTmR7vsrH9SbJ1R5OvbXL3zLgFfc6f_rrzAxDDqgxSmD-EowpNbyzjx0vFfBWCU-VN5HNlE67V6MN-Ssc7LrlZRPkdHSbw1V3NeImFQU3carSCrPm1Af3jbXZjqukrKLkqYii4bXvG_9006YdjIjWzbbGByUhXZOXgv7zH_fphhz" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=FOSSBilling/FOSSBilling&type=date&legend=top-left&sealed_token=Imt45TQsmOl2wo97NTmR7vsrH9SbJ1R5OvbXL3zLgFfc6f_rrzAxDDqgxSmD-EowpNbyzjx0vFfBWCU-VN5HNlE67V6MN-Ssc7LrlZRPkdHSbw1V3NeImFQU3carSCrPm1Af3jbXZjqukrKLkqYii4bXvG_9006YdjIjWzbbGByUhXZOXgv7zH_fphhz" />
  </picture>
 </a>
 
