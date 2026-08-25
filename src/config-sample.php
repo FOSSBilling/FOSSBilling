@@ -171,6 +171,37 @@ return [
         // 'wait_timeout' => 28800,
     ],
 
+    /*
+     * Cache backend used for the general application cache, the rate limiter, and the
+     * Doctrine ORM metadata/query/result cache. This is unrelated to the 'twig' cache below.
+     */
+    'cache' => [
+        /*
+         * Supported values: 'filesystem' (default), 'redis', 'memcached'.
+         * 'redis' requires the PHP redis (or relay) extension, and 'memcached' requires the
+         * PHP memcached extension. Also configurable from the admin area under System > Settings > Cache.
+         */
+        'driver' => 'filesystem',
+
+        /*
+         * Used when 'driver' is set to 'redis'.
+         */
+        'redis' => [
+            'host' => '127.0.0.1',
+            'port' => 6379,
+            'password' => null,
+            'database' => 0,
+        ],
+
+        /*
+         * Used when 'driver' is set to 'memcached'.
+         */
+        'memcached' => [
+            'host' => '127.0.0.1',
+            'port' => 11211,
+        ],
+    ],
+
     'twig' => [
         'debug' => false,
         'auto_reload' => true,
