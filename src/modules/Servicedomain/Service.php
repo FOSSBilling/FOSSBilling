@@ -147,6 +147,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 throw new \FOSSBilling\InformationException(':domain cannot be transferred!', [':domain' => $domain]);
             }
 
+            if ($tld->require_transfer_code && trim((string) ($data['transfer_code'] ?? '')) === '') {
+                throw new \FOSSBilling\InformationException('A transfer code (EPP/auth code) is required to transfer :domain', [':domain' => $domain]);
+            }
+
             $data['period'] = '1Y';
             $data['quantity'] = 1;
         }
@@ -838,6 +842,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->periods = array_key_exists('periods', $data) ? $data['periods'] : null;
         $model->allow_register = isset($data['allow_register']) ? (bool) $data['allow_register'] : true;
         $model->allow_transfer = isset($data['allow_transfer']) ? (bool) $data['allow_transfer'] : true;
+        $model->require_transfer_code = isset($data['require_transfer_code']) ? (bool) $data['require_transfer_code'] : false;
         $model->active = isset($data['active']) ? (bool) $data['active'] : true;
         $model->updated_at = date('Y-m-d H:i:s');
         $model->created_at = date('Y-m-d H:i:s');
@@ -867,6 +872,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->periods = array_key_exists('periods', $data) ? $data['periods'] : $model->periods;
         $model->allow_register = $data['allow_register'] ?? $model->allow_register;
         $model->allow_transfer = $data['allow_transfer'] ?? $model->allow_transfer;
+        $model->require_transfer_code = array_key_exists('require_transfer_code', $data) ? (bool) $data['require_transfer_code'] : $model->require_transfer_code;
         $model->active = $data['active'] ?? $model->active;
         $model->updated_at = date('Y-m-d H:i:s');
 
@@ -1032,6 +1038,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'active' => $model->active,
             'allow_register' => $model->allow_register,
             'allow_transfer' => $model->allow_transfer,
+            'require_transfer_code' => (bool) $model->require_transfer_code,
             'min_years' => $model->min_years,
             'periods' => $this->getTldPeriodsArray($model),
         ];
