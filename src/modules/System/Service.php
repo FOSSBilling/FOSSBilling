@@ -750,9 +750,9 @@ class Service
             // InnoDB gap locks are shared, so neither blocks the other, and they collide on the
             // insert instead. The loser's transaction is rolled back, so reserve from the row the
             // winner committed rather than failing the caller. LockWaitTimeoutException is the
-            // SQLite analogue: BEGIN IMMEDIATE below fails outright rather than blocking, so a
-            // loser that would otherwise gap-lock on MySQL surfaces here as "database is locked"
-            // instead.
+            // SQLite analogue: the lock-escalating write in doReserveNumericParamValue() fails
+            // outright rather than blocking, so a loser that would otherwise gap-lock on MySQL
+            // surfaces here as "database is locked" instead.
             return $this->reserveNumericParamValue($param, $seed);
         }
     }
@@ -762,45 +762,37 @@ class Service
         /** @var Connection $connection */
         $connection = $this->di['dbal'];
 
-        // RowLock::suffix() appends `FOR UPDATE` on MySQL/PostgreSQL, taking the write lock at
-        // the SELECT below. SQLite has no such clause, and its PDO driver only ever issues a
-        // plain deferred BEGIN, which takes no lock at all until the first write - so two
-        // concurrent transactions could both pass the read under a shared lock before either
-        // takes a write lock, and the second writer - having cached a stale $current - would
-        // silently write the same value the first writer already committed. Driving the
-        // transaction with a raw BEGIN IMMEDIATE instead takes SQLite's write lock upfront,
-        // matching what FOR UPDATE achieves on the other platforms.
-        //
-        // Known gap, not currently reachable: if $connection already has an open transaction
-        // (getTransactionNestingLevel() > 0 - not true for any call site today, since every
-        // current caller reaches this after its own flush() has already committed and closed its
-        // transaction), this falls through to the plain transactional() branch below, which nests
-        // via a SAVEPOINT rather than a fresh BEGIN IMMEDIATE - so the race this method exists to
-        // close would reopen for a caller that ever does wrap this in its own transaction. Fixing
-        // that needs either forcing an early real write (SQLite escalates its lock on the first
-        // write of *any* nesting depth, not just a top-level BEGIN IMMEDIATE) or another atomic
-        // reservation mechanism entirely - deliberately not attempted here without dedicated
-        // review, since this reserves invoice numbers.
-        if ($connection->getDatabasePlatform() instanceof SQLitePlatform && $connection->getTransactionNestingLevel() === 0) {
-            $connection->executeStatement('BEGIN IMMEDIATE');
-
-            try {
-                $result = $this->doReserveNumericParamValue($connection, $param, $seed);
-                $connection->executeStatement('COMMIT');
-
-                return $result;
-            } catch (\Throwable $e) {
-                $connection->executeStatement('ROLLBACK');
-
-                throw $e;
-            }
-        }
-
         return $connection->transactional(fn (Connection $connection): ?int => $this->doReserveNumericParamValue($connection, $param, $seed));
     }
 
     private function doReserveNumericParamValue(Connection $connection, string $param, ?int $seed): ?int
     {
+        // RowLock::suffix() appends `FOR UPDATE` on MySQL/PostgreSQL, taking the write lock at
+        // the SELECT below. SQLite has no such clause, and a plain deferred transaction - whether
+        // opened at the top level via BEGIN, or nested via SAVEPOINT when $connection already has
+        // an outer transaction open - takes no lock at all until the first write. Two concurrent
+        // transactions could otherwise both pass the read under a shared lock before either takes
+        // a write lock, and the second writer - having cached a stale $current - would silently
+        // write the same value the first writer already committed.
+        //
+        // SQLite escalates a transaction's lock to RESERVED on its first write statement,
+        // regardless of nesting depth: a SAVEPOINT doesn't get its own independent lock, it
+        // shares the one connection-wide transaction's lock state. Issuing a real write - even
+        // this no-op UPDATE, which affects zero rows whenever the counter doesn't exist yet -
+        // before the read below forces that escalation immediately and uniformly, whether or not
+        // there's an open outer transaction, so only one caller can ever be mid-reservation at a
+        // time. At most one connection can hold RESERVED simultaneously, so a second writer's own
+        // attempt at this same statement blocks (or fails outright, with SQLite's non-blocking
+        // busy behaviour) until the first has committed or rolled back. Verified against real
+        // SQLite for both the top-level and nested cases - see
+        // ReserveNumericParamValueConcurrencyTest.php.
+        if ($connection->getDatabasePlatform() instanceof SQLitePlatform) {
+            $connection->executeStatement(
+                'UPDATE setting SET updated_at = updated_at WHERE param = :param',
+                ['param' => $param]
+            );
+        }
+
         $now = date('Y-m-d H:i:s');
         $current = $connection->fetchOne(
             'SELECT value FROM setting WHERE param = :param' . RowLock::suffix($connection),

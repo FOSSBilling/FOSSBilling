@@ -103,3 +103,91 @@ test('reserveNextNumericParamValue never hands out a duplicate value under real 
         $filesystem->remove([$dbPath, $workerScriptPath]);
     }
 });
+
+/*
+ * Same guarantee, but for a caller that wraps reserveNextNumericParamValue() in its own outer
+ * transaction - getTransactionNestingLevel() > 0 by the time doReserveNumericParamValue() runs,
+ * so the lock-escalating write nests via SAVEPOINT instead of opening a fresh transaction. A
+ * SAVEPOINT has no lock state of its own; it shares whatever lock the one connection-wide
+ * transaction holds. So each worker here opens its own outer transaction around every single
+ * reservation (mirroring "some other code already has a transaction open"), and the assertion is
+ * the same as above: the combined results across every worker's every reservation are exactly the
+ * expected contiguous range.
+ */
+test('reserveNextNumericParamValue never hands out a duplicate value when called inside an already-open transaction', function (): void {
+    $workerCount = 6;
+    $reservationsPerWorker = 15;
+    $totalReservations = $workerCount * $reservationsPerWorker;
+
+    $dbPath = Path::join(sys_get_temp_dir(), 'fossbilling-reserve-numeric-nested-concurrency-' . bin2hex(random_bytes(4)) . '.sqlite');
+    $workerScriptPath = Path::join(sys_get_temp_dir(), 'fossbilling-reserve-numeric-nested-concurrency-worker-' . bin2hex(random_bytes(4)) . '.php');
+    $filesystem = new Filesystem();
+
+    $filesystem->dumpFile($workerScriptPath, <<<'PHP'
+        <?php
+        require $argv[1];
+        [, , $dbPath, $count] = $argv;
+        $connection = \Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $dbPath]);
+        $service = new \Box\Mod\System\Service();
+        (new ReflectionProperty($service, 'di'))->setValue($service, new \Pimple\Container(['dbal' => $connection]));
+
+        $results = [];
+        for ($i = 0; $i < (int) $count; $i++) {
+            // Open the outer transaction ourselves, as some other caller might, so
+            // getTransactionNestingLevel() is > 0 by the time reserveNextNumericParamValue()
+            // runs its own transactional() - forcing it to nest via SAVEPOINT.
+            $connection->beginTransaction();
+            $results[] = $service->reserveNextNumericParamValue('concurrency_counter');
+            $connection->commit();
+        }
+
+        fwrite(STDOUT, implode(',', $results));
+        PHP);
+
+    try {
+        $setupConnection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $dbPath]);
+        $setupConnection->executeStatement(
+            'CREATE TABLE setting (id INTEGER PRIMARY KEY AUTOINCREMENT, param VARCHAR(255) UNIQUE, value TEXT, created_at TEXT, updated_at TEXT)'
+        );
+        $setupConnection->executeStatement(
+            "INSERT INTO setting (param, value, created_at, updated_at) VALUES ('concurrency_counter', '0', '2026-01-01 00:00:00', '2026-01-01 00:00:00')"
+        );
+
+        $autoloadPath = Path::join(PATH_ROOT, 'vendor', 'autoload.php');
+        $handles = [];
+        foreach (range(1, $workerCount) as $ignored) {
+            $descriptors = [1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
+            $process = proc_open(
+                [PHP_BINARY, $workerScriptPath, $autoloadPath, $dbPath, (string) $reservationsPerWorker],
+                $descriptors,
+                $pipes
+            );
+            expect($process)->not->toBeFalse();
+            $handles[] = ['process' => $process, 'pipes' => $pipes];
+        }
+
+        $reserved = [];
+        $stderrOutput = '';
+        foreach ($handles as $handle) {
+            $stdout = stream_get_contents($handle['pipes'][1]);
+            $stderrOutput .= stream_get_contents($handle['pipes'][2]);
+            fclose($handle['pipes'][1]);
+            fclose($handle['pipes'][2]);
+            proc_close($handle['process']);
+
+            foreach (explode(',', trim($stdout)) as $value) {
+                if ($value !== '') {
+                    $reserved[] = (int) $value;
+                }
+            }
+        }
+
+        expect($stderrOutput)->toBe('');
+        expect($reserved)->toHaveCount($totalReservations);
+
+        sort($reserved);
+        expect($reserved)->toBe(range(0, $totalReservations - 1));
+    } finally {
+        $filesystem->remove([$dbPath, $workerScriptPath]);
+    }
+});
