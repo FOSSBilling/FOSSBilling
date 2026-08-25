@@ -71,6 +71,21 @@ class Requirements
         return $ok;
     }
 
+    /**
+     * FOSSBilling stores several database identifiers as 64-bit integers (MySQL BIGINT).
+     * On 32-bit PHP builds, PHP's native int type can't represent the full range of those
+     * values without silent precision loss, so 64-bit PHP is a hard requirement.
+     */
+    public function isPhp64Bit(): bool
+    {
+        $ok = PHP_INT_SIZE === 8;
+        if (!$ok) {
+            $this->isOk = false;
+        }
+
+        return $ok;
+    }
+
     public function checkFile(string $path): bool
     {
         $writable = false;
@@ -150,6 +165,11 @@ class Requirements
             'isOk' => $this->isPhpVersionOk(),
             'version' => PHP_VERSION,
             'min_version' => $this->php_reqs['min_version'],
+        ];
+
+        $result['php_architecture'] = [
+            'isOk' => $this->isPhp64Bit(),
+            'int_size' => PHP_INT_SIZE,
         ];
 
         $result['can_install'] = $this->isOk;

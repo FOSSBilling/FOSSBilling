@@ -64,6 +64,11 @@
                             <td class="{{ compatibility.php_version.isOk ? 'green' : 'red'}}">{{ compatibility.php_version.version }}</td>
                             <td>{% if not compatibility.php_version.isOk %}PHP {{ compatibility.php_version.min_version }} or newer is required.{% endif %}</td>
                         </tr>
+                        <tr>
+                            <td>PHP architecture</td>
+                            <td class="{{ compatibility.php_architecture.isOk ? 'green' : 'red'}}">{{ compatibility.php_architecture.isOk ? '64-bit' : '32-bit' }}</td>
+                            <td>{% if not compatibility.php_architecture.isOk %}FOSSBilling requires a 64-bit PHP build to safely store large database identifiers.{% endif %}</td>
+                        </tr>
                         {% for ext, loaded in compatibility.required_extensions %}
                             <tr>
                                 <td>PHP extension: <strong>{{ ext }}</strong></td>
