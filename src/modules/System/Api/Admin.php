@@ -116,10 +116,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             throw new \FOSSBilling\Exception('Unsupported cache driver: :driver', [':driver' => $driver]);
         }
 
-        // Keep the existing password when the admin doesn't provide a new one, so re-saving the
-        // other Redis fields doesn't require re-entering it.
+        // Keep the existing password when the admin leaves the field blank, so re-saving the
+        // other Redis fields doesn't require re-entering it. The explicit "clear" checkbox is
+        // what lets an admin actually remove a previously-set password.
         $redisPassword = $data['redis_password'] ?? '';
-        if ($redisPassword === '') {
+        if ($redisPassword === '' && !Tools::normalizeBoolean($data['redis_password_clear'] ?? false, false)) {
             $redisPassword = Config::getProperty('cache.redis.password');
         }
 

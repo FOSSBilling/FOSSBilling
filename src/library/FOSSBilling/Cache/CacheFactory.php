@@ -94,6 +94,10 @@ class CacheFactory
      */
     public static function createFromConfig(array $cacheConfig, string $namespace, int $defaultLifetime, bool $fallbackOnFailure): CacheItemPoolInterface
     {
+        // Scope every pool to this installation, so installs that happen to share a Redis
+        // database or Memcached server don't collide on the same cache keys.
+        $namespace = self::scopeNamespaceToInstallation($namespace);
+
         $driver = $cacheConfig['driver'] ?? 'filesystem';
 
         if (!in_array($driver, self::SUPPORTED_DRIVERS, true)) {
@@ -154,6 +158,22 @@ class CacheFactory
         $cacheConfig['driver'] ??= 'filesystem';
 
         return $cacheConfig;
+    }
+
+    /**
+     * Appends this installation's stable instance ID to a namespace, so multiple FOSSBilling
+     * installs pointed at the same Redis/Memcached server don't read or overwrite each other's
+     * cache entries.
+     */
+    private static function scopeNamespaceToInstallation(string $namespace): string
+    {
+        $instanceId = (string) Config::getProperty('info.instance_id', '');
+
+        if ($instanceId === '') {
+            return $namespace;
+        }
+
+        return $namespace . '_' . preg_replace('/[^A-Za-z0-9_.-]/', '_', $instanceId);
     }
 
     private static function createRedisAdapter(array $redisConfig, string $namespace, int $defaultLifetime): RedisAdapter

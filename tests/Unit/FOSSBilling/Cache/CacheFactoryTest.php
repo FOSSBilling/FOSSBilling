@@ -40,6 +40,13 @@ function setCacheConfig(?array $cacheConfig): void
     Config::setConfig($config, false);
 }
 
+function setInstanceId(string $instanceId): void
+{
+    $config = Config::getConfig();
+    $config['info']['instance_id'] = $instanceId;
+    Config::setConfig($config, false);
+}
+
 test('defaults to a working filesystem cache when no cache configuration is set', function (): void {
     setCacheConfig(null);
 
@@ -103,6 +110,24 @@ test('rejects saving a memcached configuration when the memcached extension is u
         0,
         false,
     ))->toThrow(Exception::class, 'requires the PHP memcached');
+});
+
+test('cache pools are isolated per installation instance id', function (): void {
+    setInstanceId('install-a');
+    $poolA = CacheFactory::create('cache_factory_test');
+    $item = $poolA->getItem('shared-key');
+    $item->set('value-a');
+    $poolA->save($item);
+
+    setInstanceId('install-b');
+    $poolB = CacheFactory::create('cache_factory_test');
+    expect($poolB->getItem('shared-key')->isHit())->toBeFalse();
+
+    setInstanceId('install-a');
+    $poolA2 = CacheFactory::create('cache_factory_test');
+    expect($poolA2->getItem('shared-key')->get())->toBe('value-a');
+
+    $poolA2->deleteItem('shared-key');
 });
 
 test('clearAll never throws even with a misconfigured driver', function (): void {
