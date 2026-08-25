@@ -213,6 +213,100 @@ test('updates a gateway', function (): void {
     expect($payGateway->isEnabled())->toBeTrue();
 });
 
+test('converts to api array masks secrets for an admin', function (): void {
+    $payGateway = createEntity(PayGateway::class, [
+        'id' => 1,
+        'name' => 'Stripe',
+        'gateway' => 'Stripe',
+        'acceptedCurrencies' => json_encode(['USD']),
+        'enabled' => true,
+        'allowSingle' => true,
+        'allowRecurrent' => true,
+        'testMode' => false,
+        'config' => json_encode([
+            'pub_key' => 'pk_live_visible',
+            'api_key' => 'sk_live_secret',
+            'webhook_secret' => 'whsec_secret',
+        ]),
+    ]);
+
+    $service = payGatewayService();
+
+    $result = $service->toApiArray($payGateway, false, \Tests\Helpers\admin());
+
+    expect($result['secret_fields'])->toContain('api_key');
+    expect($result['secret_fields'])->toContain('webhook_secret');
+    expect($result['secret_fields'])->toContain('test_api_key');
+    expect($result['secret_fields'])->toContain('test_webhook_secret');
+    expect($result['secret_fields'])->not->toContain('pub_key');
+    expect($result['config']['pub_key'])->toBe('pk_live_visible');
+    expect($result['config']['api_key'])->toBeNull();
+    expect($result['config']['api_key_set'])->toBeTrue();
+    expect($result['config']['webhook_secret'])->toBeNull();
+    expect($result['config']['webhook_secret_set'])->toBeTrue();
+    expect($result['config']['test_api_key_set'])->toBeFalse();
+});
+
+test('update keeps the existing secret gateway value when the incoming value is blank', function (): void {
+    $payGateway = createEntity(PayGateway::class, [
+        'id' => 1,
+        'name' => 'Stripe',
+        'gateway' => 'Stripe',
+        'enabled' => false,
+        'config' => json_encode(['api_key' => 'sk_live_existing', 'pub_key' => 'pk_live_existing']),
+    ]);
+
+    $em = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $repo = Mockery::mock(PayGatewayRepository::class);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
+
+    $service = new ServicePayGateway();
+    $di = container();
+    $di['em'] = $em;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['loggedin_admin'] = \Tests\Helpers\admin(['id' => 7]);
+    $service->setDi($di);
+
+    $result = $service->update($payGateway, [
+        'config' => [
+            'api_key' => ServicePayGateway::CREDENTIAL_KEEP_SENTINEL,
+            'pub_key' => 'pk_live_new',
+        ],
+    ]);
+
+    expect($result)->toBeTrue();
+    $config = json_decode((string) $payGateway->getConfig(), true);
+    expect($config['api_key'])->toBe('sk_live_existing');
+    expect($config['pub_key'])->toBe('pk_live_new');
+});
+
+test('update rotates a secret gateway value when a new value is submitted', function (): void {
+    $payGateway = createEntity(PayGateway::class, [
+        'id' => 1,
+        'name' => 'Stripe',
+        'gateway' => 'Stripe',
+        'enabled' => false,
+        'config' => json_encode(['api_key' => 'sk_live_old']),
+    ]);
+
+    $em = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $repo = Mockery::mock(PayGatewayRepository::class);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
+
+    $service = new ServicePayGateway();
+    $di = container();
+    $di['em'] = $em;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['loggedin_admin'] = \Tests\Helpers\admin(['id' => 7]);
+    $service->setDi($di);
+
+    $result = $service->update($payGateway, ['config' => ['api_key' => 'sk_live_new']]);
+
+    expect($result)->toBeTrue();
+    $config = json_decode((string) $payGateway->getConfig(), true);
+    expect($config['api_key'])->toBe('sk_live_new');
+});
+
 test('deletes a gateway', function (): void {
     $payGateway = createEntity(PayGateway::class, ['id' => 7]);
 

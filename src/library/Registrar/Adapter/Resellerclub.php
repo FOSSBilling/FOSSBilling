@@ -68,6 +68,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
                         'label' => 'ResellerClub API Key',
                         'description' => 'You can get this at ResellerClub control panel, go to Settings -> API',
                         'required' => false,
+                        'secret' => true,
                     ],
                 ],
             ],
