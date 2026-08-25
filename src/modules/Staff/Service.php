@@ -406,7 +406,9 @@ class Service implements InjectionAwareInterface
 
     public function getSearchQuery($data): array
     {
-        $query = 'SELECT * FROM admin';
+        // `admin` also holds `pass` and `api_token` - list columns explicitly instead of
+        // `SELECT *` so listing never exposes them.
+        $query = 'SELECT id, system_name, email, name, signature, status, timezone, created_at, updated_at FROM admin';
 
         $id = $data['id'] ?? null;
         $search = $data['search'] ?? null;

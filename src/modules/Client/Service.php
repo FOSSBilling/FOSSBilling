@@ -208,9 +208,11 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function getSearchQuery($data, $selectStmt = 'SELECT c.*'): array
+    public function getSearchQuery($data, $selectStmt = null): array
     {
-        $sql = $selectStmt;
+        // `client` also holds `pass`, `salt`, and `api_token` - reuse EXPORTABLE_COLUMNS
+        // instead of `c.*` so listing never exposes them.
+        $sql = $selectStmt ?? 'SELECT c.' . implode(', c.', self::EXPORTABLE_COLUMNS);
         $sql .= ' FROM client as c left join client_group as cg on c.client_group_id = cg.id';
 
         $search = (isset($data['search']) && !empty($data['search'])) ? $data['search'] : null;
