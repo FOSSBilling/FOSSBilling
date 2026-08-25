@@ -817,9 +817,10 @@ test('custom recurring billing periods patch is not skipped by 0.8-next installs
     // which never touched product_payment. An install coming from that lineage already has
     // last_patch = 98, so the migration must live at a number above 98 (not 98 itself) or it
     // would silently never run here. See https://github.com/FOSSBilling/FOSSBilling/issues/4188.
+    $allPatches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 0);
     $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 98);
 
-    expect($patches)->toHaveKey(107)
-        ->and($patches[107][1])->toBe('patch107')
-        ->and($patches)->not->toHaveKey(98);
+    expect($allPatches)->not->toHaveKey(98)
+        ->and($patches)->toHaveKey(107)
+        ->and($patches[107][1])->toBe('patch107');
 });
