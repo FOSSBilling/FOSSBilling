@@ -25,6 +25,11 @@ abstract class Registrar_AdapterAbstract
     protected ?Box\Mod\Order\Entity\Order $_order = null;
 
     /**
+     * Lazily created RDAP client, shared by all availability checks of the adapter.
+     */
+    protected ?Registrar_Rdap $_rdap = null;
+
+    /**
      * Return array with configuration.
      *
      * Must be overridden in adapter class
@@ -229,7 +234,7 @@ abstract class Registrar_AdapterAbstract
      */
     protected function getRdap(): Registrar_Rdap
     {
-        return new Registrar_Rdap($this->getHttpClient(), $this->getLog());
+        return $this->_rdap ??= new Registrar_Rdap($this->getHttpClient(), $this->getLog());
     }
 
     /**

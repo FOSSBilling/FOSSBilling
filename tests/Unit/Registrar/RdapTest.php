@@ -78,8 +78,10 @@ test('domains under zones without an RDAP service are left undetermined without 
         ->and($tracker->urls)->toBe([Registrar_Rdap::BOOTSTRAP_URL]);
 });
 
-test('a failed bootstrap fetch disables all lookups and logs a warning', function (): void {
-    $httpClient = new MockHttpClient(function (): never {
+test('a failed bootstrap fetch disables all lookups and is not retried', function (): void {
+    $attempts = 0;
+    $httpClient = new MockHttpClient(function () use (&$attempts): never {
+        $attempts++;
         throw new TransportException('connection refused');
     });
     $logger = new class extends Psr\Log\AbstractLogger {
@@ -94,6 +96,8 @@ test('a failed bootstrap fetch disables all lookups and logs a warning', functio
     $rdap = new Registrar_Rdap($httpClient, $logger);
 
     expect($rdap->isDomainAvailable('example.com'))->toBeNull()
+        ->and($rdap->isDomainAvailable('example-two.com'))->toBeNull()
+        ->and($attempts)->toBe(1)
         ->and($logger->records)->toHaveCount(1)
         ->and($logger->records[0][0])->toBe('warning')
         ->and($logger->records[0][1])->toContain('RDAP bootstrap registry');

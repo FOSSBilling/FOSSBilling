@@ -40,7 +40,11 @@ class Registrar_Rdap
         ?HttpClientInterface $httpClient = null,
         private readonly ?Psr\Log\LoggerInterface $logger = null,
     ) {
-        $this->httpClient = $httpClient ?? HttpClient::create(['bindto' => BIND_TO]);
+        $this->httpClient = $httpClient ?? HttpClient::create([
+            'bindto' => BIND_TO,
+            'timeout' => 10,
+            'max_duration' => 15,
+        ]);
     }
 
     /**
@@ -134,7 +138,7 @@ class Registrar_Rdap
         } catch (HttpExceptionInterface|JsonException $e) {
             $this->logger?->warning('Unable to fetch the RDAP bootstrap registry: ' . $e->getMessage());
 
-            return [];
+            return $this->bootstrap = [];
         }
 
         $map = [];
