@@ -932,7 +932,9 @@ class Service implements InjectionAwareInterface
                         && $invoiceModel->status === \Model_Invoice::STATUS_UNPAID;
 
                     if ($isUnpaid) {
-                        $invoiceId = $invoiceModel->id;
+                        // Legacy RedBean models expose ids as numeric strings; the Doctrine
+                        // Order entity requires a strict ?int, so normalize it here.
+                        $invoiceId = (int) $invoiceModel->id;
                         foreach ($orders as $order) {
                             $order->setUnpaidInvoiceId($invoiceId);
                             $this->di['em']->persist($order);
