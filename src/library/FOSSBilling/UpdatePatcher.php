@@ -548,6 +548,7 @@ class UpdatePatcher implements InjectionAwareInterface
             109 => 'patch109',
             110 => 'patch110',
             111 => 'patch111',
+            112 => 'patch112',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2680,6 +2681,16 @@ class UpdatePatcher implements InjectionAwareInterface
                     KEY `client_id_idx` (`client_id`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8'
             );
+        }
+    }
+
+    private function patch112(): void
+    {
+        // Adds an admin-configurable per-TLD flag to require the transfer code (EPP/auth
+        // code) during domain transfer checkout, instead of silently accepting a blank
+        // value that only fails later at the registrar. See issue #2335.
+        if (!$this->tableHasColumn('tld', 'require_transfer_code')) {
+            $this->executeSql('ALTER TABLE `tld` ADD COLUMN `require_transfer_code` tinyint(1) DEFAULT NULL AFTER `allow_transfer`');
         }
     }
 

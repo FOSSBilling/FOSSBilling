@@ -52,6 +52,9 @@ class Tld implements TimestampInterface
     #[ORM\Column(name: 'allow_transfer', type: Types::BOOLEAN, nullable: true)]
     private ?bool $allowTransfer = null;
 
+    #[ORM\Column(name: 'require_transfer_code', type: Types::BOOLEAN, nullable: true)]
+    private ?bool $requireTransferCode = null;
+
     #[ORM\Column(type: Types::BOOLEAN, nullable: true, options: ['default' => true])]
     private ?bool $active = true;
 
@@ -151,6 +154,18 @@ class Tld implements TimestampInterface
     public function setAllowTransfer(?bool $allowTransfer): self
     {
         $this->allowTransfer = $allowTransfer;
+
+        return $this;
+    }
+
+    public function isRequireTransferCode(): ?bool
+    {
+        return $this->requireTransferCode;
+    }
+
+    public function setRequireTransferCode(?bool $requireTransferCode): self
+    {
+        $this->requireTransferCode = $requireTransferCode;
 
         return $this;
     }
