@@ -1091,10 +1091,23 @@ dataset('searchFilters', fn (): array => [
     ],
     'do not filter by false no_cron' => [
         ['no_cron' => 'false'],
-        'SELECT * FROM admin',
+        'SELECT id, system_name, email, name, signature, status, timezone, created_at, updated_at FROM admin',
         [],
     ],
 ]);
+
+test('getSearchQuery never selects sensitive admin columns', function (): void {
+    $di = container();
+
+    $service = new Service();
+    $service->setDi($di);
+    [$query] = $service->getSearchQuery([]);
+
+    expect(str_contains($query, '*'))->toBeFalse($query);
+    foreach (['pass', 'salt', 'api_token', 'hash', 'config'] as $sensitiveColumn) {
+        expect(preg_match('/\b' . preg_quote($sensitiveColumn, '/') . '\b/', $query))->toBe(0, "Query unexpectedly selects '$sensitiveColumn': $query");
+    }
+});
 
 test('getSearchQuery returns correct query and params', function (array $data, string $expectedStr, array $expectedParams): void {
     $di = container();
