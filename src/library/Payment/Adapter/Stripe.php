@@ -103,15 +103,17 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                     ],
                 ],
                 'api_key' => [
-                    'text', [
+                    'password', [
                         'label' => 'Live Secret Key:',
                         'required_when' => ['enabled' => true, 'test_mode' => false],
+                        'secret' => true,
                     ],
                 ],
                 'webhook_secret' => [
-                    'text', [
+                    'password', [
                         'label' => 'Live Webhook signing secret:',
                         'required_when' => ['enabled' => true, 'test_mode' => false],
+                        'secret' => true,
                     ],
                 ],
                 'test_pub_key' => [
@@ -121,15 +123,17 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                     ],
                 ],
                 'test_api_key' => [
-                    'text', [
+                    'password', [
                         'label' => 'Test Secret Key:',
                         'required_when' => ['enabled' => true, 'test_mode' => true],
+                        'secret' => true,
                     ],
                 ],
                 'test_webhook_secret' => [
-                    'text', [
+                    'password', [
                         'label' => 'Test Webhook signing secret:',
                         'required_when' => ['enabled' => true, 'test_mode' => true],
+                        'secret' => true,
                     ],
                 ],
             ],

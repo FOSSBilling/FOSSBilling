@@ -66,6 +66,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
                         'label' => 'API Key',
                         'description' => 'You can get this at Namecheap control panel.',
                         'required' => true,
+                        'secret' => true,
                     ],
                 ],
                 'username' => [
