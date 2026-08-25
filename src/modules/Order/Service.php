@@ -442,6 +442,30 @@ class Service implements InjectionAwareInterface
         }
     }
 
+    /**
+     * Guards against interacting with a service on an expired order.
+     *
+     * Accepts both the Doctrine order entity and the legacy RedBeanPHP
+     * model, since callers have not all been migrated yet.
+     *
+     * @throws InformationException if the order has an expiry date in the past
+     */
+    public function assertOrderUsable(Order|\Model_ClientOrder $order): void
+    {
+        $expiresAt = $order instanceof Order ? $order->getExpiresAt() : $order->expires_at;
+        if ($expiresAt === null) {
+            return;
+        }
+
+        $expiresAtTimestamp = $expiresAt instanceof \DateTimeInterface
+            ? $expiresAt->getTimestamp()
+            : strtotime((string) $expiresAt);
+
+        if ($expiresAtTimestamp !== false && $expiresAtTimestamp <= time()) {
+            throw new InformationException('Subscription expired');
+        }
+    }
+
     public function getOrderService(Order|\Model_ClientOrder $order)
     {
         $serviceId = $this->orderServiceId($order);
