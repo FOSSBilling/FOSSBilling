@@ -179,7 +179,7 @@ test('onAfterClientSignUp handles exception gracefully', function (): void {
 });
 
 dataset('searchQueryData', [
-    [[], 'SELECT c.*', []],
+    [[], 'SELECT c.id, c.aid', []],
     [
         ['id' => 1],
         '(c.id = :client_id OR c.aid = :alt_client_id)',
@@ -261,6 +261,16 @@ test('getSearchQuery with custom select statement', function (): void {
     expect($result[1])->toBeArray();
 
     expect(str_contains((string) $result[0], $selectStmt))->toBeTrue($result[0]);
+});
+
+test('getSearchQuery never selects sensitive client columns', function (): void {
+    $service = new Box\Mod\Client\Service();
+    [$query] = $service->getSearchQuery([]);
+
+    expect(str_contains($query, '*'))->toBeFalse($query);
+    foreach (['pass', 'salt', 'api_token', 'hash', 'config'] as $sensitiveColumn) {
+        expect(preg_match('/\b' . preg_quote($sensitiveColumn, '/') . '\b/', $query))->toBe(0, "Query unexpectedly selects '$sensitiveColumn': $query");
+    }
 });
 
 test('getPairs returns array', function (): void {
