@@ -225,6 +225,14 @@ abstract class Registrar_AdapterAbstract
     }
 
     /**
+     * Creates an RDAP client for registry-based domain availability lookups.
+     */
+    protected function getRdap(): Registrar_Rdap
+    {
+        return new Registrar_Rdap($this->getHttpClient(), $this->getLog());
+    }
+
+    /**
      * Enables test mode for the adapter.
      *
      * @return Registrar_AdapterAbstract the current adapter object, for method chaining
