@@ -411,9 +411,20 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->details = serialize($whois);
         $model->expires_at = $this->formatRegistrarTimestamp($whois->getExpirationTime());
         $model->registered_at = $this->formatRegistrarTimestamp($whois->getRegistrationTime());
+        $model->synced_at = date('Y-m-d H:i:s');
         $model->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($model);
+    }
+
+    public function synchronizeDomain(\Model_ServiceDomain $model): void
+    {
+        $order = $this->di['mod_service']('order')->getServiceOrder($model);
+        if (!$order instanceof \Model_ClientOrder) {
+            throw new \FOSSBilling\Exception('Domain order not found');
+        }
+
+        $this->syncWhois($model, $order);
     }
 
     public function updateNameservers(\Model_ServiceDomain $model, $data): bool
@@ -653,6 +664,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'locked' => $model->locked,
             'registered_at' => $model->registered_at,
             'expires_at' => $model->expires_at,
+            'synced_at' => $model->synced_at,
             'contact' => [
                 'first_name' => $model->contact_first_name,
                 'last_name' => $model->contact_last_name,

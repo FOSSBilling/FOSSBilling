@@ -1226,7 +1226,52 @@ test('syncWhois stores null dates when registrar dates are unavailable', functio
     $service->syncWhoisPublic($model, $order);
 
     expect($model->expires_at)->toBeNull()
-        ->and($model->registered_at)->toBeNull();
+        ->and($model->registered_at)->toBeNull()
+        ->and($model->synced_at)->not->toBeNull();
+});
+
+test('synchronizes domain with registrar', function (): void {
+    $model = new Model_ServiceDomain();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+
+    $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
+    $orderServiceMock->shouldReceive('getServiceOrder')
+        ->once()
+        ->with($model)
+        ->andReturn($order);
+
+    $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $service->shouldReceive('syncWhois')
+        ->once()
+        ->with($model, $order);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $orderServiceMock);
+    $service->setDi($di);
+
+    $service->synchronizeDomain($model);
+});
+
+test('throws when synchronizing a domain without an order', function (): void {
+    $model = new Model_ServiceDomain();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+
+    $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
+    $orderServiceMock->shouldReceive('getServiceOrder')
+        ->once()
+        ->with($model)
+        ->andReturn(null);
+
+    $service = new Service();
+    $di = container();
+    $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $orderServiceMock);
+    $service->setDi($di);
+
+    expect(fn () => $service->synchronizeDomain($model))
+        ->toThrow(FOSSBilling\Exception::class);
 });
 
 test('converts to api array', function (?Model_Admin $identity, string $dbLoadCalled): void {
@@ -1245,6 +1290,7 @@ test('converts to api array', function (?Model_Admin $identity, string $dbLoadCa
     $model->locked = 'locked';
     $model->registered_at = date('Y-m-d H:i:s');
     $model->expires_at = date('Y-m-d H:i:s');
+    $model->synced_at = date('Y-m-d H:i:s');
 
     $model->contact_first_name = 'first_name';
     $model->contact_last_name = 'last_name';
@@ -1289,6 +1335,7 @@ test('converts to api array', function (?Model_Admin $identity, string $dbLoadCa
     expect($result)->toHaveKey('locked');
     expect($result)->toHaveKey('registered_at');
     expect($result)->toHaveKey('expires_at');
+    expect($result)->toHaveKey('synced_at');
     expect($result)->toHaveKey('contact');
 
     $contact = $result['contact'];
@@ -1318,6 +1365,7 @@ test('converts to api array', function (?Model_Admin $identity, string $dbLoadCa
     expect($result['locked'])->toBe($model->locked);
     expect($result['registered_at'])->toBe($model->registered_at);
     expect($result['expires_at'])->toBe($model->expires_at);
+    expect($result['synced_at'])->toBe($model->synced_at);
 
     expect($contact['first_name'])->toBe($model->contact_first_name);
     expect($contact['last_name'])->toBe($model->contact_last_name);
