@@ -316,6 +316,14 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             $params['ns'] = ['dns1.directi.com', 'dns2.directi.com', 'dns3.directi.com', 'dns4.directi.com'];
         }
 
+        // ResellerClub is contractually required to display a notice - and get consent via this tnc
+        // attribute - before sharing a European Registrant/Admin Organization contact's personal
+        // information with the .fr registry. See https://manage.resellerclub.com/kb/answer/752
+        if ($tld == '.fr') {
+            $params['attr-name1'] = 'tnc';
+            $params['attr-value1'] = 'Y';
+        }
+
         if ($tld == '.au' || $tld == '.net.au' || $tld == '.com.au') {
             $contact = $domain->getContactRegistrar();
 
@@ -730,6 +738,11 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             $contact['type'] = 'EuContact';
         }
 
+        // @see https://manage.resellerclub.com/kb/answer/790 for the FrContact type
+        if ($tld == '.fr') {
+            $contact['type'] = 'FrContact';
+        }
+
         if ($tld == '.cn') {
             $contact['type'] = 'CnContact';
         }
@@ -860,12 +873,18 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             $tech_contact_id = -1;
         }
 
-        if (in_array($tld, ['.uk', '.co.uk', '.org.uk', '.nz', '.ru', '.com.ru', '.org.ru', '.net.ru', '.eu', '.ca', '.nl'])) {
+        // @see https://manage.resellerclub.com/kb/answer/752 - .FR requires tech-contact-id to be -1,
+        // but (unlike .uk/.ru/.eu above) it still expects a real admin-contact-id.
+        if ($tld == '.fr') {
+            $tech_contact_id = -1;
+        }
+
+        if (in_array($tld, ['.uk', '.co.uk', '.org.uk', '.nz', '.ru', '.com.ru', '.org.ru', '.net.ru', '.eu', '.ca', '.nl', '.fr'])) {
             $billing_contact_id = -1;
         }
 
         // general contact is special contact for these TLD'S
-        if (in_array($tld, ['.de', '.nl', '.ru', '.es', '.uk', '.co.uk', '.org.uk', '.eu', '.com.ru', '.net.ru', '.org.ru', '.co'])) {
+        if (in_array($tld, ['.de', '.nl', '.ru', '.es', '.uk', '.co.uk', '.org.uk', '.eu', '.com.ru', '.net.ru', '.org.ru', '.co', '.fr'])) {
             $reg_contact_id = $special_contact_id;
         }
 

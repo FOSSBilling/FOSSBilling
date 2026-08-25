@@ -168,3 +168,86 @@ test('modifyContact assigns per-role contact IDs for TLDs that require a dedicat
     expect($body['tech-contact-id'])->toBe('-1');
     expect($body['billing-contact-id'])->toBe('-1');
 });
+
+test('modifyContact assigns per-role contact IDs for .fr, which only forces tech and billing to -1', function (): void {
+    // Regression test for #77: .fr needs its own FrContact type, but - unlike .uk/.ru/.eu - the
+    // registry still expects a real admin-contact-id rather than -1. See
+    // https://manage.resellerclub.com/kb/answer/752 and https://manage.resellerclub.com/kb/answer/790
+    $requests = [];
+    $bodies = [];
+    $responses = [
+        json_encode(['customerid' => '555']), // customers/details
+        '111111', // contacts/add (general Contact) -> id
+        '222222', // contacts/add (FrContact) -> id
+        '333333', // domains/orderid
+        json_encode(['status' => 'Success']), // domains/modify-contact
+    ];
+
+    $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$requests, &$responses, &$bodies): MockResponse {
+        $requests[] = $method . ' ' . parse_url($url, PHP_URL_PATH);
+        $bodies[] = $options['body'] ?? null;
+
+        return new MockResponse(array_shift($responses));
+    });
+    $adapter = createResellerclubAdapter($httpClient);
+    $domain = createResellerclubDomain(tld: '.fr')->setContactRegistrar(createResellerclubTestContact());
+
+    expect($adapter->modifyContact($domain))->toBeTrue();
+
+    // the second contacts/add call must actually be creating the FrContact, not just landing on the
+    // right id by coincidence
+    parse_str((string) $bodies[2], $frContactBody);
+    expect($frContactBody['type'])->toBe('FrContact');
+
+    parse_str((string) end($bodies), $body);
+    expect($body['reg-contact-id'])->toBe('222222'); // the FrContact, not the general contact
+    expect($body['admin-contact-id'])->toBe('222222'); // real contact, NOT -1
+    expect($body['tech-contact-id'])->toBe('-1');
+    expect($body['billing-contact-id'])->toBe('-1');
+});
+
+test('registerDomain sends the .fr registry consent attribute alongside the FrContact IDs', function (): void {
+    // Regression test for #77: .fr requires accepting the registry's data-sharing terms via a tnc
+    // attribute on domains/register, on top of the FrContact type/contact-id handling above. See
+    // https://manage.resellerclub.com/kb/answer/752
+    $requests = [];
+    $bodies = [];
+    $responses = [
+        json_encode(['status' => 'ERROR', 'message' => 'Order not found']), // domains/orderid (via _hasCompletedOrder)
+        json_encode(['customerid' => '555']), // customers/details
+        json_encode(['recsonpage' => 0]), // contacts/search (general Contact) -> none found
+        '111111', // contacts/add (general Contact) -> id
+        json_encode(['recsonpage' => 0]), // contacts/search (FrContact) -> none found
+        '222222', // contacts/add (FrContact) -> id
+        json_encode(['status' => 'Success']), // domains/register
+    ];
+
+    $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$requests, &$responses, &$bodies): MockResponse {
+        $requests[] = $method . ' ' . parse_url($url, PHP_URL_PATH);
+        $bodies[] = $options['body'] ?? null;
+
+        return new MockResponse(array_shift($responses));
+    });
+    $adapter = createResellerclubAdapter($httpClient);
+    $domain = createResellerclubDomain(tld: '.fr')
+        ->setContactRegistrar(createResellerclubTestContact())
+        ->setRegistrationPeriod(1)
+        ->setNs1('ns1.example.com')
+        ->setNs2('ns2.example.com');
+
+    expect($adapter->registerDomain($domain))->toBeTrue();
+    expect($requests[6])->toBe('POST /api/domains/register.json');
+
+    // the second contacts/add call must actually be creating the FrContact, not just landing on the
+    // right id by coincidence
+    parse_str((string) $bodies[5], $frContactBody);
+    expect($frContactBody['type'])->toBe('FrContact');
+
+    parse_str((string) end($bodies), $body);
+    expect($body['reg-contact-id'])->toBe('222222');
+    expect($body['admin-contact-id'])->toBe('222222');
+    expect($body['tech-contact-id'])->toBe('-1');
+    expect($body['billing-contact-id'])->toBe('-1');
+    expect($body['attr-name1'])->toBe('tnc');
+    expect($body['attr-value1'])->toBe('Y');
+});
