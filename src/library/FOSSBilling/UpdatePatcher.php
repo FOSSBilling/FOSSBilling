@@ -512,10 +512,8 @@ class UpdatePatcher implements InjectionAwareInterface
             89 => 'patch89',
             90 => 'patch90',
             91 => 'patch91',
-            92 => 'patch92',
             93 => 'patch93',
             94 => 'patch94',
-            95 => 'patch95',
             96 => 'patch96',
             97 => 'patch97',
             99 => 'patch99',
@@ -532,6 +530,13 @@ class UpdatePatcher implements InjectionAwareInterface
             // has last_patch >= 98 from that patch, which would silently skip this migration if it
             // kept number 98 — see https://github.com/FOSSBilling/FOSSBilling/issues/4188.
             107 => 'patch107',
+            // Same 0.8-next collision as patch107, found auditing the rest of the sequence: these
+            // two features (multi-file downloads, order suspension grace days) don't exist on
+            // 0.8-next at all, but their original numbers (92, 95) were reused there for unrelated
+            // migrations. An install descended from a fully-patched 0.8-next release (last_patch
+            // 98) would silently skip both forever if they kept their original numbers.
+            108 => 'patch108',
+            109 => 'patch109',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2468,7 +2473,7 @@ class UpdatePatcher implements InjectionAwareInterface
         );
     }
 
-    private function patch92(): void
+    private function patch108(): void
     {
         if (!$this->tableExists('service_downloadable_file')) {
             $this->executeSql(
@@ -2608,7 +2613,7 @@ class UpdatePatcher implements InjectionAwareInterface
         }
     }
 
-    private function patch95(): void
+    private function patch109(): void
     {
         if (!$this->tableHasColumn('product', 'suspension_grace_days')) {
             $this->executeSql("ALTER TABLE `product` ADD COLUMN `suspension_grace_days` int(11) NOT NULL DEFAULT '0' AFTER `quantity_in_stock`");

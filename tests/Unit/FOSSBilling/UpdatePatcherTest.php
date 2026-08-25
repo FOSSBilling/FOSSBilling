@@ -6,15 +6,14 @@ use FOSSBilling\UpdatePatcher;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
-test('downloadable file migration follows the client balance gateway repair', function (): void {
+test('currency formatting patch follows the client balance gateway repair', function (): void {
     $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 89);
 
     expect($patches)->toHaveKey(90)
         ->and($patches[90][1])->toBe('patch90')
         ->and($patches)->toHaveKey(91)
         ->and($patches[91][1])->toBe('patch91')
-        ->and($patches)->toHaveKey(92)
-        ->and($patches[92][1])->toBe('patch92')
+        ->and($patches)->not->toHaveKey(92)
         ->and($patches)->toHaveKey(93)
         ->and($patches[93][1])->toBe('patch93');
 });
@@ -40,14 +39,15 @@ test('manual currency rate patch follows the currency formatting patch', functio
         ->and($patches[94][1])->toBe('patch94');
 });
 
-test('suspension grace patch follows the manual currency rate patch', function (): void {
+test('client balance unique credit patch follows the manual currency rate patch, skipping the removed number 95', function (): void {
     $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 94);
 
-    expect($patches)->toHaveKey(95)
-        ->and($patches[95][1])->toBe('patch95');
+    expect($patches)->not->toHaveKey(95)
+        ->and($patches)->toHaveKey(96)
+        ->and($patches[96][1])->toBe('patch96');
 });
 
-test('client balance unique credit patch follows the suspension grace patch', function (): void {
+test('client balance unique credit patch is still offered to installs already at patch level 95', function (): void {
     $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 95);
 
     expect($patches)->toHaveKey(96)
@@ -241,7 +241,7 @@ test('suspension grace patch indexes existing order tables', function (): void {
 
     $patcher = new UpdatePatcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch95'))->invoke($patcher);
+    (new ReflectionMethod($patcher, 'patch109'))->invoke($patcher);
 });
 
 test('client balance gateway patch restores one-time payments', function (): void {
@@ -823,4 +823,29 @@ test('custom recurring billing periods patch is not skipped by 0.8-next installs
     expect($allPatches)->not->toHaveKey(98)
         ->and($patches)->toHaveKey(107)
         ->and($patches[107][1])->toBe('patch107');
+});
+
+test('downloadable file and suspension grace patches are numbered 108 and 109, out of sequence', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 107);
+
+    expect($patches)->toHaveKey(108)
+        ->and($patches[108][1])->toBe('patch108')
+        ->and($patches)->toHaveKey(109)
+        ->and($patches[109][1])->toBe('patch109');
+});
+
+test('downloadable file and suspension grace patches are not skipped by 0.8-next installs already at patch level 98', function (): void {
+    // Same collision as patch107 (see above), found auditing the rest of the sequence: 0.8-next
+    // reused numbers 92 and 95 for unrelated migrations, but never ported the downloadable-file
+    // table or suspension-grace-days columns at all. An install coming from that lineage already
+    // has last_patch = 98, so both migrations must live above 98 or they'd never run here.
+    $allPatches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 0);
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 98);
+
+    expect($allPatches)->not->toHaveKey(92)
+        ->and($allPatches)->not->toHaveKey(95)
+        ->and($patches)->toHaveKey(108)
+        ->and($patches[108][1])->toBe('patch108')
+        ->and($patches)->toHaveKey(109)
+        ->and($patches[109][1])->toBe('patch109');
 });
