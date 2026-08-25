@@ -146,6 +146,8 @@ test('a bootstrap response violating the expected schema disables all lookups', 
     '{"services": [[["com", 42], ["https://rdap.example.com/com/v1/"]]]}',
     '{"services": [[["com"], ["https://rdap.example.com/com/v1/", null]]]}',
     '{"services": [[["com"], [""]]]}',
+    '{"services": [[["com"], ["not-a-url"]]]}',
+    '{"services": [[["com"], ["ftp://rdap.example.com"]]]}',
 ]);
 
 test('a failing domain query falls through to the next RDAP server of the zone', function (): void {

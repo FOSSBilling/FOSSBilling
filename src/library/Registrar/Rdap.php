@@ -183,12 +183,28 @@ class Registrar_Rdap
             return false;
         }
 
-        foreach ([...$entry[0], ...$entry[1]] as $value) {
-            if (!is_string($value) || $value === '') {
+        foreach ($entry[0] as $label) {
+            if (!is_string($label) || $label === '') {
+                return false;
+            }
+        }
+
+        foreach ($entry[1] as $server) {
+            if (!self::isValidServerUrl($server)) {
                 return false;
             }
         }
 
         return true;
+    }
+
+    /**
+     * @param mixed $server
+     */
+    private static function isValidServerUrl($server): bool
+    {
+        return is_string($server)
+            && filter_var($server, FILTER_VALIDATE_URL) !== false
+            && in_array(parse_url($server, PHP_URL_SCHEME), ['http', 'https'], true);
     }
 }
