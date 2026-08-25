@@ -238,17 +238,13 @@ class Service implements InjectionAwareInterface
      */
     public function install(): bool
     {
-        $sql = '
-        CREATE TABLE IF NOT EXISTS `service_apikey` (
-            `id` bigint(20) NOT NULL AUTO_INCREMENT UNIQUE,
-            `client_id` bigint(20) NOT NULL,
-            `api_key` varchar(255),
-            `config` text NOT NULL,
-            `created_at` datetime,
-            `updated_at` datetime,
-            PRIMARY KEY (`id`)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;';
-        $this->di['em']->getConnection()->executeStatement($sql);
+        // Raw MySQL-only DDL here (backticks, ENGINE=InnoDB) would fail outright on
+        // PostgreSQL/SQLite. On MySQL, structure.sql doesn't create service_apikey either -
+        // UpdatePatcher::patch111() does, as a startup-safety-net fix - so this hook is already
+        // redundant there and only load-bearing on PG/SQLite fresh installs where nothing else
+        // creates the table. SchemaSynchronizer::sync() creates (or catches up) every entity's
+        // table from current metadata, additively and safely, on every platform.
+        \FOSSBilling\Doctrine\SchemaSynchronizer::sync($this->di['em']);
 
         return true;
     }

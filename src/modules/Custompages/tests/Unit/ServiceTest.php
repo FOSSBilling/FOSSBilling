@@ -457,3 +457,23 @@ test('create page reserves room for the suffix when truncating a conflicting lon
     expect($captured['slug'])->toBe(str_repeat('a', 253) . '-1');
     expect(strlen($captured['slug']))->toBe(255);
 });
+
+test('install creates the custom_pages table portably instead of via raw MySQL DDL', function (): void {
+    // Regression test: install() used to run raw MySQL-only DDL (backticks, ENGINE=InnoDB)
+    // directly, which fails outright on PostgreSQL/SQLite. custom_pages isn't in structure.sql
+    // at all, so this hook is the only thing that ever creates the table - unlike most modules,
+    // it genuinely runs on every platform, confirmed here against a real SQLite connection.
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $em = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+
+    expect($connection->createSchemaManager()->tablesExist(['custom_pages']))->toBeFalse();
+
+    $di = new Pimple\Container();
+    $di['em'] = $em;
+
+    $service = new Service();
+    $service->setDi($di);
+
+    expect($service->install())->toBeTrue();
+    expect($connection->createSchemaManager()->tablesExist(['custom_pages']))->toBeTrue();
+});
