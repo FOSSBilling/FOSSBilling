@@ -520,7 +520,7 @@ final class FOSSBilling_Installer
         }
 
         $now = new DateTimeImmutable();
-        FOSSBilling\Doctrine\InstallSeeder::seedContent($this->connection, $contentSql, $now);
+        FOSSBilling\Doctrine\InstallSeeder::seedContent($this->connection, $entityManager, $contentSql, $now);
 
         $passwordObject = new FOSSBilling\PasswordManager();
         FOSSBilling\Doctrine\InstallSeeder::seedAdmin(

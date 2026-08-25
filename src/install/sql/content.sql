@@ -334,7 +334,7 @@ VALUES
 	(28,'funds_min_amount','10',0,NULL,NULL,NOW(),NOW()),
 	(29,'funds_max_amount','200',0,NULL,NULL,NOW(),NOW()),
 	(30,'company_favicon','public/branding/favicon.ico',0,NULL,NULL,NOW(),NOW()),
-	(31,'hide_company_public',1,0,NULL,NULL,NOW(), NOW()),
+	(31,'hide_company_public','1',0,NULL,NULL,NOW(),NOW()),
 	(32,'invoice_hash_lifetime_days','90',0,NULL,NULL,NOW(),NOW());
 
 /*!40000 ALTER TABLE `setting` ENABLE KEYS */;
