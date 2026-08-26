@@ -1384,6 +1384,46 @@ test('applyCorePatches does resync an extension\'s table once it is marked insta
     });
 });
 
+/*
+ * Regression test: scope discovery (installedExtensionModules()'s schema introspection and
+ * query, plus metadata loading) has to fail inside the same try/catch as the sync call itself -
+ * it can throw for the same reasons the sync can (an unreachable database above all), and this
+ * method's whole contract is "errors are logged, not thrown". A connection that fails outright
+ * (rather than one that's merely missing a table) reproduces exactly that: the failure happens
+ * during installedExtensionModules()'s own tablesExist() call, before SchemaSynchronizer::
+ * syncEntities() is ever reached.
+ */
+test('applyCorePatches logs, rather than throws, when scope discovery itself fails to reach the database', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $brokenConnection = Doctrine\DBAL\DriverManager::getConnection([
+            'driver' => 'pdo_sqlite',
+            'path' => '/definitely-not-a-real-directory-987654321/db.sqlite',
+        ]);
+        $entityManager = FOSSBilling\Doctrine\EntityManagerFactory::create($brokenConnection);
+
+        $pdo = Mockery::mock(PDO::class);
+        $pdo->shouldNotReceive('prepare');
+        $pdo->shouldNotReceive('query');
+
+        $logger = new Tests\Helpers\TestLogger();
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+        $di['em'] = $entityManager;
+        $di['logger'] = $logger;
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        // Must not throw - the whole point of the try/catch this scope discovery has to live
+        // inside.
+        $patcher->applyCorePatches(force: true);
+
+        $errorCalls = array_values(array_filter($logger->calls, static fn (array $call): bool => $call['method'] === 'error'));
+        expect($errorCalls)->not->toBe([])
+            ->and($errorCalls[0]['params'][0])->toContain('Schema sync against the configured database failed');
+    });
+});
+
 test('availablePatches reports 0 on a non-MySQL driver regardless of the last_patch value', function (): void {
     withNonMysqlDbDriver(function (): void {
         $pdo = Mockery::mock(PDO::class);

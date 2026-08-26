@@ -236,30 +236,36 @@ class UpdatePatcher implements InjectionAwareInterface
         }
 
         $entityManager = $this->di['em'];
-        $connection = $entityManager->getConnection();
 
-        // Fetched once and reused for every entity below, rather than one query per entity - an
-        // unbounded number of extra queries per non-core module isn't a cost worth paying just
-        // to derive a handful of booleans.
-        $installedExtensionModules = ModuleEntityScope::installedExtensionModules($connection);
-
-        $eagerEntityClasses = array_values(array_filter(
-            array_map(
-                static fn ($classMetadata): string => $classMetadata->getName(),
-                $entityManager->getMetadataFactory()->getAllMetadata(),
-            ),
-            static function (string $entityClass) use ($installedExtensionModules): bool {
-                $module = ModuleEntityScope::moduleForEntityClass($entityClass);
-
-                return $module === null || ModuleEntityScope::isEagerNow($module, $installedExtensionModules);
-            },
-        ));
-
-        if ($eagerEntityClasses === []) {
-            return;
-        }
-
+        // Scope discovery (the connection, the installed-extensions query, metadata loading) can
+        // throw for the same reasons the sync itself can - an unreachable database above all -
+        // so it has to share this method's one error boundary, not run ahead of it. Only the sync
+        // itself used to be able to throw, back when this called SchemaSynchronizer::sync() with
+        // no scope discovery beforehand at all.
         try {
+            $connection = $entityManager->getConnection();
+
+            // Fetched once and reused for every entity below, rather than one query per entity -
+            // an unbounded number of extra queries per non-core module isn't a cost worth paying
+            // just to derive a handful of booleans.
+            $installedExtensionModules = ModuleEntityScope::installedExtensionModules($connection);
+
+            $eagerEntityClasses = array_values(array_filter(
+                array_map(
+                    static fn ($classMetadata): string => $classMetadata->getName(),
+                    $entityManager->getMetadataFactory()->getAllMetadata(),
+                ),
+                static function (string $entityClass) use ($installedExtensionModules): bool {
+                    $module = ModuleEntityScope::moduleForEntityClass($entityClass);
+
+                    return $module === null || ModuleEntityScope::isEagerNow($module, $installedExtensionModules);
+                },
+            ));
+
+            if ($eagerEntityClasses === []) {
+                return;
+            }
+
             $result = SchemaSynchronizer::syncEntities($entityManager, $eagerEntityClasses);
         } catch (\Throwable $e) {
             $this->logUpdate('error', 'Schema sync against the configured database failed: ' . $e->getMessage());
