@@ -11,6 +11,9 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Sanitizer;
 
+use Symfony\Component\HtmlSanitizer\HtmlSanitizer;
+use Symfony\Component\HtmlSanitizer\HtmlSanitizerConfig;
+
 final class Sanitizer
 {
     public static function sanitizeContent(string $content = '', bool $allowHtml = true): string
@@ -25,14 +28,14 @@ final class Sanitizer
             return htmlspecialchars(self::sanitizePlainText($content), ENT_QUOTES | ENT_HTML5, 'UTF-8', false);
         }
 
-        $config = (new \Symfony\Component\HtmlSanitizer\HtmlSanitizerConfig())
+        $config = (new HtmlSanitizerConfig())
             ->allowSafeElements()
             ->allowElement('a', ['href', 'title'])
             ->allowElement('code')
             ->allowElement('pre')
             ->allowLinkSchemes(['http', 'https', 'mailto', 'tel']);
 
-        $sanitizer = new \Symfony\Component\HtmlSanitizer\HtmlSanitizer($config);
+        $sanitizer = new HtmlSanitizer($config);
 
         return trim($sanitizer->sanitize($content));
     }
