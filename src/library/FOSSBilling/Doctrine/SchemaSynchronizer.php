@@ -100,7 +100,7 @@ final class SchemaSynchronizer
     {
         $metadataFactory = $entityManager->getMetadataFactory();
         $metadata = array_map(
-            static fn (string $class) => $metadataFactory->getMetadataFor($class),
+            $metadataFactory->getMetadataFor(...),
             $entityClasses,
         );
 
