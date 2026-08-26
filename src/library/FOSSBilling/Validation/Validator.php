@@ -27,9 +27,6 @@ class Validator implements InjectionAwareInterface
     {
         $this->di = $di;
         $this->domainValidator->setDi($di);
-        if (isset($di['filesystem'])) {
-            // DomainValidator handles filesystem via DI
-        }
     }
 
     public function getDi(): ?\Pimple\Container
