@@ -81,7 +81,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         }
 
         if (isset($data['from_email'])) {
-            $this->getDi()['tools']->validateAndSanitizeEmail($data['from_email']);
+            \FOSSBilling\Validation\EmailValidator::validateAndSanitizeEmail($data['from_email']);
             $model->setFromEmail($data['from_email']);
         }
 

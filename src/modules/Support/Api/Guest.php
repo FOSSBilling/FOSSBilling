@@ -36,7 +36,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             throw new \FOSSBilling\Exception\InformationException('Please enter your message');
         }
 
-        $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
+        $data['email'] = \FOSSBilling\Validation\EmailValidator::validateAndSanitizeEmail($data['email']);
         $this->getDi()['rate_limiter']->consumeOrThrow('guest_ticket_create', (string) $this->getIp());
 
         $data['content'] = \FOSSBilling\Sanitizer\Sanitizer::sanitizeMarkdownContent($content);

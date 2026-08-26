@@ -16,7 +16,6 @@ use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Doctrine\TimestampTrait;
 use FOSSBilling\Api\ArrayInterface;
 use FOSSBilling\Doctrine\TimestampInterface;
-use FOSSBilling\Tools;
 
 /**
  * One row per email that FOSSBilling sent to a client.

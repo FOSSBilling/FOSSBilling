@@ -18,7 +18,6 @@ namespace Box\Mod\System\Api;
 use FOSSBilling\Cache\CacheFactory;
 use FOSSBilling\Cache\Driver;
 use FOSSBilling\System\Config;
-use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Admin extends \FOSSBilling\Api\AbstractApi

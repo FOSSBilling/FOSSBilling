@@ -380,7 +380,6 @@ test('sendTemplate sends email when template exists', function (): void {
     $di['twig'] = $twigStub;
     $di['mod'] = $di->protect(fn () => $modMock);
     $di['mod_service'] = $di->protect(moduleService(['system' => $systemService]));
-    $di['tools'] = new FOSSBilling\Tools();
 
     $service->setDi($di);
 
@@ -467,7 +466,6 @@ test('sendTemplate forwards the attachment to the queue and strips it from the s
     $di['twig'] = Mockery::mock(Twig\Environment::class);
     $di['mod'] = $di->protect(fn () => $modMock);
     $di['mod_service'] = $di->protect(moduleService(['system' => $systemService]));
-    $di['tools'] = new FOSSBilling\Tools();
 
     $service->setDi($di);
 
@@ -621,7 +619,6 @@ test('sendTemplate handles to_staff and to_client options', function (array $dat
         'system' => $system,
         'client' => $clientServiceMock,
     ]));
-    $di['tools'] = new FOSSBilling\Tools();
 
     $service->setDi($di);
 

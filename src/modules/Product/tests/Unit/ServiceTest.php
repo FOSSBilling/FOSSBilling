@@ -1390,7 +1390,6 @@ test('to promo api array', function (): void {
     };
 
     $di = container();
-    $di['tools'] = Mockery::mock(FOSSBilling\Tools::class)->shouldIgnoreMissing();
     $di['em'] = $emMock;
 
     $service->setDi($di);
@@ -1435,7 +1434,6 @@ test('to promo api array includes usage stats for deep requests', function (): v
     };
 
     $di = container();
-    $di['tools'] = Mockery::mock(FOSSBilling\Tools::class)->shouldIgnoreMissing();
     $di['em'] = $emMock;
 
     $service->setDi($di);

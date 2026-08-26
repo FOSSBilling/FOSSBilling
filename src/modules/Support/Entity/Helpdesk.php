@@ -18,7 +18,6 @@ use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Doctrine\TimestampTrait;
 use FOSSBilling\Api\ArrayInterface;
 use FOSSBilling\Doctrine\TimestampInterface;
-use FOSSBilling\Tools;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Support\Repository\HelpdeskRepository::class)]
 #[ORM\Table(name: 'support_helpdesk')]

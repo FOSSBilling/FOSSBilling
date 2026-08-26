@@ -145,12 +145,6 @@ test('create returns int', function (): void {
     $eventMock = Mockery::mock('\Box_EventManager');
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once();
-
-    $di = container();
-    $di['events_manager'] = $eventMock;
-    $di['tools'] = $toolsMock;
 
     $adminClient->setDi($di);
     $adminClient->setService($serviceMock);
@@ -170,11 +164,6 @@ test('create throws exception when email is already registered', function (): vo
     $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
     $serviceMock->shouldReceive('emailAlreadyRegistered')->atLeast()->once()->andReturn(true);
 
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once();
-
-    $di = container();
-    $di['tools'] = $toolsMock;
 
     $adminClient->setDi($di);
     $adminClient->setService($serviceMock);
@@ -252,14 +241,6 @@ test('update returns true', function (): void {
     $eventMock = Mockery::mock('\Box_EventManager');
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once();
-
-    $di = container();
-    $di['mod_service'] = $di->protect(moduleService(['client' => $serviceMock]));
-    $di['events_manager'] = $eventMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['tools'] = $toolsMock;
 
     $adminClient->setDi($di);
     $result = $adminClient->update($data);
@@ -385,9 +366,6 @@ test('update throws exception when email is already registered', function (): vo
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['validator'] = new \FOSSBilling\Validation\Validator();
 
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once();
-    $di['tools'] = $toolsMock;
 
     $adminClient->setDi($di);
 

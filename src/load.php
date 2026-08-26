@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -14,7 +14,6 @@ use FOSSBilling\Http\RequestFactory;
 use FOSSBilling\SentryHelper;
 use FOSSBilling\System\Config;
 use FOSSBilling\System\Environment;
-use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -266,7 +265,6 @@ function preInit(): void
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'RouteMatch.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'RouteMatcher.php');
     require Path::join(PATH_LIBRARY, 'FOSSBilling', 'System', 'Config.php');
-    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Tools.php');
 }
 
 /*

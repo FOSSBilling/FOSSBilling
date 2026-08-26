@@ -299,7 +299,6 @@ test('getAdminNavigation returns admin navigation', function (): void {
 
     $di = container();
     $di['mod'] = $di->protect(fn ($name): Mockery\MockInterface => $modMock);
-    $di['tools'] = new FOSSBilling\Tools();
     $di['em'] = extensionBuildEm($extensionRepository);
 
     $service->setDi($di);
@@ -762,30 +761,6 @@ test('setConfig sets extension config', function (): void {
         ->once()
         ->andReturn([]);
 
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-
-    $cryptMock = Mockery::mock(\FOSSBilling\Security\Crypt::class);
-    $cryptMock->shouldReceive('encrypt')
-        ->atLeast()
-        ->once()
-        ->andReturn('encryptedConfig');
-
-    $metaRepo = Mockery::mock(ExtensionMetaRepository::class);
-    $metaRepo->shouldReceive('findOneByExtensionAndScope')
-        ->atLeast()
-        ->once()
-        ->andReturn(null);
-
-    $em = extensionBuildEm(null, $metaRepo);
-    $em->shouldReceive('persist')->atLeast()->once();
-    $em->shouldReceive('flush')->atLeast()->once();
-
-    $eventMock = Mockery::mock(Box_EventManager::class);
-    $eventMock->shouldReceive('fire')->atLeast()->once();
-
-    $di = container();
-    $di['em'] = $em;
-    $di['tools'] = $toolsMock;
     $di['crypt'] = $cryptMock;
     $di['events_manager'] = $eventMock;
     $di['logger'] = new Tests\Helpers\TestLogger();

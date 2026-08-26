@@ -106,7 +106,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('staff', 'create_and_edit_staff');
 
         if (isset($data['email'])) {
-            $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
+            $data['email'] = \FOSSBilling\Validation\EmailValidator::validateAndSanitizeEmail($data['email']);
         }
 
         return $this->getService()->update($model, $data);
@@ -172,7 +172,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('staff', 'create_and_edit_staff');
 
-        $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
+        $data['email'] = \FOSSBilling\Validation\EmailValidator::validateAndSanitizeEmail($data['email']);
 
         $this->getDi()['validator']->isPasswordStrong($data['password']);
 

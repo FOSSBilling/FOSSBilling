@@ -16,7 +16,6 @@ use Box\Mod\Servicehosting\Entity\ServiceHosting;
 use Box\Mod\Servicehosting\Entity\ServiceHostingHp;
 use Box\Mod\Servicehosting\Entity\ServiceHostingServer;
 use FOSSBilling\Pagination\Options;
-use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 /**

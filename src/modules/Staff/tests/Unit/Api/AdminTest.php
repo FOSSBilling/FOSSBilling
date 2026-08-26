@@ -251,9 +251,6 @@ test('create', function (): void {
     $di = container();
     $di['validator'] = $validatorMock;
 
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once();
-    $di['tools'] = $toolsMock;
 
     $api->setDi($di);
     $api->setService($serviceMock);

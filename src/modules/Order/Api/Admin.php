@@ -20,7 +20,6 @@ use Box\Mod\Order\Entity\Order;
 use Box\Mod\Order\Repository\OrderRepository;
 use FOSSBilling\Exception\InformationException;
 use FOSSBilling\Pagination\Options;
-use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 use Symfony\Component\HttpFoundation\Response;
 

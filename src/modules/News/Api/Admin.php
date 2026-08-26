@@ -132,7 +132,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('news', 'manage');
 
-        $post = new Post($data['title'], $this->getDi()['tools']->slug($data['title']));
+        $post = new Post($data['title'], \FOSSBilling\Utils\Str::slug($data['title']));
 
         $post->setAdminId($this->getIdentity()->getId())
              ->setContent($data['content'] ?? null)

@@ -20,7 +20,6 @@ use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Client\Entity\ClientGroup;
 use FOSSBilling\Exception\InformationException;
 use FOSSBilling\Pagination\Options;
-use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Intl\Countries;
@@ -187,11 +186,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('client', 'create');
 
         $validator = $this->getDi()['validator'];
-        $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
+        $data['email'] = \FOSSBilling\Validation\EmailValidator::validateAndSanitizeEmail($data['email']);
         if (array_key_exists('billing_email', $data)) {
             $data['billing_email'] = empty($data['billing_email'])
                 ? null
-                : $this->getDi()['tools']->validateAndSanitizeEmail($data['billing_email']);
+                : \FOSSBilling\Validation\EmailValidator::validateAndSanitizeEmail($data['billing_email']);
         }
         $data['send_welcome_email'] = \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['send_welcome_email'] ?? true, true);
 
@@ -301,7 +300,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         if (!is_null($data['email'] ?? null)) {
             $email = $data['email'];
-            $email = $this->getDi()['tools']->validateAndSanitizeEmail($email);
+            $email = \FOSSBilling\Validation\EmailValidator::validateAndSanitizeEmail($email);
             if ($service->emailAlreadyRegistered($email, $client)) {
                 throw new InformationException('This email address is already registered.');
             }
@@ -310,7 +309,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         if (array_key_exists('billing_email', $data)) {
             $data['billing_email'] = empty($data['billing_email'])
                 ? null
-                : $this->getDi()['tools']->validateAndSanitizeEmail($data['billing_email']);
+                : \FOSSBilling\Validation\EmailValidator::validateAndSanitizeEmail($data['billing_email']);
         }
 
         if (!empty($data['birthday'])) {

@@ -53,16 +53,6 @@ test('generateEmailConfirmationLink returns string', function (): void {
 
     $model = createEntity(Box\Mod\Extension\Entity\ExtensionMeta::class);
 
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('url')
-        ->atLeast()->once()
-        ->andReturn('fossbilling.org/index.php/client/confirm-email/');
-    $toolsMock->shouldReceive('generatePassword')
-        ->atLeast()->once()
-        ->andReturn('randomhash123456789012345678901234567890');
-
-    $di = container();
-    $di['tools'] = $toolsMock;
 
     $service->setDi($di);
 

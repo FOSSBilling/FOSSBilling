@@ -21,8 +21,6 @@ function buildCustompagesService(object $repo, ?EntityManagerInterface $em = nul
     $di['em'] = $em;
     // The production logger follows PSR-3; this test only needs a lightweight stub.
     $di['logger'] = Mockery::mock()->shouldIgnoreMissing();
-    $di['tools'] = Mockery::mock(FOSSBilling\Tools::class);
-    $di['tools']->allows('slug')->andReturnUsing(fn ($s): string => strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', (string) $s)));
 
     if ($extra !== null) {
         foreach ($extra->keys() as $key) {
@@ -138,8 +136,6 @@ test('create page generates unique slug and inserts via dbal', function (): void
     $di = new Pimple\Container();
     $di['em'] = $em;
     $di['logger'] = $logger;
-    $di['tools'] = Mockery::mock(FOSSBilling\Tools::class);
-    $di['tools']->allows('slug')->with('About Us')->andReturn('about-us');
 
     $service = new Service();
     $service->setDi($di);
@@ -178,8 +174,6 @@ test('create page appends incrementing suffix until slug is unique', function ()
     $di = new Pimple\Container();
     $di['em'] = $em;
     $di['logger'] = Mockery::mock()->shouldIgnoreMissing();
-    $di['tools'] = Mockery::mock(FOSSBilling\Tools::class);
-    $di['tools']->allows('slug')->with('Page')->andReturn('page');
 
     $service = new Service();
     $service->setDi($di);
@@ -226,8 +220,6 @@ test('update page applies setters and returns id', function (): void {
     $di = new Pimple\Container();
     $di['em'] = $em;
     $di['logger'] = Mockery::mock()->shouldIgnoreMissing();
-    $di['tools'] = Mockery::mock(FOSSBilling\Tools::class);
-    $di['tools']->allows('slug')->with('New Slug')->andReturn('new');
 
     $service = new Service();
     $service->setDi($di);
@@ -256,7 +248,6 @@ test('delete page by scalar removes the entity', function (): void {
     $di = new Pimple\Container();
     $di['em'] = $em;
     $di['logger'] = Mockery::mock()->shouldIgnoreMissing();
-    $di['tools'] = Mockery::mock(FOSSBilling\Tools::class);
 
     $service = new Service();
     $service->setDi($di);
@@ -276,7 +267,6 @@ test('delete page by scalar is a no-op when not found', function (): void {
     $di = new Pimple\Container();
     $di['em'] = $em;
     $di['logger'] = Mockery::mock()->shouldIgnoreMissing();
-    $di['tools'] = Mockery::mock(FOSSBilling\Tools::class);
 
     $service = new Service();
     $service->setDi($di);
@@ -325,8 +315,6 @@ test('create page retries on a concurrent slug conflict and succeeds on the next
     $di = new Pimple\Container();
     $di['em'] = $em;
     $di['logger'] = Mockery::mock()->shouldIgnoreMissing();
-    $di['tools'] = Mockery::mock(FOSSBilling\Tools::class);
-    $di['tools']->allows('slug')->with('About')->andReturn('about');
 
     $service = new Service();
     $service->setDi($di);
@@ -353,8 +341,6 @@ test('create page gives up after repeated slug conflicts', function (): void {
     $di = new Pimple\Container();
     $di['em'] = $em;
     $di['logger'] = Mockery::mock()->shouldIgnoreMissing();
-    $di['tools'] = Mockery::mock(FOSSBilling\Tools::class);
-    $di['tools']->allows('slug')->with('Title')->andReturn('title');
 
     $service = new Service();
     $service->setDi($di);
@@ -378,8 +364,6 @@ test('update page surfaces a concurrent constraint violation as the uniqueness e
     $di = new Pimple\Container();
     $di['em'] = $em;
     $di['logger'] = Mockery::mock()->shouldIgnoreMissing();
-    $di['tools'] = Mockery::mock(FOSSBilling\Tools::class);
-    $di['tools']->allows('slug')->with('New Slug')->andReturn('new');
 
     $service = new Service();
     $service->setDi($di);
@@ -410,8 +394,6 @@ test('create page truncates a long title slug to fit varchar 255', function (): 
     $di = new Pimple\Container();
     $di['em'] = $em;
     $di['logger'] = Mockery::mock()->shouldIgnoreMissing();
-    $di['tools'] = Mockery::mock(FOSSBilling\Tools::class);
-    $di['tools']->allows('slug')->with('Long Title')->andReturn($longSlug);
 
     $service = new Service();
     $service->setDi($di);
@@ -446,8 +428,6 @@ test('create page reserves room for the suffix when truncating a conflicting lon
     $di = new Pimple\Container();
     $di['em'] = $em;
     $di['logger'] = Mockery::mock()->shouldIgnoreMissing();
-    $di['tools'] = Mockery::mock(FOSSBilling\Tools::class);
-    $di['tools']->allows('slug')->with('Long Title')->andReturn($base);
 
     $service = new Service();
     $service->setDi($di);

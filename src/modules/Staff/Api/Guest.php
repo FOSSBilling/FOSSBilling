@@ -35,7 +35,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $startedAt = microtime(true);
 
         try {
-            $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email'], true, false);
+            $data['email'] = \FOSSBilling\Validation\EmailValidator::validateAndSanitizeEmail($data['email'], true, false);
 
             $config = $this->getModule()->getConfig();
 
@@ -143,7 +143,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
         try {
             $this->getDi()['events_manager']->fire(['event' => 'onBeforePasswordResetStaff']);
-            $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
+            $data['email'] = \FOSSBilling\Validation\EmailValidator::validateAndSanitizeEmail($data['email']);
 
             $ipLimit = $this->getDi()['rate_limiter']->consume('staff_password_reset_ip', (string) $this->getIp());
             if ($ipLimit->isLimited()) {

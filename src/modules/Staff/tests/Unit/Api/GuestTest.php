@@ -70,9 +70,6 @@ test('successful login', function (): void {
 
     $di = container();
 
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once();
-    $di['tools'] = $toolsMock;
     $di['session'] = $sessionMock;
     $di['validator'] = new \FOSSBilling\Validation\Validator();
 
@@ -98,9 +95,6 @@ test('login check ip exception', function (): void {
 
     $di = container();
 
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once();
-    $di['tools'] = $toolsMock;
     $di['validator'] = new \FOSSBilling\Validation\Validator();
 
     $guestApi = apiEndpoint(new Box\Mod\Staff\Api\Guest());

@@ -74,7 +74,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     public function update($data)
     {
         if (!is_null($data['email'] ?? null)) {
-            $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
+            $data['email'] = \FOSSBilling\Validation\EmailValidator::validateAndSanitizeEmail($data['email']);
         }
 
         return $this->getService()->updateAdmin($this->getAdminEntity(), $data);

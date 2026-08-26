@@ -19,7 +19,6 @@ use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientPasswordReset;
 use FOSSBilling\Http\CookieNames;
 use FOSSBilling\Security\RandomizedTimeFloor;
-use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Guest extends \FOSSBilling\Api\AbstractApi
@@ -87,7 +86,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $service = $this->getService();
 
         $email = $data['email'] ?? null;
-        $email = $this->getDi()['tools']->validateAndSanitizeEmail($email);
+        $email = \FOSSBilling\Validation\EmailValidator::validateAndSanitizeEmail($email);
         $email = strtolower(trim((string) $email));
         if ($service->clientAlreadyExists($email)) {
             throw new \FOSSBilling\Exception\InformationException('This email address is already registered.');
@@ -123,7 +122,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $startedAt = microtime(true);
 
         try {
-            $this->getDi()['tools']->validateAndSanitizeEmail($data['email'], true, false);
+            \FOSSBilling\Validation\EmailValidator::validateAndSanitizeEmail($data['email'], true, false);
 
             $event_params = $data;
             $event_params['ip'] = $this->ip;
@@ -175,7 +174,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             $service = $this->getDi()['mod_service']('client');
 
             // Sanitize email
-            $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
+            $data['email'] = \FOSSBilling\Validation\EmailValidator::validateAndSanitizeEmail($data['email']);
 
             $ipLimit = $this->getDi()['rate_limiter']->consume('client_password_reset_ip', (string) $this->getIp());
             if ($ipLimit->isLimited()) {

@@ -20,7 +20,6 @@ use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Repository\TransactionRepository;
 use FOSSBilling\Container\InjectionAwareInterface;
 use FOSSBilling\System\Environment;
-use FOSSBilling\Tools;
 
 class ServiceTransaction implements InjectionAwareInterface
 {

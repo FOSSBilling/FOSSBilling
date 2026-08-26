@@ -13,7 +13,6 @@ namespace Box\Mod\Currency\Api;
 
 use Box\Mod\Currency\Entity\Currency;
 use FOSSBilling\I18n\I18n;
-use FOSSBilling\Tools;
 
 class Guest extends \FOSSBilling\Api\AbstractApi
 {

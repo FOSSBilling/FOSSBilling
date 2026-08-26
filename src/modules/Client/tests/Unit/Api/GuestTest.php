@@ -59,13 +59,6 @@ test('create returns int', function (): void {
     $validatorMock->shouldReceive('isPasswordStrong')->atLeast()->once();
     $validatorMock->shouldReceive('passwordsMatch')->atLeast()->once();
 
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once()->andReturn($data['email']);
-
-    $di = container();
-    $di['mod_config'] = $di->protect(fn ($name): array => $configArr);
-    $di['validator'] = $validatorMock;
-    $di['tools'] = $toolsMock;
 
     $guestClient->setDi($di);
     $guestClient->setService($serviceMock);
@@ -106,9 +99,6 @@ test('create throws exception when client exists', function (): void {
     $di['mod_config'] = $di->protect(fn ($name): array => $configArr);
     $di['validator'] = $validatorMock;
 
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once()->andReturn($data['email']);
-    $di['tools'] = $toolsMock;
 
     $guestClient->setDi($di);
     $guestClient->setService($serviceMock);
@@ -187,14 +177,6 @@ test('login returns array', function (): void {
     $cartServiceMock->shouldReceive('transferFromOtherSession')->atLeast()->once()
         ->andReturn(true);
 
-    $toolsStub = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsStub->shouldReceive('validateAndSanitizeEmail')->atLeast()->once()->with($data['email'], true, false)->andReturn($data['email']);
-
-    $di = container();
-    $di['events_manager'] = $eventMock;
-    $di['session'] = $sessionMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['tools'] = $toolsStub;
     $di['mod_service'] = $di->protect(moduleService(['cart' => $cartServiceMock]));
 
     $guestClient->setDi($di);
@@ -226,15 +208,6 @@ test('resetPassword returns true with new flow', function (): void {
     $serviceMock->shouldReceive('createPasswordResetRequestForClient')->atLeast()->once()->andReturn('hashedString');
     $serviceMock->shouldReceive('sendPasswordResetRequestEmailForClient')->atLeast()->once();
 
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once()->andReturn($data['email']);
-
-    $di = container();
-    $di['em'] = $em;
-    $di['events_manager'] = $eventMock;
-    $di['mod_service'] = $di->protect(moduleService(['client' => $serviceMock]));
-    $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['tools'] = $toolsMock;
 
     $guestClient->setDi($di);
 
@@ -263,9 +236,6 @@ test('resetPassword returns true when email not found', function (): void {
     $di['events_manager'] = $eventMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once()->andReturn($data['email']);
-    $di['tools'] = $toolsMock;
 
     $guestClient->setDi($di);
 

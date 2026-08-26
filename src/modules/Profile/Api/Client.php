@@ -84,13 +84,13 @@ class Client extends \FOSSBilling\Api\AbstractApi
     public function update($data)
     {
         if (!is_null($data['email'] ?? null)) {
-            $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
+            $data['email'] = \FOSSBilling\Validation\EmailValidator::validateAndSanitizeEmail($data['email']);
         }
 
         if (array_key_exists('billing_email', $data)) {
             $data['billing_email'] = empty($data['billing_email'])
                 ? null
-                : $this->getDi()['tools']->validateAndSanitizeEmail($data['billing_email']);
+                : \FOSSBilling\Validation\EmailValidator::validateAndSanitizeEmail($data['billing_email']);
         }
 
         return $this->getService()->updateClient($this->getClientEntity(), $data);

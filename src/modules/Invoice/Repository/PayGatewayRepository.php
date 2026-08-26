@@ -14,7 +14,6 @@ namespace Box\Mod\Invoice\Repository;
 use Box\Mod\Invoice\Entity\PayGateway;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
-use FOSSBilling\Tools;
 
 class PayGatewayRepository extends EntityRepository
 {

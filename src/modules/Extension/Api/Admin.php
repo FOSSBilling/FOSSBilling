@@ -12,7 +12,6 @@ declare(strict_types=1);
 namespace Box\Mod\Extension\Api;
 
 use Box\Mod\Extension\Entity\Extension;
-use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Admin extends \FOSSBilling\Api\AbstractApi

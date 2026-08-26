@@ -24,7 +24,6 @@ use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use FOSSBilling\I18n\I18n;
 use FOSSBilling\Container\InjectionAwareInterface;
 use FOSSBilling\Pagination\Options;
-use FOSSBilling\Tools;
 
 class Service implements InjectionAwareInterface
 {

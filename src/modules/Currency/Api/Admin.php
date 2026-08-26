@@ -13,7 +13,6 @@ namespace Box\Mod\Currency\Api;
 
 use Box\Mod\Currency\Entity\Currency;
 use FOSSBilling\Pagination\Options;
-use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 use Symfony\Component\Intl\Currencies;
 

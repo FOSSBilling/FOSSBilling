@@ -32,7 +32,6 @@ use Box\Mod\Support\Repository\SupportTicketMessageRepository;
 use Box\Mod\Support\Repository\SupportTicketNoteRepository;
 use Box\Mod\Support\Repository\SupportTicketRepository;
 use FOSSBilling\Exception\InformationException;
-use FOSSBilling\Tools;
 use FOSSBilling\Twig\Markdown\FOSSBillingMarkdown;
 
 class Service implements \FOSSBilling\Container\InjectionAwareInterface

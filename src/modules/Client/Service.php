@@ -23,7 +23,6 @@ use Box\Mod\Staff\Entity\Admin;
 use FOSSBilling\Exception\InformationException;
 use FOSSBilling\I18n\I18n;
 use FOSSBilling\Container\InjectionAwareInterface;
-use FOSSBilling\Tools;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Intl\Countries;
 use Symfony\Component\Intl\Locales;
