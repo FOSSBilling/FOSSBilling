@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace FOSSBilling\System;
 
 use FOSSBilling\Cache\CacheFactory;
+use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\Exception\BaseException as Exception;
 use Symfony\Component\Filesystem\Exception\FileNotFoundException;
 use Symfony\Component\Filesystem\Exception\IOException;
@@ -135,6 +136,17 @@ class Config
             // wipe above only clears Twig's cache and Doctrine's proxy classes; it won't reach a
             // Redis/Memcached-backed pool.
             CacheFactory::clearAll();
+
+            // clearAll() above only reaches CacheFactory::NAMESPACE_DOCTRINE's own bare namespace -
+            // EntityManagerFactory actually stores the Doctrine metadata/query/result cache under a
+            // namespace hashed from the current entity files' mtimes/sizes (so it self-invalidates
+            // on an entity change without needing this call at all), which clearAll()'s fixed
+            // namespace list can never know to include. Harmless to skip on the filesystem driver
+            // (the PATH_CACHE wipe above already covers it), but a Redis/Memcached-backed pool has
+            // no other way to ever be reached. clearNamespace() is best-effort, same as clearAll()
+            // itself above - config.php is already written by this point, so a cache-backend
+            // hiccup here must not make setConfig() look like it failed.
+            CacheFactory::clearNamespace(EntityManagerFactory::metadataCacheNamespace());
         }
     }
 

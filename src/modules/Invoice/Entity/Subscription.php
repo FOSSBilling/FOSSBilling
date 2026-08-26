@@ -18,7 +18,7 @@ use FOSSBilling\Doctrine\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Invoice\Repository\SubscriptionRepository::class)]
 #[ORM\Table(name: 'subscription')]
-#[ORM\Index(name: 'client_id_idx', columns: ['client_id'])]
+#[ORM\Index(name: 'subscription_client_id_idx', columns: ['client_id'])]
 #[ORM\Index(name: 'pay_gateway_id_idx', columns: ['pay_gateway_id'])]
 #[ORM\HasLifecycleCallbacks]
 class Subscription implements TimestampInterface

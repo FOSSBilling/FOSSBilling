@@ -459,6 +459,8 @@ test('reserveNextNumericParamValue claims the current value and advances the cou
     $service = new Service();
 
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
     $dbalMock->shouldReceive('transactional')
         ->once()
         ->andReturnUsing(fn (callable $callback): mixed => $callback($dbalMock));
@@ -486,6 +488,8 @@ test('reserveNextNumericParamValue returns null when the counter is missing or n
     $service = new Service();
 
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
     $dbalMock->shouldReceive('transactional')
         ->once()
         ->andReturnUsing(fn (callable $callback): mixed => $callback($dbalMock));
@@ -503,6 +507,8 @@ test('reserveNextNumericParamValue rejects non-integer counter values', function
     $service = new Service();
 
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
     $dbalMock->shouldReceive('transactional')
         ->once()
         ->andReturnUsing(fn (callable $callback): mixed => $callback($dbalMock));
@@ -521,6 +527,8 @@ test('reserveNextNumericParamValue seeds a missing counter and reserves from it'
     $service = new Service();
 
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
     $dbalMock->shouldReceive('transactional')
         ->once()
         ->andReturnUsing(fn (callable $callback): mixed => $callback($dbalMock));
@@ -544,6 +552,8 @@ test('reserveNextNumericParamValue ignores the seed when the counter became vali
     $service = new Service();
 
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
     $dbalMock->shouldReceive('transactional')
         ->once()
         ->andReturnUsing(fn (callable $callback): mixed => $callback($dbalMock));
@@ -568,6 +578,8 @@ test('reserveNextNumericParamValue reserves from the winning row when seeding co
     $service = new Service();
 
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
     $dbalMock->shouldReceive('transactional')
         ->twice()
         ->andReturnUsing(fn (callable $callback): mixed => $callback($dbalMock));
@@ -597,4 +609,164 @@ test('reserveNextNumericParamValue reserves from the winning row when seeding co
 
     // Must not be 101: that is the number the winner reserved.
     expect($service->reserveNextNumericParamValue('invoice_starting_number', 101))->toBe(102);
+});
+
+test('reserveNextNumericParamValue issues a lock-escalating no-op UPDATE before the read on SQLite', function (): void {
+    $service = new Service();
+
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\SQLitePlatform::class));
+    $dbalMock->shouldReceive('transactional')
+        ->once()
+        ->andReturnUsing(fn (callable $callback): mixed => $callback($dbalMock));
+
+    // SQLite has no ' FOR UPDATE' clause, and a plain deferred transaction - whether opened at
+    // the top level or nested via SAVEPOINT - takes no lock at all until the first write. This
+    // no-op UPDATE runs before the read purely to force SQLite's write lock (RESERVED) upfront,
+    // uniformly regardless of nesting depth - matching what FOR UPDATE achieves elsewhere.
+    $dbalMock->shouldReceive('executeStatement')
+        ->once()
+        ->ordered()
+        ->with('UPDATE setting SET updated_at = updated_at WHERE param = :param', ['param' => 'invoice_starting_number']);
+    // No ' FOR UPDATE' suffix: RowLock::suffix() is a no-op on SQLite, the write above is what
+    // actually serializes this read against other writers.
+    $dbalMock->shouldReceive('fetchOne')
+        ->once()
+        ->ordered()
+        ->with('SELECT value FROM setting WHERE param = :param', ['param' => 'invoice_starting_number'])
+        ->andReturn('7');
+    $dbalMock->shouldReceive('executeStatement')
+        ->once()
+        ->ordered()
+        ->with(
+            'UPDATE setting SET value = :value, updated_at = :updated_at WHERE param = :param',
+            Mockery::on(fn (array $params): bool => $params['value'] === '8' && $params['param'] === 'invoice_starting_number')
+        )
+        ->andReturn(1);
+
+    $di = container();
+    $di['dbal'] = $dbalMock;
+    $service->setDi($di);
+
+    expect($service->reserveNextNumericParamValue('invoice_starting_number'))->toBe(7);
+});
+
+test('reserveNextNumericParamValue propagates errors from the guarded work on SQLite', function (): void {
+    $service = new Service();
+
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\SQLitePlatform::class));
+    // transactional() rolls back and rethrows on its own when the closure throws - there is
+    // nothing left for reserveNumericParamValue() to catch or roll back itself.
+    $dbalMock->shouldReceive('transactional')
+        ->once()
+        ->andReturnUsing(fn (callable $callback): mixed => $callback($dbalMock));
+
+    $dbalMock->shouldReceive('executeStatement')->once()->ordered()
+        ->with('UPDATE setting SET updated_at = updated_at WHERE param = :param', Mockery::any());
+    $dbalMock->shouldReceive('fetchOne')->once()->ordered()->andThrow(new RuntimeException('boom'));
+
+    $di = container();
+    $di['dbal'] = $dbalMock;
+    $service->setDi($di);
+
+    expect(fn () => $service->reserveNextNumericParamValue('invoice_starting_number'))
+        ->toThrow(RuntimeException::class, 'boom');
+});
+
+test('reserveNextNumericParamValue retries once when SQLite reports the write lock is already held', function (): void {
+    $service = new Service();
+
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\SQLitePlatform::class));
+
+    // A concurrent writer holds the RESERVED lock, so the first attempt's lock-escalating write
+    // fails outright - Doctrine's SQLite ExceptionConverter maps "database is locked" to
+    // LockWaitTimeoutException. transactional() rolls back and rethrows, so the retry starts a
+    // brand new transaction and its own lock-escalating write.
+    $dbalMock->shouldReceive('transactional')
+        ->twice()
+        ->andReturnUsing(fn (callable $callback): mixed => $callback($dbalMock));
+
+    $dbalMock->shouldReceive('executeStatement')
+        ->once()
+        ->ordered()
+        ->with('UPDATE setting SET updated_at = updated_at WHERE param = :param', Mockery::any())
+        ->andThrow(Mockery::mock(Doctrine\DBAL\Exception\LockWaitTimeoutException::class));
+    $dbalMock->shouldReceive('executeStatement')->once()->ordered()
+        ->with('UPDATE setting SET updated_at = updated_at WHERE param = :param', Mockery::any());
+    $dbalMock->shouldReceive('fetchOne')->once()->ordered()->andReturn('7');
+    $dbalMock->shouldReceive('executeStatement')->once()->ordered()->with(
+        'UPDATE setting SET value = :value, updated_at = :updated_at WHERE param = :param',
+        Mockery::any()
+    );
+
+    $di = container();
+    $di['dbal'] = $dbalMock;
+    $service->setDi($di);
+
+    expect($service->reserveNextNumericParamValue('invoice_starting_number'))->toBe(7);
+});
+
+test('reserveNextNumericParamValue retries more than once when SQLite contention outlasts a single retry', function (): void {
+    // With only two or three concurrent SQLite writers, a single retry (the case above) is
+    // typically enough - but DriverManagerFactory's connection sets no busy timeout, so with more
+    // concurrent writers than that, the retry itself can land in the same instant as another
+    // failed attempt and collide again. This is the regression test for that: three failures in a
+    // row still succeed on the fourth attempt, proving the retry isn't bounded to just one.
+    $service = new Service();
+
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\SQLitePlatform::class));
+
+    $dbalMock->shouldReceive('transactional')
+        ->times(4)
+        ->andReturnUsing(fn (callable $callback): mixed => $callback($dbalMock));
+
+    $dbalMock->shouldReceive('executeStatement')
+        ->times(3)
+        ->ordered()
+        ->with('UPDATE setting SET updated_at = updated_at WHERE param = :param', Mockery::any())
+        ->andThrow(Mockery::mock(Doctrine\DBAL\Exception\LockWaitTimeoutException::class));
+    $dbalMock->shouldReceive('executeStatement')->once()->ordered()
+        ->with('UPDATE setting SET updated_at = updated_at WHERE param = :param', Mockery::any());
+    $dbalMock->shouldReceive('fetchOne')->once()->ordered()->andReturn('7');
+    $dbalMock->shouldReceive('executeStatement')->once()->ordered()->with(
+        'UPDATE setting SET value = :value, updated_at = :updated_at WHERE param = :param',
+        Mockery::any()
+    );
+
+    $di = container();
+    $di['dbal'] = $dbalMock;
+    $service->setDi($di);
+
+    expect($service->reserveNextNumericParamValue('invoice_starting_number'))->toBe(7);
+});
+
+test('reserveNextNumericParamValue gives up and rethrows once contention exhausts every retry', function (): void {
+    $service = new Service();
+
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\SQLitePlatform::class));
+
+    $dbalMock->shouldReceive('transactional')
+        ->times(5)
+        ->andReturnUsing(fn (callable $callback): mixed => $callback($dbalMock));
+
+    $dbalMock->shouldReceive('executeStatement')
+        ->times(5)
+        ->with('UPDATE setting SET updated_at = updated_at WHERE param = :param', Mockery::any())
+        ->andThrow(Mockery::mock(Doctrine\DBAL\Exception\LockWaitTimeoutException::class));
+
+    $di = container();
+    $di['dbal'] = $dbalMock;
+    $service->setDi($di);
+
+    expect(fn () => $service->reserveNextNumericParamValue('invoice_starting_number'))
+        ->toThrow(Doctrine\DBAL\Exception\LockWaitTimeoutException::class);
 });

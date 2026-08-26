@@ -175,6 +175,7 @@ function container(): Container
     $di['em'] = static function () use ($di): object {
         $adminGroupRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminGroupRepository::class)->shouldIgnoreMissing();
         $adminGroupMemberRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminGroupMemberRepository::class)->shouldIgnoreMissing();
+        $adminPasswordResetRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminPasswordResetRepository::class)->shouldIgnoreMissing();
 
         $clientQueryBuilder = \Mockery::mock(\Doctrine\ORM\QueryBuilder::class)->shouldIgnoreMissing();
         foreach (['andWhere', 'orWhere', 'setParameter', 'orderBy', 'setFirstResult', 'setMaxResults', 'delete', 'where'] as $method) {
@@ -306,6 +307,7 @@ function container(): Container
             \Box\Mod\Client\Entity\ClientPasswordReset::class => $clientPasswordResetRepository,
             \Box\Mod\Staff\Entity\AdminGroup::class => $adminGroupRepository,
             \Box\Mod\Staff\Entity\AdminGroupMember::class => $adminGroupMemberRepository,
+            \Box\Mod\Staff\Entity\AdminPasswordReset::class => $adminPasswordResetRepository,
             \Box\Mod\Email\Entity\EmailTemplate::class => $emailTemplateRepository,
             \Box\Mod\Email\Entity\EmailTemplateGroup::class => $emailTemplateGroupRepository,
             \Box\Mod\Email\Entity\ActivityClientEmail::class => $activityClientEmailRepository,

@@ -25,6 +25,9 @@ use FOSSBilling\Doctrine\TimestampInterface;
  */
 #[ORM\Entity(repositoryClass: \Box\Mod\Email\Repository\ActivityClientEmailRepository::class)]
 #[ORM\Table(name: 'activity_client_email')]
+// Named per-table (unlike structure.sql's bare `client_id_idx`) because index names must be
+// unique database-wide on SQLite/PostgreSQL, not just per-table like MySQL.
+#[ORM\Index(name: 'activity_client_email_client_id_idx', columns: ['client_id'])]
 #[ORM\HasLifecycleCallbacks]
 class ActivityClientEmail implements ArrayInterface, TimestampInterface
 {

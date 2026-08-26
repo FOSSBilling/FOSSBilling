@@ -11,7 +11,7 @@ use FOSSBilling\Doctrine\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Order\Repository\OrderStatusRepository::class)]
 #[ORM\Table(name: 'client_order_status')]
-#[ORM\Index(name: 'client_order_id_idx', columns: ['client_order_id'])]
+#[ORM\Index(name: 'client_order_status_client_order_id_idx', columns: ['client_order_id'])]
 #[ORM\HasLifecycleCallbacks]
 class OrderStatus implements TimestampInterface
 {

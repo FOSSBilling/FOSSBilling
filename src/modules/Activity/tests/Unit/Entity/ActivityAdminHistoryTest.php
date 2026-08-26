@@ -16,7 +16,7 @@ test('maps the existing admin activity history table', function (): void {
 
     expect($metadata->getTableName())->toBe('activity_admin_history')
         ->and($metadata->getColumnNames())->toBe(['id', 'admin_id', 'ip', 'created_at'])
-        ->and($metadata->table['indexes']['admin_id_idx']['columns'])->toBe(['admin_id']);
+        ->and($metadata->table['indexes']['activity_admin_history_admin_id_idx']['columns'])->toBe(['admin_id']);
 });
 
 test('stores admin activity history and preserves its timestamp', function (): void {

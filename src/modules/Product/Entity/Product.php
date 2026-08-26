@@ -17,6 +17,9 @@ use FOSSBilling\Doctrine\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Product\Repository\ProductRepository::class)]
 #[ORM\Table(name: 'product')]
+#[ORM\UniqueConstraint(name: 'slug', columns: ['slug'])]
+#[ORM\Index(name: 'form_id_idx', columns: ['form_id'])]
+#[ORM\Index(name: 'product_type_idx', columns: ['type'])]
 #[ORM\HasLifecycleCallbacks]
 class Product implements TimestampInterface
 {
@@ -93,7 +96,7 @@ class Product implements TimestampInterface
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::TEXT, nullable: true)]
     private ?string $upgrades = null;
 
-    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::INTEGER, nullable: true)]
+    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::BIGINT, nullable: true)]
     private ?int $priority = null;
 
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::TEXT, nullable: true)]

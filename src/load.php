@@ -95,30 +95,78 @@ function checkWebServer(): void
 }
 
 /*
+ * Builds a raw PDO DSN (and credentials) to probe the configured database, before Doctrine/the
+ * DI container is available. Returns null when the driver isn't one we can probe, or required
+ * config is missing, so the caller can fall back to "assume tables exist".
+ */
+function buildDatabaseProbeDsn(string $driver, array $dbConfig): ?array
+{
+    if ($driver === 'pdo_sqlite') {
+        $path = $dbConfig['path'] ?? $dbConfig['name'] ?? '';
+
+        return $path === '' ? null : ['sqlite:' . $path, null, null];
+    }
+
+    $host = $dbConfig['host'] ?? '';
+    $database = $dbConfig['name'] ?? '';
+    if ($host === '' || $database === '') {
+        return null;
+    }
+
+    return match ($driver) {
+        'pdo_mysql' => [
+            sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $host, \FOSSBilling\Utils\Normalizer::normalizePort($dbConfig['port'] ?? null, 3306), $database),
+            $dbConfig['user'] ?? '',
+            $dbConfig['password'] ?? '',
+        ],
+        'pdo_pgsql' => [
+            sprintf('pgsql:host=%s;port=%s;dbname=%s', $host, \FOSSBilling\Utils\Normalizer::normalizePort($dbConfig['port'] ?? null, 5432), $database),
+            $dbConfig['user'] ?? '',
+            $dbConfig['password'] ?? '',
+        ],
+        default => null,
+    };
+}
+
+/*
  * Check whether the configured database has existing tables.
  */
 function hasDatabaseTables(): bool
 {
     $dbConfig = Config::getProperty('db', []);
-    if (!is_array($dbConfig) || ($dbConfig['driver'] ?? '') !== 'pdo_mysql') {
+    $driver = is_array($dbConfig) ? ($dbConfig['driver'] ?? '') : '';
+    if (!is_array($dbConfig) || !in_array($driver, ['pdo_mysql', 'pdo_pgsql', 'pdo_sqlite'], true)) {
         return true;
     }
 
-    $host = $dbConfig['host'] ?? '';
-    $database = $dbConfig['name'] ?? '';
-    $port = \FOSSBilling\Utils\Normalizer::normalizePort($dbConfig['port'] ?? null, 3306);
-    if ($host === '' || $database === '') {
+    // A SQLite database that doesn't exist on disk yet unambiguously has no tables. An in-memory
+    // SQLite database (never written by the installer's own SQLite config output, but a real,
+    // documented config.php option - see config-sample.php) is the same case: it's always empty
+    // on every process start, so it can never be "already installed" either. Handled explicitly
+    // here rather than falling through to buildDatabaseProbeDsn(), which returns null for both
+    // (no path to probe) - null is elsewhere treated as "assume already installed", the opposite
+    // of what's actually true for either of these.
+    if ($driver === 'pdo_sqlite' && !empty($dbConfig['memory'])) {
+        return false;
+    }
+    if ($driver === 'pdo_sqlite' && !empty($dbConfig['path']) && !is_file($dbConfig['path'])) {
+        return false;
+    }
+
+    $probe = buildDatabaseProbeDsn($driver, $dbConfig);
+    if ($probe === null) {
         return true;
     }
+    [$dsn, $user, $password] = $probe;
 
     try {
-        $pdo = new PDO(
-            sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $host, $port, $database),
-            $dbConfig['user'] ?? '',
-            $dbConfig['password'] ?? '',
-            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION],
-        );
-        $statement = $pdo->query('SHOW TABLES');
+        $pdo = new PDO($dsn, $user, $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+        $tableListQuery = match ($driver) {
+            'pdo_mysql' => 'SHOW TABLES',
+            'pdo_pgsql' => "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'",
+            'pdo_sqlite' => "SELECT name FROM sqlite_master WHERE type = 'table'",
+        };
+        $statement = $pdo->query($tableListQuery);
 
         return $statement !== false && $statement->fetchColumn() !== false;
     } catch (Throwable $e) {

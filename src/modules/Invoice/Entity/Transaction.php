@@ -18,7 +18,7 @@ use FOSSBilling\Doctrine\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Invoice\Repository\TransactionRepository::class)]
 #[ORM\Table(name: '`transaction`')]
-#[ORM\Index(name: 'invoice_id_idx', columns: ['invoice_id'])]
+#[ORM\Index(name: 'transaction_invoice_id_idx', columns: ['invoice_id'])]
 #[ORM\Index(name: 'transaction_ipn_hash_idx', columns: ['gateway_id', 'ipn_hash'])]
 #[ORM\HasLifecycleCallbacks]
 class Transaction implements TimestampInterface

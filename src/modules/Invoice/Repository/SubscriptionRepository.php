@@ -28,6 +28,17 @@ class SubscriptionRepository extends EntityRepository
         return $subscription instanceof Subscription ? $subscription : null;
     }
 
+    public function existsByGatewayId(int $gatewayId): bool
+    {
+        return (bool) $this->createQueryBuilder('s')
+            ->select('1')
+            ->andWhere('IDENTITY(s.payGateway) = :gateway_id')
+            ->setParameter('gateway_id', $gatewayId)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
     /**
      * Build a QueryBuilder for subscription searches/listings.
      *

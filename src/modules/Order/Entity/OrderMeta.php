@@ -11,7 +11,7 @@ use FOSSBilling\Doctrine\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Order\Repository\OrderMetaRepository::class)]
 #[ORM\Table(name: 'client_order_meta')]
-#[ORM\Index(name: 'client_order_id_idx', columns: ['client_order_id'])]
+#[ORM\Index(name: 'client_order_meta_client_order_id_idx', columns: ['client_order_id'])]
 #[ORM\HasLifecycleCallbacks]
 class OrderMeta implements TimestampInterface
 {

@@ -102,7 +102,6 @@ CREATE TABLE `admin` (
   `system_name` varchar(100) DEFAULT NULL,
   `email` varchar(255) DEFAULT NULL,
   `pass` varchar(255) DEFAULT NULL,
-  `salt` varchar(255) DEFAULT NULL,
   `name` varchar(255) DEFAULT NULL,
   `signature` varchar(255) DEFAULT NULL,
   `status` varchar(30) DEFAULT 'active' COMMENT 'active, inactive',
@@ -188,7 +187,7 @@ CREATE TABLE `cart` (
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `session_id_idx` (`session_id`),
+  UNIQUE KEY `session_id_idx` (`session_id`),
   KEY `currency_id_idx` (`currency_id`),
   KEY `promo_id_idx` (`promo_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

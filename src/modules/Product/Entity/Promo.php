@@ -18,6 +18,10 @@ use FOSSBilling\Doctrine\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Product\Repository\PromoRepository::class)]
 #[ORM\Table(name: 'promo')]
+#[ORM\Index(name: 'code_index_idx', columns: ['code'])]
+#[ORM\Index(name: 'start_index_idx', columns: ['start_at'])]
+#[ORM\Index(name: 'end_index_idx', columns: ['end_at'])]
+#[ORM\Index(name: 'active_index_idx', columns: ['active'])]
 #[ORM\HasLifecycleCallbacks]
 class Promo implements ArrayInterface, TimestampInterface
 {

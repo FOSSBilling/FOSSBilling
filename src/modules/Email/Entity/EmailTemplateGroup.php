@@ -17,7 +17,11 @@ use FOSSBilling\Doctrine\CreatedAtTrait;
 use FOSSBilling\Api\ArrayInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Email\Repository\EmailTemplateGroupRepository::class)]
-#[ORM\Table(name: 'email_template_group', uniqueConstraints: [new ORM\UniqueConstraint(name: 'email_template_group_unique', columns: ['email_template_id', 'admin_group_id'])])]
+#[ORM\Table(name: 'email_template_group')]
+// Doctrine\ORM\Mapping\Table's $uniqueConstraints constructor param is a documented no-op
+// (see the Deprecation::trigger() in its constructor) - it must be a standalone attribute.
+#[ORM\UniqueConstraint(name: 'email_template_group_unique', columns: ['email_template_id', 'admin_group_id'])]
+#[ORM\Index(name: 'email_template_group_group_id_idx', columns: ['admin_group_id'])]
 #[ORM\HasLifecycleCallbacks]
 class EmailTemplateGroup implements ArrayInterface
 {

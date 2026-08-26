@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling\System;
 
+use FOSSBilling\Doctrine\DriverManagerFactory;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
@@ -23,7 +24,6 @@ class Requirements
             'curl',
             'intl',
             'openssl',
-            'pdo_mysql',
             'xml',
             'dom',
             'iconv',
@@ -121,6 +121,21 @@ class Requirements
             if (!$loaded) {
                 $this->isOk = false;
             }
+        }
+
+        // At least one supported database driver's PDO extension must be available. Each is
+        // reported individually so the compatibility check stays informative about what's present,
+        // but only one needs to be loaded (the operator picks the driver via the db config).
+        $pdoDriverLoaded = false;
+        foreach (DriverManagerFactory::SUPPORTED_DRIVERS as $driver) {
+            $loaded = extension_loaded($driver);
+            $result['required_extensions'][$driver] = $loaded;
+            if ($loaded) {
+                $pdoDriverLoaded = true;
+            }
+        }
+        if (!$pdoDriverLoaded) {
+            $this->isOk = false;
         }
 
         foreach ($this->php_reqs['suggested_extensions'] as $ext => $message) {

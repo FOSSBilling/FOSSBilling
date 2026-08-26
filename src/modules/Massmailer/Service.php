@@ -104,22 +104,14 @@ class Service implements \FOSSBilling\Container\InjectionAwareInterface
     {
         $extensionService = $this->di['mod_service']('extension');
 
-        $sql = '
-        CREATE TABLE IF NOT EXISTS `mod_massmailer` (
-        `id` bigint(20) NOT NULL AUTO_INCREMENT,
-        `from_email` varchar(255) DEFAULT NULL,
-        `from_name` varchar(255) DEFAULT NULL,
-        `subject` varchar(255) DEFAULT NULL,
-        `content` text DEFAULT NULL,
-        `filter` text DEFAULT NULL,
-        `status` varchar(255) DEFAULT NULL,
-        `sent_at` datetime DEFAULT NULL,
-        `created_at` datetime DEFAULT NULL,
-        `updated_at` datetime DEFAULT NULL,
-        PRIMARY KEY (`id`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=1;
-        ';
-        $this->di['dbal']->executeStatement($sql);
+        // Raw MySQL-only DDL here (backticks, ENGINE=InnoDB) would fail outright on
+        // PostgreSQL/SQLite. mod_massmailer already exists in structure.sql, so this hook is
+        // already redundant on MySQL fresh installs - it's only load-bearing on PG/SQLite,
+        // where nothing else creates the table. SchemaSynchronizer::syncEntities() creates (or
+        // catches up) just this module's own table from current metadata, additively and
+        // safely, scoped so installing this one extension never reports every *other* table in
+        // the app as missing.
+        \FOSSBilling\Doctrine\SchemaSynchronizer::syncEntities($this->di['em'], [MassmailerMessage::class]);
 
         // default config values
         $extensionService->setConfig(['ext' => 'mod_massmailer', 'limit' => '2', 'interval' => '10', 'test_client_id' => 1]);

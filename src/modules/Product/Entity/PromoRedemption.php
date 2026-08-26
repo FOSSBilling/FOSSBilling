@@ -18,6 +18,13 @@ use FOSSBilling\Doctrine\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Product\Repository\PromoRedemptionRepository::class)]
 #[ORM\Table(name: 'promo_redemption')]
+// Named per-table (unlike structure.sql's bare names below) because index names must be
+// unique database-wide on SQLite/PostgreSQL, not just per-table like MySQL.
+#[ORM\Index(name: 'promo_redemption_client_id_idx', columns: ['client_id'])]
+#[ORM\Index(name: 'promo_redemption_client_order_id_idx', columns: ['client_order_id'])]
+#[ORM\Index(name: 'promo_redemption_invoice_id_idx', columns: ['invoice_id'])]
+#[ORM\Index(name: 'promo_redemption_phase_idx', columns: ['phase'])]
+#[ORM\Index(name: 'promo_redemption_status_idx', columns: ['status'])]
 #[ORM\HasLifecycleCallbacks]
 class PromoRedemption implements ArrayInterface, TimestampInterface
 {
@@ -48,10 +55,10 @@ class PromoRedemption implements ArrayInterface, TimestampInterface
     #[ORM\Column(name: 'invoice_id', type: \Doctrine\DBAL\Types\Types::BIGINT, nullable: true)]
     private ?int $invoiceId = null;
 
-    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 30)]
+    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 30, options: ['default' => self::PHASE_CHECKOUT])]
     private string $phase = self::PHASE_CHECKOUT;
 
-    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 30)]
+    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 30, options: ['default' => self::STATUS_RESERVED])]
     private string $status = self::STATUS_RESERVED;
 
     #[ORM\Column(name: 'discount_amount', type: \Doctrine\DBAL\Types\Types::DECIMAL, precision: 18, scale: 2, nullable: true)]

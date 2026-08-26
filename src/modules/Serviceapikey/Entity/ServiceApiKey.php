@@ -18,7 +18,7 @@ use FOSSBilling\Doctrine\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Serviceapikey\Repository\ServiceApiKeyRepository::class)]
 #[ORM\Table(name: 'service_apikey')]
-#[ORM\Index(name: 'client_id_idx', columns: ['client_id'])]
+#[ORM\Index(name: 'service_apikey_client_id_idx', columns: ['client_id'])]
 #[ORM\HasLifecycleCallbacks]
 class ServiceApiKey implements TimestampInterface
 {

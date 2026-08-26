@@ -18,7 +18,7 @@ use FOSSBilling\Doctrine\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Servicehosting\Repository\ServiceHostingRepository::class)]
 #[ORM\Table(name: 'service_hosting')]
-#[ORM\Index(name: 'client_id_idx', columns: ['client_id'])]
+#[ORM\Index(name: 'service_hosting_client_id_idx', columns: ['client_id'])]
 #[ORM\Index(name: 'service_hosting_server_id_idx', columns: ['service_hosting_server_id'])]
 #[ORM\Index(name: 'service_hosting_hp_id_idx', columns: ['service_hosting_hp_id'])]
 #[ORM\HasLifecycleCallbacks]

@@ -18,7 +18,7 @@ use FOSSBilling\Doctrine\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Invoice\Repository\InvoiceRepository::class)]
 #[ORM\Table(name: 'invoice')]
-#[ORM\Index(name: 'client_id_idx', columns: ['client_id'])]
+#[ORM\Index(name: 'invoice_client_id_idx', columns: ['client_id'])]
 #[ORM\Index(name: 'invoice_status_approved_due_at_idx', columns: ['status', 'approved', 'due_at'])]
 #[ORM\UniqueConstraint(name: 'hash', columns: ['hash'])]
 #[ORM\HasLifecycleCallbacks]

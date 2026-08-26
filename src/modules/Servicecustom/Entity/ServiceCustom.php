@@ -18,7 +18,7 @@ use FOSSBilling\Doctrine\TimestampInterface;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'service_custom')]
-#[ORM\Index(name: 'client_id_idx', columns: ['client_id'])]
+#[ORM\Index(name: 'service_custom_client_id_idx', columns: ['client_id'])]
 #[ORM\HasLifecycleCallbacks]
 class ServiceCustom implements TimestampInterface
 {

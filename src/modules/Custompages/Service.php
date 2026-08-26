@@ -50,19 +50,14 @@ class Service
 
     public function install(): bool
     {
-        $sql = '
-            CREATE TABLE IF NOT EXISTS `custom_pages` (
-                `id` int(11) NOT NULL AUTO_INCREMENT,
-                `title` varchar(255) NOT NULL,
-                `description` varchar(555) NOT NULL,
-                `keywords` varchar(555) NOT NULL,
-                `content` text NOT NULL,
-                `slug` varchar(255) NOT NULL,
-                `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-                PRIMARY KEY (`id`),
-                UNIQUE KEY `uniq_custom_pages_slug` (`slug`)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8';
-        $this->di['em']->getConnection()->executeStatement($sql);
+        // Raw MySQL-only DDL here (backticks, ENGINE=InnoDB) would fail outright on
+        // PostgreSQL/SQLite. custom_pages isn't in structure.sql at all - this module creates
+        // its own table on activation - so unlike the core install path, this genuinely runs on
+        // every platform. SchemaSynchronizer::syncEntities() creates (or catches up) just this
+        // module's own table from current metadata, additively and safely - scoped so
+        // installing this one extension never reports every *other* table in the app as missing,
+        // unlike the whole-app SchemaSynchronizer::sync().
+        \FOSSBilling\Doctrine\SchemaSynchronizer::syncEntities($this->di['em'], [CustomPage::class]);
 
         return true;
     }

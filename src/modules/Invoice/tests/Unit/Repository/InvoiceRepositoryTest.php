@@ -281,3 +281,37 @@ test('findUnpaidOlderThan returns only unpaid invoices whose due date is far eno
     expect($result)->toHaveCount(1)
         ->and($result[0]->getId())->toBe($farOverdue->getId());
 });
+
+test('lockAndGetStatus reads the status inside a transaction on every supported platform', function (): void {
+    // A real connection, not a mock: this is the regression test for FOR UPDATE portability -
+    // SQLite has no such clause, and would raise a syntax error here if RowLock ever regressed
+    // to appending it unconditionally.
+    $entityManager = invoiceEntityManager();
+    $metadata = [$entityManager->getClassMetadata(Invoice::class)];
+    (new Doctrine\ORM\Tools\SchemaTool($entityManager))->createSchema($metadata);
+
+    $invoice = new Invoice();
+    $invoice->setStatus(Invoice::STATUS_UNPAID);
+    $entityManager->persist($invoice);
+    $entityManager->flush();
+
+    $connection = $entityManager->getConnection();
+    $connection->beginTransaction();
+
+    try {
+        $status = $entityManager->getRepository(Invoice::class)->lockAndGetStatus($invoice->getId());
+    } finally {
+        $connection->rollBack();
+    }
+
+    expect($status)->toBe(Invoice::STATUS_UNPAID);
+});
+
+test('lockAndGetStatus rejects being called outside of a transaction', function (): void {
+    $entityManager = invoiceEntityManager();
+    $metadata = [$entityManager->getClassMetadata(Invoice::class)];
+    (new Doctrine\ORM\Tools\SchemaTool($entityManager))->createSchema($metadata);
+
+    expect(fn () => $entityManager->getRepository(Invoice::class)->lockAndGetStatus(1))
+        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Invoice status cannot be locked outside of a transaction.');
+});

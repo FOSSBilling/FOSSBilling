@@ -19,7 +19,21 @@ use FOSSBilling\Doctrine\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Invoice\Repository\InvoiceItemRepository::class)]
 #[ORM\Table(name: 'invoice_item')]
-#[ORM\Index(name: 'invoice_id_idx', columns: ['invoice_id'])]
+#[ORM\Index(name: 'invoice_item_invoice_id_idx', columns: ['invoice_id'])]
+// rel_id is mapped TEXT (matches structure.sql exactly - the varchar(20) elsewhere in
+// structure.sql that looks similar belongs to the unrelated client_balance.rel_id column), so
+// this needs a MySQL-only column-length prefix on rel_id: InnoDB can't index a full TEXT column
+// at all, and structure.sql's own `rel_id(20)` index has always carried the same prefix for the
+// same reason - it's an index-key-length workaround, not a real 20-character data limit.
+// SQLite/PostgreSQL ignore the `lengths` option entirely (AbstractPlatform::
+// supportsColumnLengthIndexes() is false there), so the index they create is the full,
+// unprefixed 5-column index - strictly more capable than MySQL's, not narrower. The one cost:
+// that option can't round-trip through SQLite/PostgreSQL schema introspection, so
+// FOSSBilling\Doctrine\SchemaSynchronizer::sync() permanently reports this one index as an
+// "existing structural difference" on every sync against an otherwise fully-current PG/SQLite
+// database - harmless (skipped items are never applied, see SchemaSynchronizer's docblock), but
+// worth knowing before treating a nonzero skip count as evidence of drift on those platforms.
+#[ORM\Index(name: 'invoice_item_pending_renewal_idx', columns: ['rel_id', 'type', 'task', 'status', 'invoice_id'], options: ['lengths' => [20, null, null, null, null]])]
 #[ORM\HasLifecycleCallbacks]
 class InvoiceItem implements ArrayInterface, TimestampInterface
 {
@@ -28,7 +42,6 @@ class InvoiceItem implements ArrayInterface, TimestampInterface
     final public const string TYPE_DEPOSIT = 'deposit';
     final public const string TYPE_CUSTOM = 'custom';
     final public const string TYPE_ORDER = 'order';
-    final public const string TYPE_HOOK_CALL = 'hook_call';
 
     final public const string TASK_VOID = 'void';
     final public const string TASK_ACTIVATE = 'activate';

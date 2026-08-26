@@ -20,7 +20,7 @@ use FOSSBilling\Doctrine\TimestampInterface;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'service_downloadable')]
-#[ORM\Index(name: 'client_id_idx', columns: ['client_id'])]
+#[ORM\Index(name: 'service_downloadable_client_id_idx', columns: ['client_id'])]
 #[ORM\HasLifecycleCallbacks]
 class ServiceDownloadable implements TimestampInterface
 {

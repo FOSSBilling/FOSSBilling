@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -15,8 +15,12 @@ use Box\Mod\System\Entity\Setting;
 use Box\Mod\System\Repository\SettingRepository;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\DeadlockException;
+use Doctrine\DBAL\Exception\LockWaitTimeoutException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Doctrine\DBAL\Platforms\SQLitePlatform;
 use FOSSBilling\Cache\CacheFactory;
+use FOSSBilling\Doctrine\EntityManagerFactory;
+use FOSSBilling\Doctrine\RowLock;
 use FOSSBilling\GeoIP\Reader;
 use FOSSBilling\Period;
 use FOSSBilling\Sanitizer\BrowserHtmlSanitizer;
@@ -592,6 +596,17 @@ class Service
         // backed by Redis or Memcached rather than the filesystem path cleared above.
         CacheFactory::clearAll();
 
+        // clearAll() above only reaches CacheFactory::NAMESPACE_DOCTRINE's own bare namespace -
+        // EntityManagerFactory actually stores the Doctrine metadata/query/result cache under a
+        // namespace hashed from the current entity files' mtimes/sizes (so it self-invalidates on
+        // an entity change without needing this call at all), which clearAll()'s fixed namespace
+        // list can never know to include. Harmless to skip on the filesystem driver (the
+        // remove()/mkdir() above already covers it), but a Redis/Memcached-backed pool has no
+        // other way to ever be reached. clearNamespace() is best-effort, same as clearAll() itself
+        // above - a cache-backend hiccup here must not make clearCache() report failure when the
+        // filesystem cache was already cleared fine.
+        CacheFactory::clearNamespace(EntityManagerFactory::metadataCacheNamespace());
+
         return true;
     }
 
@@ -721,6 +736,16 @@ class Service
      *
      * Not subject to canUpdateParam(): this reserves an internal counter rather than applying a
      * user-driven settings change, and must work in client and cron contexts.
+     *
+     * Callers should invoke this before doing any of their own reads on the shared connection,
+     * not after. On SQLite, an outer transaction that already read something is holding a SHARED
+     * lock the whole time this method runs; if a competing writer is holding RESERVED when this
+     * method's own lock-escalating write attempts to upgrade that SHARED lock, the outer
+     * transaction cannot release just its read - only rolling back the whole thing would - so
+     * sustained contention can exhaust every retry with the outer transaction still open. This
+     * doesn't apply to the getNextInvoiceNumber() caller today (it calls this before its own
+     * flush() opens any transaction), but would matter for a future caller that reserves from
+     * partway through an already-open transaction.
      */
     public function reserveNextNumericParamValue(string $param, ?int $seed = null): ?int
     {
@@ -728,54 +753,104 @@ class Service
             throw new \FOSSBilling\Exception\BaseException('Parameter key is missing.');
         }
 
-        try {
-            return $this->reserveNumericParamValue($param, $seed);
-        } catch (UniqueConstraintViolationException|DeadlockException) {
-            // Two callers seeding a counter that does not exist yet both pass the locking read:
-            // InnoDB gap locks are shared, so neither blocks the other, and they collide on the
-            // insert instead. The loser's transaction is rolled back, so reserve from the row the
-            // winner committed rather than failing the caller.
-            return $this->reserveNumericParamValue($param, $seed);
+        // On MySQL/PostgreSQL this only ever needs the single, unconditional retry below: two
+        // callers seeding a counter that does not exist yet both pass the locking read (InnoDB gap
+        // locks are shared, so neither blocks the other) and collide on the insert instead - the
+        // loser's transaction rolls back, and its one retry finds the winner's row already there,
+        // so there's no further contention to loop on.
+        //
+        // SQLite is different: DriverManagerFactory's pdo_sqlite connection sets no busy timeout,
+        // so doReserveNumericParamValue()'s lock-escalating write fails outright (non-blocking)
+        // rather than waiting, surfacing here as LockWaitTimeoutException - the same as MySQL's
+        // gap-lock collision from this method's point of view, but for a different reason. With
+        // only two or three concurrent SQLite writers this is still typically a one-shot race the
+        // single retry resolves, but with more than two, the retry itself can collide again (all
+        // attempts landing at roughly the same instant, not staggered) - so this loops with a short
+        // random backoff between attempts, up to a small bound, rather than assuming one retry is
+        // always enough on every driver.
+        $attempts = 0;
+        while (true) {
+            try {
+                return $this->reserveNumericParamValue($param, $seed);
+            } catch (UniqueConstraintViolationException|DeadlockException|LockWaitTimeoutException $e) {
+                if (++$attempts >= 5) {
+                    throw $e;
+                }
+
+                usleep(random_int(5_000, 25_000));
+            }
         }
     }
 
     private function reserveNumericParamValue(string $param, ?int $seed): ?int
     {
-        return $this->di['dbal']->transactional(function (Connection $connection) use ($param, $seed): ?int {
-            $now = date('Y-m-d H:i:s');
-            $current = $connection->fetchOne(
-                'SELECT value FROM setting WHERE param = :param FOR UPDATE',
+        /** @var Connection $connection */
+        $connection = $this->di['dbal'];
+
+        return $connection->transactional(fn (Connection $connection): ?int => $this->doReserveNumericParamValue($connection, $param, $seed));
+    }
+
+    private function doReserveNumericParamValue(Connection $connection, string $param, ?int $seed): ?int
+    {
+        // RowLock::suffix() appends `FOR UPDATE` on MySQL/PostgreSQL, taking the write lock at
+        // the SELECT below. SQLite has no such clause, and a plain deferred transaction - whether
+        // opened at the top level via BEGIN, or nested via SAVEPOINT when $connection already has
+        // an outer transaction open - takes no lock at all until the first write. Two concurrent
+        // transactions could otherwise both pass the read under a shared lock before either takes
+        // a write lock, and the second writer - having cached a stale $current - would silently
+        // write the same value the first writer already committed.
+        //
+        // SQLite escalates a transaction's lock to RESERVED on its first write statement,
+        // regardless of nesting depth: a SAVEPOINT doesn't get its own independent lock, it
+        // shares the one connection-wide transaction's lock state. Issuing a real write - even
+        // this no-op UPDATE, which affects zero rows whenever the counter doesn't exist yet -
+        // before the read below forces that escalation immediately and uniformly, whether or not
+        // there's an open outer transaction, so only one caller can ever be mid-reservation at a
+        // time. At most one connection can hold RESERVED simultaneously, so a second writer's own
+        // attempt at this same statement blocks (or fails outright, with SQLite's non-blocking
+        // busy behaviour) until the first has committed or rolled back. Verified against real
+        // SQLite for both the top-level and nested cases - see
+        // ReserveNumericParamValueConcurrencyTest.php.
+        if ($connection->getDatabasePlatform() instanceof SQLitePlatform) {
+            $connection->executeStatement(
+                'UPDATE setting SET updated_at = updated_at WHERE param = :param',
                 ['param' => $param]
             );
+        }
 
-            $exists = $current !== false;
-            if (!$exists || filter_var($current, FILTER_VALIDATE_INT) === false) {
-                if ($seed === null) {
-                    return null;
-                }
+        $now = date('Y-m-d H:i:s');
+        $current = $connection->fetchOne(
+            'SELECT value FROM setting WHERE param = :param' . RowLock::suffix($connection),
+            ['param' => $param]
+        );
 
-                if ($exists) {
-                    $connection->executeStatement(
-                        'UPDATE setting SET value = :value, updated_at = :updated_at WHERE param = :param',
-                        ['value' => (string) ($seed + 1), 'updated_at' => $now, 'param' => $param]
-                    );
-                } else {
-                    $connection->executeStatement(
-                        'INSERT INTO setting (param, value, created_at, updated_at) VALUES (:param, :value, :created_at, :updated_at)',
-                        ['param' => $param, 'value' => (string) ($seed + 1), 'created_at' => $now, 'updated_at' => $now]
-                    );
-                }
-
-                return $seed;
+        $exists = $current !== false;
+        if (!$exists || filter_var($current, FILTER_VALIDATE_INT) === false) {
+            if ($seed === null) {
+                return null;
             }
 
-            $connection->executeStatement(
-                'UPDATE setting SET value = :value, updated_at = :updated_at WHERE param = :param',
-                ['value' => (string) (intval($current) + 1), 'updated_at' => $now, 'param' => $param]
-            );
+            if ($exists) {
+                $connection->executeStatement(
+                    'UPDATE setting SET value = :value, updated_at = :updated_at WHERE param = :param',
+                    ['value' => (string) ($seed + 1), 'updated_at' => $now, 'param' => $param]
+                );
+            } else {
+                $connection->executeStatement(
+                    'INSERT INTO setting (param, value, created_at, updated_at) VALUES (:param, :value, :created_at, :updated_at)',
+                    ['param' => $param, 'value' => (string) ($seed + 1), 'created_at' => $now, 'updated_at' => $now]
+                );
+            }
 
-            return intval($current);
-        });
+            return $seed;
+        }
+
+        $connection->executeStatement(
+            'UPDATE setting SET value = :value, updated_at = :updated_at WHERE param = :param',
+            ['value' => (string) (intval($current) + 1), 'updated_at' => $now, 'param' => $param]
+        );
+
+        return intval($current);
     }
 
     private function canUpdateParam(string $param): bool

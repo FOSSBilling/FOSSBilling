@@ -199,29 +199,6 @@ test('records failure when executing task for order type with client order not f
         ->and($item->getStatus())->toBe(InvoiceItem::STATUS_PENDING_SETUP);
 });
 
-test('executes task for hook call type', function (): void {
-    $item = createEntity(InvoiceItem::class, ['type' => InvoiceItem::TYPE_HOOK_CALL, 'rel_id' => '{}']);
-
-    $serviceMock = Mockery::mock(ServiceInvoiceItem::class)->makePartial()->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('markAsExecuted')
-        ->atLeast()->once();
-
-    $eventManagerMock = Mockery::mock('\Box_EventManager');
-    $eventManagerMock->shouldReceive('fire')
-        ->atLeast()->once();
-
-    $em = Mockery::mock(EntityManagerInterface::class);
-    $repo = Mockery::mock(InvoiceItemRepository::class);
-    $em->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($repo);
-
-    $di = container();
-    $di['em'] = $em;
-    $di['events_manager'] = $eventManagerMock;
-    $serviceMock->setDi($di);
-
-    $serviceMock->executeTask($item);
-});
-
 test('executes task for deposit type', function (): void {
     $item = createEntity(InvoiceItem::class, ['type' => InvoiceItem::TYPE_DEPOSIT]);
 
@@ -584,61 +561,67 @@ test('gets all not execute paid items excluding executed and failed', function (
     expect($result)->toBeArray();
 });
 
-test('increments attempts on hook call failure and keeps pending setup under the cap', function (): void {
+test('increments attempts on order task failure and keeps pending setup under the cap', function (): void {
     $item = createEntity(InvoiceItem::class, [
-        'type' => InvoiceItem::TYPE_HOOK_CALL,
-        'rel_id' => '{}',
+        'type' => InvoiceItem::TYPE_ORDER,
         'status' => InvoiceItem::STATUS_PENDING_SETUP,
         'attempts' => 0,
     ]);
 
-    $eventManagerMock = Mockery::mock('\Box_EventManager');
-    $eventManagerMock->shouldReceive('fire')
-        ->andThrow(new Exception('hook failed'));
+    $serviceMock = Mockery::mock(ServiceInvoiceItem::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('getOrderId')
+        ->atLeast()->once()
+        ->andReturn(22);
 
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->shouldReceive('persist')->once();
     $em->shouldReceive('flush')->once();
     $repo = Mockery::mock(InvoiceItemRepository::class);
     $em->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($repo);
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('find')
+        ->atLeast()->once()
+        ->andReturn(null);
+    $em->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
 
-    $service = new ServiceInvoiceItem();
     $di = container();
     $di['em'] = $em;
-    $di['events_manager'] = $eventManagerMock;
-    $service->setDi($di);
+    $serviceMock->setDi($di);
 
-    $service->executeTask($item);
+    $serviceMock->executeTask($item);
 
     expect($item->getAttempts())->toBe(1)
         ->and($item->getStatus())->toBe(InvoiceItem::STATUS_PENDING_SETUP);
 });
 
-test('marks item as failed when hook call failure reaches the attempt cap', function (): void {
+test('marks item as failed when order task failure reaches the attempt cap', function (): void {
     $item = createEntity(InvoiceItem::class, [
-        'type' => InvoiceItem::TYPE_HOOK_CALL,
-        'rel_id' => '{}',
+        'type' => InvoiceItem::TYPE_ORDER,
         'status' => InvoiceItem::STATUS_PENDING_SETUP,
         'attempts' => ServiceInvoiceItem::MAX_TASK_ATTEMPTS - 1,
     ]);
 
-    $eventManagerMock = Mockery::mock('\Box_EventManager');
-    $eventManagerMock->shouldReceive('fire')
-        ->andThrow(new Exception('hook failed'));
+    $serviceMock = Mockery::mock(ServiceInvoiceItem::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('getOrderId')
+        ->atLeast()->once()
+        ->andReturn(22);
 
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->shouldReceive('persist')->once();
     $em->shouldReceive('flush')->once();
     $repo = Mockery::mock(InvoiceItemRepository::class);
     $em->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($repo);
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('find')
+        ->atLeast()->once()
+        ->andReturn(null);
+    $em->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
 
-    $service = new ServiceInvoiceItem();
     $di = container();
     $di['em'] = $em;
-    $di['events_manager'] = $eventManagerMock;
-    $service->setDi($di);
+    $serviceMock->setDi($di);
 
-    $service->executeTask($item);
+    $serviceMock->executeTask($item);
 
     expect($item->getAttempts())->toBe(ServiceInvoiceItem::MAX_TASK_ATTEMPTS)
         ->and($item->getStatus())->toBe(InvoiceItem::STATUS_FAILED);

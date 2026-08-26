@@ -18,7 +18,7 @@ use FOSSBilling\Doctrine\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Servicedomain\Repository\TldRepository::class)]
 #[ORM\Table(name: 'tld')]
-#[ORM\Index(name: 'tld_registrar_id_idx', columns: ['tld_registrar_id'])]
+#[ORM\Index(name: 'tld_tld_registrar_id_idx', columns: ['tld_registrar_id'])]
 #[ORM\HasLifecycleCallbacks]
 class Tld implements TimestampInterface
 {

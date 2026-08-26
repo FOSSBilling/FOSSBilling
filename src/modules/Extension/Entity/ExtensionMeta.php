@@ -19,6 +19,9 @@ use FOSSBilling\Doctrine\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Extension\Repository\ExtensionMetaRepository::class)]
 #[ORM\Table(name: 'extension_meta')]
+// Named per-table (unlike structure.sql's bare `client_id_idx`) because index names must be
+// unique database-wide on SQLite/PostgreSQL, not just per-table like MySQL.
+#[ORM\Index(name: 'extension_meta_client_id_idx', columns: ['client_id'])]
 #[ORM\HasLifecycleCallbacks]
 class ExtensionMeta implements ArrayInterface, TimestampInterface
 {

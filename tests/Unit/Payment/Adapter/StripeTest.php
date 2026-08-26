@@ -98,13 +98,15 @@ function setPrivateProperty(object $obj, string $property, mixed $value): void
 function expectStripeObjectLock(Mockery\MockInterface $dbalMock, string $objectId, int $gatewayId): void
 {
     $lockName = 'fb:stripe:' . substr(hash('sha256', $gatewayId . ':' . $objectId), 0, 54);
+    $dbalMock->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
     $dbalMock->shouldReceive('fetchOne')
         ->once()
-        ->with('SELECT GET_LOCK(:lock_name, 10)', ['lock_name' => $lockName])
+        ->with('SELECT GET_LOCK(:name, :timeout)', ['name' => $lockName, 'timeout' => 10])
         ->andReturn(1);
-    $dbalMock->shouldReceive('fetchOne')
+    $dbalMock->shouldReceive('executeStatement')
         ->once()
-        ->with('SELECT RELEASE_LOCK(:lock_name)', ['lock_name' => $lockName])
+        ->with('SELECT RELEASE_LOCK(:name)', ['name' => $lockName])
         ->andReturn(1);
 }
 
@@ -1206,9 +1208,11 @@ test('releases the Stripe object lock when processing fails', function (): void 
 test('logs Stripe object lock timeouts with lock context', function (): void {
     $lockName = 'fb:stripe:' . substr(hash('sha256', '2:pi_timeout'), 0, 54);
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
     $dbalMock->shouldReceive('fetchOne')
         ->once()
-        ->with('SELECT GET_LOCK(:lock_name, 10)', ['lock_name' => $lockName])
+        ->with('SELECT GET_LOCK(:name, :timeout)', ['name' => $lockName, 'timeout' => 10])
         ->andReturn(0);
 
     $logger = new Tests\Helpers\TestLogger();

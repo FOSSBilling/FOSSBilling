@@ -1283,7 +1283,12 @@ class Service implements \FOSSBilling\Container\InjectionAwareInterface
             ->setName($data['name'])
             ->setEmail($data['email'] ?? null)
             ->setCanReopen($data['can_reopen'] ?? null)
-            ->setCloseAfter($data['close_after'] ?? null)
+            // Doctrine always includes a mapped column in its INSERT, so an omitted close_after
+            // would otherwise write a literal NULL and bypass the column's own DB-level default -
+            // silently excluding this helpdesk's tickets from ever being auto-closed
+            // (findExpiredOnHold()'s SqlExpr::addHours(..., sh.close_after) propagates NULL, same
+            // as MySQL's DATE_ADD(..., INTERVAL NULL HOUR)).
+            ->setCloseAfter($data['close_after'] ?? Helpdesk::DEFAULT_CLOSE_AFTER_HOURS)
             ->setSignature($data['signature'] ?? null);
 
         $this->di['em']->persist($model);

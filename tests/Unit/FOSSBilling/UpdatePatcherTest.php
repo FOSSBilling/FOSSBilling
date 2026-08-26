@@ -1070,3 +1070,372 @@ test('require transfer code patch is a no-op when the column already exists', fu
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch112'))->invoke($patcher);
 });
+
+test('admin salt column drop patch is numbered 113', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 112);
+
+    expect($patches)->toHaveKey(113)
+        ->and($patches[113][1])->toBe('patch113');
+});
+
+test('admin salt column drop patch is a no-op when the column is already gone', function (): void {
+    $columns = Mockery::mock(PDOStatement::class);
+    $columns->expects('execute')->with([])->andReturnTrue();
+    $columns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([]);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `admin`')->andReturn($columns);
+    $pdo->shouldNotReceive('prepare')->with('ALTER TABLE `admin` DROP COLUMN `salt`');
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch113'))->invoke($patcher);
+});
+
+test('admin salt column drop patch drops the column when it still exists', function (): void {
+    $columns = Mockery::mock(PDOStatement::class);
+    $columns->expects('execute')->with([])->andReturnTrue();
+    $columns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([['Field' => 'salt']]);
+
+    $dropColumn = Mockery::mock(PDOStatement::class);
+    $dropColumn->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `admin`')->andReturn($columns);
+    $pdo->expects('prepare')->with('ALTER TABLE `admin` DROP COLUMN `salt`')->andReturn($dropColumn);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch113'))->invoke($patcher);
+});
+
+test('cart unique session_id patch is numbered 114', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 113);
+
+    expect($patches)->toHaveKey(114)
+        ->and($patches[114][1])->toBe('patch114');
+});
+
+test('cart unique session_id patch is a no-op when the index is already unique and there are no duplicates', function (): void {
+    $duplicates = Mockery::mock(PDOStatement::class);
+    $duplicates->expects('execute')->with([])->andReturnTrue();
+    $duplicates->expects('fetchAll')->with(PDO::FETCH_COLUMN)->andReturn([]);
+
+    $indexes = Mockery::mock(PDOStatement::class);
+    $indexes->expects('execute')->with([])->andReturnTrue();
+    $indexes->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Key_name' => 'session_id_idx', 'Non_unique' => '0'],
+    ]);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'SELECT c.id FROM cart c')))
+        ->andReturn($duplicates);
+    $pdo->expects('prepare')->with('SHOW INDEX FROM `cart`')->andReturn($indexes);
+    $pdo->shouldNotReceive('prepare')->with('ALTER TABLE `cart` DROP INDEX `session_id_idx`');
+    $pdo->shouldNotReceive('prepare')->with('ALTER TABLE `cart` ADD UNIQUE INDEX `session_id_idx` (`session_id`)');
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch114'))->invoke($patcher);
+});
+
+test('cart unique session_id patch reconciles duplicate sessions then converts the index to unique', function (): void {
+    // Two carts (ids 5 and 9) share a session_id; id 9 is the newer one and is kept.
+    $duplicates = Mockery::mock(PDOStatement::class);
+    $duplicates->expects('execute')->with([])->andReturnTrue();
+    $duplicates->expects('fetchAll')->with(PDO::FETCH_COLUMN)->andReturn([5]);
+
+    $deleteCartProduct = Mockery::mock(PDOStatement::class);
+    $deleteCartProduct->expects('execute')->with([5])->andReturnTrue();
+
+    $deleteCart = Mockery::mock(PDOStatement::class);
+    $deleteCart->expects('execute')->with([5])->andReturnTrue();
+
+    $indexes = Mockery::mock(PDOStatement::class);
+    $indexes->expects('execute')->with([])->andReturnTrue();
+    $indexes->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Key_name' => 'session_id_idx', 'Non_unique' => '1'],
+    ]);
+
+    $dropIndex = Mockery::mock(PDOStatement::class);
+    $dropIndex->expects('execute')->with([])->andReturnTrue();
+
+    $addIndex = Mockery::mock(PDOStatement::class);
+    $addIndex->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'SELECT c.id FROM cart c')))
+        ->andReturn($duplicates);
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'DELETE FROM `cart_product` WHERE `cart_id` IN (?)')))
+        ->andReturn($deleteCartProduct);
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'DELETE FROM `cart` WHERE `id` IN (?)')))
+        ->andReturn($deleteCart);
+    $pdo->expects('prepare')->with('SHOW INDEX FROM `cart`')->andReturn($indexes);
+    $pdo->expects('prepare')->with('ALTER TABLE `cart` DROP INDEX `session_id_idx`')->andReturn($dropIndex);
+    $pdo->expects('prepare')->with('ALTER TABLE `cart` ADD UNIQUE INDEX `session_id_idx` (`session_id`)')->andReturn($addIndex);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch114'))->invoke($patcher);
+});
+
+/**
+ * These patches are raw MySQL/MariaDB DDL with no PostgreSQL/SQLite equivalent - see
+ * UpdatePatcher::isMysqlDriver(). Swaps the real config.php's `db.driver`, mirroring
+ * DriverManagerFactoryTest's config-swap pattern, since getDatabaseConfig() reads it directly.
+ */
+function withNonMysqlDbDriver(Closure $callback): void
+{
+    withDbDriverConfig(['driver' => 'pdo_sqlite', 'path' => '/tmp/does-not-matter.sqlite'], $callback);
+}
+
+/**
+ * Same config-swap as {@see withNonMysqlDbDriver()}, but forcing `pdo_mysql` regardless of what
+ * the ambient test config already has - so a test doesn't silently depend on that.
+ */
+function withMysqlDbDriver(Closure $callback): void
+{
+    withDbDriverConfig(['driver' => 'pdo_mysql', 'host' => '127.0.0.1', 'port' => 3306, 'name' => 'does_not_matter', 'user' => 'root', 'password' => ''], $callback);
+}
+
+function withDbDriverConfig(array $dbConfig, Closure $callback): void
+{
+    $filesystem = new Filesystem();
+    $original = $filesystem->readFile(PATH_CONFIG);
+    $config = FOSSBilling\Config::getConfig();
+    $config['db'] = $dbConfig;
+    $filesystem->dumpFile(PATH_CONFIG, '<?php return ' . var_export($config, true) . ';');
+    clearstatcache(true, PATH_CONFIG);
+    if (function_exists('opcache_invalidate')) {
+        @opcache_invalidate(PATH_CONFIG, true);
+    }
+
+    try {
+        $callback();
+    } finally {
+        $filesystem->dumpFile(PATH_CONFIG, $original);
+        clearstatcache(true, PATH_CONFIG);
+        if (function_exists('opcache_invalidate')) {
+            @opcache_invalidate(PATH_CONFIG, true);
+        }
+    }
+}
+
+test('applyCorePatches never runs a legacy MySQL patch on a non-MySQL driver, even if the patch level looks stale', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $pdo = Mockery::mock(PDO::class);
+        $pdo->shouldNotReceive('prepare');
+        $pdo->shouldNotReceive('query');
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        // force: true is exactly the path finalizeUpdateLocked() calls unconditionally on every
+        // request when finalization state is missing/stale - this must never touch the database
+        // via a legacy MySQL-only patch. With no entity manager in $di, there is also nothing for
+        // the portable schema sync to run against, so this is a full no-op end to end.
+        $patcher->applyCorePatches(force: true);
+    });
+});
+
+test('applyCorePatches runs a portable schema sync instead of legacy patches on a non-MySQL driver', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+        $entityManager = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+        FOSSBilling\Doctrine\SchemaInstaller::createSchema($entityManager);
+
+        // Simulate a PostgreSQL/SQLite install that predates a table current entity metadata
+        // knows about - the same situation a real upgrade would hit. `currency` is a core-module
+        // table (see ModuleEntityScope), so it's always in scope for the ambient sync below,
+        // unlike an extension's own table - see the gating tests further down.
+        $connection->executeStatement('DROP TABLE currency');
+
+        $pdo = Mockery::mock(PDO::class);
+        $pdo->shouldNotReceive('prepare');
+        $pdo->shouldNotReceive('query');
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+        $di['em'] = $entityManager;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        $patcher->applyCorePatches(force: true);
+
+        expect($connection->createSchemaManager()->tablesExist(['currency']))->toBeTrue();
+    });
+});
+
+test('applyCorePatches also runs a portable schema sync after legacy patches on a MySQL driver', function (): void {
+    withMysqlDbDriver(function (): void {
+        $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+        $entityManager = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+        FOSSBilling\Doctrine\SchemaInstaller::createSchema($entityManager);
+        $connection->executeStatement('DROP TABLE currency');
+
+        // The legacy patch loop still needs a patch level to compare against - report the latest
+        // one so getPatches() finds nothing pending and the loop body never runs. That isolates
+        // this test to proving the sync step runs afterward, not re-testing the patches themselves.
+        $latestPatchLevel = (new UpdatePatcher())->latestPatchLevel();
+        $statement = Mockery::mock(PDOStatement::class);
+        $statement->shouldReceive('execute')->once()->andReturn(true);
+        $statement->shouldReceive('fetchColumn')->once()->andReturn((string) $latestPatchLevel);
+
+        $pdo = Mockery::mock(PDO::class);
+        $pdo->shouldReceive('prepare')->once()->andReturn($statement);
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+        $di['em'] = $entityManager;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        $patcher->applyCorePatches(force: true);
+
+        expect($connection->createSchemaManager()->tablesExist(['currency']))->toBeTrue();
+    });
+});
+
+/*
+ * Regression coverage for the gating ModuleEntityScope adds: the ambient sync above must not undo
+ * SchemaInstaller's fresh-install gating by unconditionally recreating an inactive extension's
+ * table on every request, as if it had been activated.
+ */
+test('applyCorePatches never recreates an inactive extension\'s table via the ambient schema sync', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+        $entityManager = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+        FOSSBilling\Doctrine\SchemaInstaller::createSchema($entityManager);
+
+        // custompages is neither a core module nor one of content.sql's default-active
+        // extensions, so a fresh install never creates its table - nothing here to "predate".
+        expect($connection->createSchemaManager()->tablesExist(['custom_pages']))->toBeFalse();
+
+        $pdo = Mockery::mock(PDO::class);
+        $pdo->shouldNotReceive('prepare');
+        $pdo->shouldNotReceive('query');
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+        $di['em'] = $entityManager;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        $patcher->applyCorePatches(force: true);
+
+        expect($connection->createSchemaManager()->tablesExist(['custom_pages']))->toBeFalse();
+    });
+});
+
+test('applyCorePatches does resync an extension\'s table once it is marked installed', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+        $entityManager = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+        FOSSBilling\Doctrine\SchemaInstaller::createSchema($entityManager);
+
+        // Simulate the module having been activated (its own install() hook already ran once,
+        // creating its table) and then predating a later metadata change - the same situation
+        // a currently-installed extension's table missing a new column would hit.
+        FOSSBilling\Doctrine\SchemaSynchronizer::syncEntities($entityManager, [Box\Mod\Custompages\Entity\CustomPage::class]);
+        $connection->executeStatement("INSERT INTO extension (type, name, status, version) VALUES ('mod', 'custompages', 'installed', '1.0.0')");
+        $connection->executeStatement('DROP TABLE custom_pages');
+
+        $pdo = Mockery::mock(PDO::class);
+        $pdo->shouldNotReceive('prepare');
+        $pdo->shouldNotReceive('query');
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+        $di['em'] = $entityManager;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        $patcher->applyCorePatches(force: true);
+
+        expect($connection->createSchemaManager()->tablesExist(['custom_pages']))->toBeTrue();
+    });
+});
+
+/*
+ * Regression test: scope discovery (installedExtensionModules()'s schema introspection and
+ * query, plus metadata loading) has to fail inside the same try/catch as the sync call itself -
+ * it can throw for the same reasons the sync can (an unreachable database above all), and this
+ * method's whole contract is "errors are logged, not thrown". A connection that fails outright
+ * (rather than one that's merely missing a table) reproduces exactly that: the failure happens
+ * during installedExtensionModules()'s own tablesExist() call, before SchemaSynchronizer::
+ * syncEntities() is ever reached.
+ */
+test('applyCorePatches logs, rather than throws, when scope discovery itself fails to reach the database', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $brokenConnection = Doctrine\DBAL\DriverManager::getConnection([
+            'driver' => 'pdo_sqlite',
+            'path' => '/definitely-not-a-real-directory-987654321/db.sqlite',
+        ]);
+        $entityManager = FOSSBilling\Doctrine\EntityManagerFactory::create($brokenConnection);
+
+        $pdo = Mockery::mock(PDO::class);
+        $pdo->shouldNotReceive('prepare');
+        $pdo->shouldNotReceive('query');
+
+        $logger = new Tests\Helpers\TestLogger();
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+        $di['em'] = $entityManager;
+        $di['logger'] = $logger;
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        // Must not throw - the whole point of the try/catch this scope discovery has to live
+        // inside.
+        $patcher->applyCorePatches(force: true);
+
+        $errorCalls = array_values(array_filter($logger->calls, static fn (array $call): bool => $call['method'] === 'error'));
+        expect($errorCalls)->not->toBe([])
+            ->and($errorCalls[0]['params'][0])->toContain('Schema sync against the configured database failed');
+    });
+});
+
+test('availablePatches reports 0 on a non-MySQL driver regardless of the last_patch value', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $pdo = Mockery::mock(PDO::class);
+        $pdo->shouldNotReceive('prepare');
+        $pdo->shouldNotReceive('query');
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        expect($patcher->availablePatches())->toBe(0);
+    });
+});

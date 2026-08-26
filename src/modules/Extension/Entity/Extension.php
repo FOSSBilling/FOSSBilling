@@ -26,6 +26,10 @@ use FOSSBilling\Api\ArrayInterface;
 #[ORM\Entity(repositoryClass: \Box\Mod\Extension\Repository\ExtensionRepository::class)]
 #[ORM\Table(name: 'extension')]
 #[ORM\Index(name: 'idx_extension_type', columns: ['type'])]
+// structure.sql has always enforced this as UNIQUE KEY type_name (type, name) - matches
+// ExtensionRepository::findOneByTypeAndName() / Service::activateExistingExtension()'s existing
+// check-then-insert assumption that at most one row exists per (type, name) pair.
+#[ORM\UniqueConstraint(name: 'type_name', columns: ['type', 'name'])]
 class Extension implements ArrayInterface
 {
     final public const string TYPE_MOD = 'mod';
