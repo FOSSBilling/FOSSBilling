@@ -15,7 +15,6 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 use FOSSBilling\Exception\BaseException;
 use FOSSBilling\System\Config;
-use FOSSBilling\Tools;
 
 class DriverManagerFactory
 {
@@ -91,13 +90,13 @@ class DriverManagerFactory
             }
         }
 
-        if (!in_array($dbConfig['driver'], self::SUPPORTED_DRIVERS, true)) {
+        if (!Driver::tryFrom($dbConfig['driver']) instanceof Driver) {
             throw new BaseException('Unsupported database driver :driver. Supported drivers are: :supported.', [':driver' => $dbConfig['driver'], ':supported' => implode(', ', self::SUPPORTED_DRIVERS)]);
         }
 
         $charset = $dbConfig['charset'] ?? 'utf8';
-        if (!in_array($charset, self::SUPPORTED_CHARSETS, true)) {
-            $charset = 'utf8';
+        if (!Charset::tryFrom($charset) instanceof Charset) {
+            $charset = Charset::Utf8->value;
         }
 
         $connectionParams = [
