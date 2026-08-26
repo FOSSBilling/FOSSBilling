@@ -14,7 +14,7 @@ namespace Box\Mod\Client\Entity;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Doctrine\TimestampTrait;
-use FOSSBilling\Interfaces\TimestampInterface;
+use FOSSBilling\Doctrine\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Client\Repository\ClientBalanceRepository::class)]
 #[ORM\Table(name: 'client_balance')]

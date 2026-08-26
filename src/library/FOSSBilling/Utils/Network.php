@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Utils;
 
-use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\Container\InjectionAwareInterface;
 use FOSSBilling\System\Config;
 
 final class Network implements InjectionAwareInterface

@@ -14,7 +14,7 @@ namespace FOSSBilling;
 use Box\Mod\Extension\Entity\ExtensionMeta;
 use FOSSBilling\Exception\BaseException as Exception;
 use FOSSBilling\Exception\InformationException;
-use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\Container\InjectionAwareInterface;
 use FOSSBilling\System\Config;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;

@@ -17,7 +17,7 @@ use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Repository\SubscriptionRepository;
 use Box\Mod\Order\Entity\Order;
-use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\Container\InjectionAwareInterface;
 
 class ServiceSubscription implements InjectionAwareInterface
 {

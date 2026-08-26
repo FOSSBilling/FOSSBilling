@@ -25,7 +25,7 @@ use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
 
-class Service implements \FOSSBilling\Interfaces\InjectionAwareInterface
+class Service implements \FOSSBilling\Container\InjectionAwareInterface
 {
     /**
      * Sent by the admin UI in place of a secret registrar config field's value

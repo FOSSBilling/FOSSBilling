@@ -14,15 +14,15 @@ namespace Box\Mod\Client\Entity;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Doctrine\TimestampTrait;
-use FOSSBilling\Interfaces\ApiArrayInterface;
-use FOSSBilling\Interfaces\TimestampInterface;
+use FOSSBilling\Api\ArrayInterface;
+use FOSSBilling\Doctrine\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Client\Repository\ClientRepository::class)]
 #[ORM\Table(name: 'client')]
 #[ORM\Index(name: 'alternative_id_idx', columns: ['aid'])]
 #[ORM\Index(name: 'client_group_id_idx', columns: ['client_group_id'])]
 #[ORM\HasLifecycleCallbacks]
-class Client implements ApiArrayInterface, TimestampInterface
+class Client implements ArrayInterface, TimestampInterface
 {
     use TimestampTrait;
 

@@ -13,7 +13,7 @@ namespace Box\Mod\Notification;
 
 use Box\Mod\Extension\Entity\ExtensionMeta;
 use Box\Mod\Extension\Repository\ExtensionMetaRepository;
-use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\Container\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {

@@ -14,15 +14,15 @@ namespace Box\Mod\Staff\Entity;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Doctrine\TimestampTrait;
-use FOSSBilling\Interfaces\ApiArrayInterface;
-use FOSSBilling\Interfaces\TimestampInterface;
+use FOSSBilling\Api\ArrayInterface;
+use FOSSBilling\Doctrine\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Staff\Repository\AdminRepository::class)]
 #[ORM\Table(name: 'admin')]
 #[ORM\UniqueConstraint(name: 'email', columns: ['email'])]
 #[ORM\UniqueConstraint(name: 'system_name', columns: ['system_name'])]
 #[ORM\HasLifecycleCallbacks]
-class Admin implements ApiArrayInterface, TimestampInterface
+class Admin implements ArrayInterface, TimestampInterface
 {
     use TimestampTrait;
 

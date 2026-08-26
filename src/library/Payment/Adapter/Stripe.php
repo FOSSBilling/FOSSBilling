@@ -17,7 +17,7 @@ use FOSSBilling\Period;
 use Stripe\StripeClient;
 use Symfony\Component\Intl\Currencies;
 
-class Payment_Adapter_Stripe implements FOSSBilling\Interfaces\InjectionAwareInterface
+class Payment_Adapter_Stripe implements FOSSBilling\Container\InjectionAwareInterface
 {
     protected ?Pimple\Container $di = null;
 

@@ -29,7 +29,7 @@ use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
 
-class Service implements \FOSSBilling\Interfaces\InjectionAwareInterface
+class Service implements \FOSSBilling\Container\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
     protected EmailTemplateRepository $templateRepository;

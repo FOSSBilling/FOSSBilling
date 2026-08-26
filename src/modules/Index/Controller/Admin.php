@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Index\Controller;
 
-use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\Container\InjectionAwareInterface;
 use Symfony\Component\HttpFoundation\Response;
 
 class Admin implements InjectionAwareInterface

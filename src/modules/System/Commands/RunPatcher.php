@@ -25,7 +25,7 @@ use Symfony\Component\Filesystem\Exception\IOException;
     description: 'Runs update patches and config migrations',
     hidden: false
 )]
-class RunPatcher extends Command implements \FOSSBilling\Interfaces\InjectionAwareInterface
+class RunPatcher extends Command implements \FOSSBilling\Container\InjectionAwareInterface
 {
     private const string CACHE_VERSION_KEY = 'version';
     private const string CACHE_LATEST_PATCH_LEVEL_KEY = 'latest_patch_level';

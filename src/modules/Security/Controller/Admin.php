@@ -13,7 +13,7 @@ namespace Box\Mod\Security\Controller;
 
 use FOSSBilling\Pagination\Options;
 
-class Admin implements \FOSSBilling\Interfaces\InjectionAwareInterface
+class Admin implements \FOSSBilling\Container\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 

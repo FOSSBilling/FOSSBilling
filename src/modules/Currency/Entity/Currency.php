@@ -13,14 +13,14 @@ namespace Box\Mod\Currency\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Doctrine\TimestampTrait;
-use FOSSBilling\Interfaces\ApiArrayInterface;
-use FOSSBilling\Interfaces\TimestampInterface;
+use FOSSBilling\Api\ArrayInterface;
+use FOSSBilling\Doctrine\TimestampInterface;
 use Symfony\Component\Intl\Currencies;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Currency\Repository\CurrencyRepository::class)]
 #[ORM\Table(name: 'currency')]
 #[ORM\HasLifecycleCallbacks]
-class Currency implements ApiArrayInterface, TimestampInterface
+class Currency implements ArrayInterface, TimestampInterface
 {
     use TimestampTrait;
 

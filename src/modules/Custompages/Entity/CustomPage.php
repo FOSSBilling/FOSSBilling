@@ -14,13 +14,13 @@ namespace Box\Mod\Custompages\Entity;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Doctrine\CreatedAtTrait;
-use FOSSBilling\Interfaces\ApiArrayInterface;
+use FOSSBilling\Api\ArrayInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Custompages\Repository\CustomPageRepository::class)]
 #[ORM\Table(name: 'custom_pages')]
 #[ORM\UniqueConstraint(name: 'uniq_custom_pages_slug', columns: ['slug'])]
 #[ORM\HasLifecycleCallbacks]
-class CustomPage implements ApiArrayInterface
+class CustomPage implements ArrayInterface
 {
     use CreatedAtTrait;
 

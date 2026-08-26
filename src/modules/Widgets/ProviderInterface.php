@@ -2,22 +2,16 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Interfaces;
+namespace Box\Mod\Widgets;
 
-/**
- * Interface for modules that provide widgets.
- *
- * Modules implementing this interface can register widgets that will be
- * rendered in slots within templates via the Widgets module.
- */
-interface WidgetProviderInterface
+interface ProviderInterface
 {
     /**
      * Get the widget definitions provided by this module.

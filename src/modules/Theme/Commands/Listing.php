@@ -25,7 +25,7 @@ use Symfony\Component\Console\Output\OutputInterface;
     description: 'Returns the list of the installed themes',
     hidden: false
 )]
-class Listing extends Command implements \FOSSBilling\Interfaces\InjectionAwareInterface
+class Listing extends Command implements \FOSSBilling\Container\InjectionAwareInterface
 {
     protected $di;
 

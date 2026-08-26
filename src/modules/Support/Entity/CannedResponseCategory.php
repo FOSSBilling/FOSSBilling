@@ -16,13 +16,13 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Doctrine\TimestampTrait;
-use FOSSBilling\Interfaces\ApiArrayInterface;
-use FOSSBilling\Interfaces\TimestampInterface;
+use FOSSBilling\Api\ArrayInterface;
+use FOSSBilling\Doctrine\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Support\Repository\CannedResponseCategoryRepository::class)]
 #[ORM\Table(name: 'support_pr_category')]
 #[ORM\HasLifecycleCallbacks]
-class CannedResponseCategory implements ApiArrayInterface, TimestampInterface
+class CannedResponseCategory implements ArrayInterface, TimestampInterface
 {
     use TimestampTrait;
 

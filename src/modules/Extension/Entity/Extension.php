@@ -13,7 +13,7 @@ namespace Box\Mod\Extension\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Interfaces\ApiArrayInterface;
+use FOSSBilling\Api\ArrayInterface;
 
 /**
  * Installed extension record.
@@ -26,7 +26,7 @@ use FOSSBilling\Interfaces\ApiArrayInterface;
 #[ORM\Entity(repositoryClass: \Box\Mod\Extension\Repository\ExtensionRepository::class)]
 #[ORM\Table(name: 'extension')]
 #[ORM\Index(name: 'idx_extension_type', columns: ['type'])]
-class Extension implements ApiArrayInterface
+class Extension implements ArrayInterface
 {
     final public const string TYPE_MOD = 'mod';
     final public const string TYPE_THEME = 'theme';

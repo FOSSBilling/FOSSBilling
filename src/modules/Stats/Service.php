@@ -12,7 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Stats;
 
 use Box\Mod\Invoice\Entity\Invoice;
-use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\Container\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {

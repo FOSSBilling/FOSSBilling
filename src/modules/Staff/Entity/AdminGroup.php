@@ -14,13 +14,13 @@ namespace Box\Mod\Staff\Entity;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Doctrine\TimestampTrait;
-use FOSSBilling\Interfaces\ApiArrayInterface;
-use FOSSBilling\Interfaces\TimestampInterface;
+use FOSSBilling\Api\ArrayInterface;
+use FOSSBilling\Doctrine\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Staff\Repository\AdminGroupRepository::class)]
 #[ORM\Table(name: 'admin_group')]
 #[ORM\HasLifecycleCallbacks]
-class AdminGroup implements ApiArrayInterface, TimestampInterface
+class AdminGroup implements ArrayInterface, TimestampInterface
 {
     use TimestampTrait;
 

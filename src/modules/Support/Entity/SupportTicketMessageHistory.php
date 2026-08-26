@@ -15,8 +15,8 @@ use Box\Mod\Support\Repository\SupportTicketMessageHistoryRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Doctrine\TimestampTrait;
-use FOSSBilling\Interfaces\ApiArrayInterface;
-use FOSSBilling\Interfaces\TimestampInterface;
+use FOSSBilling\Api\ArrayInterface;
+use FOSSBilling\Doctrine\TimestampInterface;
 
 /**
  * A snapshot of a support ticket message's content taken immediately before an
@@ -27,7 +27,7 @@ use FOSSBilling\Interfaces\TimestampInterface;
 #[ORM\Table(name: 'support_ticket_message_history')]
 #[ORM\Index(name: 'idx_msg_history_message', columns: ['support_ticket_message_id'])]
 #[ORM\HasLifecycleCallbacks]
-class SupportTicketMessageHistory implements ApiArrayInterface, TimestampInterface
+class SupportTicketMessageHistory implements ArrayInterface, TimestampInterface
 {
     use TimestampTrait;
 

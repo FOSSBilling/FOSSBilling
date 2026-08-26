@@ -12,7 +12,7 @@ declare(strict_types=1);
 namespace FOSSBilling\Security;
 
 use FOSSBilling\Exception\BaseException as Exception;
-use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\Container\InjectionAwareInterface;
 use FOSSBilling\System\Config;
 use Pimple\Container;
 

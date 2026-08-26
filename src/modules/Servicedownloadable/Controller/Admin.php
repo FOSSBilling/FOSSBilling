@@ -13,7 +13,7 @@ namespace Box\Mod\Servicedownloadable\Controller;
 
 use Symfony\Component\HttpFoundation\Response;
 
-class Admin implements \FOSSBilling\Interfaces\InjectionAwareInterface
+class Admin implements \FOSSBilling\Container\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 

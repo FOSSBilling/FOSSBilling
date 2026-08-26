@@ -15,7 +15,7 @@ use FOSSBilling\Http\RequestFactory;
 use FOSSBilling\Http\ResponseFactory;
 use FOSSBilling\Http\RouteDefinition;
 use FOSSBilling\Http\RouteMatcher;
-use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\Container\InjectionAwareInterface;
 use FOSSBilling\Security\AuthenticationRequiredException;
 use FOSSBilling\Security\EmailValidationRequiredException;
 use FOSSBilling\System\Config;

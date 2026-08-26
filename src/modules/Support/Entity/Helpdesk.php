@@ -16,14 +16,14 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Doctrine\TimestampTrait;
-use FOSSBilling\Interfaces\ApiArrayInterface;
-use FOSSBilling\Interfaces\TimestampInterface;
+use FOSSBilling\Api\ArrayInterface;
+use FOSSBilling\Doctrine\TimestampInterface;
 use FOSSBilling\Tools;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Support\Repository\HelpdeskRepository::class)]
 #[ORM\Table(name: 'support_helpdesk')]
 #[ORM\HasLifecycleCallbacks]
-class Helpdesk implements ApiArrayInterface, TimestampInterface
+class Helpdesk implements ArrayInterface, TimestampInterface
 {
     use TimestampTrait;
 

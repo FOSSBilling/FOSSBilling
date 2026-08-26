@@ -14,7 +14,7 @@ namespace Box\Mod\Serviceapikey;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Serviceapikey\Entity\ServiceApiKey;
-use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\Container\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {

@@ -12,7 +12,7 @@ declare(strict_types=1);
 namespace FOSSBilling\Security;
 
 use FOSSBilling\Http\CookieNames;
-use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\Container\InjectionAwareInterface;
 use FOSSBilling\System\Config;
 use FOSSBilling\System\Environment;
 use FOSSBilling\Tools;

@@ -13,7 +13,7 @@ use Box\Mod\Invoice\Entity\Invoice;
 use FOSSBilling\System\Environment;
 use Pimple\Container;
 
-class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOSSBilling\Interfaces\InjectionAwareInterface
+class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOSSBilling\Container\InjectionAwareInterface
 {
     protected ?Container $di = null;
 

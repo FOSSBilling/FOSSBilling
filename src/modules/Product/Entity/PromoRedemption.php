@@ -13,13 +13,13 @@ namespace Box\Mod\Product\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Doctrine\TimestampTrait;
-use FOSSBilling\Interfaces\ApiArrayInterface;
-use FOSSBilling\Interfaces\TimestampInterface;
+use FOSSBilling\Api\ArrayInterface;
+use FOSSBilling\Doctrine\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Product\Repository\PromoRedemptionRepository::class)]
 #[ORM\Table(name: 'promo_redemption')]
 #[ORM\HasLifecycleCallbacks]
-class PromoRedemption implements ApiArrayInterface, TimestampInterface
+class PromoRedemption implements ArrayInterface, TimestampInterface
 {
     use TimestampTrait;
 

@@ -15,8 +15,8 @@ use Box\Mod\Support\Repository\SupportTicketMessageRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Doctrine\TimestampTrait;
-use FOSSBilling\Interfaces\ApiArrayInterface;
-use FOSSBilling\Interfaces\TimestampInterface;
+use FOSSBilling\Api\ArrayInterface;
+use FOSSBilling\Doctrine\TimestampInterface;
 
 /**
  * A message in a support ticket thread. One ticket has many messages, ordered
@@ -27,7 +27,7 @@ use FOSSBilling\Interfaces\TimestampInterface;
 #[ORM\Table(name: 'support_ticket_message')]
 #[ORM\Index(name: 'idx_msg_ticket', columns: ['support_ticket_id'])]
 #[ORM\HasLifecycleCallbacks]
-class SupportTicketMessage implements ApiArrayInterface, TimestampInterface
+class SupportTicketMessage implements ArrayInterface, TimestampInterface
 {
     use TimestampTrait;
 

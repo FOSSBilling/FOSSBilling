@@ -15,7 +15,7 @@ use FOSSBilling\Security\CheckResult;
 use FOSSBilling\Security\Enum\CheckResultStatus;
 use Pimple\Container;
 
-class phpVersion implements \FOSSBilling\Interfaces\SecurityCheckInterface
+class phpVersion implements \FOSSBilling\Security\CheckInterface
 {
     protected ?Container $di = null;
 

@@ -8,7 +8,7 @@ use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Client\Repository\ClientBalanceRepository;
 use Doctrine\ORM\QueryBuilder;
-use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\Container\InjectionAwareInterface;
 
 class ServiceBalance implements InjectionAwareInterface
 {

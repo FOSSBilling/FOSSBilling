@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Validation;
 
-use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\Container\InjectionAwareInterface;
 
 class Validator implements InjectionAwareInterface
 {

@@ -14,7 +14,7 @@ namespace Box\Mod\Security\Checks;
 use FOSSBilling\Security\CheckResult;
 use FOSSBilling\Security\Enum\CheckResultStatus;
 
-class generalCheck implements \FOSSBilling\Interfaces\SecurityCheckInterface
+class generalCheck implements \FOSSBilling\Security\CheckInterface
 {
     private int $okay = 0;
     private int $warn = 1;

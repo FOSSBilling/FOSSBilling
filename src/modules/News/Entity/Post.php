@@ -13,13 +13,13 @@ namespace Box\Mod\News\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Doctrine\TimestampTrait;
-use FOSSBilling\Interfaces\ApiArrayInterface;
-use FOSSBilling\Interfaces\TimestampInterface;
+use FOSSBilling\Api\ArrayInterface;
+use FOSSBilling\Doctrine\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\News\Repository\PostRepository::class)]
 #[ORM\Table(name: 'post')]
 #[ORM\HasLifecycleCallbacks]
-class Post implements ApiArrayInterface, TimestampInterface
+class Post implements ArrayInterface, TimestampInterface
 {
     use TimestampTrait;
 

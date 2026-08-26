@@ -15,7 +15,7 @@ use Box\Mod\Client\Entity\Client;
 use Box\Mod\Staff\Entity\Admin;
 use FOSSBilling\Exception\InformationException;
 use FOSSBilling\I18n\I18n;
-use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\Container\InjectionAwareInterface;
 use FOSSBilling\Tools;
 use Symfony\Component\Intl\Countries;
 use Symfony\Component\Intl\Locales;

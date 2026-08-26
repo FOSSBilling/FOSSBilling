@@ -14,8 +14,8 @@ namespace Box\Mod\Support\Entity;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Doctrine\TimestampTrait;
-use FOSSBilling\Interfaces\ApiArrayInterface;
-use FOSSBilling\Interfaces\TimestampInterface;
+use FOSSBilling\Api\ArrayInterface;
+use FOSSBilling\Doctrine\TimestampInterface;
 
 // This entity intentionally does not use a PreUpdate callback.
 // View counter updates should not affect updatedAt (it is used as the "last updated" timestamp).
@@ -23,7 +23,7 @@ use FOSSBilling\Interfaces\TimestampInterface;
 #[ORM\Entity(repositoryClass: \Box\Mod\Support\Repository\KbArticleRepository::class)]
 #[ORM\Table(name: 'support_kb_article')]
 #[ORM\HasLifecycleCallbacks]
-class KbArticle implements ApiArrayInterface, TimestampInterface
+class KbArticle implements ArrayInterface, TimestampInterface
 {
     use TimestampTrait;
 

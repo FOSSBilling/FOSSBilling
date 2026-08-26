@@ -29,7 +29,7 @@ use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\Exception\InformationException;
 use FOSSBilling\Http\ResponseFactory;
 use FOSSBilling\I18n\I18n;
-use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\Container\InjectionAwareInterface;
 use FOSSBilling\System\Environment;
 use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;

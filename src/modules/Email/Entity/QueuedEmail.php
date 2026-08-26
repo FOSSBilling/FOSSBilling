@@ -14,8 +14,8 @@ namespace Box\Mod\Email\Entity;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Doctrine\TimestampTrait;
-use FOSSBilling\Interfaces\ApiArrayInterface;
-use FOSSBilling\Interfaces\TimestampInterface;
+use FOSSBilling\Api\ArrayInterface;
+use FOSSBilling\Doctrine\TimestampInterface;
 
 /**
  * Pending email in the queue processed by the email-batch cron task.
@@ -23,7 +23,7 @@ use FOSSBilling\Interfaces\TimestampInterface;
 #[ORM\Entity(repositoryClass: \Box\Mod\Email\Repository\QueuedEmailRepository::class)]
 #[ORM\Table(name: 'email_queue')]
 #[ORM\HasLifecycleCallbacks]
-class QueuedEmail implements ApiArrayInterface, TimestampInterface
+class QueuedEmail implements ArrayInterface, TimestampInterface
 {
     use TimestampTrait;
 

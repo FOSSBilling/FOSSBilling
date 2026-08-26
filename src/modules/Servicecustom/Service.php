@@ -18,7 +18,7 @@ use FOSSBilling\System\Environment;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
-class Service implements \FOSSBilling\Interfaces\InjectionAwareInterface
+class Service implements \FOSSBilling\Container\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
     private Filesystem $filesystem;

@@ -16,7 +16,7 @@ use Box\Mod\Order\Entity\Order;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Servicelicense\Entity\ServiceLicense;
 use Box\Mod\Servicelicense\Repository\ServiceLicenseRepository;
-use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\Container\InjectionAwareInterface;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
 

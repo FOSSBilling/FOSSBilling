@@ -13,7 +13,7 @@ namespace Box\Mod\Support\Controller;
 
 use Symfony\Component\HttpFoundation\Response;
 
-class Client implements \FOSSBilling\Interfaces\InjectionAwareInterface
+class Client implements \FOSSBilling\Container\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 

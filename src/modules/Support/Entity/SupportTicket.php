@@ -17,8 +17,8 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Doctrine\TimestampTrait;
-use FOSSBilling\Interfaces\ApiArrayInterface;
-use FOSSBilling\Interfaces\TimestampInterface;
+use FOSSBilling\Api\ArrayInterface;
+use FOSSBilling\Doctrine\TimestampInterface;
 
 /**
  * A support ticket. Cross-module fields (Client, Helpdesk FK) are stored as
@@ -30,7 +30,7 @@ use FOSSBilling\Interfaces\TimestampInterface;
 #[ORM\Index(name: 'idx_ticket_status', columns: ['status'])]
 #[ORM\Index(name: 'idx_ticket_client', columns: ['client_id'])]
 #[ORM\HasLifecycleCallbacks]
-class SupportTicket implements ApiArrayInterface, TimestampInterface
+class SupportTicket implements ArrayInterface, TimestampInterface
 {
     use TimestampTrait;
 

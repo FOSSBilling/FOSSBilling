@@ -14,7 +14,7 @@ namespace Box\Mod\Security\Checks;
 use FOSSBilling\Security\CheckResult;
 use FOSSBilling\Security\Enum\CheckResultStatus;
 
-class dangerousFunctions implements \FOSSBilling\Interfaces\SecurityCheckInterface
+class dangerousFunctions implements \FOSSBilling\Security\CheckInterface
 {
     private array $functions = [
         'exec' => [

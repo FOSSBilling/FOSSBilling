@@ -12,7 +12,7 @@ declare(strict_types=1);
 namespace FOSSBilling\Remote;
 
 use FOSSBilling\Exception\BaseException as Exception;
-use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\Container\InjectionAwareInterface;
 use FOSSBilling\System\Config;
 use FOSSBilling\System\Version;
 use Symfony\Contracts\Cache\ItemInterface;

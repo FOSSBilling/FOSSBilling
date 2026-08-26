@@ -16,7 +16,7 @@ use Box\Mod\Product\Entity\Product;
 use Box\Mod\Servicedownloadable\Entity\ServiceDownloadable;
 use Box\Mod\Servicedownloadable\Entity\ServiceDownloadableFile;
 use Box\Mod\Servicedownloadable\Repository\ServiceDownloadableFileRepository;
-use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\Container\InjectionAwareInterface;
 use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;

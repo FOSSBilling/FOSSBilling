@@ -14,7 +14,7 @@ namespace Box\Mod\Extension\Controller;
 use FOSSBilling\Exception\InformationException;
 use Symfony\Component\HttpFoundation\Response;
 
-class Admin implements \FOSSBilling\Interfaces\InjectionAwareInterface
+class Admin implements \FOSSBilling\Container\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 

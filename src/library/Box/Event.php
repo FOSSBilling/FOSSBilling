@@ -8,7 +8,7 @@ declare(strict_types=1);
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-class Box_Event implements ArrayAccess, FOSSBilling\Interfaces\InjectionAwareInterface
+class Box_Event implements ArrayAccess, FOSSBilling\Container\InjectionAwareInterface
 {
     protected ?Pimple\Container $di = null;
     protected $value;

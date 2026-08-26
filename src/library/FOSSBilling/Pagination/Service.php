@@ -14,8 +14,8 @@ namespace FOSSBilling\Pagination;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator as DoctrinePaginator;
 use FOSSBilling\Exception\InformationException;
-use FOSSBilling\Interfaces\ApiArrayInterface;
-use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\Api\ArrayInterface;
+use FOSSBilling\Container\InjectionAwareInterface;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
 
@@ -51,7 +51,7 @@ class Service implements InjectionAwareInterface
      * Paginate results from a Doctrine QueryBuilder.
      *
      * Applies pagination to a Doctrine QueryBuilder and returns metadata and normalized entities.
-     * Entities implementing `ApiArrayInterface` will use `toApiArray()`, others will be normalized
+     * Entities implementing `ArrayInterface` will use `toApiArray()`, others will be normalized
      * using Symfony's ObjectNormalizer.
      *
      * @param QueryBuilder $qb              the Doctrine QueryBuilder instance to paginate
@@ -71,7 +71,7 @@ class Service implements InjectionAwareInterface
         $serializer = new Serializer([new ObjectNormalizer()]);
 
         return $this->paginateMappedQuery($qb, $pagination, static function (object $entity) use ($serializer, $apiArrayArgs): array {
-            if ($entity instanceof ApiArrayInterface) {
+            if ($entity instanceof ArrayInterface) {
                 return $entity->toApiArray(...$apiArrayArgs);
             }
 

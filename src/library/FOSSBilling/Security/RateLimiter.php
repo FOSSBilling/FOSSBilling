@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Security;
 
-use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\Container\InjectionAwareInterface;
 use FOSSBilling\System\Config;
 use Pimple\Container;
 use Psr\Cache\CacheItemPoolInterface;

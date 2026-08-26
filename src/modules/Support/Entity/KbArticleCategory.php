@@ -16,13 +16,13 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Doctrine\TimestampTrait;
-use FOSSBilling\Interfaces\ApiArrayInterface;
-use FOSSBilling\Interfaces\TimestampInterface;
+use FOSSBilling\Api\ArrayInterface;
+use FOSSBilling\Doctrine\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Support\Repository\KbArticleCategoryRepository::class)]
 #[ORM\Table(name: 'support_kb_article_category')]
 #[ORM\HasLifecycleCallbacks]
-class KbArticleCategory implements ApiArrayInterface, TimestampInterface
+class KbArticleCategory implements ArrayInterface, TimestampInterface
 {
     use TimestampTrait;
 

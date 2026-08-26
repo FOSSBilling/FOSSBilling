@@ -14,13 +14,13 @@ namespace Box\Mod\Massmailer\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Doctrine\TimestampTrait;
-use FOSSBilling\Interfaces\ApiArrayInterface;
-use FOSSBilling\Interfaces\TimestampInterface;
+use FOSSBilling\Api\ArrayInterface;
+use FOSSBilling\Doctrine\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Massmailer\Repository\MassmailerMessageRepository::class)]
 #[ORM\Table(name: 'mod_massmailer')]
 #[ORM\HasLifecycleCallbacks]
-class MassmailerMessage implements ApiArrayInterface, TimestampInterface
+class MassmailerMessage implements ArrayInterface, TimestampInterface
 {
     use TimestampTrait;
 

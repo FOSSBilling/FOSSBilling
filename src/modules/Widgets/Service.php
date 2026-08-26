@@ -12,8 +12,8 @@ declare(strict_types=1);
 namespace Box\Mod\Widgets;
 
 use Box\Mod\Extension\Entity\Extension;
-use FOSSBilling\Interfaces\InjectionAwareInterface;
-use FOSSBilling\Interfaces\WidgetProviderInterface;
+use FOSSBilling\Container\InjectionAwareInterface;
+use Box\Mod\Widgets\ProviderInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 
 class Service implements InjectionAwareInterface
@@ -169,11 +169,11 @@ class Service implements InjectionAwareInterface
      *
      * @param object $service the service class instance
      *
-     * @return bool true if the service implements WidgetProviderInterface
+     * @return bool true if the service implements ProviderInterface
      */
     private function serviceProvidesWidgets(object $service): bool
     {
-        return $service instanceof WidgetProviderInterface;
+        return $service instanceof ProviderInterface;
     }
 
     /**

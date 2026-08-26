@@ -14,13 +14,13 @@ namespace Box\Mod\Extension\Entity;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Doctrine\TimestampTrait;
-use FOSSBilling\Interfaces\ApiArrayInterface;
-use FOSSBilling\Interfaces\TimestampInterface;
+use FOSSBilling\Api\ArrayInterface;
+use FOSSBilling\Doctrine\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Extension\Repository\ExtensionMetaRepository::class)]
 #[ORM\Table(name: 'extension_meta')]
 #[ORM\HasLifecycleCallbacks]
-class ExtensionMeta implements ApiArrayInterface, TimestampInterface
+class ExtensionMeta implements ArrayInterface, TimestampInterface
 {
     use TimestampTrait;
 

@@ -15,7 +15,7 @@ use Box\Mod\Extension\Entity\ExtensionMeta;
 use Box\Mod\Extension\Repository\ExtensionMetaRepository;
 use FOSSBilling\Exception\BaseException;
 
-class Service implements \FOSSBilling\Interfaces\InjectionAwareInterface
+class Service implements \FOSSBilling\Container\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
     private ?ExtensionMetaRepository $extensionMetaRepository = null;

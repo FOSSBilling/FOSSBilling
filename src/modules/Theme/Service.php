@@ -13,7 +13,7 @@ namespace Box\Mod\Theme;
 
 use Box\Mod\Extension\Entity\ExtensionMeta;
 use Box\Mod\Extension\Repository\ExtensionMetaRepository;
-use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\Container\InjectionAwareInterface;
 use FOSSBilling\Sanitizer\BrowserHtmlSanitizer;
 use FOSSBilling\Twig\SandboxedStringRenderer;
 use Symfony\Component\Filesystem\Filesystem;

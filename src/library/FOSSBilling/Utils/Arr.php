@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Utils;
 
-use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\Container\InjectionAwareInterface;
 
 final class Arr implements InjectionAwareInterface
 {

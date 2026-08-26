@@ -9,11 +9,11 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Interfaces;
+namespace FOSSBilling\Security;
 
 use FOSSBilling\Security\CheckResult;
 
-interface SecurityCheckInterface
+interface CheckInterface
 {
     /**
      * Returns the name of the check.

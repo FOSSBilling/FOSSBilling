@@ -15,7 +15,7 @@ use Box\Mod\Client\Entity\Client;
 use Box\Mod\Staff\Entity\Admin;
 use FOSSBilling\Exception\BaseException;
 use FOSSBilling\Identity\Guest;
-use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\Container\InjectionAwareInterface;
 use FOSSBilling\Module;
 use Pimple\Container;
 

@@ -29,7 +29,7 @@ use Box\Mod\Product\Repository\PromoRepository;
 use Box\Mod\Servicedomain\Entity\Tld;
 use Box\Mod\Staff\Entity\Admin;
 use Doctrine\ORM\QueryBuilder;
-use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\Container\InjectionAwareInterface;
 use FOSSBilling\Pagination\Options;
 use FOSSBilling\Period;
 use FOSSBilling\Validation\NonNegativeIntegerValidator;

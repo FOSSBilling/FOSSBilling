@@ -14,8 +14,8 @@ namespace Box\Mod\Email\Entity;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Doctrine\TimestampTrait;
-use FOSSBilling\Interfaces\ApiArrayInterface;
-use FOSSBilling\Interfaces\TimestampInterface;
+use FOSSBilling\Api\ArrayInterface;
+use FOSSBilling\Doctrine\TimestampInterface;
 use FOSSBilling\Tools;
 
 /**
@@ -27,7 +27,7 @@ use FOSSBilling\Tools;
 #[ORM\Entity(repositoryClass: \Box\Mod\Email\Repository\ActivityClientEmailRepository::class)]
 #[ORM\Table(name: 'activity_client_email')]
 #[ORM\HasLifecycleCallbacks]
-class ActivityClientEmail implements ApiArrayInterface, TimestampInterface
+class ActivityClientEmail implements ArrayInterface, TimestampInterface
 {
     use TimestampTrait;
 

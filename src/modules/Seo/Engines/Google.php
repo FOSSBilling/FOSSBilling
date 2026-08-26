@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Seo\Engines;
 
-class Google implements \FOSSBilling\Interfaces\InjectionAwareInterface
+class Google implements \FOSSBilling\Container\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 

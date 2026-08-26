@@ -23,7 +23,7 @@ use Box\Mod\Order\Repository\OrderStatusRepository;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Staff\Entity\Admin;
 use FOSSBilling\Exception\InformationException;
-use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\Container\InjectionAwareInterface;
 use FOSSBilling\Logging\Logger;
 use FOSSBilling\Validation\NonNegativeIntegerValidator;
 use FOSSBilling\Validation\PriceValidator;

@@ -13,7 +13,7 @@ namespace Box\Mod\Antispam;
 
 use EmailChecker\Adapter;
 use EmailChecker\Utilities;
-use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\Container\InjectionAwareInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Contracts\Cache\ItemInterface;

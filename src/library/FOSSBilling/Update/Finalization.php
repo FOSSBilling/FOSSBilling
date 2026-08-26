@@ -13,7 +13,7 @@ namespace FOSSBilling\Update;
 
 use FOSSBilling\Exception\BaseException;
 use FOSSBilling\Exception\InformationException;
-use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\Container\InjectionAwareInterface;
 use FOSSBilling\System\Config;
 use FOSSBilling\System\Environment;
 use FOSSBilling\System\Version;

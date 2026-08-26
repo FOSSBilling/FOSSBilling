@@ -7,7 +7,7 @@ namespace Box\Mod\Cart\Entity;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Doctrine\TimestampTrait;
-use FOSSBilling\Interfaces\TimestampInterface;
+use FOSSBilling\Doctrine\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Cart\Repository\CartRepository::class)]
 #[ORM\Table(name: 'cart')]

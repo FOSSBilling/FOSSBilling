@@ -35,7 +35,7 @@ use FOSSBilling\Exception\InformationException;
 use FOSSBilling\Tools;
 use FOSSBilling\Twig\Markdown\FOSSBillingMarkdown;
 
-class Service implements \FOSSBilling\Interfaces\InjectionAwareInterface
+class Service implements \FOSSBilling\Container\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
     protected KbArticleRepository $kbArticleRepository;

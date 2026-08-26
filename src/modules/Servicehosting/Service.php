@@ -22,7 +22,7 @@ use Box\Mod\Servicehosting\Repository\ServiceHostingRepository;
 use Box\Mod\Servicehosting\Repository\ServiceHostingServerRepository;
 use FOSSBilling\Exception\BaseException;
 use FOSSBilling\Exception\InformationException;
-use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\Container\InjectionAwareInterface;
 use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;

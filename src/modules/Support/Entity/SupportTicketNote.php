@@ -15,8 +15,8 @@ use Box\Mod\Support\Repository\SupportTicketNoteRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Doctrine\TimestampTrait;
-use FOSSBilling\Interfaces\ApiArrayInterface;
-use FOSSBilling\Interfaces\TimestampInterface;
+use FOSSBilling\Api\ArrayInterface;
+use FOSSBilling\Doctrine\TimestampInterface;
 
 /**
  * An internal note on a support ticket — visible to staff but not to the
@@ -26,7 +26,7 @@ use FOSSBilling\Interfaces\TimestampInterface;
 #[ORM\Table(name: 'support_ticket_note')]
 #[ORM\Index(name: 'idx_note_ticket', columns: ['support_ticket_id'])]
 #[ORM\HasLifecycleCallbacks]
-class SupportTicketNote implements ApiArrayInterface, TimestampInterface
+class SupportTicketNote implements ArrayInterface, TimestampInterface
 {
     use TimestampTrait;
 

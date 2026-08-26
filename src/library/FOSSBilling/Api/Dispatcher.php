@@ -13,7 +13,7 @@ namespace FOSSBilling\Api;
 
 use FOSSBilling\Exception\BaseException;
 use FOSSBilling\Exception\InformationException;
-use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\Container\InjectionAwareInterface;
 use FOSSBilling\Validation\Api\RequiredParams;
 use Pimple\Container;
 

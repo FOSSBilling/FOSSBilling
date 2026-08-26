@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
-use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\Container\InjectionAwareInterface;
 use Pimple\Container;
 
 class Url implements InjectionAwareInterface

@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Logging;
 
-use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\Container\InjectionAwareInterface;
 use Pimple\Container;
 use Psr\Log\AbstractLogger;
 use Psr\Log\InvalidArgumentException;

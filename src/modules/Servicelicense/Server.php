@@ -13,7 +13,7 @@ namespace Box\Mod\Servicelicense;
 
 use Box\Mod\Servicelicense\Entity\ServiceLicense;
 
-class Server implements \FOSSBilling\Interfaces\InjectionAwareInterface
+class Server implements \FOSSBilling\Container\InjectionAwareInterface
 {
     private array $_result = [
         'licensed_to' => null,

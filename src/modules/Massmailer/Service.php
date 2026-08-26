@@ -20,7 +20,7 @@ use Box\Mod\Order\Enum\Status as OrderStatus;
 use FOSSBilling\Exception\InformationException;
 use FOSSBilling\System\Environment;
 
-class Service implements \FOSSBilling\Interfaces\InjectionAwareInterface
+class Service implements \FOSSBilling\Container\InjectionAwareInterface
 {
     private const string FILTER_CLIENT_STATUS = 'client_status';
     private const string FILTER_CLIENT_GROUPS = 'client_groups';

@@ -12,7 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Formbuilder;
 
 use Doctrine\DBAL\Connection;
-use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\Container\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
