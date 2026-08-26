@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -13,7 +13,6 @@ namespace FOSSBilling\Cache;
 
 use FOSSBilling\Exception\BaseException;
 use FOSSBilling\System\Config;
-use FOSSBilling\Tools;
 use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\Cache\Adapter\MemcachedAdapter;
@@ -98,20 +97,20 @@ class CacheFactory
         // database or Memcached server don't collide on the same cache keys.
         $namespace = self::scopeNamespaceToInstallation($namespace);
 
-        $driver = $cacheConfig['driver'] ?? 'filesystem';
-
-        if (!in_array($driver, self::SUPPORTED_DRIVERS, true)) {
-            throw new BaseException('Unsupported cache driver :driver. Supported drivers are: :supported.', [':driver' => $driver, ':supported' => implode(', ', self::SUPPORTED_DRIVERS)]);
+        $rawDriver = $cacheConfig['driver'] ?? 'filesystem';
+        $driver = Driver::tryFrom($rawDriver);
+        if (!$driver instanceof Driver) {
+            throw new BaseException('Unsupported cache driver :driver. Supported drivers are: :supported.', [':driver' => $rawDriver, ':supported' => implode(', ', self::SUPPORTED_DRIVERS)]);
         }
 
-        if ($driver === 'filesystem') {
+        if ($driver === Driver::Filesystem) {
             return new FilesystemAdapter($namespace, $defaultLifetime, PATH_CACHE);
         }
 
         try {
             $pool = match ($driver) {
-                'redis' => self::createRedisAdapter($cacheConfig['redis'] ?? [], $namespace, $defaultLifetime),
-                'memcached' => self::createMemcachedAdapter($cacheConfig['memcached'] ?? [], $namespace, $defaultLifetime),
+                Driver::Redis => self::createRedisAdapter($cacheConfig['redis'] ?? [], $namespace, $defaultLifetime),
+                Driver::Memcached => self::createMemcachedAdapter($cacheConfig['memcached'] ?? [], $namespace, $defaultLifetime),
             };
 
             self::assertUsable($pool);
@@ -119,10 +118,10 @@ class CacheFactory
             return $pool;
         } catch (\Throwable $e) {
             if (!$fallbackOnFailure) {
-                throw new BaseException('Could not connect to the configured ":driver" cache backend: :message', [':driver' => $driver, ':message' => $e->getMessage()]);
+                throw new BaseException('Could not connect to the configured ":driver" cache backend: :message', [':driver' => $driver->value, ':message' => $e->getMessage()]);
             }
 
-            error_log(sprintf('FOSSBilling: failed to initialize the "%s" cache driver (%s); falling back to the filesystem cache.', $driver, $e->getMessage()));
+            error_log(sprintf('FOSSBilling: failed to initialize the "%s" cache driver (%s); falling back to the filesystem cache.', $driver->value, $e->getMessage()));
 
             return new FilesystemAdapter($namespace, $defaultLifetime, PATH_CACHE);
         }

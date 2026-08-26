@@ -16,6 +16,7 @@ declare(strict_types=1);
 namespace Box\Mod\System\Api;
 
 use FOSSBilling\Cache\CacheFactory;
+use FOSSBilling\Cache\Driver;
 use FOSSBilling\System\Config;
 use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
@@ -111,9 +112,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('system', 'update_params');
 
-        $driver = $data['driver'] ?? 'filesystem';
-        if (!in_array($driver, CacheFactory::SUPPORTED_DRIVERS, true)) {
-            throw new \FOSSBilling\Exception\BaseException('Unsupported cache driver: :driver', [':driver' => $driver]);
+        $rawDriver = $data['driver'] ?? 'filesystem';
+        $driver = Driver::tryFrom($rawDriver);
+        if (!$driver instanceof Driver) {
+            throw new \FOSSBilling\Exception\BaseException('Unsupported cache driver: :driver', [':driver' => $rawDriver]);
         }
 
         // Keep the existing password when the admin leaves the field blank, so re-saving the
@@ -125,7 +127,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         }
 
         $newCacheConfig = [
-            'driver' => $driver,
+            'driver' => $driver->value,
             'redis' => [
                 'host' => $data['redis_host'] ?? '127.0.0.1',
                 'port' => \FOSSBilling\Utils\Normalizer::normalizePort($data['redis_port'] ?? null, 6379),
@@ -139,7 +141,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         ];
 
         // Filesystem can't fail to connect, so only redis/memcached need the eager check.
-        if ($driver !== 'filesystem') {
+        if ($driver !== Driver::Filesystem) {
             CacheFactory::createFromConfig($newCacheConfig, CacheFactory::NAMESPACE_CONNECTION_TEST, 60, fallbackOnFailure: false);
         }
 
