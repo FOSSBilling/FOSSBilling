@@ -16,15 +16,11 @@ use FOSSBilling\System\Config;
 
 final class Credential
 {
-    public static function generatePassword(int $length = 8, bool|int $includeSpecial = false): string
+    public static function generatePassword(int $length = 8, bool $includeSpecial = false): string
     {
         $characters = 'abcdefghijklmnopqrstuvwxyz';
         $numbers = '0123456789';
         $specialCharacters = '!@#$%&?()+-_';
-
-        if (is_int($includeSpecial)) {
-            $includeSpecial = $includeSpecial === 4;
-        }
 
         $charSet = $characters . strtoupper($characters) . $numbers;
         if ($includeSpecial) {

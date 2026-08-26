@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -123,15 +123,15 @@ class Fingerprint
         $differing = [];
 
         foreach ($this->fingerprintProperties as $name => $properties) {
-            $exitsInFingerprint = array_key_exists($name, $fingerprint);
-            $exitsInCurrentFingerprint = !empty($properties['source']);
+            $existsInFingerprint = array_key_exists($name, $fingerprint);
+            $existsInCurrentFingerprint = !empty($properties['source']);
 
-            if ((!$exitsInFingerprint && $exitsInCurrentFingerprint) || ($exitsInFingerprint && !$exitsInCurrentFingerprint)) {
+            if ((!$existsInFingerprint && $existsInCurrentFingerprint) || ($existsInFingerprint && !$existsInCurrentFingerprint)) {
                 // The property exists in one fingerprint and not the other, so we increment the total count and deduct from the score.
                 ++$itemCount;
                 $scoreSubtract += $properties['weight'];
                 $differing[] = $name;
-            } elseif ($exitsInFingerprint && $exitsInCurrentFingerprint) {
+            } elseif ($existsInFingerprint && $existsInCurrentFingerprint) {
                 ++$itemCount;
                 $hashedData = hash('md5', (string) $properties['source']);
 

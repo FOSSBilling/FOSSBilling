@@ -15,7 +15,6 @@ use FOSSBilling\Http\CookieNames;
 use FOSSBilling\Container\InjectionAwareInterface;
 use FOSSBilling\System\Config;
 use FOSSBilling\System\Environment;
-use FOSSBilling\Tools;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 
 class Session implements InjectionAwareInterface

@@ -12,7 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Security\Checks;
 
 use FOSSBilling\Security\CheckResult;
-use FOSSBilling\Security\Enum\CheckResultStatus;
+use FOSSBilling\Security\CheckResultStatus;
 use Pimple\Container;
 
 class webserver implements \FOSSBilling\Security\CheckInterface

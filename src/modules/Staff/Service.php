@@ -490,7 +490,7 @@ class Service implements InjectionAwareInterface
         $cronEmail = \FOSSBilling\Security\Credential::generatePassword() . '@' . \FOSSBilling\Security\Credential::generatePassword() . '.com';
         $cronEmail = filter_var($cronEmail, FILTER_SANITIZE_EMAIL);
 
-        $cronPass = $this->di['password']->hashIt(\FOSSBilling\Security\Credential::generatePassword(256, 4));
+        $cronPass = $this->di['password']->hashIt(\FOSSBilling\Security\Credential::generatePassword(256, true));
 
         // Two cron runs can race to create the cron admin. Insert via the DBAL
         // connection (not an ORM flush) so a constraint violation doesn't close the

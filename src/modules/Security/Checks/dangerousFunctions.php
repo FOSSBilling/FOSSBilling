@@ -12,7 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Security\Checks;
 
 use FOSSBilling\Security\CheckResult;
-use FOSSBilling\Security\Enum\CheckResultStatus;
+use FOSSBilling\Security\CheckResultStatus;
 
 class dangerousFunctions implements \FOSSBilling\Security\CheckInterface
 {
