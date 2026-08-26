@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -15,7 +15,6 @@ use FOSSBilling\Exception\InformationException;
 use FOSSBilling\Http\CookieNames;
 use FOSSBilling\Http\CookieQueue;
 use FOSSBilling\System\Config;
-use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
@@ -89,8 +88,8 @@ class I18n
         $header = $request->headers->get('Accept-Language', '');
 
         try {
-            $detectedLocale = @\Locale::acceptFromHttp($header);
-            $detectedLocale = @\Locale::canonicalize($detectedLocale . '.utf8');
+            $detectedLocale = \Locale::acceptFromHttp($header);
+            $detectedLocale = \Locale::canonicalize($detectedLocale . '.utf8');
         } catch (\Exception) {
             $detectedLocale = '';
         }
