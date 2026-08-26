@@ -927,16 +927,12 @@ test('create product', function (): void {
 
     $newProductId = 1;
 
-    $toolMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolMock->shouldReceive('slug')->atLeast()->once()->andReturn('title');
-
     $productRepo = Mockery::mock(ProductRepository::class);
     $productRepo->shouldReceive('getMaxPriority')->once()->andReturn(0);
     $productRepo->shouldReceive('findOneBy')->once()->with(['slug' => 'title'])->andReturn(null);
 
     $di = container();
     $di['em'] = productTestCreateEntityManagerWithRepositories($productRepo, null, productTestCreateProductEntity($newProductId), productTestCreateProductPaymentEntity(1));
-    $di['tools'] = $toolMock;
     $di['logger'] = new FOSSBilling\Logging\Logger();
 
     $service->setDi($di);
@@ -1105,9 +1101,6 @@ test('get addons', function (): void {
 test('create addon', function (): void {
     $service = new Service();
     $newProductId = 1;
-
-    $toolMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolMock->shouldReceive('slug')->atLeast()->once()->andReturn('title');
 
     $productRepo = Mockery::mock(ProductRepository::class);
     $productRepo->shouldReceive('findOneBy')->once()->with(['slug' => 'title'])->andReturn(null);

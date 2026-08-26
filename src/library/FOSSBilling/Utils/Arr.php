@@ -65,11 +65,15 @@ final class Arr implements InjectionAwareInterface
             return [];
         }
 
+        if (!preg_match('/^[a-zA-Z0-9_]+$/', $table)) {
+            throw new \FOSSBilling\Exception\InformationException('Invalid table name');
+        }
+
         $count = self::safeCount($ids);
         $slots = $count ? implode(',', array_fill(0, $count, '?')) : '';
 
         $rows = $this->di['em']->getConnection()->fetchAllAssociative(
-            'SELECT id, title FROM ' . $table . ' WHERE id in (' . $slots . ')',
+            'SELECT id, title FROM `' . $table . '` WHERE id in (' . $slots . ')',
             $ids
         );
 
@@ -79,11 +83,5 @@ final class Arr implements InjectionAwareInterface
         }
 
         return $result;
-    }
-
-    // Legacy instance wrappers for transition
-    public function sortByOneKeyInstance(array $array, mixed $key, bool $asc = true): array
-    {
-        return self::sortByOneKey($array, $key, $asc);
     }
 }

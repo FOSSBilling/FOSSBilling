@@ -1380,14 +1380,8 @@ test('kb create article', function (): void {
         });
     $emMock->shouldReceive('flush')->once();
 
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('slug')
-        ->atLeast()->once()
-        ->andReturn('article-slug');
-
     $di = container();
     $di['em'] = $emMock;
-    $di['tools'] = $toolsMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
@@ -1628,14 +1622,8 @@ test('kb create category', function (): void {
         });
     $emMock->shouldReceive('flush')->once();
 
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('slug')
-        ->atLeast()->once()
-        ->andReturn('article-slug');
-
     $di = container();
     $di['em'] = $emMock;
-    $di['tools'] = $toolsMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 

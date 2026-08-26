@@ -1560,7 +1560,7 @@ class Service implements InjectionAwareInterface
     public function enrichPromoApiArray(array $result, $deep = false, $identity = null): array
     {
         $products = !empty($result['products']) ? $this->getProductTitlesByIds($this->decodePromoSelection($result['products'])) : null;
-        $clientGroups = !empty($result['client_groups']) ? $this->di['arr']->getPairsForTableByIds('client_group', $this->decodePromoSelection($result['client_groups'])) : null;
+        $clientGroups = !empty($result['client_groups']) ? (new \FOSSBilling\Utils\Arr())->getPairsForTableByIds('client_group', $this->decodePromoSelection($result['client_groups'])) : null;
         $usageStats = $deep ? $this->getPromoUsageStatsByValues((int) $result['id'], (int) ($result['used'] ?? 0), isset($result['maxuses']) ? (int) $result['maxuses'] : null) : null;
         $redemptionCount = $usageStats['recorded_applications'] ?? $this->getPromoRedemptionCountById((int) $result['id']);
 

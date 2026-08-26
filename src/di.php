@@ -532,13 +532,6 @@ $di['api_system'] = function () use ($di) {
     return $api;
 };
 
-$di['arr'] = function () use ($di) {
-    $service = new \FOSSBilling\Utils\Arr();
-    $service->setDi($di);
-
-    return $service;
-};
-
 $di['network'] = function () use ($di) {
     $service = new \FOSSBilling\Utils\Network();
     $service->setDi($di);

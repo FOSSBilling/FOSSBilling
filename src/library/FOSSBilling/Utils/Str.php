@@ -40,24 +40,5 @@ final class Str
         return preg_replace_callback('/([A-Z])/', $func, $str);
     }
 
-    // Legacy aliases for backward compatibility within migration
-    public static function slugLegacy(mixed $str): string
-    {
-        return self::slug((string) $str);
-    }
 
-    public function slugInstance(mixed $str): string
-    {
-        return self::slug((string) $str);
-    }
-
-    public function to_camel_case(mixed $str, bool $capitalize_first_char = false): ?string
-    {
-        return self::toCamelCase((string) $str, $capitalize_first_char);
-    }
-
-    public function from_camel_case(mixed $str): ?string
-    {
-        return self::fromCamelCase((string) $str);
-    }
 }
