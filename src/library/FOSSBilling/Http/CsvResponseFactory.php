@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace FOSSBilling\Http;
 
 use Doctrine\DBAL\Connection;
+use FOSSBilling\Exception\InformationException;
 use League\Csv\EscapeFormula;
 use League\Csv\Writer;
 use Symfony\Component\HttpFoundation\HeaderUtils;
@@ -30,6 +31,10 @@ final readonly class CsvResponseFactory
 
     public function create(string $table, string $outputName = 'export.csv', array $headers = [], int $limit = 0): Response
     {
+        if (!preg_match('/^[a-zA-Z0-9_]+$/', $table)) {
+            throw new InformationException('Invalid table name for CSV export');
+        }
+
         $headersRequested = $headers !== [];
 
         if ($headers) {

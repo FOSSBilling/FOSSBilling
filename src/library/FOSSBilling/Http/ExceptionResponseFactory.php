@@ -22,7 +22,7 @@ final readonly class ExceptionResponseFactory
 {
     public function create(\Throwable $exception): Response
     {
-        $message = htmlspecialchars($exception->getMessage());
+        $rawMessage = $exception->getMessage();
 
         if (Environment::isTesting()) {
             return new Response($this->formatTestingMessage($exception), $this->getStatusCode($exception), [
@@ -33,14 +33,14 @@ final readonly class ExceptionResponseFactory
         if (defined('API_MODE')) {
             $code = $exception->getCode() ?: 9998;
 
-            return new JsonResponse(['result' => null, 'error' => ['message' => $message, 'code' => $code]]);
+            return new JsonResponse(['result' => null, 'error' => ['message' => htmlspecialchars($rawMessage, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'), 'code' => $code]]);
         }
 
         if (defined('DEBUG') && DEBUG && (new Filesystem())->exists(PATH_VENDOR)) {
             return new Response($this->renderWhoops($exception), $this->getStatusCode($exception));
         }
 
-        return new Response((new ErrorPage())->renderPage($exception->getCode(), $message), $this->getStatusCode($exception));
+        return new Response((new ErrorPage())->renderPage($exception->getCode(), $rawMessage), $this->getStatusCode($exception));
     }
 
     public function formatTestingMessage(\Throwable $exception): string

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -130,8 +130,9 @@ class ErrorPage
      */
     public function renderPage(int $code, string $message): string
     {
+        $escapedMessage = htmlspecialchars($message, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         $error = static::getCodeInfo($code);
-        $error['message'] ??= "You've received a generic error message: <code> $message </code>";
+        $error['message'] ??= "You've received a generic error message: <code> $escapedMessage </code>";
         if (defined('INSTANCE_ID')) {
             $instanceID = INSTANCE_ID;
         } else {
@@ -267,7 +268,7 @@ class ErrorPage
                     </ul>
 
                     <p class="error-message" id="specialized">' . $error['message'] . '</p>
-                    <p class="error-message" id="original" style="display: none;">' . $message . '</p>
+                    <p class="error-message" id="original" style="display: none;">' . $escapedMessage . '</p>
 
                     <div class="link-container">
                         <button id="toggle" class="button" onclick="toggle()">Show original message</button>
